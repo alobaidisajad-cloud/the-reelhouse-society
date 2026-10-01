@@ -4,7 +4,9 @@
  * Cohesion law: a log looks the same in every room of the house.
  * This page renders the Reel's own ActivityCard — ledger row, poster
  * frame, verdict, prose, stamp bar, and the confidential autopsy back —
- * filtered to one film, paginated twenty at a time.
+ * filtered to one film, twenty at a time, each page starting where the last
+ * one ended (by time, then id): a critique filed while a member reads, or two
+ * filed in the same instant, never repeats or skips one.
  *
  * The poster press is overridden to go BACK: the member came from this
  * film's page, so the card must never stack a duplicate on top of it.
@@ -13,7 +15,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -29,6 +31,7 @@ import { tellMarks } from '@/src/stores/tellMarks';
 import { useAuthStore } from '@/src/stores/auth';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import { nav } from '@/src/utils/typedRouter';
+import { TryAgainLine } from '@/src/components/TryAgain';
 
 const PAGE_SIZE = 20;
 
@@ -38,6 +41,14 @@ const PAGE_SIZE = 20;
 const LOG_COLUMNS = (viewerId: string | null) =>
   `id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, is_spoiler, profiles!logs_user_id_fkey(username, avatar_url, role), ${logCountsSelect(viewerId)}`;
 
+/** Where the next page starts: the last row read, by its time and then its id. */
+type Cursor = { at: string; id: string } | null;
+
+/** Rows after the cursor, in the page's own order (newest first, id breaking ties). */
+export function afterCursor(c: { at: string; id: string }): string {
+  return `created_at.lt."${c.at}",and(created_at.eq."${c.at}",id.lt."${c.id}")`;
+}
+
 interface RawLogRow {
   [key: string]: unknown;
   user_id: string;
@@ -46,16 +57,17 @@ interface RawLogRow {
 
 export default function FilmReviewsScreen() {
   const { id: filmId, title } = useLocalSearchParams<{ id: string; title?: string }>();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const [logs, setLogs] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchingMore, setFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(0);
+  const [cursor, setCursor] = useState<Cursor>(null);
   // The first page could not be read: said, not "the projection box awaits".
   const [failed, setFailed] = useState(false);
+  // A later page could not be read: the critiques drawn stay, and the foot says so.
+  const [moreFailed, setMoreFailed] = useState(false);
 
   const fetchLogs = useCallback(async (isLoadMore = false) => {
     if (!filmId) return;
@@ -69,17 +81,20 @@ export default function FilmReviewsScreen() {
 
     const askedAt = Date.now();
     const viewer = useAuthStore.getState().user?.id ?? null;
-    const { data, error } = await withLogCountFilters(supabase
+    let query = withLogCountFilters(supabase
       .from('logs')
       .select(LOG_COLUMNS(viewer)), viewer)
       .eq('film_id', filmId)
       .not('review', 'is', null)
       .neq('review', '')
       .order('created_at', { ascending: false })
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+      .order('id', { ascending: false });
+    const from = isLoadMore ? cursor : null;
+    if (from) query = query.or(afterCursor(from));
+    const { data, error } = await query.limit(PAGE_SIZE);
 
-    // A later page that fails leaves the reviews drawn; scrolling on asks again.
-    if (!isLoadMore) setFailed(!!error);
+    if (isLoadMore) setMoreFailed(!!error);
+    else setFailed(!!error);
 
     if (data) {
       // Map the profiles join into the flat FeedItem shape the card expects;
@@ -102,17 +117,22 @@ export default function FilmReviewsScreen() {
       const visible = filterContentByBlocks(mapped, (r) => r.user_id ?? '');
 
       if (isLoadMore) {
-        setLogs(prev => [...prev, ...visible]);
+        setLogs(prev => {
+          const have = new Set(prev.map((p) => p.id));
+          return [...prev, ...visible.filter((v) => !have.has(v.id))];
+        });
       } else {
         setLogs(visible);
       }
+      // From the RAW page: a row dropped as malformed or blocked never ends the archive early.
       setHasMore(data.length === PAGE_SIZE);
-      setPage(prev => prev + 1);
+      const last = (data as unknown as { created_at?: string; id?: string }[])[data.length - 1];
+      setCursor(last?.created_at && last?.id ? { at: last.created_at, id: last.id } : null);
     }
 
     if (isLoadMore) setFetchingMore(false);
     else setLoading(false);
-  }, [filmId, page, hasMore, fetchingMore]);
+  }, [filmId, cursor, hasMore, fetchingMore]);
 
   useEffect(() => {
     fetchLogs();
@@ -120,9 +140,10 @@ export default function FilmReviewsScreen() {
   }, []);
 
   const handleFilmPress = useCallback(() => {
-    // The member is already standing on this film — walk them back to it.
-    if (router.canGoBack()) router.back();
-  }, [router]);
+    // The member came from this film: walk them back to it. Opened cold, open it.
+    if (nav.canGoBack()) nav.back();
+    else nav.replace(`/film/${filmId}`);
+  }, [filmId]);
 
   const renderLog = useCallback(({ item, index }: { item: FeedItem; index: number }) => (
     <ActivityCard item={item} index={index} onFilmPress={handleFilmPress} />
@@ -163,7 +184,13 @@ export default function FilmReviewsScreen() {
           showsVerticalScrollIndicator={false}
           estimatedItemSize={230}
           ListFooterComponent={
-            fetchingMore ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} /> : null
+            fetchingMore ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} />
+              : moreFailed ? (
+                <View style={s.moreFailed}>
+                  <Text style={s.moreFailedText}>More critiques could not be reached.</Text>
+                  <TryAgainLine onPress={() => { void fetchLogs(true); }} accessibilityLabel="Ask for more critiques" style={s.moreRetry} />
+                </View>
+              ) : null
           }
           ListEmptyComponent={failed ? (
             <EmptyOffline onRetry={() => { void fetchLogs(); }} />
@@ -193,6 +220,9 @@ const s = StyleSheet.create({
   listContent: { paddingTop: 20, paddingBottom: 100 },
 
   emptyBox: { padding: 40, alignItems: 'center' },
+  moreFailed: { alignItems: 'center', paddingVertical: 20, gap: 4 },
+  moreFailedText: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, fontStyle: 'italic' },
+  moreRetry: { paddingVertical: 10, paddingHorizontal: 16 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.sepia },
 });
 

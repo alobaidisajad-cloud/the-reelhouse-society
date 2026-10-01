@@ -11,9 +11,6 @@
  *   2. the film's own country of origin — the rating its makers were given
  *   3. GB, then US, as the two the app's copy is written for
  *   4. anything at all, rather than nothing
- *
- * This used to live in a whole section of its own — a rail of international
- * release dates — which is a lot of page for one fact most members want once.
  */
 
 export interface ReleaseDateEntry {

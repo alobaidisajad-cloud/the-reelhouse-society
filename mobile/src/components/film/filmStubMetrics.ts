@@ -43,10 +43,9 @@ export function scrollReserve(bottomInset: number): number {
 /**
  * ── MEASURED, NOT GUESSED ───────────────────────────────────────────────────
  * The tray is a head, six acts, a perforation and the dock. At 390x844 that is
- * 559pt and fits with 285 to spare, which is why twelve rounds of mockups at
- * that size never showed a problem. On an iPhone SE at Dynamic Type 1.35 it is
- * 751pt on a 667pt screen — the head, the film's title and the primary LOG row
- * pushed clean off the top.
+ * 559pt and fits with 285 to spare. On an iPhone SE at Dynamic Type 1.35 it is
+ * 751pt on a 667pt screen, which would push the head, the film's title and the
+ * primary LOG row clean off the top.
  *
  * So the tray is capped against the LIVE window height and its act list
  * scrolls. On any ordinary phone at ordinary type nothing scrolls and none of

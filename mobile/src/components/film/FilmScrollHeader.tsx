@@ -1,11 +1,10 @@
 /**
- * FilmScrollHeader — the control this page was missing.
+ * FilmScrollHeader — the way back, past the backdrop.
  *
- * ── THE FAULT IT FIXES ──────────────────────────────────────────────────────
  * The floating back button fades to `opacity: 0` once you scroll past the
- * backdrop, and NOTHING replaces it. On a page over two thousand points long
- * that leaves a member with no way back but an edge swipe — which does not
- * exist on Android — and nothing on screen saying which film they are reading.
+ * backdrop. On a page over two thousand points long a member must still have
+ * a way back on screen (an edge swipe does not exist on Android), and a word
+ * saying which film they are reading.
  *
  * So this fades IN across the same fifty points the floating control fades out
  * over. It REPLACES that control rather than joining it: at no scroll position

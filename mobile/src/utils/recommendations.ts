@@ -1,5 +1,5 @@
 /**
- * recommendations.ts — the brain of "YOU MAY ALSO LIKE".
+ * recommendations.ts — what fills FROM THE SAME SHELF on a film's page.
  * ─────────────────────────────────────────────────────────────
  * Pure, side-effect-free, unit-tested. Two stages, deliberately split so
  * the personal filter stays LIVE:

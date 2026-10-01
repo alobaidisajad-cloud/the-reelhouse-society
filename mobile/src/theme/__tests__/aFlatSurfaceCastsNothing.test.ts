@@ -46,13 +46,17 @@ function flatButElevated(): string[] {
 
 describe('a flat surface', () => {
   // Exact: one cleared is MOST lowered here, so the slack cannot let another in.
-  const MOST = 18;
+  const MOST = 16;
   it(`keeps elevation in exactly ${MOST} styles, and only fewer from here`, () => {
     expect(flatButElevated()).toHaveLength(MOST);
   });
 
   it('the Lounge has none left', () => {
     expect(flatButElevated().filter((s) => /lounge/i.test(s))).toEqual([]);
+  });
+
+  it('nor the film page', () => {
+    expect(flatButElevated().filter((s) => /[\\/](film|person)[\\/]/i.test(s))).toEqual([]);
   });
 
   it('the detector sees one', () => {

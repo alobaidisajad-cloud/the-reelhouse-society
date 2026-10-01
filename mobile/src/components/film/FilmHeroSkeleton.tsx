@@ -21,18 +21,9 @@ const POSTER_H = POSTER_W * 1.5;
 
 /**
  * ── A SKELETON IS A PROMISE ABOUT WHAT IS ARRIVING ──────────────────────────
- * Two things here were promising the page that used to exist:
- *
- *   · a full-width 48pt bar in the content flow, standing in for the CONSOLE
- *     that this pass retired. It drew a control that is never coming.
- *
- *   · `marginTop: -80`, the poster's OLD lift. The page now lifts it 190 into
- *     a shorter backdrop, so the poster landed some 110pt lower here than in
- *     the page that replaced it — a visible jump at the exact moment a member
- *     is watching the screen settle.
- *
- * The lift is read from the same token the page uses, so the two cannot drift
- * again, and the bar becomes what actually arrives: a docked plate.
+ * It draws what actually arrives: the poster at the page's own lift (read from
+ * the same token, so the two cannot land in two places and jump as the screen
+ * settles), and the docked plate where the stub will be.
  */
 export const FilmHeroSkeleton = memo(function FilmHeroSkeleton({
   skeletonAnimStyle, backdropHeight, bottomInset,

@@ -21,18 +21,19 @@ interface VideoResult {
 
 interface VideoThumbProps {
   video: VideoResult;
-  onPlay: (key: string) => void;
+  onPlay: (video: VideoResult) => void;
 }
 
 const VideoThumb = memo(function VideoThumb({ video, onPlay }: VideoThumbProps) {
   const thumb = tmdb.youtubeThumbnail(video.key);
   const handlePlay = useCallback(() => {
     TactileEngine.selection();
-    onPlay(video.key);
-  }, [onPlay, video.key]);
+    onPlay(video);
+  }, [onPlay, video]);
 
   return (
-    <PressableScale onPress={handlePlay} style={sub.videoThumb} hitSlop={{top: 10, bottom: 10}} accessibilityLabel="Play video">
+    <PressableScale onPress={handlePlay} style={sub.videoThumb} hitSlop={{top: 10, bottom: 10}}
+      accessibilityRole="button" accessibilityLabel={`Play ${video.type ?? 'video'}${video.name ? `: ${video.name}` : ''}`}>
       <Image source={{ uri: thumb }} style={sub.videoImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
       <View style={sub.videoPlayOverlay}>
         <View style={sub.videoPlayCircle}>
@@ -49,8 +50,8 @@ const VideoThumb = memo(function VideoThumb({ video, onPlay }: VideoThumbProps) 
           * that twice as likely, so both lines are capped at the app's own 1.35.
           */}
         <Text {...scaledTextProps} style={sub.videoType}>{video.type?.toUpperCase() ?? 'VIDEO'}</Text>
-        {/* Two lines. One cut a caption mid-word — "A moment for this cinematic
-            d…" — which tells a member less than no caption at all. */}
+        {/* Two lines: one would cut a caption mid-word ("A moment for this
+            cinematic d…"), which tells a member less than no caption at all. */}
         <Text {...scaledTextProps} style={sub.videoName} numberOfLines={2}>{video.name}</Text>
       </View>
     </PressableScale>
@@ -59,7 +60,7 @@ const VideoThumb = memo(function VideoThumb({ video, onPlay }: VideoThumbProps) 
 
 interface FilmMediaCarouselProps {
   videos: VideoResult[];
-  onPlayVideo: (key: string) => void;
+  onPlayVideo: (video: VideoResult) => void;
 }
 const keyExtractor = (item: VideoResult, index: number) => `${item.key}-${index}`;
 
@@ -74,8 +75,6 @@ export const FilmMediaCarousel = memo(function FilmMediaCarousel({ videos, onPla
     <SectionErrorBoundary fallbackMessage="Media could not be loaded.">
       <Animated.View style={s.sectionFlush}>
         <View style={s.sectionPadded}>
-          {/* Was VIDEOS. Half this page's headings spoke the house's language
-              and half spoke a stock app's; this is one of the four that did not. */}
           <FilmSectionHeader label={`THE FOOTAGE (${videos.length})`} />
         </View>
         <View style={sub.videoListContainer}>
@@ -104,9 +103,8 @@ const s = StyleSheet.create({
 });
 
 const sub = StyleSheet.create({
-  // 160 fitted a one-line caption exactly. The second line has to be paid for
-  // here or it overflows the rail and collides with the section beneath —
-  // a fixed-height rail does not grow to fit its contents.
+  // A fixed-height rail does not grow to fit its contents, so the caption's
+  // second line is paid for here, or it would collide with the section beneath.
   videoListContainer: { height: 176 },
   videoThumb: { width: 200, marginRight: 10 },
   // A photograph is not a lit surface: no edge light on a still.

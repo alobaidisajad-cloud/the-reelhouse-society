@@ -4,10 +4,7 @@ import { withAbortSignal } from '@/src/utils/withAbortSignal';
 import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
 import { z } from 'zod';
 
-/**
- * Typed Supabase row shape for film reviews.
- * Now validated through Zod instead of `as unknown as` cast.
- */
+/** A film review row as it arrives, validated rather than cast. */
 const FilmReviewRowSchema = z.object({
   id: z.union([z.string(), z.number()]).transform(String),
   rating: z.number().nullable().transform(v => v ?? 0),
@@ -66,10 +63,9 @@ export interface FilmReviewsPage {
 
 export const FilmService = {
   /**
-   * Migrated from offset .range() to compound cursor pagination.
-   * - Eliminates O(N²) deep-page scans
-   * - Prevents duplicate reviews from concurrent inserts shifting offsets
-   * - Compound cursor (created_at|id) handles timestamp collisions
+   * A page of a film's written critiques, newest first, by a compound cursor
+   * (created_at|id): no deep-page scans, no repeats when a critique is filed
+   * mid-read, and a timestamp collision broken by the id.
    */
   async getFilmReviews(filmId: string, pageSize: number, cursor?: string, signal?: AbortSignal): Promise<FilmReviewsPage> {
     let query = supabase

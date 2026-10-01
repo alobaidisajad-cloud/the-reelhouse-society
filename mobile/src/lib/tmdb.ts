@@ -20,6 +20,11 @@ interface TMDBWatchProvider {
 
 export interface TMDBWatchProviderResult {
     link?: string;
+    /** Free to watch, with no subscription. */
+    free?: TMDBWatchProvider[];
+    /** Free, with advertising. */
+    ads?: TMDBWatchProvider[];
+    /** With a subscription to the service. */
     flatrate?: TMDBWatchProvider[];
     rent?: TMDBWatchProvider[];
     buy?: TMDBWatchProvider[];

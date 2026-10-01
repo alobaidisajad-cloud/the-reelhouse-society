@@ -13,7 +13,7 @@ import { isArchivistPlusTier } from '@/src/utils/tier';
 
 import { FilmDetailLayout } from '@/src/components/film/FilmDetailLayout';
 import { ShareCardModal } from '@/src/components/film/ShareCardModal';
-import { TrailerModal } from '@/src/components/film/TrailerModal';
+import { TrailerModal, footageLabel, type Footage } from '@/src/components/film/TrailerModal';
 import { FilmDetailContextValue, FilmDetailProvider } from '@/src/providers/FilmDetailProvider';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { nav } from '@/src/utils/typedRouter';
@@ -42,7 +42,7 @@ export default function FilmDetailScreen() {
 
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [trailerModalVisible, setTrailerModalVisible] = useState(false);
-  const [activeTrailerKey, setActiveTrailerKey] = useState<string | null>(null);
+  const [activeVideo, setActiveVideo] = useState<{ key: string; label: string } | null>(null);
   
   const isFocused = useIsFocused();
 
@@ -89,13 +89,17 @@ export default function FilmDetailScreen() {
     return official || anyTrailer || teaser || null;
   }, [data?.detail?.videos?.results]);
 
+  const playVideo = useCallback((video: Footage) => {
+    setActiveVideo({ key: video.key, label: footageLabel(video) });
+    setTrailerModalVisible(true);
+  }, []);
+
   const handleOpenTrailer = useCallback(() => {
     if (trailer?.key) {
-      setActiveTrailerKey(trailer.key);
-      setTrailerModalVisible(true);
+      playVideo(trailer);
       TactileEngine.selection();
     }
-  }, [trailer]);
+  }, [trailer, playVideo]);
 
   const handleOpenShare = useCallback(() => {
     setShareModalVisible(true);
@@ -172,12 +176,12 @@ export default function FilmDetailScreen() {
       handleOpenShare,
       handleOpenLounge,
       handleReadFullLog,
-      setTrailerModalVisible,
-      setActiveTrailerKey,
+      playVideo,
     };
   }, [
     derivedData, existingLog, isAuthenticated, isArchivist, currentUsername, user, validFilmId, loading, isError, retry,
-    isFocused, goBack, handleLog, handleRewatch, handleOpenTrailer, handleOpenShare, handleOpenLounge, handleReadFullLog, trailer
+    isFocused, goBack, handleLog, handleRewatch, handleOpenTrailer, handleOpenShare, handleOpenLounge, handleReadFullLog, trailer,
+    playVideo,
   ]);
 
   return (
@@ -198,10 +202,11 @@ export default function FilmDetailScreen() {
           memberNo={user?.member_no}
         />
       )}
-      {activeTrailerKey && (
+      {activeVideo && (
         <TrailerModal
           visible={trailerModalVisible}
-          videoId={activeTrailerKey}
+          videoId={activeVideo.key}
+          label={activeVideo.label}
           onClose={handleCloseTrailer}
         />
       )}

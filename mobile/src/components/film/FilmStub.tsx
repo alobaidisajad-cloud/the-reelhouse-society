@@ -1,10 +1,8 @@
 /**
  * FilmStub — one control, docked, for everything you can do to a film.
  *
- * ── WHAT IT REPLACES ────────────────────────────────────────────────────────
- * A console three rows deep: LOG THIS FILM, a rewatch line, and a stamp bar of
- * WATCHLIST / TRAILER / SHARE / LOUNGE. Six controls competing at the top of
- * the page, reachable only by scrolling back to it.
+ * Docked, so it is in reach wherever the page is scrolled, rather than six
+ * controls competing at the top of it.
  *
  * ── WHY A TICKET STUB ───────────────────────────────────────────────────────
  * The app's brass ＋ already means "the concierge — make something, anywhere".
@@ -18,10 +16,10 @@
  *   after — a record, dark, with the brass moved to its edge
  *
  * ── ONE BRASS OBJECT ON SCREEN AT A TIME ────────────────────────────────────
- * With the tray open, a brass stub reading LOG THIS FILM sat directly beneath a
- * brass row reading LOG THIS FILM: the same words twice and two places for the
- * eye to go. So while the tray is open the stub is only the handle, and states
- * your standing instead. The brass then lives on exactly one thing at any
+ * With the tray open, a brass stub reading LOG THIS FILM would sit directly
+ * beneath a brass row reading LOG THIS FILM: the same words twice and two
+ * places for the eye to go. So while the tray is open the stub is only the
+ * handle, and states your standing instead. The brass then lives on exactly one thing at any
  * moment — whatever the act is.
  */
 import React, { memo, useMemo } from 'react';
@@ -80,8 +78,7 @@ export const FilmStub = memo(function FilmStub({
   const Chevron = open ? ChevronDown : ChevronUp;
 
   /**
-   * Five states, not two. `abandoned` is a real status in this app and the
-   * first design of this control would have printed SEEN over it.
+   * Five states, not two: `abandoned` is a real status, never printed as SEEN.
    */
   const state = useMemo(() => {
     if (!existingLog) return isWatchlisted ? 'shelved' : 'unseen';
@@ -106,14 +103,10 @@ export const FilmStub = memo(function FilmStub({
 
   /**
    * ── WHAT IS HEARD MUST BE WHAT IS SEEN ────────────────────────────────────
-   * This used to announce the record label unconditionally, so a shelved film
-   * that DISPLAYED "LOG THIS FILM" was READ OUT as "On the watchlist". A
-   * sighted member and a blind one were told two different things by the same
-   * control, and nothing about the screen would ever have shown it.
-   *
-   * So the announcement is built from what is actually on the face, plus the
-   * standing it does not have room to say, plus what pressing does — because
-   * "Seen, four reels" alone gives a member no reason to press anything.
+   * A sighted member and a blind one are told the same thing: the announcement
+   * is built from what is actually on the face, plus the standing it does not
+   * have room to say, plus what pressing does — because "Seen, four reels"
+   * alone gives a member no reason to press anything.
    */
   const a11yLabel = (() => {
     const parts: string[] = [];
@@ -122,7 +115,7 @@ export const FilmStub = memo(function FilmStub({
       if (state === 'shelved') parts.push('on the watchlist');
     } else {
       parts.push(label.replace('×', 'times '));
-      if (logged && rating > 0) parts.push(`rated ${rating}`);
+      if (logged && rating > 0) parts.push(`rated ${rating} of 5`);
       if (watchedLabel) parts.push(watchedLabel);
     }
     return `${parts.join(', ')}. ${open ? 'Closes' : 'Opens'} film actions.`;
@@ -160,12 +153,11 @@ export const FilmStub = memo(function FilmStub({
       <Text {...scaledTextProps} style={s.recordLabel} numberOfLines={1}>{label}</Text>
       {logged && rating > 0 && <ReelRating rating={rating} size={13} />}
       {/**
-        * The date stays, because it now FITS. The reels do not scale with the
-        * type and the words do, and `SEEN ×2 · ★★★★☆ · JUL 21, 2026` ran off a
-        * 375pt plate at ordinary size. It was the DATE FORM that was wrong,
-        * not the presence of a date: the caller sends `JUL 21` for this year
-        * and `2025` for any other, and both survive the widest label at 1.35.
-        * Measured in stubFits.test.ts, per state, rather than assumed.
+        * The date FITS because of its form. The reels do not scale with the
+        * type and the words do, and `SEEN ×2 · ★★★★☆ · JUL 21, 2026` would run
+        * off a 375pt plate at ordinary size: the caller sends `JUL 21` for this
+        * year and `2025` for any other, and both survive the widest label at
+        * 1.35. Measured in stubFits.test.ts, per state, rather than assumed.
         */}
       {logged && watchedLabel ? (
         <Text {...scaledTextProps} style={s.recordDate} numberOfLines={1}>{watchedLabel}</Text>
@@ -199,13 +191,11 @@ const s = StyleSheet.create({
   dock: { ...EDGE_LIT,
     /**
      * ── ABOVE THE TRAY, DELIBERATELY ────────────────────────────────────────
-     * The tray layer sits at 60. At 40 the stub was PAINTED OVER by it: the
-     * tray opened and the handle that raised it disappeared, leaving the scrim
-     * as the only way out and breaking the one thing this design promises —
-     * that the control never moves out from under your thumb.
-     *
-     * So the stub floats above the tray, which is also what makes the chevron
-     * flip legible: the same object, still in the same place, now pointing down.
+     * The tray layer sits at 60; under it, the handle that raised the tray
+     * would disappear, the one thing this design promises being that the
+     * control never moves out from under your thumb. So the stub floats above
+     * the tray, which is also what makes the chevron flip legible: the same
+     * object, still in the same place, now pointing down.
      */
     position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 70,
     paddingHorizontal: 20, paddingTop: STUB_PAD_TOP,

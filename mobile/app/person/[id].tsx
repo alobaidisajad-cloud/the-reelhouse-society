@@ -145,9 +145,7 @@ export default function PersonDetailScreen() {
   const personId = Number(id);
   /**
    * Sharing an artist into a salon is posting a message there, so the rope is
-   * `lounge-speaking`. It used to be a bare tier check that walked a Cinephile
-   * to '/lounge' on the promise the tab would refuse them — and the tab stopped
-   * refusing when the corridor opened to everyone.
+   * `lounge-speaking` (the corridor itself is open to every member).
    */
   const { held: canShare, standing: shareStanding, open: openShare } = useClearance('lounge-speaking', `/person/${id}`);
   const isArchivist = canShare;
@@ -247,14 +245,9 @@ export default function PersonDetailScreen() {
       return;
     }
     if (!person) return;
-    // '/social-modal', not '/(modals)/social-modal'. Both resolve — expo-router
-    // accepts the group segment — but every other call site in the app and the
-    // typed router's own documentation use the plain path, and nav.push keys its
-    // circular-navigation history off the string it is given. Two spellings of
-    // one screen meant the guard counted them as two different rooms.
-    //
-    // `mode` is not sent: social-modal infers share-person from personId and
-    // never reads a mode param, so passing one only suggests it does.
+    // '/social-modal', not '/(modals)/social-modal': nav.push keys its
+    // circular-navigation history off the string it is given, and one screen
+    // has one spelling. Social-modal infers share-person from personId.
     nav.push('/social-modal', {
       personId: String(id),
       personName: person.name,
@@ -370,8 +363,8 @@ export default function PersonDetailScreen() {
   }, [_loggedIndex]);
 
   // ── Could not be reached ──
-  // Only with nothing to show: a pull that failed over a file already on the
-  // page used to replace the whole file with this. The house's one failed state.
+  // Only with nothing to show: a pull that fails over a file already on the
+  // page keeps the file. The house's one failed state.
   if (error && !person) return (
     <View style={[s.container, s.notFoundContainer]}>
       <RoomLight room="film" />
@@ -398,15 +391,15 @@ export default function PersonDetailScreen() {
         <ShimmerBlock style={s.shimmerPortrait} />
         <ShimmerBlock style={s.shimmerDeptBadge} />
         <ShimmerBlock style={s.shimmerName} />
-        {/* The record CARD, not the four caption lines it replaced — a skeleton
-            that promises a shape the page no longer has is worse than none. */}
+        {/* The record CARD, the shape the page has. */}
         <ShimmerBlock style={s.shimmerRecordCard} />
         <ShimmerBlock style={s.shimmerLoungeBtn} />
       </View>
     </View>
   );
 
-  // ── Not found ──
+  // ── Not found ── (the way out says where it goes)
+  const wayOut = nav.canGoBack() ? 'GO BACK' : 'RETURN TO THE LOBBY';
   if (!person) return (
     <View style={[s.container, s.notFoundContainer]}>
       <RoomLight room="film" />
@@ -415,10 +408,11 @@ export default function PersonDetailScreen() {
       <Text style={s.notFoundBody} {...scaledTextProps}>
         This person does not exist in the TMDB archive, or the reel was lost.
       </Text>
-      <PressableScale style={s.backBtnBottom} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
+      <PressableScale style={s.backBtnBottom} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light"
+        accessibilityRole="button" accessibilityLabel={wayOut === 'GO BACK' ? 'Go back' : 'Return to the Lobby'}>
         <View style={s.backBtnRow}>
           <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
-          <Text style={s.backBtnBottomText} {...displayTextProps}>GO BACK</Text>
+          <Text style={s.backBtnBottomText} {...displayTextProps}>{wayOut}</Text>
         </View>
       </PressableScale>
     </View>
@@ -431,9 +425,8 @@ export default function PersonDetailScreen() {
       {/* The room's light hangs from where the hero ends, and blooms from it. */}
       <RoomLight room="film" hem={heroBackdrop ? heroH : undefined} art={heroBackdrop} />
       {/* ── The veil ──
-          The back button is pinned and the list runs beneath it, so headings and
-          posters used to slide under it and the clock sat on bare content. This
-          is the ground for both. Invisible at rest — the backdrop stays pristine
+          The back button is pinned and the list runs beneath it; this is the
+          ground for both it and the clock, over the headings and posters. Invisible at rest — the backdrop stays pristine
           — and faded in by scroll on the UI thread, so it costs no JS per frame. */}
       <Animated.View style={[s.topVeil, veilStyle, veilDynStyle]} pointerEvents="none">
         <LinearGradient

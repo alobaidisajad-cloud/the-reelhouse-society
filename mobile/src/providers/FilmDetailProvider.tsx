@@ -3,6 +3,7 @@ import { DomainLog } from '@/src/types';
 import type { TMDBMovieDetail } from '@/src/lib/tmdb';
 import { User } from '@/src/schemas/user';
 import type { FilmVerdict } from '@/src/services/FilmService';
+import type { Footage } from '@/src/components/film/TrailerModal';
 
 /** Shape of a community review as returned by useFilmDetail's Supabase join. */
 export interface FilmReviewItem {
@@ -58,8 +59,8 @@ export interface FilmDetailContextValue {
   handleOpenShare: () => void;
   handleOpenLounge: () => void;
   handleReadFullLog: () => void;
-  setTrailerModalVisible: (v: boolean) => void;
-  setActiveTrailerKey: (k: string | null) => void;
+  /** Play one video in the house's player, named by what it is. */
+  playVideo: (video: Footage) => void;
 }
 
 const FilmDetailContext = createContext<FilmDetailContextValue | null>(null);

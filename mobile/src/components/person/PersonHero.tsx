@@ -91,8 +91,7 @@ export function formatDossierDate(dateStr: string | null): string {
   if (!dateStr) return '';
   if (dateStr.length === 4) return dateStr;
   // A birthday is a calendar date, read from its own digits by the house
-  // formatter. This leaned on Hermes honouring `timeZone: 'UTC'` — Intl, which
-  // the phone has no polyfill for (see src/utils/timeAgo.ts).
+  // formatter, never through Intl (see src/utils/timeAgo.ts).
   return dateParts(dateStr) ? formatDate(dateStr) : dateStr;
 }
 
@@ -203,8 +202,8 @@ export const PersonHero = memo(function PersonHero({
           </>
         ) : (
           /* No picture: a brass tint at the top, fading to nothing — never to
-             the house colour. It used to be a near-solid dark plate, which
-             hid the room's light where it is brightest and ended in a line. */
+             the house colour, which would hide the room's light where it is
+             brightest and end in a line. */
           <LinearGradient
             colors={['rgba(184,137,26,0.12)', 'rgba(184,137,26,0)']}
             style={s.heroBg}
@@ -283,6 +282,7 @@ export const PersonHero = memo(function PersonHero({
             onPress={handleLoungeShare}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             haptic="light"
+            accessibilityRole="button"
             accessibilityLabel={shareLabel}
           >
             {isArchivist ? (
@@ -301,8 +301,8 @@ export const PersonHero = memo(function PersonHero({
               <Text style={s.auteurHuntTitle} {...displayTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦ THE AUTEUR HUNT</Text>
               <Text style={s.auteurHuntCount} {...displayTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{seenCount} OF {huntTotal} SCREENED</Text>
             </View>
-            {/* A progress bar that says nothing is a decoration. VoiceOver now
-                reads it as what it is, with its real position. */}
+            {/* A progress bar that says nothing is a decoration: a screen
+                reader hears it as what it is, with its real position. */}
             <View
               style={s.auteurHuntTrack}
               accessible

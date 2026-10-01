@@ -105,8 +105,8 @@ without one). "Read" is the day its comments were last read against its code.
 | app/dossier/[id].tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | app/edit-profile.tsx | — |  |
 | app/film-reviews/__tests__/theArchiveSaysWhenItCouldNotRead.test.tsx | — |  |
-| app/film-reviews/[id].tsx | — |  |
-| app/film/[id].tsx | — |  |
+| app/film-reviews/[id].tsx | 2026-10-01 | paged by cursor, never by offset; a failed page says so |
+| app/film/[id].tsx | 2026-10-01 | doors through nav; the critiques' failure carried down; the footage named |
 | app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx | 2026-09-30 | written with the log page's critiques matched to the stack's |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
 | app/log/__tests__/theRecordReadsTrue.test.tsx | — |  |
@@ -116,7 +116,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/lounge/[id].tsx | 2026-09-29 | standing unknown until the roster is read; messages spoken + actions; unnamed controls; histories to rules |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | — |  |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
-| app/person/[id].tsx | — |  |
+| app/person/[id].tsx | 2026-10-01 | the not-found way out says where it goes; histories to the present |
 | app/reset-password.tsx | 2026-10-01 | navigates through nav; comments short |
 | app/settings.tsx | — |  |
 | app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-09-29 | 13 fixed + test that runs the real queryFn |
@@ -348,28 +348,29 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/pickCertificate.test.ts | — |  |
 | src/components/film/__tests__/stubFits.test.ts | — |  |
 | src/components/film/__tests__/trayActsFire.test.tsx | — |  |
+| src/components/film/__tests__/whatAFilmPageNames.test.tsx | 2026-10-01 | written: where it plays, what a video is, what a file sends |
 | src/components/film/__tests__/zz-film.gen.test.tsx | — |  |
 | src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-01 | written: the critiques' failure reaches the page; an unread verdict is unknown |
-| src/components/film/CastCarousel.tsx | — |  |
-| src/components/film/FilmActionTray.tsx | — |  |
-| src/components/film/FilmDetailLayout.tsx | — |  |
-| src/components/film/FilmDossier.tsx | — |  |
-| src/components/film/FilmHero.tsx | — |  |
-| src/components/film/FilmHeroSkeleton.tsx | — |  |
-| src/components/film/FilmMediaCarousel.tsx | — |  |
-| src/components/film/FilmReviews.tsx | — |  |
-| src/components/film/FilmScrollHeader.tsx | — |  |
-| src/components/film/FilmSectionHeader.tsx | — |  |
-| src/components/film/FilmSimilar.tsx | — |  |
-| src/components/film/FilmStub.tsx | — |  |
-| src/components/film/filmStubMetrics.ts | — |  |
+| src/components/film/CastCarousel.tsx | 2026-10-01 | named for a screen reader; histories to the present |
+| src/components/film/FilmActionTray.tsx | 2026-10-01 | histories to the present |
+| src/components/film/FilmDetailLayout.tsx | 2026-10-01 | histories to the present; the not-found way out named |
+| src/components/film/FilmDossier.tsx | 2026-10-01 | what it holds, not what it absorbed |
+| src/components/film/FilmHero.tsx | 2026-10-01 | an unknown verdict claims nothing; histories to the present |
+| src/components/film/FilmHeroSkeleton.tsx | 2026-10-01 | the promise, not its history |
+| src/components/film/FilmMediaCarousel.tsx | 2026-10-01 | hands the whole video on; named |
+| src/components/film/FilmReviews.tsx | 2026-10-01 | a failed read says so; no throw; flat card |
+| src/components/film/FilmScrollHeader.tsx | 2026-10-01 | the fault it fixes, said as what it does |
+| src/components/film/FilmSectionHeader.tsx | 2026-10-01 | true as written |
+| src/components/film/FilmSimilar.tsx | 2026-10-01 | nav; named for a screen reader |
+| src/components/film/FilmStub.tsx | 2026-10-01 | histories to the present; rated of 5 |
+| src/components/film/filmStubMetrics.ts | 2026-10-01 | true as written, one history line |
 | src/components/film/LogShareCard.tsx | — |  |
-| src/components/film/NitrateFileCard.tsx | — |  |
-| src/components/film/pickCertificate.ts | — |  |
-| src/components/film/ShareCardModal.tsx | — |  |
+| src/components/film/NitrateFileCard.tsx | 2026-10-01 | every word frozen, as its header promised |
+| src/components/film/pickCertificate.ts | 2026-10-01 | the member's own region is real now |
+| src/components/film/ShareCardModal.tsx | 2026-10-01 | a failed share says so and stays |
 | src/components/film/ShareCardTypes.ts | — |  |
-| src/components/film/TrailerModal.tsx | — |  |
-| src/components/film/WatchProviders.tsx | — |  |
+| src/components/film/TrailerModal.tsx | 2026-10-01 | names what it plays |
+| src/components/film/WatchProviders.tsx | 2026-10-01 | named for what it costs, for one named country |
 | src/components/HapticTab.tsx | — |  |
 | src/components/home/ProjectorBeam.tsx | 2026-10-01 | true as written |
 | src/components/home/types.ts | 2026-10-01 | true as written |
@@ -482,7 +483,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/person/PersonBio.tsx | — |  |
 | src/components/person/PersonDefining.tsx | — |  |
 | src/components/person/PersonFilmography.tsx | — |  |
-| src/components/person/PersonHero.tsx | — |  |
+| src/components/person/PersonHero.tsx | 2026-10-01 | histories to the present |
 | src/components/person/PersonOrnaments.tsx | — |  |
 | src/components/person/personStyles.ts | — |  |
 | src/components/Preloader.tsx | — |  |
@@ -576,7 +577,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/SpoilerVeil.tsx | 2026-10-01 | veiled from the first frame |
 | src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | — |  |
 | src/components/text/AnimatedText.tsx | — |  |
-| src/components/text/index.tsx | — |  |
+| src/components/text/index.tsx | 2026-10-01 | the fourth promise: a word stops at the floor |
 | src/components/theme/CrestGlow.tsx | 2026-10-01 | the leak note to what it does |
 | src/components/theme/DiamondDivider.tsx | — |  |
 | src/components/theme/OrnamentalRule.tsx | 2026-10-01 | no comments |
@@ -663,8 +664,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useDoor.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useEditProfile.ts | — |  |
 | src/hooks/useFeeds.ts | 2026-10-01 | one cursor rule; the fallback note gone with the fallback |
-| src/hooks/useFilmAnimations.ts | — |  |
-| src/hooks/useFilmDetail.ts | — |  |
+| src/hooks/useFilmAnimations.ts | 2026-10-01 | each loop only while seen |
+| src/hooks/useFilmDetail.ts | 2026-10-01 | an unread verdict is null, never silence |
 | src/hooks/useFollowRequests.ts | — |  |
 | src/hooks/useInitiation.ts | — |  |
 | src/hooks/useLogFlow.ts | 2026-09-29 | 22 fixed; line refs (:351-352, logOperations.ts:574) and a 30-line history of the erase bug cut to the rule |
@@ -712,7 +713,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/providers/__tests__/androidTracking.test.ts | — |  |
 | src/providers/androidTracking.ts | — |  |
 | src/providers/AppBootstrapper.tsx | — |  |
-| src/providers/FilmDetailProvider.tsx | — |  |
+| src/providers/FilmDetailProvider.tsx | 2026-10-01 | reviewsFailed and playVideo, said |
 | src/schemas/__tests__/aFeedRowWithANullIsStillDrawn.test.ts | 2026-10-01 | written with the null-status fix |
 | src/schemas/__tests__/schemas.test.ts | — |  |
 | src/schemas/feed.schema.ts | 2026-10-01 | film id strict; a null status is watched |
@@ -744,10 +745,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/yearInCinema.test.ts | — |  |
 | src/services/AuthService.ts | 2026-10-01 | true as written |
 | src/services/FeedService.ts | 2026-10-01 | the cursor note made true: RPC arguments |
-| src/services/FilmService.ts | — |  |
+| src/services/FilmService.ts | 2026-10-01 | a failed verdict read is thrown; histories to the present |
 | src/services/FollowRequestService.ts | — |  |
 | src/services/InteractionService.ts | 2026-10-01 | its schema is what its test reads |
-| src/services/logCounts.ts | — |  |
+| src/services/logCounts.ts | 2026-10-01 | true as written |
 | src/services/LogService.ts | — |  |
 | src/services/LoungeService.ts | 2026-10-01 | true as written |
 | src/services/MemberDiscoveryService.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
@@ -953,6 +954,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/AppError.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/critiquePayload.ts | — |  |
 | src/utils/csv.ts | — |  |
+| src/utils/deviceRegion.ts | 2026-10-01 | new |
 | src/utils/draftSync.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/e2eTrace.ts | 2026-09-29 | new |
 | src/utils/endorsementGroupKey.ts | — |  |
@@ -964,7 +966,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/handleHistory.ts | — |  |
 | src/utils/handleNotice.ts | — |  |
 | src/utils/housePages.ts | — |  |
-| src/utils/html.ts | — |  |
+| src/utils/html.ts | 2026-10-01 | ticket numbers out of the header |
 | src/utils/imagePrefetcher.ts | — |  |
 | src/utils/keysetCursor.ts | — |  |
 | src/utils/lastTab.ts | 2026-10-01 | new: back within the half hour, back on the tab |
@@ -981,7 +983,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/openNoticeFromPush.ts | — |  |
 | src/utils/openSociety.ts | — |  |
 | src/utils/profileCountsCache.ts | — |  |
-| src/utils/recommendations.ts | — |  |
+| src/utils/recommendations.ts | 2026-10-01 | the shelf's own name |
 | src/utils/reelToast.ts | — |  |
 | src/utils/requestReview.ts | — |  |
 | src/utils/sanitize.ts | — |  |

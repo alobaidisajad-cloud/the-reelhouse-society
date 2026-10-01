@@ -24,6 +24,7 @@ import {
   NITRATE_EXPORT_HEIGHT,
 } from '@/src/components/film/NitrateFileCard';
 import { ToastHost } from '@/src/components/ToastHost';
+import reelToast from '@/src/utils/reelToast';
 
 interface ShareFilm {
   id?: number | string;
@@ -76,6 +77,11 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
     };
   }, [visible]);
 
+  /**
+   * It closes once the file has gone (or the member dismissed the share sheet,
+   * which answers rather than throws). A capture or a share that failed keeps
+   * the file open and says so: closing on it said nothing at all.
+   */
   const handleShare = async () => {
     if (!viewShotRef.current?.capture || !film) return;
     setSharing(true);
@@ -98,11 +104,12 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
         });
       }
       TactileEngine.success();
+      onClose();
     } catch (err: unknown) {
       if (__DEV__) console.warn('[NitrateFile] Share failed:', err);
+      reelToast.error('The file could not be shared. Try again.');
     } finally {
       setSharing(false);
-      onClose();
     }
   };
 
@@ -162,7 +169,8 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
             </View>
           </View>
 
-          <PressableScale style={s.shareButton} onPress={handleShare} disabled={!canShare} haptic="medium" pressedScale={0.98}>
+          <PressableScale style={s.shareButton} onPress={handleShare} disabled={!canShare} haptic="medium" pressedScale={0.98}
+            accessibilityRole="button" accessibilityState={{ disabled: !canShare, busy: sharing }}>
             <Text style={s.shareButtonText}>
               {sharing ? 'TRANSMITTING...' : (!canShare ? 'DEVELOPING...' : 'SHARE TO SOCIALS')}
             </Text>

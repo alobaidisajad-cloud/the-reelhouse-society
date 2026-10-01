@@ -9,8 +9,7 @@
  * ROUTE. `handleOpenTrailer` and `handleOpenShare` show native `<Modal>`s. Four
  * of the six acts therefore present a view controller. A native `<Modal>` and a
  * router modal are BOTH presented view controllers on iOS, and asking for the
- * second while the first is on screen is a conflict UIKit does not forgive —
- * the most likely cause of everything that went wrong with the old FAB.
+ * second while the first is on screen is a conflict UIKit does not forgive.
  *
  * A `<View>` is not a presented view controller. Building the tray as an
  * in-screen overlay makes that entire class of bug impossible rather than
@@ -23,8 +22,8 @@
  *   · the page must not scroll     → the caller freezes its ScrollView
  *
  * ── THE ACTS ────────────────────────────────────────────────────────────────
- * Every act the console had, with a label saying what happens and one line of
- * why you would want it. Rows that do not apply are ABSENT, never disabled: no
+ * Every act on a film, with a label saying what happens and one line of why
+ * you would want it. Rows that do not apply are ABSENT, never disabled: no
  * trailer, no trailer row; never logged, no rewatch row. A greyed row is a
  * promise you are not keeping.
  */
@@ -76,9 +75,8 @@ export interface TrayAct {
    *
    * The watchlist is the one act that resolves WITHOUT the tray closing, so it
    * is also the only one whose feedback has to happen in place. The bookmark
-   * springs under the member's finger. Without this the toggle would change a
-   * label and a chip and nothing would move — and the bounce that already
-   * existed in the app would have been quietly lost with the console.
+   * springs under the member's finger; without this the toggle would change a
+   * label and a chip and nothing would move.
    */
   iconStyle?: StyleProp<ViewStyle>;
 }
@@ -218,8 +216,7 @@ export const FilmActionTray = memo(function FilmActionTray({
     <View
       style={s.layer}
       // The page beneath must be invisible to a screen reader, and the closing
-      // control must live INSIDE this region — the exact defect found when the
-      // Concierge was audited, where the only way out was unreachable.
+      // control must live INSIDE this region, or the only way out is unreachable.
       // Falling, it is already closed: no longer modal, and touches pass through.
       accessibilityViewIsModal={visible}
       pointerEvents={visible ? 'auto' : 'none'}
@@ -262,11 +259,10 @@ export const FilmActionTray = memo(function FilmActionTray({
 
         {/**
          * The acts scroll and the head stays pinned. Measured: at 390x844 the
-         * tray is 559pt and fits with 285 to spare — which is why every mockup
-         * looked fine. On an iPhone SE at Dynamic Type 1.35 it is 751pt on a
-         * 667pt screen, and the head, the title and the primary act are pushed
-         * off the top. Capped, it is 567 with 100pt to spare and the list
-         * scrolls. On an ordinary phone at ordinary type nothing scrolls.
+         * tray is 559pt and fits with 285 to spare. On an iPhone SE at Dynamic
+         * Type 1.35 it would be 751pt on a 667pt screen, the head, the title and
+         * the primary act off the top; capped, it is 567 with 100pt to spare and
+         * the list scrolls. On an ordinary phone at ordinary type nothing scrolls.
          */}
         <ScrollView
           style={s.acts}
@@ -346,6 +342,5 @@ const s = StyleSheet.create({
  * reaching into lucide a second time and risking a different icon for the
  * same act.
  */
-// KeyRound left this set when the Lounge act stopped claiming to be locked: the
-// tray has no act whose door is shut, so it has no key to hand out.
+// No key: the tray has no act whose door is shut.
 export const TrayIcons = { Plus, Pencil, RotateCcw, Bookmark, Play, Share2, MessageCircle };

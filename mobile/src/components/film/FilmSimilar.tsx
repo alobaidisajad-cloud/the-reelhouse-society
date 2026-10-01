@@ -5,7 +5,7 @@ import Animated from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
 import { Film as FilmIcon } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
@@ -34,7 +34,7 @@ const SimilarCard = memo(function SimilarCard({ film, onPress }: SimilarCardProp
   }, [onPress, film.id]);
 
   return (
-    <PressableScale onPress={handlePress} style={s.similarCard} accessibilityLabel={`Similar film: ${film.title || film.name}`}>
+    <PressableScale onPress={handlePress} style={s.similarCard} accessibilityRole="button" accessibilityLabel={`From the same shelf: ${film.title || film.name}`}>
       {posterUri ? (
         <Image source={{ uri: posterUri }} style={s.similarPoster} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
       ) : (
@@ -53,11 +53,9 @@ interface FilmSimilarProps {
 const keyExtractor = (item: SimilarFilm, index: number) => `${item.id}-${index}`;
 
 export const FilmSimilar = memo(function FilmSimilar({ similarFilms }: FilmSimilarProps) {
-  const router = useRouter();
-
   const handlePressSimilar = useCallback((id: number) => {
-    if (id) (router.push as any)(`/film/${id}` as any);
-  }, [router]);
+    if (id) nav.push(`/film/${id}`);
+  }, []);
 
   // Stable render function prevents FlashList full re-renders
   const renderSimilarItem = useCallback(({ item }: { item: SimilarFilm }) => (
@@ -70,9 +68,8 @@ export const FilmSimilar = memo(function FilmSimilar({ similarFilms }: FilmSimil
     <SectionErrorBoundary fallbackMessage="Similar films could not be loaded.">
       <Animated.View style={s.sectionFlush}>
         <View style={s.sectionPadded}>
-          {/* Was YOU MAY ALSO LIKE — shop language on a page that otherwise
-              speaks the house's. The Archive is a shelf; this is what else is
-              on it. */}
+          {/* The house's language, not a shop's: the Archive is a shelf, and
+              this is what else is on it. */}
           <FilmSectionHeader label="FROM THE SAME SHELF" />
         </View>
         <View style={s.similarListContainer}>

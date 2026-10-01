@@ -37,8 +37,7 @@ export const s = StyleSheet.create({
   shimmerPortrait: { width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 2, marginBottom: 12 },
   shimmerDeptBadge: { width: 90, height: 22, borderRadius: 2, marginBottom: 10 },
   shimmerName: { width: 220, height: 38, borderRadius: 2, marginBottom: 14 },
-  // Mirrors the record CARD now, not the four caption lines it replaced. A
-  // skeleton that promises a shape the page no longer has is worse than none.
+  // Mirrors the record CARD: a skeleton promises the shape that arrives.
   shimmerRecordCard: { width: '100%', height: 78, borderRadius: 3, marginBottom: 14 },
   shimmerLoungeBtn: { width: 190, height: 39, borderRadius: 2 },
 
@@ -61,10 +60,9 @@ export const s = StyleSheet.create({
   },
 
   // ── The veil ──
-  // The back button is pinned and the list runs underneath it, so every heading
-  // and poster used to collide with it, and the clock sat on bare content. This
-  // is the ground for both: invisible at rest so the backdrop is untouched, and
-  // faded in by scroll on the UI thread. Below the button (100), above the list.
+  // The back button is pinned and the list runs underneath it; this is the
+  // ground for it and the clock: invisible at rest so the backdrop is untouched,
+  // and faded in by scroll on the UI thread. Below the button (100), above the list.
   topVeil: {
     position: 'absolute', top: 0, left: 0, right: 0,
     zIndex: 90,
@@ -130,10 +128,9 @@ export const s = StyleSheet.create({
   },
 
   // ── Beat 2: the record — a typed card, not four centred captions ──
-  // Born / place / craft / known-for used to stack as four separate centred
-  // lines, which read as a tombstone rather than a file. They are one card now:
-  // brass label, bone value, hairline between. A long birthplace WRAPS here
-  // instead of being shrunk by adjustsFontSizeToFit to 5.6pt.
+  // Born / place / craft / known-for as one card, a file rather than a
+  // tombstone: brass label, bone value, hairline between. A long birthplace
+  // WRAPS here rather than shrinking.
   recordCard: {
     width: '100%', marginTop: 14, marginBottom: 14,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.18)', borderRadius: 3,

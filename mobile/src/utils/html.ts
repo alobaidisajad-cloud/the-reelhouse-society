@@ -1,8 +1,6 @@
 /**
- * HTML stripping and entity decoding utilities for display text.
- * T3-16: Extracted from duplicate declarations in FilmDetailLayout.tsx and FilmReviews.tsx.
- * T4-1: Upgraded with robust entity decoding (handles named entities, decimal/hex codes,
- *        nested tags, and script/style content stripping).
+ * HTML stripping and entity decoding for display text: named entities,
+ * decimal and hex codes, nested tags, and script/style content.
  *
  * NOT suitable for sanitizing untrusted input for XSS — this is display-only stripping.
  * For input sanitization, use sanitizeInput.ts.

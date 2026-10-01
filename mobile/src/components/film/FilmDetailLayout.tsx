@@ -31,6 +31,7 @@ import { FilmActionTray, TrayIcons, type TrayAct } from '@/src/components/film/F
 import { FilmScrollHeader } from '@/src/components/film/FilmScrollHeader';
 import { dockHeight, scrollReserve } from '@/src/components/film/filmStubMetrics';
 import { pickCertificate } from '@/src/components/film/pickCertificate';
+import { deviceRegion } from '@/src/utils/deviceRegion';
 import { useFilmStore } from '@/src/stores/films';
 import { useFilmAnimations } from '@/src/hooks/useFilmAnimations';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -78,13 +79,8 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     existingLog, isAuthenticated, isArchivist, user,
     validFilmId, loading, isError, retry, isFocused,
     goBack, handleLog, handleRewatch, handleOpenTrailer,
-    handleOpenShare, handleOpenLounge, handleReadFullLog, setTrailerModalVisible, setActiveTrailerKey
+    handleOpenShare, handleOpenLounge, handleReadFullLog, playVideo,
   } = useFilmDetailContext();
-
-  const handlePlayVideo = useCallback((key: string) => {
-    setActiveTrailerKey(key);
-    setTrailerModalVisible(true);
-  }, [setActiveTrailerKey, setTrailerModalVisible]);
 
   const { height: windowHeight } = useWindowDimensions();
   // Whole points: the backdrop's veil and the room's light meet at this line,
@@ -286,7 +282,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     () => pickCertificate(
       film?.release_dates as any,
       film?.production_countries?.[0]?.iso_3166_1,
-      null,
+      deviceRegion(),
     ),
     [film?.release_dates, film?.production_countries],
   );
@@ -533,7 +529,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
               </Animated.View>
             )}
 
-            <FilmMediaCarousel videos={videos} onPlayVideo={handlePlayVideo} />
+            <FilmMediaCarousel videos={videos} onPlayVideo={playVideo} />
 
             {/* ...and here it is when nobody has written yet: after the film
                 has been shown to you, where the invitation can land. */}

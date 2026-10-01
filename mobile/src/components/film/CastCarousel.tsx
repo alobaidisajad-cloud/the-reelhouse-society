@@ -3,8 +3,6 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useRouter } from 'expo-router';
 import { tmdb } from '@/src/lib/tmdb';
 import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
@@ -33,6 +31,8 @@ const CastCard = memo(function CastCard({ item, nameBlock }: { item: CastMember;
             style={s.castCard}
             onPress={handlePress}
             haptic="selection"
+            accessibilityRole="button"
+            accessibilityLabel={`${item.name}${item.character ? `, as ${item.character}` : ''}. Opens their filmography.`}
         >
             <View style={s.castPhotoWrap}>
                 {photoUri ? (
@@ -51,13 +51,10 @@ const CastCard = memo(function CastCard({ item, nameBlock }: { item: CastMember;
             </View>
             {/**
               * ── A BILLED ACTOR'S NAME IS NOT NEGOTIABLE ────────────────────
-              * One line in a 100pt card turned Anne Hathaway into "Anne
-              * Hatha…" — a truncation that reads as a bug, on the section
-              * whose entire job is naming people. Shrink-to-fit did not save
-              * it either: at 0.75 of 14pt the name still did not clear the
-              * card, so it shrank AND clipped.
-              *
-              * Two lines, and the rail pays for the second below.
+              * One line in a 100pt card would make Anne Hathaway "Anne
+              * Hatha…", on the section whose entire job is naming people, and
+              * shrinking alone cannot clear it. Two lines, and the rail pays
+              * for the second below.
               */}
             <Text style={[s.castName, { minHeight: nameBlock }]} numberOfLines={NAME_LINES} adjustsFontSizeToFit minimumFontScale={0.75}>{item.name}</Text>
             <Text style={s.castRole} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.character}</Text>
@@ -81,13 +78,10 @@ export const RAIL_HEM = 5;
 /**
  * ── THE RAIL IS SIZED AT THE TYPE THE MEMBER READS ──────────────────────────
  * A fixed rail cannot grow to fit what is drawn in it, so it reserves room for
- * its text. It used to reserve room for text at the DEFAULT size only: at the
- * largest size the app allows, a two-line name overran the rail by 7pt, and a
- * one-line name's role sat a line higher than its neighbour's, because the
- * name's reserved block was a fixed 36pt while the name had grown to 48.
- *
- * Both now come from the size the phone actually draws, held to the app's own
- * cap. At the default size this is 214 and 36, exactly what it was.
+ * its text, at the size the phone actually draws it (held to the app's own
+ * cap): a reserve for the default size only would let a grown two-line name
+ * overrun the rail, and set a one-line name's role a line above its
+ * neighbour's. At the default size this is 214 and 36.
  */
 export function castCardMetrics(scale: number) {
     const line = (size: number) => Math.ceil(size * scale * LINE);
@@ -133,21 +127,18 @@ const s = StyleSheet.create({
     castPhotoPlaceholderText: { fontFamily: fonts.display, fontSize: 32, color: colors.fog },
     /**
      * ── THE ROLES HAVE TO LINE UP ─────────────────────────────────────────
-     * With the name free to be one line or two, "Odysseus" sat a full line
-     * higher than "Penelope" — three cards in a row with their roles at two
-     * different heights, which reads as a rendering fault rather than a rail.
-     *
-     * A fixed two lines' worth reserves the same space whether the name needs
-     * it or not, so every role starts on the same baseline. The reserve is set
+     * With the name free to be one line or two, roles at two heights in one
+     * row would read as a rendering fault rather than a rail. A fixed two
+     * lines' worth reserves the same space whether the name needs it or not,
+     * so every role starts on the same baseline. The reserve is set
      * where the card is drawn (`nameBlock`), because two lines is a different
      * height at every text size.
      */
     castName: { fontFamily: fonts.display, fontSize: NAME_SIZE, color: colors.parchment, marginBottom: NAME_GAP },
     /**
      * No tracking. A character is a name in upper and lower case, and lower case
-     * is not letterspaced. At 10pt the old 0.4 cost "Max von Mayerling" 7pt
-     * of a 100pt card, and at the largest text size the shrink could not
-     * get it back, so the name ended in "…".
+     * is not letterspaced; spacing would cost a long character's name the room
+     * a 100pt card does not have.
      */
     castRole: { fontFamily: fonts.sub, fontSize: ROLE_SIZE, color: colors.sepia }
 });

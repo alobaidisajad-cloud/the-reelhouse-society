@@ -45,7 +45,7 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
 }));
 jest.mock('@/src/utils/typedRouter', () => ({
-  nav: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
+  nav: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true },
 }));
 jest.mock('@/src/stores/films', () => {
   const state = { _loggedIndex: {} };

@@ -12,19 +12,12 @@ import type { PickedCertificate } from './pickCertificate';
 /**
  * THE PARTICULARS — what the hero does not already say.
  *
- * ── WHAT CHANGED, AND WHY ───────────────────────────────────────────────────
- * This was FILM DOSSIER, and over half of it repeated the hero four hundred
- * points further up: GENRES, RUNTIME and the year of RELEASE are all in the
- * meta line under the title. A member does not need to be told a film is two
- * hours fifty-three twice on one page.
+ * GENRES, RUNTIME and the year are in the meta line under the title, four
+ * hundred points up, so they are not said twice. The particulars carry the
+ * CERTIFICATE (with the country it belongs to), the full release date, the
+ * language, the STUDIO and the money.
  *
- * What it gains instead is the two facts the page used to spend whole sections
- * on — the CERTIFICATE, which lived in a rail of international release dates,
- * and the STUDIO, which was a sideways scroller for two logos.
- *
- * And it is UNBOXED. A bordered, shadowed card was the only framed block on an
- * otherwise open page; it looked imported from another app. A ledger is ruled,
- * not framed.
+ * Unboxed: a ledger is ruled, not framed.
  */
 
 const Row = memo(function Row({ label, value }: { label: string; value?: string | null }) {
@@ -69,12 +62,8 @@ interface FilmDossierProps {
     budget?: number;
     revenue?: number;
   } | null;
-  // `formatRuntime` is gone with the RUNTIME row it fed — the hero says it,
-  // four hundred points up, and saying it twice was half the point of this
-  // section's revision.
-  /** Absorbed from the retired FilmStudios rail. */
   studios?: { name?: string }[];
-  /** Absorbed from the retired CountryReleases section, region and all. */
+  /** The age rating, and whose. */
   certificate?: PickedCertificate | null;
 }
 
@@ -91,8 +80,7 @@ export const FilmDossier = memo(function FilmDossier({ film, studios, certificat
     <SectionErrorBoundary fallbackMessage="Dossier data unavailable.">
       <Animated.View style={s.section}>
         <FilmSectionHeader label="THE PARTICULARS" />
-        {/* GENRES, RUNTIME and the release YEAR are deliberately absent — all
-            three are in the hero. See the note at the top of this file. */}
+        {/* GENRES, RUNTIME and the YEAR are in the hero, not here. */}
         <Row label="CERTIFICATE" value={certificate ? `${certificate.value}  ·  ${certificate.region}` : undefined} />
         <Row label="RELEASE" value={formatTMDBDate(film.release_date, 'long')} />
         <Row label="LANGUAGE" value={languageName(film.original_language)} />

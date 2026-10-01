@@ -6,7 +6,9 @@
  * page + log page) so a ReelHouse file looks identical everywhere.
  *
  * Reliability law — the geometry is deterministic for ANY content:
- *   · fixed 360×640 canvas (ViewShot renders off-screen, device-blind)
+ *   · fixed 360×640 canvas (ViewShot renders off-screen, device-blind), and
+ *     every word FROZEN: a file is the same picture whatever text size the
+ *     member who sent it reads at
  *   · the poster zone is the ONLY flexible region; it absorbs all variance
  *   · critique zone: pull quote → review → HIDDEN. Hard 3-line clamp.
  *     No filler text, ever — an empty log grows the poster instead.
@@ -21,7 +23,8 @@ import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
+import { decorativeTextProps } from '@/src/constants/textScaling';
 import { ReelRating } from '@/src/components/Decorative';
 import { stripHtml } from '@/src/utils/html';
 import { truncateReview } from '@/src/utils/text';
@@ -99,7 +102,7 @@ export function NitrateFileCard({ data }: { data: NitrateFileData }) {
         {/* The lockup — the eye above the name */}
         <View style={s.lockup}>
           <Image source={require('@/assets/images/reelhouse-logo.png')} style={s.lockupSeal} />
-          <Text style={s.lockupWordmark}>✦ THE REELHOUSE SOCIETY ✦</Text>
+          <Text {...decorativeTextProps} style={s.lockupWordmark}>✦ THE REELHOUSE SOCIETY ✦</Text>
         </View>
 
         {/* Poster zone — the only flexible region; absorbs all variance */}
@@ -110,9 +113,9 @@ export function NitrateFileCard({ data }: { data: NitrateFileData }) {
             ) : (
               <LinearGradient colors={['#15120e', '#0D0B09']} style={s.posterFallback}>
                 <View style={s.posterFallbackRule} />
-                <Text style={s.posterFallbackMark}>✦</Text>
-                <Text style={s.posterFallbackTitle} numberOfLines={3}>{data.title}</Text>
-                {!!data.year && <Text style={s.posterFallbackYear}>{data.year}</Text>}
+                <Text {...decorativeTextProps} style={s.posterFallbackMark}>✦</Text>
+                <Text {...decorativeTextProps} style={s.posterFallbackTitle} numberOfLines={3}>{data.title}</Text>
+                {!!data.year && <Text {...decorativeTextProps} style={s.posterFallbackYear}>{data.year}</Text>}
               </LinearGradient>
             )}
           </View>
@@ -120,21 +123,21 @@ export function NitrateFileCard({ data }: { data: NitrateFileData }) {
           {/* The stamp — logged files only; inset ≥10px from every clip edge */}
           {stampText && (
             <View style={[s.stamp, isAbandoned && s.stampAbandoned]}>
-              <Text style={[s.stampText, isAbandoned && s.stampTextAbandoned]}>{stampText}</Text>
+              <Text {...decorativeTextProps} style={[s.stampText, isAbandoned && s.stampTextAbandoned]}>{stampText}</Text>
             </View>
           )}
         </View>
 
         {/* Identity — title, year, verdict */}
         <View style={s.identity}>
-          <Text style={s.title} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.6}>
+          <Text {...decorativeTextProps} style={s.title} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.6}>
             {data.title}
           </Text>
           <View style={s.metaRow}>
-            {!!data.year && <Text style={s.metaYear}>{data.year}</Text>}
+            {!!data.year && <Text {...decorativeTextProps} style={s.metaYear}>{data.year}</Text>}
             {rating > 0 && (
               <>
-                {!!data.year && <Text style={s.metaDot}>·</Text>}
+                {!!data.year && <Text {...decorativeTextProps} style={s.metaDot}>·</Text>}
                 <ReelRating rating={rating} size={12} />
               </>
             )}
@@ -145,18 +148,18 @@ export function NitrateFileCard({ data }: { data: NitrateFileData }) {
         {critique && (
           <View style={s.critiqueZone}>
             {critiqueIsQuote ? (
-              <Text style={s.critiqueQuote} numberOfLines={3}>« {critique} »</Text>
+              <Text {...decorativeTextProps} style={s.critiqueQuote} numberOfLines={3}>« {critique} »</Text>
             ) : (
-              <Text style={s.critiqueProse} numberOfLines={3}>&ldquo;{critique}&rdquo;</Text>
+              <Text {...decorativeTextProps} style={s.critiqueProse} numberOfLines={3}>&ldquo;{critique}&rdquo;</Text>
             )}
           </View>
         )}
 
         {/* The ledger line */}
         <View style={s.footer}>
-          <Text style={s.footerSerial} numberOfLines={1}>{memberNoDisplay}</Text>
+          <Text {...decorativeTextProps} style={s.footerSerial} numberOfLines={1}>{memberNoDisplay}</Text>
           {!!data.username && (
-            <Text style={s.footerHandle} numberOfLines={1}>@{data.username.toUpperCase()}</Text>
+            <Text {...decorativeTextProps} style={s.footerHandle} numberOfLines={1}>@{data.username.toUpperCase()}</Text>
           )}
         </View>
       </View>
@@ -212,7 +215,6 @@ const s = StyleSheet.create({
     borderColor: colors.sepiaBorder,
     borderRadius: 6,
     overflow: 'hidden',
-    elevation: 10, ...effects.flat,
   },
   bracket: {
     position: 'absolute',

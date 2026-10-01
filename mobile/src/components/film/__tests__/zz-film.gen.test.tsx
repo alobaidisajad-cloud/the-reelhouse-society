@@ -65,6 +65,9 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 // FlashList measures off-screen; lay the children out plainly so the geometry
 // in the mockup is the geometry the phone draws.
 jest.mock('@shopify/flash-list', () => require('@/mockups/tabs/flashListMock').makeFlashListMock());
+// The member's country, fixed: a picture is the same on every machine, and this
+// one is a member in Britain, whose certificate and services are Britain's.
+jest.mock('@/src/utils/deviceRegion', () => ({ deviceRegion: () => 'GB', regionOf: () => 'GB' }));
 
 /**
  * ── THE FIXTURE LIVES IN THE PROJECT ─────────────────────────────────────────
@@ -94,7 +97,8 @@ const value = {
   // Read, and nobody has rated it: the commonest film.
   verdict: { avg_rating: null, rating_count: 0, log_count: 0 },
   score: 26,
-  providers: detail['watch/providers']?.results?.US ?? null,
+  // Every country's list, as the route hands it on (one country's would be read as the map).
+  providers: detail['watch/providers']?.results ?? null,
   studios: detail.production_companies ?? [],
   existingLog: null,
   isAuthenticated: true,
@@ -113,8 +117,7 @@ const value = {
   handleOpenShare: jest.fn(),
   handleOpenLounge: jest.fn(),
   handleReadFullLog: jest.fn(),
-  setTrailerModalVisible: jest.fn(),
-  setActiveTrailerKey: jest.fn(),
+  playVideo: jest.fn(),
 } as never;
 
 /** Two real-shaped critiques, for the state where the house has spoken. */
@@ -227,6 +230,15 @@ describe('the film page', () => {
     const r = page();
     expect(r.getByText('The projection box awaits.')).toBeTruthy();
     expect(r.queryByText('The critiques could not be reached.')).toBeNull();
+  });
+
+  it('rates and lists for the member’s own country, and says which', () => {
+    const r = page();
+    expect(r.getByText('PG  ·  GB')).toBeTruthy();
+    expect(r.getByText('LISTED FOR GB')).toBeTruthy();
+    expect(r.getByText('RENT')).toBeTruthy();
+    expect(r.getByText('BUY')).toBeTruthy();
+    expect(r.queryByText('STREAM FREE')).toBeNull();
   });
 
   it('claims no verdict it does not know', () => {

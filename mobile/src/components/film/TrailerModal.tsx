@@ -1,5 +1,5 @@
 import PressableScale from '@/src/components/PressableScale';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { X } from 'lucide-react-native';
 import React, { memo, useEffect, useRef, useState } from 'react';
@@ -43,7 +43,21 @@ const STOP_PLAYBACK_JS = `
   true;
 `;
 
-export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClose }: { visible: boolean; videoId: string; onClose: () => void }) {
+/** A video as TMDB lists it: the player names it by what it is. */
+export interface Footage { key: string; name?: string; type?: string }
+
+/**
+ * What the player prints under the picture: the video's own name ("Official
+ * Trailer 2"), or its kind. Never "OFFICIAL TRAILER" over a featurette, a clip
+ * or a teaser, which the footage rail plays here too.
+ */
+export function footageLabel(video: Footage): string {
+  return video.name?.trim() || (video.type ? video.type.toUpperCase() : 'FOOTAGE');
+}
+
+export const TrailerModal = memo(function TrailerModal({ visible, videoId, label, onClose }: {
+    visible: boolean; videoId: string; label: string; onClose: () => void;
+}) {
     const insets = useSafeAreaInsets();
     const [shouldRender, setShouldRender] = useState(visible);
     const webviewRef = useRef<WebView>(null);
@@ -69,7 +83,8 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClo
         <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={s.overlay} accessibilityViewIsModal={true} onAccessibilityEscape={onClose}>
                 {/* Close button — matches web: "X CLOSE" text button above video */}
-                <PressableScale style={[s.closeBtn, { top: Math.max(insets.top + 10, 50) }]} onPress={onClose} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.96}>
+                <PressableScale style={[s.closeBtn, { top: Math.max(insets.top + 10, 50) }]} onPress={onClose} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.96}
+                    accessibilityRole="button" accessibilityLabel="Close">
                     <X size={12} color={colors.parchment} />
                     <Text style={s.closeBtnText}>CLOSE</Text>
                 </PressableScale>
@@ -112,8 +127,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClo
                         renderLoading={() => <ActivityIndicator size="large" color={colors.sepia} style={StyleSheet.absoluteFillObject} />}
                     />
                 </View>
-                {/* OFFICIAL TRAILER label — matches web */}
-                <Text style={s.trailerLabel}>OFFICIAL TRAILER</Text>
+                <Text style={s.trailerLabel} numberOfLines={2}>{label}</Text>
                 <ToastHost />
             </View>
         </Modal>
@@ -158,7 +172,6 @@ const s = StyleSheet.create({
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: 'rgba(184,137,26,0.3)',
-        elevation: 30, ...effects.flat,
     },
     webview: {
         flex: 1,
