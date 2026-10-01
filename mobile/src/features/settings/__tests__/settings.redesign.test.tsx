@@ -255,9 +255,11 @@ describe('membership & billing — the card that had no billing', () => {
     expect(SECTIONS).toMatch(/MEMBERSHIP & BILLING/);
   });
 
-  it('the small print fits on one line', () => {
-    // 7pt with 2pt tracking wrapped and crowded the card's edge.
-    expect(CODE_SECTIONS).toMatch(/IN-APP PURCHASE · APP STORE/);
+  it('the small print fits on one line, and names the store this phone buys from', () => {
+    // 7pt with 2pt tracking wrapped and crowded the card's edge; it said
+    // APP STORE on Android too.
+    expect(CODE_SECTIONS).toMatch(/IN-APP PURCHASE · \{STORE\.name/);
+    expect(CODE_SECTIONS).not.toMatch(/IN-APP PURCHASE · APP STORE/);
     expect(CODE_SECTIONS).not.toMatch(/SECURE CHECKOUT/);
     expect(Number(styleBody(SECTIONS, 'microNote').match(/fontSize: ([\d.]+)/)![1])).toBeGreaterThanOrEqual(7.5);
   });
@@ -282,15 +284,18 @@ describe('account', () => {
     expect(r.queryByText('EMAIL')).toBeNull();
   });
 
-  it('the biometric switch admits all three things it does', async () => {
-    // It said "for destructive actions". It also puts a lock screen in front
-    // of the member's OWN Archive, unannounced.
+  it('the biometric switch says what it guards, and only that', async () => {
+    // It said "for destructive actions", then promised a lock on signing out,
+    // which never asks (leaving gives nothing away). It names no one phone's
+    // lock: Android has neither Face ID nor Touch ID.
     const r = await settle(mount());
-    const line = r.getByText(/Face ID or Touch ID/);
+    const line = r.getByText(/Your phone's own lock/);
     const said = String(line.props.children);
-    expect(said).toMatch(/sign out/);
-    expect(said).toMatch(/delete your account/);
-    expect(said).toMatch(/open your own Archive\./);
+    expect(said).toMatch(/account can be deleted/);
+    expect(said).toMatch(/this setting changes/);
+    expect(said).toMatch(/your own Archive opens\./);
+    expect(said).not.toMatch(/sign out/);
+    expect(said).not.toMatch(/Face ID|Touch ID/);
     expect(r.queryByText(/for destructive actions/)).toBeNull();
   });
 
@@ -305,7 +310,7 @@ describe('account', () => {
       /<ArchiveLock\b/.test(readFileSync(join(PROFILE, file), 'utf8'));
     expect(mounts('ProfileArchiveTab.tsx')).toBe(true);
     expect(mounts('ProfilePhysicalTab.tsx')).toBe(false);
-    expect(SECTIONS).toMatch(/to open your own Archive\./);
+    expect(SECTIONS).toMatch(/before your own Archive opens\./);
     expect(SECTIONS).not.toMatch(/open your own Physical Archive/);
   });
 
@@ -484,12 +489,15 @@ describe('the keys the trigger reads', () => {
   const KEYS = ['notif_follows', 'notif_endorsements', 'notif_comments', 'notif_system'] as const;
 
   it('are the exact keys the app writes, at EVERY save path', () => {
-    // Two paths write them: the ordinary save, and the one that resumes after an
-    // emailed security code. Both must agree with the database.
+    // Two paths save: the ordinary save, and the one that resumes after an
+    // emailed security code. Both go through `amendments`, the one place each
+    // key is written, so they cannot disagree with the database or each other.
     for (const key of KEYS) {
       const writes = (CODE_SCREEN.match(new RegExp(`${key}: data\\.`, 'g')) || []).length;
-      expect(`${key} written at ${writes} save paths`).toBe(`${key} written at 2 save paths`);
+      expect(`${key} written ${writes} time(s)`).toBe(`${key} written 1 time(s)`);
     }
+    expect((CODE_SCREEN.match(/updateUserMutation\(amendments\(/g) || []).length).toBe(2);
+    expect(CODE_SCREEN).not.toMatch(/updateUserMutation\(\{/);
   });
 
   it('and the same keys are what it reads back in, at BOTH read sites', () => {
@@ -854,5 +862,40 @@ describe('a door to the import panel', () => {
     const r = await settle(mount());
     await act(async () => { panelOf(r).props.onLayout(placed); });
     expect(scrollTo()).not.toHaveBeenCalled();
+  });
+});
+
+describe("the phone's lock, put away, and the store's subscription", () => {
+  const pressDelete = async (r: ReturnType<typeof mount>) => {
+    await act(async () => { await fireEvent.press(r.getByLabelText('DELETE ACCOUNT')); });
+    return mockAlert.mock.calls[mockAlert.mock.calls.length - 1] as [string, string, { text: string; onPress?: () => Promise<void> }[]];
+  };
+
+  it('a Face ID prompt the system put away sends no code and deletes nothing', async () => {
+    // Put away by the system (a call, the app sent to the background) is not a
+    // failed check: it sent an email code nobody asked for.
+    mockUser = { ...BASE, preferences: { biometric_lock: true } };
+    const local = jest.requireMock('expo-local-authentication') as { authenticateAsync: jest.Mock };
+    local.authenticateAsync.mockResolvedValueOnce({ success: false, error: 'system_cancel' });
+    const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
+    const otp = jest.fn().mockResolvedValue({ data: null, error: null });
+    (supabase.auth as unknown as { signInWithOtp: jest.Mock }).signInWithOtp = otp;
+    mockRequestDeletion.mockClear();
+    const r = await settle(mount());
+    const [, , buttons] = await pressDelete(r);
+    await act(async () => { await buttons.find((b) => b.text === 'DELETE')!.onPress!(); });
+    expect(otp).not.toHaveBeenCalled();
+    expect(mockRequestDeletion).not.toHaveBeenCalled();
+    expect(r.queryByText(/6-digit cipher/)).toBeNull();
+  });
+
+  it('a paying member is told that deleting the account does not stop the subscription', async () => {
+    mockUser = { ...BASE, tier: 'archivist' };
+    const [, paying] = await pressDelete(await settle(mount()));
+    expect(paying).toMatch(/If you pay through the App Store, cancel there too/);
+    expect(paying).toMatch(/does not stop the subscription/);
+    mockUser = { ...BASE };
+    const [, free] = await pressDelete(await settle(mount()));
+    expect(free).not.toMatch(/subscription/);
   });
 });

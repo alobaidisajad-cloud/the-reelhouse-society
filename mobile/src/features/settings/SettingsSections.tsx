@@ -26,7 +26,8 @@ import { AuthService } from '@/src/services/AuthService';
 import { supabase } from '@/src/lib/supabase';
 import { isAuteurPlusTier, isArchivistPlusTier, getDisplayTier } from '@/src/utils/tier';
 import { firstPrivilegesOf } from '@/src/constants/membership';
-import { getPasswordChecks, PW_CHECK_LABELS, getStrengthInfo } from '@/src/components/auth/PasswordStrengthMeter';
+import { getPasswordChecks, PW_CHECK_LABELS, PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
+import { STORE } from '@/src/components/society/SmallPrint';
 import { Toggle } from '@/src/components/Toggle';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 
@@ -161,18 +162,9 @@ export function FrontDeskSection({ memberId, onWrite, onHelp, onCopy }: {
 }
 
 /**
- * MEMBERSHIP & BILLING.
- *
- * ── THE CARD CALLED BILLING HAD NO BILLING ───────────────────────────────────
- * An Auteur — the member paying most — got a sentence and no control at all, so
- * there was no route from this page to cancelling or restoring. An Archivist
- * had to press UPGRADE to find CANCEL. One door now, at every rank, to the page
- * that already holds all three standings, MANAGE SUBSCRIPTION and RESTORE.
- *
- * ── AND IT DOES NOT NAME THE NEXT RANK ───────────────────────────────────────
- * The Society page shows all three side by side and you may go straight from
- * free to Auteur, so a button reading "RISE TO ARCHIVIST" would be a lie about
- * what happens next. CHOOSE is what you actually do.
+ * MEMBERSHIP & BILLING: one door, at every rank, to the Society page, which
+ * holds all three ranks, MANAGE SUBSCRIPTION and RESTORE. It says CHOOSE, not
+ * the next rank's name: a member may go straight from free to Auteur.
  */
 export function PatronageSection({ userRole, onUpgrade }: { userRole: string; onUpgrade: () => void }) {
   const display = getDisplayTier(userRole);
@@ -266,7 +258,7 @@ export function PatronageSection({ userRole, onUpgrade }: { userRole: string; on
               shape — the card and record decks both read from it. */}
           <Text style={st.primaryBtnText} {...deckLabelProps}>CHOOSE YOUR RANK</Text>
         </PressableScale>
-        <Text style={st.microNote} {...scaledTextProps}>IN-APP PURCHASE · APP STORE</Text>
+        <Text style={st.microNote} {...scaledTextProps}>IN-APP PURCHASE · {STORE.name.replace(/^the /, '').toUpperCase()}</Text>
       </SectionCard>
     </AnimatedView>
   );
@@ -303,17 +295,10 @@ export function PasswordChangePanel() {
     return () => { isMountedRef.current = false; };
   }, []);
 
-  /**
-   * ── THE HOUSE HAS ONE STANDARD ───────────────────────────────────────────
-   * Joining requires all five of `getPasswordChecks`. Changing a password here
-   * required only `length >= 8`, so a member could join with a proper cipher and
-   * then downgrade it to eight lowercase letters from inside the house — and the
-   * placeholder advertised the weaker bar. Same checker, same meter, one rule.
-   */
+  // Joining's standard, all five checks, and joining's meter: one rule for a cipher.
   const pwChecks = getPasswordChecks(newPassword);
   const pwPassed = Object.values(pwChecks).filter(Boolean).length;
   const pwStrong = pwPassed === PW_CHECK_LABELS.length;
-  const strength = getStrengthInfo(pwPassed);
   const canSubmit = !!currentPassword && pwStrong && newPassword === confirmPassword;
 
   const handlePasswordChange = async () => {
@@ -383,19 +368,7 @@ export function PasswordChangePanel() {
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>NEW PASSWORD</Text>
                 <TextInput ref={newPasswordRef} style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => confirmPasswordRef.current?.focus()} placeholder="To the Society's standard" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="New password" {...scaledTextProps} />
-                {newPassword.length > 0 && (
-                  <View style={st.pwMeter} accessible accessibilityRole="progressbar" accessibilityLabel={`Cipher strength: ${strength.label}`}>
-                    <View style={st.pwBars}>
-                      {PW_CHECK_LABELS.map(([key], i) => (
-                        <View key={key} style={[st.pwBar, i < pwPassed && { backgroundColor: strength.color }]} />
-                      ))}
-                    </View>
-                    <Text style={[st.pwStrength, { color: strength.ink }]} {...scaledTextProps}>{strength.label}</Text>
-                    <Text style={st.pwChecks} {...scaledTextProps}>
-                      {PW_CHECK_LABELS.map(([key, text]) => (pwChecks[key] ? text : text)).join(' · ')}
-                    </Text>
-                  </View>
-                )}
+                <PasswordStrengthMeter password={newPassword} />
               </View>
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>CONFIRM PASSWORD</Text>
@@ -452,13 +425,9 @@ export function AccountSection(props: AccountSectionProps) {
 
         <View style={st.fieldWrap}>
           <Text style={st.fieldLabel} {...scaledTextProps}>BIOMETRIC SECURITY</Text>
-          {/* It said "for destructive actions", which is two thirds of the
-              truth. Enabling it also puts a lock screen in front of the
-              member's OWN Archive, and nothing here warned them. (It then
-              said "Physical Archive" — the wrong room; the lock was named
-              for the Vault and the shelf shared that name.) */}
+          {/* What it guards, all of it: signing out never asks (leaving gives nothing away). */}
           <Text style={st.rowDesc} {...scaledTextProps}>
-            Face ID or Touch ID to sign out, to delete your account, and to open your own Archive.
+            {"Your phone's own lock before your account can be deleted, before this setting changes, and before your own Archive opens."}
           </Text>
           <View style={st.toggleUnderDesc}>
             <Controller
@@ -746,11 +715,6 @@ const st = StyleSheet.create({
   panelField: { marginBottom: 16 },
   oauthBanner: { backgroundColor: 'rgba(184,137,26,0.05)', padding: 16, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)' },
   fieldInput: { backgroundColor: colors.well, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.body, fontSize: 14, padding: 12, borderRadius: 2 },
-  pwMeter: { marginTop: 10 },
-  pwBars: { flexDirection: 'row', gap: 5 },
-  pwBar: { flex: 1, height: 3, backgroundColor: 'rgba(184,137,26,0.15)', borderRadius: 1 },
-  pwStrength: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, marginTop: 8, includeFontPadding: false },
-  pwChecks: { fontFamily: fonts.body, fontSize: 10.5, color: colors.fog, lineHeight: 16, marginTop: 6 },
   pwMismatch: { fontFamily: fonts.body, fontSize: 11, color: colors.crimsonInk, marginTop: 8 },
   saveFieldBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.sepia, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 2 },
   saveFieldBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },

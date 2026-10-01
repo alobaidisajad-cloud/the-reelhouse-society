@@ -28,6 +28,8 @@ const DELETE_CHUNK = 200;
 export interface UndoResult {
   removed: number;
   errors: string[];
+  /** Rows still to take back: those whose delete failed. */
+  left: number;
 }
 
 /** Persist the receipt for the most recent import. Never throws. */
@@ -89,9 +91,11 @@ function chunk<T>(items: T[], size: number): T[][] {
 export async function undoImport(receipt: ImportReceipt, userId: string): Promise<UndoResult> {
   const errors: string[] = [];
   let removed = 0;
+  // What a failed delete leaves behind, so a retry (and its count) names only that.
+  const left: ImportReceipt = { ...receipt, logIds: [], watchlistIds: [], physicalArchiveIds: [], listsCreated: [], listItemsAdded: [] };
 
   if (receipt.userId !== userId) {
-    return { removed: 0, errors: ['This import belongs to a different account.'] };
+    return { removed: 0, errors: ['This import belongs to a different account.'], left: receiptSize(receipt) };
   }
 
   // 1. Films added to stacks that already existed — remove only those films.
@@ -104,8 +108,10 @@ export async function undoImport(receipt: ImportReceipt, userId: string): Promis
         .eq('list_id', listId)
         .in('film_id', batch)
         .select('film_id');
-      if (error) errors.push(`Stack films: ${error.message}`);
-      else removed += data?.length ?? 0;
+      if (error) {
+        errors.push(`Stack films: ${error.message}`);
+        left.listItemsAdded.push({ listId, filmIds: batch });
+      } else removed += data?.length ?? 0;
     }
   }
 
@@ -117,7 +123,7 @@ export async function undoImport(receipt: ImportReceipt, userId: string): Promis
       .eq('user_id', userId)
       .in('id', batch)
       .select('id');
-    if (error) errors.push(`Stacks: ${error.message}`);
+    if (error) { errors.push(`Stacks: ${error.message}`); left.listsCreated.push(...batch); }
     else removed += data?.length ?? 0;
   }
 
@@ -129,7 +135,7 @@ export async function undoImport(receipt: ImportReceipt, userId: string): Promis
       .eq('user_id', userId)
       .in('id', batch)
       .select('id');
-    if (error) errors.push(`Film logs: ${error.message}`);
+    if (error) { errors.push(`Film logs: ${error.message}`); left.logIds.push(...batch); }
     else removed += data?.length ?? 0;
   }
 
@@ -141,7 +147,7 @@ export async function undoImport(receipt: ImportReceipt, userId: string): Promis
       .eq('user_id', userId)
       .in('id', batch)
       .select('id');
-    if (error) errors.push(`Watchlist: ${error.message}`);
+    if (error) { errors.push(`Watchlist: ${error.message}`); left.watchlistIds.push(...batch); }
     else removed += data?.length ?? 0;
   }
 
@@ -153,15 +159,14 @@ export async function undoImport(receipt: ImportReceipt, userId: string): Promis
       .eq('user_id', userId)
       .in('id', batch)
       .select('id');
-    if (error) errors.push(`Physical Archive: ${error.message}`);
+    if (error) { errors.push(`Physical Archive: ${error.message}`); left.physicalArchiveIds.push(...batch); }
     else removed += data?.length ?? 0;
   }
 
-  // Only forget the receipt on a clean sweep. If anything failed, keep it so
-  // the member can try again once they are back on a stable connection —
-  // deleting rows that are already gone is a no-op, so a retry is safe.
+  // A clean sweep forgets the receipt; otherwise it keeps only what failed, for a retry.
   if (errors.length === 0) clearReceipt();
+  else saveReceipt(left);
 
   logger.debug(`[undoImport] removed ${removed}/${receiptSize(receipt)} rows, ${errors.length} errors`);
-  return { removed, errors };
+  return { removed, errors, left: errors.length === 0 ? 0 : receiptSize(left) };
 }

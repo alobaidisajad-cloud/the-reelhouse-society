@@ -1,9 +1,8 @@
 /**
- * DataVault — Import & Export Section
- * Pixel-exact match of web SettingsPage.tsx Section 4 (IMPORT & EXPORT)
- * - Import: file picker → progress bar → results grid
- * - Export: CSV via Share sheet
- * Zero competitor names.
+ * DataVault — Settings' IMPORT & EXPORT.
+ * Import: file picker → progress → what was filed, with an undo that outlives
+ * the screen. Export: CSV or the full JSON archive, through the share sheet.
+ * No other service is ever named.
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
@@ -18,7 +17,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { localCalendarDate } from '@/src/utils/timeAgo';
 import * as Sharing from 'expo-sharing';
 
-import { useFilmStore , useWatchlistStore, useArchiveStore, useListStore } from '@/src/stores/films';
+import { useFilmStore, useArchiveStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { importArchiveZip, importArchiveJSON, ImportProgress, ImportResult } from '@/src/features/archive/archiveImport';
@@ -30,10 +29,6 @@ import reelToast from '@/src/utils/reelToast';
 import { escapeCsvCell } from '@/src/utils/csv';
 
 export default function DataVault() {
-  const _logs = useFilmStore(s => s.logs);
-  const _watchlist = useWatchlistStore(s => s.watchlist);
-  const _vault = useArchiveStore(s => s.physicalArchive);
-  const _lists = useListStore(s => s.lists);
   const user = useAuthStore(s => s.user);
 
   // ── Import State ──
@@ -71,7 +66,7 @@ export default function DataVault() {
           onPress: async () => {
             setUndoing(true);
             try {
-              const { removed, errors } = await undoImport(receipt, userId);
+              const { removed, errors, left } = await undoImport(receipt, userId);
               if (!isMounted.current) return;
 
               // Pull the stores back in line with the database.
@@ -86,9 +81,8 @@ export default function DataVault() {
               if (!isMounted.current) return;
 
               if (errors.length > 0) {
-                // Partial: the receipt is deliberately kept so this can be
-                // retried once the connection is stable.
-                setUndoableRows(receiptSize(receipt));
+                // Partial: what failed is kept, to be tried again.
+                setUndoableRows(left);
                 TactileEngine.error();
                 reelToast.error(`Removed ${removed}. Some entries could not be reached — try again.`);
               } else {
@@ -112,6 +106,7 @@ export default function DataVault() {
 
   const isMounted = useRef(true);
   useEffect(() => {
+    isMounted.current = true;
     return () => { isMounted.current = false; };
   }, []);
 
@@ -225,7 +220,7 @@ export default function DataVault() {
     try {
       const dbLogs = await fetchAllRows('logs');
 
-      
+
       if (!isMounted.current) return;
       if (!dbLogs || dbLogs.length === 0) {
         reelToast.error('No logs to export yet. Start logging films first.');
@@ -381,9 +376,7 @@ export default function DataVault() {
   return (
     <Animated.View entering={FadeIn.duration(600)}>
 
-      {/* ════════════════════════════════════
-          IMPORT SECTION — matches web exactly
-         ════════════════════════════════════ */}
+      {/* ── Import ── */}
       <View style={s.importSection}>
         <Text style={s.subLabel}>IMPORT YOUR DATA</Text>
         <Text style={s.importDesc}>
@@ -401,7 +394,13 @@ export default function DataVault() {
 
         {/* ── Progress Bar (importing state) ── */}
         {importing && importProgress && (
-          <View style={s.progressCard}>
+          <View
+            style={s.progressCard}
+            accessible
+            accessibilityRole="progressbar"
+            accessibilityLabel={importProgress.phase.toLowerCase()}
+            accessibilityValue={{ min: 0, max: importProgress.total, now: importProgress.current }}
+          >
             <View style={s.progressHeader}>
               <Text style={s.progressPhase}>{importProgress.phase}</Text>
               <Text style={s.progressCount}>{importProgress.current} / {importProgress.total}</Text>
@@ -502,9 +501,7 @@ export default function DataVault() {
         )}
       </View>
 
-      {/* ════════════════════════════════════
-          EXPORT SECTION — matches web exactly
-         ════════════════════════════════════ */}
+      {/* ── Export ── */}
       <View style={s.divider} />
 
       <Text style={s.subLabel}>EXPORT YOUR DATA</Text>

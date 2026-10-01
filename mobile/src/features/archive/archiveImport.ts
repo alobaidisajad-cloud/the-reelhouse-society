@@ -18,6 +18,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { isTmdbUnreachable } from '@/src/lib/tmdbErrors';
 import { useAuthStore } from '@/src/stores/auth';
 import { logger } from '@/src/utils/logger';
+import { isArchivistPlusTier, resolveTier } from '@/src/utils/tier';
 // Imported text comes from any exporter, so it passes the same sanitiser as in-app writes.
 import { sanitizeInput } from '@/src/utils/sanitizeInput';
 import { ImportReceipt, emptyReceipt } from './importReceipt';
@@ -81,6 +82,8 @@ interface ParsedListFile {
 interface ReelHouseArchive {
   meta?: { exported_at?: string; version?: string };
   logs?: Record<string, unknown>[];
+  /** The member's private notes, one to a viewing, kept apart from the logs. */
+  private_notes?: Record<string, unknown>[];
   watchlist?: Record<string, unknown>[];
   vault?: Record<string, unknown>[];
   lists?: Record<string, unknown>[];
@@ -1361,11 +1364,44 @@ async function importLists(
 //  REELHOUSE JSON IMPORT PATH
 // ═══════════════════════════════════════════════════════════════
 
+const ARCHIVE_PARTS = ['logs', 'watchlist', 'vault', 'lists'] as const;
+
+/**
+ * An exported viewing history with a fresh identity on every viewing, and the
+ * old → new pairs so each viewing's note can follow it. The file's identities
+ * are still the original log's, and a viewing belongs to one log only. A
+ * history stored as a JSON string, as older clients wrote it, is read first.
+ * Exported for tests.
+ */
+export function freshViewings(raw: unknown): { history: unknown[]; renamed: [string, string][] } {
+  let list: unknown = raw;
+  if (typeof list === 'string') {
+    try { list = JSON.parse(list); } catch { list = []; }
+  }
+  if (list && typeof list === 'object' && !Array.isArray(list)) list = [list];
+  if (!Array.isArray(list)) return { history: [], renamed: [] };
+  const renamed: [string, string][] = [];
+  const history = list.map((e) => {
+    if (!e || typeof e !== 'object' || Array.isArray(e)) return e;
+    const fresh = Crypto.randomUUID();
+    const old = (e as Record<string, unknown>).viewingId;
+    if (typeof old === 'string' && old) renamed.push([old, fresh]);
+    return { ...(e as Record<string, unknown>), viewingId: fresh };
+  });
+  return { history, renamed };
+}
+
 export async function importArchiveJSON(
   archive: ReelHouseArchive,
   userId: string,
   onProgress?: (progress: ImportProgress) => void,
 ): Promise<ImportResult> {
+  // The one gate for every way a JSON file arrives. "null", "42", "[]" and "{}"
+  // all parse, and would import as a cheerful, empty success.
+  const parts = archive as Record<string, unknown> | null;
+  if (!parts || typeof parts !== 'object' || Array.isArray(parts) || !ARCHIVE_PARTS.some((k) => Array.isArray(parts[k]))) {
+    throw new Error('This file is not a ReelHouse archive.');
+  }
   // Same undo guarantee as the CSV path, including the try/finally: rows
   // already written must stay reversible even if the import throws.
   const receipt = emptyReceipt(userId, 'your archive');
@@ -1391,12 +1427,30 @@ async function runJSONImport(
 
   // ── Import logs ──
   const logs = archive.logs ?? [];
+  // The notes, by the viewing each was written on.
+  const noteByViewing = new Map<string, string>();
+  for (const n of archive.private_notes ?? []) {
+    if (n?.viewing_id && typeof n.notes === 'string' && n.notes) noteByViewing.set(String(n.viewing_id), n.notes);
+  }
+  const noteFor = (viewing: unknown) => (viewing ? noteByViewing.get(String(viewing)) : undefined);
+  // Notes on earlier viewings, written once their logs are (the current one rides the log).
+  const earlierNotes: { log_id: string; viewing_id: string; user_id: string; notes: string }[] = [];
   if (logs.length > 0) {
     const payloads: Record<string, unknown>[] = [];
 
     for (const log of logs) {
       const filmId = (log.filmId ?? log.film_id) as number | undefined;
       if (!filmId) { skipped++; continue; }
+
+      // Fresh identities for the log and every viewing, so each note can be
+      // filed on the viewing it was written on.
+      const logId = Crypto.randomUUID();
+      const { history, renamed } = freshViewings(log.viewingHistory ?? log.viewing_history);
+      for (const [oldId, newId] of renamed) {
+        const note = sanitizeInput(noteFor(oldId) ?? '', 'review').slice(0, 1000);
+        if (note) earlierNotes.push({ log_id: logId, viewing_id: newId, user_id: userId, notes: note });
+      }
+      const currentNote = ((log.privateNotes ?? log.private_notes) as string | null) || noteFor(log.viewingId ?? log.viewing_id) || null;
 
       const watchedDate = normalizeDate(((log.watchedDate ?? log.watched_date ?? '') as string));
       // Native-parity timeline: preserve the original created_at from the
@@ -1408,6 +1462,8 @@ async function runJSONImport(
       const created_at = originalCreated ?? fallback.created_at;
 
       payloads.push({
+        id:               logId,
+        viewing_id:       Crypto.randomUUID(),
         user_id:          userId,
         film_id:          filmId,
         film_title:       (log.title ?? log.film_title ?? 'Untitled') as string,
@@ -1419,10 +1475,8 @@ async function runJSONImport(
         watched_date:     watchedDate,
         is_spoiler:       (log.isSpoiler ?? log.is_spoiler ?? false) as boolean,
         watched_with:     (log.watchedWith ?? log.watched_with ?? null) as string | null,
-        // Owner-private notes are sanitised too (zero-width and control characters).
-        private_notes:    ((log.privateNotes ?? log.private_notes ?? null) as string | null)
-                            ? sanitizeInput((log.privateNotes ?? log.private_notes) as string, 'review')
-                            : null,
+        // Filed by the database on the log's current viewing (sanitised, as all imported text).
+        private_notes:    currentNote ? sanitizeInput(currentNote, 'review') : null,
         abandoned_reason: (log.abandonedReason ?? log.abandoned_reason ?? null) as string | null,
         physical_media:   (log.physicalMedia ?? log.physical_media ?? null) as string | null,
         is_autopsied:     (log.isAutopsied ?? log.is_autopsied ?? false) as boolean,
@@ -1434,7 +1488,7 @@ async function runJSONImport(
         video_url:        (log.videoUrl ?? log.video_url ?? null) as string | null,
         format:           (log.format ?? 'digital') as string,
         view_count:       (log.viewCount ?? log.view_count ?? 1) as number,
-        viewing_history:  (log.viewingHistory ?? log.viewing_history ?? []) as unknown[],
+        viewing_history:  history,
         created_at,
         updated_at:       originalUpdated ?? created_at,
       });
@@ -1455,6 +1509,17 @@ async function runJSONImport(
       const newLogIds = await upsertCounted('logs', batch, 'user_id,film_id', true, 'Film log', errors);
       logCount += newLogIds.length;
       receipt.logIds.push(...newLogIds);
+    }
+
+    // Earlier viewings' notes, for the logs this import wrote. Below the
+    // Archivist a note is discarded, as the database does with the current one.
+    const written = new Set(receipt.logIds);
+    const notes = earlierNotes.filter((n) => written.has(n.log_id));
+    if (notes.length > 0 && isArchivistPlusTier(resolveTier(useAuthStore.getState().user))) {
+      for (let i = 0; i < notes.length; i += BATCH_SIZE) {
+        const { error } = await supabase.from('log_private_notes').upsert(notes.slice(i, i + BATCH_SIZE), { onConflict: 'viewing_id' });
+        if (error && errors.length < MAX_COLLECTED_ERRORS) errors.push(`Private notes: ${error.message}`);
+      }
     }
   }
 
@@ -1702,9 +1767,6 @@ export async function importArchiveZip(
     } catch {
       throw new Error('Invalid JSON format.');
     }
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      throw new Error('This file is not a ReelHouse archive.');
-    }
     return importArchiveJSON(parsed, user.id, onProgress);
   }
 
@@ -1753,10 +1815,6 @@ export async function importArchiveZip(
     } catch {
       // Tells the member the FILE is the problem, as the single-JSON-file path does.
       throw new Error('Invalid JSON format.');
-    }
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      // "null", "42" and "[]" parse too, and would import as a cheerful, empty success.
-      throw new Error('This file is not a ReelHouse archive.');
     }
     return importArchiveJSON(parsed, user.id, onProgress);
   }

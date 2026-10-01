@@ -33,7 +33,8 @@ import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import DataVault from '@/src/features/settings/DataVault';
 import { storage } from '@/src/stores/mmkv-storage';
 import PressableScale from '@/src/components/PressableScale';
-import { resolveTier } from '@/src/utils/tier';
+import { isArchivistPlusTier, resolveTier } from '@/src/utils/tier';
+import { STORE } from '@/src/components/society/SmallPrint';
 import { formatDateMonthYear } from '@/src/utils/timeAgo';
 import { enterDown } from '@/src/utils/enter';
 import { useForm } from 'react-hook-form';
@@ -57,6 +58,9 @@ const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
+
+/** The phone's own lock was put away (by the member, the system or the app): not a failure. */
+const LOCK_PUT_AWAY = new Set(['user_cancel', 'system_cancel', 'app_cancel']);
 
 /** Supabase's own floor for repeat OTP sends. Asking sooner only earns an error. */
 const OTP_RESEND_SECONDS = 60;
@@ -140,8 +144,7 @@ export function SettingsScreen() {
       reelToast.success(`Security code sent to ${user.email}`);
       return true;
     } catch (e: unknown) {
-      // The box stays open with a reason and a way to try again. It used to
-      // leave a live modal, an empty field, and a toast that had already gone.
+      // The box stays open, with the reason and a way to send again.
       if (isMountedRef.current) {
         const raw = (e as { message?: unknown } | null)?.message;
         setOtpError(typeof raw === 'string' && raw
@@ -163,14 +166,7 @@ export function SettingsScreen() {
     await sendOtp();
   }, [sendOtp]);
 
-  /**
-   * ── ONE ERASURE, WHICHEVER DOOR YOU CAME THROUGH ─────────────────────────
-   *
-   * Deletion had two routes and they erased different amounts: the email-code
-   * route called storage.clearAll(), the biometric route did not — so drafts,
-   * the import receipt and local flags survived the destruction of the account.
-   * Both routes call this now, so they cannot drift apart again.
-   */
+  /** The one erasure, whichever check (the phone's lock or the emailed code) let the member through. */
   const completeAccountDeletion = useCallback(async (): Promise<void> => {
     try {
       await AuthService.requestAccountDeletion();
@@ -194,25 +190,8 @@ export function SettingsScreen() {
       if (!data) return;
 
       const nextVal = nextBiometricStateRef.current;
-      const batchedPrefs = {
-        notif_follows: data.notifFollows,
-        notif_endorsements: data.notifEndorsements,
-        notif_comments: data.notifComments,
-        notif_system: data.notifSystem,
-        social_visibility: data.socialVisibility,
-        privacy_endorsements: data.privacyEndorsements,
-        privacy_annotations: data.privacyAnnotations,
-        biometric_lock: nextVal,
-      };
-
-      const freshPrefs = useAuthStore.getState().user?.preferences || {};
-      const tactilePref = useSettingsStore.getState().tactileAudioEnabled;
-      const mergedPrefs = { ...freshPrefs, tactile_audio_enabled: tactilePref, ...batchedPrefs };
       try {
-        await updateUserMutation({
-          is_social_private: data.socialVisibility === 'private',
-          preferences: mergedPrefs
-        });
+        await updateUserMutation(amendments({ ...data, biometricLock: nextVal }));
         if (isMountedRef.current) {
           reset({ ...data, biometricLock: nextVal });
           TactileEngine.success();
@@ -242,6 +221,23 @@ export function SettingsScreen() {
   };
 
   const currentPrefs = user?.preferences;
+
+  /** The form, as the profile keeps it: over the member's other preferences, never instead of them. */
+  const amendments = (data: SettingsFormData) => ({
+    is_social_private: data.socialVisibility === 'private',
+    preferences: {
+      ...(useAuthStore.getState().user?.preferences || {}),
+      tactile_audio_enabled: useSettingsStore.getState().tactileAudioEnabled,
+      notif_follows: data.notifFollows,
+      notif_endorsements: data.notifEndorsements,
+      notif_comments: data.notifComments,
+      notif_system: data.notifSystem,
+      social_visibility: data.socialVisibility,
+      privacy_endorsements: data.privacyEndorsements,
+      privacy_annotations: data.privacyAnnotations,
+      biometric_lock: data.biometricLock,
+    },
+  });
 
   const { control, handleSubmit, reset, setValue, formState: { isDirty, dirtyFields } } = useForm<SettingsFormData>({
     resolver: zodResolver(SettingsSchema),
@@ -298,7 +294,7 @@ export function SettingsScreen() {
         }
 
         if (!result.success) {
-          if (result.error === 'user_cancel') {
+          if (LOCK_PUT_AWAY.has(result.error)) {
             setValue('biometricLock', currentPrefs?.biometric_lock === true, { shouldDirty: true });
 
             const hasOtherChanges = Object.keys(dirtyFields).some(k => k !== 'biometricLock');
@@ -323,26 +319,8 @@ export function SettingsScreen() {
       }
     }
 
-    const batchedPrefs = {
-      notif_follows: data.notifFollows,
-      notif_endorsements: data.notifEndorsements,
-      notif_comments: data.notifComments,
-      notif_system: data.notifSystem,
-      social_visibility: data.socialVisibility,
-      privacy_endorsements: data.privacyEndorsements,
-      privacy_annotations: data.privacyAnnotations,
-      biometric_lock: data.biometricLock,
-    };
-
-    const freshPrefs = useAuthStore.getState().user?.preferences || {};
-    const tactilePref = useSettingsStore.getState().tactileAudioEnabled;
-    const mergedPrefs = { ...freshPrefs, tactile_audio_enabled: tactilePref, ...batchedPrefs };
-
     try {
-      await updateUserMutation({
-        is_social_private: data.socialVisibility === 'private',
-        preferences: mergedPrefs,
-      });
+      await updateUserMutation(amendments(data));
       if (isMountedRef.current) {
         reset(data);
         TactileEngine.success();
@@ -357,14 +335,7 @@ export function SettingsScreen() {
 
   const saving = isUpdatingUser;
 
-  /**
-   * ── EVERY EXIT, NOT JUST THE ARROW ───────────────────────────────────────
-   *
-   * The discard warning hung off the back button's onPress, so the iOS swipe
-   * gesture and Android's hardware back walked straight past it and threw the
-   * member's unsaved changes away in silence. usePreventRemove intercepts all
-   * three, including the arrow, so there is one guard and one behaviour.
-   */
+  /** Every exit asks first: the arrow, the iOS swipe and Android's back alike. */
   usePreventRemove(isDirty && !saving, ({ data }) => {
     Alert.alert('Discard changes?', 'You have unsaved modifications in your dossier.', [
       { text: 'Keep editing', style: 'cancel' },
@@ -386,9 +357,13 @@ export function SettingsScreen() {
   };
 
   const handleDeleteAccount = async () => {
+    // Deleting the account does not end a store subscription; a paying member is told so first.
+    const paying = isArchivistPlusTier(userRole)
+      ? ` If you pay through ${STORE.name}, cancel there too (in ${STORE.settings}): deleting your account does not stop the subscription.`
+      : '';
     Alert.alert(
       'Expunge All Records',
-      'This will permanently destroy your dossier, all logs, stacks, and critiques. This action is irreversible.',
+      `This will permanently destroy your dossier, all logs, stacks, and critiques. This action is irreversible.${paying}`,
       [
         { text: 'CANCEL', style: 'cancel' },
         { text: 'DELETE', style: 'destructive', onPress: async () => {
@@ -405,7 +380,7 @@ export function SettingsScreen() {
                   disableDeviceFallback: false,
                 });
                 if (!result.success) {
-                  if (result.error === 'user_cancel') return;
+                  if (LOCK_PUT_AWAY.has(result.error)) return;
                   requestOtpAuth('deleteAccount');
                   return;
                 }
@@ -513,16 +488,9 @@ export function SettingsScreen() {
         </PressableScale>
       </View>
 
-      {/*
-        KEYBOARD LAW (router-screen form): automaticallyAdjustKeyboardInsets
-        scrolls the FOCUSED field above the keyboard on iOS — the mechanism the
-        login, reset-password and composer screens already use. This page wrapped
-        everything in a KeyboardAvoidingView instead, which is the "blind
-        container padding" that only makes room WITHOUT scrolling to it: opening
-        CHANGE PASSWORD near the foot of eight cards left the member typing a new
-        cipher behind the keyboard. On Android the root ends at the keyboard
-        (KeyboardRoom) and the shortened ScrollView scrolls to the field.
-      */}
+      {/* KEYBOARD LAW (router-screen form): automaticallyAdjustKeyboardInsets
+          scrolls the focused field above the keyboard on iOS; on Android the
+          root ends at the keyboard (KeyboardRoom) and this shorter view scrolls. */}
       <Animated.ScrollView
         ref={scrollRef}
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
@@ -609,8 +577,6 @@ export function SettingsScreen() {
 
         <AnimatedView entering={enterDown(400)}>
           <SectionCard danger>
-            {/* A shield — the mark of protection — used to head the card that
-                destroys an account, and served as PRIVACY POLICY's icon too. */}
             <SectionHead icon={DoorOpen} label="ACCOUNT ACTIONS" danger />
             <View style={st.legalActions}>
               <ActionBtn icon={LogOut} label="SIGN OUT" onPress={handleSignOut} />
@@ -620,8 +586,6 @@ export function SettingsScreen() {
           </SectionCard>
         </AnimatedView>
 
-        {/* The two legal links used to be repeated here, directly beneath the
-            section that already carries them. */}
         <AnimatedView entering={enterDown(450)} style={st.heritageFooter}>
           <Text style={st.memberSince} {...scaledTextProps}>MEMBER SINCE {user.created_at ? formatDateMonthYear(user.created_at) : 'THE BEGINNING'}</Text>
           <View style={st.endMarkRow}>

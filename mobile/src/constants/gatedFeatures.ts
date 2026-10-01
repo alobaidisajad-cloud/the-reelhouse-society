@@ -100,8 +100,9 @@ export const GATED_FEATURES: GatedFeature[] = [
     enforcement: { kind: 'refuses', table: 'log_private_notes', trigger: 'tr_tier_gate_private_notes' },
     // A note belongs to a VIEWING (2026-09-18). Reading one is never gated and
     // neither is taking it back; writing one is what this rope stands in front
-    // of, in the form where a member writes it.
-    gates: ['src/hooks/useLogFlow.ts', 'src/components/log/LogForm.tsx'],
+    // of, in the form where a member writes it. The import files an archive's
+    // notes only for a member who may write them, as divert_private_notes does.
+    gates: ['src/hooks/useLogFlow.ts', 'src/components/log/LogForm.tsx', 'src/features/archive/archiveImport.ts'],
   },
   {
     id: 'the-lounge',

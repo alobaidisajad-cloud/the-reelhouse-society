@@ -118,7 +118,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | 2026-10-01 | the not-found way out says where it goes; histories to the present |
 | app/reset-password.tsx | 2026-10-01 | navigates through nav; comments short |
-| app/settings.tsx | — |  |
+| app/settings.tsx | 2026-10-02 | read; sound |
 | app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-09-29 | 13 fixed + test that runs the real queryFn |
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
@@ -622,10 +622,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/archive/__tests__/anImportMergesIntoTheStackItFinds.test.ts | — |  |
 | src/features/archive/__tests__/anImportNeverDropsWhatItCouldNotAsk.test.ts | — |  |
 | src/features/archive/__tests__/archiveImport.test.ts | — |  |
+| src/features/archive/__tests__/aReturnedArchiveKeepsItsNotes.test.ts | 2026-10-02 | fresh viewing ids; notes follow their viewings; not-an-archive refused; undo keeps only what failed |
 | src/features/archive/__tests__/undoImport.test.ts | — |  |
-| src/features/archive/archiveImport.ts | 2026-09-28 | Three doc comments sat on a constant instead of the function they describe (upsertCounted, fetchAllListItems, isHeaderRow) and one on the wrong type; normalizeDate's doc sat on isRealDate. 'Zero competitor names' was false. Audit tags (FEAT-1/2) and history removed; every reason kept, shortened. |
-| src/features/archive/importReceipt.ts | — |  |
-| src/features/archive/undoImport.ts | — |  |
+| src/features/archive/archiveImport.ts | 2026-10-02 | fresh viewing ids; notes follow their viewings; one archive gate |
+| src/features/archive/importReceipt.ts | 2026-10-02 | read; sound |
+| src/features/archive/undoImport.ts | 2026-10-02 | a partial undo keeps only what failed |
 | src/features/profile/__tests__/aLinkSaysWhyBeforeItVanishes.test.tsx | 2026-10-01 | written: a link says why before it vanishes |
 | src/features/profile/__tests__/linksEditor.test.tsx | — |  |
 | src/features/profile/__tests__/theDossierSealIsSpoken.test.tsx | — |  |
@@ -635,11 +636,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/profile.styles.ts | 2026-10-01 | 19 styles nothing read, removed |
 | src/features/settings/__tests__/settings.redesign.test.tsx | — |  |
 | src/features/settings/__tests__/anExportIsWhole.test.ts | 2026-10-01 | written: an export holds every row once |
-| src/features/settings/DataVault.tsx | — |  |
+| src/features/settings/DataVault.tsx | 2026-10-02 | no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
 | src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
-| src/features/settings/settings.styles.ts | — |  |
-| src/features/settings/SettingsScreen.tsx | — |  |
-| src/features/settings/SettingsSections.tsx | — |  |
+| src/features/settings/settings.styles.ts | 2026-10-02 | read; sound |
+| src/features/settings/SettingsScreen.tsx | 2026-10-02 | a put-away lock is not a failure; paying members told of the store subscription; one amendments() |
+| src/features/settings/SettingsSections.tsx | 2026-10-02 | joining's meter; the lock says what it guards; the store named per platform |
 | src/generated/lucideIcons.js | — |  |
 | src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx | 2026-10-01 | written: a follow that throws is said and rolled back |
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
@@ -702,7 +703,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useSheetPresence.ts | 2026-10-01 | written: five sheets' rise and fall, once |
 | src/hooks/useTextScale.ts | — |  |
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
-| src/hooks/useUpdateUser.ts | — |  |
+| src/hooks/useUpdateUser.ts | 2026-10-02 | read; sound |
 | src/hooks/useVault.ts | 2026-10-01 | reload, for a Vault that could not open |
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | — |  |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | — |  |
@@ -740,7 +741,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/schemas/feed.schema.ts | 2026-10-01 | film id strict; a null status is watched |
 | src/schemas/film.schema.ts | 2026-10-01 | the unused DomainLog mirror gone; no invented date or author |
 | src/schemas/profile.schema.ts | — |  |
-| src/schemas/settings.ts | — |  |
+| src/schemas/settings.ts | 2026-10-02 | read; sound |
 | src/schemas/user.ts | — |  |
 | src/services/__tests__/aMemberTakesBackOnlyTheirOwnStackCritique.test.ts | 2026-09-30 | written with the stack critique delete |
 | src/services/__tests__/aMissingLogIsAnAnswer.test.tsx | 2026-10-01 | written: a missing log is null; a nameless author is never unknown |
@@ -775,7 +776,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/LogService.ts | 2026-10-01 | a missing log is null; histories to the present |
 | src/services/LoungeService.ts | 2026-10-01 | true as written |
 | src/services/MemberDiscoveryService.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
-| src/services/ModerationService.ts | — |  |
+| src/services/ModerationService.ts | 2026-10-02 | read; sound |
 | src/services/ProfileDataService.ts | 2026-09-29 | 24 fixed; 'Sentry breadcrumb' was dev-only logger.info (logged for step 6); a dead file ref; ticket tags |
 | src/services/ProfileWriteService.ts | — |  |
 | src/services/StackService.ts | 2026-09-30 | the delete's comment said a refusal "is seen" and never read it; made true |
@@ -979,12 +980,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/withTimeout.test.ts | — |  |
 | src/utils/AppError.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/critiquePayload.ts | — |  |
-| src/utils/csv.ts | — |  |
+| src/utils/csv.ts | 2026-10-02 | read; sound |
 | src/utils/deviceRegion.ts | 2026-10-01 | new |
 | src/utils/draftSync.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/e2eTrace.ts | 2026-09-29 | new |
 | src/utils/endorsementGroupKey.ts | — |  |
-| src/utils/enter.ts | — |  |
+| src/utils/enter.ts | 2026-10-02 | read; sound |
 | src/utils/filterContentByBlocks.ts | 2026-10-01 | true as written |
 | src/utils/gateTelemetry.ts | — |  |
 | src/utils/groupNotifications.ts | 2026-10-02 | history comments trimmed |
