@@ -37,6 +37,7 @@ const mockAmended: { id: string; updates: unknown }[] = [];
 let mockFileFails = false;
 let mockFileOffline = false;
 let mockAmendFails = false;
+let mockAmendOffline = false;
 
 jest.mock('@/src/stores/auth', () => ({
   useAuthStore: Object.assign(
@@ -63,6 +64,7 @@ jest.mock('@/src/stores/dispatch', () => ({
       amend: async (id: string, updates: unknown) => {
         mockAmended.push({ id, updates });
         if (mockAmendFails) throw new Error(String.fromCharCode(114));
+        return mockAmendOffline ? { offline: true } : { offline: false };
       },
       // What the desk reads to prefill an amendment. `filings` is the page and
       // `opened` is what was reached by its own address; the desk looks in both,
@@ -466,7 +468,7 @@ describe('a desk opened on a filing that already exists', () => {
     mockHeld = existing;
     mockAmended.length = 0;
   });
-  afterEach(() => { mockEditId = undefined; mockHeld = null; });
+  afterEach(() => { mockEditId = undefined; mockHeld = null; mockAmendOffline = false; });
 
   it('opens with the words already in it', () => {
     const { getByLabelText } = render(<ComposeShortScreen kind="take" />);
@@ -491,6 +493,17 @@ describe('a desk opened on a filing that already exists', () => {
     expect(mockAmended[0].id).toBe('f9');
     expect((mockAmended[0].updates as Record<string, unknown>).body)
       .toBe('Ozu never once stood up, and that is the argument.');
+  });
+
+  it('says an amendment made offline has not gone yet', async () => {
+    // It said "Amended" of words still waiting on the phone, as the essay's
+    // desk once did.
+    mockAmendOffline = true;
+    const r = render(<ComposeShortScreen kind="take" />);
+    await type(r.getByLabelText('Your take'), 'Ozu never once stood up, and that is the argument.');
+    await press(r.getByLabelText('Amend it'));
+    expect(mockToast.success).toHaveBeenCalledWith('Amended. It goes out when the wire is back.');
+    expect(mockToast.success).not.toHaveBeenCalledWith('Amended');
   });
 
   it('sends only the words — never the film the critiques are arguing about', () => {

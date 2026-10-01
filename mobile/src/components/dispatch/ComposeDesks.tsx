@@ -128,12 +128,13 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
     // film. The wrong film is withdrawn and filed again.
     if (amending) {
       try {
-        await useDispatch.getState().amend(editId!, {
+        const amended = await useDispatch.getState().amend(editId!, {
           body: body.trim(),
           spoilerLabel: spoiler ? 'SPOILERS' : null,
           source: kind === 'wire' ? (source.trim() || null) : null,
         });
-        reelToast.success('Amended');
+        // Queued is not gone, as the essay's desk says it.
+        reelToast.success(amended?.offline ? 'Amended. It goes out when the wire is back.' : 'Amended');
         nav.back();
       } catch {
         reelToast.error('It could not be amended.'); // the new words are still in the field
