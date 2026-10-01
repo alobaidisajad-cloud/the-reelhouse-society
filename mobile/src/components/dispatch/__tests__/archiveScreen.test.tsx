@@ -62,6 +62,10 @@ let mockSearchRows: unknown[] = [];
 let mockFilingRows: unknown[] = [];
 let mockOldest: string | null = null;
 let mockCount: number | null = null;
+let mockSearchError: unknown = null;
+let mockFilingError: unknown = null;
+/** When set, the film's first page waits for this to be called. */
+let mockHoldFilings: Promise<void> | null = null;
 
 jest.mock('@/src/lib/supabase', () => ({
   supabase: {
@@ -80,10 +84,11 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.insert = () => Promise.resolve({ data: null, error: null });
       chain.range = (a: number, b: number) => {
         asked.range = [a, b];
-        return Promise.resolve({
-          data: mockFilingRows, error: null,
+        const answer = () => ({
+          data: mockFilingError ? null : mockFilingRows, error: mockFilingError,
           count: mockCount ?? mockFilingRows.length,
         });
+        return mockHoldFilings ? mockHoldFilings.then(answer) : Promise.resolve(answer());
       };
       chain.limit = (n: number) => {
         asked.limit = n;
@@ -91,8 +96,8 @@ jest.mock('@/src/lib/supabase', () => ({
         // oldest row the span needs. They are told apart by what was ordered.
         const ascending = (asked.order?.[1] as { ascending?: boolean })?.ascending === true;
         return Promise.resolve({
-          data: ascending ? (mockOldest ? [{ created_at: mockOldest }] : []) : mockSearchRows,
-          error: null,
+          data: ascending ? (mockOldest ? [{ created_at: mockOldest }] : []) : (mockSearchError ? null : mockSearchRows),
+          error: ascending ? null : mockSearchError,
         });
       };
       chain.then = (res: (v: unknown) => unknown) =>
@@ -174,6 +179,9 @@ beforeEach(() => {
   mockFilingRows = [];
   mockOldest = null;
   mockCount = null;
+  mockSearchError = null;
+  mockFilingError = null;
+  mockHoldFilings = null;
   mockPushed.length = 0;
   mockBack.mockClear();
   mockUser = { id: 'u1', username: 'me', tier: 'archivist' };
@@ -409,6 +417,78 @@ describe('the archive', () => {
     mockSearchRows = [];
     await type(r, 'zzzz');
     expect(r.getByText(/Nobody has filed about that film/)).toBeTruthy();
+  });
+
+  it('never says nobody filed before the search has answered', async () => {
+    // The search waits 300ms for the last key; in that wait the page printed
+    // "Nobody has filed about that film" under every new word.
+    mockSearchRows = [hit()];
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await fireEvent.changeText(r.getByLabelText('Search the archive for a film'), 'stalker');
+    await act(async () => { jest.advanceTimersByTime(100); });
+    expect(r.queryByText(/Nobody has filed about that film/)).toBeNull();
+    await act(async () => { jest.advanceTimersByTime(300); await Promise.resolve(); await Promise.resolve(); });
+    expect(r.getByText('Stalker')).toBeTruthy();
+  });
+
+  it('says a search that could not run, never that nobody filed, and runs it again', async () => {
+    mockSearchError = { message: 'TypeError: Network request failed' };
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await type(r, 'stalker');
+    expect(r.getByText('The archive could not be reached.')).toBeTruthy();
+    expect(r.queryByText(/Nobody has filed about that film/)).toBeNull();
+
+    mockSearchError = null;
+    mockSearchRows = [hit()];
+    await act(async () => {
+      fireEvent.press(r.getByLabelText('Search the archive again'));
+      await Promise.resolve(); await Promise.resolve();
+    });
+    expect(r.getByText('Stalker')).toBeTruthy();
+    expect(r.queryByText('The archive could not be reached.')).toBeNull();
+  });
+
+  it('says a film that could not be read, never that nothing of it is left', async () => {
+    mockSearchRows = [hit()];
+    mockFilingError = { message: 'TypeError: Network request failed' };
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await type(r, 'stalker');
+    await act(async () => {
+      fireEvent.press(r.getByLabelText(/Stalker. 1 filing/));
+      await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+    });
+    expect(r.getByText('This film’s filings could not be reached.')).toBeTruthy();
+    expect(r.queryByText('Nothing of this film is left standing.')).toBeNull();
+
+    mockFilingError = null;
+    mockFilingRows = [filing()];
+    await act(async () => {
+      fireEvent.press(r.getByLabelText('Read this film again'));
+      await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+    });
+    expect(r.getByLabelText('Filed on the 28th')).toBeTruthy();
+    expect(r.queryByText('This film’s filings could not be reached.')).toBeNull();
+  });
+
+  it('a search that answers after a film is chosen does not throw the film away', async () => {
+    // One generation served both: a search firing while a film's first page
+    // was in flight discarded that page and left the film loading for good.
+    mockSearchRows = [hit()];
+    mockFilingRows = [filing()];
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await type(r, 'stalk');
+    let release: () => void = () => {};
+    mockHoldFilings = new Promise<void>((done) => { release = done; });
+    // A last key, then the film, inside the search's wait.
+    await fireEvent.changeText(r.getByLabelText('Search the archive for a film'), 'stalke');
+    await act(async () => { fireEvent.press(r.getByLabelText(/Stalker. 1 filing/)); });
+    await act(async () => { jest.advanceTimersByTime(400); await Promise.resolve(); await Promise.resolve(); });
+    await act(async () => { release(); for (let i = 0; i < 6; i++) await Promise.resolve(); });
+    expect(r.getByLabelText('Filed on the 28th')).toBeTruthy();
   });
 });
 

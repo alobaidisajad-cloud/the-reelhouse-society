@@ -293,6 +293,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theNumberIsAMembershipFact.test.tsx | — |  |
 | src/components/dispatch/__tests__/theParagraphKnowsItsDirection.test.tsx | — |  |
 | src/components/dispatch/__tests__/thePreviewIsThePage.test.tsx | — |  |
+| src/components/dispatch/__tests__/theSeriesSheet.test.tsx | 2026-10-01 | written: the series sheet says what it read |
 | src/components/dispatch/__tests__/theRailFitsOneScreen.test.ts | — |  |
 | src/components/dispatch/__tests__/theReaderAtFullLength.test.tsx | — |  |
 | src/components/dispatch/__tests__/theRoomOnScreenDecidesTheGate.test.ts | — |  |

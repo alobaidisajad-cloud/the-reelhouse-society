@@ -31,7 +31,7 @@ import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
+import { PaperEmpty, PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
 import { PaperBack } from '@/src/components/dispatch/paper/PaperMore';
 import { SeriesList, type Part } from '@/src/components/dispatch/paper/PaperEssay';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
@@ -41,6 +41,7 @@ import { supabase } from '@/src/lib/supabase';
 import { FILING_FULL_COLUMNS, parseFilingRows, type Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
 import { nav } from '@/src/utils/typedRouter';
+import { logger } from '@/src/utils/logger';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
@@ -64,11 +65,15 @@ export default function SeriesScreen() {
    */
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  // Not read, which is not "nothing left": that page says the parts were withdrawn.
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
     (async () => {
+      setFailed(false);
       try {
         const { data, error, count } = await supabase
           .from('dispatch_posts')
@@ -96,18 +101,15 @@ export default function SeriesScreen() {
         // `count` is null when the server does not send one. Falling back to the
         // rows in hand is the only honest default: it claims nothing extra.
         setTotal(count ?? got.length);
-      } catch {
-        // Falls through to the empty page below, which is honest about a series
-        // it cannot show. There is nothing to retry INTO — no cache, no partial
-        // list — so a toast here would only interrupt the reader on their way
-        // back to the essay they came from.
-        if (!cancelled) setParts([]);
+      } catch (e) {
+        logger.warn(`[series] ${e instanceof Error ? e.message : String(e)}`);
+        if (!cancelled) { setParts([]); setFailed(true); }
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, attempt]);
 
   if (loading) {
     return (
@@ -118,12 +120,30 @@ export default function SeriesScreen() {
     );
   }
 
+  // Not reached: the reader's page for it, and a way to ask again.
+  if (failed) {
+    return (
+      <View style={p.screen}>
+        <RoomLight room="dispatch" />
+        <PaperBack label="SERIES" onBack={() => nav.back()} />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <PaperEmpty
+            title="This series could not be reached."
+            body="Check the connection, and try again."
+            action="TRY AGAIN"
+            onAction={() => { setLoading(true); setAttempt((n) => n + 1); }}
+          />
+        </View>
+      </View>
+    );
+  }
+
   /**
    * A series with nothing left in it.
    *
-   * Reachable from an essay whose parts have since been withdrawn, from a stale
-   * link, or from a read that failed. It gets a real page rather than a header
-   * over blank space, which reads as a screen that did not finish loading.
+   * Reachable from an essay whose parts have since been withdrawn, or from a
+   * stale link. It gets a real page rather than a header over blank space,
+   * which reads as a screen that did not finish loading.
    */
   if (parts.length === 0) {
     return (

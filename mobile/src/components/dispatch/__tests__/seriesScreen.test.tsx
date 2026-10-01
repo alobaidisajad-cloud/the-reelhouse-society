@@ -274,12 +274,24 @@ describe('the series page', () => {
     expect(mockAsked.eq.series_id).toBeUndefined();
   });
 
-  it('says the same when the read itself fails', async () => {
+  it('says it could not be reached when the read fails, never that the parts are gone', async () => {
+    // This page said "Nothing is left of this series. Its parts have been
+    // withdrawn" of a series it simply could not read.
     mockReadError = { message: 'network' };
-    const { getByText } = await mount();
-    // Not a blank page, and not a crash. There is no cache to fall back to and
-    // nothing partial to show, so the honest page is the empty one.
-    expect(getByText('Nothing is left of this series.')).toBeTruthy();
+    const { getByText, queryByText } = await mount();
+    expect(getByText('This series could not be reached.')).toBeTruthy();
+    expect(queryByText('Nothing is left of this series.')).toBeNull();
+  });
+
+  it('and asks again on TRY AGAIN, drawing the series it then reads', async () => {
+    mockReadError = { message: 'network' };
+    const r = await mount();
+    mockReadError = null;
+    mockRows = [part({ title: 'The Empty Room' })];
+    await act(async () => { fireEvent.press(r.getByText('TRY AGAIN')); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    expect(r.getByText('The Empty Room')).toBeTruthy();
+    expect(r.queryByText('This series could not be reached.')).toBeNull();
   });
 });
 

@@ -477,7 +477,7 @@ jest.mock('react-native-reanimated', () => {
     scrollTo: jest.fn(),
     useReducedMotion: jest.fn(() => false),
     useAnimatedKeyboard: jest.fn(() => ({ height: { value: 0 }, state: { value: 0 } })),
-    // Reanimated's own values (commonTypes.ts).
+    // Reanimated's own enum values.
     KeyboardState: { UNKNOWN: 0, OPENING: 1, OPEN: 2, CLOSING: 3, CLOSED: 4 },
     useAnimatedProps: jest.fn((fn: any) => fn()),
     useAnimatedReaction: jest.fn(),

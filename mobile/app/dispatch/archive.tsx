@@ -34,6 +34,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
 import { ClearanceGate } from '@/src/components/clearance/Clearance';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { TryAgainLine } from '@/src/components/TryAgain';
 
 export default function ArchiveScreen() {
   const insets = useSafeAreaInsets();
@@ -42,9 +43,12 @@ export default function ArchiveScreen() {
   const gathering = useClearance('dispatch-archive', '/dispatch/archive');
 
   const {
-    query, setQuery, matches, searching,
-    film, filings, certifiedAtFetch, count, span, loading, choose, clear, loadMore,
+    query, setQuery, matches, searching, settled, searchFailed,
+    film, filings, certifiedAtFetch, count, span, loading, filmFailed, choose, clear, loadMore, retry,
   } = useDispatchArchive();
+  const typed = query.trim().length >= 2;
+  // Typed, and not yet answered (the search waits 300ms for the last key).
+  const waiting = !film && typed && !settled && !searchFailed;
 
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const savedIds = useDispatch((s) => s.savedIds);
@@ -127,7 +131,7 @@ export default function ArchiveScreen() {
             />
           ) : null}
 
-          {loading || searching ? (
+          {loading || searching || waiting ? (
             <View style={{ paddingVertical: 24, alignItems: 'center' }}>
               <ActivityIndicator size="small" color={colors.sepia} />
             </View>
@@ -136,19 +140,27 @@ export default function ArchiveScreen() {
           {/* The three states of an empty page, and they are three different
               facts. A single "nothing found" would tell a member who has typed
               nothing that the house is empty. */}
-          {!film && !searching && query.trim().length < 2 ? (
+          {!film && !typed ? (
             <Text style={p.emptyBody} {...scaledTextProps}>
               Name a film. The archive holds every filing the house has made
               about it, however long ago.
             </Text>
           ) : null}
-          {!film && !searching && query.trim().length >= 2 && matches.length === 0 ? (
+          {(film ? filmFailed && !loading : typed && searchFailed && !searching) ? (
+            <View style={{ gap: 10, alignItems: 'flex-start' }}>
+              <Text style={p.emptyBody} {...scaledTextProps}>
+                {film ? 'This film’s filings could not be reached.' : 'The archive could not be reached.'}
+              </Text>
+              <TryAgainLine onPress={retry} accessibilityLabel={film ? 'Read this film again' : 'Search the archive again'} />
+            </View>
+          ) : null}
+          {!film && typed && settled && !searching && !searchFailed && matches.length === 0 ? (
             <Text style={p.emptyBody} {...scaledTextProps}>
               Nobody has filed about that film. The archive holds what the house
               has written, not what it could have.
             </Text>
           ) : null}
-          {film && !loading && filings.length === 0 ? (
+          {film && !loading && !filmFailed && filings.length === 0 ? (
             <Text style={p.emptyBody} {...scaledTextProps}>
               Nothing of this film is left standing.
             </Text>

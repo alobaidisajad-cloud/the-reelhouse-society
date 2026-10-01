@@ -25,7 +25,7 @@
  * to whoever is writing it, and offering to join somebody else's would be
  * offering to put words in their sequence.
  */
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import * as Crypto from 'expo-crypto';
@@ -33,6 +33,7 @@ import * as Crypto from 'expo-crypto';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import PressableScale from '@/src/components/PressableScale';
+import { TryAgainLine } from '@/src/components/TryAgain';
 import { colors, fonts } from '@/src/theme/theme';
 import { decorativeTextProps, scaledTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
@@ -143,24 +144,33 @@ export async function freshPartFor(
   }
 }
 
-export function SeriesPicker({ visible, chosen, onClose, onSet, onClear, bottomInset }: {
+interface PickerProps {
   visible: boolean;
   chosen: SeriesChoice | null;
   onClose: () => void;
   onSet: (choice: SeriesChoice) => void;
   onClear: () => void;
   bottomInset: number;
-}) {
+}
+
+/** Mounted only while open, so every opening starts from `chosen` and nothing half-typed. */
+export function SeriesPicker({ visible, ...sheet }: PickerProps) {
+  return visible ? <SeriesSheet {...sheet} /> : null;
+}
+
+function SeriesSheet({ chosen, onClose, onSet, onClear, bottomInset }: Omit<PickerProps, 'visible'>) {
   const userId = useAuthStore((s) => s.user?.id);
   const [begun, setBegun] = useState<Begun[]>([]);
+  // The list could not be read: said, so it is not taken for "none begun" and
+  // a member does not begin a second series under a name they already use.
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [pick, setPick] = useState<SeriesChoice | null>(chosen);
   const [naming, setNaming] = useState(false);
   const [newTitle, setNewTitle] = useState('');
 
-  useEffect(() => { if (visible) setPick(chosen); }, [visible, chosen]);
-
   useEffect(() => {
-    if (!visible || !userId) return;
+    if (!userId) return;
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
@@ -168,13 +178,15 @@ export function SeriesPicker({ visible, chosen, onClose, onSet, onClear, bottomI
         .select('series_id, series_title, part_number')
         .eq('user_id', userId)
         .eq('kind', 'dossier')
-        .not('series_id', 'is', null);
-      // A series list that fails to load leaves BEGINNING one available rather
-      // than blocking the sheet — the member can always start a new sequence.
-      if (!cancelled && !error && data) setBegun(groupSeries(data as never));
+        .not('series_id', 'is', null)
+        // Newest first, so the series being written now heads the list.
+        .order('created_at', { ascending: false });
+      if (cancelled) return;
+      setFailed(!!error || !data);
+      if (!error && data) setBegun(groupSeries(data as never));
     })();
     return () => { cancelled = true; };
-  }, [visible, userId]);
+  }, [userId, attempt]);
 
   const choose = useCallback((s: Begun) => {
     setNaming(false);
@@ -199,9 +211,6 @@ export function SeriesPicker({ visible, chosen, onClose, onSet, onClear, bottomI
   }, [naming, newTitle, pick, onSet]);
 
   const ready = naming ? newTitle.trim().length > 0 : !!pick;
-  const shown = useMemo(() => begun.slice(0, 12), [begun]);
-
-  if (!visible) return null;
 
   return (
     <View style={[StyleSheet.absoluteFillObject, { justifyContent: 'flex-end' }]}>
@@ -231,9 +240,16 @@ export function SeriesPicker({ visible, chosen, onClose, onSet, onClear, bottomI
         </Text>
 
         <ScrollView style={x.list} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          {shown.map((s) => (
+          {begun.map((s) => (
             <Row key={s.id} s={s} chosen={!naming && pick?.id === s.id} onPick={() => choose(s)} />
           ))}
+
+          {failed ? (
+            <View style={x.unread}>
+              <Text style={x.unreadText} {...scaledTextProps}>Your series could not be read.</Text>
+              <TryAgainLine onPress={() => setAttempt((n) => n + 1)} accessibilityLabel="Read your series again" />
+            </View>
+          ) : null}
 
           <PressableScale
             style={x.row} onPress={begin} haptic="selection"
@@ -318,6 +334,11 @@ const x = StyleSheet.create({
   rowSub: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.7, color: colors.fog, marginTop: 3, includeFontPadding: false },
   next: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia, includeFontPadding: false },
   begin: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia, includeFontPadding: false },
+  unread: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 11,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.16)',
+  },
+  unreadText: { flex: 1, minWidth: 0, fontFamily: fonts.body, fontSize: 11.5, lineHeight: 18, color: colors.fog },
 
   field: {
     fontFamily: fonts.display, fontSize: 15, color: colors.parchmentBright,

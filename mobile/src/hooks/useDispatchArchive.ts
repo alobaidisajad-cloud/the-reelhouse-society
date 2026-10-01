@@ -52,6 +52,10 @@ export interface DispatchArchive {
   setQuery: (q: string) => void;
   matches: ArchiveMatch[];
   searching: boolean;
+  /** The matches answer the words typed now; until then, "nobody filed" is not yet true. */
+  settled: boolean;
+  /** The search could not be run: not the same as no film found. */
+  searchFailed: boolean;
   /** The chosen film, its filings, and the two numbers on its plate. */
   film: PaperFilm | null;
   filings: Filing[];
@@ -64,10 +68,14 @@ export interface DispatchArchive {
   count: number;
   span: string;
   loading: boolean;
+  /** The chosen film's first page could not be read: not the same as nothing left. */
+  filmFailed: boolean;
   more: boolean;
   choose: (m: ArchiveMatch) => void;
   clear: () => void;
   loadMore: () => void;
+  /** Ask again for whichever could not be read. */
+  retry: () => void;
 }
 
 /** `2019–2026`, or a single year when the house said it all in one. */
@@ -97,6 +105,8 @@ export function useDispatchArchive(): DispatchArchive {
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState<ArchiveMatch[]>([]);
   const [searching, setSearching] = useState(false);
+  const [answered, setAnswered] = useState<string | null>(null);
+  const [searchFailed, setSearchFailed] = useState(false);
 
   const [film, setFilm] = useState<PaperFilm | null>(null);
   const [filings, setFilings] = useState<Filing[]>([]);
@@ -104,10 +114,14 @@ export function useDispatchArchive(): DispatchArchive {
   const [count, setCount] = useState(0);
   const [span, setSpan] = useState('');
   const [loading, setLoading] = useState(false);
+  const [filmFailed, setFilmFailed] = useState(false);
   const [more, setMore] = useState(false);
 
   const subjectId = useRef<number | null>(null);
-  const seq = useRef(0);
+  // One generation for the search, one for the film: on one, a search firing
+  // after a film was chosen threw that film's reply away and left it loading.
+  const searchSeq = useRef(0);
+  const filmSeq = useRef(0);
   /**
    * How many rows the SERVER has handed over for this film, which is not the
    * same as how many are on screen.
@@ -124,13 +138,14 @@ export function useDispatchArchive(): DispatchArchive {
   // ── THE SEARCH ────────────────────────────────────────────────────────────
   const search = useCallback(async (q: string) => {
     const term = q.trim();
-    if (term.length < 2) { setMatches([]); setSearching(false); return; }
+    if (term.length < 2) { searchSeq.current += 1; setMatches([]); setSearching(false); setSearchFailed(false); return; }
     // Null when the term is nothing but the characters the parser owns — a
     // search that would match everything is refused rather than run.
     const pattern = buildSearchPattern(term);
-    if (!pattern) { setMatches([]); setSearching(false); return; }
-    const mine = ++seq.current;
+    if (!pattern) { searchSeq.current += 1; setMatches([]); setAnswered(term); setSearching(false); setSearchFailed(false); return; }
+    const mine = ++searchSeq.current;
     setSearching(true);
+    setSearchFailed(false);
     try {
       const { data, error } = await supabase
         .from('dispatch_posts')
@@ -144,8 +159,8 @@ export function useDispatchArchive(): DispatchArchive {
         .ilike('subject_title', `%${pattern}%`)
         .order('created_at', { ascending: false })
         .limit(SEARCH_ROWS);
-      if (mine !== seq.current) return;
-      if (error) { logger.warn(`[archive] search: ${error.message}`); setMatches([]); return; }
+      if (mine !== searchSeq.current) return;
+      if (error) { logger.warn(`[archive] search: ${error.message}`); setMatches([]); setSearchFailed(true); return; }
 
       /**
        * Grouped by subject_id, and the NEWEST row wins for the poster and the
@@ -171,10 +186,11 @@ export function useDispatchArchive(): DispatchArchive {
         });
       }
       setMatches([...byFilm.values()].sort((a, b) => b.filings - a.filings));
+      setAnswered(term);
     } catch (e) {
-      if (mine === seq.current) logger.warn(`[archive] ${String(e)}`);
+      if (mine === searchSeq.current) { logger.warn(`[archive] ${String(e)}`); setMatches([]); setSearchFailed(true); }
     } finally {
-      if (mine === seq.current) setSearching(false);
+      if (mine === searchSeq.current) setSearching(false);
     }
   }, []);
 
@@ -189,8 +205,9 @@ export function useDispatchArchive(): DispatchArchive {
   const page = useCallback(async (from: number) => {
     const id = subjectId.current;
     if (id == null) return;
-    const mine = seq.current;
+    const mine = filmSeq.current;
     setLoading(true);
+    if (from === 0) setFilmFailed(false);
     try {
       const rows = await supabase
         .from('dispatch_posts')
@@ -207,8 +224,9 @@ export function useDispatchArchive(): DispatchArchive {
         // read in the app carries this second key.
         .order('id', { ascending: false })
         .range(from, from + ARCHIVE_PAGE - 1);
-      if (mine !== seq.current) return;
-      if (rows.error) { logger.warn(`[archive] filings: ${rows.error.message}`); return; }
+      if (mine !== filmSeq.current) return;
+      // A later page: the rows drawn stay, and scrolling on asks again.
+      if (rows.error) { logger.warn(`[archive] filings: ${rows.error.message}`); if (from === 0) setFilmFailed(true); return; }
 
       const raw = rows.data?.length ?? 0;
       const { filings: got, dropped } = parseFilingRows(rows.data ?? []);
@@ -231,7 +249,7 @@ export function useDispatchArchive(): DispatchArchive {
           .is('ended_at', null)
           .order('created_at', { ascending: true })
           .limit(1);
-        if (mine !== seq.current) return;
+        if (mine !== filmSeq.current) return;
         // Unread, the span is not printed: standing in the newest for the oldest
         // drew a span that began the day the latest filing did.
         const oldest = firstError ? undefined : ((first?.[0]?.created_at as string) ?? got[0]?.createdAt);
@@ -242,7 +260,7 @@ export function useDispatchArchive(): DispatchArchive {
       // The member's own marks, for the rows this page brought — the same call
       // a member's room makes, for the same reason.
       await useDispatch.getState().loadMarks(got);
-      if (mine !== seq.current) return;
+      if (mine !== filmSeq.current) return;
       const live = useDispatch.getState().certifiedIds;
       setCertifiedAtFetch((prev) => {
         const next = from === 0 ? new Set<string>() : new Set(prev);
@@ -250,14 +268,14 @@ export function useDispatchArchive(): DispatchArchive {
         return next;
       });
     } catch (e) {
-      if (mine === seq.current) logger.warn(`[archive] ${String(e)}`);
+      if (mine === filmSeq.current) { logger.warn(`[archive] ${String(e)}`); if (from === 0) setFilmFailed(true); }
     } finally {
-      if (mine === seq.current) setLoading(false);
+      if (mine === filmSeq.current) setLoading(false);
     }
   }, []);
 
   const choose = useCallback((m: ArchiveMatch) => {
-    seq.current += 1;
+    filmSeq.current += 1;
     subjectId.current = m.subjectId;
     // Belt and braces: `page(0)` below sets this from the raw row count anyway.
     // It matters only when that fetch never completes — a stale generation, or
@@ -265,15 +283,16 @@ export function useDispatchArchive(): DispatchArchive {
     // film's offset and skip this one's opening filings.
     fetched.current = 0;
     setFilm(m.film);
-    setFilings([]); setCertifiedAtFetch(new Set()); setCount(0); setSpan(''); setMore(false);
+    setFilings([]); setCertifiedAtFetch(new Set()); setCount(0); setSpan(''); setMore(false); setFilmFailed(false);
     void page(0);
   }, [page]);
 
   const clear = useCallback(() => {
-    seq.current += 1;
+    filmSeq.current += 1;
     subjectId.current = null;
     fetched.current = 0;
     setFilm(null); setFilings([]); setCertifiedAtFetch(new Set()); setCount(0); setSpan(''); setMore(false);
+    setFilmFailed(false); setLoading(false);
   }, []);
 
   const loadMore = useCallback(() => {
@@ -284,9 +303,14 @@ export function useDispatchArchive(): DispatchArchive {
     void page(fetched.current);
   }, [loading, more, page]);
 
+  const retry = useCallback(() => {
+    if (subjectId.current != null) void page(0); else void search(query);
+  }, [page, search, query]);
+
   return {
     query, setQuery,
-    matches, searching, film, filings, certifiedAtFetch, count, span, loading, more,
-    choose, clear, loadMore,
+    matches, searching, settled: answered === query.trim(), searchFailed,
+    film, filings, certifiedAtFetch, count, span, loading, filmFailed, more,
+    choose, clear, loadMore, retry,
   };
 }
