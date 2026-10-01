@@ -98,11 +98,11 @@ without one). "Read" is the day its comments were last read against its code.
 | app/auth-callback.tsx | 2026-10-01 | a link with no code verifies nothing; comments short |
 | app/dispatch/[id].tsx | 2026-09-29 | 26 fixed; 'SAVE THE CARD offered for a dossier' was false (the sheet never gets card); history of 3 fixes cut |
 | app/dispatch/archive.tsx | 2026-09-29 | history removed; margin label now said as a day (was '28 certified') |
-| app/dispatch/compose.tsx | 2026-09-28 | Three claims were false: 'no cover, nowhere for a backdrop to live' (subject_backdrop is saved), 'counted once a second' (400ms) with a useDeferredValue the file never used, and names of draft functions that no longer exist. Two notes described code elsewhere and were moved to it. Dead style previewTitle removed. History removed. |
+| app/dispatch/compose.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | app/dispatch/room/[username].tsx | 2026-09-29 | 6 fixed; history of the byline fix cut |
-| app/dispatch/rules.tsx | — |  |
-| app/dispatch/series/[id].tsx | — |  |
-| app/dossier/[id].tsx | — |  |
+| app/dispatch/rules.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| app/dispatch/series/[id].tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| app/dossier/[id].tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | app/edit-profile.tsx | — |  |
 | app/film-reviews/__tests__/theArchiveSaysWhenItCouldNotRead.test.tsx | — |  |
 | app/film-reviews/[id].tsx | — |  |
@@ -304,20 +304,20 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | — |  |
 | src/components/dispatch/ComposeDesks.tsx | 2026-09-29 | 16 fixed; 'FILE IT unlit until the film is named' was false (it waits for the SOURCE) |
 | src/components/dispatch/dayLabel.ts | 2026-09-29 | 24-hour reason moved here from paperMetrics; 'margin never scales' was false (displayTextProps 1.2) |
-| src/components/dispatch/EssayBody.tsx | — |  |
+| src/components/dispatch/EssayBody.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
-| src/components/dispatch/FilingRow.tsx | — |  |
-| src/components/dispatch/paper/PaperBallot.tsx | — |  |
-| src/components/dispatch/paper/PaperComposer.tsx | — |  |
-| src/components/dispatch/paper/PaperCritiques.tsx | — |  |
+| src/components/dispatch/FilingRow.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/paper/PaperBallot.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/paper/PaperComposer.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperDesk.tsx | 2026-09-29 | CLOSES made a working control; handler-less controls disabled; 7 dead styles; histories to rules |
-| src/components/dispatch/paper/PaperDeskDoc.tsx | — |  |
-| src/components/dispatch/paper/PaperEssay.tsx | — |  |
-| src/components/dispatch/paper/PaperFill.tsx | — |  |
-| src/components/dispatch/paper/PaperFrame.tsx | — |  |
-| src/components/dispatch/paper/PaperKeyWell.tsx | — |  |
+| src/components/dispatch/paper/PaperDeskDoc.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/paper/PaperEssay.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/paper/PaperFill.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/paper/PaperFrame.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/paper/PaperKeyWell.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/paperMetrics.ts | 2026-09-29 | 33 fixed: stale names (NewsService, volumeNumber, chromeHeight, plate styles, noRawKindOnThePage) gone; measure example 375->318 corrected; formatCount branch comment was wrong |
-| src/components/dispatch/paper/PaperMore.tsx | 2026-09-28 | 61 findings fixed; 3 style notes contradicted their own values (loungeBy '8.5 and 1.2', the 14% story band, shareTitle 'from titleType'); 15 dead styles removed (card*, event*, unread, loungeByNo); the share-card test read this file's comment, now renders the card |
+| src/components/dispatch/paper/PaperMore.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/paperMotion.ts | — |  |
 | src/components/dispatch/paper/paperPerf.ts | — |  |
 | src/components/dispatch/paper/PaperPost.tsx | 2026-09-29 | 17 fixed; 3 FALSE: 'the counts leave' (they sit by the icons), 'there is no kind label' (every kind leads with one), 'rule material set by tier' misread; pending/dimmed never wired (logged) |
@@ -325,8 +325,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/paperStyles.ts | 2026-09-28 | Rewritten to the rule. Seven comments contradicted their values (16 vs 16.5, 9/1.1 vs 10/0.9, tracking 1.2 vs 0.9, a serial number where a monogram is drawn, a speck poster that is drawn); two blocks disagreed on what the rule carries; history removed. |
 | src/components/dispatch/paper/paperText.ts | — |  |
 | src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
-| src/components/dispatch/roomLink.ts | — |  |
-| src/components/dispatch/SeriesPicker.tsx | — |  |
+| src/components/dispatch/roomLink.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/SeriesPicker.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/EmptyStates.tsx | 2026-10-01 | the offline state arrives through Arrive |
 | src/components/ErrorBoundary.tsx | — |  |
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-01 | true as written |
@@ -471,8 +471,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/moderation/__tests__/ContentActionSheet.mute.test.tsx | — |  |
 | src/components/moderation/__tests__/ReportSheet.test.tsx | — |  |
 | src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts | — |  |
-| src/components/moderation/ContentActionSheet.tsx | — |  |
-| src/components/moderation/ReportSheet.tsx | — |  |
+| src/components/moderation/ContentActionSheet.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/moderation/ReportSheet.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/NitrateCalendar.tsx | — |  |
 | src/components/OfflineBanner.tsx | — |  |
 | src/components/person/canon.ts | — |  |
@@ -652,12 +652,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useAuthFlow.ts | 2026-10-01 | one sheet for reset or confirm; comments short |
 | src/hooks/useAuthThrottle.ts | 2026-10-01 | a lifted lock keeps the rule |
 | src/hooks/useBanCheck.ts | — |  |
-| src/hooks/useCatalogueSearch.ts | — |  |
+| src/hooks/useCatalogueSearch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useKeyboardLift.ts | 2026-10-01 | written: a sheet over a screen rises with the keyboard |
 | src/hooks/useClearance.ts | 2026-10-01 | one answer for every gate |
 | src/hooks/useDeviceThrottling.ts | — |  |
-| src/hooks/useDispatchArchive.ts | — |  |
-| src/hooks/useDoor.ts | — |  |
+| src/hooks/useDispatchArchive.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/hooks/useDoor.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useEditProfile.ts | — |  |
 | src/hooks/useFeeds.ts | 2026-10-01 | one cursor rule; the fallback note gone with the fallback |
 | src/hooks/useFilmAnimations.ts | — |  |
@@ -665,7 +665,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useFollowRequests.ts | — |  |
 | src/hooks/useInitiation.ts | — |  |
 | src/hooks/useLogFlow.ts | 2026-09-29 | 22 fixed; line refs (:351-352, logOperations.ts:574) and a 30-line history of the erase bug cut to the rule |
-| src/hooks/useMemberRoom.ts | — |  |
+| src/hooks/useMemberRoom.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useMembershipPricing.ts | — |  |
 | src/hooks/useModalKeyboardPadding.ts | — |  |
 | src/hooks/useNotableMembers.ts | 2026-10-01 | true as written |
@@ -807,7 +807,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/blockStore.ts | — |  |
 | src/stores/createSelectors.ts | — |  |
 | src/stores/discover.ts | — |  |
-| src/stores/dispatch.ts | 2026-09-28 | amend's doc said nothing calls it and edited_at is never set: both false (the reader's AMEND opens it; it sets edited_at). A doc sat on 'section' for a field that no longer exists. The cover was neither capped nor shown on a just-filed essay: both fixed and tested. History removed, reasons kept. |
+| src/stores/dispatch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/stores/dispatchTypes.ts | — |  |
 | src/stores/domain/__tests__/aShelfIsNeverHeldHostage.test.ts | — |  |
 | src/stores/domain/__tests__/cursorPagination.test.ts | — |  |
@@ -829,7 +829,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
 | src/stores/notificationStore.ts | 2026-09-29 | 28 fixed; ticket tags (#51,#73,NOTIF-1,FLAW-08,LIB-5,WS-9,L234) and bug histories cut; checked the reset's MMKV delete hits the same store (it does) |
 | src/stores/offlineQueueStore.ts | — |  |
-| src/stores/reportStore.ts | — |  |
+| src/stores/reportStore.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/stores/resetAllStores.ts | — |  |
 | src/stores/settings.ts | — |  |
 | src/stores/socialStore.ts | — |  |
@@ -945,10 +945,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/withAbortSignal.test.ts | — |  |
 | src/utils/__tests__/withRetry.test.ts | — |  |
 | src/utils/__tests__/withTimeout.test.ts | — |  |
-| src/utils/AppError.ts | — |  |
+| src/utils/AppError.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/critiquePayload.ts | — |  |
 | src/utils/csv.ts | — |  |
-| src/utils/draftSync.ts | — |  |
+| src/utils/draftSync.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/e2eTrace.ts | 2026-09-29 | new |
 | src/utils/endorsementGroupKey.ts | — |  |
 | src/utils/enter.ts | — |  |
@@ -966,7 +966,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/linking.ts | — |  |
 | src/utils/logger.ts | — |  |
 | src/utils/mappers.ts | — |  |
-| src/utils/markdownSafety.ts | — |  |
+| src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/memberDrafts.ts | — |  |
 | src/utils/memoryManager.ts | — |  |
 | src/utils/mutationExecutor.ts | 2026-09-28 | The header said the queue pauses 100ms between mutations: it pauses 0ms. The subject_backdrop cap added (offline gate). Audit tags and history removed; each replay's reason kept, shortened. |
@@ -981,7 +981,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/requestReview.ts | — |  |
 | src/utils/sanitize.ts | — |  |
 | src/utils/sanitizeInput.ts | 2026-09-28 | subjectBackdrop cap added. A literal escape sequence in a comment, two docs stacked on the wrong declarations, and a stale plan ('retires in step 3') removed; the reasons for each fence kept. |
-| src/utils/searchPattern.ts | — |  |
+| src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/softBreak.ts | — |  |
 | src/utils/storyExporter.ts | — |  |
 | src/utils/TactileEngine.ts | — |  |
@@ -998,7 +998,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/validateWithTelemetry.ts | 2026-10-01 | docs cut to what the types do not say |
 | src/utils/withAbortSignal.ts | — |  |
 | src/utils/withRetry.ts | — |  |
-| src/utils/withTimeout.ts | — |  |
+| src/utils/withTimeout.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | supabase/functions/fetch-rss/index.ts | 2026-09-29 | the header said it serves the Dispatch tab; no current source calls it (kept for installed builds, per backend-contract); audit tags and the relay's history dropped |
 | supabase/functions/notify-push/index.ts | — |  |
 | supabase/functions/revenuecat-webhook/decide.ts | 2026-09-28 | 6 findings; the rules kept, shortened |
