@@ -9,7 +9,7 @@ import { tmdb } from '../../lib/tmdb';
 import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
 import PressableScale from '../PressableScale';
 import type { ProfileLog } from '../../types';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import ArchiveLock from './ArchiveLock';
 import { useAuthStore } from '@/src/stores/auth';
@@ -19,13 +19,9 @@ import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEm
 import { EDGE_LIT } from '@/src/theme/light';
 
 /**
- * THE ARCHIVE — every film, by the month it was seen.
- *
- * The Archive and the Ledger were twins: the same four-wide grid of the same
- * posters, differing only in which subset of logs they were handed. A member
- * had no way to tell which room they were standing in. The Archive keeps the
- * grid — it is the room for SHEER VOLUME, the wall of everything — and takes
- * the month rails as its structure. The Ledger stops being a grid entirely.
+ * THE ARCHIVE — every film, by the month it was seen: the room for SHEER
+ * VOLUME, the wall of everything, a four-wide grid under month rails. (The
+ * Ledger, the room of words, is not a grid, so the two are never mistaken.)
  */
 
 interface ProfileArchiveTabProps {
@@ -142,7 +138,6 @@ export default function ProfileArchiveTab({
   onRefresh,
   bottomInset
 }: ProfileArchiveTabProps) {
-  const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
   const grid = useMemo(() => posterColumns(windowWidth, 4), [windowWidth]);
 
@@ -205,12 +200,9 @@ export default function ProfileArchiveTab({
   }, []);
 
   /**
-   * The TRUE size of each month, and how heavy it was.
-   *
-   * `items.length` counted whatever had loaded — the app pages fifty rows at a
-   * time, so March said 7 when it held 40, and the number climbed as you
-   * scrolled. The server sends the real shape of the whole history on every
-   * profile load; it was being thrown away.
+   * The TRUE size of each month, and how heavy it was — from the server's
+   * shape of the whole history, never from the rows loaded (fifty a page:
+   * March would say 7 when it holds 40, and climb as you scrolled).
    *
    * Under a status filter the server's figures cannot speak for what is on
    * screen (it counted every film in March, not every ABANDONED film in March),
@@ -260,14 +252,10 @@ export default function ProfileArchiveTab({
     /**
      * FILTERED TO ABANDONED, THE ROOM CHANGES SHAPE.
      *
-     * A walk-out reason had nowhere to live in this app. The Ledger holds only
-     * films that were rated or written about, and an abandoned film has
-     * neither — so `abandoned_reason`, the most characterful sentence a member
-     * ever writes, was fetched on every log and displayed in no room at all.
-     *
-     * A poster grid has no room for a sentence. But asking for "abandoned" is
-     * asking a QUESTION, and the answer to it is the reasons, not the artwork.
-     * So the room answers in rows.
+     * This is the one room a walk-out reason lives in (the Ledger holds only
+     * films rated or written about, and an abandoned film is neither). A poster
+     * grid has no room for a sentence, and asking for "abandoned" is asking a
+     * QUESTION whose answer is the reasons, not the artwork: so, rows.
      */
     if (abandonedView) {
       const rows: ArchiveItem[] = [];
@@ -336,7 +324,7 @@ export default function ProfileArchiveTab({
       return (
         <WalkoutRow
           log={item.log}
-          onPress={() => { if (item.log.id) (router.push as any)(`/log/${item.log.id}` as never); }}
+          onPress={() => { if (item.log.id) nav.push(`/log/${item.log.id}`); }}
         />
       );
     }
@@ -349,7 +337,7 @@ export default function ProfileArchiveTab({
         ))}
       </View>
     );
-  }, [renderPosterCard, grid, router]);
+  }, [renderPosterCard, grid]);
 
   const ListHeaderComponent = useMemo(() => {
     if (logs.length === 0) return null;
@@ -427,13 +415,13 @@ export default function ProfileArchiveTab({
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={r.ownIcon} />
           <Text {...scaledTextProps} style={r.ownTitle}>The Archive Awaits</Text>
-          <PressableScale style={r.ownAct} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Record a screening">
+          <PressableScale style={r.ownAct} onPress={() => nav.push('/search-modal')} haptic accessibilityRole="button" accessibilityLabel="Record a screening">
             <Text {...scaledTextProps} style={r.ownActText}>RECORD A SCREENING</Text>
           </PressableScale>
 
-          {/* The import signpost — the feature already lives in Settings; this
-              points a switcher to it at the moment they face an empty shelf.
-              Own-profile empty-archive only, so it shares a screen with nothing. */}
+          {/* The import, signposted where a member arriving from another
+              service faces an empty archive; the door lands on Settings' own
+              import panel. */}
           <View style={s.importDividerRow}>
             <View style={s.importDividerLine} />
             <Text {...decorativeTextProps} style={s.importDividerMark}>✦</Text>
@@ -442,7 +430,7 @@ export default function ProfileArchiveTab({
           <Text {...scaledTextProps} style={s.importLine}>Your viewing history can travel with you.</Text>
           <PressableScale
             style={s.importBtn}
-            onPress={() => (router.push as any)('/settings' as never)}
+            onPress={() => nav.push('/settings', { section: 'import' })}
             haptic="light"
             accessibilityRole="button"
             accessibilityLabel="Import your archive from another service"
@@ -460,15 +448,10 @@ export default function ProfileArchiveTab({
         body="This member hasn’t filed a screening yet."
       />
     );
-  }, [logs.length, archiveFiltered.length, isSelf, ready, unreachable, archiveSieve, setArchiveSieve, searching, archiveSearch, setArchiveSearch, pulseStyle, router]);
+  }, [logs.length, archiveFiltered.length, isSelf, ready, unreachable, archiveSieve, setArchiveSieve, searching, archiveSearch, setArchiveSearch, pulseStyle]);
 
-  /**
-   * Derived, not guessed.
-   *
-   * The old 200 was a third too small at every width: a row is a poster at 3:2
-   * plus its title block plus the gap beneath it. Under-estimating makes
-   * FlashList render and re-measure more rows than it needs on every scroll.
-   */
+  // A row is a poster at 3:2, its title block and the gap beneath; too small
+  // a guess makes FlashList render and re-measure more rows than it needs.
   const estimatedItemSize = abandonedView ? 88 : Math.round(grid.width * 1.5) + 42;
 
   return (

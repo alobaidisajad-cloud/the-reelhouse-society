@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Alert, Modal, KeyboardAvoidingView } from 'react-native';
+import { View, StyleSheet, Alert, Modal, KeyboardAvoidingView, type LayoutChangeEvent } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
 import { BlurView } from 'expo-blur';
@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePreventRemove, useNavigation } from '@react-navigation/native';
+import { useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
 import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -68,6 +69,15 @@ export function SettingsScreen() {
   const { user, logout } = useAuthStore();
   const { mutateAsync: updateUserMutation, isPending: isUpdatingUser } = useUpdateUser();
   const insets = useSafeAreaInsets();
+  // A door to one section (`/settings?section=import`) lands on it, once.
+  const { section } = useLocalSearchParams<{ section?: string }>();
+  const scrollRef = useRef<React.ComponentRef<typeof Animated.ScrollView>>(null);
+  const landedRef = useRef(false);
+  const landOn = (name: string) => (e: LayoutChangeEvent) => {
+    if (section !== name || landedRef.current) return;
+    landedRef.current = true;
+    scrollRef.current?.scrollTo({ y: Math.max(0, e.nativeEvent.layout.y - 16), animated: true });
+  };
   const navigation = useNavigation();
   const isMountedRef = useRef(true);
 
@@ -514,6 +524,7 @@ export function SettingsScreen() {
         (KeyboardRoom) and the shortened ScrollView scrolls to the field.
       */}
       <Animated.ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
@@ -549,7 +560,7 @@ export function SettingsScreen() {
 
         <ExperienceSection />
 
-        <AnimatedView entering={enterDown(300)}>
+        <AnimatedView entering={enterDown(300)} onLayout={landOn('import')}>
           <SectionCard>
             <SectionHead icon={ArrowDownUp} label="IMPORT & EXPORT" />
             <DataVault />

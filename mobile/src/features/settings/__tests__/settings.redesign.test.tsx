@@ -821,3 +821,38 @@ describe('the archive desk', () => {
     expect(CODE_VAULT).not.toMatch(/setExporting\((?:true|false)\)/);
   });
 });
+
+describe('a door to the import panel', () => {
+  const { useLocalSearchParams } = jest.requireMock('expo-router') as { useLocalSearchParams: jest.Mock };
+  afterEach(() => { useLocalSearchParams.mockImplementation(() => ({})); });
+
+  /** The panel's own card: the one that is told its place. */
+  function panelOf(r: ReturnType<typeof mount>) {
+    let node = r.getByText('[DataVault]').parent;
+    while (node && !node.props.onLayout) node = node.parent;
+    return node!;
+  }
+  // The page is a ScrollView; its mock keeps scrollTo on the prototype.
+  const { ScrollView } = jest.requireActual('react-native') as { ScrollView: { prototype: { scrollTo: jest.Mock } } };
+  const scrollTo = () => ScrollView.prototype.scrollTo;
+  beforeEach(() => { scrollTo().mockClear(); });
+  const placed = { nativeEvent: { layout: { x: 0, y: 1840, width: 390, height: 300 } } };
+
+  it('lands on it, once — the archive’s IMPORT YOUR ARCHIVE opens Settings there, not at the top', async () => {
+    mockUser = { ...BASE };
+    useLocalSearchParams.mockImplementation(() => ({ section: 'import' }));
+    const r = await settle(mount());
+    const panel = panelOf(r);
+    await act(async () => { panel.props.onLayout(placed); });
+    expect(scrollTo()).toHaveBeenCalledWith({ y: 1824, animated: true });
+    await act(async () => { panel.props.onLayout(placed); });
+    expect(scrollTo()).toHaveBeenCalledTimes(1);
+  });
+
+  it('and Settings opened plainly stays at the top', async () => {
+    mockUser = { ...BASE };
+    const r = await settle(mount());
+    await act(async () => { panelOf(r).props.onLayout(placed); });
+    expect(scrollTo()).not.toHaveBeenCalled();
+  });
+});

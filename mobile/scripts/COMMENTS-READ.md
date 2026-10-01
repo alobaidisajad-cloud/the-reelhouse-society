@@ -526,7 +526,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/heroNameSize.ts | — |  |
 | src/components/profile/NitrateCalendarGrid.tsx | — |  |
 | src/components/profile/NoirPassport.tsx | — |  |
-| src/components/profile/ProfileArchiveTab.tsx | — |  |
+| src/components/profile/ProfileArchiveTab.tsx | 2026-10-01 | nav; IMPORT lands on the import panel; comments say what is true now |
 | src/components/profile/ProfileBackdrop.tsx | — |  |
 | src/components/profile/profileComputed.ts | 2026-09-29 | 24 fixed; T3 ticket notes, 'until the migration lands', histories cut |
 | src/components/profile/ProfileHelpers.tsx | — |  |
