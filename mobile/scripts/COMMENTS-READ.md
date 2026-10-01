@@ -515,6 +515,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/roomsRender.test.tsx | — |  |
 | src/components/profile/__tests__/taste.test.tsx | — |  |
 | src/components/profile/__tests__/theCalendarDrawsToday.test.tsx | 2026-10-01 | written: the calendar draws today and counts what it draws |
+| src/components/profile/__tests__/theHonoursCountTheWholeRecord.test.tsx | 2026-10-01 | written: honours and stamps from the whole record |
 | src/components/profile/__tests__/theRestCouldNotBeReached.test.tsx | 2026-10-01 | written: a failed "more" is said in every room |
 | src/components/profile/__tests__/yearMarker.test.tsx | — |  |
 | src/components/profile/__tests__/zz-art.gen.ts | — |  |
@@ -522,7 +523,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/zz-mockup.gen.test.tsx | — |  |
 | src/components/profile/__tests__/zz-render.lib.test.ts | — |  |
 | src/components/profile/__tests__/zz-render.lib.ts | 2026-09-28 | 35 findings; the RN-vs-CSS differences kept as short present-tense rules, the story of each bug left to history |
-| src/components/profile/Achievements.tsx | — |  |
+| src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
 | src/components/profile/ArchiveLock.tsx | — |  |
 | src/components/profile/AvatarCropSheet.tsx | — |  |
 | src/components/profile/CinemaDNACard.tsx | — |  |
@@ -531,7 +532,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/FollowRequestsPanel.tsx | — |  |
 | src/components/profile/heroNameSize.ts | — |  |
 | src/components/profile/NitrateCalendarGrid.tsx | 2026-10-01 | today drawn; counts what it draws, "in the past year"; the app date helper; nav |
-| src/components/profile/NoirPassport.tsx | — |  |
+| src/components/profile/NoirPassport.tsx | 2026-10-01 | stamps from the whole record only; labels broken between words; said while unread or failed |
 | src/components/profile/ProfileArchiveTab.tsx | 2026-10-01 | nav; IMPORT lands on the import panel; comments say what is true now |
 | src/components/profile/ProfileBackdrop.tsx | — |  |
 | src/components/profile/profileComputed.ts | 2026-09-29 | 24 fixed; T3 ticket notes, 'until the migration lands', histories cut |

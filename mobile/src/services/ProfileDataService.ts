@@ -175,10 +175,10 @@ export const ProfileDataService = {
         supabase.rpc('get_profile_counts', { p_user_id: targetUser.id }),
         signal
       );
-      
+
       const result = Array.isArray(data) ? data[0] : data;
       if (!error && result && typeof result.logs_count === 'number') {
-        
+
         const counts = result as any;
         return {
           logs: counts.logs_count ?? 0,
@@ -200,7 +200,7 @@ export const ProfileDataService = {
 
   /** The counts the long way: five HEAD requests, when get_profile_counts fails. */
   async _fetchCountsFallback(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, isSelf: boolean = false, signal?: AbortSignal) {
-    
+
     try {
       let listsQuery = supabase.from('lists').select('id', { count: 'exact', head: true }).eq('user_id', targetUser.id);
       if (!isSelf) {
@@ -232,25 +232,22 @@ export const ProfileDataService = {
   },
 
   /** An Auteur's analytics, computed by the database, not from logs sent here. */
-  async fetchProfileAnalytics(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, signal?: AbortSignal) {
-    
-    if (!isAuteurPlusTier(targetUser)) return null;
-    
-    try {
-      const { data, error } = await withAbortSignal(
-        supabase.rpc('get_public_profile_analytics', { p_user_id: targetUser.id }),
-        signal
-      );
-      
-      if (error) {
-        logger.warn('[ProfileDataService] fetchProfileAnalytics error:', error.message);
-        return null;
-      }
-      return data;
-    } catch (e: any) {
-      logger.warn('[ProfileDataService] fetchProfileAnalytics crash:', e.message);
-      return null;
+  /**
+   * The member's record, counted over the WHOLE history by the server: what the
+   * honours and the passport are earned from. Every member's (the server alone
+   * decides who may read it); a read that fails throws, so a room never draws
+   * a record from the logs that happened to load.
+   */
+  async fetchProfileAnalytics(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal) {
+    const { data, error } = await withAbortSignal(
+      supabase.rpc('get_public_profile_analytics', { p_user_id: targetUser.id }),
+      signal
+    );
+    if (error) {
+      logger.warn('[ProfileDataService] fetchProfileAnalytics error:', error.message);
+      throw error;
     }
+    return data;
   },
 
   /**
@@ -307,7 +304,7 @@ export const ProfileDataService = {
             query = query.or(`watched_date.lt."${safeDate}",and(watched_date.eq."${safeDate}",id.lt.${safeId}),watched_date.is.null`);
           }
         }
-       
+
       } catch (e) {
         // Fallback or ignore invalid cursor
       }
@@ -321,10 +318,10 @@ export const ProfileDataService = {
     const rows = (data ?? []) as LogRow[];
     const hasMore = rows.length === fetchLimit;
     const paginatedRows = hasMore ? rows.slice(0, limit) : rows;
-    
+
     const items = paginatedRows.map(mapLogRow) as ProfileLog[];
     const lastRow = paginatedRows.length > 0 ? paginatedRows[paginatedRows.length - 1] : null;
-    
+
     const nextCursor = hasMore && lastRow ? JSON.stringify({
       lastDate: lastRow.watched_date,
       lastId: lastRow.id,
@@ -373,7 +370,7 @@ export const ProfileDataService = {
     const hasMore = rawRows.length === fetchLimit;
     const paginatedRaw = hasMore ? rawRows.slice(0, limit) : rawRows;
     const validRows = parseRowsSafely(schema, paginatedRaw);
-    
+
     const items = validRows.map(w => ({ id: w.film_id, filmId: w.film_id, title: w.film_title, poster_path: w.poster_path ?? null, year: w.year ?? null }));
     const lastRow = paginatedRaw.length > 0 ? (paginatedRaw[paginatedRaw.length - 1] as any) : null;
     const nextCursor = hasMore && lastRow ? buildCursor(lastRow[axis.column], lastRow.id) : null;
@@ -384,7 +381,7 @@ export const ProfileDataService = {
    * Fetches cursor-paginated vault items for another user's profile.
    */
   async fetchOtherUserVault(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, limit: number = 50, cursor?: string, signal?: AbortSignal, options?: { filter?: string, sort?: ShelfSort, search?: string }): Promise<{ items: ProfileVaultItem[], nextCursor: string | null }> {
-    
+
     if (!isArchivistPlusTier(targetUser)) return { items: [], nextCursor: null };
 
     const fetchLimit = limit + 1;
@@ -425,7 +422,7 @@ export const ProfileDataService = {
     const hasMore = rawRows.length === fetchLimit;
     const paginatedRaw = hasMore ? rawRows.slice(0, limit) : rawRows;
     const validRows = parseRowsSafely(VaultRowSchema, paginatedRaw);
-    
+
     const items = validRows.map(v => ({
       id: String(v.id), film_id: v.film_id, filmId: v.film_id, title: v.film_title,
       poster_path: v.poster_path ?? null, year: v.year ?? null,
@@ -506,7 +503,7 @@ export const ProfileDataService = {
       cursor: { lastDate: string | null; lastId: string | null; wasDateNull?: boolean },
       signal?: AbortSignal
     ) {
-      
+
       if (!isAuteurPlusTier(targetUser)) return [];
 
       let query = withAbortSignal(
@@ -518,7 +515,7 @@ export const ProfileDataService = {
           .limit(batchSize),
         signal
       );
-  
+
       if (cursor.lastId) {
         const safeId = /^\d+$/.test(String(cursor.lastId)) ? cursor.lastId : `"${cursor.lastId}"`;
         if (cursor.wasDateNull) {

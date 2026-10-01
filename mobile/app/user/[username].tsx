@@ -1,4 +1,4 @@
- 
+
 import { isNarrowed, ROOMS, type Room } from '@/src/utils/roomFilters';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,23 +7,23 @@ import { RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } fro
 import { Text } from '@/src/components/text';
 import AnimatedRN, { Easing, Extrapolation, FadeIn, cancelAnimation, interpolate, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import Svg, { Defs, Ellipse, RadialGradient as SvgRadialGradient, Stop } from 'react-native-svg';
- 
+
 import { useFilmStore } from '@/src/stores/films';
- 
+
 import type { ProfileLog, ProfileVaultItem, ProfileWatchlistItem } from '@/src/types';
- 
+
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
- 
+
 import { ReelRating, SectionDivider } from '@/src/components/Decorative';
 import { CinematicInsights } from '@/src/components/profile/CinematicInsights';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors } from '@/src/theme/theme';
- 
+
 import { useProfileController } from '@/src/hooks/useProfileController';
- 
+
 import { Achievements } from '@/src/components/profile/Achievements';
 import { CinemaDNACard } from '@/src/components/profile/CinemaDNACard';
 import NitrateCalendarGrid from '@/src/components/profile/NitrateCalendarGrid';
@@ -41,7 +41,7 @@ import { WatchlistRoulette } from '@/src/components/profile/WatchlistRoulette';
 import { useProfileComputed, tally } from '@/src/components/profile/profileComputed';
 import { s } from '@/src/components/profile/profileStyles';
 import { RoomPlate, RoomSealed, RoomFoot, RoomRetrieving, RoomUnreachable } from '@/src/components/profile/RoomParts';
- 
+
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import PressableScale from '@/src/components/PressableScale';
 import ProfileListsTab from '@/src/components/profile/ProfileListsTab';
@@ -79,7 +79,7 @@ import { heroNameSize } from '@/src/components/profile/heroNameSize';
 import { softBreak } from '@/src/utils/softBreak';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
- 
+
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
 
@@ -204,7 +204,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const readyMark = useScreenReady('member', !loading && !repairingHandle);
   const { archiveSieve, archiveSearch, listsSearch, physicalSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, setArchiveSieve, setArchiveSearch, setListsSearch, setPhysicalSearch, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setWatchlistDecade, setPhysicalFilter, setPhysicalSort, setListsSort } = ctrl;
 
-  
+
   const filmStore = useFilmStore();
 
   // ── Moderation State ──
@@ -822,7 +822,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             {/* ═══ PASSPORT TAB ═══ */}
             {/* Passport is a base feature (see the tiers page) — open to every member. */}
             {activeTab === 'passport' && (
-                <View style={s.tabContentPad}><NoirPassport {...{user: targetUser, logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, analytics: serverAnalytics} as any} /></View>
+                <View style={s.tabContentPad}><NoirPassport analytics={serverAnalytics} failed={roomFailed} onRetry={retryRoom} /></View>
             )}
 
             {/* ═══ PROJECTOR / ANALYTICS TAB ═══ */}
@@ -873,7 +873,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     {/* Society Honors */}
                     <View>
                       <SectionDivider label="SOCIETY HONORS" />
-                      <Achievements {...{logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, analytics: serverAnalytics, totalFilms} as any} />
+                      <Achievements logs={analyticsLogs.length > 0 ? analyticsLogs : displayLogs} analytics={serverAnalytics} totalFilms={totalFilms} failed={roomFailed} onRetry={retryRoom} />
                     </View>
 
                     {/* HIGHEST RATED (`highestRated`) */}
@@ -916,7 +916,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     {/* Passport */}
                     <View>
                       <SectionDivider label="CINEMATIC PASSPORT" />
-                      <NoirPassport {...{user: targetUser, logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, analytics: serverAnalytics} as any} />
+                      <NoirPassport analytics={serverAnalytics} failed={roomFailed} onRetry={retryRoom} />
                     </View>
 
                     {/* Taste Match (other users only) */}

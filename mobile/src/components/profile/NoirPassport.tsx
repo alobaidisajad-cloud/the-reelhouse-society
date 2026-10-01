@@ -5,86 +5,50 @@ import Svg, { Circle, Text as SvgText, Line } from 'react-native-svg';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { RoomRetrieving, RoomUnreachable } from './RoomParts';
 
-interface PassportLog {
-    filmId?: number;
-    year?: number | string;
-    rating: number;
-    physicalMedia?: string | null;
-    status?: string;
-}
-
+/** get_public_profile_analytics: the member's record over the WHOLE history. */
 export interface ProfileAnalyticsPayload {
     stamps?: {
         total_logs: number;
         pre_1960_count: number;
         perfect_ratings_count: number;
-        has_physical_media: boolean;
-        has_abandoned: boolean;
+        has_physical_media: boolean | null;
+        has_abandoned: boolean | null;
         decades_logged_count: number;
         has_rewatched: boolean;
+        /** From 20261002_01: absent until it is applied. */
+        reviews_count?: number;
+        genres_count?: number;
+        busiest_day_count?: number;
+        unrated_count?: number;
     };
     dna?: any;
     autopsy_math?: any;
+    /** Present instead of the record when the viewer may not read it. */
+    error?: string;
+}
+
+type Stamps = NonNullable<ProfileAnalyticsPayload['stamps']>;
+
+/** A stamp's label in up to two lines of 14, broken between words, never inside one. */
+export function stampLines(label: string, width = 14): [string, string] {
+    if (label.length <= width) return [label, ''];
+    const cut = label.lastIndexOf(' ', width);
+    return cut > 0 ? [label.slice(0, cut), label.slice(cut + 1)] : [label, ''];
 }
 
 
-const PASSPORT_STAMPS = [
-    { id: 'archivist', label: 'THE ARCHIVIST', sub: '100 FILMS LOGGED', glyph: '◈', test: (logs: PassportLog[]) => logs.length >= 100 },
-    { id: 'devotee', label: 'THE DEVOTEE', sub: '500 FILMS LOGGED', glyph: '✦', test: (logs: PassportLog[]) => logs.length >= 500 },
-    { id: 'silver_screen', label: 'SILVER SCREEN', sub: '20 FILMS PRE-1960', glyph: '†', test: (logs: PassportLog[]) => {
-        let count = 0;
-        for (const l of logs) {
-            if (!l.year) continue;
-            const y = parseInt(String(l.year), 10);
-            if (!isNaN(y) && y < 1960) {
-                if (++count >= 20) return true;
-            }
-        }
-        return false;
-    } },
-    { id: 'masterpiece', label: 'MASTERPIECE HUNTER', sub: '10 PERFECT RATINGS', glyph: '★', test: (logs: PassportLog[]) => {
-        let count = 0;
-        for (const l of logs) {
-            if (l.rating === 5) {
-                if (++count >= 10) return true;
-            }
-        }
-        return false;
-    } },
-    { id: 'vault_keeper', label: 'THE COLLECTOR', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', test: (logs: PassportLog[]) => {
-        for (const l of logs) {
-            if (l.physicalMedia) return true;
-        }
-        return false;
-    } },
-    { id: 'honest_critic', label: 'HONEST CRITIC', sub: 'ABANDONED A FILM', glyph: '✕', test: (logs: PassportLog[]) => {
-        for (const l of logs) {
-            if (l.status === 'abandoned') return true;
-        }
-        return false;
-    } },
-    { id: 'completionist', label: 'THE COMPLETIONIST', sub: 'FILMS FROM 7 DECADES', glyph: '∞', test: (logs: PassportLog[]) => {
-        const decades = new Set<number>();
-        for (const l of logs) {
-            if (!l.year) continue;
-            const y = parseInt(String(l.year), 10);
-            if (!isNaN(y) && y >= 1880) {
-                decades.add(Math.floor(y / 10) * 10);
-                if (decades.size >= 7) return true;
-            }
-        }
-        return false;
-    } },
-    { id: 'half_life', label: 'THE RETURNER', sub: 'REWATCHED A FILM', glyph: '↻', test: (logs: PassportLog[]) => { 
-        const seen = new Set<number>(); 
-        for (const l of logs) {
-            if (!l.filmId) continue;
-            if (seen.has(l.filmId)) return true;
-            seen.add(l.filmId);
-        }
-        return false;
-    } },
+/** Each stamp, earned from the member's whole record (the server's count). */
+const PASSPORT_STAMPS: { id: string; label: string; sub: string; glyph: string; earned: (s: Stamps) => boolean }[] = [
+    { id: 'archivist', label: 'THE ARCHIVIST', sub: '100 FILMS LOGGED', glyph: '◈', earned: (s) => s.total_logs >= 100 },
+    { id: 'devotee', label: 'THE DEVOTEE', sub: '500 FILMS LOGGED', glyph: '✦', earned: (s) => s.total_logs >= 500 },
+    { id: 'silver_screen', label: 'SILVER SCREEN', sub: '20 FILMS PRE-1960', glyph: '†', earned: (s) => s.pre_1960_count >= 20 },
+    { id: 'masterpiece', label: 'MASTERPIECE HUNTER', sub: '10 PERFECT RATINGS', glyph: '★', earned: (s) => s.perfect_ratings_count >= 10 },
+    { id: 'vault_keeper', label: 'THE COLLECTOR', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', earned: (s) => !!s.has_physical_media },
+    { id: 'honest_critic', label: 'HONEST CRITIC', sub: 'ABANDONED A FILM', glyph: '✕', earned: (s) => !!s.has_abandoned },
+    { id: 'completionist', label: 'THE COMPLETIONIST', sub: 'FILMS FROM 7 DECADES', glyph: '∞', earned: (s) => s.decades_logged_count >= 7 },
+    { id: 'half_life', label: 'THE RETURNER', sub: 'REWATCHED A FILM', glyph: '↻', earned: (s) => !!s.has_rewatched },
 ];
 
 const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }: { stamp: { id: string; label: string; sub: string; glyph: string }; earned: boolean; index: number; size: number }) {
@@ -92,6 +56,7 @@ const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }
     const rotation = rotations[index % 8];
     const center = size / 2;
     const outerR = center * 0.93;
+    const [line1, line2] = stampLines(stamp.label);
     const innerR = center * 0.8;
 
     return (
@@ -134,17 +99,17 @@ const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }
                     fontFamily={fonts.sub} fontSize={size * 0.058}
                     letterSpacing={1.5} fill={colors.sepia} opacity={0.85}
                 >
-                    {stamp.label.length > 14 ? stamp.label.slice(0, 14) : stamp.label}
+                    {line1}
                 </SvgText>
                 {/* Its second, when it needs one */}
-                {stamp.label.length > 14 && (
+                {!!line2 && (
                     <SvgText
                         x={center} y={center * 0.78}
                         textAnchor="middle"
                         fontFamily={fonts.sub} fontSize={size * 0.058}
                         letterSpacing={1.5} fill={colors.sepia} opacity={0.85}
                     >
-                        {stamp.label.slice(14).trim()}
+                        {line2}
                     </SvgText>
                 )}
                 {/* Sub label */}
@@ -164,35 +129,37 @@ const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }
     );
 });
 
-export const NoirPassport = memo(function NoirPassport({ logs, analytics }: { logs?: PassportLog[], analytics?: ProfileAnalyticsPayload | null }) {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const safeLogs = logs ?? [];
-
-    const earned = useMemo(() => {
-        if (analytics?.stamps) {
-            const s = analytics.stamps;
-            return PASSPORT_STAMPS.map(stamp => {
-                let isEarned = false;
-                switch (stamp.id) {
-                    case 'archivist': isEarned = s.total_logs >= 100; break;
-                    case 'devotee': isEarned = s.total_logs >= 500; break;
-                    case 'silver_screen': isEarned = s.pre_1960_count >= 20; break;
-                    case 'masterpiece': isEarned = s.perfect_ratings_count >= 10; break;
-                    case 'vault_keeper': isEarned = s.has_physical_media; break;
-                    case 'honest_critic': isEarned = s.has_abandoned; break;
-                    case 'completionist': isEarned = s.decades_logged_count >= 7; break;
-                    case 'half_life': isEarned = s.has_rewatched; break;
-                }
-                return { ...stamp, earned: isEarned };
-            });
-        }
-        return PASSPORT_STAMPS.map(s => ({ ...s, earned: s.test(safeLogs) }));
-    }, [safeLogs, analytics]);
+/**
+ * The passport, stamped from the member's whole record. Until that record has
+ * been read it says so (and, if it could not be, offers to ask again): stamps
+ * are never guessed from the logs that happened to load.
+ */
+export const NoirPassport = memo(function NoirPassport({ analytics, failed, onRetry }: {
+    analytics?: ProfileAnalyticsPayload | null;
+    /** The record's read failed. */
+    failed?: boolean;
+    onRetry?: () => void;
+}) {
+    const stamps = analytics?.stamps;
+    const earned = useMemo(
+        () => (stamps ? PASSPORT_STAMPS.map((stamp) => ({ ...stamp, earned: stamp.earned(stamps) })) : []),
+        [stamps],
+    );
 
     const earnedCount = earned.filter(s => s.earned).length;
 
     const { width } = useWindowDimensions();
     const stampSize = (width - 64) / 2.5;
+
+    if (!stamps) {
+        return (
+            <View style={s.container}>
+                {failed || analytics
+                    ? <RoomUnreachable room="the passport" onRetry={onRetry ?? (() => {})} />
+                    : <RoomRetrieving room="the passport" />}
+            </View>
+        );
+    }
 
     return (
         <Animated.View entering={FadeIn.duration(600)} style={s.container}>

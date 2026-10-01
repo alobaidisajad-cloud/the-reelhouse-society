@@ -8,49 +8,36 @@ import type { ProfileAnalyticsPayload } from './NoirPassport';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { rungAt } from '@/src/constants/standing';
 import { EDGE_LIT } from '@/src/theme/light';
+import { RoomRetrieving, RoomUnreachable } from './RoomParts';
 
+/** A log as the honours read it, before the record carries a count (see `counted`). */
 interface AchievementLog {
     rating: number;
-    review?: string;
+    review?: string | null;
     genres?: { id: number | string }[] | number[];
-    year?: number;
-    watchedDate?: string | Date;
-    createdAt?: string;
+    watchedDate?: string | Date | null;
+    createdAt?: string | null;
+}
+
+/** The member's record over the WHOLE history (the server's count). */
+type Stamps = NonNullable<ProfileAnalyticsPayload['stamps']>;
+
+/**
+ * How many films this member has logged: `totalFilms`, the reconciled count
+ * printed at the top of the page (so the honours and that number never
+ * disagree), else the record's own.
+ */
+function filmCount(s: Stamps, reconciled?: number): number {
+  if (typeof reconciled === 'number' && reconciled > 0) return reconciled;
+  return s.total_logs;
 }
 
 /**
- * Server-computed authoritative totals (same source NoirPassport uses). When
- * present, count-based badges read from these instead of the in-memory paginated
- * `logs`, which otherwise undercount for users whose history isn't fully loaded.
+ * A count the record carries from 20261002_01, or — until that is applied —
+ * the same count over the logs in hand.
  */
-type Stamps = ProfileAnalyticsPayload['stamps'];
-
-/**
- * How many films this member has actually logged.
- *
- * ── THE BUG THIS CLOSES ──────────────────────────────────────────────────────
- * The count badges read `s?.total_logs ?? logs.length`. Both halves fail for
- * the person most likely to be looking:
- *
- *   • `stamps` only arrives for AUTEUR profiles — the client refuses to fetch
- *     it for anyone else.
- *   • `logs` for a VISITOR to a non-Auteur profile is the 50-row page that
- *     happened to load, because the full history is only downloaded for
- *     yourself or for an Auteur.
- *
- * So a member with 300 films saw their own honours correctly and every visitor
- * saw THE ORACLE — LOCKED. Their record was wrong to everyone but themselves.
- *
- * `reconciled` is `totalFilms`: the server's own count, fetched for EVERY
- * profile on every load, already reconciled against the local store, and
- * already the number printed at the top of the page. Preferring it means the
- * badge grid and the film count above it can never disagree — which was the
- * other half of the same defect.
- */
-function filmCount(logs: AchievementLog[], stamps?: Stamps, reconciled?: number): number {
-  if (typeof reconciled === 'number' && reconciled > 0) return reconciled;
-  if (typeof stamps?.total_logs === 'number') return stamps.total_logs;
-  return logs.length;
+function counted(n: number | undefined, logs: AchievementLog[], fallback: (logs: AchievementLog[]) => number): number {
+  return typeof n === 'number' ? n : fallback(logs);
 }
 
 interface Badge {
@@ -58,7 +45,7 @@ interface Badge {
   title: string;
   desc: string;
   glyph: string;
-  check: (logs: AchievementLog[], s?: Stamps, total?: number) => boolean;
+  check: (logs: AchievementLog[], s: Stamps, total?: number) => boolean;
 }
 
 const BADGES: Badge[] = [
@@ -67,104 +54,107 @@ const BADGES: Badge[] = [
     title: 'FIRST REEL',
     desc: 'Log your first film',
     glyph: '✦',
-    check: (logs, s, total) => filmCount(logs, s, total) >= rungAt('FIRST REEL'),
+    check: (_logs, s, total) => filmCount(s, total) >= rungAt('FIRST REEL'),
   },
   {
     id: 'the-regular',
     title: 'THE REGULAR',
     desc: 'Log 10 films',
     glyph: '❖',
-    check: (logs, s, total) => filmCount(logs, s, total) >= rungAt('THE REGULAR'),
+    check: (_logs, s, total) => filmCount(s, total) >= rungAt('THE REGULAR'),
   },
   {
     id: 'midnight-devotee',
     title: 'MIDNIGHT DEVOTEE',
     desc: 'Log 25 films',
     glyph: '◆',
-    check: (logs, s, total) => filmCount(logs, s, total) >= rungAt('MIDNIGHT DEVOTEE'),
+    check: (_logs, s, total) => filmCount(s, total) >= rungAt('MIDNIGHT DEVOTEE'),
   },
   {
     id: 'the-oracle',
     title: 'THE ORACLE',
     desc: 'Log 100 films',
     glyph: '◈',
-    check: (logs, s, total) => filmCount(logs, s, total) >= rungAt('THE ORACLE'),
+    check: (_logs, s, total) => filmCount(s, total) >= rungAt('THE ORACLE'),
   },
   {
     id: 'the-connoisseur',
     title: 'THE CONNOISSEUR',
     desc: 'Rate 5 films with 5 reels',
     glyph: '✧',
-    check: (logs: AchievementLog[], s?: Stamps) =>
-      (s?.perfect_ratings_count ?? logs.filter((l) => l.rating === 5).length) >= 5,
+    check: (_logs, s) => s.perfect_ratings_count >= 5,
   },
   {
     id: 'the-critic',
     title: 'THE CRITIC',
     desc: 'Write 10 reviews',
     glyph: '§',
-    check: (logs: AchievementLog[]) => logs.filter((l) => (l.review?.length || 0) > 20).length >= 10,
+    check: (logs, s) => counted(s.reviews_count, logs, (ls) => ls.filter((l) => (l.review?.length || 0) > 20).length) >= 10,
   },
   {
     id: 'genre-explorer',
     title: 'GENRE EXPLORER',
     desc: 'Log films in 5+ genres',
     glyph: '⊕',
-    check: (logs: AchievementLog[]) => {
+    check: (logs, s) => counted(s.genres_count, logs, (ls) => {
       const genres = new Set<string>();
-      logs.forEach((l) => {
+      ls.forEach((l) => {
         if (Array.isArray(l.genres)) {
-          // Explicit null check prevents TypeError when backend returns null genres
           l.genres.forEach((g) => {
             if (g !== null) genres.add(typeof g === 'object' ? String((g as any).id) : String(g));
           });
         }
       });
-      return genres.size >= 5;
-    },
+      return genres.size;
+    }) >= 5,
   },
   {
     id: 'decade-drifter',
     title: 'DECADE DRIFTER',
     desc: 'Watch films from 4+ decades',
     glyph: '⊗',
-    check: (logs: AchievementLog[], s?: Stamps) => {
-      if (s?.decades_logged_count != null) return s.decades_logged_count >= 4;
-      const decades = new Set<number>();
-      // Strict isNaN sanitization prevents Math.floor(NaN) crashes
-      logs.forEach((l) => {
-        if (l.year && !isNaN(Number(l.year))) decades.add(Math.floor(Number(l.year) / 10) * 10);
-      });
-      return decades.size >= 4;
-    },
+    check: (_logs, s) => s.decades_logged_count >= 4,
   },
   {
     id: 'marathon-runner',
     title: 'MARATHON RUNNER',
     desc: 'Log 3+ films in one day',
     glyph: '⟐',
-    check: (logs: AchievementLog[]) => {
+    check: (logs, s) => counted(s.busiest_day_count, logs, (ls) => {
       const counts: Record<string, number> = {};
-      logs.forEach((l) => {
+      ls.forEach((l) => {
         const d = (l.watchedDate instanceof Date ? l.watchedDate.toISOString() : String(l.watchedDate || l.createdAt || '')).slice(0, 10);
         if (d) counts[d] = (counts[d] || 0) + 1;
       });
-      return Object.values(counts).some(c => c >= 3);
-    },
+      return Math.max(0, ...Object.values(counts));
+    }) >= 3,
   },
   {
     id: 'the-completionist',
     title: 'THE COMPLETIONIST',
     desc: 'Rate every logged film',
     glyph: '⊛',
-    check: (logs: AchievementLog[]) => logs.length >= 5 && logs.every((l) => l.rating > 0),
+    check: (logs, s, total) => filmCount(s, total) >= 5
+      && counted(s.unrated_count, logs, (ls) => ls.filter((l) => !(l.rating > 0)).length) === 0,
   },
 ];
 
-export function Achievements({ logs, analytics, totalFilms }: { logs: AchievementLog[]; analytics?: ProfileAnalyticsPayload | null; totalFilms?: number }) {
+/**
+ * SOCIETY HONORS, earned from the member's whole record. Until that record has
+ * been read the case says so (and, if it could not be, offers to ask again):
+ * an honour is never judged from the logs that happened to load.
+ */
+export function Achievements({ logs, analytics, totalFilms, failed, onRetry }: {
+  logs: AchievementLog[];
+  analytics?: ProfileAnalyticsPayload | null;
+  totalFilms?: number;
+  /** The record's read failed. */
+  failed?: boolean;
+  onRetry?: () => void;
+}) {
   const stamps = analytics?.stamps;
   const earned = useMemo(() =>
-    BADGES.map(b => ({ ...b, unlocked: b.check(logs, stamps, totalFilms) })),
+    stamps ? BADGES.map(b => ({ ...b, unlocked: b.check(logs, stamps, totalFilms) })) : [],
     [logs, stamps, totalFilms]
   );
 
@@ -180,6 +170,16 @@ export function Achievements({ logs, analytics, totalFilms }: { logs: Achievemen
    */
   const { width } = useWindowDimensions();
   const narrow = width < 375;
+
+  if (!stamps) {
+    return (
+      <View style={s.container}>
+        {failed || analytics
+          ? <RoomUnreachable room="the honours" onRetry={onRetry ?? (() => {})} />
+          : <RoomRetrieving room="the honours" />}
+      </View>
+    );
+  }
 
   return (
     <View style={s.container}>
