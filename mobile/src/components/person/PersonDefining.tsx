@@ -55,8 +55,8 @@ const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }
       style={st.defCard}
       onPress={handlePress}
       haptic="selection"
-      // The shelf's separator is 12pt, so 6 is the most either card may claim.
-      // At the default 15 they overlapped by 18pt and the later card took it.
+      // The shelf's separator is 12pt, so 6 is the most either card may claim;
+      // more would overlap, and the later card takes an overlap.
       hitSlop={{ top: 15, bottom: 15, left: 6, right: 6 }}
       accessibilityLabel={`${film.title || film.name}${film.release_date ? `, ${film.release_date.slice(0, 4)}` : ''}`}
     >
@@ -75,11 +75,9 @@ const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }
         >
           <Text style={st.defTitle} numberOfLines={2} {...displayTextProps}>{film.title || film.name}</Text>
           <View style={st.defMetaRow}>
-            {/* The five reels used to sit here at 8pt, where they resolved to
-                smudges rather than a rating — an instrument you cannot read is
-                worse than none. The year and the obscurity mark below already
-                say what this card needs to say. The reels keep their meaning on
-                surfaces large enough to show them. */}
+            {/* No reels: at this size they would resolve to smudges rather than
+                a rating. The year and the obscurity mark say what this card
+                needs to; the reels keep their meaning where they can be read. */}
             <Text style={st.defYear} {...displayTextProps}>{film.release_date ? film.release_date.slice(0, 4) : 'TBA'}</Text>
           </View>
         </LinearGradient>

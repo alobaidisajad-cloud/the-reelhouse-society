@@ -44,10 +44,9 @@ export const ObscurityBadge = memo(function ObscurityBadge({ score }: { score: n
   const color = score > 70 ? colors.sepia : score > 40 ? colors.bone : colors.fog;
   return (
     <View style={[st.obsBadge, { borderColor: color }]}>
-      {/* The raw score is gone. It was an internal 2–99 number shown without a
-          unit — "51 INDIE" asked a question it could not answer — and the word
-          already carries the whole meaning. The score still chooses the word
-          and the colour, so nothing is lost but the noise. */}
+      {/* No raw score: an internal 2–99 number without a unit ("51 INDIE")
+          asks a question it cannot answer, and the word carries the meaning.
+          The score chooses the word and the colour. */}
       <Text style={[st.obsLabel, { color }]} numberOfLines={1} {...displayTextProps}>{label}</Text>
     </View>
   );

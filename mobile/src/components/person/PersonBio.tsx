@@ -46,6 +46,9 @@ export const PersonBio = memo(function PersonBio({
           onPress={handleToggleBio}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           haptic="light"
+          accessibilityRole="button"
+          accessibilityLabel={showFullBio ? 'Read less of the biography' : 'Read the whole biography'}
+          accessibilityState={{ expanded: showFullBio }}
         >
           <Text style={s.toggleTicketText} {...displayTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{showFullBio ? '[ READ LESS ]' : '[ READ MORE ]'}</Text>
         </PressableScale>

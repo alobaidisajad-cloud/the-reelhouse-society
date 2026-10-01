@@ -245,9 +245,8 @@ export const st = StyleSheet.create({
   shimmer: { backgroundColor: colors.soot, borderRadius: 3 },
 
   // ── Obscurity Badge ──
-  // The raw score is gone. It was an internal 2–99 number with no unit — "51
-  // INDIE" invited the question "51 of what?", and the word already carries the
-  // whole meaning. The score still decides the word and the colour.
+  // The word alone: a unitless 2–99 score ("51 INDIE") would invite "51 of
+  // what?". The score decides the word and the colour.
   obsBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 7, paddingVertical: 4, borderWidth: 1, borderRadius: 2 },
   obsLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, includeFontPadding: false },
 
@@ -280,9 +279,9 @@ export const st = StyleSheet.create({
     fontFamily: fonts.sub, fontSize: 10, color: colors.bone,
     marginTop: 5, width: '100%', includeFontPadding: false,
     lineHeight: GRID_TITLE_LINE,
-    // Two lines at a readable size beats one line shrunk to 7pt — "Untitled
-    // Daniels Event Film" was unreadable. A two-line box is what keeps a
-    // three-column grid's rows level when some titles wrap and others do not;
+    // Two lines at a readable size, never one shrunk small. A two-line box is
+    // what keeps a three-column grid's rows level when some titles wrap and
+    // others do not;
     // its height is set where the card is drawn (GRID_TITLE_BOX × text size).
   },
   gridYear: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 0.6, marginTop: 2, includeFontPadding: false },

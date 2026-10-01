@@ -479,13 +479,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/moderation/ReportSheet.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/NitrateCalendar.tsx | — |  |
 | src/components/OfflineBanner.tsx | — |  |
-| src/components/person/canon.ts | — |  |
-| src/components/person/PersonBio.tsx | — |  |
-| src/components/person/PersonDefining.tsx | — |  |
-| src/components/person/PersonFilmography.tsx | — |  |
+| src/components/person/canon.ts | 2026-10-01 | the order, not the sort it replaced |
+| src/components/person/PersonBio.tsx | 2026-10-01 | READ MORE named and its state said |
+| src/components/person/PersonDefining.tsx | 2026-10-01 | histories to the present |
+| src/components/person/PersonFilmography.tsx | 2026-10-01 | one FILM; histories to the present |
 | src/components/person/PersonHero.tsx | 2026-10-01 | histories to the present |
-| src/components/person/PersonOrnaments.tsx | — |  |
-| src/components/person/personStyles.ts | — |  |
+| src/components/person/PersonOrnaments.tsx | 2026-10-01 | the rarity mark in the present tense |
+| src/components/person/personStyles.ts | 2026-10-01 | histories to the present |
 | src/components/Preloader.tsx | — |  |
 | src/components/PressableScale.tsx | 2026-09-29 | accessible / actions pass through; hitSlop comment condensed |
 | src/components/profile/__tests__/anHonourIsNeverBroken.test.tsx | — |  |
@@ -717,7 +717,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/schemas/__tests__/aFeedRowWithANullIsStillDrawn.test.ts | 2026-10-01 | written with the null-status fix |
 | src/schemas/__tests__/schemas.test.ts | — |  |
 | src/schemas/feed.schema.ts | 2026-10-01 | film id strict; a null status is watched |
-| src/schemas/film.schema.ts | — |  |
+| src/schemas/film.schema.ts | 2026-10-01 | the unused DomainLog mirror gone; no invented date or author |
 | src/schemas/profile.schema.ts | — |  |
 | src/schemas/settings.ts | — |  |
 | src/schemas/user.ts | — |  |

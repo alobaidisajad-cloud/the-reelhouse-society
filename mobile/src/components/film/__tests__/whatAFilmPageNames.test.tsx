@@ -22,6 +22,9 @@ import { FilmMediaCarousel } from '../FilmMediaCarousel';
 import { NitrateFileCard } from '../NitrateFileCard';
 import { ShareCardModal } from '../ShareCardModal';
 import { readFixture } from '@/mockups/paths';
+import { FilmReviewSchema } from '@/src/schemas/film.schema';
+import { FilmographyHeader } from '@/src/components/person/PersonFilmography';
+import { FilmHero } from '../FilmHero';
 
 let mockRegion: string | null = 'US';
 jest.mock('@/src/utils/deviceRegion', () => ({
@@ -173,5 +176,29 @@ describe('THE NITRATE FILE', () => {
     expect(mockShareAsync).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
     expect(mockToastError).not.toHaveBeenCalled();
+  });
+});
+
+describe('the small words', () => {
+  it('a critique whose author could not be read has no name, never "unknown"', () => {
+    const r = FilmReviewSchema.parse({ id: 'a', created_at: '2026-09-01T00:00:00Z' });
+    expect(r.username).toBeUndefined();
+  });
+
+  it('a critique is never given an invented date', () => {
+    expect(FilmReviewSchema.safeParse({ id: 'a' }).success).toBe(false);
+  });
+
+  it('one film in a canon is one FILM', () => {
+    expect(render(<FilmographyHeader count={1} />).getByText('THE CANON — 1 FILM')).toBeTruthy();
+    expect(render(<FilmographyHeader count={2} />).getByText('THE CANON — 2 FILMS')).toBeTruthy();
+  });
+
+  it('the rarity mark is the word, not a unitless number', () => {
+    const film = { id: 1, title: 'The Odyssey', genres: [], poster_path: null } as never;
+    const r = render(<FilmHero film={film} existingLog={null} score={51} studios={[]} verdict={null}
+      posterGlowStyle={{}} statusConfig={{} as never} />);
+    expect(r.getByText('INDIE')).toBeTruthy();
+    expect(r.queryByText('51')).toBeNull();
   });
 });

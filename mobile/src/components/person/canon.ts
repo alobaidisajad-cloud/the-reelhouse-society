@@ -1,11 +1,9 @@
 /**
  * THE CANON — the record, newest first, but the RECORD comes first.
  *
- * The old sort substituted '9999-99-99' for a missing date, which made undated
- * entries the newest thing in the file. A 92-film career therefore opened on
- * an untitled placeholder and two unreleased titles, most without posters.
  * Work that exists now leads; announced and undated films keep their place in
- * the file but sit at the end of it.
+ * the file but sit at the end of it (an undated entry is never "the newest",
+ * or a long career would open on an untitled placeholder).
  *
  * `today` is the member's own calendar day (timeAgo.localCalendarDate) — never
  * a UTC one, or a member in Los Angeles at 5pm would already be "tomorrow" and

@@ -60,14 +60,18 @@ const PrestigeBadge = memo(function PrestigeBadge({ companies }: { companies: { 
   );
 });
 
+/**
+ * The rarity mark, as the artist's file draws it: the word, coloured by the
+ * score. No raw number: an internal 2–99 score without a unit ("51 INDIE")
+ * asks a question it cannot answer, and the word carries the meaning.
+ */
 const ObscurityBadge = memo(function ObscurityBadge({ score }: { score: number }) {
   if (score <= 0) return null;
   const label = score > 80 ? 'GHOST REEL' : score > 60 ? 'DEEP CUT' : score > 40 ? 'INDIE' : score > 20 ? 'KNOWN' : 'MAINSTREAM';
   const color = score > 70 ? colors.sepia : score > 40 ? colors.bone : colors.fog;
   return (
     <View style={[sub.obsBadge, { borderColor: color }]}>
-      <Text style={[sub.obsScore, { color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{score}</Text>
-      <Text style={sub.obsLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{label}</Text>
+      <Text style={[sub.obsLabel, { color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{label}</Text>
     </View>
   );
 });
@@ -331,6 +335,5 @@ const sub = StyleSheet.create({
     backgroundColor: colors.surface,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 3, elevation: 3, 
   },
-  obsScore: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 14 },
   obsLabel: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog },
 });

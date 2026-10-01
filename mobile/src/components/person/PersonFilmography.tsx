@@ -21,9 +21,8 @@ import { s, st, GRID_COL_STYLES, GRID_TITLE_BOX } from '@/src/components/person/
 import { displayTextProps } from '@/src/constants/textScaling';
 import { useLineScale } from '@/src/hooks/useTextScale';
 
-// A 110pt-wide poster is 330 physical pixels on a 3x screen; w185 left nearly
-// half the detail to the upscaler. 2x devices are already served by w185 and
-// download exactly what they do today.
+// A 110pt-wide poster is 330 physical pixels on a 3x screen, which w185 would
+// leave to the upscaler; 2x devices are served by w185.
 const GRID_POSTER_SIZE = PixelRatio.get() >= 3 ? 'w342' : 'w185';
 
 // ── Interfaces ──────────────────────────────────────────────
@@ -42,9 +41,8 @@ interface PersonCredit {
 }
 
 // ── Film-strip Perforations ──────────────────────────────────
-// Each hole is 14 wide with a 6pt gap, so a fixed 40 laid down ~800pt of strip
-// on a 390pt screen and threw over half of it away behind overflow:hidden.
-// Two spare holes keep the row running past both edges, which is the point.
+// Each hole is 14 wide with a 6pt gap: as many as the screen is wide, and two
+// spare so the row runs past both edges, which is the point.
 const PERF_PITCH = 20;
 export const FilmStripPerforations = memo(function FilmStripPerforations() {
   const { width } = useWindowDimensions();
@@ -73,10 +71,9 @@ export const FilmPosterCard = memo(function FilmPosterCard({ film, screened }: {
       style={st.gridCard}
       onPress={handlePress}
       haptic="selection"
-      // Columns sit 10pt apart and rows 18pt. PressableScale's default 15pt on
-      // every side made neighbours overlap by 20pt sideways, and the later
-      // sibling wins on both platforms — so the edge of one poster opened the
-      // film beside it. Half the real gap is the most either may claim.
+      // Columns sit 10pt apart and rows 18pt, and the later sibling wins an
+      // overlap on both platforms: half the real gap is the most either may
+      // claim, or the edge of one poster would open the film beside it.
       hitSlop={{ top: 9, bottom: 9, left: 5, right: 5 }}
       accessibilityLabel={`${film.title || film.name}${screened ? ', screened' : ''}`}
     >
@@ -101,11 +98,10 @@ export const FilmPosterCard = memo(function FilmPosterCard({ film, screened }: {
           </View>
         )}
       </View>
-      {/* Two lines at a readable size rather than one line squeezed to 7pt —
-          "Untitled Daniels Event Film" was unreadable. The box is two lines tall
-          whatever the title, so a wrapped title cannot knock its row out of
-          line — two lines at the size the phone draws, or at a large setting
-          the second line is cut off ("In the Mood for"). */}
+      {/* Two lines at a readable size, never one squeezed small. The box is
+          two lines tall whatever the title, at the size the phone draws, so a
+          wrapped title cannot knock its row out of line nor lose its second
+          line at a large setting. */}
       <Text style={[st.gridTitle, { height: GRID_TITLE_BOX * titleScale }]} numberOfLines={2} {...displayTextProps}>{film.title || film.name}</Text>
       <Text style={st.gridYear} {...displayTextProps}>{film.release_date ? film.release_date.slice(0, 4) : 'TBA'}</Text>
     </PressableScale>
@@ -116,7 +112,7 @@ export const FilmPosterCard = memo(function FilmPosterCard({ film, screened }: {
 export const FilmographyHeader = memo(function FilmographyHeader({ count }: { count: number }) {
   return (
     <View style={s.section}>
-      <FilmSectionHeader label={count > 0 ? `THE CANON — ${count} FILMS` : 'THE CANON'} />
+      <FilmSectionHeader label={count > 0 ? `THE CANON — ${count} ${count === 1 ? 'FILM' : 'FILMS'}` : 'THE CANON'} />
     </View>
   );
 });
