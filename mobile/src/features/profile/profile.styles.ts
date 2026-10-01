@@ -35,13 +35,8 @@ export const st = StyleSheet.create({
   fieldWrap: { marginBottom: 16 },
   fieldLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia, marginBottom: 6 },
   fieldInput: { width: '100%', paddingHorizontal: 14, paddingVertical: 11, backgroundColor: 'rgba(13,11,9,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 3, color: colors.parchment, fontFamily: fonts.body, fontSize: 14 },
-  bioInput: { width: '100%', paddingHorizontal: 14, paddingVertical: 11, backgroundColor: 'rgba(13,11,9,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 3, color: colors.parchment, fontFamily: fonts.body, fontSize: 14, height: 90, textAlignVertical: 'top', lineHeight: 20 },
-  charCount: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fogQuiet, textAlign: 'right', marginTop: 4 },
   fieldBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, marginBottom: 12 },
   
-  usernameWrap: { position: 'relative', width: '100%', justifyContent: 'center' },
-  usernameAt: { position: 'absolute', left: 14, fontFamily: fonts.body, fontSize: 14, color: colors.fog, zIndex: 2 },
-  usernameInput: { paddingLeft: 32, width: '100%', paddingHorizontal: 14, paddingVertical: 11, backgroundColor: 'rgba(13,11,9,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 3, color: colors.parchment, fontFamily: fonts.body, fontSize: 14 },
   errorText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.crimsonInk, marginTop: 4 },
   helperText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fogQuiet, marginTop: 4 },
 
@@ -53,26 +48,10 @@ export const st = StyleSheet.create({
   avatarHint: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, marginBottom: 4 },
   avatarSpec: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fogQuiet },
 
-  // Links
-  linksContainer: { gap: 16, marginBottom: 12 },
-  linkItem: { padding: 16, backgroundColor: 'rgba(13,11,9,0.5)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 4 },
-  linkItemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  linkItemTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog },
-  linkRemoveBtn: { padding: 4 },
-  addLinkBtn: { width: '100%', padding: 14, backgroundColor: 'rgba(184,137,26,0.05)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderStyle: 'dashed', borderRadius: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 },
-  addLinkText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
-  linksCount: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fogQuiet, textAlign: 'center', marginTop: 10 },
-
   heritageFooter: { alignItems: 'center', paddingHorizontal: 24, paddingBottom: 40, marginTop: 10 },
-  globalSaveBtn: { position: 'relative', width: '100%', paddingVertical: 14, borderRadius: 4, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', marginBottom: 24, backgroundColor: colors.ink },
-  disabledBtn: { opacity: 0.5 },
-  saveBtnContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  globalSaveBtnText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 3, color: colors.sepia },
   memberSince: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog, marginBottom: 20 },
   endMarkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20, width: '40%', alignSelf: 'center', opacity: 0.3 },
   endMarkLine: { flex: 1, height: 1, backgroundColor: colors.sepia },
-  linkDragHandleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  linkDragHandleIcon: { opacity: 0.4 },
 
   // The save-seal ceremony — a stamped "DOSSIER AMENDED" beat on success.
   sealOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(13,11,9,0.82)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },

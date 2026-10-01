@@ -30,6 +30,8 @@ export const MAX_LENGTHS = {
   // these strip the character classes too.
   displayName: 50,
   persona: 50,
+  // A profile link's title, as the editor's box takes it.
+  linkTitle: 40,
   // Free text a member writes ABOUT another member, read by moderators in the
   // Tribunal — the one screen guaranteed to be shown hostile input.
   reportDetails: 500,

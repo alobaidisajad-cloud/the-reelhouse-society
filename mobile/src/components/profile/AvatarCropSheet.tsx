@@ -1,21 +1,14 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert, Linking } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Camera, Image as ImageIcon, X, Check } from 'lucide-react-native';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { decode } from 'base64-arraybuffer';
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { supabase } from '@/src/lib/supabase';
+import { Camera, Image as ImageIcon, X } from 'lucide-react-native';
+import { logger } from '@/src/utils/logger';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -29,6 +22,17 @@ interface Props {
   onSuccess: (url: string) => void;
 }
 
+/**
+ * A refused permission, said with the one way to grant it: once refused, the
+ * phone never asks again, so the way is the system Settings.
+ */
+function askForSettings(what: string) {
+  Alert.alert('Permission needed', `Allow ${what} in Settings to choose a portrait.`, [
+    { text: 'Not now', style: 'cancel' },
+    { text: 'Open Settings', onPress: () => { void Linking.openSettings(); } },
+  ]);
+}
+
 export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
   const { user } = useAuthStore();
   const [uploading, setUploading] = useState(false);
@@ -40,7 +44,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
     let result;
     if (source === 'camera') {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) return Alert.alert('Permission needed', 'Allow camera access to take a photo.');
+      if (!permission.granted) return askForSettings('camera access');
       result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [1, 1],
@@ -48,7 +52,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
       });
     } else {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) return Alert.alert('Permission needed', 'Allow photo library access to pick a photo.');
+      if (!permission.granted) return askForSettings('photo library access');
       result = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
         aspect: [1, 1],
@@ -73,9 +77,8 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
       TactileEngine.success();
       onSuccess(out.base64);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      if (__DEV__) console.error(msg);
-      reelToast.error(msg);
+      logger.warn('[AvatarCropSheet] the photo could not be prepared:', err);
+      reelToast.error('That photo could not be prepared. Try another.');
       TactileEngine.error();
     } finally {
       setUploading(false);

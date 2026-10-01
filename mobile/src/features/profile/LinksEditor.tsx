@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { GripVertical, Plus, X } from 'lucide-react-native';
+import { Plus, X } from 'lucide-react-native';
 import { ControlledInput } from '@/src/components/ControlledInput';
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { MAX_LINKS } from '@/src/hooks/useEditProfile';
 
 export interface LinksEditorProps {
   links: { id: string; title: string; url: string }[];
@@ -24,7 +25,6 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
               <View key={link.id} style={st.linkItem}>
                   <View style={st.linkItemHeader}>
                       <View style={st.linkDragHandleRow}>
-                          <GripVertical size={12} color={colors.ash} style={st.linkDragHandleIcon} />
                           <Text {...scaledTextProps} style={st.linkItemTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>LINK {index + 1}</Text>
                       </View>
                   </View>
@@ -48,6 +48,7 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
                         name={`links.${index}.title` as const}
                         style={st.fieldInput} placeholder="Portfolio, Blog, Channel…" placeholderTextColor={colors.fog} maxLength={40} keyboardAppearance="dark" accessibilityLabel="Link title" selectionColor={colors.sepia}
                       />
+                      {!!errors.links?.[index]?.title && <Text {...scaledTextProps} style={st.errorText}>{errors.links[index]?.title?.message}</Text>}
                   </View>
                   
                   <View style={st.fieldWrap}>
@@ -62,12 +63,14 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
           ))}
       </View>
 
-      <PressableScale style={st.addLinkBtn} onPress={handleAddLink} haptic="selection" accessibilityLabel="Add link">
-          <Plus size={14} color={colors.sepia} />
-          <Text {...scaledTextProps} style={st.addLinkText}>ADD LINK</Text>
-      </PressableScale>
+      {links.length < MAX_LINKS && (
+        <PressableScale style={st.addLinkBtn} onPress={handleAddLink} haptic="selection" accessibilityLabel="Add link">
+            <Plus size={14} color={colors.sepia} />
+            <Text {...scaledTextProps} style={st.addLinkText}>ADD LINK</Text>
+        </PressableScale>
+      )}
 
-      {links.length > 0 && <Text {...scaledTextProps} style={st.linksCount}>{links.length}/10 LINKS</Text>}
+      {links.length > 0 && <Text {...scaledTextProps} style={st.linksCount}>{links.length}/{MAX_LINKS} LINKS</Text>}
     </View>
   );
 }
@@ -96,5 +99,4 @@ const st = StyleSheet.create({
   addLinkText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
   linksCount: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fogQuiet, textAlign: 'center', marginTop: 10 },
   linkDragHandleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  linkDragHandleIcon: { opacity: 0.4 },
 });

@@ -10,10 +10,7 @@ interface ControlledInputProps extends TextInputProps {
   accessibilityLabel: string;
 }
 
-/**
- * Standard O(1) text input. Only re-renders itself when its value changes,
- * preventing massive full-screen re-renders.
- */
+/** A form field bound to the form by name: typing redraws this field, not the screen. */
 export const ControlledInput = React.memo(function ControlledInput({ name, style, ...props }: ControlledInputProps) {
   const { control } = useFormContext();
   const { field } = useController({ name, control });
@@ -29,10 +26,7 @@ export const ControlledInput = React.memo(function ControlledInput({ name, style
   );
 });
 
-/**
- * Bio input with a built-in character counter.
- * The counter isolates its own re-renders so the main screen stays locked at O(1).
- */
+/** The bio, with its count of characters beside it (redrawn with the field alone). */
 export const ControlledBioInput = React.memo(function ControlledBioInput({ name, maxLength = 300, ...props }: ControlledInputProps) {
   const { control } = useFormContext();
   const { field } = useController({ name, control });
@@ -53,9 +47,7 @@ export const ControlledBioInput = React.memo(function ControlledBioInput({ name,
   );
 });
 
-/**
- * Username input with prefix '@' symbol and custom formatting (lowercase, no special chars).
- */
+/** The handle, after a drawn '@': what is typed is kept to lowercase letters, digits and underscores. */
 export const ControlledUsernameInput = React.memo(function ControlledUsernameInput({ name, ...props }: ControlledInputProps) {
   const { control } = useFormContext();
   const { field } = useController({ name, control });

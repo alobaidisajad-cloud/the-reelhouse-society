@@ -231,7 +231,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
 | src/components/clearance/Clearance.tsx | 2026-10-01 | show it, locked; a second copy lives in the log (carried forward) |
 | src/components/ContentSkeleton.tsx | — |  |
-| src/components/ControlledInput.tsx | — |  |
+| src/components/ControlledInput.tsx | 2026-10-01 | comments in plain words |
 | src/components/critique/__tests__/aCritiqueIsWithdrawnOrReported.test.tsx | 2026-10-01 | new |
 | src/components/critique/__tests__/oneCritiqueRow.guard.test.ts | 2026-09-30 | written with the shared critique row |
 | src/components/critique/CritiqueRow.tsx | 2026-10-01 | a nameless author is never linked |
@@ -530,7 +530,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/zz-render.lib.ts | 2026-09-28 | 35 findings; the RN-vs-CSS differences kept as short present-tense rules, the story of each bug left to history |
 | src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
 | src/components/profile/ArchiveLock.tsx | 2026-10-01 | asks the phone's own means; never opens unasked; the room is not drawn behind it |
-| src/components/profile/AvatarCropSheet.tsx | — |  |
+| src/components/profile/AvatarCropSheet.tsx | 2026-10-01 | a refused permission offers Settings; a failed photo said plainly; dead imports gone |
 | src/components/profile/CinemaDNACard.tsx | 2026-10-01 | the record only; the house ladder; always opens and closes; no invented serial |
 | src/components/profile/CinematicInsights.tsx | 2026-10-01 | says retrieving or failed; whose-words; no history comments |
 | src/components/profile/favourites.ts | 2026-10-01 | comments say what is true now |
@@ -624,11 +624,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/archive/archiveImport.ts | 2026-09-28 | Three doc comments sat on a constant instead of the function they describe (upsertCounted, fetchAllListItems, isHeaderRow) and one on the wrong type; normalizeDate's doc sat on isRealDate. 'Zero competitor names' was false. Audit tags (FEAT-1/2) and history removed; every reason kept, shortened. |
 | src/features/archive/importReceipt.ts | — |  |
 | src/features/archive/undoImport.ts | — |  |
+| src/features/profile/__tests__/aLinkSaysWhyBeforeItVanishes.test.tsx | 2026-10-01 | written: a link says why before it vanishes |
 | src/features/profile/__tests__/linksEditor.test.tsx | — |  |
 | src/features/profile/__tests__/theDossierSealIsSpoken.test.tsx | — |  |
-| src/features/profile/EditProfileScreen.tsx | — |  |
-| src/features/profile/LinksEditor.tsx | — |  |
-| src/features/profile/profile.styles.ts | — |  |
+| src/features/profile/__tests__/theEditDeskSaysWhatWentWrong.test.tsx | 2026-10-01 | written: the edit desk says what went wrong |
+| src/features/profile/EditProfileScreen.tsx | 2026-10-01 | a refused backdrop said; the photo line is true; history comments trimmed |
+| src/features/profile/LinksEditor.tsx | 2026-10-01 | no handle that does not drag; ADD LINK stops at the cap; title errors shown |
+| src/features/profile/profile.styles.ts | 2026-10-01 | 19 styles nothing read, removed |
 | src/features/settings/__tests__/settings.redesign.test.tsx | — |  |
 | src/features/settings/__tests__/anExportIsWhole.test.ts | 2026-10-01 | written: an export holds every row once |
 | src/features/settings/DataVault.tsx | — |  |
@@ -678,7 +680,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useDeviceThrottling.ts | — |  |
 | src/hooks/useDispatchArchive.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useDoor.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/hooks/useEditProfile.ts | — |  |
+| src/hooks/useEditProfile.ts | 2026-10-01 | links said field by field; the cap; SAVE refused says so; a stored handle never held to today's rules |
 | src/hooks/useFeeds.ts | 2026-10-01 | one cursor rule; the fallback note gone with the fallback |
 | src/hooks/useFilmAnimations.ts | 2026-10-01 | each loop only while seen |
 | src/hooks/useFilmDetail.ts | 2026-10-01 | an unread verdict is null, never silence |

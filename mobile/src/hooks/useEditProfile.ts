@@ -13,22 +13,33 @@ import { captureError } from '@/src/lib/sentry';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { WALL_KEY } from '@/src/components/lobby/wallRead';
 import { nav } from '@/src/utils/typedRouter';
+import { normalizeSocialUrl } from '@/src/utils/linking';
 
-// Zod schema for the form
-const editProfileSchema = z.object({
-  // SCHEMA-1: validate via the single source of truth (validateUsername) instead of
-  // a looser inline regex — this also rejects leading/trailing/consecutive
-  // underscores and reserved handles, matching the server-side username policy.
-  username: z.string().superRefine((val, ctx) => {
-    const result = validateUsername(val);
-    if (!result.valid) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: result.error ?? 'Invalid username.' });
-    }
-  }),
+/** The most links a profile carries; the editor stops offering more there. */
+export const MAX_LINKS = 10;
+
+/**
+ * A link either wholly there or wholly empty: an address that cannot be
+ * opened, or one half of a pair, is said beside its field rather than dropped
+ * at save (the server keeps only links that open — utils/linking.ts).
+ */
+const linkSchema = z.object({ title: z.string(), url: z.string() }).superRefine((l, ctx) => {
+  const title = l.title.trim();
+  const url = l.url.trim();
+  if (!title && !url) return;   // an empty pair is dropped, and nothing was lost
+  if (!url) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['url'], message: 'Add the link’s address.' });
+  else if (!normalizeSocialUrl(url)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['url'], message: 'Not a web address that can be opened.' });
+  if (!title) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['title'], message: 'Give the link a title.' });
+});
+
+// Zod schema for the form. The handle is NOT held to today's rules here: the
+// save validates it only when the member changed it (a stored handle from older
+// rules must never lock them out of editing their bio).
+export const editProfileSchema = z.object({
+  username: z.string(),
   displayName: z.string().max(50).optional().default(''),
   bio: z.string().max(160, 'Bio cannot exceed 160 characters').optional().default(''),
-  // SCHEMA-1: enforce the documented 10-link cap (the LinksEditor advertises it).
-  links: z.array(z.object({ title: z.string(), url: z.string() })).max(10, 'Maximum 10 links allowed').default([]),
+  links: z.array(linkSchema).max(MAX_LINKS, `At most ${MAX_LINKS} links.`).default([]),
 });
 
 type ProfileFormData = z.infer<typeof editProfileSchema>;
@@ -152,7 +163,7 @@ export function useEditProfile() {
     if (!user) return;
     setSubmitError(null);
     setSaving(true);
-    
+
     try {
       // Did they actually touch the handle? Compare what they were SHOWN against
       // what is stored — never the sanitized form of it. Sanitizing first made a
@@ -163,8 +174,7 @@ export function useEditProfile() {
       const usernameChanged = typedUsername !== storedUsername;
 
       // `sanitizedUsername` is the handle that will be in the database after this
-      // save — the stored one when untouched. Used below for the optimistic feed
-      // sync, which matches on username and would otherwise miss legacy handles.
+      // save — the stored one when untouched.
       let sanitizedUsername = storedUsername;
 
       // Only a handle the member is deliberately choosing gets validated. Holding a
@@ -186,7 +196,6 @@ export function useEditProfile() {
         }
       }
 
-      // Map form fields to DB fields, handling the display_name mapping bug
       let finalAvatarUrl: string | null | undefined = undefined;
       if (avatarBase64) {
         finalAvatarUrl = await ProfileService.uploadAvatar(user.id, avatarBase64);
@@ -216,8 +225,9 @@ export function useEditProfile() {
             if (data?.pages) {
               const newPages = data.pages.map((page: any) => {
                 if (Array.isArray(page)) {
-                  return page.map((item: any) => 
-                    item.username === sanitizedUsername 
+                  // By either handle: items read before a rename carry the old one.
+                  return page.map((item: any) =>
+                    item.username === sanitizedUsername || item.username === storedUsername
                       ? { ...item, avatar_url: finalAvatarUrl }
                       : item
                   );
@@ -235,7 +245,7 @@ export function useEditProfile() {
                 if (member.user_id === user.id) {
                   return {
                     ...member,
-                    profiles: Array.isArray(member.profiles) 
+                    profiles: Array.isArray(member.profiles)
                       ? [{ ...member.profiles[0], avatar_url: finalAvatarUrl }]
                       : { ...member.profiles, avatar_url: finalAvatarUrl }
                   };
@@ -269,13 +279,13 @@ export function useEditProfile() {
           console.error('Non-blocking legacy avatar purge failed:', err);
         });
       }
-      
+
       // Update local auth store
       useAuthStore.setState((state) => {
         const updatedUser = state.user ? {
-          ...state.user, 
+          ...state.user,
           ...updates,
-          display_name: updates.display_name ?? state.user.display_name 
+          display_name: updates.display_name ?? state.user.display_name
         } as any : null;
         if (updatedUser) {
           setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
@@ -299,6 +309,9 @@ export function useEditProfile() {
     } finally {
       setSaving(false);
     }
+  }, () => {
+    // A field the form refused may sit below the fold: SAVE says so at the top.
+    setSubmitError('Something below needs your attention before it can be saved.');
   });
 
   const handleBack = () => {
@@ -331,7 +344,7 @@ export function useEditProfile() {
       setAvatarBase64(null);
     },
     fields,
-    handleAddLink: () => append({ title: '', url: '' }),
+    handleAddLink: () => { if (fields.length < MAX_LINKS) append({ title: '', url: '' }); },
     handleRemoveLink: (index: number) => remove(index),
     saving,
     sealed,

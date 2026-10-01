@@ -71,7 +71,10 @@ export const ProfileService = {
     if (updates.avatar_url !== undefined) dbUpdates.avatar_url = updates.avatar_url;
     if (updates.display_name !== undefined) dbUpdates.display_name = sanitizeInput(updates.display_name ?? '', 'displayName');
     if (updates.persona !== undefined) dbUpdates.persona = sanitizeInput(updates.persona ?? '', 'persona');
-    if (updates.social_links !== undefined) dbUpdates.social_links = updates.social_links;
+    // A link's title is public text like the bio, so it is cleaned the same way.
+    if (updates.social_links !== undefined) dbUpdates.social_links = Array.isArray(updates.social_links)
+      ? (updates.social_links as { title: string; url: string }[]).map((l) => ({ title: sanitizeInput(l.title ?? '', 'linkTitle'), url: (l.url ?? '').trim() }))
+      : updates.social_links;
     // COMP-1-orig: do NOT write `preferences` here. This is a full-column UPDATE that
     // would overwrite the entire JSONB blob and clobber concurrent cross-device key
     // changes. All preference writes must go through the server-side JSONB *merge*

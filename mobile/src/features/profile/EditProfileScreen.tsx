@@ -33,6 +33,8 @@ import { LinksEditor } from '@/src/features/profile/LinksEditor';
 import Buster from '@/src/components/Buster';
 import { Image } from 'expo-image';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import reelToast from '@/src/utils/reelToast';
+import { logger } from '@/src/utils/logger';
 
 /**
  * THE BACKDROP — an Auteur privilege, and now a choice.
@@ -47,12 +49,11 @@ import { scaledTextProps } from '@/src/constants/textScaling';
  * with no Save. A switch that quietly needed one would be the only control on
  * the page that did, and the member would find out by leaving and losing it.
  * Same optimistic-then-reconcile shape as the triptych: apply locally, send the
- * one key (the RPC merges), queue it if the network is out, roll back only on a
- * real refusal.
+ * one key (the RPC merges), queue it if the network is out, and on a real
+ * refusal roll back and say so.
  *
  * ── ABSENT MEANS ON ──────────────────────────────────────────────────────────
- * Only an explicit `false` takes the backdrop down, so no Auteur loses theirs
- * on the day this ships.
+ * Only an explicit `false` takes the backdrop down.
  */
 function BackdropSetting({ user }: { user: { id: string; preferences?: Record<string, unknown> | null } }) {
   const updateUser = useAuthStore(state => state.updateUser);
@@ -78,7 +79,8 @@ function BackdropSetting({ user }: { user: { id: string; preferences?: Record<st
         enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updated } });
       } else {
         updateUser({ preferences: currentPrefs });
-        if (__DEV__) console.error('[EditProfile] Failed to set backdrop:', e);
+        logger.warn('[EditProfile] backdrop refused:', e);
+        reelToast.error('The backdrop could not be changed. It is as it was.');
       }
     } finally {
       setBusy(false);
@@ -109,7 +111,7 @@ const bd = StyleSheet.create({
 
 export function EditProfileScreen() {
   const insets = useSafeAreaInsets();
-  
+
   const {
     user,
     form,
@@ -154,9 +156,8 @@ export function EditProfileScreen() {
   if (!user) return null;
 
   return (
-    // One ground, the inner one, which carries the room's light. This outer
-    // box was painted in the house colour too — a second, unlit room under
-    // the first.
+    // One ground, the inner one, which carries the room's light (a painted
+    // outer box would be a second, unlit room under the first).
     <View style={{ flex: 1 }}>
       <View style={st.container}>
         <RoomLight room="member" />
@@ -167,7 +168,7 @@ export function EditProfileScreen() {
             style={StyleSheet.absoluteFillObject}
           />
         </Animated.View>
-      
+
       <View style={[st.navBar, { paddingTop: insets.top + 8 }]}>
         <PressableScale onPress={handleBack} style={st.navBackBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light" accessibilityLabel="Go back">
           <ChevronLeft size={22} color={colors.bone} />
@@ -209,8 +210,8 @@ export function EditProfileScreen() {
           <SectionCard>
             <SectionHead icon={Camera} label="PROFILE PICTURE" />
             <View style={st.avatarSection}>
-              <PressableScale 
-                style={st.avatarWrap} 
+              <PressableScale
+                style={st.avatarWrap}
                 onPress={() => setShowCropModal(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Change profile picture"
@@ -224,9 +225,10 @@ export function EditProfileScreen() {
                     <Camera size={24} color={colors.parchment} />
                 </View>
               </PressableScale>
-              
+
               <Text {...scaledTextProps} style={st.avatarHint}>Tap portrait to change</Text>
-              <Text {...scaledTextProps} style={st.avatarSpec}>JPG, PNG, or WEBP · MAX 5MB</Text>
+              {/* True of every photo: it is re-encoded square, its location data stripped. */}
+              <Text {...scaledTextProps} style={st.avatarSpec}>ANY PHOTO · CROPPED SQUARE · LOCATION REMOVED</Text>
               {avatarPreview && (
                 <PressableScale onPress={handleRemoveAvatar} style={{ marginTop: 12, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 4, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder }} haptic="light" accessibilityRole="button" accessibilityLabel="Remove portrait">
                   <Text {...scaledTextProps} style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimsonInk, textAlign: 'center', letterSpacing: 1 }}>REMOVE PORTRAIT</Text>
@@ -235,7 +237,7 @@ export function EditProfileScreen() {
             </View>
           </SectionCard>
         </Animated.View>
-        
+
         <DiamondDivider />
 
         {/* ════ IDENTITY ════ */}
@@ -274,7 +276,7 @@ export function EditProfileScreen() {
             </View>
           </SectionCard>
         </Animated.View>
-        
+
         <DiamondDivider />
 
         {/* ════ FAVORITE FILMS ════ */}
@@ -283,11 +285,11 @@ export function EditProfileScreen() {
               <SectionCard>
                   <SectionHead icon={Film} label="FAVORITE FILMS" />
                   <Text {...scaledTextProps} style={st.fieldBody}>Choose 3 films that define your cinematic identity. Tap a slot to search and select.</Text>
-                  <ProfileTriptych 
-                    user={{ 
-                      id: user.id, 
-                      preferences: user.preferences ? { favorites: user.preferences.favorites as import('@/src/components/profile/ProfileTriptych').TriptychFilm[] } : null 
-                    }} 
+                  <ProfileTriptych
+                    user={{
+                      id: user.id,
+                      preferences: user.preferences ? { favorites: user.preferences.favorites as import('@/src/components/profile/ProfileTriptych').TriptychFilm[] } : null
+                    }}
                     isOwnProfile={true}
                     userRole={resolveTier(user)}
                   />
@@ -298,16 +300,9 @@ export function EditProfileScreen() {
         {/* ════ THE BACKDROP — Auteur only ════
             It sits directly under the triptych because it is about the
             triptych: the centre panel is the film it dresses the page with. */}
-        {/* ── THE VANISH, REPLACED ──────────────────────────────────────────
-            This row was DELETED from the page for anybody below Auteur, so a
-            member could not learn the Backdrop exists, let alone want it. A
-            member cannot want what they have never seen.
-
-            It is the one personal feature in the app, which makes the tease
-            different from every other: there is no other member's backdrop to
-            show. The Lounge can display real salons; the Vault and this can
-            only ever show you your own empty instance. So it renders the real
-            setting, inert, with the rope beneath naming what it is. */}
+        {/* Below Auteur the row is shown, inert, with the rope beneath naming
+            what it is: a member cannot want what they have never seen, and
+            there is no other member's backdrop to show them. */}
         {isReady && (
           <>
             <DiamondDivider />
@@ -339,11 +334,11 @@ export function EditProfileScreen() {
           <Animated.View entering={FadeInDown.duration(500).delay(200)}>
               <SectionCard>
                   <SectionHead icon={Link2} label="LINKS" />
-                  <LinksEditor 
-                    links={fields} 
-                    handleAddLink={handleAddLink} 
-                    handleRemoveLink={handleRemoveLink} 
-                    errors={errors as unknown as import('@/src/features/profile/LinksEditor').LinksEditorProps['errors']} 
+                  <LinksEditor
+                    links={fields}
+                    handleAddLink={handleAddLink}
+                    handleRemoveLink={handleRemoveLink}
+                    errors={errors as unknown as import('@/src/features/profile/LinksEditor').LinksEditorProps['errors']}
                   />
               </SectionCard>
           </Animated.View>
@@ -384,7 +379,7 @@ export function EditProfileScreen() {
 
       {/* Decouple modal from keyboard avoidance view to prevent UI jump */}
       {showCropModal && (
-        <AvatarCropSheet 
+        <AvatarCropSheet
            onClose={() => setShowCropModal(false)}
            onSuccess={(base64: string) => {
                setAvatarBase64(base64);
