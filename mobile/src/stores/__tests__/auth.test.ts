@@ -6,7 +6,8 @@
  */
 
 // Mock supabase before imports
-import { useAuthStore, BAD_CREDENTIALS } from '../auth';
+import { useAuthStore } from '../auth';
+import { BAD_CREDENTIALS } from '@/src/utils/authSignals';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
 // ProfileWriteService is jest.mock'd below — no direct import needed
 

@@ -113,7 +113,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | — |  |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | — |  |
-| app/reset-password.tsx | — |  |
+| app/reset-password.tsx | 2026-10-01 | navigates through nav |
 | app/settings.tsx | — |  |
 | app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-09-29 | 13 fixed + test that runs the real queryFn |
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
@@ -214,9 +214,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/atmosphere/RoomLight.tsx | — |  |
 | src/components/atmosphere/useSharedImage.ts | — |  |
 | src/components/auth/AuthChrome.tsx | — |  |
-| src/components/auth/EmailConfirmationScreen.tsx | — |  |
-| src/components/auth/PasswordRecoveryModal.tsx | — |  |
-| src/components/auth/PasswordStrengthMeter.tsx | — |  |
+| src/components/auth/EmailConfirmationScreen.tsx | 2026-10-01 | true as written |
+| src/components/auth/PasswordRecoveryModal.tsx | 2026-10-01 | says reset or confirm, one sheet |
+| src/components/auth/PasswordStrengthMeter.tsx | 2026-10-01 | true as written |
 | src/components/auth/SocietySeal.tsx | — |  |
 | src/components/AutopsyGauge.tsx | — |  |
 | src/components/Buster.tsx | — |  |
@@ -617,7 +617,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/theSealLeavesWithTheScreen.test.tsx | — |  |
 | src/hooks/__tests__/theSearchKnowsWhichSourceWasDown.test.tsx | — |  |
 | src/hooks/__tests__/useAuthFlow.validation.test.ts | — |  |
-| src/hooks/__tests__/useAuthThrottle.pbt.test.ts | — |  |
+| src/hooks/__tests__/useAuthThrottle.pbt.test.ts | 2026-10-01 | the countdown keeps the rule |
 | src/hooks/__tests__/useBanCheck.test.ts | — |  |
 | src/hooks/__tests__/useEditProfile.logic.test.ts | — |  |
 | src/hooks/__tests__/useFeeds.test.ts | — |  |
@@ -632,7 +632,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useAmbientGlow.ts | — |  |
 | src/hooks/useAnalytics.ts | — |  |
 | src/hooks/useAuthFlow.ts | 2026-10-01 | read with the auth audit |
-| src/hooks/useAuthThrottle.ts | — |  |
+| src/hooks/useAuthThrottle.ts | 2026-10-01 | a lifted lock keeps the rule |
 | src/hooks/useBanCheck.ts | — |  |
 | src/hooks/useCatalogueSearch.ts | — |  |
 | src/hooks/useClearance.ts | — |  |
@@ -961,6 +961,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/softBreak.ts | — |  |
 | src/utils/storyExporter.ts | — |  |
 | src/utils/TactileEngine.ts | — |  |
+| src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
 | src/utils/text.ts | — |  |
 | src/utils/tier.ts | — |  |
 | src/utils/tierDoor.ts | — |  |

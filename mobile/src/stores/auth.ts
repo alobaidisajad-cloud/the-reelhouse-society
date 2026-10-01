@@ -1,4 +1,3 @@
-import * as Linking from 'expo-linking';
 import { create } from 'zustand';
 import { removePushToken } from '../lib/pushNotifications';
 import { queryClient } from '../lib/queryClient';
@@ -17,6 +16,7 @@ import reelToast from '../utils/reelToast';
 import { isRetryable, withRetry } from '../utils/withRetry';
 import { hydrateFollowing } from './domain/socialSlice';
 import { storage, setSensitive } from './mmkv-storage';
+import { BAD_CREDENTIALS, isAddress, authLink } from '../utils/authSignals';
 export { storage };
 
 export interface AuthState {
@@ -48,19 +48,6 @@ const _prefTimers = new Map<string, ReturnType<typeof setTimeout>>();
 // back every key changed in it (the keys share one timer).
 const _prefBaselines = new Map<string, Record<string, unknown>>();
 
-/** Supabase's words for refused credentials: both doors throw them, so the lock counts both. */
-export const BAD_CREDENTIALS = 'Invalid login credentials';
-/** Something before the @ and a dotted domain after it. "@name" and "old@handle" are handles. */
-const ADDRESS_SHAPE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-/** An email's link back into the app, saying which it is, so a failed one offers the right way on. */
-export function authLink(type: 'signup' | 'recovery'): string {
-  return Linking.createURL('auth-callback', { queryParams: { type } });
-}
-
-/** Whether what was typed into "email or username" is an address. */
-export function isAddress(typed: string): boolean {
-  return ADDRESS_SHAPE.test(typed.trim());
-}
 
 /** A failed username sign-in, in the words mapAuthError reads: the cause, never a guess. */
 function usernameRefusal(error: unknown): Error {

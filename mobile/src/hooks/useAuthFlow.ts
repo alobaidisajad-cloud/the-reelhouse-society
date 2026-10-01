@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/src/lib/supabase';
-import { useAuthStore, BAD_CREDENTIALS, authLink } from '@/src/stores/auth';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useAuthStore } from '@/src/stores/auth';
+import { BAD_CREDENTIALS, authLink } from '@/src/utils/authSignals';
+import { useLocalSearchParams } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
 import reelToast from '@/src/utils/reelToast';
 import { getPasswordChecks } from '@/src/components/auth/PasswordStrengthMeter';
@@ -106,7 +108,6 @@ export function initialIsLogin(action?: string): boolean {
 export type EmailLinkPurpose = 'reset' | 'confirm';
 
 export function useAuthFlow() {
-  const router = useRouter();
   const params = useLocalSearchParams<{ action?: string }>();
   const { login, signup } = useAuthStore();
 
@@ -219,7 +220,7 @@ export function useAuthFlow() {
       await login(creds.email, creds.password);
       credentialsRef.current.password = '';
       setAwaitingConfirmation(false);
-      (router.replace as any)('/(tabs)');
+      nav.replace('/(tabs)');
     } catch (err: unknown) {
       const raw = messageOf(err);
       reelToast.error(raw ? mapAuthError(raw).message : 'Verification check failed.');
@@ -287,7 +288,7 @@ export function useAuthFlow() {
     try {
       if (isLogin) {
         await login(emailOrUsername.trim(), password);
-        (router.replace as any)('/(tabs)');
+        nav.replace('/(tabs)');
       } else {
         const formattedUsername = usernameCheck!.sanitized;
         const result = await signup(emailOrUsername.trim(), password, formattedUsername);
@@ -295,7 +296,7 @@ export function useAuthFlow() {
           setConfirmedEmail(emailOrUsername.trim());
           setAwaitingConfirmation(true);
         } else {
-          (router.replace as any)('/(tabs)');
+          nav.replace('/(tabs)');
         }
       }
     } catch (error: unknown) {

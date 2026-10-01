@@ -91,7 +91,11 @@ jest.mock('lucide-react-native', () => {
   const React = require('react');
   return new Proxy({}, { get: () => (p: Record<string, unknown>) => React.createElement('Icon', p) });
 });
-jest.mock('react-native/Libraries/Alert/Alert', () => ({ alert: (...a: unknown[]) => mockAlert(...a) }));
+// React Native 0.81 reads this module's default export.
+jest.mock('react-native/Libraries/Alert/Alert', () => {
+  const Alert = { alert: (...a: unknown[]) => mockAlert(...a) };
+  return { __esModule: true, default: Alert, ...Alert };
+});
 // The global mock carries no version, so the footer line could never render and
 // a test asserting only that the SOURCE mentions it proved nothing.
 jest.mock('expo-constants', () => ({ __esModule: true, default: { expoConfig: { version: '1.4.2', extra: {} } } }));
@@ -339,6 +343,35 @@ describe('the password panel upheld a weaker standard than the front door', () =
   });
 });
 
+describe('changing the password says what went wrong', () => {
+  /** Opens the panel, fills it to the standard, and submits; returns what the toast said. */
+  const changeWith = async (refusal: { message: string }) => {
+    const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
+    const signIn = supabase.auth.signInWithPassword as jest.Mock;
+    signIn.mockResolvedValueOnce({ data: { user: null, session: null }, error: refusal });
+    const toast = jest.requireMock('@/src/utils/reelToast').default as { error: jest.Mock };
+    toast.error.mockClear();
+    const r = await settle(mount());
+    await act(async () => { await fireEvent.press(r.getByLabelText('Change password')); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Current password'), 'Old#Pass12'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('New password'), 'New#Pass123'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Confirm password'), 'New#Pass123'); });
+    await act(async () => { await fireEvent(r.getByLabelText('Confirm password'), 'submitEditing'); });
+    expect(signIn).toHaveBeenCalledWith({ email: BASE.email, password: 'Old#Pass12' });
+    return toast.error.mock.calls.map((c) => String(c[0]));
+  };
+
+  it('a refused current password is called incorrect', async () => {
+    expect(await changeWith({ message: 'Invalid login credentials' })).toEqual(['Incorrect current cipher.']);
+  });
+
+  it('with no connection, never that the password is wrong', async () => {
+    const said = await changeWith({ message: 'Failed to fetch' });
+    expect(said).toHaveLength(1);
+    expect(said[0]).toMatch(/connection/);
+  });
+});
+
 describe('privacy', () => {
   it('splits the name from its explanation instead of wrapping', async () => {
     const r = await settle(mount());
@@ -522,6 +555,19 @@ describe('the security box no longer strands you', () => {
     expect(SCREEN).toMatch(/SEND A NEW CODE/);
     expect(SCREEN).toMatch(/setOtpError/);
     expect(SCREEN).toMatch(/st\.modalFail/);
+  });
+
+  it("says why in the house's words, never Supabase's", async () => {
+    const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
+    (supabase.auth as unknown as { signInWithOtp: jest.Mock }).signInWithOtp = jest.fn().mockResolvedValue({
+      data: null, error: { message: 'For security purposes, you can only request this after 42 seconds.' },
+    });
+    const r = await settle(mount());
+    await act(async () => { await fireEvent.press(r.getByLabelText('DELETE ACCOUNT')); });
+    const [, , buttons] = mockAlert.mock.calls[mockAlert.mock.calls.length - 1] as [string, string, { text: string; onPress?: () => Promise<void> }[]];
+    await act(async () => { await buttons.find((b) => b.text === 'DELETE')!.onPress!(); });
+    await waitFor(() => expect(r.getByText(/needs a moment/)).toBeTruthy());
+    expect(r.queryByText(/For security purposes/)).toBeNull();
   });
 
   it('and will not ask again before the server would accept it', () => {

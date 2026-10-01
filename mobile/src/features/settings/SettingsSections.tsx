@@ -20,6 +20,8 @@ import { Controller, Control } from 'react-hook-form';
 import type { SettingsFormData } from '@/src/schemas/settings';
 import { useSettingsStore } from '@/src/stores/settings';
 import { useAuthStore } from '@/src/stores/auth';
+import { BAD_CREDENTIALS } from '@/src/utils/authSignals';
+import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { AuthService } from '@/src/services/AuthService';
 import { supabase } from '@/src/lib/supabase';
 import { isAuteurPlusTier, isArchivistPlusTier, getDisplayTier } from '@/src/utils/tier';
@@ -319,13 +321,17 @@ export function PasswordChangePanel() {
     if (newPassword !== confirmPassword) { reelToast.error('Ciphers do not match.'); return; }
     setChangingPassword(true);
     try {
-      const { data: userAuth } = await supabase.auth.getUser();
-      if (!userAuth.user?.email) throw new Error('User email not found.');
+      // The address the phone already holds: asking the server for it fails offline.
+      const email = useAuthStore.getState().user?.email;
+      if (!email) throw new Error('User email not found.');
       const { error: verifyError } = await supabase.auth.signInWithPassword({
-        email: userAuth.user.email,
+        email,
         password: currentPassword
       });
-      if (verifyError) throw new Error('Incorrect current cipher.');
+      // Only a refusal of the password says the password is wrong.
+      if (verifyError) {
+        throw new Error(verifyError.message.includes(BAD_CREDENTIALS) ? 'Incorrect current cipher.' : mapAuthError(verifyError.message).message);
+      }
 
       await AuthService.updatePassword(newPassword);
       reelToast.success('Credentials re-encrypted.');
@@ -333,7 +339,8 @@ export function PasswordChangePanel() {
         setShowPasswordChange(false);
       }
     } catch (e: unknown) {
-      reelToast.error(e instanceof Error ? e.message : 'Re-encryption failed.');
+      const raw = (e as { message?: unknown } | null)?.message;
+      reelToast.error(typeof raw === 'string' && raw ? mapAuthError(raw).message : 'Re-encryption failed.');
     } finally {
       if (isMountedRef.current) {
         setChangingPassword(false);

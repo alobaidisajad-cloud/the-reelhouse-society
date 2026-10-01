@@ -95,9 +95,8 @@ export function useAuthThrottle() {
         if (left <= 0) {
           setSecondsRemaining(0);
           cleanup();
-          // Free the lockout explicitly
-          attemptsRef.current = [];
-          storage.delete(STORAGE_KEY);
+          // The rule again, not a clean slate: attempts still in the window count.
+          evaluateLockout();
         } else {
           setSecondsRemaining(left);
         }

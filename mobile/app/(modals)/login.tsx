@@ -18,7 +18,7 @@ import { colors } from '@/src/theme/theme';
 import { SmallPrintLink } from '@/src/components/society/SmallPrint';
 import { openHousePage } from '@/src/utils/housePages';
 import { TERMS_URL, PRIVACY_URL } from '@/src/constants/support';
-import { isAddress } from '@/src/stores/auth';
+import { isAddress } from '@/src/utils/authSignals';
 import { displayTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { pickAny } from '@/src/lore/fragments';

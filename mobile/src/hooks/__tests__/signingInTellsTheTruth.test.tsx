@@ -222,7 +222,9 @@ describe('every door into a session', () => {
     // timer outlived the screen: a member who went back first was pulled
     // forward anyway (and the tests' timer fired inside the next test file).
     jest.useFakeTimers();
-    const replace = jest.fn();
+    // Where nav sends the member: expo-router's own router (src/utils/typedRouter.ts).
+    const replace = (jest.requireMock('expo-router') as { router: { replace: jest.Mock } }).router.replace;
+    replace.mockClear();
     const { useRouter, useLocalSearchParams } = jest.requireMock('expo-router') as Record<string, jest.Mock>;
     useRouter.mockReturnValue({ push: jest.fn(), replace, back: jest.fn(), dismissAll: jest.fn() });
     useLocalSearchParams.mockReturnValue({ code: 'abc', type: 'signup' });
@@ -247,7 +249,9 @@ describe('every door into a session', () => {
     ['a link that only claims to be a recovery', { type: 'recovery' }],
   ])('%s, opened while signed in, arms nothing and sends nowhere', async (_name, params) => {
     jest.useFakeTimers();
-    const replace = jest.fn();
+    // Where nav sends the member: expo-router's own router (src/utils/typedRouter.ts).
+    const replace = (jest.requireMock('expo-router') as { router: { replace: jest.Mock } }).router.replace;
+    replace.mockClear();
     const { useRouter, useLocalSearchParams } = jest.requireMock('expo-router') as Record<string, jest.Mock>;
     useRouter.mockReturnValue({ push: jest.fn(), replace, back: jest.fn(), dismissAll: jest.fn() });
     useLocalSearchParams.mockReturnValue(params);
@@ -264,7 +268,9 @@ describe('every door into a session', () => {
 
   it('and staying, it walks on to the Lobby', async () => {
     jest.useFakeTimers();
-    const replace = jest.fn();
+    // Where nav sends the member: expo-router's own router (src/utils/typedRouter.ts).
+    const replace = (jest.requireMock('expo-router') as { router: { replace: jest.Mock } }).router.replace;
+    replace.mockClear();
     const { useRouter, useLocalSearchParams } = jest.requireMock('expo-router') as Record<string, jest.Mock>;
     useRouter.mockReturnValue({ push: jest.fn(), replace, back: jest.fn(), dismissAll: jest.fn() });
     useLocalSearchParams.mockReturnValue({ code: 'abc', type: 'signup' });

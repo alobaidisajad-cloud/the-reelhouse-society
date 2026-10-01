@@ -45,6 +45,7 @@ import { SUPPORT_EMAIL, SUPPORT_URL, TERMS_URL, PRIVACY_URL } from '@/src/consta
 import { st } from '@/src/features/settings/settings.styles';
 import { ToastHost } from '@/src/components/ToastHost';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { mapAuthError } from '@/src/hooks/useAuthFlow';
 
 const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<T> => {
   return new Promise((resolve) => {
@@ -132,7 +133,10 @@ export function SettingsScreen() {
       // The box stays open with a reason and a way to try again. It used to
       // leave a live modal, an empty field, and a toast that had already gone.
       if (isMountedRef.current) {
-        setOtpError(e instanceof Error ? e.message : 'The code could not be sent. Check your connection and try again.');
+        const raw = (e as { message?: unknown } | null)?.message;
+        setOtpError(typeof raw === 'string' && raw
+          ? mapAuthError(raw).message
+          : 'The code could not be sent. Check your connection and try again.');
       }
       return false;
     } finally {

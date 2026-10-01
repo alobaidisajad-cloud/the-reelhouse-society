@@ -5,7 +5,6 @@ import Animated, {
   FadeInDown, FadeIn, ReduceMotion,
 } from 'react-native-reanimated';
 import { supabase } from '@/src/lib/supabase';
-import { useRouter } from 'expo-router';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import { useAuthStore, storage } from '@/src/stores/auth';
@@ -22,7 +21,6 @@ import { nav } from '@/src/utils/typedRouter';
 const AnimatedView = Animated.createAnimatedComponent(View);
 
 export default function ResetPasswordScreen() {
-  const router = useRouter();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -80,7 +78,7 @@ export default function ResetPasswordScreen() {
 
       // The "3 SECONDS" the screen promises; cleared if the screen goes first.
       redirectTimerRef.current = setTimeout(() => {
-        (router.replace as any)('/(tabs)');
+        nav.replace('/(tabs)');
       }, 3000);
     } catch (err: unknown) {
       reelToast.error(err instanceof Error ? mapAuthError(err.message).message : 'Failed to reset password.');
@@ -139,7 +137,7 @@ export default function ResetPasswordScreen() {
             </Text>
             <PressableScale
               style={[s.submitBtn, { marginTop: 20 }]}
-              onPress={() => (router.replace as any)({ pathname: '/login', params: { action: 'forgot_password' } })}
+              onPress={() => nav.replace('/login', { action: 'forgot_password' })}
               pressedScale={0.97}
               accessibilityRole="button"
               accessibilityLabel="Request new reset link"
@@ -148,7 +146,7 @@ export default function ResetPasswordScreen() {
             </PressableScale>
             <PressableScale
               style={{ marginTop: 16, padding: 8 }}
-              onPress={() => (router.replace as any)('/(tabs)')}
+              onPress={() => nav.replace('/(tabs)')}
               pressedScale={0.95}
               haptic="light"
               accessibilityRole="button"
@@ -183,11 +181,7 @@ export default function ResetPasswordScreen() {
               storage.delete('recovery_pending');
               try { await supabase.auth.signOut({ scope: 'local' }); } catch {}
             }
-            if (router.canGoBack()) {
-              nav.back();
-            } else {
-              (router.replace as any)('/(tabs)');
-            }
+            nav.back(); // the Lobby when there is nothing to go back to
           }}
           hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
           haptic="light"

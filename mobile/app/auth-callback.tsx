@@ -3,6 +3,7 @@ import { View, StyleSheet, ActivityIndicator, InteractionManager } from 'react-n
 import { Text } from '@/src/components/text';
 import Animated, { FadeIn, FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { storage } from '@/src/stores/mmkv-storage';
@@ -37,7 +38,7 @@ export default function AuthCallbackScreen() {
   const goOnward = (to: string, afterMs: number) => {
     onward.current = setTimeout(() => InteractionManager.runAfterInteractions(() => {
       try { router.dismissAll(); } catch {}
-      (router.replace as any)(to);
+      nav.replace(to);
     }), afterMs);
   };
 
@@ -170,7 +171,7 @@ export default function AuthCallbackScreen() {
               {params.type === 'recovery' ? (
                 <PressableScale
                   style={s.retryBtn}
-                  onPress={() => (router.replace as any)({ pathname: '/login', params: { action: 'forgot_password' } })}
+                  onPress={() => nav.replace('/login', { action: 'forgot_password' })}
                   pressedScale={0.97}
                   haptic="medium"
                 >
@@ -179,7 +180,7 @@ export default function AuthCallbackScreen() {
               ) : params.type === 'signup' ? (
                 <PressableScale
                   style={s.retryBtn}
-                  onPress={() => (router.replace as any)({ pathname: '/login', params: { action: 'resend_signup' } })}
+                  onPress={() => nav.replace('/login', { action: 'resend_signup' })}
                   pressedScale={0.97}
                   haptic="medium"
                 >
@@ -189,7 +190,7 @@ export default function AuthCallbackScreen() {
                 // What this opens is the sign-in form, and it says so.
                 <PressableScale
                   style={s.retryBtn}
-                  onPress={() => (router.replace as any)('/login')}
+                  onPress={() => nav.replace('/login')}
                   pressedScale={0.97}
                   haptic="medium"
                   accessibilityRole="button"
@@ -201,7 +202,7 @@ export default function AuthCallbackScreen() {
 
               <PressableScale
                 style={s.retryBtnSecondary}
-                onPress={() => (router.replace as any)('/(tabs)')}
+                onPress={() => nav.replace('/(tabs)')}
                 pressedScale={0.97}
                 haptic="light"
               >
@@ -212,7 +213,7 @@ export default function AuthCallbackScreen() {
               {(params.type === 'recovery' || params.type === 'signup') && (
                 <PressableScale
                   style={s.retryBtnTertiary}
-                  onPress={() => (router.replace as any)('/login')}
+                  onPress={() => nav.replace('/login')}
                   pressedScale={0.97}
                   haptic="light"
                 >

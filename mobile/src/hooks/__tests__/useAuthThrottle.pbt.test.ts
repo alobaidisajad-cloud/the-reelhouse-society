@@ -10,7 +10,8 @@
  * bind to what actually runs.
  */
 import fc from 'fast-check';
-import { evaluateAuthThrottle, MAX_ATTEMPTS, WINDOW_MS } from '../useAuthThrottle';
+import { act, renderHook } from '@testing-library/react-native';
+import { evaluateAuthThrottle, MAX_ATTEMPTS, WINDOW_MS, useAuthThrottle } from '../useAuthThrottle';
 
 jest.mock('@/src/stores/mmkv-storage', () => ({
   storage: { getString: jest.fn(), set: jest.fn(), delete: jest.fn() },
@@ -122,5 +123,26 @@ describe('evaluateAuthThrottle — properties', () => {
       }),
       { numRuns: 400 },
     );
+  });
+});
+
+describe('the hook keeps the rule when its countdown ends', () => {
+  // The lock lifts when the OLDEST attempt leaves the window; the other four are
+  // still inside it, so one more refusal locks again. The countdown wiped all five.
+  it('a lifted lock allows one more attempt, not five', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(NOW);
+    const { result } = await renderHook(() => useAuthThrottle());
+    for (let i = 0; i < MAX_ATTEMPTS; i++) {
+      await act(async () => { result.current.recordAttempt(); });
+      await act(async () => { jest.advanceTimersByTime(1000); });
+    }
+    expect(result.current.canAttempt).toBe(false);
+    // To the moment the oldest leaves the window: the other four are still in it.
+    await act(async () => { jest.advanceTimersByTime(WINDOW_MS - MAX_ATTEMPTS * 1000); });
+    expect(result.current.canAttempt).toBe(true);
+    await act(async () => { result.current.recordAttempt(); });
+    expect(result.current.canAttempt).toBe(false);
+    jest.useRealTimers();
   });
 });
