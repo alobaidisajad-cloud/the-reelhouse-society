@@ -10,12 +10,12 @@ import * as Crypto from 'expo-crypto';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, RefreshControl, Share, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import Animated, { Easing, SlideInUp, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
  
 import { s, PARALLAX_PADDER_HEIGHT, BACKDROP_H, HEADER_ACTION_GAP } from '@/src/components/log/logDetailStyles';
@@ -49,18 +49,13 @@ import { z } from 'zod';
 import { WASH } from '@/src/theme/light';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { nav } from '@/src/utils/typedRouter';
-import { REFRESH_FAILED } from '@/src/components/EmptyStates';
+import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
+import { Arrive } from '@/src/components/Arrive';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { offerWord } from '@/src/lib/pushPrimer';
 
-// TMDB_IMG hardcoded string removed in favor of tmdb.poster / tmdb.backdrop
-const AnimatedView = Animated.createAnimatedComponent(View);
-
 /** The backdrop's fade into the room: how much house it lays down, top to hem. */
 const BACKDROP_VEIL: VeilStops = [[0, 0], [1 / 3, 0.4], [2 / 3, 0.95], [1, 1]];
-// #75 / finding 109 — a local timeAgo used to live here, one of four near-copies. It had no
-// weeks bucket at all, so a fortnight-old log jumped straight from "6d AGO" to a bare
-// "MAR 5" with no year. The shared util is imported at the top of this file.
 
 interface LogDetail {
   id: string;
@@ -119,9 +114,8 @@ interface LogComment {
 
 export default function LogDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const blockUser = useBlockStore((state) => state.blockUser);
   const muteUser = useBlockStore((state) => state.muteUser);
   const insets = useSafeAreaInsets();
@@ -129,7 +123,7 @@ export default function LogDetailScreen() {
   const queryClient = useQueryClient();
 
   // ── React Query: MMKV-cached log detail (instant revisits) ──
-  const { data: logQueryData, isLoading: logQueryLoading, refetch: rereadLog } = useQuery({
+  const { data: logQueryData, isLoading: logQueryLoading, isError: logQueryFailed, refetch: rereadLog } = useQuery({
     queryKey: ['log', id],
     queryFn: async ({ signal }) => {
       // Taken BEFORE the requests: see tellMarkCounts.
@@ -141,9 +135,8 @@ export default function LogDetailScreen() {
 
         const profile = logData ? (Array.isArray(logData.profiles) ? logData.profiles[0] : logData.profiles) : null;
 
-        // One page of critiques, newest kept, plus the TRUE total. The header
-        // used to count this array — which was only right while the fetch was
-        // unbounded.
+        // One page of critiques, newest kept, plus the TRUE total, which the
+        // header prints (never this page's length).
         const { comments: commData, total: commentTotal } = await LogService.getLogComments(id, signal);
 
         const mappedComments = (commData || []).map((c: Record<string, any>) => ({
@@ -226,9 +219,8 @@ export default function LogDetailScreen() {
             is_spoiler: localLog.isSpoiler || false,
             watched_date: localLog.watchedDate,
             watched_with: localLog.watchedWith,
-            // The save path drops the composer's 'None' sentinel; this mapping
-            // did not, so a log read from the local store printed FORMAT: NONE
-            // while the same log from the server printed nothing. One answer.
+            // The composer's 'None' sentinel is no format, here as on the
+            // server's copy: one answer, never FORMAT: NONE.
             physical_media: hasPhysicalFormat(localLog.physicalMedia) ? localLog.physicalMedia : null,
             abandoned_reason: localLog.abandonedReason,
             is_autopsied: localLog.isAutopsied,
@@ -301,20 +293,16 @@ export default function LogDetailScreen() {
   /**
    * May the READER write in the Vault — decides whether EDIT is offered on the
    * current viewing's note. The reader's own clearance, through useClearance,
-   * like every rank decision in the app. It first used `profile.role`, which is
-   * the log AUTHOR's `role` column: rank lives in `tier`, so a paying Archivist
-   * whose role still reads 'cinephile' was never offered EDIT on their own note.
+   * like every rank decision in the app: never the log author's profile.
    */
   const vaultClearance = useClearance('vault-editing');
 
   /**
    * The ONE way this screen changes the critique list.
    *
-   * The list is now a bounded page with a separate total, so every optimistic
-   * add, edit, delete and rollback has to move both together. There are five such
-   * places; maintaining a counter by hand at five sites is precisely the drift
-   * this batch keeps finding. Here the total follows the list by construction —
-   * it cannot disagree, whatever a future edit does.
+   * The list is a bounded page with a separate total, so every optimistic add,
+   * edit, delete and rollback moves both together, here: the total follows the
+   * list by construction and cannot disagree, whatever a future edit does.
    */
   const updateComments = useCallback(
     (updater: (list: LogComment[]) => LogComment[]) => {
@@ -363,19 +351,17 @@ export default function LogDetailScreen() {
   /**
    * Selectors, not the whole store.
    *
-   * `const { hasEndorsed, toggleEndorse } = useInteractionStore()` subscribes to
-   * EVERY field, so this screen — hero image, full essay, critique list — re-
-   * rendered whenever anything in the film store changed anywhere in the app.
-   * The feed card next door already reads one value at a time; this page did
-   * not. Same store, three aliases (useFilmStore / useWatchlistStore /
-   * useInteractionStore all point at it), so nothing here is a new dependency.
+   * Reading the whole store would subscribe this screen — hero image, full
+   * essay, critique list — to EVERY field, re-rendering it whenever anything in
+   * the film store changed anywhere in the app. One value at a time, as the
+   * feed card reads them. (useFilmStore / useWatchlistStore /
+   * useInteractionStore are three names for one store.)
    */
   const endorsed = useInteractionStore(st => !!st._endorsedIndex[id]);
   const toggleEndorse = useInteractionStore(st => st.toggleEndorse);
 
-  // SAVE was on the feed card and missing here, so the fuller surface offered
-  // less: read a review properly, decide you want the film, and there was no
-  // way to keep it. The deck is presentational, so the screen owns the state
+  // SAVE, as on the feed card: read a review properly, decide you want the
+  // film, and keep it. The deck is presentational, so the screen owns the state
   // and hands it down — same shape as its other handlers.
   const filmSaved = useInteractionStore(st => !!st._watchlistIndex[log?.film_id ?? -1]);
   const addToWatchlist = useInteractionStore(st => st.addToWatchlist);
@@ -417,7 +403,7 @@ export default function LogDetailScreen() {
   }, [queryClient, id]);
 
   const handlePostComment = async () => {
-    if (!isAuthenticated) return (router.push as any)('/login' as any);
+    if (!isAuthenticated) { nav.push('/login'); return; }
     if (!newComment.trim() || posting) return;
 
     // Pre-flight Log ID validation to prevent stuck UI on malformed ID
@@ -553,20 +539,17 @@ export default function LogDetailScreen() {
   }, [queryClient, id, user, updateComments]);
 
   const handleShare = async () => {
-    // The ref is no longer checked here: the card it points at does not exist
-    // until this function mounts it, three lines down.
+    // The ref is not checked here: the card it points at does not exist until
+    // this function mounts it, three lines down.
     if (!isReadyToShare || sharing) return;
     try {
       TactileEngine.navigate();
       setSharing(true);
 
       /**
-       * Mount the share card NOW, not on page open.
-       *
-       * It is a complete second rendering of the log — poster included — and it
-       * lived permanently in the tree at opacity 0.01 behind everything, with
-       * collapsable={false} so it could not even be flattened away. Every member
-       * who opened a log paid for a card most of them never share.
+       * Mount the share card NOW, not on page open: it is a complete second
+       * rendering of the log, poster included, and a member who never shares
+       * should never pay for it.
        *
        * Safe to mount late because `isReadyToShare` already gates on the VISIBLE
        * poster having loaded, so the same URI is in expo-image's memory cache
@@ -599,6 +582,8 @@ export default function LogDetailScreen() {
       }
     } catch {
        TactileEngine.error();
+       // A share that failed says so, as the film's file does.
+       reelToast.error('The log could not be shared. Try again.');
     } finally {
        setSharing(false);
        // Always unmount, including after a failed capture — a share card left
@@ -607,35 +592,56 @@ export default function LogDetailScreen() {
     }
   };
 
-  // A spinner, not a blank screen. This returned a bare <View>, so a member on a
-  // slow connection saw nothing at all and could not tell the app from a crash.
-  // The dossier and lounge screens both show this; `centerFull` is the same style
-  // the not-found branch below already uses.
+  // A spinner, not a blank screen: a member on a slow connection can tell the
+  // app from a crash. `centerFull` is the style the not-found branch uses.
   if (loading) {
     return (
       <View style={[s.container, s.centerFull]}>
         <RoomLight room="film" />
-        {/* Labelled because this spinner is the ONLY thing on screen. Without it
-            the fix was sighted-only: a blank screen became a spinner, and a
-            VoiceOver member still heard nothing either way. */}
+        {/* Labelled because this spinner is the ONLY thing on screen, so a
+            screen-reader member hears it too. */}
         <ActivityIndicator color={colors.sepia} accessibilityLabel="Loading record" />
       </View>
     );
   }
 
+  // The way out says where it goes: back, or (opened cold) to the Lobby. Asked
+  // only where a way out is drawn.
+  const wayOutLabel = () => (nav.canGoBack() ? 'Go back' : 'Return to the Lobby');
+
+  // Unreachable, not missing: a log that could not be read is never "not found".
+  if (!log && logQueryFailed) {
+    const wayOut = wayOutLabel();
+    return (
+      <View style={[s.container, s.centerFull]}>
+        <RoomLight room="film" />
+        <EmptyOffline onRetry={() => { void rereadLog(); }} wayOut={{ label: wayOut, onPress: () => { nav.back(); } }} />
+      </View>
+    );
+  }
+
   if (!log) {
+    const wayOut = wayOutLabel();
     return (
       <View style={[s.container, s.centerFull]}>
         <RoomLight room="film" />
         <FilmIcon size={40} color={colors.sepia} strokeWidth={1} />
         <Text style={s.notFoundText}>Log not found.</Text>
-        <PressableScale style={s.backBtnRow} onPress={() => { nav.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="selection" pressedScale={0.92}>
+        <PressableScale style={s.backBtnRow} onPress={() => { nav.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="selection" pressedScale={0.92}
+          accessibilityRole="button" accessibilityLabel={wayOut}>
             <ChevronLeft size={12} color={colors.bone} strokeWidth={1.5} />
-            <Text style={s.backBtnText}>GO BACK</Text>
+            <Text style={s.backBtnText}>{wayOut.toUpperCase()}</Text>
         </PressableScale>
       </View>
     );
   }
+
+  // The one door to the editor, from the deck and from an open note alike.
+  const openEditor = () => {
+    nav.push('/log-modal', {
+      editLogId: id, filmId: String(log.film_id), filmTitle: log.film_title, filmPoster: log.poster_path ?? '',
+    });
+  };
 
   const isAuteur = isAuteurPlusTier(profile?.role);
   const isArchivist = isArchivistPlusTier(profile?.role);
@@ -687,7 +693,9 @@ export default function LogDetailScreen() {
           </View>
 
           <View style={s.headerRight}>
-            <PressableScale style={s.shareBtn} onPress={() => { handleShare(); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: HEADER_ACTION_GAP / 2 }} haptic="light" pressedScale={0.92}>
+            <PressableScale style={s.shareBtn} onPress={() => { handleShare(); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: HEADER_ACTION_GAP / 2 }} haptic="light" pressedScale={0.92}
+              accessibilityRole="button" accessibilityLabel={(!isReadyToShare || sharing) ? 'Share. Preparing the card.' : 'Share this log'}
+              accessibilityState={{ busy: sharing }}>
                <Share2 size={14} color={colors.sepia} strokeWidth={1.5} />
                <Text style={s.shareBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{(!isReadyToShare || sharing) ? '...' : 'SHARE'}</Text>
             </PressableScale>
@@ -708,11 +716,9 @@ export default function LogDetailScreen() {
         </View>
       </View>
 
-      {/* The share card, mounted ONLY while a share is in flight.
-          It is a complete second rendering of this log, poster and all, and it
-          used to sit here permanently at 1% opacity behind everything — with
-          collapsable={false}, so it could not even be flattened away. Every
-          member who opened a log paid for a card most never share. */}
+      {/* The share card, mounted ONLY while a share is in flight: a complete
+          second rendering of this log, poster and all, which a member who never
+          shares never pays for. */}
       {shareCardMounted && (
       <View style={s.hiddenShareContainer} collapsable={false} pointerEvents="none">
          <View ref={viewShotRef} collapsable={false} style={s.inkBg}>
@@ -751,7 +757,8 @@ export default function LogDetailScreen() {
             <LinearGradient colors={[colors.crimsonFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFillObject, WASH]} />
           )}
         
-        <AnimatedView entering={SlideInUp.duration(500).easing(Easing.out(Easing.cubic))} style={s.logCardInner}>
+        {/* The record drops into place from above the screen, certain to arrive. */}
+        <Arrive name="log.card" duration={500} rise={-windowHeight} easing={Easing.out(Easing.cubic)} style={s.logCardInner}>
           
           <LogHero
             log={log}
@@ -761,8 +768,8 @@ export default function LogDetailScreen() {
             isArchivist={isArchivist}
             timeAgo={timeAgo(log.created_at)}
             onPosterLoaded={() => setPosterLoaded(true)}
-            onPressUser={() => { if (profile?.username) (router.push as any)(`/user/${profile.username}` as any); }}
-            onPressFilm={() => { (router.push as any)(`/film/${log.film_id}` as any); }}
+            onPressUser={() => { if (profile?.username) nav.push(`/user/${encodeURIComponent(profile.username)}`); }}
+            onPressFilm={() => { nav.push(`/film/${log.film_id}`); }}
           />
 
           {/* The honour stays: the day this log hung in the Lobby, if it did. */}
@@ -815,15 +822,11 @@ export default function LogDetailScreen() {
                scrollViewRef.current?.scrollTo({ y: Math.max(0, critiquesSectionY.current - 12), animated: true });
                setTimeout(() => { critiqueInputRef.current?.focus(); }, 300);
             }}
-            onEditPress={() => {
-              if (log.film_id) {
-                (router.push as any)({ pathname: '/log-modal', params: { editLogId: id, filmId: String(log.film_id), filmTitle: log.film_title, filmPoster: log.poster_path } } as import('expo-router').Href);
-              }
-            }}
+            onEditPress={() => { if (log.film_id) openEditor(); }}
             onLoungePress={() => { setShowLoungeShare(true); }}
           />
 
-        </AnimatedView>
+        </Arrive>
 
 
         
@@ -837,7 +840,7 @@ export default function LogDetailScreen() {
           onNewCommentChange={handleNewCommentChange}
           onPostComment={handlePostComment}
           onWithdrawComment={handleDeleteComment}
-          onPressUser={(username) => (router.push as any)(`/user/${username}` as any)}
+          onPressUser={(username) => { nav.push(`/user/${encodeURIComponent(username)}`); }}
           onSectionLayout={(y) => { critiquesSectionY.current = PARALLAX_PADDER_HEIGHT + y; }}
           // A member's report; a reader not signed in has no report to file.
           onReportComment={user ? (comment) => {
@@ -923,7 +926,7 @@ export default function LogDetailScreen() {
           // opened the same way as the deck's own EDIT — one door, not two.
           onEdit={log.film_id ? () => {
             vault.closeNote();
-            (router.push as any)({ pathname: '/log-modal', params: { editLogId: id, filmId: String(log.film_id), filmTitle: log.film_title, filmPoster: log.poster_path } } as import('expo-router').Href);
+            openEditor();
           } : undefined}
           onRemove={vault.confirmRemove}
         />

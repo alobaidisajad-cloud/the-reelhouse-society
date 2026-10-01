@@ -1,9 +1,8 @@
 import { nav } from '@/src/utils/typedRouter';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import LogForm from '@/src/components/log/LogForm';
@@ -15,6 +14,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { useLogFlow } from '@/src/hooks/useLogFlow';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors } from '@/src/theme/theme';
+import { Arrive } from '@/src/components/Arrive';
 import { ChevronLeft, X } from 'lucide-react-native';
 
 export default function LogModalScreen() {
@@ -34,12 +34,12 @@ export default function LogModalScreen() {
     // ── Not authenticated ──
     if (!isAuthenticated) {
         return (
-            <Animated.View entering={FadeInDown.duration(400)} style={[st.root, st.centerAuthPrompt]}>
+            <Arrive name="log.identify" duration={400} style={[st.root, st.centerAuthPrompt]}>
                 <Text style={st.identifyText}>Identify yourself to file records</Text>
                 <PressableScale style={st.signInBtn} onPress={() => { nav.replace('/login'); }} haptic="medium" accessibilityLabel="Sign in">
                     <Text style={st.signInBtnText}>IDENTIFY YOURSELF</Text>
                 </PressableScale>
-            </Animated.View>
+            </Arrive>
         );
     }
 
@@ -87,11 +87,10 @@ export default function LogModalScreen() {
                 {step === 1 && film && (
                     // The scroll must END above the docked seal, or the last index
                     // entry hides behind it. One measured number: the bar's own
-                    // height plus the safe area, instead of the 80 + 20 + inset
-                    // that had accumulated here for no stated reason.
-                    <Animated.ScrollView style={st.formScroll} contentContainerStyle={[st.formContent, { paddingBottom: insets.bottom + SEAL_BAR_HEIGHT + 16 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+                    // height plus the safe area.
+                    <ScrollView style={st.formScroll} contentContainerStyle={[st.formContent, { paddingBottom: insets.bottom + SEAL_BAR_HEIGHT + 16 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
                         <LogForm flow={flow} user={user} />
-                    </Animated.ScrollView>
+                    </ScrollView>
                 )}
             </View>
 

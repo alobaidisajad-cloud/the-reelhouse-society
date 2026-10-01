@@ -26,7 +26,8 @@ jest.mock('@/src/utils/openSociety', () => ({
 
 jest.mock('lucide-react-native', () => {
   const React = require('react');
-  return new Proxy({}, { get: () => (props: any) => React.createElement('Icon', props) });
+  // Each icon drawn as an 'Icon' carrying its own name, so a test can tell a lock from a list.
+  return new Proxy({}, { get: (_t, name) => (props: any) => React.createElement('Icon', { ...props, name: String(name) }) });
 });
 jest.mock('@/src/components/NitrateCalendar', () => () => null);
 jest.mock('@/src/components/AutopsyGauge', () => () => null);
@@ -331,5 +332,30 @@ describe('the verdict, in every state', () => {
 
   it('a whole rating is not written as a decimal', () => {
     expect(render(<LogVerdict status="watched" rating={4} />).getByText('4 / 5')).toBeTruthy();
+  });
+});
+
+describe('the stacks it may be filed in', () => {
+  const STACK = (id: string, title: string, over: Record<string, unknown>) =>
+    ({ id, title, films: [], isPrivate: false, isRanked: false, createdAt: '2026-09-01T00:00:00Z', ...over });
+
+  it('a private stack wears a lock, and only a ranked one the list mark', async () => {
+    const { useFilmStore } = jest.requireActual('@/src/stores/films');
+    useFilmStore.setState({ lists: [
+      STACK('l1', 'Night Walks', { isPrivate: true }),
+      STACK('l2', 'The Canon', { isRanked: true }),
+    ] });
+    const r = mount();
+    await act(async () => { fireEvent.press(r.getByText('STACKS')); });
+    const iconsIn = (label: string) => {
+      const chip = r.getByLabelText(label);
+      const out: string[] = [];
+      const walk = (n: any) => { if (!n || typeof n !== 'object') return; if (n.type === 'Icon') out.push(n.props.name); (n.children ?? []).forEach(walk); };
+      walk(chip.children ? { children: chip.children } : null);
+      (chip as any).findAll?.((n: any) => n.type === 'Icon').forEach((n: any) => { if (!out.includes(n.props.name)) out.push(n.props.name); });
+      return out;
+    };
+    expect(iconsIn('Night Walks')).toEqual(['Lock']);
+    expect(iconsIn('The Canon')).toEqual(['ListOrdered']);
   });
 });

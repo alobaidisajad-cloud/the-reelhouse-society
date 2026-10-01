@@ -5,7 +5,6 @@ import VaultNote from '@/src/components/log/VaultNote';
 import reelToast from '@/src/utils/reelToast';
 
 import { Image } from 'expo-image';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -19,7 +18,8 @@ import LogIndexEntry from '@/src/components/log/LogIndexEntry';
 import LogClearanceGate from '@/src/components/log/LogClearanceGate';
 import { useClearance } from '@/src/hooks/useClearance';
 import { Brackets, FieldLabel } from '@/src/components/log/LogFormBody';
-import { X, Eye, History, Trash2, Check, ListOrdered, Feather, Sparkles } from 'lucide-react-native';
+import { X, Eye, History, Trash2, Check, ListOrdered, Lock, Feather, Sparkles } from 'lucide-react-native';
+import { Arrive } from '@/src/components/Arrive';
 import { PHYSICAL_OPTIONS, ABANDONED_REASONS, getLocalDateString } from '@/src/hooks/useLogFlow';
 import { hasPhysicalFormat } from '@/src/components/log/logRecord';
 import { stripHTML, isRTLText } from '@/src/utils/text';
@@ -41,9 +41,7 @@ interface LogFormProps {
 /**
  * THE RECORD, UNSEALED.
  *
- * This page had nine bordered containers stacked on a void and twelve fields
- * permanently unfolded — which is what "cramped" actually was. It reads as one
- * document now:
+ * One document, not a stack of boxes with every field unfolded:
  *
  *   THE DOCKET      the film, marked with registration brackets, not boxed
  *   THE VERDICT     how you watched it and what you thought
@@ -54,10 +52,8 @@ interface LogFormProps {
  *
  * Every tool is shown to every rank. One a member cannot open carries the app's
  * brass key and names the rank; opening it shows the real instrument, inert,
- * with the clearance gate beneath. The refusal that used to interrupt the act
- * four times now appears once, inside a panel they chose to open.
- *
- * No state, logic, validation or save path changed — this is presentation.
+ * with the clearance gate beneath: the refusal appears once, inside a panel
+ * they chose to open, never interrupting the act itself.
  */
 export default function LogForm({ flow, user }: LogFormProps) {
     const following = useSocialStore(s => s.following);
@@ -86,15 +82,12 @@ export default function LogForm({ flow, user }: LogFormProps) {
     const deskName = (user?.username || 'you').toUpperCase();
 
     /**
-     * ── FOUR ROPES, ONE WAY TO HOLD THEM ────────────────────────────────────
-     * These four were the app's most-met ropes — logging is the core act — and
-     * the only ones outside `useClearance`. Each pushed a bare '/membership', so
-     * the Society page could not say what the member reached for, the funnel
-     * never saw a single tap from here, and a lapsed member was pitched as a
-     * stranger in the room where they have filed the longest.
-     *
-     * Dismissing this modal before travelling (the Concierge's law) is now done
-     * by `openSociety`, which knows this screen is presented.
+     * ── THE ROPES, ONE WAY TO HOLD THEM ─────────────────────────────────────
+     * Logging is the core act, so these are the app's most-met ropes. Through
+     * `useClearance`, the Society page says what the member reached for, the
+     * funnel sees the tap, and a lapsed member is spoken to as one. Dismissing
+     * this modal before travelling (the Concierge's law) is `openSociety`'s,
+     * which knows this screen is presented.
      *
      * WHERE TO COME BACK TO depends on what is open. A new log keeps a draft, so
      * the form itself is the way back. An EDIT keeps none — returning an editing
@@ -107,19 +100,17 @@ export default function LogForm({ flow, user }: LogFormProps) {
     const shelf = useClearance('physical-archive', returnTo);
     const vault = useClearance('the-vault', returnTo);
     /**
-     * Curatorial Control was the one tool that stayed a VANISH: the poster was
-     * `disabled` for anyone below the Auteur — no label, no door, a tap that did
-     * nothing on a feature the Society page sells by name. It now behaves like
-     * the other four: the panel opens, the instrument is shown inert, and one
-     * rope beneath it says what it is and who opens it.
+     * Curatorial Control, like the other four: the panel opens, the instrument
+     * is shown inert, and one rope beneath it says what it is and who opens it.
+     * Never a poster that ignores the tap of a member below the Auteur.
      */
     const curation = useClearance('curatorial-control', returnTo);
 
     /**
      * An instrument shown but not usable is inert to touch AND silent to a
-     * screen reader — the same pair the shared `Locked` applies. pointerEvents
-     * alone left VoiceOver landing on a "Private notes" field nobody could type
-     * into, with the rope that explains it further down the list.
+     * screen reader — the same pair the shared `Locked` applies — or VoiceOver
+     * would land on a field nobody can type into, the rope that explains it
+     * further down the list.
      */
     const inert = (held: boolean) => held ? {} : {
         pointerEvents: 'none' as const,
@@ -206,7 +197,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
             {/* Curatorial Control — the Auteur's, exercised on the record's own
                 face rather than buried inside the autopsy where it had no business. */}
             {posterOpen && (
-                <Animated.View entering={FadeInDown.duration(200)} style={st.idxBody}>
+                <Arrive name="log.curation" duration={200} style={st.idxBody}>
                     <FieldLabel>CURATORIAL CONTROL</FieldLabel>
                     <View style={!curation.held && st.lockedPanel} {...inert(curation.held)}>
                     {availablePosters.length > 0 ? (
@@ -236,12 +227,12 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     ) : null}
                     </View>
                     {!curation.held && <LogClearanceGate rank={curation.rank} standing={curation.standing} names="Curatorial Control" onPress={curation.open} />}
-                </Animated.View>
+                </Arrive>
             )}
 
             {/* Your previous take — read the old verdict before passing a new one. */}
             {isRewatchMode && previousLog && (
-                <Animated.View entering={FadeInDown.delay(100).duration(400)} style={st.prevTakeBox}>
+                <Arrive name="log.previous-take" delay={100} duration={400} style={st.prevTakeBox}>
                     <View style={st.prevTakeHeader}>
                         <History size={11} color={colors.sepia} />
                         <Text style={st.prevTakeLabel}>YOUR PREVIOUS TAKE</Text>
@@ -269,7 +260,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     {!!dateParts(previousLog.watchedDate) && (
                         <Text style={st.prevTakeDate}>LOGGED {formatDate(previousLog.watchedDate)}</Text>
                     )}
-                </Animated.View>
+                </Arrive>
             )}
 
             {/* ══ THE SHEET ══ the document rises off the film, on the app's
@@ -321,9 +312,8 @@ export default function LogForm({ flow, user }: LogFormProps) {
             <View style={st.manuscriptFrame}>
                 <View style={st.manuscriptHeader}>
                     <Feather size={10} color={colors.sepia} strokeWidth={1.5} />
-                    {/* The frame no longer repeats the movement it sits under, so
-                        this fits at a size that can actually be read — it was 6.5pt,
-                        the smallest text in the app, shrinking further to 6.3. */}
+                    {/* The frame does not repeat the movement it sits under, so
+                        this fits at a size that can be read. */}
                     <Text style={st.manuscriptHeaderText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                         FROM THE DESK OF @{deskName}
                     </Text>
@@ -446,9 +436,8 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         ) : !vault.held && !!privateNotes ? (
                             // A member whose rank has ended, over a note they
                             // wrote. READING IS NEVER GATED: the note is drawn
-                            // whole, at full strength, and read aloud — not
-                            // faded and hidden inside a locked instrument, which
-                            // is how this state first shipped. Taking it back is
+                            // whole, at full strength, and read aloud, never
+                            // faded inside a locked instrument. Taking it back is
                             // never gated either; only changing it is.
                             <View>
                                 <VaultNote note={privateNotes} inPanel />
@@ -545,7 +534,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                 const matches = following.filter((u: string) => u.toLowerCase().startsWith(partial)).slice(0, 4);
                                 if (matches.length === 0) return null;
                                 return (
-                                    <Animated.View entering={FadeIn.duration(150)} style={st.autoSuggestWrap}>
+                                    <Arrive name="log.companions" duration={150} rise={0} style={st.autoSuggestWrap}>
                                         {matches.map((username: string) => (
                                             <PressableScale
                                                 key={username}
@@ -559,7 +548,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                                 <Text style={st.autoSuggestText}>@{username}</Text>
                                             </PressableScale>
                                         ))}
-                                    </Animated.View>
+                                    </Arrive>
                                 );
                             })()}
                         </View>
@@ -586,7 +575,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                             <PressableScale key={list.id} style={st.hit48} onPress={() => { toggleList(list.id); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isIn }} accessibilityLabel={list.title}>
                                                 <View style={[st.listChip, isIn && st.listChipOn]}>
                                                     {isIn && <Check size={12} color={colors.ink} />}
-                                                    {list.isPrivate && <ListOrdered size={10} color={isIn ? colors.ink : colors.fog} />}
+                                                    {list.isPrivate && <Lock size={10} color={isIn ? colors.ink : colors.fog} />}
                                                     {list.isRanked && <ListOrdered size={10} color={isIn ? colors.ink : colors.fog} />}
                                                     <Text style={[st.listChipText, isIn && st.listChipTextActive]} numberOfLines={1}>{list.title}</Text>
                                                 </View>
@@ -603,8 +592,8 @@ export default function LogForm({ flow, user }: LogFormProps) {
 
             </View>
 
-            {/* Past the end of the record: the things you should have to reach for.
-                Delete used to be the FIRST thing on this page when editing. */}
+            {/* Past the end of the record: the things you should have to reach
+                for, never the first thing on an edit. */}
             <View style={st.tailRow}>
                 {/* Not on an edit: there is no draft there to discard (CLOSE
                     already leaves without saving), and "DISCARD DRAFT" on a

@@ -14,7 +14,10 @@
  *   · a rating with no words draws no empty review section;
  *   · the share card exists only while a share is in flight, and is gone after
  *     a failed one too;
- *   · a visitor can save the film, as they can from its card.
+ *   · a visitor can save the film, as they can from its card;
+ *   · a share that failed says so;
+ *   · a record that could not be read is never "Log not found", and a way out
+ *     says where it goes.
  *
  * Whether each of these FITS — every width, every text size — is measured on
  * the drawn page (zz-log.gen, mockups/tools/layout.cjs).
@@ -61,8 +64,9 @@ jest.mock('@tanstack/react-query', () => ({
     invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()), removeQueries: jest.fn(),
   }),
 }));
+let mockCanGoBack = true;
 jest.mock('expo-router', () => ({
-  router: { back: jest.fn(), push: jest.fn(), replace: jest.fn() },
+  router: { back: jest.fn(), push: jest.fn(), replace: jest.fn(), canGoBack: () => mockCanGoBack },
   useLocalSearchParams: () => ({ id: '22222222-2222-4222-8222-222222222222' }),
   useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
   useFocusEffect: () => {},
@@ -300,6 +304,7 @@ describe('the share card exists only while a share is in flight', () => {
       });
       expect(card(r)).toBeNull();
       expect(r.getByText('SHARE')).toBeTruthy();      // and the control is ready again
+      expect(mockToastError).toHaveBeenCalledWith('The log could not be shared. Try again.');
     } finally {
       raf.mockRestore();
     }
@@ -343,5 +348,41 @@ describe('a pull that reached nothing', () => {
     mockQueryState = { status: 'success' };
     await pull(r);
     expect(mockToastError).not.toHaveBeenCalled();
+  });
+});
+
+describe('a record that could not be read', () => {
+  const unread = async () => {
+    const refetch = jest.fn();
+    mockQuery = { data: undefined, isLoading: false, isError: true, refetch };
+    let r!: R;
+    await act(async () => { r = render(<LogDetailScreen />); });
+    return { r, refetch };
+  };
+
+  it('says it could not be reached, never "Log not found", and asks again', async () => {
+    const { r, refetch } = await unread();
+    expect(r.queryByText('Log not found.')).toBeNull();
+    expect(r.getByText('Transmission Interrupted')).toBeTruthy();
+    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    expect(refetch).toHaveBeenCalled();
+  });
+
+  it('and its way out says where it goes', async () => {
+    mockCanGoBack = false;
+    try {
+      const { r } = await unread();
+      expect(r.getByLabelText('Return to the Lobby')).toBeTruthy();
+    } finally {
+      mockCanGoBack = true;
+    }
+  });
+
+  it('a record that is not there still says so, with its way out named', async () => {
+    mockQuery = { data: { log: null, profile: null, comments: [], commentTotal: 0 }, isLoading: false, isError: false };
+    let r!: R;
+    await act(async () => { r = render(<LogDetailScreen />); });
+    expect(r.getByText('Log not found.')).toBeTruthy();
+    expect(r.getByLabelText('Go back')).toBeTruthy();
   });
 });
