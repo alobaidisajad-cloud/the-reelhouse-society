@@ -537,7 +537,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/ProfileLedgerTab.tsx | 2026-10-01 | an empty ledger said as one; the high chip counts from the shared floor; nav; comments say what is true now |
 | src/components/profile/ProfileListsTab.tsx | 2026-10-01 | a search that found nothing is said; nav; no ticket tags or history |
 | src/components/profile/ProfilePhysicalTab.tsx | 2026-10-01 | a search that found nothing is said; catalogued as VHS (the space); nav; comments say what is true now |
-| src/components/profile/ProfilePosterCard.tsx | — |  |
+| src/components/profile/ProfilePosterCard.tsx | 2026-10-01 | three modes no caller used, removed; nav; comments say what is true now |
 | src/components/profile/ProfileProjectorTab.tsx | — |  |
 | src/components/profile/profileStyles.ts | — |  |
 | src/components/profile/ProfileTriptych.tsx | — |  |

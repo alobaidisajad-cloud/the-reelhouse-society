@@ -48,14 +48,9 @@ const mount = async (node: React.ReactElement) => {
 };
 
 describe('every film tile names the film it shows', () => {
-  it('reads the title, the year and the rating', async () => {
-    const r = await mount(<ProfilePosterCard item={film() as never} showRating />);
-    expect(r.getByLabelText('Stalker, 1979, rated 4 of 5')).toBeTruthy();
-  });
-
-  it('omits the rating when the card is not showing one', async () => {
-    // The label must describe what is ON the card, not what exists in the data
-    // — announcing a rating that is not drawn is its own kind of lie.
+  it('reads the title and the year — and no rating, which the tile does not draw', async () => {
+    // The label describes what is ON the card, not what exists in the data:
+    // announcing a rating that is not drawn is its own kind of lie.
     const r = await mount(<ProfilePosterCard item={film() as never} />);
     expect(r.getByLabelText('Stalker, 1979')).toBeTruthy();
   });
@@ -70,9 +65,7 @@ describe('every film tile names the film it shows', () => {
     expect(r.getByLabelText('Untitled film')).toBeTruthy();
   });
 
-  it('tells you where the tap goes — the log, or the film', async () => {
-    const toLog = await mount(<ProfilePosterCard item={film() as never} navigateToLog />);
-    expect(toLog.getByLabelText(/Stalker/).props.accessibilityHint).toBe('Opens your log');
+  it('tells you where the tap goes: the film', async () => {
     const toFilm = await mount(<ProfilePosterCard item={film() as never} />);
     expect(toFilm.getByLabelText(/Stalker/).props.accessibilityHint).toBe('Opens the film');
   });

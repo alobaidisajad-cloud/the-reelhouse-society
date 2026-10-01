@@ -548,14 +548,11 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ════════════════════════════════════════════════════════════
   // POSTER CARD — Reusable log poster with tier glow
   // ════════════════════════════════════════════════════════════
-  const renderPosterCard = useCallback((item: ProfileLog | ProfileVaultItem | ProfileWatchlistItem, width: number, showRating = false, showTimeAgo = false, navigateToLog = false) => {
+  const renderPosterCard = useCallback((item: ProfileLog | ProfileVaultItem | ProfileWatchlistItem, width: number) => {
     return (
       <ProfilePosterCard
         item={item}
         width={width}
-        showRating={showRating}
-        showTimeAgo={showTimeAgo}
-        navigateToLog={navigateToLog}
         isAuteurPlus={isAuteurPlus}
         isArchivistPlus={isArchivistPlus}
       />

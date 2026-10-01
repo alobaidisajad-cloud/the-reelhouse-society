@@ -85,7 +85,7 @@ const ROOMS: [string, string, () => React.ReactElement][] = [
     const T = require('../ProfileArchiveTab').default;
     const { ProfilePosterCard } = require('../ProfilePosterCard');
     return <T logs={SHELF} archiveFiltered={SHELF} archiveSieve="all" setArchiveSieve={jest.fn()}
-      renderPosterCard={(log: never, w: number) => <ProfilePosterCard item={log} width={w} showRating />}
+      renderPosterCard={(log: never, w: number) => <ProfilePosterCard item={log} width={w} />}
       groupByMonth={MONTHS} monthCounts={[{ month: '2026-01', count: 41 }, { month: '2025-12', count: 28 }]}
       isSelf ready totalFilms={1247} archiveSearch="" setArchiveSearch={jest.fn()} />;
   }],
