@@ -8,9 +8,13 @@
  *
  * Webhook payload (Supabase): { type:'INSERT', table:'notifications', record:{...} }
  *
- * Hardening: if FUNCTION_SHARED_SECRET is set, require it as `x-function-secret`
- * (configure the same header on the DB webhook). Stale tokens that Expo reports
- * as DeviceNotRegistered are pruned automatically.
+ * Authentication: FUNCTION_SHARED_SECRET is REQUIRED. If unset or if the caller
+ * omits the `x-function-secret` header, the request is rejected (fail closed).
+ * The DB trigger reads the secret from Supabase Vault and sends it automatically.
+ * Stale tokens that Expo reports as DeviceNotRegistered are pruned automatically.
+ *
+ * v3 (2026-09-27): fail-closed auth (was fail-open when secret unset), accept
+ * both ExponentPushToken and ExpoPushToken formats, verify Expo API response.
  *
  * v2 (2026-07-15): per-type banner titles + the actor's name in the body.
  * Previously every push was titled 'The ReelHouse Society' with a bare message
@@ -20,6 +24,7 @@
  * self-contained sentences (prefixing would duplicate the name).
  */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { timingSafeEqual } from 'https://deno.land/std@0.177.0/crypto/timing_safe_equal.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -70,9 +75,15 @@ function composeBanner(record: NotificationRecord): { title: string; body: strin
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
-  // Optional shared-secret gate (set FUNCTION_SHARED_SECRET + send x-function-secret on the webhook).
-  const FUNCTION_SECRET = Deno.env.get('FUNCTION_SHARED_SECRET') || ''
-  if (FUNCTION_SECRET && (req.headers.get('x-function-secret') || '') !== FUNCTION_SECRET) {
+  // ── Authentication: fail closed ──────────────────────────────────────────────
+  // Require the shared secret set in Supabase Vault + the function env var.
+  // If FUNCTION_SHARED_SECRET is unset or the caller omits the header, reject.
+  // Compared in constant time: how long a wrong guess takes says nothing of the secret.
+  const FUNCTION_SECRET = Deno.env.get('FUNCTION_SHARED_SECRET') ?? ''
+  const presented = req.headers.get('x-function-secret') ?? ''
+  // exact-sized buffers: timingSafeEqual reads a view's WHOLE underlying buffer
+  const bytes = (s: string) => new TextEncoder().encode(s).slice().buffer
+  if (!FUNCTION_SECRET || !timingSafeEqual(bytes(presented), bytes(FUNCTION_SECRET))) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -105,7 +116,7 @@ serve(async (req) => {
     const banner = composeBanner(record)
     const messages = tokens
       .map((t: { token: string }) => t.token)
-      .filter((tok: string) => typeof tok === 'string' && tok.startsWith('ExponentPushToken'))
+      .filter((tok: string) => typeof tok === 'string' && (tok.startsWith('ExponentPushToken') || tok.startsWith('ExpoPushToken')))
       .map((tok: string) => ({
         to: tok,
         sound: 'default',
@@ -134,6 +145,10 @@ serve(async (req) => {
         },
         body: JSON.stringify(chunk),
       })
+      if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        throw new Error(`Expo push API returned ${res.status}: ${text.slice(0, 200)}`)
+      }
       const json = await res.json().catch(() => ({}))
       const tickets: { status?: string; details?: { error?: string } }[] = json?.data ?? []
       tickets.forEach((ticket, idx) => {
