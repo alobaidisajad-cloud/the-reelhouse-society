@@ -491,8 +491,8 @@ const st = StyleSheet.create({
     backgroundColor: colors.well, borderWidth: 1, borderColor: 'rgba(184,137,26,0.12)',
     borderRadius: 4, paddingHorizontal: 12, height: 40,
   },
-  // 0.55 measured 2.60:1 — the glyph that marks the field as searchable was
-  // fainter than the placeholder beside it. 0.80 gives 4.35:1.
+  // The glyph that marks the field as searchable: 0.80 gives 4.35:1, past the
+  // 3:1 a mark needs.
   searchIcon: { fontSize: 9, color: colors.sepia, opacity: 0.8, marginRight: 10 },
   searchInput: {
     flex: 1, fontFamily: fonts.body, fontSize: 11, color: colors.parchment,

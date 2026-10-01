@@ -10,9 +10,8 @@ export function CrestGlow() {
   const glow = useSharedValue(0.1);
   const isFocused = useIsFocused();
 
-  // Animation Thread Leak
-  // Previously ran infinitely even when component was in background stack.
-  // This kept the Reanimated UI thread awake, draining battery.
+  // Breathes only while its screen is focused: an endless loop off-screen keeps
+  // the UI thread awake.
   useEffect(() => {
     if (isFocused) {
       glow.value = withRepeat(

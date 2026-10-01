@@ -252,8 +252,7 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   title: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment },
   subtitle: { fontFamily: fonts.serif, fontSize: 13, color: colors.fog, marginTop: 4, lineHeight: 18 },
-  // 0.8 gave 4.35:1. 0.85 made 4.78:1.
-  // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
+  // Solid sepia: a word never borrows its contrast from the ground behind it.
   label: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginBottom: 12, includeFontPadding: false },
 
   memberBlock: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.soot },

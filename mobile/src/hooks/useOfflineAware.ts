@@ -1,9 +1,9 @@
 /**
  * useOfflineAware.ts — is the device offline, from NetInfo's reachability.
  *
- * It answers that and nothing else, and changes only when the answer does: a
- * running count of seconds offline re-rendered the salon screen every second
- * while offline, for a number no screen read.
+ * It answers that and nothing else, and changes only when the answer does, so
+ * a screen that reads it is redrawn once per change of connection, never on a
+ * clock.
  */
 import { useEffect, useState } from 'react';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
@@ -22,8 +22,8 @@ export interface OfflineState {
  * offline banner on every cold start, before the first reachability check
  * returns — so an unknown reachability is trusted while `isConnected` holds.
  *
- * Extracted so this can be tested directly; the surrounding hook is timers and
- * subscription plumbing around this one decision.
+ * Extracted so this can be tested directly; the hook is one subscription
+ * around this one decision.
  */
 export function isOfflineState(state: Pick<NetInfoState, 'isConnected' | 'isInternetReachable'>): boolean {
   return !(state.isConnected && state.isInternetReachable !== false);

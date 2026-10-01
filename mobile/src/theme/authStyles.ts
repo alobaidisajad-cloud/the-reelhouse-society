@@ -86,9 +86,8 @@ export const loginStyles = StyleSheet.create({
     color: colors.fogQuiet,
     textAlign: 'center',
     marginTop: 12,
-    // 0.6 measured 3.04:1 on ink — under the floor WCAG allows even for LARGE
-    // text, on 10pt italic. 0.8 made 4.59:1 and still reads as a whisper.
-    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+    // 10pt italic that still reads as a whisper: solid fogQuiet, and
+    // a word never borrows its contrast from the ground behind it.
     lineHeight: 16,
     maxWidth: 280,
     alignSelf: 'center',
@@ -259,8 +258,8 @@ export const loginStyles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 17.5,
     // This is the terms-of-service line — the one piece of text on the page a
-    // member is legally taken to have read. It measured 3.04:1. 0.8 made 4.59:1.
-    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+    // member is legally taken to have read. Solid fogQuiet:
+    // a word never borrows its contrast from the ground behind it.
     },
   legalLinks: { flexDirection: 'row', justifyContent: 'center', columnGap: 20 },
 });

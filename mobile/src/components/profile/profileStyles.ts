@@ -382,21 +382,16 @@ export const s = StyleSheet.create({
   /**
    * ── THE PLAIN-ENGLISH GLOSS ─────────────────────────────────────────────────
    * The word under each room name — *watched*, *to see*, *physical* — is what
-   * makes six invented room names legible to somebody who has just arrived. It
-   * had two problems, and both made it worse at exactly its job.
+   * makes six invented room names legible to somebody who has just arrived, so:
    *
-   * IT COULD NOT SHRINK. `flexShrink: 0` beside a count that also cannot shrink
-   * means a long gloss does not ellipsis — it pushes out of the card. At
-   * maximum Dynamic Type on a 320pt phone the pair has about 8 characters of
-   * room, and nothing was stopping a longer one from overflowing. Now it yields
-   * first: the count is a number and must stay whole, the gloss is a word and
-   * can take an ellipsis.
+   * IT YIELDS FIRST. Beside a count that cannot shrink, a gloss that could not
+   * would push out of the card: at maximum Dynamic Type on a 320pt phone the
+   * pair has about 8 characters of room. The count is a number and must stay
+   * whole; the gloss is a word and can take an ellipsis.
    *
-   * IT WAS BELOW THE READABLE FLOOR. fog at 0.7 was 3.75:1 on ink — under the
-   * 4.5 that 9.5pt text needs. The one line explaining the room was the least
-   * readable thing on the card. 0.8 made 4.59:1 on the old black and failed on
-   * the lit card, so it is solid `fogQuiet` now: a word no longer borrows its
-   * contrast from the ground behind it.
+   * IT IS READABLE. 9.5pt text needs 4.5:1, on ink and on the lit card alike,
+   * so it is solid `fogQuiet`: a word never borrows its contrast from the
+   * ground behind it.
    */
   holdSub: { fontFamily: fonts.body, fontSize: 9.5, color: colors.fogQuiet, flexShrink: 1, minWidth: 0 },
   holdLeader: { flex: 1, minWidth: 8, marginBottom: 4, borderBottomWidth: 1, borderStyle: 'dotted' as const, borderBottomColor: 'rgba(184,137,26,0.30)' },

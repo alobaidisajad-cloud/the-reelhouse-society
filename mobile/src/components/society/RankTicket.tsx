@@ -238,7 +238,7 @@ const s = StyleSheet.create({
   // A fixed box the rotated words turn inside, so they never push the ticket taller.
   admitBox: { width: STUB, height: 96, marginTop: 14, alignItems: 'center', justifyContent: 'center' },
   // Unchosen, the words are fog — quiet, and still 6:1 on the stock. Tarnish
-  // looked right and measured 3.0:1, which is not a colour anyone can read.
+  // would look right and measures 3.0:1, which is not a colour anyone can read.
   admit: {
     width: 96, textAlign: 'center', transform: [{ rotate: '-90deg' }],
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fog, includeFontPadding: false,

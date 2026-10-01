@@ -234,8 +234,8 @@ function ReportSheet({
 
   // ── Computed Values ─────────────────────────────────────────────────────
   const isSubmitDisabled = !selectedReason || isSubmitting;
-  // The count is a word; near the limit it warns in the red INK (the
-  // bloodReel pigment was 1.48:1 — the warning was the least visible state).
+  // The count is a word; near the limit it warns in the red INK (the bloodReel
+  // pigment is 1.48:1, which would make the warning the least visible state).
   const counterColor = details.length >= COUNTER_WARN_THRESHOLD ? colors.crimsonInk : colors.fog;
 
   // ── Render Guard ────────────────────────────────────────────────────────

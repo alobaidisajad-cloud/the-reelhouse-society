@@ -33,12 +33,11 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   /**
    * ── THE ROPE INSIDE A SHEET ────────────────────────────────────────────────
    * This sheet is React Native's own <Modal>, which draws above the ENTIRE
-   * navigator. Flipping the private switch without the rank used to call
-   * `privateRoom.open()` straight away — so the Society page opened underneath
-   * a sheet that was still on screen, and the member saw nothing happen.
+   * navigator: a Society page opened while it is on screen opens underneath
+   * it, and the member sees nothing happen.
    *
-   * The Concierge's presentation law, applied here: park the intent, close the
-   * sheet, and travel only once it is genuinely gone. "Gone" is the commit that
+   * So the Concierge's presentation law: park the intent, close the sheet,
+   * and travel only once it is genuinely gone. "Gone" is the commit that
    * unmounts the Modal (`isRendered` false), not the moment close was asked for.
    * A backstop forces that unmount if the close animation never completes,
    * because a switch that silently does nothing is worse than a late one.
@@ -326,9 +325,8 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 10,
     color: colors.fogQuiet,
-    // 0.35 measured 1.75:1 — effectively invisible, while being the thing
-    // that tells you how much room is left. 0.8 made 4.59:1.
-    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+    // The thing that tells you how much room is left, so it is solid fogQuiet:
+    // a word never borrows its contrast from the ground behind it.
     textAlign: 'right',
     marginTop: 4,
     includeFontPadding: false,

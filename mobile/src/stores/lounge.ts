@@ -462,8 +462,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     } catch (err) {
       if (__DEV__) console.warn('[Lounge] fetchLounges failed:', err);
       // Said by the screen that asked, not here: the Lounge polls every thirty
-      // seconds while open, and a toast here was a toast every thirty seconds
-      // for as long as the signal was gone.
+      // seconds while open, and a toast here would be a toast every thirty
+      // seconds for as long as the signal is gone.
       set({ loungesFailed: true, loading: false });
     }
   },

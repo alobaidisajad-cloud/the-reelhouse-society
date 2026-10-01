@@ -1,8 +1,8 @@
 /**
  * MemberFaceStack — the bounded avatar cluster on a salon card.
  * ─────────────────────────────────────────────────────────────
- * RELIABILITY BY CONSTRUCTION. Every dimension is fixed; nothing scales,
- * shrinks, wraps, or depends on how many members a salon has:
+ * RELIABILITY BY CONSTRUCTION. Every face's dimension is fixed; no face
+ * scales, shrinks, wraps, or depends on how many members a salon has:
  *   · at most 3 faces, always (a 2-member and a 200-member salon are identical)
  *   · the "+N" overflow comes from member_count (already reliable), NOT from
  *     the fetched faces, and its digits are capped ("999+") so its width is bounded
@@ -10,8 +10,8 @@
  *     top — the reel-page stacking law: never animate/fight over z-order)
  *   · overflow:hidden on the row as a final guard so nothing can ever spill
  *   · a member with no photo → their initial in a brass ring, never an empty circle
- *   · NO faces at all (fetch failed / not yet loaded) → the original "👥 N"
- *     count in the same spot: worst case is exactly today's card.
+ *   · NO faces at all (fetch failed / not yet loaded) → a plain "👥 N" count
+ *     in the same spot.
  */
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -57,7 +57,7 @@ export const MemberFaceStack = React.memo(function MemberFaceStack({
 }) {
   const { shown, overflowLabel } = buildFaceStackModel(faces, totalCount);
 
-  // Fallback: no faces available → today's plain count, same footprint.
+  // No faces available → the plain count, same footprint.
   if (shown.length === 0) {
     return (
       <View style={s.row}>

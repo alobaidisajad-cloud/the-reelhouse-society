@@ -91,7 +91,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/darkroom.tsx | — |  |
 | app/(tabs)/dispatch.tsx | 2026-09-29 | 12 fixed; NewsService history and the pill-fix story cut |
 | app/(tabs)/index.tsx | 2026-10-01 | the front door arrives; nav; a failed pull says so |
-| app/(tabs)/lounge.tsx | — |  |
+| app/(tabs)/lounge.tsx | 2026-10-01 | the corridor in the present tense; the gate is for visitors only |
 | app/(tabs)/profile.tsx | — |  |
 | app/(tabs)/reels.tsx | 2026-10-01 | every comment short and true; the door's reason lives in its test |
 | app/+not-found.tsx | — |  |
@@ -112,7 +112,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/theRecordReadsTrue.test.tsx | — |  |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | — |  |
-| app/lounge.tsx | — |  |
+| app/lounge.tsx | 2026-10-01 | true as written |
 | app/lounge/[id].tsx | 2026-09-29 | standing unknown until the roster is read; messages spoken + actions; unnamed controls; histories to rules |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | — |  |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
@@ -455,18 +455,18 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx | — |  |
 | src/components/lounge/__tests__/theRopeWaitsForTheSheet.test.tsx | — |  |
 | src/components/lounge/__tests__/theSalonsSayWhenTheyCouldNotBeRead.test.tsx | — |  |
-| src/components/lounge/ActionSheet.tsx | — |  |
-| src/components/lounge/AtTheDoorPanel.tsx | — |  |
-| src/components/lounge/CreateLoungeSheet.tsx | — |  |
-| src/components/lounge/EmptyMyLounges.tsx | — |  |
-| src/components/lounge/JoinedLoungeCard.tsx | — |  |
-| src/components/lounge/LoungeGate.tsx | — |  |
-| src/components/lounge/LoungeSettingsPanel.tsx | — |  |
-| src/components/lounge/LoungeStyles.ts | — |  |
-| src/components/lounge/loungeTabStyles.ts | — |  |
-| src/components/lounge/MemberFaceStack.tsx | — |  |
-| src/components/lounge/PublicLoungeCard.tsx | — |  |
-| src/components/lounge/reactions.tsx | — |  |
+| src/components/lounge/ActionSheet.tsx | 2026-10-01 | true as written |
+| src/components/lounge/AtTheDoorPanel.tsx | 2026-10-01 | true as written |
+| src/components/lounge/CreateLoungeSheet.tsx | 2026-10-01 | the rope and the counter say why, not what they were |
+| src/components/lounge/EmptyMyLounges.tsx | 2026-10-01 | contrast history to its reason |
+| src/components/lounge/JoinedLoungeCard.tsx | 2026-10-01 | true as written |
+| src/components/lounge/LoungeGate.tsx | 2026-10-01 | the door names membership, without its history |
+| src/components/lounge/LoungeSettingsPanel.tsx | 2026-10-01 | contrast history dropped |
+| src/components/lounge/LoungeStyles.ts | 2026-10-01 | true as written |
+| src/components/lounge/loungeTabStyles.ts | 2026-10-01 | contrast history to its reasons |
+| src/components/lounge/MemberFaceStack.tsx | 2026-10-01 | the faces are fixed, not the words; no "today's card" |
+| src/components/lounge/PublicLoungeCard.tsx | 2026-10-01 | true as written |
+| src/components/lounge/reactions.tsx | 2026-10-01 | true as written |
 | src/components/lounge/roomGate.ts | 2026-09-29 | new |
 | src/components/MarkFigure.tsx | — |  |
 | src/components/MasterLogo.tsx | — |  |
@@ -576,9 +576,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | — |  |
 | src/components/text/AnimatedText.tsx | — |  |
 | src/components/text/index.tsx | — |  |
-| src/components/theme/CrestGlow.tsx | — |  |
+| src/components/theme/CrestGlow.tsx | 2026-10-01 | the leak note to what it does |
 | src/components/theme/DiamondDivider.tsx | — |  |
-| src/components/theme/OrnamentalRule.tsx | — |  |
+| src/components/theme/OrnamentalRule.tsx | 2026-10-01 | no comments |
 | src/components/ToastHost.tsx | — |  |
 | src/components/Toggle.tsx | — |  |
 | src/components/TryAgain.tsx | — |  |
@@ -671,7 +671,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useMembershipPricing.ts | — |  |
 | src/hooks/useModalKeyboardPadding.ts | — |  |
 | src/hooks/useNotableMembers.ts | 2026-10-01 | true as written |
-| src/hooks/useOfflineAware.ts | — |  |
+| src/hooks/useOfflineAware.ts | 2026-10-01 | one subscription, no clock |
 | src/hooks/useProfileController.ts | — |  |
 | src/hooks/useProfileData.ts | — |  |
 | src/hooks/useReportUser.ts | — |  |
@@ -748,7 +748,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/InteractionService.ts | 2026-10-01 | its schema is what its test reads |
 | src/services/logCounts.ts | — |  |
 | src/services/LogService.ts | — |  |
-| src/services/LoungeService.ts | — |  |
+| src/services/LoungeService.ts | 2026-10-01 | true as written |
 | src/services/MemberDiscoveryService.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
 | src/services/ModerationService.ts | — |  |
 | src/services/ProfileDataService.ts | 2026-09-29 | 24 fixed; 'Sentry breadcrumb' was dev-only logger.info (logged for step 6); a dead file ref; ticket tags |
@@ -785,7 +785,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/logoutLeavesNoTrace.guard.test.ts | — |  |
 | src/stores/__tests__/logSlice.test.ts | — |  |
 | src/stores/__tests__/lounge.test.ts | — |  |
-| src/stores/__tests__/loungeActs.test.ts | — |  |
+| src/stores/__tests__/loungeActs.test.ts | 2026-10-01 | a stale line count dropped |
 | src/stores/__tests__/loungeErrors.guard.test.ts | — |  |
 | src/stores/__tests__/markCounts.test.ts | — |  |
 | src/stores/__tests__/notificationCap.test.ts | — |  |

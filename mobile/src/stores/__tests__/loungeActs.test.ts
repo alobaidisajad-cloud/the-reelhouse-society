@@ -1,8 +1,8 @@
 /**
  * loungeActs.test.ts — the room's own acts, driven.
  * ─────────────────────────────────────────────────────────────────────────────
- * `lounge.ts` is 515 lines at 12.9%. It is the page an essay is SHARED INTO, so
- * it sits on the Dispatch's path, and it is where a real bug was found today:
+ * `lounge.ts` is the room an essay is SHARED INTO, so it sits on the Dispatch's
+ * path, and it is where a real bug was found:
  * the unread count included your own messages, so sharing an essay into a room
  * you were not looking at raised your own badge over your own share.
  *

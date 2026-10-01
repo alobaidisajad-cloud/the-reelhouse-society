@@ -218,9 +218,8 @@ const s = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1,
     color: colors.sepia,
-    // 0.7 measured 3.56:1 at 7pt. 0.9 gave 5.25:1 — this is the affordance
-    // that tells you the card turns over, so it should not be a rumour.
-    // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
+    // The affordance that tells you the card turns over, so it is no rumour:
+    // solid sepia, and a word never borrows its contrast from the ground behind it.
     includeFontPadding: false,
     flexShrink: 0,
     marginLeft: 8,
@@ -264,8 +263,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.bodyItalic,
     fontSize: 10,
     color: colors.fogQuiet,
-    // 0.7 was 3.75:1; 0.8 gave 4.59:1 and cleared AA for small text.
-    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+    // Solid fogQuiet: a word never borrows its contrast from the ground behind it.
     marginBottom: 14,
     includeFontPadding: false,
   },

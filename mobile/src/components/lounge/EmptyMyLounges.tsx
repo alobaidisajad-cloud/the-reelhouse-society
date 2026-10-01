@@ -71,8 +71,8 @@ const s = StyleSheet.create({
     color: colors.fogQuiet,
     lineHeight: 16,
     textAlign: 'center',
-    // Solid, not dimmed: fog at 0.8 scraped 4.59:1 on the old black and failed
-    // on a lit card. fogQuiet is the quieter tone as a colour of its own.
+    // Solid, not dimmed: fogQuiet is the quieter tone as a colour of its own,
+    // so it holds its contrast on a lit card too.
     marginBottom: 24,
   },
   ctaBtn: {

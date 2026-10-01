@@ -505,9 +505,8 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub, fontSize: 11, letterSpacing: 3, color: colors.sepia, textAlign: 'center',
   },
   sheetLore: {
-    // 0.6 measured 3.04:1 on soot. This line is a flourish, but a flourish
-    // nobody can read is just noise taking up room.
-    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+    // A flourish, but a flourish nobody can read is noise taking up room: solid
+    // fogQuiet, and a word never borrows its contrast from the ground behind it.
     fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fogQuiet,
     marginTop: 5, textAlign: 'center',
   },

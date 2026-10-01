@@ -28,20 +28,15 @@ export function LoungeGate({ mark }: { mark?: React.ReactNode } = {}) {
           </View>
 
           <Text style={s.gateTitle} accessibilityRole="header">The Lounge</Text>
-          {/* "EST. 1924" removed — sixth page it appeared on. The line that
-              earns this spot is the one below, naming which ranks hold the key;
-              a visitor stopped at this rope needs to know what would let them
-              in, not when the house was founded. */}
+          {/* No "EST. 1924" here: a visitor stopped at this rope needs to know
+              what would let them in, not when the house was founded. */}
           <OrnamentalRule />
 
           {/* ── WHAT STANDS AT THIS DOOR IS A NAME, NOT A RANK ─────────────────
-              This gate once met every member without the Archivist rank, and
-              said so: CLEARANCE REQUIRED, the ranks hold the key, ascend. Then
-              the corridor opened — any member walks in and reads every public
-              salon, and the rank waits at the seat inside. The Lounge tab now
-              shows this gate ONLY to someone who is not signed in, and it went
-              on selling them a paid rank for a room that costs nothing to
-              enter. What they lack is membership, which is free. */}
+              Only a visitor who is not signed in meets this gate. Any member
+              walks in and reads every public salon, and the rank waits at the
+              seat inside, so what the visitor lacks is membership, which is
+              free; it never sells them a paid rank. */}
           <Text style={s.gateSub}>[ MEMBERS ONLY ]</Text>
 
           <Text style={s.gateDesc}>
@@ -147,8 +142,7 @@ const s = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1.2,
     color: colors.sepia,
-    // 0.6 was 2.90:1 in sepia. 0.85 made 4.78:1.
-    // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
+    // Solid sepia: a word never borrows its contrast from the ground behind it.
     textAlign: 'center',
     marginTop: -18,
     marginBottom: 24,
@@ -158,8 +152,7 @@ const s = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1.2,
     color: colors.fogQuiet,
-    // 0.4 was 1.96:1. 0.8 made 4.59:1.
-    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+    // Solid fogQuiet: a word never borrows its contrast from the ground behind it.
     textAlign: 'center',
   },
 });

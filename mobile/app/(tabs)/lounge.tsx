@@ -1,9 +1,10 @@
 /**
  * LoungeScreen — THE CORRIDOR.
  * ─────────────────────────────────────────────
- * The hallway of salon doors: your salons lit with honest seals,
- * the directory of doors down the hall. Archivist+ territory —
- * everyone else meets the LoungeGate's velvet rope.
+ * The hallway of salon doors: your salons lit with honest seals, the
+ * directory of doors down the hall. Every member walks it and reads the
+ * public rooms; the rank is asked at taking a seat and founding one. A
+ * visitor who is not signed in meets the LoungeGate.
  */
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { View, ScrollView, RefreshControl, ActivityIndicator, AppState } from 'react-native';
@@ -102,34 +103,13 @@ export default function LoungeScreen() {
   }, []);
 
   /**
-   * ── THE SALONS ARE FETCHED FOR EVERYONE NOW ────────────────────────────────
-   * This used to be gated on `isArchivist`, which meant a Cinephile's Lounge
-   * was not merely gated but EMPTY, three layers deep: the screen showed a
-   * poster, the poster described salons in prose, and the data layer had never
-   * asked for one. The server was always willing — `lounges` SELECT is
-   * `USING (true)` for authenticated — so only the client had decided not to
-   * look.
-   *
-   * ── AND THE POLL NOW RUNS ONLY WHILE SOMEBODY IS LOOKING AT IT ─────────────
-   * It was a 30-second `setInterval` started whenever the app was FOREGROUNDED,
-   * on any screen. So the salon list was re-queried every thirty seconds while
-   * the member was on Reels, reading a film, or writing in the Dispatch —
-   * refreshing badges nobody was looking at. Opening the corridor to everyone
-   * made that worse, not better: it used to be Archivists only, and now it
-   * would have been every signed-in member.
-   *
-   * It cannot simply be deleted. Realtime covers ONE room — `_activeChannel` is
-   * a single channel for the salon you have open — so nothing pushes changes
-   * for the rooms you are not in, and this query is the only thing feeding the
-   * unread counts in the corridor. Deleting it would leave every badge stale
-   * until a manual pull.
-   *
-   * So it moves from "while the app is open" to "while this screen is open",
-   * which is the only window in which its result can be seen. Liveness where it
-   * is visible; nothing spent where it is not. `useFocusEffect` also fires on
-   * arrival, so returning from a room updates the badges at once — the previous
-   * mount-time fetch is gone with it, because a tab that is mounted but not yet
-   * focused was fetching at startup for a screen nobody had opened.
+   * ── THE POLL RUNS ONLY WHILE SOMEBODY IS LOOKING ──────────────────────────
+   * The salons are read for every signed-in member (`lounges` SELECT is open to
+   * them). Realtime covers one room, the one open, so this thirty-second read is
+   * the only thing that moves the corridor's unread badges; it runs while this
+   * screen is focused and the app is in front, the one window in which its
+   * answer can be seen. Arriving (`useFocusEffect`) is itself a read, so coming
+   * back from a room updates the badges at once.
    */
   useFocusEffect(
     useCallback(() => {
@@ -241,17 +221,9 @@ export default function LoungeScreen() {
   ), [handleReportLounge]);
 
   /**
-   * ── THE WALL IS GONE ────────────────────────────────────────────────────
-   * This used to be `if (!isAuthenticated || !isArchivist) return <LoungeGate/>`
-   * — a full-screen poster INSTEAD of the page, describing "intimate cinema
-   * salons where the devoted gather" and showing not one real room.
-   *
-   * A locked door with no window sells nothing; it reads as an app with less
-   * in it than you thought. So the corridor is the corridor for everyone: real
-   * names, real portraits, real member counts, and the public rooms readable.
-   * The clearance moved to where it belongs — TAKING A SEAT, and founding one.
-   *
-   * Signing in is still required, because a salon roster is not for the street.
+   * The corridor is the corridor for every member: real rooms, real counts, the
+   * public rooms readable, and the rank asked at TAKING A SEAT and founding one.
+   * Signing in is required: a salon roster is not for the street.
    */
   if (!isAuthenticated) {
     return <LoungeGate mark={readyMark} />;
@@ -271,15 +243,7 @@ export default function LoungeScreen() {
         </View>
 
         <Text style={s.headerTitle}>The Lounge</Text>
-        {/* This said ARCHIVIST EXCLUSIVE, on the reasoning that "the tab is only
-            reachable by an Archivist anyway". It is reachable by everyone now,
-            so the line would be false — and worse, it would be the first thing
-            a Cinephile reads on a page full of rooms they are welcome to walk
-            into and read. It names what the rank buys instead.
-
-            The Archivist's half kept saying ARCHIVIST EXCLUSIVE, over the same
-            corridor every member walks — the one false line left on the page.
-            It now says what the rank gives THEM, in the same words. */}
+        {/* What the rank gives, said to both sides of it in the same words. */}
         <Text style={s.headerMetaLine}>
           {isArchivist ? 'READ ANY SALON · TAKE YOUR SEAT' : 'READ ANY SALON · ARCHIVISTS TAKE A SEAT'}
         </Text>
@@ -291,12 +255,8 @@ export default function LoungeScreen() {
             <TextInput
               {...scaledTextProps}
               style={s.searchInput}
-              /* "Search the salons…" needed 144pt of a 195pt field — it fit at
-                 1.0x and truncated at 1.36x, which is why it reads "Search the
-                 sal…" on a device with larger text. A TextInput placeholder
-                 cannot shrink to fit, so the string had to give. "the" carries
-                 nothing here; dropping it buys headroom past 1.7x, comfortably
-                 clear of the 1.35 cap now applied above. */
+              /* Short enough to fit the field past 1.7x text (a placeholder
+                 cannot shrink to fit). */
               placeholder="Search salons…"
               placeholderTextColor={colors.fog}
               value={searchQuery}

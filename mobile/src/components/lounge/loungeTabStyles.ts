@@ -49,9 +49,8 @@ export const s = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 2,
     color: colors.sepia,
-    // 0.65 measured 3.22:1 at 7pt. 0.85 gave 4.78:1 — this line names who the
-    // room is for, so it should be readable rather than merely present.
-    // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
+    // This line names who the room is for, so it is readable rather than merely
+    // present: solid sepia, and a word never borrows its contrast from the ground behind it.
     marginTop: 4,
     marginBottom: 14,
     textAlign: 'center',
@@ -144,17 +143,15 @@ export const s = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1.7,
     color: colors.sepia,
-    // 0.8 gave 4.35:1 — just shy. 0.85 made 4.78:1 and cleared AA.
-    // Solid sepia now: a word no longer borrows its contrast from the ground behind it.
+    // Solid sepia: a word never borrows its contrast from the ground behind it.
     includeFontPadding: false,
   },
   sectionSubtext: {
     fontFamily: fonts.bodyItalic,
     fontSize: 10,
     color: colors.fogQuiet,
-    // 0.5 measured 2.44:1 — below the floor WCAG allows even for LARGE
-    // text. This line explains what the directory IS. 0.8 made 4.59:1.
-    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+    // This line explains what the directory IS, so it is solid fogQuiet: a word
+    // never borrows its contrast from the ground behind it.
     paddingHorizontal: 20,
     marginBottom: 14,
     textAlign: 'center',
@@ -178,8 +175,7 @@ export const s = StyleSheet.create({
     width: 28,
     // Android paints by ELEVATION, not by JSX order. joinedCard sits at
     // elevation 8, so without this the cards paint straight over the gradient
-    // and the fade simply does not exist on Android — invisible on exactly the
-    // platform nobody was checking. zIndex keeps iOS agreeing.
+    // and the fade does not exist on Android. zIndex keeps iOS agreeing.
     elevation: 12,
     zIndex: 12,
     // Elevation also DRAWS a shadow on Android. This strip wants the z-order,
@@ -208,8 +204,8 @@ export const s = StyleSheet.create({
     fontFamily: fonts.sub,
     fontSize: 10,
     color: colors.fogQuiet,
-    // 0.5 was 2.44:1 — the invitation shown when the directory is empty.
-    // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+    // The invitation shown when the directory is empty: solid fogQuiet, and
+    // a word never borrows its contrast from the ground behind it.
     letterSpacing: 1,
     includeFontPadding: false,
   },
