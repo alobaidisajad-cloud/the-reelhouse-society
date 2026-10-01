@@ -21,11 +21,8 @@ describe('initialIsLogin — the form is right on the first frame', () => {
     expect(initialIsLogin('signup')).toBe(false);
   });
 
-  it('opens sign-up for a resent confirmation link', () => {
-    expect(initialIsLogin('resend_signup')).toBe(false);
-  });
-
-  it.each([['login'], ['forgot_password'], ['resend_verification'], [undefined]])(
+  // A fresh confirmation asks for the address in its own sheet, over sign-in.
+  it.each([['login'], ['forgot_password'], ['resend_signup'], ['resend_verification'], [undefined]])(
     'opens sign-in for %s',
     (action) => {
       expect(initialIsLogin(action as string | undefined)).toBe(true);
@@ -115,9 +112,11 @@ describe('validateLoginSubmission', () => {
 });
 
 describe('mapAuthError', () => {
-  it('maps a duplicate-signup database error to a friendly message', () => {
+  // A taken handle never refuses a sign-up (enforce_username_policy suffixes it),
+  // so this is a passing fault, and the honest advice is to try again.
+  it('maps a failed sign-up write to a try-again, never a claim about the handle', () => {
     const result = mapAuthError('Database error saving new user: duplicate key');
-    expect(result.message).toBe('Username is already taken.');
+    expect(result.message).toBe('The register could not take your details just now. Try again.');
     expect(result.isInvalidCredentials).toBe(false);
   });
 

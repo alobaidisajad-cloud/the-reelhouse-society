@@ -22,6 +22,32 @@ export const STORE = Platform.OS === 'android'
   ? { name: 'Google Play', account: 'Google account', settings: 'Google Play settings' }
   : { name: 'the App Store', account: 'Apple ID', settings: 'App Store settings' };
 
+/** One of the house's small-print doors: a full 44pt target, underlined. */
+export const SmallPrintLink = memo(function SmallPrintLink({ label, spoken, role, onPress, disabled, busy }: {
+  label: string;
+  spoken: string;
+  role: 'button' | 'link';
+  onPress: () => void;
+  disabled?: boolean;
+  busy?: boolean;
+}) {
+  return (
+    <PressableScale
+      style={s.link}
+      onPress={onPress}
+      disabled={disabled}
+      haptic="light"
+      pressedScale={0.97}
+      hitSlop={null}
+      accessibilityRole={role}
+      accessibilityLabel={spoken}
+      accessibilityState={{ disabled: !!disabled, busy: !!busy }}
+    >
+      <Text style={s.linkText} {...deckLabelProps}>{label}</Text>
+    </PressableScale>
+  );
+});
+
 export const SmallPrint = memo(function SmallPrint({
   restoring, busy, onRestore, onManage, onTerms, onPrivacy,
 }: {
@@ -45,20 +71,15 @@ export const SmallPrint = memo(function SmallPrint({
       </Text>
       <View style={s.links}>
         {links.map((l) => (
-          <PressableScale
+          <SmallPrintLink
             key={l.key}
-            style={s.link}
+            label={l.label}
+            spoken={l.spoken}
+            role={l.role}
             onPress={l.onPress}
             disabled={l.disabled}
-            haptic="light"
-            pressedScale={0.97}
-            hitSlop={null}
-            accessibilityRole={l.role}
-            accessibilityLabel={l.spoken}
-            accessibilityState={{ disabled: !!l.disabled, busy: l.key === 'restore' && restoring }}
-          >
-            <Text style={s.linkText} {...deckLabelProps}>{l.label}</Text>
-          </PressableScale>
+            busy={l.key === 'restore' && restoring}
+          />
         ))}
       </View>
       <Text style={s.signoff} {...scaledTextProps}>The Society thanks you for your attention.</Text>

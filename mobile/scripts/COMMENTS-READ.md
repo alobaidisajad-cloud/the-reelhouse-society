@@ -61,6 +61,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/offline_resilience.yaml | 2026-09-29 | true as written |
 | .maestro/README.md | 2026-09-29 | brought up to date with the one-flow-at-a-time runner and the Initiation |
 | .maestro/lobby_wall_flow.yaml | 2026-09-30 | new: the wall hangs whole, down to its sign-off |
+| .maestro/session_survives_restart.yaml | 2026-10-01 | written with the session kept on the device |
 | .maestro/subflows/open_a_film.yaml | 2026-09-29 | true as written |
 | .maestro/subflows/open_the_stub.yaml | 2026-09-30 | written with the stub's single tap |
 | .maestro/subflows/sign_in.yaml | 2026-09-29 | rewritten this session: passes through the Initiation |
@@ -90,7 +91,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/profile.tsx | — |  |
 | app/(tabs)/reels.tsx | — |  |
 | app/+not-found.tsx | — |  |
-| app/auth-callback.tsx | — |  |
+| app/auth-callback.tsx | 2026-10-01 | a link with no code or token verifies nothing |
 | app/dispatch/[id].tsx | 2026-09-29 | 26 fixed; 'SAVE THE CARD offered for a dossier' was false (the sheet never gets card); history of 3 fixes cut |
 | app/dispatch/archive.tsx | 2026-09-29 | history removed; margin label now said as a day (was '28 certified') |
 | app/dispatch/compose.tsx | 2026-09-28 | Three claims were false: 'no cover, nowhere for a backdrop to live' (subject_backdrop is saved), 'counted once a second' (400ms) with a useDeferredValue the file never used, and names of draft functions that no longer exist. Two notes described code elsewhere and were moved to it. Dead style previewTitle removed. History removed. |
@@ -190,7 +191,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/animation-parking.test.ts | — |  |
 | src/components/__tests__/aRatingCanBeGivenWithoutSight.test.tsx | — |  |
 | src/components/__tests__/aScreenThatFailsLetsYouLeave.test.tsx | — |  |
-| src/components/__tests__/AuthGuard.test.tsx | — |  |
 | src/components/__tests__/authRouting.test.ts | — |  |
 | src/components/__tests__/ControlledInput.test.tsx | — |  |
 | src/components/__tests__/EmptyStates.test.tsx | — |  |
@@ -218,7 +218,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/auth/PasswordRecoveryModal.tsx | — |  |
 | src/components/auth/PasswordStrengthMeter.tsx | — |  |
 | src/components/auth/SocietySeal.tsx | — |  |
-| src/components/AuthGuard.tsx | — |  |
 | src/components/AutopsyGauge.tsx | — |  |
 | src/components/Buster.tsx | — |  |
 | src/components/CinematicOverlays.tsx | — |  |
@@ -632,7 +631,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useScreenReady.test.tsx | — |  |
 | src/hooks/useAmbientGlow.ts | — |  |
 | src/hooks/useAnalytics.ts | — |  |
-| src/hooks/useAuthFlow.ts | — |  |
+| src/hooks/useAuthFlow.ts | 2026-10-01 | read with the auth audit |
 | src/hooks/useAuthThrottle.ts | — |  |
 | src/hooks/useBanCheck.ts | — |  |
 | src/hooks/useCatalogueSearch.ts | — |  |
@@ -670,8 +669,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/theCounterNamesNobody.test.ts | — |  |
 | src/lib/__tests__/theHouseAsksToSendWordWhenItMeansSomething.test.ts | 2026-10-01 | new |
 | src/lib/__tests__/thePriceIsTheStores.test.ts | — |  |
+| src/lib/__tests__/theSessionIsKeptWhole.test.ts | 2026-10-01 | written with the session store |
 | src/lib/__tests__/theTokenMustNotSurviveLogout.test.ts | — |  |
 | src/lib/__tests__/tmdb.test.ts | — |  |
+| src/lib/authSessionStorage.ts | 2026-10-01 | written: the session outgrew SecureStore |
 | src/lib/defensiveParse.ts | — |  |
 | src/lib/gateMetricsSink.ts | — |  |
 | src/lib/nativeOnly/revenuecatWebStub.js | — |  |
@@ -682,7 +683,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/schemas.ts | — |  |
 | src/lib/scrollBridge.ts | — |  |
 | src/lib/sentry.ts | — |  |
-| src/lib/supabase.ts | — |  |
+| src/lib/supabase.ts | 2026-10-01 | the session kept by authSessionStorage |
 | src/lib/tmdb.ts | — |  |
 | src/lib/tmdbErrors.ts | — |  |
 | src/lore/fragments.ts | — |  |
@@ -778,7 +779,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/theThrottleIsPerRoom.test.ts | — |  |
 | src/stores/__tests__/vaultStore.test.ts | — |  |
 | src/stores/__tests__/watchlistSlice.test.ts | — |  |
-| src/stores/auth.ts | 2026-09-29 | 31 fixed; FOUND: a refused setting stayed pending on disk and the next launch re-applied what the member saw undone; fixed + 4 tests, both halves mutation-killed; literal \u2500 text in a comment removed |
+| src/stores/auth.ts | 2026-10-01 | username sign-in says what failed; refusals are one signal |
 | src/stores/blockStore.ts | — |  |
 | src/stores/createSelectors.ts | — |  |
 | src/stores/discover.ts | — |  |
@@ -801,7 +802,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/followStore.ts | — |  |
 | src/stores/lounge.ts | 2026-09-28 | 38 findings fixed; stale 'created rooms' reason corrected (create_lounge adds the member row); loadOlderMessages→loadMoreMessages; 12 repeated sessionGuard notes dropped |
 | src/stores/markCounts.ts | — |  |
-| src/stores/mmkv-storage.ts | — |  |
+| src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added |
 | src/stores/notificationStore.ts | 2026-09-29 | 28 fixed; ticket tags (#51,#73,NOTIF-1,FLAW-08,LIB-5,WS-9,L234) and bug histories cut; checked the reset's MMKV delete hits the same store (it does) |
 | src/stores/offlineQueueStore.ts | — |  |
 | src/stores/reportStore.ts | — |  |

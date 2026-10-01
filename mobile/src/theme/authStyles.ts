@@ -274,6 +274,7 @@ export const loginStyles = StyleSheet.create({
     // member is legally taken to have read. It measured 3.04:1. 0.8 made 4.59:1.
     // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
     },
+  legalLinks: { flexDirection: 'row', justifyContent: 'center', columnGap: 20 },
 });
 
 // Film-strip perforation styles now live with the shared auth chrome:

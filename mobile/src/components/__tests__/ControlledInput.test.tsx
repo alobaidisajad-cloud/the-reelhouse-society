@@ -9,8 +9,7 @@
  * variant SANITISES what they type, which is a rule worth binding to the real
  * component rather than to a description of it.
  *
- * Component rendering works in this environment (see AuthGuard.test.tsx); it is
- * renderHook that does not.
+ * Component rendering works in this environment; it is renderHook that does not.
  */
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';

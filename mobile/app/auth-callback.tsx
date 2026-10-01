@@ -21,7 +21,10 @@ const AnimatedView = Animated.createAnimatedComponent(View);
 // URL: reelhouse://auth-callback?token_hash=xxx&type=signup|recovery  (scheme from Linking.createURL('auth-callback'))
 export default function AuthCallbackScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ token_hash?: string; type?: string; url?: string; code?: string }>();
+  const params = useLocalSearchParams<{
+    token_hash?: string; type?: string; url?: string; code?: string;
+    error?: string; error_code?: string; error_description?: string;
+  }>();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMsg, setErrorMsg] = useState('');
   // The flow type actually confirmed by verification (params.type may be absent
@@ -69,7 +72,11 @@ export default function AuthCallbackScreen() {
       const url = params.url;
       const tokenHash = params.token_hash;
       const type = params.type;
-      
+
+      // Supabase sends a refused link back with its reason ("expired", "used").
+      const refused = params.error_description || params.error_code || params.error;
+      if (refused) throw new Error(refused);
+
       // Attempt 1: Modern PKCE code exchange
       if (url || params.code) {
         const code = params.code || (url ? (Linking.parse(url).queryParams?.code as string) : undefined);
@@ -101,13 +108,8 @@ export default function AuthCallbackScreen() {
         }
       }
 
-      // Attempt 3: Implicit flow or Pre-existing session
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData?.session) {
-        await handleSuccessfulVerification(sessionData.session, type || 'recovery');
-        return;
-      }
-
+      // No code and no token: nothing is verified. Anyone can open this link, so a
+      // session already here proves nothing, and arms no recovery.
       throw new Error('No valid authentication token found. The link may have expired.');
     } catch (err: unknown) {
       // A failed link must not leave the recovery flag armed — it would sign
@@ -206,14 +208,17 @@ export default function AuthCallbackScreen() {
                 <Text style={s.retryTextSecondary}>RETURN TO THE LOBBY</Text>
               </PressableScale>
 
-              <PressableScale
-                style={s.retryBtnTertiary}
-                onPress={() => (router.replace as any)('/login')}
-                pressedScale={0.97}
-                haptic="light"
-              >
-                <Text style={s.retryTextTertiary}>RETURN TO LOGIN</Text>
-              </PressableScale>
+              {/* Beside a SIGN IN above, this would be the same door twice. */}
+              {(params.type === 'recovery' || params.type === 'signup') && (
+                <PressableScale
+                  style={s.retryBtnTertiary}
+                  onPress={() => (router.replace as any)('/login')}
+                  pressedScale={0.97}
+                  haptic="light"
+                >
+                  <Text style={s.retryTextTertiary}>RETURN TO LOGIN</Text>
+                </PressableScale>
+              )}
             </View>
           </AnimatedView>
         )}

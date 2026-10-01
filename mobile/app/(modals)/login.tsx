@@ -14,8 +14,11 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { nav } from '@/src/utils/typedRouter';
 import { useIsFocused } from '@react-navigation/native';
-import * as WebBrowser from 'expo-web-browser';
 import { colors } from '@/src/theme/theme';
+import { SmallPrintLink } from '@/src/components/society/SmallPrint';
+import { openHousePage } from '@/src/utils/housePages';
+import { TERMS_URL, PRIVACY_URL } from '@/src/constants/support';
+import { isAddress } from '@/src/stores/auth';
 import { displayTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { pickAny } from '@/src/lore/fragments';
@@ -32,8 +35,6 @@ import { e2eTrace } from '@/src/utils/e2eTrace';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
-
-WebBrowser.maybeCompleteAuthSession();
 
 // ── Subtle animated pulse for the gold accent line ──
 function PulsingRule() {
@@ -68,12 +69,12 @@ export default function LoginScreen() {
     username, setUsername,
     submitting,
     showPassword, setShowPassword,
-    forgotModalVisible, setForgotModalVisible,
+    forgotModalVisible, setForgotModalVisible, linkPurpose, setLinkPurpose,
     forgotEmail, setForgotEmail,
     forgotLoading, forgotSent, setForgotSent,
     awaitingConfirmation, setAwaitingConfirmation, confirmedEmail, resending, resendCooldown,
     usernameStatus, checkUsernameAvailability, handleResend,
-    handleLoginSubmit, handleForgotPassword, toggleMode,
+    handleLoginSubmit, handleEmailLink, toggleMode,
     canAttempt, secondsRemaining, handleManualConfirmationCheck
   } = useAuthFlow();
 
@@ -400,7 +401,8 @@ export default function LoginScreen() {
           {isLogin && (
             <PressableScale
               onPress={() => {
-                setForgotEmail(emailOrUsername.includes('@') ? emailOrUsername : '');
+                setForgotEmail(isAddress(emailOrUsername) ? emailOrUsername : '');
+                setLinkPurpose('reset');
                 setForgotSent(false);
                 setForgotModalVisible(true);
               }}
@@ -461,20 +463,26 @@ export default function LoginScreen() {
           </Text>
           <Text style={s.footerText}>
             {/* eslint-disable-next-line react/no-unescaped-entities */}
-            By continuing, you agree to The ReelHouse Society's{'\n'}Terms of Service & Privacy Policy
+            By continuing, you agree to The ReelHouse Society's
           </Text>
+          {/* What a member is taken to agree to, open to them: the house's own pages. */}
+          <View style={s.legalLinks}>
+            <SmallPrintLink label="Terms of Use" spoken="Terms of Use" role="link" onPress={() => { void openHousePage(TERMS_URL); }} />
+            <SmallPrintLink label="Privacy Policy" spoken="Privacy Policy" role="link" onPress={() => { void openHousePage(PRIVACY_URL); }} />
+          </View>
         </AnimatedView>
       </ScrollView>
 
       {/* ── Forgot Password Modal ── */}
       <PasswordRecoveryModal
         visible={forgotModalVisible}
+        purpose={linkPurpose}
         forgotSent={forgotSent}
         forgotEmail={forgotEmail}
         forgotLoading={forgotLoading}
         onClose={() => setForgotModalVisible(false)}
         onEmailChange={setForgotEmail}
-        onSubmit={handleForgotPassword}
+        onSubmit={handleEmailLink}
         onBackToSignIn={() => { setForgotModalVisible(false); setForgotSent(false); }}
       />
     </View>

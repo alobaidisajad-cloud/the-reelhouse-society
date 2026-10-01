@@ -68,6 +68,13 @@ export function setSensitive(key: string, value: string): void {
 }
 
 let _initPromise: Promise<void> | null = null;
+let _markReady: () => void = () => undefined;
+const _ready = new Promise<void>((resolve) => { _markReady = resolve; });
+
+/** Settles when initEncryptedStorage has, either way: `storage` is then final. */
+export function storageReady(): Promise<void> {
+  return _ready;
+}
 
 function generateKey(): string {
   // 256 bits of entropy from two v4 UUIDs (hex, dashes stripped).
@@ -145,6 +152,8 @@ export function initEncryptedStorage(): Promise<void> {
       // meant a member could run permanently degraded and nobody would ever know.
       logger.error('[mmkv] encryption init failed; running on the isolated placeholder store');
       captureError(e, { scope: 'mmkv.initEncryptedStorage', degraded: true });
+    } finally {
+      _markReady();
     }
   })();
   return _initPromise;

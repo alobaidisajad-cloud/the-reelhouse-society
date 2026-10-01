@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/src/lib/supabase';
-import { useAuthStore } from '@/src/stores/auth';
+import { useAuthStore, BAD_CREDENTIALS, authLink } from '@/src/stores/auth';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import * as Linking from 'expo-linking';
 import TactileEngine from '@/src/utils/TactileEngine';
 import reelToast from '@/src/utils/reelToast';
 import { getPasswordChecks } from '@/src/components/auth/PasswordStrengthMeter';
@@ -47,7 +46,7 @@ export function validateLoginSubmission(input: LoginSubmissionInput): string | n
 // Maps a raw Supabase/auth error message to its user-facing copy.
 // isInvalidCredentials tells the caller whether to record a throttle attempt.
 export function mapAuthError(rawMsg: string): { message: string; isInvalidCredentials: boolean } {
-  const isInvalidCredentials = rawMsg.includes('Invalid login credentials');
+  const isInvalidCredentials = rawMsg.includes(BAD_CREDENTIALS);
 
   // Every test reads rawMsg, never the partly-rewritten value. The first draft
   // of this chain tested `message`, so each branch was matching against
@@ -62,19 +61,23 @@ export function mapAuthError(rawMsg: string): { message: string; isInvalidCreden
   const message =
     isInvalidCredentials              ? 'Identity not recognized. Check your credentials.'
   : rawMsg.includes('Database error saving new user')
-                                      ? 'Username is already taken.'
+                                      ? 'The register could not take your details just now. Try again.'
   : rawMsg.includes('User already registered')
                                       ? 'That address is already on the register. Try signing in.'
   : rawMsg.includes('Email not confirmed')
                                       ? 'Your address is not confirmed yet. Open the link we sent, then try again.'
   : /link is invalid or has expired|otp_expired|token has expired/i.test(rawMsg)
                                       ? 'This link has expired or was already used. Ask for a new one.'
+  : /code verifier/i.test(rawMsg)
+                                      ? 'This link belongs to the phone that asked for it. An address it confirmed is confirmed: sign in. For a new password, ask for a fresh link here.'
   : /rate limit|too many requests|for security purposes|only request this after/i.test(rawMsg)
                                       ? 'Too many attempts. The door needs a moment — try again shortly.'
   : /Refresh Token|session|JWT/i.test(rawMsg)
                                       ? 'Your session lapsed. Please identify yourself again.'
   : /network|fetch|timeout/i.test(rawMsg)
                                       ? 'The line went quiet. Check your connection and try again.'
+  : rawMsg.includes('service unavailable')
+                                      ? 'The door could not answer just now. Try again shortly.'
   : rawMsg.includes('Password should be')
                                       ? 'That password is too short. Eight characters minimum.'
   : rawMsg;
@@ -96,8 +99,11 @@ function messageOf(err: unknown): string {
  * made the modal slide up on the wrong form and flip.
  */
 export function initialIsLogin(action?: string): boolean {
-  return action !== 'signup' && action !== 'resend_signup';
+  return action !== 'signup';
 }
+
+/** What the email-link sheet sends: a password reset, or a fresh confirmation. */
+export type EmailLinkPurpose = 'reset' | 'confirm';
 
 export function useAuthFlow() {
   const router = useRouter();
@@ -120,6 +126,7 @@ export function useAuthFlow() {
   const [showPassword, setShowPassword] = useState(false);
 
   const [forgotModalVisible, setForgotModalVisible] = useState(false);
+  const [linkPurpose, setLinkPurpose] = useState<EmailLinkPurpose>('reset');
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
@@ -166,10 +173,13 @@ export function useAuthFlow() {
       setIsLogin(true);
     } else if (params.action === 'forgot_password') {
       setIsLogin(true);
+      setLinkPurpose('reset');
       setForgotModalVisible(true);
     } else if (params.action === 'resend_signup') {
-      setIsLogin(false);
-      reelToast('Please enter your email to request a new link.');
+      // A fresh confirmation asks only for the address, not the whole sign-up form.
+      setIsLogin(true);
+      setLinkPurpose('confirm');
+      setForgotModalVisible(true);
     }
   }, [params.action]);
 
@@ -238,7 +248,7 @@ export function useAuthFlow() {
         type: 'signup',
         email: confirmedEmail,
         options: {
-          emailRedirectTo: Linking.createURL('auth-callback') + '?type=signup',
+          emailRedirectTo: authLink('signup'),
         },
       });
       if (error) throw error;
@@ -300,16 +310,19 @@ export function useAuthFlow() {
 
 
 
-  const handleForgotPassword = async () => {
-    if (!forgotEmail.trim()) {
-      reelToast.error('Please enter your email to request a credential reset.');
+  const handleEmailLink = async () => {
+    const email = forgotEmail.trim();
+    if (!email) {
+      reelToast.error(linkPurpose === 'reset'
+        ? 'Please enter your email to request a credential reset.'
+        : 'Please enter the email you joined with.');
       return;
     }
     setForgotLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
-        redirectTo: Linking.createURL('auth-callback') + '?type=recovery',
-      });
+      const { error } = linkPurpose === 'reset'
+        ? await supabase.auth.resetPasswordForEmail(email, { redirectTo: authLink('recovery') })
+        : await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: authLink('signup') } });
       if (error) throw error;
       setForgotSent(true);
     } catch (err: unknown) {
@@ -336,12 +349,12 @@ export function useAuthFlow() {
     username, setUsername,
     submitting,
     showPassword, setShowPassword,
-    forgotModalVisible, setForgotModalVisible,
+    forgotModalVisible, setForgotModalVisible, linkPurpose, setLinkPurpose,
     forgotEmail, setForgotEmail,
     forgotLoading, forgotSent, setForgotSent,
     awaitingConfirmation, setAwaitingConfirmation, confirmedEmail, resending, resendCooldown,
     usernameStatus, pwChecks, pwStrong,
     canAttempt, secondsRemaining,
-    checkUsernameAvailability, handleResend, handleLoginSubmit, handleForgotPassword, toggleMode, handleManualConfirmationCheck
+    checkUsernameAvailability, handleResend, handleLoginSubmit, handleEmailLink, toggleMode, handleManualConfirmationCheck
   };
 }

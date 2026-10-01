@@ -3,11 +3,16 @@
  * in the house's words, and every door into a session does the same things.
  */
 import React from 'react';
-import { act, render, renderHook } from '@testing-library/react-native';
+import { act, fireEvent, render, renderHook } from '@testing-library/react-native';
 import { mapAuthError, useAuthFlow } from '../useAuthFlow';
 import { useAuthStore } from '@/src/stores/auth';
 import { supabase } from '@/src/lib/supabase';
 import AuthCallbackScreen from '@/app/auth-callback';
+import LoginScreen from '@/app/(modals)/login';
+import { TERMS_URL, PRIVACY_URL } from '@/src/constants/support';
+
+const mockOpenHousePage = jest.fn(async (_url: string) => {});
+jest.mock('@/src/utils/housePages', () => ({ openHousePage: (u: string) => mockOpenHousePage(u) }));
 
 // Made inside the factory: the imports above load it before this file's consts exist.
 jest.mock('@/src/utils/reelToast', () => ({
@@ -90,6 +95,89 @@ describe('a handle being checked', () => {
   });
 });
 
+describe('a link that fails says why, in the house\'s words', () => {
+  const params = () => (jest.requireMock('expo-router') as { useLocalSearchParams: jest.Mock }).useLocalSearchParams;
+  const settle = async () => { await act(async () => { await new Promise((r) => setTimeout(r, 0)); }); };
+
+  it('an expired link, by the reason Supabase sends back with it', async () => {
+    params().mockReturnValue({ type: 'signup', error: 'access_denied', error_code: 'otp_expired', error_description: 'Email link is invalid or has expired' });
+    const r = render(<AuthCallbackScreen />);
+    await settle();
+    expect(r.getByText(/expired or was already used/)).toBeTruthy();
+    r.unmount();
+  });
+
+  it('a link opened on another phone: never the library\'s own words', async () => {
+    params().mockReturnValue({ code: 'abc', type: 'signup' });
+    auth.exchangeCodeForSession = jest.fn().mockResolvedValue({
+      data: { session: null },
+      error: new Error('PKCE code verifier not found in storage. This can happen if the auth flow was initiated in a different browser or device'),
+    });
+    const r = render(<AuthCallbackScreen />);
+    await settle();
+    expect(r.getByText(/belongs to the phone that asked for it/)).toBeTruthy();
+    expect(r.queryByText(/PKCE/)).toBeNull();
+    r.unmount();
+  });
+
+  it('offers SIGN IN once, never the same door twice', async () => {
+    params().mockReturnValue({});
+    const r = render(<AuthCallbackScreen />);
+    await settle();
+    expect(r.getByText('SIGN IN')).toBeTruthy();
+    expect(r.queryByText('RETURN TO LOGIN')).toBeNull();
+    r.unmount();
+  });
+});
+
+describe('a fresh confirmation', () => {
+  it('asks only for the address, and sends a confirmation, not a reset', async () => {
+    (jest.requireMock('expo-router') as { useLocalSearchParams: jest.Mock }).useLocalSearchParams.mockReturnValue({ action: 'resend_signup' });
+    auth.resend = jest.fn().mockResolvedValue({ data: {}, error: null });
+    auth.resetPasswordForEmail = jest.fn().mockResolvedValue({ data: {}, error: null });
+    const { result } = await renderHook(() => useAuthFlow());
+    expect(result.current.isLogin).toBe(true);
+    expect(result.current.forgotModalVisible).toBe(true);
+    expect(result.current.linkPurpose).toBe('confirm');
+    await act(async () => { result.current.setForgotEmail(' m@example.com '); });
+    await act(async () => { await result.current.handleEmailLink(); });
+    expect(auth.resend).toHaveBeenCalledWith(expect.objectContaining({ type: 'signup', email: 'm@example.com' }));
+    expect(auth.resetPasswordForEmail).not.toHaveBeenCalled();
+    expect(result.current.forgotSent).toBe(true);
+  });
+
+  it('every sign-up email names itself, so a failed one offers a fresh one', async () => {
+    const linking = jest.requireMock('expo-linking') as { createURL: jest.Mock };
+    auth.signUp = jest.fn().mockResolvedValue({ data: { user: { id: 'n1' }, session: null }, error: null });
+    await useAuthStore.getState().signup('n@example.com', 'Secret#123', 'newcomer');
+    expect(linking.createURL).toHaveBeenCalledWith('auth-callback', { queryParams: { type: 'signup' } });
+    expect(auth.signUp).toHaveBeenCalledWith(expect.objectContaining({
+      options: expect.objectContaining({ emailRedirectTo: linking.createURL.mock.results.at(-1)?.value }),
+    }));
+  });
+});
+
+describe('the sign-in screen', () => {
+  it('opens the Terms of Use and the Privacy Policy a member is taken to agree to', async () => {
+    (jest.requireMock('expo-router') as { useLocalSearchParams: jest.Mock }).useLocalSearchParams.mockReturnValue({});
+    const r = render(<LoginScreen />);
+    await act(async () => { await fireEvent.press(r.getByLabelText('Terms of Use')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Privacy Policy')); });
+    expect(mockOpenHousePage).toHaveBeenCalledWith(TERMS_URL);
+    expect(mockOpenHousePage).toHaveBeenCalledWith(PRIVACY_URL);
+    r.unmount();
+  });
+
+  it('a handle typed with its @ is not taken for an address to reset', async () => {
+    (jest.requireMock('expo-router') as { useLocalSearchParams: jest.Mock }).useLocalSearchParams.mockReturnValue({});
+    const r = render(<LoginScreen />);
+    await act(async () => { await fireEvent.changeText(r.getByTestId('email-input'), '@noir_fan'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Forgot your credentials')); });
+    expect(r.getByTestId('recovery-email-input').props.value).toBe('');
+    r.unmount();
+  });
+});
+
 describe('every door into a session', () => {
   it('the form, a link and a confirmed sign-up all sign in the same way', () => {
     // The profile read behind it, answered.
@@ -145,6 +233,32 @@ describe('every door into a session', () => {
     r.unmount();
     await act(async () => { jest.advanceTimersByTime(5000); });
     expect(replace).not.toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+
+  /**
+   * A link with no code and no token verified nothing. Anyone can open one
+   * (`reelhouse://auth-callback`, from any page). Taken as a recovery, it armed
+   * the flag that signs a member out on the next launch, and sent them to set a
+   * new password they never asked to change.
+   */
+  it.each([
+    ['a bare link', {}],
+    ['a link that only claims to be a recovery', { type: 'recovery' }],
+  ])('%s, opened while signed in, arms nothing and sends nowhere', async (_name, params) => {
+    jest.useFakeTimers();
+    const replace = jest.fn();
+    const { useRouter, useLocalSearchParams } = jest.requireMock('expo-router') as Record<string, jest.Mock>;
+    useRouter.mockReturnValue({ push: jest.fn(), replace, back: jest.fn(), dismissAll: jest.fn() });
+    useLocalSearchParams.mockReturnValue(params);
+    auth.getSession = jest.fn().mockResolvedValue({ data: { session: { user: { id: 'm4' } } }, error: null });
+    const r = render(<AuthCallbackScreen />);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
+    await act(async () => { jest.advanceTimersByTime(5000); });
+    expect(mockStore.get('recovery_pending')).toBeUndefined();
+    expect(replace).not.toHaveBeenCalledWith('/reset-password');
+    expect(r.getByText('VERIFICATION FAILED')).toBeTruthy();
+    r.unmount();
     jest.useRealTimers();
   });
 

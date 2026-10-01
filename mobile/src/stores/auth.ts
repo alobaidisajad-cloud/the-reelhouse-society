@@ -48,6 +48,29 @@ const _prefTimers = new Map<string, ReturnType<typeof setTimeout>>();
 // back every key changed in it (the keys share one timer).
 const _prefBaselines = new Map<string, Record<string, unknown>>();
 
+/** Supabase's words for refused credentials: both doors throw them, so the lock counts both. */
+export const BAD_CREDENTIALS = 'Invalid login credentials';
+/** Something before the @ and a dotted domain after it. "@name" and "old@handle" are handles. */
+const ADDRESS_SHAPE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+/** An email's link back into the app, saying which it is, so a failed one offers the right way on. */
+export function authLink(type: 'signup' | 'recovery'): string {
+  return Linking.createURL('auth-callback', { queryParams: { type } });
+}
+
+/** Whether what was typed into "email or username" is an address. */
+export function isAddress(typed: string): boolean {
+  return ADDRESS_SHAPE.test(typed.trim());
+}
+
+/** A failed username sign-in, in the words mapAuthError reads: the cause, never a guess. */
+function usernameRefusal(error: unknown): Error {
+  const e = error as { name?: string; context?: { status?: number } } | null;
+  if (e?.name === 'FunctionsFetchError') return new Error('network request failed');
+  if (e?.name === 'FunctionsHttpError' && e.context?.status === 401) return new Error(BAD_CREDENTIALS);
+  if (e?.name === 'FunctionsHttpError' && e.context?.status === 429) return new Error('Too many requests');
+  return new Error('Sign-in service unavailable');
+}
+
 // Single-flight guard for logout (see logout() re-entrancy note).
 let _logoutInFlight: Promise<void> | null = null;
 
@@ -225,20 +248,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const identifier = email.trim();
     let authedUser: AuthUser;
 
-    if (!identifier.includes('@')) {
+    if (!isAddress(identifier)) {
       // By username, entirely server-side: the function never reveals the email or
-      // whether the account exists (one generic error for every failure).
+      // whether the account exists (one refusal for every wrong handle or password).
       const { data: fnData, error: fnError } = await supabase.functions.invoke('sign-in-with-username', {
-        body: { username: identifier, password },
+        body: { username: identifier.replace(/^@/, ''), password },
       });
-      if (fnError || !fnData?.access_token || !fnData?.refresh_token) {
-        throw new Error('Invalid username or password.');
-      }
+      if (fnError) throw usernameRefusal(fnError);
+      if (!fnData?.access_token || !fnData?.refresh_token) throw usernameRefusal(null);
       const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
         access_token: fnData.access_token,
         refresh_token: fnData.refresh_token,
       });
-      if (sessionError || !sessionData.user) throw new Error('Invalid username or password.');
+      if (sessionError) throw sessionError;
+      if (!sessionData.user) throw usernameRefusal(null);
       authedUser = sessionData.user;
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email: identifier, password });
@@ -291,13 +314,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   signup: async (email, password, username, persona = 'The Cinephile') => {
-    // The confirmation email's link back into the app.
-    const redirectTo = Linking.createURL('auth-callback');
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: {
         data: { username },
-        emailRedirectTo: redirectTo,
+        emailRedirectTo: authLink('signup'),
       },
     });
     if (error) throw error;

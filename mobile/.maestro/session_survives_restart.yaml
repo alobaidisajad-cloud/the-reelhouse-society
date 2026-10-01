@@ -1,0 +1,25 @@
+appId: com.reelhouse.society
+---
+# Closed and opened again, a member is still signed in: the session is kept
+# on the device (src/lib/authSessionStorage.ts). The Initiation, once ever,
+# does not return.
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign_in.yaml
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "profile-tab"
+    timeout: 20000
+- assertNotVisible:
+    id: "initiation-enter-quietly"
+- tapOn:
+    id: "profile-tab"
+- scrollUntilVisible:
+    element:
+      id: "collection-card-watchlist"
+    direction: DOWN
+    timeout: 20000
+- assertNotVisible:
+    id: "profile-sign-in-prompt"

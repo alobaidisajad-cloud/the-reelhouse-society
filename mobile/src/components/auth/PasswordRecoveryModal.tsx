@@ -9,9 +9,25 @@ import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { SocietyEyebrow, HaloIcon, RegistrationBrackets } from './AuthChrome';
 import { ToastHost } from '@/src/components/ToastHost';
 import { e2eTrace } from '@/src/utils/e2eTrace';
+import type { EmailLinkPurpose } from '@/src/hooks/useAuthFlow';
+
+/** The sheet's words for each email it sends; the sheet itself is the same. */
+const WORDS = {
+  reset: {
+    eyebrow: 'CREDENTIAL RECOVERY', title: 'Reset Password', close: 'Close recovery',
+    ask: "Enter the email associated with your account and we'll send you a classified reset link.",
+    sent: 'We sent a password reset link to', send: '✦  SEND RESET LINK',
+  },
+  confirm: {
+    eyebrow: 'ADDRESS CONFIRMATION', title: 'Confirm Your Address', close: 'Close confirmation',
+    ask: "Enter the email you joined with and we'll wire a fresh confirmation link.",
+    sent: 'We sent a fresh confirmation link to', send: '✦  SEND CONFIRMATION LINK',
+  },
+} as const;
 
 interface Props {
   visible: boolean;
+  purpose: EmailLinkPurpose;
   forgotSent: boolean;
   forgotEmail: string;
   forgotLoading: boolean;
@@ -21,7 +37,8 @@ interface Props {
   onBackToSignIn: () => void;
 }
 
-export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgotLoading, onClose, onEmailChange, onSubmit, onBackToSignIn }: Props) {
+export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmail, forgotLoading, onClose, onEmailChange, onSubmit, onBackToSignIn }: Props) {
+  const w = WORDS[purpose];
   // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
   // platform — pad by the reported keyboard height on BOTH.
   const animatedOverlayStyle = useModalKeyboardPadding(24);
@@ -54,7 +71,7 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
             onPress={onClose}
             hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
             haptic="light"
-            accessibilityLabel="Close recovery"
+            accessibilityLabel={w.close}
           >
             <X size={16} color={colors.bone} strokeWidth={2} />
           </PressableScale>
@@ -62,16 +79,16 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
           {/* Header — the lost key, unframed in candlelight */}
           <View style={s.modalHeader}>
             <HaloIcon icon={KeyRound} iconSize={24} haloSize={104} style={s.iconWrap} />
-            <SocietyEyebrow label="CREDENTIAL RECOVERY" style={s.eyebrowWrap} />
+            <SocietyEyebrow label={w.eyebrow} style={s.eyebrowWrap} />
             <Text style={s.modalTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-              {forgotSent ? 'Check Your Inbox' : 'Reset Password'}
+              {forgotSent ? 'Check Your Inbox' : w.title}
             </Text>
           </View>
 
           {forgotSent ? (
             <View>
               <Text style={s.modalBodyText}>
-                We sent a password reset link to{' '}
+                {w.sent}{' '}
                 <Text style={s.forgotEmailHighlight}>
                   {forgotEmail}
                 </Text>
@@ -92,10 +109,7 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
             </View>
           ) : (
             <View style={s.forgotFormBody}>
-              <Text style={s.modalBodyText}>
-                {/* eslint-disable-next-line react/no-unescaped-entities */}
-                Enter the email associated with your account and we'll send you a classified reset link.
-              </Text>
+              <Text style={s.modalBodyText}>{w.ask}</Text>
               <View style={s.fieldGroup}>
                 <Text style={[s.inputLabel, emailFocused && s.inputLabelFocused]}>EMAIL ADDRESS</Text>
                 <TextInput
@@ -138,7 +152,7 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
                     <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SENDING...</Text>
                   </View>
                 ) : (
-                  <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦  SEND RESET LINK</Text>
+                  <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{w.send}</Text>
                 )}
               </PressableScale>
             </View>

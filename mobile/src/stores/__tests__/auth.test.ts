@@ -6,7 +6,8 @@
  */
 
 // Mock supabase before imports
-import { useAuthStore } from '../auth';
+import { useAuthStore, BAD_CREDENTIALS } from '../auth';
+import { mapAuthError } from '@/src/hooks/useAuthFlow';
 // ProfileWriteService is jest.mock'd below — no direct import needed
 
 const mockSignIn = jest.fn();
@@ -261,9 +262,48 @@ describe('AuthStore', () => {
     });
 
     it('username login throws a generic error when the edge function fails (no enumeration)', async () => {
-      mockInvoke.mockResolvedValue({ data: null, error: new Error('Unauthorized') });
+      mockInvoke.mockResolvedValue({ data: null, error: { name: 'FunctionsHttpError', context: { status: 401 } } });
       await expect(useAuthStore.getState().login('ghost_account', 'whatever'))
-        .rejects.toThrow('Invalid username or password.');
+        .rejects.toThrow(BAD_CREDENTIALS);
+    });
+
+    /** What a refused or failed username sign-in tells the member, through the form's own reading. */
+    const saidFor = async (error: unknown, who = 'noir_fan') => {
+      mockInvoke.mockResolvedValue({ data: null, error });
+      const err = await useAuthStore.getState().login(who, 'pw').catch((e: Error) => e);
+      return mapAuthError((err as Error).message);
+    };
+
+    it('a refused handle reads, and counts toward the lock, as a refused address does', async () => {
+      const byHandle = await saidFor({ name: 'FunctionsHttpError', context: { status: 401 } });
+      expect(byHandle).toEqual(mapAuthError(BAD_CREDENTIALS));
+      expect(byHandle.isInvalidCredentials).toBe(true);
+    });
+
+    it('with no connection, says the line is down: never that the password is wrong', async () => {
+      const said = await saidFor({ name: 'FunctionsFetchError', context: {} });
+      expect(said.isInvalidCredentials).toBe(false);
+      expect(said.message).toMatch(/connection/);
+    });
+
+    it("the door's own 'too many attempts' is passed on as that", async () => {
+      const said = await saidFor({ name: 'FunctionsHttpError', context: { status: 429 } });
+      expect(said.isInvalidCredentials).toBe(false);
+      expect(said.message).toMatch(/Too many attempts/);
+    });
+
+    it('a handle typed as the house prints it, with its @, signs in by handle', async () => {
+      mockInvoke.mockResolvedValue({ data: null, error: { name: 'FunctionsHttpError', context: { status: 401 } } });
+      await useAuthStore.getState().login('@noir_fan', 'pw').catch(() => undefined);
+      expect(mockInvoke).toHaveBeenCalledWith('sign-in-with-username', { body: { username: 'noir_fan', password: 'pw' } });
+      expect(mockSignIn).not.toHaveBeenCalled();
+    });
+
+    it('only an address shaped like one goes to the address door', async () => {
+      mockInvoke.mockResolvedValue({ data: null, error: { name: 'FunctionsHttpError', context: { status: 401 } } });
+      await useAuthStore.getState().login('old@handle', 'pw').catch(() => undefined);
+      expect(mockInvoke).toHaveBeenCalledWith('sign-in-with-username', { body: { username: 'old@handle', password: 'pw' } });
+      expect(mockSignIn).not.toHaveBeenCalled();
     });
   });
 
