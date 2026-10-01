@@ -23,6 +23,10 @@ const mockParams: Record<string, string> = { kind: 'dossier' };
 const mockUser = { id: 'u1', username: 'ana', tier: 'auteur', member_no: 17 };
 /** What the house is holding, if anything. */
 let mockRemote: { payload: unknown; saved_at: string } | null = null;
+/** The house could not be asked. */
+let mockPullFails = false;
+/** Every backup the room sent. */
+const mockPushed: unknown[] = [];
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), setParams: jest.fn() },
@@ -55,11 +59,11 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.select = () => self();
       chain.eq = () => self();
       chain.not = () => Promise.resolve({ data: [], error: null });
-      chain.upsert = () => Promise.resolve({ error: null });
+      chain.upsert = (row: unknown) => { mockPushed.push(row); return Promise.resolve({ error: null }); };
       chain.delete = () => self();
-      chain.maybeSingle = () => Promise.resolve({
-        data: table === 'member_drafts' ? mockRemote : null, error: null,
-      });
+      chain.maybeSingle = () => Promise.resolve(table === 'member_drafts' && mockPullFails
+        ? { data: null, error: { message: 'TypeError: Network request failed' } }
+        : { data: table === 'member_drafts' ? mockRemote : null, error: null });
       chain.then = (r: (v: unknown) => unknown) =>
         Promise.resolve({ data: [], error: null }).then(r);
       return chain;
@@ -93,6 +97,8 @@ const NEWER = new Date(2026, 8, 11, 9, 12).toISOString();   // Friday
 beforeEach(() => {
   mockStore.clear();
   mockRemote = null;
+  mockPullFails = false;
+  mockPushed.length = 0;
 });
 
 describe('a newer one written elsewhere', () => {
@@ -178,5 +184,64 @@ describe('a newer one written elsewhere', () => {
     local(OLDER, 'On this phone.');
     const { queryByText } = await mount();
     expect(queryByText('A NEWER ONE WAS WRITTEN ELSEWHERE')).toBeNull();
+  });
+});
+
+describe('the backup never replaces a copy the room has not seen', () => {
+  const ESSAY = { title: 'The Long Silence', content: 'Four thousand words.' };
+  /** Two minutes on, with the reads that follow allowed to land. */
+  const tick = async () => {
+    await act(async () => { jest.advanceTimersByTime(120_000); });
+    await act(async () => { for (let i = 0; i < 6; i++) await Promise.resolve(); });
+  };
+  beforeEach(() => { jest.useFakeTimers(); });
+  afterEach(() => { jest.useRealTimers(); });
+
+  it('THE NEW PHONE, OFFLINE: what is typed meanwhile is asked about, never pushed over the essay', async () => {
+    // The pull fails, so the room opens empty. It used to read that as "the
+    // house holds nothing", and the first backup replaced the essay.
+    mockPullFails = true;
+    mockRemote = { payload: ESSAY, saved_at: OLDER };
+    const r = render(<ComposeScreen />);
+    await act(async () => { for (let i = 0; i < 6; i++) await Promise.resolve(); });
+    await act(async () => { fireEvent.changeText(r.getByLabelText('Essay content body'), 'A first line, offline.'); });
+
+    await tick();
+    expect(mockPushed).toHaveLength(0);
+
+    // The house is back: the next tick reads it, and asks.
+    mockPullFails = false;
+    await tick();
+    expect(mockPushed).toHaveLength(0);
+    expect(r.getByText('A NEWER ONE WAS WRITTEN ELSEWHERE')).toBeTruthy();
+  });
+
+  it('closing the room on the question pushes nothing over the newer copy', async () => {
+    local(OLDER, 'On this phone.');
+    mockRemote = { payload: { title: 'On this phone', content: 'Rewritten on the other phone.' }, saved_at: NEWER };
+    const r = render(<ComposeScreen />);
+    await act(async () => { for (let i = 0; i < 6; i++) await Promise.resolve(); });
+    expect(r.getByText('A NEWER ONE WAS WRITTEN ELSEWHERE')).toBeTruthy();
+    await tick();
+    r.unmount();
+    expect(mockPushed).toHaveLength(0);
+  });
+
+  it('an answer settles it, and the backup goes on from there', async () => {
+    local(OLDER, 'On this phone.');
+    mockRemote = { payload: { title: 'On this phone', content: 'Rewritten on the other phone.' }, saved_at: NEWER };
+    const r = render(<ComposeScreen />);
+    await act(async () => { for (let i = 0; i < 6; i++) await Promise.resolve(); });
+    await act(async () => { fireEvent.press(r.getByLabelText('Keep the one on this phone')); });
+    await tick();
+    expect(mockPushed).toHaveLength(1);
+  });
+
+  it('a house holding nothing is settled at once, and the backup goes', async () => {
+    local(OLDER, 'On this phone.');
+    render(<ComposeScreen />);
+    await act(async () => { for (let i = 0; i < 6; i++) await Promise.resolve(); });
+    await tick();
+    expect(mockPushed).toHaveLength(1);
   });
 });

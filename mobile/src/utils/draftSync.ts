@@ -86,12 +86,19 @@ export async function pushDraft<T>(
   }
 }
 
-/** What the house is holding, or null — including when it cannot be asked. */
+/**
+ * What the house is holding: the draft, null for nothing, or 'unreachable'.
+ *
+ * Nothing and unreachable are kept apart because a push that follows them
+ * differs: over nothing it is safe, over a backup the room never saw it would
+ * replace that backup with whatever was typed meanwhile. Unreachable is still
+ * not an error to show: the local draft is safe on the phone.
+ */
 export async function pullDraft<T>(
   userId: string | null | undefined,
   kind: SyncedKind,
   scope = '',
-): Promise<RemoteDraft<T> | null> {
+): Promise<RemoteDraft<T> | null | 'unreachable'> {
   if (!userId) return null;
   try {
     const { data, error } = await supabase
@@ -101,16 +108,11 @@ export async function pullDraft<T>(
       .eq('kind', kind)
       .eq('scope', scope)
       .maybeSingle();
-    if (error || !data) return null;
+    if (error) return 'unreachable';
+    if (!data) return null;
     return { data: data.payload as T, savedAt: data.saved_at as string };
   } catch {
-    /**
-     * Offline is the ordinary case and it is not an error to report. The room
-     * carries on with the local draft, which is what it would have used anyway
-     * — a member with no signal must never be told their writing is in danger
-     * when it is sitting safely on their own phone.
-     */
-    return null;
+    return 'unreachable';
   }
 }
 

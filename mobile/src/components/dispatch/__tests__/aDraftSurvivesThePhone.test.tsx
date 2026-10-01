@@ -92,7 +92,7 @@ describe('the rhythm is a backup, not a keystroke', () => {
     expect(room).toMatch(/AppState\.addEventListener\('change', \(s\) => \{ if \(s !== 'active'\) backUp\(\); \}\)/);
     // The cleanup runs one last time — closing the room is the moment most
     // likely to be followed by the app being killed.
-    expect(room).toMatch(/clearInterval\(every\); sub\.remove\(\); backUp\(\);/);
+    expect(room).toMatch(/clearInterval\(every\); sub\.remove\(\); backUp\(true\);/);
   });
 });
 

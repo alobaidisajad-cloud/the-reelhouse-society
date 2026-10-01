@@ -362,28 +362,55 @@ function ComposeDossierScreen() {
      * producing text nobody wrote, and nothing is overwritten until the member
      * chooses. That is also what makes this verifiable without a second handset.
      */
-    useEffect(() => {
-        if (!user?.id) return;
-        let cancelled = false;
-        (async () => {
-            const remote = await pullDraft<DossierDraft>(
-                user.id, edit ? 'edit' : 'dossier', edit ?? '',
-            );
-            if (cancelled || !remote) return;
-            const local = readDraft<DossierDraft>(user.id, edit ? 'edit' : 'dossier', edit ?? '');
-            const verdict = whichCopy(local?.savedAt, remote.savedAt);
-            if (verdict === 'remote') {
-                // Nothing here to lose — a new phone, or an install that has
-                // never held this essay. Take it and say where it came from.
-                applyDraft(remote.data);
-                setRestored(remote.savedAt);
-            } else if (verdict === 'ask') {
-                setElsewhere(remote);
-            }
-        })();
-        return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id, edit]);
+    /**
+     * ── AND NOTHING IS PUSHED OVER A COPY THE ROOM HAS NOT SEEN ──────────────
+     * The backup below replaces the house's copy. Until this room has read that
+     * copy and settled on one (`settled`), it pushes nothing: a pull that could
+     * not reach the house used to read as "holding nothing", and on a new phone
+     * opened offline the first push replaced a whole essay with the lines typed
+     * since. Closing the room on the question did the same with the older copy.
+     *
+     * Settled when the house holds nothing, or the same words; when an empty
+     * room takes its copy; when this phone's own newer copy wins (whichCopy);
+     * or when the member answers. A phone that opened with no draft of its own,
+     * or a room that only reached the house late, asks on any difference.
+     */
+    const settled = useRef(false);
+    const asking = useRef(false);
+    const late = useRef(false);
+    const hadLocal = useRef<boolean | null>(null);
+    if (hadLocal.current === null) {
+        hadLocal.current = readDraft(user?.id, edit ? 'edit' : 'dossier', edit ?? '') !== null;
+    }
+    const reconcile = useCallback(async () => {
+        if (!user?.id || settled.current || asking.current) return;
+        const remote = await pullDraft<DossierDraft>(user.id, edit ? 'edit' : 'dossier', edit ?? '');
+        if (!isMounted.current || settled.current || asking.current) return;
+        if (remote === 'unreachable') { late.current = true; return; }
+        const t = titleRef.current, c = contentRef.current;
+        if (!remote || ((remote.data.title ?? '') === t && (remote.data.content ?? '') === c)) {
+            settled.current = true;
+        } else if (!t.trim() && !c.trim()) {
+            // Nothing here to lose: a new phone, or an install that never held it.
+            applyDraft(remote.data);
+            setRestored(remote.savedAt);
+            settled.current = true;
+        } else if (!hadLocal.current || late.current
+            || whichCopy(readDraft(user.id, edit ? 'edit' : 'dossier', edit ?? '')?.savedAt, remote.savedAt) === 'ask') {
+            asking.current = true;
+            setElsewhere(remote);
+        } else {
+            settled.current = true;
+        }
+    }, [user?.id, edit, applyDraft]);
+    /** The member's answer to the question settles it, either way. */
+    const answer = useCallback((take: boolean) => {
+        if (take && elsewhere) { applyDraft(elsewhere.data); setRestored(elsewhere.savedAt); }
+        asking.current = false;
+        settled.current = true;
+        setElsewhere(null);
+    }, [elsewhere, applyDraft]);
+    useEffect(() => { void reconcile(); }, [reconcile]);
 
     /**
      * ── THE BACKUP, EVERY TWO MINUTES ────────────────────────────────────────
@@ -397,7 +424,9 @@ function ComposeDossierScreen() {
      */
     useEffect(() => {
         if (!user?.id) return;
-        const backUp = () => {
+        const backUp = (leaving = false) => {
+            // Not settled: ask the house again (it may be back), and push nothing.
+            if (!settled.current) { if (!leaving) void reconcile(); return; }
             const t = titleRef.current, c = contentRef.current;
             if (!t.trim() && !c.trim()) return;
             void pushDraft(
@@ -408,8 +437,8 @@ function ComposeDossierScreen() {
         };
         const every = setInterval(backUp, SYNC_EVERY_MS);
         const sub = AppState.addEventListener('change', (s) => { if (s !== 'active') backUp(); });
-        return () => { clearInterval(every); sub.remove(); backUp(); };
-    }, [user?.id, edit]);
+        return () => { clearInterval(every); sub.remove(); backUp(true); };
+    }, [user?.id, edit, reconcile]);
 
     /**
      * An amend is kept too, in a slot per FILING: the new essay's slot would let an amend
@@ -713,11 +742,7 @@ function ComposeDossierScreen() {
                                 <View style={styles.elsewhereActs}>
                                     <PressableScale
                                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
-                                        onPress={() => {
-                                            applyDraft(elsewhere.data);
-                                            setRestored(elsewhere.savedAt);
-                                            setElsewhere(null);
-                                        }}
+                                        onPress={() => answer(true)}
                                         accessibilityRole="button"
                                         accessibilityLabel="Take the one written elsewhere"
                                     >
@@ -725,7 +750,7 @@ function ComposeDossierScreen() {
                                     </PressableScale>
                                     <PressableScale
                                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
-                                        onPress={() => setElsewhere(null)}
+                                        onPress={() => answer(false)}
                                         accessibilityRole="button"
                                         accessibilityLabel="Keep the one on this phone"
                                     >
