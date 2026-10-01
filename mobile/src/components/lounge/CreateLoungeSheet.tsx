@@ -4,9 +4,10 @@ import { Text, TextInput } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS
+  useAnimatedStyle, withTiming, Easing, runOnJS
 } from 'react-native-reanimated';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
+import { useSheetPresence } from '@/src/hooks/useSheetPresence';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BlurView } from 'expo-blur';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -62,9 +63,17 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
     }
   };
 
-  const [isRendered, setIsRendered] = useState(visible);
-  const translateY = useSharedValue(800);
-  const opacity = useSharedValue(0);
+  const { isRendered, setIsRendered, opacity, translateY } = useSheetPresence({
+    visible,
+    // A close during the founding leaves no spinner for the next opening.
+    onOpen: () => setCreating(false),
+    // A founded room's words go once the sheet has; a closed draft keeps them.
+    onGone: () => {
+      if (!wasSuccessRef.current) return;
+      wasSuccessRef.current = false;
+      setName(''); setDescription(''); setIsPrivate(false);
+    },
+  });
 
   // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
   // platform (Android's resize mode can't reach them) — pad on BOTH.
@@ -94,30 +103,8 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
     if (visible || !isRendered || !societyPending.current) return;
     const t = setTimeout(() => setIsRendered(false), 450);
     return () => clearTimeout(t);
-  }, [visible, isRendered]);
+  }, [visible, isRendered, setIsRendered]);
 
-  useEffect(() => {
-    if (visible) {
-      setIsRendered(true);
-      translateY.value = 800;
-      opacity.value = withTiming(1, { duration: 300 });
-      translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
-    } else {
-      setCreating(false);
-      if (isRendered) {
-        opacity.value = withTiming(0, { duration: 250 });
-        translateY.value = withTiming(800, { duration: 250, easing: Easing.out(Easing.cubic) }, () => {
-          runOnJS(setIsRendered)(false);
-          if (wasSuccessRef.current) {
-            runOnJS(setName)('');
-            runOnJS(setDescription)('');
-            runOnJS(setIsPrivate)(false);
-            wasSuccessRef.current = false;
-          }
-        });
-      }
-    }
-  }, [visible, isRendered, opacity, translateY]);
 
   const pan = Gesture.Pan()
     .onChange((e) => {

@@ -49,22 +49,13 @@ describe('#121 · the sheet fully leaves the screen on any window', () => {
     // moved: roughly 224pt never left the screen. It popped into view on open
     // and left a sliver behind on close. Pre-existing, but it sat in the code
     // this finding touches and is the same defect class: a guessed dimension.
+    // The sheet's rise and fall are useSheetPresence's; this sheet hands it the
+    // window's height. That a resize never replays the rise is held on the hook
+    // (aSheetComesAndGoesOnce).
     expect(sheet).not.toMatch(/translateY\.value = 800/);
     expect(sheet).not.toMatch(/withTiming\(800,/);
     expect(sheet).not.toMatch(/useSharedValue\(800\)/);
-    expect(sheet).toMatch(/translateY\.value = offscreenRef\.current/);
-    expect(sheet).toMatch(/withTiming\(offscreenRef\.current,/);
-  });
-
-  it('reads it from a ref, so a rotation cannot replay the entry animation', () => {
-    // The distance must be current, but adding it to the animation effect's
-    // dependencies would re-run that effect on every resize — replaying the
-    // open transition while the member is filling the form in.
-    expect(sheet).toMatch(/offscreenRef\.current = windowHeight;/);
-    const effect = sheet.slice(sheet.indexOf('React.useEffect(() => {'));
-    const deps = effect.slice(0, effect.indexOf('}, ['));
-    expect(deps.length).toBeGreaterThan(50);
-    expect(effect).toMatch(/\}, \[visible, opacity, translateY, isRendered\]\)/);
+    expect(sheet).toMatch(/useSheetPresence\(\{[\s\S]{0,80}offscreen: windowHeight/);
   });
 });
 

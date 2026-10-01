@@ -15,6 +15,7 @@ import { useWindowDimensions, Modal, ScrollView, StyleSheet, Switch, View } from
 import { Text, TextInput } from '@/src/components/text';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
+import { useSheetPresence } from '@/src/hooks/useSheetPresence';
 import Animated, {
     Easing,
     runOnJS,
@@ -160,20 +161,6 @@ function ReportSheet({
   // Reactive, so a rotation or a split-screen resize re-measures. See the note
   // on SHEET_HEIGHT_RATIO.
   const { height: windowHeight } = useWindowDimensions();
-  /**
-   * How far the sheet travels to be fully off-screen.
-   *
-   * This was a hardcoded 800. The sheet is three quarters of the window, so on
-   * anything taller than ~1067pt — an iPad in portrait is 1366 — the sheet is
-   * TALLER than the distance it moves: roughly 224pt of it never leaves the
-   * screen. It popped into view on open and left a sliver behind on close.
-   *
-   * Mirrored into a ref rather than added to the animation effect's
-   * dependencies: that effect drives the open/close transition, so re-running it
-   * on a rotation would replay the entry animation mid-use.
-   */
-  const offscreenRef = React.useRef(windowHeight);
-  offscreenRef.current = windowHeight;
   const user = useAuthStore((s) => s.user);
   const submitReport = useReportStore((s) => s.submitReport);
   const isSubmitting = useReportStore((s) => s.isSubmitting);
@@ -185,31 +172,19 @@ function ReportSheet({
   const [isFocused, setIsFocused] = useState(false);
 
   // ── Sheet Animation ─────────────────────────────────────────────────────
-  const [isRendered, setIsRendered] = React.useState(false);
-  const opacity = useSharedValue(0);
-  // Starts off-screen by the window's own height, not a guessed 800.
-  const translateY = useSharedValue(windowHeight);
-
-  React.useEffect(() => {
-    if (visible) {
-      // Reset form state on open
-      setSelectedReason(null);
-      setDetails('');
-      setBlockToggle(false);
-      setIsFocused(false);
-      setIsRendered(true);
-      translateY.value = offscreenRef.current;
-      opacity.value = withTiming(1, { duration: 300 });
-      translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
-    } else {
-      if (isRendered) {
-        opacity.value = withTiming(0, { duration: 250 });
-        translateY.value = withTiming(offscreenRef.current, { duration: 250, easing: Easing.out(Easing.cubic) }, () => {
-          runOnJS(setIsRendered)(false);
-        });
-      }
-    }
-  }, [visible, opacity, translateY, isRendered]);
+  /**
+   * Off-screen by the window's own height. This was a hardcoded 800, and the
+   * sheet is three quarters of the window: on anything taller than ~1067pt (an
+   * iPad in portrait is 1366) about 224pt of it never left the screen. The
+   * hook reads it when it moves, so a rotation re-measures without replaying
+   * the entry mid-use.
+   */
+  const { isRendered, opacity, translateY } = useSheetPresence({
+    visible,
+    offscreen: windowHeight,
+    // Every report starts clean.
+    onOpen: () => { setSelectedReason(null); setDetails(''); setBlockToggle(false); setIsFocused(false); },
+  });
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));

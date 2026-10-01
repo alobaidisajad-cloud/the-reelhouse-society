@@ -17,9 +17,9 @@ import Animated, {
     Easing,
     runOnJS,
     useAnimatedStyle,
-    useSharedValue,
     withTiming,
 } from 'react-native-reanimated';
+import { useSheetPresence } from '@/src/hooks/useSheetPresence';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PressableScale from '@/src/components/PressableScale';
@@ -67,27 +67,7 @@ export function ContentActionSheet({
   hideMute = false,
 }: ContentActionSheetProps) {
   const insets = useSafeAreaInsets();
-
-  const [isRendered, setIsRendered] = React.useState(false);
-
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(800);
-
-  React.useEffect(() => {
-    if (visible) {
-      setIsRendered(true);
-      translateY.value = 800;
-      opacity.value = withTiming(1, { duration: 300 });
-      translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
-    } else {
-      if (isRendered) {
-        opacity.value = withTiming(0, { duration: 250 });
-        translateY.value = withTiming(800, { duration: 250, easing: Easing.out(Easing.cubic) }, () => {
-          runOnJS(setIsRendered)(false);
-        });
-      }
-    }
-  }, [visible, opacity, translateY, isRendered]);
+  const { isRendered, opacity, translateY } = useSheetPresence({ visible });
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));

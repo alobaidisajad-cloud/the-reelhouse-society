@@ -622,6 +622,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/generated/lucideIcons.js | — |  |
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
+| src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-01 | written with useSheetPresence |
 | src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-01 | the ratchet is exact |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
 | src/hooks/__tests__/theArchiveDoesNotRepeatItself.test.tsx | — |  |
@@ -671,6 +672,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useProfileData.ts | — |  |
 | src/hooks/useReportUser.ts | — |  |
 | src/hooks/useScreenReady.tsx | 2026-10-01 | true as written |
+| src/hooks/useSheetPresence.ts | 2026-10-01 | written: five sheets' rise and fall, once |
 | src/hooks/useTextScale.ts | — |  |
 | src/hooks/useUniversalSearch.ts | — |  |
 | src/hooks/useUpdateUser.ts | — |  |

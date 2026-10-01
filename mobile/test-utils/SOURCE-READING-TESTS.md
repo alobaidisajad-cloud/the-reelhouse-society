@@ -57,6 +57,7 @@ Decisions, as of 2026-09-28:
 | File | The class it enumerates |
 |---|---|
 | `src/components/__tests__/animation-parking.test.ts` | Every endless animation parks when its screen is not focused. |
+| `src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx` | No sheet unmounts itself at the end of its own fall; useSheetPresence is the one place (its behaviour is tested on the hook). |
 | `src/features/settings/__tests__/anExportIsWhole.test.ts` | Every export of the private notes names their key (the viewing); the paging itself is tested on readAllRows. |
 | `src/utils/__tests__/everyPullSaysWhatItReached.guard.test.ts` | Every pull to refresh says the shared sentence when it reached nothing, or names who says it. |
 | `src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts` | The tab bar's three hooks into lastTab (remember on focus, stamp on leaving, reopen only a launch at the Lobby): the layout mounts the whole navigator, and the rule's own behaviour is tested on lastTab itself. |

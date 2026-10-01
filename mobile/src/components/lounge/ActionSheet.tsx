@@ -9,7 +9,8 @@ import { Ban, Copy, MinusCircle, Reply, ShieldAlert } from 'lucide-react-native'
 import React from 'react';
 import { Alert, Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, runOnJS, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { useSheetPresence } from '@/src/hooks/useSheetPresence';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s } from './LoungeStyles';
 
@@ -38,30 +39,15 @@ interface ActionSheetProps {
 function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose, onReply, onReact, onDelete, onReport, onBlock }: ActionSheetProps) {
   const insets = useSafeAreaInsets();
   
-  const [isRendered, setIsRendered] = React.useState(false);
   const [internalMsg, setInternalMsg] = React.useState<LoungeMessage | null>(null);
   const [internalIsSelf, setInternalIsSelf] = React.useState(false);
 
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(800);
-
-  React.useEffect(() => {
-    if (visible && msg) {
-      setInternalMsg(msg);
-      setInternalIsSelf(isSelf);
-      setIsRendered(true);
-      translateY.value = 800;
-      opacity.value = withTiming(1, { duration: 300 });
-      translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
-    } else {
-      if (isRendered) {
-        opacity.value = withTiming(0, { duration: 250 });
-        translateY.value = withTiming(800, { duration: 250, easing: Easing.out(Easing.cubic) }, () => {
-          runOnJS(setIsRendered)(false);
-        });
-      }
-    }
-  }, [visible, msg, isSelf, opacity, translateY, isRendered]);
+  // The message is held from the moment it opens, so the sheet keeps its words
+  // while it falls after the caller has let go of them.
+  const { isRendered, opacity, translateY } = useSheetPresence({
+    visible: visible && !!msg,
+    onOpen: () => { setInternalMsg(msg); setInternalIsSelf(isSelf); },
+  });
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
