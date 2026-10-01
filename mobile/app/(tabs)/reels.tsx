@@ -362,8 +362,10 @@ export default function ReelScreen() {
       </View>
       {/* Above the rule, so "CURATED STACKS" introduces the grid, not the button. */}
       <PressableScale
+        testID="reel-curate-stack"
         style={st.createStackBtn}
         onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.destroy(); nav.push('/list-modal'); }}
+        accessibilityRole="button" accessibilityLabel="Curate a collection"
       >
         <BrassSheen />
         <LinearGradient

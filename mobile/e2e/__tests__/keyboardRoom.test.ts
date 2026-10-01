@@ -7,11 +7,20 @@
  * without a keyboard on screen has measured nothing.
  */
 import { spawnSync } from 'child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
 const SCRIPT = join(__dirname, '..', 'keyboard-room.mjs');
+
+/** Every .ts/.tsx file under `dir`, tests aside, as one text. */
+function sourceUnder(dir: string): string {
+  return readdirSync(dir).map((f) => {
+    const p = join(dir, f);
+    if (statSync(p).isDirectory()) return f === '__tests__' ? '' : sourceUnder(p);
+    return /\.tsx?$/.test(f) ? readFileSync(p, 'utf8') : '';
+  }).join('\n');
+}
 let dir: string;
 
 beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'keyboard-room-')); });
@@ -133,10 +142,18 @@ describe('what the runner measures exists', () => {
   });
 
   it('and every id it taps or measures is one the app sets', () => {
-    const app = (p: string) => readFileSync(join(__dirname, '..', '..', p), 'utf8');
-    expect(app('app/(modals)/list-modal.tsx')).toMatch(/testID="stack-title-input"/);
-    expect(app('app/(modals)/list-modal.tsx')).toMatch(/'FILE THE STACK'/);
-    expect(app('app/(modals)/log-modal.tsx') + app('src/components/log/LogForm.tsx')).toMatch(/testID="review-input"/);
+    const root = join(__dirname, '..', '..');
+    const flows = readdirSync(join(root, '.maestro', 'keyboard')).map((f) => readFileSync(join(root, '.maestro', 'keyboard', f), 'utf8'));
+    const ids = new Set(flows.flatMap((y) => [...y.matchAll(/id: "([\w-]+)"/g)].map((m) => m[1])));
+    for (const p of probes) if (p.target.startsWith('#')) ids.add(p.target.slice(1));
+    expect(ids.size).toBeGreaterThan(5);
+    const code = sourceUnder(join(root, 'app')) + sourceUnder(join(root, 'src'));
+    // An id is set whole ("review-input") or built (`film-act-${act.key}` and a key 'log').
+    const builds = [...code.matchAll(/`([\w-]+)\$\{/g)].map((m) => m[1]);
+    const said = (s: string) => code.includes(`"${s}"`) || code.includes(`'${s}'`);
+    const unset = [...ids].filter((id) => !said(id) && !builds.some((b) => id.startsWith(b) && said(id.slice(b.length))));
+    expect(unset).toEqual([]);
+    expect(readFileSync(join(root, 'app/(modals)/list-modal.tsx'), 'utf8')).toMatch(/'FILE THE STACK'/);
   });
 });
 

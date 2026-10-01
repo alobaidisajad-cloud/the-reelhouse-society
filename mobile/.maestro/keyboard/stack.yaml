@@ -10,9 +10,11 @@ appId: com.reelhouse.society
 # The Reel opens on its logs; the stacks and the form's door are one over.
 - tapOn: "Stacks tab"
 - extendedWaitUntil:
-    visible: "✦ CURATE A COLLECTION"
+    visible:
+      id: "reel-curate-stack"
     timeout: 15000
-- tapOn: "✦ CURATE A COLLECTION"
+- tapOn:
+    id: "reel-curate-stack"
 - extendedWaitUntil:
     visible: "FILE THE STACK"
     timeout: 15000

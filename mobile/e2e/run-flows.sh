@@ -114,11 +114,22 @@ for probe in 'stack|"FILE THE STACK"' 'log|#review-input'; do
   left=$(( DEADLINE - $(date +%s) ))
   if [ $left -le 120 ]; then echo "$name: skipped (the flows' ${MINUTES} minutes ran out)" >> "$OUT/keyboard-room.txt"; room_rc=1; continue; fi
   keys_off
-  if ! timeout --signal=INT --kill-after=30 "$(( left < 400 ? left : 400 ))s" "$MAESTRO" test "$FLOWS/keyboard/$name.yaml" \
+  # A flow's own time: signing in types about fifty keys, and on a run where
+  # each key waits ten seconds (see the flows below) that alone is 500.
+  began=$(date +%s)
+  timeout --signal=INT --kill-after=30 "$(( left < 600 ? left : 600 ))s" "$MAESTRO" test "$FLOWS/keyboard/$name.yaml" \
       -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
-      -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" > "$OUT/keyboard-room/$name.log" 2>&1; then
-    { echo "$name: the screen was not reached; the flow said:"
-      grep -E 'FAILED|Assertion|not found|Element' "$OUT/keyboard-room/$name.log" | tail -n 4 | sed 's/^/  /'; } >> "$OUT/keyboard-room.txt"
+      -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" > "$OUT/keyboard-room/$name.log" 2>&1
+  prc=$?
+  if [ $prc -ne 0 ]; then
+    # Where it stopped: the steps it last reported (never a typed value: one is
+    # the password), how long it ran, and what was on the screen then. A probe
+    # cut off by its time prints no failure line of its own.
+    { echo "$name: the screen was not reached after $(( $(date +%s) - began ))s$([ $prc -eq 124 ] && echo ', when its time ran out'); its last steps:"
+      grep -viE 'input ?text' "$OUT/keyboard-room/$name.log" | grep -E '[A-Za-z]' | tail -n 6 | sed 's/^/  /'; } >> "$OUT/keyboard-room.txt"
+    timeout 60 "$MAESTRO" hierarchy > "$OUT/keyboard-room/$name.json" 2>/dev/null
+    node mobile/e2e/screen.mjs "$OUT/keyboard-room/$name.json" | head -n 14 | sed "s/^/  $name screen · /" >> "$OUT/keyboard-room.txt"
+    timeout 20 adb get-state > /dev/null 2>&1 || gone=1
     room_rc=1; continue
   fi
   keys_on

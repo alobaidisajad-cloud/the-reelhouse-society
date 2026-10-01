@@ -237,7 +237,7 @@ jobs:
 
       - name: The flows, on an Android emulator
         # A backstop under the job's limit, so the steps after it still run. The
-        # flows' own budget (run-flows.sh, 35 minutes) is inside this one.
+        # flows' own budget (run-flows.sh, 42 minutes) is inside this one.
         timeout-minutes: 50
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
