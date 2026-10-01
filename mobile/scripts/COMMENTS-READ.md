@@ -85,7 +85,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/login.tsx | 2026-10-01 | the terms open; every comment short and true |
 | app/(modals)/membership.tsx | — |  |
 | app/(modals)/notifications-modal.tsx | — |  |
-| app/(modals)/search-modal.tsx | — |  |
+| app/(modals)/search-modal.tsx | 2026-10-02 | tabs named; partial results said; an emptied box empties at once; nav.dismiss |
 | app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
 | app/(tabs)/_layout.tsx | — |  |
 | app/(tabs)/darkroom.tsx | — |  |
@@ -571,8 +571,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/ReelsStackList.tsx | 2026-10-01 | true as written |
 | src/components/reels/types.ts | 2026-10-01 | true as written |
 | src/components/RouteErrorBoundary.tsx | — |  |
-| src/components/search/SearchResultRow.tsx | — |  |
-| src/components/search/SearchUnreachable.tsx | 2026-10-01 | true as written |
+| src/components/search/SearchResultRow.tsx | 2026-10-02 | ReelRating draws halves; resultLabel says what the row is |
+| src/components/search/SearchUnreachable.tsx | 2026-10-02 | SearchPartly: above results that came back while a source did not |
 | src/components/SectionErrorBoundary.tsx | 2026-10-01 | retries; comments made true |
 | src/components/ShareToLoungeModal.tsx | 2026-10-01 | only salons it may speak in; subscribes only when open |
 | src/components/SkeletonPulse.tsx | — |  |
@@ -655,6 +655,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/theCalendarReadsItsOwnYear.test.ts | — |  |
 | src/hooks/__tests__/theNoteWaitsForItsViewing.test.tsx | — |  |
 | src/hooks/__tests__/theSealLeavesWithTheScreen.test.tsx | — |  |
+| src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx | 2026-10-02 | @handles, exact first, plain excerpts, half reels, named tabs, partial note, emptied box |
 | src/hooks/__tests__/theSearchKnowsWhichSourceWasDown.test.tsx | — |  |
 | src/hooks/__tests__/useAuthFlow.validation.test.ts | — |  |
 | src/hooks/__tests__/useAuthThrottle.pbt.test.ts | 2026-10-01 | the countdown keeps the rule |
@@ -699,7 +700,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useScreenReady.tsx | 2026-10-01 | true as written |
 | src/hooks/useSheetPresence.ts | 2026-10-01 | written: five sheets' rise and fall, once |
 | src/hooks/useTextScale.ts | — |  |
-| src/hooks/useUniversalSearch.ts | — |  |
+| src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
 | src/hooks/useUpdateUser.ts | — |  |
 | src/hooks/useVault.ts | 2026-10-01 | reload, for a Vault that could not open |
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | — |  |

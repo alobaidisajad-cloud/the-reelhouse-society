@@ -7,7 +7,8 @@ import { Bookmark, ScrollText, User, Clapperboard, ArrowRight } from 'lucide-rea
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import type { SR } from '@/src/hooks/useUniversalSearch';
-import { RankBadge, rankOf } from '@/src/components/RankBadge';
+import { RankBadge, rankOf, rankWord } from '@/src/components/RankBadge';
+import { ReelRating } from '@/src/components/Decorative';
 
 const TYPE_GLYPH: Record<string, string> = {
   film: '▶', actor: '◎', director: '✦', user: '◉', log: '✎', list: '☰',
@@ -20,6 +21,26 @@ const TYPE_COLOR: Record<string, { bg: string; border: string }> = {
   log:      { bg: 'rgba(107,96,85,0.10)',   border: 'rgba(107,96,85,0.25)' },
   list:     { bg: 'rgba(107,26,10,0.08)',    border: 'rgba(107,26,10,0.20)' },
 };
+
+/** What a screen reader says for a row: what it is, whose, and what the row shows. */
+export function resultLabel(item: SR): string {
+  const rank = rankWord(rankOf(item.role));
+  const ranked = rank ? `, ${rank}` : '';
+  const rated = item.rating ? `, rated ${item.rating} of 5` : '';
+  switch (item.type) {
+    case 'film':
+      return `${item.title}, film${/^\d{4}$/.test(item.subtitle) ? `, ${item.subtitle}` : ''}`;
+    case 'actor':
+    case 'director':
+      return `${item.title}, known for ${item.subtitle.toLowerCase()}`;
+    case 'user':
+      return `${item.title}, member${ranked}`;
+    case 'log':
+      return `Log of ${item.title} by ${item.subtitle.toLowerCase()}${ranked}${rated}${item.extra ? `. ${item.extra}` : ''}`;
+    case 'list':
+      return `Stack, ${item.title}, ${item.subtitle.replace(/✦\s*/g, '').toLowerCase()}`;
+  }
+}
 
 export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR; index: number; onPress: (r: SR) => void }) => {
   const tc = TYPE_COLOR[item.type] || TYPE_COLOR.film;
@@ -43,7 +64,7 @@ export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR;
         haptic="light"
         pressedScale={0.97}
         accessibilityRole="button"
-        accessibilityLabel={`Go to ${item.title}${item.subtitle ? `, ${item.subtitle}` : ''}`}
+        accessibilityLabel={resultLabel(item)}
         accessibilityHint="Double tap to view details"
       >
         <View style={[st.badge, { backgroundColor: tc.bg, borderColor: tc.border }]}>
@@ -67,15 +88,11 @@ export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR;
           <Text style={st.rowTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.title}</Text>
 
           <View style={st.rowSubRow}>
-            {/* A user row's subtitle is empty now that the rank is a mark, and
-                an empty Text still reserves its line. Rendered only when there
-                is something in it. */}
+            {/* Only when there is something in it: an empty Text still takes a line. */}
             {item.subtitle ? (
               <Text style={st.rowSub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.subtitle}</Text>
             ) : null}
-            {item.rating ? (
-              <Text style={st.rowRating}>{'◉'.repeat(Math.min(item.rating, 5))}</Text>
-            ) : null}
+            {item.rating ? <ReelRating rating={item.rating} size={10} /> : null}
             {item.extra && item.type !== 'log' ? (
               <Text style={st.rowExtra} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.extra}</Text>
             ) : null}
@@ -85,9 +102,6 @@ export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR;
             <Text style={st.rowExcerpt} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.extra}</Text>
           ) : null}
 
-          {/* This row held the third of the three golds one rank was drawn in —
-              its own here, another on the home pulse, the palette's token in
-              the archive feed. One badge now, and only the token. */}
           {item.type === 'user' || item.type === 'log' ? (
             <View style={st.rolePillWrap}><RankBadge rank={rankOf(item.role)} /></View>
           ) : null}
@@ -129,7 +143,6 @@ const st = StyleSheet.create({
   rowTitle: { fontFamily: fonts.display, fontSize: 14, color: colors.parchment, lineHeight: 17, marginBottom: 2 },
   rowSubRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   rowSub: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia },
-  rowRating: { fontFamily: fonts.sub, fontSize: 7, color: colors.sepia, letterSpacing: 1 },
   rowExtra: { fontFamily: fonts.sub, fontSize: 10, color: colors.fogQuiet },
   rowExcerpt: {
     fontFamily: fonts.body, fontSize: 11, color: colors.fogQuiet,

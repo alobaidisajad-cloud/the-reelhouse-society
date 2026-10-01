@@ -8,7 +8,6 @@ import { nav } from '@/src/utils/typedRouter';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { BlurView } from 'expo-blur';
-import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, InteractionManager, Keyboard, Platform, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -31,7 +30,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { SearchResultRow } from '@/src/components/search/SearchResultRow';
 import { SR, useUniversalSearch } from '@/src/hooks/useUniversalSearch';
 import { colors, fonts } from '@/src/theme/theme';
-import SearchUnreachable from '@/src/components/search/SearchUnreachable';
+import SearchUnreachable, { SearchPartly } from '@/src/components/search/SearchUnreachable';
 
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
@@ -48,27 +47,24 @@ const TABS: { key: FilterTab; label: string; icon: typeof Film }[] = [
 ];
 
 export default function SearchModal() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const keyboard = useAnimatedKeyboard();
 
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [tab, setTab] = useState<FilterTab>('all');
-  
+
   const inputRef = useRef<TextInput>(null);
 
-  // Debounce logic
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query), 400);
     return () => clearTimeout(t);
   }, [query]);
 
-  // Execute TanStack Query
   const { data, isFetching, isError, refetch } = useUniversalSearch(debouncedQuery);
 
   const searched = query.trim().length > 0;
-  const searching = isFetching || debouncedQuery !== query;
+  const searching = searched && (isFetching || debouncedQuery.trim() !== query.trim());
 
   const films = useMemo(() => data?.films || [], [data?.films]);
   const actors = useMemo(() => data?.actors || [], [data?.actors]);
@@ -90,8 +86,11 @@ export default function SearchModal() {
   }, [data?._down, tab]);
   const retrySearch = useCallback(() => { void refetch(); }, [refetch]);
 
+  // An emptied box is empty at once: waiting out the debounce would show the
+  // last search's results under a blank box.
   const handleQueryChange = (text: string) => {
     setQuery(text);
+    if (!text.trim()) setDebouncedQuery('');
   };
 
   const filtered = useMemo(() => {
@@ -128,12 +127,12 @@ export default function SearchModal() {
   const onPress = useCallback((r: SR) => {
     TactileEngine.selection();
     if (r._nav) {
-      router.dismiss();
+      nav.dismiss();
       InteractionManager.runAfterInteractions(() => {
         nav.push(r._nav);
       });
     }
-  }, [router]);
+  }, []);
 
   const animatedContainerStyle = useAnimatedStyle(() => ({
     // iOS only: on Android the root ends at the keyboard (KeyboardRoom).
@@ -170,7 +169,9 @@ export default function SearchModal() {
         onPress={() => { TactileEngine.selection(); setTab(t.key); }}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         haptic="selection"
-       accessibilityLabel="Switch search tab">
+        accessibilityRole="tab"
+        accessibilityState={{ selected: active }}
+        accessibilityLabel={`${t.label.charAt(0)}${t.label.slice(1).toLowerCase()}, ${c} result${c === 1 ? '' : 's'}`}>
         <Icon size={11} color={active ? colors.ink : colors.fog} strokeWidth={active ? 2.5 : 1.5} />
         <Text style={[st.tabText, active && st.tabTextActive]}>{t.label}</Text>
         {c > 0 && (
@@ -217,7 +218,7 @@ export default function SearchModal() {
             onSubmitEditing={() => Keyboard.dismiss()}
           />
           {query.length > 0 && (
-            <PressableScale onPress={() => setQuery('')} style={st.clearBtn} hitSlop={{top: 15, right: 15, bottom: 15, left: 15}} haptic="light" accessibilityRole="button" accessibilityLabel="Clear search">
+            <PressableScale onPress={() => handleQueryChange('')} style={st.clearBtn} hitSlop={{top: 15, right: 15, bottom: 15, left: 15}} haptic="light" accessibilityRole="button" accessibilityLabel="Clear search">
               <X size={14} color={colors.fog} />
             </PressableScale>
           )}
@@ -230,7 +231,7 @@ export default function SearchModal() {
       {/* ── FILTER TABS ── */}
       {searched && (
         <Animated.View entering={FadeIn.duration(250)}>
-          <View style={st.tabsWrap}>
+          <View style={st.tabsWrap} accessibilityRole="tablist">
             <FlashList
               horizontal
               data={TABS}
@@ -259,7 +260,7 @@ export default function SearchModal() {
             <Search size={30} color={colors.ash} />
             <Text style={st.emptyTitle}>The Archive Awaits</Text>
             <Text style={st.emptySub}>
-              Search for films, actors, directors,{'\n'}users, written logs, and curated stacks.
+              Search for films, actors, directors,{'\n'}members, written logs, and curated stacks.
             </Text>
           </Animated.View>
         )}
@@ -274,7 +275,7 @@ export default function SearchModal() {
 
         {/* Could not be asked: every source, or the one this tab reads from.
             An empty tab whose source was down is unknown, not empty. */}
-        {searched && !searching && (isError || (filtered.length === 0 && tabSourceDown)) && (
+        {searched && !searching && filtered.length === 0 && (isError || tabSourceDown) && (
           <Animated.View entering={FadeIn} style={st.center}>
             <SearchUnreachable onRetry={retrySearch} />
           </Animated.View>
@@ -289,10 +290,11 @@ export default function SearchModal() {
         )}
 
         {/* Results */}
-        {filtered.length > 0 && (
+        {searched && filtered.length > 0 && (
           <FlashList
             maintainVisibleContentPosition={NOT_ANCHORED}
             data={filtered}
+            ListHeaderComponent={!searching && (isError || tabSourceDown) ? <SearchPartly onRetry={retrySearch} /> : null}
             keyExtractor={keyExtractorResult}
             renderItem={renderSearchResult}
             contentContainerStyle={listContentStyle}

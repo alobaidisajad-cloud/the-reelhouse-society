@@ -3,6 +3,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { logger } from '@/src/utils/logger';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { buildSearchPattern } from '@/src/utils/searchPattern';
+import { stripHtml } from '@/src/utils/html';
 import { resolveTier } from '@/src/utils/tier';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
 import { useQuery } from '@tanstack/react-query';
@@ -23,11 +24,7 @@ export interface SR {
 }
 
 interface ProfileRow { id: string; username: string; avatar_url?: string; role?: string }
-/**
- * The author arrives EMBEDDED. `logs` has no `username` or `role` column of its
- * own — both were selected and filtered on for the life of the feature and both
- * return `42703`, which is why this tab could never return a single result.
- */
+/** A log's author arrives embedded: `logs` has no username or role of its own. */
 interface LogAuthor { username?: string; role?: string }
 interface LogRow {
   id: string;
@@ -69,6 +66,27 @@ const EMPTY_RESULTS = {
 const LOG_SEARCH_COLUMNS =
   'id, user_id, film_title, review, rating, poster_path, status, abandoned_reason, created_at';
 
+/** How many members a search shows, and how many it reads to choose them from. */
+const MEMBERS_SHOWN = 15;
+const MEMBERS_READ = 30;
+
+/** A source that is not asked: the search had nothing to ask it. */
+const NOT_ASKED = Promise.resolve({ data: [] as never[], error: null });
+
+/** The exact handle first, then handles that begin with the search, then the rest. */
+function closeness(handle: string) {
+  const h = handle.toLowerCase();
+  return (row: ProfileRow) => {
+    const u = (row.username ?? '').toLowerCase();
+    return u === h ? 0 : u.startsWith(h) ? 1 : 2;
+  };
+}
+
+/** A review as one plain line: no markup, entities decoded, whitespace folded. */
+function plainLine(review: string | null | undefined): string {
+  return stripHtml(review ?? '').replace(/\s+/g, ' ').slice(0, 200);
+}
+
 /** PostgREST returns an embedded to-one either as an object or a one-element array. */
 function firstAuthor(embedded: LogRow['profiles']): LogAuthor | null {
   if (!embedded) return null;
@@ -77,7 +95,7 @@ function firstAuthor(embedded: LogRow['profiles']): LogAuthor | null {
 
 export function useUniversalSearch(query: string) {
   return useQuery({
-    queryKey: ['universalSearch', query],
+    queryKey: ['universalSearch', query.trim()],
     queryFn: async ({ signal }) => {
       const text = query.trim();
       if (!text) return EMPTY_RESULTS;
@@ -87,14 +105,33 @@ export function useUniversalSearch(query: string) {
       const pattern = buildSearchPattern(text);
       if (pattern === null) return EMPTY_RESULTS;
 
-      const [tmdbRes, usersRes, logsTextRes, logsAuthorRes, listsRes] = await Promise.allSettled([
+      // "@kane" asks for a handle: the @ is how members write one, and no
+      // username holds it. Such a search reads usernames only.
+      const asHandle = text.startsWith('@');
+      const handleText = text.replace(/^@+/, '').trim();
+      const handle = buildSearchPattern(handleText);
+
+      const [tmdbRes, usersRes, exactRes, logsTextRes, logsAuthorRes, listsRes] = await Promise.allSettled([
         tmdb.search(text),
-        withAbortSignal(
+        handle === null ? NOT_ASKED : withAbortSignal(
           supabase
             .from('profiles')
             .select('id, username, avatar_url, role')
-            .or(`username.ilike.*${pattern}*,display_name.ilike.*${pattern}*`)
-            .limit(15),
+            .or(asHandle
+              ? `username.ilike.*${handle}*`
+              : `username.ilike.*${handle}*,display_name.ilike.*${handle}*`)
+            .order('username')
+            .limit(MEMBERS_READ),
+          signal
+        ),
+        // The exact handle, asked for on its own: among many near matches the
+        // read above can leave it out, and it is the one being looked for.
+        handle === null ? NOT_ASKED : withAbortSignal(
+          supabase
+            .from('profiles')
+            .select('id, username, avatar_url, role')
+            .ilike('username', handle)
+            .limit(1),
           signal
         ),
         // Logs matching the film or the writing.
@@ -113,11 +150,11 @@ export function useUniversalSearch(query: string) {
         // above: PostgREST refuses to reference an embedded column inside a
         // top-level `or()` — the dotted path fails to parse. A separate query is
         // the only way, and it is safe to merge because this tab is not paged.
-        withAbortSignal(
+        handle === null ? NOT_ASKED : withAbortSignal(
           supabase
             .from('logs')
             .select(`${LOG_SEARCH_COLUMNS}, profiles!logs_user_id_fkey!inner(username, role)`)
-            .ilike('profiles.username', `*${pattern}*`)
+            .ilike('profiles.username', `*${handle}*`)
             .not('review', 'is', null)
             .neq('review', '')
             .order('created_at', { ascending: false })
@@ -156,7 +193,7 @@ export function useUniversalSearch(query: string) {
 
       const tmdbFailed = tmdbRes.status === 'rejected';
       if (tmdbFailed) logger.error('[useUniversalSearch] tmdb rejected:', tmdbRes.reason);
-      const usersFailed = failed('profiles', usersRes);
+      const usersFailed = failed('profiles', usersRes) || failed('profiles (exact)', exactRes);
       const logsTextFailed = failed('logs (text)', logsTextRes);
       const logsAuthorFailed = failed('logs (author)', logsAuthorRes);
       const listsFailed = failed('lists', listsRes);
@@ -184,7 +221,7 @@ export function useUniversalSearch(query: string) {
             f.push({
               id: `film-${item.id}`, type: 'film',
               title: item.title ?? item.name ?? '',
-              subtitle: item.release_date?.slice(0, 4) ?? 'FILM',
+              subtitle: item.release_date?.slice(0, 4) || 'FILM',
               image: item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null,
               extra: item.vote_average ? `★ ${item.vote_average.toFixed(1)}` : undefined,
               _nav: `/film/${item.id}`,
@@ -205,23 +242,25 @@ export function useUniversalSearch(query: string) {
       }
 
       // ── Parse users (filter blocked/muted) ──
-      if (usersRes.status === 'fulfilled' && !usersRes.value.error) {
+      {
         const { isHidden } = useBlockStore.getState();
-        u = (usersRes.value.data ?? [])
-          .filter((user: ProfileRow) => !isHidden(user.id))
+        const rows: ProfileRow[] = [];
+        if (exactRes.status === 'fulfilled' && !exactRes.value.error) rows.push(...((exactRes.value.data ?? []) as ProfileRow[]));
+        if (usersRes.status === 'fulfilled' && !usersRes.value.error) rows.push(...((usersRes.value.data ?? []) as ProfileRow[]));
+        const seen = new Set<string>();
+        const rank = closeness(handleText);
+        u = rows
+          .filter((user) => {
+            if (seen.has(user.id)) return false;
+            seen.add(user.id);
+            return !isHidden(user.id);
+          })
+          .sort((x, y) => rank(x) - rank(y))
+          .slice(0, MEMBERS_SHOWN)
           .map((user: ProfileRow) => ({
             id: `user-${user.id}`, type: 'user',
             title: `@${user.username ?? 'anonymous'}`,
-            // NOT the rank, and nothing in its place.
-            //
-            // This line put one fact in the row twice — the rank as a string
-            // here, and the same rank as a badge drawn from `role` in the row
-            // itself. The badge is the better of the two: it applies the
-            // Highest Watermark rule, and a string cannot.
-            //
-            // Deliberately left EMPTY rather than filled with a member's
-            // number: that would mean widening this query for a decoration,
-            // and the row already renders nothing when there is nothing to say.
+            // Empty: the rank is the row's badge, drawn from `role`.
             subtitle: '',
             image: user.avatar_url || null,
             role: resolveTier(user),
@@ -260,9 +299,10 @@ export function useUniversalSearch(query: string) {
               image: log.poster_path ? `${TMDB_IMG}${log.poster_path}` : null,
               rating: log.rating,
               role: author?.role,
+              // One line; the row ellipsizes it where it runs out of room.
               extra: log.status === 'abandoned'
-                ? `[ABANDONED${log.abandoned_reason ? ` — ${log.abandoned_reason.toUpperCase()}` : ''}] ${log.review ? log.review.replace(/<[^>]+>/g, '').trim().slice(0, 50) + '…' : ''}`
-                : (log.review ? `"${log.review.replace(/<[^>]+>/g, '').trim().slice(0, 80)}…"` : undefined),
+                ? `[ABANDONED${log.abandoned_reason ? ` — ${log.abandoned_reason.toUpperCase()}` : ''}]${plainLine(log.review) ? ` ${plainLine(log.review)}` : ''}`
+                : (plainLine(log.review) ? `"${plainLine(log.review)}"` : undefined),
               _nav: `/log/${log.id}`,
             };
           });

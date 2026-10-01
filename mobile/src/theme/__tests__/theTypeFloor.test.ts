@@ -40,7 +40,6 @@ const KEEP: Record<string, 'mark' | 'stamp' | 'ordinal' | 'picture'> = {
   'src/components/dispatch/paper/paperStyles.ts · indexDot': 'mark',
   'src/components/dispatch/SeriesPicker.tsx · tick': 'mark',
   'src/components/search/SearchResultRow.tsx · badgeGlyph': 'mark',
-  'src/components/search/SearchResultRow.tsx · rowRating': 'mark',
   'app/(tabs)/reels.tsx · searchIcon': 'mark',
   'src/components/dispatch/paper/paperStyles.ts · stampText': 'stamp',
   'src/components/feed/AutopsyView.tsx · stripConfidential': 'stamp',
