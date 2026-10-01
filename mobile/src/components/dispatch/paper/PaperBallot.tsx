@@ -21,6 +21,10 @@ export interface BallotOption extends PaperFilm { votes: number }
  * detail that quietly tells a member the app is careless. Largest remainder:
  * floor everything, then hand the leftover points to whoever lost the most in
  * the rounding.
+ *
+ * Equal votes are equal shares, before the sum. Options that lost the same
+ * amount take a point together or not at all: 5, 5 and 1 is 45%, 45% and 9%,
+ * never 46% beside 45% for two films the house could not separate.
  */
 export function shares(votes: number[]): number[] {
   const total = votes.reduce((a, b) => a + b, 0);
@@ -28,10 +32,13 @@ export function shares(votes: number[]): number[] {
   const exact = votes.map((v) => (v / total) * 100);
   const out = exact.map(Math.floor);
   let left = 100 - out.reduce((a, b) => a + b, 0);
-  const order = exact
-    .map((e, i) => ({ i, rem: e - Math.floor(e) }))
-    .sort((a, b) => b.rem - a.rem);
-  for (let k = 0; left > 0 && k < order.length; k++, left--) out[order[k].i] += 1;
+  const lost = exact.map((e) => e - Math.floor(e));
+  for (const r of [...new Set(lost)].sort((a, b) => b - a)) {
+    const group = lost.flatMap((x, i) => (x === r ? [i] : []));
+    if (group.length > left) break;
+    for (const i of group) out[i] += 1;
+    left -= group.length;
+  }
   return out;
 }
 
@@ -139,9 +146,14 @@ export const PaperBallot = memo(function PaperBallot({
 
   /** The question is the member's own writing, so it sets its own direction. */
   const rtl = isRTLText(question);
-  const top = hasResult && total > 0
-    ? votes.indexOf(Math.max(...votes))
-    : -1;
+  // A tie has no winner: crowning the first of the leaders named a film the
+  // house did not choose over the others.
+  const most = Math.max(0, ...votes);
+  const leaders = hasResult && most > 0 ? votes.flatMap((v, i) => (v === most ? [i] : [])) : [];
+  const top = leaders.length === 1 ? leaders[0] : -1;
+  const tied = leaders.length > 1;
+  // One expression for `disabled` and the state a reader announces.
+  const locked = !!closed || myVote != null || !vote;
 
   return (
     <View style={p.post}>
@@ -173,7 +185,7 @@ export const PaperBallot = memo(function PaperBallot({
 
       <View style={[p.hair, { marginTop: 12 }]} />
 
-      {hasResult && total > 0 && (
+      {top >= 0 && (
         <View style={p.wonWrap}>
           <Text style={p.wonLabel} {...decorativeTextProps}>THE HOUSE CHOSE</Text>
           {/* The winner gets the hero's full treatment — glow host, brass rim,
@@ -212,6 +224,21 @@ export const PaperBallot = memo(function PaperBallot({
         </View>
       )}
 
+      {/* The leaders by name, and the count they share: below the floor the
+          rows carry no numbers, so this line is the only place the tie shows. */}
+      {tied && (
+        <View style={p.wonWrap}>
+          <Text style={p.wonLabel} {...decorativeTextProps}>THE HOUSE WAS DIVIDED</Text>
+          <Text style={p.wonTitle} {...displayTextProps}>
+            {leaders.map((i) => options[i].title.toUpperCase()).join(' · ')}
+          </Text>
+          <Text style={[p.wonMeta, { marginTop: 8, color: colors.sepia }]} {...scaledTextProps}>
+            {`TIED AT ${most} OF ${counted(total, 'BALLOT', 'BALLOTS')} EACH`}
+          </Text>
+          <View style={[p.hair, { marginTop: 16, alignSelf: 'stretch' }]} />
+        </View>
+      )}
+
       {/* Two different sentences, which shared one for as long as the count was
           never run. "Nobody voted" is a fact about the house; "not counted yet"
           is a fact about the machinery, and printing the first while the second
@@ -229,7 +256,7 @@ export const PaperBallot = memo(function PaperBallot({
       )}
 
       {options.map((o, i) => {
-        if (hasResult && i === top) return null;
+        if (i === top) return null;
         const marked = myVote === i;
         return (
           <View key={i}>
@@ -249,21 +276,19 @@ export const PaperBallot = memo(function PaperBallot({
               // The third was missing. `onVote?.(i)` turned an absent handler
               // into a tap that did nothing, so a signed-out reader could mark a
               // ballot all day and watch the page ignore them.
-              disabled={closed || myVote != null || !vote}
+              disabled={locked}
               accessibilityRole="radio"
               // The state a reader announces has to match the state the control
               // is actually in. It said `disabled: closed` while the row was ALSO
               // disabled once you had voted — so after marking a ballot, every
               // other option announced itself as available to press.
-              // The same three reasons as `disabled` above, and the same value —
-              // this line already had to be corrected once for announcing an
-              // available control that was not, so it is written from the same
-              // expression rather than restated.
-              accessibilityState={{ checked: marked, disabled: !!closed || myVote != null || !vote }}
+              accessibilityState={{ checked: marked, disabled: locked }}
+              // "Mark this." only where it can be: below the floor it was also
+              // said on a closed ballot and on the option already marked.
               accessibilityLabel={
                 showPercent
                   ? `Option ${i + 1} of ${options.length}. ${o.title}. ${pct[i]} percent, ${counted(o.votes ?? 0, 'ballot', 'ballots')}.${marked ? ' Your mark.' : ''}`
-                  : `Option ${i + 1} of ${options.length}. ${o.title}. Mark this.`
+                  : `Option ${i + 1} of ${options.length}. ${o.title}.${marked ? ' Your mark.' : locked ? '' : ' Mark this.'}`
               }
             >
               <Text style={p.optionNo} {...decorativeTextProps}>{ROMAN[i]}</Text>

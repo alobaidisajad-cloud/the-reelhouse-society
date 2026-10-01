@@ -260,12 +260,121 @@ describe('a ballot that has closed', () => {
     expect(shares([])).toEqual([]);
   });
 
-  it('always adds to exactly a hundred', () => {
+  it('adds to exactly a hundred when equal votes allow it', () => {
     // Rounding three shares independently gives 99 or 101, which is the kind of
     // detail that quietly tells a member the app is careless.
-    for (const v of [[1, 1, 1], [2, 3, 4], [1, 0, 0], [5, 5, 1], [10, 3, 3, 3]]) {
+    for (const v of [[2, 3, 4], [1, 0, 0], [8, 4], [10, 3, 3, 3], [7, 2, 2]]) {
       expect(shares(v).reduce((a, b) => a + b, 0)).toBe(100);
     }
+  });
+
+  it('gives equal votes equal shares, before the sum', () => {
+    // Largest remainder alone printed 46% beside 45% for 5 votes each: the point
+    // went to whichever film was listed first. Equal must read equal.
+    expect(shares([5, 5, 1])).toEqual([45, 45, 9]);
+    expect(shares([1, 1, 1])).toEqual([33, 33, 33]);
+    expect(shares([4, 4])).toEqual([50, 50]);
+  });
+
+  it('never passes a hundred, and every share is its exact one rounded', () => {
+    let seed = 7;
+    const next = () => { seed = (seed * 48271) % 2147483647; return seed; };
+    for (let k = 0; k < 500; k++) {
+      const votes = Array.from({ length: 2 + (next() % 5) }, () => next() % 40);
+      const total = votes.reduce((a, b) => a + b, 0);
+      const out = shares(votes);
+      expect(out.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(100);
+      out.forEach((s, i) => {
+        const exact = total ? (votes[i] / total) * 100 : 0;
+        expect(s === Math.floor(exact) || s === Math.ceil(exact)).toBe(true);
+        votes.forEach((w, j) => { if (w === votes[i]) expect(out[j]).toBe(s); });
+      });
+    }
+  });
+});
+
+describe('a ballot that closed level', () => {
+  const author = { name: 'ozu', memberNo: 7, tier: 'free' as const, avatar: null };
+  const said = (node: any, out: string[] = []): string[] => {
+    if (node == null) return out;
+    if (typeof node === 'string') { if (node.trim()) out.push(node.trim()); return out; }
+    if (Array.isArray(node)) { for (const n of node) said(n, out); return out; }
+    said(node.children, out);
+    return out;
+  };
+  const closed = (votes: number[]) => said(render(
+    <PaperBallot
+      question="Which Ozu?" author={author} closed closesLabel=""
+      options={[
+        { title: 'Tokyo Story', posterPath: '/a.jpg', votes: votes[0] },
+        { title: 'Late Spring', posterPath: '/b.jpg', votes: votes[1] },
+        { title: 'Floating Weeds', posterPath: '/c.jpg', votes: votes[2] },
+      ]}
+    />,
+  ).toJSON()).join(' | ');
+
+  it('crowns nobody when the leaders are level', () => {
+    // `indexOf(max)` named the first of them THE HOUSE CHOSE: one vote each
+    // and the film listed first was printed as the house's decision.
+    const words = closed([1, 1, 0]);
+    expect(words).not.toMatch(/THE HOUSE CHOSE/);
+    expect(words).toMatch(/THE HOUSE WAS DIVIDED/);
+  });
+
+  it('names exactly the leaders, and the count they share', () => {
+    const words = closed([2, 1, 2]);
+    expect(words).toMatch(/TOKYO STORY · FLOATING WEEDS/);
+    expect(words).not.toMatch(/LATE SPRING ·|· LATE SPRING/);
+    expect(words).toMatch(/TIED AT 2 OF 5 BALLOTS EACH/);
+  });
+
+  it('still crowns a clear winner', () => {
+    const words = closed([3, 1, 1]);
+    expect(words).toMatch(/THE HOUSE CHOSE/);
+    expect(words).not.toMatch(/DIVIDED/);
+  });
+});
+
+describe('a ballot row says only what can be done with it', () => {
+  const author = { name: 'ozu', memberNo: 7, tier: 'free' as const, avatar: null };
+  const labels = (props: Partial<React.ComponentProps<typeof PaperBallot>>) => {
+    const out: string[] = [];
+    const walk = (n: any) => {
+      if (n == null || typeof n === 'string') return;
+      if (Array.isArray(n)) { n.forEach(walk); return; }
+      if (n.props?.accessibilityRole === 'radio') out.push(n.props.accessibilityLabel);
+      walk(n.children);
+    };
+    walk(render(
+      <PaperBallot
+        question="Which Ozu?" author={author} closesLabel="Closes Friday" onVote={() => {}}
+        options={[
+          { title: 'Tokyo Story', posterPath: '/a.jpg', votes: 3 },
+          { title: 'Late Spring', posterPath: '/b.jpg', votes: 1 },
+        ]}
+        {...props}
+      />,
+    ).toJSON());
+    return out;
+  };
+
+  it('offers the mark on an open ballot', () => {
+    expect(labels({})).toEqual([
+      'Option 1 of 2. Tokyo Story. Mark this.',
+      'Option 2 of 2. Late Spring. Mark this.',
+    ]);
+  });
+
+  it('names your mark once you have made it, and offers nothing else', () => {
+    // Below the floor this said "Mark this." on the option already marked.
+    expect(labels({ myVote: 1 })).toEqual([
+      'Option 1 of 2. Tokyo Story.',
+      'Option 2 of 2. Late Spring. Your mark.',
+    ]);
+  });
+
+  it('offers nothing on a closed ballot', () => {
+    expect(labels({ closed: true }).join(' ')).not.toMatch(/Mark this/);
   });
 });
 
