@@ -10,9 +10,7 @@ import { BRASS, BRASS_STOPS, ON_BRASS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { SKELETON_COUNT, PAPER_MAX, folioOf, issueOf, SECTION_COLOR, UNSPOKEN } from './paperMetrics';
-
-export const SECTIONS = ['ALL', 'TAKES', 'SEEKING', 'WIRE', 'BALLOTS', 'ESSAYS'] as const;
-export type PaperSection = typeof SECTIONS[number];
+import { SECTIONS, type Section } from '@/src/stores/dispatchTypes';
 
 /**
  * ── ONE ROW OF CHROME ────────────────────────────────────────────────────────
@@ -38,8 +36,8 @@ const IX_SLOP = { top: 8, bottom: 8, left: 0, right: 0 };
 export const PaperChrome = memo(function PaperChrome({
   section, onSection, onArchive,
 }: {
-  section: PaperSection;
-  onSection?: (s: PaperSection) => void;
+  section: Section;
+  onSection?: (s: Section) => void;
   /**
    * The archive — one film, and everything the house has ever said about it.
    *

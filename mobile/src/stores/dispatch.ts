@@ -47,6 +47,8 @@ import {
   parseCritiqueRows,
   parseFilingRows,
   paperTierOf,
+  SECTIONS,
+  type Section,
   type BallotOption,
   type Critique,
   type CritiqueOrder,
@@ -56,8 +58,7 @@ import {
 
 // ── THE DEPARTMENTS ─────────────────────────────────────────────────────────
 
-export const SECTIONS = ['ALL', 'TAKES', 'SEEKING', 'WIRE', 'BALLOTS', 'ESSAYS'] as const;
-export type Section = typeof SECTIONS[number];
+export { SECTIONS, type Section };
 export type Sort = 'LATEST' | 'CERTIFIED';
 
 /**

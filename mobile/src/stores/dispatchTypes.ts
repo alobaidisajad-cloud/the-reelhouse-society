@@ -18,6 +18,10 @@ import type { PaperAuthor, PaperFilm, PaperKind, PaperTier } from '@/src/compone
 
 export type FilingKind = PaperKind;
 
+/** The paper's departments, as its index prints them: the one list the store and the chrome read. */
+export const SECTIONS = ['ALL', 'TAKES', 'SEEKING', 'WIRE', 'BALLOTS', 'ESSAYS'] as const;
+export type Section = typeof SECTIONS[number];
+
 /**
  * How many rows a read asks for.
  *

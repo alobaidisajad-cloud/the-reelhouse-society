@@ -27,7 +27,7 @@ import FrozenTab from '@/src/components/layout/FrozenTab';
 import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics';
 import {
   DayDivider, Ornament, PaperChrome, PaperEmpty, PaperMasthead, PaperSkeletons,
-  RunningHead, type PaperSection,
+  RunningHead,
 } from '@/src/components/dispatch/paper/PaperFrame';
 import { NewFilings, NEW_FILINGS_ROOM } from '@/src/components/dispatch/paper/PaperMore';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
@@ -267,8 +267,8 @@ export default function DispatchScreen() {
         {/* The index, pinned under the floating bar: it never scrolls away. */}
         <View style={{ paddingTop: topPad }}>
           <PaperChrome
-            section={section as PaperSection}
-            onSection={(s) => useDispatch.getState().setSection(s as Section)}
+            section={section}
+            onSection={(s) => useDispatch.getState().setSection(s)}
             // For everyone: the archive itself says what the rank buys.
             onArchive={() => nav.push('/dispatch/archive')}
           />
