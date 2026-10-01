@@ -1,7 +1,8 @@
 appId: com.reelhouse.society
 ---
-# The app boots: the whole tab bar mounts (its testIDs, from app/(tabs)/_layout.tsx,
-# are the signal; no tab screen prints a title). From a clean install.
+# The app boots: the whole tab bar mounts (its testIDs, from
+# app/(tabs)/_layout.tsx, are the signal; no tab screen prints a title).
+# From a clean install.
 - launchApp:
     clearState: true
 

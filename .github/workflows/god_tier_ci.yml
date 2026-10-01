@@ -372,9 +372,10 @@ jobs:
 
       # Fast signal: catches malformed flow YAML without a build or a device.
       # The flows themselves run in the sealed test world (e2e.yml).
+      # --strict: a warning fails the step too; one nobody reads is no warning.
       - name: Lint All Maestro Flows
         run: |
           pip install --quiet yamllint==1.38.0
-          yamllint -d relaxed mobile/.maestro/
+          yamllint --strict -d relaxed mobile/.maestro/
 
   # The app on a device is e2e.yml's: a SEALED world, never production.

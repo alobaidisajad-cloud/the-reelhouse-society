@@ -43,16 +43,16 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/e2e.yml | 2026-09-29 | history reduced to the rule each step keeps |
-| ../.github/workflows/god_tier_ci.yml | 2026-09-29 | a route check added (the script claimed CI ran it); the story of each step reduced to what it guards |
+| ../.github/workflows/god_tier_ci.yml | 2026-10-01 | a route check added (the script claimed CI ran it); the story of each step reduced to what it guards; flow lint --strict (its warnings went unread) |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
 | .maestro/auth_deep_link.yaml | 2026-09-29 | header narrowed to what it proves |
 | .maestro/auth_flow.yaml | 2026-09-29 | true as written |
-| .maestro/boot_verification.yaml | 2026-09-29 | header narrowed to what it proves |
+| .maestro/boot_verification.yaml | 2026-10-01 | header narrowed to what it proves; wrapped to 80 |
 | .maestro/browse_vault.yaml | 2026-09-29 | true as written |
 | .maestro/config.yaml | 2026-09-29 | true as written |
 | .maestro/darkroom_search.yaml | 2026-09-29 | true as written |
-| .maestro/error_recovery.yaml | 2026-09-29 | header narrowed to what it proves |
+| .maestro/error_recovery.yaml | 2026-10-01 | header narrowed to what it proves; wrapped to 80 |
 | .maestro/film_log.yaml | 2026-09-29 | true as written |
 | .maestro/flow_critical_path.yaml | 2026-09-29 | true as written |
 | .maestro/log_film_flow.yaml | 2026-09-29 | true as written |
