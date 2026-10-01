@@ -33,7 +33,7 @@ import {
 } from '@/src/components/reels/types';
 import { SharedReelHeader } from '@/src/components/reels/ReelsHeader';
 import { 
-  ProjectorBeam, TungstenSpooling, FilterChip, BrassSheen 
+  ProjectorBeam, TungstenSpooling, FilterChip, BrassSheen, FILTER_GAP,
 } from '@/src/components/reels/ReelsCards';
 import { useCommunityFeed, useFollowingFeed, useStacksFeed } from '@/src/hooks/useFeeds';
 import { ReelsFeedList } from '@/src/components/reels/ReelsFeedList';
@@ -548,7 +548,7 @@ const st = StyleSheet.create({
   listContent: { paddingBottom: 120 },
 
   filterRow: {
-    flexDirection: 'row', paddingHorizontal: 16, gap: 12,
+    flexDirection: 'row', paddingHorizontal: 16, gap: FILTER_GAP,
     marginBottom: 14, alignItems: 'center',
   },
   searchWrap: {

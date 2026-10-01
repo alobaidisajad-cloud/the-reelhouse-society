@@ -12,6 +12,8 @@ const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
 
 interface Props {
   filmId: number;
+  /** Named aloud: a feed of posters all called "View film details" says nothing. */
+  filmTitle: string;
   posterPath: string | null | undefined;
   isPremium: boolean;
   isAuteur: boolean;
@@ -21,7 +23,7 @@ interface Props {
 /**
  * Film poster with physical embossing, premium shadow, and tactile lighting overlay.
  */
-export const PosterFrame = React.memo(function PosterFrame({ filmId, posterPath, isPremium, isAuteur, onPress }: Props) {
+export const PosterFrame = React.memo(function PosterFrame({ filmId, filmTitle, posterPath, isPremium, isAuteur, onPress }: Props) {
   const posterUri = posterPath ? `${TMDB_IMG_W185}${posterPath}` : null;
 
   return (
@@ -32,7 +34,7 @@ export const PosterFrame = React.memo(function PosterFrame({ filmId, posterPath,
     // OUTSIDE them, so on iOS that shadow has never existed, while Android
     // drew one anyway from elevation. The outer view carries the shadow; the
     // inner one carries the clip. Same split as the brass Concierge disc.
-    <PressableScale onPress={onPress} haptic="heavy" style={s.wrapShadow} accessibilityLabel="View film details">
+    <PressableScale onPress={onPress} haptic="heavy" style={s.wrapShadow} accessibilityLabel={`${filmTitle}. Opens the film.`}>
     <View style={s.wrap}>
       {/* Premium glow shadow layer */}
       {posterUri && (isPremium || isAuteur) && (

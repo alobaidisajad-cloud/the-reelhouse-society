@@ -83,4 +83,12 @@ describe('ActivityCard Component', () => {
     expect(getByText('@TESTER')).toBeTruthy();
     expect(getByText('A masterpiece.')).toBeTruthy();
   });
+
+  it('names its poster aloud by the film, not "View film details" on every card', () => {
+    const item = { id: 2, user_id: 'u9', username: 'reader', role: 'cinephile', film_id: 238, film_title: 'Casablanca',
+      rating: 4, review: 'We will always have Paris.', poster_path: '/c.jpg', year: 1942, created_at: new Date().toISOString(), status: 'watched' };
+    const { getByLabelText, queryByLabelText } = render(<ActivityCard item={item as any} index={0} />);
+    expect(getByLabelText('Casablanca. Opens the film.')).toBeTruthy();
+    expect(queryByLabelText('View film details')).toBeNull();
+  });
 });

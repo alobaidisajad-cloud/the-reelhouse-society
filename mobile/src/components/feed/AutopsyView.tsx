@@ -127,7 +127,9 @@ export const AutopsyBack = React.memo(function AutopsyBack({
         <View style={s.gridWrap}>
         <View style={s.grid}>
           {stats.map(stat => (
-            <View key={stat.key} style={s.cell}>
+            // One element to a screen reader, said whole: not "STORY", then "8.0".
+            <View key={stat.key} style={s.cell} accessible
+              accessibilityLabel={`${stat.label.toLowerCase()}, ${stat.value === 10 ? '10' : stat.value.toFixed(1)} out of 10`}>
               <View style={s.cellHeader}>
                 <Text style={s.cellLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{stat.label}</Text>
                 <Text style={s.cellValue}>{stat.value === 10 ? '10.0' : stat.value.toFixed(1)}</Text>

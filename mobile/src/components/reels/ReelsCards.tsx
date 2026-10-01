@@ -89,6 +89,10 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
 // ══════════════════════════════════════════════════════════════
 //  TUNGSTEN FILAMENT FILTER CHIP
 // ══════════════════════════════════════════════════════════════
+/** The space between two filter chips; each reaches half of it, so no tap belongs to both. */
+export const FILTER_GAP = 12;
+const CHIP_HALO = { top: 10, bottom: 10, left: FILTER_GAP / 2, right: FILTER_GAP / 2 };
+
 export const FilterChip = memo(function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   const isFocused = useIsFocused();
   const pulse = useSharedValue(0);
@@ -114,7 +118,8 @@ export const FilterChip = memo(function FilterChip({ label, active, onPress }: {
     <PressableScale
       onPress={onPress}
       style={[st.filterChip, active ? st.filterChipActiveBorder : null]}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      hitSlop={CHIP_HALO}
+      accessibilityState={{ selected: active }}
     >
       <View style={st.filterChipInner}>
          <Animated.View style={[StyleSheet.absoluteFillObject, activeStyle]}>
@@ -148,7 +153,12 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
   const certifyShown = formatCount(certifyCount ?? 0);
 
   return (
-    <PressableScale onPress={onPress} style={st.stackCard} haptic>
+    <PressableScale
+      onPress={onPress}
+      style={st.stackCard}
+      haptic
+      accessibilityLabel={`${stack.title ?? 'A stack'}. ${stack.count ?? 0} ${(stack.count ?? 0) === 1 ? 'film' : 'films'}, curated by @${stack.curator ?? 'society'}. Opens the stack.`}
+    >
       <View style={st.stackCardPosterWrap}>
         {posters.length === 0 ? (
           <LinearGradient colors={gradientColors} style={StyleSheet.absoluteFillObject} />

@@ -14,7 +14,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/animationMockCoverage.test.ts | — |  |
 | __tests__/backendContract.test.ts | — |  |
 | __tests__/colorLock.test.ts | — |  |
-| __tests__/components/feed/ActivityCard.test.tsx | — |  |
+| __tests__/components/feed/ActivityCard.test.tsx | 2026-10-01 | the poster says its film |
 | __tests__/deletionIntegrity.test.ts | — |  |
 | __tests__/integration/errorBoundaryRecovery.test.tsx | — |  |
 | __tests__/integration/feedFlow.test.ts | 2026-10-01 | one path, refusals raised |
@@ -325,8 +325,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | — |  |
 | src/components/feed/ActionDeck.tsx | 2026-10-01 | owner by id; nav |
 | src/components/feed/ActivityCard.tsx | 2026-10-01 | nav; owner by id |
-| src/components/feed/AutopsyView.tsx | — |  |
-| src/components/feed/PosterFrame.tsx | — |  |
+| src/components/feed/AutopsyView.tsx | 2026-10-01 | each score read whole |
+| src/components/feed/PosterFrame.tsx | 2026-10-01 | the poster says its film |
 | src/components/feed/ReviewContent.tsx | 2026-10-01 | true as written |
 | src/components/feed/UserAttributionRow.tsx | 2026-10-01 | true as written |
 | src/components/film/__tests__/castRailFits.test.ts | — |  |
@@ -539,12 +539,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/__tests__/MemberRegistry.select.test.ts | — |  |
 | src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | — |  |
 | src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | — |  |
-| src/components/reels/MemberRegistry.tsx | — |  |
-| src/components/reels/ReelsCards.tsx | — |  |
+| src/components/reels/MemberRegistry.tsx | 2026-10-01 | nav |
+| src/components/reels/ReelsCards.tsx | 2026-10-01 | chips share no tap; a stack card says what it opens |
 | src/components/reels/ReelsFeedList.tsx | 2026-10-01 | true as written |
-| src/components/reels/ReelsHeader.tsx | — |  |
-| src/components/reels/ReelsStackList.tsx | — |  |
-| src/components/reels/types.ts | — |  |
+| src/components/reels/ReelsHeader.tsx | 2026-10-01 | true as written |
+| src/components/reels/ReelsStackList.tsx | 2026-10-01 | true as written |
+| src/components/reels/types.ts | 2026-10-01 | true as written |
 | src/components/RouteErrorBoundary.tsx | — |  |
 | src/components/search/SearchResultRow.tsx | — |  |
 | src/components/search/SearchUnreachable.tsx | — |  |
@@ -573,6 +573,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/ToastHost.tsx | — |  |
 | src/components/Toggle.tsx | — |  |
 | src/components/TryAgain.tsx | — |  |
+| src/components/reels/__tests__/theReelSaysWhatEachControlIs.test.tsx | 2026-10-01 | written with the Reel's controls |
 | src/components/ui/NotificationBadge.tsx | — |  |
 | src/constants/__tests__/aRankIsSoldEnforcedAndExplained.test.ts | — |  |
 | src/constants/__tests__/deepLinks.test.ts | — |  |
@@ -725,7 +726,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/FeedService.ts | 2026-10-01 | one path per feed; refusals raised |
 | src/services/FilmService.ts | — |  |
 | src/services/FollowRequestService.ts | — |  |
-| src/services/InteractionService.ts | — |  |
+| src/services/InteractionService.ts | 2026-10-01 | true as written |
 | src/services/logCounts.ts | — |  |
 | src/services/LogService.ts | — |  |
 | src/services/LoungeService.ts | — |  |
@@ -801,7 +802,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/socialSlice.ts | 2026-09-29 | follow-list wipe fixed; comments read |
 | src/stores/domain/watchlistSlice.ts | — |  |
 | src/stores/films.ts | — |  |
-| src/stores/followStore.ts | — |  |
+| src/stores/followStore.ts | 2026-10-01 | true as written |
 | src/stores/lounge.ts | 2026-09-28 | 38 findings fixed; stale 'created rooms' reason corrected (create_lounge adds the member row); loadOlderMessages→loadMoreMessages; 12 repeated sessionGuard notes dropped |
 | src/stores/markCounts.ts | — |  |
 | src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added |
