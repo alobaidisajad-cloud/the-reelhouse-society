@@ -45,18 +45,14 @@ describe('the preview is the page', () => {
     expect(CODE).not.toMatch(/onMarkdownLinkPress/);
   });
 
-  it('the render cap and the write cap are still the same number', () => {
-    // This is what makes capping the preview safe. `capMarkdownForRender` cuts
-    // at `dossierContent`; the composer refuses to file past `filingEssay`. If
-    // they ever diverge, a publishable essay could be truncated in its own
-    // author's preview — which is what the old uncapped note was guarding
-    // against, and the reason that note could be retired rather than ignored.
-    const caps = readFileSync(join(ROOT, 'src', 'utils', 'sanitizeInput.ts'), 'utf8');
-    const essay = /filingEssay:\s*(\d+)/.exec(caps);
-    const dossier = /dossierContent:\s*(\d+)/.exec(caps);
-    expect(essay).not.toBeNull();
-    expect(dossier).not.toBeNull();
-    expect(Number(essay![1])).toBe(Number(dossier![1]));
+  it('renders a publishable essay whole, and cuts only past the write cap', () => {
+    // What makes capping the preview safe: the render cap IS the write cap, so an
+    // essay the composer will file is never cut in its own author's preview.
+    const { capMarkdownForRender } = jest.requireActual('@/src/utils/markdownSafety');
+    const { MAX_LENGTHS } = jest.requireActual('@/src/utils/sanitizeInput');
+    const atLimit = 'a'.repeat(MAX_LENGTHS.filingEssay);
+    expect(capMarkdownForRender(atLimit)).toBe(atLimit);
+    expect(capMarkdownForRender(`${atLimit}b`)).toBe(`${atLimit}\n\n…`);
   });
 
   it('the detector reads the file it thinks it does', () => {

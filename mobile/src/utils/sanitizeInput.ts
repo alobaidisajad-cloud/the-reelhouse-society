@@ -36,7 +36,7 @@ export const MAX_LENGTHS = {
   dossierTitle: 200,
   dossierExcerpt: 500,
   loungeShareTitle: 180, // a shared card's two lines, under lounge_messages.film_title's 300
-  // ~4,350 words, and the render cap too: two markdown rules are quadratic, so it never moves.
+  // The legacy dossier view's column (older builds' queued writes replay through it).
   dossierContent: 25000,
 
   // Every column a client writes on the Dispatch, at or under its CHECK (dispatchFieldCaps):
@@ -45,7 +45,7 @@ export const MAX_LENGTHS = {
   filingTitle:   200,    // dispatch_posts.title          — title_ceiling
   filingBody:    2000,   // dispatch_posts.body           — body_ceiling
   filingExcerpt: 500,    // ditto, when kind = 'dossier'  — excerpt_ceiling
-  // dossierContent's 25,000, for its reason: the render cap too. Never moved alone.
+  // ~4,350 words, and the render cap (markdownSafety): two markdown rules are quadratic.
   filingEssay:   25000,  // dispatch_posts.full_content   — essay_ceiling
   wireSource:    100,    // dispatch_posts.source         — source_ceiling
   sourceUrl:     2048,   // dispatch_posts.source_url     — source_url_ceiling

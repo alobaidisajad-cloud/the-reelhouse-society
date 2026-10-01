@@ -53,17 +53,17 @@ describe('#122 · the fence itself does not move', () => {
     // markdown parser may be handed, and two of its rules are quadratic —
     // measured at 6877ms for 80k of nested emphasis. It was raised to 60000
     // during this batch and put back for exactly that reason.
-    expect(MAX_LENGTHS.dossierContent).toBe(25000);
+    expect(MAX_LENGTHS.filingEssay).toBe(25000);
     const render = stripComments(read('src/utils/markdownSafety.ts'));
-    expect(render).toMatch(/content\.length <= MAX_LENGTHS\.dossierContent/);
+    expect(render).toMatch(/content\.length <= MAX_LENGTHS\.filingEssay/);
   });
 
   it('the helpers agree with the cap', () => {
-    const under = 'x'.repeat(MAX_LENGTHS.dossierContent);
-    const over = 'x'.repeat(MAX_LENGTHS.dossierContent + 1);
-    expect(isOverLimit(under, 'dossierContent')).toBe(false);
-    expect(isOverLimit(over, 'dossierContent')).toBe(true);
-    expect(remainingChars(over, 'dossierContent')).toBe(-1);
+    const under = 'x'.repeat(MAX_LENGTHS.filingEssay);
+    const over = 'x'.repeat(MAX_LENGTHS.filingEssay + 1);
+    expect(isOverLimit(under, 'filingEssay')).toBe(false);
+    expect(isOverLimit(over, 'filingEssay')).toBe(true);
+    expect(remainingChars(over, 'filingEssay')).toBe(-1);
   });
 
   it('the helpers measure what is STORED, not what was typed', () => {

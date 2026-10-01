@@ -52,8 +52,8 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
  *   nested emphasis      324ms     6877ms          —
  *
  * Sixteen seconds of frozen JS thread. And it is reachable in production: the WEB app
- * writes `dispatch_dossiers.full_content` with no sanitiser and no length cap to this
- * same database, so the mobile 25,000 write limit bounds one client out of two.
+ * writes essays to this same database through its own client, so the mobile write
+ * limit alone bounds one client out of two.
  *
  * ── WHY A CAP AND NOT `typographer: false` ───────────────────────────────────
  * Disabling smartquotes makes that one rule linear (200k: 16843ms -> 9ms) and keeps
@@ -63,9 +63,9 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
  * stay, because typography is the product on an app built for film writing.
  *
  * ── WHY 25,000 ───────────────────────────────────────────────────────────────
- * It is MAX_LENGTHS.dossierContent — the limit the sanitiser ALREADY enforces on the
- * write path. One number with one meaning on both sides, rather than a second
- * threshold that drifts from the first. Worst-case adversarial input at that size
+ * It is MAX_LENGTHS.filingEssay — the limit an essay is written under
+ * (dispatch_posts.full_content). One number with one meaning on both sides, so a
+ * publishable essay is never cut on its own page. Worst-case adversarial input at that size
  * measures under half a second; the longest real dossier is 2,770 characters.
  *
  * Render-only. Storage is untouched, and the compose preview deliberately does NOT
@@ -73,8 +73,8 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
  */
 export function capMarkdownForRender(content: string | null | undefined): string {
   if (!content) return '';
-  if (content.length <= MAX_LENGTHS.dossierContent) return content;
-  return content.slice(0, MAX_LENGTHS.dossierContent) + '\n\n…';
+  if (content.length <= MAX_LENGTHS.filingEssay) return content;
+  return content.slice(0, MAX_LENGTHS.filingEssay) + '\n\n…';
 }
 
 export function onMarkdownLinkPress(url: string): false {
