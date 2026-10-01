@@ -86,6 +86,9 @@ const PRIVATE_NOTES: Said[] = [
   { file: 'src/components/log/VaultNote.tsx', text: 'THE VAULT' },
   { file: 'src/components/log/NoteSheet.tsx', text: 'THE VAULT' },
   { file: 'src/components/log/LogForm.tsx', text: 'Opening the Vault…' },
+  // The record, when the owner's notes could not be read (2026-10-01).
+  { file: 'src/components/log/LogReviewBody.tsx', text: 'The Vault could not be opened.' },
+  { file: 'src/components/log/LogReviewBody.tsx', text: 'Open the Vault again' },
   // The rank gate's own refusal, matched rather than guessed at.
   { file: 'src/services/VaultService.ts', text: 'The Vault is an Archivist feature' },
   // A telemetry scope for the notes store. Not on a page, but not wire-shaped

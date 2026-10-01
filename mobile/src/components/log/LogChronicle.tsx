@@ -22,9 +22,9 @@ interface ViewingHistoryEntry {
  * A past viewing plus the two things this screen adds: what to call it, and
  * whether it is the viewing being read right now.
  *
- * Spelled out because the card took `Record<string, any>`, which meant every
- * field it reads — and the six it compares in the memo below — were unchecked.
- * A renamed field would have compiled and silently rendered a blank card.
+ * Spelled out so every field the card reads — and the six it compares in the
+ * memo below — is checked: a renamed field fails to compile rather than
+ * rendering a blank card.
  */
 interface ChronicleEntry extends ViewingHistoryEntry {
   label: string;

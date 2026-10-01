@@ -11,9 +11,9 @@ import { st } from './LogModalStyles';
 /**
  * One line in the record's index.
  *
- * The clerical half of this page used to be twelve permanently-unfolded fields.
- * Each is now a catalogue entry that states what it HOLDS and opens in place —
- * so the page at rest reads as the record's own index rather than a form.
+ * The clerical half of this page is a catalogue: each entry states what it
+ * HOLDS and opens in place, so the page at rest reads as the record's own index
+ * rather than a form.
  *
  * ── THE MARK ────────────────────────────────────────────────────────────────
  * One glyph carries two facts:
@@ -48,9 +48,9 @@ const TINT = {
 } as const;
 
 /**
- * The WORDS' colour — the entry's name and what it is locked to. One table
- * used to do both jobs, so every Auteur-rank entry printed its name in the
- * crimson PIGMENT: 2.78:1 on the card. Same families, inks that clear.
+ * The WORDS' colour — the entry's name and what it is locked to: the inks of
+ * the same families, which clear on the card where the crimson PIGMENT (2.78:1)
+ * would not.
  */
 const INK = {
   base: colors.parchmentDim,
@@ -73,18 +73,17 @@ export default React.memo(function LogIndexEntry({
         // The rows are FLUSH — a hairline between them and no gap at all — so an
         // entry claims nothing vertically; there is no space to halve, and any
         // claim would land on the row above or below, where the later one wins.
-        //
-        // (This comment used to say the rows were "44pt apart". They never were:
-        // the row was 37pt tall and butted against its neighbours. The number
-        // was an assumption, and it hid the real defect — 37pt of reach, under
-        // both platforms' floors. `idxEntry` now carries minHeight: 48, which is
-        // the only fix, since neither accessibility layer can see a halo.)
+        // Its reach is its own box: `idxEntry` carries minHeight: 48, since
+        // neither accessibility layer can see a halo.
         hitSlop={{ top: 0, bottom: 0, left: 20, right: 20 }}
         haptic="selection"
         pressedScale={0.99}
         accessibilityRole="button"
         accessibilityState={{ expanded: !!open }}
-        accessibilityLabel={locked ? `${name}. Opens with ${lockedTo}.` : `${name}${value ? `, ${value}` : ', empty'}`}
+        // A value of blank space marks an entry that holds something it will not
+        // show (the Vault): said as "holds something", never read as nothing.
+        accessibilityLabel={locked ? `${name}. Opens with ${lockedTo}.`
+          : value?.trim() ? `${name}, ${value}` : value ? `${name}, holds something` : `${name}, empty`}
       >
         {locked ? (
           <KeyRound size={11} color={tint} strokeWidth={2} />

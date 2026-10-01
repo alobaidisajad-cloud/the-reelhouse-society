@@ -1,14 +1,14 @@
 /**
- * requestReview.ts — Smart App Store Review Prompt
+ * requestReview.ts — the App Store / Play review prompt
  * ───────────────────────────────────────────────────
- * 10/10 F-03: Uses expo-store-review to prompt at high-delight moments.
- * Implements intelligent gating so users are only prompted when:
+ * Uses expo-store-review to prompt at high-delight moments, and only when:
  *   1. They've logged at least 5 films (invested user)
- *   2. They haven't been prompted in the last 90 days
+ *   2. They haven't been prompted in the last 122 days
  *   3. They're in a positive flow (just logged, endorsed, etc.)
  *   4. The platform supports in-app review
- * 
- * Apple allows max 3 prompts per 365 days. We're far below that.
+ *
+ * Apple allows at most 3 prompts in any 365 days; 122 days apart is never more
+ * than 3 in any such year (a fourth would fall on the 366th day).
  */
 import * as StoreReview from 'expo-store-review';
 import { storage } from '@/src/stores/mmkv-storage';
@@ -17,7 +17,7 @@ import { logger } from '@/src/utils/logger';
 const MMKV_KEY = 'review_last_prompt_at';
 const MMKV_COUNT_KEY = 'review_prompt_count';
 export const MIN_LOGS_FOR_REVIEW = 5;
-export const MIN_DAYS_BETWEEN_PROMPTS = 90;
+export const MIN_DAYS_BETWEEN_PROMPTS = 122;
 export const MAX_LIFETIME_PROMPTS = 6;
 
 /**

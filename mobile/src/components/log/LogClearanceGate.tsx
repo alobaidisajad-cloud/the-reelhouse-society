@@ -12,28 +12,20 @@ import { st } from './LogModalStyles';
 /**
  * The velvet rope, said once.
  *
- * This page used to refuse a member without a rank FOUR times while they were
- * trying to do the app's core action — three identical "UNLOCK WITH ARCHIVIST"
- * boxes and an "UPGRADE" link, interrupting the act itself.
- *
- * Visibility was never the problem; being told no repeatedly was. So every
- * premium tool is still shown in its real place, and the refusal appears
+ * Every premium tool is shown in its real place, and the refusal appears
  * exactly once — at the foot of a panel the member CHOSE to open, under the
- * real controls rendered inert. You are not sold a name; you are looking at the
- * instrument.
+ * real controls rendered inert — never interrupting the app's core act. You
+ * are not sold a name; you are looking at the instrument.
  *
  * ── IT SAYS WHAT THE HOUSE-WIDE ROPE SAYS ────────────────────────────────────
  * The wording is the shared ClearanceGate's, verbatim, so a member who has met
- * the rope elsewhere recognises the shape rather than learning a second one.
- * It used to fall short of that in two ways, both fixed together with moving
- * these four ropes onto `useClearance`:
+ * the rope elsewhere recognises the shape rather than learning a second one:
  *
- *   · it had no LAPSED voice — a member whose dues ran out was pitched as a
+ *   · a LAPSED voice — a member whose dues ran out is never pitched as a
  *     stranger, in the one place they have filed longest;
- *   · it did not NAME what it guards. The instrument above it is inert and
- *     hidden from a screen reader, so the rope is the only thing that can say
- *     "The Vault" out loud. Without the name it was the vanish again, for
- *     anyone listening rather than looking.
+ *   · the NAME of what it guards. The instrument above it is inert and hidden
+ *     from a screen reader, so the rope is the only thing that can say "The
+ *     Vault" out loud, for anyone listening rather than looking.
  */
 export default React.memo(function LogClearanceGate({
   rank, standing = 'stranger', names, onPress,

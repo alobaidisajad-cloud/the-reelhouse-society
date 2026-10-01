@@ -2,8 +2,6 @@ import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { Image } from 'expo-image';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import TactileEngine from '@/src/utils/TactileEngine';
 import { Check } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
@@ -31,46 +29,36 @@ const backdropKeyExtractor = (p: { file_path: string }) => p.file_path;
 /**
  * THE STILLS NEED NO HALO.
  *
- * They used to claim 15pt on every side — PressableScale's default, which
- * applies to the sides you do not name as well — and sitting 8pt apart, two of
- * them overlapped by 22. In an overlap the LATER sibling wins on both
- * platforms, so the right-hand 7pt of every still selected the next one along.
- *
- * That was first fixed by halving the gap. It is fixed properly now: the thumb
- * is 48pt by its own geometry, which is the only measure either platform's
- * accessibility layer can see, and a control that reaches the floor on its own
- * has nothing left to ask for. A halo past that point is not generosity — it is
- * the neighbour's area.
+ * They sit 8pt apart, and in an overlap the LATER sibling wins on both
+ * platforms, so a halo would let the edge of one still select the next. Each
+ * thumb is 48pt by its own geometry, the only measure either platform's
+ * accessibility layer can see; a halo past that is the neighbour's area.
  */
 
 export default React.memo(function EditorialDesk({
     dropCap, setDropCap, pullQuote, setPullQuote, editorialHeader, setEditorialHeader, availableBackdrops,
     imagesLoaded, imagesFailed, onRetryImages,
 }: Props) {
-    // Each still is a picture, so it is NAMED — a bare image button read as
-    // "button" and nothing else, and said nothing about which one was chosen.
+    // Each still is a picture, so it is NAMED, and says whether it is chosen.
     const renderBackdropItem = React.useCallback(({ item: p, index }: { item: { file_path: string }; index: number }) => p.file_path === '__none__' ? (
         <PressableScale onPress={() => { setEditorialHeader(null); }} style={[st.stillThumb, editorialHeader === null && st.stillActive]} haptic="selection" pressedScale={0.96} hitSlop={null}
-            accessibilityLabel="No header still" accessibilityState={{ selected: editorialHeader === null }}>
+            accessibilityRole="button" accessibilityLabel="No header still" accessibilityState={{ selected: editorialHeader === null }}>
             <Text style={[st.stillNone, editorialHeader === null && st.stillNoneActive]}>NONE</Text>
         </PressableScale>
     ) : (
         <PressableScale onPress={() => { setEditorialHeader(p.file_path); }} haptic="selection" pressedScale={0.96} hitSlop={null}
-            accessibilityLabel={`Header still ${index}`} accessibilityState={{ selected: editorialHeader === p.file_path }}>
+            accessibilityRole="button" accessibilityLabel={`Header still ${index}`} accessibilityState={{ selected: editorialHeader === p.file_path }}>
             <Image source={{ uri: tmdb.backdrop(p.file_path, 'w300') }} style={[st.stillImg, editorialHeader === p.file_path && st.stillImgActive, editorialHeader && editorialHeader !== p.file_path && st.stillImgFaded]} contentFit="cover" cachePolicy="memory-disk" transition={150} />
         </PressableScale>
     ), [editorialHeader, setEditorialHeader]);
 
     return (
-        // NO TITLE OF ITS OWN. The panel this sits in is already headed
-        // ✦ THE EDITORIAL DESK; a second one four points below it said the same
-        // thing twice, in two different faces — the defect the manuscript had
-        // and had fixed. Its only caller supplies the heading.
+        // NO TITLE OF ITS OWN: the panel this sits in is already headed
+        // ✦ THE EDITORIAL DESK, and a second would say it twice, in two faces.
         <View style={st.editDesk}>
             <View style={st.editRow}>
                 <Text style={st.editLabel}>STYLIZED DROP CAP</Text>
-                {/* Named, and said to be on or off: it read "ENABLE, button"
-                    — not what it enables, nor whether it already was. */}
+                {/* Named, and said to be on or off — never "ENABLE, button". */}
                 <PressableScale style={st.spoilerRow} onPress={() => { setDropCap(!dropCap); }} hitSlop={null} haptic="selection" pressedScale={0.96}
                     accessibilityRole="checkbox" accessibilityLabel="Stylized drop cap" accessibilityState={{ checked: dropCap }}>
                     <View style={[st.cbox, dropCap && st.cboxSepia]}>{dropCap && <Check size={10} color={colors.ink} />}</View>
@@ -85,13 +73,11 @@ export default React.memo(function EditorialDesk({
             
             <View>
                 <Text style={st.editLabel}>ARTICLE HEADER (STILL)</Text>
-                {/* A plain scroller, not a FlashList.
-                    A horizontal virtualised list nested inside a vertical
-                    ScrollView has no bounded height to measure against, and the
-                    documented failure mode is that it renders NOTHING — which is
-                    precisely the report on this feature: the Editorial Desk works
-                    on the web and appears blank in the app. Ten stills need no
-                    virtualisation; a scroller is cheaper and certain to draw. */}
+                {/* A plain scroller, not a FlashList: a horizontal virtualised
+                    list nested inside a vertical ScrollView has no bounded height
+                    to measure against, and its documented failure is to render
+                    NOTHING. Ten stills need no virtualisation; a scroller is
+                    cheaper and certain to draw. */}
                 {availableBackdrops.length > 0 ? (
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.flatListGap} keyboardShouldPersistTaps="handled">
                         {[{ file_path: '__none__' }, ...availableBackdrops].map((p, i) => (
@@ -104,8 +90,8 @@ export default React.memo(function EditorialDesk({
                         <TryAgainLine onPress={onRetryImages} accessibilityLabel="Ask for the stills again" style={st.retrySpace} />
                     </View>
                 ) : imagesLoaded ? (
-                    // Said once TMDB has answered: while the request was out, and
-                    // after it failed, this said "no stills" of a film that has them.
+                    // Said once TMDB has answered — never while the request is
+                    // out, nor after it failed, of a film that has stills.
                     <Text style={st.noData}>No stills found.</Text>
                 ) : null}
             </View>
@@ -120,10 +106,8 @@ const st = StyleSheet.create({
     editToggleText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, includeFontPadding: false },
     pullQuoteInput: { backgroundColor: colors.well, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sepia, borderRadius: 4, padding: 12, fontFamily: fonts.sub, fontSize: 14, fontStyle: 'italic', color: colors.parchment },
     // The drop-cap toggle: 48 tall by its own box, as every control on the
-    // composer is. This file's own `spoilerRow` shadows LogModalStyles' (which
-    // has the floor), so the toggle was a 16pt target lifted by a halo — and a
-    // halo is invisible to both platforms' accessibility layers. The source
-    // test read the OTHER style and passed; the drawn page measured 59×16.
+    // composer is (this file's `spoilerRow` shadows LogModalStyles', so it
+    // carries the floor itself; a halo is invisible to accessibility).
     spoilerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48 },
     cbox: { width: 16, height: 16, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     cboxSepia: { backgroundColor: colors.sepia, borderColor: colors.sepia },

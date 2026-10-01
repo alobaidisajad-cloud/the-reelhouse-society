@@ -57,6 +57,11 @@ export function useVault(logId: string | null | undefined, isOwner: boolean) {
 
   const closeNote = useCallback(() => setOpen(null), []);
 
+  /** Ask the Vault again, after it could not be opened. */
+  const reload = useCallback(() => {
+    if (logId && isOwner) void loadForLog(logId, { force: true });
+  }, [logId, isOwner, loadForLog]);
+
   const confirmRemove = useCallback(() => {
     const target = open;
     if (!target || !logId) return;
@@ -94,6 +99,7 @@ export function useVault(logId: string | null | undefined, isOwner: boolean) {
     loaded,
     /** The Vault could not be reached: offline, or the request was refused. */
     unreachable,
+    reload,
     /** The note currently open in the sheet, if any. */
     openedNote: open,
     openNote,

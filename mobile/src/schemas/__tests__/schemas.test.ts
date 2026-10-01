@@ -32,6 +32,7 @@ describe('FilmReviewSchema', () => {
     const result = FilmReviewSchema.safeParse({
       id: 42,
       rating: 3,
+      created_at: '2024-01-01T00:00:00Z',
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -39,20 +40,9 @@ describe('FilmReviewSchema', () => {
     }
   });
 
-  it('should use factory default for created_at', () => {
-    const before = new Date().toISOString();
-    const result = FilmReviewSchema.safeParse({
-      id: '1',
-      rating: 0,
-    });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.created_at).toBeDefined();
-      // Should be a recent timestamp, not a static one
-      expect(new Date(result.data.created_at).getTime()).toBeGreaterThanOrEqual(
-        new Date(before).getTime() - 1000
-      );
-    }
+  it('never invents a date: a critique without one is refused', () => {
+    // It was given the moment it was parsed, so it read as filed just now.
+    expect(FilmReviewSchema.safeParse({ id: '1', rating: 0 }).success).toBe(false);
   });
 
   it('should allow null review', () => {
@@ -60,6 +50,7 @@ describe('FilmReviewSchema', () => {
       id: '1',
       rating: 5,
       review: null,
+      created_at: '2024-01-01T00:00:00Z',
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -68,7 +59,7 @@ describe('FilmReviewSchema', () => {
   });
 
   it('should default rating to 0', () => {
-    const result = FilmReviewSchema.safeParse({ id: '1' });
+    const result = FilmReviewSchema.safeParse({ id: '1', created_at: '2024-01-01T00:00:00Z' });
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.rating).toBe(0);

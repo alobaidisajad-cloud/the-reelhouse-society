@@ -51,7 +51,6 @@ const ALLOWED: Record<string, string> = {
   'src/components/RouteErrorBoundary.tsx · glyph': 'the error page’s emblem',
   'app/year-in-cinema.tsx · blankGlyph': 'a glyph in an empty cell',
   // ── PICTURES — exported images, never seen on this ground ───────────────
-  'src/components/film/LogShareCard.tsx · title': 'the share card',
   'src/components/profile/TasteDNAExportCanvas.tsx · societyLabel': 'the Taste DNA export',
   'src/components/profile/TasteDNAExportCanvas.tsx · subtitle': 'the Taste DNA export',
   // ── INACTIVE CONTROLS — the dimming is the message ──────────────────────

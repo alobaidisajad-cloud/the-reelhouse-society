@@ -34,9 +34,9 @@ interface Props {
 /**
  * THE SEAL — docked, and honest.
  *
- * The act this whole page exists for used to be a button at the end of a very
- * long scroll. It is fixed to the foot of the sheet now: the wax is on the desk
- * from the moment you sit down.
+ * The act this whole page exists for is fixed to the foot of the sheet, never
+ * at the end of a long scroll: the wax is on the desk from the moment you sit
+ * down.
  *
  * ── IT NEVER FAILS ──────────────────────────────────────────────────────────
  * Sealability comes from `validateLogSubmission` — the SAME function the save
@@ -134,9 +134,9 @@ const s = StyleSheet.create({
         fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog,
         textAlign: 'center', marginBottom: 11, includeFontPadding: false,
     },
-    // The act this page exists for measured 46pt — two short of the floor, on
-    // the one control that matters most here. minHeight rather than more
-    // padding, so it still grows with enlarged text instead of clipping it.
+    // The touch floor, on the one control that matters most here: minHeight
+    // rather than more padding, so it still grows with enlarged text instead
+    // of clipping it.
     press: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9,
         backgroundColor: colors.sepia, borderRadius: 4, paddingVertical: 15, minHeight: 48,

@@ -33,10 +33,9 @@ import { dateParts, formatDate } from '@/src/utils/timeAgo';
  * Whether a physical format is a fact worth printing.
  *
  * `None` is a selectable option in the composer (PHYSICAL_OPTIONS[0]) and is
- * stored as that literal string. It is truthy, so a record used to announce
- * `FORMAT: NONE` — a field reporting its own absence. The save path drops it,
- * but the offline mapping did not, so the same log said different things
- * depending on where it was read from.
+ * stored as that literal string. It is truthy, so without this a record would
+ * announce `FORMAT: NONE` — a field reporting its own absence — and the same
+ * log would say different things depending on where it was read from.
  *
  * Matched case-insensitively and with the empty string, because legacy rows and
  * the web client are not obliged to agree on casing.

@@ -49,7 +49,7 @@ describe('an arrival', () => {
 describe('mount-time entering animations', () => {
   /** Each can strand what it holds at opacity 0; they move to useArrival feature by feature. */
   // Exact: one converted is MOST lowered here, so the slack cannot let another back in.
-  const MOST = 104;
+  const MOST = 101;
   it(`are exactly ${MOST}, and only fewer from here`, () => {
     let count = 0;
     const walk = (dir: string) => {

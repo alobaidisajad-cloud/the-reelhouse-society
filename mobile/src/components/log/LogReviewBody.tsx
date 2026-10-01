@@ -9,6 +9,7 @@ import { s } from '@/src/components/log/logDetailStyles';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
 import VaultNote from '@/src/components/log/VaultNote';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
+import { TryAgainLine } from '@/src/components/TryAgain';
 
 interface LogReviewBodyProps {
   review?: string | null;
@@ -25,6 +26,12 @@ interface LogReviewBodyProps {
   note?: string | null;
   /** Opens the note in full. Absent while the Vault is still being opened. */
   onOpenNote?: () => void;
+  /**
+   * The owner's Vault could not be opened: said, never left to look as though
+   * no note was written. (No note's text is claimed either way.)
+   */
+  noteUnreachable?: boolean;
+  onRereadNote?: () => void;
 }
 
 export default function LogReviewBody({
@@ -36,11 +43,14 @@ export default function LogReviewBody({
   isSpoiler,
   note,
   onOpenNote,
+  noteUnreachable = false,
+  onRereadNote,
 }: LogReviewBodyProps) {
-  // A rating-only log has no quote, no essay and no notes — and this section's
-  // own margins (24 above, 16 below) still rendered, leaving a 40pt hole under
-  // the filing mark with nothing in it. Nothing to say, nothing to occupy.
-  const hasBody = !!pullQuote || !!stripHTML(review ?? '') || !!(isOwner && note);
+  // A rating-only log with no quote, no essay and no note draws nothing: this
+  // section's own margins (24 above, 16 below) would leave a hole under the
+  // filing mark. Nothing to say, nothing to occupy.
+  const vaultUnread = isOwner && !note && noteUnreachable;
+  const hasBody = !!pullQuote || !!stripHTML(review ?? '') || !!(isOwner && note) || vaultUnread;
   if (!hasBody) return null;
 
   return (
@@ -115,6 +125,12 @@ export default function LogReviewBody({
           outside the spoiler veil: a member is never veiled from their own
           writing, and a note is not part of the critique others read. */}
       {isOwner && !!note && <VaultNote note={note} onOpen={onOpenNote} />}
+      {vaultUnread && (
+        <View style={s.vaultUnread}>
+          <Text style={s.vaultUnreadText} {...scaledTextProps}>The Vault could not be opened.</Text>
+          {onRereadNote ? <TryAgainLine onPress={onRereadNote} accessibilityLabel="Open the Vault again" /> : null}
+        </View>
+      )}
     </View>
   );
 }

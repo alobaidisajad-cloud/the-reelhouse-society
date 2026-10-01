@@ -9,7 +9,7 @@
 import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 
-import LogSearchEngine from '../LogSearchEngine';
+import LogSearchEngine, { resultMeta } from '../LogSearchEngine';
 import { tmdb } from '@/src/lib/tmdb';
 
 jest.mock('lucide-react-native', () => {
@@ -255,5 +255,18 @@ describe('what the search says about itself', () => {
     expect(search).toHaveBeenLastCalledWith('the third man', 1);
     expect(r.getByText('The Third Man')).toBeTruthy();
     expect(r.queryByText('THE TELEGRAPH IS DOWN')).toBeNull();
+  });
+});
+
+describe('a result names its particulars, and only the ones it has', () => {
+  it('the year, and TMDB’s score with its name on it — never a bare star', () => {
+    expect(resultMeta({ release_date: '1974-06-20', vote_average: 8.1 })).toBe('1974 · TMDB 8.1');
+  });
+  it('a film nobody has scored has no score, not 0.0', () => {
+    expect(resultMeta({ release_date: '2026-01-01', vote_average: 0 })).toBe('2026');
+  });
+  it('a film with no date has no year, and no dangling separator', () => {
+    expect(resultMeta({ vote_average: 7.9 })).toBe('TMDB 7.9');
+    expect(resultMeta({})).toBe('');
   });
 });

@@ -4,8 +4,9 @@ import { Text, TextInput } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { Image } from 'expo-image';
-import Animated, { FadeIn, Easing, useSharedValue, useAnimatedStyle, withRepeat, withTiming, cancelAnimation } from 'react-native-reanimated';
-import { Search, Sparkles, Star } from 'lucide-react-native';
+import Animated, { Easing, useSharedValue, useAnimatedStyle, withRepeat, withTiming, cancelAnimation } from 'react-native-reanimated';
+import { Search, Sparkles } from 'lucide-react-native';
+import { Arrive } from '@/src/components/Arrive';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
 import { Brackets } from '@/src/components/log/LogFormBody';
@@ -32,27 +33,41 @@ interface Props {
 /**
  * A result may claim half the gap to the row below it, and no more.
  *
- * The rows sit 8pt apart and PressableScale defaults to 15pt on EVERY side,
- * named or not — so two defaults overlapped by 22pt, and where two targets
- * overlap the LATER sibling wins on both platforms. The bottom 7pt of every
- * result was pressing the film below it. On this screen that is not a mis-tap
- * anyone notices: it opens a record for a film nobody chose.
+ * The rows sit 8pt apart, and where two targets overlap the LATER sibling
+ * wins on both platforms: the default 15pt would let the foot of a result open
+ * a record for the film below it, a mis-tap nobody would notice.
  *
  * 4pt is half the 8pt gap. The row is 74pt tall, so the target stays far past
  * the 44pt minimum. Sideways it has no neighbour at all.
  */
 const ROW_SLOP = { top: 4, bottom: 4, left: 15, right: 15 } as const;
 
+/**
+ * A result's particulars: its year, and TMDB's score as a fact with its name on
+ * it (as the film's own page prints it), never a bare star a member could take
+ * for the house's verdict. Each only when there is one.
+ */
+export function resultMeta(r: Pick<LogSearchResult, 'release_date' | 'vote_average'>): string {
+    const year = r.release_date?.slice(0, 4);
+    const score = (r.vote_average ?? 0) > 0 ? `TMDB ${(r.vote_average ?? 0).toFixed(1)}` : '';
+    return [year, score].filter(Boolean).join(' · ');
+}
+
 const LogSearchResultRow = React.memo(({ r, onSelectFilm }: { r: LogSearchResult, onSelectFilm: (film: LogSearchResult) => void }) => {
+    const title = r.title || r.name || 'Untitled';
+    const year = r.release_date?.slice(0, 4);
+    const meta = resultMeta(r);
     return (
-        <PressableScale style={st.resultRow} onPress={() => onSelectFilm(r)} hitSlop={ROW_SLOP} haptic="selection" pressedScale={0.96}>
+        <PressableScale style={st.resultRow} onPress={() => onSelectFilm(r)} hitSlop={ROW_SLOP} haptic="selection" pressedScale={0.96}
+            accessibilityRole="button" accessibilityLabel={`Log ${title}${year ? `, ${year}` : ''}`}>
             {r.poster_path && <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={st.resultPoster} contentFit="cover" cachePolicy="memory-disk" transition={150} />}
             <View style={st.resultFlex}>
-                <Text style={st.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{r.title || r.name}</Text>
-                <View style={st.resultMetaRow}>
-                    <Text style={st.resultMeta}>{r.release_date?.slice(0, 4)} · {r.vote_average?.toFixed(1)}</Text>
-                    <Star size={8} color={colors.sepia} fill={colors.sepia} />
-                </View>
+                <Text style={st.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{title}</Text>
+                {meta ? (
+                    <View style={st.resultMetaRow}>
+                        <Text style={st.resultMeta}>{meta}</Text>
+                    </View>
+                ) : null}
             </View>
         </PressableScale>
     );
@@ -88,7 +103,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
     ), [onSelectFilm]);
 
     return (
-        <Animated.View entering={FadeIn.duration(400).easing(Easing.out(Easing.cubic))} style={st.searchStep}>
+        <Arrive name="log.search" duration={400} rise={0} easing={Easing.out(Easing.cubic)} style={st.searchStep}>
             {/* Marked, like the docket it is about to become. The room says
                 nothing else — the invitation was already made at the door. */}
             <View style={modalSt.bracketed}>
@@ -142,11 +157,9 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                 renderItem={renderItem}
                 keyboardShouldPersistTaps="handled"
             />
-            {/* TRIMMED, and not by accident. Spaces are not a search — the
-                request is never sent for them — so a field holding only spaces
-                was being answered with "No films found for ' '": a failure
-                reported for a query nobody made. It also keeps the message
-                honest about what was actually looked for. */}
+            {/* TRIMMED: spaces are not a search (the request is never sent for
+                them), so a field holding only spaces is never answered "No films
+                found for ' '", and the message names what was looked for. */}
             {unreachable && <SearchUnreachable onRetry={search.retry} />}
             {!searching && !unreachable && query.trim().length > 0 && results.length === 0 && (
                 <View style={st.noResultsWrap}>
@@ -154,7 +167,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                     <Text style={st.noResultsText}>No films found for "{query.trim()}"</Text>
                 </View>
             )}
-        </Animated.View>
+        </Arrive>
     );
 }
 

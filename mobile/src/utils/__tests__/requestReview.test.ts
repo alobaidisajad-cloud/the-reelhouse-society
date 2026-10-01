@@ -84,18 +84,21 @@ describe('shouldRequestReview — lifetime cap', () => {
 });
 
 describe('shouldRequestReview — Apple safety', () => {
-  it('stays far under Apple\'s 3-per-365-days with a 90-day cooldown', () => {
-    // Walk a year at the fastest cadence the gates permit.
-    let fired = 0;
+  it('never asks more than Apple\'s 3 in any 365 days', () => {
+    // Walk three years at the fastest cadence the gates permit, then look at
+    // every 365-day window in it. (A 90-day cooldown asked 4 times in a year.)
+    const fired: number[] = [];
     let lastPrompt = 0;
     let totalPrompts = 0;
-    for (let day = 0; day <= 365; day++) {
+    for (let day = 0; day <= 3 * 365; day++) {
       const now = NOW + day * 86_400_000;
       if (shouldRequestReview({ logCount: 100, lastPrompt, totalPrompts, now })) {
-        fired++; lastPrompt = now; totalPrompts++;
+        fired.push(day); lastPrompt = now; totalPrompts++;
       }
     }
-    expect(fired).toBeLessThanOrEqual(5); // 90-day spacing => at most ~5 in a year
-    expect(fired).toBeGreaterThan(0);
+    expect(fired.length).toBeGreaterThan(0);
+    for (const start of fired) {
+      expect(fired.filter((d) => d >= start && d < start + 365).length).toBeLessThanOrEqual(3);
+    }
   });
 });

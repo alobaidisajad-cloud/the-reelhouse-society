@@ -730,10 +730,8 @@ export default function LogDetailScreen() {
                rating: log.rating,
                review: log.review || undefined,
                pullQuote: log.pull_quote || undefined,
-               dropCap: log.drop_cap,
-               watchedWith: log.watched_with || undefined,
-               username: profile?.username || 'unknown',
-               role: profile?.role,
+               // No handle at all when the author's name could not be read.
+               username: profile?.username ?? '',
                status: log.status as "watched" | "rewatched" | "abandoned" | undefined,
                memberNo: profile?.member_no,
             }} />
@@ -785,6 +783,8 @@ export default function LogDetailScreen() {
             isOwner={isOwner}
             isSpoiler={log.is_spoiler}
             note={isOwner ? vault.noteFor(log.viewing_id) : ''}
+            noteUnreachable={isOwner && vault.unreachable}
+            onRereadNote={vault.reload}
             onOpenNote={log.viewing_id
               ? () => vault.openNote(log.viewing_id as string, '◆ CURRENT', vaultClearance.held)
               : undefined}
@@ -805,7 +805,6 @@ export default function LogDetailScreen() {
           />
 
           <LogActionDeck
-            logId={id}
             log={log}
             isOwner={isOwner}
             endorsed={endorsed}

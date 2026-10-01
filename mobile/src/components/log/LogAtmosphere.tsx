@@ -13,10 +13,9 @@ const FILM_HEIGHT = 360;
 /**
  * THE FILM, BEHIND THE RECORD.
  *
- * The composer was the only major surface in this app with no film in it — you
- * wrote about a picture while looking at a flat dark form, and the film only
- * appeared afterwards, behind your words, on the finished record. The act of
- * making it was less atmospheric than the thing made.
+ * You write about a picture while looking at it: the film is behind the
+ * composer as it is behind the finished record, so the act of making it is as
+ * atmospheric as the thing made.
  *
  * ── THE RECIPE IS THE RECORD'S OWN ──────────────────────────────────────────
  * Poster, blurred, at 20% under a four-stop gradient that reaches solid ink

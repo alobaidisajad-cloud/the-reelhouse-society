@@ -1,5 +1,5 @@
 /**
- * NitrateCalendar — Native date picker matching web NitrateCalendar.tsx (214 lines).
+ * NitrateCalendar — the house's date picker (the web's NitrateCalendar, natively).
  *
  * Features:
  *  - Dark gradient background with sepia border

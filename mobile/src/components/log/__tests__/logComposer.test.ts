@@ -114,9 +114,9 @@ describe('the sheet is lit, not shadowed', () => {
     // A view that clips cannot show anything outside itself — the bug fixed four
     // times on the record.
     expect(sheet.overflow).not.toBe('hidden');
-    // Android draws elevation from the painted background's outline, so both
-    // belong on the same view.
-    expect(sheet.elevation).toBeGreaterThan(0);
+    // And no elevation: on a surface that casts nothing it draws only one
+    // thing, a black shadow on Android before 9 (aFlatSurfaceCastsNothing).
+    expect(sheet.elevation ?? 0).toBe(0);
     expect(sheet.backgroundColor).toBeTruthy();
   });
 });

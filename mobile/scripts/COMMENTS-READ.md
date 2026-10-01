@@ -81,7 +81,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/cover-picker.tsx | — |  |
 | app/(modals)/list-modal.tsx | 2026-09-29 | histories -> rules; orphan style comments removed; header named the web port and wrong labels |
-| app/(modals)/log-modal.tsx | — |  |
+| app/(modals)/log-modal.tsx | 2026-10-01 | Arrive; the scroll needs no Animated |
 | app/(modals)/login.tsx | 2026-10-01 | the terms open; every comment short and true |
 | app/(modals)/membership.tsx | — |  |
 | app/(modals)/notifications-modal.tsx | — |  |
@@ -111,7 +111,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
 | app/log/__tests__/theRecordReadsTrue.test.tsx | — |  |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
-| app/log/[id].tsx | — |  |
+| app/log/[id].tsx | 2026-10-01 | a failed read and a missing log said apart; nav; Arrive |
 | app/lounge.tsx | 2026-10-01 | true as written |
 | app/lounge/[id].tsx | 2026-09-29 | standing unknown until the roster is read; messages spoken + actions; unnamed controls; histories to rules |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | — |  |
@@ -225,7 +225,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/auth/PasswordRecoveryModal.tsx | 2026-10-01 | says reset or confirm, one sheet |
 | src/components/auth/PasswordStrengthMeter.tsx | 2026-10-01 | true as written |
 | src/components/auth/SocietySeal.tsx | 2026-10-01 | true as written |
-| src/components/AutopsyGauge.tsx | — |  |
+| src/components/AutopsyGauge.tsx | 2026-10-01 | true as written |
 | src/components/Buster.tsx | 2026-10-01 | true as written |
 | src/components/CinematicOverlays.tsx | 2026-10-01 | the dead film grain gone |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
@@ -234,7 +234,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/ControlledInput.tsx | — |  |
 | src/components/critique/__tests__/aCritiqueIsWithdrawnOrReported.test.tsx | 2026-10-01 | new |
 | src/components/critique/__tests__/oneCritiqueRow.guard.test.ts | 2026-09-30 | written with the shared critique row |
-| src/components/critique/CritiqueRow.tsx | 2026-09-30 | moved from LogComments, comments kept and made true of both pages |
+| src/components/critique/CritiqueRow.tsx | 2026-10-01 | a nameless author is never linked |
 | src/components/critique/withdraw.ts | 2026-10-01 | new: the one question before a critique comes off the page |
 | src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx | 2026-09-29 | new |
 | src/components/darkroom/__tests__/theSuggestionsComeBack.test.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
@@ -364,7 +364,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/FilmSimilar.tsx | 2026-10-01 | nav; named for a screen reader |
 | src/components/film/FilmStub.tsx | 2026-10-01 | histories to the present; rated of 5 |
 | src/components/film/filmStubMetrics.ts | 2026-10-01 | true as written, one history line |
-| src/components/film/LogShareCard.tsx | — |  |
+| src/components/film/LogShareCard.tsx | 2026-10-01 | the unused modal mode gone; the card alone |
 | src/components/film/NitrateFileCard.tsx | 2026-10-01 | every word frozen, as its header promised |
 | src/components/film/pickCertificate.ts | 2026-10-01 | the member's own region is real now |
 | src/components/film/ShareCardModal.tsx | 2026-10-01 | a failed share says so and stays |
@@ -423,27 +423,28 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/__tests__/theLapsedMemberReadsTheirNote.test.tsx | — |  |
 | src/components/log/__tests__/theNoteSheetOffersOnlyWhatIsReal.test.tsx | — |  |
 | src/components/log/__tests__/theVaultBelongsToItsViewing.test.tsx | — |  |
+| src/components/log/__tests__/theVaultSaysWhenItCouldNotOpen.test.tsx | 2026-10-01 | written: the Vault on the record, when it could not open |
 | src/components/log/__tests__/zz-composer.gen.test.tsx | — |  |
-| src/components/log/AuteurToolkit.tsx | — |  |
-| src/components/log/EditorialDesk.tsx | — |  |
-| src/components/log/LogActionDeck.tsx | — |  |
-| src/components/log/LogAtmosphere.tsx | — |  |
-| src/components/log/LogChronicle.tsx | — |  |
-| src/components/log/LogClearanceGate.tsx | — |  |
-| src/components/log/LogComments.tsx | — |  |
-| src/components/log/logDetailStyles.ts | — |  |
-| src/components/log/LogForm.tsx | — |  |
-| src/components/log/LogFormBody.tsx | — |  |
-| src/components/log/LogHero.tsx | — |  |
-| src/components/log/LogIndexEntry.tsx | — |  |
-| src/components/log/LogModalStyles.ts | — |  |
-| src/components/log/logRecord.ts | — |  |
-| src/components/log/LogReviewBody.tsx | — |  |
-| src/components/log/LogSealBar.tsx | — |  |
-| src/components/log/LogSearchEngine.tsx | — |  |
-| src/components/log/LogVerdict.tsx | — |  |
-| src/components/log/NoteSheet.tsx | — |  |
-| src/components/log/VaultNote.tsx | — |  |
+| src/components/log/AuteurToolkit.tsx | 2026-10-01 | histories to the present |
+| src/components/log/EditorialDesk.tsx | 2026-10-01 | stills named as buttons; histories to the present |
+| src/components/log/LogActionDeck.tsx | 2026-10-01 | the autopsy toggle named; Arrive; a dead prop gone |
+| src/components/log/LogAtmosphere.tsx | 2026-10-01 | the film behind the composer, said as why |
+| src/components/log/LogChronicle.tsx | 2026-10-01 | the typed card, said as why |
+| src/components/log/LogClearanceGate.tsx | 2026-10-01 | the rope said as what it is |
+| src/components/log/LogComments.tsx | 2026-10-01 | true as written |
+| src/components/log/logDetailStyles.ts | 2026-10-01 | flat record card; the Vault's unread line |
+| src/components/log/LogForm.tsx | 2026-10-01 | a private stack wears its lock; histories to the present |
+| src/components/log/LogFormBody.tsx | 2026-10-01 | true as written |
+| src/components/log/LogHero.tsx | 2026-10-01 | the filing mark in the present tense |
+| src/components/log/LogIndexEntry.tsx | 2026-10-01 | a held-but-unshown entry said as holding something |
+| src/components/log/LogModalStyles.ts | 2026-10-01 | flat sheet and delete box; histories to the present |
+| src/components/log/logRecord.ts | 2026-10-01 | histories to the present |
+| src/components/log/LogReviewBody.tsx | 2026-10-01 | a Vault that could not open says so |
+| src/components/log/LogSealBar.tsx | 2026-10-01 | histories to the present |
+| src/components/log/LogSearchEngine.tsx | 2026-10-01 | TMDB named, never a bare star; rows named |
+| src/components/log/LogVerdict.tsx | 2026-10-01 | histories to the present |
+| src/components/log/NoteSheet.tsx | 2026-10-01 | true as written |
+| src/components/log/VaultNote.tsx | 2026-10-01 | true as written |
 | src/components/lounge/__tests__/aKeystrokeRedrawsNoMessage.test.tsx | — |  |
 | src/components/lounge/__tests__/aMessageCanBeHeardAndActedOn.test.ts | 2026-09-29 | new |
 | src/components/lounge/__tests__/MemberFaceStack.model.test.ts | — |  |
@@ -477,7 +478,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts | — |  |
 | src/components/moderation/ContentActionSheet.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/moderation/ReportSheet.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/NitrateCalendar.tsx | — |  |
+| src/components/NitrateCalendar.tsx | 2026-10-01 | the header without a stale line count |
 | src/components/OfflineBanner.tsx | — |  |
 | src/components/person/canon.ts | 2026-10-01 | the order, not the sort it replaced |
 | src/components/person/PersonBio.tsx | 2026-10-01 | READ MORE named and its state said |
@@ -558,7 +559,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/types.ts | 2026-10-01 | true as written |
 | src/components/RouteErrorBoundary.tsx | — |  |
 | src/components/search/SearchResultRow.tsx | — |  |
-| src/components/search/SearchUnreachable.tsx | — |  |
+| src/components/search/SearchUnreachable.tsx | 2026-10-01 | true as written |
 | src/components/SectionErrorBoundary.tsx | 2026-10-01 | retries; comments made true |
 | src/components/ShareToLoungeModal.tsx | 2026-10-01 | only salons it may speak in; subscribes only when open |
 | src/components/SkeletonPulse.tsx | — |  |
@@ -682,7 +683,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useTextScale.ts | — |  |
 | src/hooks/useUniversalSearch.ts | — |  |
 | src/hooks/useUpdateUser.ts | — |  |
-| src/hooks/useVault.ts | — |  |
+| src/hooks/useVault.ts | 2026-10-01 | reload, for a Vault that could not open |
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | — |  |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | — |  |
 | src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-01 | written: the unread-error sweep, both shapes |
@@ -750,7 +751,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/FollowRequestService.ts | — |  |
 | src/services/InteractionService.ts | 2026-10-01 | its schema is what its test reads |
 | src/services/logCounts.ts | 2026-10-01 | true as written |
-| src/services/LogService.ts | — |  |
+| src/services/LogService.ts | 2026-10-01 | a missing log is null; histories to the present |
 | src/services/LoungeService.ts | 2026-10-01 | true as written |
 | src/services/MemberDiscoveryService.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
 | src/services/ModerationService.ts | — |  |
@@ -986,7 +987,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/profileCountsCache.ts | — |  |
 | src/utils/recommendations.ts | 2026-10-01 | the shelf's own name |
 | src/utils/reelToast.ts | — |  |
-| src/utils/requestReview.ts | — |  |
+| src/utils/requestReview.ts | 2026-10-01 | never more than 3 in any 365 days, as it claimed |
 | src/utils/sanitize.ts | — |  |
 | src/utils/sanitizeInput.ts | 2026-09-28 | subjectBackdrop cap added. A literal escape sequence in a comment, two docs stacked on the wrong declarations, and a stale plan ('retires in step 3') removed; the reasons for each fence kept. |
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |

@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { StyleSheet, Platform } from 'react-native';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import { EDGE_LIT } from '@/src/theme/light';
 
 export const st = StyleSheet.create({
@@ -13,13 +13,9 @@ export const st = StyleSheet.create({
     /**
      * THE CHROME DOES NOT GROW.
      *
-     * Raising CLOSE to a 48pt box would have pushed this header from 64 to 80 —
-     * on a page whose worst structural habit is chrome before content. The
-     * button's own box now supplies the air the padding used to, so the header
-     * is the same 64 it always was and the mark sits in exactly the same place:
-     *   before  16 padding + 8 button padding = glyph 24pt down, header 64
-     *   after    8 padding + 16 inside a 48 box = glyph 24pt down, header 64
-     * Identical on screen. The target goes from 32 to 48.
+     * CLOSE is a 48pt box without the header growing past 64 (chrome before
+     * content is this page's worst habit): the button's own box supplies the
+     * air, 8 padding + 16 inside a 48 box, so the glyph sits 24pt down.
      */
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: colors.ash },
     /**
@@ -217,13 +213,12 @@ export const st = StyleSheet.create({
     // Delete (destructive → house crimson, not the bright alert red)
     deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, minHeight: 48, borderWidth: 1, borderColor: colors.crimsonBorder, borderRadius: 4, marginBottom: 16 },
     deleteBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.crimsonInk, includeFontPadding: false },
-    deleteConfirm: { ...effects.shadowPrimary, backgroundColor: 'rgba(50,0,0,0.6)', borderWidth: 1, borderColor: colors.crimson, borderRadius: 4, padding: 20, alignItems: 'center', alignSelf: 'stretch', marginBottom: 16, ...effects.flat, },
+    deleteConfirm: { backgroundColor: 'rgba(50,0,0,0.6)', borderWidth: 1, borderColor: colors.crimson, borderRadius: 4, padding: 20, alignItems: 'center', alignSelf: 'stretch', marginBottom: 16 },
     deleteConfirmText: { fontFamily: fonts.sub, fontSize: 11, color: colors.crimsonInk, marginBottom: 16, textAlign: 'center' },
     // Stretched on purpose — CONFIRM and CANCEL share the box's whole width.
     // Left to content size under this centred box, the two `flex: 1` buttons
-    // were stretched across it by Yoga's old flex-basis rule on the phone (and
-    // the box with them), and drawn at their words' width everywhere else.
-    // Saying it removes the disagreement; the phone draws what it drew.
+    // would be stretched by Yoga's flex-basis rule on the phone and drawn at
+    // their words' width everywhere else; saying it removes the disagreement.
     deleteConfirmRow: { flexDirection: 'row', gap: 12, alignSelf: 'stretch' },
     deleteYes: { flex: 1, backgroundColor: colors.crimson, paddingVertical: 12, borderRadius: 4, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
     deleteNo: { flex: 1, borderWidth: 1, borderColor: colors.ash, paddingVertical: 12, borderRadius: 4, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
@@ -244,15 +239,13 @@ export const st = StyleSheet.create({
     // cut straight across the picture.
     headerOnFilm: { borderBottomWidth: 0 },
 
-    // The document, lifting off the film. The Booth Law blesses an UPWARD
-    // shadow for surfaces that rise from the floor — bottom sheets, and the
-    // record's own card. This is the composer's.
+    // The document, lifting off the film: lit along its top edge (EDGE_LIT),
+    // casting nothing.
     sheet: { ...EDGE_LIT,
         marginHorizontal: -20, paddingHorizontal: 20, marginTop: 26, paddingTop: 2,
         backgroundColor: colors.soot,
         borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.sepiaBorder,
         borderTopLeftRadius: 12, borderTopRightRadius: 12,
-        elevation: 24, ...effects.flat,
     },
 
     // ── THE DOCKET ───────────────────────────────────────────────────────────
@@ -271,11 +264,9 @@ export const st = StyleSheet.create({
     // Ruled catalogue entries, not a settings list: a hairline, a name, and what
     // it holds. No chevrons — those would make it someone else's app.
     idxWrap: { marginTop: 8 },
-    // minHeight, not padding: an index row was 37pt tall and claimed no vertical
-    // slop (correctly — the rows are flush, separated by a hairline, so there is
-    // no gap to halve). 37pt of reach is under both platforms' floors, and a
-    // halo could not have fixed it: neither accessibility layer can see one.
-    // 48 by geometry, and the rows stay flush.
+    // minHeight, not padding: the rows are flush, separated by a hairline, so
+    // there is no gap to halve and no halo to lend (neither accessibility layer
+    // can see one). 48 by geometry, and the rows stay flush.
     idxEntry: {
         flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 48,
         paddingVertical: 13, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.sepiaBorder,
@@ -285,8 +276,8 @@ export const st = StyleSheet.create({
     idxValue: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog, textAlign: 'right', maxWidth: 170, includeFontPadding: false },
     idxBody: { paddingBottom: 16 },
 
-    // A ruled field: a line under it, never a box around it. The filing half of
-    // this page was six bordered wells; a typed document has rules.
+    // A ruled field: a line under it, never a box around it. A typed document
+    // has rules, not bordered wells.
     ruledField: {
         borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.sepiaBorder,
         paddingBottom: 9, paddingTop: 2, fontFamily: fonts.body, fontSize: 14, color: colors.parchment,
@@ -308,12 +299,10 @@ export const st = StyleSheet.create({
 
     // The Editorial Desk continues the manuscript SHEET — attached to its foot,
     // no border between them, because decorating your writing is part of writing.
-    // The worst target on the page as built: ~33pt tall and carrying hitSlop
-    //={null}. The null was right — this bar is attached to the manuscript's
-    // foot with no border between them, so any halo would have reached up into
-    // the critique field. But it left a 33pt target, under even Apple's floor.
-    // The answer is height, not halo: 48 by geometry takes nothing from the
-    // field above it.
+    // hitSlop={null}, because this bar is attached to the manuscript's foot
+    // with no border between them, and any halo would reach up into the
+    // critique field. So its reach is height, not halo: 48 by geometry takes
+    // nothing from the field above it.
     deskFoot: {
         borderWidth: 1, borderTopWidth: 0, borderColor: colors.sepiaBorder,
         borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
@@ -330,7 +319,6 @@ export const st = StyleSheet.create({
         backgroundColor: 'rgba(184,137,26,0.03)', paddingHorizontal: 12, paddingVertical: 14,
     },
 
-    // Delete lives past the end of the scroll now — reaching it takes intent,
-    // where it used to be the FIRST thing on the page when editing a record.
+    // Delete lives past the end of the scroll — reaching it takes intent.
     tailRow: { alignItems: 'center', gap: 16, paddingTop: 26, paddingBottom: 8 },
 });

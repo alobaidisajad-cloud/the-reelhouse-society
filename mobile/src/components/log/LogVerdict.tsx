@@ -15,9 +15,8 @@ interface Props {
 /**
  * THE VERDICT — the house names your judgment back to you.
  *
- * Rating a film used to be answered in 8.5pt grey at the edge of the screen,
- * with the score printed a second time in the header above. It is the emotional
- * peak of the whole page, so it is now the largest thing on it.
+ * Rating a film is the emotional peak of the whole page, so its answer is the
+ * largest thing on it, said once.
  *
  * ── THE SLOT NEVER CHANGES HEIGHT ───────────────────────────────────────────
  * Three states share one fixed box, so nothing shifts under a member's finger
@@ -27,9 +26,8 @@ interface Props {
  *   rated      Masterpiece               + 4.5 / 5
  *   abandoned  Abandoned                 + nothing
  *
- * The hint lives here and ONLY while unrated — it used to sit permanently in
- * the corner, instructing forever a gesture you learn once. Now it appears at
- * exactly the moment you are about to rate, and never again after.
+ * The hint lives here and ONLY while unrated: it appears at exactly the moment
+ * you are about to rate, never instructing forever a gesture you learn once.
  *
  * ── WHY "ABANDONED" AND NOT THE REASON ──────────────────────────────────────
  * Walking out is a verdict too. The reason is not the word, because

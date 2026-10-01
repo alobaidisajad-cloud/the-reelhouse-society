@@ -61,7 +61,7 @@ const BARS: Record<string, Bar> = {
     return <ActionDeck itemId="log-1" filmId={603} filmTitle="The Matrix" posterPath={null} ownerUsername="someone-else" certifyCount={c} critiqueCount={k} />;
   },
   'the log page': (c, k, on) => (
-    <LogActionDeck logId="log-1" log={{ film_id: 603, film_title: 'The Matrix', poster_path: null }}
+    <LogActionDeck log={{ film_id: 603, film_title: 'The Matrix', poster_path: null }}
       isOwner={false} endorsed={on} certifyCount={c} critiqueCount={k} filmSaved={false} autopsyOpen={false}
       onToggleEndorse={noop} onToggleAutopsy={noop} onCritiquePress={noop} onSavePress={noop} onEditPress={noop} onLoungePress={noop} />
   ),

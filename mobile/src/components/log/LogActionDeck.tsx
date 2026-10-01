@@ -1,8 +1,7 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import React, { RefObject } from 'react';
+import React from 'react';
 import { View } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Arrive } from '@/src/components/Arrive';
 import { Heart, MessageSquare, Edit3, MessageCircle, ChevronDown, Bookmark } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
 import { deckLabelProps } from '@/src/constants/textScaling';
@@ -12,10 +11,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 import { s } from '@/src/components/log/logDetailStyles';
 
-const AnimatedView = Animated.createAnimatedComponent(View);
-
 interface LogActionDeckProps {
-  logId: string;
   log: {
     film_id: number;
     film_title: string;
@@ -50,7 +46,6 @@ interface LogActionDeckProps {
 }
 
 export default function LogActionDeck({
-  logId,
   log,
   isOwner,
   endorsed,
@@ -76,6 +71,9 @@ export default function LogActionDeck({
               hitSlop={{ top: 4, bottom: 4, left: 15, right: 15 }}
               pressedScale={0.98}
               haptic="selection"
+              accessibilityRole="button"
+              accessibilityLabel="The Autopsy. Confidential."
+              accessibilityState={{ expanded: autopsyOpen }}
             >
               <View style={s.autopsyToggleInner}>
                  <View style={s.autopsyPulse} />
@@ -86,9 +84,9 @@ export default function LogActionDeck({
            </PressableScale>
 
            {autopsyOpen && (
-             <AnimatedView entering={FadeInDown.duration(400)}>
+             <Arrive name="log.autopsy" duration={400}>
                <AutopsyGauge autopsy={(log.autopsy ?? null) as Record<string, number | null> | null} />
-             </AnimatedView>
+             </Arrive>
            )}
         </View>
       )}
@@ -116,9 +114,8 @@ export default function LogActionDeck({
            </PressableScale>
 
            {/* The third slot adapts, exactly as the feed card's does: your own
-               record offers EDIT, someone else's offers SAVE. This slot used to
-               be owner-only, so a visitor got three buttons and no way to keep
-               the film — the fuller surface offering less than the card. */}
+               record offers EDIT, someone else's offers SAVE, so the fuller
+               surface never offers less than the card. */}
            {isOwner ? (
              <PressableScale style={s.deckBtn} onPress={onEditPress} hitSlop={{ top: 4, bottom: 8, left: 0, right: 0 }} haptic="light" pressedScale={0.92}
                accessibilityRole="button" accessibilityLabel="Edit this log">

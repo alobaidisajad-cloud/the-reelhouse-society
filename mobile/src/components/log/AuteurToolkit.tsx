@@ -31,14 +31,13 @@ interface Props {
  * all-zero autopsies come from.)
  *
  * ── THE LABEL SITS ABOVE THE CHANNEL ────────────────────────────────────────
- * It used to sit beside it, eating 90 of the 350 available points and leaving
- * each of eleven notches ~18.5 × 20pt — a coin toss between 6 and 7, on the
- * feature the Auteur rank is sold on. Stacked, the channel takes the full
- * width: 30 × 44pt per notch, nearly four times the area, with no gesture to
- * fight the scroll and no overlap between rows.
+ * Beside it, the label would eat 90 of the 350 points and leave each notch
+ * ~18.5 × 20pt, a coin toss between 6 and 7 on the feature the Auteur rank is
+ * sold on. Stacked, the channel takes the full width: 30 × 44pt per notch, with
+ * no gesture to fight the scroll and no overlap between rows.
  *
- * Curatorial Control is no longer here. It changes the record's FACE, so it
- * belongs on the docket's poster, which is where it now lives.
+ * Curatorial Control is not here: it changes the record's FACE, so it lives on
+ * the docket's poster.
  */
 export default React.memo(function AuteurToolkit({ isAuteur, autopsy, setAutopsy }: Props) {
     return (

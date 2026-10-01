@@ -124,15 +124,10 @@ export default function LogHero({
       )}
 
       {/* ── THE FILING MARK ──
-          Four centred captions used to stack here — watched, with, format —
-          each on its own line, which reads as a tombstone rather than a record.
-          This is one ruled band instead: a brass label and its values, the same
-          grammar the feed card already speaks. The rules above and below are
-          what make it read as something stamped into the file.
-
-          `format` is only a fact when there IS one. 'None' is a selectable
-          option in the composer and it is stored as that literal string, so it
-          used to print "FORMAT: NONE" — a field announcing its own absence. */}
+          One ruled band, not stacked captions (a tombstone rather than a
+          record): a brass label and its values, the grammar the feed card
+          speaks. The rules above and below make it read as stamped into the
+          file. `format` is only a fact when there IS one (buildFilingMark). */}
       {filed.length > 0 && (
          <View style={s.filingMark}>
             <Text style={s.filingLabel} {...displayTextProps}>FILED</Text>

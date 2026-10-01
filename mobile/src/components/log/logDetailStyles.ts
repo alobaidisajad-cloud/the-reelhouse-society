@@ -12,12 +12,10 @@ export const SPINE = 20;
  * Exported because the critiques scroll target has to add it back. The comments
  * section reports its position relative to the CARD, and the card begins after
  * this padder — so "scroll to the critiques" is `PARALLAX_PADDER_HEIGHT + y`.
- * That was written as a bare `80` in the screen, silently coupled to this style:
- * change the padder and the scroll target lands in the wrong place, with nothing
- * to say why.
- *
- * (An audit note suggested this compensated for the HEADER. It does not — the
- * header measures 96, and the header sits outside the scroll view entirely.)
+ * A bare number in the screen would be silently coupled to this style: change
+ * the padder and the scroll target would land in the wrong place, with nothing
+ * to say why. (It is not the header's height: the header sits outside the
+ * scroll view entirely.)
  */
 export const PARALLAX_PADDER_HEIGHT = 80;
 /** SHARE and ··· side by side. Each reaches half of this toward the other, no more. */
@@ -85,7 +83,7 @@ export const s = StyleSheet.create({
   // would draw nothing.
   contentCardShadowAuteur: { shadowColor: colors.bloodReel, shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.8, shadowRadius: 40 },
   // 8% see-through on purpose (see above) — `sheetOverArt`, not the house.
-  contentCard: { backgroundColor: colors.sheetOverArt, borderTopWidth: 1, borderColor: colors.sepiaBorder, borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden', elevation: 24, ...effects.flat },
+  contentCard: { backgroundColor: colors.sheetOverArt, borderTopWidth: 1, borderColor: colors.sepiaBorder, borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden' },
   contentCardAuteur: { ...EDGE_LIT, backgroundColor: colors.sheetOverArtAuteur, borderColor: colors.crimsonBorder, shadowColor: colors.bloodReel },
   logCardInner: { paddingHorizontal: SPINE, paddingBottom: 16, marginTop: 0, paddingTop: 24 },
   /** "✦ FEATURED IN THE LOBBY · 30 SEPTEMBER", between the log's head and its words. */
@@ -242,12 +240,11 @@ export const s = StyleSheet.create({
   abandonedBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.crimsonFaint, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4, borderWidth: 1, borderColor: colors.crimsonBorder, flexShrink: 1, maxWidth: '100%' },
   abandonedText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.crimsonInk, includeFontPadding: false, flexShrink: 1 },
 
-  // ── Watched Metadata Row ──
   // ── The filing mark ──
-  // What used to be three centred captions stacked under the title. The rules
-  // above and below are the whole idea: they make the line read as something
-  // stamped into a file rather than a caption floating under a poster. It wraps
-  // rather than shrinking, so a long companion name never squeezes the date.
+  // The rules above and below are the whole idea: they make the line read as
+  // something stamped into a file rather than a caption floating under a
+  // poster. It wraps rather than shrinking, so a long companion name never
+  // squeezes the date.
   filingMark: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     flexWrap: 'wrap', columnGap: 10, rowGap: 4,
@@ -267,7 +264,7 @@ export const s = StyleSheet.create({
     color: colors.bone, includeFontPadding: false,
   },
   // The companion keeps the brass — who you watched it with is the warm fact
-  // in the band, and it was already sepia before this.
+  // in the band.
   filingValueAccent: { color: colors.sepia } as import('react-native').TextStyle,
 
   // ── THE VAULT: a private note, on the page it belongs to ──
@@ -275,7 +272,7 @@ export const s = StyleSheet.create({
   // so faint it reads as part of the writing above, not as a third box between
   // two others. The spacing is even on both sides of it: the review ends with 16
   // below, the chronicle starts with 8 above, so 8 above / 16 below gives 24
-  // each way. It was 40 above and 8 below before that arithmetic.
+  // each way.
   vaultNote: {
     backgroundColor: 'rgba(184,137,26,0.05)',
     borderLeftWidth: 2,
@@ -289,8 +286,11 @@ export const s = StyleSheet.create({
   vaultNoteLabelCompact: { fontSize: 10 },
   vaultNoteLabelName: { color: colors.sepia },
   vaultNoteLabelWho: { color: colors.fog },
-  // Bone, not fog: this is the member's own writing and it is read, not skimmed.
-  // Fog on this wash measures under the floor at the small size it used to use.
+  // Bone, not fog: this is the member's own writing and it is read, not skimmed
+  // (fog on this wash measures under the floor at a small size).
   vaultNoteBody: { fontFamily: fonts.bodyItalic, fontSize: 13.5, lineHeight: 22, color: colors.bone },
+  // Where the note would be, when the Vault could not be opened.
+  vaultUnread: { marginTop: 8, marginBottom: 16, gap: 4 },
+  vaultUnreadText: { fontFamily: fonts.bodyItalic, fontSize: 12, lineHeight: 18, color: colors.fog },
   vaultNoteBodyCompact: { fontFamily: fonts.bodyItalic, fontSize: 12.5, lineHeight: 20, color: colors.bone },
 });

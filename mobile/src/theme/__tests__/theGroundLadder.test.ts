@@ -53,7 +53,6 @@ const ART = [
   'src/components/darkroom/constants.ts',
   'src/constants/formats.ts',
   'src/components/profile/TasteDNAExportCanvas.tsx',
-  'src/components/film/LogShareCard.tsx',
   'src/components/film/ShareCardModal.tsx',
 ];
 
