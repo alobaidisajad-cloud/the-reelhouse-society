@@ -11,7 +11,7 @@
 import { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import Animated, { FadeInUp, FadeOut, useReducedMotion } from 'react-native-reanimated';
+import Animated, { FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, ChevronUp, Search, ArrowLeft, Lock, ExternalLink, MoreHorizontal } from 'lucide-react-native';
@@ -28,6 +28,7 @@ import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { clipToSentence, counted } from './paperText';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
 import { EDGE_LIT } from '@/src/theme/light';
+import { Arrive } from '@/src/components/Arrive';
 
 /* ═══ THE PICKER ══════════════════════════════════════════════════════════════
  * The brass ＋ opens this: five forms, each in its own ink, so the colour code is
@@ -776,24 +777,22 @@ export const NewFilings = memo(function NewFilings({
   count, onPress,
 }: { count: number; onPress?: () => void }) {
   // In with movement, out without: it leaves as the list jumps, and two motions are one
-  // too many. Reduced motion keeps the appearing and going, without the travel.
+  // too many. Reduced motion keeps the appearing and going, without the travel. It
+  // arrives through Arrive: a stalled arrival would leave an invisible pill taking taps.
   const reduced = useReducedMotion();
   return (
     <View style={m.newWrap} pointerEvents="box-none">
-      <Animated.View
-        entering={reduced ? undefined : FadeInUp.duration(MS.base).withInitialValues({
-          transform: [{ translateY: -PILL_Y }],
-        })}
-        exiting={reduced ? undefined : FadeOut.duration(MS.quick)}
-      >
-        <PressableScale style={m.newPill} haptic="medium" onPress={onPress}
-          accessibilityRole="button"
-          accessibilityLabel={`${count} new filings. Go to the top.`}>
-          <ChevronUp size={11} strokeWidth={2.5} color={colors.ink} />
-          <Text style={m.newText} {...deckLabelProps}>
-            {count} NEW {count === 1 ? 'FILING' : 'FILINGS'}
-          </Text>
-        </PressableScale>
+      <Animated.View exiting={reduced ? undefined : FadeOut.duration(MS.quick)}>
+        <Arrive name="new-filings" duration={MS.base} rise={-PILL_Y}>
+          <PressableScale style={m.newPill} haptic="medium" onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={`${count} new filings. Go to the top.`}>
+            <ChevronUp size={11} strokeWidth={2.5} color={colors.ink} />
+            <Text style={m.newText} {...deckLabelProps}>
+              {count} NEW {count === 1 ? 'FILING' : 'FILINGS'}
+            </Text>
+          </PressableScale>
+        </Arrive>
       </Animated.View>
     </View>
   );

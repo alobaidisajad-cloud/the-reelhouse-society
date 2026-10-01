@@ -17,7 +17,6 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-g
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import Animated, {
     Easing,
-    FadeInDown,
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
@@ -27,6 +26,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PressableScale from '@/src/components/PressableScale';
+import { Arrive } from '@/src/components/Arrive';
 import { useAuthStore } from '@/src/stores/auth';
 import { useReportStore } from '@/src/stores/reportStore';
 import { colors, effects, fonts, radii, spacing } from '@/src/theme/theme';
@@ -347,7 +347,7 @@ function ReportSheet({
 
               {/* Additional Context TextInput */}
               {selectedReason && (
-                <Animated.View entering={FadeInDown.duration(300)} style={styles.detailsContainer}>
+                <Arrive name="report.details" duration={300} style={styles.detailsContainer}>
                   <TextInput
                     style={[
                       styles.detailsInput,
@@ -369,7 +369,7 @@ function ReportSheet({
                   <Text style={[styles.counter, { color: counterColor }]}>
                     {details.length}/{MAX_DETAILS_LENGTH}
                   </Text>
-                </Animated.View>
+                </Arrive>
               )}
 
               {/* Block Toggle */}
