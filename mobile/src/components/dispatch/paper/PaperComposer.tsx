@@ -192,7 +192,6 @@ export const PaperComposer = memo(function PaperComposer({
                   onChangeText={onBody}
                   multiline
                   autoFocus
-                  testID="desk-body-input"
                   selectionColor={colors.sepia}
                   // No maxLength. The composer must let a member finish a
                   // sentence and then say it is over by how much — a field that

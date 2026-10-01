@@ -1,0 +1,16 @@
+appId: com.reelhouse.society
+---
+# The stack's accession form, reached as a member reaches it, with no keyboard
+# on the device. Its act, FILE THE STACK, is docked at the foot.
+- launchApp:
+    clearState: true
+- runFlow: ../subflows/sign_in.yaml
+- tapOn:
+    id: "reels-tab"
+- extendedWaitUntil:
+    visible: "✦ CURATE A COLLECTION"
+    timeout: 15000
+- tapOn: "✦ CURATE A COLLECTION"
+- extendedWaitUntil:
+    visible: "FILE THE STACK"
+    timeout: 15000

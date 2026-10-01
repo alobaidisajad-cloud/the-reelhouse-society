@@ -365,6 +365,7 @@ export default function ListModal() {
                     placeholder="Neon Noir Masterpieces"
                     placeholderTextColor={colors.fog}
                     autoFocus
+                    testID="stack-title-input"
                     maxLength={100}
                     selectionColor={'rgba(218,165,32,0.3)'}
                     cursorColor={colors.sepia}

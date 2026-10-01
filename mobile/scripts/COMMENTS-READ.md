@@ -55,10 +55,10 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/error_recovery.yaml | 2026-10-01 | header narrowed to what it proves; wrapped to 80 |
 | .maestro/film_log.yaml | 2026-09-29 | true as written |
 | .maestro/flow_critical_path.yaml | 2026-09-29 | true as written |
-| .maestro/keyboard/desk.tap.yaml | 2026-10-01 | written with the keyboard probe |
-| .maestro/keyboard/desk.yaml | 2026-10-01 | written with the keyboard probe |
 | .maestro/keyboard/log.tap.yaml | 2026-10-01 | written with the keyboard probe |
 | .maestro/keyboard/log.yaml | 2026-10-01 | written with the keyboard probe |
+| .maestro/keyboard/stack.tap.yaml | 2026-10-01 | written with the keyboard probe: the stack form, reachable by a new member |
+| .maestro/keyboard/stack.yaml | 2026-10-01 | written with the keyboard probe: the stack form, reachable by a new member |
 | .maestro/log_film_flow.yaml | 2026-09-29 | true as written |
 | .maestro/login_flow.yaml | 2026-09-29 | true as written |
 | .maestro/lounge_flow.yaml | 2026-09-29 | true as written |

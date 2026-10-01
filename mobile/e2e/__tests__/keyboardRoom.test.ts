@@ -21,8 +21,8 @@ afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
 const screen = (railBottom: number) => ({
   attributes: { bounds: '[0,0][1080,2400]' },
   children: [
-    { attributes: { 'resource-id': 'desk-body-input', bounds: '[60,300][1020,420]', accessibilityText: 'Your take' } },
-    { attributes: { text: 'SPOILER', bounds: `[600,${railBottom - 40}][760,${railBottom}]` } },
+    { attributes: { 'resource-id': 'stack-title-input', bounds: '[60,300][1020,420]', accessibilityText: 'Stack title' } },
+    { attributes: { text: 'FILE THE STACK', bounds: `[600,${railBottom - 40}][1000,${railBottom}]` } },
     { attributes: { 'resource-id': 'com.reelhouse.society:id/review-input', bounds: '[60,1500][1020,1700]' } },
   ],
 });
@@ -55,32 +55,32 @@ const SHOWN = [
 function run(target: string, railBottom: number, ime: string | null, rn = false) {
   writeFileSync(join(dir, 'h.json'), JSON.stringify(screen(railBottom)));
   writeFileSync(join(dir, 'w.txt'), rn ? windows(ime).replace(/\n/g, '\r\n') : windows(ime));
-  const r = spawnSync(process.execPath, [SCRIPT, 'desk', target, join(dir, 'h.json'), join(dir, 'w.txt')], { encoding: 'utf8' });
+  const r = spawnSync(process.execPath, [SCRIPT, 'stack', target, join(dir, 'h.json'), join(dir, 'w.txt')], { encoding: 'utf8' });
   return { status: r.status, out: r.stdout.trim() };
 }
 
 describe('the keyboard room', () => {
   it('fails a target the keyboard covers, and says by how much', () => {
-    const r = run('"SPOILER"', 2280, SHOWN);
+    const r = run('"FILE THE STACK"', 2280, SHOWN);
     expect(r.status).toBe(1);
-    expect(r.out).toBe('desk: "SPOILER" COVERED — its foot at 2280px, the keyboard from 1395px (885px under it)');
+    expect(r.out).toBe('stack: "FILE THE STACK" COVERED — its foot at 2280px, the keyboard from 1395px (885px under it)');
   });
 
   it('passes a target the screen lifted above the keyboard', () => {
-    const r = run('"SPOILER"', 1390, SHOWN);
+    const r = run('"FILE THE STACK"', 1390, SHOWN);
     expect(r.status).toBe(0);
     expect(r.out).toMatch(/clear — its foot at 1390px, the keyboard from 1395px/);
   });
 
   it('fails when no keyboard window exists: nothing was measured', () => {
-    const r = run('"SPOILER"', 2280, null);
+    const r = run('"FILE THE STACK"', 2280, null);
     expect(r.status).toBe(1);
     expect(r.out).toMatch(/NO KEYBOARD/);
   });
 
   it('fails when the keyboard window is there but hidden', () => {
     for (const hidden of [SHOWN.replace('isOnScreen=true', 'isOnScreen=false'), SHOWN.replace('0x0', '0x8')]) {
-      const r = run('"SPOILER"', 1000, hidden);
+      const r = run('"FILE THE STACK"', 1000, hidden);
       expect(r.status).toBe(1);
       expect(r.out).toMatch(/NO KEYBOARD/);
     }
@@ -88,18 +88,28 @@ describe('the keyboard room', () => {
 
   it('reads the older mFrame line, and the content inset below the frame top', () => {
     const older = '    mFrame=[0,1200][1080,2400] last=[0,1200][1080,2400]\n    mGivenContentInsets=[0,150][0,0]\n    isOnScreen=true';
-    expect(run('"SPOILER"', 1349, older).status).toBe(0);
-    expect(run('"SPOILER"', 1351, older).out).toMatch(/keyboard from 1350px \(1px under it\)/);
+    expect(run('"FILE THE STACK"', 1349, older).status).toBe(0);
+    expect(run('"FILE THE STACK"', 1351, older).out).toMatch(/keyboard from 1350px \(1px under it\)/);
+  });
+
+  it('reads the shape the emulator printed (API 34): the frame below the status bar, the top as an inset', () => {
+    const seen = [
+      '    mViewVisibility=0x0 mHaveFrame=true mObscured=false',
+      '    mGivenContentInsets=[0,1389][0,0] mGivenVisibleInsets=[0,1389][0,0]',
+      '    Frames: parent=[0,128][1080,2400] display=[0,128][1080,2400] frame=[0,128][1080,2400] last=[0,128][1080,2400] insetsChanged=false',
+      '    isOnScreen=true',
+    ].join('\n');
+    expect(run('"FILE THE STACK"', 2280, seen).out).toMatch(/the keyboard from 1517px/);
   });
 
   it('reads a window list with Windows line endings', () => {
-    expect(run('"SPOILER"', 2280, SHOWN, true).out).toMatch(/COVERED/);
+    expect(run('"FILE THE STACK"', 2280, SHOWN, true).out).toMatch(/COVERED/);
   });
 
   it('finds a target by id, with or without the package, and by label', () => {
     expect(run('#review-input', 0, SHOWN).out).toMatch(/#review-input COVERED — its foot at 1700px/);
-    expect(run('#desk-body-input', 0, SHOWN).status).toBe(0);
-    expect(run('"Your take"', 0, SHOWN).status).toBe(0);
+    expect(run('#stack-title-input', 0, SHOWN).status).toBe(0);
+    expect(run('"Stack title"', 0, SHOWN).status).toBe(0);
   });
 
   it('fails a target that is not on the screen', () => {
@@ -114,7 +124,7 @@ describe('what the runner measures exists', () => {
   const probes = [...runner.matchAll(/'(\w+)\|([#"][^']+)'/g)].map((m) => ({ name: m[1], target: m[2] }));
 
   it('every probe has its two flows', () => {
-    expect(probes.map((p) => p.name)).toEqual(['desk', 'log']);
+    expect(probes.map((p) => p.name)).toEqual(['stack', 'log']);
     for (const { name } of probes) {
       for (const f of [`${name}.yaml`, `${name}.tap.yaml`]) {
         expect(() => readFileSync(join(__dirname, '..', '..', '.maestro', 'keyboard', f))).not.toThrow();
@@ -124,8 +134,8 @@ describe('what the runner measures exists', () => {
 
   it('and every id it taps or measures is one the app sets', () => {
     const app = (p: string) => readFileSync(join(__dirname, '..', '..', p), 'utf8');
-    expect(app('src/components/dispatch/paper/PaperComposer.tsx')).toMatch(/testID="desk-body-input"/);
-    expect(app('src/components/dispatch/paper/PaperComposer.tsx')).toMatch(/>SPOILER</);
+    expect(app('app/(modals)/list-modal.tsx')).toMatch(/testID="stack-title-input"/);
+    expect(app('app/(modals)/list-modal.tsx')).toMatch(/'FILE THE STACK'/);
     expect(app('app/(modals)/log-modal.tsx') + app('src/components/log/LogForm.tsx')).toMatch(/testID="review-input"/);
   });
 });

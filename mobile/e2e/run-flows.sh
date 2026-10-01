@@ -145,7 +145,7 @@ keys_off() {
 mkdir -p "$OUT/keyboard-room"
 : > "$OUT/keyboard-room.txt"
 room_rc=0
-for probe in 'desk|"SPOILER"' 'log|#review-input'; do
+for probe in 'stack|"FILE THE STACK"' 'log|#review-input'; do
   name=${probe%%|*}; target=${probe#*|}
   if [ $gone -eq 1 ]; then echo "$name: skipped (the emulator was gone)" >> "$OUT/keyboard-room.txt"; room_rc=1; continue; fi
   left=$(( DEADLINE - $(date +%s) ))
@@ -154,7 +154,9 @@ for probe in 'desk|"SPOILER"' 'log|#review-input'; do
   if ! timeout --signal=INT --kill-after=30 "$(( left < 400 ? left : 400 ))s" "$MAESTRO" test "$FLOWS/keyboard/$name.yaml" \
       -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
       -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" > "$OUT/keyboard-room/$name.log" 2>&1; then
-    echo "$name: the screen was not reached (keyboard-room/$name.log)" >> "$OUT/keyboard-room.txt"; room_rc=1; continue
+    { echo "$name: the screen was not reached; the flow said:"
+      grep -E 'FAILED|Assertion|not found|Element' "$OUT/keyboard-room/$name.log" | tail -n 4 | sed 's/^/  /'; } >> "$OUT/keyboard-room.txt"
+    room_rc=1; continue
   fi
   keys_on
   timeout 120 "$MAESTRO" test "$FLOWS/keyboard/$name.tap.yaml" >> "$OUT/keyboard-room/$name.log" 2>&1
@@ -165,8 +167,12 @@ for probe in 'desk|"SPOILER"' 'log|#review-input'; do
   sleep 1   # the keyboard's own entrance, so its frame is where it stops
   timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' > "$OUT/keyboard-room/$name.windows.txt"
   timeout 60 "$MAESTRO" hierarchy > "$OUT/keyboard-room/$name.json" 2>/dev/null
-  node mobile/e2e/keyboard-room.mjs "$name" "$target" "$OUT/keyboard-room/$name.json" "$OUT/keyboard-room/$name.windows.txt" \
-    >> "$OUT/keyboard-room.txt" || room_rc=1
+  if ! node mobile/e2e/keyboard-room.mjs "$name" "$target" "$OUT/keyboard-room/$name.json" "$OUT/keyboard-room/$name.windows.txt" \
+      >> "$OUT/keyboard-room.txt"; then
+    room_rc=1
+    # What was on the screen, so a target that was not found says where it looked.
+    node mobile/e2e/screen.mjs "$OUT/keyboard-room/$name.json" | head -n 14 | sed "s/^/  $name screen · /" >> "$OUT/keyboard-room.txt"
+  fi
   # The keyboard window's own lines, so the measure can be checked by eye.
   awk '/Window #[0-9]+ Window\{[0-9a-f]+ u[0-9]+ InputMethod\}/ {p=1; print; next} /Window #[0-9]+/ {p=0} p' \
     "$OUT/keyboard-room/$name.windows.txt" | grep -E 'rame|Insets|isOnScreen|Visibility' | head -n 8 | sed "s/^ */  $name · /" >> "$OUT/keyboard-room.txt"
