@@ -19,6 +19,8 @@ import { WALL_KEY } from '../wallRead';
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn(), navigate: jest.fn() }),
+  // The app travels through `nav`, which drives the module's router.
+  router: { push: (...a: unknown[]) => mockPush(...a), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(), canGoBack: () => true },
   useLocalSearchParams: () => ({}),
   useFocusEffect: () => {},
 }));
@@ -145,6 +147,14 @@ describe('a member’s Lobby', () => {
     // the wall stays hung, with its one quiet line
     expect(r.getByText('No log yet.', { includeHiddenElements: true })).toBeTruthy();
     expect(r.getByText('Could not refresh —')).toBeTruthy();
+    expect(mockScrollProps.refreshControl.props.refreshing).toBe(false);
+  });
+
+  it('a pull whose own read fails outright says so too, not nothing', async () => {
+    await mount();
+    mockFetchLogs.mockImplementationOnce(async () => { throw new Error('the archive read failed'); });
+    await pull();
+    expect(toast().error).toHaveBeenCalledWith(REFRESH_FAILED);
     expect(mockScrollProps.refreshControl.props.refreshing).toBe(false);
   });
 });

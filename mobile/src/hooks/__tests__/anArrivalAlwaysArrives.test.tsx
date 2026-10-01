@@ -48,8 +48,9 @@ describe('an arrival', () => {
 
 describe('mount-time entering animations', () => {
   /** Each can strand what it holds at opacity 0; they move to useArrival feature by feature. */
-  const MOST = 120;
-  it(`are never more than ${MOST}, and only fewer from here`, () => {
+  // Exact: one converted is MOST lowered here, so the slack cannot let another back in.
+  const MOST = 119;
+  it(`are exactly ${MOST}, and only fewer from here`, () => {
     let count = 0;
     const walk = (dir: string) => {
       for (const name of readdirSync(dir)) {
@@ -60,6 +61,6 @@ describe('mount-time entering animations', () => {
     };
     walk(join(MOBILE, 'src'));
     walk(join(MOBILE, 'app'));
-    expect(count).toBeLessThanOrEqual(MOST);
+    expect(count).toBe(MOST);
   });
 });

@@ -1,12 +1,11 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { View, StyleSheet, RefreshControl, ScrollView, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeInDown, useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
+import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
 
 import { useAuthStore } from '@/src/stores/auth';
@@ -32,6 +31,10 @@ import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { LobbyWall } from '@/src/components/lobby/LobbyWall';
 import { LIVE_LOBBY_READS, useProgramme } from '@/src/components/lobby/wallRead';
 import reelToast from '@/src/utils/reelToast';
+import { nav } from '@/src/utils/typedRouter';
+import { Arrive } from '@/src/components/Arrive';
+import { captureError } from '@/src/lib/sentry';
+import { isNetworkError } from '@/src/utils/networkError';
 
 /** Between the front door's two buttons; each one's reach toward the other is half of it. */
 const CTA_GAP = 24;
@@ -75,7 +78,6 @@ export default function LobbyScreen() {
   const fetchEndorsements = useFilmStore(s => s.fetchEndorsements);
   const setupRealtime = useNotificationStore(s => s.setupRealtime);
   const fetchNotifications = useNotificationStore(s => s.fetchNotifications);
-  const router = useRouter();
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -149,7 +151,9 @@ export default function LobbyScreen() {
       if (unanswered) reelToast.error(REFRESH_FAILED);
       else TactileEngine.mutate();
     } catch (error) {
-      if (__DEV__) console.warn('[Lobby] Refresh failed:', error);
+      // Said as any pull that reached nothing is, and reported when it was not the wire.
+      if (!isNetworkError(error)) captureError(error, { where: 'lobby.refresh' });
+      reelToast.error(REFRESH_FAILED);
     } finally {
       setRefreshing(false);
     }
@@ -185,7 +189,7 @@ export default function LobbyScreen() {
 
           {/* Top: Cinematic Typography */}
           <View style={s.welcomeTopHalf}>
-            <Animated.View entering={FadeInDown.duration(1200)} style={s.welcomeHeader}>
+            <Arrive name="welcome.header" duration={1200} style={s.welcomeHeader}>
               {/* The Society's mark ignites at the front door — clamped so
                   small screens never crowd. */}
               <View style={s.welcomeSealWrap}>
@@ -225,7 +229,7 @@ export default function LobbyScreen() {
                 <Text style={s.societyRuleText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.7}>✦ ARCHIVAL ACCESS ONLY ✦</Text>
                 <LinearGradient colors={[colors.sepia, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.societyRuleLine} />
               </View>
-            </Animated.View>
+            </Arrive>
           </View>
 
           {/* A spacer, not justifyContent. `space-evenly` on a scroll content
@@ -253,7 +257,7 @@ export default function LobbyScreen() {
                 style={s.ctaPrimaryNoir}
                 // the second door stands CTA_GAP below: each reaches half of it, no more
                 hitSlop={{ top: CTA_GAP / 2, bottom: CTA_GAP / 2 }}
-                onPress={() => { TactileEngine.destroy(); (router.push as any)({ pathname: '/login', params: { action: 'signup' } }); }}
+                onPress={() => { TactileEngine.destroy(); nav.push('/login', { action: 'signup' }); }}
                 accessibilityRole="button"
                 accessibilityLabel="Seek admission — request membership"
               >
@@ -294,7 +298,7 @@ export default function LobbyScreen() {
         scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
         topInset={topPad}
         bottomInset={tabBarHeight(insets.bottom)}
-        contentContainerStyle={[s.scrollContent, { paddingTop: topPad, paddingBottom: tabBarHeight(insets.bottom) + 24 }]}
+        contentContainerStyle={{ paddingTop: topPad, paddingBottom: tabBarHeight(insets.bottom) + 24 }}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -321,7 +325,6 @@ export default function LobbyScreen() {
 // ════════════════════════════════════════════════════════════════
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
-  scrollContent: { paddingBottom: 150 }, // More breathing room at end of scroll
 
   // ── Welcome (Unauthenticated) strict layout ──
   welcomeRootFlex: { flex: 1, zIndex: 10 },
