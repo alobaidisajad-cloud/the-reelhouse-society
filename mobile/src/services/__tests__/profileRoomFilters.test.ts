@@ -230,30 +230,27 @@ describe('every filter the controller holds reaches the query that pages it', ()
     return body;
   }
 
-  it('each one is pushed to the server by the filter effect', () => {
-    const effect = hookBody(
+  it('each one is in the room filters the reads send', () => {
+    const rooms = hookBody(
       controller,
-      'refreshTabRef.current(',
+      'const roomFilters = useMemo(',
       // The deps array's own opening — everything before it is body. Anchoring
       // on the comment above it does not work: `read()` strips comments. And a
       // multi-line anchor does not work either: these files are CRLF.
-      '}, [archiveSieve',
+      '}), [archiveSieve',
     );
-    const missing = filterState.filter(name => !effect.includes(name));
+    const missing = filterState.filter(name => !rooms.includes(name));
     expect(missing).toEqual([]);
   });
 
-  it('each one also survives a pull-to-refresh', () => {
-    // Two of the four filtered tabs used to fall through to a plain reload, so
-    // pulling to refresh a filtered room silently refilled it UNFILTERED while
-    // the chip stayed lit.
-    const handler = hookBody(
-      controller,
-      'const onRefresh = useCallback',
-      // The deps array's own opening — see above.
-      '}, [data, activeTab',
-    );
-    const missing = filterState.filter(name => !handler.includes(name));
-    expect(missing).toEqual([]);
+  it('and the filter effect and a pull-to-refresh both send them', () => {
+    // Two of the four filtered tabs once fell through to a plain reload, so
+    // pulling to refresh a filtered room refilled it UNFILTERED while the chip
+    // stayed lit.
+    const effect = hookBody(controller, 'refreshTabRef.current(', '}, [roomFilters');
+    const handler = hookBody(controller, 'const onRefresh = useCallback', '}, [data, activeTab');
+    expect(effect).toMatch(/refreshTabRef\.current\(room, roomFilters\[room\]\)/);
+    expect(handler).toMatch(/isNarrowed\(room, roomFilters\[room\]\)/);
+    expect(handler).toMatch(/refreshTabWithFilters\(room, roomFilters\[room\], true\)/);
   });
 });

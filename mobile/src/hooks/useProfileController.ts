@@ -13,6 +13,8 @@ import { shouldRepairHandleRoute, wasMyHandle } from '@/src/utils/handleHistory'
 import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
+import { logger } from '@/src/utils/logger';
+import { isNarrowed, ROOMS, type Room } from '@/src/utils/roomFilters';
 
 export const normalizeSocialHash = (links?: any[] | Record<string, string> | null): string => {
   if (!links) return '';
@@ -34,6 +36,9 @@ export function computeFollowCountDelta(isFollowing: boolean, isRequested: boole
   if (isRequested) return 0;
   return isPrivate ? 0 : 1;
 }
+
+/** The room a tab is, if it is one of the five with filters. */
+const roomOf = (tab: ProfileTab | null): Room | null => (tab && (ROOMS as readonly string[]).includes(tab) ? tab as Room : null);
 
 export function useProfileController(usernameOverride?: string) {
   const params = useLocalSearchParams<{ username: string | string[]; tab?: string }>();
@@ -99,17 +104,16 @@ export function useProfileController(usernameOverride?: string) {
     activeTab,
   });
 
-  // ── #87: follow our own rename instead of stranding on the old handle ──────────
+  // ── Your own rename: the route follows it, never stranding on the old handle ──
   // Renaming flips isSelf to false while this screen is still mounted underneath Edit
-  // Profile, which re-fires the fetch under a handle that no longer exists and lands
-  // the member on "Member Not Found" about themselves. See utils/handleHistory.ts for
-  // why neither isSelf nor the loaded targetUser can be used to detect this.
+  // Profile, which would re-read a handle that no longer exists and tell the member
+  // "Member Not Found" about themselves. utils/handleHistory.ts says why neither
+  // isSelf nor the loaded targetUser can tell this apart.
   //
   // Both halves of the predicate are required:
   //   • the handle was ONCE ours — otherwise we have no business rewriting the route
   //   • it currently resolves to NOBODY — a freed handle can be claimed by someone
-  //     else, and redirecting a visit to their profile onto ours would be far worse
-  //     than the bug being fixed
+  //     else, and a visit to their profile must never be turned onto ours
   //
   // navigation.setParams, NOT router.setParams: the auth store moves ~750ms before
   // Edit Profile pops, so at the moment of repair THIS screen is not the focused one.
@@ -136,19 +140,13 @@ export function useProfileController(usernameOverride?: string) {
     navigation.setParams({ username: user.username } as never);
   }, [repairRoute, user?.username, navigation]);
 
-  // Rewriting the route is not quite enough on its own. The repair is decided in the
-  // render where the failed fetch has already produced the not-found state, and the
-  // refetch under the corrected handle cannot start until the next commit — so without
-  // this the screen still paints "Member Not Found" for a frame or two on the way past.
+  // Rewriting the route is not enough on its own: the repair is decided in the render
+  // where the failed read has already produced the not-found state, and the read under
+  // the corrected handle starts a commit later — so "Member Not Found" would paint for
+  // a frame or two (plainly, when a stale link is opened cold). This holds it back.
   //
-  // Invisible on the path this finding describes (the screen is behind Edit Profile at
-  // that moment), but plainly visible when a stale link is opened cold, and a member
-  // being told their account is gone — even briefly — is the entire bug.
-  //
-  // The timeout is the point of this being state rather than a naked flag: if the
-  // corrected handle somehow fails too, this falls back to the honest not-found screen
-  // WITH its GO BACK button after four seconds. A hanging spinner would be a worse
-  // failure than the one being fixed, so it is not reachable from here.
+  // For four seconds at most: if the corrected handle fails too, the honest not-found
+  // screen shows, with its GO BACK, rather than a spinner that never ends.
   const [repairingHandle, setRepairingHandle] = useState(false);
   useEffect(() => {
     if (!repairRoute) return;
@@ -234,11 +232,11 @@ export function useProfileController(usernameOverride?: string) {
     if (isSelf) fetchUserDataRef.current();
   }, [isFocused, isSelf]);
 
-  // Prevent ghost filter resets on background re-renders
-  const prevTabRef = useRef<ProfileTab | null>(null);
+  // The member whose filters these are: a new one wipes them all.
   const prevUserRef = useRef<string | null>(null);
 
-  // Decouple loadTabData to prevent infinite React render loops
+  // The latest loadTabData, read without being a dependency (its identity changes
+  // with every state change, and the effect would loop).
   const loadTabDataRef = useRef(data.loadTabData);
   loadTabDataRef.current = data.loadTabData;
 
@@ -269,13 +267,17 @@ export function useProfileController(usernameOverride?: string) {
         setListsSearch('');
         prevUserRef.current = data.targetUser.id;
       }
-
-      if (activeTab !== prevTabRef.current) {
-        prevTabRef.current = activeTab;
-      }
     }
+  }, [activeTab, data.targetUser?.id, isSelf]);
 
-  }, [activeTab, data.targetUser?.id, isSelf]); // Deliberately excludes loadTabData
+  // Each room's filters, as the rooms send them.
+  const roomFilters = useMemo(() => ({
+    archive: { status: archiveSieve, search: archiveSearch, titleOnly: true },
+    ledger: { search: ledgerSearch, rating: ledgerRatingFilter, hasRatingOrReview: true },
+    watchlist: { search: watchlistSearch, sort: watchlistSort, decade: watchlistDecade },
+    physical: { filter: physicalFilter, sort: physicalSort, search: physicalSearch },
+    lists: { sort: listsSort, search: listsSearch },
+  }), [archiveSieve, archiveSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, physicalSearch, listsSort, listsSearch]);
 
   const onRefresh = useCallback(async () => {
     setRefreshingLocal(true);
@@ -283,48 +285,21 @@ export function useProfileController(usernameOverride?: string) {
     // `false`: the member could not be read. The page stays as it was, and says so.
     const read = await data.fetchUserData();
 
-    if (activeTab) {
-      if (activeTab === 'archive') {
-        if (archiveSieve !== 'all' || archiveSearch) {
-          await data.refreshTabWithFilters('archive', { status: archiveSieve, search: archiveSearch, titleOnly: true }, true);
-        }
-      } else if (activeTab === 'ledger') {
-        if (ledgerSearch || ledgerRatingFilter !== 'all') {
-          await data.refreshTabWithFilters('ledger', { search: ledgerSearch, rating: ledgerRatingFilter, hasRatingOrReview: true }, true);
-        }
-      // A filtered room refreshes its filtered read, never the plain reload
-      // below, which would refill a queue filtered to the 1970s with the whole
-      // queue while the 1970s chip stayed lit.
-      } else if (activeTab === 'watchlist') {
-        if (watchlistSearch || watchlistSort !== 'default' || watchlistDecade !== null) {
-          await data.refreshTabWithFilters('watchlist', { search: watchlistSearch, sort: watchlistSort, decade: watchlistDecade }, true);
-        } else {
-          data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
-          await data.loadTabData(activeTab, true);
-        }
-      } else if (activeTab === 'physical') {
-        if (physicalFilter || physicalSort !== 'default' || physicalSearch) {
-          await data.refreshTabWithFilters('physical', { filter: physicalFilter, sort: physicalSort, search: physicalSearch }, true);
-        } else {
-          data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
-          await data.loadTabData(activeTab, true);
-        }
-      } else if (activeTab === 'lists') {
-        if (listsSort !== 'default' || listsSearch) {
-          await data.refreshTabWithFilters('lists', { sort: listsSort, search: listsSearch }, true);
-        } else {
-          data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
-          await data.loadTabData(activeTab, true);
-        }
-      } else {
-        data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
-        await data.loadTabData(activeTab, true);
-      }
+    const room = roomOf(activeTab);
+    if (room && isNarrowed(room, roomFilters[room])) {
+      // A narrowed room refreshes its filtered read, never the plain one, which
+      // would fill a queue filtered to the 1970s with the whole queue while the
+      // 1970s chip stayed lit.
+      await data.refreshTabWithFilters(room, roomFilters[room], true);
+    } else if (activeTab && activeTab !== 'archive' && activeTab !== 'ledger') {
+      // (The archive and ledger at rest are the member's logs, read above.)
+      data.setTabDataLoaded(prev => ({ ...prev, [activeTab]: false }));
+      await data.loadTabData(activeTab, true);
     }
 
     setRefreshingLocal(false);
     if (read === false) reelToast.error(REFRESH_FAILED);
-  }, [data, activeTab, archiveSieve, archiveSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, physicalSearch, listsSort, listsSearch]);
+  }, [data, activeTab, roomFilters]);
 
   const toggleFollow = useCallback(async () => {
     if (!isAuthenticated) { nav.push('/login'); return; }
@@ -332,6 +307,8 @@ export function useProfileController(usernameOverride?: string) {
     setFollowLoading(true);
 
     const prevUser = data.targetUser;
+    const handle = (username ?? '').toLowerCase();
+    const leaving = isFollowing || isRequested;
 
     data.setTargetUser((prev) => {
       if (!prev) return prev;
@@ -340,67 +317,42 @@ export function useProfileController(usernameOverride?: string) {
       return { ...prev, followers_count: Math.max(0, current + delta) };
     });
 
+    let success = false;
     try {
-      let success = false;
-      if (isFollowing || isRequested) {
-        success = await unfollowUser((username ?? '').toLowerCase());
-      } else {
-        success = await followUser((username ?? '').toLowerCase());
-      }
-
-      if (!success) {
-        // Only rollback if the user being viewed is exactly the one we attempted to follow.
-        // This prevents UI state bleed when swiping profiles during slow network requests.
-        if (prevUser) {
-          data.setTargetUser(curr => {
-            if (!curr || curr.id !== prevUser.id) return curr;
-            // Calculate exact applied optimistic delta to prevent drift on failure
-            const optimisticDelta = computeFollowCountDelta(isFollowing, isRequested, !!prevUser.is_social_private);
-            return { ...curr, followers_count: Math.max(0, (curr.followers_count || 0) - optimisticDelta) };
-          });
-        }
-        // The store has already said why (or held a throttled or doubled tap).
-      }
+      success = leaving ? await unfollowUser(handle) : await followUser(handle);
+      // On false the store has already said why (or held a throttled or doubled tap).
     } catch (err) {
-      if (prevUser) {
-        data.setTargetUser(curr => {
-          if (!curr || curr.id !== prevUser.id) return curr;
-          // Calculate exact applied optimistic delta to prevent drift on failure
-          const optimisticDelta = computeFollowCountDelta(isFollowing, isRequested, !!prevUser.is_social_private);
-          return { ...curr, followers_count: Math.max(0, (curr.followers_count || 0) - optimisticDelta) };
-        });
-      }
-      if (__DEV__) console.warn('[Profile] follow failed, rolled back:', err);
-    } finally {
-      setFollowLoading(false);
+      // The store says why on every failure it catches; this one it did not.
+      logger.warn('[Profile] follow failed:', err);
+      reelToast.error(`Could not ${leaving ? 'unfollow' : 'follow'} @${handle}. Please try again.`);
     }
+    // Rolled back by the same delta, and only on the member it was applied to
+    // (the screen may have moved to another member meanwhile).
+    if (!success && prevUser) {
+      data.setTargetUser(curr => {
+        if (!curr || curr.id !== prevUser.id) return curr;
+        const delta = computeFollowCountDelta(isFollowing, isRequested, !!prevUser.is_social_private);
+        return { ...curr, followers_count: Math.max(0, (curr.followers_count || 0) - delta) };
+      });
+    }
+    setFollowLoading(false);
   }, [isAuthenticated, isFollowing, isRequested, username, followLoading, data]);
 
-  // Hybrid Cache Architecture connects UI filters to server pagination
+  // A room's filters, sent to the server's paged read whenever they or the room
+  // change (useProfileData asks nothing when they stay at rest).
   const refreshTabRef = useRef(data.refreshTabWithFilters);
   refreshTabRef.current = data.refreshTabWithFilters;
 
   useEffect(() => {
-    if (data.targetUser) {
-      if (activeTab === 'archive') {
-        refreshTabRef.current('archive', { status: archiveSieve, search: archiveSearch, titleOnly: true });
-      } else if (activeTab === 'ledger') {
-        refreshTabRef.current('ledger', { search: ledgerSearch, rating: ledgerRatingFilter, hasRatingOrReview: true });
-      } else if (activeTab === 'watchlist') {
-        refreshTabRef.current('watchlist', { search: watchlistSearch, sort: watchlistSort, decade: watchlistDecade });
-      } else if (activeTab === 'physical') {
-        refreshTabRef.current('physical', { filter: physicalFilter, sort: physicalSort, search: physicalSearch });
-      } else if (activeTab === 'lists') {
-        refreshTabRef.current('lists', { sort: listsSort, search: listsSearch });
-      }
-    }
+    const room = roomOf(activeTab);
+    if (data.targetUser && room) refreshTabRef.current(room, roomFilters[room]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [archiveSieve, archiveSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, physicalSearch, listsSort, listsSearch, activeTab, data.targetUser?.id]);
+  }, [roomFilters, activeTab, data.targetUser?.id]);
 
   return {
     username,
     isSelf,
-    // #87: hold the not-found screen while the route is being corrected.
+    // Holds the not-found screen while the route follows your own rename.
     repairingHandle,
     isFollowing,
     isRequested,

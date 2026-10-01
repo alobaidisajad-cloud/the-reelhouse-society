@@ -92,7 +92,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/dispatch.tsx | 2026-09-29 | 12 fixed; NewsService history and the pill-fix story cut |
 | app/(tabs)/index.tsx | 2026-10-01 | the front door arrives; nav; a failed pull says so |
 | app/(tabs)/lounge.tsx | 2026-10-01 | the corridor in the present tense; the gate is for visitors only |
-| app/(tabs)/profile.tsx | — |  |
+| app/(tabs)/profile.tsx | 2026-10-01 | nav; a named door; the header says what it is |
 | app/(tabs)/reels.tsx | 2026-10-01 | every comment short and true; the door's reason lives in its test |
 | app/+not-found.tsx | — |  |
 | app/auth-callback.tsx | 2026-10-01 | a link with no code verifies nothing; comments short |
@@ -103,7 +103,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/dispatch/rules.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | app/dispatch/series/[id].tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | app/dossier/[id].tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| app/edit-profile.tsx | — |  |
+| app/edit-profile.tsx | 2026-10-01 |  |
 | app/film-reviews/__tests__/theArchiveSaysWhenItCouldNotRead.test.tsx | — |  |
 | app/film-reviews/[id].tsx | 2026-10-01 | paged by cursor, never by offset; a failed page says so |
 | app/film/[id].tsx | 2026-10-01 | doors through nav; the critiques' failure carried down; the footage named |
@@ -626,8 +626,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/settings/SettingsScreen.tsx | — |  |
 | src/features/settings/SettingsSections.tsx | — |  |
 | src/generated/lucideIcons.js | — |  |
+| src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx | 2026-10-01 | written: a follow that throws is said and rolled back |
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
 | src/hooks/__tests__/aNewMemberStartsUnfiltered.test.tsx | 2026-10-01 | written: every filter wiped for a new member |
+| src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx | 2026-10-01 | written: each read cancelled only by what makes it stale |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
 | src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-01 | written with useSheetPresence |
 | src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-01 | written with useKeyboardLift |
@@ -677,8 +679,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useModalKeyboardPadding.ts | — |  |
 | src/hooks/useNotableMembers.ts | 2026-10-01 | true as written |
 | src/hooks/useOfflineAware.ts | 2026-10-01 | one subscription, no clock |
-| src/hooks/useProfileController.ts | — |  |
-| src/hooks/useProfileData.ts | — |  |
+| src/hooks/useProfileController.ts | 2026-10-01 | one isNarrowed for refresh and filters; a follow that throws is said; dead ref gone; no ticket history |
+| src/hooks/useProfileData.ts | 2026-10-01 | each read cancelled only by what makes it stale; failures wiped with the member; comments say what is true now |
 | src/hooks/useReportUser.ts | — |  |
 | src/hooks/useScreenReady.tsx | 2026-10-01 | true as written |
 | src/hooks/useSheetPresence.ts | 2026-10-01 | written: five sheets' rise and fall, once |
@@ -735,7 +737,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/loungeEmbeds.contract.test.ts | — |  |
 | src/services/__tests__/loungeSharePayloads.test.ts | — |  |
 | src/services/__tests__/ProfileDataService.test.ts | — |  |
-| src/services/__tests__/profileRoomFilters.test.ts | — |  |
+| src/services/__tests__/profileRoomFilters.test.ts | 2026-10-01 | the guard follows the one room-filters memo both reads send |
 | src/services/__tests__/profileService.test.ts | — |  |
 | src/services/__tests__/servicesBatch1.test.ts | — |  |
 | src/services/__tests__/servicesBatch2.test.ts | — |  |
@@ -842,7 +844,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/reportStore.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/stores/resetAllStores.ts | — |  |
 | src/stores/settings.ts | — |  |
-| src/stores/socialStore.ts | — |  |
+| src/stores/socialStore.ts | 2026-10-01 | the header says where the store lives |
 | src/stores/tellMarks.ts | 2026-10-01 | true as written |
 | src/stores/vaultStore.ts | — |  |
 | src/test-support/swallowedTypeError.ts | — |  |

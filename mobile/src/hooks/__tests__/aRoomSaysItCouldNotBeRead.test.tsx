@@ -73,3 +73,19 @@ it('a filtered read that failed marks its room, and asking again asks for the fi
   expect(result.current.tabFailed.watchlist).toBe(false);
   expect(result.current.watchlist).toEqual([{ id: 1, title: 'Night and the City' }]);
 });
+
+it('and a new member on the screen starts with no room failed: the last member’s failure is not theirs', async () => {
+  mockService.fetchOtherUserWatchlist.mockReset().mockRejectedValueOnce(new Error('Network request failed'));
+  const { result, rerender } = await renderHook(
+    ({ username }: { username: string }) => useProfileData({ username, isSelf: false, isFollowing: false, activeTab: null as never }),
+    { initialProps: { username: 'vesper' } },
+  );
+  await waitFor(() => expect(result.current.targetUser?.id).toBe('u9'));
+  await act(async () => { await result.current.loadTabData('watchlist'); });
+  expect(result.current.tabFailed.watchlist).toBe(true);
+
+  mockService.fetchProfile.mockResolvedValue({ ...MEMBER, id: 'u7', username: 'ana' });
+  await act(async () => { rerender({ username: 'ana' }); });
+  await waitFor(() => expect(result.current.targetUser?.id).toBe('u7'));
+  expect(result.current.tabFailed.watchlist).toBeFalsy();
+});

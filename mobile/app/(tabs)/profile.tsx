@@ -1,12 +1,7 @@
 /**
- * Profile Tab — Thin wrapper around the canonical UserProfileScreen.
- *
- * ALL profile UI lives in app/user/[username].tsx.
- * This file just provides the current user's username so the same
- * component renders identically for own-profile and other-user views.
- * Change one place → every profile updates. Just like the web.
- *
- * ZERO inline styles. ZERO cheap emoji. All Lucide icons.
+ * profile.tsx — the Profile tab: your own member file, drawn by the same
+ * screen as every member's (app/user/[username].tsx), or, signed out, the
+ * door to sign in.
  */
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';

@@ -14,18 +14,11 @@ import { isNarrowed, ROOMS, type Room } from '@/src/utils/roomFilters';
 export type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';
 
 /**
- * The shape of a member's collection, pre-aggregated by the server.
- *
- * ── EVERY FIELD HERE IS ALREADY BEING FETCHED ────────────────────────────────
- * `fetchAnalyticsSummary` runs on both the self and the visitor path of every
- * profile load, and the app kept exactly one number out of it. These are the
- * counts the rooms were computing from whichever page happened to have loaded —
- * which is why a month heading said 7 films when March held 40, and why a
- * member's only 1940s film could sit on page eight with no 1940s filter to
- * reach it.
- *
- * `vault_formats` and `watchlist_decades` arrive only once the migration is
- * applied; until then they are absent and the rooms simply draw no counts.
+ * The shape of a member's collection, pre-aggregated by the server
+ * (get_user_analytics) and read on every profile load. The rooms count from
+ * it, never from whichever page has loaded: a month heading says the 40 films
+ * March holds, and a member's only 1940s film has its 1940s chip though it sits
+ * on page eight.
  */
 export interface AnalyticsShape {
   total_logs?: number;
@@ -44,14 +37,10 @@ export interface AnalyticsShape {
   error?: string;
 }
 
-// ProfileUser now extends ValidatedProfileUser from the Zod schema.
-// This ensures the hook's interface stays in sync with the service boundary.
+/** The member as the service boundary validated them (profile.schema). */
 export type ProfileUser = ValidatedProfileUser;
 
-// ── useReducer replaces 22 separate useState calls ──────────
-// A single dispatch batches multiple state changes into one reconciliation
-// pass, eliminating the micro-jank caused by 22 separate re-renders when
-// loading a profile page.
+// One reducer, so a load's many changes land in one render.
 
 export interface ProfileState {
   targetUser: ProfileUser | null;
@@ -87,14 +76,11 @@ export interface ProfileState {
   taste: TasteProfile | null;
   /**
    * The whole pre-aggregated summary — month counts, format counts, rating
-   * spread, streaks, average mark — fetched on EVERY profile load and, until
-   * now, discarded except for one field. Real at any collection size, roughly
-   * 2KB, one round trip.
+   * spread, streaks, average mark: real at any collection size, one round trip.
    *
-   * Null when the RPC is unavailable or the viewer may not see this member, and
-   * every consumer is required to fall SILENT rather than guess: a count that
-   * cannot be known is not drawn at all. That rule is what makes this safe to
-   * wire up before the migration is applied.
+   * Null when it could not be read or the viewer may not see this member, and
+   * every consumer then falls SILENT rather than guess: a count that cannot be
+   * known is not drawn at all.
    */
   analyticsShape: AnalyticsShape | null;
   activeFilters: {
@@ -273,6 +259,21 @@ export function profileReducer(state: ProfileState, action: ProfileAction): Prof
   }
 }
 
+/**
+ * A room's reads, each with its own cancel switch, keyed by room ('archive',
+ * 'ledger', 'watchlist', 'physical', 'lists'), 'analytics', 'calendar', or
+ * 'main' (the logs below the rooms).
+ */
+type RoomSwitches = { current: Record<string, AbortController> };
+function roomSignal(rooms: RoomSwitches, key: string): AbortSignal {
+  return (rooms.current[key] ??= new AbortController()).signal;
+}
+/** Cancels what the room still has out (an older search, its more rows) and starts again. */
+function restartRoom(rooms: RoomSwitches, key: string): AbortController {
+  rooms.current[key]?.abort();
+  return (rooms.current[key] = new AbortController());
+}
+
 export function useProfileData({
   username,
   isSelf,
@@ -293,7 +294,7 @@ export function useProfileData({
   const fetchPhysicalArchive = useArchiveStore(s => s.fetchPhysicalArchive);
   const fetchLists = useListStore(s => s.fetchLists);
 
-  // Absolute deterministic privacy gate
+  // A sealed member's content is read only by the members who follow them.
   const canAccessData = useCallback(() => {
     if (!state.targetUser) return false;
     if (isSelf) return true;
@@ -303,16 +304,13 @@ export function useProfileData({
     return true;
   }, [state.targetUser, isSelf]);
 
-  // Tier gating to protect network bandwidth for locked features
+  // A room the member's rank does not hold is never read. Only the shelf is
+  // ranked (Archivist and above); the calendar, Projector and passport are every
+  // member's (another member's full history is read only for an Auteur and
+  // above, inside fetchAnalyticsLogs).
   const canAccessTierTab = useCallback((tab: ProfileTab) => {
     if (!state.targetUser) return false;
-
     if (tab === 'physical' && !isArchivistPlusTier(state.targetUser)) return false;
-    // The Viewing Calendar is every member's now — it was locked here while
-    // nothing on the Society page sold it.
-    // Analytics (projector) + passport are base features (see the tiers page) — no tier
-    // gate. Your own full analytics load regardless of tier; the heavy fetch for OTHERS
-    // stays guarded inside fetchAnalyticsLogs (self + auteur-others) to protect bandwidth.
     return true;
   }, [state.targetUser]);
 
@@ -323,8 +321,12 @@ export function useProfileData({
     return () => { isMounted.current = false; };
   }, []);
 
-  // AbortController ref — prevents ghost Supabase queries on rapid navigation
+  // Each read is cancelled only by what makes it stale: the member's row and
+  // first page by the next read of them, a room's reads by that room's next
+  // filtered read, and all of them by leaving the member. One switch for all
+  // cancelled a room in flight on every pull, and left it marked read and empty.
   const _fetchAbortRef = useRef<AbortController | null>(null);
+  const _roomAbortRef = useRef<Record<string, AbortController>>({});
 
   // Track current target user ID to prevent cross-user data bleed
   const targetUserIdRef = useRef<string | undefined>(undefined);
@@ -333,21 +335,18 @@ export function useProfileData({
   const fetchUserData = useCallback(async (): Promise<boolean | void> => {
     if (!username) return;
 
-    // P0-A: Abort any in-flight fetch before starting a new one
+    // A newer read of the member cancels the one still out.
     _fetchAbortRef.current?.abort();
     const controller = new AbortController();
     _fetchAbortRef.current = controller;
     const signal = controller.signal;
 
     try {
-      // Route through ProfileDataService for Zod validation + observability
-      // Uses restricted column set for non-self queries (no preferences)
+      // Validated at the service; another member's row is read without their preferences.
       const profile = await ProfileDataService.fetchProfile(username, isSelf, signal);
       if (signal.aborted) return;
       if (!profile) { if (isMounted.current) dispatch({ type: 'SET_USER', payload: null }); return; }
-      if (!isMounted.current) return; // F-19: Bail if unmounted during fetch
-      // fetchProfile now returns ValidatedProfileUser — no cast needed.
-      // The Zod validation happens inside the service boundary.
+      if (!isMounted.current) return;
       const typedProfile = profile;
 
       const currentIsFollowing = useSocialStore.getState().isFollowing(username);
@@ -369,13 +368,10 @@ export function useProfileData({
         return;
       }
 
-      // PERF: Counts and logs are independent (both only need userId).
-      // Firing them in parallel saves one full round-trip (~200-400ms).
+      // Counts, summary and logs are independent, so they are read together.
       if (isSelf) {
-        // PERF: FilmStore persists logs to MMKV via zustandMMKVStorage.
-        // If the store already has hydrated data, we can show the profile
-        // instantly (skipping the blocking fetchLogs) and refresh silently
-        // in the background for freshness.
+        // Your logs are kept on the phone (MMKV): with some held, the file shows
+        // at once and they are renewed behind it.
         const storeHasLogs = useLogStore.getState().logs.length > 0;
 
         const [countsResult, analyticsSummary, logsRead] = await Promise.all([
@@ -396,7 +392,6 @@ export function useProfileData({
         // These are exact. Keep them, so the NEXT cold start seeds the real totals
         // instead of counting the 150-entry window the film store persists.
         writeCachedCounts(typedProfile.id, countsResult);
-        // T2-01: Single dispatch replaces 3 separate setState calls
         dispatch({ type: 'USER_DATA_LOADED', user: typedProfile, counts: countsResult, serverStreak: analyticsSummary?.current_streak ?? null, analyticsShape: analyticsSummary ?? null });
 
         // Background refresh: fetch fresh logs without blocking the spinner.
@@ -415,7 +410,6 @@ export function useProfileData({
       // Heal follower/following display with the live RPC values (see self path).
       if (countsResult.followers != null) typedProfile.followers_count = countsResult.followers;
       if (countsResult.following != null) typedProfile.following_count = countsResult.following;
-      // T2-01: Single dispatch replaces 5 separate setState calls
       dispatch({
         type: 'USER_DATA_LOADED',
         user: typedProfile,
@@ -426,7 +420,7 @@ export function useProfileData({
         logsCursor: result.nextCursor,
       });
     } catch (err: unknown) {
-        if (signal.aborted) return; // P0-A: Silently ignore aborted fetches
+        if (signal.aborted) return; // cancelled by a newer read, or by leaving
         logger.warn('[ProfileFetch] fetchUserData error:', err);
         if (isMounted.current) {
           dispatch({ type: 'SET_ERROR', payload: err instanceof Error ? err : new Error(String(err)) });
@@ -451,14 +445,12 @@ export function useProfileData({
     const uid = state.targetUser.id;
     setTabFailed((f) => (f[tab] ? { ...f, [tab]: false } : f));
     try {
-      // All non-self queries now route through ProfileDataService
-      // for Zod validation, consistent error logging, and AbortSignal support.
       if (tab === 'watchlist' && (!state.tabDataLoaded.watchlist || forceRefresh)) {
         dispatch({ type: 'SET_TAB_LOADED', tabs: { watchlist: true } });
         if (isSelf) {
           if (!(await fetchWatchlist())) throw new Error('The watchlist could not be read');
         } else {
-          const result = await ProfileDataService.fetchOtherUserWatchlist(uid, undefined, undefined, _fetchAbortRef.current?.signal, state.activeFilters.watchlist);
+          const result = await ProfileDataService.fetchOtherUserWatchlist(uid, undefined, undefined, roomSignal(_roomAbortRef, 'watchlist'), state.activeFilters.watchlist);
           if (uid !== targetUserIdRef.current) return;
           dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor });
         }
@@ -467,7 +459,7 @@ export function useProfileData({
         if (isSelf) {
           if (!(await fetchPhysicalArchive())) throw new Error('The shelf could not be read');
         } else {
-          const result = await ProfileDataService.fetchOtherUserVault(state.targetUser, undefined, undefined, _fetchAbortRef.current?.signal, state.activeFilters.physical);
+          const result = await ProfileDataService.fetchOtherUserVault(state.targetUser, undefined, undefined, roomSignal(_roomAbortRef, 'physical'), state.activeFilters.physical);
           if (uid !== targetUserIdRef.current) return;
           dispatch({ type: 'SET_VAULT_PAGE', items: result.items, cursor: result.nextCursor });
         }
@@ -476,17 +468,17 @@ export function useProfileData({
         if (isSelf) {
           if (!(await fetchLists())) throw new Error('The stacks could not be read');
         } else {
-          const result = await ProfileDataService.fetchOtherUserLists(uid, undefined, undefined, _fetchAbortRef.current?.signal, state.activeFilters.lists);
+          const result = await ProfileDataService.fetchOtherUserLists(uid, undefined, undefined, roomSignal(_roomAbortRef, 'lists'), state.activeFilters.lists);
           if (uid !== targetUserIdRef.current) return;
           dispatch({ type: 'SET_LISTS_PAGE', items: result.items, cursor: result.nextCursor });
         }
       } else if ((tab === 'projector' || tab === 'passport') && (!state.tabDataLoaded.analytics || forceRefresh)) {
         dispatch({ type: 'SET_TAB_LOADED', tabs: { analytics: true } });
         const [parsedAnalytics, serverAnalyticsPayload, tastePayload] = await Promise.all([
-          ProfileDataService.fetchAnalyticsLogs(state.targetUser, isSelf, _fetchAbortRef.current?.signal),
-          ProfileDataService.fetchProfileAnalytics(state.targetUser, _fetchAbortRef.current?.signal),
+          ProfileDataService.fetchAnalyticsLogs(state.targetUser, isSelf, roomSignal(_roomAbortRef, 'analytics')),
+          ProfileDataService.fetchProfileAnalytics(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),
           // Replaces dozens of TMDB round trips from the phone with one call.
-          ProfileDataService.fetchTasteProfile(state.targetUser, _fetchAbortRef.current?.signal),
+          ProfileDataService.fetchTasteProfile(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),
         ]);
         // "Something changed — read whatever is outstanding." Fire and forget:
         // nothing on screen waits, and the function drains the whole backlog,
@@ -500,13 +492,10 @@ export function useProfileData({
         dispatch({ type: 'SET_TASTE', payload: tastePayload });
       } else if (tab === 'calendar' && (!state.tabDataLoaded.calendar || forceRefresh)) {
         dispatch({ type: 'SET_TAB_LOADED', tabs: { calendar: true } });
-        // Always its own read. It used to skip this whenever the Projector had
-        // loaded first, to reuse those logs — but for another member below the
-        // Auteur rank the Projector loads NOTHING, so the calendar was left
-        // drawing the first page of their logs as if it were their year. Three
-        // columns bounded to the 52 weeks the grid draws is cheap enough to
-        // simply ask for.
-        const calData = await ProfileDataService.fetchCalendarData(state.targetUser, _fetchAbortRef.current?.signal);
+        // Always its own read — three columns over the 52 weeks the grid draws.
+        // The Projector's logs are not the member's year: for another member
+        // below the Auteur rank it reads none.
+        const calData = await ProfileDataService.fetchCalendarData(state.targetUser, roomSignal(_roomAbortRef, 'calendar'));
         if (!isMounted.current || uid !== targetUserIdRef.current) return;
         dispatch({ type: 'SET_CALENDAR_DATA', payload: calData.map(d => ({ watchedDate: d.date, rating: d.rating, status: d.status })) });
       }
@@ -545,9 +534,9 @@ export function useProfileData({
     dispatch({ type: 'SET_LOADING_MORE', key: lockKey, value: true });
     try {
       const activeLogFilters = activeTab === 'archive' ? state.activeFilters.archive : activeTab === 'ledger' ? state.activeFilters.ledger : undefined;
-      const result = await ProfileDataService.fetchOtherUserLogs(uid, 50, targetCursor ?? undefined, _fetchAbortRef.current?.signal, activeLogFilters);
-      if (uid !== targetUserIdRef.current) return;
       const tabLiteral = activeTab === 'archive' ? 'archive' : activeTab === 'ledger' ? 'ledger' : 'main';
+      const result = await ProfileDataService.fetchOtherUserLogs(uid, 50, targetCursor ?? undefined, roomSignal(_roomAbortRef, tabLiteral), activeLogFilters);
+      if (uid !== targetUserIdRef.current) return;
       dispatch({ type: 'SET_LOGS_PAGE', tab: tabLiteral, items: result.items, cursor: result.nextCursor, append: true });
     } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
@@ -565,7 +554,7 @@ export function useProfileData({
     const uid = state.targetUser.id;
     dispatch({ type: 'SET_LOADING_MORE', key: 'watchlist', value: true });
     try {
-      const result = await ProfileDataService.fetchOtherUserWatchlist(uid, 50, state.watchlistCursor ?? undefined, _fetchAbortRef.current?.signal, state.activeFilters.watchlist);
+      const result = await ProfileDataService.fetchOtherUserWatchlist(uid, 50, state.watchlistCursor ?? undefined, roomSignal(_roomAbortRef, 'watchlist'), state.activeFilters.watchlist);
       if (uid !== targetUserIdRef.current) return;
       dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor, append: true });
     } catch (err) {
@@ -587,7 +576,7 @@ export function useProfileData({
     const uid = state.targetUser.id;
     dispatch({ type: 'SET_LOADING_MORE', key: 'vault', value: true });
     try {
-      const result = await ProfileDataService.fetchOtherUserVault(state.targetUser, 50, state.vaultCursor ?? undefined, _fetchAbortRef.current?.signal, state.activeFilters.physical);
+      const result = await ProfileDataService.fetchOtherUserVault(state.targetUser, 50, state.vaultCursor ?? undefined, roomSignal(_roomAbortRef, 'physical'), state.activeFilters.physical);
       if (uid !== targetUserIdRef.current) return;
       dispatch({ type: 'SET_VAULT_PAGE', items: result.items, cursor: result.nextCursor, append: true });
     } catch (err) {
@@ -606,7 +595,7 @@ export function useProfileData({
     const uid = state.targetUser.id;
     dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: true });
     try {
-      const result = await ProfileDataService.fetchOtherUserLists(uid, 50, state.listsCursor ?? undefined, _fetchAbortRef.current?.signal, state.activeFilters.lists);
+      const result = await ProfileDataService.fetchOtherUserLists(uid, 50, state.listsCursor ?? undefined, roomSignal(_roomAbortRef, 'lists'), state.activeFilters.lists);
       if (uid !== targetUserIdRef.current) return;
       dispatch({ type: 'SET_LISTS_PAGE', items: result.items, cursor: result.nextCursor, append: true });
     } catch (err) {
@@ -619,31 +608,21 @@ export function useProfileData({
   }, [isSelf, fetchLists, state.hasMoreLists, state.isLoadingMore.lists, state.targetUser, state.listsCursor]);
 
   useEffect(() => {
-    // Instantly wipe existing data when navigating to a new user profile
-    // This mathematically guarantees zero state contamination between Profile A and Profile B.
+    // A new member starts from nothing: no row, room or failure of the last one.
     dispatch({ type: 'RESET_STATE' });
+    setTabFailed({});
 
-    // CACHE-FIRST (own dossier only): the signed-in user is already persisted in
-    // the auth store (MMKV) and their logs in the film store — there is nothing to
-    // wait for. Seed the screen from that cache and drop the spinner immediately,
-    // then let fetchUserData() refresh silently in the background. This mirrors the
-    // existing silent stale-while-revalidate on focus (useProfileController) and
-    // removes the ONE remaining spinner path: the first open of your own profile.
-    // Gated to isSelf, which is provably true only when the viewed username IS the
-    // auth user (controller compares lowercased usernames), so we can never seed
-    // one member's dossier with another's data.
+    // Your own file opens at once from what the phone holds (the auth store's
+    // member, the film store's logs), with no spinner, and is renewed behind it.
+    // isSelf is true only when the handle IS the signed-in member's, so no other
+    // member's file is ever seeded from it.
     const cachedSelf = isSelf ? useAuthStore.getState().user : null;
     if (cachedSelf) {
       dispatch({ type: 'SET_USER', payload: cachedSelf as unknown as ProfileUser });
-      // Seed the visible counts from the last EXACT totals this account saw, falling
-      // back to zeros only on the very first open (nothing cached yet), where
-      // reconcileCount's Math.max still shows the locally-loaded rows.
-      //
-      // Zeros used to be unconditional, and that was the whole cold-start flash: the
-      // film store persists only its most recent 150 entries, so a member with 815
-      // watchlist items was shown 150 until the counts landed. The background refresh
-      // below still corrects these within the same beat — this only decides what the
-      // FIRST frame says, and the first frame should not be wrong.
+      // The counts are the last EXACT totals this account read (the film store
+      // keeps only its latest 150 entries, so counting it would say 150 of 815);
+      // zeros only on the very first open, where reconcileCount's Math.max still
+      // shows the rows held. The read behind corrects them within the beat.
       const seeded = readCachedCounts(cachedSelf.id);
       dispatch({ type: 'SET_COUNTS', payload: {
         logs: seeded?.logs ?? 0,
@@ -660,8 +639,12 @@ export function useProfileData({
       dispatch({ type: 'SET_LOADING', payload: true });
       fetchUserData().finally(() => dispatch({ type: 'SET_LOADING', payload: false }));
     }
-    // P0-A: Abort in-flight queries when effect re-fires or component unmounts
-    return () => { _fetchAbortRef.current?.abort(); };
+    // Leaving the member (or the screen) cancels every read still out.
+    return () => {
+      _fetchAbortRef.current?.abort();
+      for (const c of Object.values(_roomAbortRef.current)) c.abort();
+      _roomAbortRef.current = {};
+    };
   }, [fetchUserData, isSelf]);
 
 
@@ -674,8 +657,11 @@ export function useProfileData({
     if (!state.targetUser) return;
 
     // The same filters asked twice (a re-render, an optimistic update) are
-    // asked once.
-    if (!forceRefresh && JSON.stringify(state.activeFilters[tab]) === JSON.stringify(filters)) {
+    // asked once; and filters at rest that were at rest ask nothing: the room
+    // as it stands is its own read (loadTabData, or the member's first page).
+    const was = state.activeFilters[tab];
+    if (!forceRefresh && (JSON.stringify(was) === JSON.stringify(filters) || (!isNarrowed(tab, was) && !isNarrowed(tab, filters)))) {
+      if (JSON.stringify(was) !== JSON.stringify(filters)) dispatch({ type: 'SET_ACTIVE_FILTERS', tab, filters });
       return;
     }
     // Your own stacks are filtered on the phone, never from this read.
@@ -686,10 +672,7 @@ export function useProfileData({
 
     dispatch({ type: 'SET_ACTIVE_FILTERS', tab, filters });
 
-    // Abort previous search and fetch fresh paginated data with filters
-    _fetchAbortRef.current?.abort();
-    const controller = new AbortController();
-    _fetchAbortRef.current = controller;
+    const controller = restartRoom(_roomAbortRef, tab);
     const uid = state.targetUser.id;
 
     if (tab === 'ledger' || tab === 'archive') {
