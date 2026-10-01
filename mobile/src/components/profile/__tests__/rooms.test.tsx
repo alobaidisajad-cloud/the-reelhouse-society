@@ -321,7 +321,9 @@ describe('every room that can grow can be searched', () => {
       const src = code(read(f));
       const gate = /const showSearch = ([^;]+);/.exec(src)?.[1];
       if (!gate) continue;
-      expect(gate).toMatch(/total/i);
+      // `held` is the room's size from its total (and never less than in hand).
+      const held = /\bheld\b/.test(gate) ? /const held = ([^;]+);/.exec(src)?.[1] ?? '' : '';
+      expect(`${gate} ${held}`).toMatch(/total/i);
     }
   });
 

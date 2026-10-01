@@ -733,6 +733,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 watchlistDecade={watchlistDecade}
                 setWatchlistDecade={setWatchlistDecade}
                 decades={watchlistDecadeCounts}
+                totalWatchlist={totalWatchlist}
                 watchlistFiltered={watchlistFiltered}
                 renderPosterCard={renderPosterCard}
                 ready={roomReady}

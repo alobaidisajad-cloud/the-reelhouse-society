@@ -493,6 +493,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/anHonourIsNeverBroken.test.tsx | — |  |
 | src/components/profile/__tests__/aRoomKeepsWhatTheServerFound.test.ts | 2026-10-01 | written: a room's search on the phone is the server's |
 | src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx | 2026-10-01 | written: rows, paging and failure from one answer |
+| src/components/profile/__tests__/aSearchKeepsItsBox.test.tsx | 2026-10-01 | written: every searchable room, searched to nothing |
 | src/components/profile/__tests__/computeDailyStreak.test.ts | — |  |
 | src/components/profile/__tests__/decadeCounts.test.ts | — |  |
 | src/components/profile/__tests__/heroNameSize.test.ts | — |  |
@@ -533,13 +534,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/profileComputed.ts | 2026-09-29 | 24 fixed; T3 ticket notes, 'until the migration lands', histories cut |
 | src/components/profile/ProfileHelpers.tsx | — |  |
 | src/components/profile/ProfileLedgerTab.tsx | 2026-10-01 | an empty ledger said as one; the high chip counts from the shared floor; nav; comments say what is true now |
-| src/components/profile/ProfileListsTab.tsx | — |  |
-| src/components/profile/ProfilePhysicalTab.tsx | — |  |
+| src/components/profile/ProfileListsTab.tsx | 2026-10-01 | a search that found nothing is said; nav; no ticket tags or history |
+| src/components/profile/ProfilePhysicalTab.tsx | 2026-10-01 | a search that found nothing is said; catalogued as VHS (the space); nav; comments say what is true now |
 | src/components/profile/ProfilePosterCard.tsx | — |  |
 | src/components/profile/ProfileProjectorTab.tsx | — |  |
 | src/components/profile/profileStyles.ts | — |  |
 | src/components/profile/ProfileTriptych.tsx | — |  |
-| src/components/profile/ProfileWatchlistTab.tsx | — |  |
+| src/components/profile/ProfileWatchlistTab.tsx | 2026-10-01 | sized by the true total: a search keeps its box, finding nothing is said; the Oracle only with a choice; nav |
 | src/components/profile/ProjectorRoom.tsx | — |  |
 | src/components/profile/RadarChart.tsx | — |  |
 | src/components/profile/RoomParts.tsx | — |  |

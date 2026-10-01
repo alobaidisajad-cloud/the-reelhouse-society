@@ -6,7 +6,7 @@ import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Disc, Film as FilmIcon, Search } from 'lucide-react-native';
 import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import type { ProfileVaultItem, FormatCount, ShelfSort } from '../../types';
 import PressableScale from '../PressableScale';
@@ -17,17 +17,12 @@ import { RoomChip, RoomChipDivider, RoomRail, RoomSearch, RoomRetrieving, RoomUn
 
 /**
  * THE PHYSICAL ARCHIVE — a collection of OBJECTS, arranged the way objects are.
- * (Once called the Vault; that name belongs to the private notes now.)
+ * (The Vault is the private notes; this is the shelf.)
  *
- * This room held physical discs and drew them as flat posters in a grid,
- * shelved by the MONTH each one was catalogued — a fact about the database, not
- * about the collection: a member's 4K box and their father's VHS sat side by
- * side because they were typed in on the same Tuesday. Nothing on the screen
- * said "this is a thing you own" rather than "this is a film you watched".
- *
- * So the room is shelved by CARRIER now, newest first, and every item is drawn
- * as a CASE: a coloured spine down its left edge in the format's own colour,
- * standing on a shelf board. It is the same data. It reads as a wall of discs.
+ * Shelved by CARRIER, newest first — never by the day each copy was typed in —
+ * and every item drawn as a CASE: a spine down its left edge in the format's
+ * own colour, standing on a shelf board. It reads as a wall of discs, a thing
+ * the member owns rather than a film they watched.
  */
 
 const SHELF_LABEL: Record<string, string> = { '4k': '4K UHD', bluray: 'BLU-RAY', dvd: 'DVD', vhs: 'VHS', laserdisc: 'LASERDISC', steelbook: 'STEELBOOK', criterion: 'CRITERION' };
@@ -49,8 +44,6 @@ interface ProfilePhysicalTabProps {
   setPhysicalSort: (val: ShelfSort) => void;
   physicalFormatCounts: FormatCount[];
   physicalFiltered: ProfileVaultItem[];
-  // `groupByMonth` is gone: a collection is shelved by carrier, not by the
-  // Tuesday each copy happened to be typed in.
   /** Has the data landed? A room must not describe itself before it knows. */
   ready?: boolean;
   /** A visitor's room whose read failed: the way to ask again (the room then says so). */
@@ -85,7 +78,6 @@ const VaultCase = React.memo(function VaultCase({
   format: string;
   width: number;
 }) {
-  const router = useRouter();
   const posterUri = tmdb.poster(vaultItem.poster_path, 'w185');
   const tint = FORMAT_META[format]?.color ?? colors.sepia;
   // A copy that is BOTH a Blu-ray and a Steelbook stands on both shelves; the
@@ -95,8 +87,8 @@ const VaultCase = React.memo(function VaultCase({
 
   const onPress = useCallback(() => {
     const fid = vaultItem.film_id ?? vaultItem.filmId;
-    if (fid) (router.push as any)(`/film/${fid}` as never);
-  }, [vaultItem.film_id, vaultItem.filmId, router]);
+    if (fid) nav.push(`/film/${fid}`);
+  }, [vaultItem.film_id, vaultItem.filmId]);
 
   return (
     <PressableScale
@@ -162,7 +154,6 @@ export default React.memo(function ProfilePhysicalTab({
   onRefresh,
   bottomInset
 }: ProfilePhysicalTabProps) {
-  const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
   const grid = useMemo(() => posterColumns(windowWidth, 4), [windowWidth]);
 
@@ -170,10 +161,9 @@ export default React.memo(function ProfilePhysicalTab({
   useEffect(() => {
     breatheAnim.value = withRepeat(
       withTiming(0.6, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
-      // 20, not -1. Every sibling room caps here and says why: to let the UI
-      // thread idle instead of running a worklet for as long as the tab stays
-      // open. This room looped forever. And it is atmosphere, so it holds still
-      // for anyone who has asked the system to stop things moving.
+      // 20, not -1, as every room: the UI thread idles rather than run a
+      // worklet for as long as the tab stays open. And it is atmosphere, so it
+      // holds still for anyone who has asked the system to stop things moving.
       20, true, undefined, ReduceMotion.System,
     );
     return () => cancelAnimation(breatheAnim);
@@ -185,11 +175,16 @@ export default React.memo(function ProfilePhysicalTab({
   }));
 
   /**
-   * Search — the way IN. Shown past one screenful, measured on the REAL total
-   * rather than the rows that happen to have loaded, so the box cannot appear
-   * and vanish as a member scrolls.
+   * The collection's TRUE size, never the rows in hand: under a filter those
+   * are the filter's answer, and a search that found nothing would call the
+   * shelves bare and take away the box it was typed in.
    */
-  const showSearch = (totalVault ?? vault.length) > 12;
+  const held = Math.max(totalVault ?? 0, vault.length);
+  const searching = !!physicalSearch?.trim();
+  const filtering = searching || physicalFilter != null;
+
+  /** Search — the way IN, past one screenful (and always while one is live). */
+  const showSearch = held > 12 || searching;
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [localSearch, setLocalSearch] = useState(physicalSearch ?? '');
   const handleSearchChange = useCallback((val: string) => {
@@ -205,18 +200,11 @@ export default React.memo(function ProfilePhysicalTab({
 
 
   /**
-   * The shelves a member actually owns, and how many stand on each.
-   *
-   * `physicalFormatCounts` derived both the LIST and the COUNTS from whichever
-   * page had loaded. Two separate failures in one: the counts were wrong, and a
-   * member whose only LaserDisc was catalogued two hundred items ago had **no
-   * LaserDisc chip at all** — a filter they could never reach.
-   *
-   * `vault_formats` is computed over the whole collection, so both are fixed at
-   * once. It arrives only after the migration; until then this falls back to
-   * the derived list WITHOUT counts — an incomplete set of filters is a
-   * degraded feature, but a wrong number is a lie, and the two deserve
-   * different treatment.
+   * The shelves a member owns, and how many stand on each — from
+   * `vault_formats`, over the whole collection, so a member whose only
+   * LaserDisc was catalogued two hundred items ago still has its chip. Without
+   * it, the shelves of the loaded rows WITHOUT counts: an incomplete set of
+   * filters is a degraded feature, but a wrong number is a lie.
    */
   const shelfChips = useMemo(() => {
     const real = new Map<string, number>();
@@ -241,10 +229,8 @@ export default React.memo(function ProfilePhysicalTab({
    * The shelves.
    *
    * A copy stands on the shelf of EVERY carrier it is recorded under, which is
-   * what `formats: string[]` means. Today the log flow writes exactly one, so
-   * nothing doubles — but when it learns to write two, a Criterion Blu-ray will
-   * appear on both shelves without a line changing here, which is the whole
-   * reason it is written this way rather than reading `formats[0]`.
+   * what `formats: string[]` means: a Criterion Blu-ray recorded as both
+   * stands on both shelves.
    *
    * A copy with no format at all still has to live somewhere: it goes to an
    * UNFILED shelf rather than silently vanishing from the member's own vault.
@@ -279,10 +265,10 @@ export default React.memo(function ProfilePhysicalTab({
     return result;
   }, [physicalFiltered, physicalFilter]);
 
-  // Pre-fetch all visible and next-page posters using expo-image for zero-latency scroll
+  // The first forty faces are fetched ahead, so scrolling never waits on art.
   useEffect(() => {
     const urlsToPrefetch = physicalFiltered
-      .slice(0, 40) // aggressive prefetch of first 40 items
+      .slice(0, 40)
       .map(item => tmdb.poster(item.poster_path, 'w185'))
       .filter((url): url is string => !!url);
 
@@ -321,7 +307,7 @@ export default React.memo(function ProfilePhysicalTab({
   }, [grid, shelfChips]);
 
   const ListHeaderComponent = useMemo(() => {
-    if (physicalFormatCounts.length === 0) return null;
+    if (held === 0 && !filtering) return null;
     return (
       <>
         {showSearch && (
@@ -337,9 +323,8 @@ export default React.memo(function ProfilePhysicalTab({
           </View>
         )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={r.chipScroll} contentContainerStyle={r.chipRow}>
-        {/* `vault.length` was the LOADED count — 50 on first open, whatever
-            had paged in after. `totalVault` is the server's own reconciled
-            figure, the same one printed on the plate above. */}
+        {/* The server's reconciled total, the figure on the plate above —
+            never the rows loaded. */}
         <RoomChip
           label="ALL"
           count={totalVault}
@@ -376,22 +361,36 @@ export default React.memo(function ProfilePhysicalTab({
       </ScrollView>
       </>
     );
-  }, [shelfChips, physicalFormatCounts.length, physicalFilter, totalVault, setPhysicalFilter, physicalSort, setPhysicalSort, showSearch, localSearch, handleSearchChange, setPhysicalSearch]);
+  }, [shelfChips, held, filtering, physicalFilter, totalVault, setPhysicalFilter, physicalSort, setPhysicalSort, showSearch, localSearch, handleSearchChange, setPhysicalSearch]);
 
   const ListEmptyComponent = useMemo(() => {
     if (physicalFiltered.length > 0) return null;
 
     if (!ready) return unreachable ? <RoomUnreachable room="the shelves" onRetry={unreachable} /> : <RoomRetrieving room="the shelves" />;
 
+    // A SEARCH found nothing — checked first: it is what the member just did.
+    if (searching) {
+      return (
+        <RoomEmpty
+          invite
+          icon={<Search size={26} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
+          title="Nothing under that name"
+          body={`No copy in the Physical Archive matches “${physicalSearch?.trim()}”.`}
+          actionLabel="CLEAR THE SEARCH"
+          onAction={() => { setLocalSearch(''); setPhysicalSearch?.(''); }}
+        />
+      );
+    }
+
     // A FORMAT filter matched nothing — not an empty archive.
-    if (vault.length > 0) {
+    if (vault.length > 0 || physicalFilter) {
       const meta = physicalFilter ? FORMAT_META[physicalFilter] : null;
       return (
         <RoomEmpty
           invite
           icon={<Disc size={26} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
           title="That shelf is bare"
-          body={`Nothing in the Physical Archive is catalogued as${meta?.label ?? physicalFilter ?? 'that format'}.`}
+          body={`Nothing in the Physical Archive is catalogued as ${meta?.label ?? physicalFilter ?? 'that format'}.`}
           actionLabel="SHOW EVERY SHELF"
           onAction={() => setPhysicalFilter(null)}
         />
@@ -404,7 +403,7 @@ export default React.memo(function ProfilePhysicalTab({
           <View style={s.vaultPattern} pointerEvents="none" />
           <Disc size={36} color={colors.parchment} strokeWidth={1.5} style={r.ownIcon} />
           <Text {...scaledTextProps} style={r.ownTitle}>Empty Shelves</Text>
-          <PressableScale style={r.ownAct} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Catalogue physical media">
+          <PressableScale style={r.ownAct} onPress={() => nav.push('/search-modal')} haptic accessibilityRole="button" accessibilityLabel="Catalogue physical media">
             <Text {...scaledTextProps} style={r.ownActText}>CATALOGUE A COPY</Text>
           </PressableScale>
         </Animated.View>
@@ -418,7 +417,7 @@ export default React.memo(function ProfilePhysicalTab({
         body="This member hasn’t catalogued a physical copy yet."
       />
     );
-  }, [physicalFiltered.length, vault.length, physicalFilter, setPhysicalFilter, ready, unreachable, isSelf, pulseStyle, router]);
+  }, [physicalFiltered.length, vault.length, physicalFilter, setPhysicalFilter, searching, physicalSearch, setPhysicalSearch, ready, unreachable, isSelf, pulseStyle]);
 
   const ListFooterComponent = useMemo(() => {
     if (flashData.length === 0) return null;
@@ -439,8 +438,7 @@ export default React.memo(function ProfilePhysicalTab({
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
-        // A row of cases plus its shelf board — derived, where the old 100 was a
-        // guess less than half the true height of the item it described.
+        // A row of cases (3:2) plus its shelf board.
         estimatedItemSize={Math.round(grid.width * 1.5) + 11}
         getItemType={(item: VaultListItem) => item.type}
         contentContainerStyle={r.listContent}
@@ -458,11 +456,7 @@ const s = StyleSheet.create({
   searchWrap: { marginBottom: 12 },
   searchIcon: { opacity: 0.6 },
   // ── a cased copy ──
-  /**
-   * `maxWidth: '23.5%'` used to fight `flex: 1` inside a row with an 8pt gap —
-   * four of them came to 94% plus 24pt of gaps, which is how the fourth case
-   * was clipped on every phone. The width is passed in now, derived once.
-   */
+  // The width is passed in, derived once for the row (posterColumns).
   case: {
     position: 'relative', aspectRatio: 2 / 3, borderRadius: 2, overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(232,223,208,0.14)',

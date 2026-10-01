@@ -4,7 +4,7 @@ import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { LayoutList, Lock, ListOrdered, Search } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
@@ -16,14 +16,9 @@ import { RoomChip, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomF
 import { EDGE_LIT } from '@/src/theme/light';
 
 /**
- * THE STACKS — bound volumes, not thumbnails.
- *
- * A stack is the one thing in these six rooms a member MADE. It had a fanned
- * strip of three posters and a title, which is a thumbnail; what it did not
- * have was any sense of being an object with a shape. It gets a spine now, in
- * the member's own rank colour — the thing you actually see when a book is on a
- * shelf — and the private ones get a lock that reads as a clasp rather than a
- * yellow pill floating over the artwork.
+ * THE STACKS — bound volumes, not thumbnails: the one thing in these rooms a
+ * member MADE. Each has a spine in the member's own rank colour (what you see
+ * of a book on a shelf), and a private one is held by a clasp.
  */
 
 /** The same three orders the Watchlist and the Vault offer. */
@@ -55,7 +50,7 @@ interface ProfileListsTabProps {
   bottomInset?: number;
 }
 
-const ProfileListCard = React.memo(({ list, router, edge }: { list: ProfileList, router: import('expo-router').Router, edge: string }) => {
+const ProfileListCard = React.memo(({ list, edge }: { list: ProfileList, edge: string }) => {
   const posters = (list.films || [])
     .filter((f: ProfileListFilm) => f.poster)
     .slice(0, 3)
@@ -64,12 +59,11 @@ const ProfileListCard = React.memo(({ list, router, edge }: { list: ProfileList,
   return (
     <PressableScale
       // The card is far larger than 44pt on its own, and the gutter between two
-      // of them is spent entirely on their margins — so a card claims nothing.
-      // At 8 per side, two neighbouring stacks overlapped by 6pt and the later
-      // one silently took every tap meant for the earlier.
+      // of them is spent entirely on their margins — so a card claims nothing
+      // (any slop and the later of two neighbours takes the earlier's taps).
       hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
       style={s.stackCard}
-      onPress={() => (router.push as any)(`/stacks/${list.id}` as any)}
+      onPress={() => nav.push(`/stacks/${list.id}`)}
       haptic
       accessibilityRole="button"
       accessibilityLabel={[
@@ -108,8 +102,8 @@ const ProfileListCard = React.memo(({ list, router, edge }: { list: ProfileList,
       </View>
       <View style={s.stackContent}>
         <View style={s.badgeRow}>
-          {/* filmCount, NOT films.length — for a visitor that array is capped at 4,
-              which is how a 96-film stack advertised itself as "4 FILMS" (#46). */}
+          {/* filmCount, NOT films.length: for a visitor that array is capped at
+              4, and a 96-film stack would call itself "4 FILMS". */}
           <Text {...scaledTextProps} style={s.stackBadge}>{list.filmCount} {list.filmCount === 1 ? 'FILM' : 'FILMS'}</Text>
           {list.isRanked && (
             <View style={s.rankedBadge}>
@@ -128,7 +122,6 @@ const ProfileListCard = React.memo(({ list, router, edge }: { list: ProfileList,
 });
 
 export default React.memo(function ProfileListsTab({ lists, listsSort = 'default', setListsSort, listsSearch, setListsSearch, totalLists, ready = true, unreachable, tier, onLoadMore, isLoadingMore, hasMore, isSelf, refreshing = false, onRefresh, bottomInset }: ProfileListsTabProps) {
-  const router = useRouter();
   const edge = useMemo(() => roomTier(tier).edge, [tier]);
 
   const breatheAnim = useSharedValue(0.1);
@@ -148,10 +141,11 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
 
   /**
    * Search — the way IN. Shown past one screenful, measured on the REAL total
-   * rather than the rows that happen to have loaded, so the box cannot appear
-   * and vanish as a member scrolls.
+   * rather than the rows in hand (under a search, those are its answer), and
+   * always while a search is live.
    */
-  const showSearch = (totalLists ?? lists.length) > 6;
+  const searching = !!listsSearch?.trim();
+  const showSearch = (totalLists ?? lists.length) > 6 || searching;
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [localSearch, setLocalSearch] = useState(listsSearch ?? '');
   const handleSearchChange = useCallback((val: string) => {
@@ -168,14 +162,30 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
 
   const renderItem = useCallback(({ item }: { item: ProfileList }) => {
     return (
-      <ProfileListCard list={item} router={router} edge={edge} />
+      <ProfileListCard list={item} edge={edge} />
     );
-  }, [router, edge]);
+  }, [edge]);
 
   const ListEmptyComponent = useMemo(() => {
     if (lists.length > 0) return null;
 
     if (!ready) return <View style={s.footWrap}>{unreachable ? <RoomUnreachable room="the stacks" onRetry={unreachable} /> : <RoomRetrieving room="the stacks" />}</View>;
+
+    // A SEARCH found nothing — not an empty room.
+    if (searching) {
+      return (
+        <View style={s.footWrap}>
+          <RoomEmpty
+            invite
+            icon={<Search size={26} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
+            title="Nothing under that name"
+            body={`No stack matches “${listsSearch?.trim()}”.`}
+            actionLabel="CLEAR THE SEARCH"
+            onAction={() => { setLocalSearch(''); setListsSearch?.(''); }}
+          />
+        </View>
+      );
+    }
 
     if (isSelf) {
       return (
@@ -185,7 +195,7 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
           <View style={s.dossierFront}>
             <LayoutList size={32} color={colors.parchment} strokeWidth={1.5} style={r.ownIcon} />
             <Text {...scaledTextProps} style={r.ownTitle}>Uncharted Stacks</Text>
-            <PressableScale style={r.ownAct} onPress={() => (router.push as any)('/list-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Compile a stack">
+            <PressableScale style={r.ownAct} onPress={() => nav.push('/list-modal')} haptic accessibilityRole="button" accessibilityLabel="Compile a stack">
               <Text {...scaledTextProps} style={r.ownActText}>COMPILE A STACK</Text>
             </PressableScale>
           </View>
@@ -205,15 +215,11 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
         />
       </View>
     );
-  }, [lists.length, ready, unreachable, isSelf, pulseStyle, router]);
+  }, [lists.length, ready, unreachable, searching, listsSearch, setListsSearch, isSelf, pulseStyle]);
 
   /**
-   * The order the volumes stand in.
-   *
-   * Only when there are enough of them to matter. This room had NO header rows
-   * at all — the one of the six that didn't — and adding a chip row to reorder
-   * five stacks that already fit on a screen would be chrome bought with the
-   * thing that made the room good. Six is where a shelf stops being scannable.
+   * The search and the order the volumes stand in — only when there are
+   * enough of them to matter: six is where a shelf stops being scannable.
    */
   const ListHeaderComponent = useMemo(() => {
     if (!showSearch) return null;
@@ -287,20 +293,12 @@ const s = StyleSheet.create({
   stackPosterPanel: { position: 'absolute', top: 0, bottom: 0, height: '100%' },
   stackEmptyBg: { flex: 1, backgroundColor: 'rgba(30,25,20,0.7)' },
   stackOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6,5,4,0.32)' },
-  /**
-   * A clasp, not a pill. The old lock was a filled brass circle floating over
-   * the artwork at radius 12 — the roundest object in an app where nothing is
-   * round, and brass, which everywhere else means "you can press this".
-   */
+  // A clasp hung from the top edge, square-cornered: nothing here is round.
   clasp: { position: 'absolute', top: 0, right: 10, paddingHorizontal: 5, paddingTop: 4, paddingBottom: 5, backgroundColor: colors.sepia, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 },
   stackContent: { paddingTop: 9 },
   stackBadge: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.8, color: colors.sepia },
-  /**
-   * `adjustsFontSizeToFit` is gone from both of these. Paired with
-   * `numberOfLines`, it shrinks a long title until it fits — so a wall of
-   * stacks was set in a different size per card, and the shortest title on the
-   * screen was the largest. Two lines and an ellipsis, at one size, always.
-   */
+  // Two lines and an ellipsis, at one size, always: shrunk to fit, a wall of
+  // stacks would be set in a different size per card.
   stackTitle: { fontFamily: fonts.display, fontSize: 13, lineHeight: 17, color: colors.parchment, marginTop: 5 },
   // Solid fogQuiet: a word never borrows its contrast from the ground, so it
   // holds 4.5:1 on a lit card as on the page.

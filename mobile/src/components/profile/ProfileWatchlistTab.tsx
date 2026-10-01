@@ -4,7 +4,7 @@ import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Bookmark, Search, Disc3, Sparkles } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts } from '../../theme/theme';
 import PressableScale from '../PressableScale';
@@ -17,16 +17,12 @@ import { RoomChip, RoomChipDivider, RoomRetrieving, RoomUnreachable, RoomEmpty, 
 import { EDGE_LIT } from '@/src/theme/light';
 
 /**
- * THE WATCHLIST — the queue, and the one room with a ritual in it.
- *
- * The Oracle stays exactly where it is. It is the best object on any of these
- * six screens: a reel of perforations that picks tonight's film, and the only
- * thing in the rooms that a member comes back FOR rather than to check. What
- * changes is everything around it — one chip, one search, honest empty states,
- * and a grid that stops clipping its third column.
+ * THE WATCHLIST — the queue, and the one room with a ritual in it: the Oracle,
+ * a reel of perforations that picks tonight's film, the one thing in the rooms
+ * a member comes back FOR rather than to check.
  */
 
-// Module-scoped: prevents remount on every render cycle
+// Made once, here: made in the render, it would remount on every pass.
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
 const SORTS: { id: ShelfSort; label: string }[] = [
@@ -47,15 +43,12 @@ interface ProfileWatchlistTabProps {
   setWatchlistDecade: (val: WatchlistDecade) => void;
   /**
    * The decades this queue spans, newest first — counted by the SERVER over the
-   * whole queue, falling back to the loaded page only if it has not answered.
-   *
-   * The comment here used to say "derived from what is loaded", which was true
-   * when it was written and is the bug that was fixed: a member whose only
-   * 1940s film sat on page eight got no 1940s chip at all and could never
-   * reach it. Corrected because a stale comment outlives the person who
-   * remembers it was stale.
+   * whole queue (so a member's only 1940s film, on page eight, has its chip),
+   * falling back to the loaded page only if it has not answered.
    */
   decades: DecadeCount[];
+  /** The queue's TRUE size (the server's count, reconciled), whatever is loaded or filtered. */
+  totalWatchlist?: number;
   setRouletteOpen: (val: boolean) => void;
   renderPosterCard: (item: ProfileWatchlistItem, width: number) => React.ReactNode;
   /** Has the data landed? A room must not describe itself before it knows. */
@@ -83,6 +76,7 @@ export default function ProfileWatchlistTab({
   watchlistDecade,
   setWatchlistDecade,
   decades = [],
+  totalWatchlist,
   setRouletteOpen,
   renderPosterCard,
   ready = true,
@@ -94,7 +88,6 @@ export default function ProfileWatchlistTab({
   onRefresh,
   bottomInset
 }: ProfileWatchlistTabProps) {
-  const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
   const grid = useMemo(() => posterColumns(windowWidth, 3), [windowWidth]);
 
@@ -112,7 +105,7 @@ export default function ProfileWatchlistTab({
     borderColor: `rgba(184,137,26,${0.1 + breatheAnim.value})`,
   }));
 
-  // Nitrate Noir Breathing Ember Protocol for Search
+  // The search glass breathes while a search is live.
   const searchEmberOpacity = useSharedValue(EMBER_REST);
   useEffect(() => {
       if (watchlistSearch.length > 0) {
@@ -123,7 +116,6 @@ export default function ProfileWatchlistTab({
       return () => cancelAnimation(searchEmberOpacity);
   }, [watchlistSearch.length, searchEmberOpacity]);
 
-  // Reanimated props must map from useSharedValue to prevent UI thread sync failures
   const animatedSearchProps = useAnimatedProps(() => ({
       color: searchEmberOpacity.value > EMBER_REST ? colors.bloodReel : colors.fog,
   }));
@@ -131,7 +123,7 @@ export default function ProfileWatchlistTab({
       opacity: searchEmberOpacity.value,
   }));
 
-  // Debounce JS thread string search to prevent ANR freezes
+  // Typing is debounced: the filter and the server's read follow 300ms behind.
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [localSearch, setLocalSearch] = useState(watchlistSearch);
 
@@ -143,10 +135,16 @@ export default function ProfileWatchlistTab({
       }, 300);
   }, [setWatchlistSearch]);
 
-  // A pending debounce used to outlive the room — see the Ledger.
+  // A pending debounce never outlives the room.
   useEffect(() => () => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
   }, []);
+
+  // The queue's TRUE size, never the rows in hand: under a filter those are
+  // the filter's answer, and a search that found three films would take away
+  // the box it was typed in, or one that found none call the queue empty.
+  const held = Math.max(totalWatchlist ?? 0, watchlist.length);
+  const filtering = !!watchlistSearch.trim() || watchlistDecade !== null;
 
   const flashData = useMemo(() => {
     if (watchlistFiltered.length === 0) return [];
@@ -161,14 +159,13 @@ export default function ProfileWatchlistTab({
     return result;
   }, [watchlistFiltered]);
 
-  // Pre-fetch next-page posters using expo-image for zero-latency scroll
+  // The first forty posters are fetched ahead, so scrolling never waits on art.
   useEffect(() => {
     const urlsToPrefetch = watchlistFiltered
-      .slice(0, 40) // aggressive prefetch of first 40 items
+      .slice(0, 40)
       .map(item => tmdb.poster(item.poster_path, 'w185'))
       .filter((url): url is string => !!url);
 
-    // A STATIC import, as the Vault already does — see the note in the Ledger.
     if (urlsToPrefetch.length > 0) Image.prefetch(urlsToPrefetch);
   }, [watchlistFiltered]);
 
@@ -185,10 +182,11 @@ export default function ProfileWatchlistTab({
   }, [renderPosterCard, grid]);
 
   const ListHeaderComponent = useMemo(() => {
-    if (watchlist.length === 0) return null;
+    if (held === 0 && !filtering) return null;
     return (
       <>
-        {isSelf && watchlist.length > 1 && (
+        {/* Only with a choice to make: the Oracle picks from what is shown. */}
+        {isSelf && watchlistFiltered.length > 1 && (
           <PressableScale style={s.oracleCta} onPress={() => setRouletteOpen(true)} haptic accessibilityRole="button" accessibilityLabel="Consult the Oracle's Choice — let the archive pick tonight's film">
             <View style={s.oracleCtaPerf}>
               {[0, 1, 2].map(i => <View key={i} style={s.oracleCtaHole} />)}
@@ -204,13 +202,11 @@ export default function ProfileWatchlistTab({
             </View>
           </PressableScale>
         )}
-        {watchlist.length > 5 && (
+        {(held > 5 || filtering) && (
           <View style={s.controlCol}>
-            {/* The SHARED search — see the note in the Ledger. This room kept
-                its own copy for the breathing icon alone, and the copy left
-                autoCorrect, autoCapitalize and spellCheck ON, so a queue
-                searched for "Kieślowski" could be corrected into a word the
-                queue does not contain. */}
+            {/* The shared search (its breathing glass passed as `ember`), so
+                autocorrect stays off: "Kieślowski" is never corrected into a
+                word the queue does not hold. */}
             <RoomSearch
               value={localSearch}
               onChange={handleSearchChange}
@@ -219,11 +215,9 @@ export default function ProfileWatchlistTab({
               a11y="Search the watchlist"
               ember={<AnimatedSearchIcon size={13} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />}
             />
-            {/* The sort row used to sit BESIDE the search box, which left each
-                chip about 40pt wide with 4pt between them — three targets a
-                thumb could not separate. Its own line, at the shared gap.
-                The decades share that line rather than taking a third one:
-                header chrome is the loudest complaint about this app. */}
+            {/* The sorts on their own line, at the shared gap (beside the box
+                they were three targets a thumb could not separate); the
+                decades share it rather than take a third. */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={r.chipRow}>
               {SORTS.map(sv => (
                 <RoomChip
@@ -265,20 +259,17 @@ export default function ProfileWatchlistTab({
       </>
     );
    
-  }, [watchlist.length, isSelf, setRouletteOpen, localSearch, handleSearchChange, setWatchlistSearch, watchlistSort, setWatchlistSort, watchlistDecade, setWatchlistDecade, decades, animatedSearchProps, animatedSearchStyle]);
+  }, [held, filtering, watchlistFiltered.length, isSelf, setRouletteOpen, localSearch, handleSearchChange, setWatchlistSearch, watchlistSort, setWatchlistSort, watchlistDecade, setWatchlistDecade, decades, animatedSearchProps, animatedSearchStyle]);
 
   const ListEmptyComponent = useMemo(() => {
     if (watchlist.length > 0 && watchlistFiltered.length > 0) return null;
 
     if (!ready) return unreachable ? <RoomUnreachable room="the queue" onRetry={unreachable} /> : <RoomRetrieving room="the queue" />;
 
-    // A FILTER found nothing. This used to be one grey line of italic text
-    // floating in the middle of the page with no way out of it — the only
-    // "empty state" in the six rooms that was not a panel at all. And it has
-    // to name the RIGHT filter: with a search and a decade both live, telling a
-    // member to clear the search when it was the decade that emptied the room
-    // sends them round the loop again.
-    if (watchlist.length > 0) {
+    // A FILTER found nothing, said with the way out. It names the RIGHT
+    // filter: with a search and a decade both live, sending a member to clear
+    // the search when the decade emptied the room sends them round again.
+    if (watchlist.length > 0 || filtering) {
       const era = watchlistDecade !== null ? decadeLabel(watchlistDecade) : null;
       return (
         <RoomEmpty
@@ -306,7 +297,7 @@ export default function ProfileWatchlistTab({
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <Bookmark size={32} color={colors.sepia} strokeWidth={1.5} style={r.ownIcon} />
           <Text {...scaledTextProps} style={r.ownTitle}>An Empty Queue</Text>
-          <PressableScale style={r.ownAct} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Curate future viewings">
+          <PressableScale style={r.ownAct} onPress={() => nav.push('/search-modal')} haptic accessibilityRole="button" accessibilityLabel="Curate future viewings">
             <Text {...scaledTextProps} style={r.ownActText}>CURATE FUTURE VIEWINGS</Text>
           </PressableScale>
         </Animated.View>
@@ -320,7 +311,7 @@ export default function ProfileWatchlistTab({
         body="This member hasn’t saved a film for later yet."
       />
     );
-  }, [watchlist.length, watchlistFiltered.length, isSelf, ready, unreachable, watchlistSearch, setWatchlistSearch, watchlistDecade, setWatchlistDecade, pulseStyle, router]);
+  }, [watchlist.length, watchlistFiltered.length, filtering, isSelf, ready, unreachable, watchlistSearch, setWatchlistSearch, watchlistDecade, setWatchlistDecade, pulseStyle]);
 
   return (
     <View style={r.container}>
@@ -330,7 +321,7 @@ export default function ProfileWatchlistTab({
         keyExtractor={(item: WatchlistRowItem) => item.id}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
-        // A 3-wide poster row, derived — the old 150 was a guess.
+        // A 3-wide poster row: a poster at 3:2 and the gap beneath.
         estimatedItemSize={Math.round(grid.width * 1.5) + grid.gap}
         contentContainerStyle={r.listContent}
         refreshing={refreshing}
@@ -351,7 +342,7 @@ export default function ProfileWatchlistTab({
 const s = StyleSheet.create({
   emptyStateSelf: { ...EDGE_LIT, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: colors.soot, borderWidth: 1, borderRadius: 4, marginTop: 12 },
 
-  // ── the Oracle — untouched, because it is the best thing here ──
+  // ── the Oracle ──
   oracleCta: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.sepiaFaint, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)', paddingVertical: 14, paddingHorizontal: 14, marginBottom: 18, overflow: 'hidden' },
   oracleCtaText: { flex: 1, minWidth: 0 },
   oracleCtaTitle: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.sepia },
