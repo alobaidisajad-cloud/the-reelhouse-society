@@ -34,7 +34,10 @@ export function makeFlashListMock() {
     });
 
     const header = asEl(props.ListHeaderComponent);
-    const footer = data.length ? asEl(props.ListFooterComponent) : asEl(props.ListEmptyComponent);
+    // As FlashList draws them: the empty component in place of rows, and the
+    // footer always. A footer drawn only with rows hid every act in one.
+    const empty = data.length ? null : asEl(props.ListEmptyComponent);
+    const footer = asEl(props.ListFooterComponent);
 
     // `contentContainerStyle` wraps the WHOLE list — header, cells and footer.
     // Applying it to the cells alone put the list's top padding (which exists to
@@ -56,6 +59,7 @@ export function makeFlashListMock() {
         },
         withSeps,
       ),
+      empty ? React.createElement(View, { key: 'e', style: full }, empty) : null,
       footer ? React.createElement(View, { key: 'f', style: full }, footer) : null,
     );
     // A scroll view, as FlashList is: a rail's far cards are reached by swiping, and a

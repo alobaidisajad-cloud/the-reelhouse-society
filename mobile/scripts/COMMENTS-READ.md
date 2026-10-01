@@ -446,6 +446,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/__tests__/aMessageCanBeHeardAndActedOn.test.ts | 2026-09-29 | new |
 | src/components/lounge/__tests__/MemberFaceStack.model.test.ts | — |  |
 | src/components/lounge/__tests__/roomGate.test.ts | 2026-09-29 | new |
+| src/components/lounge/__tests__/aRefusedLeaveStaysInTheRoom.test.tsx | 2026-10-01 | written: the salon panel leaves only on success |
 | src/components/lounge/__tests__/theCorridorIsOpen.test.ts | — |  |
 | src/components/lounge/__tests__/theDoorAdmits.test.tsx | 2026-10-01 | written: the host's panel, mounted |
 | src/components/lounge/__tests__/theDoorIsAName.test.tsx | — |  |
@@ -764,6 +765,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/aProfileChangeIsNeverDropped.test.ts | — |  |
 | src/stores/__tests__/aReactionIsOneOfFive.test.ts | — |  |
 | src/stores/__tests__/aRefusedWriteIsNotSuccess.test.ts | — |  |
+| src/stores/__tests__/aSalonKeepsItsCoverAndItsDoor.test.ts | 2026-10-01 | written: the corridor reads covers; a rank refusal is a door |
 | src/stores/__tests__/aStackIsSavedWhole.test.ts | — |  |
 | src/stores/__tests__/auth.test.ts | — |  |
 | src/stores/__tests__/blockEnforcement.test.ts | — |  |

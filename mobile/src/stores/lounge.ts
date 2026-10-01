@@ -109,7 +109,8 @@ export interface LoungeState {
   joinPublicLounge: (loungeId: string) => Promise<boolean>;
   /** Private lounge: ask the host to admit you. Returns the resulting standing. */
   requestMembership: (loungeId: string) => Promise<'requested' | 'joined' | 'error'>;
-  leaveLounge: (loungeId: string) => Promise<void>;
+  /** True once the member is out; false when the house refused or could not be reached (said). */
+  leaveLounge: (loungeId: string) => Promise<boolean>;
   deleteLounge: (loungeId: string) => Promise<boolean>;
   subscribeToLounge: (loungeId: string, opts?: { onMembership?: () => void }) => () => void;
   markRead: (loungeId: string) => Promise<void>;
@@ -150,6 +151,11 @@ export const MESSAGE_WINDOW = 400;
 // appending: a cap on the prepend would fight the scroll back.
 export const capMessages = (msgs: LoungeMessage[]): LoungeMessage[] =>
   msgs.length > MESSAGE_WINDOW ? msgs.slice(msgs.length - MESSAGE_WINDOW) : msgs;
+
+/** A salon as the corridor draws it: its cover too, or a cover set by its host
+ *  showed until the next refresh and then nowhere. */
+const ROOM_COLUMNS = 'id, name, description, is_private, creator_id, created_at, member_count, cover_image';
+type RoomRow = { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; member_count: number; cover_image: string | null };
 
 // ── Create lounge cooldown — prevents spam-creation ──
 let _lastCreateAt = 0;
@@ -336,18 +342,18 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Three sources, merged: the newest rooms (private ones too; they need admission),
       // the rooms joined, and the rooms hosted, whose door requests are counted below.
       const browsablePromise = supabase.from('lounges')
-        .select('id, name, description, is_private, creator_id, created_at, member_count')
+        .select(ROOM_COLUMNS)
         .order('created_at', { ascending: false })
         .limit(50);
 
       const myJoinedPromise = myLoungeIds.length > 0 
         ? supabase.from('lounges')
-            .select('id, name, description, is_private, creator_id, created_at, member_count')
+            .select(ROOM_COLUMNS)
             .in('id', myLoungeIds)
-        : Promise.resolve({ data: [] as { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; member_count: number }[], error: null });
+        : Promise.resolve({ data: [] as RoomRow[], error: null });
 
       const myCreatedPromise = supabase.from('lounges')
-        .select('id, name, description, is_private, creator_id, created_at, member_count')
+        .select(ROOM_COLUMNS)
         .eq('creator_id', user.id);
 
       const [browsableRes, myJoinedRes, myCreatedRes] = await Promise.all([
@@ -358,7 +364,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (unread) throw unread;
 
       // Merge all three, deduplicating by id
-      const allLoungesMap = new Map<string, { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; member_count: number }>();
+      const allLoungesMap = new Map<string, RoomRow>();
       if (browsableRes.data) browsableRes.data.forEach(l => allLoungesMap.set(l.id, l));
       if (myJoinedRes.data) myJoinedRes.data.forEach(l => allLoungesMap.set(l.id, l));
       if (myCreatedRes.data) myCreatedRes.data.forEach(l => allLoungesMap.set(l.id, l));
@@ -441,6 +447,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         creator_id: l.creator_id,
         created_at: l.created_at,
         member_count: l.member_count ?? 0,
+        cover_image: l.cover_image ?? null,
         unread_count: ownedOrJoinedIds.has(l.id) ? (unreadCounts[l.id] || 0) : undefined,
         last_message_at: lastMessageTimestamps[l.id],
         membership_status: statusMap.get(l.id) as LoungeRoom['membership_status'],
@@ -811,9 +818,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
       if (error || !loungeId) {
         logger.error('[LoungeStore.createLounge] RPC failed:', error);
-        reelToast.error('Failed to create lounge.');
         // Set before the call, so a second tap can't create twice; a failure releases it.
         _lastCreateAt = 0;
+        // A rank the house no longer sees (it lapsed since the screen asked) gets its door.
+        if (!showTierDoor(error, { returnTo: '/lounge' })) reelToast.error('Failed to create lounge.');
         return null;
       }
 
@@ -881,7 +889,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       return true;
     } catch (e) {
       logger.error('[LoungeStore.joinPublicLounge] failed:', e);
-      reelToast.error('Could not take a seat. Check your connection and try again.');
+      // A seat refused for the rank is its door, never "check your connection".
+      if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {
+        reelToast.error('Could not take a seat. Check your connection and try again.');
+      }
       return false;
     }
   },
@@ -895,7 +906,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       return 'requested';
     } catch (e) {
       logger.error('[LoungeStore.requestMembership] failed:', e);
-      reelToast.error('Could not send your request. Check your connection and try again.');
+      if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {
+        reelToast.error('Could not send your request. Check your connection and try again.');
+      }
       return 'error';
     }
   },
@@ -1104,12 +1117,12 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   leaveLounge: async (loungeId) => {
     const user = useAuthStore.getState().user;
     const startedAs = user?.id ?? null;
-    if (!user) return;
+    if (!user) return false;
 
     const lounge = get().lounges.find(l => l.id === loungeId);
     if (lounge && lounge.creator_id === user.id) {
         reelToast.error('You created this lounge. Delete it instead of leaving.');
-        return;
+        return false;
     }
 
     set(s => {
@@ -1150,7 +1163,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       .select('id');
 
     if (error || !removed || removed.length === 0) {
-      if (!memberUnchanged(startedAs)) return;
+      if (!memberUnchanged(startedAs)) return false;
       set(s => {
         const newSet = new Set(s._pendingLeaveLoungeIds);
         newSet.delete(loungeId);
@@ -1159,10 +1172,11 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       clearTimeout(timeoutId);
       reelToast.error('Failed to leave — please try again.');
       await get().fetchLounges();
-    } else {
-      queryClient.invalidateQueries({ queryKey: ['lounge_membership', loungeId] });
-      queryClient.invalidateQueries({ queryKey: ['lounge_members', loungeId] });
+      return false;
     }
+    queryClient.invalidateQueries({ queryKey: ['lounge_membership', loungeId] });
+    queryClient.invalidateQueries({ queryKey: ['lounge_members', loungeId] });
+    return true;
   },
 
   deleteLounge: async (loungeId) => {

@@ -7,16 +7,17 @@ import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
 import { Ban, Crown, DoorClosed, Image as ImageIcon, LogOut, MoreHorizontal, Trash2, Users, Volume2, VolumeX, X } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
 import React, { useCallback, useState } from 'react';
 import { Alert, InteractionManager, Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import Animated, { SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ToastHost } from '@/src/components/ToastHost';
-import { arrive, leave, MS } from '@/src/theme/motion';
+import { leave, MS } from '@/src/theme/motion';
+import { Arrive } from '@/src/components/Arrive';
+import { nav } from '@/src/utils/typedRouter';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const BLOOD = colors.crimson;
@@ -33,7 +34,6 @@ export interface LoungeSettingsPanelProps {
 }
 
 export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator, onMembersChanged }: LoungeSettingsPanelProps) {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { leaveLounge, deleteLounge, setMemberStatus, removeMember, setLoungeCover } = useLoungeStore();
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -46,9 +46,10 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
       { text: 'Cancel', style: 'cancel' },
       { text: 'Step out', style: 'destructive', onPress: async () => {
         TactileEngine.destroy();
-        await leaveLounge(lounge.id);
+        // Only once out: a refused leave is said by the store, and the room stays.
+        if (!(await leaveLounge(lounge.id))) return;
         onClose();
-        InteractionManager.runAfterInteractions(() => router.replace('/(tabs)/lounge' as never));
+        InteractionManager.runAfterInteractions(() => nav.replace('/(tabs)/lounge'));
       }},
     ]);
   };
@@ -58,9 +59,10 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
       { text: 'Cancel', style: 'cancel' },
       { text: 'Incinerate', style: 'destructive', onPress: async () => {
         TactileEngine.warn();
-        await deleteLounge(lounge.id);
+        // A salon the house would not destroy is still standing: its host stays in it.
+        if (!(await deleteLounge(lounge.id))) return;
         onClose();
-        InteractionManager.runAfterInteractions(() => router.replace('/(tabs)/lounge' as never));
+        InteractionManager.runAfterInteractions(() => nav.replace('/(tabs)/lounge'));
       }},
     ]);
   };
@@ -72,9 +74,9 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
   const handleChangeCover = useCallback(() => {
     onClose();
     InteractionManager.runAfterInteractions(() => {
-      (router.push as any)({ pathname: '/cover-picker', params: { loungeId: lounge.id } });
+      nav.push('/cover-picker', { loungeId: lounge.id });
     });
-  }, [onClose, router, lounge.id]);
+  }, [onClose, lounge.id]);
 
   const handleRemoveCover = useCallback(() => {
     TactileEngine.selection();
@@ -118,7 +120,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         </View>
 
         {isCreator && !isFounder && isOpen && (
-          <AnimatedView entering={SlideInDown.duration(160)} style={s.actionRow}>
+          <Arrive name="lounge.member-acts" duration={160} rise={8} style={s.actionRow}>
             <PressableScale hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
               style={s.memberAction}
               haptic="selection"
@@ -149,7 +151,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
               <Ban size={12} color={BLOOD} strokeWidth={1.5} />
               <Text style={[s.memberActionText, { color: BLOOD_INK }]}>{banned ? 'UNBAN' : 'BAN'}</Text>
             </PressableScale>
-          </AnimatedView>
+          </Arrive>
         )}
       </View>
     );
@@ -163,8 +165,10 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         {/* The ground closes it for a finger; a screen reader has the named Close. */}
         <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no"><View /></PressableScale>
       </BlurView>
-      <AnimatedView entering={SlideInDown.duration(MS.considered).easing(arrive())} exiting={SlideOutDown.duration(MS.quick).easing(leave())} style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 28) }]}
-        onAccessibilityEscape={onClose}>
+      {/* Arrive, rising from below, not a mount-time `entering` that can stall. */}
+      <AnimatedView exiting={SlideOutDown.duration(MS.quick).easing(leave())} style={s.frame} pointerEvents="box-none">
+      <Arrive name="lounge.settings" duration={MS.considered} rise={SETTINGS_RISE} style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 28) }]}>
+      <View style={s.body} onAccessibilityEscape={onClose}>
         <View style={s.handle} />
         <View style={s.headerRow}>
           <View style={{ flex: 1, marginRight: 12 }}>
@@ -223,14 +227,22 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
             </View>
           }
         />
+      </View>
+      </Arrive>
       </AnimatedView>
       <ToastHost />
     </Modal>
   );
 }
 
+/** How far the sheet rises as it arrives. */
+const SETTINGS_RISE = 320;
+
 const s = StyleSheet.create({
   backdrop: { flex: 1 },
+  frame: { ...StyleSheet.absoluteFillObject },
+  // Fills the sheet's fixed height, so the roster scrolls inside it.
+  body: { flex: 1 },
   sheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0, height: '85%', backgroundColor: colors.ink,
     borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 24, paddingBottom: 28,
