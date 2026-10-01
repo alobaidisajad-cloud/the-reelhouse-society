@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useAuthStore } from '@/src/stores/auth';
@@ -41,8 +41,7 @@ export function useProfileController(usernameOverride?: string) {
   // Prevent deep-link array mutation crashing the Supabase client
   const username = Array.isArray(rawUsername) ? rawUsername[0] : rawUsername;
   const tab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
-  const router = useRouter();
-  
+
   const user = useAuthStore(s => s.user);
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
 
@@ -81,24 +80,18 @@ export function useProfileController(usernameOverride?: string) {
     }
   }, [tab]);
 
-  // We need to pass isFollowing to useProfileData, but we need targetUser first.
-  // We can use a ref to the latest targetUser from data, or just use useProfileData first
-  // and compute it. But hooks must be called unconditionally.
-  // However, we can use useProfileData without isFollowing initially, or we can use the 
-  // authStore's following list and check if it contains the fetched user's ID inside useProfileData.
-  // The cleanest way is to extract targetUser from useProfileData, but since useProfileData
-  // is a custom hook, we can't access its return value before calling it.
-  
+  // Following is read by handle from the social store, so it is known before the
+  // member's row is (useProfileData needs it to open a sealed profile).
   const isSelf = Boolean(
-    user?.username && 
-    username && 
-    typeof user.username === 'string' && 
-    typeof username === 'string' && 
+    user?.username &&
+    username &&
+    typeof user.username === 'string' &&
+    typeof username === 'string' &&
     user.username.toLowerCase() === username.toLowerCase()
   );
   const isFollowing = useSocialStore(s => s.isFollowing((username ?? '').toLowerCase()));
   const isRequested = useSocialStore(s => s.isRequested((username ?? '').toLowerCase()));
-  
+
   const data = useProfileData({
     username,
     isSelf,
@@ -167,7 +160,8 @@ export function useProfileController(usernameOverride?: string) {
     if (data.targetUser) setRepairingHandle(false);
   }, [data.targetUser]);
 
-  // Replaced JSON.stringify with specific property mapping to prevent infinite loops from arbitrary key ordering
+  // Specific properties, never JSON.stringify of the whole row: a key order that
+  // changed would read as a change and loop.
   const targetUserHash = [
     data.targetUser?.display_name,
     data.targetUser?.bio,
@@ -188,7 +182,7 @@ export function useProfileController(usernameOverride?: string) {
     if (isSelf && user && data.targetUser) {
       const userSocialStr = normalizeSocialHash(user.social_links);
       const targetSocialStr = normalizeSocialHash(data.targetUser.social_links);
-      
+
       const userPrefsStr = `${user.preferences?.accent_color}|${user.preferences?.default_tab}|${JSON.stringify(user.preferences?.favorites || [])}|${JSON.stringify(user.preferences?.programmes || [])}`;
       const targetPrefsStr = `${data.targetUser.preferences?.accent_color}|${data.targetUser.preferences?.default_tab}|${JSON.stringify(data.targetUser.preferences?.favorites || [])}|${JSON.stringify(data.targetUser.preferences?.programmes || [])}`;
 
@@ -252,29 +246,35 @@ export function useProfileController(usernameOverride?: string) {
     // Only fire when activeTab is selected and targetUser is fully populated
     if (activeTab && data.targetUser?.id) {
       loadTabDataRef.current(activeTab);
-      
+
       // Force analytics fetch for Ledger so halfLifeMap has full historical data
       if (activeTab === 'ledger' && !isSelf) {
         loadTabDataRef.current('projector');
       }
 
-      // Dual-Reference wipe mathematically guarantees zero state contamination across profiles.
-      // We only wipe filters when the USER changes, preserving filter state when just switching tabs.
+      // Every filter is wiped when the MEMBER changes (and kept when only the
+      // room does): one left behind would narrow the next member's room.
       if (data.targetUser.id !== prevUserRef.current) {
         setArchiveSieve('all');
+        setArchiveSearch('');
         setLedgerSearch('');
         setLedgerRatingFilter('all');
         setWatchlistSearch('');
         setWatchlistSort('default');
+        setWatchlistDecade(null);
         setPhysicalFilter(null);
+        setPhysicalSort('default');
+        setPhysicalSearch('');
+        setListsSort('default');
+        setListsSearch('');
         prevUserRef.current = data.targetUser.id;
       }
-      
+
       if (activeTab !== prevTabRef.current) {
         prevTabRef.current = activeTab;
       }
     }
-   
+
   }, [activeTab, data.targetUser?.id, isSelf]); // Deliberately excludes loadTabData
 
   const onRefresh = useCallback(async () => {
@@ -282,7 +282,7 @@ export function useProfileController(usernameOverride?: string) {
     TactileEngine.navigate();
     // `false`: the member could not be read. The page stays as it was, and says so.
     const read = await data.fetchUserData();
-    
+
     if (activeTab) {
       if (activeTab === 'archive') {
         if (archiveSieve !== 'all' || archiveSearch) {
@@ -292,12 +292,9 @@ export function useProfileController(usernameOverride?: string) {
         if (ledgerSearch || ledgerRatingFilter !== 'all') {
           await data.refreshTabWithFilters('ledger', { search: ledgerSearch, rating: ledgerRatingFilter, hasRatingOrReview: true }, true);
         }
-      // The Watchlist and the Vault fell through to the plain reload below,
-      // which fetches the tab UNFILTERED — so pulling to refresh a queue
-      // filtered to the 1970s silently refilled it with the whole queue while
-      // the 1970s chip stayed lit. Two of the four tabs that carry filters were
-      // handled and two were not; the sort was already live before this pass,
-      // so the bug is older than the decade filter that surfaced it.
+      // A filtered room refreshes its filtered read, never the plain reload
+      // below, which would refill a queue filtered to the 1970s with the whole
+      // queue while the 1970s chip stayed lit.
       } else if (activeTab === 'watchlist') {
         if (watchlistSearch || watchlistSort !== 'default' || watchlistDecade !== null) {
           await data.refreshTabWithFilters('watchlist', { search: watchlistSearch, sort: watchlistSort, decade: watchlistDecade }, true);
@@ -330,7 +327,7 @@ export function useProfileController(usernameOverride?: string) {
   }, [data, activeTab, archiveSieve, archiveSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, physicalSearch, listsSort, listsSearch]);
 
   const toggleFollow = useCallback(async () => {
-    if (!isAuthenticated) return (router.push as any)('/login' as any);
+    if (!isAuthenticated) { nav.push('/login'); return; }
     if (followLoading) return;
     setFollowLoading(true);
 
@@ -362,7 +359,7 @@ export function useProfileController(usernameOverride?: string) {
             return { ...curr, followers_count: Math.max(0, (curr.followers_count || 0) - optimisticDelta) };
           });
         }
-        console.warn('Failed to toggle follow status, rolling back UI');
+        // The store has already said why (or held a throttled or doubled tap).
       }
     } catch (err) {
       if (prevUser) {
@@ -373,16 +370,16 @@ export function useProfileController(usernameOverride?: string) {
           return { ...curr, followers_count: Math.max(0, (curr.followers_count || 0) - optimisticDelta) };
         });
       }
-      console.warn('Failed to toggle follow status with exception, rolling back UI', err);
+      if (__DEV__) console.warn('[Profile] follow failed, rolled back:', err);
     } finally {
       setFollowLoading(false);
     }
-  }, [isAuthenticated, isFollowing, isRequested, username, followLoading, router, data]);
+  }, [isAuthenticated, isFollowing, isRequested, username, followLoading, data]);
 
   // Hybrid Cache Architecture connects UI filters to server pagination
   const refreshTabRef = useRef(data.refreshTabWithFilters);
   refreshTabRef.current = data.refreshTabWithFilters;
-  
+
   useEffect(() => {
     if (data.targetUser) {
       if (activeTab === 'archive') {
@@ -411,7 +408,7 @@ export function useProfileController(usernameOverride?: string) {
     myWatchlist,
     myVault,
     myLists,
-    
+
     activeTab,
     setActiveTab,
     dnaCardOpen,
@@ -422,7 +419,7 @@ export function useProfileController(usernameOverride?: string) {
     onRefresh,
     followLoading,
     toggleFollow,
-    
+
     archiveSieve, setArchiveSieve,
     ledgerSearch, setLedgerSearch,
     ledgerRatingFilter, setLedgerRatingFilter,
@@ -437,18 +434,18 @@ export function useProfileController(usernameOverride?: string) {
     physicalFilter, setPhysicalFilter,
 
     nav: {
-      toEditProfile: useCallback(() => (router.push as any)('/edit-profile' as never), [router]),
-      toSettings: useCallback(() => (router.push as any)('/settings' as never), [router]),
-      toMembership: useCallback(() => (router.push as any)('/membership' as never), [router]),
-      toFollowers: useCallback(() => { 
+      toEditProfile: useCallback(() => nav.push('/edit-profile'), []),
+      toSettings: useCallback(() => nav.push('/settings'), []),
+      toMembership: useCallback(() => nav.push('/membership'), []),
+      toFollowers: useCallback(() => {
         if (!data.targetUser?.id) return;
-        (router.push as any)({ pathname: '/social-modal', params: { userId: data.targetUser.id, type: 'followers' } } as never);
-      }, [router, data.targetUser?.id]),
-      toFollowing: useCallback(() => { 
+        nav.push('/social-modal', { userId: data.targetUser.id, type: 'followers' });
+      }, [data.targetUser?.id]),
+      toFollowing: useCallback(() => {
         if (!data.targetUser?.id) return;
-        (router.push as any)({ pathname: '/social-modal', params: { userId: data.targetUser.id, type: 'following' } } as never);
-      }, [router, data.targetUser?.id]),
-      toCalendar: useCallback(() => (router.push as any)({ pathname: `/user/${username}`, params: { tab: 'calendar' } } as never), [router, username]),
+        nav.push('/social-modal', { userId: data.targetUser.id, type: 'following' });
+      }, [data.targetUser?.id]),
+      toCalendar: useCallback(() => { if (username) nav.push(`/user/${encodeURIComponent(username)}`, { tab: 'calendar' }); }, [username]),
       openSocialLink: useCallback((url: string) => {
         // Same rule the write-time validator uses (utils/linking.ts) — a link accepted
         // on save is a link that opens, and neither side can drift from the other.
@@ -457,12 +454,8 @@ export function useProfileController(usernameOverride?: string) {
       }, []),
       handleBack: useCallback(() => {
         TactileEngine.selection();
-        if (router.canGoBack()) {
-          nav.back();
-        } else {
-          (router.replace as any)('/(tabs)' as never);
-        }
-      }, [router]),
+        nav.back();
+      }, []),
     },
 
     data,

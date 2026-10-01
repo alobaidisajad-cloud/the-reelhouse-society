@@ -490,6 +490,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/Preloader.tsx | — |  |
 | src/components/PressableScale.tsx | 2026-09-29 | accessible / actions pass through; hitSlop comment condensed |
 | src/components/profile/__tests__/anHonourIsNeverBroken.test.tsx | — |  |
+| src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx | 2026-10-01 | written: rows, paging and failure from one answer |
 | src/components/profile/__tests__/computeDailyStreak.test.ts | — |  |
 | src/components/profile/__tests__/decadeCounts.test.ts | — |  |
 | src/components/profile/__tests__/heroNameSize.test.ts | — |  |
@@ -626,6 +627,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/settings/SettingsSections.tsx | — |  |
 | src/generated/lucideIcons.js | — |  |
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
+| src/hooks/__tests__/aNewMemberStartsUnfiltered.test.tsx | 2026-10-01 | written: every filter wiped for a new member |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
 | src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-01 | written with useSheetPresence |
 | src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-01 | written with useKeyboardLift |
@@ -762,6 +764,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/YearInCinemaService.ts | — |  |
 | src/services/__tests__/aCountNotReadIsNotZero.test.ts | 2026-10-01 | written with the counts fix |
 | src/stores/__tests__/aFailedLoadKeepsWhoYouFollow.test.ts | 2026-09-29 | follow-list wipe fixed; comments read |
+| src/stores/__tests__/aFailedReadIsSaid.test.ts | 2026-10-01 | written: a failed read is answered as failed |
 | src/stores/__tests__/aFailedSettingStaysUndone.test.ts | 2026-09-29 | new |
 | src/stores/__tests__/aFollowMadeOfflineIsKept.test.ts | — |  |
 | src/stores/__tests__/aMarkReadThatFailedIsHeard.test.ts | 2026-10-01 | written with the marks fix |
@@ -931,6 +934,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/recommendations.test.ts | — |  |
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | — |  |
+| src/utils/__tests__/roomFilters.test.ts | 2026-10-01 | written: one answer to is-this-room-narrowed |
 | src/utils/__tests__/sanitisationCallSites.test.ts | — |  |
 | src/utils/__tests__/sanitize.test.ts | — |  |
 | src/utils/__tests__/sanitizeInput.test.ts | — |  |
@@ -988,6 +992,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/recommendations.ts | 2026-10-01 | the shelf's own name |
 | src/utils/reelToast.ts | — |  |
 | src/utils/requestReview.ts | 2026-10-01 | never more than 3 in any 365 days, as it claimed |
+| src/utils/roomFilters.ts | 2026-10-01 | new |
 | src/utils/sanitize.ts | — |  |
 | src/utils/sanitizeInput.ts | 2026-09-28 | subjectBackdrop cap added. A literal escape sequence in a comment, two docs stacked on the wrong declarations, and a stale plan ('retires in step 3') removed; the reasons for each fence kept. |
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |

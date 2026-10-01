@@ -38,7 +38,8 @@ export const listSliceInitialState = (): ListSliceData => ({
 
 export interface ListSlice extends ListSliceData {
 
-    fetchLists: (loadMore?: boolean) => Promise<void>;
+    /** True when the read was answered (or there was nothing to read); false when it failed. */
+    fetchLists: (loadMore?: boolean) => Promise<boolean>;
     createList: (list: Partial<CustomList>) => Promise<void>;
     updateList: (listId: string, updates: Partial<CustomList>) => Promise<void>;
     deleteList: (listId: string) => Promise<void>;
@@ -51,10 +52,10 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
 
     fetchLists: async (loadMore = false) => {
         const user = useAuthStore.getState().user;
-        if (!user) return;
+        if (!user) return true;
         const state = get();
-        if (state._fetchingLists) return;
-        if (loadMore && !state.listsHasMore) return;
+        if (state._fetchingLists) return true;
+        if (loadMore && !state.listsHasMore) return true;
         set({ _fetchingLists: true });
 
         const PAGE_SIZE = 20;
@@ -85,9 +86,9 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
 
         // Left mid-fetch — see sessionGuard. Their stacks must not be written
         // back into a store the reset has cleared, nor persisted to disk with it.
-        if (!stillSignedIn(user.id)) return;
+        if (!stillSignedIn(user.id)) return true;
 
-        if (error || !data) { set({ _fetchingLists: false }); return; }
+        if (error || !data) { set({ _fetchingLists: false }); return false; }
 
         const hasMore = data.length === PAGE_SIZE;
 
@@ -179,6 +180,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                 }
             }, 1000);
         }
+        return true;
     },
 
     createList: async (list) => {

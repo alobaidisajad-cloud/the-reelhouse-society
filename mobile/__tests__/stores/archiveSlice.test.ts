@@ -133,7 +133,8 @@ describe('archiveSlice', () => {
 
             const result = await useFilmStore.getState().fetchPhysicalArchive();
 
-            expect(result).toEqual([]);
+            // Answered, and empty: a true answer.
+            expect(result).toBe(true);
             expect(useFilmStore.getState().physicalArchive.length).toBe(0);
         });
 
@@ -148,8 +149,10 @@ describe('archiveSlice', () => {
 
             const result = await useFilmStore.getState().fetchPhysicalArchive();
 
-            // Should return existing archive without throwing
-            expect(result).toEqual([]);
+            // Never thrown, and never answered as an empty shelf: the caller is
+            // told the read failed, and the shelf on screen is left as it was.
+            expect(result).toBe(false);
+            expect(useFilmStore.getState().physicalArchive).toEqual([]);
         });
     });
 

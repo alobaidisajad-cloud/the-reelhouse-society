@@ -47,7 +47,8 @@ export const logSliceInitialState = (): LogSliceData => ({
 });
 
 export interface LogSlice extends LogSliceData {
-    fetchLogs: (loadMore?: boolean) => Promise<void>;
+    /** True when the read was answered (or there was nothing to read); false when it failed. */
+    fetchLogs: (loadMore?: boolean) => Promise<boolean>;
     addLog: (log: Partial<DomainLog>) => Promise<void>;
     updateLog: (id: string, updates: Partial<DomainLog>) => Promise<void>;
     removeLog: (id: string, forceDeleteAll?: boolean) => Promise<void>;

@@ -1,4 +1,5 @@
  
+import { isNarrowed, ROOMS, type Room } from '@/src/utils/roomFilters';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -450,18 +451,45 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     else (router.replace as any)(`/user/${username}` as never);
   }, [router, username]);
 
-  // A visitor's room whose read failed: the way to ask again, and the room says
-  // so (it stood at RETRIEVING for as long as the member stayed).
-  const loadTabData = data.loadTabData;
-  const retryRoom = useCallback(() => {
-    if (activeTab) void loadTabData(activeTab as ProfileTab, true);
-  }, [loadTabData, activeTab]);
-  const roomUnreachable = !isSelf && activeTab && data.tabFailed[activeTab as ProfileTab] ? retryRoom : undefined;
+  // Whether each room is narrowed by its filters (src/utils/roomFilters): then it
+  // shows, and pages, the filtered read; otherwise your own room shows your
+  // store. One answer, so the rows, the paging and "is there more" agree.
+  const narrowed = useMemo(() => ({
+    archive: isNarrowed('archive', { status: archiveSieve, search: archiveSearch }),
+    ledger: isNarrowed('ledger', { search: ledgerSearch, rating: ledgerRatingFilter }),
+    watchlist: isNarrowed('watchlist', { search: watchlistSearch, sort: watchlistSort, decade: watchlistDecade }),
+    physical: isNarrowed('physical', { filter: physicalFilter, sort: physicalSort, search: physicalSearch }),
+    // Your own stacks are filtered on the phone, from your store.
+    lists: !isSelf && isNarrowed('lists', { sort: listsSort, search: listsSearch }),
+  }), [isSelf, archiveSieve, archiveSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, physicalSearch, listsSort, listsSearch]);
+  const ownStore = (room: Room) => isSelf && !narrowed[room];
 
-  // Whether a room's data has ARRIVED, before it may call itself empty. Your own
-  // rooms hydrate before first paint; a visitor's, once the count proves it.
+  // A room whose read failed: the way to ask again, and the room says so.
+  const retryRoomOf = data.retryRoom;
+  const retryRoom = useCallback(() => {
+    if (activeTab) void retryRoomOf(activeTab as ProfileTab);
+  }, [retryRoomOf, activeTab]);
+  const roomFailed = !!activeTab && !!data.tabFailed[activeTab as ProfileTab];
+  const roomUnreachable = roomFailed ? retryRoom : undefined;
+  const roomNarrowed = !!activeTab && (ROOMS as readonly string[]).includes(activeTab) && narrowed[activeTab as Room];
+
+  // Whether a room's data has ARRIVED, before it may call itself empty. A
+  // filtered read that failed is never shown as the last search's rows. Your own
+  // room keeps what it holds, and with nothing held after a failed read says so;
+  // a visitor's arrives once the count proves it.
   const roomReady = useMemo(() => {
-    if (isSelf) return true;
+    if (roomFailed && roomNarrowed) return false;
+    if (isSelf) {
+      if (!roomFailed) return true;
+      switch (activeTab) {
+        case 'archive':
+        case 'ledger':    return displayLogs.length > 0;
+        case 'watchlist': return displayWatchlist.length > 0;
+        case 'lists':     return displayLists.length > 0;
+        case 'physical':  return displayVault.length > 0;
+        default:          return true;
+      }
+    }
     switch (activeTab) {
       case 'archive':   return displayLogs.length > 0 || counts.logs === 0;
       case 'ledger':    return displayLogs.length > 0 || counts.ledger === 0;
@@ -470,7 +498,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
       case 'physical':  return displayVault.length > 0 || counts.vault === 0;
       default:          return true;
     }
-  }, [isSelf, activeTab, displayLogs.length, displayWatchlist.length, displayLists.length, displayVault.length, counts]);
+  }, [isSelf, activeTab, displayLogs.length, displayWatchlist.length, displayLists.length, displayVault.length, counts, roomFailed, roomNarrowed]);
 
   // The six rated highest: by rating, then recency to break a tie, as the title says.
   const highestRated = useMemo(() => {
@@ -656,13 +684,14 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 renderPosterCard={renderPosterCard}
                 groupByMonth={groupByMonth}
                 ready={roomReady}
+                unreachable={roomUnreachable}
                 tier={tier}
                 monthCounts={analyticsShape?.monthly_activity}
                 totalFilms={totalFilms}
                 archiveSearch={archiveSearch}
                 setArchiveSearch={setArchiveSearch}
-                onLoadMore={(isSelf && archiveSieve === 'all') ? (filmStore.archiveHasMore ? loadMoreLogs : undefined) : (hasMoreArchiveLogs ? loadMoreLogs : undefined)}
-                isLoadingMore={(isSelf && archiveSieve === 'all') ? filmStore._fetchingLogs : isLoadingMore.logs_archive}
+                onLoadMore={ownStore('archive') ? (filmStore.logsHasMore ? loadMoreLogs : undefined) : (hasMoreArchiveLogs ? loadMoreLogs : undefined)}
+                isLoadingMore={ownStore('archive') ? filmStore._fetchingLogs : isLoadingMore.logs_archive}
                 refreshing={refreshing}
                 onRefresh={onRefresh}
                 bottomInset={insets.bottom}
@@ -681,10 +710,11 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 halfLifeMap={halfLifeMap}
                 groupByMonth={groupByMonth}
                 ready={roomReady}
+                unreachable={roomUnreachable}
                 tier={tier}
                 ratingCounts={analyticsShape?.rating_distribution}
-                onLoadMore={(isSelf && ledgerSearch.trim() === '' && ledgerRatingFilter === 'all') ? (filmStore.logsHasMore ? loadMoreLogs : undefined) : (hasMoreLedgerLogs ? loadMoreLogs : undefined)}
-                isLoadingMore={(isSelf && ledgerSearch.trim() === '' && ledgerRatingFilter === 'all') ? filmStore._fetchingLogs : isLoadingMore.logs_ledger}
+                onLoadMore={ownStore('ledger') ? (filmStore.logsHasMore ? loadMoreLogs : undefined) : (hasMoreLedgerLogs ? loadMoreLogs : undefined)}
+                isLoadingMore={ownStore('ledger') ? filmStore._fetchingLogs : isLoadingMore.logs_ledger}
                 isSelf={isSelf}
                 refreshing={refreshing}
                 onRefresh={onRefresh}
@@ -710,8 +740,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 tier={tier}
                 /* With any filter live the room reads the SERVER's pages, so it
                    pages by the server's cursor, not the unfiltered local store. */
-                onLoadMore={(isSelf && watchlistSearch.trim() === '' && watchlistSort === 'default' && watchlistDecade === null) ? (filmStore.watchlistHasMore ? loadMoreWatchlist : undefined) : (hasMoreWatchlist ? loadMoreWatchlist : undefined)}
-                isLoadingMore={(isSelf && watchlistSearch.trim() === '' && watchlistSort === 'default' && watchlistDecade === null) ? filmStore._fetchingWatchlist : isLoadingMore.watchlist}
+                onLoadMore={ownStore('watchlist') ? (filmStore.watchlistHasMore ? loadMoreWatchlist : undefined) : (hasMoreWatchlist ? loadMoreWatchlist : undefined)}
+                isLoadingMore={ownStore('watchlist') ? filmStore._fetchingWatchlist : isLoadingMore.watchlist}
                 isSelf={isSelf}
                 setRouletteOpen={setRouletteOpen}
                 refreshing={refreshing}
@@ -732,8 +762,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 ready={roomReady}
                 unreachable={roomUnreachable}
                 tier={tier}
-                onLoadMore={hasMoreLists ? loadMoreLists : undefined}
-                isLoadingMore={isSelf ? filmStore._fetchingLists : isLoadingMore.lists}
+                onLoadMore={ownStore('lists') ? (filmStore.listsHasMore ? loadMoreLists : undefined) : (hasMoreLists ? loadMoreLists : undefined)}
+                isLoadingMore={ownStore('lists') ? filmStore._fetchingLists : isLoadingMore.lists}
                 hasMore={isSelf ? filmStore.listsHasMore : hasMoreLists}
                 isSelf={isSelf}
                 refreshing={refreshing}
@@ -762,8 +792,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   physicalSearch={physicalSearch}
                   setPhysicalSearch={setPhysicalSearch}
                   /* No filter is `null` (the chip's own state), not 'all'. */
-                  onLoadMore={(isSelf && !physicalFilter) ? (filmStore.archiveHasMore ? loadMoreVault : undefined) : (hasMoreVault ? loadMoreVault : undefined)}
-                  isLoadingMore={(isSelf && !physicalFilter) ? filmStore._fetchingArchive : isLoadingMore.vault}
+                  onLoadMore={ownStore('physical') ? (filmStore.archiveHasMore ? loadMoreVault : undefined) : (hasMoreVault ? loadMoreVault : undefined)}
+                  isLoadingMore={ownStore('physical') ? filmStore._fetchingArchive : isLoadingMore.vault}
                   hasMore={(isSelf && !physicalFilter) ? filmStore.archiveHasMore : hasMoreVault}
                   refreshing={refreshing}
                   onRefresh={onRefresh}

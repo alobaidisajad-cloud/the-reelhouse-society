@@ -46,7 +46,7 @@ const makeCtl = (over: Record<string, unknown> = {}, dataOver: Record<string, un
     setTargetUser: jest.fn(),
     hasMoreLogs: false, hasMoreWatchlist: false, hasMoreVault: false, hasMoreLists: false,
     isLoadingMore: false, loadMoreLogs: jest.fn(),
-    tabFailed: {}, loadTabData: jest.fn(),
+    tabFailed: {}, loadTabData: jest.fn(), retryRoom: jest.fn(),
     ...dataOver,
   },
   username: 'tomasreyes', isSelf: false, repairingHandle: false,
@@ -466,12 +466,12 @@ describe('the page survives the edges', () => {
 describe('a visitor\'s room whose read failed', () => {
   // It stood at RETRIEVING THE QUEUE for as long as the member stayed.
   it('says the room could not be reached, and asks for it again', async () => {
-    const loadTabData = jest.fn();
-    const r = await mount({ activeTab: 'watchlist' }, { tabFailed: { watchlist: true }, loadTabData });
+    const retryRoom = jest.fn();
+    const r = await mount({ activeTab: 'watchlist' }, { tabFailed: { watchlist: true }, retryRoom });
     expect(r.queryByLabelText('Retrieving the queue')).toBeNull();
     expect(r.getByText('The queue could not be reached.')).toBeTruthy();
     await act(async () => { fireEvent.press(r.getByLabelText('Ask for the queue again')); });
-    expect(loadTabData).toHaveBeenCalledWith('watchlist', true);
+    expect(retryRoom).toHaveBeenCalledWith('watchlist');
   });
 
   it('a room still on its way says it is retrieving, not that it failed', async () => {

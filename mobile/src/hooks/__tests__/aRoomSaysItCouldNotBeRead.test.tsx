@@ -55,3 +55,21 @@ it('a member whose read failed answers false, so a pull over a file already show
   // The file already drawn stays drawn.
   expect(result.current.targetUser?.id).toBe('u9');
 });
+
+it('a filtered read that failed marks its room, and asking again asks for the filtered read', async () => {
+  const { result } = await renderHook(() => useProfileData({ username: 'vesper', isSelf: false, isFollowing: false, activeTab: null as never }));
+  await waitFor(() => expect(result.current.targetUser?.id).toBe('u9'));
+
+  const noir = { search: 'noir', sort: 'default', decade: null };
+  mockService.fetchOtherUserWatchlist.mockReset()
+    .mockRejectedValueOnce(new Error('Network request failed'))
+    .mockResolvedValueOnce({ items: [{ id: 1, title: 'Night and the City' }], nextCursor: null });
+  await act(async () => { await result.current.refreshTabWithFilters('watchlist', noir); });
+  expect(result.current.tabFailed.watchlist).toBe(true);
+
+  // Asked again through the room's one door: the SEARCH, not the plain room.
+  await act(async () => { await result.current.retryRoom('watchlist'); });
+  expect(mockService.fetchOtherUserWatchlist).toHaveBeenLastCalledWith('u9', 50, undefined, expect.anything(), noir);
+  expect(result.current.tabFailed.watchlist).toBe(false);
+  expect(result.current.watchlist).toEqual([{ id: 1, title: 'Night and the City' }]);
+});

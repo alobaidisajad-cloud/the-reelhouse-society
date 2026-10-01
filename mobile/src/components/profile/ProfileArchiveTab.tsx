@@ -15,7 +15,7 @@ import ArchiveLock from './ArchiveLock';
 import { useAuthStore } from '@/src/stores/auth';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { r, rtlText, posterColumns, completeCount, countLabel, ROOM_INSET, yearMarker } from './roomStyles';
-import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomEmpty, RoomFoot } from './RoomParts';
+import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
 
 /**
@@ -38,6 +38,8 @@ interface ProfileArchiveTabProps {
   groupByMonth: (items: ProfileLog[], dateKey?: string) => Record<string, ProfileLog[]>;
   /** Has the data landed? A room must not describe itself before it knows. */
   ready?: boolean;
+  /** A room whose read failed: the way to ask again (the room then says so). */
+  unreachable?: () => void;
   tier?: string | null;
   /** The TRUE films-per-month, from the server. Absent = draw no counts. */
   monthCounts?: { month: string; count: number }[] | null;
@@ -128,6 +130,7 @@ export default function ProfileArchiveTab({
   renderPosterCard,
   groupByMonth,
   ready = true,
+  unreachable,
   tier,
   monthCounts,
   totalFilms,
@@ -384,7 +387,7 @@ export default function ProfileArchiveTab({
     if (logs.length > 0 && archiveFiltered.length > 0) return null;
 
     // Nothing true can be said about a room whose contents are still in transit.
-    if (!ready) return <RoomRetrieving room="the archive" />;
+    if (!ready) return unreachable ? <RoomUnreachable room="the archive" onRetry={unreachable} /> : <RoomRetrieving room="the archive" />;
 
     // A SEARCH found nothing — checked BEFORE the filter case, because with
     // both live the search is what the member just did and the one they will
@@ -457,7 +460,7 @@ export default function ProfileArchiveTab({
         body="This member hasn’t filed a screening yet."
       />
     );
-  }, [logs.length, archiveFiltered.length, isSelf, ready, archiveSieve, setArchiveSieve, searching, archiveSearch, setArchiveSearch, pulseStyle, router]);
+  }, [logs.length, archiveFiltered.length, isSelf, ready, unreachable, archiveSieve, setArchiveSieve, searching, archiveSearch, setArchiveSearch, pulseStyle, router]);
 
   /**
    * Derived, not guessed.

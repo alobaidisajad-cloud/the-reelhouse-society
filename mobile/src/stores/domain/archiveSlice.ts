@@ -31,7 +31,8 @@ export const archiveSliceInitialState = (): ArchiveSliceData => ({
 });
 
 export interface ArchiveSlice extends ArchiveSliceData {
-    fetchPhysicalArchive: (userId?: string, loadMore?: boolean) => Promise<PhysicalArchiveItem[]>;
+    /** True when the read was answered (or there was nothing to read); false when it failed. */
+    fetchPhysicalArchive: (userId?: string, loadMore?: boolean) => Promise<boolean>;
     addToPhysicalArchive: (film: { id: number; title?: string; name?: string; poster_path?: string | null; poster?: string | null; release_date?: string }, formats: string[], notes?: string, condition?: string) => Promise<void>;
     removeFromPhysicalArchive: (filmId: number) => Promise<void>;
     updatePhysicalArchiveItem: (filmId: number, updates: Partial<PhysicalArchiveItem>) => Promise<void>;
@@ -63,10 +64,10 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
         // Still read, because the staleness guard below compares against the
         // SIGNED-IN member — only the tier test is gone, not the session.
         const user = useAuthStore.getState().user;
-        if (!uid) return [];
+        if (!uid) return true;
         const state = get();
-        if (loadMore && !state.archiveHasMore) return state.physicalArchive;
-        if (state._fetchingArchive) return state.physicalArchive;
+        if (loadMore && !state.archiveHasMore) return true;
+        if (state._fetchingArchive) return true;
 
         set({ _fetchingArchive: true });
         try {
@@ -92,7 +93,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             // fetch was for — which may be another member's public archive — so
             // comparing it to the session would make this op bail every time
             // someone viewed a profile that was not their own.
-            if (!stillSignedIn(user?.id)) return get().physicalArchive;
+            if (!stillSignedIn(user?.id)) return true;
             if (!error && data) {
                 const items = data.map((item) => ({
                     id: item.id,
@@ -120,9 +121,10 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
                         _archiveCursor: nextCursor,
                     }));
                 }
-                return items;
+                return true;
             }
-            return get().physicalArchive;
+            // The read failed: the shelf on screen stays, and the caller is told.
+            return false;
         } finally {
             set({ _fetchingArchive: false });
         }

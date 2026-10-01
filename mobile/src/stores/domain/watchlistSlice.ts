@@ -34,7 +34,8 @@ export const watchlistSliceInitialState = (): WatchlistSliceData => ({
 });
 
 export interface WatchlistSlice extends WatchlistSliceData {
-    fetchWatchlist: (loadMore?: boolean) => Promise<void>;
+    /** True when the read was answered (or there was nothing to read); false when it failed. */
+    fetchWatchlist: (loadMore?: boolean) => Promise<boolean>;
     addToWatchlist: (film: { id: number; title?: string; name?: string; poster_path?: string | null; release_date?: string }) => Promise<void>;
     removeFromWatchlist: (filmId: number) => Promise<void>;
 }
@@ -44,10 +45,10 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
 
     fetchWatchlist: async (loadMore = false) => {
         const user = useAuthStore.getState().user;
-        if (!user) return;
+        if (!user) return true;
         const state = get();
-        if (state._fetchingWatchlist) return;
-        if (loadMore && !state.watchlistHasMore) return;
+        if (state._fetchingWatchlist) return true;
+        if (loadMore && !state.watchlistHasMore) return true;
         set({ _fetchingWatchlist: true });
 
         const PAGE_SIZE = 50;
@@ -71,9 +72,9 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
 
         // Left while this was in the air — see sessionGuard. Writing their
         // watchlist back into a cleared store would also persist it to disk.
-        if (!stillSignedIn(user.id)) return;
+        if (!stillSignedIn(user.id)) return true;
 
-        if (error || !data) { set({ _fetchingWatchlist: false }); return; }
+        if (error || !data) { set({ _fetchingWatchlist: false }); return false; }
 
         const hasMore = data.length === PAGE_SIZE;
         const newItems = data.map((w) => ({ id: w.film_id, title: w.film_title, poster: w.poster_path ?? null, poster_path: w.poster_path ?? null, year: w.year ?? null }));
@@ -105,6 +106,7 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
         if (posterUrls.length > 0) {
             Image.prefetch(posterUrls, 'disk').catch(() => {});
         }
+        return true;
     },
 
     addToWatchlist: async (film) => {

@@ -16,7 +16,7 @@ import { LEDGER_HIGH_FLOOR } from '../../types';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
 import { r, rtlText, EMBER_REST, EMBER_BEATS, yearMarker } from './roomStyles';
-import { RoomChip, RoomRail, RoomRetrieving, RoomEmpty, RoomFoot, RoomSearch } from './RoomParts';
+import { RoomChip, RoomRail, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomSearch } from './RoomParts';
 
 /**
  * THE LEDGER — what the member WROTE.
@@ -85,6 +85,8 @@ interface ProfileLedgerTabProps {
   groupByMonth: (items: ProfileLog[], dateKey?: string) => Record<string, ProfileLog[]>;
   /** Has the data landed? A room must not describe itself before it knows. */
   ready?: boolean;
+  /** A room whose read failed: the way to ask again (the room then says so). */
+  unreachable?: () => void;
   tier?: string | null;
   /** TRUE entries-per-month from the server. Absent = draw no counts. */
   monthCounts?: { month: string; count: number }[] | null;
@@ -292,6 +294,7 @@ export default function ProfileLedgerTab({
   halfLifeMap,
   groupByMonth,
   ready = true,
+  unreachable,
   tier,
   monthCounts,
   ratingCounts,
@@ -498,7 +501,7 @@ export default function ProfileLedgerTab({
   const ListEmptyComponent = useMemo(() => {
     if (logs.length > 0 && ledgerFiltered.length > 0) return null;
 
-    if (!ready) return <RoomRetrieving room="the ledger" />;
+    if (!ready) return unreachable ? <RoomUnreachable room="the ledger" onRetry={unreachable} /> : <RoomRetrieving room="the ledger" />;
 
     // A SEARCH found nothing — not an empty ledger. The way out is the way back.
     if (logs.length > 0 && ledgerSearch) {
@@ -552,7 +555,7 @@ export default function ProfileLedgerTab({
       />
     );
    
-  }, [logs.length, ledgerFiltered.length, ledgerSearch, ledgerRatingFilter, setLedgerSearch, setLedgerRatingFilter, ready, isSelf, pulseStyle, router]);
+  }, [logs.length, ledgerFiltered.length, ledgerSearch, ledgerRatingFilter, setLedgerSearch, setLedgerRatingFilter, ready, unreachable, isSelf, pulseStyle, router]);
 
   return (
     <View style={r.container}>

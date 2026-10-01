@@ -11,9 +11,8 @@
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useAuthStore } from '@/src/stores/auth';
-import { useRouter } from 'expo-router';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { nav } from '@/src/utils/typedRouter';
+import { colors, fonts } from '@/src/theme/theme';
 import { LogIn } from 'lucide-react-native';
 import UserProfileScreen from '../user/[username]';
 import Buster from '@/src/components/Buster';
@@ -24,7 +23,6 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 export default function ProfileTab() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const user = useAuthStore(s => s.user);
-  const router = useRouter();
 
   if (!isAuthenticated || !user) {
     return (
@@ -33,7 +31,8 @@ export default function ProfileTab() {
           <RoomLight room="member" />
           <Buster size={80} mood="peeking" message="The archive awaits your identity." />
           <Text style={s.prompt}>Identify yourself to access your dossier</Text>
-          <PressableScale testID="profile-sign-in-prompt" style={s.ctaBtn} onPress={() => (router.push as any)('/login' as any)} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="medium">
+          <PressableScale testID="profile-sign-in-prompt" style={s.ctaBtn} onPress={() => nav.push('/login')} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="medium"
+            accessibilityRole="button" accessibilityLabel="Identify yourself. Sign in.">
             <LogIn size={11} color={colors.sepia} strokeWidth={1.5} />
             <Text style={s.ctaBtnText}>IDENTIFY YOURSELF</Text>
           </PressableScale>

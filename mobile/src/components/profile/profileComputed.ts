@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react';
+import { isNarrowed } from '@/src/utils/roomFilters';
 import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry, DomainLog, LedgerRating, WatchlistDecade, DecadeCount, ShelfSort } from '@/src/types';
 import { LEDGER_HIGH_FLOOR, decadeOf } from '@/src/types';
 import { standingFor } from '@/src/constants/standing';
@@ -173,13 +174,10 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   // On your OWN profile each flag decides whether a room reads the SERVER's
   // filtered page or the unfiltered local store, so it names EVERY filter: one
   // left out would be sent to the query and then ignored on screen.
-  const hasArchiveSearch = archiveSieve !== 'all' || (archiveSearch?.trim() ?? '') !== '';
-  const hasLedgerSearch = ledgerSearch.trim() !== '' || ledgerRatingFilter !== 'all';
-  const hasWatchlistSearch = watchlistSearch.trim() !== '' || watchlistSort !== 'default' || watchlistDecade !== null;
-  // No format chip is `null`, not 'all'.
-  const hasPhysicalSearch = physicalFilter !== null
-    || physicalSort !== 'default'
-    || (physicalSearch?.trim() ?? '') !== '';
+  const hasArchiveSearch = isNarrowed('archive', { status: archiveSieve, search: archiveSearch });
+  const hasLedgerSearch = isNarrowed('ledger', { search: ledgerSearch, rating: ledgerRatingFilter });
+  const hasWatchlistSearch = isNarrowed('watchlist', { search: watchlistSearch, sort: watchlistSort, decade: watchlistDecade });
+  const hasPhysicalSearch = isNarrowed('physical', { filter: physicalFilter, sort: physicalSort, search: physicalSearch });
 
   const displayLogs = useMemo(() => isSelf ? myLogs.map(toProfileLog) : mainLogs, [isSelf, myLogs, mainLogs]);
   

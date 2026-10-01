@@ -59,12 +59,13 @@ type SetState = StoreApi<FilmState>['setState'];
 type GetState = StoreApi<FilmState>['getState'];
 
 
-export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolean = false) => {
+/** True when the read was answered (or there was nothing to read); false when it failed. */
+export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolean = false): Promise<boolean> => {
         const user = useAuthStore.getState().user;
-        if (!user) return;
+        if (!user) return true;
         const state = get();
-        if (state._fetchingLogs) return;
-        if (loadMore && !state.logsHasMore) return;
+        if (state._fetchingLogs) return true;
+        if (loadMore && !state.logsHasMore) return true;
         set({ _fetchingLogs: true });
 
         const PAGE_SIZE = 50;
@@ -104,9 +105,9 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
         const { data, error } = await query;
 
         // Left mid-fetch: the reset restored this op's flags, and persisting would copy them.
-        if (!stillSignedIn(user.id)) return;
+        if (!stillSignedIn(user.id)) return true;
 
-        if (error || !data) { set({ _fetchingLogs: false }); return; }
+        if (error || !data) { set({ _fetchingLogs: false }); return false; }
         
         const hasMore = data.length === PAGE_SIZE;
 
@@ -169,6 +170,7 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
         if (posterUrls.length > 0) {
             Image.prefetch(posterUrls, 'disk').catch(() => {});
         }
+        return true;
     }
 
 /**
