@@ -967,6 +967,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/softBreak.ts | — |  |
 | src/utils/storyExporter.ts | — |  |
 | src/utils/TactileEngine.ts | — |  |
+| src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
 | src/utils/text.ts | — |  |
 | src/utils/tier.ts | — |  |
