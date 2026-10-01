@@ -776,7 +776,7 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
                 // The server removed its note; the local Vault forgets it too.
                 useVaultStore.getState().forgetNote(leavingViewingId);
                 reelToast(undone?.queuedOffline
-                    ? 'Rewatch removed. Will sync when connected.'
+                    ? 'Rewatch removed offline. Will sync when connected.'
                     : 'Rewatch removed. Reverted to previous viewing.');
             } catch (e) {
                 throw e; // the caller toasts, once

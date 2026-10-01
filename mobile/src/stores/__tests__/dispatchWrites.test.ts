@@ -278,6 +278,13 @@ describe('amending a filing', () => {
     expect(useDispatch.getState().filings[0].editedAt).toBeNull();
   });
 
+  it('refuses, and sends nothing, when the filing is neither held nor readable', async () => {
+    // Returning as though it went would let the writing room drop the member's words.
+    reset({ filings: [], opened: {} });
+    await expect(useDispatch.getState().amend('f1', { body: 'A better take.' })).rejects.toBeTruthy();
+    expect(sentTo('dispatch_posts', 'update')).toHaveLength(0);
+  });
+
   it('queues the amendment when the wire is down', async () => {
     mockOutcome = 'offline';
     const res = await useDispatch.getState().amend('f1', { body: 'A better take.' });
@@ -294,6 +301,12 @@ describe('ending a filing', () => {
     expect(mockRpc[0].args).toEqual({ p_post: 'f1', p_by: 'author' });
     // An erasure written by the client is an erasure a client can get wrong.
     expect(sentTo('dispatch_posts', 'update')).toHaveLength(0);
+  });
+
+  it('refuses, and calls nothing, when the filing is neither held nor readable', async () => {
+    reset({ filings: [], opened: {} });
+    await expect(useDispatch.getState().end('f1')).rejects.toBeTruthy();
+    expect(mockRpc).toHaveLength(0);
   });
 
   it('empties the words on the page but keeps the row', async () => {

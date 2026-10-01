@@ -27,21 +27,26 @@ const walk = (dir: string) => {
 walk(join(MOBILE, 'src'));
 walk(join(MOBILE, 'app'));
 
-/** Every toast sentence that says a write was kept for later. */
+/**
+ * Every SENTENCE in the code that says a write was kept for later: any string shaped like
+ * one (a capital, a space, a closing stop), not only a literal handed straight to a toast,
+ * so one chosen by a ternary or held in a variable is read too.
+ */
 const said = files.flatMap((f) => {
   const code = readCode(relative(MOBILE, f).split(sep).join('/'));
-  return [...code.matchAll(/reelToast(?:\.\w+)?\(\s*'([^']*)'/g)]
-    .map((m) => m[1])
+  return [...code.matchAll(/'([A-Z][^'\n]* [^'\n]*[.!])'|"([A-Z][^"\n]* [^"\n]*[.!])"|`([A-Z][^`$\n]* [^`$\n]*[.!])`/g)]
+    .map((m) => m[1] ?? m[2] ?? m[3])
     // Every way it has been said: a new phrasing is caught by its words, then
     // held to the house sentence below.
-    .filter((s) => /offline|connected|reconnect|wire is back|queued|will sync/i.test(s))
+    // Only "kept for later" phrasings: a queue warning or a "reconnect" prompt says something else.
+    .filter((s) => /will sync|when connected|wire is back|queued|saved offline|kept offline/i.test(s))
     .map((s) => ({ file: relative(MOBILE, f).split(sep).join('/'), s }));
 });
 
 /** The house's sentence: what was kept, then what will happen. */
 const HOUSE = /^[A-Z][^.]* offline\. Will [a-z ]+ when connected\.$/;
-/** The Dispatch speaks in its paper voice, and only the Dispatch does. */
-const PAPER = 'Filed. It goes out when the wire is back.';
+/** The Dispatch speaks in its paper voice, and only the Dispatch does: a filing, or an amendment. */
+const PAPER = /^(Filed|Amended)\. It goes out when the wire is back\.$/;
 
 describe('a write kept for later is said one way', () => {
   it('found the sentences, rather than an empty list that passes', () => {
@@ -50,7 +55,7 @@ describe('a write kept for later is said one way', () => {
 
   it('in the house sentence — or, in the Dispatch alone, its paper one', () => {
     const odd = said.filter(({ file, s }) =>
-      !(HOUSE.test(s) || (s === PAPER && /dispatch/i.test(file))));
+      !(HOUSE.test(s) || (PAPER.test(s) && /dispatch/i.test(file))));
     expect(odd).toEqual([]);
   });
 });

@@ -228,7 +228,7 @@ describe('removing a record', () => {
     hold(rewatched());
     (VaultService.removeViewing as jest.Mock).mockRejectedValue(OFFLINE);
     await store().removeLog('log-1');
-    expect(shown()).toEqual(['Rewatch removed. Will sync when connected.']);
+    expect(shown()).toEqual(['Rewatch removed offline. Will sync when connected.']);
     expect(heard()).toEqual([]);
   });
 

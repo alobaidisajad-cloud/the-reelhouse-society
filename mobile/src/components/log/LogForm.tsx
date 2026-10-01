@@ -475,7 +475,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                                             void (async () => {
                                                                 try {
                                                                     const res = await removeVaultNote();
-                                                                    if (res) reelToast(res.queuedOffline ? 'Note removed. Will sync when connected.' : 'Note removed.');
+                                                                    if (res) reelToast(res.queuedOffline ? 'Note removed offline. Will sync when connected.' : 'Note removed.');
                                                                 } catch {
                                                                     reelToast.error('The note could not be removed. Try again.');
                                                                 }

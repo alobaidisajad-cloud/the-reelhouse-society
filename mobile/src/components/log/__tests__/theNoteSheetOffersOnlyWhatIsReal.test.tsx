@@ -149,7 +149,7 @@ describe('removing, through the page', () => {
     await act(async () => result.current.confirmRemove());
     const remove = (spy.mock.calls[0][2] as any[]).find(b => b.text === 'Remove');
     await act(async () => { remove.onPress(); });
-    expect(mockToast).toHaveBeenCalledWith('Note removed. Will sync when connected.');
+    expect(mockToast).toHaveBeenCalledWith('Note removed offline. Will sync when connected.');
   });
 
   it('a failure is said once, as a failure', async () => {

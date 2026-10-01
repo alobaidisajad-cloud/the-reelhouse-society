@@ -75,7 +75,7 @@ export function useVault(logId: string | null | undefined, isOwner: boolean) {
                 // One message, and it is spoken: the toast announces itself on
                 // both platforms, so there is nothing to say a second time.
                 const { queuedOffline } = await dropNote(logId, target.viewingId);
-                reelToast(queuedOffline ? 'Note removed. Will sync when connected.' : 'Note removed.');
+                reelToast(queuedOffline ? 'Note removed offline. Will sync when connected.' : 'Note removed.');
               } catch {
                 reelToast.error('The note could not be removed. Try again.');
               }

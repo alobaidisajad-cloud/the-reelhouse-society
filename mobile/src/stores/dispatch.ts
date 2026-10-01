@@ -525,8 +525,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
    */
   amend: async (id, updates) => {
     const user = useAuthStore.getState().user;
-    const filing = heldFiling(get(), id);
-    if (!user || !filing) return;
+    if (!user) return;
+    const filing = heldFiling(get(), id) ?? await readForAct(get, id, 'amend');
     const startedAs = user.id;
 
     const clean = cleanUpdate(filing.kind, updates);
@@ -581,8 +581,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
    */
   end: async (id) => {
     const user = useAuthStore.getState().user;
-    const before = heldFiling(get(), id);
-    if (!user || !before) return;
+    if (!user) return;
+    const before = heldFiling(get(), id) ?? await readForAct(get, id, 'end');
     const startedAs = user.id;
 
     // The page empties what the house empties (dispatch_empty_filing): the
@@ -1000,6 +1000,17 @@ registerStoreReset(() => {
   // The module's own request too: the next member must not be handed the last one's fetch.
   invalidateInflight();
 });
+
+/**
+ * The filing an act needs when the page no longer holds it (`opened` keeps twelve): read
+ * now, or the act is refused. Returning as though it went would tell the writing room the
+ * amendment landed, and the room would let go of the member's words.
+ */
+async function readForAct(get: () => DispatchState, id: string, act: string): Promise<Filing> {
+  const read = await get().hydrate(id);
+  if (!read || read === 'unreachable') throw new Error(`dispatch.${act}: the filing could not be read`);
+  return read;
+}
 
 /** A timed, cancellable read that keeps the row type: a query builder is thenable, not a
  *  Promise, and awaiting it inside is what spares every call site a type-erasing cast. */

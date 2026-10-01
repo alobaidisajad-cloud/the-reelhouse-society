@@ -172,13 +172,16 @@ describe('it does not act for nobody', () => {
 
   it('refuses to act on a filing or critique it does not hold', async () => {
     reset({ filings: [] });
-    expect(await useDispatch.getState().amend('nope', { body: 'x' })).toBeUndefined();
-    expect(await useDispatch.getState().end('nope')).toBeUndefined();
+    // An amend or an end reads a filing the page let go of, and refuses ALOUD when it cannot:
+    // returning as though it went let the writing room drop the member's words.
+    await expect(useDispatch.getState().amend('nope', { body: 'x' })).rejects.toBeTruthy();
+    await expect(useDispatch.getState().end('nope')).rejects.toBeTruthy();
     useDispatch.getState().takeAnswer('nope', 'c1');
     await useDispatch.getState().amendCritique('nope', 'nope', 'x');
     await useDispatch.getState().removeCritique('nope', 'nope');
     await settle();
-    expect(mockAsks).toHaveLength(0);
+    // The two reads, and nothing written.
+    expect(mockAsks).toEqual(['dispatch_posts', 'dispatch_posts']);
   });
 
   it('refuses an empty amendment to a critique', async () => {

@@ -12,5 +12,10 @@ export function readTimeOf(text: string): string {
  * so a wall of three essays does not carry three essays).
  */
 export function readTimeForWords(words: number): string {
-  return `${Math.max(1, Math.round(words / 200))} MIN`;
+  return `${readMinutes(words)} MIN`;
+}
+
+/** The minutes alone, for a page that prints them its own way (the writing room's `~2m`). */
+export function readMinutes(words: number): number {
+  return Math.max(1, Math.round(words / 200));
 }

@@ -24,7 +24,7 @@ import {
 } from '@/src/components/dispatch/SeriesPicker';
 import { FORMS, PaperBack, PaperDoor, PaperPicker } from '@/src/components/dispatch/paper/PaperMore';
 import { EssayHead } from '@/src/components/dispatch/paper/PaperEssay';
-import { readTimeOf } from '@/src/components/dispatch/readTime';
+import { readMinutes, readTimeOf } from '@/src/components/dispatch/readTime';
 import { WEEKDAYS, hourLabel } from '@/src/components/dispatch/dayLabel';
 import { paperTierOf } from '@/src/stores/dispatchTypes';
 import { formatDateMonthDay } from '@/src/utils/timeAgo';
@@ -283,20 +283,11 @@ function ComposeDossierScreen() {
         }
     }, [user?.id]);
 
-    /**
-     * `TUESDAY · 21:40`, from the app's own tables.
-     *
-     * NEVER `Intl` — it is not in Hermes and this app ships no polyfill, so a
-     * `toLocaleString` here would work in every test and throw on a device.
-     * Empty for a draft written before drafts carried a time, and the line then
-     * simply does not name one rather than inventing a moment.
-     */
-    const restoredWhen = useMemo(() => {
-        if (!restored || restored === 'unreadable' || restored === 'unknown') return '';
-        const d = new Date(restored);
-        if (Number.isNaN(d.getTime())) return '';
-        return `${WEEKDAYS[d.getDay()]} · ${hourLabel(restored)}`;
-    }, [restored]);
+    // Empty for a draft kept with no time: the line names none rather than inventing one.
+    const restoredWhen = useMemo(
+        () => (!restored || restored === 'unreadable' || restored === 'unknown' ? '' : whenOf(restored)),
+        [restored],
+    );
 
     // Guards the delayed back() below against a screen already gone.
     const isMounted = useRef(true);
@@ -496,8 +487,8 @@ function ComposeDossierScreen() {
     }, [content]);
     const stats = useMemo(() => {
         const words = counted.trim() ? counted.trim().split(/\s+/).length : 0;
-        const readMin = Math.max(1, Math.ceil(words / 200));
-        return { words, readMin };
+        // The reader's own figure, so the room and the published page never disagree.
+        return { words, readMin: readMinutes(words) };
     }, [counted]);
 
     /**
@@ -567,16 +558,16 @@ function ComposeDossierScreen() {
             const excerpt = excerptFor(content);
 
             if (edit) {
-                await useDispatch.getState().amend(edit, {
+                const amended = await useDispatch.getState().amend(edit, {
                     title: title.trim(),
                     body: excerpt,
                     fullContent: content.trim(),
                 });
-                // The amended words are the house's now, so the phone's copy goes.
+                // The amended words are the house's now (or the queue's, which holds them whole),
+                // so the phone's copy goes, and the backup, which exists only until then.
                 clearDraft(user?.id, 'edit', edit);
-                // And the backup, which exists only until the house has the words.
                 void dropDraft(user?.id, 'edit', edit);
-                reelToast.success('Essay updated');
+                reelToast.success(amended?.offline ? 'Amended. It goes out when the wire is back.' : 'Essay updated');
             } else {
                 const filed = await useDispatch.getState().file({
                     kind: 'dossier',

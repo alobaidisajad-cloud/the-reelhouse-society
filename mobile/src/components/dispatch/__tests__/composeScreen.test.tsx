@@ -59,6 +59,8 @@ let mockUser: Record<string, unknown> | null = { id: 'u1', username: 'me', tier:
 let mockFiled: Record<string, unknown>[] = [];
 let mockAmended: [string, Record<string, unknown>][] = [];
 let mockFileFails = false;
+/** The wire is down: the store keeps the write for later and says so. */
+let mockOffline = false;
 const mockStore = new Map<string, string>();
 let mockStoreFull = false;
 const mockToast = { error: jest.fn(), success: jest.fn() };
@@ -101,6 +103,7 @@ jest.mock('@/src/stores/dispatch', () => ({
       amend: async (id: string, u: Record<string, unknown>) => {
         if (mockFileFails) throw new Error('refused');
         mockAmended.push([id, u]);
+        return mockOffline ? { offline: true } : undefined;
       },
     }),
   },
@@ -140,7 +143,7 @@ const flush = async () => { await act(async () => { await Promise.resolve(); });
 
 beforeEach(() => {
   mockUser = { id: 'u1', username: 'me', tier: 'auteur' };
-  mockFiled = []; mockAmended = []; mockFileFails = false;
+  mockFiled = []; mockAmended = []; mockFileFails = false; mockOffline = false;
   mockStore.clear();
   mockStoreFull = false;
   mockToast.error.mockClear(); mockToast.success.mockClear();
@@ -490,6 +493,24 @@ describe('amending a dossier that already exists', () => {
     expect(mockFiled).toHaveLength(0);
     expect(mockAmended[0][0]).toBe('f1');
     expect(mockAmended[0][1].fullContent).toBe('The second version.');
+  });
+
+  it('prints the read time the published page will print', async () => {
+    // 250 words: the reader says 1 MIN (readTime.ts); a second formula once said 2.
+    const { getByLabelText, getByText } = await openEdit();
+    await type(getByLabelText("Essay content body"), Array.from({ length: 250 }, () => 'word').join(' '));
+    await act(async () => { jest.advanceTimersByTime(500); });
+    expect(getByText('~1m')).toBeTruthy();
+  });
+
+  it('says an amendment kept for later is kept for later, not that it went', async () => {
+    mockOffline = true;
+    const { getByLabelText } = await openEdit();
+    await type(getByLabelText("Essay content body"), 'The second version.');
+    await press(getByLabelText('Re-file the essay'));
+    await flush();
+    expect(mockToast.success).toHaveBeenCalledWith('Amended. It goes out when the wire is back.');
+    expect(mockToast.success).not.toHaveBeenCalledWith('Essay updated');
   });
 
   it('never touches the NEW-dossier draft', async () => {
