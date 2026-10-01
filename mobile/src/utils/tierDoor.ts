@@ -1,33 +1,15 @@
 /**
  * tierDoor — turning the server's refusal into the door it was written to be.
  * ─────────────────────────────────────────────────────────────────────────────
- * `tierRefusal.ts` has always known how to read a tier refusal. It was called
- * by nothing. So a member whose rank had ended tapped send in a salon, the
- * database answered — in a sentence composed for a person to read —
+ * When the database refuses an act on rank, it says so in a sentence written for
+ * a person ("The Lounge is an Archivist feature"). This shows that sentence, with
+ * the way in on the same line: the one answer to "what does a refusal look like",
+ * as `useClearance` is the one answer to "may I".
  *
- *     The Lounge is an Archivist feature
- *
- * and the app showed them "Failed to send message." with a retry that could
- * never succeed. The sales copy was written by the server, carried across the
- * wire intact, and thrown away one line before it reached the screen.
- *
- * This is the missing line. One function, so there is one answer to "what does
- * a server refusal look like", the same way `useClearance` is one answer to
- * "may I".
- *
- * ── WHY A TOAST AND NOT A SCREEN ────────────────────────────────────────────
- * The member is mid-act — halfway through a sentence in a salon, or filing an
- * essay. Throwing a full-screen page over that would lose what they were doing
- * to tell them why they cannot finish it. `reelToast` already carries a
- * tappable action, so the refusal reads as the house answering them and the way
- * forward sits on the same line.
- *
- * ── WHY IT COUNTS ITSELF ────────────────────────────────────────────────────
- * A server refusal means the CLIENT let them try. Every one is a rope that
- * should have been in front of the act and was not — so `gate_refused` is
- * recorded here and nowhere else, and any nonzero count in `gate_metrics`
- * names the feature whose door is missing. That is how this class of bug gets
- * found next time without anybody reading all of it.
+ * A toast, not a screen: the member is mid-act, and a page over it would lose
+ * what they were doing. And it counts itself (`gate_refused`, recorded here
+ * alone): a refusal means a rope was missing in front of the act, so any count
+ * in `gate_metrics` names the feature whose door to add.
  */
 import reelToast from '@/src/utils/reelToast';
 import { openSociety, societyHref } from '@/src/utils/openSociety';
@@ -47,29 +29,14 @@ export function showTierDoor(
   e: unknown,
   opts?: {
     returnTo?: string;
-    /**
-     * A second sentence the caller can vouch for, said after the house's.
-     *
-     * The writing desks tell a refused member their words are kept — the one
-     * thing they most need to hear after an hour's work. Replacing that with
-     * the refusal alone would trade reassurance for explanation; this keeps
-     * both on one line. Only pass what is TRUE at the call site.
-     */
+    /** A second sentence, true at the call site, said after the house's ("your words are kept"). */
     also?: string;
   },
 ): boolean {
   const refusal = asTierRefusal(e);
   if (!refusal) return false;
 
-  /**
-   * Never held it, or held it and stopped. Read the same way `useClearance`
-   * reads it — `entitlement_source` is written only by `grant_entitlement`, so
-   * a member carrying one who no longer has the weight for it once paid.
-   *
-   * This is the whole reason the sentence matters: a lapsed Archivist in a
-   * salon they have been talking in for months should be met with "your dues
-   * have lapsed", not with a stranger's pitch.
-   */
+  // As useClearance reads it: a lapsed member hears "your dues have lapsed", not a pitch.
   const user = useAuthStore.getState().user as { entitlement_source?: string | null } | null;
   const standing: 'stranger' | 'lapsed' = user?.entitlement_source ? 'lapsed' : 'stranger';
 
@@ -79,12 +46,7 @@ export function showTierDoor(
     standing,
   });
 
-  // The server's own sentence, unedited. It was written for this.
-  //
-  // Said as INFO, not as an error. A rank refusal is not a failure the member
-  // caused, and everywhere else the house presents it as a brass rope — here it
-  // arrived as a red ✕ over "✦ ASCEND THE RANKS", the one place the door looked
-  // like a crash.
+  // The server's own sentence, unedited, said as INFO: a rank refusal is a rope, not a failure.
   const message = opts?.also ? `${refusal.said}. ${opts.also}` : refusal.said;
   reelToast.info(message, {
     label: standing === 'lapsed' ? '✦ RESUME YOUR STANDING' : '✦ ASCEND THE RANKS',
@@ -95,8 +57,7 @@ export function showTierDoor(
         rank: refusal.rank,
         standing,
       });
-      // The same traveller the ropes use, so a refusal met inside the log or the
-      // writing desk dismisses first, and one met in a salon does not close it.
+      // As the ropes travel: a presented desk is dismissed first, a pushed salon stays.
       openSociety(societyHref(refusal.featureId, refusal.rank, opts?.returnTo));
     },
   });

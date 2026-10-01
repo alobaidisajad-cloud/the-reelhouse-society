@@ -1,5 +1,5 @@
 /**
- * ShareToLoungeModal — Share films/logs to lounge rooms.
+ * ShareToLoungeModal — a film, log, stack or filing, shared into a salon.
  */
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
@@ -41,42 +41,13 @@ interface ShareToLoungeProps {
     dossierKind?: string;
 }
 
-/**
- * WHICH ROOM YOU POST IN.
- *
- * The rows are 6pt apart (loungeItem marginBottom) and carried the 15pt
- * default, so each row's target reached 15pt into the next and overlapped it by
- * 24. In an overlap the LATER row wins on both platforms — so aiming at the
- * lower part of a lounge selected the one BELOW it, and the film went to a room
- * you did not choose. Of everything this halo can do wrong, posting in the
- * wrong room is the one you cannot take back.
- *
- * 3 is half the real gap: the two targets meet and never overlap. Sideways the
- * rows are full width and have no neighbour, so they keep the full default.
- *
- * The row is ~40pt tall, still under the 48dp floor — geometry this list's
- * design pass must raise, which no halo can do.
- */
+/** Half the rows' 6pt gap: no tap reaches the next salon, and a wrong room cannot be undone. */
 const LOUNGE_SLOP = { top: 3, bottom: 3, left: 15, right: 15 } as const;
 
 /**
- * ── WHAT GOES IN THE CARD'S TITLE COLUMN ────────────────────────────────────
- * `lounge_messages.film_title` has a CHECK of 300 characters, and the Dispatch
- * shares every kind of filing down this path with `title || body` — so a TAKE,
- * which runs to 2,000, was sent whole. Past 300 the constraint refused the
- * insert; the modal had already closed on "fire and forget", and the member got
- * a raw Postgres error naming `lounge_messages_film_title_len` while their
- * filing never reached the room. It failed for exactly the longer, more
- * considered takes.
- *
- * Cut at a SENTENCE, not at a character: the card is showing somebody's writing
- * and `…and the thing about Ozu is that he ne` is not a title. `clipToSentence`
- * walks back to the last full stop and only falls back to a word boundary when
- * there is no sentence to end on.
- *
- * Applied to every share, not only the Dispatch's. A stack title is capped at
- * 100 and a film title is short, so this changes nothing for them — and it is
- * the last thing standing between any future caller and the same error.
+ * The card's title, within `lounge_messages.film_title`'s 300-character CHECK: a take
+ * runs to 2,000, and past 300 the insert is refused. Cut at a sentence, or a word when
+ * there is none, because it is somebody's writing. Every share comes through here.
  */
 export const cardTitle = (raw?: string | null): string | null => {
     const whole = (raw ?? '').trim();
@@ -166,12 +137,7 @@ function ShareSheet({
             // essay's headline; everything else rides the metadata jsonb.
             payload = {
                 film_title: cardTitle(dossierTitle),
-                // `kind` is new and OPTIONAL, so every message already in every
-                // room keeps rendering exactly as it did. The Dispatch shares
-                // five kinds of filing through this one path — the metadata key
-                // and the message type stay `dossier` because changing either
-                // would orphan the messages already sent — and the card reads
-                // this to label a take as a TAKE instead of as a DOSSIER.
+                // `kind` labels the card (a TAKE, not a DOSSIER); key and type stay `dossier`.
                 metadata: { dossier_id: dossierId, author_username: dossierAuthor, kind: dossierKind ?? null },
             };
         } else if (shareType === 'list_share') {
@@ -185,8 +151,6 @@ function ShareSheet({
         } else {
             payload = {
                 film_id: filmId ? Number(filmId) : null,
-                // The same clamp. A film title is short and this changes nothing
-                // for it — which is the point: one door into that column.
                 film_title: cardTitle(filmTitle),
                 film_poster: posterPath ?? null,
                 metadata
@@ -195,31 +159,15 @@ function ShareSheet({
 
         const content = message.trim() || '';
 
-        // Fire and forget — the sheet closes either way, so the member is never
-        // made to wait on the network for a share.
-        //
-        // ── WHY THERE IS NO `.then(ok => ...)` HERE ─────────────────────────
-        // `sendMessage` RESOLVES to `false` when it declines rather than
-        // rejecting, so this `.catch` only ever sees an unexpected crash. The
-        // obvious repair — toast when the result is false — is wrong: every
-        // path in sendMessage that returns false for a SHARE already raises its
-        // own toast (schema, network, a refused write), so that would say it
-        // twice.
-        //
-        // The one path that returned false in silence was the send throttle,
-        // and it was a single app-wide number: sharing an essay into one salon
-        // and then another inside 800ms was read as a double-tap and dropped
-        // without a word. That is fixed where it belongs, in the store, by
-        // keying the throttle per room. What remains silent here is a genuine
-        // double-tap into the SAME room, which is what the throttle is for and
-        // which should stay quiet.
+        // Sent without waiting. sendMessage says every refusal itself; its one silent `false`
+        // is a double-tap into the same room, which the per-room throttle keeps quiet.
         useLoungeStore.getState().sendMessage(
             selectedLounge,
             content,
             shareType,
             payload
         ).catch((e: unknown) => {
-            // Only a crash reaches here: it is reported, and the member hears the house, not the code.
+            // Only a crash reaches here: reported, and the member hears the house, not code.
             captureError(e, { where: 'shareToLounge.send', shareType });
             reelToast.error('Signal failed to transmit. Try again.');
         });
@@ -239,9 +187,7 @@ function ShareSheet({
         />
     ), [handleSelectLounge]);
 
-    // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
-    // platform — the message input and SHARE button rise with the keyboard
-    // on BOTH (Android's resize mode can't reach Modal windows).
+    // A Modal window never resizes for the keyboard on either platform: the sheet rises itself.
     const animatedSheetStyle = useModalKeyboardPadding();
 
     return (

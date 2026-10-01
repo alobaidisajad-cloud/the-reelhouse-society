@@ -43,30 +43,7 @@ interface ValidateOptions<T> {
 
 // ── Composable Reporter ──
 
-/**
- * Report validation results to Sentry. Composable — call AFTER your
- * existing parseRowsSafely or schema validation. Does not own parsing logic.
- *
- * No-op when invalidCount === 0.
- *
- * @param options - Telemetry configuration
- * @param options.context - Service.method identifier for Sentry grouping (e.g., 'FeedService.getCommunityFeed')
- * @param options.totalRows - Total number of rows before validation
- * @param options.invalidCount - Number of rows that failed validation
- * @param options.sampleErrors - Optional first N Zod issues for debugging (capped at 3 in report)
- * @returns void
- *
- * @example
- * ```typescript
- * const { valid, invalid } = parseRowsSafely(data, schema, 'FeedService.getCommunityFeed');
- * reportValidationTelemetry({
- *   context: 'FeedService.getCommunityFeed',
- *   totalRows: data.length,
- *   invalidCount: invalid.length,
- *   sampleErrors: invalid.flatMap(r => r.issues).slice(0, 3),
- * });
- * ```
- */
+/** Reports rows a caller's own parsing dropped, after it parsed them; nothing when none were. */
 export function reportValidationTelemetry(options: TelemetryOptions): void {
   const { context, totalRows, invalidCount, sampleErrors } = options;
   if (invalidCount === 0) return;
@@ -92,31 +69,9 @@ export function reportValidationTelemetry(options: TelemetryOptions): void {
 // ── Full Validate + Report ──
 
 /**
- * Full validate-and-report utility for services that DON'T already
- * have parseRowsSafely. Combines parsing + telemetry in one call.
- *
- * Strategy:
- * - Fast path: batch Zod parse (z.array(schema).safeParse) — single allocation
- * - Slow path: per-row salvage when batch fails — preserves valid rows
- *
- * @param options - Validation configuration
- * @param options.schema - Zod schema to validate each row against
- * @param options.context - Service.method identifier for Sentry grouping
- * @param options.data - Raw data array to validate
- * @param options.throwOnAllInvalid - If true, throws when ALL rows fail validation
- * @returns Object containing `valid` items array and `invalidCount` where `valid.length + invalidCount === data.length`
- * @throws {Error} When `throwOnAllInvalid: true` and all rows fail validation. Message includes context and row count.
- *
- * @example
- * ```typescript
- * const { valid, invalidCount } = validateWithTelemetry({
- *   schema: LogCommentSchema,
- *   context: 'LogService.getComments',
- *   data: rawRows,
- *   throwOnAllInvalid: true,
- * });
- * // valid.length + invalidCount === rawRows.length
- * ```
+ * Parses every row and reports the ones dropped: the whole array at once, or row by
+ * row when that fails, so one bad row never costs the good ones.
+ * `valid.length + invalidCount === data.length`; with `throwOnAllInvalid`, none valid throws.
  */
 export function validateWithTelemetry<T>(options: ValidateOptions<T>): { valid: T[]; invalidCount: number } {
   const { schema, context, data, throwOnAllInvalid = false } = options;

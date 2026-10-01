@@ -1,32 +1,12 @@
 /**
  * Clearance — the velvet rope, said once, everywhere.
  * ─────────────────────────────────────────────────────────────────────────────
- * The app had three different answers to "you do not hold this rank", and only
- * one of them was any good:
+ * The house's one answer to "you do not hold this rank": SHOW IT, LOCKED. The
+ * real controls are drawn inert, and one quiet rope at their foot names the rank
+ * that opens them — never a wall over the page, never a feature removed from it.
  *
- *   SHOW IT, LOCKED   the log's Autopsy and Editorial Desk — the real controls,
- *                     rendered inert under a single quiet refusal at the foot
- *                     of a panel the member CHOSE to open. You are not sold a
- *                     name; you are looking at the instrument.
- *
- *   THE WALL          a full-screen poster instead of the page. The Lounge and
- *                     the Dispatch archive. It describes a room you cannot see
- *                     into, and the archive's version offered no way in at all.
- *
- *   THE VANISH        the feature is deleted from the interface. The Lounge's
- *                     nav icon, the profile Backdrop. A member cannot want what
- *                     they have never seen.
- *
- * This is the first one, lifted out of the log so the other two can be
- * replaced by it. Nothing here is new behaviour — it is the same wording, the
- * same 0.4, the same brass-for-Archivist and ruby-for-Auteur — moved to where
- * every screen can reach it.
- *
- * ── WHY THE COPY LIVES IN THE REGISTRY AND NOT HERE ─────────────────────────
- * `gatedFeatures.ts` already holds the promise text the Society page sells
- * from. A gate that wrote its own sentence would be a second copy of a claim,
- * and the copy is the one that goes stale — which is exactly how we ended up
- * charging for a Gilded Frame that did not exist.
+ * The copy lives in `gatedFeatures.ts`, the registry the Society page sells from:
+ * a gate with its own sentence would be a second copy of a promise, and go stale.
  */
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -42,15 +22,7 @@ import type { Rank } from '@/src/constants/gatedFeatures';
 const inkFor = (rank: Rank) => (rank === 'auteur' ? colors.crimsonInk : colors.sepia);
 const nameFor = (rank: Rank) => (rank === 'auteur' ? 'THE AUTEUR' : 'THE ARCHIVIST');
 
-/**
- * Whether this member has merely never held the rank, or held it and stopped.
- *
- * They must not be told the same thing. A stranger is being introduced to a
- * room; a lapsed member is being told their dues ran out, which is a different
- * sentence and a kinder one. `entitlement_source` is how we know: it is only
- * ever set by `grant_entitlement`, so a member carrying one who no longer has
- * the weight once paid.
- */
+/** Never held the rank, or held it and stopped (`entitlement_source` set): told differently. */
 export type Standing = 'stranger' | 'lapsed';
 
 export interface ClearanceProps {
@@ -58,20 +30,7 @@ export interface ClearanceProps {
   standing?: Standing;
   /** One line, in the house's voice, about what the rank opens. Optional. */
   line?: string;
-  /**
-   * WHAT THE ROPE IS STANDING IN FRONT OF — required, and the reason is
-   * accessibility rather than decoration.
-   *
-   * `Locked` hides its children from the screen reader, which is right: nobody
-   * should be walked through six controls that cannot be used. But it means a
-   * member who cannot see the dimmed instrument has no idea anything is there
-   * — which is THE VANISH, recreated for exactly the people least able to work
-   * around it.
-   *
-   * So the rope carries the name. Sighted members see the instrument and read
-   * the rope; everyone else hears both from the rope alone. This was found by
-   * this component's own test failing to locate locked text by its label.
-   */
+  /** What the rope stands before: `Locked` hides it from screen readers, so the rope says it. */
   names: string;
   onPress: () => void;
 }
@@ -102,8 +61,7 @@ export const ClearanceGate = React.memo(function ClearanceGate({
       accessibilityRole="button"
       accessibilityLabel={spoken}
     >
-      {/* The text is furniture inside one target — a member taps the rope, not
-          a word in it. Same reason the log's version does this. */}
+      {/* The words are furniture inside one target: a member taps the rope, not a word. */}
       <View pointerEvents="none">
         <Text style={s.heading} {...scaledTextProps}>{heading}</Text>
         {line ? <Text style={s.line} {...scaledTextProps}>{line}</Text> : null}
@@ -142,8 +100,6 @@ export const Locked = React.memo(function Locked({
 });
 
 const s = StyleSheet.create({
-  // Lifted from LogModalStyles so the rope is the same object everywhere it
-  // appears, rather than three screens each drawing something close to it.
   gate: { alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingTop: 16, paddingBottom: 6 },
   heading: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.fog,
@@ -157,6 +113,6 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, textAlign: 'center',
     includeFontPadding: false,
   },
-  /** The same 0.4 the log already used. Not a new number. */
+  /** The instrument, shown and dimmed. */
   locked: { opacity: 0.4 },
 });

@@ -161,7 +161,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tabs/__tests__/zz-reel.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/tabs/__tests__/zz-rooms.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/tabs/__tests__/zz-settings.gen.test.tsx | 2026-09-29 | true as written |
-| mockups/tabs/flashListMock.tsx | 2026-09-29 | history reduced to the rule |
+| mockups/tabs/flashListMock.tsx | 2026-10-01 | rows handed extraData, as FlashList does |
 | mockups/tools/advances.cjs | 2026-09-29 | true as written |
 | mockups/tools/drawn.cjs | 2026-09-29 | 1 finding |
 | mockups/tools/harness.cjs | 2026-09-28 | 5 findings; the header's middle sentence was garbled by an insertion; open() said 1.35 was the most a word grows (uncapped grows to 3.1) |
@@ -201,13 +201,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/overlayElevation.test.ts | — |  |
 | src/components/__tests__/PressableScale.hitSlop.test.tsx | — |  |
 | src/components/__tests__/SectionErrorBoundary.test.tsx | — |  |
-| src/components/__tests__/SpoilerVeil.test.tsx | — |  |
+| src/components/__tests__/SpoilerVeil.test.tsx | 2026-10-01 | records every frame |
 | src/components/__tests__/stackedRowHitSlop.test.ts | 2026-09-29 | histories → rules; FALSE: '15pt on EVERY side' (PressableScale drops it on an axis ≥48pt); iOS source cited is Fabric's RCTViewComponentView; BUG: mapSpans treated a backtick string as code ('\'' twice) — fixed |
 | src/components/__tests__/textContrast.test.ts | — |  |
 | src/components/__tests__/theCountHangsBesideItsMark.test.tsx | — |  |
 | src/components/__tests__/theDoorCanBeReadAndPressed.test.tsx | — |  |
 | src/components/__tests__/theRankBadgeIsReadable.test.ts | — |  |
-| src/components/__tests__/theShareSheetSaysWhenTheSalonsAreAway.test.tsx | — |  |
+| src/components/__tests__/theShareSheetSaysWhenTheSalonsAreAway.test.tsx | 2026-10-01 | salons, selection, closed cost, crash copy |
 | src/components/__tests__/theToastHasOneHome.test.tsx | — |  |
 | src/components/__tests__/theToastIsDrawnOnTop.test.ts | — |  |
 | src/components/atmosphere/__tests__/useSharedImage.test.tsx | — |  |
@@ -223,7 +223,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/Buster.tsx | — |  |
 | src/components/CinematicOverlays.tsx | — |  |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
-| src/components/clearance/Clearance.tsx | — |  |
+| src/components/clearance/Clearance.tsx | 2026-10-01 | show it, locked; a second copy lives in the log (carried forward) |
 | src/components/ContentSkeleton.tsx | — |  |
 | src/components/ControlledInput.tsx | — |  |
 | src/components/critique/__tests__/aCritiqueIsWithdrawnOrReported.test.tsx | 2026-10-01 | new |
@@ -548,8 +548,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/RouteErrorBoundary.tsx | — |  |
 | src/components/search/SearchResultRow.tsx | — |  |
 | src/components/search/SearchUnreachable.tsx | — |  |
-| src/components/SectionErrorBoundary.tsx | — |  |
-| src/components/ShareToLoungeModal.tsx | — |  |
+| src/components/SectionErrorBoundary.tsx | 2026-10-01 | retries; comments made true |
+| src/components/ShareToLoungeModal.tsx | 2026-10-01 | only salons it may speak in; subscribes only when open |
 | src/components/SkeletonPulse.tsx | — |  |
 | src/components/SkeletonShimmer.tsx | — |  |
 | src/components/society/__tests__/theSocietySellsWhatItSays.test.tsx | — |  |
@@ -563,7 +563,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/society/SmallPrint.tsx | 2026-10-01 | its link shared with the sign-in footer |
 | src/components/society/SocietyPoster.tsx | — |  |
 | src/components/society/societyPricing.ts | — |  |
-| src/components/SpoilerVeil.tsx | — |  |
+| src/components/SpoilerVeil.tsx | 2026-10-01 | veiled from the first frame |
 | src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | — |  |
 | src/components/text/AnimatedText.tsx | — |  |
 | src/components/text/index.tsx | — |  |
@@ -639,7 +639,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useAuthThrottle.ts | 2026-10-01 | a lifted lock keeps the rule |
 | src/hooks/useBanCheck.ts | — |  |
 | src/hooks/useCatalogueSearch.ts | — |  |
-| src/hooks/useClearance.ts | — |  |
+| src/hooks/useClearance.ts | 2026-10-01 | one answer for every gate |
 | src/hooks/useDeviceThrottling.ts | — |  |
 | src/hooks/useDispatchArchive.ts | — |  |
 | src/hooks/useDoor.ts | — |  |
@@ -653,7 +653,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useMemberRoom.ts | — |  |
 | src/hooks/useMembershipPricing.ts | — |  |
 | src/hooks/useModalKeyboardPadding.ts | — |  |
-| src/hooks/useNotableMembers.ts | — |  |
+| src/hooks/useNotableMembers.ts | 2026-10-01 | true as written |
 | src/hooks/useOfflineAware.ts | — |  |
 | src/hooks/useProfileController.ts | — |  |
 | src/hooks/useProfileData.ts | — |  |
@@ -696,7 +696,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/providers/FilmDetailProvider.tsx | — |  |
 | src/schemas/__tests__/aFeedRowWithANullIsStillDrawn.test.ts | 2026-10-01 | written with the null-status fix |
 | src/schemas/__tests__/schemas.test.ts | — |  |
-| src/schemas/feed.schema.ts | 2026-10-01 | comments cut to the why |
+| src/schemas/feed.schema.ts | 2026-10-01 | film id strict; a null status is watched |
 | src/schemas/film.schema.ts | — |  |
 | src/schemas/profile.schema.ts | — |  |
 | src/schemas/settings.ts | — |  |
@@ -816,7 +816,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/resetAllStores.ts | — |  |
 | src/stores/settings.ts | — |  |
 | src/stores/socialStore.ts | — |  |
-| src/stores/tellMarks.ts | — |  |
+| src/stores/tellMarks.ts | 2026-10-01 | true as written |
 | src/stores/vaultStore.ts | — |  |
 | src/test-support/swallowedTypeError.ts | — |  |
 | src/theme/__tests__/aPhotographIsNotLit.test.ts | — |  |
@@ -935,7 +935,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/e2eTrace.ts | 2026-09-29 | new |
 | src/utils/endorsementGroupKey.ts | — |  |
 | src/utils/enter.ts | — |  |
-| src/utils/filterContentByBlocks.ts | — |  |
+| src/utils/filterContentByBlocks.ts | 2026-10-01 | true as written |
 | src/utils/gateTelemetry.ts | — |  |
 | src/utils/groupNotifications.ts | — |  |
 | src/utils/handleGuard.ts | — |  |
@@ -971,13 +971,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
 | src/utils/text.ts | — |  |
 | src/utils/tier.ts | — |  |
-| src/utils/tierDoor.ts | — |  |
-| src/utils/tierRefusal.ts | — |  |
+| src/utils/tierDoor.ts | 2026-10-01 | the server sentence as a door |
+| src/utils/tierRefusal.ts | 2026-10-01 | by the sentence, not the code |
 | src/utils/timeAgo.ts | — |  |
 | src/utils/toastBus.ts | — |  |
 | src/utils/typedRouter.ts | — |  |
 | src/utils/validateUsername.ts | — |  |
-| src/utils/validateWithTelemetry.ts | — |  |
+| src/utils/validateWithTelemetry.ts | 2026-10-01 | docs cut to what the types do not say |
 | src/utils/withAbortSignal.ts | — |  |
 | src/utils/withRetry.ts | — |  |
 | src/utils/withTimeout.ts | — |  |

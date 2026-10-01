@@ -1,5 +1,5 @@
 /**
- * tierRefusal — the server already writes the sentence; stop throwing it away.
+ * tierRefusal — the server's own sentence, recognised when it is about a rank.
  * ─────────────────────────────────────────────────────────────────────────────
  * Every tier gate in the database raises SQLSTATE 42501 with a sentence written
  * for a person to read:
@@ -9,21 +9,11 @@
  *     ERROR: The Physical Archive is an Archivist feature
  *     ERROR: The Dispatch is an Auteur feature
  *
- * `isForbiddenError` has always classified 42501 correctly. Nothing has ever
- * read the message. So a member who hits a server-side refusal — a lapsed
- * Archivist trying to post, most likely — gets whatever generic copy the
- * calling screen happens to have for "that did not save", and no way forward.
- *
- * ── WHY THIS IS NOT JUST `isForbiddenError` ─────────────────────────────────
- * Because 42501 is ALSO what a privacy refusal looks like. A member whose
- * settings say only mutuals may certify their filings refuses a stranger with
- * the same code. Showing that stranger "✦ ASCEND THE RANKS" would be a lie:
- * no rank would help, the answer is no from a person rather than from a price.
- *
- * So a tier refusal is recognised by the SENTENCE, not by the code, and
- * anything else keeps its generic handling. `gates:check` asserts that every
- * message a live trigger can raise appears in the table below — so a new gate
- * with new wording cannot silently fall through to "something went wrong".
+ * Recognised by the SENTENCE, not the code alone: 42501 is also a privacy
+ * refusal (only mutuals may certify), where no rank would help and "✦ ASCEND
+ * THE RANKS" would be a lie. Anything else keeps its caller's own handling.
+ * `gates:check` asserts every sentence a live trigger can raise is in the table
+ * below, so a new gate's wording cannot fall through to "something went wrong".
  */
 import { isForbiddenError } from '@/src/utils/networkError';
 import type { Rank } from '@/src/constants/gatedFeatures';
@@ -73,7 +63,6 @@ export function asTierRefusal(e: unknown): TierRefusal | null {
   for (const s of SENTENCES) {
     if (s.match.test(said)) return { featureId: s.featureId, rank: s.rank, said };
   }
-  // 42501, but not about a rank — a privacy rule, or a row that is not theirs.
-  // No rank would fix it, so it must not be dressed as something a price can.
+  // 42501 about something no rank can fix: a privacy rule, or a row not theirs.
   return null;
 }

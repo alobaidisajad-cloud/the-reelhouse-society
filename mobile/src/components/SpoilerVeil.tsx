@@ -6,18 +6,9 @@ import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 
 /**
- * SpoilerVeil — reader-side spoiler gate (COMP-SPOILER-1).
- * ────────────────────────────────────────────────────────
- * `is_spoiler` is collected at log time and persisted, but historically no
- * surface consumed it, so spoiler-flagged reviews rendered in the clear. This
- * wraps review content and, when flagged, replaces it with a tap-to-reveal
- * veil instead of showing the text.
- *
- * - `bypass` skips the veil entirely (e.g. the author viewing their own log —
- *   no point hiding a spoiler from the person who wrote it).
- * - `revealKey` resets the revealed state when it changes. This matters on the
- *   recycled FlashList feed: without it a revealed veil could leak into the
- *   different log that reuses the same component instance after scrolling.
+ * SpoilerVeil — a review marked as a spoiler, behind a tap to reveal.
+ * `bypass` is for its author; `revealKey` names the item, so a revealed veil
+ * never carries over to another log that reuses the row.
  */
 interface SpoilerVeilProps {
   isSpoiler?: boolean | null;
@@ -33,8 +24,7 @@ interface SpoilerVeilProps {
 const NONE = Symbol('none');
 
 export default function SpoilerVeil({ isSpoiler, bypass, revealKey, compact, children }: SpoilerVeilProps) {
-  // Which item was revealed, not whether: a recycled row holding another log is veiled
-  // from its first frame. A reset in an effect came a frame late, and drew the spoiler.
+  // WHICH item was revealed: another log in this row is veiled from its very first frame.
   const [revealedFor, setRevealedFor] = React.useState<string | number | undefined | typeof NONE>(NONE);
 
   if (!isSpoiler || bypass || revealedFor === revealKey) {

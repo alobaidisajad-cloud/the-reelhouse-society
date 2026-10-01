@@ -1,13 +1,8 @@
 /**
- * SectionErrorBoundary — Tab-Level Crash Shield with Retry
+ * SectionErrorBoundary — a section that crashed, with two retries.
  * ────────────────────────────────────────────────────────
- * Upgraded from static error display to recoverable
- * boundary with 2 retry attempts. When a tab section crashes, users
- * can tap "RETRY" to clear stale query cache and re-mount the component
- * tree — without losing their position in other tabs.
- *
- * GOLDEN RULE: Zero visual changes to working screens. This component
- * only renders when a crash actually occurs.
+ * RETRY clears the inactive query cache and mounts the section again, so the
+ * member keeps their place in every other tab. It draws nothing until a crash.
  */
 import React, { Component, ReactNode } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
@@ -107,9 +102,7 @@ export class SectionErrorBoundary extends Component<Props, State> {
 
 const styles = StyleSheet.create({
   container: {
-    // Removed flex:1 — SectionErrorBoundary wraps individual
-    // sections, not full screens. flex:1 consumed all parent height and pushed
-    // sibling sections off-screen.
+    // No flex: it wraps a section, and growing would push its siblings off screen.
     backgroundColor: colors.ink,
     justifyContent: 'center',
     alignItems: 'center',

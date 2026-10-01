@@ -1,15 +1,9 @@
 /**
  * useClearance — may I, and if not, what do I say and where do I send them?
  * ─────────────────────────────────────────────────────────────────────────────
- * Seventeen gates across twelve files each answered this separately, and the
- * answers disagreed: two threw up a full-screen wall, two deleted the feature
- * from the interface, one showed a toast and stopped, five did it properly, and
- * the rest silently returned empty arrays.
- *
- * This is the one answer. It reads `gatedFeatures.ts`, which is the same file
- * the Society page sells from and the same file `gates:check` verifies against
- * production — so a gate cannot drift from the promise, and the promise cannot
- * drift from the trigger.
+ * The one answer for every rank gate. It reads `gatedFeatures.ts`, the file the
+ * Society page sells from and `gates:check` verifies against production, so a
+ * gate cannot drift from the promise, nor the promise from the trigger.
  *
  * ── THE MODAL-OVER-MODAL LAW ────────────────────────────────────────────────
  * `(modals)/membership` is presented as a modal, and so are the desks and the
@@ -39,10 +33,7 @@ export interface Clearance {
   rank: Rank;
   /** Never held it, or held it and stopped. The rope says different things. */
   standing: Standing;
-  /**
-   * Opens the Society page, told WHY the member came and WHERE to put them
-   * back. Dismisses the current modal first — see the law above.
-   */
+  /** Opens the Society page, told why they came and where to return them (the law above). */
   open: () => void;
 }
 
@@ -53,16 +44,7 @@ export interface Clearance {
  *        to where they were".
  */
 export function useClearance(featureId: string, returnTo?: string): Clearance {
-  /**
-   * Two PRIMITIVES, never the user object.
-   *
-   * This hook now runs inside every feed card (the share-to-a-salon rope), and
-   * selecting `s.user` re-rendered every one of them whenever anything on the
-   * member changed — an avatar upload, a bio edit, a count refresh. A rope
-   * only needs two facts, and a number and a boolean compare equal when
-   * nothing that matters moved. -1 means signed out: no rank is weighed below
-   * zero, so it can never satisfy a gate.
-   */
+  // Two primitives, never the user: this runs in every feed card. -1, signed out, opens nothing.
   const weight = useAuthStore((s) => (s.user ? getTierWeight(resolveTier(s.user)) : -1));
   const onceHeldARank = useAuthStore(
     (s) => !!(s.user as { entitlement_source?: string | null } | null)?.entitlement_source,
@@ -85,24 +67,14 @@ export function useClearance(featureId: string, returnTo?: string): Clearance {
 
   const held = weight >= RANK_WEIGHT[rank];
 
-  /**
-   * `entitlement_source` is written only by `grant_entitlement`. A member
-   * carrying one who no longer has the weight for it once paid and stopped —
-   * which is the whole difference between "come in" and "come back".
-   */
+  // Only `grant_entitlement` writes `entitlement_source`: one without the weight is "come back".
   const standing: Standing = onceHeldARank ? 'lapsed' : 'stranger';
 
   const open = useCallback(() => {
     TactileEngine.selection();
-    /**
-     * Every rope in the app reports here, because they all come through this
-     * one function — which is the reason it was worth collapsing seventeen
-     * gates into one hook before trying to measure anything.
-     */
+    // Every rope in the app reports here, the one way through.
     recordGateEvent('gate_tapped', { featureId, rank, standing });
-    // Dismiss only if this screen was PRESENTED. This used to dismiss whenever
-    // there was history behind the screen, which closed a salon behind the
-    // Society page — see openSociety.ts.
+    // openSociety dismisses only a PRESENTED screen: a pushed one (a salon) stays behind the page.
     openSociety(societyHref(featureId, rank, returnTo));
   }, [featureId, rank, returnTo, standing]);
 

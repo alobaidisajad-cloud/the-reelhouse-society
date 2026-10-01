@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** A TMDB film id, as a number or its digits: anything else drops the row, never a link to /film/NaN. */
+/** A TMDB film id, as a number or its digits; anything else drops the row (no /film/NaN). */
 const filmId = z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform(Number);
 
 /** `logs.status` may be null; null is what the column's default fills in. */
