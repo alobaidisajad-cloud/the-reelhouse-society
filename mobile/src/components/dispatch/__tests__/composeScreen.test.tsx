@@ -273,6 +273,13 @@ describe('the writing room', () => {
     expect(getByLabelText('File the essay').props.accessibilityState.disabled).toBe(false);
   });
 
+  it('is not lit by spaces, which the filing would refuse in silence', async () => {
+    const { getByLabelText } = await open();
+    await type(getByLabelText("Essay headline"), '   ');
+    await type(getByLabelText("Essay content body"), 'The opening line.');
+    expect(getByLabelText(/Not ready yet/).props.accessibilityState.disabled).toBe(true);
+  });
+
   it('refuses an over-length essay before touching anything', async () => {
     const { getByLabelText } = await open();
     await type(getByLabelText("Essay headline"), 'Too Long');

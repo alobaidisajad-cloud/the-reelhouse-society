@@ -529,13 +529,16 @@ function ComposeDossierScreen() {
         if (forcedSelection) setForcedSelection(null);
     };
 
+    // Spaces are not a title or a body: the button judges as the filing does.
+    const ready = !!title.trim() && !!content.trim();
+
     const handlePublish = async () => {
         if (!canWrite) {
             // A door, not a toast: the ranks, explained, and autosave keeps the words meanwhile.
             essay.open();
             return;
         }
-        if (!title.trim() || !content.trim() || isPublishing) return;
+        if (!ready || isPublishing) return;
 
         // Refuse BEFORE anything is written or deleted. This return happens
         // outside the try below, so the draft is never touched — the failure
@@ -879,16 +882,16 @@ function ComposeDossierScreen() {
                             ) : null}
                         </View>
                         <PressableScale
-                            style={[styles.publishBtn, (!title || !content || isPublishing) && styles.publishBtnDisabled]}
-                            disabled={!title || !content || isPublishing}
+                            style={[styles.publishBtn, (!ready || isPublishing) && styles.publishBtnDisabled]}
+                            disabled={!ready || isPublishing}
                             onPress={handlePublish}
                             haptic="medium"
                             accessibilityRole="button"
                             // Disabled is announced, or a press answers with nothing.
-                            accessibilityState={{ disabled: !title || !content || isPublishing, busy: isPublishing }}
+                            accessibilityState={{ disabled: !ready || isPublishing, busy: isPublishing }}
                             accessibilityLabel={
                                 isPublishing ? 'Filing the essay'
-                                    : !title || !content ? 'File the essay. Not ready yet — it needs a title and a body'
+                                    : !ready ? 'File the essay. Not ready yet — it needs a title and a body'
                                         : edit ? 'Re-file the essay' : 'File the essay'
                             }
                         >
