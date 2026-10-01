@@ -68,10 +68,10 @@ export default function LobbyScreen() {
   // screen and 37pt on a 375pt one, where a bare 1.2x cap alone would still
   // have wrapped.
   const RYE_REELHOUSE_EM = 6.507;   // measured from the font file, not estimated
-  const TITLE_LETTER_SPACING = 2;   // welcomeTitle.letterSpacing, 9 glyphs
+  const TITLE_SPARE = 18;           // width the title leaves free, beyond the page's margins
   const welcomeTitleSize = Math.min(
     38,
-    Math.floor((windowWidth - 64 - TITLE_LETTER_SPACING * 9) / (RYE_REELHOUSE_EM * 1.2))
+    Math.floor((windowWidth - 64 - TITLE_SPARE) / (RYE_REELHOUSE_EM * 1.2))
   );
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const fetchLogs = useFilmStore(s => s.fetchLogs);
