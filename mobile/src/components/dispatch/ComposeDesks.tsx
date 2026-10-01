@@ -42,6 +42,8 @@ import reelToast from '@/src/utils/reelToast';
 import { showTierDoor } from '@/src/utils/tierDoor';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
+import { useKeyboardLift } from '@/src/hooks/useKeyboardLift';
+import Animated from 'react-native-reanimated';
 import { nav } from '@/src/utils/typedRouter';
 
 /** Set when the desk OPENS; a ticking clock would re-render the desk mid-typing. */
@@ -381,6 +383,8 @@ export function FilmPicker({
   useEffect(() => {
     if (!visible) setQuery('');
   }, [visible]);
+  // The field is focused on open and sits at the foot of the sheet.
+  const lift = useKeyboardLift(bottomInset);
 
   if (!visible) return null;
 
@@ -395,7 +399,7 @@ export function FilmPicker({
       >
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(6,5,4,0.72)' }]} />
       </PressableScale>
-      <View style={{ paddingBottom: bottomInset }}>
+      <Animated.View style={lift}>
         <FilmFinder
           query={query}
           onQuery={setQuery}
@@ -408,7 +412,7 @@ export function FilmPicker({
           answer={answer}
           onRetry={search.retry}
         />
-      </View>
+      </Animated.View>
     </View>
   );
 }

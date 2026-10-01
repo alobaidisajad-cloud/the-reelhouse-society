@@ -39,6 +39,8 @@ import { decorativeTextProps, scaledTextProps, displayTextProps, deckLabelProps 
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { EDGE_LIT } from '@/src/theme/light';
 import { roman } from './paper/paperText';
+import { useKeyboardLift } from '@/src/hooks/useKeyboardLift';
+import Animated from 'react-native-reanimated';
 
 export interface SeriesChoice { id: string; title: string; part: number }
 
@@ -202,6 +204,8 @@ function SeriesSheet({ chosen, onClose, onSet, onClear, bottomInset }: Omit<Pick
   }, [naming, newTitle, pick, onSet]);
 
   const ready = naming ? newTitle.trim().length > 0 : !!pick;
+  // The new series' name is typed at the foot of the sheet, above SET THE SERIES.
+  const lift = useKeyboardLift(bottomInset + 22, 22);
 
   return (
     <View style={[StyleSheet.absoluteFillObject, { justifyContent: 'flex-end' }]}>
@@ -213,7 +217,7 @@ function SeriesSheet({ chosen, onClose, onSet, onClear, bottomInset }: Omit<Pick
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(6,5,4,0.72)' }]} />
       </PressableScale>
 
-      <View style={[x.sheet, { paddingBottom: bottomInset + 22 }]}>
+      <Animated.View style={[x.sheet, lift]}>
         <View style={x.head}>
           <Text style={x.headText} {...decorativeTextProps}>PART OF A SERIES</Text>
           {chosen ? (
@@ -294,7 +298,7 @@ function SeriesSheet({ chosen, onClose, onSet, onClear, bottomInset }: Omit<Pick
         >
           <Text style={[x.setText, !ready && x.setTextOff]} {...deckLabelProps}>SET THE SERIES</Text>
         </PressableScale>
-      </View>
+      </Animated.View>
     </View>
   );
 }

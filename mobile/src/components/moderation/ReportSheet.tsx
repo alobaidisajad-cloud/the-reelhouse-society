@@ -281,18 +281,9 @@ function ReportSheet({
             >
               {/* Header */}
               <Text style={styles.header}>REPORT TO THE TRIBUNAL</Text>
-              {/* ── A PROMISE THE HOUSE CANNOT KEEP IS NOT REASSURANCE ──────
-                  This read "The Tribunal will review within 24 hours." Nothing
-                  in this app makes that true: there is no timer, no queue with
-                  a deadline, no job that escalates an old report. The one "24
-                  hours" in the whole schema is a daily WRITE limit.
-
-                  What IS true is how the queue is ordered — `get_priority_
-                  reports` and the docket both rank by `report_count DESC` — so
-                  the sheet says that instead. And it says it in the words of
-                  clause V of the house rules, because a report form whose
-                  vocabulary differs from the rules it enforces teaches members
-                  the wrong rules. */}
+              {/* No promised review time: nothing in the house keeps one. What
+                  is true is the order (`get_priority_reports` ranks by members
+                  reporting), said in the words of clause V of the house rules. */}
               <Text style={styles.subtext}>
                 Your report is confidential. The Tribunal reads what is reported,
                 most-reported first — a report is not a verdict, and neither is
@@ -396,8 +387,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    // height is applied inline from useWindowDimensions — a static stylesheet is
-    // evaluated once, which is the whole defect this replaced.
+    // height is applied inline from useWindowDimensions: a stylesheet is
+    // evaluated once.
     backgroundColor: colors.ink,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,

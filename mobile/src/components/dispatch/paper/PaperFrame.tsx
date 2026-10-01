@@ -60,16 +60,9 @@ export const PaperChrome = memo(function PaperChrome({
 }) {
   return (
     <View style={p.chrome}>
-      {/* ── THE INDEX IS CAPPED TOO ─────────────────────────────────────────
-          `PAPER_MAX` capped the DOCUMENT and nothing else. Rendered at 834pt
-          for the first time — the tablet width this app ships support for and
-          that nobody had ever drawn — the paper sat centred while the index sat
-          hard against the far-left edge, 250 points away from the page it
-          indexes. Navigation that does not line up with the thing it navigates
-          is not a small thing on a large screen; it is the first thing you see.
-
-          The rule below the row still runs the full width, because that rule is
-          the edge of the chrome, not of the paper. */}
+      {/* The index is capped to `PAPER_MAX` with the document, so on a tablet
+          it lines up with the page it indexes. The rule below the row runs the
+          full width: it is the chrome's edge, not the paper's. */}
       <View style={p.chromeWrap}>
       <View style={p.chromeIndex}>
         {/* The clip has to be SOFT. With `overflow: hidden` alone the last
@@ -82,20 +75,9 @@ export const PaperChrome = memo(function PaperChrome({
           pointerEvents="none"
           style={p.chromeFade}
         />
-        {/* ── AND IT ACTUALLY SCROLLS ────────────────────────────────────────
-            The note at the top of this file has always said "the index
-            scrolls", the fade above says "there is more this way", and
-            `chromeIndex` carries `overflow: hidden` to clip it — and the row
-            was a plain View. Nothing scrolled.
-
-            At normal type all six departments fit, so it never showed. At 1.35
-            the row overflows by 5.2pt, measured across all 66 screens, and the
-            last department is cut against the tools: a member who turns type up
-            loses a whole department and has no way to reach it — a dead end that
-            only appears for the people most likely to hit it.
-
-            `alwaysBounceHorizontal` off, so a row that DOES fit does not rubber
-            band and imply there is something past the end. */}
+        {/* It scrolls: at larger type the departments overflow the row, and the
+            last one would be cut against the tools. No bounce, so a row that
+            fits does not imply more past its end. */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -105,16 +87,9 @@ export const PaperChrome = memo(function PaperChrome({
         >
           {SECTIONS.map((s, i) => (
             <View key={s} style={p.chromeRow}>
-              {/* UNSPOKEN, because this is a rule made out of a character. The
-                  index is a TABLIST: without it a member using VoiceOver hears
-                  "ALL, middle dot, TAKES, middle dot, SEEKING, middle dot…" —
-                  five interruptions between six departments, in the one control
-                  that decides what the whole page is.
-
-                  `decorativeTextProps` alone does NOT do this. It sets
-                  `allowFontScaling: false` and nothing else; its name promises
-                  the ear and delivers only the eye, which is exactly why this
-                  mark was left spoken. */}
+              {/* UNSPOKEN: a rule made of a character, which a screen reader
+                  would say between every department ("middle dot").
+                  `decorativeTextProps` only stops the scaling. */}
               {i > 0 && <Text style={p.indexDot} {...UNSPOKEN} {...decorativeTextProps}>·</Text>}
               {/* Each department wears its own colour, the way a Darkroom mood
                   does — dimmed until you choose it, full strength and underlined
@@ -173,11 +148,6 @@ export const PaperChrome = memo(function PaperChrome({
 });
 
 /**
- * The full masthead. It is ordinary scroll content and is never animated — the
- * fold is the overlay arriving over it, which costs one opacity interpolation
- * on the animation thread instead of a layout pass per frame.
- */
-/**
  * ── THE FOLIO ────────────────────────────────────────────────────────────────
  * A running head. Every printed page carries the paper's name and its number;
  * ours carried nothing, so the moment the masthead scrolled away there was
@@ -195,18 +165,6 @@ export const RunningHead = memo(function RunningHead({
   dayLabel: string;
   sort: 'LATEST' | 'CERTIFIED';
   saved?: boolean;
-  /**
-   * ── NO THIRD TOOL LIVES HERE ────────────────────────────────────────────
-   * The archive's magnifier was put in this row and MEASURED out of it. This
-   * head has no spare width: with the two tools it already has, the issue line
-   * needs 207 points and is given 206.5 — it fits by half a point, and only
-   * because `LATEST` is six characters. Under `CERTIFIED` it is tighter still.
-   *
-   * A third mark takes 25 of those points, and the line truncates: `WEDNESDAY,
-   * AUGUST 28` becomes `WEDNESDAY, AUGUST 2` at the accessibility size, which
-   * is not a shortened date but a WRONG one. The archive went to the index row
-   * instead, where the row scrolls and nothing has to give way.
-   */
   /** Replaces the issue line when the paper is filtered to something that is
    *  not the edition — your saved filings. The bookmark beside it lights, and
    *  that lit bookmark is also the way back out: one control, two states, no
@@ -247,6 +205,7 @@ export const RunningHead = memo(function RunningHead({
   );
 });
 
+/** The full masthead: ordinary scroll content, never animated. */
 export const PaperMasthead = memo(function PaperMasthead({
   date, dateLabel,
 }: { date: Date; dateLabel: string }) {
@@ -266,10 +225,8 @@ export const PaperMasthead = memo(function PaperMasthead({
         THE DISPATCH
       </Text>
       <View style={p.mastRuleBottom} />
-      {/* The old masthead printed a volume counted in WEEKS from an arbitrary
-          epoch, directly beside a line claiming the house was founded in 1924 —
-          two numbers on one row disagreeing with each other. Now the volume is
-          the house's year and the number is the day, both from the date. */}
+      {/* The volume is the house's year since 1924 and the number the day,
+          both from the date, so they agree with EST. 1924 beside them. */}
       <View style={p.mastMetaRow}>
         <Text style={p.mastMeta} {...scaledTextProps}>{folioOf(date)}</Text>
         <View style={p.pip} />
@@ -292,9 +249,8 @@ export const Ornament = memo(function Ornament() {
   );
 });
 
-/** The divider that gives an endless feed a shape. Dates come from the app's own
- *  helpers — Hermes has no Intl here, and the current masthead may already be
- *  proving that on a device. */
+/** The divider that gives an endless feed a shape. Its label comes from the
+ *  app's own date helpers: Hermes has no Intl. */
 export const DayDivider = memo(function DayDivider({ label }: { label: string }) {
   return (
     <View style={p.dayRow}>
@@ -306,44 +262,9 @@ export const DayDivider = memo(function DayDivider({ label }: { label: string })
 });
 
 /**
- * ── THE APP'S OWN SECTION HEAD ───────────────────────────────────────────────
- * I had invented a centred Rye heading. The app already HAS a shared one, used
- * across the film page: a slim brass index-bar with its own glow, the label in
- * Special Elite, and a hairline rule fading to nothing on the right.
- *
- * Using it rather than a second design is the whole difference between this
- * page looking like the app and looking like a page beside it — and it is the
- * one component in the app whose comment says "one source of truth so the
- * sections can never drift". Drifting was exactly what I was about to do.
- */
-/* ── NO SECTION HEAD LIVES HERE ───────────────────────────────────────────
- * There was one: a hand copy of the app's `FilmSectionHeader` — brass index
- * bar, label, hairline fading right — with a tint the shared component does
- * not have. It was never mounted on any screen, and its own comment said the
- * way to ship it is an optional `tint` prop on the real component so the film
- * page and this page can never drift.
- *
- * Keeping the copy WAS the drift. The instruction survives; the duplicate
- * does not, because an unmounted component rots and a note does not.
- */
-
-/** A brass face: the shared ramp with its crown, never a flat gold rectangle. */
-/**
- * `onPress` is REQUIRED, and that is the whole point.
- *
- * This component exists only to be pressed. With an optional handler it was
- * mounted without one — `PaperEmpty` rendered `<BrassButton label={action} />`
- * on the day-one screen and on every empty department, so the one control a new
- * member is offered in their first minute did nothing at all.
- *
- * A test could catch that. A required prop makes it impossible, which is better:
- * the compiler is checked on every build and by every editor, and it names the
- * line rather than a file.
- *
- * NOT exported. `PaperEmpty` is its only caller and it lives in this file; the
- * `export` was surface nobody asked for, and it read as a component waiting to
- * be wired when it has been in use on the day-one screen and every empty
- * department all along.
+ * A brass face: the shared ramp with its crown, never a flat gold rectangle.
+ * `onPress` is REQUIRED: a control that exists only to be pressed cannot be
+ * mounted without a handler (the compiler refuses it). PaperEmpty's alone.
  */
 const BrassButton = memo(function BrassButton({
   label, onPress,
@@ -367,16 +288,6 @@ const BrassButton = memo(function BrassButton({
   );
 });
 
-/**
- * ── AN EMPTY SECTION ─────────────────────────────────────────────────────────
- * No glyph above the words. Five invented symbols would be exactly the
- * vocabulary this design spent a week trimming, and an icon-over-text-over-
- * button is the empty state every app ships. The section head above IS the mark.
- *
- * The headline states what is absent; the line under it teaches the form in one
- * breath; the act is a verb. `action` is omitted where a member cannot perform
- * it — offering a locked door is worse than offering nothing.
- */
 /** The ruling, fading as it runs down the page. See `emptyRules`. */
 const RULED_ABOVE = [0.13, 0.115, 0.10, 0.086];
 const RULED_BELOW = [0.072, 0.058, 0.044, 0.03, 0.016];
@@ -392,12 +303,8 @@ const Ruling = ({ ops }: { ops: number[] }) => (
 /**
  * ── THE MARK AT THE END OF A THING ──────────────────────────────────────────
  * Rule, ornament, rule — what a compositor set where a piece finished, so a
- * page that has been read to the end says so instead of simply stopping.
- *
- * It existed twice, written out inline, with the same three-property style
- * object typed by hand in both — the exact duplication `paperPerf` forbids, and
- * the exact way one of them ends up half a point away from the other. A member's
- * room would have been the third copy.
+ * page that has been read to the end says so instead of simply stopping. One
+ * component for every list that ends.
  *
  * UNSPOKEN, in both directions: ✦ is furniture, and a screen reader announcing
  * "black four pointed star" at the foot of every finished list is the page
@@ -415,6 +322,11 @@ export const EndMark = memo(function EndMark() {
 
 /**
  * ── AN EMPTY PAGE STILL OFFERS A WAY FORWARD ────────────────────────────────
+ * No glyph above the words: an icon over text over a button is the empty state
+ * every app ships. The headline states what is absent, the line under it
+ * teaches the form, the act is a verb, and it is omitted where a member cannot
+ * perform it.
+ *
  * `action` and `onAction` are a PAIR, expressed as a union so the type system
  * refuses one without the other. An empty state whose only button does nothing
  * is worse than an empty state with no button: the member is told there is
@@ -443,10 +355,7 @@ export const PaperEmpty = memo(function PaperEmpty({
       <Ruling ops={RULED_ABOVE} />
       <Text style={p.emptyTitle} accessibilityRole="header" {...displayTextProps}>{title}</Text>
       <Text style={p.emptyBody} {...scaledTextProps}>{body}</Text>
-      {/* ONE button, everywhere. Day one offered a brass plate and an empty
-          department offered an outline — the same act, drawn two ways, on two
-          screens a member sees within a minute of each other. Two treatments of
-          one control is how an app stops feeling like one app. */}
+      {/* ONE button, everywhere: one act is never drawn two ways. */}
       {action && onAction ? <BrassButton label={action} onPress={onAction} /> : null}
       {quiet ? (
         onQuiet ? (
@@ -470,7 +379,7 @@ export const PaperEmpty = memo(function PaperEmpty({
 /**
  * Skeletons follow the section you are in, so heights match what arrives and
  * nothing jumps. Four, never more: four reads as loading, twelve as a slot
- * machine. One shimmer value drives all of them — one animation, not four.
+ * machine. Still, not shimmering: a page of ink is quiet while it loads.
  */
 const SHAPES: Record<string, number[][]> = {
   TAKES: [[97, 92, 58], [94, 70], [96, 88, 44], [90, 63]],
@@ -488,17 +397,9 @@ export const PaperSkeletons = memo(function PaperSkeletons({
       {shapes.map((lines, i) => (
         <View key={i}>
           {i > 0 && <View style={p.hair} />}
-          {/* ── THE SHAPE HAS TO BE THE POST'S SHAPE ────────────────────────
-              These bars used to run the full measure from the document's left
-              edge, with the byline UNDER the body — so when the real posts
-              landed every line jumped 59 points right and the byline jumped to
-              the top. A skeleton whose geometry is not the content's geometry
-              is not holding a place, it is guaranteeing a lurch.
-
-              It is now built from the post's own parts: the same margin, the
-              same rule, the same column, byline first, and a footer where the
-              action row will be, so nothing moves at all when the writing
-              arrives. */}
+          {/* Built from the post's own parts (margin, rule, column, byline
+              first, a footer where the actions will be), so nothing moves when
+              the writing arrives. */}
           <View style={p.skRow}>
             <View style={p.postRow}>
               <View style={p.margin}>
@@ -532,18 +433,9 @@ export const PaperSheet = memo(function PaperSheet({
 }: { top?: boolean; children: ReactNode }) {
   return (
     <View style={[p.docWrap, { maxWidth: PAPER_MAX }]}>
-      {/* ── NO SURFACE ───────────────────────────────────────────────────────
-          A tiled paper stock lived here. It was built, rendered, looked at, and
-          it was wrong — not badly made, wrong in principle.
-
-          Texture reads because a surface SCATTERS LIGHT. A near-black page has
-          almost none to scatter, so the tile did not read as pulp; it read as
-          sensor noise, dirt on the lens of a dark page. That is also why the
-          app's own material is FILM grain: film grain belongs to a projected
-          image, which is light. This page is ink.
-
-          The richness here is carried by the rules, the type and the brass. On
-          this ground, surface is not depth — it is dirt. */}
+      {/* No paper texture: texture reads because a surface scatters light, and
+          on a near-black page it reads as dirt. The rules, the type and the
+          brass carry it. */}
       <View style={[p.doc, top && p.docTop]}>
         {children}
       </View>

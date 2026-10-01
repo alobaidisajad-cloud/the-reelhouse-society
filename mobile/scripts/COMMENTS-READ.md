@@ -623,6 +623,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
 | src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-01 | written with useSheetPresence |
+| src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-01 | written with useKeyboardLift |
 | src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-01 | the ratchet is exact |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
 | src/hooks/__tests__/theArchiveDoesNotRepeatItself.test.tsx | — |  |
@@ -652,6 +653,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useAuthThrottle.ts | 2026-10-01 | a lifted lock keeps the rule |
 | src/hooks/useBanCheck.ts | — |  |
 | src/hooks/useCatalogueSearch.ts | — |  |
+| src/hooks/useKeyboardLift.ts | 2026-10-01 | written: a sheet over a screen rises with the keyboard |
 | src/hooks/useClearance.ts | 2026-10-01 | one answer for every gate |
 | src/hooks/useDeviceThrottling.ts | — |  |
 | src/hooks/useDispatchArchive.ts | — |  |
