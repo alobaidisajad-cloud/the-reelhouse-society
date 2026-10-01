@@ -4,7 +4,7 @@ import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { PenTool, Search, TrendingUp, TrendingDown, Minus, Stethoscope } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts, type, SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
@@ -19,16 +19,9 @@ import { r, rtlText, EMBER_REST, EMBER_BEATS, yearMarker } from './roomStyles';
 import { RoomChip, RoomRail, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomSearch } from './RoomParts';
 
 /**
- * THE LEDGER — what the member WROTE.
- *
- * This room and the Archive were the same room: an identical four-wide grid of
- * identical posters, differing only in which logs they were handed. Standing in
- * one, you could not tell which. And the whole point of the Ledger — the
- * writing — was the one thing a grid of posters cannot show, so a member's
- * words appeared nowhere on the screen dedicated to them.
- *
- * So: rows, ruled like a ledger. A small plate, the title, the rating, and the
- * first two lines of what they actually said.
+ * THE LEDGER — what the member WROTE: rows, ruled like a ledger. A small plate,
+ * the title, the rating, and the first two lines of what they said. (The
+ * Archive is the poster grid; a grid cannot show writing.)
  */
 
 // Module-scoped: prevents remount on every render cycle
@@ -49,14 +42,8 @@ const PLATE_H = 63;
  */
 const ROW_REVIEW_CHARS = 180;
 /**
- * What a row is worth telling FlashList, derived from its parts rather than
- * guessed at.
- *
- * It used to be `PLATE_H + 24` — 87 — which was close enough while the words
- * were 11.5pt on a 17pt line. Raising them to `type.voice` on a 20pt line adds
- * six points to every row that HAS words, and in the Ledger most rows do: that
- * is what the room is for. Left at 87 the list would under-estimate every real
- * row and hand the scrollbar a length it has to keep correcting.
+ * What a row is worth telling FlashList, derived from its parts — most rows
+ * here have words, so the estimate is a row WITH them:
  *
  *   padding 11 top and bottom       22
  *   the title line                  20
@@ -80,8 +67,6 @@ interface ProfileLedgerTabProps {
   setLedgerRatingFilter: (val: LedgerRating) => void;
   ledgerFiltered: ProfileLog[];
   halfLifeMap: Record<number, HalfLifeEntry>;
-  // `renderPosterCard` is gone: the Ledger draws its own row now, because the
-  // grid it shared with the Archive was the defect.
   groupByMonth: (items: ProfileLog[], dateKey?: string) => Record<string, ProfileLog[]>;
   /** Has the data landed? A room must not describe itself before it knows. */
   ready?: boolean;
@@ -127,12 +112,9 @@ const LedgerRow = React.memo(function LedgerRow({
   const rtl = useMemo(() => isRTLText(words), [words]);
 
   /**
-   * Both of these are already fetched on every log and shown in NO room.
-   *
-   * Capped here, not only by `numberOfLines`: an editorial header is member
-   * input, and a member who pastes four thousand characters into it would
-   * otherwise leave that whole string to be measured by the text engine on
-   * every pass of a recycled row.
+   * The editorial headline and the companion, each capped here, not only by
+   * `numberOfLines`: both are member input, and four thousand pasted
+   * characters would otherwise be measured on every pass of a recycled row.
    */
   const header = useMemo(() => {
     const h = stripHTML(String(log.editorialHeader ?? '')).replace(/\s+/g, ' ').trim();
@@ -218,10 +200,8 @@ const LedgerRow = React.memo(function LedgerRow({
         {/**
           * THE HEADLINE.
           *
-          * `editorial_header` is written at the editorial desk — an
-          * Archivist-and-above feature, PAID FOR, and displayed in none of the
-          * six rooms until now. It is fetched on every log and was reaching the
-          * screen nowhere on the member's own profile.
+          * `editorial_header`, written at the editorial desk (an
+          * Archivist-and-above feature, paid for).
           *
           * In champagne and above the quote, so it reads as a title rather than
           * more of the review. One line: a headline that wraps to three is a
@@ -247,9 +227,8 @@ const LedgerRow = React.memo(function LedgerRow({
         {/**
           * WHO THEY SAW IT WITH.
           *
-          * Set exactly as the log page already sets it — `♡ WITH SARAH` — so
-          * one fact does not get two different treatments in one app. Also
-          * unused in every room until now.
+          * Set exactly as the log page sets it — `♡ WITH SARAH` — so one fact
+          * does not get two different treatments in one app.
           */}
         {!!companion && (
           <Text {...scaledTextProps} style={s.rowWith} numberOfLines={1}>
@@ -271,6 +250,8 @@ const LedgerRow = React.memo(function LedgerRow({
  * profile it filters the whole ledger rather than the 150 rows in hand.
  */
 const RATINGS: LedgerRating[] = ['all', 'high', 1, 2, 3, 4, 5];
+/** The rungs the high chip holds: the shared floor and every one above it. */
+const HIGH_RUNGS = [1, 2, 3, 4, 5].filter((m) => m >= LEDGER_HIGH_FLOOR);
 
 function ratingLabel(v: LedgerRating): string | undefined {
   if (v === 'all') return 'ALL';
@@ -305,8 +286,6 @@ export default function ProfileLedgerTab({
   onRefresh,
   bottomInset
 }: ProfileLedgerTabProps) {
-  const router = useRouter();
-
   const breatheAnim = useSharedValue(0.1);
   useEffect(() => {
     breatheAnim.value = withRepeat(
@@ -322,7 +301,7 @@ export default function ProfileLedgerTab({
     backgroundColor: `rgba(15,12,8,${0.8 + (breatheAnim.value * 0.2)})`,
   }));
 
-  // Nitrate Noir Breathing Ember Protocol for Search
+  // The search glass breathes while a search is live.
   const searchEmberOpacity = useSharedValue(EMBER_REST);
   useEffect(() => {
       if (ledgerSearch.length > 0) {
@@ -333,7 +312,6 @@ export default function ProfileLedgerTab({
       return () => cancelAnimation(searchEmberOpacity);
   }, [ledgerSearch.length, searchEmberOpacity]);
 
-  // Reanimated props must map from useSharedValue to prevent UI thread sync failures
   const animatedSearchProps = useAnimatedProps(() => ({
       color: searchEmberOpacity.value > EMBER_REST ? colors.bloodReel : colors.fog,
   }));
@@ -341,7 +319,7 @@ export default function ProfileLedgerTab({
       opacity: searchEmberOpacity.value,
   }));
 
-  // Debounce JS thread string search to prevent ANR freezes on 1000+ log profiles
+  // Typing is debounced: the filter and the server's read follow 300ms behind.
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [localSearch, setLocalSearch] = useState(ledgerSearch);
 
@@ -353,9 +331,7 @@ export default function ProfileLedgerTab({
       }, 300);
   }, [setLedgerSearch]);
 
-  // A pending debounce used to outlive the room: leave the Ledger inside 300ms
-  // of a keystroke and the timer still fired, setting state on a screen that
-  // was gone.
+  // A pending debounce never outlives the room.
   useEffect(() => () => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
   }, []);
@@ -367,8 +343,7 @@ export default function ProfileLedgerTab({
    * no month counts at all and keeps only the rhythm's sibling: the heading.
    *
    * The rating chips are different — `rating_distribution` is exactly the
-   * question those chips ask, so those counts ARE real, and they are counts the
-   * chips never had.
+   * question those chips ask, so those counts ARE real.
    */
   const ratings = useMemo(() => {
     const by = new Map<number, number>();
@@ -398,17 +373,9 @@ export default function ProfileLedgerTab({
         type: 'header',
         title: cut > 0 ? month.slice(0, cut) : month,
         lead: markYear(cut > 0 ? month.slice(cut + 1) : ''),
-        // NO COUNT, deliberately.
-        //
-        // `items.length` counted the loaded page, so a month holding forty
-        // entries announced seven and then climbed as you scrolled. And the
-        // server's month figures cannot replace it: they count EVERY log in
-        // March, while this room shows only the ones that were rated or written
-        // about. Stating either number here would describe something other than
-        // what is underneath the heading.
-        //
-        // The Archive carries the real counts; this room carries the writing.
-        // A month name on its own is the honest form.
+        // NO COUNT, deliberately: the loaded page undercounts (fifty a page),
+        // and the server's month figures count EVERY log in March, not the
+        // rated or written ones this room shows. A month name alone is honest.
         count: undefined,
       });
       for (const log of items) result.push({ type: 'entry', log });
@@ -417,7 +384,7 @@ export default function ProfileLedgerTab({
     return result;
   }, [ledgerFiltered, groupByMonth]);
 
-  // Pre-fetch next-page posters using expo-image for zero-latency scroll
+  // The first forty plates are fetched ahead, so scrolling never waits on art.
   useEffect(() => {
     const urlsToPrefetch = ledgerFiltered
       .slice(0, 40)
@@ -427,10 +394,6 @@ export default function ProfileLedgerTab({
       })
       .filter((url): url is string => !!url);
 
-    // A STATIC import, as the Vault already does. expo-image is a hard
-    // dependency rendered on nearly every screen, so deferring it bought
-    // nothing — and the dynamic form made this component impossible to mount
-    // in a test at all, which is exactly why nothing covered it.
     if (urlsToPrefetch.length > 0) Image.prefetch(urlsToPrefetch);
   }, [ledgerFiltered]);
 
@@ -444,24 +407,18 @@ export default function ProfileLedgerTab({
         log={log}
         halfLife={log.filmId ? halfLifeMap[log.filmId] : null}
         isSelf={isSelf}
-        onPress={() => { if (log.id) (router.push as any)(`/log/${log.id}` as never); }}
+        onPress={() => { if (log.id) nav.push(`/log/${log.id}`); }}
       />
     );
-  }, [halfLifeMap, isSelf, router]);
+  }, [halfLifeMap, isSelf]);
 
   const ListHeaderComponent = useMemo(() => {
     if (logs.length === 0) return null;
     return (
       <View style={s.filterGroupCol}>
-        {/* The SHARED search, not a local copy of it.
-            This room hand-rolled its own TextInput purely to place the
-            breathing icon — which RoomSearch already takes as `ember`. The copy
-            cost three input flags the shared one sets deliberately:
-            autoCorrect, autoCapitalize and spellCheck were all left ON, so iOS
-            would quietly turn "Nosferatu" into something else and the room
-            would answer "nothing under that name" for a film the member owns.
-            A search box is not a place to be autocorrected into a different
-            film — which is exactly what the shared component's comment says. */}
+        {/* The shared search (its breathing glass passed as `ember`), so it
+            keeps autocorrect off: "Nosferatu" is never corrected into a film
+            the member does not own. */}
         <RoomSearch
           value={localSearch}
           onChange={handleSearchChange}
@@ -479,13 +436,11 @@ export default function ProfileLedgerTab({
               onPress={() => { setLedgerRatingFilter(v); }}
               gap={8}
               a11y={ratingSpoken(v)}
-              /* These chips carried no counts at all. `rating_distribution` is
-                 exactly the question they ask, computed over every log — so
-                 unlike the month headings, this one the server CAN answer.
-                 `4+` sums the top two rungs; ALL is the room's own total. */
+              /* From `rating_distribution`, over every log; the high chip sums
+                 its rungs from the shared floor up. ALL is the room's own total. */
               count={
                 v === 'all' ? undefined
-                  : v === 'high' ? ratingTotal([4, 5])
+                  : v === 'high' ? ratingTotal(HIGH_RUNGS)
                   : ratings.get(v)
               }
             >
@@ -517,18 +472,18 @@ export default function ProfileLedgerTab({
       );
     }
 
-    // A RATING filter found nothing.
-    if (logs.length > 0) {
+    // A RATING filter found nothing. (With none chosen, an empty room is an
+    // empty ledger — a member whose films are logged but none rated or written
+    // about — and is said as one below.)
+    if (logs.length > 0 && ledgerRatingFilter !== 'all') {
       return (
         <RoomEmpty
           invite
           icon={<PenTool size={26} color={colors.sepia} strokeWidth={1} style={r.stateIcon} />}
           title="Nothing at that mark"
-          body={ledgerRatingFilter === 'all'
-            ? 'No entries to show.'
-            : ledgerRatingFilter === 'high'
-              ? `Nothing in the ledger is rated ${LEDGER_HIGH_FLOOR} of 5 or better.`
-              : `Nothing in the ledger is rated ${ledgerRatingFilter} of 5.`}
+          body={ledgerRatingFilter === 'high'
+            ? `Nothing in the ledger is rated ${LEDGER_HIGH_FLOOR} of 5 or better.`
+            : `Nothing in the ledger is rated ${ledgerRatingFilter} of 5.`}
           actionLabel="SHOW EVERY RATING"
           onAction={() => setLedgerRatingFilter('all')}
         />
@@ -540,7 +495,7 @@ export default function ProfileLedgerTab({
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <PenTool size={32} color={colors.sepia} strokeWidth={1} style={r.ownIcon} />
           <Text {...scaledTextProps} style={r.ownTitle}>A Blank Ledger</Text>
-          <PressableScale style={r.ownAct} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Draft a critique">
+          <PressableScale style={r.ownAct} onPress={() => nav.push('/search-modal')} haptic accessibilityRole="button" accessibilityLabel="Draft a critique">
             <Text {...scaledTextProps} style={r.ownActText}>DRAFT A CRITIQUE</Text>
           </PressableScale>
         </Animated.View>
@@ -555,7 +510,7 @@ export default function ProfileLedgerTab({
       />
     );
    
-  }, [logs.length, ledgerFiltered.length, ledgerSearch, ledgerRatingFilter, setLedgerSearch, setLedgerRatingFilter, ready, unreachable, isSelf, pulseStyle, router]);
+  }, [logs.length, ledgerFiltered.length, ledgerSearch, ledgerRatingFilter, setLedgerSearch, setLedgerRatingFilter, ready, unreachable, isSelf, pulseStyle]);
 
   return (
     <View style={r.container}>
@@ -566,9 +521,6 @@ export default function ProfileLedgerTab({
         keyExtractor={(item: LedgerItem) => item.type === 'header' ? `header-${item.lead}-${item.title}` : `entry-${item.log.id}`}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
-        // A row is a 63pt plate plus its padding — measured, where the old 250
-        // was a guess three times too large, which made FlashList reserve three
-        // screens of blank space below the last entry on a short ledger.
         estimatedItemSize={ROW_EST}
         contentContainerStyle={r.listContent}
         refreshing={refreshing}
@@ -616,21 +568,10 @@ const s = StyleSheet.create({
   markRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   markText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.sepia },
   /**
-   * The member's own words — the reason this room exists, and the one thing it
-   * never used to show.
-   */
-  /**
-   * ── THE POINT OF THIS ROOM ──────────────────────────────────────────────────
-   * The member's own words. They were 11.5pt at 0.72 opacity, under a film
-   * title at 14.5 — the smallest, faintest thing in a row, in the one room that
-   * exists to show them. The Ledger was built because a poster grid cannot show
-   * writing, and then set the writing like a footnote.
-   *
-   * `type.voice` sits ONE point under `type.title`, and that is deliberate: the
-   * separation between a film's name and a member's sentence is carried by FACE
-   * (Rye against Courier Prime Italic) and by COLOUR (parchment against bone),
-   * which is what was doing the work all along. Shrinking the words was never
-   * what made the title read first.
+   * ── THE POINT OF THIS ROOM ── the member's own words, never set like a
+   * footnote. `type.voice` sits ONE point under `type.title`: the title reads
+   * first by FACE (Rye against Courier Prime Italic) and COLOUR (parchment
+   * against bone), not by shrinking the words.
    */
   rowWords: { fontFamily: fonts.bodyItalic, fontSize: type.voice, lineHeight: 20, color: colors.bone, marginTop: 6 },
   /** The editorial desk's headline — champagne, so it reads as a title. */

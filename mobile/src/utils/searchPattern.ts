@@ -98,3 +98,18 @@ export function buildSearchPattern(raw: string | null | undefined): string | nul
     .replace(/\*/g, '\\*')    // PostgREST's OWN alias for % — see above
     .replace(/[(),]/g, '_');  // the characters .or()'s parser owns — see above
 }
+
+/**
+ * Whether any of `texts` holds the search as the server's ILIKE on
+ * `buildSearchPattern(raw)` does: trimmed, in any case, each of `( ) ,`
+ * standing for any one character. A room re-filters the server's page with
+ * this, so it can never drop a row the server found (an untrimmed copy dropped
+ * every row for "noir ", the space a phone keyboard leaves after a word).
+ */
+export function matchesSearch(raw: string | null | undefined, ...texts: (string | null | undefined)[]): boolean {
+  const term = (raw ?? '').trim();
+  if (!term) return true;
+  const body = [...term].map((c) => ('(),'.includes(c) ? '.' : c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).join('');
+  const found = new RegExp(body, 'isu');
+  return texts.some((t) => !!t && found.test(t));
+}

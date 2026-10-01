@@ -489,7 +489,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/person/personStyles.ts | 2026-10-01 | histories to the present |
 | src/components/Preloader.tsx | — |  |
 | src/components/PressableScale.tsx | 2026-09-29 | accessible / actions pass through; hitSlop comment condensed |
+| src/components/profile/__tests__/anEmptyLedgerSaysSo.test.tsx | 2026-10-01 | written: an empty ledger is said as one |
 | src/components/profile/__tests__/anHonourIsNeverBroken.test.tsx | — |  |
+| src/components/profile/__tests__/aRoomKeepsWhatTheServerFound.test.ts | 2026-10-01 | written: a room's search on the phone is the server's |
 | src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx | 2026-10-01 | written: rows, paging and failure from one answer |
 | src/components/profile/__tests__/computeDailyStreak.test.ts | — |  |
 | src/components/profile/__tests__/decadeCounts.test.ts | — |  |
@@ -530,7 +532,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/ProfileBackdrop.tsx | — |  |
 | src/components/profile/profileComputed.ts | 2026-09-29 | 24 fixed; T3 ticket notes, 'until the migration lands', histories cut |
 | src/components/profile/ProfileHelpers.tsx | — |  |
-| src/components/profile/ProfileLedgerTab.tsx | — |  |
+| src/components/profile/ProfileLedgerTab.tsx | 2026-10-01 | an empty ledger said as one; the high chip counts from the shared floor; nav; comments say what is true now |
 | src/components/profile/ProfileListsTab.tsx | — |  |
 | src/components/profile/ProfilePhysicalTab.tsx | — |  |
 | src/components/profile/ProfilePosterCard.tsx | — |  |

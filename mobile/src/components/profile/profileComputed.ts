@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { isNarrowed } from '@/src/utils/roomFilters';
+import { matchesSearch } from '@/src/utils/searchPattern';
 import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry, DomainLog, LedgerRating, WatchlistDecade, DecadeCount, ShelfSort } from '@/src/types';
 import { LEDGER_HIGH_FLOOR, decadeOf } from '@/src/types';
 import { standingFor } from '@/src/constants/standing';
@@ -226,10 +227,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     // TITLES ONLY, matching the server. The Ledger is the room for searching
     // writing; here, a film surfacing because its REVIEW says "boring" — with
     // nothing on screen explaining why — is a bewildering result.
-    if (archiveSearch?.trim()) {
-      const q = archiveSearch.trim().toLowerCase();
-      result = result.filter(l => (l.title ?? '').toLowerCase().includes(q));
-    }
+    if (archiveSearch?.trim()) result = result.filter(l => matchesSearch(archiveSearch, l.title));
     return result;
   }, [displayArchiveLogs, archiveSieve, archiveSearch]);
 
@@ -246,7 +244,8 @@ export function useProfileComputed(params: UseProfileComputedParams) {
       if (ledgerRatingFilter === 'high') {
         if (!log.rating || log.rating < LEDGER_HIGH_FLOOR) return false;
       } else if (ledgerRatingFilter !== 'all' && log.rating !== ledgerRatingFilter) return false;
-      if (ledgerSearch.trim() && !(log.title || '').toLowerCase().includes(ledgerSearch.toLowerCase())) return false;
+      // Title AND review, as the server searches: the Ledger is the room of words.
+      if (!matchesSearch(ledgerSearch, log.title, log.review)) return false;
       return true;
     });
   }, [displayLedgerLogs, ledgerSearch, ledgerRatingFilter]);
@@ -291,10 +290,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   // Watchlist filtering
   const watchlistFiltered = useMemo(() => {
     let result = [...displayWatchlist];
-    if (watchlistSearch.trim()) {
-      const q = watchlistSearch.toLowerCase();
-      result = result.filter(f => (f.title ?? '').toLowerCase().includes(q));
-    }
+    if (watchlistSearch.trim()) result = result.filter(f => matchesSearch(watchlistSearch, f.title));
     // A film with no year on record belongs to no decade, so a decade filter
     // hides it — the same way the Vault's format filter hides an unfiled copy.
     if (typeof watchlistDecade === 'number') {
@@ -337,11 +333,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   const displayLists = useMemo(
     () => byShelfSort(
       listsSearch?.trim()
-        ? displayListsRaw.filter((l) => {
-            const q = listsSearch.trim().toLowerCase();
-            return (l.title ?? '').toLowerCase().includes(q)
-              || (l.description ?? '').toLowerCase().includes(q);
-          })
+        ? displayListsRaw.filter((l) => matchesSearch(listsSearch, l.title, l.description))
         : displayListsRaw,
       listsSort,
     ),
@@ -356,11 +348,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
       : displayVault;
     // Title AND the member's own notes, matching the server exactly — "the one
     // Dad gave me" is how somebody actually looks for a disc.
-    if (physicalSearch?.trim()) {
-      const q = physicalSearch.trim().toLowerCase();
-      base = base.filter((i) => (i.title ?? '').toLowerCase().includes(q)
-        || (i.notes ?? '').toLowerCase().includes(q));
-    }
+    if (physicalSearch?.trim()) base = base.filter((i) => matchesSearch(physicalSearch, i.title, i.notes));
     return byShelfSort(base, physicalSort);
    
   }, [displayVault, physicalFilter, physicalSort, physicalSearch]);
