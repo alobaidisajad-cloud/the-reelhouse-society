@@ -41,11 +41,6 @@ interface ShareToLoungeProps {
     dossierKind?: string;
 }
 
-interface _LoungeMemberRow {
-    lounge_id: string;
-    lounges: LoungeRoom | null;
-}
-
 /**
  * WHICH ROOM YOU POST IN.
  *
