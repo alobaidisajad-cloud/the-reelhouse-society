@@ -1,23 +1,8 @@
 /**
- * TasteDNA — a member's genre fingerprint, over their WHOLE archive.
- *
- * ── WHAT THIS USED TO DO ─────────────────────────────────────────────────────
- * It fetched films from TMDB one at a time, from the phone, in batches of four
- * with a 400ms pause between them, and stopped at sixty:
- *
- *     const idsToFetch = filmIds.slice(0, 60);   // limit for mobile perf
- *
- * Sixty is roughly what a handset can pull before the page feels broken. So a
- * member with five thousand films saw a "cinematic fingerprint" drawn from
- * sixty of them, and nothing on screen said so. For a VISITOR looking at a
- * non-Auteur profile it was worse: those sixty were drawn from the fifty logs
- * that happened to have loaded.
- *
- * It cannot be fixed on the phone — the data has to be ours. It is now: the
- * films table holds genres, and the server counts them across everything.
- *
- * The whole fetch-batch-cache-retry apparatus is gone. This component reads one
- * number set and draws it.
+ * TasteDNA — a member's genre fingerprint, over their WHOLE archive: the films
+ * table holds genres and the server counts them across everything, so this
+ * reads one number set and draws it. Until that set is read, or while too
+ * little of the archive is catalogued to rank honestly, it says so.
  */
 import React, { memo, useMemo, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -34,6 +19,7 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import { tally } from './profileComputed';
 import { tasteReadiness, coverageNote, type TasteProfile } from '@/src/constants/taste';
 import { EDGE_LIT } from '@/src/theme/light';
+import { RoomRetrieving, RoomUnreachable } from './RoomParts';
 
 // Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
 // TactileEngine.navigate would lose its `this` binding).
@@ -45,9 +31,14 @@ interface TasteDNAProps {
     username?: string;
     /** Padded member serial — stamped on the shared export artifact. */
     memberNo?: string | null;
+    /** Your own file: the words say "your". */
+    isSelf: boolean;
+    /** The taste read failed. */
+    failed?: boolean;
+    onRetry?: () => void;
 }
 
-export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo }: TasteDNAProps) {
+export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo, isSelf, failed, onRetry }: TasteDNAProps) {
     const [isSharing, setIsSharing] = useState(false);
     const viewShotRef = React.useRef<ViewShot>(null);
 
@@ -64,13 +55,30 @@ export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo }: Ta
      *
      * `films_known`, not the sum of genre counts: a film carries two or three
      * genres, so summing them gives a number larger than the archive and every
-     * percentage comes out too small. It used to count "films we resolved",
-     * which meant the same thing for sixty films and nothing at all beyond.
+     * percentage comes out too small.
      */
     const denominator = Math.max(ready.known, 1);
 
-    // Nothing logged, or nothing read yet — the parent decides what to say.
-    if (!ready.ready || computedGenres.length === 0) return null;
+    // Not read, too few films, or too little catalogued: said in the card's
+    // own place, never a heading left over nothing.
+    const plain = (line: React.ReactNode) => (
+        <View style={s.container}>
+            <Text {...scaledTextProps} style={s.title}>TASTE DNA</Text>
+            {line}
+        </View>
+    );
+    if (!taste) {
+        return plain(failed
+            ? <RoomUnreachable room="the fingerprint" onRetry={onRetry ?? (() => {})} />
+            : <RoomRetrieving room="the fingerprint" />);
+    }
+    if (ready.total < 3) {
+        return plain(<Text {...scaledTextProps} style={s.subtitle}>{isSelf ? 'Log at least 3 films to draw your fingerprint.' : 'Too few films logged to draw a fingerprint.'}</Text>);
+    }
+    if (!ready.ready) {
+        return plain(<Text {...scaledTextProps} style={s.subtitle}>{`${tally(ready.known)} of ${tally(ready.total)} films catalogued so far.`}</Text>);
+    }
+    if (computedGenres.length === 0) return null;
 
     const maxCount = computedGenres[0][1];
 
@@ -84,7 +92,7 @@ export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo }: Ta
             setIsSharing(true);
             const uri = await viewShotRef.current.capture?.();
             if (uri) {
-                await Sharing.shareAsync(uri, { dialogTitle: 'Share your Taste DNA' });
+                await Sharing.shareAsync(uri, { dialogTitle: isSelf ? 'Share your Taste DNA' : 'Share this Taste DNA' });
             }
         } catch (e) {
             if (__DEV__) console.error('Failed to export TasteDNA', e);
@@ -103,10 +111,10 @@ export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo }: Ta
                         A member should always be able to tell "your taste" from
                         "your taste so far", and the line costs one row. */}
                     <Text {...scaledTextProps} style={s.subtitle}>
-                        {coverageNote(ready, tally) ?? 'Your cinematic fingerprint'}
+                        {coverageNote(ready, tally, isSelf) ?? (isSelf ? 'Your cinematic fingerprint' : 'A cinematic fingerprint')}
                     </Text>
                 </View>
-                <PressableScale onPress={handleShare} style={s.shareBtn} haptic accessibilityRole="button" accessibilityLabel="Share your taste profile" accessibilityState={{ busy: isSharing }}>
+                <PressableScale onPress={handleShare} style={s.shareBtn} haptic accessibilityRole="button" accessibilityLabel={isSelf ? 'Share your taste profile' : 'Share this taste profile'} accessibilityState={{ busy: isSharing }}>
                     <Share2 size={16} color={isSharing ? colors.sepia : colors.fog} />
                 </PressableScale>
             </View>

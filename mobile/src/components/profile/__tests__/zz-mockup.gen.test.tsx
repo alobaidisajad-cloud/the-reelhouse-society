@@ -151,9 +151,9 @@ const ROOMS: [string, string, () => React.ReactElement][] = [
           record={{ longest_streak: 31, current_streak: 9, avg_rating: 3.8,
             monthly_activity: [{ month: '2025-11', count: 22 }, { month: '2025-12', count: 28 }, { month: '2026-01', count: 41 }] }} />
         <div style={{ height: 32 } as never} />
-        <TasteDNA taste={taste} username="kane" memberNo="0042" />
+        <TasteDNA isSelf taste={taste} username="kane" memberNo="0042" />
         <div style={{ height: 32 } as never} />
-        <CinematicInsights taste={taste} />
+        <CinematicInsights isSelf taste={taste} />
       </>
     );
   }],

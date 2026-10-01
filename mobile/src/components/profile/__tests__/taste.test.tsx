@@ -110,7 +110,7 @@ describe('neither panel builds a portrait from the phone any more', () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe('CinematicInsights refuses to guess', () => {
   it('shows the ranking once the archive is read', async () => {
-    const { getByText } = render(<CinematicInsights taste={taste()} />);
+    const { getByText } = render(<CinematicInsights isSelf taste={taste()} />);
     expect(getByText('Kurosawa')).toBeTruthy();
     expect(getByText('Toshiro')).toBeTruthy();
   });
@@ -119,7 +119,7 @@ describe('CinematicInsights refuses to guess', () => {
     // The failure this pass exists to remove, reappearing in a new place: on the
     // first day the films table ships, a large archive is mostly unread.
     const { getByText, queryByText } = render(
-      <CinematicInsights taste={taste({ films_total: 2000, films_known: 30 })} />,
+      <CinematicInsights isSelf taste={taste({ films_total: 2000, films_known: 30 })} />,
     );
     expect(getByText('READING YOUR ARCHIVE')).toBeTruthy();
     // Crucially it must NOT have drawn the names it was handed.
@@ -128,23 +128,32 @@ describe('CinematicInsights refuses to guess', () => {
 
   it('reports real progress while reading, not a bare spinner', async () => {
     const { getByText } = render(
-      <CinematicInsights taste={taste({ films_total: 2000, films_known: 30 })} />,
+      <CinematicInsights isSelf taste={taste({ films_total: 2000, films_known: 30 })} />,
     );
     expect(getByText(/30 of .*2,?000 films catalogued/)).toBeTruthy();
   });
 
   it('tells a member with two films to log more, rather than reading for ever', async () => {
     const { getByText } = render(
-      <CinematicInsights taste={taste({ films_total: 2, films_known: 2 })} />,
+      <CinematicInsights isSelf taste={taste({ films_total: 2, films_known: 2 })} />,
     );
     expect(getByText(/at least 3 films/i)).toBeTruthy();
   });
 
-  it('renders nothing at all rather than an empty frame when there is no payload', async () => {
-    // No payload is a page still loading, or a request that failed — NOT an
-    // empty archive. They are different claims and only one is ours to make.
-    const { toJSON } = render(<CinematicInsights taste={null} />);
-    expect(toJSON()).toBeNull();
+  it('with no payload says it is retrieving — or, if the read failed, that it could not be reached', async () => {
+    // No payload is a read still out, or one that failed — NOT an empty
+    // archive. Each is said as what it is; neither is "nothing catalogued".
+    expect(render(<CinematicInsights isSelf taste={null} />).getByLabelText('Retrieving the insights')).toBeTruthy();
+    const failed = render(<CinematicInsights isSelf taste={null} failed onRetry={jest.fn()} />);
+    expect(failed.getByText('The insights could not be reached.')).toBeTruthy();
+    expect(failed.queryByText(/catalogued/)).toBeNull();
+  });
+
+  it('on another member\'s file the archive is theirs, not "your"', async () => {
+    const reading = render(<CinematicInsights isSelf={false} taste={taste({ films_total: 2000, films_known: 30 })} />);
+    expect(reading.getByText('READING THE ARCHIVE')).toBeTruthy();
+    const few = render(<CinematicInsights isSelf={false} taste={taste({ films_total: 2, films_known: 2 })} />);
+    expect(few.queryByText(/your/i)).toBeNull();
   });
 
   it('a member who has logged nothing is told so, not left under a spinner', async () => {
@@ -153,7 +162,7 @@ describe('CinematicInsights refuses to guess', () => {
     // "READING YOUR ARCHIVE", which never resolves because there is nothing to
     // read and no request outstanding.
     const { getByText, queryByText } = render(
-      <CinematicInsights taste={taste({ films_total: 0, films_known: 0, genres: [], actors: [], directors: [] })} />,
+      <CinematicInsights isSelf taste={taste({ films_total: 0, films_known: 0, genres: [], actors: [], directors: [] })} />,
     );
     expect(getByText(/at least 3 films/i)).toBeTruthy();
     expect(queryByText('READING YOUR ARCHIVE')).toBeNull();
@@ -164,7 +173,7 @@ describe('CinematicInsights refuses to guess', () => {
     // 40% — an honest-looking number computed from two different denominators,
     // which is precisely the class of bug being removed.
     const { getByText } = render(
-      <CinematicInsights taste={taste({ films_total: 50, films_known: 50 })} />,
+      <CinematicInsights isSelf taste={taste({ films_total: 50, films_known: 50 })} />,
     );
     expect(getByText('80%')).toBeTruthy();
   });
@@ -176,7 +185,7 @@ describe('CinematicInsights refuses to guess', () => {
 describe('the difference between "your taste" and "your taste so far" is visible', () => {
   it('labels a ranking drawn from most, but not all, of the archive', async () => {
     const { getByText } = render(
-      <CinematicInsights taste={taste({ films_total: 100, films_known: 95 })} />,
+      <CinematicInsights isSelf taste={taste({ films_total: 100, films_known: 95 })} />,
     );
     // Above the floor, so it ranks — and it admits what it ranked.
     //
@@ -191,7 +200,7 @@ describe('the difference between "your taste" and "your taste so far" is visible
 
   it('drops the label once everything is read', async () => {
     // "BASED ON 100 OF 100 FILMS" is noise on a finished profile.
-    const { queryByText } = render(<CinematicInsights taste={taste()} />);
+    const { queryByText } = render(<CinematicInsights isSelf taste={taste()} />);
     expect(queryByText(/BASED ON/i)).toBeNull();
   });
 });

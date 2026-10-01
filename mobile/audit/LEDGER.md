@@ -195,7 +195,7 @@
 | `src/components/profile/ProfileListsTab.tsx` | 195 | PENDING |  |  |  |  |  |
 | `src/components/profile/ProfilePhysicalTab.tsx` | 281 | PENDING |  |  |  |  |  |
 | `src/components/profile/ProfilePosterCard.tsx` | 162 | PENDING |  |  |  |  |  |
-| `src/components/profile/ProfileProjectorTab.tsx` | 44 | PENDING |  |  |  |  |  |
+| `src/components/profile/ProfileProjectorTab.tsx` | 44 | REMOVED (imported by nothing) |  |  |  |  |  |
 | `src/components/profile/ProfileTriptych.tsx` | 529 | AUDITED | 0 | 0 | 1 | 0 | no |
 | `src/components/profile/ProfileWatchlistTab.tsx` | 271 | PENDING |  |  |  |  |  |
 | `src/components/profile/ProgrammesSection.tsx` | 410 | AUDITED | 0 | 0 | 1 | 0 | no |

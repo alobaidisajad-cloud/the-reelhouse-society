@@ -111,8 +111,8 @@ export function tasteReadiness(profile: TasteProfile | null | undefined): TasteR
   };
 }
 
-/** "from 2,315 of your 2,481 films" — shown only while that is still true. */
-export function coverageNote(r: TasteReadiness, tally: (n: number) => string): string | null {
+/** "from 2,315 of your 2,481 films" (or "their", on another member's file) — shown only while that is still true. */
+export function coverageNote(r: TasteReadiness, tally: (n: number) => string, isSelf = true): string | null {
   if (!r.ready || r.complete) return null;
-  return `from ${tally(r.known)} of your ${tally(r.total)} films`;
+  return `from ${tally(r.known)} of ${isSelf ? 'your' : 'their'} ${tally(r.total)} films`;
 }

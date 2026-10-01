@@ -861,13 +861,13 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     {/* Taste DNA */}
                     <View>
                       <SectionDivider label="TASTE FINGERPRINT" />
-                      <TasteDNA taste={taste} username={targetUser?.username || username} memberNo={memberNo} />
+                      <TasteDNA taste={taste} username={targetUser?.username || username} memberNo={memberNo} isSelf={isSelf} failed={roomFailed} onRetry={retryRoom} />
                     </View>
 
                     {/* Cinematic Insights */}
                     <View>
                       <SectionDivider label="REAL ANALYTICS" />
-                      <CinematicInsights taste={taste} />
+                      <CinematicInsights taste={taste} isSelf={isSelf} failed={roomFailed} onRetry={retryRoom} />
                     </View>
 
                     {/* Society Honors */}

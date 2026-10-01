@@ -561,7 +561,7 @@
 | `src/components/profile/ProfileLedgerTab.tsx` | 290 | _(pending)_ |
 | `src/components/profile/CinematicInsights.tsx` | 382 | _(pending)_ |
 | `src/components/profile/ProgrammesSection.tsx` | 410 | _(pending)_ |
-| `src/components/profile/ProfileProjectorTab.tsx` | 44 | _(pending)_ |
+| `src/components/profile/ProfileProjectorTab.tsx` | 44 | _(removed 2026-10-02: imported by nothing)_ |
 | `src/components/profile/ProfileTriptych.tsx` | 529 | _(pending)_ |
 | `src/components/profile/FilmLogRow.tsx` | 55 | _(pending)_ |
 | `src/components/profile/TicketBooth.tsx` | 72 | _(pending)_ |

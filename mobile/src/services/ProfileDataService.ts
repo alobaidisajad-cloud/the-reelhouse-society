@@ -622,22 +622,23 @@ export const ProfileDataService = {
    * films. It reports its own coverage (`films_total`, `films_known`), as the
    * films table fills in over time and the screen says what it rests on.
    */
+  /**
+   * Genres, actors and directors over the member's WHOLE archive. Null when the
+   * viewer may not read it (a refusal is not an empty taste); a read that fails
+   * throws, so its room says so rather than looking unread.
+   */
   async fetchTasteProfile(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal): Promise<TasteProfile | null> {
-    try {
-      const { data, error } = await withAbortSignal(
-        supabase.rpc('get_taste_profile', { p_user_id: targetUser.id }),
-        signal
-      );
-      if (error) {
-        logger.warn('[ProfileDataService] get_taste_profile error:', error.message);
-        return null;
-      }
-      const shape = data as TasteProfile & { error?: string };
-      if (!shape || shape.error) return null; // a refusal is not an empty taste
-      return shape;
-    } catch {
-      return null;
+    const { data, error } = await withAbortSignal(
+      supabase.rpc('get_taste_profile', { p_user_id: targetUser.id }),
+      signal
+    );
+    if (error) {
+      logger.warn('[ProfileDataService] get_taste_profile error:', error.message);
+      throw error;
     }
+    const shape = data as TasteProfile & { error?: string };
+    if (!shape || shape.error) return null;
+    return shape;
   },
 
   /**

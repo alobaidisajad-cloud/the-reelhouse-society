@@ -1,7 +1,6 @@
 /**
- * CinematicInsights — Real analytics computed from the user's logged films.
- * Fetches TMDB credits to determine top actors, directors, and genres.
- * Nitrate Noir themed — matches the web exactly.
+ * CinematicInsights — the actors, directors and genres a member has watched
+ * most, counted by the server over their whole archive.
  */
 import { useMemo } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
@@ -15,34 +14,16 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import { tally } from './profileComputed';
 import { tasteReadiness, type TasteProfile } from '@/src/constants/taste';
 import { EDGE_LIT } from '@/src/theme/light';
+import { RoomRetrieving, RoomUnreachable } from './RoomParts';
 
-/**
- * Deleted with the TMDB fetch: a 19-entry GENRE_MAP that had to be kept in step
- * with TMDB by hand, a hand-rolled LRUCache, and the two module-level caches it
- * backed (GLOBAL_TMDB_CACHE, INFLIGHT_TMDB_REQUESTS). Both were exported, and
- * nothing outside this file ever imported them — they existed to survive tab
- * unmounts during a fetch storm that no longer happens. Genre names now arrive
- * spelled out from the films table, so there is no id to map.
- */
-
-export function CinematicInsights({ taste }: { taste?: TasteProfile | null }) {
-    /**
-     * ── WHAT THIS USED TO DO ─────────────────────────────────────────────────
-     * Fetched every film's credits from TMDB, four at a time, 400ms apart, with
-     * an LRU cache and an in-flight map to survive it — and stopped at sixty:
-     *
-     *     const idsToFetch = filmIds.slice(0, 60);   // limit for mobile perf
-     *
-     * To its credit this panel DID say "BASED ON 58 OF 2481 LOGGED FILMS",
-     * which is more than TasteDNA managed. But honest about a bad answer is
-     * still a bad answer, and for a VISITOR to a non-Auteur profile those
-     * sixty were drawn from the fifty logs that happened to have loaded — so
-     * the denominator was wrong too.
-     *
-     * The server counts across everything now. The cache, the batching, the
-     * delays, the in-flight map and the abort handling are all gone: there is
-     * one payload and it is already here.
-     */
+export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
+    taste?: TasteProfile | null;
+    /** Your own file: the words say "your". */
+    isSelf: boolean;
+    /** The taste read failed. */
+    failed?: boolean;
+    onRetry?: () => void;
+}) {
     const ready = useMemo(() => tasteReadiness(taste), [taste]);
 
     const topActors = taste?.actors ?? [];
@@ -50,17 +31,18 @@ export function CinematicInsights({ taste }: { taste?: TasteProfile | null }) {
     const topGenres = taste?.genres ?? [];
 
     /**
-     * No payload at all is NOT an empty archive — it is a page that has not
-     * finished loading, or a request that failed. Those are different claims and
-     * only one of them is ours to make.
-     *
-     * Without this the panel fell through to "READING YOUR ARCHIVE / Nothing
-     * catalogued yet." under a spinner that would never resolve: a member whose
-     * request had simply failed was told their archive was empty, in a room
-     * built to show them what they had watched. Render nothing and let the rest
-     * of the page speak.
+     * No payload is NOT an empty archive — it is a read still out, or one that
+     * failed. Each is said as what it is, never as "nothing catalogued".
      */
-    if (!taste) return null;
+    if (!taste) {
+        return (
+            <View style={s.card}>
+                {failed
+                    ? <RoomUnreachable room="the insights" onRetry={onRetry ?? (() => {})} />
+                    : <RoomRetrieving room="the insights" />}
+            </View>
+        );
+    }
 
     // Fewer than three films is not "still loading" — it is a member who has
     // not logged enough for any of this to mean anything. Zero belongs here
@@ -69,7 +51,7 @@ export function CinematicInsights({ taste }: { taste?: TasteProfile | null }) {
         return (
             <View style={s.card}>
                 <Text {...scaledTextProps} style={s.sectionTitle}>CINEMATIC INSIGHTS</Text>
-                <Text {...scaledTextProps} style={s.emptyText}>Log at least 3 films to unlock your cinematic insights.</Text>
+                <Text {...scaledTextProps} style={s.emptyText}>{isSelf ? 'Log at least 3 films to unlock your cinematic insights.' : 'Too few films logged, at least 3, for insights.'}</Text>
             </View>
         );
     }
@@ -86,7 +68,7 @@ export function CinematicInsights({ taste }: { taste?: TasteProfile | null }) {
     if (!ready.ready) {
         return (
             <View style={s.card}>
-                <Text {...scaledTextProps} style={s.sectionTitle}>READING YOUR ARCHIVE</Text>
+                <Text {...scaledTextProps} style={s.sectionTitle}>{isSelf ? 'READING YOUR ARCHIVE' : 'READING THE ARCHIVE'}</Text>
                 <ActivityIndicator color={colors.sepia} style={s.loaderMargin} />
                 {/* An archive of 0, 1 or 2 films is handled above, so `total`
                     is at least 3 by here and the count always says something. */}
@@ -105,10 +87,8 @@ export function CinematicInsights({ taste }: { taste?: TasteProfile | null }) {
 
     return (
         <View style={s.container}>
-            {/* The old line read "BASED ON 58 OF 2481 LOGGED FILMS" — honest,
-                but about a sample of sixty. This one is drawn from everything
-                read so far, and once that is everything the line goes away
-                rather than restating what is now simply true. */}
+            {/* Drawn from everything read so far; once that is everything the
+                line goes away rather than restating what is simply true. */}
             {!ready.complete && (
                 <Text {...scaledTextProps} style={s.metaNote}>
                     BASED ON {tally(ready.known)} OF {tally(ready.total)} FILMS

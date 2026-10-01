@@ -202,34 +202,39 @@ describe('TasteDNA draws only what the server counted', () => {
   it('mounts and shows the genres', () => {
     // Genre names are drawn uppercase, and appear twice: once in the strip and
     // once on the off-screen canvas the share button captures.
-    const { getAllByText } = render(<TasteDNA taste={taste()} username="kane" memberNo="0042" />);
+    const { getAllByText } = render(<TasteDNA isSelf taste={taste()} username="kane" memberNo="0042" />);
     expect(getAllByText('TASTE DNA').length).toBeGreaterThan(0);
     expect(getAllByText('DRAMA').length).toBeGreaterThan(0);
     expect(getAllByText('HORROR').length).toBeGreaterThan(0);
   });
 
-  it('renders nothing below the coverage floor', () => {
-    // 30 of 2000 read. The old component would have drawn a confident
-    // fingerprint from whatever it happened to have.
-    const { toJSON } = render(
-      <TasteDNA taste={taste({ films_total: 2000, films_known: 30 })} username="kane" />,
-    );
-    expect(toJSON()).toBeNull();
+  it('below the coverage floor draws no fingerprint, and says how far the reading has got', () => {
+    // 30 of 2000 read: a fingerprint drawn now would be a confident guess.
+    const r = render(<TasteDNA isSelf taste={taste({ films_total: 2000, films_known: 30 })} username="kane" />);
+    expect(r.queryByText('DRAMA')).toBeNull();
+    expect(r.getByText(/30 of 2,?000 films catalogued so far/)).toBeTruthy();
   });
 
-  it('renders nothing when there is no payload', () => {
-    expect(render(<TasteDNA taste={null} username="kane" />).toJSON()).toBeNull();
+  it('with no payload says it is retrieving, or that it could not be reached — never a heading over nothing', () => {
+    expect(render(<TasteDNA isSelf taste={null} username="kane" />).getByLabelText('Retrieving the fingerprint')).toBeTruthy();
+    expect(render(<TasteDNA isSelf taste={null} username="kane" failed onRetry={jest.fn()} />).getByText('The fingerprint could not be reached.')).toBeTruthy();
+  });
+
+  it('on another member\'s file the films are theirs', () => {
+    const r = render(<TasteDNA isSelf={false} taste={taste({ films_total: 100, films_known: 95 })} username="kane" />);
+    expect(r.getByText(/from 95 of their 100 films/)).toBeTruthy();
+    expect(r.getByLabelText('Share this taste profile')).toBeTruthy();
   });
 
   it('says what it was drawn from while that is still less than everything', () => {
     const { getByText } = render(
-      <TasteDNA taste={taste({ films_total: 100, films_known: 95 })} username="kane" />,
+      <TasteDNA isSelf taste={taste({ films_total: 100, films_known: 95 })} username="kane" />,
     );
     expect(getByText(/from 95 of your 100 films/)).toBeTruthy();
   });
 
   it('drops that line once the whole archive is read', () => {
-    const { getByText, queryByText } = render(<TasteDNA taste={taste()} username="kane" />);
+    const { getByText, queryByText } = render(<TasteDNA isSelf taste={taste()} username="kane" />);
     expect(queryByText(/from .* of your .* films/)).toBeNull();
     expect(getByText('Your cinematic fingerprint')).toBeTruthy();
   });
@@ -238,7 +243,7 @@ describe('TasteDNA draws only what the server counted', () => {
     // 40 Drama of 50 read is 80%. Dividing by films_total would print 40% —
     // an honest-looking number from two different denominators.
     const { getByText } = render(
-      <TasteDNA taste={taste({ films_total: 50, films_known: 50 })} username="kane" />,
+      <TasteDNA isSelf taste={taste({ films_total: 50, films_known: 50 })} username="kane" />,
     );
     expect(getByText('80%')).toBeTruthy();
   });
