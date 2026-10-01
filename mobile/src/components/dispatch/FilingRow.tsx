@@ -16,6 +16,7 @@ import { memo } from 'react';
 
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { roomOf } from '@/src/components/dispatch/roomLink';
+import { partOf } from '@/src/components/dispatch/paper/paperText';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { Filing } from '@/src/stores/dispatchTypes';
 import { nav } from '@/src/utils/typedRouter';
@@ -67,7 +68,7 @@ export const FilingRow = memo(function FilingRow({
       withheld={!!f.withheldAt}
       ended={f.endedBy ?? undefined}
       edited={!!f.editedAt}
-      series={f.seriesTitle ? `Part ${f.partNumber} of ${f.seriesTitle}` : undefined}
+      series={f.seriesTitle ? partOf(f.partNumber, f.seriesTitle).printed : undefined}
       pending={pending}
       onOpen={() => nav.push(`/dispatch/${f.id}`)}
       onCritique={() => nav.push(`/dispatch/${f.id}`)}

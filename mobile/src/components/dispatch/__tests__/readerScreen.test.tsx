@@ -321,6 +321,15 @@ describe('the reader', () => {
     expect(mockPushed.some((p) => p.startsWith('/dispatch/series/s1'))).toBe(true);
   });
 
+  it('prints the part in numerals and says it as a number', async () => {
+    // The design and the writing room's preview set `PART II`; the reader set
+    // `PART 2`. A screen reader is handed the number, which it cannot misread.
+    mockRow = row({ series_id: 's1', series_title: 'Ozu, in four parts', part_number: 2 });
+    const { getByText, getByLabelText } = await mount();
+    expect(getByText('PART II OF OZU, IN FOUR PARTS')).toBeTruthy();
+    expect(getByLabelText('Part 2 of Ozu, in four parts. Open the series.')).toBeTruthy();
+  });
+
   it('opens the app’s own action sheet on somebody else’s filing', async () => {
     // The same sheet a log and a stack open.
     const { getByLabelText } = await mount();

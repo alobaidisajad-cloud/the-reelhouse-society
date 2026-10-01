@@ -14,6 +14,27 @@ export { softBreak, MAX_RUN } from '@/src/utils/softBreak';
  */
 export const NOT_SENT_LINE = 'NOT SENT YET · THE HOUSE HAS NOT SEEN THIS';
 
+/** Roman numerals, which is how the paper prints a part. Bounded by the cap. */
+const ROMAN: [number, string][] = [
+  [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
+];
+export function roman(n: number): string {
+  if (!Number.isFinite(n) || n < 1) return '';
+  let left = Math.floor(n);
+  let out = '';
+  for (const [v, s] of ROMAN) while (left >= v) { out += s; left -= v; }
+  return out;
+}
+
+/**
+ * A part of a series, as printed (`Part II of …`) and as said (`Part 2 of …`):
+ * a screen reader may spell a numeral out letter by letter.
+ */
+export function partOf(part: number | null, title: string): { printed: string; said: string } {
+  if (part == null || part < 1) return { printed: title, said: title };
+  return { printed: `Part ${roman(part)} of ${title}`, said: `Part ${part} of ${title}` };
+}
+
 /**
  * ── THE CUT ON A SHARE CARD ──────────────────────────────────────────────────
  * An essay runs to 25,000 characters. A card is one image. So the card carries

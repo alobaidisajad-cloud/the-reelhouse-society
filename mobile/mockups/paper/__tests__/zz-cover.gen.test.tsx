@@ -20,6 +20,7 @@ import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 
 import { EssayHead } from '@/src/components/dispatch/paper/PaperEssay';
+import { partOf } from '@/src/components/dispatch/paper/paperText';
 import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { DOC_MARGIN, DOC_PAD, DOC_RAIL } from '@/src/components/dispatch/paper/paperMetrics';
@@ -42,7 +43,7 @@ const FILM = {
 const head = (
   <EssayHead
     title="The Long Silence in Ozu"
-    series="Part II of Ozu, in four parts"
+    series={partOf(2, 'Ozu, in four parts')}
     author={ANA}
     readTime="12 MIN"
     filed="AUGUST 24"

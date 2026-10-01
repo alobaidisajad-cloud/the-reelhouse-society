@@ -39,7 +39,7 @@ import { PaperEmpty, PaperSheet } from '@/src/components/dispatch/paper/PaperFra
 import { DossierShareCard, PaperBack } from '@/src/components/dispatch/paper/PaperMore';
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { NOT_SENT_LINE } from '@/src/components/dispatch/paper/paperText';
+import { NOT_SENT_LINE, partOf } from '@/src/components/dispatch/paper/paperText';
 import { measure, KIND_NAME } from '@/src/components/dispatch/paper/paperMetrics';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { roomOf } from '@/src/components/dispatch/roomLink';
@@ -419,7 +419,7 @@ export default function FilingReader() {
             <>
               <EssayHead
                 title={live.title ?? ''}
-                series={live.seriesTitle ? `Part ${live.partNumber} of ${live.seriesTitle}` : undefined}
+                series={live.seriesTitle ? partOf(live.partNumber, live.seriesTitle) : undefined}
                 author={author ?? { name: '[deleted]', memberNo: 0, tier: 'free' }}
                 readTime={readTimeOf(live.fullContent ?? live.body)}
                 filed={formatDateMonthDay(live.createdAt).toUpperCase()}

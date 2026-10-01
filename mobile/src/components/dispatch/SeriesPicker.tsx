@@ -38,22 +38,13 @@ import { colors, fonts } from '@/src/theme/theme';
 import { decorativeTextProps, scaledTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { EDGE_LIT } from '@/src/theme/light';
+import { roman } from './paper/paperText';
 
 export interface SeriesChoice { id: string; title: string; part: number }
 
 interface Begun { id: string; title: string; parts: number[] }
 
-/** Roman numerals, which is how the reader prints a part. Bounded by the cap. */
-const ROMAN: [number, string][] = [
-  [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
-];
-export function roman(n: number): string {
-  if (!Number.isFinite(n) || n < 1) return '';
-  let left = Math.floor(n);
-  let out = '';
-  for (const [v, s] of ROMAN) while (left >= v) { out += s; left -= v; }
-  return out;
-}
+export { roman };
 
 /**
  * The series a member has already begun, from their own filings.

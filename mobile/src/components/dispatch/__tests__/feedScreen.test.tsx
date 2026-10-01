@@ -683,7 +683,9 @@ describe('the page, in the rest of its states', () => {
       })],
     });
     const { getByText } = await mount();
-    expect(getByText(/PART 2 OF OZU, IN FOUR PARTS/i)).toBeTruthy();
+    // In numerals, as the design sets a part and as the writing room's preview
+    // promised: the card printed `PART 2`.
+    expect(getByText('PART II OF OZU, IN FOUR PARTS')).toBeTruthy();
   });
 
   it('says it is fetching more rather than looking finished', async () => {

@@ -76,7 +76,7 @@ export const ESSAY_BODY = {
 export const EssayHead = memo(function EssayHead({
   title, series, author, readTime, filed, film, onSeries, onAuthor, onFilm,
 }: {
-  title: string; series?: string; author: PaperAuthor;
+  title: string; series?: { printed: string; said: string }; author: PaperAuthor;
   readTime: string; filed: string; film?: PaperFilm | null;
   onSeries?: () => void; onAuthor?: () => void; onFilm?: () => void;
 }) {
@@ -106,8 +106,8 @@ export const EssayHead = memo(function EssayHead({
         <PressableScale style={e.seriesRow} haptic="selection" onPress={onSeries}
           // The byline is 12pt below and answers taps too: half of that, no more.
           hitSlop={{ top: 15, bottom: 6, left: 15, right: 15 }}
-          accessibilityRole="button" accessibilityLabel={`${series}. Open the series.`}>
-          <Text style={e.series} numberOfLines={2} {...scaledTextProps}>{series.toUpperCase()}</Text>
+          accessibilityRole="button" accessibilityLabel={`${series.said}. Open the series.`}>
+          <Text style={e.series} numberOfLines={2} {...scaledTextProps}>{series.printed.toUpperCase()}</Text>
           <ChevronRight size={12} strokeWidth={2} color={colors.sepia} />
         </PressableScale>
       ) : null}

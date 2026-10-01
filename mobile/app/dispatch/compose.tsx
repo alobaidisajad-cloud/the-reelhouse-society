@@ -24,6 +24,7 @@ import {
 } from '@/src/components/dispatch/SeriesPicker';
 import { FORMS, PaperBack, PaperDoor, PaperPicker } from '@/src/components/dispatch/paper/PaperMore';
 import { EssayHead } from '@/src/components/dispatch/paper/PaperEssay';
+import { partOf } from '@/src/components/dispatch/paper/paperText';
 import { readMinutes, readTimeOf } from '@/src/components/dispatch/readTime';
 import { WEEKDAYS, hourLabel } from '@/src/components/dispatch/dayLabel';
 import { paperTierOf } from '@/src/stores/dispatchTypes';
@@ -694,7 +695,7 @@ function ComposeDossierScreen() {
                     {title || film ? (
                         <EssayHead
                             title={title}
-                            series={series ? `Part ${roman(series.part)} of ${series.title}` : undefined}
+                            series={series ? partOf(series.part, series.title) : undefined}
                             author={{
                                 name: user?.username ?? '',
                                 memberNo: user?.member_no ?? 0,

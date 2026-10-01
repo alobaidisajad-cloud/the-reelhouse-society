@@ -17,6 +17,7 @@ import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib'
 import { LOCAL_ART, POSTERS } from '../../../src/components/profile/__tests__/zz-art.gen';
 
 import { EssayHead } from '@/src/components/dispatch/paper/PaperEssay';
+import { partOf } from '@/src/components/dispatch/paper/paperText';
 import { EssayBody } from '@/src/components/dispatch/EssayBody';
 import { DossierDesk } from '@/src/components/dispatch/paper/PaperDesk';
 import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
@@ -212,7 +213,7 @@ add('p4-the-desk-already-built', (
   <DossierDesk onBack={() => {}} onFile={() => {}} onFilm={() => {}} onCover={() => {}}
     onSeries={() => {}}
     title="What the Camera Refuses to Do" words={2140}
-    series="Part II of Ozu, in four parts"
+    series={partOf(2, 'Ozu, in four parts').printed}
     body="Ozu keeps the camera at the height of somebody kneeling, and he keeps it there after the room has emptied. He will not move it, he will not cut early, and he will not tell you what to feel about either." />
 ));
 
@@ -236,7 +237,7 @@ add('p6-a-dossier-with-its-film-and-series', (
     <PaperSheet>
       <EssayHead title="What the Camera Refuses to Do" author={ANA}
         readTime="9 MIN" filed="AUGUST 26"
-        series="Part II of Ozu, in four parts"
+        series={partOf(2, 'Ozu, in four parts')}
         film={TOKYO} />
       <EssayBody text={ESSAY} />
     </PaperSheet>

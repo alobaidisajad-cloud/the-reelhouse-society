@@ -33,6 +33,7 @@ import {
 import {
   EssayHead, EssayOpening, EssayPara, EssayBreak, EssayNext, SeriesList,
 } from '@/src/components/dispatch/paper/PaperEssay';
+import { partOf } from '@/src/components/dispatch/paper/paperText';
 /** The path a real dossier takes — the markdown renderer, not hand-built paragraphs. */
 import { EssayBody } from '@/src/components/dispatch/EssayBody';
 import {
@@ -226,7 +227,7 @@ add('t2-iphone-se', (
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperPost kind="dossier" order="14:20" orderIs="hour" author={LONGNAME} measureWidth={SE_COL} film={TOKYO}
-        body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
+        body="The Long Silence in Ozu" series={partOf(2, 'Ozu, in four parts').printed}
         readTime="12 MIN" edited certifyCount={61} commentCount={14} />
       <PaperPost kind="take" order="19:02" orderIs="hour" author={MIRA} measureWidth={SE_COL} film={STALKER}
         body={LONGEST} certifyCount={2140} commentCount={61} certified />
@@ -245,7 +246,7 @@ add('t3-android-360', (
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperPost kind="dossier" order="14:20" orderIs="hour" author={LONGNAME} measureWidth={AND_COL} film={TOKYO}
-        body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
+        body="The Long Silence in Ozu" series={partOf(2, 'Ozu, in four parts').printed}
         readTime="12 MIN" edited certifyCount={61} commentCount={14} />
       <PaperPost kind="seeking" order="20:15" orderIs="hour" author={SAJAD} measureWidth={AND_COL}
         body="something to watch after a funeral. No irony, no uplift. I have three hours."
@@ -268,7 +269,7 @@ add('t7-byline-worst-case', (
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
       <PaperPost kind="dossier" order="14:20" orderIs="hour" author={MAX_AUTEUR} measureWidth={AND_COL} film={TOKYO}
-        body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
+        body="The Long Silence in Ozu" series={partOf(2, 'Ozu, in four parts').printed}
         readTime="12 MIN" edited certifyCount={61} commentCount={14} />
       <PaperPost kind="take" order="2.1K" orderIs="count" author={MAX_AUTEUR} measureWidth={AND_COL}
         body={LONGEST} certifyCount={2140} commentCount={61} certified />
@@ -457,7 +458,7 @@ add('e1-saved', (
         body="Tokyo Story is the only film that has ever made me telephone my mother the same night."
         certifyCount={214} commentCount={31} saved />
       <PaperPost kind="dossier" order="16:40" orderIs="hour" author={ANA} measureWidth={COL} film={TOKYO}
-        body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
+        body="The Long Silence in Ozu" series={partOf(2, 'Ozu, in four parts').printed}
         readTime="12 MIN" certifyCount={61} commentCount={14} saved />
       <DayDivider label="SATURDAY, AUGUST 23" />
       <PaperPost kind="seeking" order="09:58" orderIs="hour" author={SAJAD} measureWidth={COL}
@@ -534,7 +535,7 @@ add('b5-dossier', (
     <PaperSheet top>
       {/* A credit that agrees with its headline (an essay on Ozu, on an Ozu film). */}
       <PaperPost kind="dossier" order="14:20" orderIs="hour" author={ANA} measureWidth={COL} still film={TOKYO}
-        body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
+        body="The Long Silence in Ozu" series={partOf(2, 'Ozu, in four parts').printed}
         readTime="12 MIN" certifyCount={61} commentCount={14} certified />
     </PaperSheet>
   </View>
@@ -699,7 +700,7 @@ add('f5-member-room', (
       <PaperPost noByline kind="take" order="28" orderIs="day" author={ANA} measureWidth={COL} film={STALKER}
         body={LONGEST} certifyCount={2140} commentCount={61} certified />
       <PaperPost noByline kind="dossier" order="24" orderIs="day" author={ANA} measureWidth={COL} film={TOKYO}
-        body="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
+        body="The Long Silence in Ozu" series={partOf(2, 'Ozu, in four parts').printed}
         readTime="12 MIN" certifyCount={61} commentCount={14} />
       <PaperPost noByline kind="wire" order="21" orderIs="day" author={ANA} measureWidth={COL} film={GODFATHER}
         source="bfi.org.uk"
@@ -953,7 +954,7 @@ add('h1-essay-read', (
   <View style={p.screen}>
     <PaperBack label="ESSAY" />
     <PaperSheet>
-      <EssayHead title="The Long Silence in Ozu" series="Part II of Ozu, in four parts"
+      <EssayHead title="The Long Silence in Ozu" series={partOf(2, 'Ozu, in four parts')}
         author={ANA} readTime="12 MIN" filed="AUGUST 24" film={TOKYO} />
       <EssayOpening text="There is a shot in Tokyo Story that lasts eleven seconds after everyone has left the frame, and for years I thought it was a mistake of the print." />
       <EssayPara>
@@ -1039,7 +1040,7 @@ add('h4-desk-ballot', (
 ));
 
 add('h5-desk-dossier', (
-  <DossierDesk onBack={() => {}} onFile={() => {}} title="The Long Silence in Ozu" words={2140} series="Part II of Ozu, in four parts"
+  <DossierDesk onBack={() => {}} onFile={() => {}} title="The Long Silence in Ozu" words={2140} series={partOf(2, 'Ozu, in four parts').printed}
     body="There is a shot in Tokyo Story that lasts eleven seconds after everyone has left the frame, and for years I thought it was a mistake of the print. It is not. Ozu holds the room because the room is what the film is about." />
 ));
 
@@ -1225,7 +1226,7 @@ add('t5-se-reader', (
     <PaperBack label="ESSAY" onMore={NOOP} />
     <PaperSheet>
       <EssayHead title="The Long Silence in Ozu, and What the House Remembers"
-        series="Part II of Ozu, in four parts"
+        series={partOf(2, 'Ozu, in four parts')}
         author={LONGNAME} readTime="12 MIN" filed="AUGUST 24" film={TOKYO} />
       <EssayOpening text="There is a shot in Tokyo Story that lasts eleven seconds after everyone has left the frame, and for years I thought it was a mistake of the print." />
       <EssayPara>
