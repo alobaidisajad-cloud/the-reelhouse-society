@@ -401,8 +401,8 @@ export default function LogDetailScreen() {
 
   const keyboard = useAnimatedKeyboard();
   const animatedContainerStyle = useAnimatedStyle(() => ({
-    // iOS only: Android's window resize (softwareKeyboardLayoutMode) already
-    // lifts the composer; padding both would double-shift the content.
+    // iOS only: on Android the root ends at the keyboard (KeyboardRoom);
+    // padding both would double-shift the content.
     paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
   }));
 

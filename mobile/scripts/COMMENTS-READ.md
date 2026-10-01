@@ -373,6 +373,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/home/types.ts | 2026-10-01 | true as written |
 | src/components/home/VelvetRopeCTA.tsx | 2026-10-01 | nav; the shimmer note made true |
 | src/components/InitiationModal.tsx | — |  |
+| src/components/KeyboardRoom.tsx | 2026-10-01 | written: the keyboard's room on Android |
 | src/components/layout/__tests__/ConciergeButton.test.tsx | — |  |
 | src/components/layout/__tests__/everyListChoosesItsAnchor.guard.test.ts | 2026-09-29 | new |
 | src/components/layout/__tests__/flashListKeyboard.test.tsx | 2026-09-29 | anchor tests |
@@ -579,6 +580,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/Toggle.tsx | — |  |
 | src/components/TryAgain.tsx | — |  |
 | src/components/__tests__/aLabelIsSpoken.test.ts | 2026-10-01 | written: a label on a View is spoken |
+| src/components/__tests__/theKeyboardHasRoom.test.tsx | 2026-10-01 | written with the keyboard's room |
 | src/components/reels/__tests__/theReelSaysWhatEachControlIs.test.tsx | 2026-10-01 | written with the Reel's controls |
 | src/components/ui/NotificationBadge.tsx | — |  |
 | src/constants/__tests__/aRankIsSoldEnforcedAndExplained.test.ts | — |  |

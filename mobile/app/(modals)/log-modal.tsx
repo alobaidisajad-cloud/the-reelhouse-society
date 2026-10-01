@@ -26,8 +26,9 @@ export default function LogModalScreen() {
     // KEYBOARD LAW (router-screen form): the ScrollView's
     // automaticallyAdjustKeyboardInsets scrolls the FOCUSED field above the
     // keyboard on iOS (the login/reset-password proven mechanism) — blind
-    // container padding only made room without scrolling to it. Android's
-    // window resize handles everything natively.
+    // container padding only made room without scrolling to it. On Android the
+    // root ends at the keyboard (KeyboardRoom) and the shortened ScrollView
+    // scrolls the focused field into view.
     const insets = useSafeAreaInsets();
 
     // ── Not authenticated ──

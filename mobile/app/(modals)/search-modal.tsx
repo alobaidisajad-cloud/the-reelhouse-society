@@ -136,7 +136,7 @@ export default function SearchModal() {
   }, [router]);
 
   const animatedContainerStyle = useAnimatedStyle(() => ({
-    // iOS only: Android's window resize handles the keyboard natively.
+    // iOS only: on Android the root ends at the keyboard (KeyboardRoom).
     paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
   }));
 

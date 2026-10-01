@@ -113,6 +113,7 @@ Decisions, as of 2026-09-28:
 |---|---|
 | `app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts` | The RPC signature the queue calls, against the schema. |
 | `app/__tests__/boot-structure.test.tsx` | The root layout mounts the bootstrapper (the root layout is the app; jest cannot mount it whole). |
+| `src/components/__tests__/theKeyboardHasRoom.test.tsx` | The root layout puts the whole app inside the keyboard's room (jest cannot mount the root whole); the room itself is mounted. |
 | `src/components/dispatch/__tests__/everyRuleIsTrue.test.ts` | The house rules page against the schema's constraints. |
 | `src/components/dispatch/__tests__/oneCapNotThree.test.ts` | The input's cap, the sanitiser's and the column's CHECK are one number. |
 | `src/components/lounge/__tests__/theDoorIsAName.test.tsx` | The Lounge's door, and the Maestro flow that walks through it; mounts the gate too. |

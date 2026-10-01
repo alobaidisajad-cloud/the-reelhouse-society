@@ -36,8 +36,8 @@ export const PaperKeyWell = memo(function PaperKeyWell({ drawn }: { drawn?: bool
   // Hooks run unconditionally; only what is RENDERED differs.
   const keyboard = useAnimatedKeyboard();
   const room = useAnimatedStyle(() => ({
-    // iOS only, matching `compose.tsx`: Android's window resize handles the
-    // keyboard natively, and padding for it there would double the inset.
+    // iOS only, matching `compose.tsx`: on Android the root ends at the
+    // keyboard (KeyboardRoom), and padding for it here would double the inset.
     height: Platform.OS === 'ios' ? keyboard.height.value : 0,
   }));
 

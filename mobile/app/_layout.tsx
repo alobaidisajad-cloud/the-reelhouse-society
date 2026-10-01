@@ -25,6 +25,7 @@ import { SpecialElite_400Regular } from '@expo-google-fonts/special-elite';
 import * as SplashScreen from 'expo-splash-screen';
 import { StyleSheet } from 'react-native';
 import OfflineBanner from '@/src/components/OfflineBanner';
+import { KeyboardRoom } from '@/src/components/KeyboardRoom';
 import { captureError, initSentry, markAppLoaded } from '@/src/lib/sentry';
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
 import { noteCurrentPath } from '@/src/utils/openSociety';
@@ -132,6 +133,7 @@ export default function RootLayout() {
     <GlobalErrorBoundary>
       <SafeAreaProvider>
         <GestureHandlerRootView style={styles.root} onLayout={onLayoutReady}>
+        <KeyboardRoom>
           <PersistQueryClientProvider
           client={queryClient}
           persistOptions={{ persister: mmkvPersister, maxAge: 24 * 60 * 60 * 1000 }}
@@ -186,6 +188,7 @@ export default function RootLayout() {
       <ToastHost layer="root" />
       <OfflineBanner />
         <StatusBar style="light" />
+        </KeyboardRoom>
         </GestureHandlerRootView>
       </SafeAreaProvider>
     </GlobalErrorBoundary>

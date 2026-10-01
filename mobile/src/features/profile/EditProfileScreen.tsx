@@ -147,7 +147,8 @@ export function EditProfileScreen() {
 
   // KEYBOARD LAW (router-screen form): automaticallyAdjustKeyboardInsets on
   // the ScrollView scrolls the focused field above the keyboard on iOS;
-  // Android's window resize handles it natively. Container padding removed —
+  // on Android the root ends at the keyboard (KeyboardRoom) and the shortened
+  // ScrollView scrolls to the field. Container padding removed —
   // it made room without scrolling to the field.
 
   if (!user) return null;

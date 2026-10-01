@@ -510,7 +510,8 @@ export function SettingsScreen() {
         everything in a KeyboardAvoidingView instead, which is the "blind
         container padding" that only makes room WITHOUT scrolling to it: opening
         CHANGE PASSWORD near the foot of eight cards left the member typing a new
-        cipher behind the keyboard. Android's window resize handles it natively.
+        cipher behind the keyboard. On Android the root ends at the keyboard
+        (KeyboardRoom) and the shortened ScrollView scrolls to the field.
       */}
       <Animated.ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}

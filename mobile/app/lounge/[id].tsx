@@ -337,7 +337,7 @@ export default function LoungeRoomScreen() {
   const { isOffline } = useOfflineAware();
 
   const keyboard = useAnimatedKeyboard();
-  // iOS only: Android's window resize already lifts the chat composer.
+  // iOS only: on Android the root ends at the keyboard (KeyboardRoom).
   const animatedContainerStyle = useAnimatedStyle(() => ({ paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0 }));
 
   const {

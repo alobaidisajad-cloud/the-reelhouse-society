@@ -222,8 +222,8 @@ export default function StackDetailScreen() {
     paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
   }));
   // The overlay is absolute, so the container's padding cannot lift it — its
-  // own foot rides the keyboard instead. Android resizes the window, so there
-  // is nothing to lift there.
+  // own foot rides the keyboard instead. On Android the root ends at the
+  // keyboard (KeyboardRoom), so there is nothing to lift there.
   const critiqueSheetStyle = useAnimatedStyle(() => ({
     bottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
   }));
