@@ -96,7 +96,7 @@ export function SettingsScreen() {
   }, [isAdmin]);
 
   const [otpModalVisible, setOtpModalVisible] = useState(false);
-  const [otpAction, setOtpAction] = useState<'signOut' | 'deleteAccount' | 'toggleBiometric' | null>(null);
+  const [otpAction, setOtpAction] = useState<'deleteAccount' | 'toggleBiometric' | null>(null);
   const [otpCode, setOtpCode] = useState('');
   const [otpSending, setOtpSending] = useState(false);
   const [otpVerifying, setOtpVerifying] = useState(false);
@@ -144,7 +144,7 @@ export function SettingsScreen() {
     }
   }, [user?.email]);
 
-  const requestOtpAuth = useCallback(async (action: 'signOut' | 'deleteAccount' | 'toggleBiometric') => {
+  const requestOtpAuth = useCallback(async (action: 'deleteAccount' | 'toggleBiometric') => {
     setOtpAction(action);
     setOtpCode('');
     setOtpError(null);
@@ -177,13 +177,7 @@ export function SettingsScreen() {
   }, [logout]);
 
   const executePendingOtpAction = async () => {
-    if (otpAction === 'signOut') {
-      // Sign-out is instant: logout() clears auth state synchronously up front;
-      // network cleanup continues in the background. Navigate immediately.
-      logout().catch(() => {});
-      TactileEngine.destroy();
-      nav.replace('/login');
-    } else if (otpAction === 'deleteAccount') {
+    if (otpAction === 'deleteAccount') {
       await completeAccountDeletion();
     } else if (otpAction === 'toggleBiometric') {
       const data = pendingSaveDataRef.current;
@@ -371,35 +365,9 @@ export function SettingsScreen() {
   const handleSignOut = async () => {
     Alert.alert('Depart the Society', 'Your membership will remain. You may return at any time.', [
       { text: 'CANCEL', style: 'cancel' },
-      { text: 'SIGN OUT', style: 'destructive', onPress: async () => {
-        const biometricEnabled = user?.preferences?.biometric_lock === true;
-        if (biometricEnabled) {
-          const hasHardware = await withTimeout(LocalAuthentication.hasHardwareAsync(), 2000, false);
-          const isEnrolled = await withTimeout(LocalAuthentication.isEnrolledAsync(), 2000, false);
-
-          if (hasHardware && isEnrolled) {
-            try {
-              const result = await LocalAuthentication.authenticateAsync({
-                promptMessage: 'Confirm your identity to sign out',
-                fallbackLabel: 'Use Passcode',
-                disableDeviceFallback: false,
-              });
-              if (!result.success) {
-                if (result.error === 'user_cancel') return;
-                requestOtpAuth('signOut');
-                return;
-              }
-            } catch {
-              requestOtpAuth('signOut');
-              return;
-            }
-          } else {
-            requestOtpAuth('signOut');
-            return;
-          }
-        }
-        // Instant sign-out: state clears synchronously inside logout(); the
-        // network cleanup finishes in the background.
+      { text: 'SIGN OUT', style: 'destructive', onPress: () => {
+        // Leaving gives nothing away, so no lock stands at the door out: offline,
+        // or with Face ID failing, a member can always sign out.
         logout().catch(() => {});
         TactileEngine.destroy();
         nav.replace('/login');
@@ -664,7 +632,6 @@ export function SettingsScreen() {
               <Text style={st.modalTitle} {...scaledTextProps}>SECURITY VERIFICATION</Text>
             </View>
             <Text style={st.modalDesc} {...scaledTextProps}>
-              {otpAction === 'signOut' && 'Enter the 6-digit cipher sent to your email to authorize sign out.'}
               {otpAction === 'deleteAccount' && 'Enter the 6-digit cipher sent to your email to authorize account deletion.'}
               {otpAction === 'toggleBiometric' && 'Enter the 6-digit cipher sent to your email to authorize this security change.'}
             </Text>

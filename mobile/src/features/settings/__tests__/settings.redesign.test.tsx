@@ -548,6 +548,25 @@ describe('the way out, and the way to leave for good', () => {
   });
 });
 
+describe('the door out is never locked', () => {
+  // Leaving gives nothing away: Biometric Lock guards what is valuable, not the exit.
+  it('a member with Biometric Lock signs out with no Face ID and no code', async () => {
+    mockUser = { ...BASE, preferences: { biometric_lock: true } };
+    const local = jest.requireMock('expo-local-authentication') as { authenticateAsync: jest.Mock };
+    local.authenticateAsync.mockClear();
+    mockLogout.mockClear();
+    mockNavReplace.mockClear();
+    const r = await settle(mount());
+    await act(async () => { await fireEvent.press(r.getByLabelText('SIGN OUT')); });
+    const [, , buttons] = mockAlert.mock.calls[mockAlert.mock.calls.length - 1] as [string, string, { text: string; onPress?: () => unknown }[]];
+    await act(async () => { await buttons.find((b) => b.text === 'SIGN OUT')!.onPress!(); });
+    expect(local.authenticateAsync).not.toHaveBeenCalled();
+    expect(r.queryByText(/6-digit cipher/)).toBeNull();
+    expect(mockLogout).toHaveBeenCalledTimes(1);
+    expect(mockNavReplace).toHaveBeenCalledWith('/login');
+  });
+});
+
 describe('the security box no longer strands you', () => {
   it('offers a new code, and says why one never came', () => {
     // It opened BEFORE the send was attempted; a failure left a live box, an
