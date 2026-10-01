@@ -95,6 +95,6 @@ export function buildSearchPattern(raw: string | null | undefined): string | nul
     .replace(/\\/g, '\\\\')   // our own escape character, first
     .replace(/%/g, '\\%')     // LIKE's "any run of characters"
     .replace(/_/g, '\\_')     // LIKE's "any single character"
-    .replace(/\*/g, '\\*')    // PostgREST's OWN alias for % — see below
-    .replace(/[(),]/g, '_');  // the characters .or()'s parser owns — see below
+    .replace(/\*/g, '\\*')    // PostgREST's OWN alias for % — see above
+    .replace(/[(),]/g, '_');  // the characters .or()'s parser owns — see above
 }

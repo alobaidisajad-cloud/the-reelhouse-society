@@ -1,11 +1,9 @@
 /**
  * ContentActionSheet — Shared moderation trigger action sheet.
  * ─────────────────────────────────────────────────────────────
- * Reusable bottom sheet for content moderation actions (Report / Block / Mute).
- * Extends the Lounge ActionSheet pattern to all surfaces.
- *
- * Visual language: Nitrate Noir — BlurView backdrop, spring animations,
- * gesture-dismissible, sepia border glow on ink surface.
+ * The bottom sheet for moderation acts (Report / Block / Mute) on every surface:
+ * a blurred backdrop, a sheet that rises and falls with useSheetPresence and
+ * closes on a downward drag.
  */
 import { BlurView } from 'expo-blur';
 import { Ban, ShieldAlert, Unlock, Volume2, VolumeX } from 'lucide-react-native';

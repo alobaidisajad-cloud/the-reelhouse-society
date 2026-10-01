@@ -68,8 +68,8 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
  * publishable essay is never cut on its own page. Worst-case adversarial input at that size
  * measures under half a second; the longest real dossier is 2,770 characters.
  *
- * Render-only. Storage is untouched, and the compose preview deliberately does NOT
- * use this — truncating authors' drafts while they write is the app fighting its user.
+ * Render-only: storage is untouched. The writing room's preview mounts the
+ * reader's EssayBody, so a draft past the limit shows where the limit bites.
  */
 export function capMarkdownForRender(content: string | null | undefined): string {
   if (!content) return '';

@@ -1,5 +1,5 @@
 /**
- * THE HOUSE RULES — nine clauses, and every one of them is a claim.
+ * THE HOUSE RULES — every clause is a claim.
  * ─────────────────────────────────────────────────────────────────────────────
  * The letters page doing the job it was invented for: the numeral in the margin,
  * the clause in the column. Nothing here is designed for this screen; it is the
@@ -8,17 +8,14 @@
  *
  * ── IT SCROLLS, AND THE DESIGN PLATE DOES NOT ───────────────────────────────
  * `f3-house-rules` draws the same two components with no scroll view, because a
- * plate is one screenful by definition. Nine clauses come to roughly 655 points
- * at the system text size — inside a 740pt screen, and past it at the
- * accessibility ceiling, where the last two clauses and the date under them
- * would simply not exist. A page a member cannot reach the bottom of is a page
- * whose last rules are not rules.
+ * plate is one screenful by definition. The clauses fit a 740pt screen at the
+ * system text size and run past it at the accessibility ceiling, where the last
+ * of them and the date would not exist without the scroll.
  *
  * ── AND WHY THE FOOT IS NOT A NUMBER ────────────────────────────────────────
- * See `CLAUSES` in PaperMore: the standfirst used to say "Six" while there were
- * six, and a count in prose beside a list is a second copy of that list's
- * length. The copy is what goes stale. `everyRuleIsTrue.test.ts` fails if one
- * comes back.
+ * A count in prose beside a list is a second copy of the list's length, and the
+ * copy goes stale (see `CLAUSES` in PaperMore). `everyRuleIsTrue.test.ts` fails
+ * if one comes back.
  */
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

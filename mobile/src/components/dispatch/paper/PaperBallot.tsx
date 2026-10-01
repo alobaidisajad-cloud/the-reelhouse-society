@@ -60,29 +60,13 @@ const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.'];
  *                      beneath. It stops being a question and becomes a record.
  *
  * `closes_at` is read at render time, so a ballot closes without anything
- * having to run.
+ * having to run. Its NUMBERS do not: they are `frozen_totals`, written only by
+ * `freeze_closed_ballots()` (revoked from the app), which the cron job
+ * `freeze-closed-ballots` runs every five minutes (20260905_01).
  *
- * ── BUT THE COUNT IS NOT RENDER-TIME, AND THIS SAID IT WAS ──────────────────
- * The line here read: "There is no scheduled job anywhere in this design, so
- * there is no job that can silently stop running." That was wrong, and it is
- * the sentence that would have stopped anybody looking.
- *
- * A ballot's numbers come from `frozen_totals` on the post. That column is
- * written by exactly one thing — `freeze_closed_ballots()` — which is REVOKEd
- * from anon and authenticated, so the app cannot call it. Until 20260905_01 no
- * job called it either (`cron.job` was empty), so no ballot was ever counted.
- * That migration schedules `freeze-closed-ballots` every five minutes; checked
- * against production 2026-09-30, it runs and succeeds.
- *
- * ── AND BETWEEN A CLOSE AND THE COUNT, THIS COMPONENT LIED ──────────────────
- * With no totals every option reads 0, so `total` is 0, so a closed ballot
- * printed NO BALLOTS WERE CAST — under a question fifty members may have
- * marked. `sealed` is what separates "counted, and nobody voted" from "not
- * counted yet", which are different sentences and must not share one.
- *
- * It still matters with the job running: between a ballot closing and the next
- * run there is a window of up to five minutes, and the page must be honest
- * inside it rather than announcing a result that has not been worked out.
+ * Between a close and that run every option reads 0. `sealed` separates
+ * "counted, and nobody voted" from "not counted yet": two different sentences,
+ * and a closed ballot must not print the first while the second is true.
  */
 export const PaperBallot = memo(function PaperBallot({
   question, author, options, myVote, closed, closesLabel, sealed = true,

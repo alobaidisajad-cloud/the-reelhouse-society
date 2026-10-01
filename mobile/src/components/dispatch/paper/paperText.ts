@@ -93,28 +93,13 @@ export function clipToSentence(text: string, max: number): { text: string; clipp
     if (end < whole.length && !/\s/.test(whole[end])) continue;
 
     /**
-     * ── AND THE COMMENT HERE USED TO CLAIM MORE THAN THE CODE DID ────────────
-     * It said this "keeps `No. 17` and `U.S.` from reading as endings". It did
-     * not. Whitespace follows the stop in `No. 17`, `Mr. Ozu` and `U.S. desk`
-     * exactly as it follows a real ending, so all three were cuts. Measured,
-     * the excerpts this produced were:
-     *
-     *     "Ballot No."
-     *     "J. L."
-     *     "Filed by Mr. Ozu of the U.S."
-     *
-     * The first two are a card printing nothing but an abbreviation.
-     *
-     * Two more conditions, both cheap, and neither needing to know English:
-     *
-     *   WHAT FOLLOWS BEGINS A SENTENCE. A real ending is followed by a capital
-     *   or by the end of the essay. `No. 17` and `U.S. desk` are followed by a
-     *   digit and a lowercase letter, so they are not endings.
-     *
-     *   WHAT PRECEDES IS NOT AN ABBREVIATION. `Mr. Ozu` and `J. L. Godard` ARE
-     *   followed by capitals, so the first rule cannot see them. A short list
-     *   of titles, and any single letter, covers what a film essay actually
-     *   contains.
+     * Whitespace alone also follows `No. 17`, `Mr. Ozu` and `U.S. desk` (cut
+     * there, a card reads "Ballot No." or "J. L."). Two more conditions:
+     *   WHAT FOLLOWS BEGINS A SENTENCE: a capital, or the essay's end. Not the
+     *   digit of `No. 17` or the lowercase of `U.S. desk`.
+     *   WHAT PRECEDES IS NOT AN ABBREVIATION: `Mr. Ozu` and `J. L. Godard` are
+     *   followed by capitals, so a short list of titles, and any single
+     *   letter, catches them.
      */
     const after = whole.slice(end).replace(/^\s+/, '');
     if (after && !/^[A-Z«“"'([]/.test(after[0] + (after[1] ?? ''))) continue;

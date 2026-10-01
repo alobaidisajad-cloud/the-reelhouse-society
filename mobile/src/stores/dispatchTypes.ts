@@ -247,18 +247,10 @@ const unwrap = (p: RawProfile | RawProfile[] | null | undefined): RawProfile | n
 /**
  * The rank a Dispatch byline draws, from anything that describes a member.
  *
- * ── WHY THIS IS EXPORTED ────────────────────────────────────────────────────
- * It used to live inside `toAuthor`, which maps a row that came back from the
- * SERVER. Three other places build a `PaperAuthor` for the member who is signed
- * in right now — the desk's preview of your own byline, and the optimistic
- * filing and critique you see the instant you post — and all three wrote
- * `tier: 'free'` because there was nothing to call.
- *
- * That was survivable while rank was a 1.5pt ring. With a badge on the byline
- * it is not: an Auteur would have paid for the mark, posted, watched their own
- * post appear without it, and seen it appear a second later when the server's
- * copy replaced theirs. The first thing the feature would have done is look
- * broken to exactly the members who paid for it.
+ * Exported because the signed-in member's own byline is built in three places
+ * besides a server row (the desk's preview, the optimistic filing and
+ * critique): each draws the member's real rank at once, never `free` until the
+ * server's copy replaces it.
  *
  * Compared by WEIGHT, not by name. `resolveTier` already applies the Highest
  * Watermark rule across tier / role / is_founding, and a founding member comes

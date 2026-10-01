@@ -193,10 +193,8 @@ export const PaperComposer = memo(function PaperComposer({
                   multiline
                   autoFocus
                   selectionColor={colors.sepia}
-                  // No maxLength. The composer must let a member finish a
-                  // sentence and then say it is over by how much — a field that
-                  // silently stops accepting characters mid-word is how the
-                  // dossier composer used to destroy a draft.
+                  // No maxLength: a member finishes the sentence and is told by
+                  // how much it is over, rather than losing its end mid-word.
                   accessibilityLabel={`Your ${nameOf(kind).toLowerCase()}`}
                   {...scaledTextProps}
                 />

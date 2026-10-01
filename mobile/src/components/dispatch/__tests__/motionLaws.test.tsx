@@ -1,12 +1,8 @@
 /**
- * motionLaws.test.tsx — the movement that was designed and never built.
+ * motionLaws.test.tsx — the page moves as `paperMotion.ts` says, and only so.
  * ─────────────────────────────────────────────────────────────────────────────
- * `paperMotion.ts` is a hundred and forty lines specifying how this page moves,
- * and NOTHING in the app imported it — the second module in this feature written
- * as design and left unwired, after `paperPerf`. Its own opening says why that
- * is not a neutral state: with nothing specified, every screen inherits whatever
- * the navigator and the platform do, and an app assembled that way feels
- * assembled.
+ * The file specifies how the Dispatch moves, and must be imported by what
+ * moves: a design module nothing imports is a specification nothing keeps.
  *
  * What is held here is the file's own three laws, because those are the part
  * that can be checked without a device:

@@ -56,19 +56,9 @@ export interface ReportSheetProps {
 // ── Constants ───────────────────────────────────────────────────────────────
 
 /**
- * The sheet fills three quarters of the window — measured WHEN IT OPENS.
- *
- * This used to be `Dimensions.get('window').height` at module scope, read once
- * when the JS bundle loaded and never again. The sheet was therefore sized to
- * whatever the window was at startup: wrong after a rotation, wrong in
- * split-screen, wrong in iPad multitasking. It was the only module-load
- * `Dimensions.get` in the entire app — every other component already takes the
- * reactive hook, and that inconsistency is what marked it an oversight.
- *
- * Safe to make reactive because no worklet captures it: the animations here
- * derive from scale, opacity and translateY, and this value has exactly one
- * consumer — the sheet's own height. A hook value and a module constant behave
- * differently inside a worklet, which is why that was checked first.
+ * The sheet fills three quarters of the window, read from `useWindowDimensions`
+ * so a rotation or split-screen resizes it (a module-level `Dimensions.get` is
+ * read once, at load). No worklet reads it: its one use is the sheet's height.
  */
 const SHEET_HEIGHT_RATIO = 0.75;
 const REASON_OPTIONS = ReportReasonEnum.options;

@@ -265,11 +265,6 @@ export const CritiqueRow = memo(function CritiqueRow({
 });
 
 /**
- * The footer of a very long thread. It never claims an end is near — with five
- * thousand critiques it says what remains, which is honest and stops the member
- * scrolling in hope.
- */
-/**
  * The foot of the critiques: the ornament when they have all been read, and the
  * way to read the rest when they have not.
  *

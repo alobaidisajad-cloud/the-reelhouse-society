@@ -131,14 +131,9 @@ export const EssayHead = memo(function EssayHead({
  * section is a pattern book, not a page.
  *
  * ── WHY THE CAP IS INLINE AND NOT A COLUMN BESIDE THE TEXT ──────────────────
- * It used to be a flex row: the cap in one child, the WHOLE paragraph in the
- * other. A row cannot put a line back under the cap, so the paragraph stayed
- * indented for its full height. Measured on the reader: 46pt of indent, a
- * measure 15% narrower than every other paragraph, and — because the cap is
- * only two lines tall — a 66pt column of nothing beneath it. It read as a
- * misalignment rather than as a form, and it only ever looked right when the
- * opening paragraph happened to be about two lines long, which is not something
- * this component controls.
+ * A flex row (cap in one child, paragraph in the other) cannot put a line back
+ * under the cap: the whole paragraph stays indented (46pt, a measure 15%
+ * narrower) with a 66pt void beneath a two-line cap.
  *
  * A true SUNK initial — two lines beside the cap, then the text returning to
  * full measure — needs `onTextLayout` to find where the second line ends, a
@@ -219,14 +214,9 @@ export interface Part {
 /**
  * The inks a part that is not out yet is printed in.
  *
- * This row used to be dimmed instead — the whole thing set to one opacity. That
- * put the part NUMERAL at 4.21:1 and its TO COME at 4.45:1 against the sheet,
- * both under the 4.5 a reader is owed, and lifting the opacity only moved the
- * problem: the ground was re-cut later and the numeral fell under again, at
- * 4.27. A dimmed word is a word whose contrast is decided by whatever is
- * painted behind it, and the house does not draw words see-through.
- *
- * So the row is printed, not faded. Three solid inks, each one quieter than the
+ * Printed, not faded: a row set to an opacity has its contrast decided by
+ * whatever is painted behind it (a dimmed numeral fell to 4.21:1, under the
+ * 4.5 a reader is owed). Three solid inks, each one quieter than the
  * ink a part that IS out uses, and each one clear of 4.5:1 on the sheet:
  *
  *   numeral   brass -> grey   the brass is what says a part can be opened

@@ -1,31 +1,25 @@
 /**
  * draftSync.ts — the copy of an unfinished essay that is not on the phone.
  * ─────────────────────────────────────────────────────────────────────────────
- * Four thousand words used to live in exactly one place: MMKV on one handset. A
- * lost phone, a cracked screen, a reinstall or "I deleted the app to free up
- * space" took every one of them. This is not about writing on two devices — it
- * is that a member's unpublished work had NO BACKUP.
+ * The backup of a member's unpublished work: a lost phone, a reinstall or "I
+ * deleted the app to free up space" must not take four thousand words with it.
+ * Not a way of writing on two devices.
  *
  * ── THE SERVER IS THE BACKUP, NEVER THE BOSS ────────────────────────────────
- * The local draft stays the source of truth for the session. Nothing here can
- * block typing, delay a keystroke, or fail in a way the member has to deal with.
- * Every call swallows its own errors; the next push tries again.
+ * The local draft is the source of truth for the session. Nothing here can
+ * block typing, delay a keystroke, or fail in a way the member has to handle;
+ * every call swallows its own errors.
  *
- * ── AND IT DOES NOT TRACK KEYSTROKES ────────────────────────────────────────
- * The first sketch of this pushed on a ten-second debounce. Measured against the
- * real ceiling — 25,000 characters — that is about NINE MEGABYTES AN HOUR of
- * somebody's mobile data, for a file that only matters if their phone dies.
- *
- * Every two minutes, plus when the app goes to the background, plus when the
- * room closes. Worst case a member loses two minutes of writing, and only if the
- * handset is destroyed inside that window — the local copy still has it in every
- * other case.
+ * ── TAKEN EVERY TWO MINUTES, NOT PER KEYSTROKE ──────────────────────────────
+ * A push every ten seconds is about nine megabytes an hour of a member's data at
+ * the 25,000-character ceiling. Two minutes, plus on background and when the
+ * room closes: a member loses at most two minutes, and only if the handset is
+ * destroyed inside them.
  *
  * ── IT ASKS, IT NEVER MERGES ────────────────────────────────────────────────
- * A merge rule for prose is a rule for silently producing text nobody wrote. The
- * room compares the two `savedAt` stamps and, when the remote one is newer, puts
- * the question to the member with both sides named. Nothing is overwritten until
- * they choose — which is also what makes this verifiable without a second phone.
+ * A merge rule for prose produces text nobody wrote. The room compares the two
+ * `savedAt` stamps (whichCopy) and puts a newer remote copy to the member with
+ * both sides named, and pushes nothing over a copy it has not settled with.
  */
 import { supabase } from '@/src/lib/supabase';
 import { logger } from '@/src/utils/logger';
@@ -124,17 +118,9 @@ export async function dropDraft(
 ): Promise<void> {
   if (!userId) return;
   try {
-    // ── THE ERROR WAS NOT EVEN READ ─────────────────────────────────────────
-    // supabase-js RESOLVES a failure rather than throwing, so `await` alone
-    // learns nothing and this catch could only ever see a crash. A drop that
-    // quietly failed — a flaky connection is enough — left the backup standing
-    // after the essay was filed and the local copy cleared. The next time the
-    // member opened the room on another phone, `pullDraft` handed back the
-    // piece they had already published and the room offered to restore it.
-    //
-    // Not retried: this is fire-and-forget by design, and `whichCopy` compares
-    // timestamps rather than trusting the backup's existence. But a failure
-    // that has a visible consequence should be visible, so it is logged.
+    // supabase-js RESOLVES a failure, so its error is read. A drop that failed
+    // leaves a filed essay's backup standing, which another phone would offer
+    // to restore: not retried (fire-and-forget), but logged.
     const { error } = await supabase
       .from('member_drafts')
       .delete()
