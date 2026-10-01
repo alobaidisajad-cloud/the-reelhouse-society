@@ -779,6 +779,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/theLogSaysWhatHappened.test.ts | — |  |
 | src/stores/__tests__/theRoomYouAreActuallyIn.test.ts | — |  |
 | src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts | — |  |
+| src/stores/__tests__/theStoreOpensOnEveryLaunch.test.ts | 2026-10-01 | written with the 16-byte key fix |
 | src/stores/__tests__/theThrottleIsPerRoom.test.ts | — |  |
 | src/stores/__tests__/vaultStore.test.ts | — |  |
 | src/stores/__tests__/watchlistSlice.test.ts | — |  |
@@ -805,7 +806,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/followStore.ts | 2026-10-01 | true as written |
 | src/stores/lounge.ts | 2026-09-28 | 38 findings fixed; stale 'created rooms' reason corrected (create_lounge adds the member row); loadOlderMessages→loadMoreMessages; 12 repeated sessionGuard notes dropped |
 | src/stores/markCounts.ts | — |  |
-| src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added |
+| src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
 | src/stores/notificationStore.ts | 2026-09-29 | 28 fixed; ticket tags (#51,#73,NOTIF-1,FLAW-08,LIB-5,WS-9,L234) and bug histories cut; checked the reset's MMKV delete hits the same store (it does) |
 | src/stores/offlineQueueStore.ts | — |  |
 | src/stores/reportStore.ts | — |  |

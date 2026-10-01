@@ -154,6 +154,7 @@ jest.mock('expo-crypto', () => {
     randomUUID: jest.fn(
       () => `00000000-0000-4000-8000-${(++seq).toString(16).padStart(12, '0')}`,
     ),
+    getRandomBytes: jest.fn((n: number) => Uint8Array.from({ length: n }, (_, i) => (i * 37 + 11) % 256)),
   };
 });
 

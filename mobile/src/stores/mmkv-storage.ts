@@ -77,9 +77,23 @@ export function storageReady(): Promise<void> {
   return _ready;
 }
 
+/**
+ * MMKV refuses to OPEN a store with a key over 16 bytes; recrypt takes the first
+ * 16. Earlier builds stored a 64-character key: their stores were keyed with its
+ * first 16, and opening with the whole of it failed on every launch after the first.
+ */
+export const MMKV_KEY_BYTES = 16;
+
+/** The key MMKV holds for a stored one: its first 16 bytes, as recrypt took them. */
+export function mmkvKey(stored: string): string {
+  return stored.slice(0, MMKV_KEY_BYTES);
+}
+
+const KEY_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
 function generateKey(): string {
-  // 256 bits of entropy from two v4 UUIDs (hex, dashes stripped).
-  return `${Crypto.randomUUID()}${Crypto.randomUUID()}`.replace(/-/g, '');
+  // 16 characters of 64 symbols: 96 bits, the most a 16-byte key holds as text.
+  return Array.from(Crypto.getRandomBytes(MMKV_KEY_BYTES), (b) => KEY_ALPHABET[b % 64]).join('');
 }
 
 /**
@@ -90,14 +104,17 @@ function generateKey(): string {
 export function initEncryptedStorage(): Promise<void> {
   if (_initPromise) return _initPromise;
   _initPromise = (async () => {
+    let step = 'read-key';
     try {
       const existingKey = await SecureStore.getItemAsync(KEY_NAME);
       if (existingKey) {
+        step = 'open';
         // Data on disk is already encrypted — open the default store WITH the key.
-        storage = new MMKV({ encryptionKey: existingKey });
+        storage = new MMKV({ encryptionKey: mmkvKey(existingKey) });
         _encrypted = true;
         return;
       }
+      step = 'first-key';
       // First encryption. Persist the key FIRST so it can never be lost after a
       // successful recrypt, then open the existing plaintext default store and
       // encrypt it in place (preserves all existing data — no loss).
@@ -152,7 +169,8 @@ export function initEncryptedStorage(): Promise<void> {
       // Reported rather than whispered: this used to be `if (__DEV__)`, which
       // meant a member could run permanently degraded and nobody would ever know.
       logger.error('[mmkv] encryption init failed; running on the isolated placeholder store');
-      captureError(e, { scope: 'mmkv.initEncryptedStorage', degraded: true });
+      captureError(e, { scope: 'mmkv.initEncryptedStorage', degraded: true, step });
+      e2eTrace('storage.failed', { step, message: String((e as { message?: unknown })?.message ?? e).slice(0, 160) });
     } finally {
       e2eTrace('storage.opened', { encrypted: _encrypted });
       _markReady();
