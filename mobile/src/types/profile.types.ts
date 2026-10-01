@@ -119,6 +119,8 @@ export function decadeLabel(decade: number): string {
 
 export interface ProfileWatchlistItem {
     id: number;
+    /** The film, which every room's poster opens (the same number as `id`). */
+    filmId?: number | null;
     title: string;
     poster_path: string | null;
     year?: number | null;

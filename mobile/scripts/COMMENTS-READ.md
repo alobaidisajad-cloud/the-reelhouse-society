@@ -517,8 +517,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/theCalendarDrawsToday.test.tsx | 2026-10-01 | written: the calendar draws today and counts what it draws |
 | src/components/profile/__tests__/theDnaCardReadsTheRecord.test.tsx | 2026-10-01 | written: the DNA card reads the record and always opens |
 | src/components/profile/__tests__/theHonoursCountTheWholeRecord.test.tsx | 2026-10-01 | written: honours and stamps from the whole record |
+| src/components/profile/__tests__/theOracleClosesClean.test.tsx | 2026-10-01 | written: the Oracle closes clean |
 | src/components/profile/__tests__/theRestCouldNotBeReached.test.tsx | 2026-10-01 | written: a failed "more" is said in every room |
 | src/components/profile/__tests__/yearMarker.test.tsx | — |  |
+| src/components/profile/__tests__/yourQueueOpensItsFilms.test.tsx | 2026-10-01 | written: your own queue's posters open their films |
 | src/components/profile/__tests__/zz-art.gen.ts | — |  |
 | src/components/profile/__tests__/zz-memberfile.gen.test.tsx | — |  |
 | src/components/profile/__tests__/zz-mockup.gen.test.tsx | — |  |
@@ -552,7 +554,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/TasteDNA.tsx | 2026-10-01 | says retrieving, failed, too few or still reading — never a heading over nothing; whose-words |
 | src/components/profile/TasteDNAExportCanvas.tsx | — |  |
 | src/components/profile/TasteMatch.tsx | 2026-10-01 |  |
-| src/components/profile/WatchlistRoulette.tsx | — |  |
+| src/components/profile/WatchlistRoulette.tsx | 2026-10-01 | a mid-spin close stops the spin; opens filmId; nav |
 | src/components/RankBadge.tsx | — |  |
 | src/components/RatingLegend.tsx | — |  |
 | src/components/ReelEyeIcon.tsx | — |  |

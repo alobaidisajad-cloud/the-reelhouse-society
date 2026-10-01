@@ -17,7 +17,7 @@ import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '../PressableScale';
@@ -27,7 +27,7 @@ import { EDGE_LIT } from '@/src/theme/light';
 
 interface RouletteFilm {
     id?: number;
-    filmId?: number;
+    filmId?: number | null;
     title?: string;
     name?: string;
     poster_path?: string | null;
@@ -99,7 +99,6 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     onClose?: () => void;
     onSelect?: (id: number) => void;
 }) {
-    const router = useRouter();
     const [picking, setPicking] = useState(false);
     const [result, setResult] = useState<RouletteFilm | null>(null);
     const [reason, setReason] = useState('');
@@ -178,15 +177,15 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     const handleSelect = useCallback(() => {
         TactileEngine.selection();
         if (!result) return;
-        const filmId = result.id ?? result.filmId;
+        const filmId = result.filmId ?? result.id;
         onClose?.();
         setResult(null);
         if (onSelect) {
             onSelect(filmId as number);
         } else {
-            (router.push as any)(`/film/${filmId}` as never);
+            nav.push(`/film/${filmId}`);
         }
-    }, [result, onSelect, onClose, router]);
+    }, [result, onSelect, onClose]);
 
     // Don't render if not visible or empty
     if (!visible || !watchlist || watchlist.length === 0) return null;
@@ -196,7 +195,15 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
         return path ? tmdb.poster(path, 'w342') : null;
     };
 
-    const close = () => { TactileEngine.selection(); onClose?.(); };
+    // Closing stops a spin still running, so the Oracle never reopens on a
+    // verdict reached while it was shut.
+    const close = () => {
+        TactileEngine.selection();
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        setPicking(false);
+        setResult(null);
+        onClose?.();
+    };
 
     return (
         <Modal statusBarTranslucent visible transparent animationType="fade" onRequestClose={close}>
@@ -277,7 +284,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                     )}
 
                     {/* Close button */}
-                    <PressableScale style={s.closeBtn} onPress={() => { onClose?.(); }} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close the oracle">
+                    <PressableScale style={s.closeBtn} onPress={close} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close the oracle">
                         <Text {...scaledTextProps} style={s.closeBtnText}>{'✕'}</Text>
                     </PressableScale>
                 </View>

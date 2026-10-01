@@ -450,6 +450,9 @@ export function toProfileLog(log: DomainLog): ProfileLog {
 export function toProfileWatchlistItem(item: WatchlistItem): ProfileWatchlistItem {
   return {
     id: item.id,
+    // A queued film's id IS the film's: carried as filmId too, which is what
+    // every room's poster opens (without it your own queue's posters opened nothing).
+    filmId: item.id,
     title: item.title,
     poster_path: item.poster_path ?? item.poster ?? null,
     year: item.year ?? null,
