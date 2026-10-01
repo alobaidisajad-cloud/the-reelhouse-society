@@ -24,28 +24,14 @@ import { timeAgo } from '@/src/utils/timeAgo';
 import { Award, Bell, ChevronRight, Heart, KeyRound, MessageCircle, Star, UserPlus, X } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
 
-// ── Hoisted Constants (P2-HITSLOP FIX) ──
 const HITSLOP_15 = { top: 15, bottom: 15, left: 15, right: 15 } as const;
 /**
- * DISMISS — a child inside a pressable row, so it takes what it claims.
- *
- * The button is a 12pt × with 8pt of padding: a 28pt control. It carried 20pt
- * top and bottom and 15 at the sides, and the row (`itemWrap`) is padded by 14
- * — so the halo reached 6pt past the row's own padding and 15pt into the
- * notice's text. A child always beats its parent in hit testing on both
- * platforms (RCTView hitTest walks subviews in reverse; TouchTargetHelper
- * recurses children first), which meant pressing the lower-right of a notice
- * DISMISSED it instead of opening it. You cannot get a dismissed notice back.
- *
- * 10 per side is exactly what a 28pt control needs to reach the 48dp floor,
- * and it stays inside the row's 14pt padding, so it takes nothing that was
- * ever the row's. Reaching the floor is the whole job; anything beyond it is
- * theft.
- *
- * The control's own bounds are still 28pt, which no halo can fix — the geometry
- * (minWidth/minHeight 48) grows the row visibly and belongs to this screen's
- * design pass.
+ * The dismiss ×, a 28pt child inside a pressable row. A child wins the press,
+ * so its halo is exactly what reaches the 48dp floor (10 a side) and stays
+ * inside the row's 14pt padding: a press meant to open a notice never
+ * dismisses it, and a dismissed notice cannot be brought back.
  */
 const HITSLOP_DISMISS = { top: 10, bottom: 10, left: 10, right: 10 } as const;
 
@@ -60,23 +46,23 @@ const TYPE_ICONS: Record<string, { Icon: typeof Heart; color: string }> = {
   default: { Icon: Award, color: colors.fog },
 };
 
+/** What a screen reader says for a notice: whether it is new, who, what and when. */
+function noticeLabel(unread: boolean, who: string | null | undefined, message: string, at: string): string {
+  return `${unread ? 'Unread. ' : ''}${who ? `@${who} ` : ''}${message}, ${timeAgo(at).toLowerCase()}`;
+}
+
 const NotificationItem = React.memo(function NotificationItem({ item, index }: { item: AppNotification; index: number }) {
   const isRead = item.read;
 
   const typeInfo = TYPE_ICONS[item.type] || TYPE_ICONS.default;
   const TypeIcon = typeInfo.Icon;
-  
+
   const handlePress = () => {
     if (!isRead) {
       useNotificationStore.getState().markRead(item.id);
     }
-    // ── WHAT IT IS ABOUT, THEN WHO DID IT ──────────────────────────────────
-    // This routed on `film_id`, then fell back to the actor's profile, so a
-    // critique on your essay opened the critic's room. The answer lives in
-    // noticeRoute now — the same one a tapped PUSH notification uses — so the
-    // sheet and the lock screen land in the same room by construction.
-    //
-    // FIX #6: back() before push, to keep the modal stack from corrupting.
+    // Where the notice is about (noticeRoute, which a tapped push uses too);
+    // the sheet closes before the room opens.
     const route = noticeRoute(item);
     if (route) {
       nav.back();
@@ -88,12 +74,12 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
 
   return (
     <Animated.View entering={FadeInUp.duration(300).delay(Math.min(index * 50, 400))}>
-      <PressableScale 
-        style={[s.itemWrap, !isRead && s.itemUnread]} 
+      <PressableScale
+        style={[s.itemWrap, !isRead && s.itemUnread]}
         onPress={handlePress}
         haptic="light"
         pressedScale={0.96}
-        accessibilityLabel={`Notice: ${item.message}`}
+        accessibilityLabel={noticeLabel(!isRead, item.from_username, item.message, item.created_at)}
       >
         {/* Action icon */}
         <View style={[s.iconCircle, { borderColor: typeInfo.color }]}>
@@ -143,11 +129,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
     }
     nav.back();
     InteractionManager.runAfterInteractions(() => {
-      // Route by what the group is ABOUT, not by film alone. Three different actions
-      // produce an `endorse` notification — a log, a stack, or a dossier — and only the
-      // first has a film. The old handler routed on `film_id` only, so a stack or
-      // dossier group would have closed this sheet and gone nowhere: a dead button,
-      // invisible until grouping actually started working (#73).
+      // By what the group is about: a log, a stack or a dossier.
       const route = groupRoute(parseGroupKey(item.groupKey), item.film_id);
       if (route) nav.push(route as never);
     });
@@ -165,7 +147,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
         onPress={handlePress}
         haptic="light"
         pressedScale={0.96}
-        accessibilityLabel={`Notice: ${item.message}`}
+        accessibilityLabel={noticeLabel(item.hasUnread, null, item.message, item.created_at)}
       >
         {/* Count badge */}
         <View style={s.groupBadge}>
@@ -198,10 +180,9 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
 
 export default function NotificationsModal() {
 
-  // loading is now used for the list loading state
   const { notifications, loading, fetchFailed, markAllRead, fetchNotifications, loadMoreNotifications } = useNotificationStore();
-  // FIX #4: Single-source derived value instead of double .every() computation
   const allRead = useNotificationStore(s => s._unreadCount) === 0;
+  const moreFailed = useNotificationStore(s => s.moreFailed);
 
   // ── At the Door: follow requests live in their own stateful panel, not the
   // notice stream. We surface a pinned banner here and suppress the individual
@@ -219,9 +200,9 @@ export default function NotificationsModal() {
   React.useEffect(() => {
     fetchNotifications();
     refreshFollowRequestCount();
-    // Optimistically clear the iOS springboard badge instantly
+    // The springboard badge clears when the board is opened.
     if (Platform.OS === 'ios') {
-      Notifications.setBadgeCountAsync(0);
+      Notifications.setBadgeCountAsync(0).catch(() => { /* a courtesy, never an error */ });
     }
   }, [fetchNotifications]);
 
@@ -246,7 +227,6 @@ export default function NotificationsModal() {
     loadMoreNotifications();
   }, [loadMoreNotifications]);
 
-  // FIX #3: Stable renderItem reference to prevent FlashList cell reconciliation
   const renderNotification = useCallback(({ item, index }: { item: DisplayItem; index: number }) => {
     if (item.kind === 'group') {
       return <GroupedNotificationItem item={item} index={index} />;
@@ -268,8 +248,8 @@ export default function NotificationsModal() {
           <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>The Notices</Text>
           <Text style={s.eyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>◈ FROM THE FRONT DESK ◈</Text>
         </View>
-        <PressableScale 
-           style={s.markReadBtn} 
+        <PressableScale
+           style={s.markReadBtn}
            onPress={handleMarkAllRead}
            disabled={allRead}
            hitSlop={HITSLOP_15}
@@ -330,12 +310,13 @@ export default function NotificationsModal() {
           ) : null
         }
         ListFooterComponent={
-          // Footer spinner for loadMore pagination.
-          // Only visible when loading AND we already have data (i.e., not initial fetch).
+          // The older page's spinner, or what it could not reach.
           loading && notifications.length > 0 ? (
             <View style={s.footerLoadingWrap}>
               <ActivityIndicator size="small" color={colors.sepia} />
             </View>
+          ) : moreFailed && notifications.length > 0 ? (
+            <RoomMoreFailed onRetry={handleLoadMore} />
           ) : null
         }
         ListEmptyComponent={
@@ -392,7 +373,7 @@ const s = StyleSheet.create({
   doorSub: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, marginTop: 2 },
 
   listContent: { paddingBottom: 40, flexGrow: 1 },
-  
+
   itemWrap: {
     flexDirection: 'row', alignItems: 'center', padding: 14,
     // No ground of its own: a slip lies on the room, ruled off from the next.
@@ -422,7 +403,7 @@ const s = StyleSheet.create({
   miniPosterEmpty: {
     alignItems: 'center', justifyContent: 'center'
   },
-  
+
   dismissBtn: { padding: 8 },
 
   groupBadge: {

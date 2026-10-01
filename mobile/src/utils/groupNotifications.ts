@@ -46,41 +46,18 @@ const MIN_GROUP_SIZE = 3;
  * Returns null if the notification is not eligible for grouping.
  */
 export function getGroupKey(n: AppNotification): string | null {
-  // The server declares this. Both previous legs were dead: film_id was never written
-  // by the trigger, and the message regex expected wording a migration had already
-  // replaced. Reading a declared key means a copy change can never disable grouping
-  // again — which is precisely how it was disabled the first time.
-  //
-  // Only a key this client UNDERSTANDS may group. Returning any string would let a key
-  // from a newer server (say endorse:screening:…) form a group that then falls back to
-  // the log wording — labelling it "certified your log of …". Unknown means ungrouped,
-  // which renders as ordinary individual rows: correct, just not collapsed.
-  // Only endorsements group. This check was in the original and is KEPT: the key's
-  // prefix already implies the type, but that equivalence holds only while every writer
-  // stays disciplined about which rows receive a key. Two independent conditions cost
-  // one comparison and mean a mislabelled row cannot be rendered as an endorse group.
+  // Only endorsements group, and only by a key the server declared and this
+  // client understands: an unknown key (from a newer server) stays as single rows
+  // rather than borrowing the log's wording.
   if (n.type !== 'endorse') return null;
 
   return parseGroupKey(n.group_key) ? (n.group_key as string) : null;
 }
 
-/**
- * The name of the thing that was certified — a film, a stack, or a dossier.
- *
- * Read from a column. The previous version matched /your review of (.+)$/ against the
- * message and fell back to the literal string "your review", so a working group would
- * have rendered "…endorsed your review of your review".
- */
+/** The name of the thing that was certified (a film, a stack or a dossier), from its column. */
 export function groupTitle(n: AppNotification): string | undefined {
   return n.title;
 }
-
-// `extractFilmName` was deleted rather than repaired. It matched the message against
-// /your review of (.+)$/ — wording a migration replaced long ago — and fell back to the
-// literal string "your review", so a working group would have rendered
-// "…endorsed your review of your review". Repairing the pattern to match today's copy
-// would have re-armed the same trap for the next copy edit; `groupTitle` reads a column
-// instead, and the label is now the writer's responsibility.
 
 // ─── Main Grouping Function ───────────────────────────────────────────────────
 

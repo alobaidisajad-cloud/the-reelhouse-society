@@ -18,7 +18,8 @@ export async function refreshFollowRequestCount(): Promise<void> {
   const myId = useAuthStore.getState().user?.id;
   if (!myId) return;
   const n = await FollowRequestService.count(myId);
-  useSocialStore.getState().setPendingRequestCount(n);
+  // A count that could not be read leaves the last one standing.
+  if (n !== null) useSocialStore.getState().setPendingRequestCount(n);
 }
 
 export function useFollowRequests(enabled: boolean) {
@@ -31,6 +32,10 @@ export function useFollowRequests(enabled: boolean) {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearchRaw] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
+  /** The door could not be read: unknown, not empty. */
+  const [failed, setFailed] = useState(false);
+  /** The next page could not be read. */
+  const [moreFailed, setMoreFailed] = useState(false);
 
   const cursorRef = useRef<string | null>(null);
   const hasMoreRef = useRef(true);
@@ -77,6 +82,11 @@ export function useFollowRequests(enabled: boolean) {
         }
         return page.items;
       });
+      if (mode === 'more') setMoreFailed(false); else { setFailed(false); setMoreFailed(false); }
+    } catch {
+      if (!isMounted.current || seq !== reqSeq.current) return;
+      if (mode === 'more') setMoreFailed(true);
+      else { setItems([]); setFailed(true); }
     } finally {
       if (mode === 'more') {
         // Always release the pagination lock, even if a newer request
@@ -104,6 +114,7 @@ export function useFollowRequests(enabled: boolean) {
 
   const loadMore = useCallback(() => { if (enabled) load('more', search); }, [enabled, load, search]);
   const refresh = useCallback(() => { cursorRef.current = null; hasMoreRef.current = true; load('refresh', search); }, [load, search]);
+  const retry = useCallback(() => { cursorRef.current = null; hasMoreRef.current = true; load('initial', search); }, [load, search]);
   const setSearch = useCallback((v: string) => setSearchRaw(v), []);
 
   // Optimistic resolve (accept/decline share the shape).
@@ -114,7 +125,7 @@ export function useFollowRequests(enabled: boolean) {
     // Optimistic: drop the row + decrement the badge immediately.
     setItems(prev => prev.filter(r => r.requesterId !== req.requesterId));
     const cur = useSocialStore.getState().pendingRequestCount;
-    setCount(cur - 1);
+    setCount(Math.max(0, cur - 1));
     const ok = admit
       ? await FollowRequestService.accept(req.requesterId)
       : await FollowRequestService.decline(req.requesterId);
@@ -133,6 +144,7 @@ export function useFollowRequests(enabled: boolean) {
 
   const declineAll = useCallback(async () => {
     const snapshot = items;
+    const hadMore = hasMoreRef.current;
     TactileEngine.warn();
     setItems([]);
     setCount(0);
@@ -141,15 +153,17 @@ export function useFollowRequests(enabled: boolean) {
     const n = await FollowRequestService.declineAll();
     if (!isMounted.current) return;
     if (n < 0) {
-      // Failure: restore and re-count from the server.
+      // Failure: restore, paging included, and re-count from the server.
       setItems(snapshot);
+      hasMoreRef.current = hadMore;
+      setHasMore(hadMore);
       reelToast.error("Couldn't clear the queue. Try again.");
       refreshFollowRequestCount();
     }
   }, [items, setCount]);
 
   return {
-    items, loading, loadingMore, refreshing, hasMore, search, busyId,
-    setSearch, loadMore, refresh, accept, decline, declineAll,
+    items, loading, loadingMore, refreshing, hasMore, search, busyId, failed, moreFailed,
+    setSearch, loadMore, refresh, retry, accept, decline, declineAll,
   };
 }

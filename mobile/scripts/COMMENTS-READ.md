@@ -84,7 +84,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/log-modal.tsx | 2026-10-01 | Arrive; the scroll needs no Animated |
 | app/(modals)/login.tsx | 2026-10-01 | the terms open; every comment short and true |
 | app/(modals)/membership.tsx | — |  |
-| app/(modals)/notifications-modal.tsx | — |  |
+| app/(modals)/notifications-modal.tsx | 2026-10-02 | rows say new/who/what/when; the rest could not be reached; history comments trimmed |
 | app/(modals)/search-modal.tsx | 2026-10-02 | tabs named; partial results said; an emptied box empties at once; nav.dismiss |
 | app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
 | app/(tabs)/_layout.tsx | — |  |
@@ -518,6 +518,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/theArchiveLockHolds.test.tsx | 2026-10-01 | written: the archive lock holds |
 | src/components/profile/__tests__/theCalendarDrawsToday.test.tsx | 2026-10-01 | written: the calendar draws today and counts what it draws |
 | src/components/profile/__tests__/theDnaCardReadsTheRecord.test.tsx | 2026-10-01 | written: the DNA card reads the record and always opens |
+| src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx | 2026-10-02 | a failed door is said; a failed count keeps the last; @handles; decline-all asks first |
 | src/components/profile/__tests__/theHonoursCountTheWholeRecord.test.tsx | 2026-10-01 | written: honours and stamps from the whole record |
 | src/components/profile/__tests__/theOracleClosesClean.test.tsx | 2026-10-01 | written: the Oracle closes clean |
 | src/components/profile/__tests__/theRestCouldNotBeReached.test.tsx | 2026-10-01 | written: a failed "more" is said in every room |
@@ -535,7 +536,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/CinemaDNACard.tsx | 2026-10-01 | the record only; the house ladder; always opens and closes; no invented serial |
 | src/components/profile/CinematicInsights.tsx | 2026-10-01 | says retrieving or failed; whose-words; no history comments |
 | src/components/profile/favourites.ts | 2026-10-01 | comments say what is true now |
-| src/components/profile/FollowRequestsPanel.tsx | — |  |
+| src/components/profile/FollowRequestsPanel.tsx | 2026-10-02 | a failed door is said; the rest could not be reached; decline-all asks first |
 | src/components/profile/heroNameSize.ts | 2026-10-01 |  |
 | src/components/profile/NitrateCalendarGrid.tsx | 2026-10-01 | today drawn; counts what it draws, "in the past year"; the app date helper; nav |
 | src/components/profile/NoirPassport.tsx | 2026-10-01 | stamps from the whole record only; labels broken between words; said while unread or failed |
@@ -686,7 +687,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useFeeds.ts | 2026-10-01 | one cursor rule; the fallback note gone with the fallback |
 | src/hooks/useFilmAnimations.ts | 2026-10-01 | each loop only while seen |
 | src/hooks/useFilmDetail.ts | 2026-10-01 | an unread verdict is null, never silence |
-| src/hooks/useFollowRequests.ts | — |  |
+| src/hooks/useFollowRequests.ts | 2026-10-02 | failed + moreFailed + retry; the count never below 0; decline-all restores paging |
 | src/hooks/useInitiation.ts | — |  |
 | src/hooks/useLogFlow.ts | 2026-09-29 | 22 fixed; line refs (:351-352, logOperations.ts:574) and a 30-line history of the erase bug cut to the rule |
 | src/hooks/useMemberRoom.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -768,7 +769,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/AuthService.ts | 2026-10-01 | true as written |
 | src/services/FeedService.ts | 2026-10-01 | the cursor note made true: RPC arguments |
 | src/services/FilmService.ts | 2026-10-01 | a failed verdict read is thrown; histories to the present |
-| src/services/FollowRequestService.ts | — |  |
+| src/services/FollowRequestService.ts | 2026-10-02 | a failed read throws; a failed count is null; @ stripped |
 | src/services/InteractionService.ts | 2026-10-01 | its schema is what its test reads |
 | src/services/logCounts.ts | 2026-10-01 | true as written |
 | src/services/LogService.ts | 2026-10-01 | a missing log is null; histories to the present |
@@ -824,6 +825,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/theHouseSaysWhy.test.ts | — |  |
 | src/stores/__tests__/theLiveWireKnowsTheRoom.test.ts | — |  |
 | src/stores/__tests__/theLogSaysWhatHappened.test.ts | — |  |
+| src/stores/__tests__/theNoticesSayWhatTheyCouldNotReach.test.tsx | 2026-10-02 | first page ordered by time then id; older page failure said; rows say who, what, when |
 | src/stores/__tests__/theRoomYouAreActuallyIn.test.ts | — |  |
 | src/stores/__tests__/theSalonListIsWholeOrSaysSo.test.ts | 2026-10-01 | written with the salon-list fix |
 | src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts | — |  |
@@ -855,7 +857,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/lounge.ts | 2026-09-28 | 38 findings fixed; stale 'created rooms' reason corrected (create_lounge adds the member row); loadOlderMessages→loadMoreMessages; 12 repeated sessionGuard notes dropped |
 | src/stores/markCounts.ts | — |  |
 | src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
-| src/stores/notificationStore.ts | 2026-09-29 | 28 fixed; ticket tags (#51,#73,NOTIF-1,FLAW-08,LIB-5,WS-9,L234) and bug histories cut; checked the reset's MMKV delete hits the same store (it does) |
+| src/stores/notificationStore.ts | 2026-10-02 | first page ordered by time then id; moreFailed |
 | src/stores/offlineQueueStore.ts | — |  |
 | src/stores/reportStore.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/stores/resetAllStores.ts | — |  |
@@ -985,7 +987,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/enter.ts | — |  |
 | src/utils/filterContentByBlocks.ts | 2026-10-01 | true as written |
 | src/utils/gateTelemetry.ts | — |  |
-| src/utils/groupNotifications.ts | — |  |
+| src/utils/groupNotifications.ts | 2026-10-02 | history comments trimmed |
 | src/utils/handleGuard.ts | — |  |
 | src/utils/handleHistory.ts | — |  |
 | src/utils/handleNotice.ts | — |  |

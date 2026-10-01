@@ -100,6 +100,8 @@ export interface NotificationState {
     loading: boolean;
     /** The last read of the board could not be answered (never persisted). */
     fetchFailed: boolean;
+    /** The last ask for an older page could not be answered (never persisted). */
+    moreFailed: boolean;
     _fetching: boolean;
     _fetchingMore: boolean;
     fetchNotifications: () => Promise<void>;
@@ -127,6 +129,7 @@ export const useNotificationStore = create<NotificationState>()(
     notifications: [],
     loading: false,
     fetchFailed: false,
+    moreFailed: false,
     _fetching: false,
     _fetchingMore: false,
     _unreadCount: 0,
@@ -137,7 +140,7 @@ export const useNotificationStore = create<NotificationState>()(
     fetchNotifications: async () => {
         const user = useAuthStore.getState().user;
         if (!user) return;
-        
+
         const state = get();
         if (state._fetching) return;
 
@@ -150,6 +153,7 @@ export const useNotificationStore = create<NotificationState>()(
                     .select(NOTIFICATION_COLUMNS)
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false })
+                    .order('id', { ascending: false })
                     .limit(PAGE_SIZE),
                 supabase
                     .from('notifications')
@@ -182,6 +186,7 @@ export const useNotificationStore = create<NotificationState>()(
             const cursor = lastRaw?.created_at && lastRaw?.id ? `${lastRaw.created_at}|${lastRaw.id}` : null;
             set({
                 fetchFailed: false,
+                moreFailed: false,
                 notifications: validated,
                 // The server's count; the page's only as a fallback.
                 _unreadCount: unreadRes.error ? validated.filter(n => !n.read).length : (unreadRes.count ?? 0),
@@ -242,7 +247,7 @@ export const useNotificationStore = create<NotificationState>()(
                 const existingIds = new Set(state.notifications.map(n => n.id));
                 const deduped = validated.filter(n => !existingIds.has(n.id));
                 const allNotifs = [...state.notifications, ...deduped].slice(0, LOCAL_NOTIFICATION_CAP);
-                
+
                 // From the RAW response, as in the first fetch.
                 const lastRaw = data[data.length - 1] as { created_at?: string; id?: string } | undefined;
                 const advanced = lastRaw?.created_at && lastRaw?.id
@@ -250,6 +255,7 @@ export const useNotificationStore = create<NotificationState>()(
                     : null;
 
                 return {
+                    moreFailed: false,
                     notifications: allNotifs,
                     _unreadCount: state._unreadCount, // older pages change no total
                     // A full SERVER page, and a cursor that moved (no bad row ends
@@ -260,6 +266,7 @@ export const useNotificationStore = create<NotificationState>()(
             });
         } else if (error) {
             logger.warn('[notificationStore.loadMore] Supabase error:', error.message);
+            set({ moreFailed: true });
         }
         } finally {
             set({ loading: false, _fetchingMore: false });
@@ -279,7 +286,7 @@ export const useNotificationStore = create<NotificationState>()(
             ),
             _unreadCount: wasUnread ? state._unreadCount - 1 : state._unreadCount,
         }));
-        
+
         try {
             // The user_id filter is depth, not the guard: RLS already refuses
             // another member's notice (checked against production).
@@ -516,7 +523,7 @@ export const rehydrateNotificationStore = () => useNotificationStore.persist.reh
 // so the next member never rehydrates the previous one's notifications.
 registerStoreReset(() => {
     if (_realtimeCleanup) { _realtimeCleanup(); _realtimeCleanup = null; }
-    useNotificationStore.setState({ notifications: [], _unreadCount: 0, _hasMore: true, _cursor: null });
+    useNotificationStore.setState({ notifications: [], _unreadCount: 0, _hasMore: true, _cursor: null, fetchFailed: false, moreFailed: false });
     try { zustandMMKVStorage.removeItem('reelhouse-notifications'); } catch { /* noop */ }
 });
 

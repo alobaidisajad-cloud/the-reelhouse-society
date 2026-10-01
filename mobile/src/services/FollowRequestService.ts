@@ -29,8 +29,8 @@ export interface FollowRequestPage {
 const PAGE_SIZE = 30;
 
 export const FollowRequestService = {
-  /** Live count of pending requests addressed to `myId`. */
-  async count(myId: string): Promise<number> {
+  /** Live count of pending requests addressed to `myId`; null when it could not be counted. */
+  async count(myId: string): Promise<number | null> {
     const { count, error } = await supabase
       .from('interactions')
       .select('id', { count: 'exact', head: true })
@@ -38,58 +38,30 @@ export const FollowRequestService = {
       .eq('type', 'follow_request');
     if (error) {
       logger.warn('[FollowRequestService.count] failed:', error.message);
-      return 0;
+      return null;
     }
     return count ?? 0;
   },
 
   /**
    * One page of requests, newest first. `cursor` is the previous page's last
-   * createdAt (keyset). `search` filters by requester username (server-side).
+   * createdAt (keyset). `search` filters by requester username (server-side);
+   * a leading @ is how members write a handle, and is not part of it. Throws
+   * when the door could not be read: that is not an empty door.
    */
   async fetchPage({ myId, cursor, search }: { myId: string; cursor?: string | null; search?: string }): Promise<FollowRequestPage> {
     // No .toLowerCase(): ilike is already case-insensitive, and lowercasing a
     // term can alter it in some locales for no gain.
-    const raw = (search ?? '').trim();
+    const raw = (search ?? '').trim().replace(/^@+/, '').trim();
     const pattern = raw ? buildSearchPattern(raw) : null;
     // A term of only separators carries nothing searchable — refuse it rather
     // than fall through and list the whole queue.
     if (raw && pattern === null) return { items: [], nextCursor: null };
 
-    // ── One statement, joined server-side ─────────────────────────────────────
-    // This used to resolve matching profile ids first and pass them to the page
-    // query with .in(). That had a hard ceiling: the ids travel in the request
-    // URL, and the request FAILS OUTRIGHT past roughly 350 of them — measured
-    // against production, 300 ids succeed and 400 do not. The cap here was 500,
-    // i.e. above the breaking point, and the failure surfaced as an empty door
-    // rather than an error. Joining removes the id list entirely, so there is no
-    // ceiling to stay under and no second round trip to resolve names.
-    //
-    // The old note here warned that naming the foreign key is fragile. It is
-    // named because a bare embed IS ambiguous — `interactions` has two links to
-    // `profiles` (requester and target) and PostgREST rejects the choice. The
-    // same named form already ships in LogService and FeedService.
-    //
-    // !inner is deliberate: a request whose requester profile is not readable is
-    // dropped, exactly as the previous code dropped it after the fact — but now
-    // the page length is honest instead of silently short.
-    // ── THE CURSOR CARRIES A TIEBREAKER ────────────────────────────────────
-    // It was `lt('created_at', cursor)` alone. A bare timestamp cursor skips
-    // every row sharing the boundary row's timestamp, and the skip is
-    // PERMANENT: the next page starts strictly below them, so those requests
-    // never load and the door simply shows fewer people than are standing at
-    // it — with no error anywhere.
-    //
-    // Latent rather than live: every follow request is a single-row insert, so
-    // two would have to land in the same microsecond and the tie would then
-    // have to straddle a page boundary. Production was checked and holds zero
-    // ties. But Postgres freezes now() for a whole transaction, so anything
-    // that ever writes requests in a batch makes this live at once.
-    //
-    // Same repair as socialSlice's hydrate, and the same shape the
-    // notification store, the feed, the lounge and the logs already use. The
-    // cursor is opaque to its only caller (useFollowRequests stores it and
-    // hands it back), so widening it to `created_at|id` breaks nothing.
+    // One statement, the requester joined server-side. The embed is named because
+    // `interactions` links to `profiles` twice (requester and target); !inner
+    // drops a request whose requester cannot be read. The cursor is
+    // `created_at|id`, so requests sharing a timestamp are never skipped.
     let q = supabase
       .from('interactions')
       .select('id, user_id, created_at, profiles!interactions_user_id_fkey!inner(username, avatar_url)')
@@ -112,7 +84,7 @@ export const FollowRequestService = {
     const { data: rows, error } = await q;
     if (error) {
       logger.warn('[FollowRequestService.fetchPage] failed:', error.message);
-      return { items: [], nextCursor: null };
+      throw new Error(`the door could not be read: ${error.message}`);
     }
 
     type Requester = { username: string; avatar_url: string | null };
@@ -130,8 +102,7 @@ export const FollowRequestService = {
       })
       .filter((x): x is FollowRequest => x !== null);
 
-    // Both halves, from the same row, so the filter above and the ordering
-    // agree. Taking only the timestamp is what made the tie invisible.
+    // Both halves from the same row, as the filter above reads them.
     const last = sliced[sliced.length - 1];
     const nextCursor = hasMore ? `${last.created_at}|${last.id}` : null;
     return { items, nextCursor };

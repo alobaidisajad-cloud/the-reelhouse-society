@@ -8,7 +8,7 @@
  * so it behaves identically at 3 requests or 3,000.
  */
 import React from 'react';
-import { Modal, View, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
+import { Alert, Modal, View, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
@@ -26,6 +26,9 @@ import type { FollowRequest } from '@/src/services/FollowRequestService';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { ToastHost } from '@/src/components/ToastHost';
 import { arrive, leave, MS } from '@/src/theme/motion';
+import TryAgain from '@/src/components/TryAgain';
+import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
+import { useSocialStore } from '@/src/stores/followStore';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const HITSLOP = { top: 10, bottom: 10, left: 10, right: 10 } as const;
@@ -71,9 +74,10 @@ const RequestRow = React.memo(function RequestRow({
 export default function FollowRequestsPanel({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const insets = useSafeAreaInsets();
   const {
-    items, loading, loadingMore, hasMore, search, busyId,
-    setSearch, loadMore, accept, decline, declineAll,
+    items, loading, loadingMore, hasMore, search, busyId, failed, moreFailed,
+    setSearch, loadMore, retry, accept, decline, declineAll,
   } = useFollowRequests(visible);
+  const pending = useSocialStore(s => s.pendingRequestCount);
 
   // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
   // platform — the search field rises with the keyboard on BOTH.
@@ -83,6 +87,20 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
   if (!visible) return null;
 
   const showSearch = items.length > 0 || search.length > 0;
+
+  // Every request is declined, not only those shown or found, and it cannot be
+  // undone: asked first, with the whole count.
+  const confirmDeclineAll = () => {
+    const n = Math.max(pending, items.length);
+    Alert.alert(
+      n === 1 ? 'Decline the one request?' : `Decline all ${n} requests?`,
+      'Everyone at the door is turned away, including any not shown. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Decline all', style: 'destructive', onPress: () => { void declineAll(); } },
+      ],
+    );
+  };
 
   return (
     <Modal statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
@@ -131,6 +149,11 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
               <View style={s.center}>
                 <ActivityIndicator size="small" color={colors.sepia} />
               </View>
+            ) : items.length === 0 && failed ? (
+              <View style={s.center}>
+                <Text {...scaledTextProps} style={s.emptyText}>The door could not be reached.</Text>
+                <TryAgain onPress={retry} style={s.retry} />
+              </View>
             ) : items.length === 0 ? (
               <View style={s.center}>
                 <Text {...scaledTextProps} style={s.emptyText}>{search ? 'No one by that name.' : "No one's at the door."}</Text>
@@ -148,13 +171,15 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
                 renderItem={({ item }: { item: FollowRequest }) => (
                   <RequestRow item={item} busy={busyId === item.requesterId} onAccept={accept} onDecline={decline} />
                 )}
-                ListFooterComponent={loadingMore ? <View style={s.footerLoad}><ActivityIndicator size="small" color={colors.sepia} /></View> : null}
+                ListFooterComponent={loadingMore
+                  ? <View style={s.footerLoad}><ActivityIndicator size="small" color={colors.sepia} /></View>
+                  : moreFailed ? <RoomMoreFailed onRetry={loadMore} /> : null}
               />
             )}
           </View>
 
           {items.length > 0 && (
-            <PressableScale style={s.declineAll} onPress={declineAll} haptic="heavy" pressedScale={0.97} accessibilityRole="button" accessibilityLabel="Decline all remaining requests">
+            <PressableScale style={s.declineAll} onPress={confirmDeclineAll} haptic="heavy" pressedScale={0.97} accessibilityRole="button" accessibilityLabel="Decline all remaining requests">
               <Text {...scaledTextProps} style={s.declineAllText}>DECLINE ALL REMAINING</Text>
             </PressableScale>
           )}
@@ -190,6 +215,7 @@ const s = StyleSheet.create({
   center: { flex: 1, minHeight: 140, alignItems: 'center', justifyContent: 'center' },
   emptyText: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 14, color: colors.fog },
   footerLoad: { paddingVertical: 16, alignItems: 'center' },
+  retry: { marginTop: 12 },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.soot },
   avatar: {
