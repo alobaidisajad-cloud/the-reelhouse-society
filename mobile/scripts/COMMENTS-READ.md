@@ -78,7 +78,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/cover-picker.tsx | — |  |
 | app/(modals)/list-modal.tsx | 2026-09-29 | histories -> rules; orphan style comments removed; header named the web port and wrong labels |
 | app/(modals)/log-modal.tsx | — |  |
-| app/(modals)/login.tsx | — |  |
+| app/(modals)/login.tsx | 2026-10-01 | the terms open; every comment short and true |
 | app/(modals)/membership.tsx | — |  |
 | app/(modals)/notifications-modal.tsx | — |  |
 | app/(modals)/search-modal.tsx | — |  |
@@ -91,7 +91,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/profile.tsx | — |  |
 | app/(tabs)/reels.tsx | — |  |
 | app/+not-found.tsx | — |  |
-| app/auth-callback.tsx | 2026-10-01 | a link with no code or token verifies nothing |
+| app/auth-callback.tsx | 2026-10-01 | a link with no code verifies nothing; comments short |
 | app/dispatch/[id].tsx | 2026-09-29 | 26 fixed; 'SAVE THE CARD offered for a dossier' was false (the sheet never gets card); history of 3 fixes cut |
 | app/dispatch/archive.tsx | 2026-09-29 | history removed; margin label now said as a day (was '28 certified') |
 | app/dispatch/compose.tsx | 2026-09-28 | Three claims were false: 'no cover, nowhere for a backdrop to live' (subject_backdrop is saved), 'counted once a second' (400ms) with a useDeferredValue the file never used, and names of draft functions that no longer exist. Two notes described code elsewhere and were moved to it. Dead style previewTitle removed. History removed. |
@@ -113,7 +113,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | — |  |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | — |  |
-| app/reset-password.tsx | 2026-10-01 | navigates through nav |
+| app/reset-password.tsx | 2026-10-01 | navigates through nav; comments short |
 | app/settings.tsx | — |  |
 | app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-09-29 | 13 fixed + test that runs the real queryFn |
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
@@ -213,11 +213,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/atmosphere/RoomBloom.tsx | — |  |
 | src/components/atmosphere/RoomLight.tsx | — |  |
 | src/components/atmosphere/useSharedImage.ts | — |  |
-| src/components/auth/AuthChrome.tsx | — |  |
+| src/components/auth/AuthChrome.tsx | 2026-10-01 | true as written |
 | src/components/auth/EmailConfirmationScreen.tsx | 2026-10-01 | true as written |
 | src/components/auth/PasswordRecoveryModal.tsx | 2026-10-01 | says reset or confirm, one sheet |
 | src/components/auth/PasswordStrengthMeter.tsx | 2026-10-01 | true as written |
-| src/components/auth/SocietySeal.tsx | — |  |
+| src/components/auth/SocietySeal.tsx | 2026-10-01 | true as written |
 | src/components/AutopsyGauge.tsx | — |  |
 | src/components/Buster.tsx | — |  |
 | src/components/CinematicOverlays.tsx | — |  |
@@ -559,7 +559,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/society/PurchaseDock.tsx | — |  |
 | src/components/society/purchaseStop.ts | 2026-09-30 | written with the purchase-stop fix |
 | src/components/society/RankTicket.tsx | — |  |
-| src/components/society/SmallPrint.tsx | — |  |
+| src/components/society/SmallPrint.tsx | 2026-10-01 | its link shared with the sign-in footer |
 | src/components/society/SocietyPoster.tsx | — |  |
 | src/components/society/societyPricing.ts | — |  |
 | src/components/SpoilerVeil.tsx | — |  |
@@ -580,7 +580,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/__tests__/theRanksAreWellFormed.test.ts | — |  |
 | src/constants/__tests__/theVaultIsThePrivateNotes.test.ts | — |  |
 | src/constants/cacheKeys.ts | — |  |
-| src/constants/deepLinks.ts | — |  |
+| src/constants/deepLinks.ts | 2026-10-01 | true as written |
 | src/constants/formats.ts | — |  |
 | src/constants/gatedFeatures.ts | — |  |
 | src/constants/membership.ts | — |  |
@@ -631,7 +631,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useScreenReady.test.tsx | — |  |
 | src/hooks/useAmbientGlow.ts | — |  |
 | src/hooks/useAnalytics.ts | — |  |
-| src/hooks/useAuthFlow.ts | 2026-10-01 | read with the auth audit |
+| src/hooks/useAuthFlow.ts | 2026-10-01 | one sheet for reset or confirm; comments short |
 | src/hooks/useAuthThrottle.ts | 2026-10-01 | a lifted lock keeps the rule |
 | src/hooks/useBanCheck.ts | — |  |
 | src/hooks/useCatalogueSearch.ts | — |  |
@@ -683,7 +683,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/schemas.ts | — |  |
 | src/lib/scrollBridge.ts | — |  |
 | src/lib/sentry.ts | — |  |
-| src/lib/supabase.ts | 2026-10-01 | the session kept by authSessionStorage |
+| src/lib/supabase.ts | 2026-10-01 | the session kept by authSessionStorage; comments short |
 | src/lib/tmdb.ts | — |  |
 | src/lib/tmdbErrors.ts | — |  |
 | src/lore/fragments.ts | — |  |
@@ -719,7 +719,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/tmdbProxyAllowsEveryPath.test.ts | — |  |
 | src/services/__tests__/VaultService.test.ts | — |  |
 | src/services/__tests__/yearInCinema.test.ts | — |  |
-| src/services/AuthService.ts | — |  |
+| src/services/AuthService.ts | 2026-10-01 | true as written |
 | src/services/FeedService.ts | — |  |
 | src/services/FilmService.ts | — |  |
 | src/services/FollowRequestService.ts | — |  |
@@ -779,7 +779,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/theThrottleIsPerRoom.test.ts | — |  |
 | src/stores/__tests__/vaultStore.test.ts | — |  |
 | src/stores/__tests__/watchlistSlice.test.ts | — |  |
-| src/stores/auth.ts | 2026-10-01 | username sign-in says what failed; refusals are one signal |
+| src/stores/auth.ts | 2026-10-01 | username sign-in says what failed; comments short |
 | src/stores/blockStore.ts | — |  |
 | src/stores/createSelectors.ts | — |  |
 | src/stores/discover.ts | — |  |
@@ -791,7 +791,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/__tests__/logReconciliation.test.ts | — |  |
 | src/stores/domain/archiveSlice.ts | — |  |
 | src/stores/domain/helpers/promiseMutex.ts | — |  |
-| src/stores/domain/helpers/sessionGuard.ts | — |  |
+| src/stores/domain/helpers/sessionGuard.ts | 2026-10-01 | true as written |
 | src/stores/domain/interactionSlice.ts | — |  |
 | src/stores/domain/listSlice.ts | — |  |
 | src/stores/domain/logSlice.ts | — |  |
@@ -822,7 +822,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/theVeilMeetsTheLight.test.ts | — |  |
 | src/theme/__tests__/wordsAreNotMarks.test.ts | — |  |
 | src/theme/__tests__/wordsAreSolid.test.ts | — |  |
-| src/theme/authStyles.ts | — |  |
+| src/theme/authStyles.ts | 2026-10-01 | comments short and true |
 | src/theme/brass.ts | — |  |
 | src/theme/light.ts | — |  |
 | src/theme/motion.ts | — |  |
