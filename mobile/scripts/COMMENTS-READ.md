@@ -447,6 +447,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/__tests__/MemberFaceStack.model.test.ts | — |  |
 | src/components/lounge/__tests__/roomGate.test.ts | 2026-09-29 | new |
 | src/components/lounge/__tests__/theCorridorIsOpen.test.ts | — |  |
+| src/components/lounge/__tests__/theDoorAdmits.test.tsx | 2026-10-01 | written: the host's panel, mounted |
 | src/components/lounge/__tests__/theDoorIsAName.test.tsx | — |  |
 | src/components/lounge/__tests__/theDoorWaitsForTheGuestList.test.tsx | 2026-09-29 | new |
 | src/components/lounge/__tests__/thePollRunsWhileWatched.test.ts | — |  |

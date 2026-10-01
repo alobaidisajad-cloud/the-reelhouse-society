@@ -9,10 +9,11 @@ import { Check, DoorOpen, Users, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import Animated, { SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ToastHost } from '@/src/components/ToastHost';
-import { arrive, leave, MS } from '@/src/theme/motion';
+import { Arrive } from '@/src/components/Arrive';
+import { leave, MS } from '@/src/theme/motion';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const BLOOD = colors.crimson;
@@ -46,8 +47,11 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
         {/* The ground closes it for a finger; a screen reader has the named Close. */}
         <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no"><View /></PressableScale>
       </BlurView>
-      <AnimatedView entering={SlideInDown.duration(MS.considered).easing(arrive())} exiting={SlideOutDown.duration(MS.quick).easing(leave())} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 8, 28) }]}
-        onAccessibilityEscape={onClose}>
+      {/* Arrive, rising from below, not a mount-time `entering`: one that stalls
+          leaves the host a blurred screen and nobody to admit. */}
+      <AnimatedView exiting={SlideOutDown.duration(MS.quick).easing(leave())} style={s.frame} pointerEvents="box-none">
+      <Arrive name="lounge.door" duration={MS.considered} rise={DOOR_RISE} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 8, 28) }]}>
+      <View style={s.body} onAccessibilityEscape={onClose}>
         <View style={s.handle} />
         <View style={s.headerRow}>
           <View style={s.titleRow}>
@@ -99,14 +103,22 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
             ))}
           </ScrollView>
         )}
+      </View>
+      </Arrive>
       </AnimatedView>
       <ToastHost />
     </Modal>
   );
 }
 
+/** How far the sheet rises as it arrives: most of a short sheet's height. */
+const DOOR_RISE = 320;
+
 const s = StyleSheet.create({
   backdrop: { flex: 1 },
+  frame: { ...StyleSheet.absoluteFillObject },
+  // Shrinks with the sheet's height cap, so the requests scroll inside it.
+  body: { flexShrink: 1 },
   sheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '80%', backgroundColor: colors.ink,
     borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 24,
