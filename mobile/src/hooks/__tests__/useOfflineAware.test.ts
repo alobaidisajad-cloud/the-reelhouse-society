@@ -9,7 +9,9 @@
  * event, so these bind to what actually decides whether a member sees the
  * offline state.
  */
-import { isOfflineState } from '../useOfflineAware';
+import { renderHook, act } from '@testing-library/react-native';
+import NetInfo from '@react-native-community/netinfo';
+import { isOfflineState, useOfflineAware } from '../useOfflineAware';
 
 jest.mock('@react-native-community/netinfo', () => ({
   addEventListener: jest.fn(() => jest.fn()),
@@ -78,5 +80,24 @@ describe('isOfflineState — exhaustive matrix', () => {
       { isConnected: true, isInternetReachable: true },
       { isConnected: true, isInternetReachable: null },
     ]);
+  });
+});
+
+describe('the hook changes only when the answer does', () => {
+  it('ten seconds offline is one render, not ten', async () => {
+    jest.useFakeTimers();
+    let tell: (s: NetState) => void = () => {};
+    (NetInfo.addEventListener as jest.Mock).mockImplementation((fn: (s: NetState) => void) => { tell = fn; return jest.fn(); });
+    let renders = 0;
+    const r = await renderHook(() => { renders += 1; return useOfflineAware(); });
+    const before = renders;
+    await act(async () => { tell(state(false, null)); });
+    expect(r.result.current.isOffline).toBe(true);
+    const offline = renders;
+    // It counted seconds offline, and redrew the salon every one of them.
+    await act(async () => { jest.advanceTimersByTime(10_000); });
+    expect(renders).toBe(offline);
+    expect(offline - before).toBe(1);
+    jest.useRealTimers();
   });
 });
