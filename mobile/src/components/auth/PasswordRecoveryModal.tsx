@@ -39,8 +39,7 @@ interface Props {
 
 export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmail, forgotLoading, onClose, onEmailChange, onSubmit, onBackToSignIn }: Props) {
   const w = WORDS[purpose];
-  // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
-  // platform — pad by the reported keyboard height on BOTH.
+  // A Modal never resizes for the keyboard: padded by its height, on both platforms.
   const animatedOverlayStyle = useModalKeyboardPadding(24);
   // Ledger line warms to brass while the field is active
   const [emailFocused, setEmailFocused] = useState(false);

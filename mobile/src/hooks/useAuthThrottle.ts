@@ -30,9 +30,7 @@ export function evaluateAuthThrottle(
   attempts: number[],
   now: number,
 ): { pruned: number[]; locked: boolean; secondsRemaining: number } {
-  // Only attempts inside the window count — anything older has expired.
-  // Non-finite entries would survive every comparison and wedge the lockout
-  // permanently, so they are dropped rather than trusted.
+  // Inside the window only; a non-finite entry would hold the lock for ever.
   const pruned = attempts.filter(t => Number.isFinite(t) && now - t < WINDOW_MS);
 
   if (pruned.length < MAX_ATTEMPTS) return { pruned, locked: false, secondsRemaining: 0 };

@@ -64,9 +64,7 @@ export default function ResetPasswordScreen() {
       setSuccess(true);
       TactileEngine.success();
 
-      // The new password is set — the recovery session is now legitimate.
-      // Clear the pending flag BEFORE hydrating, or restoreSession would
-      // treat this as an abandoned recovery and destroy the session.
+      // Before restoreSession, which ends a session whose recovery is still pending.
       storage.delete('recovery_pending');
 
       // Signed in fully now, on the session the link made.

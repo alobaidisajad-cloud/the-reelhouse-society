@@ -15,7 +15,7 @@ export function isAddress(typed: string): boolean {
   return ADDRESS_SHAPE.test(typed.trim());
 }
 
-/** An email's link back into the app, saying which it is, so a failed one offers the right way on. */
+/** An email's link back into the app, naming its kind, so a failed one offers the right way on. */
 export function authLink(type: 'signup' | 'recovery'): string {
   return Linking.createURL('auth-callback', { queryParams: { type } });
 }

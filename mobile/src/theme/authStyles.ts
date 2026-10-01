@@ -35,22 +35,13 @@ export const loginStyles = StyleSheet.create({
     right: 0,
     height: 20,
     zIndex: 99,   // under the header (100), over the scrolling content
-    // Nothing beneath this one is elevated today, so it works as-is — but the
-    // two sibling fades were both invisible on Android for exactly this reason,
-    // and a card gaining a shadow later should not silently delete an effect.
+    // Android stacks by elevation, not zIndex: an elevated card would cover it.
     elevation: 99,
-    // Elevation also DRAWS a shadow on Android. This strip wants the z-order,
-    // not the mark, so the shadow is cleared explicitly.
-    shadowColor: 'transparent',
+    shadowColor: 'transparent', // elevation draws a shadow; this wants the order only
   },
   scroll: {
     flexGrow: 1,
-    // NOT 'center'. On a scroll content container, centring distributes
-    // negative free space as well as positive — when the form is taller than
-    // the viewport (which it always is) the top is pushed above the scroll
-    // origin and becomes unreachable, and every keyboard open re-centres the
-    // whole form under the user's thumb. A form beneath a fixed header belongs
-    // at the top; no spacer is wanted here, unlike the gate.
+    // Never 'center': a taller form would start above the scroll, out of reach.
     justifyContent: 'flex-start',
     paddingHorizontal: 32,
     paddingBottom: 24,
@@ -74,10 +65,7 @@ export const loginStyles = StyleSheet.create({
     fontSize: 34,
     color: colors.parchment,
     textAlign: 'center',
-    // 40 gave a ratio of 1.176, under the 1.2 cap the text now declares — the
-    // glyphs would have grown a fraction past their own line box. 42 clears it
-    // (34 * 1.2 = 40.8) and the extra 2pt is invisible at rest.
-    lineHeight: 42,
+    lineHeight: 42, // at least 34 × 1.2, the text's own cap
     ...effects.textShadowDeep,
   },
   rule: {

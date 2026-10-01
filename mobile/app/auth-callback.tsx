@@ -17,9 +17,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
-// ── AUTH CALLBACK SCREEN ──
-// Handles deep links from Supabase email verification & password recovery.
-// URL: reelhouse://auth-callback?token_hash=xxx&type=signup|recovery  (scheme from Linking.createURL('auth-callback'))
+// Where an email's link lands (authLink): a sign-up confirmed, or a password reset begun.
 export default function AuthCallbackScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{
@@ -28,8 +26,7 @@ export default function AuthCallbackScreen() {
   }>();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMsg, setErrorMsg] = useState('');
-  // The flow type actually confirmed by verification (params.type may be absent
-  // when the type only arrives inside the deep-link url's query string).
+  // Which email this was, as verification found it, not only as the link said.
   const [resolvedType, setResolvedType] = useState<string | undefined>(undefined);
   // The walk onward after a confirmation, held so that leaving first cancels
   // it: it fired regardless, and pulled a member who had already gone back
@@ -109,8 +106,7 @@ export default function AuthCallbackScreen() {
         }
       }
 
-      // No code and no token: nothing is verified. Anyone can open this link, so a
-      // session already here proves nothing, and arms no recovery.
+      // Anyone can open this link: a session already here verifies nothing.
       throw new Error('No valid authentication token found. The link may have expired.');
     } catch (err: unknown) {
       // A failed link must not leave the recovery flag armed — it would sign

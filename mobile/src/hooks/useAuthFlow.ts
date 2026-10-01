@@ -22,9 +22,7 @@ export interface LoginSubmissionInput {
   usernameCheck: { valid: boolean; error?: string } | null;
 }
 
-// Returns a user-facing block message, or null if the form can be submitted.
-// Order matters: each gate matches the exact check handleLoginSubmit used to
-// run inline, so the earliest applicable reason is always the one returned.
+// The first reason the form cannot be sent, in the member's words, or null.
 export function validateLoginSubmission(input: LoginSubmissionInput): string | null {
   const { isLogin, emailOrUsername, password, username, canAttempt, secondsRemaining, pwStrong, usernameStatus, usernameCheck } = input;
   if (!emailOrUsername || !password || (!isLogin && !username)) {
@@ -93,13 +91,7 @@ function messageOf(err: unknown): string {
   return typeof m === 'string' ? m : '';
 }
 
-/**
- * Which form the screen opens on, decided from the route BEFORE first paint.
- *
- * Exported so the invariant is testable without mounting the whole hook: the
- * effect that also handles `action` fires after mount, so relying on it alone
- * made the modal slide up on the wrong form and flip.
- */
+/** The form the screen opens on, from the route, before its first frame. */
 export function initialIsLogin(action?: string): boolean {
   return action !== 'signup';
 }
@@ -111,14 +103,7 @@ export function useAuthFlow() {
   const params = useLocalSearchParams<{ action?: string }>();
   const { login, signup } = useAuthStore();
 
-  // Seeded from the route, not defaulted to true. The effect below cannot do
-  // this job alone: it fires AFTER mount, so a member tapping SEEK ADMISSION
-  // would watch the modal slide up showing "Enter The House" and the sign-in
-  // form, then flip to "Join The Society" with the username field animating
-  // in under LinearTransition. Render one is now already correct, and the
-  // effect remains for the case it actually handles — the param CHANGING on a
-  // screen that is already mounted (auth-callback and reset-password both
-  // router.replace into this route).
+  // Right on the first frame; the effect below follows the route changing after.
   const [isLogin, setIsLogin] = useState(() => initialIsLogin(params.action));
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');

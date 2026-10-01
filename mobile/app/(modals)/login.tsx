@@ -94,7 +94,7 @@ export default function LoginScreen() {
   const spinValue = useSharedValue(0);
   useEffect(() => {
     if (submitting && isFocused) {
-      // Infinite loop instead of finite 20 repeats to handle long network requests, gated by useIsFocused
+      // Turns for as long as the request takes, and only while the screen is seen.
       spinValue.value = withRepeat(withTiming(1, { duration: 1500, easing: Easing.linear }), -1, false);
     } else {
       spinValue.value = 0;
@@ -135,10 +135,7 @@ export default function LoginScreen() {
     // CONST-1: channels match base sepia (#B8891A = rgb(184,137,26))
     textShadowColor: `rgba(184, 137, 26, ${interpolate(titleGlow.value, [0, 1], [0.15, 0.55])})`,
     textShadowOffset: { width: 0, height: 0 },
-    // 18 was the problem, not the glow. Past roughly 10 iOS stops rendering a
-    // soft halo and starts painting a blocky rectangle behind the glyphs — the
-    // bright box visible at the peak of the breath. 10 keeps the candlelight
-    // and loses the artefact.
+    // Past ~10 iOS paints a box behind the glyphs, not a halo.
     textShadowRadius: interpolate(titleGlow.value, [0, 1], [4, 10]),
   }));
 
@@ -184,9 +181,7 @@ export default function LoginScreen() {
         <PressableScale
           style={s.closeBtn}
           onPress={() => {
-            // Removed redundant nav.replace — typedRouter.back()
-            // already falls back to /(tabs) if canGoBack() is false.
-            nav.back();
+            nav.back(); // the Lobby when there is nothing to go back to
           }}
           hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
           haptic="light"
@@ -247,11 +242,6 @@ export default function LoginScreen() {
               ? 'The House remembers its own.'
               : 'Every great collection begins with a single frame.'}
           </Text>
-
-          {/* The lore quote used to sit here, making six things a member had to
-              pass before the first field. It is not cut — it moved to the
-              footer, where it reads as the house signing off rather than as a
-              fourth line of preamble. */}
         </AnimatedView>
 
         {/* ── Form ── */}
@@ -488,9 +478,6 @@ export default function LoginScreen() {
     </View>
   );
 }
-
-// ── Styles imported from extracted module ──
-// See src/theme/authStyles.ts for the full style definitions
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
 export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

@@ -32,20 +32,14 @@ export interface AuthState {
   getPreference: (key: string, fallback?: unknown) => unknown;
   restoreSession: () => Promise<void>;
   hydrateFromCache: () => void;
-  /**
-   * A session has begun (a password, a username, an email link, a confirmed
-   * sign-up). The one way in, so every door does the same: signed in on screen,
-   * remembered for the next launch, known to the store, profile and following
-   * fetched behind.
-   */
+  /** The one way in, from every door: signed in, remembered, the profile fetched behind. */
   adoptSession: (authedUser: AuthUser, profile?: Record<string, unknown> | null) => void;
 }
 
 
 
 const _prefTimers = new Map<string, ReturnType<typeof setTimeout>>();
-// Each member's preferences at the START of a debounce window: a refusal rolls
-// back every key changed in it (the keys share one timer).
+// Preferences as a debounce window opened: a refusal rolls back all of it.
 const _prefBaselines = new Map<string, Record<string, unknown>>();
 
 
@@ -427,8 +421,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const user = get().user;
     if (!user) return;
 
-    // Every call applies: a second change made at once, or a caller's own undo
-    // after the server refused, is never dropped.
+    // Every call applies: no change made at once is dropped.
     const prevUser = user;
 
     // Prevent client-side role elevation
@@ -453,8 +446,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         // Rollback optimistic update
         if (__DEV__) console.warn('[updateUser] DB sync failed, rolling back:', e);
         storage.delete(`dirty_profile_${user.id}`);
-        // Only if they are still here: after a logout it would restore the
-        // departed member, and rewrite their cache (email included).
+        // Never onto a member who has left (it would rewrite their cache).
         if (!memberUnchanged(prevUser.id)) return;
         // This change alone is undone: a field changed again since keeps its
         // newer value, and another field's change is not touched.

@@ -3,11 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Platform, AppState } from 'react-native';
 import { authSessionStorage } from './authSessionStorage';
 
-// The Supabase anon key is intentionally exposed in
-// the JS bundle — this is Supabase's design. All data security is enforced by
-// Row Level Security (RLS) policies on every table. The anon key only grants
-// access to operations explicitly permitted by RLS. The session is kept
-// encrypted on the device (authSessionStorage).
+// The anon key is public by design: RLS and column grants guard every table.
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'dummy';
 
