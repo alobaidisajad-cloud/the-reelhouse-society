@@ -3,8 +3,6 @@ import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import TactileEngine from '@/src/utils/TactileEngine';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import Buster from '@/src/components/Buster';
@@ -14,13 +12,11 @@ import PressableScale from '../PressableScale';
 
 import type { ProfileAnalyticsPayload } from './NoirPassport';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { standingFor } from '@/src/constants/standing';
+import { RoomRetrieving, RoomUnreachable } from './RoomParts';
 
-interface DNALog {
-    year?: number | string;
-    rating: number;
-    isAutopsied?: boolean;
-    autopsy?: Record<string, number> | null;
-}
+/** A reading needs this many films before it says anything. */
+const DNA_FLOOR = 5;
 
 interface DNAUser {
     username?: string;
@@ -28,13 +24,47 @@ interface DNAUser {
     avatar_url?: string | null;
 }
 
-export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics, onClose }: { logs: DNALog[]; user: DNAUser; analytics?: ProfileAnalyticsPayload | null; onClose: () => void }) {
+/**
+ * The Cinema DNA card, read from the member's whole record (the server's
+ * summary). Until that record is read it says so; below five films it says
+ * how many a reading needs. It always opens, and always closes.
+ */
+export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, failed, onRetry, onClose }: {
+    user: DNAUser;
+    analytics?: ProfileAnalyticsPayload | null;
+    /** The record's read failed. */
+    failed?: boolean;
+    onRetry?: () => void;
+    onClose: () => void;
+}) {
     const insets = useSafeAreaInsets();
     const { width: windowWidth } = useWindowDimensions();
-    
-    // Always calculate total count from either analytics or logs
-    const totalCount = analytics?.stamps?.total_logs ?? logs?.length ?? 0;
-    if (totalCount < 5) return null;
+
+    const stamps = analytics?.stamps;
+    const totalCount = stamps?.total_logs ?? 0;
+
+    const close = (
+        <PressableScale onPress={() => { onClose(); }} style={[s.closeBtn, { top: Math.max(insets.top + 10, 40) }]} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close cinema DNA">
+            <X size={16} color={colors.parchment} />
+        </PressableScale>
+    );
+    if (!stamps || totalCount < DNA_FLOOR) {
+        // Shown at once (no entrance of its own): only the full reading arrives.
+        return (
+            <View style={s.overlay}>
+                {close}
+                <View style={[s.card, s.cardPlain, { width: windowWidth * 0.85 }]}>
+                    <Text {...scaledTextProps} style={s.eyebrow}>CINEMATIC FINGERPRINT</Text>
+                    <Text {...scaledTextProps} style={s.title}>CINEMA DNA</Text>
+                    {!stamps
+                        ? (failed || analytics
+                            ? <RoomUnreachable room="the reading" onRetry={onRetry ?? (() => {})} />
+                            : <RoomRetrieving room="the reading" />)
+                        : <Text {...scaledTextProps} style={s.plainLine}>{`A reading needs ${DNA_FLOOR} films; ${totalCount} ${totalCount === 1 ? 'is' : 'are'} logged.`}</Text>}
+                </View>
+            </View>
+        );
+    }
 
     let topDecades: [string, number][] = [];
     let avgRatingStr = '—';
@@ -42,7 +72,6 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics
     let avgAutopsy: { story: number; cinematography: number; sound: number } | null = null;
 
     if (analytics?.dna) {
-        // Phase 3: Server-side pre-computed
         const d = analytics.dna;
         avgRatingNum = d.avg_rating ?? 0;
         avgRatingStr = d.avg_rating ? Number(d.avg_rating).toFixed(1) : '—';
@@ -59,69 +88,22 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics
                 sound: Math.round(analytics.autopsy_math.avg_sound || 0),
             };
         }
-    } else {
-        // Fallback: Client-side O(N) computation
-        const decades: Record<string, number> = {};
-        logs.forEach((log) => {
-            if (!log.year) return;
-            const year = parseInt(String(log.year), 10);
-            if (isNaN(year)) return;
-            const decade = `${Math.floor(year / 10) * 10}s`;
-            decades[decade] = (decades[decade] ?? 0) + 1;
-        });
-        topDecades = Object.entries(decades).sort((a, b) => b[1] - a[1]).slice(0, 3);
-        
-        const rated = logs.filter((l) => l.rating > 0);
-        avgRatingNum = rated.length ? rated.reduce((s, l) => s + l.rating, 0) / rated.length : 0;
-        avgRatingStr = rated.length ? avgRatingNum.toFixed(1) : '—';
-        
-        const autopsies = logs.filter((l) => l.isAutopsied && l.autopsy).map((l) => l.autopsy!);
-        // Rated-axes-only averaging. v2 payloads carry only filed scores (a
-        // deliberate 0 counts and drags the average — that's the verdict's
-        // job); legacy zeros meant "untouched" and are excluded so they can't
-        // deflate the craft profile.
-        let ratedSamples = 0;
-        const axisAvg = (keys: string[]) => {
-            let sum = 0, n = 0;
-            for (const a of autopsies) {
-                const rec = a as Record<string, unknown>;
-                const isV2 = typeof rec._v === 'number' && (rec._v as number) >= 2;
-                let v: number | undefined;
-                for (const k of keys) { const c = rec[k]; if (typeof c === 'number') { v = c; break; } }
-                if (v === undefined || (!isV2 && v === 0)) continue;
-                sum += v; n += 1;
-            }
-            ratedSamples += n;
-            return n > 0 ? Math.round(sum / n) : 0;
-        };
-        if (autopsies.length > 0) {
-            const computed = {
-                story: axisAvg(['story', 'screenplay', 'script']),
-                cinematography: axisAvg(['cinematography', 'visuals', 'acting']),
-                sound: axisAvg(['sound', 'score', 'editing']),
-            };
-            if (ratedSamples > 0) avgAutopsy = computed;
-        }
     }
 
     const obscurityScore = Math.round(40 + (5 - (avgRatingNum || 3)) * 12 + Math.min(totalCount, 30));
 
-    const archetypes = [
-        { min: 0, label: 'Initiate' }, { min: 5, label: 'Devotee' }, { min: 15, label: 'Archivist' },
-        { min: 30, label: 'Cinephile' }, { min: 60, label: 'Obsessive' }, { min: 100, label: 'The Oracle' },
-    ];
-    const archetype = archetypes.filter(a => totalCount >= a.min).pop()?.label ?? 'Initiate';
+    // The house's one ladder (the Projector's STANDING), never a second one
+    // that borrows the paid ranks' names.
+    const archetype = standingFor(totalCount).name;
     const tones = avgRatingNum >= 4 ? 'Romanticism' : avgRatingNum >= 3 ? 'Realism' : avgRatingNum >= 2 ? 'Dark Romanticism' : 'Nihilism';
 
     return (
         <Animated.View entering={FadeInDown} exiting={FadeOut} style={s.overlay}>
-            <PressableScale onPress={() => { onClose(); }} style={[s.closeBtn, { top: Math.max(insets.top + 10, 40) }]} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close cinema DNA">
-                <X size={16} color={colors.parchment} />
-            </PressableScale>
+            {close}
 
             <View style={[s.card, { width: windowWidth * 0.85 }]}>
                 <View style={s.grainOverlay} />
-                
+
                 <View style={s.header}>
                     {/* The member's real portrait on their own file; Buster is the fallback */}
                     <View style={s.avatarWrap}>
@@ -193,14 +175,12 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics
 
                 <View style={s.footer}>
                     <Text {...scaledTextProps} style={s.logo}>REELHOUSE</Text>
-                    {/* The real serial — the member's number on their own artifact.
-                        Falls back to the film-count case number until the
-                        member_no migration data reaches this client. */}
-                    <Text {...scaledTextProps} style={s.footerSub}>
-                        {user?.member_no
-                            ? `MEMBER Nº ${String(user.member_no).padStart(4, '0')}`
-                            : `CASE №${String(totalCount).padStart(4, '0')}`}
-                    </Text>
+                    {/* The member's real serial; with none on file, none is invented. */}
+                    {!!user?.member_no && (
+                        <Text {...scaledTextProps} style={s.footerSub}>
+                            {`MEMBER Nº ${String(user.member_no).padStart(4, '0')}`}
+                        </Text>
+                    )}
                 </View>
             </View>
         </Animated.View>
@@ -216,6 +196,8 @@ const s = StyleSheet.create({
         alignItems: 'center',
     },
     closeBtn: { position: 'absolute', top: 40, right: 20, zIndex: 100006, padding: 10 },
+    cardPlain: { aspectRatio: undefined, gap: 16, alignItems: 'center' },
+    plainLine: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.bone, textAlign: 'center' },
     card: {
         aspectRatio: 9/16,
         backgroundColor: colors.ink,

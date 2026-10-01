@@ -610,7 +610,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ════════════════════════════════════════════════════════════
   const modals = (
     <>
-      {dnaCardOpen && <CinemaDNACard {...{logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, user: targetUser, analytics: serverAnalytics, onClose: closeDnaCard} as any} />}
+      {dnaCardOpen && <CinemaDNACard user={targetUser as never} analytics={serverAnalytics} failed={!!data.tabFailed.projector} onRetry={() => { void data.retryRoom('projector'); }} onClose={closeDnaCard} />}
       <WatchlistRoulette visible={rouletteOpen} watchlist={watchlistFiltered} onClose={closeRoulette} onSelect={onRouletteSelect} />
       {!isSelf && (
         <>

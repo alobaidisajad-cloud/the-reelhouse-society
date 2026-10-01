@@ -515,6 +515,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/roomsRender.test.tsx | — |  |
 | src/components/profile/__tests__/taste.test.tsx | — |  |
 | src/components/profile/__tests__/theCalendarDrawsToday.test.tsx | 2026-10-01 | written: the calendar draws today and counts what it draws |
+| src/components/profile/__tests__/theDnaCardReadsTheRecord.test.tsx | 2026-10-01 | written: the DNA card reads the record and always opens |
 | src/components/profile/__tests__/theHonoursCountTheWholeRecord.test.tsx | 2026-10-01 | written: honours and stamps from the whole record |
 | src/components/profile/__tests__/theRestCouldNotBeReached.test.tsx | 2026-10-01 | written: a failed "more" is said in every room |
 | src/components/profile/__tests__/yearMarker.test.tsx | — |  |
@@ -526,7 +527,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
 | src/components/profile/ArchiveLock.tsx | — |  |
 | src/components/profile/AvatarCropSheet.tsx | — |  |
-| src/components/profile/CinemaDNACard.tsx | — |  |
+| src/components/profile/CinemaDNACard.tsx | 2026-10-01 | the record only; the house ladder; always opens and closes; no invented serial |
 | src/components/profile/CinematicInsights.tsx | 2026-10-01 | says retrieving or failed; whose-words; no history comments |
 | src/components/profile/favourites.ts | — |  |
 | src/components/profile/FollowRequestsPanel.tsx | — |  |
@@ -545,7 +546,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/ProfileTriptych.tsx | 2026-10-01 | a refused change is said; nav; the close backdrop is a button; comments say what is true now |
 | src/components/profile/ProfileWatchlistTab.tsx | 2026-10-01 | sized by the true total: a search keeps its box, finding nothing is said; the Oracle only with a choice; nav |
 | src/components/profile/ProjectorRoom.tsx | 2026-10-01 | a visitor shares the standing as the member's; a failed share said plainly; comments say what is true now |
-| src/components/profile/RadarChart.tsx | — |  |
+| src/components/profile/RadarChart.tsx | 2026-10-01 |  |
 | src/components/profile/RoomParts.tsx | 2026-10-01 | RoomMoreFailed; comments say what is true now |
 | src/components/profile/roomStyles.ts | 2026-09-29 | 26 fixed; chip-halo note was stranded 100 lines from chipSlop; 'the Vault' renamed Physical Archive in prose |
 | src/components/profile/TasteDNA.tsx | 2026-10-01 | says retrieving, failed, too few or still reading — never a heading over nothing; whose-words |
