@@ -8,14 +8,15 @@
 --
 --   psql "$SUPABASE_DB_URL" -X -q -t -A -v with_fix=1 -f mobile/supabase/diagnostics/the_lobby_wall_rehearsal.sql
 --
--- `with_fix=1` applies 20260930_03 first, inside the same transaction. Without
--- it every case answers "missing": there is no edition, no wall and no switch.
+-- `with_fix=1` applies 20261001_01 (the order of honour) first, inside the same
+-- transaction; 20260930_03 (the tables, the switch, the job) is already live.
+-- Without it, the cases ask the order production runs now.
 -- Read each NOTICE as  case | expected | got.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
 BEGIN;
 \if :{?with_fix}
-\ir ../../../supabase/migrations/20260930_03_the_lobby_wall.sql
+\ir ../../../supabase/migrations/20261001_01_the_lobby_turns_daily.sql
 \endif
 
 -- Made before anyone is anyone: auth.uid() is null, so no member's gate asks.
@@ -38,11 +39,10 @@ CREATE TEMP TABLE lobby_clock ON COMMIT DROP AS
          ((now() AT TIME ZONE 'UTC')::date)::timestamp AT TIME ZONE 'UTC' AS moment;
 GRANT SELECT ON lobby_clock TO authenticated;
 
-\if :{?with_fix}
--- Today's real edition (chosen by the migration) is set aside; the fixtures' is chosen in its place.
+-- The house's own record is set aside (rolled back with the rest): the only
+-- honours below are the fixtures', so each rule is asked of pieces we know.
 DELETE FROM public.notifications WHERE type = 'featured';
-DELETE FROM public.lobby_editions WHERE edition = (SELECT today FROM lobby_clock);
-\endif
+DELETE FROM public.lobby_editions;
 
 -- ── THE FIXTURES ────────────────────────────────────────────────────────────
 -- Logs by the author. The minutes before the moment decide which window a mark is in.
@@ -64,7 +64,12 @@ SELECT v.id::uuid, (SELECT id FROM lobby_cast WHERE part = v.who), 990000 + righ
     ('10bb1e00-0000-4000-8000-000000000010', 'author',  'Two marks, three days ago.',       false, 5000),  -- L10 week 2, day 0
     ('10bb1e00-0000-4000-8000-000000000011', 'author',  'One mark today, nothing more.',    false, 180),   -- L11 day 1 week 1
     ('10bb1e00-0000-4000-8000-000000000012', 'author',  'One mark today, one this week.',   false, 5100),  -- L12 day 1 week 2
-    ('10bb1e00-0000-4000-8000-000000000013', 'private', 'A private member''s log.',         false, 650)    -- L13 private author
+    ('10bb1e00-0000-4000-8000-000000000013', 'private', 'A private member''s log.',         false, 650),   -- L13 private author
+    ('10bb1e00-0000-4000-8000-000000000014', 'reader',  'A member never honoured, and worth reading.', false, 400),  -- L14 nobody marked it; its writer never hung
+    ('10bb1e00-0000-4000-8000-000000000015', 'reader',  'Iconic.',                          false, 1),     -- L15 seven characters, unmarked
+    ('10bb1e00-0000-4000-8000-000000000016', 'reader',  'Marked today, and reported, awaiting a moderator.', false, 200), -- L16 reported
+    ('10bb1e00-0000-4000-8000-000000000017', 'reader',  'Iconic.',                          false, 210),   -- L17 seven characters, certified today
+    ('10bb1e00-0000-4000-8000-000000000018', 'reader',  'Reported, and the report dismissed by a moderator.', false, 220) -- L18
   ) AS v(id, who, review, spoiler, mins);
 
 -- The marks: certifications (interactions) and critiques (log_comments), each at its time.
@@ -80,7 +85,9 @@ SELECT (SELECT id FROM lobby_cast WHERE part = v.who), 'endorse_log', v.log::uui
     ('reader', '10bb1e00-0000-4000-8000-000000000010', 4400), ('critic', '10bb1e00-0000-4000-8000-000000000010', 4500),
     ('reader', '10bb1e00-0000-4000-8000-000000000011', 60),
     ('reader', '10bb1e00-0000-4000-8000-000000000012', 60),  ('critic', '10bb1e00-0000-4000-8000-000000000012', 4500),
-    ('reader', '10bb1e00-0000-4000-8000-000000000013', 10),  ('critic', '10bb1e00-0000-4000-8000-000000000013', 11)
+    ('reader', '10bb1e00-0000-4000-8000-000000000013', 10),  ('critic', '10bb1e00-0000-4000-8000-000000000013', 11),
+    ('critic', '10bb1e00-0000-4000-8000-000000000016', 30),  ('critic', '10bb1e00-0000-4000-8000-000000000017', 30),
+    ('critic', '10bb1e00-0000-4000-8000-000000000018', 30)
   ) AS v(who, log, mins);
 
 INSERT INTO public.log_comments (log_id, user_id, username, body, created_at)
@@ -135,6 +142,52 @@ INSERT INTO public.dispatch_comments (post_id, user_id, author_username, body, c
 SELECT '10bb1e00-0000-4000-8000-0000000000b1', id, 'rehearsal', 'A critique.', (SELECT moment FROM lobby_clock) - interval '90 minutes'
   FROM lobby_cast WHERE part = 'critic';
 
+-- A second member's stack (four films, unmarked) and two more filings: the
+-- author's second (certified once) and the reader's (unmarked).
+INSERT INTO public.lists (id, user_id, title, is_private, created_at)
+VALUES ('10bb1e00-0000-4000-8000-0000000000a4', (SELECT id FROM lobby_cast WHERE part = 'reader'), 'Another member''s four', false,
+        (SELECT moment FROM lobby_clock) - interval '10 hours');
+INSERT INTO public.list_items (list_id, film_id, film_title, rank_position)
+SELECT '10bb1e00-0000-4000-8000-0000000000a4', 990200 + n, 'Paris, Texas', n FROM generate_series(1, 4) n;
+INSERT INTO public.dispatch_posts (id, kind, user_id, author_username, body, is_published, created_at)
+VALUES ('10bb1e00-0000-4000-8000-0000000000b4', 'take', (SELECT id FROM lobby_cast WHERE part = 'author'), 'rehearsal', 'A second take.', true,
+        (SELECT moment FROM lobby_clock) - interval '7 hours'),
+       ('10bb1e00-0000-4000-8000-0000000000b5', 'take', (SELECT id FROM lobby_cast WHERE part = 'reader'), 'rehearsal', 'Another member''s take, said at some length.', true,
+        (SELECT moment FROM lobby_clock) - interval '9 hours'),
+       ('10bb1e00-0000-4000-8000-0000000000b6', 'take', (SELECT id FROM lobby_cast WHERE part = 'critic'), 'rehearsal', 'Ok.', true,
+        (SELECT moment FROM lobby_clock) - interval '1 hour');
+-- S5 and P7: the critic's stack and filing, each certified today, each reported.
+INSERT INTO public.lists (id, user_id, title, is_private, created_at)
+VALUES ('10bb1e00-0000-4000-8000-0000000000a5', (SELECT id FROM lobby_cast WHERE part = 'critic'), 'A reported four', false,
+        (SELECT moment FROM lobby_clock) - interval '5 hours');
+INSERT INTO public.list_items (list_id, film_id, film_title, rank_position)
+SELECT '10bb1e00-0000-4000-8000-0000000000a5', 990300 + n, 'Paris, Texas', n FROM generate_series(1, 4) n;
+INSERT INTO public.interactions (user_id, type, target_list_id, created_at)
+VALUES ((SELECT id FROM lobby_cast WHERE part = 'reader'), 'endorse_list', '10bb1e00-0000-4000-8000-0000000000a5',
+        (SELECT moment FROM lobby_clock) - interval '1 hour');
+INSERT INTO public.dispatch_posts (id, kind, user_id, author_username, body, is_published, created_at)
+VALUES ('10bb1e00-0000-4000-8000-0000000000b7', 'take', (SELECT id FROM lobby_cast WHERE part = 'critic'), 'rehearsal',
+        'A reported take, awaiting a moderator''s word.', true, (SELECT moment FROM lobby_clock) - interval '3 hours');
+INSERT INTO public.dispatch_certifications (user_id, post_id, created_at)
+VALUES ((SELECT id FROM lobby_cast WHERE part = 'reader'), '10bb1e00-0000-4000-8000-0000000000b7', (SELECT moment FROM lobby_clock) - interval '2 hours');
+-- A member reports L16, S5 and P7; no moderator has decided.
+INSERT INTO public.reports (reporter_id, content_type, content_id, reason, status, target_user_id)
+SELECT (SELECT id FROM lobby_cast WHERE part = v.who), v.kind, v.id, 'spam', 'pending', (SELECT id FROM lobby_cast WHERE part = v.whose)
+  FROM (VALUES ('critic', 'log',           '10bb1e00-0000-4000-8000-000000000016', 'reader'),
+               ('reader', 'list',          '10bb1e00-0000-4000-8000-0000000000a5', 'critic'),
+               ('reader', 'dispatch_post', '10bb1e00-0000-4000-8000-0000000000b7', 'critic')) AS v(who, kind, id, whose);
+-- L18 was reported too, and a moderator dismissed it (as bulk_dismiss_reports leaves it).
+INSERT INTO public.reports (reporter_id, content_type, content_id, reason, status, resolved_at, resolution_action, target_user_id)
+VALUES ((SELECT id FROM lobby_cast WHERE part = 'critic'), 'log', '10bb1e00-0000-4000-8000-000000000018', 'spam', 'resolved', now(), 'dismiss',
+        (SELECT id FROM lobby_cast WHERE part = 'reader'));
+INSERT INTO public.dispatch_certifications (user_id, post_id, created_at)
+VALUES ((SELECT id FROM lobby_cast WHERE part = 'reader'), '10bb1e00-0000-4000-8000-0000000000b4', (SELECT moment FROM lobby_clock) - interval '2 hours');
+
+-- Yesterday's wall: L9 hung first among logs — so L9 has had its day, and its
+-- writer (the author) was honoured this week.
+INSERT INTO public.lobby_editions (edition, slot, place, target_id, author_id, score)
+VALUES ((SELECT today FROM lobby_clock) - 1, 'log', 1, '10bb1e00-0000-4000-8000-000000000009', (SELECT id FROM lobby_cast WHERE part = 'author'), 1);
+
 -- Only now: the banned member is banned, the private member private (their marks were made before).
 UPDATE public.profiles SET is_banned = true WHERE id = (SELECT id FROM lobby_cast WHERE part = 'banned');
 UPDATE public.profiles SET is_social_private = true WHERE id = (SELECT id FROM lobby_cast WHERE part = 'private');
@@ -166,7 +219,12 @@ BEGIN
                                  ('L13','10bb1e00-0000-4000-8000-000000000013'), ('S1','10bb1e00-0000-4000-8000-0000000000a1'),
                                  ('S2','10bb1e00-0000-4000-8000-0000000000a2'), ('S3','10bb1e00-0000-4000-8000-0000000000a3'),
                                  ('P1','10bb1e00-0000-4000-8000-0000000000b1'), ('P2','10bb1e00-0000-4000-8000-0000000000b2'),
-                                 ('P3','10bb1e00-0000-4000-8000-0000000000b3')) AS f(fixture, id) LOOP
+                                 ('P3','10bb1e00-0000-4000-8000-0000000000b3'), ('L14','10bb1e00-0000-4000-8000-000000000014'),
+                                 ('S4','10bb1e00-0000-4000-8000-0000000000a4'), ('P4','10bb1e00-0000-4000-8000-0000000000b4'),
+                                 ('P5','10bb1e00-0000-4000-8000-0000000000b5'), ('P6','10bb1e00-0000-4000-8000-0000000000b6'),
+                                 ('L15','10bb1e00-0000-4000-8000-000000000015'), ('L16','10bb1e00-0000-4000-8000-000000000016'),
+                                 ('L17','10bb1e00-0000-4000-8000-000000000017'), ('S5','10bb1e00-0000-4000-8000-0000000000a5'),
+                                 ('P7','10bb1e00-0000-4000-8000-0000000000b7'), ('L18','10bb1e00-0000-4000-8000-000000000018')) AS f(fixture, id) LOOP
     BEGIN
       EXECUTE 'SELECT place FROM public.lobby_editions WHERE edition = $1 AND target_id = $2'
         INTO p USING (SELECT today FROM lobby_clock), r.id::uuid;
@@ -191,16 +249,39 @@ BEGIN
   EXECUTE pl INTO a USING 'L6'; EXECUTE pl INTO b USING 'L1';
   RAISE NOTICE '%|%|%', 'certified AND critiqued (3) above certified twice (2)', 'true', (a > 0 AND a < b)::text;
   RAISE NOTICE '%|%|%', 'a member critiquing three times counts once (L6 is 3, not 5): it stays above L1', 'true', (a < b)::text;
-  EXECUTE pl INTO a USING 'L12'; EXECUTE pl INTO b USING 'L11';
-  RAISE NOTICE '%|%|%', 'a tie today is broken by the week', 'true', (a > 0 AND a < b)::text;
-  EXECUTE pl INTO a USING 'L9'; EXECUTE pl INTO b USING 'L8';
-  RAISE NOTICE '%|%|%', 'a tie all the way down goes to the newest', 'true', (a > 0 AND a < b)::text;
-  EXECUTE pl INTO a USING 'L1'; EXECUTE pl INTO b USING 'L10';
-  RAISE NOTICE '%|%|%', 'today beats the week', 'true', (a > 0 AND a < b)::text;
-  EXECUTE pl INTO a USING 'L5'; EXECUTE pl INTO b USING 'L10';
-  RAISE NOTICE '%|%|%', 'self-certification counts for nothing (L5 not above L10)', 'true', (a = 0 OR a > b)::text;
+  EXECUTE pl INTO a USING 'L11'; EXECUTE pl INTO b USING 'L12';
+  RAISE NOTICE '%|%|%', 'only the last day counts: L12 (one today, one this week) ties L11 (one today), and the newer wins', 'true', (a > 0 AND a < b)::text;
+  EXECUTE pl INTO a USING 'L11'; EXECUTE pl INTO b USING 'L10';
+  -- (0 = not among the twelve: the house's own newer logs may fill them)
+  RAISE NOTICE '%|%|%', 'a log marked twice three days ago is below one marked once today', 'true', (a > 0 AND (b = 0 OR a < b))::text;
+  EXECUTE pl INTO a USING 'L11'; EXECUTE pl INTO b USING 'L8';
+  RAISE NOTICE '%|%|%', 'a tie on the day goes to the newest', 'true', (a > 0 AND a < b)::text;
+  EXECUTE pl INTO a USING 'L5'; EXECUTE pl INTO b USING 'L8';
+  RAISE NOTICE '%|%|%', 'self-certification counts for nothing (L5 below L8, marked once)', 'true', (b > 0 AND (a = 0 OR a > b))::text;
   EXECUTE pl INTO a USING 'L7';
-  RAISE NOTICE '%|%|%', 'a banned member''s mark counts for nothing (L7 not above L10)', 'true', (a = 0 OR a > b)::text;
+  RAISE NOTICE '%|%|%', 'a banned member''s mark counts for nothing (L7 below L8)', 'true', (b > 0 AND (a = 0 OR a > b))::text;
+  EXECUTE pl INTO a USING 'L14'; EXECUTE pl INTO b USING 'L4';
+  RAISE NOTICE '%|%|%', 'on a quiet tie a member honoured this week gives way to one who was not (L14 above the newer L4)', 'true', (a > 0 AND (b = 0 OR a < b))::text;
+  EXECUTE pl INTO a USING 'L9'; EXECUTE pl INTO b USING 'L14';
+  RAISE NOTICE '%|%|%', 'a log that has had its day gives way to every one that has not (L9, marked today, below unmarked L14)', 'true', (b > 0 AND (a = 0 OR a > b))::text;
+  SELECT count(*)::text INTO got FROM public.lobby_editions
+   WHERE edition = (SELECT today FROM lobby_clock) AND slot = 'log' AND place < coalesce(nullif(a, 0), 13)
+     AND target_id NOT IN (SELECT target_id FROM public.lobby_editions WHERE edition < (SELECT today FROM lobby_clock));
+  RAISE NOTICE '%|%|%', 'every log above L9 is one that has not had its day', (coalesce(nullif(a, 0), 13) - 1)::text, got;
+  EXECUTE pl INTO a USING 'L15';
+  RAISE NOTICE '%|%|%', 'a quiet day never hangs a throwaway review (seven characters, unmarked)', '0', a::text;
+  EXECUTE pl INTO a USING 'L17';
+  RAISE NOTICE '%|%|%', 'a short review another member certified has earned its place', 'true', (a > 0)::text;
+  EXECUTE pl INTO a USING 'L16';
+  RAISE NOTICE '%|%|%', 'a log awaiting a moderator''s word on a report never hangs', '0', a::text;
+  EXECUTE pl INTO a USING 'P6';
+  RAISE NOTICE '%|%|%', 'nor a throwaway filing ("Ok.", unmarked)', '0', a::text;
+  EXECUTE pl INTO a USING 'S5';
+  RAISE NOTICE '%|%|%', 'a stack awaiting a moderator''s word never hangs', '0', a::text;
+  EXECUTE pl INTO a USING 'P7';
+  RAISE NOTICE '%|%|%', 'a filing awaiting a moderator''s word never hangs', '0', a::text;
+  EXECUTE pl INTO a USING 'L18';
+  RAISE NOTICE '%|%|%', 'once a moderator dismisses the report, the log may hang again', 'true', (a > 0)::text;
   EXECUTE pl INTO a USING 'L2';
   RAISE NOTICE '%|%|%', 'a log marked a spoiler never hangs', '0', a::text;
   EXECUTE pl INTO a USING 'L3';
@@ -209,14 +290,21 @@ BEGIN
   RAISE NOTICE '%|%|%', 'a private member''s log never hangs', '0', a::text;
   EXECUTE pl INTO a USING 'L6';
   RAISE NOTICE '%|%|%', 'the most honoured log takes the first place', '1', a::text;
-  EXECUTE pl INTO a USING 'S1';
-  RAISE NOTICE '%|%|%', 'a public stack of four films, certified today, takes the first place', '1', a::text;
+  EXECUTE pl INTO a USING 'S4'; EXECUTE pl INTO b USING 'S1';
+  RAISE NOTICE '%|%|%', 'one member, one bill: the first log is the author''s, so the first stack is another member''s', 'true', (a = 1 AND b <> 1)::text;
   EXECUTE pl INTO a USING 'S2';
   RAISE NOTICE '%|%|%', 'a stack of three films never hangs', '0', a::text;
   EXECUTE pl INTO a USING 'S3';
   RAISE NOTICE '%|%|%', 'a private stack never hangs', '0', a::text;
   EXECUTE pl INTO a USING 'P1';
   RAISE NOTICE '%|%|%', 'the open filing certified and critiqued takes the first place', '1', a::text;
+  EXECUTE pl INTO a USING 'P5'; EXECUTE pl INTO b USING 'P4';
+  RAISE NOTICE '%|%|%', 'three filings, three writers: the reader''s unmarked take before the author''s second', 'true', (a = 2 AND (b = 0 OR b > a))::text;
+  SELECT count(*)::text INTO got FROM public.lobby_editions e
+   WHERE e.edition = (SELECT today FROM lobby_clock) AND e.slot = 'post' AND e.place <= 3
+     AND e.author_id IN (SELECT author_id FROM public.lobby_editions f
+                          WHERE f.edition = e.edition AND f.slot = 'post' AND f.place < e.place);
+  RAISE NOTICE '%|%|%', 'no writer holds two of the three columns while another writer waits', '0', got;
   EXECUTE pl INTO a USING 'P2';
   RAISE NOTICE '%|%|%', 'a filing behind a spoiler label never hangs', '0', a::text;
   EXECUTE pl INTO a USING 'P3';
@@ -228,8 +316,18 @@ BEGIN
   -- the notices: the first log, the first stack, the first three filings — and nothing buzzed
   SELECT string_agg(group_key, ',' ORDER BY group_key) INTO got FROM public.notifications
    WHERE type = 'featured' AND user_id = (SELECT id FROM lobby_cast WHERE part = 'author');
-  RAISE NOTICE '%|%|%', 'the author is told of the log, the stack and the filing',
-    'lobby:list:10bb1e00-0000-4000-8000-0000000000a1,lobby:log:10bb1e00-0000-4000-8000-000000000006,lobby:post:10bb1e00-0000-4000-8000-0000000000b1', got;
+  RAISE NOTICE '%|%|%', 'the author is told of the log and the filing that hang — not the stack that gave way, nor the second filing',
+    'lobby:log:10bb1e00-0000-4000-8000-000000000006,lobby:post:10bb1e00-0000-4000-8000-0000000000b1', got;
+  SELECT count(*)::text INTO got FROM public.notifications n
+   WHERE n.type = 'featured'
+     AND n.group_key NOT IN (SELECT 'lobby:' || e.slot || ':' || e.target_id FROM public.lobby_editions e
+                              WHERE e.edition = (SELECT today FROM lobby_clock)
+                                AND e.place <= CASE e.slot WHEN 'post' THEN 3 ELSE 1 END);
+  RAISE NOTICE '%|%|%', 'nobody is told of a piece the wall does not show', '0', got;
+  SELECT string_agg(group_key, ',' ORDER BY group_key) INTO got FROM public.notifications
+   WHERE type = 'featured' AND user_id = (SELECT id FROM lobby_cast WHERE part = 'reader');
+  RAISE NOTICE '%|%|%', 'the reader is told of their stack and their filing',
+    'lobby:list:10bb1e00-0000-4000-8000-0000000000a4,lobby:post:10bb1e00-0000-4000-8000-0000000000b5', got;
   SELECT (count(*) - (SELECT before FROM lobby_pushes))::text INTO got FROM net.http_request_queue;
   RAISE NOTICE '%|%|%', 'a notice of honour is never pushed', '0', got;
 
@@ -238,7 +336,7 @@ BEGIN
   RAISE NOTICE '%|%|%', 'an edition is chosen once (asking again chooses 0)', '0', got;
   SELECT count(*)::text INTO got FROM public.notifications
    WHERE type = 'featured' AND user_id = (SELECT id FROM lobby_cast WHERE part = 'author');
-  RAISE NOTICE '%|%|%', 'and tells no one twice', '3', got;
+  RAISE NOTICE '%|%|%', 'and tells no one twice', '2', got;
 END $$;
 
 -- The push still buzzes for everything else: a critique's notice is queued.
@@ -270,7 +368,11 @@ BEGIN
   PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'reader')), true);
   wall := public.get_lobby();
   RAISE NOTICE '%|%|%', 'the reader sees the first log', '10bb1e00-0000-4000-8000-000000000006', wall #>> '{log,id}';
-  RAISE NOTICE '%|%|%', 'the reader sees the first stack', '10bb1e00-0000-4000-8000-0000000000a1', wall #>> '{stack,id}';
+  RAISE NOTICE '%|%|%', 'the reader sees the first stack — another member''s than the log''s', '10bb1e00-0000-4000-8000-0000000000a4', wall #>> '{stack,id}';
+  RAISE NOTICE '%|%|%', 'and filings from different writers before any writer twice', '0',
+    (SELECT (count(*) - count(DISTINCT f #>> '{author,id}'))::text FROM jsonb_array_elements(wall -> 'filings') f);
+  RAISE NOTICE '%|%|%', 'the reader''s wall opens with the first filing, then another writer''s', '10bb1e00-0000-4000-8000-0000000000b1,10bb1e00-0000-4000-8000-0000000000b5',
+    (SELECT string_agg(f ->> 'id', ',' ORDER BY i) FROM jsonb_array_elements(wall -> 'filings') WITH ORDINALITY AS x(f, i) WHERE i <= 2);
   RAISE NOTICE '%|%|%', 'the stack carries its film count and up to three posters', '4/3', (wall #>> '{stack,films}') || '/' || jsonb_array_length(wall #> '{stack,posters}');
   RAISE NOTICE '%|%|%', 'the reader sees the first filing', '10bb1e00-0000-4000-8000-0000000000b1', wall #>> '{filings,0,id}';
   -- no FIELD anywhere in the wall counts regard (the words members wrote may say anything)
@@ -396,11 +498,11 @@ BEGIN
 
   -- its author cuts the first stack below four films
   BEGIN
-    DELETE FROM public.list_items WHERE list_id = '10bb1e00-0000-4000-8000-0000000000a1' AND rank_position = 4;
+    DELETE FROM public.list_items WHERE list_id = '10bb1e00-0000-4000-8000-0000000000a4' AND rank_position = 4;
     EXECUTE 'SET LOCAL ROLE authenticated';
     PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'reader')), true);
     wall := public.get_lobby();
-    got := CASE WHEN wall #>> '{stack,id}' = '10bb1e00-0000-4000-8000-0000000000a1' THEN 'hangs' ELSE 'gone' END;
+    got := CASE WHEN wall #>> '{stack,id}' = '10bb1e00-0000-4000-8000-0000000000a4' THEN 'hangs' ELSE 'gone' END;
     RAISE NOTICE '%|%|%', 'cut below four films since: the next stack takes the wall', 'gone', got;
     RAISE EXCEPTION USING ERRCODE = 'ZZ001';
   EXCEPTION WHEN SQLSTATE 'ZZ001' THEN NULL;
@@ -427,6 +529,12 @@ BEGIN
   SELECT count(*)::text INTO got FROM public.lobby_editions
    WHERE edition = (SELECT today FROM lobby_clock) + 1 AND target_id = '10bb1e00-0000-4000-8000-0000000000b1';
   RAISE NOTICE '%|%|%', 'kept off: never chosen again', '0', got;
+  SELECT (count(*) - count(DISTINCT group_key))::text INTO got FROM public.notifications WHERE type = 'featured';
+  RAISE NOTICE '%|%|%', 'the next day tells no piece twice', '0', got;
+  SELECT CASE WHEN (SELECT target_id FROM public.lobby_editions WHERE edition = (SELECT today FROM lobby_clock) + 1 AND slot = 'log' AND place = 1)
+                IN (SELECT target_id FROM public.lobby_editions WHERE edition <= (SELECT today FROM lobby_clock) AND slot = 'log' AND place = 1)
+              THEN 'again' ELSE 'new' END INTO got;
+  RAISE NOTICE '%|%|%', 'the next day''s first log is one that has not had its day', 'new', got;
   PERFORM public.set_lobby_withheld('post', '10bb1e00-0000-4000-8000-0000000000b1', false);
   SELECT count(*)::text INTO got FROM public.lobby_withheld WHERE target_id = '10bb1e00-0000-4000-8000-0000000000b1';
   RAISE NOTICE '%|%|%', 'let back: it may be chosen again', '0', got;
