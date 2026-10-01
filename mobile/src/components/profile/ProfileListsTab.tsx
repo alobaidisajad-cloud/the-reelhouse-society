@@ -12,7 +12,7 @@ import type { ProfileList, ProfileListFilm, ShelfSort } from '../../types';
 import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, roomTier, ROOM_INSET } from './roomStyles';
-import { RoomChip, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
+import { RoomChip, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore, RoomMoreFailed } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
 
 /**
@@ -43,6 +43,8 @@ interface ProfileListsTabProps {
   tier?: string | null;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
+  /** The last "more" could not be read: the foot says so, with the way to ask again. */
+  moreFailed?: boolean;
   hasMore?: boolean;
   isSelf?: boolean;
   refreshing?: boolean;
@@ -121,7 +123,7 @@ const ProfileListCard = React.memo(({ list, edge }: { list: ProfileList, edge: s
   );
 });
 
-export default React.memo(function ProfileListsTab({ lists, listsSort = 'default', setListsSort, listsSearch, setListsSearch, totalLists, ready = true, unreachable, tier, onLoadMore, isLoadingMore, hasMore, isSelf, refreshing = false, onRefresh, bottomInset }: ProfileListsTabProps) {
+export default React.memo(function ProfileListsTab({ lists, listsSort = 'default', setListsSort, listsSearch, setListsSearch, totalLists, ready = true, unreachable, tier, onLoadMore, isLoadingMore, moreFailed, hasMore, isSelf, refreshing = false, onRefresh, bottomInset }: ProfileListsTabProps) {
   const edge = useMemo(() => roomTier(tier).edge, [tier]);
 
   const breatheAnim = useSharedValue(0.1);
@@ -255,11 +257,13 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
     if (lists.length === 0) return null;
     return (
       <View style={s.footWrap}>
-        {hasMore && <RoomLoadMore busy={isLoadingMore} onPress={onLoadMore} />}
+        {moreFailed && !isLoadingMore
+          ? <RoomMoreFailed onRetry={onLoadMore} />
+          : hasMore && <RoomLoadMore busy={isLoadingMore} onPress={onLoadMore} />}
         <RoomFoot tier={tier} />
       </View>
     );
-  }, [lists.length, hasMore, isLoadingMore, onLoadMore, tier]);
+  }, [lists.length, hasMore, isLoadingMore, moreFailed, onLoadMore, tier]);
 
   return (
     <View style={r.container}>

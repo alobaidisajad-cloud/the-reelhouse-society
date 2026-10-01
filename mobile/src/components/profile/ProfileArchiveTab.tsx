@@ -15,7 +15,7 @@ import ArchiveLock from './ArchiveLock';
 import { useAuthStore } from '@/src/stores/auth';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { r, rtlText, posterColumns, completeCount, countLabel, ROOM_INSET, yearMarker } from './roomStyles';
-import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot } from './RoomParts';
+import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomMoreFailed } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
 
 /**
@@ -45,6 +45,8 @@ interface ProfileArchiveTabProps {
   setArchiveSearch?: (v: string) => void;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
+  /** The last "more" could not be read: the foot says so, with the way to ask again. */
+  moreFailed?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
   bottomInset?: number;
@@ -134,6 +136,7 @@ export default function ProfileArchiveTab({
   setArchiveSearch,
   onLoadMore,
   isLoadingMore,
+  moreFailed,
   refreshing = false,
   onRefresh,
   bottomInset
@@ -476,6 +479,7 @@ export default function ProfileArchiveTab({
         ListFooterComponent={
           isLoadingMore
             ? <RoomRetrieving room="more" />
+            : moreFailed ? <RoomMoreFailed onRetry={onLoadMore} />
             : flashData.length > 0 ? <RoomFoot tier={tier} /> : null
         }
         bottomInset={bottomInset}

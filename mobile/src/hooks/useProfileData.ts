@@ -12,6 +12,8 @@ import type { TasteProfile } from '@/src/constants/taste';
 import { isNarrowed, ROOMS, type Room } from '@/src/utils/roomFilters';
 
 export type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';
+/** The paged collections a room asks "more" of (the archive and the ledger share the logs). */
+export type MoreKey = 'logs' | 'watchlist' | 'vault' | 'lists';
 
 /**
  * The shape of a member's collection, pre-aggregated by the server
@@ -321,6 +323,13 @@ export function useProfileData({
     return () => { isMounted.current = false; };
   }, []);
 
+  /** A room whose "more" could not be read, until it is asked again. */
+  const [moreFailed, setMoreFailed] = useState<Partial<Record<MoreKey, boolean>>>({});
+  const noteMore = useCallback((key: MoreKey, read: boolean | void) => {
+    if (isMounted.current) setMoreFailed((f) => (!!f[key] === (read === false) ? f : { ...f, [key]: read === false }));
+    return read;
+  }, []);
+
   // Each read is cancelled only by what makes it stale: the member's row and
   // first page by the next read of them, a room's reads by that room's next
   // filtered read, and all of them by leaving the member. One switch for all
@@ -521,7 +530,7 @@ export function useProfileData({
     if (isSelf && (!activeTab || activeTab === 'archive' || activeTab === 'ledger')) {
       const hasSearch = (activeTab === 'archive' && isNarrowed('archive', state.activeFilters.archive))
         || (activeTab === 'ledger' && isNarrowed('ledger', state.activeFilters.ledger));
-      if (!hasSearch) return fetchLogs(true);
+      if (!hasSearch) return noteMore('logs', await fetchLogs(true));
     }
 
     const targetCursor = activeTab === 'archive' ? state.archiveLogsCursor : activeTab === 'ledger' ? state.ledgerLogsCursor : state.mainLogsCursor;
@@ -538,17 +547,19 @@ export function useProfileData({
       const result = await ProfileDataService.fetchOtherUserLogs(uid, 50, targetCursor ?? undefined, roomSignal(_roomAbortRef, tabLiteral), activeLogFilters);
       if (uid !== targetUserIdRef.current) return;
       dispatch({ type: 'SET_LOGS_PAGE', tab: tabLiteral, items: result.items, cursor: result.nextCursor, append: true });
+      noteMore('logs', true);
     } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] loadMoreLogs error:', err);
+        return noteMore('logs', false);
     } finally {
       if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: lockKey, value: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelf, fetchLogs, state.hasMoreArchiveLogs, state.hasMoreLedgerLogs, state.hasMoreMainLogs, state.isLoadingMore.logs_main, state.isLoadingMore.logs_archive, state.isLoadingMore.logs_ledger, state.targetUser, state.archiveLogsCursor, state.ledgerLogsCursor, state.mainLogsCursor, state.activeFilters.ledger, state.activeFilters.archive, activeTab]);
+  }, [isSelf, fetchLogs, noteMore, state.hasMoreArchiveLogs, state.hasMoreLedgerLogs, state.hasMoreMainLogs, state.isLoadingMore.logs_main, state.isLoadingMore.logs_archive, state.isLoadingMore.logs_ledger, state.targetUser, state.archiveLogsCursor, state.ledgerLogsCursor, state.mainLogsCursor, state.activeFilters.ledger, state.activeFilters.archive, activeTab]);
 
   const loadMoreWatchlist = useCallback(async () => {
-    if (isSelf && !isNarrowed('watchlist', state.activeFilters.watchlist)) return fetchWatchlist(true);
+    if (isSelf && !isNarrowed('watchlist', state.activeFilters.watchlist)) return noteMore('watchlist', await fetchWatchlist(true));
     if (!state.hasMoreWatchlist || state.isLoadingMore.watchlist || !state.targetUser) return;
     if (!canAccessData()) return;
     const uid = state.targetUser.id;
@@ -557,19 +568,21 @@ export function useProfileData({
       const result = await ProfileDataService.fetchOtherUserWatchlist(uid, 50, state.watchlistCursor ?? undefined, roomSignal(_roomAbortRef, 'watchlist'), state.activeFilters.watchlist);
       if (uid !== targetUserIdRef.current) return;
       dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor, append: true });
+      noteMore('watchlist', true);
     } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] loadMoreWatchlist error:', err);
+        return noteMore('watchlist', false);
     } finally {
       if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: 'watchlist', value: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelf, fetchWatchlist, state.hasMoreWatchlist, state.isLoadingMore.watchlist, state.targetUser, state.watchlistCursor, state.activeFilters.watchlist]);
+  }, [isSelf, fetchWatchlist, noteMore, state.hasMoreWatchlist, state.isLoadingMore.watchlist, state.targetUser, state.watchlistCursor, state.activeFilters.watchlist]);
 
   const loadMoreVault = useCallback(async () => {
     // Pass loadMore=true for self-view — without this, tapping "load more"
     // on your own vault resets the list instead of appending.
-    if (isSelf && !isNarrowed('physical', state.activeFilters.physical)) { void fetchPhysicalArchive(undefined, true); return; }
+    if (isSelf && !isNarrowed('physical', state.activeFilters.physical)) return noteMore('vault', await fetchPhysicalArchive(undefined, true));
     if (!state.hasMoreVault || state.isLoadingMore.vault || !state.targetUser) return;
     if (!canAccessData()) return;
     if (!canAccessTierTab('physical')) return;
@@ -579,17 +592,19 @@ export function useProfileData({
       const result = await ProfileDataService.fetchOtherUserVault(state.targetUser, 50, state.vaultCursor ?? undefined, roomSignal(_roomAbortRef, 'physical'), state.activeFilters.physical);
       if (uid !== targetUserIdRef.current) return;
       dispatch({ type: 'SET_VAULT_PAGE', items: result.items, cursor: result.nextCursor, append: true });
+      noteMore('vault', true);
     } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] loadMoreVault error:', err);
+        return noteMore('vault', false);
     } finally {
       if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: 'vault', value: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelf, fetchPhysicalArchive, state.hasMoreVault, state.isLoadingMore.vault, state.targetUser, state.vaultCursor, state.activeFilters.physical]);
+  }, [isSelf, fetchPhysicalArchive, noteMore, state.hasMoreVault, state.isLoadingMore.vault, state.targetUser, state.vaultCursor, state.activeFilters.physical]);
 
   const loadMoreLists = useCallback(async () => {
-    if (isSelf) return fetchLists(true);
+    if (isSelf) return noteMore('lists', await fetchLists(true));
     if (!state.hasMoreLists || state.isLoadingMore.lists || !state.targetUser) return;
     if (!canAccessData()) return;
     const uid = state.targetUser.id;
@@ -598,19 +613,22 @@ export function useProfileData({
       const result = await ProfileDataService.fetchOtherUserLists(uid, 50, state.listsCursor ?? undefined, roomSignal(_roomAbortRef, 'lists'), state.activeFilters.lists);
       if (uid !== targetUserIdRef.current) return;
       dispatch({ type: 'SET_LISTS_PAGE', items: result.items, cursor: result.nextCursor, append: true });
+      noteMore('lists', true);
     } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] loadMoreLists error:', err);
+        return noteMore('lists', false);
     } finally {
       if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelf, fetchLists, state.hasMoreLists, state.isLoadingMore.lists, state.targetUser, state.listsCursor]);
+  }, [isSelf, fetchLists, noteMore, state.hasMoreLists, state.isLoadingMore.lists, state.targetUser, state.listsCursor]);
 
   useEffect(() => {
     // A new member starts from nothing: no row, room or failure of the last one.
     dispatch({ type: 'RESET_STATE' });
     setTabFailed({});
+    setMoreFailed({});
 
     // Your own file opens at once from what the phone holds (the auth store's
     // member, the film store's logs), with no spinner, and is renewed behind it.
@@ -768,7 +786,7 @@ export function useProfileData({
       const next = typeof v === 'function' ? v(state.tabDataLoaded) : v;
       dispatch({ type: 'SET_TAB_LOADED', tabs: next });
     },
-    fetchUserData, loadTabData, tabFailed,
+    fetchUserData, loadTabData, tabFailed, moreFailed,
     loadMoreLogs, loadMoreWatchlist, loadMoreVault, loadMoreLists,
     refreshTabWithFilters, retryRoom,
   };

@@ -16,7 +16,7 @@ import { LEDGER_HIGH_FLOOR } from '../../types';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
 import { r, rtlText, EMBER_REST, EMBER_BEATS, yearMarker } from './roomStyles';
-import { RoomChip, RoomRail, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomSearch } from './RoomParts';
+import { RoomChip, RoomRail, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomSearch, RoomMoreFailed } from './RoomParts';
 
 /**
  * THE LEDGER — what the member WROTE: rows, ruled like a ledger. A small plate,
@@ -79,6 +79,8 @@ interface ProfileLedgerTabProps {
   ratingCounts?: { rating: number; count: number }[] | null;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
+  /** The last "more" could not be read: the foot says so, with the way to ask again. */
+  moreFailed?: boolean;
   isSelf?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
@@ -281,6 +283,7 @@ export default function ProfileLedgerTab({
   ratingCounts,
   onLoadMore,
   isLoadingMore,
+  moreFailed,
   isSelf,
   refreshing = false,
   onRefresh,
@@ -530,6 +533,7 @@ export default function ProfileLedgerTab({
         ListFooterComponent={
           isLoadingMore
             ? <RoomRetrieving room="more" />
+            : moreFailed ? <RoomMoreFailed onRetry={onLoadMore} />
             : flashData.length > 0 ? <RoomFoot tier={tier} /> : null
         }
         bottomInset={bottomInset}

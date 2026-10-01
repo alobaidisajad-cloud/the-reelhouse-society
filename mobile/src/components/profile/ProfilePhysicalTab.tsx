@@ -13,7 +13,7 @@ import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { FORMAT_META, shelfRank } from '@/src/constants/formats';
 import { r, posterColumns, countLabel } from './roomStyles';
-import { RoomChip, RoomChipDivider, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore } from './RoomParts';
+import { RoomChip, RoomChipDivider, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore, RoomMoreFailed } from './RoomParts';
 
 /**
  * THE PHYSICAL ARCHIVE — a collection of OBJECTS, arranged the way objects are.
@@ -57,6 +57,8 @@ interface ProfilePhysicalTabProps {
   setPhysicalSearch?: (v: string) => void;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
+  /** The last "more" could not be read: the foot says so, with the way to ask again. */
+  moreFailed?: boolean;
   hasMore?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
@@ -149,6 +151,7 @@ export default React.memo(function ProfilePhysicalTab({
   setPhysicalSearch,
   onLoadMore,
   isLoadingMore,
+  moreFailed,
   hasMore,
   refreshing = false,
   onRefresh,
@@ -423,11 +426,13 @@ export default React.memo(function ProfilePhysicalTab({
     if (flashData.length === 0) return null;
     return (
       <View>
-        {hasMore && <RoomLoadMore busy={isLoadingMore} onPress={onLoadMore} />}
+        {moreFailed && !isLoadingMore
+          ? <RoomMoreFailed onRetry={onLoadMore} />
+          : hasMore && <RoomLoadMore busy={isLoadingMore} onPress={onLoadMore} />}
         <RoomFoot tier={tier} />
       </View>
     );
-  }, [flashData.length, hasMore, isLoadingMore, onLoadMore, tier]);
+  }, [flashData.length, hasMore, isLoadingMore, moreFailed, onLoadMore, tier]);
 
   return (
     <View style={r.container}>

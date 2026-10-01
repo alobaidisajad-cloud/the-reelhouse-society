@@ -13,7 +13,7 @@ import { decadeLabel } from '../../types';
 import { tmdb } from '../../lib/tmdb';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, posterColumns, EMBER_REST, EMBER_BEATS } from './roomStyles';
-import { RoomChip, RoomChipDivider, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomSearch } from './RoomParts';
+import { RoomChip, RoomChipDivider, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomSearch, RoomMoreFailed } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
 
 /**
@@ -58,6 +58,8 @@ interface ProfileWatchlistTabProps {
   tier?: string | null;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
+  /** The last "more" could not be read: the foot says so, with the way to ask again. */
+  moreFailed?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
   bottomInset?: number;
@@ -84,6 +86,7 @@ export default function ProfileWatchlistTab({
   tier,
   onLoadMore,
   isLoadingMore,
+  moreFailed,
   refreshing = false,
   onRefresh,
   bottomInset
@@ -331,6 +334,7 @@ export default function ProfileWatchlistTab({
         ListFooterComponent={
           isLoadingMore
             ? <RoomRetrieving room="more" />
+            : moreFailed ? <RoomMoreFailed onRetry={onLoadMore} />
             : flashData.length > 0 ? <RoomFoot tier={tier} /> : null
         }
         bottomInset={bottomInset}

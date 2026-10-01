@@ -513,6 +513,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/roomSearchWiring.test.tsx | — |  |
 | src/components/profile/__tests__/roomsRender.test.tsx | — |  |
 | src/components/profile/__tests__/taste.test.tsx | — |  |
+| src/components/profile/__tests__/theRestCouldNotBeReached.test.tsx | 2026-10-01 | written: a failed "more" is said in every room |
 | src/components/profile/__tests__/yearMarker.test.tsx | — |  |
 | src/components/profile/__tests__/zz-art.gen.ts | — |  |
 | src/components/profile/__tests__/zz-memberfile.gen.test.tsx | — |  |
@@ -543,7 +544,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/ProfileWatchlistTab.tsx | 2026-10-01 | sized by the true total: a search keeps its box, finding nothing is said; the Oracle only with a choice; nav |
 | src/components/profile/ProjectorRoom.tsx | — |  |
 | src/components/profile/RadarChart.tsx | — |  |
-| src/components/profile/RoomParts.tsx | — |  |
+| src/components/profile/RoomParts.tsx | 2026-10-01 | RoomMoreFailed; comments say what is true now |
 | src/components/profile/roomStyles.ts | 2026-09-29 | 26 fixed; chip-halo note was stranded 100 lines from chipSlop; 'the Vault' renamed Physical Archive in prose |
 | src/components/profile/TasteDNA.tsx | — |  |
 | src/components/profile/TasteDNAExportCanvas.tsx | — |  |

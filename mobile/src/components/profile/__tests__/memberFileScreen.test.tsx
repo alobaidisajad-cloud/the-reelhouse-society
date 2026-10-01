@@ -46,7 +46,7 @@ const makeCtl = (over: Record<string, unknown> = {}, dataOver: Record<string, un
     setTargetUser: jest.fn(),
     hasMoreLogs: false, hasMoreWatchlist: false, hasMoreVault: false, hasMoreLists: false,
     isLoadingMore: false, loadMoreLogs: jest.fn(),
-    tabFailed: {}, loadTabData: jest.fn(), retryRoom: jest.fn(),
+    tabFailed: {}, moreFailed: {}, loadTabData: jest.fn(), retryRoom: jest.fn(),
     ...dataOver,
   },
   username: 'tomasreyes', isSelf: false, repairingHandle: false,

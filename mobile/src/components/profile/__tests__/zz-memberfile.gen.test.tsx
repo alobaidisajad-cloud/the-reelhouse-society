@@ -94,7 +94,7 @@ const CTL: Ctl = {
     taste: null,
     setTargetUser: jest.fn(),
     hasMoreLogs: false, hasMoreWatchlist: false, hasMoreVault: false, hasMoreLists: false,
-    isLoadingMore: false, loadMoreLogs: jest.fn(), loadTabData: jest.fn(), tabFailed: {},
+    isLoadingMore: false, loadMoreLogs: jest.fn(), loadTabData: jest.fn(), tabFailed: {}, moreFailed: {},
   },
   username: 'kane', isSelf: false, repairingHandle: false,
   isFollowing: true, isRequested: false, activeTab: null,

@@ -70,7 +70,7 @@ async function open(activeTab: string, over: Record<string, unknown> = {}, data:
       analyticsLogs: [], calendarData: [], serverAnalytics: null, serverStreak: null, setTargetUser: jest.fn(),
       hasMoreMainLogs: true, hasMoreArchiveLogs: true, hasMoreLedgerLogs: true, hasMoreWatchlist: true, hasMoreVault: true, hasMoreLists: true,
       isLoadingMore: {}, loadMoreLogs, loadMoreLists, loadMoreVault, loadMoreWatchlist,
-      tabFailed: {}, loadTabData: jest.fn(), retryRoom: jest.fn(),
+      tabFailed: {}, moreFailed: {}, loadTabData: jest.fn(), retryRoom: jest.fn(),
       ...data,
     },
     username: 'tomasreyes', isSelf: true, repairingHandle: false, isFollowing: false, isRequested: false, activeTab,

@@ -28,11 +28,8 @@ export function RoomPlate({
   /** Whose room this is. You always know, on your own file or anyone's. */
   member: string;
   /**
-   * The RECONCILED count — `tally(totalFilms)`, not `logs.length`.
-   *
-   * The rooms are handed windowed arrays capped at 150, so a member with 247
-   * films would have been told 150 by any count taken from the list itself.
-   * This is the same number their profile shows, from the same source.
+   * The RECONCILED count — `tally(totalFilms)`, never `logs.length` (the rooms
+   * hold windows capped at 150): the number the profile shows, from its source.
    */
   count: string;
   sealed?: boolean;
@@ -116,8 +113,7 @@ export function RoomChip({
       haptic
       accessibilityRole="button"
       accessibilityLabel={a11y}
-      // The gap that mattered more than the missing names: a filter that says
-      // what it is called but never whether it is ON.
+      // A filter says whether it is ON, not only what it is called.
       accessibilityState={{ selected: on }}
     >
       {children ?? (
@@ -132,13 +128,9 @@ export function RoomChip({
 }
 
 /**
- * A hairline between two GROUPS of chips in one scroller.
- *
- * The Watchlist has to ask two different questions — in what ORDER, and WHICH
- * ones — and the honest layout for that is two rows. But the loudest complaint
- * about this app is header chrome: eight rows before content on the Stacks, and
- * a search box plus two chip rows here would be three before a single poster.
- * One row, two groups, a rule between them: the cost is 1pt.
+ * A hairline between two GROUPS of chips in one scroller: in what ORDER, and
+ * WHICH ones, asked in one row rather than two (header rows before the first
+ * poster are what a room can least afford). The cost is 1pt.
  */
 export function RoomChipDivider() {
   return <View style={r.chipDivider} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />;
@@ -148,21 +140,13 @@ export function RoomChipDivider() {
 // SEARCH — the way IN, not a convenience
 // ════════════════════════════════════════════════════════════════════════════
 /**
- * Three of the six rooms had no way to find anything.
+ * The one search box of every room. With 2,000 films or 300 stacks, scrolling
+ * is not navigation; past one screenful this is the primary control.
  *
- * With 2,000 films in the Archive or 300 stacks on the shelf, scrolling is not
- * navigation — it is the absence of it. Sorting A–Z means scrolling to "N" by
- * hand. So this is not a nicety for large collections; past one screenful it is
- * the primary control and everything else is secondary.
- *
- * Every term goes through `buildSearchPattern` at the call site — the one
- * sanitiser in the app, hardened against a live injection that turned a search
- * for four letters into "match every member". Nothing here builds a query.
- *
- * The debounce lives with the caller because each room's ANR budget differs;
- * what lives here is the shape, so five rooms cannot end up with five search
- * boxes that look and behave differently. They did once: two rooms had one,
- * three had none, and the two that had one used different placeholder voices.
+ * Every term reaches the server through `buildSearchPattern` (the one
+ * sanitiser) and is matched on the phone by `matchesSearch`; nothing here
+ * builds a query. The debounce lives with each room; the shape lives here, so
+ * five rooms cannot have five boxes that look and behave differently.
  */
 export function RoomSearch({ value, onChange, onClear, placeholder, a11y, ember }: {
   value: string;
@@ -277,10 +261,7 @@ export function RoomRetrieving({ room }: { room: string }) {
   );
 }
 
-/**
- * A room whose read could not be answered: said, with the way to ask again. It
- * stood at RETRIEVING for as long as the member stayed.
- */
+/** A room whose read could not be answered: said, with the way to ask again. */
 export function RoomUnreachable({ room, onRetry }: { room: string; onRetry: () => void }) {
   return (
     <View style={r.state}>
@@ -291,12 +272,8 @@ export function RoomUnreachable({ room, onRetry }: { room: string; onRetry: () =
 }
 
 /**
- * A private member's room.
- *
- * It used to say "this member hasn't watched any films yet" — to a visitor
- * looking at someone with two thousand of them. The counts ARE fetched on the
- * sealed path, deliberately, so that the profile does not read "0 films"; the
- * rooms simply never used them. The plate states the true number and this
+ * A private member's room: never "hasn't watched any films yet". The plate
+ * states the true number (the counts are read on the sealed path) and this
  * explains the rest.
  */
 export function RoomSealed() {
@@ -313,12 +290,10 @@ export function RoomSealed() {
 }
 
 /**
- * An empty room — and, separately, a room whose FILTER matched nothing.
- *
- * Those are different facts and today they share one sentence: filter the
- * Archive to "Abandoned" with nothing abandoned and it reports "The Archive is
- * Empty", which sends a member hunting for a fault in their own account. When
- * a filter is the cause, the only action offered is the one that undoes it.
+ * An empty room — and, separately, a room whose FILTER matched nothing. Those
+ * are different facts with different sentences ("The Archive is Empty" sends a
+ * member with 200 films hunting for a fault in their account); when a filter is
+ * the cause, the action offered is the one that undoes it.
  */
 export function RoomEmpty({ icon, title, body, actionLabel, onAction, invite }: {
   icon?: React.ReactNode;
@@ -355,6 +330,16 @@ export function RoomEmpty({ icon, title, body, actionLabel, onAction, invite }: 
 // ════════════════════════════════════════════════════════════════════════════
 // THE FOOT — every room closes
 // ════════════════════════════════════════════════════════════════════════════
+/** "More" that could not be read: said at the foot, with the way to ask again. */
+export function RoomMoreFailed({ onRetry }: { onRetry?: () => void }) {
+  return (
+    <View style={r.state}>
+      <Text {...scaledTextProps} style={r.stateBody}>The rest could not be reached.</Text>
+      {!!onRetry && <TryAgainLine onPress={onRetry} accessibilityLabel="Ask for the rest again" style={r.stateRetry} />}
+    </View>
+  );
+}
+
 export function RoomFoot({ tier }: { tier?: string | null }) {
   const t = roomTier(tier);
   return (
@@ -366,7 +351,7 @@ export function RoomFoot({ tier }: { tier?: string | null }) {
   );
 }
 
-/** The Stacks' and the Vault's paginator. Silent while it works, until now. */
+/** The Stacks' and the shelf's paginator: LOAD MORE, and a spinner while it works. */
 export function RoomLoadMore({ busy, onPress }: { busy?: boolean; onPress?: () => void }) {
   return (
     <PressableScale
