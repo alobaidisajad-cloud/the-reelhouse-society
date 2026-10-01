@@ -83,7 +83,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/list-modal.tsx | 2026-09-29 | histories -> rules; orphan style comments removed; header named the web port and wrong labels |
 | app/(modals)/log-modal.tsx | 2026-10-01 | Arrive; the scroll needs no Animated |
 | app/(modals)/login.tsx | 2026-10-01 | the terms open; every comment short and true |
-| app/(modals)/membership.tsx | — |  |
+| app/(modals)/membership.tsx | 2026-10-02 | restore asks a visitor to sign in; FOUNDING.seats; one readFoundingCount; no seat offered the store does not sell |
 | app/(modals)/notifications-modal.tsx | 2026-10-02 | rows say new/who/what/when; the rest could not be reached; history comments trimmed |
 | app/(modals)/search-modal.tsx | 2026-10-02 | tabs named; partial results said; an emptied box empties at once; nav.dismiss |
 | app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
@@ -579,16 +579,16 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/SkeletonPulse.tsx | — |  |
 | src/components/SkeletonShimmer.tsx | — |  |
 | src/components/society/__tests__/theSocietySellsWhatItSays.test.tsx | — |  |
-| src/components/society/BillingSwitch.tsx | — |  |
-| src/components/society/FoundingCertificate.tsx | — |  |
-| src/components/society/GeneralAdmission.tsx | — |  |
-| src/components/society/PrivilegeLedger.tsx | — |  |
-| src/components/society/PurchaseDock.tsx | — |  |
+| src/components/society/BillingSwitch.tsx | 2026-10-02 | read; sound |
+| src/components/society/FoundingCertificate.tsx | 2026-10-02 | read; sound |
+| src/components/society/GeneralAdmission.tsx | 2026-10-02 | read; sound |
+| src/components/society/PrivilegeLedger.tsx | 2026-10-02 | read; sound |
+| src/components/society/PurchaseDock.tsx | 2026-10-02 | read; sound |
 | src/components/society/purchaseStop.ts | 2026-09-30 | written with the purchase-stop fix |
-| src/components/society/RankTicket.tsx | — |  |
+| src/components/society/RankTicket.tsx | 2026-10-02 | a ticket the store does not sell says so |
 | src/components/society/SmallPrint.tsx | 2026-10-01 | its link shared with the sign-in footer |
-| src/components/society/SocietyPoster.tsx | — |  |
-| src/components/society/societyPricing.ts | — |  |
+| src/components/society/SocietyPoster.tsx | 2026-10-02 | read; sound |
+| src/components/society/societyPricing.ts | 2026-10-02 | never a static dollar price for a product the store answered without |
 | src/components/SpoilerVeil.tsx | 2026-10-01 | veiled from the first frame |
 | src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | — |  |
 | src/components/text/AnimatedText.tsx | — |  |
@@ -691,7 +691,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useInitiation.ts | — |  |
 | src/hooks/useLogFlow.ts | 2026-09-29 | 22 fixed; line refs (:351-352, logOperations.ts:574) and a 30-line history of the erase bug cut to the rule |
 | src/hooks/useMemberRoom.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/hooks/useMembershipPricing.ts | — |  |
+| src/hooks/useMembershipPricing.ts | 2026-10-02 | read; sound |
 | src/hooks/useModalKeyboardPadding.ts | — |  |
 | src/hooks/useNotableMembers.ts | 2026-10-01 | true as written |
 | src/hooks/useOfflineAware.ts | 2026-10-01 | one subscription, no clock |

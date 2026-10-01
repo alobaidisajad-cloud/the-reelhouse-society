@@ -117,7 +117,7 @@ describe('the numbers', () => {
   };
 
   it('the amount charged is the big number, in the store’s own currency', () => {
-    const p = ticketPrice('archivist', 'annual', LIVE);
+    const p = ticketPrice('archivist', 'annual', LIVE)!;
     expect(p.amount).toBe('£19.99');
     expect(p.per).toBe('A YEAR');
     expect(p.terms).toBe('About £1.67 a month. Renews yearly.');
@@ -126,16 +126,16 @@ describe('the numbers', () => {
 
   it('a local price is never followed by a dollar figure', () => {
     // The store gave a price but not its per-month string: say nothing, never "$1.67".
-    const p = ticketPrice('archivist', 'annual', { archivist: { annual: '£19.99', annualPrice: 19.99 } });
+    const p = ticketPrice('archivist', 'annual', { archivist: { annual: '£19.99', annualPrice: 19.99 } })!;
     expect(p.terms).toBe('Renews yearly.');
     expect(`${p.amount} ${p.terms}`).not.toMatch(/\$/);
   });
 
   it('when the store cannot be reached, the dollar fallback is dollars throughout', () => {
-    const y = ticketPrice('auteur', 'annual', {});
+    const y = ticketPrice('auteur', 'annual', {})!;
     expect(y.amount).toBe('$49.99');
     expect(y.terms).toBe('About $4.17 a month. Renews yearly.');
-    const m = ticketPrice('auteur', 'monthly', {});
+    const m = ticketPrice('auteur', 'monthly', {})!;
     expect(m.amount).toBe('$4.99');
     expect(m.terms).toBe('Renews monthly.');
   });
@@ -148,12 +148,20 @@ describe('the numbers', () => {
   });
 
   it('the founding pitch compares only when the comparison is true', () => {
-    expect(foundingPitch({}).amount).toBe('$49');
-    expect(foundingPitch({}).body).toMatch(/less than a single year of the Auteur/);
-    expect(foundingPitch(LIVE).amount).toBe('£49');
-    const dear = foundingPitch({ ...LIVE, founding: { lifetime: '£99', lifetimePrice: 99 } });
+    expect(foundingPitch({})!.amount).toBe('$49');
+    expect(foundingPitch({})!.body).toMatch(/less than a single year of the Auteur/);
+    expect(foundingPitch(LIVE)!.amount).toBe('£49');
+    const dear = foundingPitch({ ...LIVE, founding: { lifetime: '£99', lifetimePrice: 99 } })!;
     expect(dear.body).not.toMatch(/less than/);
     expect(dear.body).toMatch(/never renews/);
+  });
+
+  it('what the store answered without is not for sale, and is never priced in dollars', () => {
+    const { auteur: _auteur, ...noAuteur } = LIVE;
+    expect(ticketPrice('auteur', 'annual', noAuteur)).toBeNull();
+    expect(ticketPrice('archivist', 'monthly', { ...LIVE, archivist: { annual: '£19.99', annualPrice: 19.99 } })).toBeNull();
+    const { founding: _seat, ...noSeat } = LIVE;
+    expect(foundingPitch(noSeat)).toBeNull();
   });
 
   it('the founding seat states its limit, never its count', () => {
@@ -563,5 +571,26 @@ describe('the ledger and the tickets are one list', () => {
   it('the free seat lists every free privilege', async () => {
     const r = await mount();
     for (const p of privilegesOf('cinephile')) expect(r.getByText(p.name)).toBeTruthy();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+describe('what the store does not sell, and who may restore', () => {
+  it('a rank the store answered without says so, and no seat is offered that it cannot sell', async () => {
+    mockPricing = {
+      archivist: { monthly: '£1.99', annual: '£19.99', monthlyPrice: 1.99, annualPrice: 19.99, annualPerMonth: '£1.67' },
+    };
+    const r = await mount();
+    expect(r.getByText('Not yet on sale in the App Store.')).toBeTruthy();
+    expect(r.queryByText(/\$/, PRINT)).toBeNull();
+    expect(r.queryByText('A Seat for Life.', PRINT)).toBeNull();
+  });
+
+  it('restoring asks a visitor to sign in first, and never asks the store for no one', async () => {
+    mockUser = null;
+    const r = await mount();
+    await fireEvent.press(r.getAllByLabelText('Restore purchases')[0]);
+    expect(mockPush).toHaveBeenCalledWith('/login');
+    expect(mockRestore).not.toHaveBeenCalled();
   });
 });

@@ -10,11 +10,6 @@
  * Everything it says is read from `constants/membership.ts` — one list of
  * privileges that the tickets, the ledger and the web all sell from — and
  * every figure from the store (`useMembershipPricing`, `societyPricing`).
- *
- * The purchase, founding-seat, restore and unlock logic below is the
- * battle-tested code from the previous page, kept as it was; what changed is
- * everything a member sees, and the four links at the foot, which now all
- * really go somewhere.
  */
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, AppState, useWindowDimensions, Platform } from 'react-native';
@@ -39,7 +34,7 @@ import { supabase } from '@/src/lib/supabase';
 import { resolveTier, getTierWeight } from '@/src/utils/tier';
 import { deckLabelProps } from '@/src/constants/textScaling';
 
-import { PRIVILEGES, RANKS, rankById, type PaidRankId, type Rank } from '@/src/constants/membership';
+import { FOUNDING, PRIVILEGES, RANKS, rankById, type PaidRankId, type Rank } from '@/src/constants/membership';
 import { GATED_FEATURES } from '@/src/constants/gatedFeatures';
 import { recordGateEvent } from '@/src/utils/gateTelemetry';
 import { useLocalSearchParams } from 'expo-router';
@@ -77,6 +72,15 @@ const SHORT_SCREEN = 740;
 export const SCROLL_BREATH = 32;
 
 const PAID: (Rank & { id: PaidRankId })[] = RANKS.filter((r): r is Rank & { id: PaidRankId } => r.id !== 'cinephile');
+
+/** How many founding seats are taken; null when it could not be read. */
+async function readFoundingCount(): Promise<number | null> {
+  const { count, error } = await supabase
+    .from('profiles')
+    .select('id', { count: 'exact', head: true })
+    .eq('is_founding', true);
+  return error ? null : count;
+}
 
 export default function MembershipScreen() {
 
@@ -174,30 +178,17 @@ export default function MembershipScreen() {
         if (Date.now() - lastCheckoutRef.current > 10000) {
           useAuthStore.getState().restoreSession?.();
         }
-        supabase
-          .from('profiles')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_founding', true)
-          .then(({ count, error }) => {
-            if (!error && count !== null) setFoundingCount(count);
-          });
+        void readFoundingCount().then((n) => { if (n !== null) setFoundingCount(n); });
       }
     });
     return () => sub.remove();
   }, []);
 
-  // ── Founding seat cap ─────────────────────────────────────────
-  // Fetch once on mount. profiles RLS allows SELECT for everyone,
-  // so a head-only count query works without an RPC.
+  // The seats taken, read once on arrival (and again on return, above). Unread,
+  // the certificate stays away: a seat is never offered that may be gone.
   useEffect(() => {
     let mounted = true;
-    supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_founding', true)
-      .then(({ count, error }) => {
-        if (mounted && !error && count !== null) setFoundingCount(count);
-      });
+    void readFoundingCount().then((n) => { if (mounted && n !== null) setFoundingCount(n); });
     return () => { mounted = false; };
   }, []);
 
@@ -313,14 +304,14 @@ export default function MembershipScreen() {
     purchaseMutex.current = true;
 
     try {
-      // Concurrency Guard: Re-verify the count right before purchase
-      const { count, error } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_founding', true);
-      if (error) {
+      // The seats, counted again just before the store is asked.
+      const count = await readFoundingCount();
+      if (count === null) {
         reelToast.error('Unable to verify Founding Member availability. Try again.');
         return;
       }
-      if (count !== null && count >= 100) {
-        reelToast.error('The 100 Founding Member seats have been filled.');
+      if (count >= FOUNDING.seats) {
+        reelToast.error(`The ${FOUNDING.seats} Founding Member seats have been filled.`);
         setFoundingCount(count);
         return;
       }
@@ -334,21 +325,10 @@ export default function MembershipScreen() {
         reelToast.success('Welcome to the Founding Board.');
         useAuthStore.getState().setLocalTierHint({ tier: entitlement.tier, is_founding: entitlement.tier === 'founding' || undefined });
 
-        // Global Unlock Polling Architecture
-        //
-        // ⚠️ finding 100 — this waits for the SEAT (is_founding), not for the founding tier.
-        //
-        // The 100-seat cap is enforced atomically server-side by claim_founding_seat, and
-        // RevenueCat has already charged by the time it runs. If the last seat goes while
-        // this purchase is in flight, the member is granted the Auteur rank WITHOUT the
-        // seat — the server reports that as seatClaimed=false and the app used to throw
-        // the whole reply away, so someone who paid for a seat that no longer existed was
-        // never told and believed they were a founding member.
-        //
-        // The old condition made it worse: it waited for a weight >= founding, which in
-        // exactly that case NEVER arrives, so the loop ran out and the member's session
-        // was never refreshed either. Waiting on the seat and handling its absence
-        // explicitly fixes both.
+        // Waits for the SEAT (is_founding), not the founding tier: the cap is
+        // claimed server-side (claim_founding_seat) after the store has charged, so
+        // if the last seat went meanwhile the member holds the Auteur rank without
+        // a seat, and must be told.
         (async () => {
           try {
             const userId = useAuthStore.getState().user?.id;
@@ -364,21 +344,11 @@ export default function MembershipScreen() {
                 return;   // seat secured — nothing to explain
               }
             }
-            // The seat never landed inside the window. Telling someone their seat was
-            // taken is alarming and irreversible-feeling, so it needs POSITIVE evidence
-            // — not the absence of evidence.
-            //
-            // "The rank arrived, so they must have been capped out" is NOT evidence: an
-            // existing AUTEUR already had the rank before they bought, so a merely slow
-            // webhook would look identical and they would be told the seat was taken
-            // when it was not. Ask the cap directly instead.
+            // No seat inside the window. "Your seat was taken" needs positive
+            // evidence (a slow webhook looks the same), so the cap itself is asked.
             if (last?.is_founding !== true) {
-              const { count } = await supabase
-                .from('profiles')
-                .select('id', { count: 'exact', head: true })
-                .eq('is_founding', true);
-
-              if (count !== null && count >= 100) {
+              const count = await readFoundingCount();
+              if (count !== null && count >= FOUNDING.seats) {
                 // The seats really are gone. Retire the certificate on screen too.
                 setFoundingCount(count);
                 await supabase.auth.refreshSession();
@@ -407,6 +377,9 @@ export default function MembershipScreen() {
 
   // ── Restore — required by both stores ─────────────────────────────────────
   const handleRestore = async () => {
+    // Restored with no one signed in, the store would move the purchase to an
+    // anonymous buyer, and the house would have no member to grant it to.
+    if (!isAuthenticated || !user) { nav.push('/login'); return; }
     if (purchaseMutex.current) return;
     purchaseMutex.current = true;
     setIsRestoring(true);
@@ -416,20 +389,13 @@ export default function MembershipScreen() {
       const authStore = useAuthStore.getState();
 
       if (!result.storeReachable) {
-        // #99 — the store could not be consulted. That is NOT "you have no
-        // subscription", and it used to be treated as though it were: a paying
-        // member on bad signal was told they had nothing and had their tier
-        // stripped locally, closing every premium feature until a good session
-        // restored it. Say what actually happened and change nothing.
+        // The store could not be asked: not "you have no subscription". Nothing changes.
         reelToast.error(`Couldn't reach ${STORE.name} — your membership is unchanged.`);
         return;
       }
 
       if (result.isActive) {
-        // setLocalTierHint, NOT updateUser. `tier` is server-derived and not a field
-        // ProfileWriteService.updateProfile writes, so updateUser would pay for a round
-        // trip that cannot write it, and on failure say "Profile update failed —
-        // changes reverted" right after a SUCCESSFUL restore.
+        // A local hint: `tier` is the server's to write.
         authStore.setLocalTierHint({
           tier: result.tier,
           is_founding: result.tier === 'founding' || undefined,
@@ -437,11 +403,9 @@ export default function MembershipScreen() {
         const restored = result.tier === 'founding' ? 'your founding seat' : `the ${result.tier === 'auteur' ? 'Auteur' : 'Archivist'} rank`;
         reelToast.success(`Restored — ${restored} is yours again.`);
       } else {
-        // The store answered and reported nothing active. restorePurchases has
-        // already sent that downgrade to the server, where grant_entitlement
-        // decides whether it is allowed — it refuses to lower a tier bought on
-        // the website or granted by hand. So ask the server for the truth
-        // instead of guessing locally, which is what used to demote web buyers.
+        // The store has nothing active. The server decides whether that lowers
+        // the rank (it never lowers one bought on the web or granted by hand), so
+        // the session is read from it rather than guessed here.
         await authStore.restoreSession?.();
         reelToast.info(`${STORE.name === 'Google Play' ? 'Google Play' : 'The App Store'} has no active membership for this account.`);
       }
@@ -462,7 +426,7 @@ export default function MembershipScreen() {
   const showDock = selected !== null && selectedPrice !== null;
   const selectedRank = selected ? rankById(selected) : null;
   const founder = userRole === 'founding';
-  const showFounding = founder || (foundingCount !== null && foundingCount < 100);
+  const showFounding = founder || (pitch !== null && foundingCount !== null && foundingCount < FOUNDING.seats);
 
   return (
     // The E2E flows land here from every rope in the app (e2e: society-page).
@@ -527,7 +491,7 @@ export default function MembershipScreen() {
         {showFounding ? (
           <FoundingCertificate
             founder={founder}
-            pitch={pitch}
+            pitch={pitch ?? { amount: '', body: '' }}
             busy={isRedirecting || isRestoring}
             onClaim={handleFoundingCheckout}
           />

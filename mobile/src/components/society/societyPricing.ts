@@ -39,12 +39,20 @@ export interface TicketPrice {
 /** True when the store answered with at least one price. */
 const storeAnswered = (pricing: Pricing) => Object.keys(pricing).length > 0;
 
-export function ticketPrice(rank: PaidRankId, billing: Billing, pricing: Pricing): TicketPrice {
+/**
+ * The ticket's price, or null when the store answered and does not sell this
+ * rank for this period: the static dollar price is the stand-in only for a
+ * store that has not answered, never for a product it lacks (it would print
+ * "$4.99" in a pound store, for something that cannot be bought).
+ */
+export function ticketPrice(rank: PaidRankId, billing: Billing, pricing: Pricing): TicketPrice | null {
   const r = rankById(rank);
   const live = pricing[rank];
   const yearly = billing === 'annual';
   const staticPrice = yearly ? r.priceAnnual : r.priceMonthly;
-  const amount = (yearly ? live?.annual : live?.monthly) ?? `$${staticPrice}`;
+  const sold = yearly ? live?.annual : live?.monthly;
+  if (!sold && storeAnswered(pricing)) return null;
+  const amount = sold ?? `$${staticPrice}`;
 
   let perMonth: string | null = null;
   if (yearly) {
@@ -100,10 +108,12 @@ export interface FoundingPitch {
 
 /**
  * The founding seat's price, and its pitch. "It costs less than a single year of
- * the Auteur" is said only when it is TRUE of the prices on screen.
+ * the Auteur" is said only when it is TRUE of the prices on screen. Null when
+ * the store answered without the seat: it is not offered.
  */
-export function foundingPitch(pricing: Pricing): FoundingPitch {
+export function foundingPitch(pricing: Pricing): FoundingPitch | null {
   const answered = storeAnswered(pricing);
+  if (answered && !pricing.founding?.lifetime) return null;
   const amount = pricing.founding?.lifetime ?? `$${FOUNDING.price}`;
   const seat = answered ? pricing.founding?.lifetimePrice : Number(FOUNDING.price);
   const year = answered ? pricing.auteur?.annualPrice : Number(rankById('auteur').priceAnnual);
@@ -118,11 +128,8 @@ export function foundingPitch(pricing: Pricing): FoundingPitch {
 }
 
 /**
- * The limit, and never the count.
- *
- * The page used to print "100 SEATS · 100 REMAIN — None taken yet." True, and
- * it told every visitor that nobody had joined. The offer's real terms are the
- * limit, so that is what is said; the count is still read, quietly, so the
- * certificate retires itself when the last seat goes.
+ * The limit, and never the count: the count would tell every visitor how many
+ * have joined. It is read quietly, so the certificate retires itself when the
+ * last seat goes.
  */
 export const SEATS_LINE = `LIMITED TO THE FIRST ${FOUNDING.seats} MEMBERS`;

@@ -33,6 +33,7 @@ import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { privilegesOf, type PaidRankId, type Rank } from '@/src/constants/membership';
 import type { TicketPrice } from './societyPricing';
 import { EDGE_LIT } from '@/src/theme/light';
+import { STORE } from './SmallPrint';
 
 export type TicketState = 'offer' | 'held' | 'included';
 
@@ -90,7 +91,7 @@ export const RankTicket = memo(function RankTicket({
         hitSlop={null}
         accessibilityRole="radio"
         accessibilityState={{ checked: selected }}
-        accessibilityLabel={`${rank.name}, ${price?.spoken ?? ''}. ${rank.character}`}
+        accessibilityLabel={`${rank.name}, ${price?.spoken ?? `not yet on sale in ${STORE.name}`}. ${rank.character}`}
         accessibilityHint={selected ? undefined : 'Chooses this rank. The button at the bottom buys it.'}
       >
         <View style={s.top}>
@@ -109,7 +110,9 @@ export const RankTicket = memo(function RankTicket({
             </View>
             <Text style={s.terms} {...scaledTextProps}>{price.terms}</Text>
           </>
-        ) : null}
+        ) : (
+          <Text style={s.terms} {...scaledTextProps}>Not yet on sale in {STORE.name}.</Text>
+        )}
       </PressableScale>
 
       {open ? (

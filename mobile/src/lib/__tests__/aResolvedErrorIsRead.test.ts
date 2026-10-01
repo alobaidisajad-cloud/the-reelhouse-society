@@ -23,9 +23,6 @@ const JUDGED: Record<string, { n: number; why: string }> = {
   'app/(modals)/membership.tsx · [from] destructured without error (data)': {
     n: 2, why: 'polls for the webhook: a failed read is "not yet", and the next poll asks again',
   },
-  'app/(modals)/membership.tsx · [from] destructured without error (count)': {
-    n: 1, why: 'telling a member their seat was taken needs positive evidence; no count says nothing',
-  },
   'app/(modals)/membership.tsx · [auth] result discarded': {
     n: 3, why: 'a best-effort refresh; restoreSession follows and reads its own answer',
   },
