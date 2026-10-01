@@ -9,7 +9,7 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, {
-    FadeIn, useSharedValue, useAnimatedStyle,
+    useSharedValue, useAnimatedStyle,
     withRepeat, withSequence, withTiming, Easing, cancelAnimation,
 } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
@@ -17,6 +17,7 @@ import Buster, { BusterMood } from '@/src/components/Buster';
 import TryAgain, { ACTS_GAP, TRY_AGAIN_ABOVE_A_WAY_OUT, WayOut } from '@/src/components/TryAgain';
 import { pickRandom } from '@/src/lore/fragments';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { Arrive } from '@/src/components/Arrive';
 
 interface EmptyStateProps {
     icon?: React.ReactNode;
@@ -65,7 +66,7 @@ function BreathingIcon({ children }: { children: React.ReactNode }) {
 
 export function EmptyState({ icon, glyph = '◈', title, subtitle, compact, busterMood, busterMessage, useBuster = false }: EmptyStateProps) {
     return (
-        <Animated.View entering={FadeIn.duration(600)} style={[s.container, compact && s.compact]}>
+        <Arrive name="empty-state" duration={600} rise={0} style={[s.container, compact && s.compact]}>
             {useBuster ? (
                 <Buster size={80} mood={busterMood ?? 'neutral'} message={busterMessage} />
             ) : icon ? (
@@ -80,7 +81,7 @@ export function EmptyState({ icon, glyph = '◈', title, subtitle, compact, bust
                 <Text style={s.dividerGlyph} {...UNSPOKEN}>✦</Text>
                 <View style={s.dividerLine} />
             </View>
-        </Animated.View>
+        </Arrive>
     );
 }
 

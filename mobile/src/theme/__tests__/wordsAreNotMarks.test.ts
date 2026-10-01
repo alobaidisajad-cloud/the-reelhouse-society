@@ -71,7 +71,6 @@ const PIGMENT_VALUES = new Map<string, string>(
  */
 const MARKS: Record<string, string> = {
   'src/components/AutopsyGauge.tsx · headerStar': '✦ beside the heading',
-  'src/components/Decorative.tsx · reelEmpty': '◉ an unlit reel in a rating',
   'src/components/RatingLegend.tsx · reelEmpty': '◉ an unlit reel in the legend',
   'src/components/ErrorBoundary.tsx · glyph': '⊗ / ✦ at 48pt, the page’s emblem',
   'app/+not-found.tsx · glyph': '⊗ / ✦ at 48pt, the page’s emblem',
