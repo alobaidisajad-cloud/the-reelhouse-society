@@ -89,7 +89,14 @@ export function mmkvKey(stored: string): string {
   return stored.slice(0, MMKV_KEY_BYTES);
 }
 
-const KEY_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+/**
+ * The member's store, by the id MMKV gives one opened with no configuration. Passed
+ * whenever a configuration is: `new MMKV({ encryptionKey })` replaces the default
+ * configuration whole, its id goes to native undefined, and the open throws.
+ */
+export const STORE_ID = 'mmkv.default';
+
+const KEY_ALPHABET ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
 function generateKey(): string {
   // 16 characters of 64 symbols: 96 bits, the most a 16-byte key holds as text.
@@ -110,7 +117,7 @@ export function initEncryptedStorage(): Promise<void> {
       if (existingKey) {
         step = 'open';
         // Data on disk is already encrypted — open the default store WITH the key.
-        storage = new MMKV({ encryptionKey: mmkvKey(existingKey) });
+        storage = new MMKV({ id: STORE_ID, encryptionKey: mmkvKey(existingKey) });
         _encrypted = true;
         return;
       }
@@ -120,7 +127,7 @@ export function initEncryptedStorage(): Promise<void> {
       // encrypt it in place (preserves all existing data — no loss).
       const key = generateKey();
       await SecureStore.setItemAsync(KEY_NAME, key);
-      const plain = new MMKV(); // default id, currently plaintext
+      const plain = new MMKV({ id: STORE_ID }); // currently plaintext
       try {
         plain.recrypt(key);
         storage = plain;
@@ -138,7 +145,7 @@ export function initEncryptedStorage(): Promise<void> {
         // The cost is a cold cache, refetched from the server. The alternative
         // is the member's own writing left readable on their device forever.
         try { plain.clearAll(); } catch { /* best effort — see below */ }
-        storage = new MMKV({ encryptionKey: key });
+        storage = new MMKV({ id: STORE_ID, encryptionKey: key });
         _encrypted = true;
 
         logger.error('[mmkv] recrypt failed; cleared the plaintext store and started fresh');
