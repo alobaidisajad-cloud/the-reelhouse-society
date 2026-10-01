@@ -11,13 +11,18 @@
 import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 
+/** The member's rank, for the cases that turn on it. */
+let mockTier = 'archivist';
 jest.mock('@/src/stores/auth', () => {
-  const build = () => ({ user: { id: 'me', username: 'kane', role: 'archivist', tier: 'archivist', preferences: {} }, isAuthenticated: true });
+  const build = () => ({ user: { id: 'me', username: 'kane', role: mockTier === 'archivist' ? 'archivist' : null, tier: mockTier, preferences: {} }, isAuthenticated: true });
   const useAuthStore = (sel?: (s: unknown) => unknown) => (sel ? sel(build()) : build());
   (useAuthStore as any).getState = () => build();
   return { useAuthStore };
 });
+/** Where the rope sent the member (openSociety travels by the module router). */
+const mockPushed: string[] = [];
 jest.mock('expo-router', () => ({
+  router: { push: (h: string) => { mockPushed.push(h); }, canGoBack: () => false, back: () => {} },
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useLocalSearchParams: () => ({}), useFocusEffect: () => {},
 }));
@@ -65,6 +70,7 @@ async function mount() {
 }
 
 beforeEach(() => {
+  mockTier = 'archivist';
   fetchLounges.mockReset().mockResolvedValue(undefined);
   toast().error.mockClear();
 });
@@ -94,4 +100,36 @@ it('a pull that reaches nothing keeps the salons and says so', async () => {
   expect(toast().error).toHaveBeenCalledWith('Could not refresh — check your connection.');
   expect(r.queryByText('Transmission Interrupted')).toBeNull();
   expect(r.getAllByText('The Nitrate Circle').length).toBeGreaterThan(0);
+});
+
+describe('what the corridor says when it is empty', () => {
+  it('a search that matches nothing says so, not that no salon is open', async () => {
+    useLoungeStore.setState({ lounges: [{ ...ROOM, unread_count: undefined, is_member: false }], loungesFailed: false, loading: false, fetchLounges } as never);
+    const r = await mount();
+    await act(async () => { fireEvent.changeText(r.getByLabelText('Search salons'), 'zzzz'); });
+    expect(r.getByText('No salon matches that.')).toBeTruthy();
+    expect(r.queryByText('No open salons at this time.')).toBeNull();
+  });
+
+  it('says nothing of open salons while the first read is still coming', async () => {
+    useLoungeStore.setState({ lounges: [], loungesFailed: false, loading: true, fetchLounges } as never);
+    const r = await mount();
+    expect(r.getByText('RETRIEVING SALONS')).toBeTruthy();
+    expect(r.queryByText('No open salons at this time.')).toBeNull();
+  });
+});
+
+describe('ESTABLISH, for a member without the rank', () => {
+  it('the empty state opens the rope, never a form the house will refuse', async () => {
+    mockTier = 'free';
+    useLoungeStore.setState({ lounges: [], loungesFailed: false, loading: false, fetchLounges } as never);
+    const r = await mount();
+    mockPushed.length = 0;
+    await act(async () => {
+      fireEvent.press(r.getByLabelText('Establish a new salon. The Archivist opens this. Opens the Society.'));
+    });
+    await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+    expect(mockPushed.some((h) => h.startsWith('/membership'))).toBe(true);
+    expect(r.queryByLabelText('Salon name')).toBeNull();
+  });
 });

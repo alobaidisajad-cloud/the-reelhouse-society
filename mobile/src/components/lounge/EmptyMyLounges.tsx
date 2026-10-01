@@ -1,18 +1,19 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { MessageCircle, Plus } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { OrnamentalRule } from '@/src/components/theme/OrnamentalRule';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { CreateLoungeSheet } from './CreateLoungeSheet';
+import { Arrive } from '@/src/components/Arrive';
 
-export function EmptyMyLounges({ onEstablishPress }: { onEstablishPress: () => void }) {
+/**
+ * `held`: the member may found a salon. Without it ESTABLISH opens the rope
+ * (the caller's `onEstablishPress`), and says so before it is pressed.
+ */
+export function EmptyMyLounges({ onEstablishPress, held }: { onEstablishPress: () => void; held: boolean }) {
   return (
-    <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.emptyHero}>
+    <Arrive name="lounge.empty" duration={600} delay={200} style={s.emptyHero}>
       <View style={s.emptyCrestWrap}>
         <MessageCircle size={32} color={colors.sepia} strokeWidth={1} />
       </View>
@@ -24,18 +25,19 @@ export function EmptyMyLounges({ onEstablishPress }: { onEstablishPress: () => v
         in a public salon below.
       </Text>
 
-      {/* Improvement #5: Add "Establish Salon" CTA directly to the empty state */}
       <PressableScale
         style={s.ctaBtn}
         onPress={onEstablishPress}
         haptic="medium"
         accessibilityRole="button"
-        accessibilityLabel="Establish a new salon"
+        accessibilityLabel={held
+          ? 'Establish a new salon'
+          : 'Establish a new salon. The Archivist opens this. Opens the Society.'}
       >
         <Plus size={12} color={colors.ink} strokeWidth={2.5} />
         <Text style={s.ctaBtnText}>[ ESTABLISH SALON ]</Text>
       </PressableScale>
-    </Animated.View>
+    </Arrive>
   );
 }
 

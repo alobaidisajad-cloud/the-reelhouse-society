@@ -88,7 +88,14 @@ describe('the corridor is open', () => {
       // The vanish is what this replaces: a member who cannot found a salon
       // still learns that founding one is possible.
       expect(corridor).toMatch(/ESTABLISH/);
-      expect(corridor).toMatch(/foundRoom\.held \? setShowCreate\(true\) : foundRoom\.open\(\)/);
+      expect(corridor).toMatch(/mayFound \? setShowCreate\(true\) : openFounding\(\)/);
+    });
+
+    it('and BOTH of them go through it: the empty state opened the form for anyone', () => {
+      // A member without the rank filled in a salon the house then refused.
+      expect(corridor).toMatch(/onPress=\{establish\}/);
+      expect(corridor).toMatch(/onEstablishPress=\{establish\}/);
+      expect((corridor.match(/setShowCreate\(true\)/g) ?? []).length).toBe(1);
     });
   });
 

@@ -9,7 +9,6 @@ import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { View, ScrollView, RefreshControl, ActivityIndicator, AppState } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, {
-  FadeIn,
   useSharedValue, withTiming, useAnimatedProps, useAnimatedStyle, useAnimatedScrollHandler,
 } from 'react-native-reanimated';
 import { Search, Plus, Globe, X } from 'lucide-react-native';
@@ -43,6 +42,7 @@ import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
+import { Arrive } from '@/src/components/Arrive';
 import reelToast from '@/src/utils/reelToast';
 
 // Module-scoped: prevents remount on every render cycle
@@ -72,6 +72,12 @@ export default function LoungeScreen() {
    * one wall over the whole page.
    */
   const foundRoom = useClearance('create-a-lounge', '/lounge');
+  // Both ESTABLISH buttons: the form for a member who may found one, the rope otherwise.
+  const { held: mayFound, open: openFounding } = foundRoom;
+  const establish = useCallback(
+    () => (mayFound ? setShowCreate(true) : openFounding()),
+    [mayFound, openFounding],
+  );
   const isPollingRef = useRef(false);
   // Re-tap the active tab icon → smoothly scroll the corridor to the top.
   const listRef = useRef<any>(null);
@@ -257,7 +263,7 @@ export default function LoungeScreen() {
       <RoomLight room="default" />
       {readyMark}
       {/* ── Compact ceremonial header ── */}
-      <Animated.View entering={FadeIn.duration(700)} style={[s.header, { paddingTop: Math.max(insets.top + 10, 44) }]}>
+      <Arrive name="lounge.header" duration={700} rise={0} style={[s.header, { paddingTop: Math.max(insets.top + 10, 44) }]}>
         <View style={s.headerCrestRow}>
           <View style={s.headerCrest}>
             <MasterLogo size={26} />
@@ -317,7 +323,7 @@ export default function LoungeScreen() {
               which is the entire point of the rope over the vanish. */}
           <PressableScale
             style={s.btnPrimary}
-            onPress={() => (foundRoom.held ? setShowCreate(true) : foundRoom.open())}
+            onPress={establish}
             haptic="medium"
             accessibilityRole="button"
             accessibilityLabel={foundRoom.held
@@ -328,7 +334,7 @@ export default function LoungeScreen() {
             <Text style={s.btnPrimaryText}>ESTABLISH</Text>
           </PressableScale>
         </View>
-      </Animated.View>
+      </Arrive>
 
       {/* ── Body ── */}
       <CinematicFlashList
@@ -392,7 +398,7 @@ export default function LoungeScreen() {
                 </View>
               </View>
             ) : (
-              !loading && !searchQuery && <EmptyMyLounges onEstablishPress={() => setShowCreate(true)} />
+              !loading && !searchQuery && <EmptyMyLounges onEstablishPress={establish} held={mayFound} />
             )}
 
             {/* Directory header */}
@@ -406,13 +412,19 @@ export default function LoungeScreen() {
             </View>}
           </>
         }
-        ListEmptyComponent={salonsLost ? null :
+        // Said only once the salons are read, and of the search when there is one:
+        // "no open salons" was printed under the spinner, and of a search that missed.
+        ListEmptyComponent={salonsLost || (loading && lounges.length === 0) ? null : searchQuery.trim() ? (
+          <View style={s.emptyPublic}>
+            <Text style={s.emptyPublicText}>No salon matches that.</Text>
+          </View>
+        ) : (
           <View style={s.emptyPublic}>
             <Globe size={22} color={colors.fog} strokeWidth={1} />
             <Text style={s.emptyPublicText}>No open salons at this time.</Text>
             <Text style={s.emptyPublicHint}>BE THE FIRST TO OPEN ONE</Text>
           </View>
-        }
+        )}
       />
 
       {/* ── Create Sheet ── */}
