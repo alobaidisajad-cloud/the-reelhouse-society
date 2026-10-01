@@ -86,7 +86,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/membership.tsx | — |  |
 | app/(modals)/notifications-modal.tsx | — |  |
 | app/(modals)/search-modal.tsx | — |  |
-| app/(modals)/social-modal.tsx | — |  |
+| app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
 | app/(tabs)/_layout.tsx | — |  |
 | app/(tabs)/darkroom.tsx | — |  |
 | app/(tabs)/dispatch.tsx | 2026-09-29 | 12 fixed; NewsService history and the pill-fix story cut |
@@ -550,7 +550,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/roomStyles.ts | 2026-09-29 | 26 fixed; chip-halo note was stranded 100 lines from chipSlop; 'the Vault' renamed Physical Archive in prose |
 | src/components/profile/TasteDNA.tsx | 2026-10-01 | says retrieving, failed, too few or still reading — never a heading over nothing; whose-words |
 | src/components/profile/TasteDNAExportCanvas.tsx | — |  |
-| src/components/profile/TasteMatch.tsx | — |  |
+| src/components/profile/TasteMatch.tsx | 2026-10-01 |  |
 | src/components/profile/WatchlistRoulette.tsx | — |  |
 | src/components/RankBadge.tsx | — |  |
 | src/components/RatingLegend.tsx | — |  |

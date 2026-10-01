@@ -22,7 +22,7 @@ import { BlurView } from 'expo-blur';
 import { Check, Film as FilmIcon, Send, User, UserCircle2, Users, X } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
-import TryAgain from '@/src/components/TryAgain';
+import TryAgain, { TryAgainLine } from '@/src/components/TryAgain';
 
 interface SocialProfile {
     id: string;
@@ -64,11 +64,11 @@ function resolveTitle(mode: ModalMode): string {
 }
 
 // ── Lounge Row Component ──────────────────────────────────────────────────────
-const LoungeRow = React.memo(function LoungeRow({ 
-    lounge, onShare, sharing, shared 
-}: { 
-    lounge: { id: string; name: string }; 
-    onShare: (loungeId: string) => void; 
+const LoungeRow = React.memo(function LoungeRow({
+    lounge, onShare, sharing, shared
+}: {
+    lounge: { id: string; name: string };
+    onShare: (loungeId: string) => void;
     sharing: string | null;
     shared: Set<string>;
 }) {
@@ -125,7 +125,7 @@ export default function SocialModal() {
         personName?: string;
     }>();
 
-    const normalizeString = (val: string | string[] | undefined): string | undefined => 
+    const normalizeString = (val: string | string[] | undefined): string | undefined =>
         Array.isArray(val) ? val[0] : val;
 
     const params = useMemo(() => ({
@@ -146,6 +146,12 @@ export default function SocialModal() {
     const [profiles, setProfiles] = useState<SocialProfile[]>([]);
     const [lounges, setLounges] = useState<{ id: string; name: string }[]>([]);
     const [timedOut, setTimedOut] = useState(false);
+    /** The read could not be answered: said in place, never drawn as an empty circle. */
+    const [failed, setFailed] = useState(false);
+    /** Followers and following come a page at a time; this is where the next begins. */
+    const [cursor, setCursor] = useState<string | undefined>(undefined);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [moreFailed, setMoreFailed] = useState(false);
     const [sharingTo, setSharingTo] = useState<string | null>(null);
     const [sharedTo, setSharedTo] = useState<Set<string>>(new Set());
 
@@ -165,11 +171,15 @@ export default function SocialModal() {
     // ── Data fetching ──────────────────────────────────────────────────────────
     const fetchData = useCallback(async () => {
         setLoading(true);
+        setFailed(false);
         try {
             if (mode === 'followers' || mode === 'following') {
-                // Original social connections mode
                 const result = await ProfileService.getSocialConnections(params.userId!, mode);
-                if (isMounted.current) setProfiles(result.profiles || []);
+                if (isMounted.current) {
+                    setProfiles(result.profiles || []);
+                    setCursor(result.hasMore ? result.nextCursor : undefined);
+                    setMoreFailed(false);
+                }
             } else {
                 // Share mode — fetch user's lounges
                 if (!user?.id) {
@@ -185,17 +195,15 @@ export default function SocialModal() {
                     setLounges(parsed);
                 }
             }
-         
+
         } catch (err) {
-            // Finding 115: this catch toasted the member and recorded nothing.
-            // logger.debug is deliberate over logger.warn — warn forwards to
-            // Sentry in production UNGATED, so an offline member would raise a
-            // warning for an expected failure. Console in development, and a
-            // single error-severity event only for a genuine defect.
+            // logger.debug, not warn: warn reaches Sentry in production ungated,
+            // and an offline member's failed read is expected. A genuine defect
+            // is one error-severity event.
             logger.debug('[SocialModal] Fetch failed:', err);
             addBreadcrumb('socialModal.fetchData failed', 'telemetry');
             if (!isNetworkError(err)) captureError(err, { scope: 'socialModal.fetchData', mode });
-            reelToast.error('The telegraph to the archive is disrupted.');
+            if (isMounted.current) setFailed(true);
         } finally {
             if (isMounted.current) setLoading(false);
         }
@@ -211,6 +219,28 @@ export default function SocialModal() {
 
         fetchData();
     }, [valid, fetchData]);
+
+    /** The next page of followers or following, appended; a failed one is said at the foot. */
+    const loadMore = useCallback(async () => {
+        if (!cursor || loadingMore || (mode !== 'followers' && mode !== 'following')) return;
+        setLoadingMore(true);
+        setMoreFailed(false);
+        try {
+            const result = await ProfileService.getSocialConnections(params.userId!, mode, { cursor });
+            if (!isMounted.current) return;
+            setProfiles((prev) => {
+                const seen = new Set(prev.map((p) => p.id));
+                return [...prev, ...(result.profiles || []).filter((p) => !seen.has(p.id))];
+            });
+            setCursor(result.hasMore ? result.nextCursor : undefined);
+        } catch (err) {
+            logger.debug('[SocialModal] More failed:', err);
+            if (!isNetworkError(err)) captureError(err, { scope: 'socialModal.loadMore', mode });
+            if (isMounted.current) setMoreFailed(true);
+        } finally {
+            if (isMounted.current) setLoadingMore(false);
+        }
+    }, [cursor, loadingMore, mode, params.userId]);
 
     // ── Handlers ──────────────────────────────────────────────────────────────
     const handleProfilePress = useCallback((username: string) => {
@@ -264,7 +294,6 @@ export default function SocialModal() {
             // line only ever arrived second, saying "Try again" directly under a
             // refusal that no amount of trying will change.
         } catch (err) {
-            // Same treatment as fetchData above, so the file is consistent.
             logger.debug('[SocialModal] Share failed:', err);
             addBreadcrumb('socialModal.share failed', 'telemetry');
             if (!isNetworkError(err)) captureError(err, { scope: 'socialModal.share', mode, loungeId });
@@ -327,7 +356,7 @@ export default function SocialModal() {
     // ── Determine list data ──────────────────────────────────────────────────
     const isShareMode = mode === 'share-film' || mode === 'share-person';
     const listData = isShareMode ? lounges : profiles;
-    const isEmpty = !loading && listData.length === 0;
+    const isEmpty = !loading && !failed && listData.length === 0;
 
     const retryFetch = useCallback(() => {
         setTimedOut(false);
@@ -351,7 +380,13 @@ export default function SocialModal() {
             {/* Share context banner */}
             {shareBanner}
 
-            {loading ? (
+            {failed ? (
+                <View style={styles.center}>
+                    <Text style={[styles.username, styles.timeoutTitle]}>COULD NOT BE REACHED</Text>
+                    <Text style={styles.timeoutSubtext}>The telegraph to the archive is disrupted.</Text>
+                    <TryAgain onPress={retryFetch} style={styles.retrySpace} />
+                </View>
+            ) : loading ? (
                 <View style={styles.center}>
                     {timedOut ? (
                         <>
@@ -380,7 +415,7 @@ export default function SocialModal() {
                     />
                 </View>
             ) : isShareMode ? (
-                <FlashList 
+                <FlashList
                     maintainVisibleContentPosition={NOT_ANCHORED}
                     data={lounges}
                     estimatedItemSize={68}
@@ -389,13 +424,24 @@ export default function SocialModal() {
                     renderItem={renderLoungeItem}
                 />
             ) : (
-                <FlashList 
+                <FlashList
                     maintainVisibleContentPosition={NOT_ANCHORED}
                     data={profiles}
                     estimatedItemSize={68}
                     keyExtractor={item => item.id}
                     contentContainerStyle={{ padding: 16 }}
                     renderItem={renderSocialItem}
+                    onEndReached={loadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={
+                        loadingMore ? <ActivityIndicator color={colors.sepia} style={styles.moreSpace} />
+                        : moreFailed ? (
+                            <View style={styles.moreSpace}>
+                                <Text style={styles.timeoutSubtext}>The rest could not be reached.</Text>
+                                <TryAgainLine onPress={loadMore} accessibilityLabel="Ask for the rest again" />
+                            </View>
+                        ) : null
+                    }
                 />
             )}
         </BlurView>
@@ -414,6 +460,7 @@ const styles = StyleSheet.create({
     title: { fontFamily: fonts.sub, fontSize: 12, letterSpacing: 4, color: colors.sepia },
     closeBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    moreSpace: { alignItems: 'center', paddingVertical: 16 },
 
     // ── Share Banner ──
     shareBanner: {

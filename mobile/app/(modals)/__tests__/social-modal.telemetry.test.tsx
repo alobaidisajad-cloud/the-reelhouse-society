@@ -5,7 +5,7 @@
  * with it afterwards. Both were verified by reading. This renders the real
  * screen, makes the real calls fail, and asserts the gating actually holds:
  * a genuine defect reaches Sentry, an offline failure does not, and the
- * member still gets their toast either way.
+ * member is told either way (the sheet says a failed read in place).
  */
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
@@ -50,13 +50,17 @@ jest.mock('expo-blur', () => {
     const { View } = require('react-native');
     return { BlurView: ({ children }: { children: React.ReactNode }) => React.createElement(View, null, children) };
 });
+/** The list's last props: its end-of-list callback is called by hand. */
+const mockList: { onEndReached?: () => void } = {};
 jest.mock('@shopify/flash-list', () => {
     const React = require('react');
     const { View } = require('react-native');
     return {
-        FlashList: ({ data, renderItem }: { data: unknown[]; renderItem: (a: { item: unknown; index: number }) => React.ReactNode }) =>
-            React.createElement(View, null, (data ?? []).map((item, index) =>
-                React.createElement(View, { key: String(index) }, renderItem({ item, index })))),
+        FlashList: ({ data, renderItem, onEndReached, ListFooterComponent }: { data: unknown[]; renderItem: (a: { item: unknown; index: number }) => React.ReactNode; onEndReached?: () => void; ListFooterComponent?: React.ReactNode }) => {
+            mockList.onEndReached = onEndReached;
+            return React.createElement(View, null, ...(data ?? []).map((item, index) =>
+                React.createElement(View, { key: String(index) }, renderItem({ item, index }))), ListFooterComponent ?? null);
+        },
     };
 });
 
@@ -149,5 +153,45 @@ describe('the breadcrumb trail — a trace even when nothing is reported', () =>
         });
         // The whole point: a trace exists, but no Sentry event was spent on it.
         expect(captureError).not.toHaveBeenCalled();
+    });
+});
+
+describe('the circle, read and failed, and read a page at a time', () => {
+    beforeEach(() => { mockParams = { type: 'followers', userId: 'target-1' }; });
+    const member = (n: number) => ({ id: `m${n}`, username: `member${n}`, avatar_url: null, role: 'cinephile' });
+
+    it('a read that failed says so, with the way to ask again — never "The Circle Is Empty"', async () => {
+        (ProfileService.getSocialConnections as jest.Mock)
+            .mockRejectedValueOnce(OFFLINE)
+            .mockResolvedValueOnce({ profiles: [member(1)], hasMore: false });
+        const screen = render(<SocialModal />);
+        expect(await screen.findByText('COULD NOT BE REACHED')).toBeTruthy();
+        expect(screen.queryByText('The Circle Is Empty')).toBeNull();
+        await act(async () => { fireEvent.press(screen.getByLabelText('Try again')); });
+        expect(await screen.findByText('@MEMBER1')).toBeTruthy();
+    });
+
+    it('past the first fifty, the rest is read as the member reaches the end', async () => {
+        (ProfileService.getSocialConnections as jest.Mock)
+            .mockResolvedValueOnce({ profiles: [member(1), member(2)], hasMore: true, nextCursor: 'c1' })
+            .mockResolvedValueOnce({ profiles: [member(3)], hasMore: false });
+        const screen = render(<SocialModal />);
+        expect(await screen.findByText('@MEMBER2')).toBeTruthy();
+        await act(async () => { mockList.onEndReached?.(); });
+        expect(ProfileService.getSocialConnections).toHaveBeenLastCalledWith('target-1', 'followers', { cursor: 'c1' });
+        expect(await screen.findByText('@MEMBER3')).toBeTruthy();
+    });
+
+    it('and a page that failed is said at the foot, with the way to ask again', async () => {
+        (ProfileService.getSocialConnections as jest.Mock)
+            .mockResolvedValueOnce({ profiles: [member(1)], hasMore: true, nextCursor: 'c1' })
+            .mockRejectedValueOnce(OFFLINE)
+            .mockResolvedValueOnce({ profiles: [member(2)], hasMore: false });
+        const screen = render(<SocialModal />);
+        expect(await screen.findByText('@MEMBER1')).toBeTruthy();
+        await act(async () => { mockList.onEndReached?.(); });
+        expect(await screen.findByText('The rest could not be reached.')).toBeTruthy();
+        await act(async () => { fireEvent.press(screen.getByLabelText('Ask for the rest again')); });
+        expect(await screen.findByText('@MEMBER2')).toBeTruthy();
     });
 });
