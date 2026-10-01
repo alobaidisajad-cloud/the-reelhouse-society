@@ -521,6 +521,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/theHonoursCountTheWholeRecord.test.tsx | 2026-10-01 | written: honours and stamps from the whole record |
 | src/components/profile/__tests__/theOracleClosesClean.test.tsx | 2026-10-01 | written: the Oracle closes clean |
 | src/components/profile/__tests__/theRestCouldNotBeReached.test.tsx | 2026-10-01 | written: a failed "more" is said in every room |
+| src/components/profile/__tests__/theSharedCardIsAPicture.test.tsx | 2026-10-02 | the share card is unspoken and fixed-size |
 | src/components/profile/__tests__/yearMarker.test.tsx | — |  |
 | src/components/profile/__tests__/yourQueueOpensItsFilms.test.tsx | 2026-10-01 | written: your own queue's posters open their films |
 | src/components/profile/__tests__/zz-art.gen.ts | — |  |
@@ -539,7 +540,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/NitrateCalendarGrid.tsx | 2026-10-01 | today drawn; counts what it draws, "in the past year"; the app date helper; nav |
 | src/components/profile/NoirPassport.tsx | 2026-10-01 | stamps from the whole record only; labels broken between words; said while unread or failed |
 | src/components/profile/ProfileArchiveTab.tsx | 2026-10-01 | nav; IMPORT lands on the import panel; comments say what is true now |
-| src/components/profile/ProfileBackdrop.tsx | — |  |
+| src/components/profile/ProfileBackdrop.tsx | 2026-10-02 | comments say what is true now; poster via tmdb.poster |
 | src/components/profile/profileComputed.ts | 2026-09-29 | 24 fixed; T3 ticket notes, 'until the migration lands', histories cut |
 | src/components/profile/ProfileHelpers.tsx | 2026-10-01 | comments say what is true now |
 | src/components/profile/ProfileLedgerTab.tsx | 2026-10-01 | an empty ledger said as one; the high chip counts from the shared floor; nav; comments say what is true now |
@@ -554,7 +555,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/RoomParts.tsx | 2026-10-01 | RoomMoreFailed; comments say what is true now |
 | src/components/profile/roomStyles.ts | 2026-09-29 | 26 fixed; chip-halo note was stranded 100 lines from chipSlop; 'the Vault' renamed Physical Archive in prose |
 | src/components/profile/TasteDNA.tsx | 2026-10-01 | says retrieving, failed, too few or still reading — never a heading over nothing; whose-words |
-| src/components/profile/TasteDNAExportCanvas.tsx | — |  |
+| src/components/profile/TasteDNAExportCanvas.tsx | 2026-10-02 | unspoken; words fixed-size (it is a picture); history comments trimmed |
 | src/components/profile/TasteMatch.tsx | 2026-10-01 |  |
 | src/components/profile/WatchlistRoulette.tsx | 2026-10-01 | a mid-spin close stops the spin; opens filmId; nav |
 | src/components/RankBadge.tsx | — |  |
@@ -990,7 +991,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/housePages.ts | — |  |
 | src/utils/html.ts | 2026-10-01 | ticket numbers out of the header |
 | src/utils/imagePrefetcher.ts | — |  |
-| src/utils/keysetCursor.ts | — |  |
+| src/utils/keysetCursor.ts | 2026-10-02 | quotes escaped with a backslash, as PostgREST reads them (measured 2026-10-02) |
 | src/utils/lastTab.ts | 2026-10-01 | new: back within the half hour, back on the tab |
 | src/utils/linking.ts | — |  |
 | src/utils/logger.ts | — |  |
@@ -1004,7 +1005,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/offlineQueue.ts | 2026-09-29 | histories (#77, #82, OFFQ-2) → rules; FALSE: 'reactive UI binding' store (nothing subscribes, no screen reads it); FALSE: schema branch 'MUST come before' duplicate (errorClass is one value; the order lives in classifyQueueError) |
 | src/utils/openNoticeFromPush.ts | — |  |
 | src/utils/openSociety.ts | — |  |
-| src/utils/profileCountsCache.ts | — |  |
+| src/utils/profileCountsCache.ts | 2026-10-02 | read; sound |
 | src/utils/recommendations.ts | 2026-10-01 | the shelf's own name |
 | src/utils/reelToast.ts | — |  |
 | src/utils/requestReview.ts | 2026-10-01 | never more than 3 in any 365 days, as it claimed |

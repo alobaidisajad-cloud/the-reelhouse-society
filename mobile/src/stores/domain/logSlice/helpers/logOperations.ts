@@ -10,6 +10,7 @@ import { isNetworkError } from '../../../../utils/networkError';
 import { enqueueMutation, getOfflineQueue } from '../../../../utils/offlineQueue';
 import reelToast from '../../../../utils/reelToast';
 import { sanitizeInput } from '../../../../utils/sanitizeInput';
+import { pgLiteral } from '../../../../utils/keysetCursor';
 import { resolveTier } from '../../../../utils/tier';
 import { localCalendarDate } from '../../../../utils/timeAgo';
 import { useAuthStore } from '../../../auth';
@@ -89,9 +90,9 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
                         // .lt('id', …) is a parameter, not interpolated: safe as it is.
                         query = query.is('watched_date', null).lt('id', parsed.lastId);
                     } else if (parsed.lastDate) {
-                        const safeDate = String(parsed.lastDate).replace(/"/g, '""');
+                        const safeDate = pgLiteral(String(parsed.lastDate));
                         if (isUuid) {
-                            query = query.or(`watched_date.lt."${safeDate}",and(watched_date.eq."${safeDate}",id.lt.${parsed.lastId}),watched_date.is.null`);
+                            query = query.or(`watched_date.lt.${safeDate},and(watched_date.eq.${safeDate},id.lt.${parsed.lastId}),watched_date.is.null`);
                         } else {
                             query = query.lt('watched_date', String(parsed.lastDate));
                         }

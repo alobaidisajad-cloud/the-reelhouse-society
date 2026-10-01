@@ -15,7 +15,7 @@ import { mapLogRow, PUBLIC_LOG_COLUMNS } from '../utils/mappers';
 import type { LogRow } from '../utils/mappers';
 import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, ShelfSort } from '../types';
 import { LEDGER_HIGH_FLOOR } from '../types';
-import { sortAxis, parseCursor, keysetFilter, buildCursor } from '../utils/keysetCursor';
+import { sortAxis, parseCursor, keysetFilter, buildCursor, pgLiteral } from '../utils/keysetCursor';
 import type { AnalyticsShape } from '../hooks/useProfileData';
 import type { TasteProfile } from '../constants/taste';
 import { ProfileUserSchema, type ValidatedProfileUser } from '../schemas/profile.schema';
@@ -296,12 +296,12 @@ export const ProfileDataService = {
       try {
         const cursor = JSON.parse(cursorString);
         if (cursor.lastId) {
-          const safeId = /^\d+$/.test(String(cursor.lastId)) ? cursor.lastId : `"${cursor.lastId}"`;
+          const safeId = pgLiteral(String(cursor.lastId));
           if (cursor.wasDateNull) {
             query = query.is('watched_date', null).lt('id', cursor.lastId);
           } else if (cursor.lastDate) {
-            const safeDate = String(cursor.lastDate).replace(/"/g, '""');
-            query = query.or(`watched_date.lt."${safeDate}",and(watched_date.eq."${safeDate}",id.lt.${safeId}),watched_date.is.null`);
+            const safeDate = pgLiteral(String(cursor.lastDate));
+            query = query.or(`watched_date.lt.${safeDate},and(watched_date.eq.${safeDate},id.lt.${safeId}),watched_date.is.null`);
           }
         }
 
@@ -517,12 +517,12 @@ export const ProfileDataService = {
       );
 
       if (cursor.lastId) {
-        const safeId = /^\d+$/.test(String(cursor.lastId)) ? cursor.lastId : `"${cursor.lastId}"`;
+        const safeId = pgLiteral(String(cursor.lastId));
         if (cursor.wasDateNull) {
           query = query.is('watched_date', null).lt('id', cursor.lastId);
         } else if (cursor.lastDate) {
-          const safeDate = String(cursor.lastDate).replace(/"/g, '""');
-          query = query.or(`watched_date.lt."${safeDate}",and(watched_date.eq."${safeDate}",id.lt.${safeId}),watched_date.is.null`);
+          const safeDate = pgLiteral(String(cursor.lastDate));
+          query = query.or(`watched_date.lt.${safeDate},and(watched_date.eq.${safeDate},id.lt.${safeId}),watched_date.is.null`);
         }
       }
 

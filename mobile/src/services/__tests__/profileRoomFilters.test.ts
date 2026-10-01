@@ -176,9 +176,9 @@ describe('a sort moves the ORDER BY and the cursor together', () => {
   it('a title carrying a quote cannot escape the filter', async () => {
     await ProfileDataService.fetchOtherUserVault(ARCHIVIST, 50, 'A "Cut"|17', undefined, { sort: 'az' });
     const keyset = argsOf('or').map(a => String(a[0])).find(s => s.includes('film_title'));
-    // Doubled, as PostgREST expects — an unescaped quote ends the value and the
-    // rest of the title is parsed as filter syntax.
-    expect(keyset).toContain('""Cut""');
+    // Escaped with a backslash, as PostgREST reads it — an unescaped quote ends
+    // the value and the rest of the title is parsed as filter syntax.
+    expect(keyset).toContain('\\"Cut\\"');
   });
 });
 

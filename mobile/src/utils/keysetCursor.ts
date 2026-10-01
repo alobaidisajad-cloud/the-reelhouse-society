@@ -22,8 +22,9 @@
  * ── QUOTING ───────────────────────────────────────────────────────────────────
  * The cursor value goes into a PostgREST `.or()` string, where an unescaped `"`
  * ends the value early and the rest is parsed as filter syntax. A film titled
- * `2001: A Space Odyssey "Director's Cut"` is not hypothetical. PostgREST
- * doubles an embedded quote, the same as SQL.
+ * `"Wuthering Heights"`, quotes and all, is in production. Inside a quoted
+ * value PostgREST takes a BACKSLASH before `"` (and before `\`); a doubled
+ * quote, as SQL would write it, matched nothing — measured, 2026-10-02.
  */
 
 export type CursorDirection = 'asc' | 'desc';
@@ -60,12 +61,12 @@ export function buildCursor(primary: unknown, id: unknown): string {
  * A PostgREST literal.
  *
  * A bare integer stays bare — quoting it is harmless but makes the filter
- * harder to read in a log. Everything else is quoted, with embedded quotes
- * doubled.
+ * harder to read in a log. Everything else is quoted, its backslashes and
+ * quotes each escaped with a backslash (backslashes first).
  */
 export function pgLiteral(value: string): string {
   if (/^\d+$/.test(value)) return value;
-  return `"${value.replace(/"/g, '""')}"`;
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
 /**

@@ -13,19 +13,12 @@ import { pickBackdropFilm } from './favourites';
  *
  * An Auteur's page is dressed from the centre of their altarpiece — beautiful,
  * and not what everyone wants behind their own face. The switch lives in the
- * Dossier Bureau; ABSENT MEANS ON, so nobody who already has a backdrop loses
- * it the day this ships, and only an explicit `false` takes it down.
+ * Dossier Bureau; ABSENT MEANS ON: only an explicit `false` takes it down.
  */
 export function backdropIsOn(preferences: { backdrop?: unknown } | null | undefined): boolean {
     return preferences?.backdrop !== false;
 }
 
-/**
- * ProfileBackdrop — Auteur-only full-bleed poster backdrop.
- * 
- * Keeps the poster VISIBLE but atmospheric — not muddy.
- * No gold glow (user feedback: looks messy/annoying).
- */
 interface BackdropLog {
     poster?: string | null;
 }
@@ -46,18 +39,21 @@ interface BackdropUser {
 export function backdropSource(user: BackdropUser | null | undefined, logs: BackdropLog[] | null | undefined): string | null {
     if (!user || !isAuteurPlusTier(user)) return null;
     if (!backdropIsOn(user?.preferences)) return null;
-    // The centre of the altarpiece dresses the page. That rule lives in one
-    // place so this and ProfileTriptych can never disagree about which film is
-    // "first" — they used to read the same array two different ways.
+    // The centre of the altarpiece dresses the page — the rule lives in one
+    // place (favourites.ts), so this and the altarpiece agree which film it is.
     const centre = pickBackdropFilm(user?.preferences?.favorites);
     return (centre
-        ? `https://image.tmdb.org/t/p/w780${centre.poster_path}`
+        ? tmdb.poster(centre.poster_path, 'w780')
         : logs?.filter((l: BackdropLog) => l.poster).slice(0, 1).map((l: BackdropLog) => tmdb.poster(l.poster ?? '', 'w342'))[0]) || null;
 }
 
 /** The plate's fade into the room: how much house it lays down, top to hem. */
 const PLATE_VEIL: VeilStops = [[0, 0], [0.45, 0.55], [1, 1]];
 
+/**
+ * An Auteur's full-bleed poster behind their file: visible, but washed and
+ * vignetted into the room (no gold glow).
+ */
 export function ProfileBackdrop({ user, logs, hem, scrollY }: {
     user: BackdropUser;
     logs: BackdropLog[];
@@ -80,7 +76,7 @@ export function ProfileBackdrop({ user, logs, hem, scrollY }: {
                 transition={150}
             />
 
-            {/* Dark wash to simulate CSS brightness(0.4) */}
+            {/* A dark wash, so the poster sits behind the page and not on it. */}
             <View style={s.darkWash} />
 
             {/* Top edge fade (navbar blend) */}

@@ -4,7 +4,8 @@ import { Text } from '@/src/components/text';
 import ViewShot from 'react-native-view-shot';
 import Svg, { Defs, RadialGradient as SvgRadialGradient, Stop, Rect } from 'react-native-svg';
 import { colors, fonts } from '@/src/theme/theme';
-import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
+import { decorativeTextProps } from '@/src/constants/textScaling';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 
 interface TasteDNAExportCanvasProps {
     genres: [string, number][];
@@ -14,8 +15,12 @@ interface TasteDNAExportCanvasProps {
 }
 
 
-// Standard Instagram Story aspect ratio is 9:16, but we can make a square or a specific card.
-// Let's create a beautiful, cinematic 4:5 card for Instagram feed/stories.
+/**
+ * The picture the fingerprint's share button captures: a 4:5 card, 1080 wide.
+ * It is drawn off screen and is a PICTURE, so its words keep their size
+ * whatever the member's text size (the card is a fixed 1080 wide), and a
+ * screen reader never reaches it (the fingerprint itself is read in the room).
+ */
 const CARD_WIDTH = 1080;
 const CARD_HEIGHT = 1350;
 
@@ -28,12 +33,11 @@ export const TasteDNAExportCanvas = forwardRef<ViewShot, TasteDNAExportCanvasPro
         const dnaColors = ['#8B6914', '#A67B17', '#C4921E', '#D4A825', '#E0BC3A', '#F0D050'];
 
         return (
-            <View style={s.offscreenContainer} pointerEvents="none">
+            <View style={s.offscreenContainer} pointerEvents="none" {...UNSPOKEN}>
                 <ViewShot ref={ref} options={{ format: 'png', quality: 1.0 }} style={s.canvas}>
                     {/* Background */}
                     <View style={s.background}>
-                        {/* True radial vignette — the old 100px border-hack baked
-                            visible corner artifacts into every shared PNG. */}
+                        {/* A true radial vignette (a border fakes it with corners). */}
                         <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
                             <Svg width="100%" height="100%">
                                 <Defs>
@@ -49,21 +53,21 @@ export const TasteDNAExportCanvas = forwardRef<ViewShot, TasteDNAExportCanvasPro
                         {/* Content Wrap */}
                         <View style={s.content}>
                             <View style={s.header}>
-                                <Text {...scaledTextProps} style={s.societyLabel}>THE REELHOUSE SOCIETY</Text>
+                                <Text {...decorativeTextProps} style={s.societyLabel}>THE REELHOUSE SOCIETY</Text>
                                 <View style={s.divider} />
-                                <Text {...scaledTextProps} style={s.dossierTitle}>DOSSIER: {username.toUpperCase()}</Text>
+                                <Text {...decorativeTextProps} style={s.dossierTitle}>DOSSIER: {username.toUpperCase()}</Text>
                             </View>
 
                             <View style={s.mainBody}>
-                                <Text {...scaledTextProps} style={s.title}>TASTE DNA</Text>
-                                <Text {...scaledTextProps} style={s.subtitle}>CINEMATIC FINGERPRINT</Text>
+                                <Text {...decorativeTextProps} style={s.title}>TASTE DNA</Text>
+                                <Text {...decorativeTextProps} style={s.subtitle}>CINEMATIC FINGERPRINT</Text>
 
                                 <View style={s.dnaStrip}>
                                     {genres.map(([genre, count], i) => {
                                         const barWidth = `${(count / maxCount) * 100}%`;
                                         return (
                                             <View key={genre} style={s.row}>
-                                                <Text {...scaledTextProps} style={s.genreLabel} numberOfLines={1}>{genre.toUpperCase()}</Text>
+                                                <Text {...decorativeTextProps} style={s.genreLabel} numberOfLines={1}>{genre.toUpperCase()}</Text>
                                                 <View style={s.barTrack}>
                                                     <View style={[s.barFill, { width: barWidth as any, backgroundColor: dnaColors[i] ?? colors.sepia }]} />
                                                 </View>
@@ -73,8 +77,7 @@ export const TasteDNAExportCanvas = forwardRef<ViewShot, TasteDNAExportCanvasPro
                                 </View>
                             </View>
 
-                            {/* Footer Watermark — the REAL serial, not a random
-                                counterfeit that changed on every render. */}
+                            {/* The member's real serial, or the house's name. */}
                             <View style={s.footer}>
                                 <Text {...decorativeTextProps} style={s.watermark}>DOCUMENT CLASSIFIED</Text>
                                 <Text {...decorativeTextProps} style={s.watermarkId}>

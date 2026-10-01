@@ -40,11 +40,16 @@ describe('a cursor survives the round trip', () => {
 });
 
 describe('a value cannot escape the filter it sits in', () => {
-  it('doubles an embedded quote, as PostgREST expects', () => {
-    // `2001: A Space Odyssey "Director's Cut"` is not hypothetical, and an
-    // unescaped `"` ends the value early — the rest is then parsed as filter
-    // syntax, which is how a title becomes a query.
-    expect(pgLiteral('A "Cut"')).toBe('"A ""Cut"""');
+  it('escapes an embedded quote with a backslash, as PostgREST reads it', () => {
+    // An unescaped `"` ends the value early — the rest is then parsed as filter
+    // syntax, which is how a title becomes a query. Measured on production
+    // (2026-10-02): `"Wuthering Heights"`, quotes and all, is matched by the
+    // backslash form; a doubled quote, as SQL writes it, matched nothing.
+    expect(pgLiteral('A "Cut"')).toBe('"A \\"Cut\\""');
+  });
+
+  it('escapes a backslash too, before the quotes', () => {
+    expect(pgLiteral('A \\ B')).toBe('"A \\\\ B"');
   });
 
   it('leaves a bare integer bare', () => {
@@ -87,8 +92,8 @@ describe('the predicate asks for what comes strictly after', () => {
 
   it('never leaves a raw quote in the filter it emits', () => {
     const f = keysetFilter('film_title', { primary: 'A "Cut"', id: '17' }, 'asc')!;
-    // Every quote in the output is either a delimiter or one of a doubled pair.
-    expect(f).toBe('film_title.gt."A ""Cut""",and(film_title.eq."A ""Cut""",id.gt.17)');
+    // Every quote in the output is either a delimiter or escaped.
+    expect(f).toBe('film_title.gt."A \\"Cut\\"",and(film_title.eq."A \\"Cut\\"",id.gt.17)');
   });
 });
 
