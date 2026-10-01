@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import { Heart, MessageSquare, Edit3, Bookmark, MessageCircle, KeyRound } from 'lucide-react-native';
 import { useWatchlistStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
@@ -23,6 +23,8 @@ interface ActionDeckProps {
   posterPath: string | null;
   year?: number;
   ownerUsername: string;
+  /** Whose log this is, by id: a handle can change, an id cannot. */
+  ownerId?: string | null;
   /** The counts this card's page arrived with — shown until the shared store
    *  has been told fresher ones (a page restored from the cache on a cold start
    *  was never told). Null when the source could not say. */
@@ -37,10 +39,10 @@ export const ActionDeck = React.memo(function ActionDeck({
   posterPath,
   year,
   ownerUsername,
+  ownerId = null,
   certifyCount: certifyFallback = null,
   critiqueCount: critiqueFallback = null,
 }: ActionDeckProps) {
-  const router = useRouter();
 
   // Zustand slices purely for THIS specific component. ActivityCard won't re-render.
   const endorsed = useWatchlistStore(s => !!s._endorsedIndex[itemId]);
@@ -52,7 +54,7 @@ export const ActionDeck = React.memo(function ActionDeck({
   const addToWatchlist = useWatchlistStore(s => s.addToWatchlist);
   const removeFromWatchlist = useWatchlistStore(s => s.removeFromWatchlist);
 
-  const isOwner = useAuthStore(s => s.user?.username === ownerUsername);
+  const isOwner = useAuthStore(s => !!ownerId && s.user?.id === ownerId);
   const signedIn = useAuthStore(s => !!s.user);
   /**
    * Sharing a critique into a salon IS posting a message there — the act
@@ -84,7 +86,7 @@ export const ActionDeck = React.memo(function ActionDeck({
 
   const handleCertify = useCallback(() => {
     if (!useAuthStore.getState().user) {
-        (router.push as any)('/login' as any);
+        nav.push('/login');
         return;
     }
     if (isAnimating.current) return;
@@ -100,34 +102,31 @@ export const ActionDeck = React.memo(function ActionDeck({
       withTiming(1.22, { duration: 110, easing: Easing.out(Easing.quad) }),
       withTiming(1, { duration: 150, easing: Easing.bezier(0.33, 0, 0.15, 1) })
     );
-  }, [itemId, toggleEndorse, heartScale, router.push]);
+  }, [itemId, toggleEndorse, heartScale]);
 
   const handleCritique = useCallback(() => {
     if (!useAuthStore.getState().user) {
-        (router.push as any)('/login' as any);
+        nav.push('/login');
         return;
     }
     TactileEngine.selection();
-    (router.push as any)(`/log/${itemId}` as any);
-  }, [itemId, router]);
+    nav.push(`/log/${itemId}`);
+  }, [itemId]);
 
   const handleSaveOrEdit = useCallback(() => {
     if (!useAuthStore.getState().user) {
-        (router.push as any)('/login' as any);
+        nav.push('/login');
         return;
     }
     TactileEngine.mutate();
     if (isOwner) {
-      (router.push as any)({
-        pathname: '/log-modal',
-        params: {
-          filmId: String(filmId),
-          editLogId: itemId,
-          filmTitle: filmTitle,
-          filmPoster: posterPath ?? '',
-          filmYear: year ? String(year) : '',
-        },
-      } as any);
+      nav.push('/log-modal', {
+        filmId: String(filmId),
+        editLogId: itemId,
+        filmTitle,
+        filmPoster: posterPath ?? '',
+        filmYear: year ? String(year) : '',
+      });
     } else {
       if (filmSaved) {
         removeFromWatchlist(filmId);
@@ -146,11 +145,11 @@ export const ActionDeck = React.memo(function ActionDeck({
         withTiming(1, { duration: 150, easing: Easing.bezier(0.33, 0, 0.15, 1) })
       );
     }
-  }, [isOwner, filmSaved, addToWatchlist, removeFromWatchlist, router, filmId, itemId, filmTitle, posterPath, year, bookmarkScale]);
+  }, [isOwner, filmSaved, addToWatchlist, removeFromWatchlist, filmId, itemId, filmTitle, posterPath, year, bookmarkScale]);
 
   const handleLounge = useCallback(() => {
     if (!useAuthStore.getState().user) {
-        (router.push as any)('/login' as any);
+        nav.push('/login');
         return;
     }
     if (!canShare) {
@@ -168,7 +167,7 @@ export const ActionDeck = React.memo(function ActionDeck({
     setShowShareModal(true);
   // The fields, not `share` itself: useClearance returns a fresh object every
   // render, and this handler lives in every card of a long feed.
-  }, [canShare, openShare, router.push]);
+  }, [canShare, openShare]);
 
   return (
     <>

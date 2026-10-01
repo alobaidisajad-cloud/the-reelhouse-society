@@ -1,6 +1,5 @@
 import { supabase } from '@/src/lib/supabase';
 import {
-    CommunityFeedRowSchema,
     FeedItem,
     FeedItemSchema,
     FollowingFeedRowSchema,
@@ -10,9 +9,6 @@ import {
 } from '@/src/schemas/feed.schema';
 
 import { tellMarks } from '@/src/stores/tellMarks';
-import { useAuthStore } from '@/src/stores/auth';
-import { logCountsSelect, withLogCountFilters } from '@/src/services/logCounts';
-import { buildSearchPattern } from '@/src/utils/searchPattern';
 import { logger } from '@/src/utils/logger';
 import { reportValidationTelemetry } from '@/src/utils/validateWithTelemetry';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
@@ -93,14 +89,15 @@ function parseRowsSafely<T>(data: unknown[], schema: z.ZodType<T>, context: stri
  */
 const STACK_CARD_POSTERS = 4;
 
+/** Rows a page asks for; a shorter page is the last (useFeeds). */
+export const FEED_PAGE = 40;
+export const STACKS_PAGE = 60;
+
 /** Tell the shared count store what this page of logs said, and when it was asked. */
 function tellFeed(items: FeedItem[], askedAt: number): FeedItem[] {
   tellMarks('log', items.map((i) => ({ id: i.id, certify: i.certify_count, critique: i.critique_count, certified: i.certified })), askedAt);
   return items;
 }
-
-/** Who is asking — the viewer's own mark is only asked for when there is one. */
-const viewerId = (): string | null => useAuthStore.getState().user?.id ?? null;
 
 const ISO_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}(:?\d{2})?|Z)?$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -117,381 +114,79 @@ export function parseCursor(pageParam?: string): { cursorDate: string | null; cu
 }
 
 /**
- * FeedService — cursor-paginated feed data access layer.
- *
- * Provides community, following, and stacks feeds with resilient row parsing,
- * cursor-based pagination, and automatic RPC-to-direct-query fallback.
+ * FeedService — the Reel's three feeds, each read through the house's own
+ * function: blocks and mutes filtered on the server, so a page's length is what
+ * the card list draws, and keyset cursors (`created_at|id`) never repeat a row.
+ * Every refusal is thrown: an unread feed is never drawn as an empty one, and a
+ * missing function is never quietly replaced by an unfiltered query
+ * (backend-contract.json requires all three).
  */
 export const FeedService = {
-  /**
-   * Fetches the community feed (all public reviews) with cursor pagination.
-   * Uses keyset pagination on `created_at|id` for stable ordering.
-   * Tries the block-aware server-side RPC first, falls back to a direct
-   * query (which cannot filter blocks server-side — see Strategy 2 below).
-   * @returns Parsed and validated feed items, newest first
-   * @throws {FeedServiceError} on network or total validation failure
-   */
+  /** The community feed, newest first. */
   async getCommunityFeed({ pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}): Promise<FeedItem[]> {
-    const limit = 40;
     const { cursorDate, cursorId } = parseCursor(pageParam);
     // Taken BEFORE the request: see tellMarkCounts.
     const askedAt = Date.now();
-
-    // ── Strategy 1: Block-aware cursor RPC ──
-    // Filters blocked/muted authors server-side so the page length used for
-    // pagination matches what the client actually renders (see useFeeds.ts).
-    try {
-      const rpcResult = await supabase.rpc('get_community_feed_auth_cursor', {
-        p_limit: limit,
-        p_cursor_created_at: cursorDate,
-        p_cursor_id: cursorId,
-      });
-
-      if (!rpcResult.error) {
-        if (!rpcResult.data || rpcResult.data.length === 0) return [];
-        const rows = parseRowsSafely(rpcResult.data, FollowingFeedRowSchema, 'getCommunityFeed.rpc');
-        return tellFeed(rows.map((d) => FeedItemSchema.parse(d)), askedAt);
-      }
-
-      const msg = rpcResult.error.message || '';
-      const isMissingFunction = msg.includes('does not exist') || msg.includes('42883') || rpcResult.error.code === '42883';
-      if (!isMissingFunction) {
-        throw new FeedServiceError(rpcResult.error);
-      }
-      if (__DEV__) console.warn('[FeedService] get_community_feed_auth_cursor RPC not found, falling back to direct query');
-    } catch (e) {
-      if (e instanceof FeedServiceError) throw e;
-      if (__DEV__) console.warn('[FeedService] Community feed RPC call failed unexpectedly, using direct query:', e);
-    }
-
-    // ── Strategy 2: Direct query fallback (no server-side block filter) ──
-    // Block/mute filtering for this path happens client-side only, in
-    // useFeeds.ts's `select`, so its pages can come up short.
-    //
-    // This is a safety net, not the live path: get_community_feed_auth_cursor
-    // IS deployed, with EXECUTE granted to anon AND authenticated, so every
-    // real community feed is served by Strategy 1 above — including a signed-out
-    // visitor's, now that The Reel is open to one. (Verified as a real anon
-    // against production: 40 rows, and the fallback below reads too, because
-    // `logs` carries column grants for anon rather than a table grant.)
-    // (The old note here said
-    // "deploy it to close that gap" — it was deployed, and the note outlived
-    // the work. Verified against pg_proc, 23 OUT columns matching
-    // FollowingFeedRowSchema field for field — the last two, the counts,
-    // added by 20260926_01.)
-    const viewer = viewerId();
-    let query = withLogCountFilters(supabase.from('logs')
-      .select(`id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, is_spoiler, profiles!logs_user_id_fkey(username, avatar_url, role), ${logCountsSelect(viewer)}`), viewer)
-      .not('review', 'is', null).neq('review', '')
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
-      .limit(limit);
-
-    if (cursorDate && cursorId) {
-      query = query.or(`created_at.lt.${cursorDate},and(created_at.eq.${cursorDate},id.lt.${cursorId})`);
-    } else if (cursorDate) {
-      query = query.lt('created_at', cursorDate);
-    }
-
-    query = withAbortSignal(query, signal);
-
-    const { data, error } = await query;
-
+    const { data, error } = await withAbortSignal(supabase.rpc('get_community_feed_auth_cursor', {
+      p_limit: FEED_PAGE,
+      p_cursor_created_at: cursorDate,
+      p_cursor_id: cursorId,
+    }), signal);
     if (error) throw new FeedServiceError(error);
     if (!data || data.length === 0) return [];
+    const rows = parseRowsSafely(data, FollowingFeedRowSchema, 'getCommunityFeed');
+    return tellFeed(rows.map((d) => FeedItemSchema.parse(d)), askedAt);
+  },
 
-    const rows = parseRowsSafely(data, CommunityFeedRowSchema, 'getCommunityFeed.direct');
-
-    return tellFeed(rows.map((d) => {
-      const profile = Array.isArray(d.profiles) ? d.profiles[0] : d.profiles;
-      const rawItem = {
-        ...d,
-        username: profile?.username,
-        avatar_url: profile?.avatar_url,
-        role: profile?.role,
-      };
-      return FeedItemSchema.parse(rawItem);
-    }), askedAt);
+  /** The logs of the members the viewer follows, newest first. */
+  async getFollowingFeed({ pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}): Promise<FeedItem[]> {
+    const { cursorDate, cursorId } = parseCursor(pageParam);
+    const askedAt = Date.now();
+    const { data, error } = await withAbortSignal(supabase.rpc('get_following_feed_auth_cursor', {
+      p_limit: FEED_PAGE,
+      p_cursor_created_at: cursorDate,
+      p_cursor_id: cursorId,
+    }), signal);
+    if (error) throw new FeedServiceError(error);
+    if (!data || data.length === 0) return [];
+    const rows = parseRowsSafely(data, FollowingFeedRowSchema, 'getFollowingFeed');
+    return tellFeed(rows.map((d) => FeedItemSchema.parse(d)), askedAt);
   },
 
   /**
-   * Fetches the following feed for the current user with cursor pagination.
-   * Tries server-side RPC first, falls back to client-side filtered query.
-   * @param fallbackFollowing - Followed usernames for direct-query fallback (max 150 used)
-   * @returns Parsed feed items from followed users, newest first
-   * @throws {FeedServiceError} on network or total validation failure
+   * Curated stacks, newest first, searched and filtered on the server.
+   * @param followingCount - whom the viewer follows: none means no followed stacks to ask for
    */
-  async getFollowingFeed({ pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}, fallbackFollowing?: string[]): Promise<FeedItem[]> {
-    const limit = 40;
+  async getStacksFeed(filter: 'all' | 'following', search: string, { pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}, followingCount = 0): Promise<StackData[]> {
+    if (filter === 'following' && followingCount === 0) return [];
     const { cursorDate, cursorId } = parseCursor(pageParam);
-    // Taken BEFORE the request: see tellMarkCounts.
+    // A stack's card shows its certify count; certifying on its page moves it at once.
     const askedAt = Date.now();
-
-    // ── Strategy 1: Server-side cursor RPC ──
-    try {
-      const rpcResult = await supabase.rpc('get_following_feed_auth_cursor', {
-        p_limit: limit,
-        p_cursor_created_at: cursorDate,
-        p_cursor_id: cursorId,
-      });
-
-      if (!rpcResult.error && rpcResult.data && rpcResult.data.length > 0) {
-        const rows = parseRowsSafely(rpcResult.data, FollowingFeedRowSchema, 'getFollowingFeed.rpc');
-        return tellFeed(rows.map((d) => FeedItemSchema.parse(d)), askedAt);
-      }
-
-      if (rpcResult.error) {
-        const msg = rpcResult.error.message || '';
-        const isMissingFunction = msg.includes('does not exist') || msg.includes('42883') || rpcResult.error.code === '42883';
-        if (!isMissingFunction) {
-          throw new FeedServiceError(rpcResult.error);
-        }
-        if (__DEV__) console.warn('[FeedService] get_following_feed_auth_cursor RPC not found, falling back to direct query');
-      }
-      
-      if (!rpcResult.error && rpcResult.data) return [];
-    } catch (e) {
-      if (e instanceof FeedServiceError) throw e;
-      if (__DEV__) console.warn('[FeedService] RPC call failed unexpectedly, using direct query:', e);
-    }
-
-    // ── Strategy 2: Direct query fallback (Safely bounded to prevent 414 URI crashes) ──
-    // 150 UUIDs = ~5.5KB URI, well under the 8KB hard limit of standard load balancers.
-    const safeFollowing = fallbackFollowing ? fallbackFollowing.slice(0, 150) : [];
-    // Log when truncation occurs for production observability
-    if (fallbackFollowing && fallbackFollowing.length > 150) {
-      logger.warn(`[FeedService.getFollowingFeed] Truncated following list: ${fallbackFollowing.length} → 150 (direct query fallback). Deploy get_following_feed_auth_cursor RPC to resolve.`);
-    }
-    if (safeFollowing.length === 0) return [];
-    const { data: profiles, error: profileError } = await supabase
-      .from('profiles')
-      .select('id')
-      .in('username', safeFollowing)
-      .limit(150);
-
-    if (profileError) throw new FeedServiceError(profileError);
-    if (!profiles || profiles.length === 0) return [];
-
-    const viewer = viewerId();
-    let query = withLogCountFilters(supabase.from('logs')
-      .select(`id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, is_spoiler, profiles!logs_user_id_fkey(username, avatar_url, role), ${logCountsSelect(viewer)}`), viewer)
-      .in('user_id', profiles.map(p => p.id))
-      .not('review', 'is', null).neq('review', '')
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
-      .limit(limit);
-
-    if (cursorDate && cursorId) {
-      query = query.or(`created_at.lt.${cursorDate},and(created_at.eq.${cursorDate},id.lt.${cursorId})`);
-    } else if (cursorDate) {
-      query = query.lt('created_at', cursorDate);
-    }
-
-    query = withAbortSignal(query, signal);
-
-    const { data, error } = await query;
-    if (error) throw new FeedServiceError(error);
+    const { data, error } = await withAbortSignal(supabase.rpc('get_filtered_stacks_auth_cursor_v2', {
+      p_search: search.trim().toLowerCase(),
+      p_filter_following: filter === 'following',
+      p_limit: STACKS_PAGE,
+      p_cursor_created_at: cursorDate,
+      p_cursor_id: cursorId,
+      p_poster_count: STACK_CARD_POSTERS,
+    }), signal);
+    if (error) throw new FeedServiceError(error, 'Failed to fetch stacks feed');
     if (!data || data.length === 0) return [];
-
-    // Direct query returns CommunityFeedRow shape (with profiles join)
-    const rows = parseRowsSafely(data, CommunityFeedRowSchema, 'getFollowingFeed.direct');
-    return tellFeed(rows.map((d) => {
-      const profile = Array.isArray(d.profiles) ? d.profiles[0] : d.profiles;
-      return FeedItemSchema.parse({
-        ...d,
-        username: profile?.username,
-        avatar_url: profile?.avatar_url,
-        role: profile?.role,
-      });
-    }), askedAt);
-  },
-
-  /**
-   * Fetches curated stacks (lists) with filtering, search, and cursor pagination.
-   * Tries server-side RPC first, falls back to multi-query client-side assembly.
-   * @param filter - Show all public stacks or only from followed users
-   * @param search - Free-text search applied to title/description
-   * @param fallbackFollowing - Followed usernames for 'following' filter fallback
-   * @returns Parsed stack data with films and endorsement counts
-   * @throws {FeedServiceError} on network or total validation failure
-   */
-  async getStacksFeed(filter: 'all' | 'following', search: string, { pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}, fallbackFollowing?: string[]): Promise<StackData[]> {
-    if (filter === 'following' && (!fallbackFollowing || fallbackFollowing.length === 0)) return [];
-
-    const limit = 60;
-    const { cursorDate, cursorId } = parseCursor(pageParam);
-    // Taken BEFORE the request: see tellMarkCounts. A stack's card shows its
-    // certify count, and certifying on the stack's page moves it at once.
-    const askedAt = Date.now();
-    // The card draws no heart, so only the count is told (the stack's page
-    // learns the viewer's own mark when it opens).
-    const tellStacks = (stacks: StackData[]) => {
-      tellMarks('list', stacks.map((st) => ({ id: st.id, certify: st.certifyCount })), askedAt);
-      return stacks;
-    };
-
-    // ── Strategy 1: Server-side cursor RPC ──
-    try {
-      // v2, for two reasons measured against production:
-      //   • the original ships EVERY film of every stack — 247 rows to draw 24
-      //     posters, 88% of the payload — because the card needs three and the
-      //     count. v2 returns four posters and a true `film_count`.
-      //   • the original builds its search pattern by hand and never escapes it,
-      //     so searching `_` or `%` returned every stack. Fixed in both.
-      //
-      // It is a NEW function rather than an edit: the build on TestFlight counts
-      // the array it receives, so capping that array there would print "4 FILMS"
-      // on every stack for everyone using the app today.
-      const rpcResult = await supabase.rpc('get_filtered_stacks_auth_cursor_v2', {
-        p_search: search.trim().toLowerCase(),
-        p_filter_following: filter === 'following',
-        p_limit: limit,
-        p_cursor_created_at: cursorDate,
-        p_cursor_id: cursorId,
-        p_poster_count: STACK_CARD_POSTERS,
-      });
-
-      if (!rpcResult.error && rpcResult.data) {
-        if (rpcResult.data.length === 0) return [];
-
-        const stackRows = parseRowsSafely(rpcResult.data, StackFeedRowSchema, 'getStacksFeed.rpc');
-        return tellStacks(stackRows.map((l) => {
-          const rawStack = {
-            id: l.id,
-            title: l.title,
-            description: l.description,
-            curator: l.username,
-            curatorId: l.user_id,
-            createdAt: l.created_at,
-            films: l.films || [],
-            // The stack's real size, from the server — NOT the length of the
-            // poster array, which is now capped at four.
-            count: l.film_count,
-            certifyCount: Number(l.certify_count) || 0,
-            isRanked: l.is_ranked,
-          };
-          return StackDataSchema.parse(rawStack);
-        }));
-      }
-
-      if (rpcResult.error) {
-        const msg = rpcResult.error.message || '';
-        const isMissingFunction = msg.includes('does not exist') || msg.includes('42883') || rpcResult.error.code === '42883';
-        if (!isMissingFunction) {
-          throw new FeedServiceError(rpcResult.error, 'Failed to fetch stacks feed');
-        }
-        if (__DEV__) logger.warn('[FeedService] get_filtered_stacks_auth_cursor RPC not found, falling back to direct query');
-      }
-    } catch (e) {
-      if (e instanceof FeedServiceError) throw e;
-      if (__DEV__) logger.warn('[FeedService] Stacks RPC failed, using direct query:', e);
-    }
-
-    // ── Strategy 2: Direct query fallback ──
-    // `film_count:list_items(count)` is an aggregate embed — the stack's TRUE
-    // size, independent of how many item rows the shared fetch below returns.
-    // Without it this path counts the films it happened to receive, which is the
-    // same defect the v2 function above exists to fix. This path is a fallback
-    // that does not run while the RPC is deployed; the count is corrected here so
-    // it cannot come back if it ever does.
-    let listQuery = supabase
-      .from('lists')
-      .select('id, title, description, created_at, user_id, is_private, is_ranked, profiles!lists_user_id_fkey(username), film_count:list_items(count)')
-      .eq('is_private', false)
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
-      .limit(limit);
-
-    if (cursorDate && cursorId) {
-      listQuery = listQuery.or(`created_at.lt.${cursorDate},and(created_at.eq.${cursorDate},id.lt.${cursorId})`);
-    } else if (cursorDate) {
-      listQuery = listQuery.lt('created_at', cursorDate);
-    }
-
-    if (filter === 'following' && fallbackFollowing && fallbackFollowing.length > 0) {
-      const safeFollowing = fallbackFollowing.slice(0, 150); // Maximize payload, prevent 8KB URI crash
-      // Get user IDs for followed usernames
-      const { data: followedProfiles, error: followedError } = await supabase
-        .from('profiles')
-        .select('id')
-        .in('username', safeFollowing)
-        .limit(150);
-      // Unread is not "you follow no one": that drew an empty page.
-      if (followedError) throw new FeedServiceError(followedError, 'Failed to read who you follow');
-      if (!followedProfiles || followedProfiles.length === 0) return [];
-      listQuery = listQuery.in('user_id', followedProfiles.map(p => p.id));
-    }
-
-    if (search.trim()) {
-      // Unquoted: inside a quoted value PostgREST swallows the escape, so the
-      // wildcards stayed live and the filter could be rewritten. `null` means the
-      // term is nothing but separators — search for nothing rather than everything.
-      const pattern = buildSearchPattern(search);
-      if (pattern === null) return [];
-      listQuery = listQuery.or(`title.ilike.*${pattern}*,description.ilike.*${pattern}*`);
-    }
-
-    listQuery = withAbortSignal(listQuery, signal);
-
-    const { data: lists, error: listError } = await listQuery;
-    if (listError) throw new FeedServiceError(listError, 'Failed to fetch stacks');
-    if (!lists || lists.length === 0) return [];
-
-    const listIds = lists.map((l: any) => l.id);
-
-    // Fetch items and endorsements in parallel
-    const [itemsResp, endorseResp] = await Promise.all([
-      listIds.length > 0
-        ? supabase.from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds).order('rank_position', { ascending: true }).order('created_at', { ascending: true }).limit(600)
-        : Promise.resolve({ data: [] as any[], error: null }),
-      // Server-authoritative, and one round trip for the whole page. Tallying
-      // `interactions` rows here counted only what the VIEWER may see, so this
-      // path disagreed with the RPC path above for the same stack. Both now
-      // report the true number. The 3000-row cap is gone with the rows: a count
-      // cannot be truncated.
-      listIds.length > 0
-        ? supabase.rpc('list_certify_counts', { p_list_ids: listIds })
-        : Promise.resolve({ data: [] as { list_id: string; certify_count: number }[], error: null }),
-    ]);
-
-    const itemsMap: Record<string, { film_id: number; film_title: string; poster_path: string | null }[]> = {};
-    if (itemsResp.data) {
-      for (const item of itemsResp.data as any[]) {
-        if (!itemsMap[item.list_id]) itemsMap[item.list_id] = [];
-        itemsMap[item.list_id].push(item);
-      }
-    }
-
-    // One row per stack now, carrying the count — not one row per endorsement to
-    // be tallied client-side.
-    const endorseMap: Record<string, number> = {};
-    if (endorseResp.data) {
-      for (const e of endorseResp.data as { list_id: string; certify_count: number }[]) {
-        endorseMap[e.list_id] = Number(e.certify_count) || 0;
-      }
-    }
-
-    return tellStacks(lists.map((l: any) => {
-      const curator = Array.isArray(l.profiles) ? l.profiles[0]?.username : l.profiles?.username;
-      const films = (itemsMap[l.id] ?? []).map((item) => ({
-        id: item.film_id,
-        title: item.film_title,
-        poster_path: item.poster_path ?? null,
-      }));
-      return StackDataSchema.parse({
-        id: l.id,
-        title: l.title,
-        description: l.description ?? '',
-        curator: curator ?? 'society',
-        curatorId: l.user_id,
-        createdAt: l.created_at,
-        films,
-        // PostgREST returns an aggregate embed as an ARRAY — `film_count[0].count`.
-        // Falls back to the fetched length only if the aggregate is absent.
-        count: (l as { film_count?: { count: number }[] }).film_count?.[0]?.count ?? films.length,
-        certifyCount: endorseMap[l.id] ?? 0,
-        isRanked: l.is_ranked ?? false,
-      });
+    const stacks = parseRowsSafely(data, StackFeedRowSchema, 'getStacksFeed').map((l) => StackDataSchema.parse({
+      id: l.id,
+      title: l.title,
+      description: l.description,
+      curator: l.username,
+      curatorId: l.user_id,
+      createdAt: l.created_at,
+      films: l.films || [],
+      // The stack's real size: the poster array holds four at most.
+      count: l.film_count,
+      certifyCount: Number(l.certify_count) || 0,
+      isRanked: l.is_ranked,
     }));
-  }
+    // The card draws no heart, so only the count is told.
+    tellMarks('list', stacks.map((st) => ({ id: st.id, certify: st.certifyCount })), askedAt);
+    return stacks;
+  },
 };

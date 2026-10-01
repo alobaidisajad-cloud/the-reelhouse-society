@@ -4,6 +4,7 @@
  * Exercises the real auth store + FeedService with mocked Supabase to verify:
  *   1. Session restoration populates auth state → feed query returns Zod-validated items
  *   2. Consecutive cursor pages have zero overlapping IDs (keyset pagination invariant)
+ *   3. Every feed is read through the house's own function, and every refusal is raised
  */
 
 import { useAuthStore } from '@/src/stores/auth';
@@ -47,29 +48,6 @@ jest.mock('@/src/utils/withAbortSignal', () => ({
 
 // ── Test Data ───────────────────────────────────────────────────────────────
 
-function makeFeedRow(id: string, createdAt: string) {
-  return {
-    id,
-    film_id: 550,
-    film_title: 'Fight Club',
-    poster_path: '/poster.jpg',
-    rating: 4.5,
-    review: 'A masterpiece.',
-    drop_cap: false,
-    status: 'watched',
-    abandoned_reason: null,
-    created_at: createdAt,
-    year: 1999,
-    user_id: 'user-abc',
-    editorial_header: null,
-    pull_quote: null,
-    watched_with: null,
-    is_autopsied: false,
-    autopsy: null,
-    profiles: { username: 'cinephile42', avatar_url: null, role: 'cinephile' },
-  };
-}
-
 // ── Tests ───────────────────────────────────────────────────────────────────
 
 /**
@@ -105,23 +83,12 @@ function makeRpcRow(id: string, createdAt: string) {
   };
 }
 
-/** PostgREST's answer when a function is not deployed. */
-const RPC_NOT_DEPLOYED = {
-  data: null,
-  error: { message: 'function public.get_community_feed_auth_cursor does not exist', code: '42883' },
-};
 
 describe('Feed Flow Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     resetStores();
-    // ── SAY WHICH STRATEGY IS UNDER TEST ────────────────────────────────────
-    // mockRpc was a bare jest.fn(), so it answered `undefined` and
-    // `rpcResult.error` threw a TypeError inside getCommunityFeed's try. The
-    // catch swallowed it and every test here silently landed on the direct-query
-    // fallback — while believing it had exercised the service as a whole.
-    // Now the fallback is REQUESTED, and the RPC path has its own test below.
-    mockRpc.mockResolvedValue(RPC_NOT_DEPLOYED);
+    mockRpc.mockResolvedValue({ data: [], error: null });
   });
 
   it('auth session restoration → feed query → returns validated items', async () => {
@@ -141,26 +108,15 @@ describe('Feed Flow Integration', () => {
     expect(authState.user).not.toBeNull();
     expect(authState.user!.username).toBe('testuser');
 
-    // 3. Mock feed query
-    const feedRows = [
-      makeFeedRow('log-1', '2024-06-01T10:00:00Z'),
-      makeFeedRow('log-2', '2024-06-01T09:00:00Z'),
-      makeFeedRow('log-3', '2024-06-01T08:00:00Z'),
-    ];
-
-    const feedChain: Record<string, jest.Mock> = {};
-    feedChain.select = jest.fn().mockReturnValue(feedChain);
-    // `.eq` narrows the embedded certify count to certifications (logCounts).
-    feedChain.eq = jest.fn().mockReturnValue(feedChain);
-    feedChain.not = jest.fn().mockReturnValue(feedChain);
-    feedChain.neq = jest.fn().mockReturnValue(feedChain);
-    feedChain.order = jest.fn().mockReturnValue(feedChain);
-    feedChain.limit = jest.fn().mockReturnValue(feedChain);
-    feedChain.or = jest.fn().mockReturnValue(feedChain);
-    feedChain.lt = jest.fn().mockReturnValue(feedChain);
-    feedChain.then = jest.fn((cb) => Promise.resolve(cb({ data: feedRows, error: null })));
-
-    mockFrom.mockImplementation(() => feedChain);
+    // 3. The function answers
+    mockRpc.mockResolvedValue({
+      data: [
+        makeRpcRow('log-1', '2024-06-01T10:00:00Z'),
+        makeRpcRow('log-2', '2024-06-01T09:00:00Z'),
+        makeRpcRow('log-3', '2024-06-01T08:00:00Z'),
+      ],
+      error: null,
+    });
 
     // 4. Execute: Fetch feed using real FeedService
     const { FeedService } = require('@/src/services/FeedService');
@@ -175,37 +131,20 @@ describe('Feed Flow Integration', () => {
   });
 
   it('consecutive cursor pages have zero overlapping IDs', async () => {
-    // Page 1
     const page1Rows = [
-      makeFeedRow('log-10', '2024-06-10T10:00:00Z'),
-      makeFeedRow('log-9', '2024-06-09T10:00:00Z'),
-      makeFeedRow('log-8', '2024-06-08T10:00:00Z'),
+      makeRpcRow('log-10', '2024-06-10T10:00:00Z'),
+      makeRpcRow('log-9', '2024-06-09T10:00:00Z'),
+      makeRpcRow('log-8', '2024-06-08T10:00:00Z'),
     ];
-
     // Page 2 — different IDs, older timestamps
     const page2Rows = [
-      makeFeedRow('log-7', '2024-06-07T10:00:00Z'),
-      makeFeedRow('log-6', '2024-06-06T10:00:00Z'),
-      makeFeedRow('log-5', '2024-06-05T10:00:00Z'),
+      makeRpcRow('log-7', '2024-06-07T10:00:00Z'),
+      makeRpcRow('log-6', '2024-06-06T10:00:00Z'),
+      makeRpcRow('log-5', '2024-06-05T10:00:00Z'),
     ];
-
-    let callCount = 0;
-    const feedChain: Record<string, jest.Mock> = {};
-    feedChain.select = jest.fn().mockReturnValue(feedChain);
-    feedChain.eq = jest.fn().mockReturnValue(feedChain);
-    feedChain.not = jest.fn().mockReturnValue(feedChain);
-    feedChain.neq = jest.fn().mockReturnValue(feedChain);
-    feedChain.order = jest.fn().mockReturnValue(feedChain);
-    feedChain.limit = jest.fn().mockReturnValue(feedChain);
-    feedChain.or = jest.fn().mockReturnValue(feedChain);
-    feedChain.lt = jest.fn().mockReturnValue(feedChain);
-    feedChain.then = jest.fn((cb) => {
-      callCount++;
-      const data = callCount === 1 ? page1Rows : page2Rows;
-      return Promise.resolve(cb({ data, error: null }));
-    });
-
-    mockFrom.mockImplementation(() => feedChain);
+    mockRpc
+      .mockResolvedValueOnce({ data: page1Rows, error: null })
+      .mockResolvedValueOnce({ data: page2Rows, error: null });
 
     const { FeedService } = require('@/src/services/FeedService');
 
@@ -229,20 +168,9 @@ describe('Feed Flow Integration', () => {
     expect(overlap).toHaveLength(0);
   });
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // THE PATH PRODUCTION ACTUALLY TAKES
-  //
-  // get_community_feed_auth_cursor IS deployed — verified against pg_proc, with
-  // EXECUTE granted to authenticated. So every real community feed comes back
-  // through the RPC, and the direct query above is the branch that never runs.
-  // It had all the coverage; the live one had none.
-  //
-  // The RPC also matters for a reason the fallback cannot reproduce: it filters
-  // blocked and muted authors SERVER-SIDE, so the page length used for
-  // pagination matches what the client renders. The fallback filters in
-  // useFeeds.ts afterwards, which is why its pages can come up short.
-  // ══════════════════════════════════════════════════════════════════════════
-  describe('the block-aware RPC — the strategy the live app uses', () => {
+  // The function filters blocked and muted authors server-side, so a page's
+  // length is what the client draws, and pagination never stops short.
+  describe('the block-aware function, the only path', () => {
     it('parses the deployed function’s flat row shape into feed items', async () => {
       mockRpc.mockResolvedValue({
         data: [
@@ -299,9 +227,7 @@ describe('Feed Flow Integration', () => {
       );
     });
 
-    it('returns an empty page rather than falling back when the RPC has nothing', async () => {
-      // An empty feed and a missing function are different things. Treating
-      // "no rows" as a failure would run the whole unfiltered query again.
+    it('an empty answer is an empty page', async () => {
       mockRpc.mockResolvedValue({ data: [], error: null });
 
       const { FeedService } = require('@/src/services/FeedService');
@@ -309,10 +235,7 @@ describe('Feed Flow Integration', () => {
       expect(mockFrom).not.toHaveBeenCalled();
     });
 
-    it('RAISES a real error instead of quietly serving the unfiltered fallback', async () => {
-      // Only a MISSING function may fall back. Any other error means the
-      // block filter could not be applied, and silently serving the
-      // unfiltered query would show a member the authors they blocked.
+    it('RAISES a refusal: an unread feed is never drawn as an empty one', async () => {
       mockRpc.mockResolvedValue({
         data: null,
         error: { message: 'permission denied for function get_community_feed_auth_cursor', code: '42501' },
@@ -322,13 +245,36 @@ describe('Feed Flow Integration', () => {
       await expect(FeedService.getCommunityFeed({})).rejects.toThrow();
       expect(mockFrom).not.toHaveBeenCalled();
     });
+
+    // A missing function was once quietly replaced by a direct query that could
+    // not filter blocks server-side: a member would have seen whom they blocked.
+    it('a MISSING function is raised too, never replaced by an unfiltered query', async () => {
+      const missing = { data: null, error: { message: 'function does not exist', code: '42883' } };
+      mockRpc.mockResolvedValue(missing);
+      const { FeedService } = require('@/src/services/FeedService');
+      await expect(FeedService.getCommunityFeed({})).rejects.toThrow();
+      await expect(FeedService.getFollowingFeed({})).rejects.toThrow();
+      await expect(FeedService.getStacksFeed('all', '', {}, 0)).rejects.toThrow();
+      expect(mockFrom).not.toHaveBeenCalled();
+    });
+
+    it('the followed stacks of a member who follows no one are not asked for', async () => {
+      const { FeedService } = require('@/src/services/FeedService');
+      expect(await FeedService.getStacksFeed('following', '', {}, 0)).toEqual([]);
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it('the followed stacks of a member who follows some are asked of the server', async () => {
+      const { FeedService } = require('@/src/services/FeedService');
+      await FeedService.getStacksFeed('following', '', {}, 3);
+      expect(mockRpc).toHaveBeenCalledWith('get_filtered_stacks_auth_cursor_v2', expect.objectContaining({ p_filter_following: true }));
+    });
   });
 
   // ══════════════════════════════════════════════════════════════════════════
   // THE COUNTS EVERY CARD DRAWS
-  // 20260926_01 added certify_count and critique_count to both feed functions;
-  // the fallback asks PostgREST for the same two numbers as embedded counts.
-  // Both must reach the card, AND the shared store every bar reads.
+  // 20260926_01 added certify_count and critique_count to both feed functions.
+  // They must reach the card, AND the shared store every bar reads.
   // ══════════════════════════════════════════════════════════════════════════
   describe('the counts every card draws', () => {
     const { resetMarkCounts, selectMarkCount, useMarkCounts } = jest.requireActual('@/src/stores/markCounts');
@@ -355,25 +301,6 @@ describe('Feed Flow Integration', () => {
       const [item] = await FeedService.getCommunityFeed({});
       expect([item.certify_count, item.critique_count]).toEqual([null, null]);
       expect(told('log-1')).toEqual([null, null]);
-    });
-
-    it('the fallback reads the embedded counts, narrowed to certifications', async () => {
-      const chain: Record<string, jest.Mock> = {};
-      for (const k of ['select', 'eq', 'not', 'neq', 'order', 'limit', 'or', 'lt']) chain[k] = jest.fn().mockReturnValue(chain);
-      chain.then = jest.fn((cb) => Promise.resolve(cb({
-        data: [{ ...makeFeedRow('log-2', '2024-06-01T10:00:00Z'), certify_count: [{ count: 4 }], critique_count: [{ count: 9 }] }],
-        error: null,
-      })));
-      mockFrom.mockImplementation(() => chain);
-      const { FeedService } = require('@/src/services/FeedService');
-      const [item] = await FeedService.getCommunityFeed({});
-      expect(chain.select.mock.calls[0][0]).toMatch(/certify_count:interactions!interactions_target_log_id_fkey\(count\)/);
-      expect(chain.select.mock.calls[0][0]).toMatch(/critique_count:log_comments!log_comments_log_id_fkey\(count\)/);
-      // Without this, the certify count counts retransmits and reactions too.
-      // By ALIAS: `interactions` is embedded twice when a member is signed in.
-      expect(chain.eq).toHaveBeenCalledWith('certify_count.type', 'endorse_log');
-      expect([item.certify_count, item.critique_count]).toEqual([4, 9]);
-      expect(told('log-2')).toEqual([4, 9]);
     });
   });
 
@@ -404,33 +331,5 @@ describe('Feed Flow Integration', () => {
       expect([hearted('log-old'), hearted('log-new')]).toEqual([true, false]);
     });
 
-    it('the fallback asks for the member’s own mark, each embed narrowed by its alias', async () => {
-      const chain: Record<string, jest.Mock> = {};
-      for (const k of ['select', 'eq', 'not', 'neq', 'order', 'limit', 'or', 'lt']) chain[k] = jest.fn().mockReturnValue(chain);
-      chain.then = jest.fn((cb) => Promise.resolve(cb({
-        data: [{ ...makeFeedRow('log-9', '2024-06-01T10:00:00Z'), certify_count: [{ count: 2 }], critique_count: [{ count: 0 }], certified: [{ count: 1 }] }],
-        error: null,
-      })));
-      mockFrom.mockImplementation(() => chain);
-      const { FeedService } = require('@/src/services/FeedService');
-      await FeedService.getCommunityFeed({});
-      expect(chain.select.mock.calls[0][0]).toMatch(/certified:interactions!interactions_target_log_id_fkey\(count\)/);
-      expect(chain.eq).toHaveBeenCalledWith('certify_count.type', 'endorse_log');
-      expect(chain.eq).toHaveBeenCalledWith('certified.type', 'endorse_log');
-      expect(chain.eq).toHaveBeenCalledWith('certified.user_id', ME);
-      expect(hearted('log-9')).toBe(true);
-    });
-
-    it('a visitor’s fallback does not ask for a mark nobody signed in could have', async () => {
-      useAuthStore.setState({ user: null } as never);
-      const chain: Record<string, jest.Mock> = {};
-      for (const k of ['select', 'eq', 'not', 'neq', 'order', 'limit', 'or', 'lt']) chain[k] = jest.fn().mockReturnValue(chain);
-      chain.then = jest.fn((cb) => Promise.resolve(cb({ data: [], error: null })));
-      mockFrom.mockImplementation(() => chain);
-      const { FeedService } = require('@/src/services/FeedService');
-      await FeedService.getCommunityFeed({});
-      expect(chain.select.mock.calls[0][0]).not.toMatch(/certified:/);
-      expect(chain.eq.mock.calls.map((c) => c[0])).toEqual(['certify_count.type']);
-    });
   });
 });

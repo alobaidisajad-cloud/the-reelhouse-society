@@ -85,48 +85,6 @@ export const FeedItemSchema = z.object({
 export type FeedItem = z.infer<typeof FeedItemSchema>;
 
 /**
- * Zod schema for raw Supabase community feed join rows.
- * Validates the polymorphic `profiles` field (can be object or array
- * depending on Supabase query config) BEFORE property access.
- * Eliminates the `as unknown as CommunityFeedRow[]` double-cast in FeedService.
- */
-const ProfileJoinSchema = z.object({
-  username: z.string(),
-  avatar_url: z.string().nullable(),
-  role: z.string(),
-});
-
-export const CommunityFeedRowSchema = z.object({
-  id: z.union([z.string(), z.number()]).transform(String),
-  film_id: numericId,
-  film_title: z.string(),
-  poster_path: z.string().nullable(),
-  rating: z.number().nullable().default(0),
-  review: z.string().nullable(),
-  drop_cap: z.boolean().nullable(),
-  status: z.string().nullable(),
-  abandoned_reason: z.string().nullable(),
-  created_at: z.string(),
-  year: yearCoercer,
-  user_id: z.string(),
-  editorial_header: z.string().nullable(),
-  pull_quote: z.string().nullable(),
-  watched_with: z.string().nullable(),
-  is_autopsied: z.boolean().nullable(),
-  autopsy: z.unknown().nullable(),
-  is_spoiler: z.boolean().nullable().optional(),
-  certify_count: markCount,
-  critique_count: markCount,
-  certified: mineMark,
-  profiles: z.union([
-    ProfileJoinSchema,
-    z.array(ProfileJoinSchema),
-  ]).nullable(),
-});
-
-export type CommunityFeedRow = z.infer<typeof CommunityFeedRowSchema>;
-
-/**
  * Input-side Zod schema for the following feed RPC response.
  * Accepts both old `get_following_feed` and new `get_following_feed_cursor` shapes.
  * Key resilience: year accepts string|number, rating accepts null, autopsy accepts any JSONB.

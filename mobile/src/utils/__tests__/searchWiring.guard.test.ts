@@ -70,7 +70,6 @@ describe('every ilike carrying member input goes through the funnel', () => {
    */
   const SEARCH_SITES = [
     'src/hooks/useUniversalSearch.ts',
-    'src/services/FeedService.ts',
     'src/services/ProfileDataService.ts',
     'src/services/FollowRequestService.ts',
     // The Dispatch's archive: a member names a film and the house's filings

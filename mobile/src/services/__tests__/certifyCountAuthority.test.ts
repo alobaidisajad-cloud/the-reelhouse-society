@@ -39,7 +39,10 @@ describe('#39 · the endorsement count does not depend on who is looking', () =>
 
   it('both call sites use the authoritative functions', () => {
     expect(stackSvc).toMatch(/supabase\.rpc\('list_certify_count',\s*\{\s*p_list_id/);
-    expect(feedSvc).toMatch(/supabase\.rpc\('list_certify_counts',\s*\{\s*p_list_ids/);
+    // The feed takes the count its stacks function computed with list_certify_count
+    // (asserted of the v2 body below), and tallies nothing itself.
+    expect(feedSvc).toMatch(/certifyCount: Number\(l\.certify_count\)/);
+    expect(feedSvc).not.toMatch(/from\('interactions'\)/);
   });
 
   it('and those functions are SECURITY DEFINER — the whole point', () => {
@@ -91,6 +94,5 @@ describe('#39 · the endorsement count does not depend on who is looking', () =>
   it('the new RPCs are declared in the backend contract', () => {
     const manifest = read('scripts/backend-contract.json');
     expect(manifest).toContain('"list_certify_count"');
-    expect(manifest).toContain('"list_certify_counts"');
   });
 });

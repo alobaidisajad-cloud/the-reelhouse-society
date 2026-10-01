@@ -135,3 +135,11 @@ it('a pull that was answered says nothing', async () => {
   await act(async () => { await mockListProps.feed.onRefresh(); });
   expect(toast().error).not.toHaveBeenCalled();
 });
+
+it('the stacks search says what it searches: stacks, not "the archives"', async () => {
+  await mount();
+  const head = render(mockListProps.stacks.ListHeaderComponent);
+  expect(head.getByPlaceholderText('SEARCH STACKS...')).toBeTruthy();
+  expect(head.getByLabelText('Search curated stacks')).toBeTruthy();
+  head.unmount();
+});

@@ -30,7 +30,7 @@ jest.mock('@/src/stores/films', () => {
   return { useWatchlistStore: (sel: (s: typeof state) => unknown) => sel(state) };
 });
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
+jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: (...a: unknown[]) => mockPush(...a) } }));
 const mockOpenSociety = jest.fn();
 jest.mock('@/src/utils/openSociety', () => ({
   openSociety: (...a: unknown[]) => mockOpenSociety(...a),

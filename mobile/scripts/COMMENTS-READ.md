@@ -17,7 +17,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/components/feed/ActivityCard.test.tsx | — |  |
 | __tests__/deletionIntegrity.test.ts | — |  |
 | __tests__/integration/errorBoundaryRecovery.test.tsx | — |  |
-| __tests__/integration/feedFlow.test.ts | — |  |
+| __tests__/integration/feedFlow.test.ts | 2026-10-01 | one path, refusals raised |
 | __tests__/integration/helpers.ts | — |  |
 | __tests__/integration/notificationPagination.test.ts | — |  |
 | __tests__/integration/offlineQueueFlush.test.ts | — |  |
@@ -89,7 +89,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/index.tsx | — |  |
 | app/(tabs)/lounge.tsx | — |  |
 | app/(tabs)/profile.tsx | — |  |
-| app/(tabs)/reels.tsx | — |  |
+| app/(tabs)/reels.tsx | 2026-10-01 | nav for every act; empty states arrive; the search says stacks |
 | app/+not-found.tsx | — |  |
 | app/auth-callback.tsx | 2026-10-01 | a link with no code verifies nothing; comments short |
 | app/dispatch/[id].tsx | 2026-09-29 | 26 fixed; 'SAVE THE CARD offered for a dossier' was false (the sheet never gets card); history of 3 fixes cut |
@@ -187,7 +187,8 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/surface-jest-failure.sh | — |  |
 | scripts/test-timezones.js | 2026-09-29 | the batch story reduced to the fact it guards |
 | src/assets/logo/reelhouse-logo-data.ts | — |  |
-| src/components/__tests__/ActionDeck.test.tsx | — |  |
+| src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
+| src/components/__tests__/ActionDeck.test.tsx | 2026-10-01 | rendered: owner, certify, save, stranger |
 | src/components/__tests__/animation-parking.test.ts | — |  |
 | src/components/__tests__/aRatingCanBeGivenWithoutSight.test.tsx | — |  |
 | src/components/__tests__/aScreenThatFailsLetsYouLeave.test.tsx | — |  |
@@ -322,12 +323,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/EmptyStates.tsx | — |  |
 | src/components/ErrorBoundary.tsx | — |  |
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | — |  |
-| src/components/feed/ActionDeck.tsx | — |  |
-| src/components/feed/ActivityCard.tsx | — |  |
+| src/components/feed/ActionDeck.tsx | 2026-10-01 | owner by id; nav |
+| src/components/feed/ActivityCard.tsx | 2026-10-01 | nav; owner by id |
 | src/components/feed/AutopsyView.tsx | — |  |
 | src/components/feed/PosterFrame.tsx | — |  |
-| src/components/feed/ReviewContent.tsx | — |  |
-| src/components/feed/UserAttributionRow.tsx | — |  |
+| src/components/feed/ReviewContent.tsx | 2026-10-01 | true as written |
+| src/components/feed/UserAttributionRow.tsx | 2026-10-01 | true as written |
 | src/components/film/__tests__/castRailFits.test.ts | — |  |
 | src/components/film/__tests__/FilmActionTray.test.tsx | — |  |
 | src/components/film/__tests__/filmDossier.test.tsx | — |  |
@@ -540,7 +541,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | — |  |
 | src/components/reels/MemberRegistry.tsx | — |  |
 | src/components/reels/ReelsCards.tsx | — |  |
-| src/components/reels/ReelsFeedList.tsx | — |  |
+| src/components/reels/ReelsFeedList.tsx | 2026-10-01 | true as written |
 | src/components/reels/ReelsHeader.tsx | — |  |
 | src/components/reels/ReelsStackList.tsx | — |  |
 | src/components/reels/types.ts | — |  |
@@ -642,7 +643,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useDispatchArchive.ts | — |  |
 | src/hooks/useDoor.ts | — |  |
 | src/hooks/useEditProfile.ts | — |  |
-| src/hooks/useFeeds.ts | — |  |
+| src/hooks/useFeeds.ts | 2026-10-01 | page sizes from the service |
 | src/hooks/useFilmAnimations.ts | — |  |
 | src/hooks/useFilmDetail.ts | — |  |
 | src/hooks/useFollowRequests.ts | — |  |
@@ -694,7 +695,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/providers/AppBootstrapper.tsx | — |  |
 | src/providers/FilmDetailProvider.tsx | — |  |
 | src/schemas/__tests__/schemas.test.ts | — |  |
-| src/schemas/feed.schema.ts | — |  |
+| src/schemas/feed.schema.ts | 2026-10-01 | the fallback row gone |
 | src/schemas/film.schema.ts | — |  |
 | src/schemas/profile.schema.ts | — |  |
 | src/schemas/settings.ts | — |  |
@@ -714,7 +715,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/servicesBatch2.test.ts | — |  |
 | src/services/__tests__/servicesBatch3.test.ts | — |  |
 | src/services/__tests__/theDoorCursorCarriesATiebreaker.test.ts | — |  |
-| src/services/__tests__/theFollowedStacksSayWhenUnread.test.ts | — |  |
 | src/services/__tests__/theRegistryRetriesAFailedRead.test.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
 | src/services/__tests__/theStackKnowsYourMark.test.ts | — |  |
 | src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx | — |  |
@@ -722,7 +722,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/VaultService.test.ts | — |  |
 | src/services/__tests__/yearInCinema.test.ts | — |  |
 | src/services/AuthService.ts | 2026-10-01 | true as written |
-| src/services/FeedService.ts | — |  |
+| src/services/FeedService.ts | 2026-10-01 | one path per feed; refusals raised |
 | src/services/FilmService.ts | — |  |
 | src/services/FollowRequestService.ts | — |  |
 | src/services/InteractionService.ts | — |  |

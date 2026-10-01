@@ -18,7 +18,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { User } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -54,7 +54,6 @@ export function selectRegistryMembers(
 }
 
 function MemberRow({ member }: { member: NotableMember }) {
-  const router = useRouter();
   // Follow state is read from the store (single source of truth), so the
   // stamp can never show a wrong state.
   const isFollowing = useSocialStore((s) => s.isFollowing(member.username));
@@ -63,8 +62,8 @@ function MemberRow({ member }: { member: NotableMember }) {
   const serial = member.member_no ? `Nº ${String(member.member_no).padStart(4, '0')}` : null;
 
   const goToProfile = useCallback(() => {
-    (router.push as any)(`/user/${member.username}` as any);
-  }, [router, member.username]);
+    nav.push(`/user/${member.username}`);
+  }, [member.username]);
 
   const onFollow = useCallback(() => {
     if (isFollowing || isRequested) return;

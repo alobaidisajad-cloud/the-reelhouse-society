@@ -114,10 +114,6 @@
       "signature": "list_certify_count(p_list_id uuid)"
     },
     {
-      "name": "list_certify_counts",
-      "signature": "list_certify_counts(p_list_ids uuid[])"
-    },
-    {
       "name": "log_viewing_add",
       "signature": "log_viewing_add(p_log_id uuid, p_viewing_id uuid, p_fields jsonb)"
     },

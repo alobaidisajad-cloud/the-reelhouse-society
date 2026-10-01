@@ -4,12 +4,14 @@ import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
 
 import Animated, {
-  FadeInDown, useSharedValue, useAnimatedStyle, withTiming, useDerivedValue, Easing
+  useSharedValue, useAnimatedStyle, withTiming, useDerivedValue, Easing
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
+import { Arrive } from '@/src/components/Arrive';
 import { useScrollToTop } from '@react-navigation/native';
 
 import { useAuthStore } from '@/src/stores/auth';
@@ -85,7 +87,7 @@ const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: str
     <>
       <TextInput
         style={st.searchInput}
-        placeholder="SEARCH ARCHIVES..."
+        placeholder="SEARCH STACKS..."
         placeholderTextColor={colors.fog}
         value={localText}
         onChangeText={handleChange}
@@ -115,7 +117,6 @@ export default function ReelScreen() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const user = useAuthStore(s => s.user);
   const resolvedRole = resolveTier(user);
-  const router = useRouter();
 
   // NAV_ROW_MIN_H plus the bar's bottom padding. The 12 is 2pt more than the
   // bar actually pads; it predates this and is left alone on purpose, since
@@ -267,8 +268,8 @@ export default function ReelScreen() {
    */
   const askForAName = useCallback(() => {
     TactileEngine.destroy();
-    (router.push as any)('/login' as any);
-  }, [router]);
+    nav.push('/login');
+  }, []);
 
   const switchFeedFilter = useCallback((f: FeedFilter) => {
     /**
@@ -347,7 +348,7 @@ export default function ReelScreen() {
     if (feedLoading) return <TungstenSpooling />;
     if (feedFailed) return <EmptyOffline onRetry={rereadFeed} />;
     return (
-      <Animated.View entering={FadeInDown.duration(600)} style={st.emptyWrap}>
+      <Arrive name="reel.empty" style={st.emptyWrap}>
         <Buster size={48} mood="peeking" />
         <Text style={st.emptyTitle}>
           {feedFilter === 'following' ? 'Your orbit is quiet.' : 'The projection booth is dark.'}
@@ -362,7 +363,7 @@ export default function ReelScreen() {
             <Text style={st.emptyBtnText}>GLOBAL REEL</Text>
           </PressableScale>
         ) : (
-          <PressableScale style={st.emptyBtn} onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.mutate(); (router.push as any)('/log-modal' as any); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.mutate(); nav.push('/log-modal'); }}>
             <Text style={st.emptyBtnText}>LOG A FILM</Text>
           </PressableScale>
         )}
@@ -372,9 +373,9 @@ export default function ReelScreen() {
             once a follow lands and the feed re-develops. Renders nothing when
             there's no one notable to show. */}
         <MemberRegistry visible={feedFilter === 'following'} />
-      </Animated.View>
+      </Arrive>
     );
-  }, [feedLoading, feedFailed, rereadFeed, feedFilter, router, switchFeedFilter, isAuthenticated, askForAName]);
+  }, [feedLoading, feedFailed, rereadFeed, feedFilter, switchFeedFilter, isAuthenticated, askForAName]);
 
   const stackHeader = useMemo(() => (
     <>
@@ -399,7 +400,7 @@ export default function ReelScreen() {
           it labels rather than the button. */}
       <PressableScale
         style={st.createStackBtn}
-        onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.destroy(); (router.push as any)('/list-modal' as any); }}
+        onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.destroy(); nav.push('/list-modal'); }}
       >
         <BrassSheen />
         <LinearGradient
@@ -413,7 +414,7 @@ export default function ReelScreen() {
     </>
    
   // Same here — `filteredStacks.length` left with the duplicate count.
-  ), [section, resolvedRole, stackSearch, stackFilter, switchSection, switchStackFilter, router, handleStackSearchChange, handleClearSearch, isAuthenticated, askForAName]);
+  ), [section, resolvedRole, stackSearch, stackFilter, switchSection, switchStackFilter, handleStackSearchChange, handleClearSearch, isAuthenticated, askForAName]);
 
   const logsExtraData = useMemo(() => [feedFilter, section, logCount, resolvedRole, feedLoading], [feedFilter, section, logCount, resolvedRole, feedLoading]);
   const stacksExtraData = useMemo(() => [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading], [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading]);
@@ -426,7 +427,7 @@ export default function ReelScreen() {
     if (stacksLoading) return <TungstenSpooling />;
     if (stacksLost) return <EmptyOffline onRetry={rereadStacks} />;
     return (
-      <Animated.View entering={FadeInDown.duration(600)} style={st.emptyWrap}>
+      <Arrive name="stacks.empty" style={st.emptyWrap}>
         <Buster size={48} mood="thinking" />
         <Text style={st.emptyTitle}>
           {stackSearch ? 'No stacks match your search.' 
@@ -448,13 +449,13 @@ export default function ReelScreen() {
             <Text style={st.emptyBtnText}>GLOBAL STACKS</Text>
           </PressableScale>
         ) : (
-          <PressableScale style={st.emptyBtn} onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.mutate(); (router.push as any)('/list-modal' as any); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.mutate(); nav.push('/list-modal'); }}>
             <Text style={st.emptyBtnText}>CREATE COLLECTION</Text>
           </PressableScale>
         )}
-      </Animated.View>
+      </Arrive>
     );
-  }, [stacksLoading, stacksLost, rereadStacks, stackSearch, stackFilter, router, handleClearSearch, switchStackFilter, isAuthenticated, askForAName]);
+  }, [stacksLoading, stacksLost, rereadStacks, stackSearch, stackFilter, handleClearSearch, switchStackFilter, isAuthenticated, askForAName]);
 
 
 

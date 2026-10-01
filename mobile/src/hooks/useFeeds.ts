@@ -1,5 +1,5 @@
 import type { FeedItem, StackData } from '@/src/schemas/feed.schema';
-import { FeedService } from '@/src/services/FeedService';
+import { FeedService, FEED_PAGE, STACKS_PAGE } from '@/src/services/FeedService';
 import { useAuthStore } from '@/src/stores/auth';
 import { useSocialStore } from '@/src/stores/followStore';
 import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
@@ -21,7 +21,7 @@ export function useCommunityFeed() {
     // `select` filter is a defense-in-depth backstop for the direct-query
     // fallback path in FeedService, which can't filter blocks server-side.
     getNextPageParam: (lastPage) => {
-      if (lastPage.length < 40) return undefined;
+      if (lastPage.length < FEED_PAGE) return undefined;
       const last = lastPage[lastPage.length - 1];
       return last ? `${last.created_at}|${last.id}` : undefined;
     },
@@ -42,14 +42,11 @@ export function useFollowingFeed() {
 
   return useInfiniteQuery({
     queryKey: ['feed', 'following', userId],
-    queryFn: async ({ pageParam, signal }) => {
-      const following = useSocialStore.getState().following;
-      return FeedService.getFollowingFeed({ pageParam, signal }, following);
-    },
+    queryFn: async ({ pageParam, signal }) => FeedService.getFollowingFeed({ pageParam, signal }),
     // Cursor-based pagination — compound (created_at|id) cursor
     // prevents duplicate items caused by offset drift on concurrent inserts.
     getNextPageParam: (lastPage) => {
-      if (lastPage.length < 40) return undefined;
+      if (lastPage.length < FEED_PAGE) return undefined;
       const last = lastPage[lastPage.length - 1];
       return last ? `${last.created_at}|${last.id}` : undefined;
     },
@@ -78,12 +75,12 @@ export function useStacksFeed(filter: 'all' | 'following' = 'all', search: strin
   return useInfiniteQuery({
     queryKey: ['feed', 'stacks', filter, search, userId],
     queryFn: async ({ pageParam, signal }) => {
-      const following = useSocialStore.getState().following;
-      return FeedService.getStacksFeed(filter, search, { pageParam, signal }, following);
+      const followingCount = useSocialStore.getState().following.length;
+      return FeedService.getStacksFeed(filter, search, { pageParam, signal }, followingCount);
     },
     // Cursor-based pagination for stacks feed.
     getNextPageParam: (lastPage) => {
-      if (lastPage.length < 60) return undefined;
+      if (lastPage.length < STACKS_PAGE) return undefined;
       const last = lastPage[lastPage.length - 1];
       return last ? `${last.createdAt}|${last.id}` : undefined;
     },

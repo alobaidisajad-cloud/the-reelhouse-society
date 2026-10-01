@@ -21,7 +21,7 @@ import { View, StyleSheet, AccessibilityInfo, PixelRatio } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate,
   useReducedMotion,
@@ -113,7 +113,6 @@ const ActivityEditorialHeader = React.memo(({ backdropUri }: { backdropUri: stri
 ActivityEditorialHeader.displayName = 'ActivityEditorialHeader';
 
 export const ActivityCard = React.memo(function ActivityCard({ item, index, onFilmPress }: { item: FeedItem; index: number; onFilmPress?: () => void }) {
-  const router = useRouter();
   const reducedMotion = useReducedMotion();
   const isArchivist = isArchivistPlusTier(item.role);
   const isAuteur = isAuteurPlusTier(item.role);
@@ -190,16 +189,16 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
     // Host screens already standing on the film (the archive page) override
     // this so the poster never stacks a duplicate film page.
     if (onFilmPress) return onFilmPress();
-    (router.push as any)(`/film/${item.film_id}` as any);
-  }, [router, item.film_id, onFilmPress]);
+    nav.push(`/film/${item.film_id}`);
+  }, [item.film_id, onFilmPress]);
 
   const handleUserPress = useCallback(() => {
-    (router.push as any)(`/user/${item.username}` as any);
-  }, [router, item.username]);
+    nav.push(`/user/${item.username}`);
+  }, [item.username]);
 
   const handleLogPress = useCallback(() => {
-    (router.push as any)(`/log/${item.id}` as any);
-  }, [router, item.id]);
+    nav.push(`/log/${item.id}`);
+  }, [item.id]);
 
   return (
     <View style={{ zIndex: index }}>
@@ -265,6 +264,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
                 posterPath={item.poster_path ?? null}
                 year={item.year ?? undefined}
                 ownerUsername={item.username}
+                ownerId={item.user_id}
                 certifyCount={item.certify_count}
                 critiqueCount={item.critique_count}
               />
@@ -430,6 +430,5 @@ const s = StyleSheet.create({
 });
 
 const st = StyleSheet.create({
-  hitSlop: { top: 15, bottom: 15, left: 15, right: 15 },
   actionDeckWrap: { marginTop: 14, width: '100%', zIndex: 1 },
 });
