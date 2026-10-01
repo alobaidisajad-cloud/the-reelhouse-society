@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Arrive } from '@/src/components/Arrive';
 import { Eye, Sparkles } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -19,7 +19,7 @@ export function LoungeGate({ mark }: { mark?: React.ReactNode } = {}) {
       <View style={s.gateContainer}>
         <RoomLight room="default" />
         {mark}
-        <Animated.View entering={FadeInDown.duration(900).delay(200)} style={s.gateCard}>
+        <Arrive name="lounge-gate" duration={900} delay={200} style={s.gateCard}>
           <View style={s.gateCrestWrap}>
             <CrestGlow />
             <View style={s.gateCrest}>
@@ -74,7 +74,7 @@ export function LoungeGate({ mark }: { mark?: React.ReactNode } = {}) {
           <Text style={s.gateFootnote}>
             PRIVATE SCREENING ROOMS / PUBLIC SALONS / CINEMA DISCOURSE
           </Text>
-        </Animated.View>
+        </Arrive>
       </View>
     </>
   );

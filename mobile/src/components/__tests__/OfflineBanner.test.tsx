@@ -31,19 +31,6 @@ jest.mock('../PressableScale', () => {
   };
 });
 
-// Mock reanimated
-jest.mock('react-native-reanimated', () => {
-  const { View } = require('react-native');
-  return {
-    __esModule: true,
-    default: {
-      View: ({ children, ...props }: Record<string, unknown>) => <View {...props}>{children}</View>,
-    },
-    FadeInUp: { duration: () => ({}) },
-    FadeOutUp: { duration: () => ({}) },
-  };
-});
-
 describe('OfflineBanner', () => {
   it('returns null when connected', () => {
     mockUseNetInfo.mockReturnValue({ isConnected: true });
