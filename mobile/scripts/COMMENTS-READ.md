@@ -86,7 +86,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/_layout.tsx | — |  |
 | app/(tabs)/darkroom.tsx | — |  |
 | app/(tabs)/dispatch.tsx | 2026-09-29 | 12 fixed; NewsService history and the pill-fix story cut |
-| app/(tabs)/index.tsx | — |  |
+| app/(tabs)/index.tsx | 2026-10-01 | the front door arrives; nav; a failed pull says so |
 | app/(tabs)/lounge.tsx | — |  |
 | app/(tabs)/profile.tsx | — |  |
 | app/(tabs)/reels.tsx | 2026-10-01 | every comment short and true; the door's reason lives in its test |
@@ -220,8 +220,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/auth/PasswordStrengthMeter.tsx | 2026-10-01 | true as written |
 | src/components/auth/SocietySeal.tsx | 2026-10-01 | true as written |
 | src/components/AutopsyGauge.tsx | — |  |
-| src/components/Buster.tsx | — |  |
-| src/components/CinematicOverlays.tsx | — |  |
+| src/components/Buster.tsx | 2026-10-01 | true as written |
+| src/components/CinematicOverlays.tsx | 2026-10-01 | the dead film grain gone |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
 | src/components/clearance/Clearance.tsx | 2026-10-01 | show it, locked; a second copy lives in the log (carried forward) |
 | src/components/ContentSkeleton.tsx | — |  |
@@ -239,7 +239,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/DarkroomHeader.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/DarkroomHero.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/DarkroomMoodBar.tsx | — |  |
-| src/components/Decorative.tsx | — |  |
+| src/components/Decorative.tsx | 2026-10-01 | the dead marquee and styles gone |
 | src/components/dispatch/__tests__/aBallotsClosingTimes.test.ts | 2026-09-29 | new |
 | src/components/dispatch/__tests__/aControlsNameCanBeRead.test.ts | — |  |
 | src/components/dispatch/__tests__/aDeskControlNeverAnswersWithNothing.test.tsx | 2026-09-29 | new |
@@ -298,7 +298,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/ComposeDesks.tsx | 2026-09-29 | 16 fixed; 'FILE IT unlit until the film is named' was false (it waits for the SOURCE) |
 | src/components/dispatch/dayLabel.ts | 2026-09-29 | 24-hour reason moved here from paperMetrics; 'margin never scales' was false (displayTextProps 1.2) |
 | src/components/dispatch/EssayBody.tsx | — |  |
-| src/components/dispatch/excerpt.ts | — |  |
+| src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
 | src/components/dispatch/FilingRow.tsx | — |  |
 | src/components/dispatch/paper/PaperBallot.tsx | — |  |
 | src/components/dispatch/paper/PaperComposer.tsx | — |  |
@@ -317,10 +317,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperStrike.tsx | — |  |
 | src/components/dispatch/paper/paperStyles.ts | 2026-09-28 | Rewritten to the rule. Seven comments contradicted their values (16 vs 16.5, 9/1.1 vs 10/0.9, tracking 1.2 vs 0.9, a serial number where a monogram is drawn, a speck poster that is drawn); two blocks disagreed on what the rule carries; history removed. |
 | src/components/dispatch/paper/paperText.ts | — |  |
-| src/components/dispatch/readTime.ts | — |  |
+| src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
 | src/components/dispatch/roomLink.ts | — |  |
 | src/components/dispatch/SeriesPicker.tsx | — |  |
-| src/components/EmptyStates.tsx | — |  |
+| src/components/EmptyStates.tsx | 2026-10-01 | the offline state arrives through Arrive |
 | src/components/ErrorBoundary.tsx | — |  |
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-01 | true as written |
 | src/components/feed/ActionDeck.tsx | 2026-10-01 | owner by id; nav; comments cut to the why |
@@ -363,26 +363,26 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/TrailerModal.tsx | — |  |
 | src/components/film/WatchProviders.tsx | — |  |
 | src/components/HapticTab.tsx | — |  |
-| src/components/home/ProjectorBeam.tsx | — |  |
-| src/components/home/types.ts | — |  |
-| src/components/home/VelvetRopeCTA.tsx | — |  |
+| src/components/home/ProjectorBeam.tsx | 2026-10-01 | true as written |
+| src/components/home/types.ts | 2026-10-01 | true as written |
+| src/components/home/VelvetRopeCTA.tsx | 2026-10-01 | nav; the shimmer note made true |
 | src/components/InitiationModal.tsx | — |  |
 | src/components/layout/__tests__/ConciergeButton.test.tsx | — |  |
 | src/components/layout/__tests__/everyListChoosesItsAnchor.guard.test.ts | 2026-09-29 | new |
 | src/components/layout/__tests__/flashListKeyboard.test.tsx | 2026-09-29 | anchor tests |
-| src/components/layout/__tests__/theThumbStaysInItsTrack.test.ts | — |  |
+| src/components/layout/__tests__/theThumbStaysInItsTrack.test.ts | 2026-10-01 | runs the real maths |
 | src/components/layout/__tests__/TopNavBar.test.tsx | — |  |
 | src/components/layout/CinematicFlashList.tsx | 2026-09-29 | NOT_ANCHORED default (header race) |
-| src/components/layout/CinematicScrollbar.tsx | — |  |
-| src/components/layout/CinematicScrollView.tsx | — |  |
+| src/components/layout/CinematicScrollbar.tsx | 2026-10-01 | the thumb maths in one place |
+| src/components/layout/CinematicScrollView.tsx | 2026-10-01 | true as written |
 | src/components/layout/ConciergeButton.tsx | — |  |
-| src/components/layout/FrozenTab.tsx | — |  |
+| src/components/layout/FrozenTab.tsx | 2026-10-01 | says it passes through; freezing carried to performance |
 | src/components/layout/navMetrics.ts | — |  |
 | src/components/layout/SectionCards.tsx | — |  |
 | src/components/layout/TopNavBar.tsx | — |  |
 | src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-09-30 | new: doors, names, states, counts, every line's room |
 | src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-09-30 | new |
-| src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-09-30 | new |
+| src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-01 | both doors, every pull |
 | src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-09-30 | new |
 | src/components/lobby/__tests__/theWallIsRead.test.ts | 2026-09-30 | new |
 | src/components/lobby/faceAdvances.ts | 2026-09-30 | generated; header only |
@@ -584,7 +584,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/deepLinks.ts | 2026-10-01 | true as written |
 | src/constants/formats.ts | — |  |
 | src/constants/gatedFeatures.ts | — |  |
-| src/constants/membership.ts | — |  |
+| src/constants/membership.ts | 2026-10-01 | one list; checked against production |
 | src/constants/modalRoutes.ts | — |  |
 | src/constants/standing.ts | — |  |
 | src/constants/support.ts | — |  |
@@ -610,7 +610,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/generated/lucideIcons.js | — |  |
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
-| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-01 | true as written |
+| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-01 | the ratchet is exact |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
 | src/hooks/__tests__/theArchiveDoesNotRepeatItself.test.tsx | — |  |
 | src/hooks/__tests__/theArchivePagesOnWhatTheServerGave.test.ts | — |  |
@@ -657,7 +657,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useProfileController.ts | — |  |
 | src/hooks/useProfileData.ts | — |  |
 | src/hooks/useReportUser.ts | — |  |
-| src/hooks/useScreenReady.tsx | — |  |
+| src/hooks/useScreenReady.tsx | 2026-10-01 | true as written |
 | src/hooks/useTextScale.ts | — |  |
 | src/hooks/useUniversalSearch.ts | — |  |
 | src/hooks/useUpdateUser.ts | — |  |
@@ -826,7 +826,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | — |  |
 | src/theme/__tests__/theTypeFloor.test.ts | — |  |
 | src/theme/__tests__/theVeilMeetsTheLight.test.ts | — |  |
-| src/theme/__tests__/wordsAreNotMarks.test.ts | — |  |
+| src/theme/__tests__/wordsAreNotMarks.test.ts | 2026-10-01 | true as written |
 | src/theme/__tests__/wordsAreSolid.test.ts | — |  |
 | src/theme/authStyles.ts | 2026-10-01 | comments short and true |
 | src/theme/brass.ts | — |  |

@@ -47,14 +47,8 @@ export default memo(function Buster({ size = 120, message, mood, style }: Buster
     const reducedMotion = useReducedMotion();
     const floatY = useSharedValue(0);
 
-    // Buster's float. He appears on thirteen screens, and this loop was `-1` with
-    // no cleanup at all — every Buster ever mounted kept breathing on the UI
-    // thread for the rest of the session, including on tabs nobody was looking
-    // at. He now parks on blur and is cancelled on unmount, matching the pattern
-    // MarqueeBoard and PulseCardItem already use.
-    //
-    // Reduce Motion settles him at rest rather than removing him: he is a
-    // character, and a still ghost is still a ghost.
+    // His float parks when his screen is hidden and stops when he goes; under Reduce
+    // Motion he rests rather than vanishes: a still ghost is still a ghost.
     useEffect(() => {
         if (!isFocused || reducedMotion) {
             cancelAnimation(floatY);

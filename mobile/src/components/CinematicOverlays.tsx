@@ -2,11 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 
-/**
- * Vignette — A true radial darkening at the screen edges.
- * Static SVG gradient (painted once, zero per-frame cost) replacing the old
- * 60px-border approximation, which produced visible corner artifacts.
- */
+/** Vignette — a radial darkening at the screen's edges: one static gradient, painted once. */
 export function Vignette() {
   return (
     <View style={styles.vignette} pointerEvents="none">

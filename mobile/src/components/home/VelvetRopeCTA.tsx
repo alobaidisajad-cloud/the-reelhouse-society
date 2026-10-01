@@ -1,5 +1,5 @@
 /**
- * VelvetRopeCTA & BrassSheen — Unauthenticated Lobby Welcome Screen CTAs.
+ * VelvetRopeCTA, ShimmerRule & BrassSheen — the front door's second button, and its brass.
  */
 import { memo, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -20,10 +20,7 @@ export const ShimmerRule = memo(() => {
     const isFocused = useIsFocused();
     const reducedMotion = useReducedMotion();
     const shimmer = useSharedValue(-1);
-    // ShimmerRule is not only the logged-out CTA's underline — FeaturedCritique
-    // renders it on the authenticated Lobby too, so this `-1` loop was running
-    // forever on every other tab for the rest of the session. Parked at -1, the
-    // rule keeps its faint base line and simply loses the travelling highlight.
+    // Parked at -1 when hidden or under Reduce Motion: the faint line stays, the highlight rests.
     useEffect(() => {
        if (!isFocused || reducedMotion) {
          cancelAnimation(shimmer);
@@ -71,9 +68,7 @@ export const BrassSheen = memo(() => {
     const isFocused = useIsFocused();
     const reducedMotion = useReducedMotion();
     const sheen = useSharedValue(-2);
-    // Same parking as ShimmerRule. The sheen is a decorative highlight sweeping
-    // across the brass plate; parked off-frame at -2 the plate reads exactly as
-    // it does between sweeps, so nothing is lost but the motion.
+    // Parked off-frame at -2, the plate reads as it does between sweeps.
     useEffect(() => {
        if (!isFocused || reducedMotion) {
          cancelAnimation(sheen);

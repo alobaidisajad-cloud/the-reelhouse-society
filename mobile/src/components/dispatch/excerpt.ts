@@ -1,24 +1,12 @@
 /**
  * The opening of an essay, as prose — for the card in the feed.
  * ─────────────────────────────────────────────────────────────────────────────
- * A dossier's `body` column holds an excerpt of its `full_content`, and the feed
- * card prints that excerpt. It was made like this:
+ * A dossier's `body` is an excerpt of its `full_content`, which the feed card
+ * prints. Markup is unwrapped only where it IS markup: `a well-made film (see
+ * below)` keeps its hyphen and brackets, and a link keeps its words, not its URL.
  *
- *     content.replace(/[#*_[\]()>-]/g, '').replace(/\n+/g, ' ').trim()
- *
- * which deletes those characters from ANY position, not only where they are
- * markdown. So an essay saying `a well-made film (see below)` produced a card
- * saying `a wellmade film see below`, and `[the poll](https://…)` — where the
- * whole point is to drop the URL and keep the words — became
- * `the pollhttpsexamplecom`.
- *
- * The rule is the same one the essay body already follows: markup is markup and
- * prose is prose, and a hyphen inside a word was never markup.
- *
- * This is deliberately NOT a markdown parser. It unwraps the constructs a member
- * actually uses in an essay and leaves everything else exactly as written —
- * because the failure mode of over-matching here is silently editing somebody's
- * sentence, which is worse than leaving a stray asterisk in a preview.
+ * Deliberately not a markdown parser: it unwraps what members write and leaves
+ * the rest as written, since over-matching here edits somebody's sentence.
  */
 
 /** Strip the markup, keep the words. Whitespace collapsed to single spaces. */
@@ -29,8 +17,7 @@ export function excerptOf(markdown: string): string {
   s = s.replace(/```[\s\S]*?```/g, ' ');
   s = s.replace(/!\[[^\]]*\]\([^)]*\)/g, ' ');
 
-  // A link is its text. This is the case the old version got exactly backwards:
-  // it deleted the brackets and parentheses and kept the URL.
+  // A link is its text, never its URL.
   s = s.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
 
   // Line-leading markers only — a heading, a quotation, a bullet, a rule.
@@ -52,13 +39,7 @@ export function excerptOf(markdown: string): string {
   return s.replace(/\s+/g, ' ').trim();
 }
 
-/**
- * How long an excerpt may be.
- *
- * 150 characters is the design's, not the database's — `excerpt_ceiling` allows
- * a dossier 500. The card prints two or three lines and the rest would never be
- * seen, so the shorter number is a choice about the page rather than a limit.
- */
+/** 150 is the card's (two or three lines); the database's `excerpt_ceiling` allows 500. */
 export const EXCERPT_CHARS = 150;
 
 /** The excerpt as it is stored: unwrapped, cut on a word, and marked if cut. */

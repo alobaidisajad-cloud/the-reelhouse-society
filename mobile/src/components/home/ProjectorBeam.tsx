@@ -1,6 +1,5 @@
 /**
- * ProjectorBeam — Atmospheric projector sweep for the Lobby.
- * GPU-culled: ejects completely when scrolled past hero section.
+ * ProjectorBeam — the front door's projector sweep; culled once scrolled a screen down.
  */
 import { memo, useCallback } from 'react';
 import { StyleSheet, useWindowDimensions } from 'react-native';
@@ -29,8 +28,7 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
           withTiming(0.1, { duration: 8000, easing: Easing.inOut(Easing.sin) })
         ), -1, true
       );
-      // Calmed flicker — same law as the reel-page beam: the old 0.70–1.00
-      // swing strobed on device and read as a glitch. 0.92–1.00 breathes.
+      // A calm 0.92–1.00 flicker: a wider swing strobes on a phone and reads as a glitch.
       flicker.value = withRepeat(
         withSequence(
           withTiming(1, { duration: 400 }),

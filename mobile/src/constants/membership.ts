@@ -6,13 +6,10 @@
  * the tickets, the free seat, the ledger that compares them, and the line under
  * the poster when a locked door sent the member. There is no second copy.
  *
- * ── WHY ONE LIST OF PRIVILEGES, NOT A LIST PER RANK ─────────────────────────
- * The page draws every privilege twice — on its rank's ticket, and as a row of
- * the ledger — and the old page kept each rank's list separately, with hard
- * line breaks typed into the names to fit a card that no longer exists. Two
- * drawings of one fact is how they come to disagree. So each privilege is ONE
- * record: its name, the plain sentence that says what it does, the lowest rank
- * that holds it, and the ledger row it fills.
+ * ── ONE LIST OF PRIVILEGES, NOT A LIST PER RANK ─────────────────────────────
+ * The page draws each privilege twice, on its rank's ticket and as a row of the
+ * ledger, so each is ONE record (its name, its plain sentence, the lowest rank
+ * that holds it, its ledger row): two drawings of one fact cannot disagree.
  *
  * ── WHAT IS CHECKED, AND WHERE ──────────────────────────────────────────────
  *   · every PAID name is a promise `gatedFeatures.ts` backs with a trigger,
@@ -23,13 +20,9 @@
  *     (`theTwoClientsSellTheSameThing`, in the web suite);
  *   · `npm run gates:check` holds the claims against production.
  *
- * ── REMOVED, AND WHY ────────────────────────────────────────────────────────
- *   "The Gilded Frame (Exclusive Animated Gold Borders)" — built nowhere, sold
- *   for months. "Poster Glow Profile Aesthetics" — named nothing a member could
- *   find (the feature is the Backdrop). "Gold Foil Badge" — the mark is not
- *   gold. "Early Access to New Features" — no mechanism existed that gave anyone
- *   early access to anything, so it was a promise nothing kept. "MOST POPULAR" —
- *   said of a rank nobody had yet bought.
+ * Nothing is sold here that the app does not do: a privilege with no trigger,
+ * no feature behind its name, or no mechanism goes, and so does praise of a
+ * rank ("MOST POPULAR") that no count supports.
  */
 
 export type RankId = 'cinephile' | 'archivist' | 'auteur';
@@ -47,22 +40,14 @@ export const LEDGER_GROUPS: { id: LedgerGroup; label: string }[] = [
 export interface Privilege {
   /** A stable key. Never shown. */
   id: string;
-  /**
-   * The name a member reads. For a paid privilege this is the PROMISE that
-   * `gatedFeatures.ts` quotes character for character; for a free one it is the
-   * line on the free seat, quoted by `FREE_PROMISES`.
-   */
+  /** The name a member reads, quoted exactly by `gatedFeatures.ts` (paid) or `FREE_PROMISES`. */
   name: string;
   /** One plain sentence: what it does, in words nobody has to learn. */
   detail: string;
   /** The lowest rank that holds it. Every rank above holds it too. */
   rank: RankId;
   group: LedgerGroup;
-  /**
-   * The ledger's row label, short enough for one line beside three columns —
-   * or null where another row already says it (the Auteur's plate IS "your
-   * rank's mark", which the Archivist's row already carries for both ranks).
-   */
+  /** The ledger row's one-line label, or null where another row says it (the Auteur's plate). */
   ledger: string | null;
 }
 
@@ -111,17 +96,11 @@ export interface Rank {
   name: string;
   /** One line of character under the name. */
   character: string;
-  /**
-   * The rank's two lines on its Lobby ticket (an order, then the house's
-   * answer), or null for the rank the Lobby does not offer.
-   */
+  /** Its Lobby ticket's two lines (an order, the house's answer), or null if not offered there. */
   lobbyLine: readonly [string, string] | null;
   /** The line above the list: what this rank adds to. */
   includes: string | null;
-  /**
-   * Static prices — ONLY the fallback for when the store cannot be reached.
-   * The live, localized store price is always preferred (useMembershipPricing).
-   */
+  /** Fallback prices, for when the store cannot be reached; its localized price comes first. */
   priceMonthly: string | null;
   priceAnnual: string | null;
   cta: string;
@@ -166,11 +145,9 @@ export const RANKS: Rank[] = [
 export const rankById = (id: RankId): Rank => RANKS.find((r) => r.id === id) as Rank;
 
 /**
- * "The Vault, The Editorial Desk and The Lounge" — the first three things a
- * rank adds, in the order its ticket lists them. For any sentence elsewhere in
- * the app that says what a rank opens: read from here, it cannot name a
- * privilege that does not exist. (Settings once promised "the gold Dispatch
- * badge" at Auteur — gold being the colour the mark is not.)
+ * "The Vault, The Editorial Desk and The Lounge": the first things a rank adds,
+ * in its ticket's order, for any sentence saying what a rank opens. Read from
+ * here, it cannot name a privilege that does not exist.
  */
 export function firstPrivilegesOf(rank: PaidRankId, count = 3): string {
   const names = privilegesOf(rank).slice(0, count).map((p) => p.name);

@@ -1,9 +1,6 @@
 /**
- * EmptyStates — Themed cinematic empty state displays.
- * Used across tabs when no data is available.
- * 
- * Each empty state tells a story — not just "no data" but an invitation.
- * Uses the official Buster mascot with mood-aware personality + lore fragments.
+ * EmptyStates — what a screen draws when there is nothing to show, or what it
+ * shows could not be read: Buster, a line of lore, and the way on.
  */
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -85,15 +82,7 @@ export function EmptyState({ icon, glyph = '◈', title, subtitle, compact, bust
     );
 }
 
-// ── Pre-built variants with Buster + lore poetry ──
-// (Six sibling variants — Ledger/Watchlist/Vault/Lists/Reviews/Feed — were
-// deleted once their last consumer, the dead ledger route, was removed. Their
-// lore copy lives in git history if a future surface wants it.)
-
-/**
- * What a pull-to-refresh says when it could not reach the house, and the page
- * it had stays: one sentence, the same on every page that pulls.
- */
+/** What every pull to refresh says when it reached nothing, over the page it kept. */
 export const REFRESH_FAILED = 'Could not refresh — check your connection.';
 
 /**

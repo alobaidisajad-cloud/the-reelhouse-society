@@ -31,14 +31,8 @@ export const SectionDivider = memo(function SectionDivider({ label }: { label?: 
 })
 
 export const ReelRating = memo(function ReelRating({ rating, size = 16, onChange }: { rating: number; size?: number; onChange?: (rating: number) => void }) {
-  /**
-   * To a screen reader, a rating you can SET is one control, not ten. The
-   * halves below are ten unnamed buttons, which VoiceOver read as "button"
-   * ten times with no score — a member who could not see could not rate a
-   * film. So the row is one adjustable control: named, its value spoken, and
-   * moved half a reel at a time by swiping up or down. The halves stay for
-   * fingers and are grouped under it.
-   */
+  // To a screen reader, a rating you can set is ONE adjustable control, named, its value
+  // spoken, moved half a reel per swipe; the ten halves below are for fingers only.
   const step = (by: number) => {
     const next = Math.min(5, Math.max(0, rating + by));
     if (next !== rating) onChange?.(next);
@@ -78,7 +72,7 @@ export const ReelRating = memo(function ReelRating({ rating, size = 16, onChange
                 <View key={reel} style={[s.reelTouchWrap, { width: size, height: size }]}>
                     {reelImage}
                     <View style={s.reelSplitRow}>
-                        {/* For fingers only: the row above is the one control a screen reader moves. */}
+                        {/* Fingers only: the row is the one control a screen reader moves. */}
                         <Pressable
                             onPress={() => { TactileEngine.selection(); onChange(rating === halfVal ? 0 : halfVal); }}
                             style={s.reelHalf}
