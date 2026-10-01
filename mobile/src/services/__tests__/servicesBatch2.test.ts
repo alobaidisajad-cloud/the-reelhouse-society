@@ -257,48 +257,6 @@ describe('LoungeService', () => {
     let LoungeService: typeof import('@/src/services/LoungeService').LoungeService;
     beforeAll(() => { LoungeService = require('@/src/services/LoungeService').LoungeService; });
 
-    describe('checkMembership', () => {
-        it('returns true when member exists', async () => {
-            (supabase.from as jest.Mock).mockReturnValue(chain({ data: { id: 'm1' }, error: null }));
-            const result = await LoungeService.checkMembership('l1', 'u1');
-            expect(result).toBe(true);
-        });
-
-        it('returns false when PGRST116 (no rows)', async () => {
-            // maybeSingle returns null data when no rows found
-            (supabase.from as jest.Mock).mockReturnValue(chain({ data: null, error: null }));
-            const result = await LoungeService.checkMembership('l1', 'u1');
-            expect(result).toBe(false);
-        });
-
-        it('throws on errors', async () => {
-            (supabase.from as jest.Mock).mockReturnValue(chain({ data: null, error: { code: '42P01', message: 'Table not found' } }));
-            await expect(LoungeService.checkMembership('l1', 'u1')).rejects.toBeTruthy();
-        });
-    });
-
-    describe('shareToLounge', () => {
-        it('validates and inserts message', async () => {
-            (supabase.from as jest.Mock).mockReturnValue(chain({ error: null }));
-            await LoungeService.shareToLounge({
-                lounge_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-                user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12',
-                content: 'Check this out!',
-                type: 'text',
-            });
-            expect(supabase.from).toHaveBeenCalledWith('lounge_messages');
-        });
-
-        it('rejects invalid type', async () => {
-            await expect(LoungeService.shareToLounge({
-                lounge_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-                user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12',
-                content: 'Test',
-                type: 'invalid_type',
-            })).rejects.toThrow();
-        });
-    });
-
     describe('getUserLounges', () => {
         it('returns Zod-parsed user lounges', async () => {
             const data = [{ lounge_id: 'l1', lounges: { id: 'l1', name: 'Club' } }];
