@@ -613,7 +613,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/LinksEditor.tsx | — |  |
 | src/features/profile/profile.styles.ts | — |  |
 | src/features/settings/__tests__/settings.redesign.test.tsx | — |  |
+| src/features/settings/__tests__/anExportIsWhole.test.ts | 2026-10-01 | written: an export holds every row once |
 | src/features/settings/DataVault.tsx | — |  |
+| src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
 | src/features/settings/settings.styles.ts | — |  |
 | src/features/settings/SettingsScreen.tsx | — |  |
 | src/features/settings/SettingsSections.tsx | — |  |
@@ -623,6 +625,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-01 | the ratchet is exact |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
 | src/hooks/__tests__/theArchiveDoesNotRepeatItself.test.tsx | — |  |
+| src/hooks/__tests__/theRoomDoesNotRepeatItself.test.tsx | 2026-10-01 | written: the room pages on what the server gave |
 | src/hooks/__tests__/theArchivePagesOnWhatTheServerGave.test.ts | — |  |
 | src/hooks/__tests__/theCalendarReadsItsOwnYear.test.ts | — |  |
 | src/hooks/__tests__/theNoteWaitsForItsViewing.test.tsx | — |  |

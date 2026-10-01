@@ -1210,9 +1210,10 @@ async function readCritiquePage(
         critiques: { ...st.critiques, [postId]: merged },
         // A short page is the end of the list. A full one MIGHT be, and the next
         // press finds out — which costs one query and never hides a critique.
+        // Short as SENT, not as parsed: a row the parser drops is not the end.
         critiquesHasMore: {
           ...st.critiquesHasMore,
-          [postId]: critiques.length === COMMENT_PAGE_SIZE,
+          [postId]: (data ?? []).length === COMMENT_PAGE_SIZE,
         },
       };
     });

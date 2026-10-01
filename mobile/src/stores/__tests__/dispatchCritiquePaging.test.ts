@@ -106,6 +106,15 @@ describe('paging a filing’s critiques', () => {
     expect(useDispatch.getState().critiquesHasMore.p2).toBe(false);
   });
 
+  it('a full page with a row it could not read is still a full page', async () => {
+    // Measured on the parsed rows, one unreadable critique made the page
+    // "short", and the rest of the thread was never offered.
+    mockRows = [[...fullPage(0).slice(1), { id: null, body: 7 }]];
+    await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    expect(useDispatch.getState().critiques.p1).toHaveLength(COMMENT_PAGE_SIZE - 1);
+    expect(useDispatch.getState().critiquesHasMore.p1).toBe(true);
+  });
+
   it('continues from where it stopped, and keeps both pages', async () => {
     mockRows = [fullPage(0), fullPage(COMMENT_PAGE_SIZE)];
     await useDispatch.getState().fetchCritiques('p1', 'NEWEST');

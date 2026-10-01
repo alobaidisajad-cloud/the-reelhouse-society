@@ -130,6 +130,13 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
    * out-of-order fault the film finder was fixed for.
    */
   const gen = useRef(0);
+  /**
+   * How many rows the SERVER has handed over, which runs ahead of the filings
+   * drawn when the parser drops one. Paging from `filings.length` asked again
+   * for a row already read, and the room drew a filing twice (useDispatchArchive
+   * carries the same counter for the same reason).
+   */
+  const fetched = useRef(0);
 
   const page = useCallback(async (from: number, mine: number) => {
     const id = userId.current;
@@ -167,10 +174,12 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
     // difference between finding a schema change and calling the room "short".
     if (dropped > 0) logger.warn(`[room] ${dropped} filing(s) failed to parse`);
 
+    const raw = rows.data?.length ?? 0;
+    fetched.current = from + raw;
     setFilings((prev) => (from === 0 ? got : [...prev, ...got]));
     // Measured on what the SERVER sent, not on what parsed: a full page of rows
     // the parser dropped still means there is another page behind it.
-    setMore((rows.data?.length ?? 0) === ROOM_PAGE);
+    setMore(raw === ROOM_PAGE);
 
     /**
      * ── NO TOTALS IS NOT ZERO TOTALS ───────────────────────────────────────
@@ -258,12 +267,12 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
     setLoadingMore(true);
     void (async () => {
       try {
-        await page(filings.length, mine);
+        await page(fetched.current, mine);
       } finally {
         if (mine === gen.current) setLoadingMore(false);
       }
     })();
-  }, [loading, loadingMore, more, filings.length, page]);
+  }, [loading, loadingMore, more, page]);
 
   return {
     author, filings, filed, certified, totalsKnown, certifiedAtFetch,

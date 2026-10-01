@@ -24,7 +24,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { importArchiveZip, importArchiveJSON, ImportProgress, ImportResult } from '@/src/features/archive/archiveImport';
 import { loadReceipt, undoImport } from '@/src/features/archive/undoImport';
 import { receiptSize } from '@/src/features/archive/importReceipt';
-import { supabase } from '@/src/lib/supabase';
+import { readAllRows } from '@/src/features/settings/readAllRows';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { escapeCsvCell } from '@/src/utils/csv';
@@ -210,27 +210,8 @@ export default function DataVault() {
   // ══════════════════════════════════════
   //  EXPORT HELPERS
   // ══════════════════════════════════════
-  const fetchAllRows = async (table: string, selectQuery: string = '*') => {
-    if (!user) return [];
-    let allData: any[] = [];
-    let from = 0;
-    const step = 1000;
-    while (true) {
-      const { data, error } = await supabase
-        .from(table)
-        .select(selectQuery)
-        .eq('user_id', user.id)
-        .range(from, from + step - 1);
-      
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-      
-      allData = allData.concat(data);
-      if (data.length < step) break;
-      from += step;
-    }
-    return allData;
-  };
+  const fetchAllRows = async (table: string, selectQuery: string = '*', key: string = 'id') =>
+    (user ? readAllRows(user.id, table, selectQuery, key) : []);
 
   // ══════════════════════════════════════
   //  EXPORT CSV HANDLER
@@ -257,7 +238,7 @@ export default function DataVault() {
       // part nobody else holds a copy of. The note here is the one on the
       // viewing each log is CURRENTLY on; earlier viewings' notes travel in the
       // full JSON export, which can carry a note per viewing.
-      const dbNotes = await fetchAllRows('log_private_notes');
+      const dbNotes = await fetchAllRows('log_private_notes', '*', 'viewing_id');
       const noteByViewing = new Map<string, string>(
         (dbNotes || []).map((n: any) => [String(n.viewing_id), String(n.notes ?? '')]),
       );
@@ -324,7 +305,7 @@ export default function DataVault() {
         fetchAllRows('lists', '*, list_items(*)'),
         // The member's private notes, one per viewing. Owner-only at the
         // database, and this export is the member asking for their own.
-        fetchAllRows('log_private_notes'),
+        fetchAllRows('log_private_notes', '*', 'viewing_id'),
       ]);
 
       if (!isMounted.current) return;
