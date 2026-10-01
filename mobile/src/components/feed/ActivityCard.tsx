@@ -288,8 +288,7 @@ const s = StyleSheet.create({
     borderColor: 'rgba(184,137,26,0.4)',
     overflow: 'hidden',
     position: 'relative',
-    // Android's lift, on the painted view; shadowColor tints it (API 28+), here transparent.
-    elevation: 12,
+    // No elevation: before Android 9 it casts black whatever shadowColor says.
     ...effects.flat,
   },
   cardPremium: {
@@ -299,7 +298,8 @@ const s = StyleSheet.create({
   cardAuteur: { ...EDGE_LIT,
     borderColor: colors.crimsonBorder,
     backgroundColor: colors.sootAuteur,
-    // The Android lift in crimson, as cardShadowAuteur casts it on iOS.
+    // The Android lift, crimson from Android 9, as cardShadowAuteur casts it on iOS.
+    elevation: 12,
     shadowColor: colors.bloodReel,
   },
   backFace: {

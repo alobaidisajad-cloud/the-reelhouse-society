@@ -8,24 +8,8 @@
  *   4. Handles TMDB numeric film IDs correctly
  */
 
-import { z } from 'zod';
-
-// Re-create the schema locally to test it in isolation (avoids Supabase import)
-const InteractionPayloadSchema = z.object({
-  user_id: z.string().uuid(),
-  type: z.enum(['endorse_log', 'endorse_list', 'endorse_film', 'endorse_review']),
-  target_log_id: z.string().uuid().optional(),
-  target_list_id: z.string().uuid().optional(),
-  target_film_id: z.union([
-    z.string().uuid(),
-    z.string().regex(/^\d+$/),
-    z.number().int().positive().transform(String),
-  ]).optional(),
-  target_review_id: z.string().uuid().optional(),
-}).refine(data =>
-  data.target_log_id || data.target_list_id || data.target_film_id || data.target_review_id,
-  { message: "Interaction requires at least one target ID" }
-);
+// The service's own schema: a copy here would pass whatever the real one became.
+import { InteractionPayloadSchema } from '@/src/services/InteractionService';
 
 describe('InteractionPayloadSchema', () => {
   const validUserId = '550e8400-e29b-41d4-a716-446655440000';

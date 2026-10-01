@@ -89,4 +89,27 @@ describe('ActivityCard Component', () => {
     expect(getByLabelText('Casablanca. Opens the film.')).toBeTruthy();
     expect(queryByLabelText('View film details')).toBeNull();
   });
+
+  it('lies flat unless it is an Auteur\'s, which lifts in crimson', () => {
+    // Before Android 9 an elevation casts black whatever its shadowColor: only the Auteur has one.
+    const paper = (role: string) => {
+      const item = { id: 3, user_id: 'u9', username: 'reader', role, film_id: 238, film_title: 'Casablanca',
+        rating: 4, review: 'We will always have Paris.', poster_path: '/c.jpg', year: 1942, created_at: new Date().toISOString(), status: 'watched' };
+      type Node = { props?: Record<string, unknown>; children?: unknown[] | null };
+      const find = (n: unknown): Node | undefined => {
+        if (!n || typeof n !== 'object') return undefined;
+        const node = n as Node;
+        if (node.props && node.props.shouldRasterizeIOS !== undefined) return node;
+        for (const c of node.children ?? []) { const hit = find(c); if (hit) return hit; }
+        return undefined;
+      };
+      const card = find(render(<ActivityCard item={item as any} index={0} />).toJSON());
+      if (!card) throw new Error('the card was not rendered');
+      const { StyleSheet } = jest.requireActual('react-native');
+      return StyleSheet.flatten(card.props!.style);
+    };
+    expect(paper('cinephile').elevation ?? 0).toBe(0);
+    expect(paper('auteur')).toEqual(expect.objectContaining({ elevation: 12, shadowColor: expect.any(String) }));
+    expect(paper('auteur').shadowColor).not.toBe('transparent');
+  });
 });

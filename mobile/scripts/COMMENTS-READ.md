@@ -14,7 +14,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/animationMockCoverage.test.ts | — |  |
 | __tests__/backendContract.test.ts | — |  |
 | __tests__/colorLock.test.ts | — |  |
-| __tests__/components/feed/ActivityCard.test.tsx | 2026-10-01 | the poster says its film |
+| __tests__/components/feed/ActivityCard.test.tsx | 2026-10-01 | the poster says its film; the card lies flat |
 | __tests__/deletionIntegrity.test.ts | — |  |
 | __tests__/integration/errorBoundaryRecovery.test.tsx | — |  |
 | __tests__/integration/feedFlow.test.ts | 2026-10-01 | one path, refusals raised |
@@ -24,7 +24,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/integration/setup.test.ts | — |  |
 | __tests__/integration/setup.ts | — |  |
 | __tests__/integration/socialRollback.test.ts | — |  |
-| __tests__/InteractionService.test.ts | — |  |
+| __tests__/InteractionService.test.ts | 2026-10-01 | reads the service's own schema |
 | __tests__/interpolateMock.test.ts | — |  |
 | __tests__/moderationActs.test.ts | — |  |
 | __tests__/notificationsMockCoverage.test.ts | — |  |
@@ -89,7 +89,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/index.tsx | — |  |
 | app/(tabs)/lounge.tsx | — |  |
 | app/(tabs)/profile.tsx | — |  |
-| app/(tabs)/reels.tsx | 2026-10-01 | nav for every act; empty states arrive; the search says stacks |
+| app/(tabs)/reels.tsx | 2026-10-01 | every comment short and true; the door's reason lives in its test |
 | app/+not-found.tsx | — |  |
 | app/auth-callback.tsx | 2026-10-01 | a link with no code verifies nothing; comments short |
 | app/dispatch/[id].tsx | 2026-09-29 | 26 fixed; 'SAVE THE CARD offered for a dossier' was false (the sheet never gets card); history of 3 fixes cut |
@@ -322,13 +322,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/SeriesPicker.tsx | — |  |
 | src/components/EmptyStates.tsx | — |  |
 | src/components/ErrorBoundary.tsx | — |  |
-| src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | — |  |
-| src/components/feed/ActionDeck.tsx | 2026-10-01 | owner by id; nav |
-| src/components/feed/ActivityCard.tsx | 2026-10-01 | nav; owner by id |
+| src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-01 | true as written |
+| src/components/feed/ActionDeck.tsx | 2026-10-01 | owner by id; nav; comments cut to the why |
+| src/components/feed/ActivityCard.tsx | 2026-10-01 | lies flat unless an Auteur's; comments made true |
 | src/components/feed/AutopsyView.tsx | 2026-10-01 | each score read whole |
 | src/components/feed/PosterFrame.tsx | 2026-10-01 | the poster says its film |
-| src/components/feed/ReviewContent.tsx | 2026-10-01 | true as written |
-| src/components/feed/UserAttributionRow.tsx | 2026-10-01 | true as written |
+| src/components/feed/ReviewContent.tsx | 2026-10-01 | comments cut to the why |
+| src/components/feed/UserAttributionRow.tsx | 2026-10-01 | comments cut to the why |
 | src/components/film/__tests__/castRailFits.test.ts | — |  |
 | src/components/film/__tests__/FilmActionTray.test.tsx | — |  |
 | src/components/film/__tests__/filmDossier.test.tsx | — |  |
@@ -536,13 +536,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/RankBadge.tsx | — |  |
 | src/components/RatingLegend.tsx | — |  |
 | src/components/ReelEyeIcon.tsx | — |  |
-| src/components/reels/__tests__/MemberRegistry.select.test.ts | — |  |
-| src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | — |  |
+| src/components/reels/__tests__/MemberRegistry.select.test.ts | 2026-10-01 | no comments |
+| src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | 2026-10-01 | carries the door's reason |
 | src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | — |  |
-| src/components/reels/MemberRegistry.tsx | 2026-10-01 | nav |
-| src/components/reels/ReelsCards.tsx | 2026-10-01 | chips share no tap; a stack card says what it opens |
-| src/components/reels/ReelsFeedList.tsx | 2026-10-01 | true as written |
-| src/components/reels/ReelsHeader.tsx | 2026-10-01 | true as written |
+| src/components/reels/MemberRegistry.tsx | 2026-10-01 | nav; comments cut to the why |
+| src/components/reels/ReelsCards.tsx | 2026-10-01 | chips share no tap; comments cut to the why |
+| src/components/reels/ReelsFeedList.tsx | 2026-10-01 | stale contrast note gone |
+| src/components/reels/ReelsHeader.tsx | 2026-10-01 | comments cut to the why |
 | src/components/reels/ReelsStackList.tsx | 2026-10-01 | true as written |
 | src/components/reels/types.ts | 2026-10-01 | true as written |
 | src/components/RouteErrorBoundary.tsx | — |  |
@@ -611,7 +611,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/generated/lucideIcons.js | — |  |
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
-| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-01 | written with useArrival |
+| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-01 | true as written |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
 | src/hooks/__tests__/theArchiveDoesNotRepeatItself.test.tsx | — |  |
 | src/hooks/__tests__/theArchivePagesOnWhatTheServerGave.test.ts | — |  |
@@ -623,7 +623,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useAuthThrottle.pbt.test.ts | 2026-10-01 | the countdown keeps the rule |
 | src/hooks/__tests__/useBanCheck.test.ts | — |  |
 | src/hooks/__tests__/useEditProfile.logic.test.ts | — |  |
-| src/hooks/__tests__/useFeeds.test.ts | — |  |
+| src/hooks/__tests__/useFeeds.test.ts | 2026-10-01 | rewritten: drives the real hooks |
 | src/hooks/__tests__/useInitiation.test.ts | — |  |
 | src/hooks/__tests__/useLogFlow.payload.test.ts | — |  |
 | src/hooks/__tests__/useLogFlow.telemetry.test.tsx | — |  |
@@ -644,7 +644,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useDispatchArchive.ts | — |  |
 | src/hooks/useDoor.ts | — |  |
 | src/hooks/useEditProfile.ts | — |  |
-| src/hooks/useFeeds.ts | 2026-10-01 | page sizes from the service |
+| src/hooks/useFeeds.ts | 2026-10-01 | one cursor rule; the fallback note gone with the fallback |
 | src/hooks/useFilmAnimations.ts | — |  |
 | src/hooks/useFilmDetail.ts | — |  |
 | src/hooks/useFollowRequests.ts | — |  |
@@ -696,7 +696,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/providers/AppBootstrapper.tsx | — |  |
 | src/providers/FilmDetailProvider.tsx | — |  |
 | src/schemas/__tests__/schemas.test.ts | — |  |
-| src/schemas/feed.schema.ts | 2026-10-01 | the fallback row gone |
+| src/schemas/feed.schema.ts | 2026-10-01 | comments cut to the why |
 | src/schemas/film.schema.ts | — |  |
 | src/schemas/profile.schema.ts | — |  |
 | src/schemas/settings.ts | — |  |
@@ -705,7 +705,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | — |  |
 | src/services/__tests__/certifyCountAuthority.test.ts | — |  |
 | src/services/__tests__/everyNameAClientCallsExists.test.ts | — |  |
-| src/services/__tests__/FeedService.test.ts | — |  |
+| src/services/__tests__/FeedService.test.ts | 2026-10-01 | cursor note made true |
 | src/services/__tests__/getFilmVerdict.test.ts | — |  |
 | src/services/__tests__/loungeEmbeds.contract.test.ts | — |  |
 | src/services/__tests__/loungeSharePayloads.test.ts | — |  |
@@ -723,10 +723,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/VaultService.test.ts | — |  |
 | src/services/__tests__/yearInCinema.test.ts | — |  |
 | src/services/AuthService.ts | 2026-10-01 | true as written |
-| src/services/FeedService.ts | 2026-10-01 | one path per feed; refusals raised |
+| src/services/FeedService.ts | 2026-10-01 | the cursor note made true: RPC arguments |
 | src/services/FilmService.ts | — |  |
 | src/services/FollowRequestService.ts | — |  |
-| src/services/InteractionService.ts | 2026-10-01 | true as written |
+| src/services/InteractionService.ts | 2026-10-01 | its schema is what its test reads |
 | src/services/logCounts.ts | — |  |
 | src/services/LogService.ts | — |  |
 | src/services/LoungeService.ts | — |  |
@@ -803,7 +803,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/socialSlice.ts | 2026-09-29 | follow-list wipe fixed; comments read |
 | src/stores/domain/watchlistSlice.ts | — |  |
 | src/stores/films.ts | — |  |
-| src/stores/followStore.ts | 2026-10-01 | true as written |
+| src/stores/followStore.ts | 2026-10-01 | comments cut to the why |
 | src/stores/lounge.ts | 2026-09-28 | 38 findings fixed; stale 'created rooms' reason corrected (create_lounge adds the member row); loadOlderMessages→loadMoreMessages; 12 repeated sessionGuard notes dropped |
 | src/stores/markCounts.ts | — |  |
 | src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
@@ -987,7 +987,6 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/__tests__/everySourceReaderIsLedgered.test.ts | — |  |
 | test-utils/__tests__/readCode.test.ts | — |  |
 | test-utils/contractEnv.ts | — |  |
-| test-utils/hookTestHelpers.ts | — |  |
 | test-utils/react-native-testing-library.js | — |  |
 | test-utils/readCode.ts | — |  |
 | test-utils/SOURCE-READING-TESTS.md | — |  |

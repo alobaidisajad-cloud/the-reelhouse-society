@@ -1,9 +1,7 @@
 import { supabase } from '@/src/lib/supabase';
 import { z } from 'zod';
-// Removed unused logger import
 
-// Zod schemas for runtime boundary safety
-const InteractionPayloadSchema = z.object({
+export const InteractionPayloadSchema = z.object({
   user_id: z.string().uuid(),
   type: z.enum(['endorse_log', 'endorse_list', 'endorse_film', 'endorse_review']),
   target_log_id: z.string().uuid().optional(),
