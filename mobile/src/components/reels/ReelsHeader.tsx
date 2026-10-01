@@ -63,8 +63,7 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, pulse, auteu
       <PressableScale hitSlop={null} style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
         <View style={st.tabInner}>
           <Animated.View style={[st.liveDot, auteur ? st.liveDotAuteur : st.liveDotDefault, pulseStyle]} />
-          {/* The tab you are NOT on is quieter by its ink, not by being drawn
-              see-through: fog at 0.75 took its contrast from the plate behind. */}
+          {/* The tab you are not on is quieter by its ink, never drawn see-through. */}
           <Text style={[st.tabText, { color: activeTab === 'logs' ? colors.parchmentDim : colors.fogQuiet }]}>LOGS</Text>
         </View>
       </PressableScale>
@@ -128,12 +127,9 @@ const st = StyleSheet.create({
     width: '50%', backgroundColor: colors.soot, borderColor: 'rgba(184,137,26,0.4)',
     borderWidth: 1, borderRadius: 4, ...effects.shadowFloat, elevation: 5
   },
-  // The bar is 46pt tall, so a tab is a whole target with no halo: a 15pt one
-  // reached the filter chips 16pt below, and the later chip took the tap.
+  // A whole 46pt target with no halo, which would reach the filter chips below.
   tabButton: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   tabInner: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  // 0.60 measured 3.04:1 on ink; 0.75 gives 4.16:1. The inactive tab should read
-  // as unselected, not as unavailable.
   tabText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 5 },
 
   sectionHeaderWrap: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },

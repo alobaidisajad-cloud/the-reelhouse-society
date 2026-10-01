@@ -138,8 +138,7 @@ describe('the other two places that promised a locked corridor', () => {
     expect(act).not.toMatch(/Archivists and above/);
     // The same words the corridor header and the room's button already use.
     expect(act).toMatch(/'Listen in\. Archivists take a seat\.'/);
-    // One line, and the tray caps a gloss at one line — measured against the
-    // longest gloss already in the tray, 36 characters.
+    // The tray caps a gloss at one line; its longest gloss is 36 characters.
     expect('Listen in. Archivists take a seat.'.length).toBeLessThanOrEqual(36);
     // No fork left on rank in what the act DOES.
     const open = layout.slice(layout.indexOf('const openLounge'), layout.indexOf('}, [isAuthenticated, handleOpenLounge]);'));

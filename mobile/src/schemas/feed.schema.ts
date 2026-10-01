@@ -20,16 +20,9 @@ const yearCoercer = z.union([z.number(), z.string()])
   });
 
 /**
- * A mark's count, however it travelled.
- * ──────────────────────────────────────
- * The feed functions return it as a plain integer column. A direct query asks
- * PostgREST for an embedded count — `certify_count:interactions!…(count)` —
- * which arrives as `[{ count: 12 }]`. Both are the same fact and both become a
- * number here.
- *
- * ABSENT is null, never zero: a shipped function that predates the column, or
- * a query that did not ask, has not said "nobody" — it has said nothing, and a
- * bar then draws no count rather than a confident wrong one.
+ * A mark's count, however it travelled: a plain integer from the feed functions,
+ * `[{ count: 12 }]` from an embedded PostgREST count. Absent is null, never zero:
+ * a source that did not say has not said "nobody", so a bar draws no count.
  */
 export const markCount = z.unknown()
   .optional()
@@ -136,17 +129,7 @@ export const StackFeedRowSchema = z.object({
     title: z.string(),
     poster_path: z.string().nullable().optional(),
   })).default([]),
-  /**
-   * The TRUE number of films in the stack, independent of how many posters
-   * travelled. REQUIRED, deliberately: the feed used to count the array it
-   * received, which was only correct because the server shipped every film —
-   * 247 rows to draw 24 posters. Now that the array is capped at four, deriving
-   * the count from it would print "4 FILMS" on every stack. Making this required
-   * turns that mistake into a compile error rather than a wrong number on screen.
-   *
-   * Zod strips unknown keys, so a column selected but not declared here is
-   * silently dropped — which is exactly how the old count would come back.
-   */
+  /** The stack's true size; required, since the four posters that travel are not its count. */
   film_count: z.union([z.number(), z.string()]).transform(Number),
   certify_count: z.union([z.number(), z.string()]).transform(Number),
   is_ranked: z.boolean(),

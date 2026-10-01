@@ -24,9 +24,7 @@ export interface SocialState {
     /** O(1) lookup index — mirrors endorsement/watchlist index pattern */
     _followingIndex: Set<string>;
     _requestedIndex: Set<string>;
-    /** Incoming follow requests awaiting your approval ("At the Door"). Drives the
-     *  Notices banner + the profile door badge. Source of truth is the DB; this is
-     *  the cached live count, refreshed on app focus and when the panel resolves one. */
+    /** Requests awaiting your approval: cached, refreshed on focus and on each answer. */
     pendingRequestCount: number;
     setPendingRequestCount: (n: number) => void;
     setFollowing: (usernames: string[]) => void;
@@ -168,14 +166,7 @@ registerStoreReset((previousUserId) => {
         pendingRequestCount: 0
     });
 
-    // This store writes two per-member caches to disk, and neither was ever
-    // deleted — the member's social graph and their pending follow requests
-    // stayed on the device after they signed out. Clearing memory alone left
-    // them there indefinitely.
-    //
-    // Erased HERE rather than in auth.ts's hand-maintained delete list, because
-    // that list is exactly what these two were missed from. The store that
-    // writes a cache is the only place that reliably knows it exists.
+    // Its own disk caches, erased here: the store that writes a cache knows it exists.
     if (previousUserId) {
         try {
             storage.delete(`reelhouse_following_${previousUserId}`);

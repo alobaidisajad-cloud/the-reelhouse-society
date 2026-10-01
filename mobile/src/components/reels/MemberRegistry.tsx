@@ -5,8 +5,7 @@
  * a newcomer to the House's most-followed public members so their orbit is
  * never a dead end. Retires itself the moment the feed has content.
  *
- * Built from proven parts: the row visual language mirrors SearchResultRow
- * (already live on device), and the FOLLOW stamp mirrors the profile page's
+ * The row mirrors SearchResultRow, and the FOLLOW stamp the profile page's
  * follow button states. Two separate touch targets — row → profile,
  * stamp → follow — so neither gesture is ambiguous.
  *
@@ -68,15 +67,7 @@ function MemberRow({ member }: { member: NotableMember }) {
   const onFollow = useCallback(() => {
     if (isFollowing || isRequested) return;
     TactileEngine.selection();
-    // The store applies the optimistic update instantly (0ms, even offline);
-    // this component re-renders from that state, and socialSlice refreshes the
-    // following feed itself so the registry retires on its own.
-    //
-    // The invalidation used to live HERE, and only here — which is why following from
-    // the Registry refreshed the feed while following from the profile screen, the
-    // primary follow surface, did not (#82). It now lives in the store, so every
-    // follow surface gets it. Repeating it here would be a harmless double-refetch,
-    // but two copies of one rule is how the rule drifts.
+    // The store marks the follow at once and refreshes the feed itself, for every follow surface.
     followUser(member.username)
       .catch(() => { /* socialSlice already rolls back + toasts on failure */ });
   }, [member.username, isFollowing, isRequested]);
@@ -103,14 +94,7 @@ function MemberRow({ member }: { member: NotableMember }) {
 
         <View style={s.rowText}>
           <Text style={s.name} numberOfLines={1}>@{member.username.toUpperCase()}</Text>
-          {/* The house's mark, not this file's own copy of it. This row used to
-              print `★ AUTEUR` as a coloured word in `marqueeGold` — a fifth
-              dress and a fourth gold for one rank.
-
-              And CINEPHILE is gone with it. It was a label meaning "has not
-              paid", printed on most of the house; the serial beside it is a
-              real fact about a member and says more. An unranked member now
-              shows their number and nothing else. */}
+          {/* The house's mark; an unranked member shows their number and nothing else. */}
           <View style={s.rankRow}>
             <RankBadge rank={rankOf({ role: member.role, is_founding: member.is_founding })} />
             {serial ? <Text style={s.serial} numberOfLines={1}>{serial}</Text> : null}
@@ -149,8 +133,7 @@ export function MemberRegistry({ visible }: { visible: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, myId, following, blockedVersion]);
 
-  // Safe degradation: nothing notable to show → render nothing, the empty
-  // state stays exactly as designed.
+  // Nothing notable to show: the empty state stands alone.
   if (!visible || members.length === 0) return null;
 
   return (
@@ -175,8 +158,7 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
   headerLine: { flex: 1, height: 1, backgroundColor: colors.sepia, opacity: 0.25 },
   headerText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia },
-  // 0.7 was 3.75:1; 0.8 gave 4.59:1. Same for `serial` below.
-  // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+  // Solid fogQuiet, as `serial` below: no word borrows its contrast from the ground.
   subtitle: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fogQuiet, textAlign: 'center', marginBottom: 12 },
 
   list: {},

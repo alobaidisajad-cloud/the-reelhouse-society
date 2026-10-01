@@ -41,10 +41,7 @@ import { timeAgo } from '@/src/utils/timeAgo';
 import type { FeedItem } from '@/src/schemas/feed.schema';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 
-// The editorial banner spans the full card at ~326pt. On a 3x screen that is
-// 978 physical pixels being filled from a 500px image — barely half the detail,
-// on the most prominent image the feed has. Matched to the device so 2x phones
-// download exactly what they did before.
+// The banner spans ~326pt: 978 pixels on a 3x screen, which a 500px image fills at half detail.
 const TMDB_IMG_EDITORIAL = `https://image.tmdb.org/t/p/${PixelRatio.get() >= 3 ? 'w780' : 'w500'}`;
 export type { FeedItem };
 
@@ -54,12 +51,7 @@ const FLIP_MS = 420;
 const FLIP_EASING = Easing.bezier(0.33, 0, 0.15, 1);
 const CROSSFADE_MS = 250;
 
-/**
- * The card's own washes, THINNED. At full strength the shell ran the card from
- * its own tone down to the recess, so on the lit house every card darkened
- * into a hole at its foot; a card is paper laid on the page, lit like one.
- * Every full-bleed wash with no artwork behind it is drawn at this strength.
- */
+/** The card's own washes, thinned: a card is paper on the lit page, not a hole in it. */
 const SHELL = WASH;
 
 const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {
@@ -81,11 +73,7 @@ const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.
   );
 };
 
-/**
- * True editorial banner only — the tribunal's pick wears the crown.
- * (The old automatic blurred-poster billboard on every premium log is
- * retired: tiers speak through washes, glow, crest, and the ledger rule.)
- */
+/** The editorial banner: only the tribunal's pick wears the crown. */
 const ActivityEditorialHeader = React.memo(({ backdropUri }: { backdropUri: string }) => {
   return (
     <View style={s.editorialHeaderContainer}>
@@ -119,8 +107,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
   const isPremium = isArchivist || isAuteur || !!item.editorial_header || !!item.pull_quote;
 
   const autopsyStats = (item.autopsy ?? undefined) as Record<string, number> | undefined;
-  // Rated-axes-only gate: a phantom all-zero legacy autopsy (or an object with
-  // no genuinely filed scores) must not present the card as autopsied.
+  // Only filed scores count: an all-zero autopsy does not turn the card over.
   const hasAutopsy = !!item.is_autopsied && hasRatedAutopsy(autopsyStats);
 
   const editorialUri = item.editorial_header ? `${TMDB_IMG_EDITORIAL}${item.editorial_header}` : null;
@@ -154,11 +141,8 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
     AccessibilityInfo.announceForAccessibility('Returned to the log');
   }, [flip, reducedMotion]);
 
-  // STACKING LAW: no animated zIndex (Fabric + FlashList commits race it — the
-  // reel-page FAB glitch class). It was redundant here anyway: visibility is
-  // decided purely by the binary opacity below, and touch routing purely by
-  // the state-driven pointerEvents props. Static sibling order (back rendered
-  // after front) needs no z help.
+  // No animated zIndex (on Fabric it races FlashList's commits): opacity shows a face,
+  // pointerEvents routes the touch, and the back is simply drawn after the front.
   const frontStyle = useAnimatedStyle(() => {
     if (reducedMotion) {
       return { opacity: 1 - flip.value, transform: [] };
@@ -202,15 +186,8 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
 
   return (
     <View style={{ zIndex: index }}>
-      {/* Rasterize ONLY at rest: the flattened bitmap makes the heavy card
-          shadow cheap during scroll, but re-rasterizing every frame of the
-          flip is a per-frame bitmap redraw — release it while animating. */}
-      {/* Shadow host / clip host. The card's own clip is load-bearing — the
-          reverse face rotates inside it and would spill without it — but a
-          layer that masks to its bounds cannot draw a shadow outside them, so
-          this card's 20pt lift has never rendered on iOS while Android drew one
-          from elevation. The outer view holds the lift and the rail margins;
-          the inner one holds the clip and the paper. */}
+      {/* Rasterized only at rest: cheap in a scroll, never redrawn per frame of the flip. */}
+      {/* The outer view casts the lift; the inner one clips, and a clip hides a shadow. */}
       <View style={[s.cardShadow, isAuteur && s.cardShadowAuteur]}>
       <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur]} shouldRasterizeIOS={!flipped}>
         {/* ── FRONT of the card ── */}
@@ -239,10 +216,6 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
               <PosterFrame filmId={item.film_id} filmTitle={item.film_title} posterPath={item.poster_path} isPremium={isPremium} isAuteur={isAuteur} onPress={handleFilmPress} />
               <View style={s.filmMeta}>
                 <PressableScale onPress={handleFilmPress} hitSlop={{ top: 12, bottom: 5, left: 15, right: 15 }} haptic="selection" pressedScale={0.96}>
-                  {/* 19pt in a 24pt line box (ratio 1.26), and lineHeight does
-                      not scale with Dynamic Type — at 1.35 the glyphs reach
-                      25.7pt in a box fixed at 24 and clip. Capped at 1.2 they
-                      land on 22.8. See the same note in MarqueeBoard. */}
                   <Text {...displayTextProps} style={s.cardTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>{item.film_title}</Text>
                 </PressableScale>
                 {item.year != null && <Text style={s.cardYear}>{item.year}</Text>}
@@ -292,14 +265,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
 });
 
 const s = StyleSheet.create({
-  // The shadow host: the rail margins and the lift, nothing that clips.
-  //
-  // iOS geometry ONLY. `elevation` stays below on the clip host, because that
-  // is the view with a background — Android builds its shadow from the
-  // background's outline, so an elevated view with nothing painted in it is
-  // not guaranteed to cast anything. Leaving elevation where it already was
-  // means Android renders exactly as it did before this split, and iOS gains
-  // the shadow that overflow:'hidden' had been silently discarding.
+  // The shadow host: the rail margins, and on iOS the lift. Nothing here clips.
   cardShadow: {
     // One rail: 16px, aligned with the header, tabs, and chips above.
     marginHorizontal: 16,
@@ -307,18 +273,14 @@ const s = StyleSheet.create({
     borderRadius: 4,
     ...effects.flat,
   },
-  // Auteur cards lift in their own colour — the crimson file reads as warmer
-  // paper, and a neutral black shadow under it flattened that. On the lit
-  // house the black lift is gone from every card (see `cardShadow`), so this
-  // carries the WHOLE lift: a colour alone would draw nothing.
+  // Only an Auteur card lifts, in its own crimson; every other card lies flat on the lit house.
   cardShadowAuteur: {
     shadowColor: colors.bloodReel,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.7,
     shadowRadius: 20,
   },
-  // The clip host: the paper, the border, and the mask the reverse face turns
-  // inside of.
+  // The clip host: the paper, the border, and the mask the reverse face turns inside.
   card: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderRadius: 4,
@@ -326,10 +288,7 @@ const s = StyleSheet.create({
     borderColor: 'rgba(184,137,26,0.4)',
     overflow: 'hidden',
     position: 'relative',
-    // Android's lift. Kept on the painted view (see cardShadow above), where it
-    // has always been. shadowColor travels with it because from API 28 that is
-    // what tints the elevation shadow; it draws nothing on iOS on its own,
-    // since shadowOpacity defaults to 0.
+    // Android's lift, on the painted view; shadowColor tints it (API 28+), here transparent.
     elevation: 12,
     ...effects.flat,
   },
@@ -340,8 +299,7 @@ const s = StyleSheet.create({
   cardAuteur: { ...EDGE_LIT,
     borderColor: colors.crimsonBorder,
     backgroundColor: colors.sootAuteur,
-    // Pairs with cardShadowAuteur: the crimson file lifts in its own colour on
-    // Android too, not just iOS.
+    // The Android lift in crimson, as cardShadowAuteur casts it on iOS.
     shadowColor: colors.bloodReel,
   },
   backFace: {

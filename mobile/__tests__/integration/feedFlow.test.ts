@@ -193,8 +193,7 @@ describe('Feed Flow Integration', () => {
     });
 
     it('passes the cursor through as the function’s two separate arguments', async () => {
-      // The RPC takes created_at and id apart; the client's cursor is one
-      // string. Splitting it wrongly is how a page silently repeats itself.
+      // The cursor is one string, the RPC takes two: a wrong split repeats a page.
       mockRpc.mockResolvedValue({ data: [], error: null });
 
       const { FeedService } = require('@/src/services/FeedService');
@@ -212,10 +211,7 @@ describe('Feed Flow Integration', () => {
     });
 
     it('drops a cursor id that is not a UUID instead of sending it', async () => {
-      // p_cursor_id is `uuid` on the deployed function. Handing it anything
-      // else is a 400 for the whole page, so parseCursor nulls it — which
-      // restarts the feed rather than breaking it. Written down because a
-      // fixture with a short id is how this was nearly "fixed" the wrong way.
+      // p_cursor_id is a uuid: anything else would 400 the page, so the feed restarts instead.
       mockRpc.mockResolvedValue({ data: [], error: null });
 
       const { FeedService } = require('@/src/services/FeedService');

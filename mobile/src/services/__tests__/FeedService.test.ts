@@ -111,9 +111,7 @@ describe('FeedService — Schema Validation', () => {
   });
 });
 
-// 2b: cursor shape validation — the parts are interpolated into PostgREST .or()
-// filters, so a malformed/crafted cursor must be rejected (→ safe first-page fetch)
-// rather than passed through. These lock that boundary.
+// A cursor part of the wrong shape is dropped, never sent: the feed restarts instead of failing.
 describe('FeedService.parseCursor', () => {
   it('accepts a well-formed created_at|uuid cursor', () => {
     const { cursorDate, cursorId } = parseCursor(

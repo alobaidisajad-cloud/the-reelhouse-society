@@ -61,17 +61,10 @@ export const VerdictBlock = React.memo(function VerdictBlock({ item }: VerdictPr
  * recycled FlashList rows.
  */
 export const ReviewContent = React.memo(function ReviewContent({ item, isPremium, isAuteur, onPress }: ProseProps) {
-  // The shared cleaner, not a second copy. This file used to carry its own,
-  // and the two disagreed on entities, unknown tags and paragraph breaks — so
-  // a review read one way here and another on its own page.
-  //
-  // Still memoized: the regex work is O(N) and this runs inside FlashList's
-  // render path, where a re-cleaned review is a dropped frame.
+  // The app's one cleaner, memoized: this runs in FlashList's render path.
   const cleanReview = React.useMemo(() => stripHTML(item.review ?? ''), [item.review]);
 
-  // Whether this member wrote right-to-left. Decided from the text itself, not
-  // from the device's locale — an Arabic review on an English phone is still
-  // Arabic, and this is the app's own members we are talking about.
+  // Right-to-left is decided by the text, not the phone: Arabic on an English phone is Arabic.
   const rtl = React.useMemo(() => isRTLText(item.pull_quote || cleanReview), [item.pull_quote, cleanReview]);
 
   // Did the preview actually clip? onTextLayout reports the lines that were
@@ -149,19 +142,7 @@ const s = StyleSheet.create({
   },
   abandonedText: {
     includeFontPadding: false, textAlignVertical: 'center',
-    // Bone, not crimson. The previous note (below) moved this from bloodReel to
-    // crimson for legibility, but crimson tops out at 3.18:1 on ink and this
-    // text sits on a FAINT CRIMSON wash, which lightens the background to a
-    // real 3.03:1 — worse than it looked. Crimson cannot reach AA at any
-    // opacity, so the colour had to change rather than the alpha.
-    //
-    // Bone on the same wash measures 9.25:1. The stamp stays red — the faint
-    // fill and the crimson border still carry the meaning — and only the
-    // lettering becomes legible, which is exactly how CONFIDENTIAL already
-    // works on the autopsy strip.
-    //
-    // Previous note, kept because it explains the fill and border:
-    // Crimson, not bloodReel — the deep stamp red was near-invisible on soot.
+    // Bone: 9.25:1 on the crimson wash, where crimson cannot reach AA. The fill stays red.
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.bone,
   },
   ratingWrap: { marginTop: 2, marginBottom: 4, alignItems: 'flex-start' },

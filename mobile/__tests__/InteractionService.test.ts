@@ -46,7 +46,7 @@ describe('InteractionPayloadSchema', () => {
     const payload = {
       user_id: validUserId,
       type: 'endorse_film' as const,
-      target_film_id: 550, // The Godfather's TMDB ID
+      target_film_id: 550, // Fight Club's TMDB id
     };
 
     const result = InteractionPayloadSchema.safeParse(payload);

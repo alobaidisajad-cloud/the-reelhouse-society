@@ -27,10 +27,7 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
   const { width, height } = useWindowDimensions();
   const beamSwing = useSharedValue(0.1);
   const flicker = useSharedValue(0.8);
-  // Tabs stay mounted forever — without this gate, every visited tab's beam
-  // keeps compositing a full-screen animated layer while invisible. Loops run
-  // only while this tab is on screen; on refocus they resume from the frozen
-  // values, so there is never a visual jump.
+  // Tabs stay mounted: the loops run only while this one is on screen, and resume where they froze.
   const isFocused = useIsFocused();
 
   useEffect(() => {
@@ -219,10 +216,7 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
           <View style={st.stackCardMetaDivider} />
         </View>
 
-        {/* No adjustsFontSizeToFit. In a two-column grid it sized every card's
-            title independently — a short title at 16pt beside a long one
-            silently shrunk to 12.8 — and pairing it with a fixed lineHeight
-            clips descenders. One size across the grid, honest ellipsis. */}
+        {/* One title size across the grid and an honest ellipsis: no shrink-to-fit. */}
         <Text style={st.stackCardTitle} numberOfLines={2} ellipsizeMode="tail">{(stack.title ?? '').toUpperCase()}</Text>
 
         <View style={st.stackCardCuratorRow}>
@@ -298,14 +292,12 @@ const st = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)',
     backgroundColor: 'rgba(30,25,20,0.5)',
   },
-  // 0.6 measured 3.04:1; 0.8 gave 4.59:1. An unselected filter should read as
-  // unselected, not as disabled.
-  // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+  // Solid fogQuiet: an unselected filter reads as unselected, not disabled.
   filterChipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fogQuiet },
   filterChipTextActive: { color: colors.sepia, opacity: 1 },
 
   stackCard: {
-    // App-standard 1px brass dossier frame (was a heavy 2px umber slab).
+    // The app's 1px brass dossier frame.
     flex: 1, backgroundColor: colors.inkwell,
     borderWidth: 1, borderColor: colors.sepiaBorder,
     borderRadius: 5, overflow: 'hidden',

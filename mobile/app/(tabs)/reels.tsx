@@ -26,9 +26,7 @@ import FrozenTab from '@/src/components/layout/FrozenTab';
 
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import { globalScrollY } from '@/src/lib/scrollBridge';
-
-// Extracted Modules
-import { 
+import {
   ReelSection, FeedFilter 
 } from '@/src/components/reels/types';
 import { SharedReelHeader } from '@/src/components/reels/ReelsHeader';
@@ -45,9 +43,6 @@ import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import reelToast from '@/src/utils/reelToast';
-
-// Removed LayoutAnimation — conflicts with Reanimated layout transitions.
-// Reanimated's entering/exiting animations handle all transitions in this screen.
 
 const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: string; onChangeText: (text: string) => void; onClear: () => void }) => {
   const [localText, setLocalText] = useState(value);
@@ -118,13 +113,9 @@ export default function ReelScreen() {
   const user = useAuthStore(s => s.user);
   const resolvedRole = resolveTier(user);
 
-  // NAV_ROW_MIN_H plus the bar's bottom padding. The 12 is 2pt more than the
-  // bar actually pads; it predates this and is left alone on purpose, since
-  // trimming it would shift three screens for no gain.
+  // The bar's row and bottom padding; the 12 is 2pt over the padding, as on the Lobby.
   const NAV_HEIGHT = NAV_ROW_MIN_H + 12;
-  // The zero-inset floor now comes FROM the bar instead of being copied here.
-  // It exists because on a zero-inset device the nav is 74px tall while a bare
-  // insets.top offset would be 64px, tucking the masthead under the blur.
+  // The bar's own top padding: with no inset it still pads, and a bare inset hides the masthead.
   const topPad = navTopPadding(insets.top) + NAV_HEIGHT + 8;
 
   useEffect(() => { globalScrollY.value = 0; }, []);
@@ -143,12 +134,8 @@ export default function ReelScreen() {
     }, [activeScrollY])
   );
 
-  // STACKING LAW: never animate zIndex here. On Fabric, Reanimated writing
-  // zIndex from the UI thread races FlashList's per-scroll React commits over
-  // native stacking order — transient re-sorts made the FAB and background
-  // layers blink during scroll on both platforms. The crossfade needs only
-  // opacity (an invisible list's stacking position is irrelevant), and
-  // pointerEvents already gates touches. Sibling order is static: FAB last.
+  // Never animate zIndex: on Fabric it races FlashList's commits and the layers blink.
+  // Opacity crossfades; pointerEvents gates the touches.
   const logsProgress = useDerivedValue(() =>
     withTiming(activeTabSV.value === 'logs' ? 1 : 0, { duration: 300, easing: Easing.out(Easing.quad) })
   );
@@ -214,8 +201,7 @@ export default function ReelScreen() {
       } else {
         pulled = await refetchStacks();
       }
-      // The reel on screen stays; the member is told the pull reached nothing.
-      // (With nothing on screen, the empty state already says it.)
+      // The reel on screen stays and the pull's failure is said; an empty reel says it itself.
       if (pulled?.isError && pulled.data !== undefined) reelToast.error(REFRESH_FAILED);
     } finally {
       setIsManualRefreshing(false);
@@ -257,27 +243,14 @@ export default function ReelScreen() {
     }
   }, [section, activeTabSV, overallLogsScrollY, stacksScrollY]);
 
-  /**
-   * A stranger reads this page and acts on none of it.
-   *
-   * The ask happens AT THE ACT, not at the door — the rule the film and log
-   * pages already follow (`if (!isAuthenticated) return router.push('/login')`).
-   * A bare '/login' is deliberate and matches every other act gate in the app:
-   * the two places that promised MEMBERSHIP instead of a sign-in were the
-   * outliers, and one of them was the wall this screen no longer has.
-   */
+  /** A stranger reads this page; each act asks for a name where it is, as every act gate does. */
   const askForAName = useCallback(() => {
     TactileEngine.destroy();
     nav.push('/login');
   }, []);
 
   const switchFeedFilter = useCallback((f: FeedFilter) => {
-    /**
-     * FOLLOWING is roped rather than hidden. A stranger has no orbit, so the
-     * filter cannot work for them — but removing the chip would also remove the
-     * only place the app says an orbit exists. It stays visible, and tapping it
-     * is the invitation. Switching back to ALL is never gated.
-     */
+    // Roped, not hidden: the chip is where a stranger learns an orbit exists.
     if (f === 'following' && !isAuthenticated) return askForAName();
     if (f === feedFilter) return;
     TactileEngine.selection();
@@ -331,12 +304,9 @@ export default function ReelScreen() {
       </View>
       <SectionDivider label="THE LIVING RECORD" />
     </>
-  // No longer depends on the feed length: with the count gone the header does
-  // not change when a page loads, so it stops being rebuilt on every scroll-in.
   ), [section, feedFilter, resolvedRole, switchSection, switchFeedFilter]);
 
-  // A feed that could not be read is not an empty one: it said "The projection
-  // booth is dark. Be the first to log a film." to a member with no signal.
+  // A feed that could not be read is not an empty one, and does not say it is.
   const feedFailed = feedFilter === 'following'
     ? followingFailed && followingData === undefined
     : communityFailed && communityData === undefined;
@@ -368,10 +338,7 @@ export default function ReelScreen() {
           </PressableScale>
         )}
 
-        {/* The Member Registry — only in the empty FOLLOWING feed. Introduces
-            notable members so the orbit is never a dead end; retires itself
-            once a follow lands and the feed re-develops. Renders nothing when
-            there's no one notable to show. */}
+        {/* Only in the empty FOLLOWING feed, so an orbit is never a dead end. */}
         <MemberRegistry visible={feedFilter === 'following'} />
       </Arrive>
     );
@@ -388,16 +355,12 @@ export default function ReelScreen() {
           onClear={handleClearSearch} 
         />
       </View>
-      {/* The trailing "{n} STACKS" is gone. It repeated the header three rows
-          above, it clipped off the right edge (no shrink guard in a row with a
-          flex spacer), it measured 2.44:1 — and it was never a total anyway:
-          the stacks feed pages 60 at a time, so `.length` is the page size. */}
+      {/* No count: the feed pages 60 at a time, so a length is never the total. */}
       <View style={st.filterRow}>
         <FilterChip label="ALL STACKS" active={stackFilter === 'all'} onPress={() => switchStackFilter('all')} />
         <FilterChip label="FOLLOWING" active={stackFilter === 'following'} onPress={() => switchStackFilter('following')} />
       </View>
-      {/* Create sits ABOVE the rule now, so "CURATED STACKS" introduces the grid
-          it labels rather than the button. */}
+      {/* Above the rule, so "CURATED STACKS" introduces the grid, not the button. */}
       <PressableScale
         style={st.createStackBtn}
         onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.destroy(); nav.push('/list-modal'); }}
@@ -412,8 +375,6 @@ export default function ReelScreen() {
       </PressableScale>
       <SectionDivider label="CURATED STACKS" />
     </>
-   
-  // Same here — `filteredStacks.length` left with the duplicate count.
   ), [section, resolvedRole, stackSearch, stackFilter, switchSection, switchStackFilter, handleStackSearchChange, handleClearSearch, isAuthenticated, askForAName]);
 
   const logsExtraData = useMemo(() => [feedFilter, section, logCount, resolvedRole, feedLoading], [feedFilter, section, logCount, resolvedRole, feedLoading]);
@@ -459,33 +420,7 @@ export default function ReelScreen() {
 
 
 
-  /**
-   * ── THE DOOR THAT STOOD IN FRONT OF AN OPEN WINDOW ──────────────────────────
-   * A full-screen wall used to sit here: "Admit One Required · Join the Society
-   * to access The Reel." It protected nothing.
-   *
-   * Asked of production directly, the `anon` role already reads every byte
-   * behind it — 316 logs, 33 members, 15 stacks — through deliberate COLUMN
-   * grants that hand a stranger the film, the rating, the writing, the poster,
-   * the handle and the portrait, while withholding email, streaks, badges and
-   * everything about suspensions. Somebody designed exactly what a stranger may
-   * see, and then the app refused to show them any of it. The same writing is
-   * on the public web right now at /feed, /user/:username and /log/:id, with no
-   * account at all.
-   *
-   * So the wall did not keep anything private. It only meant the one thing that
-   * argues for this place — members' actual writing about actual films — was
-   * the one thing nobody could look at before deciding whether to join.
-   *
-   * The Reel is the advertisement. Reading it needs no name. The acts inside it
-   * still do, and they ask for one where they are, which is the rule the film
-   * and log pages have always followed.
-   *
-   * The Lounge keeps its wall, and now for a reason that can be checked rather
-   * than asserted: a stranger reads 0 lounges and 0 messages at the database.
-   * A salon roster is not for the street, and the schema says so too.
-   */
-
+  // Why a stranger may read the Reel and not the Lounge: theReelIsTheAdvertisement.test.ts.
   return (
     <SectionErrorBoundary section="The Reel">
       <FrozenTab>
@@ -581,9 +516,7 @@ const st = StyleSheet.create({
 
   emptyWrap: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 32 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, textAlign: 'center', marginBottom: 8 },
-  // 0.5 measured 3.12:1 on 12pt italic. 0.7 gave 5.14:1 — this is the line that
-  // tells a member what to DO with an empty feed, so it has to be readable.
-  // Solid fogQuiet now: a word no longer borrows its contrast from the ground behind it.
+  // Solid fogQuiet: the line that says what to do with an empty feed reads on any ground.
   emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.fogQuiet, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, marginBottom: 24 },
   emptyBtn: { ...EDGE_LIT,
     backgroundColor: colors.soot, borderWidth: 1,
@@ -591,10 +524,6 @@ const st = StyleSheet.create({
     paddingVertical: 12, paddingHorizontal: 28,
   },
   emptyBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.sepia },
-
-  // The six `gate*` styles that dressed the "Admit One Required" wall went with
-  // it. Leaving them would have left the next reader looking for the screen
-  // that used them.
 });
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx

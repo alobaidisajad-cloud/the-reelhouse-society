@@ -11,15 +11,8 @@ export function useCommunityFeed() {
     queryFn: async ({ pageParam, signal }) => {
       return FeedService.getCommunityFeed({ pageParam, signal });
     },
-    // Compound cursor (created_at|id) replaces bare created_at.
-    // Without the id tiebreaker, two logs with identical timestamps cause
-    // duplicates or skips on the next page — matching following/stacks pattern.
-    //
-    // getNextPageParam reads the raw page length, so block/mute filtering
-    // must happen server-side (get_community_feed_auth_cursor) for this
-    // length check to match what `select` below actually renders. The
-    // `select` filter is a defense-in-depth backstop for the direct-query
-    // fallback path in FeedService, which can't filter blocks server-side.
+    // The page's length decides the next page, so the server filters blocks and mutes;
+    // `select` hides anyone blocked since the page arrived.
     getNextPageParam: (lastPage) => {
       if (lastPage.length < FEED_PAGE) return undefined;
       const last = lastPage[lastPage.length - 1];
@@ -43,8 +36,6 @@ export function useFollowingFeed() {
   return useInfiniteQuery({
     queryKey: ['feed', 'following', userId],
     queryFn: async ({ pageParam, signal }) => FeedService.getFollowingFeed({ pageParam, signal }),
-    // Cursor-based pagination — compound (created_at|id) cursor
-    // prevents duplicate items caused by offset drift on concurrent inserts.
     getNextPageParam: (lastPage) => {
       if (lastPage.length < FEED_PAGE) return undefined;
       const last = lastPage[lastPage.length - 1];
@@ -65,12 +56,7 @@ export function useFollowingFeed() {
 export function useStacksFeed(filter: 'all' | 'following' = 'all', search: string = '') {
   const userId = useAuthStore((s) => s.user?.id);
 
-  // This hook deliberately does NOT subscribe to the follow graph. It used to, with the
-  // lint warning suppressed — someone wired up reactivity, found it did nothing, and
-  // silenced the complaint instead of removing it. It re-rendered on every follow but
-  // never refetched, because the query key was unchanged. socialSlice now invalidates
-  // this key on follow/unfollow, which is the refresh that subscription was reaching
-  // for (#82). Re-adding it would restore the render churn without the benefit.
+  // No follow-graph subscription: socialSlice invalidates this key on follow and unfollow.
 
   return useInfiniteQuery({
     queryKey: ['feed', 'stacks', filter, search, userId],
@@ -78,7 +64,6 @@ export function useStacksFeed(filter: 'all' | 'following' = 'all', search: strin
       const followingCount = useSocialStore.getState().following.length;
       return FeedService.getStacksFeed(filter, search, { pageParam, signal }, followingCount);
     },
-    // Cursor-based pagination for stacks feed.
     getNextPageParam: (lastPage) => {
       if (lastPage.length < STACKS_PAGE) return undefined;
       const last = lastPage[lastPage.length - 1];

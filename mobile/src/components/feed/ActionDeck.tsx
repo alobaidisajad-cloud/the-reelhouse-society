@@ -25,9 +25,7 @@ interface ActionDeckProps {
   ownerUsername: string;
   /** Whose log this is, by id: a handle can change, an id cannot. */
   ownerId?: string | null;
-  /** The counts this card's page arrived with — shown until the shared store
-   *  has been told fresher ones (a page restored from the cache on a cold start
-   *  was never told). Null when the source could not say. */
+  /** Counts the page arrived with, shown until the store holds fresher; null if unknown. */
   certifyCount?: number | null;
   critiqueCount?: number | null;
 }
@@ -56,11 +54,7 @@ export const ActionDeck = React.memo(function ActionDeck({
 
   const isOwner = useAuthStore(s => !!ownerId && s.user?.id === ownerId);
   const signedIn = useAuthStore(s => !!s.user);
-  /**
-   * Sharing a critique into a salon IS posting a message there — the act
-   * `tr_tier_gate_lounge_messages` refuses — so the rope is `lounge-speaking`,
-   * not the Lounge's door. The corridor itself is open to everyone to read.
-   */
+  /** Sharing to a salon posts a message there: the rope is speaking, not the Lounge's door. */
   const { held: canShare, standing: shareStanding, open: openShare } = useClearance('lounge-speaking');
 
   const [showShareModal, setShowShareModal] = useState(false);
@@ -76,7 +70,7 @@ export const ActionDeck = React.memo(function ActionDeck({
     transform: [{ scale: bookmarkScale.value }]
   }));
 
-  // FIX 6: View Recycling Animation Bleed fix
+  // A recycled card starts at rest: no pulse, no lock, no open modal.
   React.useEffect(() => {
     heartScale.value = 1;
     bookmarkScale.value = 1;
@@ -153,20 +147,13 @@ export const ActionDeck = React.memo(function ActionDeck({
         return;
     }
     if (!canShare) {
-      /**
-       * This used to walk the member to '/lounge', on the promise that the tab
-       * would refuse them and explain. The corridor opened to everyone, so it
-       * stopped refusing — and a member tapping "share" was dropped into a list
-       * of salons with their critique left behind and no word about why. The
-       * rope now goes where it says: the Society, told what they reached for.
-       */
+      // To the Society, told what they reached for — never the open corridor.
       openShare();
       return;
     }
     TactileEngine.mutate();
     setShowShareModal(true);
-  // The fields, not `share` itself: useClearance returns a fresh object every
-  // render, and this handler lives in every card of a long feed.
+  // The fields: useClearance returns a fresh object every render, in every card.
   }, [canShare, openShare]);
 
   return (
@@ -178,11 +165,7 @@ export const ActionDeck = React.memo(function ActionDeck({
               <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'} />
             </Animated.View>
           </MarkFigure>
-          {/* Four labels, one line each, at every text size the app allows.
-              The cap does the work: at 1.35 the widest of them ('CERTIFIED')
-              needs ~79pt of an ~81pt column, and shrink-to-fit absorbs the
-              rest. Uncapped, all four ran past their columns — three of them
-              wrapped to a second line and left the deck ragged. */}
+          {/* The cap and shrink-to-fit keep each label on one line at every size. */}
           <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]} {...deckLabelProps}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
         </PressableScale>
 
@@ -204,10 +187,7 @@ export const ActionDeck = React.memo(function ActionDeck({
           <Text style={[s.actionLabel, !isOwner && filmSaved && s.actionLabelSaved]} {...deckLabelProps}>{isOwner ? 'EDIT' : filmSaved ? 'SAVED' : 'SAVE'}</Text>
         </PressableScale>
 
-        {/* Members who may speak share to a salon; everyone else holds the
-            brass key — an invitation marked private, never a dead switch. The
-            spoken label says where the key actually leads, in the rope's own
-            words, because it no longer leads to the corridor. */}
+        {/* Who may not speak holds the brass key; its label says it opens the Society. */}
         <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleLounge} accessibilityRole="button" accessibilityLabel={
           canShare ? 'Share to a lounge'
             : !signedIn ? 'Share to a lounge. Sign in first.'
@@ -264,8 +244,7 @@ const s = StyleSheet.create({
     color: colors.fog,
     includeFontPadding: false,
   },
-  // Crimson passion for certification; brass for the archival act of saving —
-  // both finally legible (bloodReel was ~1.4:1 on ink).
+  // Crimson to certify, brass to save; both legible on ink.
   actionLabelCertified: {
     color: colors.crimsonInk,
   },

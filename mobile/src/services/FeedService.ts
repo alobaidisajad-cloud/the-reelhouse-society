@@ -70,23 +70,7 @@ function parseRowsSafely<T>(data: unknown[], schema: z.ZodType<T>, context: stri
   return valid;
 }
 
-// ──────────────────────────────────────────────────────────────
-// CURSOR HELPERS
-// ──────────────────────────────────────────────────────────────
-// Cursor parts are server-generated (`created_at|id`) and round-tripped through React
-// Query's pageParam. Downstream they are string-interpolated directly into PostgREST
-// `.or()` filter expressions, so we validate their SHAPE here before use. The patterns
-// are tightly anchored (^…$) and allow only the characters a real timestamp / uuid
-// contains — anything carrying PostgREST filter metacharacters (`,` `(` `)` `"` `.` as
-// an operator) fails to match and is treated as absent, degrading to a safe first-page
-// fetch instead of a broken or injectable query.
-/**
- * Posters requested per stack card.
- *
- * The card draws three (`ReelsCards.tsx` filters to films that have a poster and
- * slices three). A fourth is asked for as headroom so the row still fills if one
- * is unusable. The stack's real size travels separately as `film_count`.
- */
+/** Posters asked per stack card: it draws three, and a fourth stands in for an unusable one. */
 const STACK_CARD_POSTERS = 4;
 
 /** Rows a page asks for; a shorter page is the last (useFeeds). */
@@ -99,7 +83,8 @@ function tellFeed(items: FeedItem[], askedAt: number): FeedItem[] {
   return items;
 }
 
-const ISO_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}(:?\d{2})?|Z)?$/;
+// A cursor is `created_at|id`; a part of any other shape is dropped, and the feed restarts.
+const ISO_TIMESTAMP_RE =/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}(:?\d{2})?|Z)?$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function parseCursor(pageParam?: string): { cursorDate: string | null; cursorId: string | null } {

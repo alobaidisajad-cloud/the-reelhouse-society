@@ -47,7 +47,7 @@ describe('an arrival', () => {
 });
 
 describe('mount-time entering animations', () => {
-  /** Each one can leave what it holds invisible; they move to useArrival as the audit reaches them. */
+  /** Each can strand what it holds at opacity 0; they move to useArrival feature by feature. */
   const MOST = 120;
   it(`are never more than ${MOST}, and only fewer from here`, () => {
     let count = 0;

@@ -48,12 +48,7 @@ export const UserAttributionRow = React.memo(function UserAttributionRow({ usern
             @{username.toUpperCase()}
           </Text>
         </PressableScale>
-        {/* The house's badge, drawn once and imported. This file used to hold
-            its own copy — and the app ended up with three golds for one rank,
-            because four surfaces each solved this separately. The Auteur's
-            plate is the brass RAMP now, not a flat fill: `oneBrass` named this
-            badge as its one known violation of that rule and left it for
-            whoever owned the four surfaces to convert. */}
+        {/* The house's one badge, imported: one brass for one rank, everywhere. */}
         <RankBadge rank={rankOf(role)} />
         <Text style={s.timestamp} numberOfLines={1}>
           {timeAgo}
