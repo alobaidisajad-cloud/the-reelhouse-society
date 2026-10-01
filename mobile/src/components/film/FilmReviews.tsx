@@ -13,14 +13,15 @@
  *   · four clippings maximum inline; the archive door opens from five
  *   · every clipping carries OPEN LOG → — the door is always visible,
  *     even on a two-line review
+ *   · critiques that could not be read say so, with TRY AGAIN: never "be the
+ *     first voice" over a film the house may well have written about
  */
 import React, { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
-import { useRouter } from 'expo-router';
 import { XCircle } from 'lucide-react-native';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ReelRating } from '@/src/components/Decorative';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
@@ -31,6 +32,8 @@ import { extractDropCap } from '@/src/utils/text';
 import { timeAgo } from '@/src/utils/timeAgo';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
+import { TryAgainLine } from '@/src/components/TryAgain';
+import { nav } from '@/src/utils/typedRouter';
 import { EDGE_LIT } from '@/src/theme/light';
 
 const INLINE_CLIPPINGS = 4;
@@ -55,13 +58,14 @@ interface FilmReviewsProps {
   filmId: number;
   filmTitle: string;
   reviews: CommunityReview[];
-  reviewsError?: any;
+  /** The critiques could not be read: `reviews` is empty because unknown. */
+  failed?: boolean;
+  onRetry?: () => void;
   /** The signed-in member's id — their review lives in YOUR LOG, not here. */
   excludeUserId?: string | null;
 }
 
 const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityReview }) {
-  const nav = useRouter();
   const strippedReview = stripHtml(review.review ?? '');
   const { first: dropCapFirst, rest: dropCapRest } = extractDropCap(strippedReview);
 
@@ -69,29 +73,18 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
   const isArchivist = isArchivistPlusTier(review.role) && !isAuteur;
 
   const handleOpenLog = React.useCallback(() => {
-    if (review.id) nav.push(`/log/${review.id}` as any);
-  }, [nav, review.id]);
+    if (review.id) nav.push(`/log/${review.id}`);
+  }, [review.id]);
 
   const handleOpenProfile = React.useCallback(() => {
-    if (review.username) nav.push(`/user/${encodeURIComponent(review.username)}` as any);
-  }, [nav, review.username]);
+    if (review.username) nav.push(`/user/${encodeURIComponent(review.username)}`);
+  }, [review.username]);
 
   return (
     <View style={s.reviewCard}>
-      {/**
-        * ── THE QUOTE MARK IS GONE ────────────────────────────────────────────
-        * It was a 60pt opening quote at `bottom: -22` on a card with
-        * `overflow: hidden`: the wrong glyph for the end of a passage, clipped
-        * in half, and sitting under OPEN LOG →. Corrected to a whole closing
-        * quote it then landed on the words themselves — because this card has
-        * no whitespace to host a watermark. Every position is on top of
-        * something.
-        *
-        * So it goes. The card already carries a drop cap, a brass border, an
-        * avatar, a rule and the reels; the drop cap alone says "these are
-        * somebody's own words". An ornament that can only be placed over the
-        * writing is not an ornament on the block that IS the writing.
-        */}
+      {/* No quote mark: this card has no whitespace to host a watermark, so
+          one can only sit over the writing, and the drop cap already says
+          "these are somebody's own words". */}
 
       {/* The ledger row — the Reel's own handwriting */}
       <UserAttributionRow
@@ -153,13 +146,7 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
   );
 });
 
-export const FilmReviews = memo(function FilmReviews({ filmId, filmTitle, reviews, reviewsError, excludeUserId }: FilmReviewsProps) {
-  if (reviewsError) {
-    throw reviewsError;
-  }
-
-  const nav = useRouter();
-
+export const FilmReviews = memo(function FilmReviews({ filmId, filmTitle, reviews, failed, onRetry, excludeUserId }: FilmReviewsProps) {
   // YOUR LOG owns the member's own critique — nothing prints twice.
   const communityReviews = React.useMemo(() => {
     if (!excludeUserId) return reviews;
@@ -174,7 +161,12 @@ export const FilmReviews = memo(function FilmReviews({ filmId, filmTitle, review
       <Animated.View style={s.section}>
         <FilmSectionHeader label="SOCIETY CRITIQUES" />
 
-        {clippings.length === 0 ? (
+        {failed && clippings.length === 0 ? (
+          <View style={s.emptyReviewBox}>
+            <Text style={s.emptyReviewTitle}>The critiques could not be reached.</Text>
+            {onRetry ? <TryAgainLine onPress={onRetry} accessibilityLabel="Ask for the critiques again" style={s.retry} /> : null}
+          </View>
+        ) : clippings.length === 0 ? (
           <View style={s.emptyReviewBox}>
             <Text style={s.emptyReviewTitle}>The projection box awaits.</Text>
             <Text style={s.emptyReviewBody}>No transmissions yet. Log this film to be the first voice in the archive.</Text>
@@ -185,25 +177,17 @@ export const FilmReviews = memo(function FilmReviews({ filmId, filmTitle, review
 
         {hasMore && (
           <PressableScale
-            onPress={() => nav.push(`/film-reviews/${filmId}?title=${encodeURIComponent(filmTitle || 'Archive')}` as any)}
+            onPress={() => nav.push(`/film-reviews/${filmId}`, { title: filmTitle || 'Archive' })}
             style={s.readAllBtn}
             pressedScale={0.97} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             accessibilityLabel="Read all logs"
           >
             {/**
-              * ── A NUMBER YOU CANNOT KNOW MUST NOT BE PRINTED ────────────────
-              * This read `READ ALL {communityReviews.length} LOGS`, and both
-              * halves were false.
-              *
-              * The COUNT came from a fetch capped at ten, so a film with two
-              * hundred and forty-seven critiques invited you to read all ten
-              * of them. And the NOUN was wrong: these are written critiques,
-              * not logs — a member can log a film without writing a word, and
-              * the screen this opens lists only the writing.
-              *
-              * The count is not available here and adding a column to carry it
-              * would be a migration to print a number nobody asked for. So the
-              * false precision goes and the true invitation stays.
+              * ── A NUMBER YOU CANNOT KNOW IS NOT PRINTED ─────────────────────
+              * The list here is a page capped at ten, so it cannot count the
+              * critiques; and they are critiques, not logs (a member can log a
+              * film without writing a word, and the screen this opens lists
+              * only the writing).
               */}
             <Text style={s.readAllText}>READ EVERY CRITIQUE →</Text>
           </PressableScale>
@@ -220,8 +204,7 @@ const s = StyleSheet.create({
     backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.sepiaBorder,
     borderRadius: 4, padding: 16, marginTop: 10,
     borderLeftWidth: 3, borderLeftColor: 'rgba(184,137,26,0.4)',
-    elevation: 8,
-    position: 'relative', overflow: 'hidden', ...effects.flat,
+    position: 'relative', overflow: 'hidden',
   },
   verdictRow: {
     flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center',
@@ -245,28 +228,23 @@ const s = StyleSheet.create({
 
   /**
    * ── UNBOXED, WITH EVERY OTHER EMPTY STATE ON THIS PAGE ────────────────────
-   * The dossier, the synopsis and WHERE IT PLAYS all lost their frames this
-   * pass. This was the last one left, which made an ABSENCE the most heavily
-   * framed thing on the page — a bordered, shadowed, centred box announcing
-   * that there is nothing here.
-   *
-   * The writing is good enough to stand on the ground. The only boxes left are
-   * the critique cards themselves, and those are meant to look like cards.
+   * Like the dossier, the synopsis and WHERE IT PLAYS: an absence is never the
+   * most heavily framed thing on the page. The only boxes are the critique
+   * cards themselves, and those are meant to look like cards.
    */
   emptyReviewBox: {
     paddingVertical: 4,
   },
   emptyReviewTitle: { fontFamily: fonts.display, fontSize: 16, letterSpacing: 1, color: colors.sepia, marginBottom: 8 },
-  // Left, and readable. It was centred because the box it sat in was centred,
-  // and at 0.5 opacity the one line inviting a member to be the first voice
-  // here was the faintest text on the page.
+  // Left, and solid fog: the one line inviting a member to be the first voice
+  // is never the faintest text on the page.
   emptyReviewBody: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, fontStyle: 'italic', lineHeight: 20 },
+  retry: { alignSelf: 'flex-start', paddingVertical: 10 },
 
   readAllBtn: { ...EDGE_LIT,
     marginTop: 12, paddingVertical: 16, alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.soot, borderRadius: 2,
     borderWidth: 1, borderColor: colors.sepiaBorder,
-    elevation: 8, ...effects.flat,
   },
   readAllText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.sepia, includeFontPadding: false },
 

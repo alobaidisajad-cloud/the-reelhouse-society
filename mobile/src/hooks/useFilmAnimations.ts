@@ -14,50 +14,42 @@ import {
 
 interface UseFilmAnimationsProps {
   isFocused: boolean;
+  /** The skeleton is on screen: only then does its shimmer run. */
+  skeleton: boolean;
   scrollY: SharedValue<number>;
   backdropHeight: number;
 }
 
-export function useFilmAnimations({ isFocused, scrollY, backdropHeight }: UseFilmAnimationsProps) {
+/**
+ * Each endless loop runs only while what it moves can be seen: the poster's
+ * glow while the page is focused, the shimmer while the skeleton is up. A loop
+ * left running keeps the UI thread awake for nothing.
+ */
+export function useFilmAnimations({ isFocused, skeleton, scrollY, backdropHeight }: UseFilmAnimationsProps) {
   const posterGlowOpacity = useSharedValue(0.6);
-  const whisperPulse = useSharedValue(0.2);
   const skeletonOpacity = useSharedValue(0.4);
   const bookmarkScale = useSharedValue(1);
 
   useEffect(() => {
-    if (isFocused) {
-      posterGlowOpacity.value = withRepeat(
-        withTiming(0.8, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-        -1, true
-      );
-      whisperPulse.value = withRepeat(
-        withTiming(0.6, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-        -1, true
-      );
-      skeletonOpacity.value = withRepeat(
-        withTiming(0.8, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-        -1, true
-      );
-    } else {
-      cancelAnimation(posterGlowOpacity);
-      cancelAnimation(whisperPulse);
-      cancelAnimation(skeletonOpacity);
-    }
+    if (!isFocused) return;
+    posterGlowOpacity.value = withRepeat(
+      withTiming(0.8, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+      -1, true
+    );
+    return () => cancelAnimation(posterGlowOpacity);
+  }, [isFocused, posterGlowOpacity]);
 
-    return () => {
-      cancelAnimation(posterGlowOpacity);
-      cancelAnimation(whisperPulse);
-      cancelAnimation(skeletonOpacity);
-    };
-  }, [isFocused, posterGlowOpacity, skeletonOpacity, whisperPulse]);
+  useEffect(() => {
+    if (!isFocused || !skeleton) return;
+    skeletonOpacity.value = withRepeat(
+      withTiming(0.8, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      -1, true
+    );
+    return () => cancelAnimation(skeletonOpacity);
+  }, [isFocused, skeleton, skeletonOpacity]);
 
   const posterGlowStyle = useAnimatedStyle(() => ({
     opacity: posterGlowOpacity.value,
-  }));
-
-  const whisperPulseStyle = useAnimatedStyle(() => ({
-    opacity: whisperPulse.value,
-    transform: [{ scale: whisperPulse.value * 0.5 + 1 }]
   }));
 
   const skeletonAnimStyle = useAnimatedStyle(() => ({
@@ -69,16 +61,10 @@ export function useFilmAnimations({ isFocused, scrollY, backdropHeight }: UseFil
   }));
 
   /**
-   * ── THE FADE HAS TO COMPLETE ──────────────────────────────────────────────
-   * This used to settle at `0.3` and stop there, which meant the backdrop —
-   * a photograph — sat behind the synopsis, the provider chips, the ledger and
-   * every critique for the whole two-thousand-point scroll. Body text at
-   * reduced contrast over a picture, permanently, for no gain: it was visible
-   * in every screenshot once anyone actually scrolled the page.
-   *
-   * Now it reaches zero across the backdrop's own height. The atmosphere
-   * belongs to the hero; below it the page is ink and every section reads at
-   * full strength.
+   * ── THE FADE COMPLETES ────────────────────────────────────────────────────
+   * The backdrop reaches zero across its own height. The atmosphere belongs to
+   * the hero; below it the page is ink, and no body text sits at reduced
+   * contrast over a photograph.
    */
   // How far the backdrop has drifted DOWN the screen (the parallax). One value,
   // read by the backdrop's style and, negated, by its veil — whose light must
@@ -116,14 +102,12 @@ export function useFilmAnimations({ isFocused, scrollY, backdropHeight }: UseFil
 
   return {
     posterGlowStyle,
-    whisperPulseStyle,
     skeletonAnimStyle,
     bookmarkAnimStyle,
     backdropAnimatedStyle,
     backdropLifted,
     immersiveAnimatedStyle,
     scrollHeaderStyle,
-    skeletonOpacity,
     bookmarkScale,
   };
 }

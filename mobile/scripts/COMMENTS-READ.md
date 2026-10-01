@@ -349,6 +349,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/stubFits.test.ts | — |  |
 | src/components/film/__tests__/trayActsFire.test.tsx | — |  |
 | src/components/film/__tests__/zz-film.gen.test.tsx | — |  |
+| src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-01 | written: the critiques' failure reaches the page; an unread verdict is unknown |
 | src/components/film/CastCarousel.tsx | — |  |
 | src/components/film/FilmActionTray.tsx | — |  |
 | src/components/film/FilmDetailLayout.tsx | — |  |

@@ -84,13 +84,15 @@ const videos = (detail.videos?.results ?? []).filter((v: { site: string }) => v.
 const value = {
   film: detail,
   reviews: [],
-  reviewsError: null,
+  reviewsFailed: false,
+  retry: jest.fn(),
   similarFilms: (detail.similar?.results ?? []).slice(0, 8),
   directors: crew.filter((c: { job: string }) => c.job === 'Director').slice(0, 4),
   cast: (detail.credits?.cast ?? []).slice(0, 10),
   videos,
   trailer: videos[0] ?? null,
-  verdict: null,
+  // Read, and nobody has rated it: the commonest film.
+  verdict: { avg_rating: null, rating_count: 0, log_count: 0 },
   score: 26,
   providers: detail['watch/providers']?.results?.US ?? null,
   studios: detail.production_companies ?? [],
@@ -206,6 +208,33 @@ whenRendering('film page generator', () => {
 
 // A real test, not a picture: it runs on every test run.
 describe('the film page', () => {
+  const page = (over: Record<string, unknown> = {}) => render(
+    <FilmDetailProvider value={{ ...(value as object), ...over } as never}>
+      <FilmDetailLayout />
+    </FilmDetailProvider>,
+  );
+
+  it('says when the critiques could not be read, and asks again', async () => {
+    const retry = jest.fn();
+    const r = page({ reviewsFailed: true, retry });
+    expect(r.getByText('The critiques could not be reached.')).toBeTruthy();
+    expect(r.queryByText('The projection box awaits.')).toBeNull();
+    await fireEvent.press(r.getByLabelText('Ask for the critiques again'));
+    expect(retry).toHaveBeenCalled();
+  });
+
+  it('invites the first voice only when the critiques were read', () => {
+    const r = page();
+    expect(r.getByText('The projection box awaits.')).toBeTruthy();
+    expect(r.queryByText('The critiques could not be reached.')).toBeNull();
+  });
+
+  it('claims no verdict it does not know', () => {
+    const r = page({ verdict: null });
+    expect(r.queryByText('THE HOUSE HAS NOT SPOKEN')).toBeNull();
+    expect(r.getByTestId('verdict-unknown', { includeHiddenElements: true })).toBeTruthy();
+  });
+
   it('the tray really opens — otherwise every tray shot is a shut one', async () => {
     const r = render(
       <FilmDetailProvider value={value as never}>

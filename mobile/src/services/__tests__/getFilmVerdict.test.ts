@@ -94,18 +94,20 @@ describe('a film nobody has touched', () => {
 
 describe('when the network is having a day', () => {
   /**
-   * supabase-js RESOLVES its errors rather than throwing them, so a `try` around
-   * this call catches nothing. The branch that reads `error` is the only thing
-   * between a blip and a fabricated verdict.
+   * supabase-js RESOLVES its errors rather than throwing them, so the branch
+   * that reads `error` is the only thing between a blip and a fabricated
+   * verdict. It answered a failure as silence ("the house has not spoken"),
+   * which is a verdict too: a failed read is thrown, and the page (useFilmDetail)
+   * holds the film and calls the verdict unknown.
    */
-  it('returns silence rather than a verdict when the query errors', async () => {
+  it('throws a failed read rather than answering it with any verdict', async () => {
     mockRow({ data: { avg_rating: 5, log_count: 99 }, error: { message: 'network' } });
-    expect(await FilmService.getFilmVerdict(603)).toEqual({ avg_rating: null, rating_count: 0, log_count: 0 });
+    await expect(FilmService.getFilmVerdict(603)).rejects.toEqual({ message: 'network' });
   });
 
-  it('never throws, because the film must still render', async () => {
-    mockRow({ data: undefined, error: { message: 'boom' } });
-    await expect(FilmService.getFilmVerdict(603)).resolves.toBeDefined();
+  it('throws a row it cannot read, rather than calling it silence', async () => {
+    mockRow({ data: { avg_rating: 4, rating_count: 'many', log_count: 2 } });
+    await expect(FilmService.getFilmVerdict(603)).rejects.toBeDefined();
   });
 });
 

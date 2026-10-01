@@ -36,7 +36,8 @@ const base = {
   existingLog: null,
   score: 26,
   studios: [],
-  verdict: null,
+  // Read, and nobody has rated it.
+  verdict: { avg_rating: null, rating_count: 0, log_count: 0 },
   posterGlowStyle: { opacity: 1 },
   statusConfig: STATUS as never,
 };
@@ -69,6 +70,14 @@ describe('the reels belong to the house and nobody else', () => {
   it('says so out loud instead of leaving a gap', () => {
     const t = render(<FilmHero {...base} />);
     expect(t.getByText('THE HOUSE HAS NOT SPOKEN')).toBeTruthy();
+  });
+
+  it('but says nothing of a verdict it could not read', () => {
+    // Null is unknown: "has not spoken" over a lost signal is a verdict nobody holds.
+    const t = render(<FilmHero {...base} verdict={null} />);
+    expect(t.queryByText('THE HOUSE HAS NOT SPOKEN')).toBeNull();
+    expect(reelCount(t)).toBe(0);
+    expect(t.getByTestId('verdict-unknown', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('draws them once the house HAS spoken, and names whose they are', () => {

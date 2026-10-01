@@ -23,7 +23,8 @@ export interface FilmReviewItem {
 export interface FilmDetailContextValue {
   film: TMDBMovieDetail | null;
   reviews: FilmReviewItem[];
-  reviewsError?: any;
+  /** The critiques could not be read: `reviews` is empty because unknown, not because nobody wrote. */
+  reviewsFailed: boolean;
   similarFilms: { id: number; title?: string; name?: string; poster_path?: string | null }[];
   directors: { id: number; name: string; profile_path?: string | null; job: string }[];
   cast: { id: number; name: string; profile_path?: string | null; character: string }[];
@@ -36,6 +37,7 @@ export interface FilmDetailContextValue {
    * What the members of this house made of the film — an average and a log
    * count maintained server-side. NEVER computed from `reviews`, which is a
    * page of written critiques and knows nothing about how many people logged it.
+   * Null while it is not known (not yet read, or the read failed).
    */
   verdict: FilmVerdict | null;
   existingLog: DomainLog | null;

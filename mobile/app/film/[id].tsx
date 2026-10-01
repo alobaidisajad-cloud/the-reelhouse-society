@@ -1,6 +1,6 @@
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useIsFocused } from '@react-navigation/native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -16,13 +16,13 @@ import { ShareCardModal } from '@/src/components/film/ShareCardModal';
 import { TrailerModal } from '@/src/components/film/TrailerModal';
 import { FilmDetailContextValue, FilmDetailProvider } from '@/src/providers/FilmDetailProvider';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { nav } from '@/src/utils/typedRouter';
 
 const EMPTY_ARRAY = [] as never[];
 const EMPTY_OBJECT = {} as Record<string, never>;
 
 export default function FilmDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string | string[] }>();
-  const router = useRouter();
   const idString = Array.isArray(id) ? id[0] : id;
   const filmId = parseInt(idString || '0', 10);
   const validFilmId = !isNaN(filmId) && filmId > 0;
@@ -46,55 +46,32 @@ export default function FilmDetailScreen() {
   
   const isFocused = useIsFocused();
 
-  const goBack = useCallback(() => {
-    if (router.canGoBack()) router.back();
-    else (router.replace as any)('/' as any);
-  }, [router]);
+  const goBack = useCallback(() => nav.back(), []);
+
+  const filmParams = useMemo(() => ({
+    filmId: String(filmId),
+    filmTitle: data?.detail?.title ?? '',
+    filmPoster: data?.detail?.poster_path ?? '',
+  }), [filmId, data?.detail?.title, data?.detail?.poster_path]);
 
   const handleLog = useCallback(() => {
-    if (!isAuthenticated) return (router.push as any)('/login' as any);
+    if (!isAuthenticated) { nav.push('/login'); return; }
     TactileEngine.mutate();
-    if (existingLog) {
-      router.push({
-        pathname: '/log-modal',
-        params: {
-          editLogId: existingLog.id,
-          filmId: String(filmId),
-          filmTitle: data?.detail?.title ?? '',
-          filmPoster: data?.detail?.poster_path ?? '',
-        },
-      } as any);
-    } else {
-      router.push({
-        pathname: '/log-modal',
-        params: {
-          filmId: String(filmId),
-          filmTitle: data?.detail?.title ?? '',
-          filmPoster: data?.detail?.poster_path ?? '',
-        },
-      } as any);
-    }
-  }, [isAuthenticated, router, existingLog, filmId, data?.detail]);
+    nav.push('/log-modal', existingLog ? { editLogId: existingLog.id, ...filmParams } : filmParams);
+  }, [isAuthenticated, existingLog, filmParams]);
 
   const handleRewatch = useCallback(() => {
-    if (!isAuthenticated) return (router.push as any)('/login' as any);
+    if (!isAuthenticated) { nav.push('/login'); return; }
     TactileEngine.rigid();
-    router.push({
-      pathname: '/log-modal',
-      params: {
-        filmId: String(filmId),
-        filmTitle: data?.detail?.title ?? '',
-        filmPoster: data?.detail?.poster_path ?? '',
-      },
-    } as any);
-  }, [isAuthenticated, router, filmId, data?.detail]);
+    nav.push('/log-modal', filmParams);
+  }, [isAuthenticated, filmParams]);
 
   const handleReadFullLog = useCallback(() => {
     if (existingLog?.id) {
       TactileEngine.selection();
-      (router.push as any)(`/log/${existingLog.id}`);
+      nav.push(`/log/${existingLog.id}`);
     }
-  }, [existingLog, router]);
+  }, [existingLog]);
 
   /**
    * ── A ROW THAT SAYS TRAILER MUST OPEN A TRAILER ────────────────────────────
@@ -126,14 +103,13 @@ export default function FilmDetailScreen() {
   }, []);
 
   const handleOpenLounge = useCallback(() => {
-    if (!isAuthenticated) return (router.push as any)('/login' as any);
+    if (!isAuthenticated) { nav.push('/login'); return; }
     TactileEngine.selection();
-    // The Lounge is not film-scoped — route to the corridor, which every member
-    // may walk into and read; the rope waits at the seat inside each room. This
-    // previously pushed `/lounge/${filmId}`, using a film id where a lounge id
-    // belongs, which resolved to a non-existent room ("Signal Lost").
-    (router.push as any)('/lounge' as any);
-  }, [isAuthenticated, router]);
+    // The Lounge is not film-scoped: the corridor, which every member may walk
+    // into and read; the rope waits at the seat inside each room. (A film id is
+    // never a salon's.)
+    nav.push('/lounge');
+  }, [isAuthenticated]);
 
   const handleCloseShare = useCallback(() => setShareModalVisible(false), []);
   const handleCloseTrailer = useCallback(() => setTrailerModalVisible(false), []);
@@ -159,13 +135,17 @@ export default function FilmDetailScreen() {
     // count is how a film with four hundred logs comes to claim it has two.
     const verdict = data?.verdict ?? null;
 
-    return { film, videos, directors, cast, score, providers, studios, reviews, similarFilms, verdict };
+    // Unknown, not empty: a page of critiques that could not be read.
+    const reviewsFailed = !!data?.reviewsError;
+
+    return { film, videos, directors, cast, score, providers, studios, reviews, reviewsFailed, similarFilms, verdict };
   }, [data, loggedIndex]);
 
   const providerValue = useMemo<FilmDetailContextValue>(() => {
     return {
       film: derivedData.film,
       reviews: derivedData.reviews,
+      reviewsFailed: derivedData.reviewsFailed,
       similarFilms: derivedData.similarFilms,
       directors: derivedData.directors,
       cast: derivedData.cast,

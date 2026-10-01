@@ -22,14 +22,14 @@ const POSTER_H = POSTER_W * 1.5;
 
 interface FilmHeroProps {
   film: TMDBMovieDetail;
-  // `reviews` is gone: the hero used it only to print "N SOCIETY REVIEWS"
-  // beside a stranger's score. What the house made of a film now arrives as
-  // `verdict`, which is an average and a real count rather than the length of
-  // whichever page of written critiques happened to load.
   existingLog: { status?: string; rating?: number; viewCount?: number } | null;
   score: number;
   studios: { name?: string }[];
-  /** What the members of this house made of it — never TMDB. */
+  /**
+   * What the members of this house made of it — never TMDB, and never the
+   * length of whichever page of critiques loaded. Null while it is not known
+   * (not yet read, or the read failed): the hero then claims nothing.
+   */
   verdict: FilmVerdict | null;
   posterGlowStyle: StyleProp<ViewStyle>;
   statusConfig: Record<string, { text: string; Icon: React.ComponentType<{ size: number; color: string; strokeWidth: number }> }>;
@@ -103,13 +103,10 @@ export const FilmHero = memo(function FilmHero({
         <View style={styles.scanlines} />
         {existingLog && (
           /**
-           * ── THE LAST FLAT BRASS ON THE PAGE ──────────────────────────────
-           * This stamp was `backgroundColor: colors.sepia` — a flat gold pill,
-           * and the only brass object left that was not the house's ramp once
-           * the stub and the tray adopted it. Brass is four golds on a
-           * diagonal, lit from the top left; a flat fill reads as plastic
-           * beside the real thing, and the two sit within an inch of each
-           * other in the hero.
+           * ── BRASS, NOT A FLAT GOLD ───────────────────────────────────────
+           * The house's ramp, as the stub and the tray wear it: four golds on
+           * a diagonal, lit from the top left. A flat fill would read as
+           * plastic within an inch of the real thing.
            *
            * Two views, for the same reason the stub needs two: a view that
            * CLIPS a gradient to its corners cannot also cast a shadow on iOS.
@@ -146,21 +143,16 @@ export const FilmHero = memo(function FilmHero({
 
         {/* softBreak: TMDB sets some taglines as one 45-character word
             ("Sensational...Daring...Unforgettable..."). With nowhere to wrap,
-            the phone either broke it mid-letter or shrank the whole line
-            below the type floor. It now wraps after an ellipsis, as a poster
-            would. */}
+            the phone would break it mid-letter or shrink the whole line below
+            the type floor; it wraps after an ellipsis, as a poster would. */}
         {film.tagline ? <Text style={styles.tagline} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>&ldquo;{softBreak(film.tagline)}&rdquo;</Text> : null}
 
         {/**
           * ── TWO LINES, NOT ONE, AND NOT THREE ──────────────────────────────
-          * This was a row of bordered genre chips above a strip of icon-and-
-          * label pairs: three rows of chrome for six words of fact. Merged into
-          * a single run it read as "FANTASY 2H 53M" — one item — because the
-          * only thing dividing the genres from the particulars was a space.
-          *
-          * Two lines, then: what KIND of film, and then its particulars, the
-          * genres carrying a touch more presence so the eye reads them as
-          * different kinds of fact rather than one long string.
+          * No chrome for six words of fact, and not one run either (that reads
+          * "FANTASY 2H 53M" as one item). What KIND of film, then its
+          * particulars, the genres carrying a touch more presence so the eye
+          * reads them as different kinds of fact rather than one long string.
           */}
         {(film.genres?.length ?? 0) > 0 && (
           <Text {...scaledTextProps} style={styles.genreLine} numberOfLines={1}>
@@ -174,9 +166,8 @@ export const FilmHero = memo(function FilmHero({
           {film.production_countries?.[0] ? `  ·  ${film.production_countries[0].iso_3166_1}` : ''}
           {/**
             * TMDB's score is a PARTICULAR, and it sits with the runtime and
-            * the year where a particular belongs. It used to wear four brass
-            * reels — the house's own language — with `2,317 GLOBAL` beside it,
-            * and no member could tell whose verdict either one was.
+            * the year where a particular belongs, never in the house's reels:
+            * a member must always be able to tell whose verdict is whose.
             */}
           {(film.vote_average ?? 0) > 0 ? `  ·  TMDB ${(film.vote_average ?? 0).toFixed(1)}` : ''}
         </Text>
@@ -188,15 +179,14 @@ export const FilmHero = memo(function FilmHero({
           * dignified, and which sets up the invitation further down the page.
           *
           * ── AND "THE HOUSE" HAS TO MEAN MORE THAN ONE PERSON ───────────────
-          * This said `THE HOUSE · 1 LOG`, which is the SAME untruth this whole
-          * change was made to remove: a single member's opinion wearing the
-          * house's name. The live database has 288 logs across 250 films —
-          * barely more than one apiece — so that would have been the state of
-          * very nearly every film in the archive.
+          * A single member's opinion never wears the house's name. Below a
+          * quorum the line names what it actually is: one voice, or two. The
+          * reels still show, because a first voice IS worth showing — it just
+          * is not a consensus, and must not claim to be one.
           *
-          * Below a quorum the line names what it actually is: one voice, or
-          * two. The reels still show, because a first voice IS worth showing —
-          * it just is not a consensus, and must not claim to be one.
+          * ── AND NOT KNOWING IS NOT SILENCE ─────────────────────────────────
+          * A verdict not yet read, or that could not be read, is null: the rule
+          * is drawn without its words, and nothing is claimed either way.
           *
           * The count is RATING_COUNT, not log_count. The reels are an average
           * over the people who RATED it; attributing them to everyone who
@@ -216,10 +206,14 @@ export const FilmHero = memo(function FilmHero({
                 : verdict.rating_count === 1 ? 'ONE VOICE' : `${verdict.rating_count} VOICES`}
             </Text>
           </View>
-        ) : (
+        ) : verdict ? (
           <View style={styles.silentRow}>
             <View style={styles.silentRule} />
             <Text {...scaledTextProps} style={styles.silentText} numberOfLines={1}>THE HOUSE HAS NOT SPOKEN</Text>
+            <View style={styles.silentRule} />
+          </View>
+        ) : (
+          <View testID="verdict-unknown" style={styles.silentRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
             <View style={styles.silentRule} />
           </View>
         )}
@@ -229,7 +223,7 @@ export const FilmHero = memo(function FilmHero({
           * KNOWN, which tells a member nothing and spends a row saying it.
           * Above 40 it reads INDIE, DEEP CUT, GHOST REEL — and for an app
           * about archive-diving that is one of the most distinctive things on
-          * the page. Deleting it outright was over-eager; gating it is right.
+          * the page.
           */}
         {score > 40 && <ObscurityBadge score={score} />}
       </View>
@@ -307,10 +301,11 @@ const styles = StyleSheet.create({
   verdictScore: { includeFontPadding: false, fontFamily: fonts.body, fontSize: 13, color: colors.parchment },
   verdictWho: { includeFontPadding: false, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.1, color: colors.fog, flexShrink: 1 },
 
-  /** And when it has not spoken: a statement, ruled like a title card. */
+  /** And when it has not spoken: a statement, ruled like a title card. Its
+      height is held without the words, so a verdict arriving moves nothing. */
   silentRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    alignSelf: 'stretch', paddingHorizontal: 18, marginBottom: 10,
+    alignSelf: 'stretch', paddingHorizontal: 18, marginBottom: 10, minHeight: 14,
   },
   silentRule: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.22)' },
   silentText: {

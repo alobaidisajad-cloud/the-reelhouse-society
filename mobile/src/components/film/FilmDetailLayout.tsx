@@ -6,8 +6,6 @@ import Animated, { useSharedValue, useAnimatedScrollHandler, withSequence, withT
 import { arrive, MARK_PULSE, MS } from '@/src/theme/motion';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-// ArrowUpRight went with the director card's chevron — a credit does not
-// carry one, and `↗` now means "this leaves the page" and nothing else.
 import { ArrowLeft, Film as FilmIcon, RotateCcw, Check, XCircle } from 'lucide-react-native';
 
 import { colors, fonts, SEPIA_HASH, metrics } from '@/src/theme/theme';
@@ -53,13 +51,10 @@ const STATUS_CONFIG = {
 
 /**
  * ── A CREDIT, SET AS ONE ────────────────────────────────────────────────────
- * This was a bordered card with a round avatar and a chevron — indistinguishable
- * from a settings row, and the least 1924 thing on the page. A director is a
- * film CREDIT, so it is set like one: the name alone, in the display face,
- * centred, over a brass signature rule. The rule is also what says it is
- * pressable, without borrowing a chevron that means "go deeper" everywhere else.
- *
- * The photograph goes with the card. A title card has never had one.
+ * A director is a film CREDIT, so it is set like one: the name alone, in the
+ * display face, centred, over a brass signature rule, and no photograph (a
+ * title card has never had one). The rule is also what says it is pressable,
+ * without borrowing a chevron that means "go deeper" everywhere else.
  */
 const DirectorCard = memo(function DirectorCard({ director }: { director: { id: number; name: string; profile_path?: string | null } }) {
   return (
@@ -79,7 +74,7 @@ const DirectorCard = memo(function DirectorCard({ director }: { director: { id: 
 
 export const FilmDetailLayout = memo(function FilmDetailLayout() {
   const {
-    film, reviews, reviewsError, similarFilms, directors, cast, videos, trailer, score, providers, studios, verdict,
+    film, reviews, reviewsFailed, similarFilms, directors, cast, videos, trailer, score, providers, studios, verdict,
     existingLog, isAuthenticated, isArchivist, user,
     validFilmId, loading, isError, retry, isFocused,
     goBack, handleLog, handleRewatch, handleOpenTrailer,
@@ -108,8 +103,6 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
 
   const {
     posterGlowStyle,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    whisperPulseStyle,
     skeletonAnimStyle,
     bookmarkAnimStyle,
     backdropAnimatedStyle,
@@ -117,7 +110,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     immersiveAnimatedStyle,
     scrollHeaderStyle,
     bookmarkScale
-  } = useFilmAnimations({ isFocused, scrollY, backdropHeight: BACKDROP_H });
+  } = useFilmAnimations({ isFocused, skeleton: loading && validFilmId, scrollY, backdropHeight: BACKDROP_H });
 
   const onScroll = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
@@ -146,8 +139,8 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   /**
    * Every act but this one lets the tray close first, then travels. Four of the
    * six present a view controller, and stacking one on a sheet that is still on
-   * screen is the conflict that broke the old FAB. The tray is a View rather
-   * than a Modal so this is belt AND braces, not the only defence.
+   * screen is a conflict iOS refuses. The tray is a View rather than a Modal, so
+   * this is belt AND braces, not the only defence.
    */
   const actThenClose = useCallback((run: () => void) => () => {
     setTrayOpen(false);
@@ -177,12 +170,9 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   }, [isAuthenticated, film, isWatchlisted, addToWatchlist, removeFromWatchlist, handleWatchlistToggled]);
 
   /**
-   * One door for every rank. This forked on rank — an Archivist "entered the
-   * salon", a Cinephile was "walked to the gate that shows them how to earn
-   * the room" — but both branches pushed the same corridor, and the corridor no
-   * longer has a gate: every member may walk in and read any salon, and the
-   * rope waits at the seat inside. So there is nothing to fork on. What
-   * differed was only the promise printed on the tray, and that is fixed there.
+   * One door for every rank: every member may walk into the corridor and read
+   * any salon, and the rope waits at the seat inside. Only the promise printed
+   * on the tray differs by rank.
    */
   const openLounge = useCallback(() => {
     if (!isAuthenticated) { nav.push('/login'); return; }
@@ -206,7 +196,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     // Watched this year, the DAY is what a member is placing. Watched years
     // ago, the YEAR is the whole point and the day is noise. Both forms are
     // short, which is what lets the row survive a rewatch count and five reels
-    // beside them — `JUL 21, 2025` did not.
+    // beside them (`JUL 21, 2025` would not).
     return watched.getFullYear() === new Date().getFullYear()
       ? formatDateMonthDay(existingLog.watchedDate).toUpperCase()
       : String(watched.getFullYear());
@@ -291,10 +281,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
 
   const dockH = useMemo(() => dockHeight(insets.bottom), [insets.bottom]);
 
-  /**
-   * The certificate, with the region it belongs to. Absorbed from the
-   * international-releases rail this revision retires.
-   */
+  /** The certificate, with the region it belongs to. */
   const certificate = useMemo(
     () => pickCertificate(
       film?.release_dates as any,
@@ -326,11 +313,12 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         filmId={Number(film?.id)}
         filmTitle={film?.title ?? ''}
         reviews={reviews}
-        reviewsError={reviewsError}
+        failed={reviewsFailed}
+        onRetry={retry}
         excludeUserId={user?.id ?? null}
       />
     </View>
-  ), [film?.id, film?.title, reviews, reviewsError, user?.id]);
+  ), [film?.id, film?.title, reviews, reviewsFailed, retry, user?.id]);
 
   if (loading && validFilmId) {
     return (
@@ -359,16 +347,18 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   }
 
   if (!validFilmId || !film) {
+    // The way out says where it goes: back, or (opened cold) to the Lobby.
+    const wayOut = nav.canGoBack() ? 'GO BACK' : 'RETURN TO THE LOBBY';
     return (
       <View style={[s.container, s.notFoundContainer]}>
         <RoomLight room="film" />
         <FilmIcon size={48} color={colors.bloodReel} strokeWidth={1} />
         <Text style={s.notFoundTitle}>Not in the Archive</Text>
         <Text style={s.notFoundBody}>This reel could not be found. It may have been withdrawn from circulation.</Text>
-        <PressableScale style={s.backBtn} onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityLabel="Go back">
+        <PressableScale style={s.backBtn} onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityRole="button" accessibilityLabel={wayOut === 'GO BACK' ? 'Go back' : 'Return to the Lobby'}>
           <View style={s.ctaIconRow}>
             <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
-            <Text style={s.backBtnText}>GO BACK</Text>
+            <Text style={s.backBtnText}>{wayOut}</Text>
           </View>
         </PressableScale>
       </View>
@@ -380,14 +370,12 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
       {/* The room's light hangs from where the backdrop ends, and blooms from it. */}
       <RoomLight room="film" hem={backdropUri ? BACKDROP_H : undefined} art={backdropUri} />
       {/* Parallax Backdrop */}
-      {/* testID so a static render can be driven through the fade — it is the
-          only way to SEE that the backdrop leaves rather than ghosting behind
-          every section, on a page nobody can build to a device yet.
+      {/* testID so a static render can be driven through the fade, to SEE that
+          the backdrop leaves rather than ghosting behind every section.
 
-          A film with no backdrop gets no plate at all. It used to get a dark
-          stand-in painted down to the house colour, which blacked out the
-          room's light at the top of the screen: with no picture to show, the
-          room itself is the picture. */}
+          A film with no backdrop gets no plate at all: a dark stand-in would
+          black out the room's light at the top of the screen, and with no
+          picture to show, the room itself is the picture. */}
       {backdropUri ? (
         <Animated.View testID="film-backdrop" style={[s.backdropWrap, { height: BACKDROP_H }, backdropAnimatedStyle]}>
           <Image source={{ uri: backdropUri }} style={s.backdrop} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
@@ -427,11 +415,9 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         scrollEnabled={!trayOpen}
         /**
          * ── accessibilityViewIsModal IS iOS-ONLY ──────────────────────────
-         * The tray sets it, and its own comment says the page beneath is
-         * hidden from a screen reader. On iOS that is true. On ANDROID it does
-         * nothing at all — TalkBack would read straight through an open tray
-         * into the whole page behind it, and the promise in that comment was
-         * simply not kept on half the devices we ship to.
+         * The tray sets it, which hides the page beneath from VoiceOver. On
+         * ANDROID it does nothing, and TalkBack would read straight through an
+         * open tray into the page behind it, so the page hides itself here.
          *
          * The stub is deliberately NOT hidden: it stays the visible close
          * control, and on Android it remains reachable.
@@ -453,23 +439,18 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
           statusConfig={STATUS_CONFIG}
         />
 
-        {/* The six-control console is gone. Its acts live in the tray raised by
-            the docked stub at the foot of this screen. */}
+        {/* The film's acts live in the tray raised by the docked stub at the
+            foot of this screen. */}
 
         {isTransitionComplete && (
           <>
             {/**
-              * ── A HEADING WITH NOTHING UNDER IT ─────────────────────────────
-              * `film.overview ?? '…'` only catches null. TMDB returns an EMPTY
-              * STRING for a film it has no synopsis for, which sailed past the
-              * `??` and drew the brass tick, the label and the rule over
-              * nothing at all — a dangling heading, on exactly the obscure
-              * films this app sends people to look for.
-              *
-              * The section omits itself, as the cast, the footage and the shelf
-              * already do. Those blocks say nothing when they have nothing; the
-              * ones that DO show an empty state — WHERE IT PLAYS, THE SOCIETY —
-              * are the two a member can act on. Nobody can write a synopsis.
+              * ── NO HEADING WITH NOTHING UNDER IT ─────────────────────────────
+              * TMDB returns an EMPTY STRING for a film it has no synopsis for
+              * (truthiness, not `??`, catches it), and the section omits
+              * itself, as the cast, the footage and the shelf do. The blocks
+              * that DO show an empty state — WHERE IT PLAYS, THE SOCIETY — are
+              * the two a member can act on. Nobody can write a synopsis.
               */}
             {film.overview ? (
               <Animated.View style={s.section}>
@@ -481,10 +462,9 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
             ) : null}
 
             {/* ── YOURS, THEN THE HOUSE'S ──────────────────────────────────
-                Your own critique sits directly above the society's, wearing a
-                brass edge so it reads as yours without a second label. It used
-                to sit under the console at the top of the page, which put your
-                own writing above the film's synopsis. */}
+                Your own critique sits under the synopsis and directly above the
+                society's, wearing a brass edge so it reads as yours without a
+                second label. */}
             {existingLog && (
               <Animated.View style={s.section}>
                 <FilmSectionHeader label="YOURS" />
@@ -530,8 +510,8 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
                 An empty box in the third slot on every film says "nobody has
                 been here" before a member has seen a single thing about the
                 film; the same block low down says "be the first voice" and
-                reads as an invitation. With 288 logs across 250 films, the
-                empty case is not the edge — it is nearly every film. */}
+                reads as an invitation. In a young archive the empty case is
+                not the edge — it is most films. */}
             {hasSociety && <TheSociety />}
 
             {/* THE CREDIT — a film credit, set as one. */}
@@ -563,17 +543,12 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
               <WatchProviders providers={providers as any} />
             </Animated.View>
 
-            {/* THE PARTICULARS — absorbing the studio marks and the certificate
-                from the two rails this retires. */}
+            {/* THE PARTICULARS — the studio marks and the certificate among them. */}
             <FilmDossier
               film={film}
               studios={studios}
               certificate={certificate}
             />
-
-            {/* The international-releases rail is retired: it existed to carry
-                the CERTIFICATE, which now sits in the particulars where a
-                member looks for it — beside the runtime and the language. */}
 
             <FilmSimilar similarFilms={similarFilms} />
           </>
@@ -618,12 +593,9 @@ const s = StyleSheet.create({
   sepiaTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(60,40,10,0.35)' },
   /**
    * z-index 50, the SAME level as the header it hands over to — they are two
-   * forms of one control and must sit at one height.
-   *
-   * At 100 it outranked the tray (60) and the stub (70): opening the tray left
-   * a brass-ringed disc floating over the scrim, still tappable, offering to
-   * leave the film while the actions for it were open. The scrim is supposed
-   * to cover everything except the tray and the handle that raised it.
+   * forms of one control and must sit at one height — and under the tray (60)
+   * and the stub (70): the scrim covers everything except the tray and the
+   * handle that raised it, never a way off the film while its acts are open.
    */
   floatingBack: { position: 'absolute', top: 54, left: 16, zIndex: 50, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.sepiaBorder, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8, alignItems: 'center', justifyContent: 'center' },
   /** Your own critique: a brass edge rather than a box, so it reads as yours
@@ -639,10 +611,9 @@ const s = StyleSheet.create({
       other gets more air than the utility sections around it. */
   /**
    * ── AIR THAT ADDS UP TO WHAT WAS INTENDED ─────────────────────────────────
-   * The house gets 44pt where the utility sections get 30. But FilmReviews
-   * already carries `marginBottom: 24` of its own, so a flat 44 here made the
-   * gap below it 68 — a third more than designed, and visibly a cavern before
-   * DIRECTED BY. Margins do not replace each other; they stack.
+   * The house gets 44pt where the utility sections get 30. FilmReviews carries
+   * `marginBottom: 24` of its own, and margins do not replace each other; they
+   * stack.
    *
    * Above:  30 (the section before) + 14 = 44.
    * Below:  20 + 24 (the component's own) = 44.
@@ -655,16 +626,13 @@ const s = StyleSheet.create({
   creditRule: { width: 96, height: 1, backgroundColor: colors.sepia, marginTop: 9, opacity: 0.65 },
   section: { marginBottom: 30, paddingHorizontal: 24 },
   /**
-   * Unboxed with the particulars. Once the dossier's card came off, this was
-   * the last framed block on an open page — and framing the SYNOPSIS is the
-   * wrong choice twice over: it is the studio's copy, not the house's, and
-   * plainness is exactly what marks it as somebody else's voice. The critiques
-   * are the only cards on this page now, and they are meant to look like cards.
+   * Unboxed, like the particulars: the SYNOPSIS is the studio's copy, not the
+   * house's, and plainness is exactly what marks it as somebody else's voice.
+   * The critiques are the only cards on this page, meant to look like cards.
    */
   synopsisWrap: {},
   // The house prose hand — Courier, like every review and dossier line.
   synopsis: { fontFamily: fonts.body, fontSize: 13.5, color: colors.bone, lineHeight: 23, letterSpacing: 0.2 },
-  // The director card's styles went with the card — see DirectorCard above.
   backBtn: { backgroundColor: 'rgba(30,25,20,0.8)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(215,205,190,0.1)', marginTop: 24 },
   backBtnText: { fontFamily: fonts.sub, fontSize: 10, color: colors.bone, letterSpacing: 1.5, includeFontPadding: false },
   ctaIconRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },

@@ -132,12 +132,10 @@ export const FilmService = {
    * What the members of this house made of a film, as opposed to what the
    * internet did.
    *
-   * This exists because `getFilmReviews` above cannot answer the question. It
-   * returns logs that have WRITING, capped at a page — so its count is
-   * "critiques on this page", never "how many people logged this", and it has
-   * no average at all. The film page used to paper over that by rendering
-   * TMDB's score in the house's own brass reels, which is the one thing a
-   * members' club must not do.
+   * `getFilmReviews` above cannot answer the question: it returns logs that
+   * have WRITING, capped at a page, so its count is "critiques on this page",
+   * never "how many people logged this", and it has no average at all. And
+   * TMDB's score is never drawn in the house's reels.
    *
    * `avg_rating` is NULL when nobody has rated it. Not zero — zero is a number
    * and would draw as a verdict of no reels. NULL is the absence of a verdict,
@@ -154,13 +152,16 @@ export const FilmService = {
 
     const { data, error } = await withAbortSignal(query, signal);
 
+    // A read that failed is thrown, never answered as silence: "the house has
+    // not spoken" said over a lost signal is a verdict nobody holds. (supabase-js
+    // RESOLVES its errors, so this line is the only thing that sees one.)
+    if (error) throw error;
     // A film nobody has touched yet has no row at all, and that is not a
     // failure — it is the commonest case in an archive of a million titles.
-    // supabase-js RESOLVES errors rather than throwing, so this branch is the
-    // only thing standing between a network blip and a fabricated verdict.
-    if (error || !data) return EMPTY_VERDICT;
+    if (!data) return EMPTY_VERDICT;
 
     const parsed = FilmVerdictSchema.safeParse(data);
-    return parsed.success ? parsed.data : EMPTY_VERDICT;
+    if (!parsed.success) throw parsed.error;
+    return parsed.data;
   },
 };

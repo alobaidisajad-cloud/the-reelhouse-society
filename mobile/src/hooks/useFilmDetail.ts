@@ -24,10 +24,11 @@ export function useFilmDetail(filmId: number, validFilmId: boolean) {
        * late and painting a number it does not have.
        *
        * It NEVER rejects the film. A film reads perfectly well without knowing
-       * what the house thought; it does not read at all if the page throws.
+       * what the house thought; it does not read at all if the page throws. A
+       * verdict that could not be read is null, unknown, and the hero claims
+       * nothing for it: never "the house has not spoken".
        */
-      const verdictP = FilmService.getFilmVerdict(filmId)
-        .catch(() => ({ avg_rating: null, rating_count: 0, log_count: 0 }));
+      const verdictP = FilmService.getFilmVerdict(filmId).catch(() => null);
 
       // An unreachable catalogue throws (the page offers TRY AGAIN); a film the
       // catalogue does not have is an answer, null, and the page says so.
@@ -55,21 +56,20 @@ export function useFilmDetail(filmId: number, validFilmId: boolean) {
     // hero immediately as placeholder data while the real query — same key,
     // same shape, untouched — completes underneath. The warm detail already
     // carries recommendations/similar, so the pool is populated instantly too.
-    // Cold cache (deep link, cold start) returns undefined → identical
-    // behavior to before. This can never make any path slower.
+    // A cold cache (deep link, cold start) returns undefined and the page
+    // waits for the real answer. This can never make any path slower.
     placeholderData: () => {
       const cached = tmdb.peekDetail(filmId);
       if (!cached) return undefined;
-      // The placeholder must carry EVERY key the real result has, or the hero
-      // paints one shape and then re-paints another. No verdict is known yet,
-      // and the honest stand-in for that is the same "nobody has spoken" state
-      // a genuinely unrated film has — never a zero, which would draw reels.
+      // The placeholder carries EVERY key the real result has. No verdict is
+      // known yet, and unknown is null: "nobody has spoken" would be a claim
+      // about a film the house may well have rated.
       return {
         detail: cached,
         reviews: [],
         reviewsError: null,
         similar: poolFromDetail(cached, filmId),
-        verdict: { avg_rating: null, rating_count: 0, log_count: 0 },
+        verdict: null,
       };
     },
     staleTime: 30 * 60 * 1000,  // 30 min
