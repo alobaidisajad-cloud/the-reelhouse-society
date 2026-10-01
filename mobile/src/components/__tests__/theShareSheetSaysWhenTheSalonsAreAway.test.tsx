@@ -95,3 +95,19 @@ it('closed, as it sits in every feed card, reads no store at all', async () => {
   await open();
   expect(mockLoungeReads).toBeGreaterThan(0);
 });
+
+it('a share that crashes says the house\'s sentence, never the code\'s', async () => {
+  const reelToast = jest.requireActual('@/src/utils/reelToast').default;
+  const said = jest.spyOn(reelToast, 'error').mockImplementation(() => undefined);
+  const sendMessage = jest.fn(() => Promise.reject(new TypeError("Cannot read properties of undefined (reading 'id')")));
+  useLoungeStore.setState({
+    lounges: [room('Seated', { membership_status: 'approved', unread_count: 0 })],
+    loungesFailed: false, loading: false, fetchLounges, sendMessage,
+  } as never);
+  const r = await open();
+  await act(async () => { fireEvent.press(r.getByText('Seated')); });
+  await act(async () => { fireEvent.press(r.getByText('SHARE TO LOUNGE')); });
+  expect(sendMessage).toHaveBeenCalled();
+  expect(said).toHaveBeenCalledWith('Signal failed to transmit. Try again.');
+  said.mockRestore();
+});

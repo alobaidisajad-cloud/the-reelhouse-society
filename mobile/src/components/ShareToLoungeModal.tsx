@@ -15,6 +15,7 @@ import { canPostIn, LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 
 import reelToast from '@/src/utils/reelToast';
+import { captureError } from '@/src/lib/sentry';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { clipToSentence } from '@/src/components/dispatch/paper/paperText';
 import { ToastHost } from '@/src/components/ToastHost';
@@ -223,8 +224,9 @@ function ShareSheet({
             shareType,
             payload
         ).catch((e: unknown) => {
-            const msg = e instanceof Error ? e.message : 'Signal failed to transmit. Try again.';
-            reelToast.error(msg);
+            // Only a crash reaches here: it is reported, and the member hears the house, not the code.
+            captureError(e, { where: 'shareToLounge.send', shareType });
+            reelToast.error('Signal failed to transmit. Try again.');
         });
 
         onClose();
