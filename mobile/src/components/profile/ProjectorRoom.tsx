@@ -12,21 +12,12 @@ import { tally } from './profileComputed';
 import { EDGE_LIT } from '@/src/theme/light';
 
 /**
- * THE PROJECTOR ROOM — the one room that never got rebuilt, and the only one
- * that was showing numbers that were plainly wrong.
+ * THE PROJECTOR ROOM — the member's standing on the one ladder (the ring and the
+ * bar both measure the current rung) and their record.
  *
- * A member with 2,481 films opened this page and saw a progress bar at ZERO.
- * The bar was `(films % 20) * 5` — a sawtooth with no relation to the ladder
- * printed directly above it, resetting every twenty films forever. The ring
- * beside it filled at a hundred and stayed full. The rank stopped moving at
- * fifty-one. Three indicators, three different scales, one of them empty for
- * exactly the members who use the app most.
- *
- * ── THE RULE THIS ROOM NOW FOLLOWS ───────────────────────────────────────────
- * At the top of the ladder there is nowhere left to go, so NO BAR IS DRAWN. A
+ * At the top of the ladder there is nowhere left to go, so NO BAR IS DRAWN: a
  * full bar still implies distance remaining; an absent one says you have
- * arrived. In its place goes the member's actual record — every figure of which
- * the server already computes and the app was throwing away.
+ * arrived. In its place goes the member's record, from the server's summary.
  */
 
 interface CinephileStats {
@@ -47,6 +38,12 @@ export interface ProjectorRecord {
 
 interface ProjectorUser {
     username?: string;
+}
+
+/** What a share says: your own standing as yours, another member's as theirs. */
+export function standingShare(count: number, standingName: string, isSelf: boolean, username?: string): string {
+    const whose = isSelf ? 'My' : username ? `@${username}'s` : "A member's";
+    return `${whose} ReelHouse archive:\n\n${tally(count)} ${count === 1 ? 'film' : 'films'} on file\nStanding: ${standingName}\n\nThe ReelHouse Society`;
 }
 
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -84,8 +81,7 @@ function StatDial({ count, color, progress, isHighest }: { count: number; color:
     const circumference = 2 * Math.PI * radius;
     /**
      * The ring shows progress along the CURRENT rung — the same number the bar
-     * shows — instead of `count / 100`, which pinned itself at full for anyone
-     * past a hundred films and then said nothing ever again.
+     * shows (a ring of `count / 100` would sit full past a hundred films).
      */
     const fraction = isHighest ? 1 : Math.max(0, Math.min(1, progress / 100));
 
@@ -115,9 +111,11 @@ function StatDial({ count, color, progress, isHighest }: { count: number; color:
     );
 }
 
-export function ProjectorRoom({ stats, user, record, streak }: {
+export function ProjectorRoom({ stats, user, isSelf = false, record, streak }: {
     stats?: CinephileStats;
     user?: ProjectorUser;
+    /** Your own file: the share calls the standing yours. */
+    isSelf?: boolean;
     record?: ProjectorRecord | null;
     /**
      * The run the member is on, already resolved by the screen: the server's
@@ -138,12 +136,6 @@ export function ProjectorRoom({ stats, user, record, streak }: {
 
     /**
      * THE RUN THE MEMBER IS ON RIGHT NOW.
-     *
-     * `current_streak` was declared on this component's props, carried through
-     * the hook as `serverStreak`, recomputed in profileComputed as `streak` —
-     * and then never destructured by the screen. It reached the phone and
-     * stopped. The SQL fix that made this number correct (it returned 1 or 0
-     * for every member in the app) was repairing something nobody could see.
      *
      * It sits HERE rather than as a fourth cell in the record below, for two
      * reasons. A live streak is a different kind of fact from a historical
@@ -169,12 +161,11 @@ export function ProjectorRoom({ stats, user, record, streak }: {
         TactileEngine.mutate();
         try {
             await Share.share({
-                message: `My ReelHouse Archive:\n\n${tally(stats.count)} films on file\nStanding: ${standing.name}\n\nThe ReelHouse Society`,
+                message: standingShare(stats.count, standing.name, isSelf, user?.username),
                 title: 'ReelHouse Archive Stats',
             });
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : 'Unknown error';
-            reelToast.error(msg);
+        } catch {
+            reelToast.error('The standing could not be shared.');
         }
     };
 
@@ -221,10 +212,8 @@ export function ProjectorRoom({ stats, user, record, streak }: {
                         </>
                     )}
 
-                    {/* THE RECORD — what replaces the dead bar for a member who
-                        has run out of ladder. Every figure comes from the
-                        server's summary, which is fetched on every profile load
-                        already and was being discarded. */}
+                    {/* THE RECORD — from the server's summary, read on every
+                        profile load. */}
                     {hasRecord && (
                         <View style={s.record}>
                             {longest != null && (
@@ -269,8 +258,8 @@ export function ProjectorRoom({ stats, user, record, streak }: {
             )}
 
             <AnimatedView entering={FadeInDown.delay(400).duration(600)} style={s.exportWrap}>
-                <PressableScale style={s.exportBtn} onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic accessibilityRole="button" accessibilityLabel="Share your standing">
-                    <Text {...scaledTextProps} style={s.exportText}>SHARE YOUR STANDING</Text>
+                <PressableScale style={s.exportBtn} onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic accessibilityRole="button" accessibilityLabel={isSelf ? 'Share your standing' : 'Share this standing'}>
+                    <Text {...scaledTextProps} style={s.exportText}>{isSelf ? 'SHARE YOUR STANDING' : 'SHARE THIS STANDING'}</Text>
                 </PressableScale>
             </AnimatedView>
         </View>

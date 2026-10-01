@@ -494,6 +494,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/aRoomKeepsWhatTheServerFound.test.ts | 2026-10-01 | written: a room's search on the phone is the server's |
 | src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx | 2026-10-01 | written: rows, paging and failure from one answer |
 | src/components/profile/__tests__/aSearchKeepsItsBox.test.tsx | 2026-10-01 | written: every searchable room, searched to nothing |
+| src/components/profile/__tests__/aStandingIsSharedAsWhoseItIs.test.tsx | 2026-10-01 | written: a standing is shared as whose it is |
 | src/components/profile/__tests__/computeDailyStreak.test.ts | — |  |
 | src/components/profile/__tests__/decadeCounts.test.ts | — |  |
 | src/components/profile/__tests__/heroNameSize.test.ts | — |  |
@@ -543,7 +544,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/profileStyles.ts | 2026-10-01 | 61 styles nothing read, removed; comments say what is true now |
 | src/components/profile/ProfileTriptych.tsx | 2026-10-01 | a refused change is said; nav; the close backdrop is a button; comments say what is true now |
 | src/components/profile/ProfileWatchlistTab.tsx | 2026-10-01 | sized by the true total: a search keeps its box, finding nothing is said; the Oracle only with a choice; nav |
-| src/components/profile/ProjectorRoom.tsx | — |  |
+| src/components/profile/ProjectorRoom.tsx | 2026-10-01 | a visitor shares the standing as the member's; a failed share said plainly; comments say what is true now |
 | src/components/profile/RadarChart.tsx | — |  |
 | src/components/profile/RoomParts.tsx | 2026-10-01 | RoomMoreFailed; comments say what is true now |
 | src/components/profile/roomStyles.ts | 2026-09-29 | 26 fixed; chip-halo note was stranded 100 lines from chipSlop; 'the Vault' renamed Physical Archive in prose |

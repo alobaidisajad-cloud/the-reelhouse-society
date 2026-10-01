@@ -13,7 +13,7 @@ import { MOBILE, readCode } from '@/test-utils/readCode';
 const RAW = /\brouter\.(push|replace|navigate)\b/;
 /** The one file that may drive the router: nav itself. */
 const HOME = 'src/utils/typedRouter.ts';
-const MOST = 37;
+const MOST = 31;
 
 function rawCalls(): Map<string, number> {
   const found = new Map<string, number>();

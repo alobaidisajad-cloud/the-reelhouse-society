@@ -14,6 +14,7 @@ import type { ProfileLog, ProfileVaultItem, ProfileWatchlistItem } from '@/src/t
  
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
  
 import { ReelRating, SectionDivider } from '@/src/components/Decorative';
@@ -195,7 +196,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
   // ── State controller ──
   const ctrl = useProfileController(usernameOverride);
-  const { nav, data } = ctrl;
+  const { nav: doors, data } = ctrl;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, analyticsShape, taste, setTargetUser } = data;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -246,12 +247,12 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
 
   const { refreshing, onRefresh, dnaCardOpen, setDnaCardOpen, rouletteOpen, setRouletteOpen, followLoading, toggleFollow } = ctrl;
-  const { toEditProfile: navToEditProfile, toSettings: navToSettings, toMembership: navToMembership, toFollowers: navToFollowers, toFollowing: navToFollowing, toCalendar: navToCalendar, openSocialLink, handleBack } = nav;
+  const { toEditProfile: navToEditProfile, toSettings: navToSettings, toMembership: navToMembership, toFollowers: navToFollowers, toFollowing: navToFollowing, toCalendar: navToCalendar, openSocialLink, handleBack } = doors;
   const closeDnaCard = useCallback(() => setDnaCardOpen(false), [setDnaCardOpen]);
   // The locked Physical Archive's own rope, so the Society page names what was reached for.
   const shelfRope = useClearance('physical-archive');
   const closeRoulette = useCallback(() => setRouletteOpen(false), [setRouletteOpen]);
-  const onRouletteSelect = useCallback((id: number) => { setRouletteOpen(false); (router.push as any)(`/film/${id}` as never); }, [setRouletteOpen, router]);
+  const onRouletteSelect = useCallback((id: number) => { setRouletteOpen(false); nav.push(`/film/${id}`); }, [setRouletteOpen]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { fetchLogs, fetchWatchlist, fetchPhysicalArchive, fetchLists } = filmStore;
@@ -447,8 +448,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
   // A room was pushed, so a room pops (a push would pile up Android's history).
   const handleRoomBack = useCallback(() => {
-    if (router.canGoBack()) router.back();
-    else (router.replace as any)(`/user/${username}` as never);
+    if (router.canGoBack()) nav.back();
+    else nav.replace(`/user/${encodeURIComponent(username ?? '')}`);
   }, [router, username]);
 
   // Whether each room is narrowed by its filters (src/utils/roomFilters): then it
@@ -841,7 +842,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   {/* Your Year in Cinema — your own annual retrospective */}
                   {isSelf && (
                     <View style={s.tabContentPad}>
-                      <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/year-in-cinema')} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic accessibilityRole="button" accessibilityLabel="Your Year in Cinema">
+                      <PressableScale style={s.ctaBtn} onPress={() => nav.push('/year-in-cinema')} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic accessibilityRole="button" accessibilityLabel="Your Year in Cinema">
                         <View style={s.ctaBtnRow}>
                           <CalendarDays size={12} color={colors.sepia} strokeWidth={1.5} />
                           <Text {...scaledTextProps} style={s.ctaBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>YOUR YEAR IN CINEMA</Text>
@@ -853,7 +854,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   {/* Projector Room, inset like its neighbours; its 140pt dial
                       fits the smallest phone. */}
                   <View style={s.tabContentPad}>
-                    <ProjectorRoom stats={{ count: totalFilms, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} record={analyticsShape} streak={streak} />
+                    <ProjectorRoom stats={{ count: totalFilms, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} isSelf={isSelf} record={analyticsShape} streak={streak} />
                   </View>
 
                   <View style={s.projectorSectionsWrap}>
@@ -886,7 +887,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                               <PressableScale
                                 key={log.id}
                                 style={s.favouriteRow}
-                                onPress={() => log.filmId && (router.push as any)(`/film/${log.filmId}` as any)}
+                                onPress={() => { if (log.filmId) nav.push(`/film/${log.filmId}`); }}
                                 // 5, half the 10pt gap: the 15pt default let a
                                 // row's tap open the film below. 42 + 10 clears 44.
                                 hitSlop={{ top: 5, bottom: 5, left: 8, right: 8 }}
@@ -1197,7 +1198,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   <PressableScale
                     key={log.id}
                     style={[s.latelyRow, i === recentLogs.length - 1 && s.latelyRowLast]}
-                    onPress={() => (router.push as any)(`/log/${log.id}` as never)}
+                    onPress={() => nav.push(`/log/${log.id}`)}
                     // Edge-to-edge rows, 66pt tall: no vertical reach into the next.
                     hitSlop={{ top: 0, bottom: 0, left: 12, right: 12 }}
                     haptic
@@ -1244,7 +1245,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                       key={item.id}
                       testID={`collection-card-${item.id}`}
                       style={[s.holdRow, i === rooms.length - 1 && s.holdRowLast]}
-                      onPress={() => (router.push as any)({ pathname: `/user/${username}`, params: { tab: item.id } } as any)}
+                      onPress={() => nav.push(`/user/${encodeURIComponent(username ?? '')}`, { tab: item.id })}
                       // None vertical (the row below); 7 fills half the 14pt gutter.
                       hitSlop={{ top: 0, bottom: 0, left: 7, right: 7 }}
                       haptic
