@@ -64,6 +64,7 @@ Decisions, as of 2026-09-28:
 | `src/components/__tests__/authRouting.test.ts` | Every route to `/login` says which form it opens. |
 | `src/components/__tests__/oneRankMark.test.ts` | The rank mark is drawn in one place; no surface draws its own. |
 | `src/components/__tests__/overlayElevation.test.ts` | Every overlay out-ranks what it covers in Android's elevation order (a browser paints in DOM order, so no drawing shows it). |
+| `src/lib/__tests__/aResolvedErrorIsRead.test.ts` | Every supabase answer whose `error` is not read — awaited, or taken out of a `Promise.all` — is read, or judged with its reason. |
 | `src/components/__tests__/textContrast.test.ts` | Every muted text's opacity against its ground, from the stylesheets. |
 | `src/components/__tests__/theCountHangsBesideItsMark.test.tsx` | Every bar with a count draws it through `MarkFigure`; mounts the bars too. |
 | `src/components/__tests__/theToastIsDrawnOnTop.test.ts` | Every `<Modal>` and modal route carries its own toast host. |

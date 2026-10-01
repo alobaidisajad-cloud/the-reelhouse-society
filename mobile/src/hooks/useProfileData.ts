@@ -110,7 +110,7 @@ export type ProfileAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: Error | null }
   | { type: 'SET_REFRESHING'; payload: boolean }
-  | { type: 'SET_COUNTS'; payload: ProfileState['counts'] }
+  | { type: 'SET_COUNTS'; payload: CountsRead }
   | { type: 'SET_TAB_LOADED'; tabs: Record<string, boolean> }
   | { type: 'SET_ANALYTICS'; payload: ProfileLog[] }
   | { type: 'SET_CALENDAR_DATA'; payload: { watchedDate: string; rating: number; status: string }[] }
@@ -121,7 +121,7 @@ export type ProfileAction =
   | { type: 'SET_VAULT_PAGE'; items: ProfileVaultItem[]; cursor: string | null; append?: boolean }
   | { type: 'SET_LISTS_PAGE'; items: ProfileList[]; cursor: string | null; append?: boolean }
   | { type: 'SET_LOADING_MORE'; key: string; value: boolean }
-  | { type: 'USER_DATA_LOADED'; user: ProfileUser; counts: ProfileState['counts']; serverStreak: number | null; analyticsShape?: AnalyticsShape | null; logs?: ProfileLog[]; logsCursor?: string | null }
+  | { type: 'USER_DATA_LOADED'; user: ProfileUser; counts: CountsRead; serverStreak: number | null; analyticsShape?: AnalyticsShape | null; logs?: ProfileLog[]; logsCursor?: string | null }
   | { type: 'SET_ACTIVE_FILTERS'; tab: 'archive' | 'ledger' | 'watchlist' | 'physical' | 'lists'; filters: any }
   | { type: 'RESET_STATE' };
 
@@ -165,6 +165,22 @@ export const initialState: ProfileState = {
   },
 };
 
+/** Counts as read: one left undefined could not be read. */
+export type CountsRead = { [K in keyof ProfileState['counts']]?: number | undefined };
+
+/** A count that could not be read keeps the one on screen: no number is invented as zero. */
+function withCounts(on: ProfileState['counts'], read: CountsRead): ProfileState['counts'] {
+  return {
+    logs: read.logs ?? on.logs,
+    ledger: read.ledger ?? on.ledger,
+    watchlist: read.watchlist ?? on.watchlist,
+    vault: read.vault ?? on.vault,
+    lists: read.lists ?? on.lists,
+    followers: read.followers ?? on.followers,
+    following: read.following ?? on.following,
+  };
+}
+
 export function profileReducer(state: ProfileState, action: ProfileAction): ProfileState {
   switch (action.type) {
     case 'RESET_STATE':
@@ -183,7 +199,7 @@ export function profileReducer(state: ProfileState, action: ProfileAction): Prof
     case 'SET_REFRESHING':
       return { ...state, refreshing: action.payload };
     case 'SET_COUNTS':
-      return { ...state, counts: action.payload };
+      return { ...state, counts: withCounts(state.counts, action.payload) };
     case 'SET_TAB_LOADED':
       return { ...state, tabDataLoaded: { ...state.tabDataLoaded, ...action.tabs } };
     case 'SET_ANALYTICS': return { ...state, analyticsLogs: action.payload };
@@ -234,7 +250,7 @@ export function profileReducer(state: ProfileState, action: ProfileAction): Prof
       return {
         ...state,
         targetUser: action.user,
-        counts: action.counts,
+        counts: withCounts(state.counts, action.counts),
         serverStreak: action.serverStreak,
         analyticsShape: action.analyticsShape ?? state.analyticsShape,
         mainLogs: action.logs ?? state.mainLogs,

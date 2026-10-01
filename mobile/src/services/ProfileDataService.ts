@@ -118,6 +118,15 @@ const AnalyticsRowSchema = z.object({
 
 // ── Service ────────────────────────────────────────────────────────────
 
+/** A count, or undefined when it could not be read: a failed read is not a member with none. */
+const countRead = (r: { count?: number | null; error?: unknown }): number | undefined =>
+  !r.error && typeof r.count === 'number' ? r.count : undefined;
+
+const UNREAD_COUNTS = {
+  logs: undefined, ledger: undefined, watchlist: undefined, vault: undefined, lists: undefined,
+  followers: undefined, following: undefined,
+} as const satisfies Record<string, number | undefined>;
+
 export const ProfileDataService = {
   /**
    * Fetches a user profile by username.
@@ -202,23 +211,23 @@ export const ProfileDataService = {
         withAbortSignal(supabase.from('logs').select('id', { count: 'exact', head: true }).eq('user_id', targetUser.id), signal),
         withAbortSignal(supabase.from('logs').select('id', { count: 'exact', head: true }).eq('user_id', targetUser.id).or('rating.gt.0,review.neq.""'), signal),
         withAbortSignal(supabase.from('watchlists').select('id', { count: 'exact', head: true }).eq('user_id', targetUser.id), signal),
-        isArchivistPlusTier(targetUser) 
-          ? withAbortSignal(supabase.from('physical_archive').select('id', { count: 'exact', head: true }).eq('user_id', targetUser.id), signal) 
-          : Promise.resolve({ count: 0 }),
+        isArchivistPlusTier(targetUser)
+          ? withAbortSignal(supabase.from('physical_archive').select('id', { count: 'exact', head: true }).eq('user_id', targetUser.id), signal)
+          : Promise.resolve({ count: 0, error: null }),
         withAbortSignal(listsQuery, signal),
       ]);
 
       return {
-        logs: logsCount.count ?? 0,
-        ledger: ledgerCount.count ?? 0,
-        watchlist: watchCount.count ?? 0,
-        vault: vaultCount.count ?? 0,
-        lists: listsCount.count ?? 0,
+        logs: countRead(logsCount),
+        ledger: countRead(ledgerCount),
+        watchlist: countRead(watchCount),
+        vault: countRead(vaultCount),
+        lists: countRead(listsCount),
         followers: undefined as number | undefined,
         following: undefined as number | undefined,
       };
     } catch {
-      return { logs: 0, ledger: 0, watchlist: 0, vault: 0, lists: 0, followers: undefined as number | undefined, following: undefined as number | undefined };
+      return UNREAD_COUNTS;
     }
   },
 

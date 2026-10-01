@@ -20,6 +20,8 @@ import { useDispatch } from '../dispatch';
 import type { Filing } from '../dispatchTypes';
 
 let mockOutcome: 'ok' | 'refused' | 'offline' | 'already' = 'ok';
+/** The vote the house holds for this member, when asked after a duplicate. */
+let mockHeldVote: { option_index: number } | null = null;
 const mockQueued: { type: string; payload: unknown }[] = [];
 
 /** Refused by the house: a real PostgREST error, resolved not thrown. */
@@ -50,6 +52,7 @@ jest.mock('../../lib/supabase', () => ({
       chain.insert = () => answer();
       chain.delete = () => self();
       chain.update = () => self();
+      chain.maybeSingle = () => Promise.resolve({ data: mockHeldVote, error: null });
       // A delete/update chain is awaited after its filters, so the chain itself
       // has to be thenable — not just the terminal call.
       chain.then = (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
@@ -201,6 +204,20 @@ describe('marking a ballot', () => {
     expect(useDispatch.getState().myVotes.f1).toBe(2);
     await settle();
     expect(useDispatch.getState().myVotes.f1).toBeUndefined();
+  });
+
+  it('shows the vote the house already holds, not a refusal', async () => {
+    // Cast on another device, or a mark this phone could not read: the unique key answers.
+    const reelToast = jest.requireMock('../../utils/reelToast').default;
+    reelToast.error.mockClear();
+    mockOutcome = 'already';
+    mockHeldVote = { option_index: 0 };
+    useDispatch.getState().vote('f1', 3);
+    await settle();
+    await settle();
+    expect(useDispatch.getState().myVotes.f1).toBe(0);
+    expect(reelToast.error).not.toHaveBeenCalled();
+    mockHeldVote = null;
   });
 
   it('is cast once and never changed', () => {

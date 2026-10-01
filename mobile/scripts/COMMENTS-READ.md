@@ -665,6 +665,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useVault.ts | — |  |
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | — |  |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | — |  |
+| src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-01 | written: the unread-error sweep, both shapes |
 | src/lib/__tests__/defensiveParse.test.ts | — |  |
 | src/lib/__tests__/revenueCat.selectPackage.test.ts | — |  |
 | src/lib/__tests__/schemas.test.ts | — |  |
@@ -737,9 +738,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/StackService.ts | 2026-09-30 | the delete's comment said a refusal "is seen" and never read it; made true |
 | src/services/VaultService.ts | — |  |
 | src/services/YearInCinemaService.ts | — |  |
+| src/services/__tests__/aCountNotReadIsNotZero.test.ts | 2026-10-01 | written with the counts fix |
 | src/stores/__tests__/aFailedLoadKeepsWhoYouFollow.test.ts | 2026-09-29 | follow-list wipe fixed; comments read |
 | src/stores/__tests__/aFailedSettingStaysUndone.test.ts | 2026-09-29 | new |
 | src/stores/__tests__/aFollowMadeOfflineIsKept.test.ts | — |  |
+| src/stores/__tests__/aMarkReadThatFailedIsHeard.test.ts | 2026-10-01 | written with the marks fix |
 | src/stores/__tests__/aNoticeIsNarrowedToItsOwner.test.ts | — |  |
 | src/stores/__tests__/aProfileChangeIsNeverDropped.test.ts | — |  |
 | src/stores/__tests__/aReactionIsOneOfFive.test.ts | — |  |
@@ -778,6 +781,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/theLiveWireKnowsTheRoom.test.ts | — |  |
 | src/stores/__tests__/theLogSaysWhatHappened.test.ts | — |  |
 | src/stores/__tests__/theRoomYouAreActuallyIn.test.ts | — |  |
+| src/stores/__tests__/theSalonListIsWholeOrSaysSo.test.ts | 2026-10-01 | written with the salon-list fix |
 | src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts | — |  |
 | src/stores/__tests__/theStoreOpensOnEveryLaunch.test.ts | 2026-10-01 | written with the 16-byte key fix |
 | src/stores/__tests__/theThrottleIsPerRoom.test.ts | — |  |

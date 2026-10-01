@@ -335,7 +335,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         ? supabase.from('lounges')
             .select('id, name, description, is_private, creator_id, created_at, member_count')
             .in('id', myLoungeIds)
-        : Promise.resolve({ data: [] as { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; member_count: number }[] });
+        : Promise.resolve({ data: [] as { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; member_count: number }[], error: null });
 
       const myCreatedPromise = supabase.from('lounges')
         .select('id, name, description, is_private, creator_id, created_at, member_count')
@@ -344,6 +344,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const [browsableRes, myJoinedRes, myCreatedRes] = await Promise.all([
         browsablePromise, myJoinedPromise, myCreatedPromise,
       ]);
+      // A source that failed would draw a short list as the whole house: the read failed.
+      const unread = browsableRes.error ?? myJoinedRes.error ?? myCreatedRes.error;
+      if (unread) throw unread;
 
       // Merge all three, deduplicating by id
       const allLoungesMap = new Map<string, { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; member_count: number }>();

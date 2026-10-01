@@ -153,6 +153,14 @@ describe('ProfileWriteService (ProfileService)', () => {
             expect(result.hasMore).toBe(false);
         });
 
+        it('throws a failed read rather than answering "no followers"', async () => {
+            const failed = { data: null, error: { message: 'Failed to fetch' } };
+            for (const type of ['followers', 'following'] as const) {
+                (supabase.from as jest.Mock).mockReturnValueOnce(chain(failed));
+                await expect(ProfileService.getSocialConnections('u1', type)).rejects.toEqual(failed.error);
+            }
+        });
+
         it('detects hasMore when extra row returned', async () => {
             // Create 51 items (limit=50, so 51 = hasMore)
             const manyIds = Array.from({ length: 51 }, (_, i) => ({ user_id: `u${i}`, created_at: `2024-01-${String(i).padStart(2, '0')}` }));

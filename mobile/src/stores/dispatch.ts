@@ -719,7 +719,22 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         const { error } = await supabase
           .from('dispatch_votes')
           .insert([{ post_id: id, user_id: user.id, option_index: optionIndex }]);
-        if (error) throw error;
+        if (!error) return;
+        // A vote the house already holds (another device, or a mark this phone could not
+        // read) stands: the ballot shows the one it holds, not a refusal.
+        if (error.code === '23505') {
+          const { data: held, error: unread } = await supabase
+            .from('dispatch_votes')
+            .select('option_index')
+            .eq('post_id', id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          if (!unread && held && memberUnchanged(user.id)) {
+            set((st) => ({ myVotes: { ...st.myVotes, [id]: held.option_index as number } }));
+            return;
+          }
+        }
+        throw error;
       },
       { type: 'cast_vote', payload: { post_id: id, user_id: user.id, option_index: optionIndex } },
       () => {
@@ -1118,6 +1133,9 @@ async function loadViewerState(
       for (const r of votes.data ?? []) myVotes[r.post_id as string] = r.option_index as number;
       return { certifiedIds: certified, savedIds: saved, myVotes };
     });
+    // The reads that answered are merged above; one that failed is still a failure, reported.
+    const failed = certs.error ?? saves.error ?? votes.error;
+    if (failed) throw failed;
   } catch (e) {
     // A page without the member's marks is still a readable page.
     if (!isNetworkError(e)) captureError(e, { where: 'dispatch.viewerState' });
@@ -1200,11 +1218,12 @@ async function loadCritiqueCertifications(
 ): Promise<void> {
   if (!startedAs || critiques.length === 0) return;
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('dispatch_certifications')
       .select('comment_id')
       .eq('user_id', startedAs)
       .in('comment_id', critiques.map((c) => c.id));
+    if (error) throw error;
     if (!memberUnchanged(startedAs)) return;
     set((st) => {
       const ids = new Set(st.certifiedCritiqueIds);

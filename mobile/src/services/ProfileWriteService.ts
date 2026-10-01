@@ -275,7 +275,9 @@ export const ProfileService = {
         }
         
         query = withAbortSignal(query, signal);
-        const { data } = await query;
+        // A failed read is not a member with no followers: it is thrown, and said.
+        const { data, error } = await query;
+        if (error) throw error;
         rows = data || [];
         ids = rows.map((r: { user_id: string }) => r.user_id);
 
@@ -300,7 +302,8 @@ export const ProfileService = {
         }
         
         query = withAbortSignal(query, signal);
-        const { data } = await query;
+        const { data, error } = await query;
+        if (error) throw error;
         rows = data || [];
         ids = rows.map((r: { target_user_id: string }) => r.target_user_id);
     }
