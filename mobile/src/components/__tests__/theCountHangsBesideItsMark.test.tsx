@@ -159,8 +159,9 @@ describe.each(Object.entries(BARS))('%s', (_name, bar) => {
     expect(p.maxFontSizeMultiplier).toBe(1.2);
     expect(p.numberOfLines).toBe(1);
     expect(p.adjustsFontSizeToFit).toBe(true);
-    // Shrink gives back only what the text size added: 10pt × 1.2 × (1/1.2).
-    expect(p.maxFontSizeMultiplier * p.minimumFontScale).toBeCloseTo(1, 5);
+    // Shrink gives back only what the text size added; at the size it is
+    // drawn here (no growth) that is nothing, since 10pt is the floor.
+    expect(p.minimumFontScale).toBe(1);
   });
 });
 

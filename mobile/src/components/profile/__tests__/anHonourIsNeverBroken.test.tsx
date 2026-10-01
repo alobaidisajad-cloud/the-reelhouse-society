@@ -34,11 +34,13 @@ describe('the honours case', () => {
     expect(titles.map(nameOf)).toContain('THE CONNOISSEUR');
   });
 
-  it('lets every title shrink to stay whole, and no further than 0.8', () => {
+  it('lets every title shrink to stay whole, never smaller than it is set', () => {
+    // At the default size a title (set at or under the floor) has nothing to
+    // give back, so nothing shrinks; grown by the member's text size, it may.
     for (const t of titlesOf()) {
       const name = nameOf(t);
       expect({ name, fit: t.props.adjustsFontSizeToFit, floor: t.props.minimumFontScale })
-        .toEqual({ name, fit: true, floor: 0.8 });
+        .toEqual({ name, fit: true, floor: 1 });
     }
   });
 });

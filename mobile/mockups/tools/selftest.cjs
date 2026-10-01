@@ -168,6 +168,12 @@ const CASES = {
     `</div>`), ALL('OFF')],
   // fits only once shrunk (63.7pt at 12pt in a 56pt cell; 47.8 at its floor): fails unshrunk
   shrinks: [box('width:56px;overflow:hidden', T('font-size:12px;white-space:nowrap;display:block', 'CERTIFIED', 1, ' data-fit-min="0.75"')), {}],
+  // the type floor: a 10pt label the app lets give back only its growth (53.1pt
+  // at 10pt in a 56pt cell, 71.7 grown to 13.5) is whole at every size
+  floorgives: [box('width:56px;overflow:hidden', T('font-size:10px;white-space:nowrap;display:block', 'CERTIFIED', 1.35, ' data-fit-min="1" data-fit-base="10"')), {}],
+  // and never under 10pt: a 12pt label that would need 0.785 of itself (under
+  // the floor's 0.833) is cut at every size, grown or not
+  floorholds: [box('width:50px;overflow:hidden', T('font-size:12px;white-space:nowrap;display:block', 'CERTIFIED', 1.35, ' data-fit-min="0.8333" data-fit-base="12"')), ALL('CUT')],
   // cuts ITSELF short even at its floor, in a roomy column: the phone draws "CERTIF…"
   floor: [box('width:200px', T('font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;width:40px', 'CERTIFIED 2.1K', 0, ' data-fit-min="0.75"')), ALL('CUT')],
   // a label clipped by its cell, whose shrink cannot save it

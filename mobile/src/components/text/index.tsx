@@ -2,8 +2,8 @@
  * The app's Text and TextInput — the only ones it uses.
  * ─────────────────────────────────────────────────────────────────────────────
  * Every word the app draws goes through here (ESLint refuses Text and
- * TextInput from 'react-native' anywhere else), so three promises hold for all
- * of them, on a phone, not only in tests (the third, below, for Text):
+ * TextInput from 'react-native' anywhere else), so four promises hold for all
+ * of them, on a phone, not only in tests (the third and fourth, below, for Text):
  *
  *   1. It grows with the member's text size — up to 1.35×, unless it sets a
  *      ceiling of its own (`maxFontSizeMultiplier`, or `allowFontScaling={false}`
@@ -25,13 +25,14 @@
 import React, { forwardRef } from 'react';
 import {
   Platform,
+  StyleSheet,
   // The one place these may come from 'react-native' (eslint.config.js).
   Text as RNText,
   TextInput as RNTextInput,
   type TextInputProps,
   type TextProps,
 } from 'react-native';
-import { scaledTextProps } from '@/src/constants/textScaling';
+import { scaledTextProps, TYPE_FLOOR } from '@/src/constants/textScaling';
 import { useFontScale } from '@/src/hooks/useTextScale';
 import { androidTracking } from '@/src/providers/androidTracking';
 
@@ -99,6 +100,25 @@ function spoken(props: TextProps): Partial<TextProps> | null {
 }
 
 /**
+ * 4. A word that shrinks to fit stops at the type floor. `minimumFontScale` is
+ *    a fraction of the size drawn, so 0.75 of a 10pt label is 7.5pt: a word
+ *    below the floor every word a member reads is held to. So the fraction is
+ *    raised to what keeps the drawn size at TYPE_FLOOR or above, at the size
+ *    the phone actually draws; a word set below the floor by design (a 9pt
+ *    badge) never shrinks below its own size.
+ */
+export function flooredMinimumScale(props: TextProps, scale: number): number | undefined {
+  const asked = props.minimumFontScale;
+  if (!props.adjustsFontSizeToFit || asked == null) return asked;
+  const size = StyleSheet.flatten(props.style)?.fontSize;
+  if (!size) return asked;
+  const cap = props.maxFontSizeMultiplier ?? scaledTextProps.maxFontSizeMultiplier;
+  const grown = props.allowFontScaling === false ? 1 : cap >= 1 ? Math.min(scale, cap) : scale;
+  const floor = Math.min(TYPE_FLOOR, size);
+  return Math.min(1, Math.max(asked, floor / (size * Math.max(grown, 1))));
+}
+
+/**
  * Each name is a component AND the type of its ref, as React Native's were —
  * so `useRef<TextInput>(null)` still means what it meant.
  */
@@ -106,7 +126,9 @@ export type Text = React.ComponentRef<typeof RNText>;
 export const Text = forwardRef<Text, TextProps>(function Text(props, ref) {
   const scale = useFontScale();
   const said = spoken(props);
-  return <RNText ref={ref} {...housed(said ? { ...props, ...said } : props, scale)} />;
+  const housedProps = housed(said ? { ...props, ...said } : props, scale);
+  const minimumFontScale = flooredMinimumScale(housedProps, scale);
+  return <RNText ref={ref} {...housedProps} {...(minimumFontScale !== undefined ? { minimumFontScale } : null)} />;
 });
 
 export type TextInput = React.ComponentRef<typeof RNTextInput>;

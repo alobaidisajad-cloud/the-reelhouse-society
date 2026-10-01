@@ -138,8 +138,26 @@ async function open(browser, file, { factor = 1, platform = 'ios', width = WIDTH
  * used by the audit and the camera alike — a photograph that skips this shows
  * "Max von May…" where the phone draws the whole name a little smaller.
  */
+/**
+ * How far a label may shrink at the size it is drawn now, as the app's Text
+ * holds it (src/components/text: a word never shrinks under 10pt, or under its
+ * own size if it is set smaller). `data-fit-min` is the fraction the capture
+ * drew at ×1; where that was the floor's own fraction, the screen asked for
+ * that or less, and at a larger size the floor is what holds. Without a base
+ * size (a page drawn by hand) the fraction is taken as written.
+ */
+function fitMinOf(e) {
+  const asked = Number(e.dataset.fitMin || 0);
+  const base = Number(e.dataset.fitBase || 0);
+  if (!asked || !base) return asked;
+  const floor = Math.min(10, base);
+  if (asked > floor / base + 1e-6) return asked;
+  return Math.min(1, floor / parseFloat(getComputedStyle(e).fontSize));
+}
+
 async function shrinkToFit(page) {
-  await page.evaluate(() => {
+  await page.evaluate((fitMinSrc) => {
+    const fitMinOf = new Function(`return (${fitMinSrc})`)();
     const truncates = (e) => { const cs = getComputedStyle(e); return cs.textOverflow === 'ellipsis' || cs.webkitLineClamp !== 'none' && cs.webkitLineClamp !== ''; };
     const rectOf = (e) => {
       const box = e.getBoundingClientRect();
@@ -167,7 +185,7 @@ async function shrinkToFit(page) {
       return e.scrollWidth <= e.clientWidth && e.scrollHeight <= e.clientHeight;
     };
     for (const e of document.querySelectorAll('span[data-fit-min]')) {
-      const min = Number(e.dataset.fitMin || 0);
+      const min = fitMinOf(e);
       if (!min || fits(e)) continue;
       const base = parseFloat(getComputedStyle(e).fontSize);
       const ls = parseFloat(getComputedStyle(e).letterSpacing) || 0;
@@ -183,7 +201,7 @@ async function shrinkToFit(page) {
         if (ls) e.style.letterSpacing = ls * min + 'px';
       }
     }
-  });
+  }, fitMinOf.toString());
 }
 
-module.exports = { chromium, open, shrinkToFit, screens, fonts, GROWTH, HOUSE, WIDTH, HEIGHT, MOBILE };
+module.exports = { chromium, open, shrinkToFit, fitMinOf, screens, fonts, GROWTH, HOUSE, WIDTH, HEIGHT, MOBILE };

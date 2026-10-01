@@ -142,3 +142,40 @@ describe('an ornament is not read aloud', () => {
     expect(hostProps(<AnimatedText>✦ ARCHIVIST</AnimatedText>).accessibilityLabel).toBe('ARCHIVIST');
   });
 });
+
+describe('a word that shrinks to fit stops at the floor', () => {
+  const shrunk = (style: object, scale: number, extra: object = {}) =>
+    hostProps(<Text style={style} adjustsFontSizeToFit minimumFontScale={scale} {...extra}>The Nitrate Circle</Text>).minimumFontScale;
+
+  it('a 10pt label asked to shrink to 0.75 does not shrink at all', () => {
+    expect(shrunk({ fontSize: 10 }, 0.75)).toBe(1);
+  });
+
+  it('a larger word may shrink, down to 10pt and no further', () => {
+    expect(shrunk({ fontSize: 20 }, 0.3)).toBeCloseTo(0.5);
+    expect(shrunk({ fontSize: 26 }, 0.7)).toBe(0.7);
+  });
+
+  it('a word grown by the member’s text size may give that back, to the floor', async () => {
+    await setFontScale(1.35);
+    // 10pt drawn at 13.5pt may shrink to 10pt again.
+    expect(shrunk({ fontSize: 10 }, 0.5)).toBeCloseTo(10 / 13.5);
+  });
+
+  it('a frozen word cannot use a growth it never had', async () => {
+    await setFontScale(1.35);
+    expect(shrunk({ fontSize: 10 }, 0.5, { allowFontScaling: false })).toBe(1);
+  });
+
+  it('a word set below the floor by design never shrinks below its own size', () => {
+    expect(shrunk({ fontSize: 9 }, 0.8)).toBe(1);
+  });
+
+  it('reads the size through a style array, as screens write it', () => {
+    expect(shrunk([{ fontSize: 30 }, { fontSize: 12 }], 0.5)).toBeCloseTo(10 / 12);
+  });
+
+  it('leaves a word that does not shrink exactly as it was', () => {
+    expect(hostProps(<Text style={{ fontSize: 10 }} minimumFontScale={0.5}>Lobby</Text>).minimumFontScale).toBe(0.5);
+  });
+});

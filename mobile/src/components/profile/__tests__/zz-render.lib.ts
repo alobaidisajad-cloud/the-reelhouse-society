@@ -688,7 +688,10 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     const fit = p.adjustsFontSizeToFit === true
       ? (typeof p.minimumFontScale === 'number' ? p.minimumFontScale : 0.5)
       : 0;
-    const capAttr = ` data-scale-cap="${cap}"${fit ? ` data-fit-min="${fit}"` : ''}`;
+    // With its base size, so the audit can hold it to the type floor at whatever
+    // size it measures (the app's Text sets the floor at the size the phone draws).
+    const fitBase = fit && typeof st.fontSize === 'number' ? ` data-fit-base="${st.fontSize}"` : '';
+    const capAttr = ` data-scale-cap="${cap}"${fit ? ` data-fit-min="${fit}"${fitBase}` : ''}`;
     // The harness holds text to its parent's width, but a Text with its OWN width keeps
     // it, as in Yoga (the ticket's rotated ADMIT ONE is 96pt in a 42pt stub).
     const ownWidth = st.width !== undefined && st.width !== null && st.width !== 'auto' ? ';max-width:none' : '';

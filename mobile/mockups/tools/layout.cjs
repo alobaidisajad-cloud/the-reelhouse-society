@@ -52,7 +52,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { chromium, open, shrinkToFit, screens, MOBILE, WIDTH } = require('./harness.cjs');
+const { chromium, open, shrinkToFit, fitMinOf, screens, MOBILE, WIDTH } = require('./harness.cjs');
 
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : d; };
@@ -136,7 +136,8 @@ async function audit(page) {
   await page.addScriptTag({ content: `window.RN = (${pageHelpers})();` });
 
   // 1 · RUN — before anything shrinks.
-  await page.evaluate(() => {
+  await page.evaluate((fitMinSrc) => {
+    const fitMinOf = new Function(`return (${fitMinSrc})`)();
     const { texts } = window.RN;
     // RUN: a word wider than its line, asked before any shrink and by the LINES (a
     // clamped box never grows); the phone would break it mid-letter. A text that may
@@ -158,7 +159,7 @@ async function audit(page) {
     for (const e of texts) {
       if (getComputedStyle(e).whiteSpace === 'nowrap') continue; // one line: judged below
       const host = hostOf(e);
-      const min = Number(e.dataset.fitMin || 0);
+      const min = fitMinOf(e);
       const limit = parseInt(getComputedStyle(host).webkitLineClamp, 10);
       if (!min || e !== host || !(limit > 0)) {
         const over = overlong(e, host);
@@ -181,7 +182,7 @@ async function audit(page) {
       [st.fontSize, st.letterSpacing, st.overflowWrap, st.webkitLineClamp] = saved;
       if (over > 0.75) e.dataset.run = String(over);
     }
-  });
+  }, fitMinOf.toString());
 
   // 2 · shrink-to-fit, exactly as the camera does (harness.shrinkToFit).
   await shrinkToFit(page);

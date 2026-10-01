@@ -15,6 +15,9 @@
  *   <Text {...decorativeTextProps}>REELHOUSE</Text>
  */
 
+/** The smallest size, in points, any word a member reads is drawn at. */
+export const TYPE_FLOOR = 10;
+
 /** Props for text that should scale with system accessibility settings */
 export const scaledTextProps = {
   allowFontScaling: true,
