@@ -16,13 +16,18 @@ export function isNetworkError(e: unknown): boolean {
         : (e instanceof Error ? e.message : String(e));
     const status = (typeof e === 'object' && e !== null && 'status' in e) ? (e as any).status : null;
     const code = (typeof e === 'object' && e !== null && 'code' in e) ? (e as any).code : null;
+    const name = (typeof e === 'object' && e !== null && 'name' in e) ? String((e as any).name) : '';
     const errLower = msg.toLowerCase();
-    
+
     return (
         errLower.includes('fetch') ||
         errLower.includes('network') ||
         errLower.includes('offline') ||
         errLower.includes('timeout') ||
+        // A request that did not complete: supabase answers an abort (a cancelled query, a
+        // timeout) as "AbortError: …"; withTimeout throws code TIMEOUT. Never a defect.
+        name === 'AbortError' || errLower.startsWith('aborterror') ||
+        errLower.includes('timed out') || code === 'ABORT_ERR' || code === 'TIMEOUT' ||
         status === 502 || status === 503 || status === 504 ||
         code === '57014' || code === '08000' || code === '08003' || code === '08006'
     );

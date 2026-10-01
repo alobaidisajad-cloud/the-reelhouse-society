@@ -1,10 +1,10 @@
 /**
- * withTimeout — AbortSignal-based request timeout for Supabase calls.
+ * withTimeout — a request that runs out of time ends, rather than spinning forever.
  * ────────────────────────────────────────────────────────────────────
- * Prevents infinite spinners when Supabase is slow but TCP-connected.
- *
- * Uses native AbortSignal.timeout() supported by Hermes since RN 0.73+.
- * Composes with existing withAbortSignal utility for full cancel+timeout.
+ * A supabase query does not THROW when the signal fires: it answers
+ * `{ error: "AbortError: …" }`, which the caller reads like any failure and
+ * `isNetworkError` counts as not completing. Only a thrown abort reaches the
+ * catch below, and becomes an AppError with code TIMEOUT.
  *
  * Usage:
  *   const { data } = await withTimeout(

@@ -18,6 +18,20 @@ describe('isNetworkError — Property-Based Tests', () => {
       expect(isNetworkError({ message: 'error', status: 504 })).toBe(true);
     });
 
+    it('a request that did not complete: aborted (a cancelled query, or a timeout) or timed out', () => {
+      // Exactly what supabase-js RESOLVES when a request's signal fires: an answer, not a throw.
+      const aborted = { message: 'AbortError: Aborted', details: '', hint: 'Request was aborted (timeout or manual cancellation)', code: '' };
+      expect(isNetworkError(aborted)).toBe(true);
+      // Thrown by fetch itself, and by withTimeout once its own clock runs out.
+      expect(isNetworkError(Object.assign(new Error('Aborted'), { name: 'AbortError' }))).toBe(true);
+      expect(isNetworkError({ message: 'The operation was aborted', code: 'ABORT_ERR' })).toBe(true);
+      expect(isNetworkError({ message: 'Request timed out after 15000ms', code: 'TIMEOUT' })).toBe(true);
+    });
+
+    it('but not Postgres saying a transaction was aborted, which is the server answering', () => {
+      expect(isNetworkError({ message: 'current transaction is aborted, commands ignored until end of transaction block', code: '25P02' })).toBe(false);
+    });
+
     it('errors with postgres connection failure codes', () => {
       expect(isNetworkError({ message: 'error', code: '57014' })).toBe(true);
       expect(isNetworkError({ message: 'error', code: '08000' })).toBe(true);
