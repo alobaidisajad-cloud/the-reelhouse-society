@@ -14,7 +14,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { Lock, Globe } from 'lucide-react-native';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { useClearance } from '@/src/hooks/useClearance';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ToastHost } from '@/src/components/ToastHost';
 
@@ -274,8 +274,6 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderBottomWidth: 0,
     borderColor: colors.sepiaBorder,
-    ...effects.shadowSurface,
-    elevation: 20, ...effects.flat,
   },
   sheetHandle: {
     width: 48,
@@ -387,7 +385,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 2,
     backgroundColor: colors.sepia,
-    ...effects.shadowSurface, ...effects.flat,
   },
   sheetBtnPrimaryText: {
     fontFamily: fonts.sub,

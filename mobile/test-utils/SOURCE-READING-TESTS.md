@@ -57,6 +57,7 @@ Decisions, as of 2026-09-28:
 | File | The class it enumerates |
 |---|---|
 | `src/components/__tests__/animation-parking.test.ts` | Every endless animation parks when its screen is not focused. |
+| `src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts` | Every style that spreads `effects.flat` and still carries elevation (a black shadow on Android before 9); an exact ratchet, lowered as each feature is read. |
 | `src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx` | No sheet unmounts itself at the end of its own fall; useSheetPresence is the one place (its behaviour is tested on the hook). |
 | `src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx` | The film and series sheets are wrapped in the lift; the lift itself is tested on the hook (a keyboard cannot be rendered). |
 | `src/features/settings/__tests__/anExportIsWhole.test.ts` | Every export of the private notes names their key (the viewing); the paging itself is tested on readAllRows. |

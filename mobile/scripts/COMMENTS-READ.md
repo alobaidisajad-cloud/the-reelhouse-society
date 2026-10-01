@@ -837,6 +837,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/vaultStore.ts | — |  |
 | src/test-support/swallowedTypeError.ts | — |  |
 | src/theme/__tests__/aPhotographIsNotLit.test.ts | — |  |
+| src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts | 2026-10-01 | written: the flat-but-elevated ratchet |
 | src/theme/__tests__/lightFloor.test.ts | — |  |
 | src/theme/__tests__/nothingOvershoots.guard.test.ts | — |  |
 | src/theme/__tests__/theGroundLadder.test.ts | — |  |

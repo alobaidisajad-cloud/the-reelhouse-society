@@ -13,7 +13,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Users, KeyRound, ChevronRight } from 'lucide-react-native';
 import { LoungeRoom } from '@/src/stores/lounge';
-import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
+import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
 
@@ -93,7 +93,6 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: colors.sepiaBorder,
     borderRadius: 4, position: 'relative',
     overflow: 'hidden',
-    ...effects.shadowSurface, ...effects.flat,
   },
   publicAccentBar: {
     position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,

@@ -35,7 +35,11 @@ export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
         onPress={() => nav.push(`/lounge/${lounge.id}`)}
         haptic="light"
         accessibilityRole="button"
-        accessibilityLabel={`Enter salon ${lounge.name}${hasUnread ? `, ${unread} new dispatches` : ''}`}
+        // Every seal the card draws, said: the door and AWAITING were only seen.
+        accessibilityLabel={`Enter salon ${lounge.name}${
+          isAwaiting ? ', awaiting the host'
+            : atDoor > 0 ? `, ${atDoor} at your door`
+              : hasUnread ? `, ${unread} new dispatches` : ''}`}
       >
         <View style={s.joinedImgWrap}>
           {coverUrl ? (
