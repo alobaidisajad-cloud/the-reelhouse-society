@@ -528,7 +528,7 @@ describe('the body says the same six things in half the height', () => {
 // ════════════════════════════════════════════════════════════════════════════
 // DRIVEN — the altarpiece, actually rendered
 // ════════════════════════════════════════════════════════════════════════════
-const mockRpc = jest.fn(() => Promise.resolve({ error: null }));
+const mockRpc = jest.fn((): Promise<{ error: unknown }> => Promise.resolve({ error: null }));
 const mockUpdateUser = jest.fn();
 let mockStorePrefs: Record<string, unknown>;
 
@@ -543,6 +543,7 @@ jest.mock('@/src/stores/auth', () => {
   return { useAuthStore };
 });
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
+jest.mock('@/src/utils/reelToast', () => ({ __esModule: true, default: Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn() }) }));
 
 
 const FILMS = [
@@ -629,6 +630,18 @@ describe('the altarpiece, driven', () => {
     expect(sent.p_preferences.favorites[CENTRE_MOUNT]).toBeNull();
     expect(sent.p_preferences.favorites[1]).toMatchObject({ title: 'Persona' });
     expect(sent.p_preferences.favorites[2]).toMatchObject({ title: 'In the Mood for Love' });
+  });
+
+  it('a change the server refuses is undone, and said', async () => {
+    const reelToast = jest.requireMock('@/src/utils/reelToast').default as { error: jest.Mock };
+    mockRpc.mockImplementationOnce(() => Promise.resolve({ error: { message: 'permission denied', code: '42501' } }));
+    const r = mount(FILMS);
+    await act(async () => { fireEvent.press(r.getByLabelText(/Stalker, the centre/)); });
+    await act(async () => { fireEvent.press(r.getByLabelText('Remove from the altarpiece')); });
+
+    await waitFor(() => expect(reelToast.error).toHaveBeenCalledWith('Your favourites could not be changed. They are as they were.'));
+    // Applied at once, then put back exactly as it was.
+    expect(mockUpdateUser).toHaveBeenLastCalledWith({ preferences: { favorites: FILMS } });
   });
 
   it('a wing reaches the centre only when the member asks', async () => {

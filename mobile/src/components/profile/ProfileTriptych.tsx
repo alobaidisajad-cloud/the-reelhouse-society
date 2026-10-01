@@ -13,7 +13,9 @@ import { useAuthStore } from '@/src/stores/auth';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
+import reelToast from '@/src/utils/reelToast';
+import { logger } from '@/src/utils/logger';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
@@ -33,11 +35,9 @@ const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 // THE ALTARPIECE
 // ════════════════════════════════════════════════════════════════════════════
 /**
- * Three favourite films used to hang as three equal thirds — the same row every
- * other logging app draws. An altarpiece is not three equal panels: it is a
- * large centre with two smaller wings, hung from a hook and standing on a rail.
- * That shape says something a row cannot — that ONE of these films matters most
- * — and it costs nothing but arithmetic.
+ * Three favourite films as an altarpiece, not three equal thirds: a large centre
+ * with two smaller wings, hung from a hook and standing on a rail. The shape
+ * says what a row cannot — that ONE of these films matters most.
  *
  * ── THE GEOMETRY IS DERIVED, NEVER TYPED IN ──────────────────────────────────
  * Fixed widths (85 / 140 / 85) fit a 375pt screen and overflow a 320pt one.
@@ -72,10 +72,8 @@ export function triptychMetrics(windowWidth: number) {
 /** Hanging order: left wing, centre, right wing. */
 const HANGING_ORDER = [1, CENTRE_MOUNT, 2] as const;
 
-// ── Tier Slot Glow — Web's archivist-card-glow / auteur-card-glow ──
-// 4s breathing border, shimmer top line. The per-panel ✦/★ glyph is gone: the
-// altarpiece says rank with LIGHT, and three badges on three frames was the
-// "decoration where information belongs" problem this pass exists to remove.
+// ── The rank's light on a panel: a 4s breathing border and a shimmer along
+// the top. The altarpiece says rank with LIGHT, never a badge on each frame.
 function TierGlow({ tier, style, children }: { tier: 'archivist' | 'auteur'; style?: any; children: React.ReactNode }) {
     const isArch = tier === 'archivist';
     const borderOpacity = useSharedValue(0.30);
@@ -126,7 +124,7 @@ function TierGlow({ tier, style, children }: { tier: 'archivist' | 'auteur'; sty
     );
 }
 
-/** Kept as the public name — every existing import refers to it. */
+/** A film on the altarpiece (the favourites' own type, under the name its importers use). */
 export type TriptychFilm = FavouriteFilm;
 
 interface TriptychSearchResult {
@@ -178,7 +176,6 @@ const MOUNT_NAME = ['the centre', 'the left wing', 'the right wing'];
 
 export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: TriptychUser, isOwnProfile: boolean, userRole?: string }) {
     const { updateUser } = useAuthStore();
-    const router = useRouter();
     const { width } = useWindowDimensions();
     const m = useMemo(() => triptychMetrics(width), [width]);
 
@@ -194,11 +191,9 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
     const kbPad = useModalKeyboardPadding(insets.bottom);
 
     // ── ONE MODAL, TWO PANES ─────────────────────────────────────────────────
-    // Managing a mount and searching for a film used to want two sheets, and
-    // dismissing one to present the other in the same tick is the iOS
-    // modal-over-modal race that has bitten this app before: the second sheet
-    // never appears. Swapping the CONTENT of a single mounted Modal cannot
-    // race with anything.
+    // Managing a mount and searching for a film share one sheet: dismissing one
+    // Modal to present another in the same tick is the iOS modal-over-modal
+    // race (the second never appears). Swapping the CONTENT of one cannot race.
     const [sheet, setSheet] = useState<Sheet | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const searching = sheet?.mode === 'search';
@@ -211,7 +206,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         [search.results],
     );
 
-    // Nitrate Noir Breathing Ember Protocol for Search Modal
+    // The search glass breathes while a search is out.
     const searchEmberOpacity = useSharedValue(0.5);
     useEffect(() => {
         if (isSearching) {
@@ -238,7 +233,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
      * Every write goes through here: optimistic locally, merged onto the
      * FRESHEST prefs from the store rather than a stale prop snapshot (so a
      * concurrent change to another key isn't clobbered), queued when offline,
-     * rolled back when the server genuinely refuses.
+     * rolled back — and said — when the server refuses.
      */
     const commit = useCallback(async (next: (FavouriteFilm | null)[]) => {
         const currentPrefs = useAuthStore.getState().user?.preferences ?? {};
@@ -254,7 +249,8 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                 enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });
             } else {
                 updateUser({ preferences: currentPrefs });
-                if (__DEV__) console.error('[ProfileTriptych] Failed to write favourites:', e);
+                logger.warn('[ProfileTriptych] favourites refused:', e);
+                reelToast.error('Your favourites could not be changed. They are as they were.');
             }
         }
     }, [updateUser, user.id]);
@@ -295,14 +291,14 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
 
     const openMount = useCallback((index: number, film: FavouriteFilm | null) => {
         if (!isOwnProfile) {
-            if (film && film.id && film.id !== -1) (router.push as any)(`/film/${film.id}` as never);
+            if (film && film.id && film.id !== -1) nav.push(`/film/${film.id}`);
             return;
         }
         TactileEngine.navigate();
         setSearchQuery('');
         // An empty mount has nothing to manage — go straight to the search.
         setSheet({ index, mode: film ? 'plate' : 'search' });
-    }, [isOwnProfile, router]);
+    }, [isOwnProfile]);
 
     const hasAnything = mounts.some(Boolean);
     if (!hasAnything && !isOwnProfile) {
@@ -325,14 +321,9 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                 : `${film.title}, ${MOUNT_NAME[index]} of their favourites.`)
             : (isOwnProfile ? `Add a film to ${MOUNT_NAME[index]}` : `${MOUNT_NAME[index]}, empty`);
 
-        // The WRAPPER carries the size and the panel fills it.
-        //
-        // Both were given `size` at first, which is right for the plain wrapper
-        // (a bare View, no border) and wrong for TierGlow: that draws a 1pt
-        // breathing border, so its content box is 2pt smaller than the size it
-        // was handed — and a child with an explicit width simply overflowed it.
-        // Every Archivist and Auteur would have had three panels sitting 1pt
-        // proud of their own frames.
+        // The WRAPPER carries the size and the panel fills it: TierGlow draws
+        // a 1pt border, so a panel given the size itself would stand 1pt proud
+        // of its own frame.
         const face = (
             <PressableScale
                 style={[
@@ -368,8 +359,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                         />
                     ) : (
                         // A favourite stored by an old build as a bare title has
-                        // no artwork. A titled plate is the dignified answer; a
-                        // broken image was the old one.
+                        // no artwork: it is shown as a titled plate.
                         <View style={s.titlePlate}>
                             <Text {...scaledTextProps} style={[s.titlePlateText, isCentre && s.titlePlateTextLg]} numberOfLines={4}>{film.title}</Text>
                         </View>
@@ -390,10 +380,8 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
             </PressableScale>
         );
 
-        // The centre's light, on a host that does not clip. The panel clips its
-        // corners (overflow hidden), and on iOS a view that clips cannot cast
-        // anything outside itself — so while the glow sat on the panel, iOS
-        // drew no light on the prize at all.
+        // The centre's light, on a host that does not clip: the panel clips its
+        // corners, and on iOS a view that clips casts nothing outside itself.
         const hung = isCentre && film
             ? <View style={[s.mountFill, isAuteurPlus ? s.mountCentreLitRuby : s.mountCentreLit]}>{face}</View>
             : face;
@@ -475,6 +463,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                     <Pressable
                         style={StyleSheet.absoluteFillObject}
                         onPress={() => { TactileEngine.selection(); setSheet(null); }}
+                        accessibilityRole="button"
                         accessibilityLabel="Close"
                     />
 
