@@ -246,9 +246,13 @@ for (const f of files) {
 
 for (const g of groups.values()) {
   const [first, ...rest] = g.flows.sort();
+  // What a person looking at the phone would have read: within the annotation's 40 lines.
+  const words = g.screen.filter((r) => r.includes('"'));
   const lines = [
     `${g.flows.join(', ')}: failed at ${g.where}`,
     `why: ${g.why}`,
+    `the words on the screen${rest.length ? ` (${first}'s)` : ''}:`,
+    ...(words.length ? words.slice(0, 10) : ['(none)']),
     // Before the screen, whose long list the annotation cuts short.
     `traced by the app${rest.length ? ` (${first}'s)` : ''}:`,
     ...g.traced,

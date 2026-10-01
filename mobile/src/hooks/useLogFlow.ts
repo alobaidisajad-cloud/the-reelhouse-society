@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager } from 'react-native';
 import { localCalendarDate } from '@/src/utils/timeAgo';
 import { nav } from '@/src/utils/typedRouter';
+import { e2eTrace } from '@/src/utils/e2eTrace';
 export interface LogSearchResult {
     id: number;
     title?: string;
@@ -479,6 +480,7 @@ export function useLogFlow() {
         const blockReason = validateLogSubmission(status, rating, review, abandonedReason);
         if (blockReason) { reelToast.error(blockReason); return; }
         setSubmitting(true);
+        e2eTrace('log.seal.start', { editing: isEditing });
         try {
             const logData = buildLogPayload({
                 film, status, rating, review, isSpoiler, date, watchedWith, privateNotes,
@@ -490,11 +492,14 @@ export function useLogFlow() {
             else { await addLog(logData); }
             clearDraft(user?.id, 'log');
             TactileEngine.success();
+            e2eTrace('log.seal.saved');
             // One brass beat, "RECORD SEALED", then dismiss (never after unmount).
             setSealed(true);
             if (sealTimerRef.current) clearTimeout(sealTimerRef.current);
             sealTimerRef.current = setTimeout(() => {
+                e2eTrace('log.seal.beat');
                 deferUntilIdle(() => {
+                    e2eTrace('log.seal.dismiss');
                     nav.back();
                     // A NEW entry only (an edit adds no film). Nested, so the
                     // dismissal ends before an OS modal can rise; `logs` is the
@@ -509,6 +514,7 @@ export function useLogFlow() {
             }, 650);
             return;
         } catch (err: unknown) {
+            e2eTrace('log.seal.failed', { code: (err as { code?: string })?.code ?? null, network: isNetworkError(err) });
             // The core write's failures surface here; a network one is queued, not a defect.
             if (!isNetworkError(err)) {
                 captureError(err, { scope: 'useLogFlow.handleLog', isEditing, filmId: film?.id });
