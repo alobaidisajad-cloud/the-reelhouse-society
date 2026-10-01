@@ -539,7 +539,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/ProfilePhysicalTab.tsx | 2026-10-01 | a search that found nothing is said; catalogued as VHS (the space); nav; comments say what is true now |
 | src/components/profile/ProfilePosterCard.tsx | 2026-10-01 | three modes no caller used, removed; nav; comments say what is true now |
 | src/components/profile/ProfileProjectorTab.tsx | — |  |
-| src/components/profile/profileStyles.ts | — |  |
+| src/components/profile/profileStyles.ts | 2026-10-01 | 61 styles nothing read, removed; comments say what is true now |
 | src/components/profile/ProfileTriptych.tsx | — |  |
 | src/components/profile/ProfileWatchlistTab.tsx | 2026-10-01 | sized by the true total: a search keeps its box, finding nothing is said; the Oracle only with a choice; nav |
 | src/components/profile/ProjectorRoom.tsx | — |  |

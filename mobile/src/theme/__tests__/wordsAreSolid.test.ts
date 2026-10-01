@@ -36,7 +36,6 @@ const ALLOWED: Record<string, string> = {
   'src/components/film/NitrateFileCard.tsx · posterFallbackMark': 'a mark on a missing poster',
   'src/components/film/NitrateFileCard.tsx · metaDot': '· between two facts',
   'src/components/profile/ProfileArchiveTab.tsx · importDividerMark': 'the ornament on a divider',
-  'src/components/profile/profileStyles.ts · searchIcon': 'an icon',
   'app/(tabs)/reels.tsx · searchIcon': 'an icon',
   'src/components/profile/profileStyles.ts · plateInitial': 'the ghost initial standing in for a portrait',
   'src/components/profile/profileStyles.ts · bioMark': '« » around a bio',

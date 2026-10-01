@@ -3,10 +3,7 @@ import { StyleSheet } from 'react-native';
 import { ROOM_INSET } from './roomStyles';
 import { EDGE_LIT } from '@/src/theme/light';
 
-// ════════════════════════════════════════════════════════════
-// STYLES — Nitrate Noir Design System
-// T3-1: Extracted from [username].tsx for maintainability
-// ════════════════════════════════════════════════════════════
+// The member file's styles: app/user/[username].tsx and the parts it draws.
 
 export const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
@@ -14,14 +11,6 @@ export const s = StyleSheet.create({
   // ── Top Navigation ──
   topNav: { paddingTop: 56, paddingHorizontal: ROOM_INSET, paddingBottom: 8, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   topNavBtn: { width: 40, height: 40, justifyContent: 'center' },
-
-  // ── Tab Page Header ──
-  tabPageHeader: { ...EDGE_LIT,
-    paddingTop: 56, paddingHorizontal: ROOM_INSET, paddingBottom: 12,
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: colors.soot,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.15)',
-  },
 
   // ── Atmospheric Header ──
   headerWrap: {
@@ -41,26 +30,18 @@ export const s = StyleSheet.create({
     backgroundColor: 'rgba(184,137,26,0.3)', zIndex: 3,
   },
   // No horizontal padding and no centring: each block inside the hero sets its
-  // own inset, exactly as the design does. A shared 20pt pad plus
-  // alignItems:'center' is precisely what produced the old single centred
-  // column of eleven stacked rows. `paddingTop` is supplied at the call site —
-  // it differs between your own file (a tab, no back button) and a pushed one.
+  // own inset (a shared pad and centring make one centred column of stacked
+  // rows). `paddingTop` is supplied at the call site — it differs between your
+  // own file (a tab, no back button) and a pushed one.
   headerContent: { position: 'relative', zIndex: 4 },
 
-  // ── Avatar ──
-  avatarWrap: { position: 'relative', marginBottom: 12 },
-  avatar: { width: 108, height: 108, borderRadius: 54 },
-  // Auteur-only: a tight, contained ruby halo behind the avatar — replaces the
-  // big header haze. iOS shadow only, soft and restrained (not the old red cloud).
-
   // ── Social Links ──
-  // Sets its own inset — the hero no longer pads its children as a group.
+  // Sets its own inset, as every block in the hero does.
   socialLinksRow: { position: 'relative' as const, zIndex: 5, flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 8, justifyContent: 'center' as const, marginTop: 14, paddingHorizontal: 20 },
   socialLinkChip: {
     flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 4,
     // 36 + 4pt of slop each side = the 44pt floor, using only half the 8pt row
-    // gap so a chip never reaches into the one beside or below it. At the old
-    // ~20pt height no amount of legal slop could have got there.
+    // gap so a chip never reaches into the one beside or below it.
     minHeight: 36,
     paddingHorizontal: 12, paddingVertical: 5,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 3,
@@ -70,22 +51,9 @@ export const s = StyleSheet.create({
   // ── Buttons ──
   ghostBtn: { paddingVertical: 14, paddingHorizontal: 28, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 4, backgroundColor: 'rgba(13,11,9,0.8)' },
   ghostBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen },
-  primaryBtn: { ...EDGE_LIT, backgroundColor: colors.soot, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 4, ...effects.shadowFloat },
-  primaryBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen, ...effects.textGlowSepia },
   ctaBtn: { ...EDGE_LIT, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: colors.soot, paddingVertical: 14, alignItems: 'center' as const, borderRadius: 4, marginBottom: 16, ...effects.shadowSurface, ...effects.flat, },
   ctaBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen, ...effects.textGlowSepia },
-
-  // ── Stats ──
-  statsGrid: { 
-    flexDirection: 'row' as const, width: '100%' as const, marginTop: 24, 
-    justifyContent: 'center' as const, alignItems: 'center' as const,
-    backgroundColor: 'rgba(13,11,9,0.85)',
-    borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.15)',
-    borderRadius: 6,
-    ...effects.shadowSurface, ...effects.flat,
-  },
-  statValue: { fontFamily: fonts.display, fontSize: 18, color: colors.silverScreen, lineHeight: 22, ...effects.textGlowSepia },
-  statLabel: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.fogQuiet, marginTop: 4 },
+  ctaBtnRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
 
   // ── The Sealed Dossier (private accounts) ──
   // No ground of its own, as contentArea has none: the sealed notice lies on
@@ -99,68 +67,17 @@ export const s = StyleSheet.create({
   sealedTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, marginBottom: 10 },
   sealedBody: { fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.bone, textAlign: 'center' as const, lineHeight: 19 },
 
-  // ── Recently Watched poster overlays ──
-  posterImg: { width: '100%' as const, height: '100%' as const, borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)' },
-  posterBottomGrad: {
-    position: 'absolute' as const, bottom: 0, left: 0, right: 0,
-    padding: 4, flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'flex-end' as const,
-    backgroundColor: 'rgba(0,0,0,0.65)', borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
-    overflow: 'hidden' as const, flexWrap: 'wrap' as const,
-  },
-  posterTimeAgo: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1, color: colors.fog },
-
-  // ── Tier Borders (Shadows Purged) ──
-  auteurGlow: {
-    borderWidth: 1, borderColor: 'rgba(107,26,10,0.8)', borderRadius: 2, borderStyle: 'solid' as const,
-  },
-  archivistGlow: {
-    borderWidth: 1, borderColor: 'rgba(196,150,26,0.5)', borderRadius: 2, borderStyle: 'solid' as const,
-  },
-
   // ── Collection Grid ──
-  // Width is computed in pixels at the call site — the '31%'-of-a-widthless-
-  // wrapper collapse is dead. minHeight keeps all six rooms in perfect rows.
+  // Width is computed in pixels at the call site; minHeight keeps all six
+  // rooms in even rows.
   roomKeyDim: { opacity: 0.75 },
   ascendBtn: { marginTop: 18, backgroundColor: colors.sepia, borderRadius: 2, paddingVertical: 11, paddingHorizontal: 24 },
   ascendBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.ink },
-
-  // ── Tab Content: Grids ──
-  grid4: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 6 },
-  grid3: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 8 },
-  monthHeader: {
-    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia, marginBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.15)', paddingBottom: 8,
-  },
-
-  // ── Badges ──
-  statusBadge: { position: 'absolute' as const, top: 4, right: 4, backgroundColor: 'rgba(13,11,9,0.85)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.35)', borderRadius: 2, paddingHorizontal: 4, paddingVertical: 2 },
-  halfLifeBadge: { position: 'absolute' as const, bottom: 4, left: 4, backgroundColor: colors.ink, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, paddingHorizontal: 4, paddingVertical: 2 },
-  formatBadge: { position: 'absolute' as const, top: 4, right: 4, backgroundColor: colors.ink, borderWidth: 1, borderRadius: 2, paddingHorizontal: 5, paddingVertical: 2 },
-
-  // ── Filters & Search ──
-  filterChip: { paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, backgroundColor: 'transparent' },
-  filterChipActive: { borderColor: colors.sepia, backgroundColor: colors.sepiaFaint },
-  filterChipText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
-  filterChipTextActive: { color: colors.sepia },
-  searchWrap: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: colors.well, borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', borderRadius: 2, paddingHorizontal: 10 },
-  searchIcon: { fontSize: 14, color: colors.fog, opacity: 0.5, marginRight: 6 },
-  searchInput: { flex: 1, fontFamily: fonts.sub, fontSize: 11, color: colors.parchment, paddingVertical: 10 },
-  searchClear: { padding: 4 },
 
   // ── Empty State ──
   emptyState: { alignItems: 'center' as const, paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderStyle: 'dashed' as const, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, backgroundColor: 'rgba(30,25,20,0.7)' },
   emptyTitle: { fontFamily: fonts.display, fontSize: 15, color: colors.parchment, marginBottom: 8 },
   emptyDesc: { fontFamily: fonts.body, fontSize: 10, color: colors.fog, textAlign: 'center' as const, lineHeight: 16, fontStyle: 'italic' as const },
-
-  // ── Stacks ──
-  stackCard: { ...EDGE_LIT, borderRadius: 2, overflow: 'hidden' as const, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)', backgroundColor: colors.soot },
-  stackPosterWrap: { width: '100%' as const, height: 80, position: 'relative' as const, overflow: 'hidden' as const },
-  stackPosterPanel: { position: 'absolute' as const, top: 0, height: '100%' as const },
-  stackOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(13,11,9,0.55)' },
-  stackContent: { padding: 12 },
-  stackBadge: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.sepia, backgroundColor: colors.sepiaFaint, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 1, alignSelf: 'flex-start' as const, overflow: 'hidden' as const, marginBottom: 4 },
-  stackTitle: { fontFamily: fonts.display, fontSize: 11, color: colors.parchment, letterSpacing: 0.5, lineHeight: 14 },
-  stackDesc: { fontFamily: fonts.body, fontSize: 9, color: colors.fog, fontStyle: 'italic' as const, lineHeight: 13, marginTop: 4 },
 
   // ── Projector Tab ──
   card: { ...EDGE_LIT, backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, padding: 16, gap: 10 },
@@ -176,40 +93,11 @@ export const s = StyleSheet.create({
   notFoundBody: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, fontStyle: 'italic' as const, textAlign: 'center' as const, marginBottom: 24 },
   ghostBtnRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
 
-  // ── Tab Header ──
-  tabHeaderTextWrap: { flex: 1 },
-  tabHeaderUsername: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.5, color: colors.fog },
-  tabHeaderTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, lineHeight: 22 },
+  // ── A room ──
   tabScrollContent: { paddingBottom: 80, paddingTop: 8 },
   /** A sealed room, which has no list to inherit the room inset from. */
   sealedPad: { paddingHorizontal: ROOM_INSET },
   tabContentPad: { paddingHorizontal: ROOM_INSET },
-  filterGroupCol: { marginBottom: 16, gap: 10 },
-  filterScrollMargin: { marginBottom: 16 },
-  filterChipRow: { gap: 8 },
-  filterChipRowTight: { gap: 6 },
-  searchIconStyle: { opacity: 0.5, marginRight: 6 },
-  searchWrapFlex: { flex: 1 },
-  searchNoResults: { textAlign: 'center' as const, padding: 24, color: colors.fog, fontFamily: fonts.body, fontSize: 11 },
-
-  // ── Poster Cards ──
-  posterPlaceholder: { backgroundColor: colors.inkwell, justifyContent: 'center' as const, alignItems: 'center' as const },
-  posterRatingRow: { flexDirection: 'row' as const, gap: 2 },
-  posterCardWrap: { aspectRatio: 2 / 3, position: 'relative' as const },
-  statusBadgeAbandoned: { borderColor: 'rgba(139,30,30,0.4)' },
-  formatBadgeText: { fontSize: 7, fontFamily: fonts.sub, letterSpacing: 1 },
-
-  // ── Half-Life ──
-  halfLifeContent: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 2 },
-  halfLifeText: { fontSize: 7, fontFamily: fonts.sub },
-
-  // ── Watchlist ──
-  watchlistControlRow: { flexDirection: 'row' as const, gap: 8, marginBottom: 16, alignItems: 'center' as const },
-  sortRow: { flexDirection: 'row' as const, gap: 4 },
-  ctaBtnRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
-
-  // ── Stacks ──
-  stackEmptyBg: { ...EDGE_LIT, flex: 1, backgroundColor: colors.soot },
 
   // ── Projector Tab ──
   // The header above already names the room; nothing here names it again.
@@ -227,41 +115,25 @@ export const s = StyleSheet.create({
   // ── Calendar ──
   emptyLockIcon: { marginBottom: 12, opacity: 0.5 },
 
-  // ── Profile Action Row (follow + more) ──
-  moreBtn: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, paddingHorizontal: 10, paddingVertical: 8, marginLeft: 8 },
-
   // ── Triptych ──
-  // No `maxWidth: 380` any more. The altarpiece derives its panel widths from
-  // the WINDOW, so a wrapper that capped the row at 380 while the panels were
-  // measured against a 430pt screen would have hung them off the edge of their
-  // own container on the larger phones.
+  // No maxWidth: the altarpiece derives its panel widths from the WINDOW, and
+  // a capped wrapper would hang them off its own edge on the larger phones.
   triptychWrap: { marginTop: 16 },
 
   // ── Content Area ──
-  // No ground of its own. It was painted in the house colour, which laid a
-  // second, UNLIT page over the room's light from the plate down — the seam
-  // under the profile's buttons. The light is painted once, at the root.
+  // No ground of its own: a painted one would lay a second, UNLIT page over the
+  // room's light from the plate down. The light is painted once, at the root.
   contentArea: {},
 
   // ── Main Scroll ──
   mainScrollContent: { paddingBottom: 60 },
 
-  // ── Founder's Mark ──
-  founderText: {
-    fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.5,
-    color: colors.sepia, textAlign: 'center' as const,
-  },
-
   // ══════════════════════════════════════════════════════════════════════════
   // THE MEMBER FILE
   // ══════════════════════════════════════════════════════════════════════════
-  // The hero used to be ten centred blocks stacked down the middle of a 120pt
-  // top pad: portrait, badge, name, tier pill, serial, joined, bio, links,
-  // buttons, stats. Eleven rows before a single film. It is now a COMPOSITION —
-  // a mounted portrait on the left, the member's particulars set beside it like
-  // a letterhead — which reads in one glance and costs about 100pt less on a
-  // pushed profile (~613 → ~510 at 375pt) and about 140 on your own tab, where
-  // the old flat 120pt pad was clearing a back button that is not there.
+  // The hero is a COMPOSITION — a mounted portrait on the left, the member's
+  // particulars set beside it like a letterhead — read in one glance, not
+  // eleven centred rows before a single film.
 
   // A breath of dark at the very top so the status bar recedes into the plate
   // instead of fighting a bright backdrop for the same pixels.
@@ -294,14 +166,9 @@ export const s = StyleSheet.create({
   cornerBL: { bottom: 0, left: 0, borderBottomWidth: 15, borderRightWidth: 15, borderBottomColor: 'rgba(232,223,208,0.30)', borderRightColor: 'transparent' },
   cornerBR: { bottom: 0, right: 0, borderBottomWidth: 15, borderLeftWidth: 15, borderBottomColor: 'rgba(232,223,208,0.30)', borderLeftColor: 'transparent' },
 
-  // WHERE the rank sits on the print — and only where. This used to hold the
-  // whole construction too: the border, the ground, the tilt and the type. That
-  // construction is now `theme/stamp.ts` and `RankBadge`, drawn identically in
-  // every one of the ten places a rank appears, so what is left here is the
-  // corner it is pressed into.
-  //
-  // The tilt goes with it. One angle, stated once, so a column of marks in a
-  // feed agrees with the single mark on a profile.
+  // WHERE the rank sits on the print — and only where. The mark itself (its
+  // border, ground, tilt and type) is `theme/stamp.ts` and `RankBadge`, drawn
+  // identically in every place a rank appears.
   tierStamp: {
     position: 'absolute' as const, left: -8, bottom: 11, zIndex: 6,
   },
@@ -341,16 +208,9 @@ export const s = StyleSheet.create({
   actTextSolid: { color: colors.ink },
   actGhost: { flex: 0, width: 48, borderColor: colors.ash, backgroundColor: 'transparent' },
 
-  // ── the picture rail the altarpiece stands on ──
-  railRow: { flexDirection: 'row' as const, alignItems: 'center' as const, marginHorizontal: 20, marginTop: 14 },
-  railLine: { flex: 1, height: 1 },
-  railDiamond: { width: 3, height: 3, marginHorizontal: 5, backgroundColor: colors.sepia, opacity: 0.5, transform: [{ rotate: '45deg' }] },
-  railDiamondRuby: { backgroundColor: colors.crimson },
-
   // ══ LATELY — a ledger, numbered ══
-  // Three poster tiles in a row said "here are three pictures". A numbered
-  // ledger says "these are the last three films, in order, and here is what
-  // they got" — the same data, carrying its own meaning.
+  // A numbered ledger, not three tiles: "the last three films, in order, and
+  // what they got".
   latelySection: { marginTop: 4 },
   latelyWrap: { paddingHorizontal: 20 },
   latelyRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 11, minHeight: 66, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.10)' },
@@ -367,11 +227,9 @@ export const s = StyleSheet.create({
   latelyRewatch: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 0.9, color: colors.sepia, marginTop: 4 },
 
   // ══ THE HOLDINGS ══
-  // Six 122pt cards in a 3-wide grid spent ~286pt saying six numbers, and put a
-  // decorative icon circle above each one. Three rows in two columns say the
-  // same six in 156pt, and a dotted leader carries the eye from the room to its
-  // count the way a printed index does. That 130pt is what pays for the centre
-  // of the altarpiece being genuinely large.
+  // Three rows in two columns say the six rooms' numbers in 156pt, a dotted
+  // leader carrying the eye from the room to its count as a printed index does
+  // (the room this saves is what makes the altarpiece's centre large).
   holdWrap: { flexDirection: 'row' as const, gap: 14, paddingHorizontal: 20 },
   holdCol: { flex: 1, minWidth: 0 },
   holdRow: { minHeight: 52, justifyContent: 'center' as const, gap: 3, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.10)' },

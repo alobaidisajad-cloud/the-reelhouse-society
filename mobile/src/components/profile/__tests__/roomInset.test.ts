@@ -36,7 +36,6 @@ const code = (s: string) =>
  */
 const PAGE_INSET_RULES = [
   ['profileStyles.ts', 'topNav'],
-  ['profileStyles.ts', 'tabPageHeader'],
   ['profileStyles.ts', 'tabContentPad'],
   ['profileStyles.ts', 'projectorSectionsWrap'],
   ['profileStyles.ts', 'sealedPad'],
@@ -60,7 +59,7 @@ describe('one inset from the screen edge, named once', () => {
     // If a rule were renamed, the regex above would return null and the test
     // would fail — but a typo in THIS list would silently check nothing. This
     // pins the count so shrinking the list is visible.
-    expect(PAGE_INSET_RULES.length).toBe(7);
+    expect(PAGE_INSET_RULES.length).toBe(6);
   });
 
   it('ROOM_INSET is a real, sane number', () => {
