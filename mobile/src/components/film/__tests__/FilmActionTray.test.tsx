@@ -3,10 +3,14 @@
  * to earn that a <Modal> would have given it free.
  */
 import React from 'react';
-import { BackHandler } from 'react-native';
+import { BackHandler, StyleSheet } from 'react-native';
+import { withTiming } from 'react-native-reanimated';
 import { render, fireEvent } from '@testing-library/react-native';
-import { FilmActionTray, TrayIcons, type TrayAct } from '../FilmActionTray';
+import { FilmActionTray, TrayIcons, FALL_MS, RISE_RESCUE_MS, type TrayAct } from '../FilmActionTray';
 import { trayMaxHeight } from '../filmStubMetrics';
+import { e2eTrace } from '@/src/utils/e2eTrace';
+
+jest.mock('@/src/utils/e2eTrace', () => ({ e2eTrace: jest.fn(), E2E_BUILD: false }));
 
 const act = (over: Partial<TrayAct> = {}): TrayAct => ({
   key: 'log', Icon: TrayIcons.Plus, label: 'LOG THIS FILM',
@@ -126,6 +130,41 @@ describe('the three things an overlay has to earn', () => {
     render(<FilmActionTray {...base} visible={false} />);
     expect(spy.mock.calls.length).toBe(before);
     spy.mockRestore();
+  });
+});
+
+describe('an open tray is always seen, and a closed one always goes', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  const risen = (t: ReturnType<typeof render>) => {
+    const scrim = StyleSheet.flatten(t.getByTestId('film-tray-scrim').parent!.props.style);
+    return scrim.opacity;
+  };
+
+  /**
+   * In the sealed E2E, offline, an opened tray stayed transparent: open to the
+   * page (the stub said it closes it) and invisible to the member. A rise that
+   * has not landed by RISE_RESCUE_MS is set risen.
+   */
+  it('is set risen when its rise never lands', () => {
+    (withTiming as jest.Mock).mockImplementationOnce(() => 0); // a rise that never moves
+    const t = render(<FilmActionTray {...base} />);
+    expect(risen(t)).toBe(0);
+    React.act(() => { jest.advanceTimersByTime(RISE_RESCUE_MS); });
+    t.rerender(<FilmActionTray {...base} acts={[...base.acts]} />); // memo: a new list redraws it
+    expect(risen(t)).toBe(1);
+    expect(e2eTrace).toHaveBeenCalledWith('tray.rise.rescued', { at: 0 });
+  });
+
+  it('is drawn through its fall, then gone, and holds nothing while it falls', () => {
+    const t = render(<FilmActionTray {...base} />);
+    t.rerender(<FilmActionTray {...base} visible={false} />);
+    const layer = t.getByTestId('film-action-tray');
+    expect(layer.props.pointerEvents).toBe('none');
+    expect(layer.props.accessibilityViewIsModal).toBe(false);
+    React.act(() => { jest.advanceTimersByTime(FALL_MS); });
+    expect(t.queryByTestId('film-action-tray')).toBeNull();
   });
 });
 

@@ -28,11 +28,11 @@
  * trailer, no trailer row; never logged, no rewatch row. A greyed row is a
  * promise you are not keeping.
  */
-import React, { memo, useCallback, useEffect, useMemo } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, BackHandler, Pressable, ScrollView } from 'react-native';
 import { Text } from '@/src/components/text';
 import type { StyleProp, ViewStyle } from 'react-native';
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, ReduceMotion } from 'react-native-reanimated';
+import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import {
@@ -46,10 +46,14 @@ import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
 import { trayMaxHeight } from './filmStubMetrics';
 import { EDGE_LIT } from '@/src/theme/light';
+import { e2eTrace } from '@/src/utils/e2eTrace';
 
 /** The scrim, matching the Concierge's. Not a blur — Android. */
 const SCRIM = 'rgba(13,11,9,0.66)';
-const RISE_MS = 260;
+export const RISE_MS = 260;
+export const FALL_MS = 180;
+/** An open tray not risen by now is set risen: a stalled rise never hides it. */
+export const RISE_RESCUE_MS = RISE_MS + 240;
 /** A gloss may give back what large type added — down to its designed size, never below. */
 const GLOSS_FLOOR = 1 / scaledTextProps.maxFontSizeMultiplier;
 
@@ -176,12 +180,39 @@ export const FilmActionTray = memo(function FilmActionTray({
     return () => sub.remove();
   }, [visible, onDismiss]);
 
+  const rise = useSharedValue(0); // 0 gone, 1 risen: the scrim's fade and the tray's rise
+  const [shown, setShown] = useState(visible);
+  // It rises on its own shared value, not a mount-time `entering` animation,
+  // which can fail to start and leave an OPEN tray transparent. Closing, it is
+  // drawn through its fall and a timer unmounts it: it never holds the page.
+  useEffect(() => {
+    if (visible) {
+      setShown(true);
+      e2eTrace('tray.open');
+      rise.value = withTiming(1, { duration: RISE_MS, reduceMotion: ReduceMotion.System });
+      const rescue = setTimeout(() => {
+        if (rise.value >= 1) return;
+        e2eTrace('tray.rise.rescued', { at: rise.value });
+        rise.value = 1;
+      }, RISE_RESCUE_MS);
+      return () => clearTimeout(rescue);
+    }
+    rise.value = withTiming(0, { duration: FALL_MS, reduceMotion: ReduceMotion.System });
+    const gone = setTimeout(() => setShown(false), FALL_MS);
+    return () => clearTimeout(gone);
+  }, [visible, rise]);
+
+  const scrimStyle = useAnimatedStyle(() => ({ opacity: rise.value }));
+  const trayStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: (1 - rise.value) * windowHeight }],
+  }));
+
   const maxHeight = useMemo(() => trayMaxHeight(windowHeight), [windowHeight]);
   const poster = film.poster_path ? tmdb.poster(film.poster_path, 'w185') : null;
 
   const handleScrim = useCallback(() => onDismiss(), [onDismiss]);
 
-  if (!visible) return null;
+  if (!shown) return null;
 
   return (
     <View
@@ -189,14 +220,12 @@ export const FilmActionTray = memo(function FilmActionTray({
       // The page beneath must be invisible to a screen reader, and the closing
       // control must live INSIDE this region — the exact defect found when the
       // Concierge was audited, where the only way out was unreachable.
-      accessibilityViewIsModal
+      // Falling, it is already closed: no longer modal, and touches pass through.
+      accessibilityViewIsModal={visible}
+      pointerEvents={visible ? 'auto' : 'none'}
       testID="film-action-tray"
     >
-      <Animated.View
-        style={s.scrim}
-        entering={FadeIn.duration(RISE_MS).reduceMotion(ReduceMotion.System)}
-        exiting={FadeOut.duration(180).reduceMotion(ReduceMotion.System)}
-      >
+      <Animated.View style={[s.scrim, scrimStyle]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={handleScrim}
@@ -206,11 +235,7 @@ export const FilmActionTray = memo(function FilmActionTray({
         />
       </Animated.View>
 
-      <Animated.View
-        style={[s.tray, { maxHeight, paddingBottom: dockHeight + 6 }]}
-        entering={SlideInDown.duration(RISE_MS).reduceMotion(ReduceMotion.System)}
-        exiting={SlideOutDown.duration(180).reduceMotion(ReduceMotion.System)}
-      >
+      <Animated.View style={[s.tray, { maxHeight, paddingBottom: dockHeight + 6 }, trayStyle]}>
         {/* The tear line the stub was torn along. */}
         <View style={s.perf} pointerEvents="none">
           {PERF_HOLES.map((k) => <View key={k} style={s.perfHole} />)}
