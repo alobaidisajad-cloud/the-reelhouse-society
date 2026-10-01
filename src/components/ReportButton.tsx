@@ -10,11 +10,13 @@ interface ReportButtonProps {
     size?: number
 }
 
+// The values are the house's own (the reports table's reason CHECK): 'spoilers'
+// and 'offensive' stood here, and the table refused every report filed with them.
 const REASONS = [
     { value: 'spam', label: 'Spam / Promotional', icon: '📧' },
     { value: 'harassment', label: 'Harassment / Hate', icon: '⚠️' },
-    { value: 'spoilers', label: 'Unmarked Spoilers', icon: '🎬' },
-    { value: 'offensive', label: 'Offensive Content', icon: '🚫' },
+    { value: 'spoiler_unmarked', label: 'Unmarked Spoilers', icon: '🎬' },
+    { value: 'inappropriate', label: 'Offensive Content', icon: '🚫' },
     { value: 'other', label: 'Other', icon: '📝' },
 ] as const
 
@@ -25,35 +27,6 @@ export default function ReportButton({ contentType, contentId, size = 14 }: Repo
     const [details, setDetails] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const modalRef = useRef<HTMLDivElement>(null)
-
-    // Don't show if not logged in or if user is reporting their own content
-    if (!isAuthenticated || !user) return null
-
-    const handleSubmit = async () => {
-        if (!reason) {
-            reelToast.error('Please select a reason.')
-            return
-        }
-        setSubmitting(true)
-        try {
-            const { error } = await supabase.from('reports').insert({
-                reporter_id: user.id,
-                content_type: contentType,
-                content_id: contentId,
-                reason,
-                details: details.trim(),
-            })
-            if (error) throw error
-            reelToast.success('Report submitted. The Society will review it.')
-            setShowModal(false)
-            setReason('')
-            setDetails('')
-        } catch {
-            reelToast.error('Failed to submit report. Try again.')
-        } finally {
-            setSubmitting(false)
-        }
-    }
 
     // Close on outside click
     useEffect(() => {
@@ -66,6 +39,51 @@ export default function ReportButton({ contentType, contentId, size = 14 }: Repo
         document.addEventListener('pointerdown', handleClick)
         return () => document.removeEventListener('pointerdown', handleClick)
     }, [showModal])
+
+    // After every hook: returning before one changed their number on sign-in.
+    if (!isAuthenticated || !user) return null
+
+    const close = () => {
+        setShowModal(false)
+        setReason('')
+        setDetails('')
+    }
+
+    const handleSubmit = async () => {
+        if (!reason) {
+            reelToast.error('Please select a reason.')
+            return
+        }
+        setSubmitting(true)
+        try {
+            // Through submit_report, as the app files: the table takes no direct
+            // writes, and the function holds the rate limit and one pending
+            // report per member per thing.
+            const { error } = await supabase.rpc('submit_report', {
+                p_reporter_id: user.id,   // ignored server-side; auth.uid() wins
+                p_content_id: contentId,
+                p_content_type: contentType === 'user' ? 'profile' : contentType,
+                p_reason: reason,
+                p_details: details.trim() || null,
+            })
+            if (error?.code === '23505') {
+                reelToast.success("You've already reported this. The Society will review it.")
+                close()
+                return
+            }
+            if (error?.message?.includes('Rate limit')) {
+                reelToast.error('Too many reports. Please wait a while.')
+                return
+            }
+            if (error) throw error
+            reelToast.success('Report submitted. The Society will review it.')
+            close()
+        } catch {
+            reelToast.error('Failed to submit report. Try again.')
+        } finally {
+            setSubmitting(false)
+        }
+    }
 
     return (
         <>

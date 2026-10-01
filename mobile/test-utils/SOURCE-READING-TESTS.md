@@ -122,6 +122,7 @@ Decisions, as of 2026-09-28:
 | `src/components/profile/__tests__/hideStatsRemoved.guard.test.ts` | A retired control that must not come back as theatre. |
 | `src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts` | The migration that ends a rank, against the client that asks. |
 | `src/services/__tests__/certifyCountAuthority.test.ts` | The migration and the backend contract the count comes from. |
+| `src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts` | Every client (the app and the web) files a report through submit_report, and the web offers only reasons the table accepts; the migration it relies on is rehearsed on the database. |
 | `src/services/__tests__/everyNameAClientCallsExists.test.ts` | Every table and function a client calls exists in the schema snapshot. |
 | `src/services/__tests__/tmdbProxyAllowsEveryPath.test.ts` | The edge function's allowed paths against every path the clients use. |
 | `src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts` | The salon name's four limits, the column's among them. |

@@ -716,6 +716,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/schemas/settings.ts | — |  |
 | src/schemas/user.ts | — |  |
 | src/services/__tests__/aMemberTakesBackOnlyTheirOwnStackCritique.test.ts | 2026-09-30 | written with the stack critique delete |
+| src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts | 2026-10-01 | written with 20261001_03 |
 | src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | — |  |
 | src/services/__tests__/certifyCountAuthority.test.ts | — |  |
 | src/services/__tests__/everyNameAClientCallsExists.test.ts | — |  |

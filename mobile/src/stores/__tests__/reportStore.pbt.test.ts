@@ -356,3 +356,35 @@ describe('ReportStore PBT — Property 8: Invalid payload no side effects', () =
     }
   });
 });
+
+describe('a second report on the same thing', () => {
+  // The house refuses it (one pending report per member per thing, 20261001_03),
+  // and the in-memory list that used to be the only rule forgets on restart.
+  const U = '11111111-1111-4111-8111-111111111111';
+  const T = '22222222-2222-4222-8222-222222222222';
+  const payload = {
+    reporter_id: U, content_id: T, content_type: 'dispatch_post' as const,
+    reason: 'spam' as const, details: null, block_target: false,
+    target_user_id: '33333333-3333-4333-8333-333333333333',
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    useReportStore.setState({ recentReports: new Set(), isSubmitting: false });
+    const { useAuthStore } = jest.requireMock('../auth');
+    (useAuthStore.getState as jest.Mock).mockReturnValue({ user: { id: U } });
+  });
+
+  it('is said as already reported when the house refuses it, and remembered', async () => {
+    (supabase.rpc as jest.Mock).mockResolvedValueOnce({
+      data: null, error: { code: '23505', message: 'Already reported', details: '', hint: '' },
+    });
+    const result = await useReportStore.getState().submitReport(payload as never);
+    expect(result.status).toBe('duplicate');
+    const reelToast = jest.requireMock('../../utils/reelToast').default;
+    expect(reelToast).toHaveBeenCalledWith("You've already reported this content.");
+    expect(reelToast.error).not.toHaveBeenCalled();
+    expect(useReportStore.getState().hasReported(T)).toBe(true);
+    expect(enqueueMutation).not.toHaveBeenCalled();
+  });
+});

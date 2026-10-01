@@ -90,6 +90,13 @@ export const useReportStore = create<ReportState>()((set, get) => ({
         });
 
         if (error) {
+          // The house holds one pending report per member per thing (20261001_03),
+          // and the list above forgets on every restart: this is the answer that stays.
+          if (error.code === '23505') {
+            if (stillSignedIn(startedAs)) set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
+            reelToast("You've already reported this content.");
+            return { status: 'duplicate', message: "You've already reported this content." };
+          }
           if (error.message?.includes('Rate limit')) {
             reelToast.error('Too many reports. Please wait.');
             return { status: 'error', message: 'Rate limit exceeded' };

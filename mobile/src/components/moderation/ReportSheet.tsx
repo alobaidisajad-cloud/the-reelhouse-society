@@ -236,7 +236,8 @@ function ReportSheet({
       target_user_id: targetUserId,
     });
 
-    if (result.status === 'submitted' || result.status === 'queued') {
+    // Already reported is done too: the house holds that report, and says so.
+    if (result.status === 'submitted' || result.status === 'queued' || result.status === 'duplicate') {
       onDismiss();
     }
   }, [selectedReason, user, submitReport, contentId, contentType, details, blockToggle, targetUserId, onDismiss]);

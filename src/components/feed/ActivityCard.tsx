@@ -105,30 +105,28 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     const handleReport = async () => {
         if (!currentUser) return reelToast.error('You must be logged in to report.')
         if (window.confirm("Hide this log and report the author to the Society?")) {
+            // Hides this card, now; nothing is kept, so it says no more than that.
             setIsMuted(true)
-            reelToast.success('Reported. This user has been muted from your feed.')
-            if (log.user_id || log.userId) {
-                // Reports go through `submit_report`, the same RPC the app uses.
-                //
-                // This used to insert straight into `user_reports` — a table the
-                // Tribunal does not read. It reads `reports`. So every report filed
-                // from the web feed landed in a place nobody looks, silently, while
-                // the member was told "Reported." user_reports is dropped in batch 31.
-                //
-                // The RPC is also strictly safer than the insert it replaces: it
-                // derives the reporter from auth.uid() rather than trusting the
-                // client, rate-limits to 10 reports an hour, and refuses self-reports.
-                try {
-                    await supabase.rpc('submit_report', {
-                        p_reporter_id: currentUser.id,   // ignored server-side; auth.uid() wins
-                        p_content_id: log.id,
-                        p_content_type: 'log',
-                        p_reason: 'inappropriate',
-                        p_details: 'Reported from the web feed',
-                        p_target_user_id: log.user_id || log.userId,
-                    })
-                } catch { /* non-critical */ }
+            if (!(log.user_id || log.userId)) {
+                reelToast.success('This log is hidden.')
+                return
             }
+            // Reports go through `submit_report`, the same RPC the app uses: it
+            // takes the reporter from auth.uid(), rate-limits to 10 an hour,
+            // refuses self-reports and holds one pending report per member per
+            // thing. (This once wrote `user_reports`, a table the Tribunal never
+            // read; dropped in batch 31.)
+            const { error } = await supabase.rpc('submit_report', {
+                p_reporter_id: currentUser.id,   // ignored server-side; auth.uid() wins
+                p_content_id: log.id,
+                p_content_type: 'log',
+                p_reason: 'inappropriate',
+                p_details: 'Reported from the web feed',
+                p_target_user_id: log.user_id || log.userId,
+            })
+            // Said after the answer: 23505 is an earlier report of this log, filed already.
+            if (error && error.code !== '23505') reelToast.error('This log is hidden. The report could not be filed; try again later.')
+            else reelToast.success('Reported. This log is hidden.')
         }
     }
 
