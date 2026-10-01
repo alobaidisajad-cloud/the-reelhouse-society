@@ -1,7 +1,7 @@
 appId: com.reelhouse.society
 ---
 # The log form, reached as log_film_flow reaches it, with no keyboard on the
-# device. The member is still signed in from the desk before it.
+# device. The member is still signed in from the stack probe before it.
 - launchApp
 - extendedWaitUntil:
     visible:

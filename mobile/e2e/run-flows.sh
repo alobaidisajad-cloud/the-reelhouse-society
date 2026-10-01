@@ -81,57 +81,20 @@ trap 'kill $sampler $streamer 2>/dev/null' EXIT
 # screen is read the moment a flow fails, before the next one relaunches the app.
 # The flows share a budget well inside the job's (a job that runs out is killed
 # with nothing explained), and each has at most ten minutes of it.
-MINUTES=${E2E_FLOWS_MINUTES:-35}
+MINUTES=${E2E_FLOWS_MINUTES:-42}
 DEADLINE=$(( $(date +%s) + MINUTES * 60 ))
 mkdir -p "$OUT/flow-reports" "$OUT/flow-hierarchy"
 : > "$OUT/maestro.log"
 rc=0
 gone=0
-for flow in $(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort); do
-  name=$(basename "$flow" .yaml)
-  if [ $gone -eq 1 ]; then
-    echo "[Skipped] $name (the emulator was gone)" >> "$OUT/maestro.log"; continue
-  fi
-  left=$(( DEADLINE - $(date +%s) ))
-  if [ $left -le 60 ]; then
-    echo "[Skipped] $name (the flows' ${MINUTES} minutes ran out)" >> "$OUT/maestro.log"; rc=1; continue
-  fi
-  echo "── $name" >> "$OUT/maestro.log"
-  # The device's clock as the flow starts, so its log can be read on its own.
-  # (Quoted twice: adb hands the device's shell one line, which splits it again.)
-  since=$(timeout 20 adb shell "date +'%m-%d %H:%M:%S.000'" 2>/dev/null | tr -d '\r')
-  timeout --signal=INT --kill-after=30 "$(( left < 600 ? left : 600 ))s" "$MAESTRO" test "$flow" \
-    -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" \
-    -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
-    -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" \
-    --format junit --output "$OUT/flow-reports/$name.xml" \
-    --debug-output "$OUT/maestro-debug/$name" \
-    >> "$OUT/maestro.log" 2>&1
-  frc=$?
-  if [ $frc -ne 0 ]; then
-    rc=1
-    [ $frc -eq 124 ] && echo "[Failed] $name (ran out of its time)" >> "$OUT/maestro.log"
-    timeout 60 "$MAESTRO" hierarchy > "$OUT/flow-hierarchy/$name.json" 2>/dev/null || true
-    # The windows Android had then, and what it still called drawing or
-    # animating: the driver waits on every one of them after each key it types.
-    timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' \
-      | grep -E 'Window #[0-9]+|mDrawState=|nimat' > "$OUT/flow-hierarchy/$name.wm" || true
-    # The device's log for this flow alone: what the driver skipped as invisible,
-    # and what Android and the app said (flow-screens.mjs reads both). Its lines
-    # begin "MM-DD HH:MM:SS.mmm", which compare as text within the run.
-    sleep 2   # the copy is a moment behind the device
-    [ -n "$since" ] && awk -v s="$since" '($1 " " $2) >= s' "$OUT/logcat-stream.txt" > "$OUT/flow-hierarchy/$name.log"
-    timeout 20 adb get-state > /dev/null 2>&1 || { gone=1; echo "[Gone] the emulator went away during $name" >> "$OUT/maestro.log"; }
-  fi
-done
-
 # ── THE KEYBOARD'S ROOM ───────────────────────────────────────────────────────
 # The flows type with no keyboard on the device, so none of them can see
 # whether a screen makes room for one. Each probe reaches its screen the same
 # way, then a keyboard is turned on for one tap, and Android's own window list
 # says where the keyboard's top edge is. keyboard-room.mjs compares it with the
 # thing the member needs, and fails when it is under the keyboard — or when no
-# keyboard showed, since then nothing was measured.
+# keyboard showed, since then nothing was measured. They run before the flows,
+# so the flows' shared budget can never leave them unmeasured.
 keys_on() {
   for pkg in $(echo "$imes_all" | sed 's#/.*##' | sort -u); do timeout 20 adb shell pm enable "$pkg" > /dev/null 2>&1; done
   for ime in $imes_all; do timeout 20 adb shell ime enable "$ime" > /dev/null 2>&1; done
@@ -187,6 +150,45 @@ if [ $room_rc -ne 0 ]; then
 else
   node mobile/e2e/annotate.mjs "The keyboard's room" "$OUT/keyboard-room.txt" notice
 fi
+
+for flow in $(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort); do
+  name=$(basename "$flow" .yaml)
+  if [ $gone -eq 1 ]; then
+    echo "[Skipped] $name (the emulator was gone)" >> "$OUT/maestro.log"; continue
+  fi
+  left=$(( DEADLINE - $(date +%s) ))
+  if [ $left -le 60 ]; then
+    echo "[Skipped] $name (the flows' ${MINUTES} minutes ran out)" >> "$OUT/maestro.log"; rc=1; continue
+  fi
+  echo "── $name" >> "$OUT/maestro.log"
+  # The device's clock as the flow starts, so its log can be read on its own.
+  # (Quoted twice: adb hands the device's shell one line, which splits it again.)
+  since=$(timeout 20 adb shell "date +'%m-%d %H:%M:%S.000'" 2>/dev/null | tr -d '\r')
+  timeout --signal=INT --kill-after=30 "$(( left < 600 ? left : 600 ))s" "$MAESTRO" test "$flow" \
+    -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" \
+    -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
+    -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" \
+    --format junit --output "$OUT/flow-reports/$name.xml" \
+    --debug-output "$OUT/maestro-debug/$name" \
+    >> "$OUT/maestro.log" 2>&1
+  frc=$?
+  if [ $frc -ne 0 ]; then
+    rc=1
+    [ $frc -eq 124 ] && echo "[Failed] $name (ran out of its time)" >> "$OUT/maestro.log"
+    timeout 60 "$MAESTRO" hierarchy > "$OUT/flow-hierarchy/$name.json" 2>/dev/null || true
+    # The windows Android had then, and what it still called drawing or
+    # animating: the driver waits on every one of them after each key it types.
+    timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' \
+      | grep -E 'Window #[0-9]+|mDrawState=|nimat' > "$OUT/flow-hierarchy/$name.wm" || true
+    # The device's log for this flow alone: what the driver skipped as invisible,
+    # and what Android and the app said (flow-screens.mjs reads both). Its lines
+    # begin "MM-DD HH:MM:SS.mmm", which compare as text within the run.
+    sleep 2   # the copy is a moment behind the device
+    [ -n "$since" ] && awk -v s="$since" '($1 " " $2) >= s' "$OUT/logcat-stream.txt" > "$OUT/flow-hierarchy/$name.log"
+    timeout 20 adb get-state > /dev/null 2>&1 || { gone=1; echo "[Gone] the emulator went away during $name" >> "$OUT/maestro.log"; }
+  fi
+done
+
 
 cat "$OUT/maestro.log"
 grep -E '^\[(Passed|Failed|Skipped|Gone)\]' "$OUT/maestro.log" > "$OUT/maestro-summary.txt" || true

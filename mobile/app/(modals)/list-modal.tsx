@@ -459,6 +459,7 @@ export default function ListModal() {
                     disableFullscreenUI={true}
                     keyboardAppearance="dark"
                     accessibilityLabel="Stack description"
+                    testID="stack-note-input"
                 />
                 {description.length > 800 && (
                     <Text style={s.counter}>{description.length}/1000</Text>

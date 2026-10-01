@@ -1,6 +1,8 @@
 appId: com.reelhouse.society
 ---
+# The title took focus on arrival, before any keyboard was on: tapping it
+# again binds none. The note, not yet focused, raises one.
 - tapOn:
-    id: "stack-title-input"
+    id: "stack-note-input"
 - waitForAnimationToEnd:
     timeout: 3000
