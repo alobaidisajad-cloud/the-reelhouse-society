@@ -53,7 +53,8 @@ export interface ProfileState {
   archiveLogs: ProfileLog[];
   ledgerLogs: ProfileLog[];
   analyticsLogs: ProfileLog[];
-  calendarData: { watchedDate: string; rating: number; status: string }[];
+  /** The last year of viewings, by day. Null until its read has answered. */
+  calendarData: { watchedDate: string; rating: number; status: string }[] | null;
   serverAnalytics: any | null;
   watchlist: ProfileWatchlistItem[];
   vault: ProfileVaultItem[];
@@ -123,7 +124,7 @@ export const initialState: ProfileState = {
   archiveLogs: [],
   ledgerLogs: [],
   analyticsLogs: [],
-  calendarData: [],
+  calendarData: null,
   serverAnalytics: null,
   watchlist: [],
   vault: [],

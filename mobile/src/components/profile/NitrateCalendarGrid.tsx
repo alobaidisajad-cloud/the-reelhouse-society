@@ -4,10 +4,11 @@ import { Text } from '@/src/components/text';
 import Svg, { Rect, G, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { Flame } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
 import PressableScale from '../PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { nav } from '@/src/utils/typedRouter';
+import { calendarDateString } from '@/src/utils/timeAgo';
 
 interface CalendarGridLog {
   watchedDate?: string;
@@ -26,12 +27,48 @@ const CELL_GAP = 3;
 const SVG_WIDTH = WEEKS * (CELL_SIZE + CELL_GAP);
 const SVG_HEIGHT = DAYS_PER_WEEK * (CELL_SIZE + CELL_GAP);
 
+/** A day's key: the date as the member would name it (an instant is their local day). */
+const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/**
+ * The last 52 weeks, a column a week, ending TODAY. Every film counted in the
+ * heading is a film drawn on the grid: the read carries a week of slack for
+ * timezone edges, and nothing outside the grid is counted.
+ */
 export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
-  const router = useRouter();
-  
+  const { gridData, drawn } = useMemo(() => {
+    const countsMap = new Map<string, number>();
+    for (const log of logs) {
+      const key = calendarDateString(log.watchedDate || log.createdAt);
+      if (key) countsMap.set(key, (countsMap.get(key) || 0) + 1);
+    }
+
+    // The first cell is 52 weeks less a day ago, so the last is today.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - (WEEKS * DAYS_PER_WEEK - 1));
+
+    const weeksData: { date: string; count: number }[][] = [];
+    let total = 0;
+    for (let w = 0; w < WEEKS; w++) {
+      const week = [];
+      for (let d = 0; d < DAYS_PER_WEEK; d++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + (w * DAYS_PER_WEEK) + d);
+        const key = dayKey(currentDate);
+        const count = countsMap.get(key) || 0;
+        total += count;
+        week.push({ date: key, count });
+      }
+      weeksData.push(week);
+    }
+    return { gridData: weeksData, drawn: total };
+  }, [logs]);
+
   const flickerAnim = useSharedValue(0.6);
   useEffect(() => {
-    if (logs.length === 0 && isSelf) {
+    if (drawn === 0 && isSelf) {
       flickerAnim.value = withRepeat(
         withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
         // Infinite is right HERE and nowhere else on the page: it only runs on
@@ -47,64 +84,11 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
     }
     return () => cancelAnimation(flickerAnim);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logs.length, isSelf]);
+  }, [drawn, isSelf]);
 
   const flickerStyle = useAnimatedStyle(() => ({
     opacity: flickerAnim.value,
   }));
-
-  // Generate contribution data for the last 52 weeks
-  const gridData = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    // Map logs to counts per day
-    const countsMap = new Map<string, number>();
-    logs.forEach(log => {
-      const dayRaw = log.watchedDate || log.createdAt;
-      let key = '';
-      if (typeof dayRaw === 'string') {
-        if (dayRaw.includes('T')) {
-          // Extract exact YYYY-MM-DD from UTC string to ensure universal chronological accuracy
-          key = dayRaw.substring(0, 10);
-        } else {
-          const match = dayRaw.match(/^(\d{4}-\d{2}-\d{2})/);
-          if (match) {
-            key = match[1];
-          } else {
-            const dateObj = new Date(dayRaw);
-            if (!isNaN(dateObj.getTime())) {
-              key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
-            }
-          }
-        }
-      }
-      if (!key) return;
-
-      countsMap.set(key, (countsMap.get(key) || 0) + 1);
-    });
-
-    // Build grid (cols: weeks, rows: days)
-    const weeksData = [];
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() - (WEEKS * 7));
-
-    for (let w = 0; w < WEEKS; w++) {
-      const week = [];
-      for (let d = 0; d < DAYS_PER_WEEK; d++) {
-        const currentDate = new Date(startDate);
-        currentDate.setDate(startDate.getDate() + (w * 7) + d);
-        
-        const key = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
-        const count = countsMap.get(key) || 0;
-        
-        week.push({ date: key, count });
-      }
-      weeksData.push(week);
-    }
-    
-    return weeksData;
-  }, [logs]);
 
   const getColor = (count: number) => {
     if (count === 0) return 'rgba(184,137,26,0.05)';
@@ -118,9 +102,9 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
     <Animated.View entering={FadeInUp.duration(600).delay(300)} style={s.container}>
       <View style={s.header}>
         <Text {...scaledTextProps} style={s.title}>CINEMATIC RHYTHM</Text>
-        <Text {...scaledTextProps} style={s.subtitle}>{logs.length} FILMS THIS YEAR</Text>
+        <Text {...scaledTextProps} style={s.subtitle}>{drawn} {drawn === 1 ? 'FILM' : 'FILMS'} IN THE PAST YEAR</Text>
       </View>
-      
+
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.scrollContent}>
         <View style={s.gridWrapper}>
           <Svg width={SVG_WIDTH} height={SVG_HEIGHT}>
@@ -153,7 +137,7 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
               ))}
             </G>
           </Svg>
-          
+
           <View style={s.legend}>
             <Text {...scaledTextProps} style={s.legendText}>LESS</Text>
             <View style={[s.legendBox, { backgroundColor: getColor(0) }]} />
@@ -165,9 +149,9 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
         </View>
       </ScrollView>
 
-      {logs.length === 0 && isSelf && (
+      {drawn === 0 && isSelf && (
         <Animated.View style={[s.ctaContainer, flickerStyle]}>
-          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic accessibilityRole="button" accessibilityLabel="Ignite the timeline — log a film">
+          <PressableScale style={s.ctaBtn} onPress={() => nav.push('/search-modal')} haptic accessibilityRole="button" accessibilityLabel="Ignite the timeline — log a film">
             <Flame size={14} color={colors.flicker} style={{ marginRight: 8 }} />
             <Text {...scaledTextProps} style={s.ctaText}>IGNITE THE TIMELINE</Text>
           </PressableScale>

@@ -513,6 +513,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/roomSearchWiring.test.tsx | — |  |
 | src/components/profile/__tests__/roomsRender.test.tsx | — |  |
 | src/components/profile/__tests__/taste.test.tsx | — |  |
+| src/components/profile/__tests__/theCalendarDrawsToday.test.tsx | 2026-10-01 | written: the calendar draws today and counts what it draws |
 | src/components/profile/__tests__/theRestCouldNotBeReached.test.tsx | 2026-10-01 | written: a failed "more" is said in every room |
 | src/components/profile/__tests__/yearMarker.test.tsx | — |  |
 | src/components/profile/__tests__/zz-art.gen.ts | — |  |
@@ -528,7 +529,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/favourites.ts | — |  |
 | src/components/profile/FollowRequestsPanel.tsx | — |  |
 | src/components/profile/heroNameSize.ts | — |  |
-| src/components/profile/NitrateCalendarGrid.tsx | — |  |
+| src/components/profile/NitrateCalendarGrid.tsx | 2026-10-01 | today drawn; counts what it draws, "in the past year"; the app date helper; nav |
 | src/components/profile/NoirPassport.tsx | — |  |
 | src/components/profile/ProfileArchiveTab.tsx | 2026-10-01 | nav; IMPORT lands on the import panel; comments say what is true now |
 | src/components/profile/ProfileBackdrop.tsx | — |  |

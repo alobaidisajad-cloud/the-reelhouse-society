@@ -491,4 +491,19 @@ describe('a visitor\'s room whose read failed', () => {
     });
     expect(r.getByText('The shelves could not be reached.')).toBeTruthy();
   });
+
+  // The calendar drew the member's logs (all of them, any year) whenever its own
+  // read had not answered, and labelled their number "THIS YEAR".
+  it('the calendar too, and it never stands the member\'s logs in for their year', async () => {
+    const retryRoom = jest.fn();
+    let r = await mount({ activeTab: 'calendar' }, { calendarData: null, tabFailed: { calendar: true }, retryRoom });
+    expect(r.getByText('The calendar could not be reached.')).toBeTruthy();
+    expect(r.queryByText(/IN THE PAST YEAR/)).toBeNull();
+    await act(async () => { fireEvent.press(r.getByLabelText('Ask for the calendar again')); });
+    expect(retryRoom).toHaveBeenCalledWith('calendar');
+    r.unmount();
+    r = await mount({ activeTab: 'calendar' }, { calendarData: null, tabFailed: {} });
+    expect(r.getByLabelText('Retrieving the calendar')).toBeTruthy();
+    expect(r.queryByText(/IN THE PAST YEAR/)).toBeNull();
+  });
 });

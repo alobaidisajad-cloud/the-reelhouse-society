@@ -39,7 +39,7 @@ import { TasteMatch } from '@/src/components/profile/TasteMatch';
 import { WatchlistRoulette } from '@/src/components/profile/WatchlistRoulette';
 import { useProfileComputed, tally } from '@/src/components/profile/profileComputed';
 import { s } from '@/src/components/profile/profileStyles';
-import { RoomPlate, RoomSealed, RoomFoot } from '@/src/components/profile/RoomParts';
+import { RoomPlate, RoomSealed, RoomFoot, RoomRetrieving, RoomUnreachable } from '@/src/components/profile/RoomParts';
  
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import PressableScale from '@/src/components/PressableScale';
@@ -931,7 +931,10 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             {activeTab === 'calendar' && (
               <View style={s.tabContentPad}>
                 <SectionDivider label="VIEWING HISTORY" />
-                <NitrateCalendarGrid {...{logs: calendarData.length > 0 ? calendarData : (analyticsLogs.length > 0 ? analyticsLogs : displayLogs), isSelf} as any} />
+                {/* Its own read, never the member's logs standing in for their year. */}
+                {calendarData
+                  ? <NitrateCalendarGrid logs={calendarData} isSelf={isSelf} />
+                  : roomFailed ? <RoomUnreachable room="the calendar" onRetry={retryRoom} /> : <RoomRetrieving room="the calendar" />}
               </View>
             )}
           </ScrollView>
