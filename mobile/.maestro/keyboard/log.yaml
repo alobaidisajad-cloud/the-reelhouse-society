@@ -1,8 +1,11 @@
 appId: com.reelhouse.society
 ---
 # The log form, reached as log_film_flow reaches it, with no keyboard on the
-# device. The member is still signed in from the stack probe before it.
-- launchApp
+# device. It signs in for itself: a probe that could only pass after another
+# passed would hide its own answer behind that one's.
+- launchApp:
+    clearState: true
+- runFlow: ../subflows/sign_in.yaml
 - extendedWaitUntil:
     visible:
       id: "darkroom-tab"

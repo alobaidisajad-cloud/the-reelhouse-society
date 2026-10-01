@@ -117,9 +117,11 @@ for probe in 'stack|"FILE THE STACK"' 'log|#review-input'; do
   # A flow's own time: signing in types about fifty keys, and on a run where
   # each key waits ten seconds (see the flows below) that alone is 500.
   began=$(date +%s)
+  since=$(timeout 20 adb shell "date +'%m-%d %H:%M:%S.000'" 2>/dev/null | tr -d '\r')
   timeout --signal=INT --kill-after=30 "$(( left < 600 ? left : 600 ))s" "$MAESTRO" test "$FLOWS/keyboard/$name.yaml" \
       -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
-      -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" > "$OUT/keyboard-room/$name.log" 2>&1
+      -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" \
+      --debug-output "$OUT/maestro-debug/keyboard-$name" > "$OUT/keyboard-room/$name.log" 2>&1
   prc=$?
   if [ $prc -ne 0 ]; then
     # Where it stopped: the steps it last reported (never a typed value: one is
@@ -129,6 +131,14 @@ for probe in 'stack|"FILE THE STACK"' 'log|#review-input'; do
       grep -viE 'input ?text' "$OUT/keyboard-room/$name.log" | grep -E '[A-Za-z]' | tail -n 6 | sed 's/^/  /'; } >> "$OUT/keyboard-room.txt"
     timeout 60 "$MAESTRO" hierarchy > "$OUT/keyboard-room/$name.json" 2>/dev/null
     node mobile/e2e/screen.mjs "$OUT/keyboard-room/$name.json" | head -n 14 | sed "s/^/  $name screen · /" >> "$OUT/keyboard-room.txt"
+    # And the record a failed flow leaves (flow-screens.mjs reports it): the
+    # screen, the windows Android had, and the device's log for this probe —
+    # what the driver was kept waiting on while it typed.
+    cp "$OUT/keyboard-room/$name.json" "$OUT/flow-hierarchy/$name.json" 2>/dev/null
+    timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' \
+      | grep -E 'Window #[0-9]+|mDrawState=|nimat' > "$OUT/flow-hierarchy/$name.wm" || true
+    sleep 2   # the copy is a moment behind the device
+    [ -n "$since" ] && awk -v s="$since" '($1 " " $2) >= s' "$OUT/logcat-stream.txt" > "$OUT/flow-hierarchy/$name.log"
     timeout 20 adb get-state > /dev/null 2>&1 || gone=1
     room_rc=1; continue
   fi
