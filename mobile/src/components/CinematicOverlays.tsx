@@ -1,16 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
-import SkiaFilmGrain from './FilmGrain';
-
-/**
- * FilmGrain — A persistent noise overlay that simulates 35mm film grain.
- * Currently renders null (grain deferred pending on-device perf proof);
- * kept exported for any remaining call sites.
- */
-export function FilmGrain() {
-  return <SkiaFilmGrain intensity={0.05} pointerEvents="none" />;
-}
 
 /**
  * Vignette — A true radial darkening at the screen edges.

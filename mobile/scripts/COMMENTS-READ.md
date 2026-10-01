@@ -362,7 +362,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/ShareCardTypes.ts | — |  |
 | src/components/film/TrailerModal.tsx | — |  |
 | src/components/film/WatchProviders.tsx | — |  |
-| src/components/FilmGrain.tsx | — |  |
 | src/components/HapticTab.tsx | — |  |
 | src/components/home/ProjectorBeam.tsx | — |  |
 | src/components/home/types.ts | — |  |
