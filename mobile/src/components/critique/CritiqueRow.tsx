@@ -33,6 +33,7 @@ export interface Critique {
   id: string;
   /** Null once its author has left the house: the words stay, the name goes. */
   user_id: string | null;
+  /** Empty when the author's name could not be read: drawn as "a member", never linked. */
   username: string;
   avatar_url?: string | null;
   body: string;
@@ -74,22 +75,23 @@ export const CritiqueRow = React.memo(function CritiqueRow({
   onReport?: (critique: Critique & { user_id: string }) => void;
 }) {
   const mine = !!currentUserId && currentUserId === c.user_id;
+  // A profile is opened by its name: no name, no link (never a guessed one).
+  const linked = !!c.user_id && !!c.username;
   return (
     <View style={s.commentItem}>
       <View style={s.commentTopRow}>
         {/* A critique outlives its author: deleting an account keeps the words and
             drops the name, leaving user_id null and the handle a tombstone. There
-            is no profile behind it, so the byline must not behave like a button —
-            it used to open a profile page for someone who no longer exists. */}
+            is no profile behind it, so the byline never behaves like a button. */}
         <PressableScale
           style={s.commentByline}
-          onPress={c.user_id ? () => onPressUser(c.username) : undefined}
-          disabled={!c.user_id}
+          onPress={linked ? () => onPressUser(c.username) : undefined}
+          disabled={!linked}
           hitSlop={HITSLOP_BYLINE}
-          pressedScale={c.user_id ? 0.96 : 1}
-          haptic={c.user_id ? 'selection' : undefined}
-          accessibilityRole={c.user_id ? 'link' : undefined}
-          accessibilityLabel={c.user_id ? `View profile of @${c.username}` : `Critique by a former member`}
+          pressedScale={linked ? 0.96 : 1}
+          haptic={linked ? 'selection' : undefined}
+          accessibilityRole={linked ? 'link' : undefined}
+          accessibilityLabel={linked ? `View profile of @${c.username}` : c.user_id ? 'Critique by a member' : 'Critique by a former member'}
         >
           {c.avatar_url ? (
             <Image source={{ uri: c.avatar_url }} style={s.commentAvatar} cachePolicy="memory-disk" contentFit="cover" transition={150} />
@@ -98,7 +100,7 @@ export const CritiqueRow = React.memo(function CritiqueRow({
               <Text style={s.commentAvatarText}>{(c.username || '?').charAt(0).toUpperCase()}</Text>
             </View>
           )}
-          <Text style={s.commUsername} numberOfLines={1}>@{c.username}</Text>
+          <Text style={s.commUsername} numberOfLines={1}>{c.username ? `@${c.username}` : 'a member'}</Text>
         </PressableScale>
         {/* The archive's own date shape — this printed the device's short form,
             8/5/2026, directly beneath the record's AUG 5, 2026.
@@ -132,7 +134,7 @@ export const CritiqueRow = React.memo(function CritiqueRow({
           haptic="selection"
           pressedScale={0.92}
           accessibilityRole="button"
-          accessibilityLabel={`Report this critique by @${c.username}`}
+          accessibilityLabel={c.username ? `Report this critique by @${c.username}` : 'Report this critique'}
         >
           <Text style={s.commReport} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
             REPORT

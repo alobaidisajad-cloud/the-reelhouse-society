@@ -29,15 +29,10 @@ const PROFILE_LOOKUP_BATCH = 200;
  * ── WHY 100 AND NOT THE DOSSIER'S 30 ────────────────────────────────────────
  * The dossier screen pairs a 30-row page with a "LOAD EARLIER · N MORE" control,
  * so nothing it bounds is ever unreachable. This screen has the bounded page and
- * the honest total but NOT that control yet — so at 30 a member would correctly
- * be told there are 45 critiques while 15 of them could not be reached. Trading
- * an unbounded query for hidden comments is the same defect wearing a hat.
- *
- * 100 closes the actual defect — the query is bounded — while putting the
- * unreachable case far beyond anything that exists (the largest thread in the
- * database is ONE comment). When a thread approaches this, the fix is the
- * dossier's control, not a bigger number; the total already travels beside the
- * page, which is the hard half.
+ * the honest total but no such control, so its page is set far past any thread
+ * the house holds: the query is bounded, and nothing is hidden. A thread that
+ * nears it needs the dossier's control, not a bigger number; the total already
+ * travels beside the page, which is the hard half.
  */
 const COMMENT_PAGE_SIZE = 100;
 
@@ -122,16 +117,19 @@ const LogCommentSchema = z.object({
 });
 
 export const LogService = {
-  /** AbortSignal support for screen unmount cancellation. */
+  /**
+   * One log, with its author and its certify count; null when there is no such
+   * log for this member (deleted, never there, not theirs to read, or removed
+   * on this phone and not yet in the house). A read that FAILED is thrown: a
+   * missing log and an unreachable one are said differently.
+   */
   async getLogDetails(logId: string, signal?: AbortSignal) {
     const currentUserId = useAuthStore.getState().user?.id;
     const queue = getOfflineQueue();
 
     // 1. Pending Removes check
     const isPendingRemove = queue.some((q) => q.type === 'remove_log' && q.payload.log_id === logId);
-    if (isPendingRemove) {
-        throw new Error('Log not found');
-    }
+    if (isPendingRemove) return null;
 
     // The certify count rides in the same request (`certify_count: [{ count }]`);
     // the critique count comes from getLogComments' exact total.
@@ -166,7 +164,7 @@ export const LogService = {
             error = null;
         } else {
             if (error) throw error;
-            throw new Error('Log not found');
+            return null;
         }
     }
 
@@ -176,12 +174,8 @@ export const LogService = {
         for (const up of pendingUpdates) {
             logData = { ...logData, ...(up.payload.updates as any) };
         }
-        // There used to be a fourth step here: a second request that fetched
-        // `private_notes` on its own, because the column is invisible to the
-        // wider select. It was fetching a column the database keeps BLANK on
-        // purpose — so it cost a round trip per log and returned nothing. A note
-        // belongs to a viewing now, and the Vault is read by viewing, owner-only
-        // (VaultService), never from the log row.
+        // No private note here: a note belongs to a viewing, and the Vault is
+        // read by viewing, owner-only (VaultService), never from the log row.
     }
 
     // Validate response shape — logs structured warning on mismatch
@@ -199,15 +193,11 @@ export const LogService = {
    * display — plus the TRUE total.
    *
    * ── WHY NOT JUST `.limit(50)` ────────────────────────────────────────────────
-   * The fetch was unbounded. The obvious fix is a limit, and the obvious limit is
-   * wrong twice over:
-   *   • the order is ASCENDING, so `.limit(50)` keeps the OLDEST fifty and hides
-   *     the newest — including a comment the member just posted.
-   *   • the header renders `CRITIQUES (${comments.length})`, so a bounded array
-   *     would print a wrong number the moment a thread exceeds the bound.
-   * So this asks for the newest page, reverses it for display, and carries a
-   * server-side total that does not shrink with the page. Same shape the dossier
-   * screen already uses.
+   * A limit on the display's ASCENDING order would keep the OLDEST and hide the
+   * newest, including a comment the member just posted; and a count of the
+   * bounded page would print a wrong total once a thread outgrows it. So this
+   * asks for the newest page, reverses it for display, and carries a server-side
+   * total that does not shrink with the page — the dossier screen's shape.
    */
   async getLogComments(logId: string, signal?: AbortSignal, limit: number = COMMENT_PAGE_SIZE) {
     let query = supabase
@@ -244,8 +234,8 @@ export const LogService = {
     //
     // It IS batched, because the ids travel in the request URL and the request
     // fails outright past roughly 350 of them (measured: 300 succeed, 400 do
-    // not). The page above is now bounded, so this can no longer be exceeded in
-    // one go — the batching stays because the bound is a page size, not a law.
+    // not). The page above is bounded, so one batch suffices today; the batching
+    // stays because the bound is a page size, not a law.
     const userIds = [...new Set(comments.map(c => c.user_id))];
     const profileMap: Record<string, any> = {};
     for (let i = 0; i < userIds.length; i += PROFILE_LOOKUP_BATCH) {
@@ -264,9 +254,11 @@ export const LogService = {
       }
     }
 
+    // An author whose name could not be read has none, never "unknown": a name
+    // the page would link to, and any member may hold.
     const data = comments.map(c => ({
       ...c,
-      profiles: profileMap[c.user_id] || { username: 'unknown', avatar_url: null, display_name: null }
+      profiles: profileMap[c.user_id] ?? null,
     }));
 
     // Validate each comment row

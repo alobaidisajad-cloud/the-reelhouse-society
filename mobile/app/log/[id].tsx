@@ -144,7 +144,8 @@ export default function LogDetailScreen() {
           body: c.body,
           created_at: c.created_at,
           user_id: c.user_id,
-          username: (Array.isArray(c.profiles) ? (c.profiles[0] as any)?.username : (c.profiles as any)?.username) || 'anonymous',
+          // '' when the author's name could not be read: drawn as "a member", never linked.
+          username: (Array.isArray(c.profiles) ? (c.profiles[0] as any)?.username : (c.profiles as any)?.username) || '',
           avatar_url: (Array.isArray(c.profiles) ? (c.profiles[0] as any)?.avatar_url : (c.profiles as any)?.avatar_url) || null,
         }));
 
