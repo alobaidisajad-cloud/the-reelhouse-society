@@ -139,3 +139,32 @@ describe('what the runner measures exists', () => {
     expect(app('app/(modals)/log-modal.tsx') + app('src/components/log/LogForm.tsx')).toMatch(/testID="review-input"/);
   });
 });
+
+describe('the dump Android makes of the app window', () => {
+  const xml = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hierarchy rotation="0">',
+    '<node index="0" text="" resource-id="" class="android.widget.FrameLayout" bounds="[0,0][1080,2400]">',
+    '<node index="1" text="" resource-id="com.reelhouse.society:id/review-input" content-desc="Your review" bounds="[60,1900][1020,2100]" />',
+    '<node index="2" text="FILE THE STACK" resource-id="" content-desc="" bounds="[600,2240][1000,2280]" />',
+    '</node></hierarchy>',
+  ].join('');
+  const SHOWN_WINDOWS = windows(SHOWN);
+
+  function runWith(target: string, dump: string) {
+    writeFileSync(join(dir, 'h.json'), JSON.stringify({ attributes: { bounds: '[0,0][1080,2400]' }, children: [] }));
+    writeFileSync(join(dir, 'w.txt'), SHOWN_WINDOWS);
+    writeFileSync(join(dir, 'd.xml'), dump);
+    const r = spawnSync(process.execPath, [SCRIPT, 'log', target, join(dir, 'h.json'), join(dir, 'w.txt'), join(dir, 'd.xml')], { encoding: 'utf8' });
+    return { status: r.status, out: r.stdout.trim() };
+  }
+
+  it('finds a field the hierarchy left out, by id and by text', () => {
+    expect(runWith('#review-input', xml).out).toBe('log: #review-input COVERED — its foot at 2100px, the keyboard from 1395px (705px under it)');
+    expect(runWith('"FILE THE STACK"', xml).out).toMatch(/COVERED — its foot at 2280px/);
+    expect(runWith('"Your review"', xml).status).toBe(1);
+  });
+
+  it('and says not found when neither has it', () => {
+    expect(runWith('#nowhere', xml).out).toMatch(/not found on screen/);
+  });
+});

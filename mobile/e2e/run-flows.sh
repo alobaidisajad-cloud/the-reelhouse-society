@@ -167,8 +167,11 @@ for probe in 'stack|"FILE THE STACK"' 'log|#review-input'; do
   sleep 1   # the keyboard's own entrance, so its frame is where it stops
   timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' > "$OUT/keyboard-room/$name.windows.txt"
   timeout 60 "$MAESTRO" hierarchy > "$OUT/keyboard-room/$name.json" 2>/dev/null
+  # Android's own dump of the app's window, measured first (keyboard-room.mjs).
+  timeout 30 adb shell uiautomator dump /sdcard/keyboard-room.xml > /dev/null 2>&1
+  timeout 20 adb exec-out cat /sdcard/keyboard-room.xml > "$OUT/keyboard-room/$name.xml" 2>/dev/null
   if ! node mobile/e2e/keyboard-room.mjs "$name" "$target" "$OUT/keyboard-room/$name.json" "$OUT/keyboard-room/$name.windows.txt" \
-      >> "$OUT/keyboard-room.txt"; then
+      "$OUT/keyboard-room/$name.xml" >> "$OUT/keyboard-room.txt"; then
     room_rc=1
     # What was on the screen, so a target that was not found says where it looked.
     node mobile/e2e/screen.mjs "$OUT/keyboard-room/$name.json" | head -n 14 | sed "s/^/  $name screen · /" >> "$OUT/keyboard-room.txt"

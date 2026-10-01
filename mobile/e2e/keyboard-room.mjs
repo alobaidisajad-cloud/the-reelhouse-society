@@ -53,6 +53,26 @@ export function findTarget(tree, target) {
   return hit;
 }
 
+/**
+ * The same, from `uiautomator dump` (XML): Android's own dump of the app's
+ * window. With a keyboard up, Maestro's hierarchy mixes in the keyboard's
+ * window and did not hand back a field the app was drawing.
+ */
+export function findTargetXml(xml, target) {
+  const byId = target.startsWith('#') ? target.slice(1) : null;
+  const byText = byId ? null : target.replace(/^"|"$/g, '');
+  for (const node of xml.match(/<node\b[^>]*>/g) ?? []) {
+    const attr = (name) => new RegExp(`\\b${name}="([^"]*)"`).exec(node)?.[1] ?? '';
+    const id = attr('resource-id');
+    const matches = byId
+      ? id === byId || id.endsWith(`:id/${byId}`)
+      : attr('text').trim() === byText || attr('content-desc').trim() === byText;
+    const r = RECT.exec(attr('bounds'));
+    if (matches && r) return { left: +r[1], top: +r[2], right: +r[3], bottom: +r[4] };
+  }
+  return null;
+}
+
 /** One line saying what was measured, and whether it is a finding. */
 export function verdict(name, target, bounds, top) {
   if (top == null) return { ok: false, line: `${name}: NO KEYBOARD on screen — nothing was measured` };
@@ -64,16 +84,19 @@ export function verdict(name, target, bounds, top) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  const [name, target, hierarchyFile, windowsFile] = process.argv.slice(2);
+  const [name, target, hierarchyFile, windowsFile, dumpFile] = process.argv.slice(2);
   if (!name || !target || !hierarchyFile || !windowsFile) {
-    console.error('usage: node e2e/keyboard-room.mjs <name> <#id|"text"> <hierarchy> <windows>');
+    console.error('usage: node e2e/keyboard-room.mjs <name> <#id|"text"> <hierarchy> <windows> [dump.xml]');
     process.exit(2);
   }
   let tree = null;
   try { tree = JSON.parse(readFileSync(hierarchyFile, 'utf8')); } catch { /* reported below as not found */ }
   let windows = '';
   try { windows = readFileSync(windowsFile, 'utf8'); } catch { /* reported below as no keyboard */ }
-  const v = verdict(name, target, tree && findTarget(tree, target), keyboardTop(windows));
+  let dump = '';
+  try { dump = dumpFile ? readFileSync(dumpFile, 'utf8') : ''; } catch { /* the hierarchy alone, then */ }
+  const bounds = (dump && findTargetXml(dump, target)) || (tree && findTarget(tree, target));
+  const v = verdict(name, target, bounds, keyboardTop(windows));
   console.log(v.line);
   process.exit(v.ok ? 0 : 1);
 }

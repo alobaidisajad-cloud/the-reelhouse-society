@@ -7,6 +7,8 @@ appId: com.reelhouse.society
 - runFlow: ../subflows/sign_in.yaml
 - tapOn:
     id: "reels-tab"
+# The Reel opens on its logs; the stacks, and the form's door, are a section over.
+- tapOn: "Stacks tab"
 - extendedWaitUntil:
     visible: "✦ CURATE A COLLECTION"
     timeout: 15000
