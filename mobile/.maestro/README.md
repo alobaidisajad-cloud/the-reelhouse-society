@@ -54,6 +54,11 @@ a time, each from a clean install, so no flow depends on another.
 
 `subflows/` holds the steps the flows share: signing in, and opening a film.
 
+`keyboard/` is the keyboard's room. The flows type with no keyboard on the
+device, so after them `e2e/run-flows.sh` reaches each of these screens, turns
+a keyboard on for one tap (`*.tap.yaml`), and `e2e/keyboard-room.mjs` measures
+from Android's window list whether the thing a member needs is under it.
+
 ## Kept true
 
 `src/utils/__tests__/maestroFlows.guard.test.ts` reads every flow on every push:

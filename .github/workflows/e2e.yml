@@ -291,6 +291,8 @@ jobs:
             ${{ runner.temp }}/flow-reports
             ${{ runner.temp }}/flow-screens
             ${{ runner.temp }}/maestro-debug
+            ${{ runner.temp }}/keyboard-room
+            ${{ runner.temp }}/keyboard-room.txt
             ${{ runner.temp }}/screen.txt
             ${{ runner.temp }}/logcat.txt
           if-no-files-found: ignore

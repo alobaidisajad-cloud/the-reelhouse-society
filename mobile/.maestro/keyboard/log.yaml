@@ -1,0 +1,33 @@
+appId: com.reelhouse.society
+---
+# The log form, reached as log_film_flow reaches it, with no keyboard on the
+# device. The member is still signed in from the desk before it.
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "darkroom-tab"
+    timeout: 20000
+- tapOn:
+    id: "darkroom-tab"
+- tapOn:
+    id: "darkroom-search-input"
+- inputText: "Blade Runner"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: "film-card"
+    timeout: 15000
+- tapOn:
+    id: "film-card"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: "film-stub"
+    timeout: 15000
+- runFlow: ../subflows/open_the_stub.yaml
+- tapOn:
+    id: "film-act-log"
+- extendedWaitUntil:
+    visible:
+      id: "review-input"
+    timeout: 15000

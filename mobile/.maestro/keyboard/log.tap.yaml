@@ -1,0 +1,6 @@
+appId: com.reelhouse.society
+---
+- tapOn:
+    id: "review-input"
+- waitForAnimationToEnd:
+    timeout: 3000

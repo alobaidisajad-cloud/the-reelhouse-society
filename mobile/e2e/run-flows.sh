@@ -36,8 +36,10 @@ adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null
 # system app (run 36590647413: both stayed). Android's own answer is printed.
 rooted="$(adb root 2>&1 | tr -d '\r')"
 adb wait-for-device
+# Kept for the keyboard's room (below), which turns one back on for a tap.
+imes_all="$(adb shell ime list -a -s | tr -d '\r')"
 answers=""
-for pkg in $(adb shell ime list -a -s | tr -d '\r' | sed 's#/.*##' | sort -u); do
+for pkg in $(echo "$imes_all" | sed 's#/.*##' | sort -u); do
   answers="${answers} ${pkg}: $(adb shell pm disable "${pkg}" 2>&1 | tr -d '\r' | tr '\n' ' ');"
 done
 # Which input methods are ENABLED is a setting of its own, and it outlived the
@@ -122,6 +124,61 @@ for flow in $(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort); do
     timeout 20 adb get-state > /dev/null 2>&1 || { gone=1; echo "[Gone] the emulator went away during $name" >> "$OUT/maestro.log"; }
   fi
 done
+
+# ── THE KEYBOARD'S ROOM ───────────────────────────────────────────────────────
+# The flows type with no keyboard on the device, so none of them can see
+# whether a screen makes room for one. Each probe reaches its screen the same
+# way, then a keyboard is turned on for one tap, and Android's own window list
+# says where the keyboard's top edge is. keyboard-room.mjs compares it with the
+# thing the member needs, and fails when it is under the keyboard — or when no
+# keyboard showed, since then nothing was measured.
+keys_on() {
+  for pkg in $(echo "$imes_all" | sed 's#/.*##' | sort -u); do timeout 20 adb shell pm enable "$pkg" > /dev/null 2>&1; done
+  for ime in $imes_all; do timeout 20 adb shell ime enable "$ime" > /dev/null 2>&1; done
+  timeout 20 adb shell ime set "$(echo "$imes_all" | grep -m 1 latin || echo "$imes_all" | head -n 1)" > /dev/null 2>&1
+}
+keys_off() {
+  for pkg in $(echo "$imes_all" | sed 's#/.*##' | sort -u); do timeout 20 adb shell pm disable "$pkg" > /dev/null 2>&1; done
+  timeout 20 adb shell settings delete secure enabled_input_methods > /dev/null 2>&1
+  timeout 20 adb shell settings delete secure default_input_method > /dev/null 2>&1
+}
+mkdir -p "$OUT/keyboard-room"
+: > "$OUT/keyboard-room.txt"
+room_rc=0
+for probe in 'desk|"SPOILER"' 'log|#review-input'; do
+  name=${probe%%|*}; target=${probe#*|}
+  if [ $gone -eq 1 ]; then echo "$name: skipped (the emulator was gone)" >> "$OUT/keyboard-room.txt"; room_rc=1; continue; fi
+  left=$(( DEADLINE - $(date +%s) ))
+  if [ $left -le 120 ]; then echo "$name: skipped (the flows' ${MINUTES} minutes ran out)" >> "$OUT/keyboard-room.txt"; room_rc=1; continue; fi
+  keys_off
+  if ! timeout --signal=INT --kill-after=30 "$(( left < 400 ? left : 400 ))s" "$MAESTRO" test "$FLOWS/keyboard/$name.yaml" \
+      -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
+      -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" > "$OUT/keyboard-room/$name.log" 2>&1; then
+    echo "$name: the screen was not reached (keyboard-room/$name.log)" >> "$OUT/keyboard-room.txt"; room_rc=1; continue
+  fi
+  keys_on
+  timeout 120 "$MAESTRO" test "$FLOWS/keyboard/$name.tap.yaml" >> "$OUT/keyboard-room/$name.log" 2>&1
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    timeout 20 adb shell dumpsys input_method 2>/dev/null | grep -q 'mInputShown=true' && break
+    sleep 1
+  done
+  sleep 1   # the keyboard's own entrance, so its frame is where it stops
+  timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' > "$OUT/keyboard-room/$name.windows.txt"
+  timeout 60 "$MAESTRO" hierarchy > "$OUT/keyboard-room/$name.json" 2>/dev/null
+  node mobile/e2e/keyboard-room.mjs "$name" "$target" "$OUT/keyboard-room/$name.json" "$OUT/keyboard-room/$name.windows.txt" \
+    >> "$OUT/keyboard-room.txt" || room_rc=1
+  # The keyboard window's own lines, so the measure can be checked by eye.
+  awk '/Window #[0-9]+ Window\{[0-9a-f]+ u[0-9]+ InputMethod\}/ {p=1; print; next} /Window #[0-9]+/ {p=0} p' \
+    "$OUT/keyboard-room/$name.windows.txt" | grep -E 'rame|Insets|isOnScreen|Visibility' | head -n 8 | sed "s/^ */  $name · /" >> "$OUT/keyboard-room.txt"
+done
+keys_off
+if [ $room_rc -ne 0 ]; then
+  rc=1
+  node mobile/e2e/annotate.mjs "The keyboard covers what a member needs" "$OUT/keyboard-room.txt"
+else
+  node mobile/e2e/annotate.mjs "The keyboard's room" "$OUT/keyboard-room.txt" notice
+fi
+
 cat "$OUT/maestro.log"
 grep -E '^\[(Passed|Failed|Skipped|Gone)\]' "$OUT/maestro.log" > "$OUT/maestro-summary.txt" || true
 # Everything below that asks the device waits for it forever if it is gone, so

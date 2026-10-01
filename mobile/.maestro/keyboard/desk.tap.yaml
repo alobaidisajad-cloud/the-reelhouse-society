@@ -1,0 +1,6 @@
+appId: com.reelhouse.society
+---
+- tapOn:
+    id: "desk-body-input"
+- waitForAnimationToEnd:
+    timeout: 3000

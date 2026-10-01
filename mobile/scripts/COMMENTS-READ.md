@@ -55,6 +55,10 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/error_recovery.yaml | 2026-10-01 | header narrowed to what it proves; wrapped to 80 |
 | .maestro/film_log.yaml | 2026-09-29 | true as written |
 | .maestro/flow_critical_path.yaml | 2026-09-29 | true as written |
+| .maestro/keyboard/desk.tap.yaml | 2026-10-01 | written with the keyboard probe |
+| .maestro/keyboard/desk.yaml | 2026-10-01 | written with the keyboard probe |
+| .maestro/keyboard/log.tap.yaml | 2026-10-01 | written with the keyboard probe |
+| .maestro/keyboard/log.yaml | 2026-10-01 | written with the keyboard probe |
 | .maestro/log_film_flow.yaml | 2026-09-29 | true as written |
 | .maestro/login_flow.yaml | 2026-09-29 | true as written |
 | .maestro/lounge_flow.yaml | 2026-09-29 | true as written |
@@ -125,14 +129,16 @@ without one). "Read" is the day its comments were last read against its code.
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | — |  |
 | e2e/__tests__/flowScreens.test.ts | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
+| e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
 | e2e/annotate.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/db/bootstrap.mjs | 2026-09-28 | 7 findings; stale function count and 'how this was found' asides dropped |
 | e2e/db/seed.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-writes.mjs | 2026-09-29 | true as written |
 | e2e/flow-screens.mjs | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
+| e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
-| e2e/run-flows.sh | 2026-09-29 | rewritten this session: one flow at a time, each failure's screen read at once |
+| e2e/run-flows.sh | 2026-10-01 | the keyboard's room added after the flows |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/supabase/functions/tmdb-proxy/index.ts | 2026-09-29 | history reduced to the rule |
 | e2e/supabase/functions/tmdb-proxy/normalize.mjs | 2026-09-29 | true as written |
