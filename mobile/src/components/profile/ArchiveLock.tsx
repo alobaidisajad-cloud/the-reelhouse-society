@@ -1,23 +1,30 @@
 import React, { useEffect, useState } from 'react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { colors, fonts } from '@/src/theme/theme';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import PressableScale from '@/src/components/PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { nav } from '@/src/utils/typedRouter';
 
 /**
- * The biometric screen in front of a member's OWN Archive — the room of every
- * film they have seen — when they have turned the lock on in Settings.
+ * The lock in front of a member's OWN Archive — the room of every film they
+ * have seen — when they have turned it on in Settings.
  *
  * Not the Vault (that is the private notes) and not the Physical Archive (the
  * disc shelf): it stands in front of the Archive alone, and says so.
+ *
+ * It asks whatever the phone has: Face ID or Touch ID, else the passcode. A
+ * phone with neither cannot open it, and it never opens unasked: it stays
+ * shut, says why, and offers the way to turn it off. Every error fails CLOSED.
+ * (The room behind it is not drawn while it stands — see ProfileArchiveTab —
+ * so a screen reader cannot read past it either.)
  */
 export default function ArchiveLock({ onUnlocked }: { onUnlocked: () => void }) {
-    const [locked, setLocked] = useState(true);
     const [error, setError] = useState('');
+    /** The phone has nothing to open the lock with. */
+    const [noMeans, setNoMeans] = useState(false);
 
     useEffect(() => {
         authenticate();
@@ -26,17 +33,13 @@ export default function ArchiveLock({ onUnlocked }: { onUnlocked: () => void }) 
 
     async function authenticate() {
         try {
-            const hasHardware = await LocalAuthentication.hasHardwareAsync();
-            if (!hasHardware) {
-                onUnlocked();
-                return setLocked(false);
+            const level = await LocalAuthentication.getEnrolledLevelAsync();
+            if (level === LocalAuthentication.SecurityLevel.NONE) {
+                setNoMeans(true);
+                setError('This phone has no Face ID, Touch ID or passcode to open it with.');
+                return;
             }
-
-            const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-            if (!isEnrolled) {
-                onUnlocked();
-                return setLocked(false);
-            }
+            setNoMeans(false);
 
             const result = await LocalAuthentication.authenticateAsync({
                 promptMessage: 'Unlock your Archive',
@@ -47,19 +50,15 @@ export default function ArchiveLock({ onUnlocked }: { onUnlocked: () => void }) 
             if (result.success) {
                 setError('');
                 onUnlocked();
-                setLocked(false);
             } else {
                 setError('Authentication Failed');
             }
-
-        } catch (e) {
+        } catch {
             // Fail CLOSED: an error in the auth flow must never grant access.
             // The Archive stays locked and the member can retry.
             setError('Authentication Unavailable');
         }
     }
-
-    if (!locked) return null;
 
     return (
         <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.container}>
@@ -69,6 +68,11 @@ export default function ArchiveLock({ onUnlocked }: { onUnlocked: () => void }) 
             <PressableScale style={styles.button} onPress={authenticate} accessibilityRole="button" accessibilityLabel="Authenticate to open your Archive">
                 <Text {...scaledTextProps} style={styles.btnText}>AUTHENTICATE</Text>
             </PressableScale>
+            {noMeans && (
+                <PressableScale style={styles.settingsBtn} onPress={() => nav.push('/settings')} accessibilityRole="button" accessibilityLabel="Turn the lock off in Settings">
+                    <Text {...scaledTextProps} style={styles.settingsText}>TURN THE LOCK OFF IN SETTINGS</Text>
+                </PressableScale>
+            )}
         </Animated.View>
     );
 }
@@ -80,6 +84,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 100,
+        paddingHorizontal: 32,
     },
     title: {
         fontFamily: fonts.sub,
@@ -99,6 +104,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: colors.danger,
         marginBottom: 24,
+        textAlign: 'center',
     },
     button: {
         borderWidth: 1,
@@ -112,5 +118,7 @@ const styles = StyleSheet.create({
         fontSize: 11,
         color: colors.sepia,
         letterSpacing: 2,
-    }
+    },
+    settingsBtn: { marginTop: 18, paddingVertical: 12, paddingHorizontal: 12 },
+    settingsText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 1.6 },
 });

@@ -514,6 +514,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/roomSearchWiring.test.tsx | — |  |
 | src/components/profile/__tests__/roomsRender.test.tsx | — |  |
 | src/components/profile/__tests__/taste.test.tsx | — |  |
+| src/components/profile/__tests__/theArchiveLockHolds.test.tsx | 2026-10-01 | written: the archive lock holds |
 | src/components/profile/__tests__/theCalendarDrawsToday.test.tsx | 2026-10-01 | written: the calendar draws today and counts what it draws |
 | src/components/profile/__tests__/theDnaCardReadsTheRecord.test.tsx | 2026-10-01 | written: the DNA card reads the record and always opens |
 | src/components/profile/__tests__/theHonoursCountTheWholeRecord.test.tsx | 2026-10-01 | written: honours and stamps from the whole record |
@@ -527,7 +528,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/zz-render.lib.test.ts | — |  |
 | src/components/profile/__tests__/zz-render.lib.ts | 2026-09-28 | 35 findings; the RN-vs-CSS differences kept as short present-tense rules, the story of each bug left to history |
 | src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
-| src/components/profile/ArchiveLock.tsx | — |  |
+| src/components/profile/ArchiveLock.tsx | 2026-10-01 | asks the phone's own means; never opens unasked; the room is not drawn behind it |
 | src/components/profile/AvatarCropSheet.tsx | — |  |
 | src/components/profile/CinemaDNACard.tsx | 2026-10-01 | the record only; the house ladder; always opens and closes; no invented serial |
 | src/components/profile/CinematicInsights.tsx | 2026-10-01 | says retrieving or failed; whose-words; no history comments |

@@ -145,7 +145,8 @@ export default function ProfileArchiveTab({
   const grid = useMemo(() => posterColumns(windowWidth, 4), [windowWidth]);
 
   // The lock only guards the member's OWN archive, and only when they have
-  // explicitly enabled the biometric lock in Settings.
+  // turned it on in Settings. While it stands the room is not drawn at all,
+  // so nothing behind it can be read, by eye or by a screen reader.
   const biometricLock = useAuthStore((s) => s.user?.preferences?.biometric_lock === true);
   const requiresLock = isSelf && biometricLock;
   const [unlocked, setUnlocked] = useState(false);
@@ -457,9 +458,16 @@ export default function ProfileArchiveTab({
   // a guess makes FlashList render and re-measure more rows than it needs.
   const estimatedItemSize = abandonedView ? 88 : Math.round(grid.width * 1.5) + 42;
 
+  if (requiresLock && !unlocked) {
+    return (
+      <View style={r.container}>
+        <ArchiveLock onUnlocked={handleUnlocked} />
+      </View>
+    );
+  }
+
   return (
     <View style={r.container}>
-      {requiresLock && !unlocked && <ArchiveLock onUnlocked={handleUnlocked} />}
       <CinematicFlashList
         estimatedItemSize={estimatedItemSize}
         data={flashData}
