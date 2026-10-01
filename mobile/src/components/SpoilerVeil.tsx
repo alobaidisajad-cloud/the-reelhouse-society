@@ -29,21 +29,21 @@ interface SpoilerVeilProps {
   children: React.ReactNode;
 }
 
+/** Revealed nothing yet: no key, not even `undefined`, equals it. */
+const NONE = Symbol('none');
+
 export default function SpoilerVeil({ isSpoiler, bypass, revealKey, compact, children }: SpoilerVeilProps) {
-  const [revealed, setRevealed] = React.useState(false);
+  // Which item was revealed, not whether: a recycled row holding another log is veiled
+  // from its first frame. A reset in an effect came a frame late, and drew the spoiler.
+  const [revealedFor, setRevealedFor] = React.useState<string | number | undefined | typeof NONE>(NONE);
 
-  // Reset on recycled rows so a reveal never carries over to another log.
-  React.useEffect(() => {
-    setRevealed(false);
-  }, [revealKey]);
-
-  if (!isSpoiler || bypass || revealed) {
+  if (!isSpoiler || bypass || revealedFor === revealKey) {
     return <>{children}</>;
   }
 
   return (
     <PressableScale
-      onPress={() => { setRevealed(true); }}
+      onPress={() => { setRevealedFor(revealKey); }}
       haptic="selection"
       pressedScale={0.98}
       accessibilityRole="button"

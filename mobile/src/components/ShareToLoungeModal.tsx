@@ -11,7 +11,7 @@ import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 
 import PressableScale from '@/src/components/PressableScale';
 import { useAuthStore } from '@/src/stores/auth';
-import { LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
+import { canPostIn, LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 
 import reelToast from '@/src/utils/reelToast';
@@ -98,6 +98,8 @@ const LoungeItem = React.memo(({ item, isSelected, onSelect }: { item: LoungeRoo
         disabled={isSelected}
         haptic="selection"
         pressedScale={0.98}
+        // Selected, not "dimmed": `disabled` alone would be read as unavailable.
+        accessibilityState={{ selected: isSelected }}
     >
         <Text style={[s.loungeName, isSelected && s.loungeNameActive]}>
             {item.name}
@@ -106,46 +108,50 @@ const LoungeItem = React.memo(({ item, isSelected, onSelect }: { item: LoungeRoo
 ));
 LoungeItem.displayName = 'LoungeItem';
 
-export default function ShareToLoungeModal({ 
+/**
+ * The sheet, mounted only while open or closing. It lives in every feed card's
+ * action bar, so the store subscriptions belong to the open sheet alone: a closed
+ * one in each card answers nothing.
+ */
+export default function ShareToLoungeModal(props: ShareToLoungeProps) {
+    const { visible } = props;
+    // Kept a moment after closing, for the slide down; unmounted after, to free it.
+    const [closing, setClosing] = useState(false);
+    useEffect(() => {
+        if (visible) { setClosing(true); return; }
+        const timer = setTimeout(() => setClosing(false), 350);
+        return () => clearTimeout(timer);
+    }, [visible]);
+
+    if (!visible && !closing) return null;
+    // Keyed by what is shared: a card recycled for another item opens a fresh sheet.
+    const sharing = [props.filmId, props.logId, props.listId, props.dossierId].join('|');
+    return <ShareSheet key={sharing} {...props} />;
+}
+
+function ShareSheet({
     visible, onClose, filmTitle, filmId, posterPath, logId, ownerUsername,
     listId, listTitle, listFilmCount, listCurator, listTopPosters,
     dossierId, dossierTitle, dossierAuthor, dossierKind
 }: ShareToLoungeProps) {
-    const { user } = useAuthStore();
+    const signedIn = useAuthStore((s) => !!s.user);
     const allLounges = useLoungeStore(s => s.lounges);
     const isFetching = useLoungeStore(s => s.loading);
     const loungesFailed = useLoungeStore(s => s.loungesFailed);
-    const lounges = allLounges.filter(l => l.is_member || l.unread_count !== undefined);
+    // Only the salons the house lets this member speak in: a pending or muted seat is refused.
+    const lounges = allLounges.filter(canPostIn);
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [selectedLounge, setSelectedLounge] = useState<string | null>(null);
-    const [shouldRender, setShouldRender] = useState(visible);
-
-    // FIX 1: Delayed Unmount for Android OOM safety
-    useEffect(() => {
-        if (visible) {
-            setShouldRender(true);
-        } else {
-            const timer = setTimeout(() => setShouldRender(false), 350);
-            return () => clearTimeout(timer);
-        }
-    }, [visible]);
-
-    // FIX 3: View Recycling Input Bleed fix
-    useEffect(() => {
-        setMessage('');
-        setSelectedLounge(null);
-        setSending(false);
-    }, [filmId, logId, listId, dossierId]);
 
     useEffect(() => {
-        if (!visible || !user) return;
-        // Prevent UI blocking. Fetch silently if we already have lounges.
-        useLoungeStore.getState().fetchLounges();
-    }, [visible, user]);
+        if (!visible || !signedIn) return;
+        // Silently: the salons already held stay on screen while they are asked again.
+        void useLoungeStore.getState().fetchLounges();
+    }, [visible, signedIn]);
 
     const handleSend = async () => {
-        if (!selectedLounge || !user) return;
+        if (!selectedLounge || !signedIn) return;
         setSending(true);
 
         let shareType: 'film_share' | 'log_share' | 'list_share' | 'dossier_share' = 'film_share';
@@ -222,7 +228,6 @@ export default function ShareToLoungeModal({
         });
 
         onClose();
-        // State wipe is deferred to unmount by the useEffect
     };
 
     const handleSelectLounge = useCallback((id: string) => {
@@ -241,8 +246,6 @@ export default function ShareToLoungeModal({
     // platform — the message input and SHARE button rise with the keyboard
     // on BOTH (Android's resize mode can't reach Modal windows).
     const animatedSheetStyle = useModalKeyboardPadding();
-
-    if (!shouldRender) return null;
 
     return (
         <Modal statusBarTranslucent visible={visible} transparent animationType="slide" onRequestClose={onClose}>

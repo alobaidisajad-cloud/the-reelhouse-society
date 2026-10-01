@@ -294,6 +294,15 @@ interface LoungeMessageRow {
   profiles: { username: string; avatar_url?: string } | { username: string; avatar_url?: string }[] | null;
 }
 
+/**
+ * Whether this member may post in a salon: the server's rule ("Approved members can
+ * send"), read from the status it gave, or — for a salon just founded or joined, before
+ * that status arrives — from the seat this phone took.
+ */
+export function canPostIn(room: Pick<LoungeRoom, 'membership_status' | 'is_member'>): boolean {
+  return room.membership_status ? room.membership_status === 'approved' : !!room.is_member;
+}
+
 export const useLoungeStore = create<LoungeState>()((set, get) => ({
   lounges: [],
   loungesFailed: false,

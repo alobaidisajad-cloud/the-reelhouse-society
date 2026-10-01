@@ -120,13 +120,17 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
   const [backMounted, setBackMounted] = useState(false);
   const flip = useSharedValue(0);
 
-  // FlashList recycling: a flipped card must never leak onto another log.
-  useEffect(() => {
+  // A recycled card turned over for another log is set face up while rendering, so its
+  // first frame is this log's front: an effect would come a frame late and draw the
+  // last log's back. With the back unmounted the front holds no flip, and the value
+  // resets after, unseen.
+  const [flipFor, setFlipFor] = useState(item.id);
+  if (flipFor !== item.id) {
+    setFlipFor(item.id);
     setFlipped(false);
     setBackMounted(false);
-    flip.value = 0;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.id]);
+  }
+  useEffect(() => { flip.value = 0; }, [item.id, flip]);
 
   const turnOver = useCallback(() => {
     setBackMounted(true);

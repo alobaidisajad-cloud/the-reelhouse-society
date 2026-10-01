@@ -21,7 +21,8 @@ export function makeFlashListMock() {
           key: props.keyExtractor ? props.keyExtractor(item, index) : String(index),
           style: cols > 1 ? { width: `${100 / cols}%` } : props.horizontal ? undefined : full,
         },
-        props.renderItem ? props.renderItem({ item, index }) : null,
+        // As FlashList's ViewHolder: a row is handed the list's extraData, and a row that reads it must see it.
+        props.renderItem ? props.renderItem({ item, index, extraData: props.extraData, target: 'Cell' }) : null,
       ),
     );
 

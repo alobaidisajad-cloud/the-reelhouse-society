@@ -668,7 +668,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-01 | written: the unread-error sweep, both shapes |
 | src/lib/__tests__/defensiveParse.test.ts | — |  |
 | src/lib/__tests__/revenueCat.selectPackage.test.ts | — |  |
-| src/lib/__tests__/schemas.test.ts | — |  |
 | src/lib/__tests__/sentryMeasures.test.ts | — |  |
 | src/lib/__tests__/signingOutSilencesOnlyThisDevice.test.ts | — |  |
 | src/lib/__tests__/theCounterNamesNobody.test.ts | — |  |
@@ -685,7 +684,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/pushPrimer.ts | 2026-10-01 | new: the house asks to send word at a moment that wants it |
 | src/lib/queryClient.ts | — |  |
 | src/lib/revenueCat.ts | 2026-09-29 | 17 fixed; FALSE: 'syncs the tier to profiles.role' (the server re-reads RevenueCat and ignores the tier); setup notes with prices; ticket tags |
-| src/lib/schemas.ts | — |  |
 | src/lib/scrollBridge.ts | — |  |
 | src/lib/sentry.ts | — |  |
 | src/lib/supabase.ts | 2026-10-01 | the session kept by authSessionStorage; comments short |
@@ -696,6 +694,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/providers/androidTracking.ts | — |  |
 | src/providers/AppBootstrapper.tsx | — |  |
 | src/providers/FilmDetailProvider.tsx | — |  |
+| src/schemas/__tests__/aFeedRowWithANullIsStillDrawn.test.ts | 2026-10-01 | written with the null-status fix |
 | src/schemas/__tests__/schemas.test.ts | — |  |
 | src/schemas/feed.schema.ts | 2026-10-01 | comments cut to the why |
 | src/schemas/film.schema.ts | — |  |

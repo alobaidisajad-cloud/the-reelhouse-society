@@ -58,4 +58,18 @@ describe('SpoilerVeil', () => {
     expect(queryByText('a different spoiler')).toBeNull();
     expect(queryByText('CONTAINS SPOILERS')).toBeTruthy();
   });
+
+  it('never draws a recycled row\'s spoiler, not even for one frame', async () => {
+    // The state after the rerender is veiled either way; the flash is the frame before it.
+    const drawn: string[] = [];
+    const Probe = ({ id }: { id: string }) => { drawn.push(id); return <Text>{`spoiler of ${id}`}</Text>; };
+    const { getByLabelText, queryByText, rerender } = render(
+      <SpoilerVeil isSpoiler revealKey="log-1"><Probe id="log-1" /></SpoilerVeil>,
+    );
+    await fireEvent.press(getByLabelText(/contains spoilers/i));
+    await waitFor(() => expect(queryByText('spoiler of log-1')).toBeTruthy());
+
+    rerender(<SpoilerVeil isSpoiler revealKey="log-2"><Probe id="log-2" /></SpoilerVeil>);
+    expect(drawn).not.toContain('log-2');
+  });
 });

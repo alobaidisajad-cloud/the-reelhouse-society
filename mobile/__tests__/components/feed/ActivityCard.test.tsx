@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { ActivityCard } from '@/src/components/feed/ActivityCard';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
@@ -15,6 +15,13 @@ jest.mock('@/src/utils/typedRouter', () => ({
 
 jest.mock('@/src/utils/linking', () => ({
   safeOpenURL: jest.fn(),
+}));
+
+/** Whose autopsy the card's back was drawn for, in order. */
+const mockBacksDrawn: string[] = [];
+jest.mock('@/src/components/feed/AutopsyView', () => ({
+  ...jest.requireActual('@/src/components/feed/AutopsyView'),
+  AutopsyBack: ({ username }: { username: string }) => { mockBacksDrawn.push(username); return null; },
 }));
 
 jest.mock('expo-haptics', () => ({
@@ -88,6 +95,18 @@ describe('ActivityCard Component', () => {
     const { getByLabelText, queryByLabelText } = render(<ActivityCard item={item as any} index={0} />);
     expect(getByLabelText('Casablanca. Opens the film.')).toBeTruthy();
     expect(queryByLabelText('View film details')).toBeNull();
+  });
+
+  it('turned over, and recycled for another log, never draws that log\'s back', async () => {
+    const autopsied = (id: number, username: string) => ({ id, user_id: 'u9', username, role: 'cinephile', film_id: 238,
+      film_title: 'Casablanca', rating: 4, review: 'Here.', poster_path: '/c.jpg', year: 1942,
+      created_at: new Date().toISOString(), status: 'watched', is_autopsied: true, autopsy: { story: 8 } });
+    const { getByLabelText, rerender } = render(<ActivityCard item={autopsied(5, 'first') as any} index={0} />);
+    await fireEvent.press(getByLabelText('Turn the card over to read the confidential autopsy'));
+    expect(mockBacksDrawn).toContain('first');
+
+    rerender(<ActivityCard item={autopsied(6, 'second') as any} index={0} />);
+    expect(mockBacksDrawn).not.toContain('second');
   });
 
   it('lies flat unless it is an Auteur\'s, which lifts in crimson', () => {

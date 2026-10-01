@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { numericId } from '../lib/schemas';
+
+/** A TMDB film id, as a number or its digits: anything else drops the row, never a link to /film/NaN. */
+const filmId = z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform(Number);
+
+/** `logs.status` may be null; null is what the column's default fills in. */
+const logStatus = z.string().nullable().optional().transform((s) => s ?? 'watched');
 
 /**
  * RESILIENT YEAR PARSER
@@ -55,11 +60,11 @@ export const FeedItemSchema = z.object({
   avatar_url: z.string().nullable().optional(),
   role: z.string().default('cinephile'),
   film_title: z.string().default('Unknown Film'),
-  film_id: numericId,
+  film_id: filmId,
   poster_path: z.string().nullable().optional(),
   rating: z.number().nullable().default(0),
   review: z.string().nullable().optional(),
-  status: z.string().default('watched'),
+  status: logStatus,
   created_at: z.string().default(() => new Date().toISOString()),
   year: yearCoercer,
   editorial_header: z.string().nullable().optional(),
@@ -84,7 +89,7 @@ export type FeedItem = z.infer<typeof FeedItemSchema>;
  */
 export const FollowingFeedRowSchema = z.object({
   id: z.union([z.string(), z.number()]).transform(String),
-  film_id: numericId,
+  film_id: filmId,
   film_title: z.string(),
   poster_path: z.string().nullable(),
   rating: z.number().nullable().default(0),
