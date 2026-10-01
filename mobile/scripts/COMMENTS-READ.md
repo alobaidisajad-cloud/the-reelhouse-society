@@ -377,6 +377,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/home/VelvetRopeCTA.tsx | 2026-10-01 | nav; the shimmer note made true |
 | src/components/InitiationModal.tsx | — |  |
 | src/components/KeyboardRoom.tsx | 2026-10-01 | written: the keyboard's room on Android |
+| src/components/layout/__tests__/aSectionIsAHeading.test.tsx | 2026-10-01 | written: a section title is a heading |
 | src/components/layout/__tests__/ConciergeButton.test.tsx | — |  |
 | src/components/layout/__tests__/everyListChoosesItsAnchor.guard.test.ts | 2026-09-29 | new |
 | src/components/layout/__tests__/flashListKeyboard.test.tsx | 2026-09-29 | anchor tests |
@@ -388,7 +389,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/ConciergeButton.tsx | — |  |
 | src/components/layout/FrozenTab.tsx | 2026-10-01 | says it passes through; freezing carried to performance |
 | src/components/layout/navMetrics.ts | — |  |
-| src/components/layout/SectionCards.tsx | — |  |
+| src/components/layout/SectionCards.tsx | 2026-10-01 | a section title is a heading |
 | src/components/layout/TopNavBar.tsx | — |  |
 | src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-09-30 | new: doors, names, states, counts, every line's room |
 | src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-09-30 | new |
@@ -532,15 +533,15 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/AvatarCropSheet.tsx | — |  |
 | src/components/profile/CinemaDNACard.tsx | 2026-10-01 | the record only; the house ladder; always opens and closes; no invented serial |
 | src/components/profile/CinematicInsights.tsx | 2026-10-01 | says retrieving or failed; whose-words; no history comments |
-| src/components/profile/favourites.ts | — |  |
+| src/components/profile/favourites.ts | 2026-10-01 | comments say what is true now |
 | src/components/profile/FollowRequestsPanel.tsx | — |  |
-| src/components/profile/heroNameSize.ts | — |  |
+| src/components/profile/heroNameSize.ts | 2026-10-01 |  |
 | src/components/profile/NitrateCalendarGrid.tsx | 2026-10-01 | today drawn; counts what it draws, "in the past year"; the app date helper; nav |
 | src/components/profile/NoirPassport.tsx | 2026-10-01 | stamps from the whole record only; labels broken between words; said while unread or failed |
 | src/components/profile/ProfileArchiveTab.tsx | 2026-10-01 | nav; IMPORT lands on the import panel; comments say what is true now |
 | src/components/profile/ProfileBackdrop.tsx | — |  |
 | src/components/profile/profileComputed.ts | 2026-09-29 | 24 fixed; T3 ticket notes, 'until the migration lands', histories cut |
-| src/components/profile/ProfileHelpers.tsx | — |  |
+| src/components/profile/ProfileHelpers.tsx | 2026-10-01 | comments say what is true now |
 | src/components/profile/ProfileLedgerTab.tsx | 2026-10-01 | an empty ledger said as one; the high chip counts from the shared floor; nav; comments say what is true now |
 | src/components/profile/ProfileListsTab.tsx | 2026-10-01 | a search that found nothing is said; nav; no ticket tags or history |
 | src/components/profile/ProfilePhysicalTab.tsx | 2026-10-01 | a search that found nothing is said; catalogued as VHS (the space); nav; comments say what is true now |
@@ -591,10 +592,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/text/AnimatedText.tsx | — |  |
 | src/components/text/index.tsx | 2026-10-01 | the fourth promise: a word stops at the floor |
 | src/components/theme/CrestGlow.tsx | 2026-10-01 | the leak note to what it does |
-| src/components/theme/DiamondDivider.tsx | — |  |
+| src/components/theme/DiamondDivider.tsx | 2026-10-01 |  |
 | src/components/theme/OrnamentalRule.tsx | 2026-10-01 | no comments |
 | src/components/ToastHost.tsx | — |  |
-| src/components/Toggle.tsx | — |  |
+| src/components/Toggle.tsx | 2026-10-01 | comments say what is true now |
 | src/components/TryAgain.tsx | — |  |
 | src/components/__tests__/aLabelIsSpoken.test.ts | 2026-10-01 | written: a label on a View is spoken |
 | src/components/__tests__/theKeyboardHasRoom.test.tsx | 2026-10-01 | written with the keyboard's room |
@@ -608,7 +609,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/__tests__/theVaultIsThePrivateNotes.test.ts | — |  |
 | src/constants/cacheKeys.ts | — |  |
 | src/constants/deepLinks.ts | 2026-10-01 | true as written |
-| src/constants/formats.ts | — |  |
+| src/constants/formats.ts | 2026-10-01 | the shelf is the Physical Archive, not the Vault; no ticket tag |
 | src/constants/gatedFeatures.ts | — |  |
 | src/constants/membership.ts | 2026-10-01 | one list; checked against production |
 | src/constants/modalRoutes.ts | — |  |
@@ -665,7 +666,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useProfileController.logic.test.ts | — |  |
 | src/hooks/__tests__/useProfileData.reducer.test.ts | — |  |
 | src/hooks/__tests__/useScreenReady.test.tsx | — |  |
-| src/hooks/useAmbientGlow.ts | — |  |
+| src/hooks/useAmbientGlow.ts | 2026-10-01 |  |
 | src/hooks/useAnalytics.ts | — |  |
 | src/hooks/useArrival.ts | 2026-10-01 | written: an arrival that cannot stay invisible |
 | src/hooks/useAuthFlow.ts | 2026-10-01 | one sheet for reset or confirm; comments short |
@@ -874,7 +875,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/brass.ts | — |  |
 | src/theme/light.ts | — |  |
 | src/theme/motion.ts | — |  |
-| src/theme/ryeAdvances.ts | — |  |
+| src/theme/ryeAdvances.ts | 2026-10-01 |  |
 | src/theme/shaders.ts | — |  |
 | src/theme/stamp.ts | — |  |
 | src/theme/theme.ts | 2026-09-28 | 31 findings; header claimed an 'exact port of the web CSS' (false); the ladder, the see-through rule and every measured ratio kept; a stray comment about tarnishDeep sat under onBrassQuiet — moved to its token |

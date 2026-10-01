@@ -6,8 +6,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import type { LucideIcon } from 'lucide-react-native';
 import { WASH } from '@/src/theme/light';
 
-
-
+/** A card of the Edit Profile desk: a lit top line over a faint wash. */
 export const SectionCard = React.memo(({ children, danger }: { children: React.ReactNode; danger?: boolean }) => (
   <View style={[st.sectionCard, danger && st.sectionCardDanger]}>
     <LinearGradient
@@ -28,7 +27,8 @@ export const SectionHead = React.memo(({ icon: Icon, label, danger }: { icon: Lu
   <View style={st.sectionHeaderWrap}>
     <View style={st.sectionHeaderRow}>
       <Icon size={14} color={danger ? colors.bloodReel : colors.sepia} style={st.sectionHeaderIcon} />
-      <Text style={[st.sectionHeaderText, danger && st.sectionHeaderTextDanger]}>{label}</Text>
+      {/* A heading, so a screen reader can move section by section. */}
+      <Text style={[st.sectionHeaderText, danger && st.sectionHeaderTextDanger]} accessibilityRole="header">{label}</Text>
     </View>
   </View>
 ));

@@ -8,14 +8,11 @@
  * ── WHY THE MOUNTS ARE POSITIONAL ────────────────────────────────────────────
  * ProfileTriptych's `handleRemove` writes a literal `null` into the array — so a
  * member who clears their first favourite has `[null, A, B]` stored. A reader
- * that does `.filter(Boolean)` and THEN indexes quietly slides A into first
- * place: you removed one film and a different one was promoted without being
- * asked. On the old equal-thirds row that was merely surprising. On the
- * altarpiece the first slot is the centre panel — the largest thing on the
- * page, and the film the backdrop is cut from — so the same shrug would
- * re-dress somebody's entire profile behind their back.
+ * that does `.filter(Boolean)` and THEN indexes would slide A into the centre
+ * panel (the largest thing on the page, and the film the backdrop is cut from):
+ * one film removed, another promoted unasked.
  *
- * A hole is now a hole. Index 0 is the centre, 1 is the left wing, 2 is the
+ * A hole is a hole. Index 0 is the centre, 1 is the left wing, 2 is the
  * right wing, and the only way a wing reaches the centre is the member asking
  * for it.
  */
@@ -27,11 +24,9 @@ export interface FavouriteFilm {
   /**
    * Release year, for the gallery label.
    *
-   * Optional because it is NEW: nothing stored before this build carries one,
-   * and there is no honest way to invent it for the favourites already on file
-   * (the search result it came from is long gone). Newly chosen films record
-   * it, so labels fill in as members curate — a label with no year simply
-   * closes up rather than showing a guess.
+   * Optional: favourites stored by earlier builds carry none, and there is no
+   * honest way to invent one. Newly chosen films record it; a label with no
+   * year closes up rather than showing a guess.
    */
   year?: string;
 }
@@ -88,14 +83,10 @@ export function readMounts(raw: unknown): (FavouriteFilm | null)[] {
  * something, rather than stripping an Auteur's backdrop over one empty mount,
  * and a film with no poster can dress nothing, so it is skipped.
  *
- * ── WHY THERE IS NO EXPLICIT "CENTRE FIRST" BRANCH ───────────────────────────
- * There was one, and a mutation pass proved it could never change the answer:
- * `readMounts` returns STORED order, in which the centre is index 0, so a plain
- * scan already prefers it in every case. The branch read as intent and executed
- * as nothing. What actually carries the rule is the order of this loop, so that
- * is what the comment — and the test — has to be about: iterate the mounts in
- * STORED order, never in HANGING order (wing, centre, wing), which would hand
- * the page's backdrop to the left wing.
+ * What carries "centre first" is the order of this loop: `readMounts` returns
+ * STORED order, in which the centre is index 0. Iterate in STORED order, never
+ * in HANGING order (wing, centre, wing), which would hand the page's backdrop
+ * to the left wing.
  */
 export function pickBackdropFilm(raw: unknown): FavouriteFilm | null {
   for (const m of readMounts(raw)) if (m?.poster_path) return m;

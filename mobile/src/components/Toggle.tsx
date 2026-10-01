@@ -1,16 +1,11 @@
 /**
- * Toggle — the app's one switch.
- *
- * Lifted out of the settings feature when the profile's Dossier Bureau needed
- * its first switch. A second implementation would have drifted: this one
- * already carries two fixes that took finding.
+ * Toggle — the app's one switch, so no second one drifts from it.
  *
  * ── ios_backgroundColor ──────────────────────────────────────────────────────
  * On iOS `trackColor.false` maps to UISwitch's `tintColor`, which colours the
- * OUTLINE only; the fill stays the system default. So an off switch rendered as
- * a bright light-grey pill on the app's darkest surfaces, while the same switch
- * on Android was dark brass — two platforms, two different apps.
- * `ios_backgroundColor` sets the actual fill, and they finally agree.
+ * OUTLINE only: an off switch would be a bright grey pill on the darkest
+ * surfaces while Android's is dark brass. `ios_backgroundColor` sets the fill,
+ * so the two platforms agree.
  *
  * ── the label ────────────────────────────────────────────────────────────────
  * A Switch with no accessibilityLabel announces "off, switch" and never WHICH

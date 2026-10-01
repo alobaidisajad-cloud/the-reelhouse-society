@@ -6,8 +6,8 @@
  * sizes for a reason a reader cannot see (the design's own rule — see the
  * profile screen).
  *
- * The step used to be chosen by COUNTING characters. A count cannot see the two
- * things that decide whether a name fits:
+ * A count of characters sets only the ceiling: it cannot see the two things
+ * that decide whether a name fits:
  *
  *   · A WORD CANNOT WRAP. A name of many short words can take two lines; a
  *     handle is one word, and a one-word name wider than the column is broken

@@ -62,7 +62,8 @@ export const SectionHead = ({ icon: Icon, label, danger }: { icon: import('lucid
   <View style={st.sectionHeaderWrap}>
     <View style={st.sectionHeaderRow}>
       <Icon size={14} color={danger ? 'rgba(162,36,36,0.7)' : colors.sepia} style={st.sectionHeaderIcon} />
-      <Text style={[st.sectionHeaderText, danger && st.sectionHeaderTextDanger]} {...scaledTextProps}>{label}</Text>
+      {/* A heading, so a screen reader can move section by section. */}
+      <Text style={[st.sectionHeaderText, danger && st.sectionHeaderTextDanger]} {...scaledTextProps} accessibilityRole="header">{label}</Text>
     </View>
   </View>
 );

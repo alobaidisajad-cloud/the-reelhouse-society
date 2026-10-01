@@ -7,19 +7,12 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 /**
  * One of the four figures on the member's plate.
  *
- * ── THE RULE MOVED FROM A SIBLING TO A BORDER ────────────────────────────────
- * The divider used to be a 1.5pt View emitted BETWEEN cards from inside a
- * fragment, driven by an `isLast` flag. That works right up until the row's
- * contents become conditional, at which point "last" and "actually last" part
- * company. A left border on every cell but the first cannot drift.
+ * The rule between cells is a left border on every cell but the first (a
+ * divider drawn between them drifts once the row's contents are conditional).
  *
- * ── WHY THERE IS NO HORIZONTAL hitSlop ───────────────────────────────────────
- * PressableScale gives 15pt on every side when the prop is absent, and adjacent
- * touch targets that overlap resolve in favour of the LATER sibling. Four cells
- * in a row meant the right-hand 15pt of FOLLOWERS actually belonged to
- * FOLLOWING — a member tapping the edge of one count opened the other list. The
- * cell is 56pt tall and already a comfortable target on its own; the slop is
- * spent on height, where there is nothing to collide with.
+ * No horizontal hitSlop: overlapping targets go to the LATER sibling, so slop
+ * sideways would hand the edge of FOLLOWERS to FOLLOWING. The 56pt cell is a
+ * comfortable target on its own; the slop is spent on height.
  */
 export const StatCard = React.memo(function StatCard({
   label, value, onPress, rule,

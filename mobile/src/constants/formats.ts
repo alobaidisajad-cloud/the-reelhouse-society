@@ -1,8 +1,6 @@
 /**
- * formats.ts — Physical Media Format Metadata
- * ─────────────────────────────────────────────
- * T3-20: Extracted from [username].tsx for reusability.
- * Used by: Profile vault tab (format counts), archive feature.
+ * formats.ts — the physical formats a copy can be catalogued as: each one's
+ * label and spine colour, and the order the Physical Archive's shelves stand in.
  */
 import { colors } from '@/src/theme/theme';
 
@@ -20,16 +18,9 @@ export const FORMAT_META: Record<string, { label: string; color: string }> = {
 export const FORMAT_IDS = Object.keys(FORMAT_META);
 
 /**
- * The order the Vault's shelves stand in — newest carrier first, then the
- * special editions.
- *
- * The Vault used to shelve a collection by the month each disc was CATALOGUED,
- * which is a fact about the app's database and not about the collection: a
- * member's 4K box and their father's VHS sat side by side because they happened
- * to be typed in on the same Tuesday. A physical archive is arranged by
- * CARRIER, so this is chronological by format — 4K, Blu-ray, DVD, LaserDisc,
- * VHS — and then the two that describe an EDITION rather than a carrier, which
- * belong at the end because they are the prized shelf.
+ * The order the Physical Archive's shelves stand in: by CARRIER, newest first —
+ * 4K, Blu-ray, DVD, LaserDisc, VHS — then the two that describe an EDITION
+ * rather than a carrier, at the end because they are the prized shelf.
  *
  * Anything not named here still gets a shelf; it simply falls to the bottom.
  */
