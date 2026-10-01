@@ -4,7 +4,8 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { useArrival } from '@/src/hooks/useArrival';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, X } from 'lucide-react-native';
 
@@ -41,6 +42,7 @@ export const DarkroomHero = React.memo(function DarkroomHero({
   suggestions, handleSuggestionPress,
   animatedSearchProps, animatedSearchStyle, setFieldFocused,
 }: DarkroomHeroProps) {
+  const arrival = useArrival({ duration: MS.considered, easing: arrive(), name: 'darkroom.hero' });
   return (
     <View style={s.heroContainer}>
       <DarkroomAtmo />
@@ -51,7 +53,7 @@ export const DarkroomHero = React.memo(function DarkroomHero({
         locations={[0, 0.6, 1]}
         style={[StyleSheet.absoluteFillObject, WASH]}
       />
-      <Animated.View entering={FadeInDown.duration(MS.considered).easing(arrive())} style={s.heroContent}>
+      <Animated.View style={[s.heroContent, arrival]}>
         {(() => {
           const h = new Date().getHours();
           const isLateNight = h >= 2 && h < 6;

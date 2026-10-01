@@ -609,6 +609,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/generated/lucideIcons.js | — |  |
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
+| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-01 | written with useArrival |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
 | src/hooks/__tests__/theArchiveDoesNotRepeatItself.test.tsx | — |  |
 | src/hooks/__tests__/theArchivePagesOnWhatTheServerGave.test.ts | — |  |
@@ -631,6 +632,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useScreenReady.test.tsx | — |  |
 | src/hooks/useAmbientGlow.ts | — |  |
 | src/hooks/useAnalytics.ts | — |  |
+| src/hooks/useArrival.ts | 2026-10-01 | written: an arrival that cannot stay invisible |
 | src/hooks/useAuthFlow.ts | 2026-10-01 | one sheet for reset or confirm; comments short |
 | src/hooks/useAuthThrottle.ts | 2026-10-01 | a lifted lock keeps the rule |
 | src/hooks/useBanCheck.ts | — |  |

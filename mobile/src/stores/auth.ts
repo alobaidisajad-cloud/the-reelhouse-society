@@ -17,6 +17,7 @@ import { isRetryable, withRetry } from '../utils/withRetry';
 import { hydrateFollowing } from './domain/socialSlice';
 import { storage, setSensitive } from './mmkv-storage';
 import { BAD_CREDENTIALS, isAddress, authLink } from '../utils/authSignals';
+import { e2eTrace } from '../utils/e2eTrace';
 export { storage };
 
 export interface AuthState {
@@ -157,6 +158,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       }
 
       const { data: { session } } = await supabase.auth.getSession();
+      e2eTrace('auth.restore', { session: !!session?.user, cached: lastUserId !== undefined });
       if (session?.user) {
         // Unsynced preferences first, MERGED server-side (another device may
         // have set other keys meanwhile).

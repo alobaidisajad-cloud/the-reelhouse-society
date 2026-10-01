@@ -8,6 +8,7 @@ import * as Crypto from 'expo-crypto';
 // reporting from this file actually reaches Sentry rather than being dropped.
 import { logger } from '@/src/utils/logger';
 import { captureError } from '@/src/lib/sentry';
+import { e2eTrace } from '@/src/utils/e2eTrace';
 
 // ── Encryption-at-rest (LIB-5) ───────────────────────────────────────────────
 // MMKV needs its encryption key *synchronously at construction*, but the key is
@@ -153,6 +154,7 @@ export function initEncryptedStorage(): Promise<void> {
       logger.error('[mmkv] encryption init failed; running on the isolated placeholder store');
       captureError(e, { scope: 'mmkv.initEncryptedStorage', degraded: true });
     } finally {
+      e2eTrace('storage.opened', { encrypted: _encrypted });
       _markReady();
     }
   })();

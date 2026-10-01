@@ -176,6 +176,7 @@ Decisions, as of 2026-09-28:
 | `src/components/lounge/__tests__/theCorridorIsOpen.test.ts` | No layer of the Lounge refuses a member. |
 | `src/components/lounge/__tests__/thePollRunsWhileWatched.test.ts` | The corridor polls only while it is on screen. |
 | `src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts` | The Reel shows itself to a visitor rather than a wall. |
+| `src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx` | A ratchet: the count of mount-time `entering` animations across the app, which only falls as each moves to useArrival. A count over every file is the rule; no render reaches it. (The rescue itself is tested by mounting.) |
 | `src/hooks/__tests__/theArchivePagesOnWhatTheServerGave.test.ts` | The archive pages on the server's count. |
 | `src/services/__tests__/profileRoomFilters.test.ts` | Each room filter reaches the query it sends. |
 | `src/stores/__tests__/followGraph.wiring.guard.test.ts` | The follow loader's one way into the store, and the layout that reads the saved list. |
