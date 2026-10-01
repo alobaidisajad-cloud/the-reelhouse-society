@@ -169,6 +169,13 @@ describe('a visitor', () => {
     expect(r.queryByText('The Lobby')).toBeNull();
   });
 
+  it('ALREADY A MEMBER? opens the sign-in form, whichever was open last', async () => {
+    mockSignedIn = false;
+    const { r } = await mount();
+    await act(async () => { fireEvent.press(r.getByText('ALREADY A MEMBER?')); });
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/login', params: { action: 'login' } });
+  });
+
   it('SEEK ADMISSION opens the sign-up form, not the sign-in one', async () => {
     mockSignedIn = false;
     const { r } = await mount();

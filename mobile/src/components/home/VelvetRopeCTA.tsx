@@ -11,7 +11,7 @@ import Animated, {
 import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 
@@ -52,17 +52,13 @@ export const ShimmerRule = memo(() => {
 
  
 export const VelvetRopeCTA = memo(() => {
-    const router = useRouter();
-
-    // Explicit `login`, not a bare push. Its sibling on the gate now opens
-    // signup, so this one has to state its own mode — otherwise reopening
-    // after a signup visit would inherit whichever form was left over.
+    // States its form, `login`: a bare push would reopen whichever form was left.
     return (
        <PressableScale
           style={s.ctaSecondaryNoir}
           // the first door stands 24 above (the front door's gap): half of it, no more
           hitSlop={{ top: 12 }}
-          onPress={() => { TactileEngine.destroy(); (router.push as any)({ pathname: '/login', params: { action: 'login' } }); }}
+          onPress={() => { TactileEngine.destroy(); nav.push('/login', { action: 'login' }); }}
        >
           <Text style={s.ctaSecondaryNoirText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.7}>ALREADY A MEMBER?</Text>
           <ShimmerRule />
