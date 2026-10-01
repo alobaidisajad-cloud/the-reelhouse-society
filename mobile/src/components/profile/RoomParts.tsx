@@ -240,7 +240,7 @@ export function RoomRail({ lead, label, count, tint, weight }: {
   const hasWeight = typeof weight === 'number' && weight > 0;
   return (
     <View style={hasWeight ? r.railWrap : undefined}>
-      <View style={[r.rail, hasWeight && r.railTight]} accessibilityRole="header">
+      <View style={[r.rail, hasWeight && r.railTight]} accessible accessibilityRole="header">
         {!!lead && <Text {...scaledTextProps} style={r.railYear}>{lead}</Text>}
         <View style={[r.railLine, tint ? { backgroundColor: tint, opacity: 0.45 } : null]} />
         {/* Bounded like the chip beside it. Most rails carry a month name or
@@ -269,7 +269,7 @@ export function RoomRail({ lead, label, count, tint, weight }: {
 /** The moment before the data lands. Says nothing about the room's contents. */
 export function RoomRetrieving({ room }: { room: string }) {
   return (
-    <View style={r.retrieve} accessibilityRole="progressbar" accessibilityLabel={`Retrieving ${room}`}>
+    <View style={r.retrieve} accessible accessibilityRole="progressbar" accessibilityLabel={`Retrieving ${room}`}>
       <Text {...decorativeTextProps} style={r.retrieveMark}>✦</Text>
       <Text {...scaledTextProps} style={r.retrieveText}>RETRIEVING {room.toUpperCase()}</Text>
       <Text {...decorativeTextProps} style={r.retrieveMark}>✦</Text>

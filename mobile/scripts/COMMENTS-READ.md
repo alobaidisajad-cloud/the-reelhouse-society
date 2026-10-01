@@ -572,6 +572,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/ToastHost.tsx | — |  |
 | src/components/Toggle.tsx | — |  |
 | src/components/TryAgain.tsx | — |  |
+| src/components/__tests__/aLabelIsSpoken.test.ts | 2026-10-01 | written: a label on a View is spoken |
 | src/components/reels/__tests__/theReelSaysWhatEachControlIs.test.tsx | 2026-10-01 | written with the Reel's controls |
 | src/components/ui/NotificationBadge.tsx | — |  |
 | src/constants/__tests__/aRankIsSoldEnforcedAndExplained.test.ts | — |  |

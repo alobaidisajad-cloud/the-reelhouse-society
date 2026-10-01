@@ -57,7 +57,7 @@ export default React.memo(function AuteurToolkit({ isAuteur, autopsy, setAutopsy
                             <Text style={st.axisLabel} numberOfLines={1} {...scaledTextProps}>{label}</Text>
                             <Text style={[st.axisValue, !rated && st.axisValueUnrated]} {...scaledTextProps}>{rated ? String(val) : '—'}</Text>
                         </View>
-                        <View style={st.axisTrack} accessibilityLabel={`${label}, ${rated ? `scored ${val} of 10` : 'not scored'}`}>
+                        <View style={st.axisTrack}>
                             {[0,1,2,3,4,5,6,7,8,9,10].map(v => (
                                 <PressableScale
                                     key={v}

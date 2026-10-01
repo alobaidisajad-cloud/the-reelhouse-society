@@ -486,7 +486,7 @@ export const PaperSkeletons = memo(function PaperSkeletons({
 }: { section?: string }) {
   const shapes = (SHAPES[section] ?? SHAPES.ALL).slice(0, SKELETON_COUNT);
   return (
-    <View accessibilityLabel="Loading filings">
+    <View accessible accessibilityRole="progressbar" accessibilityLabel="Loading filings">
       {shapes.map((lines, i) => (
         <View key={i}>
           {i > 0 && <View style={p.hair} />}

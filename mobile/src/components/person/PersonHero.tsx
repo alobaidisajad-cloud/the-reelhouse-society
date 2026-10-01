@@ -305,6 +305,7 @@ export const PersonHero = memo(function PersonHero({
                 reads it as what it is, with its real position. */}
             <View
               style={s.auteurHuntTrack}
+              accessible
               accessibilityRole="progressbar"
               accessibilityLabel="The Auteur Hunt"
               accessibilityValue={{ min: 0, max: huntTotal, now: seenCount }}
