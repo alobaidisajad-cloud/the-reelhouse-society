@@ -161,7 +161,7 @@ export default function App() {
   }, [location.pathname])
 
   // ── Persistent Achievements — detect new badge unlocks ──
-  const { newBadges, dismissNewBadge } = useAchievements(user?.id, logs)
+  const { newBadges, dismissNewBadge } = useAchievements(user?.id, logs.length)
 
   // Degradation filters REMOVED — they were applying brightness(0.95) saturate(0.9)
   // to the entire app when logged in, killing the warm Nitrate Noir atmosphere
@@ -273,7 +273,7 @@ export default function App() {
           <OnboardingModal />
           {csvImportOpen && <CSVImport onClose={() => setCsvImportOpen(false)} />}
           {showHelp && <ShortcutsHelp onClose={() => setShowHelp(false)} />}
-          {newBadges.length > 0 && <AchievementToast badge={newBadges[0]} onDismiss={() => dismissNewBadge(newBadges[0].key)} />}
+          {newBadges.length > 0 && <AchievementToast badge={newBadges[0]} onDismiss={() => dismissNewBadge(newBadges[0].id)} />}
 
           <main id="main-content" tabIndex={-1}>
             <Suspense fallback={<PageFallback />}>

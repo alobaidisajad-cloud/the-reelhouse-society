@@ -5,9 +5,10 @@ import { useFilmStore, useUIStore, useAuthStore } from '../../store'
 import reelToast from '../../utils/reelToast'
 import { isArchivistPlusTier } from '../../utils/tier'
 import { fetchAllMyNotes, type VaultNoteRow } from '../../services/vault'
+import type { Standing } from '../../constants/standing'
 
-export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
-    const isMaster = stats.total_logs > 50
+/** `stats` is the standing from the member's record; null until it is read. */
+export function ProjectorRoom({ stats, user }: { stats: Standing | null; user: any }) {
 
     // `user` is the profile being LOOKED AT, not the person looking. Gating the
     // export on `user.role` therefore asked "is the owner of this page an
@@ -115,21 +116,21 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '3rem', width: '100%', maxWidth: 400 }}>
                     <div className="projector-stat-dial" style={{ transform: 'scale(1.2)', margin: '1rem 0 2.5rem' }}>
-                        <div className="dial-value">{stats.count}</div>
+                        <div className="dial-value">{stats ? stats.count : '—'}</div>
                         <div className="dial-label" style={{ marginTop: '0.4rem' }}>LIFETIME LOGS</div>
                     </div>
-                    <div style={{ width: '100%' }}>
+                    {stats && <div style={{ width: '100%' }}>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.25em', color: 'var(--fog)', marginBottom: '0.6rem' }}>RANKING</div>
                         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: stats.color, filter: `drop-shadow(0 0 20px ${stats.color}40)`, marginBottom: '1.5rem' }}>{stats.level}</h2>
                         <div style={{ height: 4, background: 'var(--ash)', borderRadius: 2, overflow: 'hidden' }}>
                             <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: stats.progress / 100 }} style={{ height: '100%', width: '100%', transformOrigin: 'left', background: stats.color }} />
                         </div>
-                    </div>
+                    </div>}
                 </div>
             </div>
 
             {/* Achievement Certificate */}
-            {stats.count > 0 && (
+            {stats && stats.count > 0 && (
                 <div className="card" style={{ padding: '3rem', textAlign: 'center', background: 'var(--soot)', border: '1px double var(--sepia)', position: 'relative' }}>
                     <div style={{ position: 'absolute', top: 10, left: 10, opacity: 0.2, fontFamily: 'var(--font-display)', fontSize: '4rem' }}>✦</div>
                     <div style={{ position: 'absolute', bottom: 10, right: 10, opacity: 0.2, fontFamily: 'var(--font-display)', fontSize: '4rem' }}>✦</div>

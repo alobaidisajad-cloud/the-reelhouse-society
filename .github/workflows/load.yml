@@ -91,8 +91,19 @@ jobs:
           SNAPSHOT_SAME_MAJOR: '1'
         run: node mobile/scripts/schema-snapshot.mjs --check
 
+      # Logs are for signed-in readers only, so a failure says itself as an annotation.
       - name: Fill the house — 100,000 members
-        run: psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 -f mobile/e2e/load/seed.sql
+        run: |
+          set +e
+          psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f mobile/e2e/load/seed.sql > "$RUNNER_TEMP/seed.log" 2>&1
+          rc=$?
+          cat "$RUNNER_TEMP/seed.log"
+          if [ $rc -ne 0 ]; then
+            grep -nE 'ERROR|DETAIL|HINT|CONTEXT|LINE|psql:' "$RUNNER_TEMP/seed.log" | tail -n 12 > "$RUNNER_TEMP/seed-errors.txt"
+            node mobile/e2e/annotate.mjs "Load seed failed" "$RUNNER_TEMP/seed-errors.txt"
+          fi
+          exit $rc
 
       - name: Time every busy screen's reads
         run: node mobile/e2e/load/probe.mjs

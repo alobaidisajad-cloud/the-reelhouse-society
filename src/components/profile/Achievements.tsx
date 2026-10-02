@@ -1,105 +1,21 @@
 /**
- * Achievements — Nitrate Noir-themed unlockable badges.
- * Computed client-side from user's film logs.
- * Uses elegant SVG glyphs (no emojis) matching the cinema society aesthetic.
+ * Achievements — SOCIETY HONORS, earned from the member's whole record (the
+ * server's counts, constants/honours.ts), never from the logs that loaded.
+ * Until the record is read the case says so.
  */
 import { useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { HONOURS, stampsOf, type ProfileAnalytics } from '../../constants/honours'
+import { RecordNotRead } from './RecordNotRead'
 
-// ── Badge Definitions — Film Society Honors ──
-const BADGES = [
-  {
-    id: 'first-reel',
-    title: 'FIRST REEL',
-    desc: 'Log your first film',
-    glyph: '✦',
-    check: (logs: any[]) => logs.length >= 1,
-  },
-  {
-    id: 'the-regular',
-    title: 'THE REGULAR',
-    desc: 'Log 10 films',
-    glyph: '❖',
-    check: (logs: any[]) => logs.length >= 10,
-  },
-  {
-    id: 'midnight-devotee',
-    title: 'MIDNIGHT DEVOTEE',
-    desc: 'Log 25 films',
-    glyph: '◆',
-    check: (logs: any[]) => logs.length >= 25,
-  },
-  {
-    id: 'the-oracle',
-    title: 'THE ORACLE',
-    desc: 'Log 100 films',
-    glyph: '◈',
-    check: (logs: any[]) => logs.length >= 100,
-  },
-  {
-    id: 'the-connoisseur',
-    title: 'THE CONNOISSEUR',
-    desc: 'Rate 5 films with 5 reels',
-    glyph: '✧',
-    check: (logs: any[]) => logs.filter((l: any) => l.rating === 5).length >= 5,
-  },
-  {
-    id: 'the-critic',
-    title: 'THE CRITIC',
-    desc: 'Write 10 reviews',
-    glyph: '§',
-    check: (logs: any[]) => logs.filter((l: any) => l.review?.length > 20).length >= 10,
-  },
-  {
-    id: 'genre-explorer',
-    title: 'GENRE EXPLORER',
-    desc: 'Log films in 5+ genres',
-    glyph: '⊕',
-    check: (logs: any[]) => {
-      const genres = new Set<string>()
-      logs.forEach((l: any) => l.genres?.forEach((g: any) => genres.add(g)))
-      return genres.size >= 5
-    },
-  },
-  {
-    id: 'decade-drifter',
-    title: 'DECADE DRIFTER',
-    desc: 'Watch films from 4+ decades',
-    glyph: '⊗',
-    check: (logs: any[]) => {
-      const decades = new Set<number>()
-      logs.forEach((l: any) => { if (l.year) decades.add(Math.floor(l.year / 10) * 10) })
-      return decades.size >= 4
-    },
-  },
-  {
-    id: 'marathon-runner',
-    title: 'MARATHON RUNNER',
-    desc: 'Log 3+ films in one day',
-    glyph: '⟐',
-    check: (logs: any[]) => {
-      const counts: Record<string, number> = {}
-      logs.forEach((l: any) => {
-        const d = (l.watchedDate || l.createdAt || '').slice(0, 10)
-        if (d) counts[d] = (counts[d] || 0) + 1
-      })
-      return Object.values(counts).some(c => c >= 3)
-    },
-  },
-  {
-    id: 'the-completionist',
-    title: 'THE COMPLETIONIST',
-    desc: 'Rate every logged film',
-    glyph: '⊛',
-    check: (logs: any[]) => logs.length >= 5 && logs.every((l: any) => l.rating > 0),
-  },
-]
-
-export default function Achievements({ logs }: { logs: any[] }) {
+export default function Achievements({ analytics, failed }: { analytics?: ProfileAnalytics | null; failed?: boolean }) {
+  const stamps = stampsOf(analytics)
   const earned = useMemo(() =>
-    BADGES.map(b => ({ ...b, unlocked: b.check(logs) })),
-    [logs]
+    stamps ? HONOURS.map(b => ({ ...b, unlocked: b.check(stamps) })) : [],
+    [stamps]
   )
+
+  if (!stamps) return <RecordNotRead analytics={analytics} failed={failed} />
 
   const unlockedCount = earned.filter(b => b.unlocked).length
 
@@ -111,7 +27,7 @@ export default function Achievements({ logs }: { logs: any[] }) {
           fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em',
           color: 'var(--sepia)', opacity: 0.7,
         }}>
-          {unlockedCount}/{BADGES.length} EARNED
+          {unlockedCount}/{HONOURS.length} EARNED
         </div>
       </div>
 
@@ -164,3 +80,4 @@ export default function Achievements({ logs }: { logs: any[] }) {
     </div>
   )
 }
+

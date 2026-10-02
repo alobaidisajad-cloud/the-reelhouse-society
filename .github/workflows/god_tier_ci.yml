@@ -243,6 +243,14 @@ jobs:
         working-directory: ./mobile
         run: node mockups/tools/selftest.cjs
 
+      # The letter widths the Lobby and the profile do arithmetic with are what
+      # the app's own font files measure (a face changed without them would fit
+      # lines by the old letters).
+      - name: The faces' letter widths match the font files
+        if: matrix.width == 390
+        working-directory: ./mobile
+        run: node mockups/tools/face-advances.cjs --check
+
   captures:
     # Every screen the tests and generators BUILD (every sheet, error, empty and
     # loading state), measured for what mocked content cannot distort: STEAL,

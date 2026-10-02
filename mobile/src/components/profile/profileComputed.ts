@@ -39,7 +39,6 @@ interface UseProfileComputedParams {
   lists: ProfileList[];
   counts: { logs: number; ledger: number; watchlist: number; vault: number; lists: number };
   isArchivistPlus: boolean;
-  isAuteurPlus: boolean;
   targetUser: any;
   username: string;
   serverStreak: number | null;
@@ -166,7 +165,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   const {
     isSelf, myLogs, myWatchlist, myVault, myLists,
     mainLogs, archiveLogs, ledgerLogs, analyticsLogs, watchlist, vault, lists,
-    counts, isArchivistPlus, isAuteurPlus, targetUser, serverStreak,
+    counts, isArchivistPlus, targetUser, serverStreak,
     archiveSieve, archiveSearch, listsSearch, physicalSearch, ledgerSearch, ledgerRatingFilter,
     watchlistSearch, watchlistSort, watchlistDecade,
     physicalFilter, physicalSort, listsSort, serverDecades,
@@ -251,41 +250,31 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   }, [displayLedgerLogs, ledgerSearch, ledgerRatingFilter]);
 
   // Half-life: how a member's rating of a film has moved across rewatches.
+  // A film is ONE log per member (logs_user_id_film_id_key), and a rewatch is
+  // kept on it: each earlier viewing, with its own rating, in viewing_history.
+  // So the trajectory is read from the log itself — every row the room shows
+  // carries its whole story — never by pairing two logs of one film, which
+  // cannot exist (it was, and no row ever showed a mark).
   const halfLifeMap = useMemo(() => {
-    // It needs the WHOLE history; a paged window would give false trajectories.
-    let sourceLogs: ProfileLog[] = [];
-    if (isSelf || isAuteurPlus) {
-      sourceLogs = analyticsLogs;
-    } else {
-      // A visitor to a non-Auteur is not sent the whole history, so: none.
-      return {};
-    }
-
-    if (sourceLogs.length === 0) return {};
-    // Each entry keeps its index, to order two logs with the same timestamp.
-    const byFilm: Record<number, { rating: number; timestamp: number; orderIndex: number }[]> = {};
-    for (let i = 0; i < sourceLogs.length; i++) {
-      const log = sourceLogs[i];
-      if (!log.filmId || !log.rating) continue;
-      if (!byFilm[log.filmId]) byFilm[log.filmId] = [];
-      const d = log.watchedDate ?? log.createdAt;
-      let ts = Date.now();
-      if (d) {
-        const parsedTs = new Date(d).getTime();
-        if (!isNaN(parsedTs)) ts = parsedTs;
-      }
-      byFilm[log.filmId].push({ rating: log.rating, timestamp: ts, orderIndex: i });
-    }
     const result: Record<number, HalfLifeEntry> = {};
-    for (const [filmId, entries] of Object.entries(byFilm)) {
-      if (entries.length < 2) continue;
-      // Oldest first; the logs arrive newest-first, so a higher index is older.
-      const sorted = [...entries].sort((a, b) => (a.timestamp - b.timestamp) || (b.orderIndex - a.orderIndex));
-      const first = sorted[0].rating, last = sorted[sorted.length - 1].rating;
-      result[Number(filmId)] = { count: sorted.length, trajectory: last > first ? 'ASCENDING' : last < first ? 'DECAYING' : 'ETERNAL', delta: last - first };
+    for (const log of displayLedgerLogs) {
+      const earlier = log.viewingHistory ?? [];
+      if (!log.filmId || earlier.length === 0) continue;
+      // Oldest first: the earlier viewings by their dates (in the order kept
+      // when a date is missing), then this one, which is the latest.
+      const dated = earlier.map((v, i) => ({ rating: Number(v.rating) || 0, at: v.date ? Date.parse(v.date) : NaN, i }));
+      dated.sort((a, b) => (Number.isFinite(a.at) && Number.isFinite(b.at) ? a.at - b.at : 0) || a.i - b.i);
+      const rated = [...dated.map((v) => v.rating), log.rating || 0].filter((r) => r > 0);
+      const first = rated[0] ?? 0;
+      const last = rated[rated.length - 1] ?? 0;
+      result[log.filmId] = {
+        count: earlier.length + 1,
+        trajectory: last > first ? 'ASCENDING' : last < first ? 'DECAYING' : 'ETERNAL',
+        delta: last - first,
+      };
     }
     return result;
-  }, [isSelf, isAuteurPlus, analyticsLogs]);
+  }, [displayLedgerLogs]);
 
   // Watchlist filtering
   const watchlistFiltered = useMemo(() => {

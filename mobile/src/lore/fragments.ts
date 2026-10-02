@@ -36,7 +36,7 @@ export const FOUNDING = [
 
 // ── OPERATIONS — Rules, rituals, secrets ────────────────────────
 export const OPERATIONS = [
-  'Your Ledger is encrypted with the same cipher used by the 1947 Paris chapter.',
+  'Your Ledger is kept as the 1947 Paris chapter kept theirs: in ink, and in the open.',
   'The Physical Archive is deeper than you think. Keep cataloging.',
   'The Archivist Council meets at midnight. You weren\'t told.',
   'Every log you write becomes part of the permanent archive.',

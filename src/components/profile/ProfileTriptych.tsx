@@ -17,7 +17,6 @@ interface TriptychFilm {
 export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, isOwnProfile: boolean, userRole?: string }) {
     const isArchivist = userRole === 'archivist'
     const isAuteur = userRole === 'auteur' || userRole === 'auteur'
-    const { updateUser } = useAuthStore()
     const favorites = (user?.preferences?.favorites as TriptychFilm[]) || []
     
     // Always render 3 slots. Identify empty slots.
@@ -66,45 +65,41 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
         setSearchResults([])
     }
 
+    /**
+     * Shown at once, then merged into the member's preferences on the server
+     * (update_my_preferences), as the app saves it; put back if refused. Members
+     * may not write the preferences column itself, so the direct update this
+     * made was refused and no triptych chosen on the website was ever kept.
+     * Each slot keeps its place: slots one and three may be filled, two empty.
+     */
+    const saveFavorites = async (next: Array<TriptychFilm | null>, saved: string | null, refused: string) => {
+        const previous = favorites
+        const showFavorites = (favs: Array<TriptychFilm | null>) => useAuthStore.setState((s) => ({
+            user: s.user ? { ...s.user, preferences: { ...(s.user.preferences || {}), favorites: favs } } : null,
+        }))
+        showFavorites(next)
+        const { error } = await supabase.rpc('update_my_preferences', { p_preferences: { favorites: next } })
+        if (error) {
+            showFavorites(previous)
+            reelToast.error(refused)
+        } else if (saved) {
+            reelToast.success(saved)
+        }
+    }
+
     const handleSetFilm = async (film: any) => {
         if (editingSlotIndex === null) return
         const newFavs = [...slots]
         newFavs[editingSlotIndex] = { id: film.id, title: film.title, poster_path: film.poster_path }
-        
-        // Compact the array to remove nulls in the middle, or just maintain exact index? 
-        // Maintain exact index is better so users can have slot 1 and 3 filled but not 2.
-        
-        // Update local state and backend
-        const currentPrefs = user?.preferences || {}
-        const updatedPrefs = { ...currentPrefs, favorites: newFavs }
-        
-        updateUser({ preferences: updatedPrefs }) // optimistic
         setIsEditing(false)
-
-        try {
-            const { error } = await supabase.from('profiles').update({ preferences: updatedPrefs }).eq('id', user.id)
-            if (error) throw error
-            reelToast.success('Dossier updated.')
-        } catch (error: any) {
-            reelToast.error('Failed to update favorites.')
-        }
+        await saveFavorites(newFavs, 'Dossier updated.', 'Failed to update favorites.')
     }
 
     const handleClearSlot = async (index: number, e: React.MouseEvent) => {
         e.stopPropagation()
         const newFavs = [...slots]
         newFavs[index] = null
-        
-        const currentPrefs = user?.preferences || {}
-        const updatedPrefs = { ...currentPrefs, favorites: newFavs }
-        
-        updateUser({ preferences: updatedPrefs })
-
-        try {
-            await supabase.from('profiles').update({ preferences: updatedPrefs }).eq('id', user.id)
-        } catch (error: any) {
-            reelToast.error('Failed to clear slot.')
-        }
+        await saveFavorites(newFavs, null, 'Failed to clear slot.')
     }
 
     const hasFavorites = slots.some(s => s !== null)

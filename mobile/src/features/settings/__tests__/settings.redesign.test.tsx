@@ -293,7 +293,7 @@ describe('account', () => {
     const said = String(line.props.children);
     expect(said).toMatch(/account can be deleted/);
     expect(said).toMatch(/this setting changes/);
-    expect(said).toMatch(/your own Archive shows: its room, the Ledger, the calendar and LATELY\./);
+    expect(said).toMatch(/your own Archive shows: its room, the Ledger, the calendar, LATELY and your highest rated\./);
     expect(said).not.toMatch(/sign out/);
     expect(said).not.toMatch(/Face ID|Touch ID/);
     expect(r.queryByText(/for destructive actions/)).toBeNull();
@@ -313,7 +313,7 @@ describe('account', () => {
     expect(PAGE.match(/<ArchiveLock\b/g)).toHaveLength(2);
     expect(PAGE).toMatch(/<ArchiveLockedLine\b/);
     expect(mounts('ProfilePhysicalTab.tsx')).toBe(false);
-    expect(SECTIONS).toMatch(/before your own Archive shows: its room, the Ledger, the calendar and LATELY\./);
+    expect(SECTIONS).toMatch(/before your own Archive shows: its room, the Ledger, the calendar, LATELY and your highest rated\./);
     expect(SECTIONS).not.toMatch(/open your own Physical Archive/);
   });
 

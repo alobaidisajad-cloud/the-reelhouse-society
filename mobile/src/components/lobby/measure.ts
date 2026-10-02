@@ -25,7 +25,7 @@
  */
 import {
   RYE, RYE_WIDEST, ELITE, ELITE_WIDEST, COURIER_ITALIC, COURIER_ITALIC_WIDEST, SPECTRAL_ITALIC, SPECTRAL_ITALIC_WIDEST,
-} from './faceAdvances';
+} from '@/src/theme/faceAdvances';
 import { FILINGS_BILL, LOG_BILL, RANK_BILL, STACK_BILL, STATES, rankTicket } from './words';
 
 export type Face = 'rye' | 'elite' | 'courierItalic' | 'spectralItalic';

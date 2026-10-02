@@ -138,8 +138,8 @@ export const Byline = memo(function Byline({
  * A link to the film's page when there is one; plain text when there is not.
  */
 export const Credit = memo(function Credit({
-  film, bare, onPress,
-}: { film: PaperFilm; bare?: boolean; onPress?: () => void }) {
+  film, onPress,
+}: { film: PaperFilm; onPress?: () => void }) {
   const words = (
     <View style={p.creditWords}>
       <Text style={p.creditText} numberOfLines={1} {...scaledTextProps}>
@@ -340,7 +340,7 @@ export const PaperPost = memo(function PaperPost({
   readTime?: string;
   /** A member's room: its head already says whose. */
   noByline?: boolean;
-  /** Filed offline, not yet sent: says so under the words. Drawn; no screen passes it yet. */
+  /** Filed offline, not yet sent: says so under the words, and nothing can be done to it yet. */
   pending?: boolean;
   /** The whole card opens the filing; optional for the harness, required in the app by a test. */
   onOpen?: () => void;
@@ -527,8 +527,7 @@ export const PaperPost = memo(function PaperPost({
           )}
           </PressableScale>
 
-          {film && !spoiler ? <Credit film={film} bare={!!still} onPress={onFilm} /> : null}
-          {spoiler && film ? <Credit film={film} onPress={onFilm} /> : null}
+          {film ? <Credit film={film} onPress={onFilm} /> : null}
 
           {answer ? (
             <View style={p.answer}>

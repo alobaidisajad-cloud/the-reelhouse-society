@@ -216,7 +216,7 @@ add('m0-all-six', (
 ));
 
 /* ═══ THE WRITING ROOM: four SKETCHES of the dossier's tools, from the fewest to the
-   most, against the bare desk it had then (W0). The room that shipped is DossierDesk. */
+   most, against the bare desk it had then (W0). The room that shipped is ComposeDesks. */
 
 /** A tool on a rail: a mark and a word, the way the existing rail draws FILM. */
 const Tool = ({ mark, label, on }: { mark: string; label: string; on?: boolean }) => (

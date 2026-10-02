@@ -231,7 +231,6 @@ export const ProfileDataService = {
     }
   },
 
-  /** An Auteur's analytics, computed by the database, not from logs sent here. */
   /**
    * The member's record, counted over the WHOLE history by the server: what the
    * honours and the passport are earned from. Every member's (the server alone
@@ -619,14 +618,12 @@ export const ProfileDataService = {
   },
 
   /**
-   * A member's taste over their WHOLE archive, in one ~2KB call however many
-   * films. It reports its own coverage (`films_total`, `films_known`), as the
-   * films table fills in over time and the screen says what it rests on.
-   */
-  /**
-   * Genres, actors and directors over the member's WHOLE archive. Null when the
-   * viewer may not read it (a refusal is not an empty taste); a read that fails
-   * throws, so its room says so rather than looking unread.
+   * Genres, actors and directors over the member's WHOLE archive, in one ~2KB
+   * call however many films. It reports its own coverage (`films_total`,
+   * `films_known`), as the films table fills in over time and the screen says
+   * what it rests on. Null when the viewer may not read it (a refusal is not an
+   * empty taste); a read that fails throws, so its room says so rather than
+   * looking unread.
    */
   async fetchTasteProfile(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal): Promise<TasteProfile | null> {
     const { data, error } = await withAbortSignal(

@@ -6,7 +6,8 @@
 import { Check, Circle, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuthStore, useFilmStore } from '../store'
-import { useAchievements, BADGE_DEFS } from '../hooks/useAchievements'
+import { useAchievements } from '../hooks/useAchievements'
+import { HONOURS } from '../constants/honours'
 import { useStreak } from '../hooks/useStreak'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
@@ -15,7 +16,7 @@ import Buster from '../components/Buster'
 export default function DebugPanel() {
     const { user, isAuthenticated } = useAuthStore()
     const { logs, watchlist, lists } = useFilmStore()
-    const { badges } = useAchievements(user?.id, logs)
+    const { badges } = useAchievements(user?.id, logs.length)
     const { currentStreak, longestStreak } = useStreak(logs)
     const [analyticsCount, setAnalyticsCount] = useState<number | null>(null)
     const [profileData, setProfileData] = useState<any>(null)
@@ -124,12 +125,12 @@ export default function DebugPanel() {
 
                 {/* Badges */}
                 <div style={sectionStyle}>
-                    <div style={titleStyle}>③ ACHIEVEMENT BADGES ({badges.length}/{BADGE_DEFS.length} UNLOCKED)</div>
+                    <div style={titleStyle}>③ ACHIEVEMENT BADGES ({badges.length}/{HONOURS.length} UNLOCKED)</div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem' }}>
-                        {BADGE_DEFS.map(badge => {
-                            const earned = badges.some(b => b.key === badge.key)
+                        {HONOURS.map(badge => {
+                            const earned = badges.some(b => b.id === badge.id)
                             return (
-                                <div key={badge.key} style={{
+                                <div key={badge.id} style={{
                                     padding: '0.75rem', borderRadius: '4px',
                                     border: `1px solid ${earned ? 'var(--sepia)' : 'var(--ash)'}`,
                                     background: earned ? 'rgba(139,105,20,0.08)' : 'transparent',
@@ -137,9 +138,9 @@ export default function DebugPanel() {
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
                                         <span style={{ fontSize: '1rem', color: earned ? 'var(--flicker)' : 'var(--fog)' }}>{badge.glyph}</span>
-                                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: earned ? 'var(--parchment)' : 'var(--fog)' }}>{badge.label}</span>
+                                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: earned ? 'var(--parchment)' : 'var(--fog)' }}>{badge.title}</span>
                                     </div>
-                                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--fog)' }}>{badge.description}</div>
+                                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--fog)' }}>{badge.desc}</div>
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: earned ? 'var(--sepia)' : 'var(--ash)', marginTop: '0.3rem' }}>
                                         {earned ? <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> UNLOCKED</> : <><Circle size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> LOCKED</>}
                                     </div>

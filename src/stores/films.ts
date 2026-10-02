@@ -78,7 +78,6 @@ export interface FilmState {
     fetchLogs: (loadMore?: boolean) => Promise<void>
     fetchWatchlist: () => Promise<void>
     fetchLists: (loadMore?: boolean) => Promise<void>
-    getCinephileStats: (overrideCount?: number) => { count: number, level: string, color: string, progress: number }
     removeLog: (id: string) => Promise<void>
     addToWatchlist: (film: TMDBFilmInput) => Promise<void>
     removeFromWatchlist: (filmId: number) => Promise<void>
@@ -427,17 +426,6 @@ export const useFilmStore = create<FilmState>()(
             // `private_notes` column and built the viewing history by hand with
             // JSON.stringify — the very code that shredded 16 histories. A second
             // copy of a write path is how a fix lands in one and not the other.
-
-            getCinephileStats: (overrideCount?: number) => {
-                const logs = get().logs
-                const count = overrideCount ?? logs.length
-                let level = 'FIRST REEL'
-                let color = 'var(--fog)'
-                if (count > 50) { level = 'THE ORACLE'; color = 'var(--sepia)' }
-                else if (count > 20) { level = 'MIDNIGHT DEVOTEE'; color = 'var(--blood-reel)' }
-                else if (count > 5) { level = 'THE REGULAR'; color = 'var(--flicker)' }
-                return { count, level, color, progress: (count % 20) * 5 }
-            },
 
             // updateLog was removed with them, for the same reason: unused, and
             // it wrote `private_notes` and a stringified history.

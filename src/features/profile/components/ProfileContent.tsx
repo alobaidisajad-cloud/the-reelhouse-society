@@ -18,6 +18,9 @@ import { VaultWatchlistTab, VaultArchiveTab } from '../../../components/profile/
 import TasteMatch from '../../../components/profile/TasteMatch';
 import FilmRecommendations from '../../../components/profile/FilmRecommendations';
 import { useViewport } from '../../../hooks/useViewport';
+import { stampsOf, type ProfileAnalytics } from '../../../constants/honours';
+import type { Standing } from '../../../constants/standing';
+import { DNA_FLOOR } from '../../../components/profile/dna';
 
 interface ProfileContentProps {
     activeTab: string;
@@ -27,8 +30,11 @@ interface ProfileContentProps {
     profileLists: any[];
     physicalArchive: any[];
     isOwnProfile: boolean;
-    finalMetrics: any;
-    cineStats: any;
+    /** The member's whole record (get_public_profile_analytics); undefined until read. */
+    analytics: ProfileAnalytics | undefined;
+    analyticsFailed: boolean;
+    /** The standing, from the record; null until it is read. */
+    stats: Standing | null;
     logsHasMore: boolean;
     listsHasMore: boolean;
     archiveSieve: string;
@@ -45,7 +51,7 @@ interface ProfileContentProps {
 
 export function ProfileContent({
     activeTab, profileUser, profileLogs, profileWatchlist, profileLists, physicalArchive,
-    isOwnProfile, finalMetrics, cineStats, logsHasMore, listsHasMore,
+    isOwnProfile, analytics, analyticsFailed, stats, logsHasMore, listsHasMore,
     archiveSieve, archiveVisibleCount, archiveFilteredLogs, currentLogs,
     setViewLog, fetchLogs, fetchLists, setArchiveSieve, setArchiveVisibleCount, setShowDNA
 }: ProfileContentProps) {
@@ -79,7 +85,7 @@ export function ProfileContent({
                                     <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.5rem' }}>Lifetime cinematic data & achievements.</p>
                                 </div>
 
-                                <ProjectorRoom stats={cineStats} user={profileUser} />
+                                <ProjectorRoom stats={stats} user={profileUser} />
                                 
                                 <div style={{ marginTop: '2rem' }}>
                                     <ProfileProjectorTab profileLogs={profileLogs} profileWatchlist={profileWatchlist} profileLists={profileLists} />
@@ -87,8 +93,8 @@ export function ProfileContent({
                             </div>
 
                             <div>
-                                <TasteDNA stats={finalMetrics} />
-                                {finalMetrics.total_logs >= 5 && isOwnProfile && (
+                                <TasteDNA analytics={analytics} failed={analyticsFailed} />
+                                {(stampsOf(analytics)?.total_logs ?? 0) >= DNA_FLOOR && isOwnProfile && (
                                     <button
                                         className="btn btn-ghost"
                                         onClick={() => setShowDNA(true)}
@@ -106,7 +112,7 @@ export function ProfileContent({
 
                             <div>
                                 <SectionHeader label="UNLOCKABLE BADGES" title="Society Honors" />
-                                <Achievements logs={profileLogs} />
+                                <Achievements analytics={analytics} failed={analyticsFailed} />
                             </div>
 
                             {profileLogs.filter((l: any) => l.rating >= 4).length > 0 && (
@@ -136,7 +142,7 @@ export function ProfileContent({
 
                             <div>
                                 <SectionHeader label="CINEMATIC ACHIEVEMENTS" title="The Passport" />
-                                <NoirPassport logs={profileLogs} />
+                                <NoirPassport analytics={analytics} failed={analyticsFailed} />
                             </div>
 
                             <div>

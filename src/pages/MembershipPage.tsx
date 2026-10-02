@@ -5,10 +5,37 @@ import { Crown, Star, Upload } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
 import CSVImport from '../components/CSVImport'
-import reelToast from '../utils/reelToast'
 import { supabase } from '../supabaseClient'
 import '../styles/membership.css'
 import PageSEO from '../components/PageSEO'
+import { APP_STORE_URL, GOOGLE_PLAY_URL } from '../constants/stores'
+
+/**
+ * Where a rank is taken: in the app. The website sold ranks through a checkout
+ * (PayTabs) that could never open — no merchant account stands behind it — and
+ * said "Try again" each time, while its Terms, Privacy Policy and Support page
+ * all say ranks are bought through the App Store or Google Play.
+ */
+function TakenInTheApp({ rank, colour }: { rank: string; colour?: string }) {
+    const stores = [['APP STORE', APP_STORE_URL], ['GOOGLE PLAY', GOOGLE_PLAY_URL]].filter(([, url]) => url)
+    return (
+        <div className="taken-in-the-app">
+            <div className="current-rank" style={colour ? { borderColor: colour, color: colour } : undefined}>
+                {rank} · TAKEN IN THE APP
+            </div>
+            <p style={{ fontSize: '0.7rem', color: 'var(--fog)', textAlign: 'center', margin: '0.6rem 0 0' }}>
+                Ranks are bought in the ReelHouse app, through the App Store or Google Play.
+            </p>
+            {stores.length > 0 && (
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '0.6rem' }}>
+                    {stores.map(([name, url]) => (
+                        <a key={name} className="btn btn-ghost" href={url} target="_blank" rel="noopener noreferrer">{name}</a>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
 
 export default function MembershipPage() {
     const { isAuthenticated, user } = useAuthStore()
@@ -38,8 +65,6 @@ export default function MembershipPage() {
         visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 20 } }
     }
 
-    const [isRedirecting, setIsRedirecting] = useState(false)
-
     // Tier hierarchy for CTA logic — prevents dead-end buttons and accidental downgrades.
     // Mirrors the mobile membership.tsx TIER_RANK system.
     const userRole = (user?.role as string) ?? 'cinephile'
@@ -50,21 +75,6 @@ export default function MembershipPage() {
         return userRole === id
     }
     const isLowerTier = (id: string) => userRank > (TIER_RANK[id] ?? 0)
-
-    const handleCheckout = async (tier: string) => {
-        if (!isAuthenticated || !user) { navigate('/join'); return }
-        setIsRedirecting(true)
-        try {
-            const { data, error } = await supabase.functions.invoke('paytabs-handler/create', {
-                body: { checkout_type: 'membership', user_id: user.id, tier }
-            })
-            if (error || !data?.redirect_url) throw error
-            window.location.href = data.redirect_url
-        } catch (err) {
-            reelToast.error('Checkout unavailable right now. Try again.')
-            setIsRedirecting(false)
-        }
-    }
 
     return (
         <div className="membership-page">
@@ -187,14 +197,7 @@ export default function MembershipPage() {
                         ) : isAuthenticated && isLowerTier('archivist') ? (
                             <div className="current-rank" style={{ borderColor: 'rgba(139,105,20,0.15)', color: 'var(--fog)', opacity: 0.6 }}>INCLUDED IN YOUR RANK</div>
                         ) : (
-                            <button
-                                className="btn btn-primary tier-btn"
-                                style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '0.75rem', letterSpacing: '0.2em', opacity: isRedirecting ? 0.7 : 1 }}
-                                disabled={isRedirecting}
-                                onClick={() => handleCheckout('archivist')}
-                            >
-                                {isRedirecting ? 'SECURING LEDGER...' : 'BECOME AN ARCHIVIST'}
-                            </button>
+                            <TakenInTheApp rank="THE ARCHIVIST" colour="var(--sepia)" />
                         )}
                     </motion.div>
 
@@ -254,14 +257,7 @@ export default function MembershipPage() {
                         ) : isAuthenticated && isLowerTier('auteur') ? (
                             <div className="current-rank" style={{ borderColor: 'rgba(139,105,20,0.15)', color: 'var(--fog)', opacity: 0.6 }}>INCLUDED IN YOUR RANK</div>
                         ) : (
-                            <button
-                                className="btn btn-primary tier-btn tier-btn--auteur"
-                                style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '0.75rem', letterSpacing: '0.2em', opacity: isRedirecting ? 0.7 : 1 }}
-                                disabled={isRedirecting}
-                                onClick={() => handleCheckout('auteur')}
-                            >
-                                {isRedirecting ? 'SECURING LEDGER...' : 'BECOME AN AUTEUR'}
-                            </button>
+                            <TakenInTheApp rank="THE AUTEUR" colour="#7d1f1f" />
                         )}
                     </motion.div>
                 </motion.div>
@@ -304,27 +300,7 @@ export default function MembershipPage() {
                         It costs less than a single year of the Auteur, and lasts somewhat longer.
                     </div>
 
-                    <button
-                        className="btn btn-primary founding-btn"
-                        style={{ opacity: isRedirecting ? 0.7 : 1 }}
-                        disabled={isRedirecting}
-                        onClick={async () => {
-                            if (!isAuthenticated || !user) { navigate('/join'); return }
-                            setIsRedirecting(true)
-                            try {
-                                const { data, error } = await supabase.functions.invoke('paytabs-handler/create', {
-                                    body: { checkout_type: 'membership', user_id: user.id, tier: 'founding' }
-                                })
-                                if (error || !data?.redirect_url) throw error
-                                window.location.href = data.redirect_url
-                            } catch (err) {
-                                reelToast.error('Checkout unavailable right now.')
-                                setIsRedirecting(false)
-                            }
-                        }}
-                    >
-                        {isRedirecting ? 'SECURING LEDGER...' : 'CLAIM A FOUNDING SEAT'}
-                    </button>
+                    <TakenInTheApp rank="A FOUNDING SEAT" />
 
                     <div className="founding-footer">
                         ONE PAYMENT · NEVER RENEWS

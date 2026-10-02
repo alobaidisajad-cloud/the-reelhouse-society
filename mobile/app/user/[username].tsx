@@ -14,7 +14,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { ProfileLog, ProfileVaultItem, ProfileWatchlistItem } from '@/src/types';
 
 import { globalScrollY } from '@/src/lib/scrollBridge';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
 
@@ -93,28 +93,6 @@ interface SocialLink {
   url: string;
 }
 
-
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface ProfileUser {
-  id: string;
-  username: string;
-  avatar_url?: string | null;
-  bio?: string | null;
-  role?: string;
-  tier?: string;
-  persona?: string | null;
-  is_social_private?: boolean;
-  followers_count?: number;
-  following_count?: number;
-  followers?: string[];
-  following?: string[];
-  favorite_films?: number[];
-  preferences?: import('@/src/types').UserPreferences;
-  created_at?: string;
-  social_links?: SocialLink[] | Record<string, string>;
-}
-
 // ════════════════════════════════════════════════════════════
 // MAIN PROFILE SCREEN
 // ════════════════════════════════════════════════════════════
@@ -172,8 +150,6 @@ function VelvetGate({ title, line, isSelf, onAscend }: { title: string; line: st
 }
 
 export default function UserProfileScreen({ usernameOverride, isRootTab = false }: { usernameOverride?: string, isRootTab?: boolean } = {}) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const params = useLocalSearchParams<{ username: string; tab?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -199,10 +175,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ── State controller ──
   const ctrl = useProfileController(usernameOverride);
   const { nav: doors, data } = ctrl;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, analyticsShape, taste, setTargetUser } = data;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { username, isSelf, repairingHandle, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists, setActiveTab } = ctrl;
+  const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, analyticsShape, taste } = data;
+  const { username, isSelf, repairingHandle, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists } = ctrl;
   const readyMark = useScreenReady('member', !loading && !repairingHandle);
   // Your own Archive, wherever this page shows it, behind one lock (Settings).
   const archiveLock = useArchiveLock(isSelf);
@@ -269,8 +243,6 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const loadMoreWatchlist = data.loadMoreWatchlist;
   const loadMoreVault = data.loadMoreVault;
   const loadMoreLists = data.loadMoreLists;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const hasMoreMainLogs = data.hasMoreMainLogs;
   const hasMoreArchiveLogs = data.hasMoreArchiveLogs;
   const hasMoreLedgerLogs = data.hasMoreLedgerLogs;
   const hasMoreWatchlist = data.hasMoreWatchlist;
@@ -393,7 +365,6 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     targetUser,
     isSelf,
     isArchivistPlus,
-    isAuteurPlus,
     myLogs,
     myWatchlist,
     myVault,
@@ -890,8 +861,14 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                       <Achievements analytics={serverAnalytics} totalFilms={totalFilms} failed={roomFailed} onRetry={retryRoom} />
                     </View>
 
-                    {/* HIGHEST RATED (`highestRated`) */}
-                    {highestRated.length > 0 && (
+                    {/* HIGHEST RATED (`highestRated`): films of the Archive, so behind its lock. */}
+                    {highestRated.length > 0 && archiveLock.locked && (
+                      <View>
+                        <SectionDivider label="HIGHEST RATED" />
+                        <ArchiveLockedLine onUnlocked={archiveLock.opened} />
+                      </View>
+                    )}
+                    {highestRated.length > 0 && !archiveLock.locked && (
                       <View>
                         <SectionDivider label="HIGHEST RATED" />
                         <View style={s.card}>

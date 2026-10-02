@@ -27,6 +27,42 @@ async function resolveUsernameToId(username: string): Promise<string | null> {
     return null
 }
 
+// ── Signing in: by address, or by handle on the server ──
+// A handle is turned into a session by the sign-in-with-username function, as
+// the app does it: the address never reaches the browser, and every wrong handle
+// or password gets the same answer. The page used to look the address up itself
+// with get_email_by_username, which the database stopped answering browsers when
+// that lookup was closed, so every sign-in by handle said "No account found".
+// Supabase's own words for a refused address, so both doors say the same thing.
+const BAD_CREDENTIALS = 'Invalid login credentials'
+/** Something before the @ and a dotted domain after it, as the app reads it: "@name" is a handle. */
+const ADDRESS_SHAPE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+
+function usernameRefusal(error: unknown): Error {
+    const e = error as { name?: string; context?: { status?: number } } | null
+    if (e?.name === 'FunctionsFetchError') return new Error('Could not reach the House. Check your connection and try again.')
+    if (e?.name === 'FunctionsHttpError' && e.context?.status === 401) return new Error(BAD_CREDENTIALS)
+    if (e?.name === 'FunctionsHttpError' && e.context?.status === 429) return new Error('Too many attempts. Please wait a moment and try again.')
+    return new Error('Sign-in is unavailable right now. Please try again.')
+}
+
+async function signIn(identifier: string, password: string) {
+    if (ADDRESS_SHAPE.test(identifier)) {
+        const { data, error } = await supabase.auth.signInWithPassword({ email: identifier, password })
+        if (error) throw error
+        return data
+    }
+    const { data: tokens, error: fnError } = await supabase.functions.invoke('sign-in-with-username', {
+        body: { username: identifier.replace(/^@/, ''), password },
+    })
+    if (fnError) throw usernameRefusal(fnError)
+    if (!tokens?.access_token || !tokens?.refresh_token) throw usernameRefusal(null)
+    const { data, error } = await supabase.auth.setSession({ access_token: tokens.access_token, refresh_token: tokens.refresh_token })
+    if (error) throw error
+    if (!data.user || !data.session) throw usernameRefusal(null)
+    return { user: data.user, session: data.session }
+}
+
 // ── Action throttle: prevents spam-clicking social buttons ──
 const _actionThrottles = new Map<string, number>()
 const _THROTTLE_MAX = 200
@@ -47,10 +83,39 @@ function pruneThrottles() {
     }
 }
 
+// ── Preferences: sent through update_my_preferences, as the app sends them ──
+// Members may not write the preferences column itself; the direct update this
+// store made was refused, unread, so no preference ever left the browser. The
+// function merges what it is sent into what is stored, so only the keys that
+// changed are sent: one call for a burst, after the last change.
+const PREF_SEND_DELAY_MS = 800
+const _pendingPrefs = new Map<string, { keys: Record<string, unknown>; before: Record<string, unknown> }>()
+const _prefTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
+type StoreGet = () => AuthState
+type StoreSet = (fn: (state: AuthState) => Partial<AuthState>) => void
+
+async function sendPreferences(userId: string, get: StoreGet, set: StoreSet) {
+    _prefTimers.delete(userId)
+    const sending = _pendingPrefs.get(userId)
+    _pendingPrefs.delete(userId)
+    if (!sending) return
+    const { error } = await supabase.rpc('update_my_preferences', { p_preferences: sending.keys })
+    if (!error) return
+    logError({ type: 'store', message: `[setPreference] refused: ${error.message}`, component: 'auth.setPreference' })
+    // Put back what was refused, unless a newer change to the same key is on its way.
+    if (get().user?.id !== userId) return
+    const waiting = _pendingPrefs.get(userId)?.keys ?? {}
+    const restore = Object.fromEntries(Object.entries(sending.before).filter(([k]) => !(k in waiting)))
+    set((state) => ({ user: state.user ? { ...state.user, preferences: { ...(state.user.preferences || {}), ...restore } } : null }))
+    reelToast.error('Your setting could not be saved. Please try again.')
+}
+
 export interface AuthState {
     user: User | null
     isAuthenticated: boolean
-    login: (email: string, password: string) => Promise<{ user: unknown; session: unknown }>
+    /** An email address, or a handle (with or without its @). */
+    login: (identifier: string, password: string) => Promise<{ user: unknown; session: unknown }>
     signup: (email: string, password: string, username: string, role?: string, persona?: string) => Promise<{ user: unknown; session: unknown | null }>
     logout: () => Promise<void>
     updateUser: (updates: Partial<User>) => Promise<void>
@@ -124,9 +189,8 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             isAuthenticated: false,
 
-            login: async (email, password) => {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-                if (error) throw error
+            login: async (identifier, password) => {
+                const data = await signIn(identifier.trim(), password)
 
                 // Set authenticated IMMEDIATELY with minimal auth data so the UI responds instantly
                 set({ user: { ...data.user, following: [], requested: [] } as unknown as User, isAuthenticated: true })
@@ -189,6 +253,13 @@ export const useAuthStore = create<AuthState>()(
             },
 
             logout: async () => {
+                // 0. A setting changed a moment ago is sent while the session can still send it.
+                const leaving = get().user?.id
+                if (leaving && _prefTimers.has(leaving)) {
+                    clearTimeout(_prefTimers.get(leaving))
+                    await sendPreferences(leaving, get, set)
+                }
+
                 // 1. Sign out from Supabase
                 try { await supabase.auth.signOut() } catch { /* continue even if this fails */ }
 
@@ -258,21 +329,19 @@ export const useAuthStore = create<AuthState>()(
                 set((state) => ({ user: state.user ? { ...state.user, ...safeUpdates } : null }))
             },
 
-            // ── Preferences — synced to profiles.preferences JSONB column ──
+            // ── Preferences — merged into profiles.preferences on the server ──
             setPreference: async (key, value) => {
                 const user = get().user
                 if (!user) return
-                const prefs = { ...(user.preferences || {}), [key]: value }
-                set((state) => ({ user: state.user ? { ...state.user, preferences: prefs } : null }))
-
-                // ── Throttle network sync to prevent DB spam during UI sliders ──
-                const throttleKey = `pref:${user.id}`
-                const lastCall = _actionThrottles.get(throttleKey) || 0
-                if (Date.now() - lastCall < 1500) return // Skip network hit if too fast, UI is already updated
-                pruneThrottles()
-                _actionThrottles.set(throttleKey, Date.now())
-
-                try { await supabase.from('profiles').update({ preferences: prefs }).eq('id', user.id) } catch { /* ignore */ }
+                const before = user.preferences || {}
+                set((state) => ({ user: state.user ? { ...state.user, preferences: { ...before, [key]: value } } : null }))
+                // The value each key had when this burst began, to put back if it is refused.
+                const sending = _pendingPrefs.get(user.id) ?? { keys: {}, before: {} }
+                if (!(key in sending.keys)) sending.before[key] = before[key]
+                sending.keys[key] = value
+                _pendingPrefs.set(user.id, sending)
+                clearTimeout(_prefTimers.get(user.id))
+                _prefTimers.set(user.id, setTimeout(() => { void sendPreferences(user.id, get, set) }, PREF_SEND_DELAY_MS))
             },
 
             getPreference: (key, fallback = null) => {

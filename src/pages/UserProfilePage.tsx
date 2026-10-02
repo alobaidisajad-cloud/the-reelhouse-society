@@ -23,6 +23,9 @@ import { ProfileContent } from '../features/profile/components/ProfileContent'
 
 import { useViewport } from '../hooks/useViewport'
 import { isArchivistPlusTier } from '../utils/tier'
+import { useProfileAnalytics } from '../hooks/useProfileAnalytics'
+import { stampsOf } from '../constants/honours'
+import { standingFor } from '../constants/standing'
 
 
 
@@ -33,7 +36,7 @@ export default function UserProfilePage() {
     const { username: routeUsername, tab } = useParams()
     const queryClient = useQueryClient()
     const { user: currentUser, isAuthenticated, updateUser, followUser, unfollowUser } = useAuthStore()
-    const { logs: currentLogs, watchlist: currentWatchlist, lists: currentLists, physicalArchive, getCinephileStats } = useFilmStore()
+    const { logs: currentLogs, watchlist: currentWatchlist, lists: currentLists, physicalArchive } = useFilmStore()
     const { openLogModal } = useUIStore()
     const fileRef = useRef(null)
     const isOwnProfile = !routeUsername || routeUsername === currentUser?.username || routeUsername === 'me'
@@ -97,25 +100,11 @@ export default function UserProfilePage() {
     const isRequested = currentUser?.requested?.includes(profileUser?.username)
     const isPrivacyBlocked = !isOwnProfile && fetchedProfile?.isSocialPrivate && !isFollowing
 
-    const { data: profileMetrics } = useQuery({
-        queryKey: ['profile-metrics', profileUser?.id],
-        queryFn: async () => {
-             // Direct query instead of RPC — get_profile_metrics function doesn't exist
-             const { data, error } = await supabase
-                 .from('logs')
-                 .select('rating')
-                 .eq('user_id', profileUser?.id)
-             if (error) throw error
-             const total_logs = data?.length || 0
-             const rated = (data || []).filter((l: any) => l.rating > 0)
-             const avg_rating = rated.length > 0
-                 ? rated.reduce((sum: number, l: any) => sum + l.rating, 0) / rated.length
-                 : 0
-             return { total_logs, avg_rating }
-        },
-        enabled: !!profileUser?.id,
-        staleTime: 1000 * 60 * 5,
-    })
+    // The member's whole record, counted by the server: the films on the tabs,
+    // the standing, the honours, the passport and the DNA. It replaced a
+    // download of every rating the member ever gave, which stopped at a
+    // thousand rows. On your own page it is read again as your films change.
+    const { data: analytics, isError: analyticsFailed } = useProfileAnalytics(profileUser?.id, isOwnProfile ? currentLogs.length : undefined)
 
     const activeTab = tab || null
 
@@ -341,14 +330,9 @@ export default function UserProfilePage() {
     // profileLogs is already defined above from infinite query
     const profileLists = isOwnProfile ? currentLists : otherUserLists
     const profileWatchlist = isOwnProfile ? currentWatchlist : otherUserWatchlist
-    const finalMetrics = profileMetrics || { total_logs: profileLogs.length, avg_rating: 0 }
-    const cineStats = {
-        count: finalMetrics.total_logs,
-        level: finalMetrics.total_logs > 50 ? 'THE ORACLE' : finalMetrics.total_logs > 20 ? 'MIDNIGHT DEVOTEE' : finalMetrics.total_logs > 5 ? 'THE REGULAR' : 'FIRST REEL',
-        color: finalMetrics.total_logs > 50 ? 'var(--sepia)' : finalMetrics.total_logs > 20 ? 'var(--blood-reel)' : 'var(--flicker)',
-        progress: (finalMetrics.total_logs % 20) * 5,
-    }
-    const stats = isOwnProfile && getCinephileStats ? getCinephileStats(finalMetrics.total_logs) : cineStats
+    // Unknown until the record is read, so a long history never flashes as UNSEATED.
+    const totalFilms = stampsOf(analytics)?.total_logs
+    const stats = totalFilms === undefined ? null : standingFor(totalFilms)
 
 
 
@@ -441,18 +425,18 @@ export default function UserProfilePage() {
     const isArchivistPlus = isArchivistPlusTier(profileUser as never)
 
     const TABS = [
-        { id: 'diary', label: 'The Ledger', count: finalMetrics.total_logs },
+        { id: 'diary', label: 'The Ledger', count: totalFilms ?? null },
         { id: 'passport', label: 'Passport', count: null },
         { id: 'projector', label: 'Projector Room', count: null },
         { id: 'lists', label: 'Lists', count: profileLists.length },
         { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length },
         { id: 'physical', label: isArchivistPlus ? 'Physical Archive' : <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> Physical Archive</>, count: isArchivistPlus ? (physicalArchive.length > 0 ? physicalArchive.length : null) : 'LOCKED' },
-        { id: 'archive', label: 'The Archive', count: finalMetrics.total_logs > 0 ? finalMetrics.total_logs : null },
+        { id: 'archive', label: 'The Archive', count: totalFilms ? totalFilms : null },
         ...(isOwnProfile ? [{ id: 'calendar', label: 'The Calendar', count: null }] : []),
     ]
 
     return (
-        <div className={`page-top ${stats.count > 50 ? 'level-obsessed' : stats.count > 10 ? 'level-degrade' : ''}`} style={{ minHeight: '100dvh' }}>
+        <div className={`page-top ${(stats?.count ?? 0) > 50 ? 'level-obsessed' : (stats?.count ?? 0) > 10 ? 'level-degrade' : ''}`} style={{ minHeight: '100dvh' }}>
             {/* Header */}
             <ProfileHeader
                 profileUser={profileUser}
@@ -496,8 +480,9 @@ export default function UserProfilePage() {
                             profileLists={profileLists}
                             physicalArchive={physicalArchive}
                             isOwnProfile={isOwnProfile}
-                            finalMetrics={finalMetrics}
-                            cineStats={cineStats}
+                            analytics={analytics}
+                            analyticsFailed={analyticsFailed}
+                            stats={stats}
                             logsHasMore={logsHasMore}
                             listsHasMore={listsHasMore}
                             archiveSieve={archiveSieve}
@@ -518,7 +503,7 @@ export default function UserProfilePage() {
             <SocialModal socialModal={socialModal} socialLoading={socialLoading} onClose={() => setSocialModal(null)} />
 
             <ShareCardOverlay log={shareLog} user={profileUser} onClose={() => setShareLog(null)} />
-            {showDNA && <CinemaDNACard logs={profileLogs} user={profileUser} onClose={() => setShowDNA(false)} />}
+            {showDNA && <CinemaDNACard analytics={analytics} user={profileUser} onClose={() => setShowDNA(false)} />}
 
             <ReviewModal
                 viewLog={viewLog}

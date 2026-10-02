@@ -3,7 +3,7 @@
  * at every text size (see heroNameSize.ts).
  */
 import { heroNameSize, wordWidth, IDENT_INSET, NAME_STEPS } from '../heroNameSize';
-import { RYE_ADVANCE } from '@/src/theme/ryeAdvances';
+import { RYE } from '@/src/theme/faceAdvances';
 
 const PHONE = 390;
 const SMALL = 320;
@@ -15,9 +15,9 @@ describe('the name is set as words, not as a character count', () => {
   });
 
   it('knows Rye\'s width for every capital and digit a handle can hold', () => {
-    for (const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_') expect(RYE_ADVANCE[ch]).toBeGreaterThan(0.2);
+    for (const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_') expect(RYE[ch]).toBeGreaterThan(0.2);
     // and a W is not an I, which is the whole reason a count is not enough
-    expect(RYE_ADVANCE.W / RYE_ADVANCE.I).toBeGreaterThan(2);
+    expect(RYE.W / RYE.I).toBeGreaterThan(2);
   });
 
   it('agrees with the width a browser measured independently', () => {

@@ -247,6 +247,19 @@ if [ $alive -eq 0 ]; then
   } > "$OUT/device-gone.txt" 2>&1
   node mobile/e2e/annotate.mjs "The emulator went away during the flows" "$OUT/device-gone.txt"
 fi
+# How long each screen took to show what it was opened for (useScreenReady),
+# read from the device's log. With a ceilings file it is a gate; --complete
+# only when every flow ran, so a cut-short run never blames a screen it skipped.
+slow=0
+times_args=()
+[ -f mobile/e2e/screen-ceilings.json ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
+[ $rc -eq 0 ] && [ $gone -eq 0 ] && times_args+=(--complete)
+if node mobile/e2e/screen-times.mjs "$OUT/logcat-stream.txt" ${times_args[@]+"${times_args[@]}"} > "$OUT/screen-times.txt"; then
+  node mobile/e2e/annotate.mjs "How long each screen took" "$OUT/screen-times.txt" notice
+else
+  slow=1
+  node mobile/e2e/annotate.mjs "A screen is slower than its ceiling" "$OUT/screen-times.txt"
+fi
 if [ $rc -ne 0 ]; then
   node mobile/e2e/annotate.mjs "E2E flows failed" "$OUT/maestro-summary.txt"
   # Each failed flow's step, why, and its OWN screen at that moment. (A step
@@ -288,4 +301,6 @@ if [ $rc -ne 0 ]; then
     node mobile/e2e/annotate.mjs "What the app said before it failed (logcat)" "$OUT/crash.txt"
   fi
 fi
+# A slow screen fails the run, after the flows' own report (which it is not part of).
+[ $slow -eq 0 ] || rc=1
 exit $rc

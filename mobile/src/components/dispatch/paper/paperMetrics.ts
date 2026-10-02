@@ -129,19 +129,20 @@ export const COUNT_EXACT_BELOW = 1000;
 /** The house's founding year, the EST. on the masthead. */
 export const FOUNDED = 1924;
 
-/** The volume is the year of publication counted from founding: 2026 is VOL. 102. */
+/** The volume is the year of publication counted from founding, 1924 being VOL. 1: 2026 is VOL. 103. */
 export const volumeOf = (d: Date) => d.getFullYear() - FOUNDED + 1;
 
 /**
  * The issue is the day of the year, as for a daily paper: 28 August is No. 240.
  * Both come from the date alone, so nothing is seeded and nothing drifts.
+ * Counted in calendar days, not elapsed hours: under summer time a local day
+ * is an hour short of the last midnight's, and the number fell back by one
+ * every night from midnight to one.
  */
-export const issueOf = (d: Date) => {
-  const start = new Date(d.getFullYear(), 0, 0);
-  return Math.floor((d.getTime() - start.getTime()) / 86_400_000);
-};
+export const issueOf = (d: Date) =>
+  (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 0)) / 86_400_000;
 
-/** `VOL. 102 · No. 240` */
+/** `VOL. 103 · No. 240` */
 export const folioOf = (d: Date) => `VOL. ${volumeOf(d)} · No. ${issueOf(d)}`;
 
 /**

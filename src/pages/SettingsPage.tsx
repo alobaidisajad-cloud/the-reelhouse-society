@@ -17,6 +17,7 @@ import { useFilmStore } from '../store'
 import exportLogsCSV from '../components/profile/exportLogsCSV'
 import '../styles/settings.css'
 import { SUPPORT_EMAIL } from '../constants/support'
+import { isArchivistPlusTier } from '../utils/tier'
 
 export default function SettingsPage() {
     const { user, isAuthenticated, logout } = useAuthStore()
@@ -183,12 +184,70 @@ export default function SettingsPage() {
     }
 
     // ── Delete Account ──
-    const handleDeleteAccount = () => {
+    // As the app does it: confirmed, then proved by a code sent to the account's
+    // email (the web has no phone lock to ask), then the one erasure
+    // (request_account_deletion), then signed out. It used to say only "requires
+    // admin intervention".
+    const [erasing, setErasing] = useState<'idle' | 'code'>('idle')
+    const [eraseCode, setEraseCode] = useState('')
+    const [eraseBusy, setEraseBusy] = useState(false)
+    const [eraseError, setEraseError] = useState<string | null>(null)
+
+    const sendEraseCode = async (): Promise<boolean> => {
+        if (!user?.email) {
+            setEraseError(`This account has no email address to send a code to. Write to ${SUPPORT_EMAIL} and we will delete it for you.`)
+            return false
+        }
+        setEraseBusy(true)
+        setEraseError(null)
+        try {
+            // shouldCreateUser: false — a challenge for an account that exists, never a sign-up.
+            const { error } = await supabase.auth.signInWithOtp({ email: user.email, options: { shouldCreateUser: false } })
+            if (error) throw error
+            reelToast.success(`A code was sent to ${user.email}`)
+            return true
+        } catch {
+            setEraseError('The code could not be sent. Check your connection and try again.')
+            return false
+        } finally {
+            setEraseBusy(false)
+        }
+    }
+
+    const handleDeleteAccount = async () => {
+        const paying = isArchivistPlusTier(user as never)
+            ? ' If you pay through the App Store or Google Play, cancel there too: deleting your account does not stop the subscription.'
+            : ''
         const confirmed = window.confirm(
-            'This will permanently delete your account, all logs, lists, and reviews. This cannot be undone. Are you absolutely certain?'
+            `This will permanently delete your account, all logs, lists, and reviews. This cannot be undone.${paying} Are you absolutely certain?`
         )
         if (!confirmed) return
-        reelToast.error(`Account deletion requires admin intervention. Contact ${SUPPORT_EMAIL}`)
+        setEraseCode('')
+        setErasing('code')
+        await sendEraseCode()
+    }
+
+    const confirmErasure = async () => {
+        if (!user?.email || eraseCode.trim().length < 6) return
+        setEraseBusy(true)
+        setEraseError(null)
+        try {
+            const { error: codeError } = await supabase.auth.verifyOtp({ email: user.email, token: eraseCode.trim(), type: 'email' })
+            if (codeError) {
+                setEraseError('That code is not right, or it has expired. Send a new one.')
+                return
+            }
+            const { error } = await supabase.rpc('request_account_deletion')
+            if (error) {
+                setEraseError(`Your account could not be deleted. Try again, or write to ${SUPPORT_EMAIL} and we will do it for you.`)
+                return
+            }
+            await logout()
+            navigate('/')
+            reelToast.success('Your account has been erased.')
+        } finally {
+            setEraseBusy(false)
+        }
     }
 
     if (!user) return null
@@ -671,9 +730,37 @@ export default function SettingsPage() {
                         <LogOut size={12} /> SIGN OUT
                     </button>
                     <div className="settings-divider" />
-                    <button className="settings-action-btn settings-action-btn--danger" onClick={handleDeleteAccount}>
-                        <Trash2 size={12} /> DELETE ACCOUNT
-                    </button>
+                    {erasing === 'idle' ? (
+                        <button className="settings-action-btn settings-action-btn--danger" onClick={handleDeleteAccount}>
+                            <Trash2 size={12} /> DELETE ACCOUNT
+                        </button>
+                    ) : (
+                        <div className="settings-field">
+                            <label className="settings-label" htmlFor="erase-code">THE CODE SENT TO {user.email?.toUpperCase()}</label>
+                            <input
+                                id="erase-code"
+                                className="settings-input"
+                                inputMode="numeric"
+                                autoComplete="one-time-code"
+                                maxLength={10}
+                                value={eraseCode}
+                                onChange={(e) => setEraseCode(e.target.value.replace(/\D/g, ''))}
+                                placeholder="6-digit code"
+                            />
+                            {eraseError && <p role="alert" style={{ color: 'var(--blood-reel, #a22424)', fontSize: '0.75rem', margin: '0.5rem 0 0' }}>{eraseError}</p>}
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+                                <button className="settings-action-btn settings-action-btn--danger" onClick={confirmErasure} disabled={eraseBusy || eraseCode.trim().length < 6}>
+                                    <Trash2 size={12} /> {eraseBusy ? 'WORKING…' : 'ERASE MY ACCOUNT'}
+                                </button>
+                                <button className="settings-action-btn" onClick={() => { void sendEraseCode() }} disabled={eraseBusy}>
+                                    <Mail size={12} /> SEND A NEW CODE
+                                </button>
+                                <button className="settings-action-btn" onClick={() => { setErasing('idle'); setEraseError(null) }} disabled={eraseBusy}>
+                                    CANCEL
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

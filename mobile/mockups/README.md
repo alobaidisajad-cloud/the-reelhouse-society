@@ -187,10 +187,10 @@ lost its site.
 - `shoot.cjs --only <names> [--factor 1.35] [--platform android] [--clip x,y,w,h] [--full]` — PNGs to
   `mockups/out/shots/`. It shrinks labels exactly as the audit does (`harness.shrinkToFit`): a photo
   that skipped it showed "Max von May…" where the phone draws the whole name a little smaller.
-- `advances.cjs` — measures Rye's letter widths from the font file into
-  `src/theme/ryeAdvances.ts` (the profile uses it to fit a name as words).
-- `lobby-advances.cjs` — the same for the four faces the Lobby wall is set in, into
-  `src/components/lobby/faceAdvances.ts`.
+- `face-advances.cjs` — measures the letter widths of the four faces the app does
+  arithmetic with (Rye, Special Elite, Courier Prime and Spectral italics) from the font
+  files into `src/theme/faceAdvances.ts`: the Lobby fits its lines by them, the profile a
+  name's words. `--check` (CI) fails when the file is not what the fonts measure.
 - `quote-ink.cjs` — the outline of Spectral Italic's quote marks, read from the font file
   (the Lobby draws its great “ from it, in a box the size of its ink).
 - `contrast.cjs --only <names> [--width W] [--passes ios@1,android@2]` — every word scored

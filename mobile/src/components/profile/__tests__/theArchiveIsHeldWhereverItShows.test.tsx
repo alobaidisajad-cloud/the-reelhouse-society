@@ -97,6 +97,13 @@ describe('your own file, with the lock on', () => {
     expect(LA.authenticateAsync).toHaveBeenCalledTimes(1);
   });
 
+  it('the Projector\'s HIGHEST RATED is held, and asks only when tapped', async () => {
+    const r = await mount({ activeTab: 'projector' });
+    expect(r.getByText('HIGHEST RATED', { exact: false })).toBeTruthy();
+    expect(filmShown(r)).toBe(false);
+    expect(LA.authenticateAsync).not.toHaveBeenCalled();
+  });
+
   it('LATELY is held on the page, and asks only when tapped', async () => {
     const r = await mount();
     expect(filmShown(r)).toBe(false);

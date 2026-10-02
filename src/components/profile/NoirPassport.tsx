@@ -1,19 +1,14 @@
-import { X, RotateCcw } from 'lucide-react'
+/**
+ * NoirPassport — the passport's stamps, earned from the member's whole record
+ * (constants/honours.ts, the app's list), never from the logs that loaded.
+ */
 import { useMemo } from 'react'
+import { PASSPORT_STAMPS, stampLines, stampsOf, type ProfileAnalytics } from '../../constants/honours'
+import { RecordNotRead } from './RecordNotRead'
 
-const PASSPORT_STAMPS = [
-    { id: 'archivist', label: 'THE ARCHIVIST', sub: '100 FILMS LOGGED', glyph: '◈', test: (logs: any[]) => logs.length >= 100 },
-    { id: 'devotee', label: 'THE DEVOTEE', sub: '500 FILMS LOGGED', glyph: '✦', test: (logs: any[]) => logs.length >= 500 },
-    { id: 'silver_screen', label: 'SILVER SCREEN', sub: '20 FILMS PRE-1960', glyph: '†', test: (logs: any[]) => logs.filter((l: any) => l.year && parseInt(l.year) < 1960).length >= 20 },
-    { id: 'masterpiece', label: 'MASTERPIECE HUNTER', sub: '10 PERFECT RATINGS', glyph: '★', test: (logs: any[]) => logs.filter((l: any) => l.rating === 5).length >= 10 },
-    { id: 'vault_keeper', label: 'THE COLLECTOR', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', test: (logs: any[]) => logs.some((l: any) => l.physicalMedia) },
-    { id: 'honest_critic', label: 'HONEST CRITIC', sub: 'ABANDONED A FILM', glyph: <><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></>, test: (logs: any[]) => logs.some((l: any) => l.status === 'abandoned') },
-    { id: 'completionist', label: 'THE COMPLETIONIST', sub: 'FILMS FROM 7 DECADES', glyph: '∞', test: (logs: any[]) => new Set(logs.filter((l: any) => l.year).map((l: any) => Math.floor(parseInt(l.year) / 10) * 10)).size >= 7 },
-    { id: 'half_life', label: 'THE RETURNER', sub: 'REWATCHED A FILM', glyph: <><RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></>, test: (logs: any[]) => { const seen = new Set(); return logs.some((l: any) => { if (seen.has(l.filmId)) return true; seen.add(l.filmId); return false }) } },
-]
-
-function PassportStamp({ stamp, earned, index }: { stamp: any; earned: boolean; index: number }) {
+function PassportStamp({ stamp, earned, index }: { stamp: { label: string; sub: string; glyph: string }; earned: boolean; index: number }) {
     const rotation = ['-4', '3', '-2', '5', '-3', '2', '-5', '4'][index % 8]
+    const [line1, line2] = stampLines(stamp.label)
     return (
         <div
             title={earned ? stamp.label : `Not yet earned: ${stamp.sub}`}
@@ -31,9 +26,9 @@ function PassportStamp({ stamp, earned, index }: { stamp: any; earned: boolean; 
                 <circle cx="60" cy="60" r="56" fill="none" stroke="var(--sepia)" strokeWidth="2.5" strokeDasharray="8 3 15 2 6 4 20 2" opacity="0.9" />
                 <circle cx="60" cy="60" r="48" fill="none" stroke="var(--sepia)" strokeWidth="1" opacity="0.5" />
                 <text x="60" y="58" textAnchor="middle" dominantBaseline="middle" fontFamily="var(--font-display)" fontSize="24" fill="var(--sepia)" opacity="0.95">{stamp.glyph}</text>
-                <text x="60" y="38" textAnchor="middle" fontFamily="var(--font-ui)" fontSize="7" letterSpacing="2" fill="var(--sepia)" opacity="0.85">{stamp.label.slice(0, 14)}</text>
-                {stamp.label.length > 14 && (
-                    <text x="60" y="47" textAnchor="middle" fontFamily="var(--font-ui)" fontSize="7" letterSpacing="2" fill="var(--sepia)" opacity="0.85">{stamp.label.slice(14).trim()}</text>
+                <text x="60" y="38" textAnchor="middle" fontFamily="var(--font-ui)" fontSize="7" letterSpacing="2" fill="var(--sepia)" opacity="0.85">{line1}</text>
+                {line2 && (
+                    <text x="60" y="47" textAnchor="middle" fontFamily="var(--font-ui)" fontSize="7" letterSpacing="2" fill="var(--sepia)" opacity="0.85">{line2}</text>
                 )}
                 <text x="60" y="82" textAnchor="middle" fontFamily="var(--font-ui)" fontSize="6" letterSpacing="1.5" fill="var(--sepia)" opacity="0.6">{stamp.sub}</text>
                 <line x1="20" y1="55" x2="28" y2="58" stroke="var(--sepia)" strokeWidth="1" opacity="0.2" />
@@ -43,10 +38,13 @@ function PassportStamp({ stamp, earned, index }: { stamp: any; earned: boolean; 
     )
 }
 
-export function NoirPassport({ logs }: { logs: any[] }) {
+export function NoirPassport({ analytics, failed }: { analytics?: ProfileAnalytics | null; failed?: boolean }) {
+    const stamps = stampsOf(analytics)
     const earned = useMemo(() =>
-        PASSPORT_STAMPS.map(s => ({ ...s, earned: s.test(logs) })),
-        [logs])
+        stamps ? PASSPORT_STAMPS.map(s => ({ ...s, earned: s.earned(stamps) })) : [],
+        [stamps])
+
+    if (!stamps) return <RecordNotRead analytics={analytics} failed={failed} />
 
     const earnedCount = earned.filter(s => s.earned).length
 

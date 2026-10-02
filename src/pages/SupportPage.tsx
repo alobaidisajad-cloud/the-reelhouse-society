@@ -187,7 +187,7 @@ export default function SupportPage() {
                         (see <a href="#cancel" onClick={() => { const c = document.getElementById('cancel'); if (c instanceof HTMLDetailsElement) c.open = true }}>How do I cancel?</a>),
                         or the store will keep charging you.
                     </p>
-                    <p>On the website, write to us from the email address on your account and we will delete it for you.</p>
+                    <p>On the website, it is in Settings, under Account actions: a code is sent to the email address on your account, and the account is erased when you enter it.</p>
                 </Question>
 
                 <Question id="data" q="How do I take my data with me?">

@@ -402,7 +402,7 @@ export const FilmFinder = memo(function FilmFinder({
           <PressableScale style={d.result} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
             onPress={onPick && (() => onPick(f, i))} disabled={!onPick}
             accessibilityRole="button" accessibilityState={{ disabled: !onPick }}
-            accessibilityLabel={`${f.title}, ${f.year}`}>
+            accessibilityLabel={`${f.title}${f.year ? `, ${f.year}` : ''}`}>
             <View style={d.resultArt}>
               {f.posterPath ? (
                 <Image source={{ uri: f.posterPath }} style={p.plateArt} contentFit="cover" />

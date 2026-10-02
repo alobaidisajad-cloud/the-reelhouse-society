@@ -2,46 +2,23 @@ import { motion } from 'framer-motion'
 import { X, Share2 } from 'lucide-react'
 import Buster from '../Buster'
 import { RadarChart } from '../UI'
+import { stampsOf, type ProfileAnalytics } from '../../constants/honours'
+import { standingFor } from '../../constants/standing'
+import { dnaOf, DNA_FLOOR } from './dna'
 
 /**
- * Cinema DNA Card — A branded shareable image of a user's cinematic identity.
- * Shows archetype, top decades, obscurity index, radar chart, and branding.
- * Designed as a 9:16 Instagram Story-sized overlay.
+ * Cinema DNA Card — a shareable image of a member's cinematic identity, read
+ * from their whole record (get_public_profile_analytics), as the app's card is:
+ * the house's one ladder for the name, the measured obscurity index or "—".
+ * Designed as a 9:16 Instagram Story-sized overlay. The profile offers it from
+ * five films (DNA_FLOOR); below that, or unread, it is not drawn.
  */
-export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any; onClose: () => void }) {
-    if (!logs || logs.length < 5) return null
+export function CinemaDNACard({ analytics, user, onClose }: { analytics?: ProfileAnalytics | null; user: { username?: string } | null; onClose: () => void }) {
+    const total = stampsOf(analytics)?.total_logs ?? 0
+    if (total < DNA_FLOOR) return null
 
-    // Compute Cinema DNA stats
-    const decades: Record<string, number> = {}
-    logs.forEach((log: any) => {
-        const year = parseInt(log.year || '2000')
-        const decade = `${Math.floor(year / 10) * 10}s`
-        decades[decade] = (decades[decade] || 0) + 1
-    })
-    const topDecades = Object.entries(decades).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 3)
-    const rated = logs.filter((l: any) => l.rating > 0)
-    const avgRating = rated.length ? (rated.reduce((s: number, l: any) => s + l.rating, 0) / rated.length).toFixed(1) : '—'
-    const obscurityScore = Math.round(40 + (5 - parseFloat(avgRating || '3')) * 12 + Math.min(logs.length, 30))
-
-    const archetypes = [
-        { min: 0, label: 'Initiate' }, { min: 5, label: 'Devotee' }, { min: 15, label: 'Archivist' },
-        { min: 30, label: 'Cinephile' }, { min: 60, label: 'Obsessive' }, { min: 100, label: 'The Oracle' },
-    ]
-    const archetype = archetypes.filter(a => logs.length >= a.min).pop()?.label || 'Initiate'
-
-    const tones = parseFloat(avgRating) >= 4 ? 'Romanticism' : parseFloat(avgRating) >= 3 ? 'Realism' : parseFloat(avgRating) >= 2 ? 'Dark Romanticism' : 'Nihilism'
-
-    // Aggregate autopsy data for radar
-    const autopsies = logs.filter((l: any) => l.isAutopsied && l.autopsy).map((l: any) => l.autopsy)
-    let avgAutopsy: { story: number; cinematography: number; sound: number } | null = null
-    if (autopsies.length > 0) {
-        avgAutopsy = {
-            story: Math.round(autopsies.reduce((s: number, a: any) => s + (a.story || a.screenplay || a.script || 0), 0) / autopsies.length),
-            cinematography: Math.round(autopsies.reduce((s: number, a: any) => s + (a.cinematography || a.visuals || a.acting || 0), 0) / autopsies.length),
-            sound: Math.round(autopsies.reduce((s: number, a: any) => s + (a.sound || a.score || a.editing || 0), 0) / autopsies.length),
-        }
-    }
-
+    const dna = dnaOf(analytics)
+    const archetype = standingFor(total).level
 
     return (
         <motion.div
@@ -122,14 +99,14 @@ export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any;
                             {archetype}
                         </div>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginTop: '0.2rem' }}>
-                            SCHOOL OF {tones.toUpperCase()}
+                            SCHOOL OF {dna.tones.toUpperCase()}
                         </div>
                     </div>
 
                     {/* Radar Chart (if available) */}
-                    {avgAutopsy && (
+                    {dna.autopsy && (
                         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', filter: 'drop-shadow(0 0 10px rgba(139,105,20,0.2))' }}>
-                            <RadarChart autopsy={avgAutopsy} size={120} />
+                            <RadarChart autopsy={dna.autopsy} size={120} />
                         </div>
                     )}
 
@@ -139,8 +116,8 @@ export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any;
                         marginBottom: '1rem',
                     }}>
                         {[
-                            { label: 'FILMS', value: logs.length },
-                            { label: 'AVG RATING', value: avgRating },
+                            { label: 'FILMS', value: total },
+                            { label: 'AVG RATING', value: dna.avgRating },
                         ].map(({ label, value }) => (
                             <div key={label} style={{ textAlign: 'center', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '2px' }}>
                                 <div style={{ fontFamily: 'var(--font-display-alt)', fontSize: '1.3rem', color: 'var(--parchment)', lineHeight: 1 }}>{value}</div>
@@ -153,8 +130,8 @@ export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any;
                     <div style={{ marginBottom: 'auto' }}>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>DOMINANT ERAS</div>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            {topDecades.map(([decade, count]: [string, number]) => {
-                                const pct = Math.round((count / logs.length) * 100)
+                            {dna.topDecades.map(([decade, count]) => {
+                                const pct = Math.round((count / total) * 100)
                                 return (
                                     <div key={decade} style={{
                                         flex: 1, padding: '0.4rem 0.5rem', background: 'rgba(139,105,20,0.06)',
@@ -174,7 +151,7 @@ export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any;
                         padding: '0.5rem 0', borderTop: '1px solid rgba(139,105,20,0.15)', marginBottom: '0.75rem',
                     }}>
                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>OBSCURITY INDEX</span>
-                        <span style={{ fontFamily: 'var(--font-display-alt)', fontSize: '1.4rem', color: 'var(--sepia)' }}>{obscurityScore}</span>
+                        <span style={{ fontFamily: 'var(--font-display-alt)', fontSize: '1.4rem', color: 'var(--sepia)' }}>{dna.obscurity}</span>
                     </div>
 
                     {/* Footer Branding */}
@@ -186,7 +163,7 @@ export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any;
                             REELHOUSE
                         </div>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', color: 'var(--fog)', letterSpacing: '0.1em', textAlign: 'right' }}>
-                            CINEMATIC FINGERPRINT<br />ANALYSIS №{String(logs.length).padStart(4, '0')}
+                            CINEMATIC FINGERPRINT<br />ANALYSIS №{String(total).padStart(4, '0')}
                         </div>
                     </div>
                 </div>

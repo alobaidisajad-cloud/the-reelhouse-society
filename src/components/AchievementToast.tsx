@@ -3,10 +3,10 @@
  * Auto-dismisses after 5 seconds with a slide-in animation.
  */
 import { useEffect, useState } from 'react'
-import type { Badge } from '../hooks/useAchievements'
+import type { Honour } from '../constants/honours'
 
 interface Props {
-  badge: Badge
+  badge: Honour
   onDismiss: () => void
 }
 
@@ -79,7 +79,7 @@ export default function AchievementToast({ badge, onDismiss }: Props) {
           letterSpacing: '0.1em',
           lineHeight: 1.2,
         }}>
-          {badge.label}
+          {badge.title}
         </div>
         <div style={{
           fontFamily: 'var(--font-body)',
@@ -87,7 +87,7 @@ export default function AchievementToast({ badge, onDismiss }: Props) {
           color: 'var(--fog)',
           lineHeight: 1.4,
         }}>
-          {badge.description}
+          {badge.desc}
         </div>
       </div>
 

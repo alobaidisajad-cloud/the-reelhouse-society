@@ -131,6 +131,7 @@ without one). "Read" is the day its comments were last read against its code.
 | CONTRIBUTING.md | — |  |
 | e2e/__tests__/flowScreens.test.ts | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
+| e2e/__tests__/screenTimes.test.ts | 2026-10-02 | Written in the launch audit: the screen-time reader on threadtime log lines, and every way its gate says no. |
 | e2e/annotate.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/db/bootstrap.mjs | 2026-09-28 | 7 findings; stale function count and 'how this was found' asides dropped |
 | e2e/db/seed.mjs | 2026-09-29 | true as written |
@@ -141,6 +142,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/load/probe.mjs | 2026-10-02 | Written in the launch audit: every busy screen's reads, timed as a member, against a budget. |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
 | e2e/run-flows.sh | 2026-10-01 | the keyboard's room added after the flows |
+| e2e/screen-times.mjs | 2026-10-02 | Written in the launch audit: each screen's time to its content, read from the E2E device log; a gate once ceilings are set. |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/supabase/functions/tmdb-proxy/index.ts | 2026-09-29 | history reduced to the rule |
 | e2e/supabase/functions/tmdb-proxy/normalize.mjs | 2026-09-29 | true as written |
@@ -170,12 +172,11 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tabs/__tests__/zz-rooms.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/tabs/__tests__/zz-settings.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/tabs/flashListMock.tsx | 2026-10-01 | rows handed extraData, as FlashList does |
-| mockups/tools/advances.cjs | 2026-09-29 | true as written |
 | mockups/tools/drawn.cjs | 2026-09-29 | 1 finding |
+| mockups/tools/face-advances.cjs | 2026-10-02 | Written in the launch audit: one generator for every face's letter widths, read from the font files, with --check in CI. |
 | mockups/tools/harness.cjs | 2026-09-28 | 5 findings; the header's middle sentence was garbled by an insertion; open() said 1.35 was the most a word grows (uncapped grows to 3.1) |
 | mockups/tools/layout.cjs | 2026-09-28 | 12 findings; the header said it measured 'x1 and x1.35' (it runs five passes, iOS to 3.1 and Android to 2) and left SMALL, SHORT and LOST unlisted; two stacked JSDocs merged |
 | mockups/tools/contrast.cjs | 2026-09-30 | new: every word against the pixels under it |
-| mockups/tools/lobby-advances.cjs | 2026-09-30 | new: the faces' advance tables, measured in Chromium |
 | mockups/tools/quote-ink.cjs | 2026-09-30 | new: the quote marks' outline, read from the font file |
 | mockups/tools/selftest.cjs | 2026-09-28 | 19 findings; the bordered-pair note sat over scaledbeside, moved to its case |
 | mockups/tools/shoot.cjs | 2026-09-29 | true as written |
@@ -296,6 +297,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theEssayAtLargeType.test.tsx | — |  |
 | src/components/dispatch/__tests__/theHardcodedWidthIsHarmless.test.ts | — |  |
 | src/components/dispatch/__tests__/theInvitationHasAnAddress.test.tsx | — |  |
+| src/components/dispatch/__tests__/theIssueIsTheCalendarDay.test.ts | 2026-10-02 | Written in the launch audit: the issue number counted in calendar days, every hour of two years. |
 | src/components/dispatch/__tests__/theMarginSaysWhatItCounts.test.tsx | 2026-09-29 | new |
 | src/components/dispatch/__tests__/theNumberIsAMembershipFact.test.tsx | — |  |
 | src/components/dispatch/__tests__/theParagraphKnowsItsDirection.test.tsx | — |  |
@@ -404,7 +406,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-01 | both doors, every pull |
 | src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-09-30 | new |
 | src/components/lobby/__tests__/theWallIsRead.test.ts | 2026-09-30 | new |
-| src/components/lobby/faceAdvances.ts | 2026-09-30 | generated; header only |
 | src/components/lobby/FeatureRow.tsx | 2026-09-30 | new |
 | src/components/lobby/FilingsBill.tsx | 2026-09-30 | new; the byline moved out of the filing's door |
 | src/components/lobby/KeepOff.tsx | 2026-09-30 | new |
@@ -502,6 +503,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/aNameIsEarnedOnce.test.ts | 2026-10-02 | Written in the launch audit: no honour or stamp shares a name or borrows a rank's. |
 | src/components/profile/__tests__/anEmptyLedgerSaysSo.test.tsx | 2026-10-01 | written: an empty ledger is said as one |
 | src/components/profile/__tests__/anHonourIsNeverBroken.test.tsx | — |  |
+| src/components/profile/__tests__/aRewatchShowsItsHalfLife.test.ts | 2026-10-02 | Written in the launch audit: a rewatch's half-life from the viewing history and the current rating. |
 | src/components/profile/__tests__/aRoomKeepsWhatTheServerFound.test.ts | 2026-10-01 | written: a room's search on the phone is the server's |
 | src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx | 2026-10-01 | written: rows, paging and failure from one answer |
 | src/components/profile/__tests__/aSearchKeepsItsBox.test.tsx | 2026-10-01 | written: every searchable room, searched to nothing |
@@ -902,9 +904,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/wordsAreSolid.test.ts | — |  |
 | src/theme/authStyles.ts | 2026-10-01 | comments short and true |
 | src/theme/brass.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/theme/faceAdvances.ts | 2026-10-02 | Written in the launch audit: generated; the one table of letter widths, header only. |
 | src/theme/light.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/motion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/theme/ryeAdvances.ts | 2026-10-01 |  |
 | src/theme/stamp.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/theme.ts | 2026-10-02 | Read whole (launch audit). Dead tokens removed: typography, physics (springBouncy broke the no-bounce law), three metrics, three effects; type.caption 8.5 and type.badge 7.5 sat under the 10pt floor unused. theTypeFloor now reads the live scale. |
 | src/types/film.types.ts | 2026-10-02 | Read whole (launch audit). VaultItem was used nowhere: removed. |

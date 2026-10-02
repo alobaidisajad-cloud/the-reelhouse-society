@@ -19,14 +19,14 @@
  *
  * So the count still sets the ceiling, and the step is then lowered — only
  * ever lowered — until the name's longest word fits the column at the size the
- * phone draws, measured from Rye's own letter widths (`ryeAdvances.ts`). Still
+ * phone draws, measured from Rye's own letter widths (`faceAdvances.ts`). Still
  * deterministic: one name, on one phone, at one text setting, has one size.
  *
  * A word that fits no step (a thirty-letter handle with no joint in it) is set
  * at the smallest step and allowed to break: the design chose a break over
  * type shrunk into illegibility.
  */
-import { RYE_ADVANCE, RYE_WIDEST } from '@/src/theme/ryeAdvances';
+import { RYE, RYE_WIDEST } from '@/src/theme/faceAdvances';
 import { s } from './profileStyles';
 
 export const NAME_STEPS = [26, 20, 16] as const;
@@ -42,7 +42,7 @@ export const nameSpacing = (size: number) => (size >= 26 ? 1.4 : 1);
 export function wordWidth(word: string, size: number, scale: number): number {
   let em = 0;
   let n = 0;
-  for (const ch of word) { em += RYE_ADVANCE[ch] ?? RYE_WIDEST; n++; }
+  for (const ch of word) { em += RYE[ch] ?? RYE_WIDEST; n++; }
   return em * size * scale + nameSpacing(size) * n;
 }
 

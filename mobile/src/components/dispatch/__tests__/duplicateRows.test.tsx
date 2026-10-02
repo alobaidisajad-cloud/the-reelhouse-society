@@ -199,3 +199,12 @@ describe('the foot of the critiques', () => {
     expect(queryByLabelText(/more critiques/)).toBeNull();
   });
 });
+
+describe('a film with no year on record', () => {
+  // A result the catalogue gives no year was read aloud as "Possession, undefined".
+  it('is named by its title alone', () => {
+    const r = render(<FilmFinder query="possession" results={[{ title: 'Possession', year: null }]} onPick={() => {}} />);
+    expect(r.getByLabelText('Possession')).toBeTruthy();
+    expect(r.queryByLabelText(/undefined|null/)).toBeNull();
+  });
+});

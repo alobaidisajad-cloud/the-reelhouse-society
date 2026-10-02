@@ -29,10 +29,8 @@ interface DarkroomHeroProps {
   handleClearSearch: () => void;
   suggestions: DiscoverFilm[];
   handleSuggestionPress: (item: DiscoverFilm) => void;
-   
-  animatedSearchProps: any;
-   
-  animatedSearchStyle: any;
+  animatedSearchProps: React.ComponentProps<typeof AnimatedSearchIcon>['animatedProps'];
+  animatedSearchStyle: React.ComponentProps<typeof AnimatedSearchIcon>['style'];
   setFieldFocused: (focused: boolean) => void;
 }
 

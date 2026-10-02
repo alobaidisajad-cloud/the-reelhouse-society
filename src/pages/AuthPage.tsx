@@ -150,23 +150,9 @@ export default function AuthPage({ mode }: { mode: 'join' | 'login' | 'verify' |
 
         try {
             if (mode === 'login') {
-                let loginEmail = emailOrUsername.trim()
-                if (!loginEmail.includes('@')) {
-                    const lookupUsername = loginEmail.toLowerCase().replace(/\\s+/g, '_')
-                    const { data: resolvedEmail, error: rpcError } = await supabase.rpc('get_email_by_username', { lookup_username: lookupUsername })
-                    if (rpcError || !resolvedEmail) {
-                        reelToast.error('No account found with that username.')
-                        setSubmitting(false)
-                        return
-                    }
-                    loginEmail = resolvedEmail
-                } else if (!isValidEmailFormat(loginEmail)) {
-                    reelToast.error('Please enter a valid email address.')
-                    setSubmitting(false)
-                    return
-                }
-                
-                await login(loginEmail, password)
+                // An address or a handle: the store tells them apart, and a handle
+                // is signed in on the server, which never shows the address here.
+                await login(emailOrUsername.trim(), password)
                 reelToast.success('Welcome back to the House.')
                 navigate('/')
             } else {

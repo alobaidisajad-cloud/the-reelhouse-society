@@ -11,7 +11,8 @@ interface ProfileHeaderProps {
     currentUser: any
     isOwnProfile: boolean
     activeTab: string | null
-    stats: { count: number; level: string; color: string; progress: number }
+    /** The standing, from the member's record; null until it is read. */
+    stats: { count: number; level: string; color: string; progress: number } | null
     ownCounts?: { followersCount: number; followingCount: number }
     profileLogs: any[]
     profileWatchlist: any[]
@@ -45,6 +46,8 @@ export function ProfileHeader({
 }: ProfileHeaderProps) {
     const { isTouch: IS_TOUCH } = useViewport()
     const navigate = useNavigate()
+    // The ring takes the standing's colour once the record is read; ash until then.
+    const ring = stats?.color ?? 'var(--ash)'
 
     const renderAvatar = (avatarValue: any, size = 90) => {
         if (!avatarValue || typeof avatarValue !== 'string') return <Buster size={size} mood="smiling" />
@@ -76,16 +79,16 @@ export function ProfileHeader({
                             <div className="profile-avatar-ring profile-avatar-breathe" style={{ 
                                 width: IS_TOUCH ? 120 : 160, height: IS_TOUCH ? 120 : 160, 
                                 borderRadius: '50%', background: 'var(--ink)', 
-                                border: `2px solid ${stats.color}`, 
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                position: 'relative', 
-                                boxShadow: `0 0 60px ${stats.color}50, 0 0 120px ${stats.color}20, inset 0 0 30px rgba(0,0,0,0.6)`, 
+                                border: `2px solid ${ring}`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                position: 'relative',
+                                boxShadow: `0 0 60px ${ring}50, 0 0 120px ${ring}20, inset 0 0 30px rgba(0,0,0,0.6)`,
                                 overflow: 'hidden',
                             }}>
                                 {renderAvatar(((profileUser as any)?.avatar_url || (profileUser as any)?.avatar || 'smiling'), IS_TOUCH ? 75 : 100)}
                             </div>
-                            <div style={{ 
-                                position: 'absolute', bottom: -12, left: '50%', transform: 'translateX(-50%)', 
+                            {stats && <div style={{
+                                position: 'absolute', bottom: -12, left: '50%', transform: 'translateX(-50%)',
                                 background: 'linear-gradient(135deg, rgba(15,10,5,0.95), rgba(25,18,10,0.95))', 
                                 border: `1px solid ${stats.color}`, 
                                 padding: '0.25rem 0.75rem', borderRadius: '3px', 
@@ -93,7 +96,7 @@ export function ProfileHeader({
                                 color: stats.color, whiteSpace: 'nowrap', 
                                 boxShadow: `0 4px 15px rgba(0,0,0,0.6), 0 0 10px ${stats.color}20`, 
                                 zIndex: 2 
-                            }}>✦ {stats.level}</div>
+                            }}>✦ {stats.level}</div>}
                         </div>
                     </div>
 
