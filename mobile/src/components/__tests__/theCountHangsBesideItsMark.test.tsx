@@ -44,7 +44,7 @@ import LogActionDeck from '@/src/components/log/LogActionDeck';
 // eslint-disable-next-line import/first
 import { PaperActions, PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 // eslint-disable-next-line import/first
-import { PostDock, CritiqueRow } from '@/src/components/dispatch/paper/PaperCritiques';
+import { PostDock, PaperCritiqueRow } from '@/src/components/dispatch/paper/PaperCritiques';
 // eslint-disable-next-line import/first
 import LogComments from '@/src/components/log/LogComments';
 // eslint-disable-next-line import/first
@@ -262,7 +262,7 @@ describe('a zero is never printed — anywhere a mark is counted', () => {
     expect(drawn(r).filter((s) => /(^|[^\d.])0(?![\d.])/.test(s))).toEqual([]);
 
   it('a critique with no certifications has a heart and no number', () => {
-    const r = render(<CritiqueRow c={{ id: 'c1', author: null, body: 'Cold is not unfeeling.', certifyCount: 0, age: '1 HR' } as never} onCertify={noop} />);
+    const r = render(<PaperCritiqueRow c={{ id: 'c1', author: null, body: 'Cold is not unfeeling.', certifyCount: 0, age: '1 HR' } as never} onCertify={noop} />);
     noZero(r);
     // Not even an empty text beside the heart: nothing, so nothing holds a slot.
     const control: any = r.getByLabelText('Certify this critique');
@@ -273,7 +273,7 @@ describe('a zero is never printed — anywhere a mark is counted', () => {
   });
 
   it('…and one with certifications says so, once', () => {
-    const r = render(<CritiqueRow c={{ id: 'c1', author: null, body: 'Cold is not unfeeling.', certifyCount: 1200, age: '1 HR' } as never} onCertify={noop} />);
+    const r = render(<PaperCritiqueRow c={{ id: 'c1', author: null, body: 'Cold is not unfeeling.', certifyCount: 1200, age: '1 HR' } as never} onCertify={noop} />);
     expect(r.getByText('1.2K', HIDDEN_TOO)).toBeTruthy();
     expect(r.getByLabelText('Certify this critique. 1200 members have certified this critique')).toBeTruthy();
   });

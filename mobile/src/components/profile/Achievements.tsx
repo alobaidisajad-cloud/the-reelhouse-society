@@ -31,7 +31,7 @@ interface Badge {
   check: (s: Stamps, total?: number) => boolean;
 }
 
-const BADGES: Badge[] = [
+export const BADGES: Badge[] = [
   {
     id: 'first-reel',
     title: 'FIRST REEL',

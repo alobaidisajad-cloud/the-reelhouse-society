@@ -7,7 +7,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import { WASH } from '@/src/theme/light';
 
 /** A card of the Edit Profile desk: a lit top line over a faint wash. */
-export const SectionCard = React.memo(({ children, danger }: { children: React.ReactNode; danger?: boolean }) => (
+export const BureauCard = React.memo(({ children, danger }: { children: React.ReactNode; danger?: boolean }) => (
   <View style={[st.sectionCard, danger && st.sectionCardDanger]}>
     <LinearGradient
       colors={danger ? ['transparent', colors.bloodReel, 'transparent'] : ['transparent', colors.sepiaBorder, 'transparent']}
@@ -21,9 +21,9 @@ export const SectionCard = React.memo(({ children, danger }: { children: React.R
     {children}
   </View>
 ));
-SectionCard.displayName = 'SectionCard';
+BureauCard.displayName = 'BureauCard';
 
-export const SectionHead = React.memo(({ icon: Icon, label, danger }: { icon: LucideIcon; label: string; danger?: boolean }) => (
+export const BureauHead = React.memo(({ icon: Icon, label, danger }: { icon: LucideIcon; label: string; danger?: boolean }) => (
   <View style={st.sectionHeaderWrap}>
     <View style={st.sectionHeaderRow}>
       <Icon size={14} color={danger ? colors.bloodReel : colors.sepia} style={st.sectionHeaderIcon} />
@@ -32,7 +32,7 @@ export const SectionHead = React.memo(({ icon: Icon, label, danger }: { icon: Lu
     </View>
   </View>
 ));
-SectionHead.displayName = 'SectionHead';
+BureauHead.displayName = 'BureauHead';
 
 const st = StyleSheet.create({
 

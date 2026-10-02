@@ -170,8 +170,6 @@ export const r = StyleSheet.create({
   // THE FRAME — bone, not brass: sixteen brass frames would read as a toolbar
   // ══════════════════════════════════════════════════════════════════════════
   gridRow: { flexDirection: 'row' as const },
-  /** A mount just inside the frame, 3pt for a grid cell: a picture, not an image in a box. */
-  mountBoard: { position: 'absolute' as const, top: 3, left: 3, right: 3, bottom: 3, borderWidth: 1, borderColor: 'rgba(232,223,208,0.10)', zIndex: 3 },
 
   // ══════════════════════════════════════════════════════════════════════════
   // THE SPINE — a bound volume, a cased disc

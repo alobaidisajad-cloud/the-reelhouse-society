@@ -23,7 +23,7 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
 // ══════════════════════════════════════════════════════════════
 //  PROJECTOR BEAM ATMOSPHERICS (The Reel) - GPU HARDENED
 // ══════════════════════════════════════════════════════════════
-export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY: SharedValue<number> }) {
+export const ReelProjectorBeam = memo(function ReelProjectorBeam({ scrollY }: { scrollY: SharedValue<number> }) {
   const { width, height } = useWindowDimensions();
   const beamSwing = useSharedValue(0.1);
   const flicker = useSharedValue(0.8);
@@ -230,7 +230,7 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
 //  BRASS SHEEN (For Primary Call to Action)
 // ════════════════════════════════════════════════════════════════
  
-export const BrassSheen = memo(() => {
+export const ReelBrassSheen = memo(() => {
     const sheen = useSharedValue(-2);
     useEffect(() => {
        sheen.value = withRepeat(
@@ -413,4 +413,4 @@ const st = StyleSheet.create({
 });
 
 
-BrassSheen.displayName = 'BrassSheen';
+ReelBrassSheen.displayName = 'ReelBrassSheen';

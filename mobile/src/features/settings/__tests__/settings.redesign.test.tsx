@@ -293,7 +293,7 @@ describe('account', () => {
     const said = String(line.props.children);
     expect(said).toMatch(/account can be deleted/);
     expect(said).toMatch(/this setting changes/);
-    expect(said).toMatch(/your own Archive opens\./);
+    expect(said).toMatch(/your own Archive shows: its room, the Ledger, the calendar and LATELY\./);
     expect(said).not.toMatch(/sign out/);
     expect(said).not.toMatch(/Face ID|Touch ID/);
     expect(r.queryByText(/for destructive actions/)).toBeNull();
@@ -304,13 +304,16 @@ describe('account', () => {
     // of the Archive — the two rooms had been confused by a shared "Vault"
     // name. So the sentence is checked against where the lock is MOUNTED, not
     // against a string: if the lock ever moves rooms, this goes red until
-    // Settings says so.
+    // Settings says so. (That it holds each place it names is shown on the
+    // mounted page: theArchiveIsHeldWhereverItShows.)
     const PROFILE = join(DIR, '..', '..', 'components', 'profile');
+    const PAGE = readFileSync(join(DIR, '..', '..', '..', 'app', 'user', '[username].tsx'), 'utf8');
     const mounts = (file: string) =>
       /<ArchiveLock\b/.test(readFileSync(join(PROFILE, file), 'utf8'));
-    expect(mounts('ProfileArchiveTab.tsx')).toBe(true);
+    expect(PAGE.match(/<ArchiveLock\b/g)).toHaveLength(2);
+    expect(PAGE).toMatch(/<ArchiveLockedLine\b/);
     expect(mounts('ProfilePhysicalTab.tsx')).toBe(false);
-    expect(SECTIONS).toMatch(/before your own Archive opens\./);
+    expect(SECTIONS).toMatch(/before your own Archive shows: its room, the Ledger, the calendar and LATELY\./);
     expect(SECTIONS).not.toMatch(/open your own Physical Archive/);
   });
 

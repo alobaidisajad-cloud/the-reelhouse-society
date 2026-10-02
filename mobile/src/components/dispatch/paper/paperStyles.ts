@@ -18,9 +18,6 @@ export const p = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.ink },
   /** Transparent: a desk mounts in a screen lit by its room, and a page would hide the light. */
   desk: { flex: 1 },
-  /** Grows so a short thread's foot sits at the page's foot; nothing when the thread is long. */
-  fill: { flexGrow: 1 },
-  ambient: { position: 'absolute', top: 0, left: 0, right: 0, height: 360 },
 
   /** Centred; the screen caps it at PAPER_MAX, so a tablet does not set forty words to a line. */
   docWrap: { flex: 1, alignSelf: 'center', width: '100%' },
@@ -206,7 +203,6 @@ export const p = StyleSheet.create({
   /** The rank's rule, brass ramp or crimson, runs along its length: across 3pt it is flat. */
   rankRule: { position: 'absolute', left: -RULE_W, top: 0, bottom: 0, width: RULE_W },
 
-  ruled: { paddingLeft: RULE_GAP, borderLeftWidth: RULE_W, borderLeftColor: 'rgba(184,137,26,0.25)' },
 
   /** The largest thing on a post, at full parchment: the words a member wrote. */
   take: {
@@ -301,8 +297,6 @@ export const p = StyleSheet.create({
   },
 
   // ── the plate ─────────────────────────────────────────────────────────────
-  /** A poster lit as the film hero's: a glow host that never clips (`plateGlow`), a rim, art. */
-  plate: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, paddingLeft: BYLINE_INDENT },
   plateGlow: {
     shadowColor: colors.sepia, shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.55, shadowRadius: 12, elevation: 6,
@@ -310,7 +304,6 @@ export const p = StyleSheet.create({
   plateArt: { width: '100%', height: '100%' },
   /** Held back: a bright poster is otherwise the loudest thing on a page of ink and brass. */
   artHeld: { opacity: 0.86 },
-  plateTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.parchment, includeFontPadding: false },
   /** The feed's credit: a thumbnail and one line. The full poster is on the post page. */
   credit: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   creditArt: {
@@ -369,10 +362,6 @@ export const p = StyleSheet.create({
   actionLabelSaved: { color: colors.sepia },
 
   // ── THE REPLY ─────────────────────────────────────────────────────────────
-  reply: {
-    marginTop: 12, marginLeft: BYLINE_INDENT, paddingLeft: RULE_GAP,
-    borderLeftWidth: RULE_W, borderLeftColor: 'rgba(184,137,26,0.5)',
-  },
 
   // ── the answer on a seeking post ──────────────────────────────────────────
   answer: {
@@ -459,12 +448,8 @@ export const p = StyleSheet.create({
   cardBallotQ: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.parchment, marginBottom: 8 },
   dossierLead: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: KIND_RULE.dossier, includeFontPadding: false },
   series: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia, marginTop: 8, includeFontPadding: false },
-  excerpt: { fontFamily: fonts.serif, fontSize: 13.5, lineHeight: 24, color: colors.bone, flex: 1, paddingTop: 2 },
 
   // ── section head + empty ──────────────────────────────────────────────────
-  headRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  headRule: { flex: 1, height: 1, marginLeft: 12 },
-  sectionTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, marginBottom: 6, textAlign: 'center' },
 
   /** Centred in its space: pinned under a heading, it reads as content that failed to load. */
   empty: { flex: 1, minHeight: 0, alignItems: 'center', paddingHorizontal: 4, paddingBottom: 6 },
@@ -562,7 +547,6 @@ export const p = StyleSheet.create({
   chs: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
   chsGo: { color: colors.parchment },
   chm: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.2, color: colors.sepia, includeFontPadding: false },
-  cb: { ...EDGE_LIT, flex: 1, minHeight: 0, paddingHorizontal: 16, paddingTop: 16, backgroundColor: colors.soot },
 
   /**
    * The desk's document fills the writing area, framed as the feed's sheet is.
@@ -576,7 +560,6 @@ export const p = StyleSheet.create({
     borderLeftWidth: DOC_RAIL, borderRightWidth: DOC_RAIL,
     borderColor: colors.sepiaBorder,
   },
-  deskRow: { flex: 1, minHeight: 0, alignItems: "stretch" },
   caret: { color: colors.sepia },
   railTool: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
 
@@ -611,10 +594,6 @@ export const p = StyleSheet.create({
     color: colors.bone, textAlign: 'center', marginBottom: 12, includeFontPadding: false,
   },
   veilAction: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
-  removed: {
-    paddingVertical: 16, alignItems: 'center',
-    borderTopWidth: 1, borderBottomWidth: 1, borderColor: 'rgba(184,137,26,0.14)',
-  },
   /** Flush left, like every other line on the page. */
   removedText: { fontFamily: fonts.bodyItalic, fontSize: 12.5, color: colors.fogQuiet },
 });

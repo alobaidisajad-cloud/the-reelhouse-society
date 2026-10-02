@@ -26,6 +26,7 @@ import { SpecialElite_400Regular } from '@expo-google-fonts/special-elite';
 import * as SplashScreen from 'expo-splash-screen';
 import { StyleSheet } from 'react-native';
 import OfflineBanner from '@/src/components/OfflineBanner';
+import StandingNotice from '@/src/components/StandingNotice';
 import { KeyboardRoom } from '@/src/components/KeyboardRoom';
 import { captureError, initSentry, markAppLoaded } from '@/src/lib/sentry';
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
@@ -189,6 +190,7 @@ export default function RootLayout() {
       <PathTracker />
       <ToastHost layer="root" />
       <OfflineBanner />
+      <StandingNotice />
         <StatusBar style="light" />
         </KeyboardRoom>
         </GestureHandlerRootView>

@@ -8,11 +8,11 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { Users } from 'lucide-react-native';
-import { SectionHead } from '../SectionCards';
+import { BureauHead } from '../SectionCards';
 import { SectionHead as SettingsSectionHead } from '@/src/features/settings/SettingsSections';
 
 it.each([
-  ['the Edit Profile desk', SectionHead],
+  ['the Edit Profile desk', BureauHead],
   ['Settings', SettingsSectionHead],
 ])('%s', (_where, Head) => {
   const r = render(<Head icon={Users} label="IMPORT & EXPORT" />);

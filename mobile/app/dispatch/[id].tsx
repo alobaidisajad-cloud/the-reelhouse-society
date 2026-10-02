@@ -32,7 +32,7 @@ import { EssayBody } from '@/src/components/dispatch/EssayBody';
 import { readTimeOf } from '@/src/components/dispatch/readTime';
 import { PaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
 import {
-  CritiqueComposer, CritiqueFooter, CritiqueHead, CritiqueRow, CritiqueSpine, PostDock,
+  CritiqueComposer, CritiqueFooter, CritiqueHead, PaperCritiqueRow, CritiqueSpine, PostDock,
 } from '@/src/components/dispatch/paper/PaperCritiques';
 import { EssayHead, EssayNext } from '@/src/components/dispatch/paper/PaperEssay';
 import { PaperEmpty, PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
@@ -553,7 +553,7 @@ export default function FilingReader() {
           </View>
 
           {rows.map((c, i) => (
-            <CritiqueRow
+            <PaperCritiqueRow
               key={c.id}
               top={order === 'CERTIFIED' && i === 0 && c.certifyCount > 0}
               c={{

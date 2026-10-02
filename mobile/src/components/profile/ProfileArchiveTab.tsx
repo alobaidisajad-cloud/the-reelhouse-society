@@ -11,8 +11,6 @@ import PressableScale from '../PressableScale';
 import type { ProfileLog } from '../../types';
 import { nav } from '@/src/utils/typedRouter';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
-import ArchiveLock from './ArchiveLock';
-import { useAuthStore } from '@/src/stores/auth';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { r, rtlText, posterColumns, completeCount, countLabel, ROOM_INSET, yearMarker } from './roomStyles';
 import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomMoreFailed } from './RoomParts';
@@ -144,13 +142,6 @@ export default function ProfileArchiveTab({
   const { width: windowWidth } = useWindowDimensions();
   const grid = useMemo(() => posterColumns(windowWidth, 4), [windowWidth]);
 
-  // The lock only guards the member's OWN archive, and only when they have
-  // turned it on in Settings. While it stands the room is not drawn at all,
-  // so nothing behind it can be read, by eye or by a screen reader.
-  const biometricLock = useAuthStore((s) => s.user?.preferences?.biometric_lock === true);
-  const requiresLock = isSelf && biometricLock;
-  const [unlocked, setUnlocked] = useState(false);
-
   const breatheAnim = useSharedValue(0.2);
   useEffect(() => {
     breatheAnim.value = withRepeat(
@@ -172,10 +163,6 @@ export default function ProfileArchiveTab({
     shadowRadius: 20,
     elevation: breatheAnim.value * 10
   }));
-
-  const handleUnlocked = useCallback(() => {
-    setUnlocked(true);
-  }, []);
 
   /**
    * Search — the way IN to two thousand films.
@@ -457,14 +444,6 @@ export default function ProfileArchiveTab({
   // A row is a poster at 3:2, its title block and the gap beneath; too small
   // a guess makes FlashList render and re-measure more rows than it needs.
   const estimatedItemSize = abandonedView ? 88 : Math.round(grid.width * 1.5) + 42;
-
-  if (requiresLock && !unlocked) {
-    return (
-      <View style={r.container}>
-        <ArchiveLock onUnlocked={handleUnlocked} />
-      </View>
-    );
-  }
 
   return (
     <View style={r.container}>

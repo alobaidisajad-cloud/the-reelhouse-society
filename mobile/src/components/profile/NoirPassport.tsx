@@ -22,7 +22,13 @@ export interface ProfileAnalyticsPayload {
         busiest_day_count: number;
         unrated_count: number;
     };
-    dna?: any;
+    dna?: {
+        avg_rating: number | null;
+        top_decades: Record<string, number>[] | null;
+        /** The film page's obscurity mark, averaged over the films read; null with none read (absent before 20261002_03). */
+        obscurity_index?: number | null;
+        obscurity_films?: number;
+    };
     autopsy_math?: any;
     /** Present instead of the record when the viewer may not read it. */
     error?: string;
@@ -39,14 +45,14 @@ export function stampLines(label: string, width = 14): [string, string] {
 
 
 /** Each stamp, earned from the member's whole record (the server's count). */
-const PASSPORT_STAMPS: { id: string; label: string; sub: string; glyph: string; earned: (s: Stamps) => boolean }[] = [
-    { id: 'archivist', label: 'THE ARCHIVIST', sub: '100 FILMS LOGGED', glyph: '◈', earned: (s) => s.total_logs >= 100 },
+export const PASSPORT_STAMPS: { id: string; label: string; sub: string; glyph: string; earned: (s: Stamps) => boolean }[] = [
+    { id: 'century', label: 'THE CENTURY', sub: '100 FILMS LOGGED', glyph: '◈', earned: (s) => s.total_logs >= 100 },
     { id: 'devotee', label: 'THE DEVOTEE', sub: '500 FILMS LOGGED', glyph: '✦', earned: (s) => s.total_logs >= 500 },
     { id: 'silver_screen', label: 'SILVER SCREEN', sub: '20 FILMS PRE-1960', glyph: '†', earned: (s) => s.pre_1960_count >= 20 },
     { id: 'masterpiece', label: 'MASTERPIECE HUNTER', sub: '10 PERFECT RATINGS', glyph: '★', earned: (s) => s.perfect_ratings_count >= 10 },
     { id: 'vault_keeper', label: 'THE COLLECTOR', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', earned: (s) => !!s.has_physical_media },
     { id: 'honest_critic', label: 'HONEST CRITIC', sub: 'ABANDONED A FILM', glyph: '✕', earned: (s) => !!s.has_abandoned },
-    { id: 'completionist', label: 'THE COMPLETIONIST', sub: 'FILMS FROM 7 DECADES', glyph: '∞', earned: (s) => s.decades_logged_count >= 7 },
+    { id: 'historian', label: 'THE HISTORIAN', sub: 'FILMS FROM 7 DECADES', glyph: '∞', earned: (s) => s.decades_logged_count >= 7 },
     { id: 'half_life', label: 'THE RETURNER', sub: 'REWATCHED A FILM', glyph: '↻', earned: (s) => !!s.has_rewatched },
 ];
 

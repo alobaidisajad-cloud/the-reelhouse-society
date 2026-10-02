@@ -43,6 +43,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
       mockStore.delete(k);
     },
   },
+  isStorageEncrypted: () => true,
 }));
 
 const ANA = 'ana-uuid';

@@ -90,6 +90,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
     },
     delete: (k: string) => { mockStore.delete(k); },
   },
+  isStorageEncrypted: () => true,
 }));
 
 jest.mock('@/src/stores/dispatch', () => ({

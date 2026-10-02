@@ -19,10 +19,6 @@ export function backdropIsOn(preferences: { backdrop?: unknown } | null | undefi
     return preferences?.backdrop !== false;
 }
 
-interface BackdropLog {
-    poster?: string | null;
-}
-
 interface BackdropUser {
     role?: string | null;
     tier?: string | null;
@@ -35,16 +31,19 @@ interface BackdropUser {
  * Auteur with the backdrop on and a film to cut it from. One function, read by
  * the backdrop itself AND by the room's light, which blooms from the same
  * picture: two copies of this rule could disagree about which film it is.
+ *
+ * Only a film the member chose, as Edit Profile says. With the triptych empty
+ * the page keeps the house's own dark: it once fell back to the latest film
+ * logged, a small poster stretched full-bleed, chosen by nobody, and shown
+ * from behind the record's lock.
  */
-export function backdropSource(user: BackdropUser | null | undefined, logs: BackdropLog[] | null | undefined): string | null {
+export function backdropSource(user: BackdropUser | null | undefined): string | null {
     if (!user || !isAuteurPlusTier(user)) return null;
     if (!backdropIsOn(user?.preferences)) return null;
     // The centre of the altarpiece dresses the page — the rule lives in one
     // place (favourites.ts), so this and the altarpiece agree which film it is.
     const centre = pickBackdropFilm(user?.preferences?.favorites);
-    return (centre
-        ? tmdb.poster(centre.poster_path, 'w780')
-        : logs?.filter((l: BackdropLog) => l.poster).slice(0, 1).map((l: BackdropLog) => tmdb.poster(l.poster ?? '', 'w342'))[0]) || null;
+    return centre ? tmdb.poster(centre.poster_path, 'w780') || null : null;
 }
 
 /** The plate's fade into the room: how much house it lays down, top to hem. */
@@ -54,15 +53,14 @@ const PLATE_VEIL: VeilStops = [[0, 0], [0.45, 0.55], [1, 1]];
  * An Auteur's full-bleed poster behind their file: visible, but washed and
  * vignetted into the room (no gold glow).
  */
-export function ProfileBackdrop({ user, logs, hem, scrollY }: {
+export function ProfileBackdrop({ user, hem, scrollY }: {
     user: BackdropUser;
-    logs: BackdropLog[];
     /** Where the plate ends at rest, once it has been laid out. */
     hem?: number;
     /** The page's scroll: the plate moves with it, the room's light does not. */
     scrollY?: SharedValue<number>;
 }) {
-    const posterSrc = backdropSource(user, logs);
+    const posterSrc = backdropSource(user);
     if (!posterSrc) return null;
 
     return (

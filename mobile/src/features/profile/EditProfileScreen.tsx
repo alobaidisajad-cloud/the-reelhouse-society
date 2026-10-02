@@ -24,7 +24,7 @@ import { isNetworkError } from '@/src/utils/networkError';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
-import { SectionCard, SectionHead } from '@/src/components/layout/SectionCards';
+import { BureauCard, BureauHead } from '@/src/components/layout/SectionCards';
 import { st } from '@/src/features/profile/profile.styles';
 import { DiamondDivider } from '@/src/components/theme/DiamondDivider';
 import AvatarCropSheet from '@/src/components/profile/AvatarCropSheet';
@@ -88,8 +88,8 @@ function BackdropSetting({ user }: { user: { id: string; preferences?: Record<st
   }, [busy, on, updateUser, user.id]);
 
   return (
-    <SectionCard>
-      <SectionHead icon={ImageIcon} label="THE BACKDROP" />
+    <BureauCard>
+      <BureauHead icon={ImageIcon} label="THE BACKDROP" />
       <View style={bd.row}>
         <View style={bd.copy}>
           <Text {...scaledTextProps} style={st.fieldBody}>
@@ -100,7 +100,7 @@ function BackdropSetting({ user }: { user: { id: string; preferences?: Record<st
         </View>
         <Toggle active={on} onToggle={toggle} disabled={busy} label="Film backdrop on your profile" />
       </View>
-    </SectionCard>
+    </BureauCard>
   );
 }
 
@@ -207,8 +207,8 @@ export function EditProfileScreen() {
 
         {/* ════ PROFILE PICTURE ════ */}
         <Animated.View entering={FadeInDown.duration(500).delay(50)}>
-          <SectionCard>
-            <SectionHead icon={Camera} label="PROFILE PICTURE" />
+          <BureauCard>
+            <BureauHead icon={Camera} label="PROFILE PICTURE" />
             <View style={st.avatarSection}>
               <PressableScale
                 style={st.avatarWrap}
@@ -235,15 +235,15 @@ export function EditProfileScreen() {
                 </PressableScale>
               )}
             </View>
-          </SectionCard>
+          </BureauCard>
         </Animated.View>
 
         <DiamondDivider />
 
         {/* ════ IDENTITY ════ */}
         <Animated.View entering={FadeInDown.duration(500).delay(100)}>
-          <SectionCard>
-            <SectionHead icon={User} label="IDENTITY" />
+          <BureauCard>
+            <BureauHead icon={User} label="IDENTITY" />
 
             <View style={st.fieldWrap}>
               <Text {...scaledTextProps} style={st.fieldLabel}>USERNAME</Text>
@@ -274,7 +274,7 @@ export function EditProfileScreen() {
               />
               {!!errors.bio && <Text {...scaledTextProps} style={st.errorText}>{errors.bio.message}</Text>}
             </View>
-          </SectionCard>
+          </BureauCard>
         </Animated.View>
 
         <DiamondDivider />
@@ -282,8 +282,8 @@ export function EditProfileScreen() {
         {/* ════ FAVORITE FILMS ════ */}
         {isReady && (
           <Animated.View entering={FadeInDown.duration(500).delay(150)}>
-              <SectionCard>
-                  <SectionHead icon={Film} label="FAVORITE FILMS" />
+              <BureauCard>
+                  <BureauHead icon={Film} label="FAVORITE FILMS" />
                   <Text {...scaledTextProps} style={st.fieldBody}>Choose 3 films that define your cinematic identity. Tap a slot to search and select.</Text>
                   <ProfileTriptych
                     user={{
@@ -293,7 +293,7 @@ export function EditProfileScreen() {
                     isOwnProfile={true}
                     userRole={resolveTier(user)}
                   />
-              </SectionCard>
+              </BureauCard>
           </Animated.View>
         )}
 
@@ -332,15 +332,15 @@ export function EditProfileScreen() {
         {/* ════ LINKS ════ */}
         {isReady && (
           <Animated.View entering={FadeInDown.duration(500).delay(200)}>
-              <SectionCard>
-                  <SectionHead icon={Link2} label="LINKS" />
+              <BureauCard>
+                  <BureauHead icon={Link2} label="LINKS" />
                   <LinksEditor
                     links={fields}
                     handleAddLink={handleAddLink}
                     handleRemoveLink={handleRemoveLink}
                     errors={errors as unknown as import('@/src/features/profile/LinksEditor').LinksEditorProps['errors']}
                   />
-              </SectionCard>
+              </BureauCard>
           </Animated.View>
         )}
 

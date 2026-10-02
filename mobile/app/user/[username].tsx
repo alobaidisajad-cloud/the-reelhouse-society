@@ -31,6 +31,7 @@ import NitrateCalendarGrid from '@/src/components/profile/NitrateCalendarGrid';
 import { NoirPassport } from '@/src/components/profile/NoirPassport';
 import ProfileArchiveTab from '@/src/components/profile/ProfileArchiveTab';
 import { ProfileBackdrop, backdropSource } from '@/src/components/profile/ProfileBackdrop';
+import ArchiveLock, { ArchiveLockedLine, useArchiveLock } from '@/src/components/profile/ArchiveLock';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import ProfileLedgerTab from '@/src/components/profile/ProfileLedgerTab';
 import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
@@ -203,6 +204,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { username, isSelf, repairingHandle, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists, setActiveTab } = ctrl;
   const readyMark = useScreenReady('member', !loading && !repairingHandle);
+  // Your own Archive, wherever this page shows it, behind one lock (Settings).
+  const archiveLock = useArchiveLock(isSelf);
   const { archiveSieve, archiveSearch, listsSearch, physicalSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, setArchiveSieve, setArchiveSearch, setListsSearch, setPhysicalSearch, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setWatchlistDecade, setPhysicalFilter, setPhysicalSort, setListsSort } = ctrl;
 
 
@@ -422,7 +425,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
   // The reading lamp hangs from the backdrop's hem (the plate's laid-out height),
   // and the same film's colour blooms onto the page beneath.
-  const heroArt = backdropSource(targetUser as never, displayLogs as never);
+  const heroArt = backdropSource(targetUser as never);
   const [plateH, setPlateH] = useState(0);
   const lit = heroArt && plateH > 0 ? { hem: plateH, art: heroArt } : {};
 
@@ -677,8 +680,13 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           </View>
         ) :['archive', 'ledger', 'watchlist', 'lists', 'physical'].includes(activeTab) ? (
           <View style={{ flex: 1 }}>
+            {/* While the lock stands, the rooms that hold the Archive are not drawn at all. */}
+            {archiveLock.locked && (activeTab === 'archive' || activeTab === 'ledger') && (
+              <View style={{ flex: 1 }}><ArchiveLock onUnlocked={archiveLock.opened} /></View>
+            )}
+
             {/* ═══ ARCHIVE TAB ═══ */}
-            {activeTab === 'archive' && (
+            {activeTab === 'archive' && !archiveLock.locked && (
               <ProfileArchiveTab
                 logs={displayLogs}
                 isSelf={isSelf}
@@ -704,7 +712,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             )}
 
             {/* ═══ LEDGER TAB ═══ */}
-            {activeTab === 'ledger' && (
+            {activeTab === 'ledger' && !archiveLock.locked && (
               <ProfileLedgerTab
                 logs={displayLogs}
                 ledgerSearch={ledgerSearch}
@@ -939,7 +947,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               <View style={s.tabContentPad}>
                 <SectionDivider label="VIEWING HISTORY" />
                 {/* Its own read, never the member's logs standing in for their year. */}
-                {calendarData
+                {archiveLock.locked
+                  ? <ArchiveLock inline onUnlocked={archiveLock.opened} />
+                  : calendarData
                   ? <NitrateCalendarGrid logs={calendarData} isSelf={isSelf} />
                   : roomFailed ? <RoomUnreachable room="the calendar" onRetry={retryRoom} /> : <RoomRetrieving room="the calendar" />}
               </View>
@@ -985,7 +995,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           {/* Tier atmosphere — breathes up as the plate develops */}
           <AnimatedView style={[StyleSheet.absoluteFillObject, atmosphereDevelop]} pointerEvents="none">
             {isAuteurPlus ? (
-              <ProfileBackdrop {...{user: targetUser, logs: displayLogs} as any} hem={plateH || undefined} scrollY={scrollY} />
+              <ProfileBackdrop user={targetUser as never} hem={plateH || undefined} scrollY={scrollY} />
             ) : isArchivistPlus ? (
               /* Brass fading to NOTHING, so the room's light shows through. */
               <View style={s.headerArchivistBase}>
@@ -1196,7 +1206,13 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
           {/* ══ LATELY — a numbered ledger: the last films, in order, each with
               its title, year, rating, and whether it was a rewatch ══ */}
-          {recentLogs.length > 0 && (
+          {recentLogs.length > 0 && archiveLock.locked && (
+            <View style={s.latelySection}>
+              <SectionDivider label="LATELY" />
+              <ArchiveLockedLine onUnlocked={archiveLock.opened} />
+            </View>
+          )}
+          {recentLogs.length > 0 && !archiveLock.locked && (
             <View style={s.latelySection}>
               <SectionDivider label="LATELY" />
               <View style={s.latelyWrap}>

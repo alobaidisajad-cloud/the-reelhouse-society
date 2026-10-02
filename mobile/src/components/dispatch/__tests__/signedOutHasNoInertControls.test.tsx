@@ -24,7 +24,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 
 import { PaperActions } from '@/src/components/dispatch/paper/PaperPost';
 import { PaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
-import { CritiqueRow } from '@/src/components/dispatch/paper/PaperCritiques';
+import { PaperCritiqueRow } from '@/src/components/dispatch/paper/PaperCritiques';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 
 /** sRGB relative luminance, and the ratio between two composited colours. */
@@ -112,7 +112,7 @@ describe('a control with no handler is disabled, not silent', () => {
 
   it('the mark under a critique', () => {
     const { getByLabelText } = render(
-      <CritiqueRow
+      <PaperCritiqueRow
         c={{
           id: 'c1', author, body: 'A critique.', certifyCount: 4,
           certified: false, age: '2H', mine: false, taken: false,

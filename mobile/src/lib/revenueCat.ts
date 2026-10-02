@@ -14,7 +14,6 @@ import type { CustomerInfo } from 'react-native-purchases';
 import { supabase } from './supabase';
 import { logger } from '../utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
-import { resolveTier } from '../utils/tier';
 import { recordGateEvent } from '../utils/gateTelemetry';
 
 // ── The app's own view of an entitlement ──
@@ -419,19 +418,18 @@ export async function showManageSubscriptions(): Promise<boolean> {
  * Ask the server to grant what the store says: `sync-entitlement` reads
  * RevenueCat itself, server to server, and ignores the tier sent here.
  */
-async function syncEntitlementToSupabase(tier: ReelHouseTier): Promise<void> {
+export async function syncEntitlementToSupabase(tier: ReelHouseTier): Promise<void> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    // Whose rank this is, from the session on the phone: `getUser` asks the
+    // network, so a purchase or restore with no signal queued nothing and the
+    // new rank never reached the house. The queue is what carries it later.
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return;
 
-    // A founding seat is never asked to step down (the server refuses it too).
-    const { useAuthStore } = await import('../stores/auth');
-    const currentRole = resolveTier(useAuthStore.getState().user);
-
-    if (currentRole === 'founding' && tier !== 'founding') {
-       logger.info('[revenueCat] Protected manual founding grant from downward sync');
-       return;
-    }
+    // A founding seat is never lowered by a store: grant_entitlement refuses
+    // any provider but 'manual' below auteur for a founding member, whatever
+    // tier this sends (and sync-entitlement reads the store itself anyway).
 
     // Queued (a dropped network only delays it); `user_id` keeps it off the
     // WRONG account (see sync_entitlement in types/mutations.ts).

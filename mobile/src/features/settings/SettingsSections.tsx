@@ -427,7 +427,7 @@ export function AccountSection(props: AccountSectionProps) {
           <Text style={st.fieldLabel} {...scaledTextProps}>BIOMETRIC SECURITY</Text>
           {/* What it guards, all of it: signing out never asks (leaving gives nothing away). */}
           <Text style={st.rowDesc} {...scaledTextProps}>
-            {"Your phone's own lock before your account can be deleted, before this setting changes, and before your own Archive opens."}
+            {"Your phone's own lock before your account can be deleted, before this setting changes, and before your own Archive shows: its room, the Ledger, the calendar and LATELY."}
           </Text>
           <View style={st.toggleUnderDesc}>
             <Controller

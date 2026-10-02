@@ -31,7 +31,6 @@ export const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
   centerFull: { justifyContent: 'center', alignItems: 'center', gap: 16 },
   notFoundText: { color: colors.fog, fontFamily: fonts.body, fontSize: 14, marginTop: 8 },
-  shrinkable: { flexShrink: 1 },
   maxHeight200: { maxHeight: 200 },
   backdropContainer: { height: BACKDROP_H },
   fullSize: { width: '100%', height: '100%' },

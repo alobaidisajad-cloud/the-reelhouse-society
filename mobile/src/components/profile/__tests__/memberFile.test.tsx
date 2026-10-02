@@ -34,7 +34,7 @@ import { join } from 'path';
 import { ProfileTriptych, triptychMetrics, TRIPTYCH_AISLE } from '../ProfileTriptych';
 import { readMounts, pickBackdropFilm, CENTRE_MOUNT, MOUNT_COUNT } from '../favourites';
 import { tally } from '../profileComputed';
-import { ProfileBackdrop, backdropIsOn } from '../ProfileBackdrop';
+import { ProfileBackdrop, backdropIsOn, backdropSource } from '../ProfileBackdrop';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
@@ -569,27 +569,34 @@ describe('the backdrop guards itself, not just where it is called from', () => {
 
   it('refuses to render for a rank below Auteur, whoever calls it', () => {
     for (const tier of [undefined, 'free', 'cinephile', 'archivist']) {
-      const r = render(<ProfileBackdrop user={{ tier, preferences: FAV } as never} logs={[]} />);
+      const r = render(<ProfileBackdrop user={{ tier, preferences: FAV } as never} />);
       expect(r.toJSON()).toBeNull();
     }
   });
 
   it('renders for an Auteur, and for a founding member of any nominal tier', () => {
     for (const user of [{ tier: 'auteur' }, { tier: 'cinephile', is_founding: true }]) {
-      const r = render(<ProfileBackdrop user={{ ...user, preferences: FAV } as never} logs={[]} />);
+      const r = render(<ProfileBackdrop user={{ ...user, preferences: FAV } as never} />);
       expect(r.toJSON()).not.toBeNull();
     }
   });
 
   it('honours the switch even when called directly', () => {
     const off = render(<ProfileBackdrop
-      user={{ tier: 'auteur', preferences: { ...FAV, backdrop: false } } as never} logs={[]} />);
+      user={{ tier: 'auteur', preferences: { ...FAV, backdrop: false } } as never} />);
     expect(off.toJSON()).toBeNull();
+  });
+
+  it('with the triptych empty, no film the member did not choose dresses the page', () => {
+    const auteur = { tier: 'auteur', preferences: { favorites: [] } } as never;
+    expect(backdropSource(auteur)).toBeNull();
+    // @ts-expect-error — it reads no logs: the latest film logged is not a choice.
+    expect(backdropSource(auteur, [{ poster: '/latest.jpg' }])).toBeNull();
   });
 
   it('renders nothing at all rather than an empty frame when there is no art', () => {
     const r = render(<ProfileBackdrop
-      user={{ tier: 'auteur', preferences: { favorites: [] } } as never} logs={[]} />);
+      user={{ tier: 'auteur', preferences: { favorites: [] } } as never} />);
     expect(r.toJSON()).toBeNull();
   });
 });

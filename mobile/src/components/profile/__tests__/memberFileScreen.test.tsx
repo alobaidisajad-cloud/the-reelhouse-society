@@ -359,12 +359,16 @@ describe('the atmosphere behind the plate belongs to the rank', () => {
     expect(r.getByTestId('profile-backdrop')).toBeTruthy();
   });
 
-  it('an Auteur with no favourites falls back rather than showing nothing', async () => {
+  it('an Auteur with no favourites keeps the house\'s dark: the latest film logged is not a choice', async () => {
+    // It once fell back to that film: a small poster stretched full-bleed, the
+    // page's dress changing with every log (a one-reel film included), and
+    // shown from behind the Archive's lock. Edit Profile says the centre of
+    // the triptych dresses the file, and now only that does.
     const r = await mount({}, {
       targetUser: baseUser({ tier: 'auteur', preferences: { favorites: [] } }),
-      mainLogs: [{ id: 'l1', filmId: 1, title: 'A', poster: '/p.jpg', year: 2001, rating: 4, status: 'watched' }],
+      mainLogs: [{ id: 'l1', filmId: 1, title: 'A', poster: '/p.jpg', year: 2001, rating: 1, status: 'watched' }],
     });
-    expect(r.getByTestId('profile-backdrop')).toBeTruthy();
+    expect(r.queryByTestId('profile-backdrop')).toBeNull();
   });
 
   it('no rank below Auteur gets one', async () => {

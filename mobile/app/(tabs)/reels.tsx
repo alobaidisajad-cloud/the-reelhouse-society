@@ -31,7 +31,7 @@ import {
 } from '@/src/components/reels/types';
 import { SharedReelHeader } from '@/src/components/reels/ReelsHeader';
 import { 
-  ProjectorBeam, TungstenSpooling, FilterChip, BrassSheen, FILTER_GAP,
+  ReelProjectorBeam, TungstenSpooling, FilterChip, ReelBrassSheen, FILTER_GAP,
 } from '@/src/components/reels/ReelsCards';
 import { useCommunityFeed, useFollowingFeed, useStacksFeed } from '@/src/hooks/useFeeds';
 import { ReelsFeedList } from '@/src/components/reels/ReelsFeedList';
@@ -367,7 +367,7 @@ export default function ReelScreen() {
         onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.destroy(); nav.push('/list-modal'); }}
         accessibilityRole="button" accessibilityLabel="Curate a collection"
       >
-        <BrassSheen />
+        <ReelBrassSheen />
         <LinearGradient
           colors={['transparent', 'rgba(184,137,26,0.06)', 'transparent']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -435,7 +435,7 @@ export default function ReelScreen() {
         locations={[0, 0.4, 1]}
         style={[StyleSheet.absoluteFillObject, WASH]}
       />
-      <ProjectorBeam scrollY={activeScrollY} />
+      <ReelProjectorBeam scrollY={activeScrollY} />
 
       <Animated.View pointerEvents={section === 'logs' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, logsOpacityStyle]}>
         <ReelsFeedList

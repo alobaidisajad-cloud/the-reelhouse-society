@@ -77,6 +77,8 @@ export const UserSchema = z.object({
   member_no: z.number().nullable().optional(),
   preferences: UserPreferencesSchema.optional(),
   is_banned: z.boolean().optional(),
+  /** When a suspension ends (null when there is none); read by `standingOf`. */
+  suspended_until: z.string().nullable().optional(),
   ban_reason: z.string().optional(),
   social_links: z.union([
     z.record(z.string(), z.string()),

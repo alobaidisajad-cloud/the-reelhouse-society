@@ -10,7 +10,7 @@ import React, { act } from 'react';
 import { Text } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
-import ProfileArchiveTab from '../ProfileArchiveTab';
+import ArchiveLock, { useArchiveLock } from '../ArchiveLock';
 import { nav } from '@/src/utils/typedRouter';
 
 jest.mock('expo-local-authentication', () => ({
@@ -25,16 +25,14 @@ jest.mock('@/src/stores/auth', () => {
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), back: jest.fn() } }));
 
 const LA = LocalAuthentication as unknown as { getEnrolledLevelAsync: jest.Mock; authenticateAsync: jest.Mock };
-const logs = [{ id: 'l1', filmId: 1, title: 'Stalker', status: 'watched', watchedDate: '2026-03-01' }] as never[];
+/** A room as the page draws it: the lock while it stands, the films once it opens. */
+function Room() {
+  const lock = useArchiveLock(true);
+  return lock.locked ? <ArchiveLock onUnlocked={lock.opened} /> : <Text>Stalker</Text>;
+}
 
 const mount = async () => {
-  const r = render(
-    <ProfileArchiveTab
-      logs={logs} archiveFiltered={logs} isSelf archiveSieve="all" setArchiveSieve={jest.fn()}
-      renderPosterCard={(log: { title: string }) => <Text>{log.title}</Text>}
-      groupByMonth={(items) => ({ 'MARCH 2026': items })}
-    />,
-  );
+  const r = render(<Room />);
   await act(async () => { await Promise.resolve(); await Promise.resolve(); });
   return r;
 };

@@ -2,12 +2,26 @@ import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
 import { Platform, AppState } from 'react-native';
 import { authSessionStorage } from './authSessionStorage';
+import { heardRefusal } from './refusalEvents';
 
 // The anon key is public by design: RLS and column grants guard every table.
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'dummy';
 
+/** Every refusal's sentence (HTTP 403) is told to refusalEvents; the response itself is untouched. */
+export const fetchHearingRefusals: typeof fetch = async (input, init) => {
+  const res = await fetch(input, init);
+  if (res.status === 403) {
+    // A copy is read; the caller's own response is untouched.
+    res.clone().json()
+      .then((body: { message?: unknown }) => { if (typeof body?.message === 'string') heardRefusal(body.message); })
+      .catch(() => { /* not JSON: nothing to hear */ });
+  }
+  return res;
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: { fetch: fetchHearingRefusals },
   auth: {
     ...(Platform.OS !== 'web' ? { storage: authSessionStorage } : {}),
     autoRefreshToken: true,

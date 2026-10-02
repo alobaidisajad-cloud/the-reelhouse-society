@@ -4,21 +4,23 @@
  * It named its archetype from a second ladder that borrowed the paid ranks'
  * names ("Archivist" at 15 films, to a member who holds no such rank); below
  * five films it drew nothing, so VIEW CINEMA DNA did nothing; it read from the
- * logs in hand when the record had not arrived; and with no member number it
- * printed the film count as one.
+ * logs in hand when the record had not arrived; with no member number it
+ * printed the film count as one; and its OBSCURITY INDEX was worked out from
+ * the average rating and the film count, not from the films.
  */
 import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { CinemaDNACard } from '../CinemaDNACard';
 import type { ProfileAnalyticsPayload } from '../NoirPassport';
+import { obscurityScore } from '@/src/lib/tmdb';
 
-const record = (total: number): ProfileAnalyticsPayload => ({
+const record = (total: number, obscurity: number | null = 73): ProfileAnalyticsPayload => ({
   stamps: {
     total_logs: total, pre_1960_count: 0, perfect_ratings_count: 0, has_physical_media: false,
     has_abandoned: false, decades_logged_count: 3, has_rewatched: false,
     reviews_count: 0, genres_count: 0, busiest_day_count: 0, unrated_count: 0,
   },
-  dna: { avg_rating: 3.6, top_decades: [{ '1970s': 40 }, { '1990s': 30 }] },
+  dna: { avg_rating: 3.6, top_decades: [{ '1970s': 40 }, { '1990s': 30 }], obscurity_index: obscurity, obscurity_films: obscurity === null ? 0 : 118 },
 });
 
 it('names the standing from the house\'s one ladder, never a paid rank', () => {
@@ -26,6 +28,19 @@ it('names the standing from the house\'s one ladder, never a paid rank', () => {
   expect(r.getByText('THE ORACLE')).toBeTruthy();
   expect(r.queryByText('Archivist')).toBeNull();
   expect(r.getByText('MEMBER Nº 0042')).toBeTruthy();
+});
+
+it('the OBSCURITY INDEX is the record\'s measure of the films, and with none measured says none', () => {
+  // The old sum for this record was 40 + (5 − 3.6) × 12 + 30 = 87.
+  expect(render(<CinemaDNACard user={{ username: 'vesper' }} analytics={record(120)} onClose={jest.fn()} />).getByText('73')).toBeTruthy();
+  const r = render(<CinemaDNACard user={{ username: 'vesper' }} analytics={record(120, null)} onClose={jest.fn()} />);
+  expect(r.queryByText('87')).toBeNull();
+  // A dash is a mark, not a word: drawn, and kept from the screen reader.
+  expect(r.getAllByText('—', { includeHiddenElements: true }).length).toBeGreaterThan(0);
+});
+
+it('the film page\'s mark is the one the record averages (the rehearsal reads the same four from the database)', () => {
+  expect([5000, 1, 0, Math.sqrt(5000)].map((popularity) => obscurityScore({ popularity }))).toEqual([2, 99, 99, 51]);
 });
 
 it('with no member number on file, invents none', () => {

@@ -221,3 +221,5 @@ Decisions, as of 2026-09-28:
 | File | What it reads |
 |---|---|
 | `mockups/paper/__tests__/zz-paper.gen.test.tsx` | Poster art and fixture JSON for its drawings. |
+| `src/theme/__tests__/everyStyleIsRead.guard.test.ts` | Every key of every StyleSheet is read somewhere in the app: a style nobody draws renders nothing, so no render can find it. |
+| `src/components/__tests__/aComponentHasOneName.guard.test.ts` | Which module exports a component name: a fact about the code that no render shows. |

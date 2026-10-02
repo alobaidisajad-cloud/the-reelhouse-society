@@ -148,7 +148,7 @@ export const CritiqueHead = memo(function CritiqueHead({
  * own answer; the control is absent here and the function refuses it too, so
  * hiding a button is never the only thing standing in the way.
  */
-export const CritiqueRow = memo(function CritiqueRow({
+export const PaperCritiqueRow = memo(function PaperCritiqueRow({
   c, canTake, top, onCertify, onTake, onAuthor, onDelete, onReport,
 }: {
   c: Critique; canTake?: boolean; top?: boolean;

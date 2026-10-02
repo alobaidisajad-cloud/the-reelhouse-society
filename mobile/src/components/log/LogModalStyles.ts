@@ -58,7 +58,6 @@ export const st = StyleSheet.create({
     formScroll: { flex: 1 },
     formContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 80 },
     sec: { marginBottom: 20 },
-    input: { backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
     // No marginBottom: this sits INSIDE the bracket, whose own padding sets the
     // inset. A margin here pushed the bottom brackets 24pt below the poster —
     // 14pt of air above the docket and 38 below it.
@@ -126,7 +125,6 @@ export const st = StyleSheet.create({
     spoilerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48 },
     cbox: { width: 16, height: 16, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     cboxOn: { backgroundColor: colors.bloodReel, borderColor: colors.bloodReel },
-    cboxSepia: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     spoilerText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 0.6, includeFontPadding: false },
     charCount: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, includeFontPadding: false },
     charCountWarn: { color: colors.flicker },
@@ -149,18 +147,6 @@ export const st = StyleSheet.create({
     vaultKeptRemoveText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.parchment },
 
     // Editorial (dead-dup keys kept swept — leaf owns live styles)
-    editDesk: { padding: 16, borderWidth: 1, borderColor: colors.sepia, borderRadius: 6, backgroundColor: 'rgba(184,137,26,0.05)', gap: 16, marginBottom: 20 },
-    editRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    editLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.bone, marginBottom: 8, includeFontPadding: false },
-    editToggleText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, includeFontPadding: false },
-    pullQuoteInput: { backgroundColor: 'rgba(13,11,9,0.8)', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sepia, borderRadius: 4, padding: 12, fontFamily: fonts.sub, fontSize: 14, fontStyle: 'italic', color: colors.parchment },
-    stillThumb: { width: 80, height: 45, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
-    stillActive: { backgroundColor: colors.sepia, borderColor: colors.sepia, borderWidth: 2 },
-    stillNone: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, includeFontPadding: false },
-    stillImg: { width: 80, height: 45, borderRadius: 2, borderWidth: 1, borderColor: 'transparent' },
-    stillImgActive: { borderWidth: 2, borderColor: colors.sepia },
-    stillImgFaded: { opacity: 0.4 },
-    stillNoneActive: { color: colors.ink },
     noData: { fontFamily: fonts.body, fontSize: 11, color: colors.fog },
     retrySpace: { marginTop: 8, alignSelf: 'flex-start' },
 
@@ -227,7 +213,6 @@ export const st = StyleSheet.create({
     // Submit — SEAL THE RECORD
     discardBtn: { minHeight: 48, justifyContent: 'center' },
     cancelText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog, includeFontPadding: false },
-    flatListGap: { gap: 8 },
     flatListGapPad: { gap: 8, paddingVertical: 4 },
 
     // Autocomplete suggestions

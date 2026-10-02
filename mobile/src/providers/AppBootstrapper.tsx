@@ -20,6 +20,25 @@ import { flushOfflineQueue } from '../utils/offlineQueue';
 import { resolveTier } from '../utils/tier';
 
 /**
+ * What a developer reads when a build is missing its server settings: one line
+ * each, real line breaks (the boot check itself stands down under jest, so this
+ * is where the words are tested).
+ */
+export function describeMissingEnv(missing: string[]): string {
+  return [
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    '  [FATAL] Missing required environment variables:',
+    ...missing.map((key) => `    ✗ ${key}`),
+    '',
+    '  Create a .env file in the project root with:',
+    ...missing.map((key) => `    ${key}=<your-value>`),
+    '',
+    '  See .env.example for reference.',
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+  ].join('\n');
+}
+
+/**
  * AppBootstrapper (Headless Component)
  * ─────────────────────────────────────────────────────────────
  * Decouples 3rd-party SDK initialization, background sync, and
@@ -45,18 +64,7 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
           missing.push('EXPO_PUBLIC_SUPABASE_ANON_KEY');
         }
         if (missing.length > 0 && !process.env.JEST_WORKER_ID) {
-          const message = [
-            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-            '  [FATAL] Missing required environment variables:',
-            ...missing.map((key) => `    ✗ ${key}`),
-            '',
-            '  Create a .env file in the project root with:',
-            ...missing.map((key) => `    ${key}=<your-value>`),
-            '',
-            '  See .env.example for reference.',
-            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-          ].join('\n');
-          throw new Error(message);
+          throw new Error(describeMissingEnv(missing));
         }
 
         // ── Sentry User Context ──

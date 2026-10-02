@@ -88,3 +88,18 @@ describe('useBanCheck — checkBan (the guard callers use)', () => {
     expect((reelToast as any).error).not.toHaveBeenCalled();
   });
 });
+
+describe('useBanCheck — a suspension', () => {
+  // It read a ban and never a suspension: a suspended member wrote, and was
+  // refused by the server into a "could not save" that no retry could answer.
+  it('stops a suspended member and says until when', () => {
+    asUser({ id: 'u1', is_banned: false, suspended_until: new Date(Date.now() + 3_600_000).toISOString() });
+    expect(useBanCheck().checkBan()).toBe(true);
+    expect((reelToast as any).error).toHaveBeenCalledWith(expect.stringMatching(/^Your account is suspended until .+, \d{2}:\d{2} (AM|PM)\.$/));
+  });
+
+  it('a suspension that has ended stops nothing', () => {
+    asUser({ id: 'u1', is_banned: false, suspended_until: new Date(Date.now() - 3_600_000).toISOString() });
+    expect(useBanCheck().checkBan()).toBe(false);
+  });
+});

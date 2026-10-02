@@ -90,7 +90,10 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
         }
     }
 
-    const obscurityScore = Math.round(40 + (5 - (avgRatingNum || 3)) * 12 + Math.min(totalCount, 30));
+    // The film page's obscurity mark, averaged over the member's films the
+    // house has read (get_public_profile_analytics); none read yet, none said.
+    const measured = analytics?.dna?.obscurity_index;
+    const obscurityIndex = typeof measured === 'number' ? String(measured) : '—';
 
     // The house's one ladder (the Projector's STANDING), never a second one
     // that borrows the paid ranks' names.
@@ -170,7 +173,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
 
                 <View style={s.obscurityWrap}>
                     <Text {...scaledTextProps} style={s.obscurityLabel}>OBSCURITY INDEX</Text>
-                    <Text {...scaledTextProps} style={s.obscurityVal}>{obscurityScore}</Text>
+                    <Text {...scaledTextProps} style={s.obscurityVal}>{obscurityIndex}</Text>
                 </View>
 
                 <View style={s.footer}>

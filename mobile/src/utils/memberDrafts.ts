@@ -34,7 +34,7 @@
  * signed out since that draft was written and it is theirs. Anything else is
  * unattributable, and an unattributable private note is not a thing to gamble.
  */
-import { storage } from '@/src/stores/mmkv-storage';
+import { storage, isStorageEncrypted } from '@/src/stores/mmkv-storage';
 import { logger } from '@/src/utils/logger';
 
 /** Everything a member leaves unfinished shares this, so one sweep clears it. */
@@ -155,6 +155,10 @@ export function writeDraft<T>(
   userId: string | null | undefined, kind: DraftKind, data: T, scope?: string,
 ): boolean {
   if (!userId) return false;
+  // A draft is the member's own writing, private notes among it: on a phone
+  // whose keystore failed, kept off the disk like everything else they wrote
+  // (`setSensitive`). The room says it was not saved.
+  if (!isStorageEncrypted()) return false;
   try {
     const envelope: DraftEnvelope<T> = {
       v: DRAFT_VERSION, savedAt: new Date().toISOString(), data,
@@ -270,7 +274,7 @@ export function adoptLegacyDrafts(userId: string | null | undefined): void {
     const legacy = safeGet(key);
     if (legacy === undefined) continue;
 
-    if (becomes && provablyTheirs && !safeGet(draftKey(userId, becomes))) {
+    if (becomes && provablyTheirs && isStorageEncrypted() && !safeGet(draftKey(userId, becomes))) {
       try {
         // Wrapped into an envelope so it is read like everything else. The old
         // payload becomes `data` and keeps every field it had.

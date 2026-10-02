@@ -214,9 +214,16 @@ export async function flushOfflineQueue() {
     try {
         const { data: banProfile } = await supabase
             .from('profiles')
-            .select('is_banned')
+            .select('is_banned, suspended_until')
             .eq('id', authenticatedUserId)
             .single();
+        // A suspension ends: what was written is held until it does, not thrown
+        // away refused (the queue's own day-old rule still applies).
+        const suspendedUntil = banProfile?.suspended_until ? Date.parse(banProfile.suspended_until) : NaN;
+        if (!banProfile?.is_banned && Number.isFinite(suspendedUntil) && suspendedUntil > Date.now()) {
+            logger.warn('[OfflineSync] Member is suspended — holding the queue until it ends.');
+            return;
+        }
         if (banProfile?.is_banned) {
             logger.warn('[OfflineSync] User is banned — purging write queue to dead-letter.');
             const bannedMutations = readQueue().map(m => ({

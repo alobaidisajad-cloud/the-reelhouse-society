@@ -193,6 +193,8 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/surface-jest-failure.sh | — |  |
 | scripts/test-timezones.js | 2026-09-29 | the batch story reduced to the fact it guards |
 | src/assets/logo/reelhouse-logo-data.ts | — |  |
+| src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-02 | Written in the launch audit: no two modules export a component under one name. |
+| src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
@@ -495,6 +497,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/person/personStyles.ts | 2026-10-01 | histories to the present |
 | src/components/Preloader.tsx | 2026-10-02 | Read whole (launch audit). A comment about a noise overlay that was never drawn removed. |
 | src/components/PressableScale.tsx | 2026-10-02 | Read whole (launch audit). A suspected dropped disabled state was disproved (RN's Pressable merges it). Sound; left alone. |
+| src/components/profile/__tests__/aNameIsEarnedOnce.test.ts | 2026-10-02 | Written in the launch audit: no honour or stamp shares a name or borrows a rank's. |
 | src/components/profile/__tests__/anEmptyLedgerSaysSo.test.tsx | 2026-10-01 | written: an empty ledger is said as one |
 | src/components/profile/__tests__/anHonourIsNeverBroken.test.tsx | — |  |
 | src/components/profile/__tests__/aRoomKeepsWhatTheServerFound.test.ts | 2026-10-01 | written: a room's search on the phone is the server's |
@@ -521,6 +524,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/roomSearchWiring.test.tsx | — |  |
 | src/components/profile/__tests__/roomsRender.test.tsx | — |  |
 | src/components/profile/__tests__/taste.test.tsx | — |  |
+| src/components/profile/__tests__/theArchiveIsHeldWhereverItShows.test.tsx | 2026-10-02 | Written in the launch audit: the Archive's lock holds every place the own file shows it. |
 | src/components/profile/__tests__/theArchiveLockHolds.test.tsx | 2026-10-01 | written: the archive lock holds |
 | src/components/profile/__tests__/theCalendarDrawsToday.test.tsx | 2026-10-01 | written: the calendar draws today and counts what it draws |
 | src/components/profile/__tests__/theDnaCardReadsTheRecord.test.tsx | 2026-10-01 | written: the DNA card reads the record and always opens |
@@ -594,6 +598,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/society/SocietyPoster.tsx | 2026-10-02 | read; sound |
 | src/components/society/societyPricing.ts | 2026-10-02 | never a static dollar price for a product the store answered without |
 | src/components/SpoilerVeil.tsx | 2026-10-01 | veiled from the first frame |
+| src/components/StandingNotice.tsx | 2026-10-02 | Written in the launch audit: the notice a silenced or suspended member reads while it lasts. |
 | src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | — |  |
 | src/components/text/AnimatedText.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/text/index.tsx | 2026-10-01 | the fourth promise: a word stops at the floor |
@@ -711,6 +716,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
 | src/hooks/useUpdateUser.ts | 2026-10-02 | read; sound |
 | src/hooks/useVault.ts | 2026-10-01 | reload, for a Vault that could not open |
+| src/lib/__tests__/aRankBoughtOfflineIsKept.test.ts | 2026-10-02 | Written in the launch audit: a rank bought with no signal is queued from the session. |
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | — |  |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | — |  |
 | src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-01 | written: the unread-error sweep, both shapes |
@@ -729,6 +735,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/pushNotifications.ts | 2026-10-02 | the foreground handler is set as the module loads; comments say what is true |
 | src/lib/pushPrimer.ts | 2026-10-01 | new: the house asks to send word at a moment that wants it |
 | src/lib/queryClient.ts | 2026-10-02 | read; sound |
+| src/lib/refusalEvents.ts | 2026-10-02 | Written in the launch audit: every refusal's sentence, for whoever listens. |
 | src/lib/revenueCat.ts | 2026-10-02 | Read whole (launch audit). syncEntitlementToSupabase asks auth.getUser (the network) for an id the session holds, so offline it queues nothing: left for the payments pass, as the owner set. |
 | src/lib/scrollBridge.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lib/sentry.ts | 2026-10-02 | Read whole (launch audit). The re-export was said to be for an ErrorBoundary wrapper in _layout; its one caller tags the session. |
@@ -737,6 +744,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/tmdbErrors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lore/fragments.ts | — |  |
 | src/providers/__tests__/androidTracking.test.ts | — |  |
+| src/providers/__tests__/theMissingSettingsAreNamed.test.ts | 2026-10-02 | Written in the launch audit: the missing-settings message, one line each. |
 | src/providers/androidTracking.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/providers/AppBootstrapper.tsx | 2026-10-02 | the env message breaks its lines; the handle door through nav |
 | src/providers/FilmDetailProvider.tsx | 2026-10-01 | reviewsFailed and playVideo, said |
@@ -880,6 +888,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/test-support/swallowedTypeError.ts | — |  |
 | src/theme/__tests__/aPhotographIsNotLit.test.ts | — |  |
 | src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts | 2026-10-01 | written: the flat-but-elevated ratchet |
+| src/theme/__tests__/everyStyleIsRead.guard.test.ts | 2026-10-02 | Written in the launch audit: every style a sheet defines is drawn by the app. |
 | src/theme/__tests__/lightFloor.test.ts | — |  |
 | src/theme/__tests__/nothingOvershoots.guard.test.ts | — |  |
 | src/theme/__tests__/theGroundLadder.test.ts | — |  |
@@ -904,12 +913,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/social.types.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
 | src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): the cap, the excerpt and the drop cap cut between characters. |
+| src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
 | src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-02 | a hidden pressable is hidden whole (no-hide-descendants) |
 | src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts | 2026-10-01 | new |
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/appConfig.guard.test.ts | — |  |
 | src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
+| src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-10-02 | Written in the launch audit: a suspended member's queued writes wait for the end. |
 | src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | — |  |
 | src/utils/__tests__/boundedCounts.guard.test.ts | — |  |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
@@ -1026,6 +1037,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/sanitizeInput.ts | 2026-10-02 | Read whole (launch audit). Stripped the two joiners everywhere: gendered and family emoji fell apart and Persian words lost their ZWNJ. Kept now where they join (emoji, joining scripts), stripped everywhere else. |
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/softBreak.ts | 2026-10-02 | Read whole (launch audit). Its blind cut could fall inside an emoji (a skin tone, a joined sequence): it waits for the next character to start. |
+| src/utils/standing.ts | 2026-10-02 | Written in the launch audit: the member's standing, read with the profile and on refusal. |
 | src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |

@@ -22,7 +22,7 @@ import {
   PaperSheet, DayDivider, Ornament, RunningHead,
 } from '@/src/components/dispatch/paper/PaperFrame';
 import {
-  CritiqueSpine, CritiqueHead, CritiqueRow, CritiqueFooter,
+  CritiqueSpine, CritiqueHead, PaperCritiqueRow, CritiqueFooter,
   CritiqueComposer, PostDock as RawPostDock, type Critique,
 } from '@/src/components/dispatch/paper/PaperCritiques';
 import {
@@ -571,8 +571,7 @@ add('c1-critiques-scale', (
     <CritiqueSpine kind="TAKE" opening={LONGEST} count={5218} />
     <PaperSheet>
       <CritiqueHead count={5218} order="CERTIFIED" />
-      {CRITS.map((c, i) => <CritiqueRow key={c.id} c={c} top={i === 0} />)}
-      <View style={p.fill} />
+      {CRITS.map((c, i) => <PaperCritiqueRow key={c.id} c={c} top={i === 0} />)}
       <CritiqueFooter shown={30} total={5218} onMore={NOOP} />
     </PaperSheet>
     <PostDock certifyCount={2140} commentCount={5218} certified />
@@ -584,8 +583,8 @@ add('c2-critiques-composing', (
     <CritiqueSpine kind="TAKE" opening={LONGEST} count={5218} />
     <PaperSheet>
       <CritiqueHead count={5218} order="NEWEST" />
-      <CritiqueRow c={{ id: 'mine', author: ANA, body: 'Filed a moment ago, sitting at the top of NEWEST where I can see it.', certifyCount: 0, age: 'NOW', mine: true }} />
-      {CRITS.slice(0, 2).map((c) => <CritiqueRow key={c.id} c={c} />)}
+      <PaperCritiqueRow c={{ id: 'mine', author: ANA, body: 'Filed a moment ago, sitting at the top of NEWEST where I can see it.', certifyCount: 0, age: 'NOW', mine: true }} />
+      {CRITS.slice(0, 2).map((c) => <PaperCritiqueRow key={c.id} c={c} />)}
     </PaperSheet>
     <CritiqueComposer me={ANA} />
   </View>
@@ -596,9 +595,8 @@ add('c3-answers-seeking', (
     <CritiqueSpine kind="SEEKING" opening="something to watch after a funeral. No irony, no uplift. I have three hours." count={22} />
     <PaperSheet>
       <CritiqueHead count={22} order="CERTIFIED" />
-      <CritiqueRow canTake top c={{ id: 'a1', author: MIRA, film: COME, body: 'Two hours twenty, and you will not want company afterwards. That is the point.', certifyCount: 61, certified: true, age: '3 HR' }} />
-      <CritiqueRow canTake c={{ id: 'a2', author: SAM, film: STALKER, body: 'Not what you asked for. Put it on anyway.', certifyCount: 8, age: '4 HR' }} />
-      <View style={p.fill} />
+      <PaperCritiqueRow canTake top c={{ id: 'a1', author: MIRA, film: COME, body: 'Two hours twenty, and you will not want company afterwards. That is the point.', certifyCount: 61, certified: true, age: '3 HR' }} />
+      <PaperCritiqueRow canTake c={{ id: 'a2', author: SAM, film: STALKER, body: 'Not what you asked for. Put it on anyway.', certifyCount: 8, age: '4 HR' }} />
       <CritiqueFooter shown={22} total={22} onMore={NOOP} />
     </PaperSheet>
     <PostDock certifyCount={47} commentCount={22} />
@@ -1198,7 +1196,7 @@ add('z4-critiques-loading-more', (
       opening="Stalker is not slow, it is patient, and there is a difference nobody making films today seems to understand any more." />
     <PaperSheet>
       <CritiqueHead count={5218} order="NEWEST" />
-      {CRITS.slice(0, 2).map((c) => <CritiqueRow key={c.id} c={c} />)}
+      {CRITS.slice(0, 2).map((c) => <PaperCritiqueRow key={c.id} c={c} />)}
       <CritiqueFooter shown={30} total={5218} loading onMore={NOOP} />
     </PaperSheet>
     <PostDock certifyCount={2140} commentCount={5218} certified saved />
@@ -1253,7 +1251,7 @@ add('t7-se-critiques', (
     <CritiqueSpine kind="TAKE" opening={LONGEST} count={5218} />
     <PaperSheet>
       <CritiqueHead count={5218} order="CERTIFIED" />
-      {CRITS.map((c, i) => <CritiqueRow key={c.id} c={c} top={i === 0} />)}
+      {CRITS.map((c, i) => <PaperCritiqueRow key={c.id} c={c} top={i === 0} />)}
       <CritiqueFooter shown={30} total={5218} onMore={NOOP} />
     </PaperSheet>
     <PostDock certifyCount={2140} commentCount={5218} certified saved />
