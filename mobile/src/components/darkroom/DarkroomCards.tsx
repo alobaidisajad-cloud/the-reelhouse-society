@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation, useReducedMotion } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import { Bookmark } from 'lucide-react-native';
 
 import { colors, fonts, SEPIA_HASH, castOf, liftOf } from '@/src/theme/theme';
@@ -62,7 +62,7 @@ export const DarkroomAtmo = React.memo(function DarkroomAtmo() {
 export const AnimatedPosterSkeleton = React.memo(function AnimatedPosterSkeleton({ sharedOp }: { sharedOp?: any }) {
   const localOp = useSharedValue(0.4);
   const op = sharedOp || localOp;
-  
+
   useEffect(() => {
     if (!sharedOp) {
       op.value = withRepeat(withTiming(0.8, { duration: 1000, easing: Easing.inOut(Easing.ease) }), -1, true);
@@ -70,7 +70,7 @@ export const AnimatedPosterSkeleton = React.memo(function AnimatedPosterSkeleton
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sharedOp]);
-  
+
   const animStyle = useAnimatedStyle(() => ({ opacity: op.value }));
   return (
     <Animated.View style={[s.posterWrap, animStyle, { backgroundColor: 'rgba(30,25,20,0.7)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.06)' }]} />
@@ -78,7 +78,6 @@ export const AnimatedPosterSkeleton = React.memo(function AnimatedPosterSkeleton
 });
 
 export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: DiscoverFilm }) {
-  const router = useRouter();
   const isPerson = item.media_type === 'person';
   const isLogged = useFilmStore((s: any) => !isPerson && !!s._loggedIndex[item.id]);
   const isSaved = useFilmStore((s: any) => !isPerson && !!s._watchlistIndex[item.id]);
@@ -95,7 +94,7 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
   const posterUri = posterPath ? (isPerson ? tmdb.profile(posterPath, 'w185') : tmdb.poster(posterPath, 'w342')) : null;
 
   const handlePress = () => {
-    (router.push as any)((isPerson ? `/person/${item.id}` : `/film/${item.id}`) as any);
+    nav.push(isPerson ? `/person/${item.id}` : `/film/${item.id}`);
   };
 
   const isMutatingWatchlist = useRef(false);
@@ -108,7 +107,7 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
 
   const toggleWatchlist = async () => {
     if (!isAuthenticated) {
-      (router.push as any)('/login' as any);
+      nav.push('/login');
       return;
     }
     if (isMutatingWatchlist.current) return;
@@ -150,11 +149,11 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
                   paper in the tray. Native GPU crossfade: zero JS cost. */}
               <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={300} contentFit="cover" />
               {/* Soft tactical tungsten edge mapping */}
-              <LinearGradient 
-                colors={['rgba(255,255,255,0.08)', 'transparent', 'rgba(13,11,9,0.9)']} 
-                locations={[0, 0.4, 1]} 
-                style={StyleSheet.absoluteFillObject} 
-                pointerEvents="none" 
+              <LinearGradient
+                colors={['rgba(255,255,255,0.08)', 'transparent', 'rgba(13,11,9,0.9)']}
+                locations={[0, 0.4, 1]}
+                style={StyleSheet.absoluteFillObject}
+                pointerEvents="none"
               />
               <View style={s.posterBorderEngrave} pointerEvents="none" />
             </>
@@ -191,8 +190,8 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
       </View>
 
       {!isPerson && (
-        <PressableScale 
-          style={[s.quickSaveIcon, isSaved ? s.quickSaveIconActive : s.quickSaveIconInactive]} 
+        <PressableScale
+          style={[s.quickSaveIcon, isSaved ? s.quickSaveIconActive : s.quickSaveIconInactive]}
           onPress={toggleWatchlist}
           haptic="light"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -206,7 +205,7 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
   );
 });
 
- 
+
 export const DarkroomSuggestionRow = React.memo(({ item, onPress }: { item: DiscoverFilm; onPress: (item: DiscoverFilm) => void }) => {
   const isPerson = item.media_type === 'person';
   const imgPath = isPerson ? item.profile_path : item.poster_path;
@@ -229,7 +228,7 @@ export const DarkroomSuggestionRow = React.memo(({ item, onPress }: { item: Disc
       ) : (
         <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm, s.suggestionImgPlaceholder]} />
       )}
-      
+
       <View style={s.suggestionInfo}>
         <Text style={s.suggestionTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{isPerson ? item.name : item.title}</Text>
         <Text style={s.suggestionSubTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>

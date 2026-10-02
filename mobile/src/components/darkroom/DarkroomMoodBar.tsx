@@ -1,6 +1,4 @@
-// ============================================================
-// DarkroomMoodBar — extracted from DarkroomHeader.tsx
-// ============================================================
+/** DarkroomMoodBar — the moods a member can develop by, one chosen at a time. */
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -18,17 +16,16 @@ interface DarkroomMoodBarProps {
 export const DarkroomMoodBar = React.memo(function DarkroomMoodBar({
   mood, handleSelectMood,
 }: DarkroomMoodBarProps) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const keyExtractor = React.useCallback((v: typeof MOODS[number]) => v.label, []);
-
   const renderItem = React.useCallback(({ item }: { item: typeof MOODS[number] }) => {
     const active = mood?.label === item.label;
     return (
-      <PressableScale hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }}
+      <PressableScale key={item.label} hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }}
         onPress={() => handleSelectMood(item)}
         style={[s.moodCard, active && { backgroundColor: item.color, borderColor: item.accent }]}
         haptic="medium"
-        accessibilityLabel={`Mood: ${item.label}${active ? ', selected' : ''}`}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
+        accessibilityLabel={`${item.label} mood. ${item.sub}`}
       >
         {(() => {
           const IconComp = MOOD_ICONS[item.icon];
@@ -73,7 +70,7 @@ export const DarkroomMoodBar = React.memo(function DarkroomMoodBar({
 
 DarkroomMoodBar.displayName = 'DarkroomMoodBar';
 
-// ── Styles — copied PIXEL-PERFECT from DarkroomHeader.tsx ──
+// ── Styles ──
 const s = StyleSheet.create({
   moodSection: {
     marginBottom: 20,

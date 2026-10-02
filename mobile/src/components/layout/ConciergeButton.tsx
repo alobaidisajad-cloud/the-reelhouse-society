@@ -46,7 +46,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { useRouter, type Href } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus, Film, ListPlus, PenLine } from 'lucide-react-native';
 
@@ -220,7 +220,6 @@ ConciergeCard.displayName = 'ConciergeCard';
 export const ConciergeButton = memo(function ConciergeButton() {
   const [visible, setVisible] = useState(false);
   const [open, setOpen] = useState(false);
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
@@ -230,13 +229,13 @@ export const ConciergeButton = memo(function ConciergeButton() {
 
   // Where the chosen door leads. Held here rather than pushed immediately —
   // see PRESENTATION LAW above.
-  const pending = useRef<Href | null>(null);
+  const pending = useRef<string | null>(null);
 
   const flush = useCallback(() => {
     const route = pending.current;
     pending.current = null;
-    if (route) (router.push as (href: Href) => void)(route);
-  }, [router]);
+    if (route) nav.push(route);
+  }, []);
 
   const finishClose = useCallback(() => {
     setVisible(false);
@@ -277,14 +276,14 @@ export const ConciergeButton = memo(function ConciergeButton() {
     progress.value = withTiming(1, { duration: OPEN_MS, easing: Easing.out(Easing.quad) });
   }, [progress]);
 
-  const handleAction = useCallback((route: Href) => {
+  const handleAction = useCallback((route: string) => {
     TactileEngine.selection();
     pending.current = route;
     closeSheet();
   }, [closeSheet]);
 
-  const onLog = useCallback(() => handleAction('/log-modal' as Href), [handleAction]);
-  const onStack = useCallback(() => handleAction('/list-modal' as Href), [handleAction]);
+  const onLog = useCallback(() => handleAction('/log-modal'), [handleAction]);
+  const onStack = useCallback(() => handleAction('/list-modal'), [handleAction]);
   /**
    * The third act. It opens the picker rather than a desk, because "file to the
    * Dispatch" is five things and the concierge's job is to hand you the right
@@ -295,7 +294,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
    * a long form and a ballot before they can use them. Gating the whole row
    * would hide the tier's value from exactly the people it is sold to.
    */
-  const onFile = useCallback(() => handleAction('/dispatch/compose' as Href), [handleAction]);
+  const onFile = useCallback(() => handleAction('/dispatch/compose'), [handleAction]);
 
   const backdropStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
 
@@ -335,7 +334,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
         // guard against double-pushes only buys a dead tap here.
         debounceMs={0}
         accessibilityLabel="Create"
-        accessibilityHint="Opens the concierge: log a film, or curate a stack"
+        accessibilityHint="Opens the concierge: log a film, curate a stack, or file to the Dispatch"
       >
         <BrassDisc rotation={rotation} />
       </PressableScale>

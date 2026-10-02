@@ -684,3 +684,32 @@ describe('TribunalScreen Integration', () => {
     });
   });
 });
+
+describe('the Tribunal says what it knows', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAuthStore.user = ADMIN_USER;
+    mockGetPriorityQueue.mockResolvedValue([]);
+    mockGetModerationHistoryForUsers.mockResolvedValue({});
+  });
+
+  it('a docket that could not be read counts nothing', async () => {
+    // It said "0 matters await judgment" above "The docket could not be reached."
+    mockGetPendingReports.mockRejectedValue(new Error('Network request failed'));
+    const { getByText, queryByText } = renderTribunal();
+    await waitFor(() => expect(getByText('The docket could not be read')).toBeTruthy());
+    expect(queryByText(/0 matters await judgment/)).toBeNull();
+  });
+
+  it('a ban is said as the house enforces it: until an admin lifts it', async () => {
+    mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const { getAllByLabelText } = renderTribunal();
+    await waitFor(() => expect(getAllByLabelText('Ban member').length).toBeGreaterThan(0));
+    await act(async () => { await fireEvent.press(getAllByLabelText('Ban member')[0]); });
+    const [, message] = alertSpy.mock.calls[alertSpy.mock.calls.length - 1] as [string, string];
+    expect(message).toMatch(/until an admin lifts it/);
+    expect(message).not.toMatch(/permanently/i);
+    alertSpy.mockRestore();
+  });
+});

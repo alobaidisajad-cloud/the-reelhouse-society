@@ -19,6 +19,7 @@ import Buster from '@/src/components/Buster';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
+import { TryAgainLine } from '@/src/components/TryAgain';
 
 import { DarkroomHeader } from '@/src/components/darkroom/DarkroomHeader';
 import { FilmGridCard, AnimatedPosterSkeleton } from '@/src/components/darkroom/DarkroomCards';
@@ -45,7 +46,9 @@ export default function DarkRoomScreen() {
   const [unreachable, setUnreachable] = useState(false);
   const [asked, setAsked] = useState(0);
   const askAgain = useCallback(() => setAsked((n) => n + 1), []);
-  
+  /** The next batch could not be read: the grid says so instead of simply ending. */
+  const [moreFailed, setMoreFailed] = useState(false);
+
   const {
     page, mood, query, accumulatedFilms, filters,
     setPage, setAccumulatedFilms, clearFilters: clearAllFilters, clearSearch: clearAllSearch
@@ -70,11 +73,6 @@ export default function DarkRoomScreen() {
   const viewHeight = useSharedValue(0);
   const isScrolling = useSharedValue(false);
   const skeletonOpacity = useSharedValue(0.4);
-
-  // The skeleton pulse is started further down, once `showSkeleton` is known.
-  // It used to start here with `[]` deps and cancel only on unmount — and a tab
-  // screen never unmounts, so it drove the UI thread for the whole session, on
-  // every tab, long after the posters had arrived.
 
   // Reset scroll bridge so NavBar returns to transparent on this tab
   useEffect(() => { globalScrollY.value = 0; }, []);
@@ -107,9 +105,7 @@ export default function DarkRoomScreen() {
     return rawKey.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 128);
   }, [isSearching, query, mood, filters]);
 
-  // Hoisted out of renderEmpty so the pulse below can be gated on it. Parking
-  // this on focus alone would not have been enough — it would still have run
-  // the entire time you sat on the Darkroom, skeleton or no skeleton.
+  // The skeleton pulses only while it is drawn and the tab is in view.
   const showSkeleton = loading || (cacheKey !== lastFetchedKey && network.isConnected !== false);
   const readyMark = useScreenReady('darkroom', !showSkeleton);
 
@@ -138,6 +134,9 @@ export default function DarkRoomScreen() {
     }
     return [];
   }, [accumulatedFilms, page, cacheKey]);
+
+  // A new search or filter is a new grid: what its last batch could not reach is not this one's.
+  useEffect(() => { setMoreFailed(false); }, [cacheKey]);
 
   // -- Main Fetching Logic --
   useEffect(() => {
@@ -189,7 +188,7 @@ export default function DarkRoomScreen() {
           };
           if (filters.genreId) params.with_genres = filters.genreId;
           else if (mood) params.with_genres = mood.genre;
-          
+
           if (filters.yearFrom || filters.yearTo) {
             if (filters.yearFrom) params['primary_release_date.gte'] = `${filters.yearFrom}-01-01`;
             if (filters.yearTo) params['primary_release_date.lte'] = `${filters.yearTo}-12-31`;
@@ -199,7 +198,7 @@ export default function DarkRoomScreen() {
           }
           if (filters.language) params.with_original_language = filters.language;
           if (filters.minRating > 0) params['vote_average.gte'] = filters.minRating;
-          
+
           const strParams: Record<string, string> = {};
           for (const [k, v] of Object.entries(params)) strParams[k] = String(v);
           const discoverRes = await tmdb.discover(strParams);
@@ -219,24 +218,12 @@ export default function DarkRoomScreen() {
           // Detect network failure to prevent permanent page skipping
           if (isNetworkFailure && page > 1) {
             useDiscoverStore.getState().setPage(page - 1);
-            return; // Gracefully abort this cycle, let the rollback re-trigger cache
+            setMoreFailed(true);
+            return;
           }
 
-          // People need a face; films need a name.
-          //
-          // This used to require `poster_path || profile_path`, which silently
-          // deleted every film TMDB has no poster for — so searching a real but
-          // unillustrated title told you it did not exist. On THIS page that is
-          // backwards: the section is called THE NEGATIVES, "undeveloped
-          // stock", and a film with no print made yet is the purest example of
-          // it. Those now render as unexposed plates.
-          //
-          // Measured live against the proxy before changing it (five queries
-          // through search/multi): poster-less films are 0-2 per ~19 results,
-          // and 7 of 7 carried BOTH a title and a year — real catalogue
-          // entries, not database stubs. So the grid gains a rare blank plate,
-          // not a patchy wall. A person with no photograph is still just a
-          // gap, so they keep their filter.
+          // People need a face; films need a name: a film with no poster is an
+          // unexposed plate (THE NEGATIVES), a person with no photograph a gap.
           const withPostersRaw = results.filter((f: DiscoverFilm) =>
             f.media_type === 'person' ? !!f.profile_path : !!(f.poster_path || f.title || f.name)
           );
@@ -258,7 +245,7 @@ export default function DarkRoomScreen() {
             setAccumulatedFilms(uniqueWithPosters);
             try { storage.set(cacheKey, JSON.stringify(uniqueWithPosters.slice(0, 60))); } catch { /* non-critical */ }
           } else {
-            // Merge safely via Zustand functional updater to eliminate micro race conditions
+            setMoreFailed(false);
             setAccumulatedFilms((prev) => {
               const currentKeys = new Set(prev.map(getFilmKey));
               const newUnique = uniqueWithPosters.filter(f => !currentKeys.has(getFilmKey(f)));
@@ -272,6 +259,7 @@ export default function DarkRoomScreen() {
         // Graceful Pagination Rollback on Hard Network Failure
         if (active && reqId === fetchRequestId.current && page > 1) {
           useDiscoverStore.getState().setPage(page - 1);
+          setMoreFailed(true);
         }
         if (active && reqId === fetchRequestId.current && page === 1) setUnreachable(true);
         // Optimistic cache was already injected at the start of fetchContent.
@@ -298,8 +286,20 @@ export default function DarkRoomScreen() {
         </View>
       );
     }
+    if (moreFailed) {
+      return (
+        <View style={s.footerLoading}>
+          <Text style={s.paginationRetrieving}>THE NEXT BATCH COULD NOT BE DEVELOPED.</Text>
+          <TryAgainLine
+            onPress={() => { setMoreFailed(false); setPage(useDiscoverStore.getState().page + 1); }}
+            accessibilityLabel="Develop the next batch again"
+            style={s.moreRetry}
+          />
+        </View>
+      );
+    }
     return <View style={s.footerSpacer} />;
-  }, [loading, page]);
+  }, [loading, page, moreFailed, setPage]);
 
   const renderEmpty = useMemo(() => {
     // `showSkeleton` is hoisted to component scope so the pulse animation can
@@ -315,7 +315,7 @@ export default function DarkRoomScreen() {
         </View>
       );
     }
-    
+
     // Offline, it asks again by itself when the connection returns (the fetch
     // hears it); reached but refused, the member asks.
     if (network.isConnected === false || unreachable) {
@@ -328,7 +328,6 @@ export default function DarkRoomScreen() {
 
     return (
       <Animated.View entering={FadeInDown.duration(600)} style={s.emptyWrap}>
-        {/* Removed empty onPress handler — was doing nothing */}
         <View style={{ alignItems: 'center' }}>
           <Buster size={56} mood="crying" />
         </View>
@@ -385,7 +384,7 @@ export default function DarkRoomScreen() {
           ListEmptyComponent={renderEmpty}
           renderItem={renderFilmItem}
           onEndReached={() => {
-            if (!loadingRef.current && displayData.length > 0 && displayData.length < 5000 && network.isConnected !== false) {
+            if (!loadingRef.current && !moreFailed && displayData.length > 0 && displayData.length < 5000 && network.isConnected !== false) {
               const statePage = useDiscoverStore.getState().page;
               if (statePage < totalPagesRef.current) {
                 loadingRef.current = true;
@@ -420,6 +419,7 @@ const s = StyleSheet.create({
   footerSpacer: {
     height: 100,
   },
+  moreRetry: { marginTop: 10 },
   paginationRetrieving: {
     fontFamily: fonts.sub,
     fontSize: 10,

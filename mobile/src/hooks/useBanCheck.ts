@@ -2,9 +2,9 @@ import { useAuthStore } from '../stores/auth'
 import reelToast from '../utils/reelToast'
 
 /**
- * Returns true if the current user is banned.
- * Call `checkBan()` before any write operation (post review, create list, comment).
- * If banned, it shows a toast and returns true — the caller should abort.
+ * Whether the member is banned, as the phone last read their profile. The
+ * stack composer asks before writing, and says so; every write is refused by
+ * the server anyway (enforce_not_restricted), for a ban or a suspension.
  */
 export function useBanCheck() {
     const { user } = useAuthStore()

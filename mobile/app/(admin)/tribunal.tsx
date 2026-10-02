@@ -1,5 +1,4 @@
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useRouter } from 'expo-router';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -77,12 +76,8 @@ interface ActionModalState {
 // ── Enforcement History Panel ──────────────────────────────────────────────
 
 /**
- * One member's enforcement record.
- *
- * The records arrive as a prop now. This used to run its OWN query per card —
- * `select('*')` with no limit — so a docket of 20 meant 20 unbounded requests to
- * draw five rows each. They are fetched once for the whole docket instead, ranked
- * per member so a single prolific offender cannot crowd the others out.
+ * One member's enforcement record, from the one read made for the whole docket
+ * (ranked per member, so a prolific offender cannot crowd the others out).
  */
 export function EnforcementHistory({ history, isLoading, failed, onRetry }: {
   history: ModActionRecord[]; isLoading: boolean; failed?: boolean; onRetry?: () => void;
@@ -216,7 +211,7 @@ function ActionModal({
       title: 'BAN MEMBER',
       color: colors.crimson,
       ink: colors.crimsonInk,
-      description: 'Permanently revoke access. This can be reversed by another admin.',
+      description: 'Revoke access until an admin lifts the ban.',
     },
     permanent_exile: {
       title: 'PERMANENT EXILE',
@@ -316,7 +311,6 @@ function ActionModal({
 // ── Main Tribunal Screen ───────────────────────────────────────────────────
 
 export default function TribunalScreen() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
@@ -608,7 +602,7 @@ export default function TribunalScreen() {
       const title = action === 'ban' ? 'Ban Member' : 'Permanent Exile';
       const message =
         action === 'ban'
-          ? 'This will permanently ban the member from the Society. Are you certain?'
+          ? 'This will ban the member from the Society until an admin lifts it. Are you certain?'
           : 'PERMANENT EXILE is irrevocable. The member will be expelled forever. Proceed?';
 
       Alert.alert(title, message, [
@@ -671,20 +665,9 @@ export default function TribunalScreen() {
   const isLoadingData = activeView === 'pending' ? isLoading : priorityLoading;
 
   /**
-   * Did the query behind the visible tab FAIL?
-   *
-   * Neither query used to report this, so a failure left the list empty and the
-   * screen said "The docket is clear. The house rests." — a moderator was told
-   * there was nothing to review when nothing had loaded. The urgent queue had
-   * been in that state permanently (its RPC signature never matched), and the
-   * main docket was one bad request away from the same lie.
-   *
-   * A queue is the one screen where "nothing here" has to be trustworthy, so
-   * this is tracked for BOTH tabs rather than only the one that was broken.
-   *
-   * Moderation history is deliberately NOT included: it is context printed
-   * beside a report, not the verdict, and this file already treats that class as
-   * best-effort.
+   * Did the read behind the visible tab FAIL? A queue is the one screen where
+   * "nothing here" must be trustworthy, so both tabs say so. (The record beside
+   * a case says its own failure, in EnforcementHistory.)
    */
   const queueFailed = activeView === 'pending' ? pendingFailed : priorityFailed;
   const retryQueue = activeView === 'pending' ? refetch : refetchPriority;
@@ -715,7 +698,10 @@ export default function TribunalScreen() {
         <Text style={s.eyebrow}>THE HOUSE CONVENES</Text>
         <Text style={s.title}>The Tribunal</Text>
         <Text style={s.subtitle}>
-          {pendingTotal === 1 ? '1 matter awaits judgment' : `${pendingTotal} matters await judgment`}
+          {/* Unread is not none: a failed docket counts nothing. */}
+          {pendingFailed && !pendingPage
+            ? 'The docket could not be read'
+            : pendingTotal === 1 ? '1 matter awaits judgment' : `${pendingTotal} matters await judgment`}
         </Text>
 
         {/* ── View Toggle Tabs ─────────────────────────────────────────── */}
@@ -894,7 +880,7 @@ export default function TribunalScreen() {
                     {accused?.username ? (
                       <PressableScale
                         style={s.accusedRow}
-                        onPress={() => (router.push as any)(`/user/${accused.username}`)}
+                        onPress={() => nav.push(`/user/${accused.username}`)}
                         haptic="selection"
                         pressedScale={0.98}
                         accessibilityRole="button"
@@ -930,7 +916,7 @@ export default function TribunalScreen() {
                             <Text style={s.contextValue} selectable>“{ev.data.body}”</Text>
                             {!!ev.data.route && (
                               <PressableScale
-                                onPress={() => (router.push as any)(ev.data!.route!)}
+                                onPress={() => nav.push(ev.data!.route!)}
                                 haptic="selection"
                                 pressedScale={0.97}
                                 accessibilityRole="button"
