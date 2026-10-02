@@ -503,6 +503,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/aStandingIsSharedAsWhoseItIs.test.tsx | 2026-10-01 | written: a standing is shared as whose it is |
 | src/components/profile/__tests__/computeDailyStreak.test.ts | — |  |
 | src/components/profile/__tests__/decadeCounts.test.ts | — |  |
+| src/components/profile/__tests__/everyRatingHasAChip.test.tsx | 2026-10-02 | Written in the launch audit: a half rating sits under the chip below it, in room, query and counts. |
 | src/components/profile/__tests__/heroNameSize.test.ts | — |  |
 | src/components/profile/__tests__/hideStatsRemoved.guard.test.ts | — |  |
 | src/components/profile/__tests__/holdingsFit.test.ts | — |  |

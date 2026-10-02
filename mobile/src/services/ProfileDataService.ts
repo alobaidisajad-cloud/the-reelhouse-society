@@ -14,7 +14,7 @@ import { withAbortSignal } from '../utils/withAbortSignal';
 import { mapLogRow, PUBLIC_LOG_COLUMNS } from '../utils/mappers';
 import type { LogRow } from '../utils/mappers';
 import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, ShelfSort } from '../types';
-import { LEDGER_HIGH_FLOOR } from '../types';
+import { LEDGER_HIGH_FLOOR, ledgerRungRange } from '../types';
 import { sortAxis, parseCursor, keysetFilter, buildCursor, pgLiteral } from '../utils/keysetCursor';
 import type { AnalyticsShape } from '../hooks/useProfileData';
 import type { TasteProfile } from '../constants/taste';
@@ -273,13 +273,14 @@ export const ProfileDataService = {
         ? query.ilike('film_title', `%${pattern}%`)
         : query.or(`film_title.ilike.*${pattern}*,review.ilike.*${pattern}*`);
     }
-    // `'high'` is a SENTINEL, not a rating — a range, which is the one thing an
-    // `.eq()` cannot express. Checked BEFORE the numeric branch, because
-    // `.eq('rating', 'high')` would be a 22P02 against an integer column.
+    // `'high'` is a SENTINEL, not a rating. Checked BEFORE the numeric branch,
+    // because `'high'` in a numeric filter would be a 22P02 against the column.
+    // A numbered chip is a range too: its reel and the half above it.
     if (options?.rating === 'high') {
       query = query.gte('rating', LEDGER_HIGH_FLOOR);
     } else if (options?.rating !== undefined && options.rating !== 'all') {
-      query = query.eq('rating', options.rating);
+      const { from, below } = ledgerRungRange(options.rating);
+      query = query.gte('rating', from).lt('rating', below);
     }
     if (options?.status && options.status !== 'all') {
       query = query.eq('status', options.status);

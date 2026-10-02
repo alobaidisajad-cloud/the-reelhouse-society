@@ -72,6 +72,21 @@ export type LedgerRating = number | 'all' | 'high';
 export const LEDGER_HIGH_FLOOR = 4;
 
 /**
+ * The numbered chip a rating sits under. A rating moves in half reels, the
+ * chips in whole ones: a half goes with the reel below it (3½ under 3, as 4½
+ * already sits inside 4+), and ½ goes under 1. Every rated entry is under
+ * exactly one chip.
+ */
+export function ledgerRung(rating: number): number {
+  return Math.min(5, Math.max(1, Math.floor(rating)));
+}
+
+/** The ratings a numbered chip holds: at least `from`, below `below`. */
+export function ledgerRungRange(rung: number): { from: number; below: number } {
+  return { from: rung === 1 ? 0.5 : rung, below: rung + 1 };
+}
+
+/**
  * The decade a queue is filtered to — `1990` means 1990–1999, `null` means all.
  *
  * A queue of two hundred films has exactly two ways in today: alphabetical, and

@@ -70,10 +70,11 @@ describe('the ledger’s 4+ is a RANGE, not an equality', () => {
     expect(argsOf('eq').some(a => a[0] === 'rating')).toBe(false);
   });
 
-  it('still sends eq for a single rating', async () => {
+  it('sends a chip as its range: the reel and the half above it', async () => {
     await ProfileDataService.fetchOtherUserLogs('u1', 50, undefined, undefined, { rating: 3 });
-    expect(argsOf('eq')).toContainEqual(['rating', 3]);
-    expect(argsOf('gte').some(a => a[0] === 'rating')).toBe(false);
+    expect(argsOf('gte')).toContainEqual(['rating', 3]);
+    expect(argsOf('lt')).toContainEqual(['rating', 4]);
+    expect(argsOf('eq').some(a => a[0] === 'rating')).toBe(false);
   });
 
   it('filters on nothing at all for ALL', async () => {

@@ -12,7 +12,7 @@ import PressableScale from '../PressableScale';
 import { ReelRating } from '../Decorative';
 import SpoilerVeil from '../SpoilerVeil';
 import type { ProfileLog, HalfLifeEntry, LedgerRating } from '../../types';
-import { LEDGER_HIGH_FLOOR } from '../../types';
+import { LEDGER_HIGH_FLOOR, ledgerRung } from '../../types';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
 import { r, rtlText, EMBER_REST, EMBER_BEATS, yearMarker } from './roomStyles';
@@ -243,7 +243,7 @@ const LedgerRow = React.memo(function LedgerRow({
 });
 
 /**
- * ALL · 4+ · one chip per rating.
+ * ALL · 4+ · one chip per reel (a half goes with the reel below: `ledgerRung`).
  *
  * `4+` is the only filter here a member cannot already express by picking a
  * single rating, and it is the one they actually reach for: "show me the ones
@@ -261,10 +261,17 @@ function ratingLabel(v: LedgerRating): string | undefined {
   return undefined;   // the numbered chips draw reels, not text
 }
 
+/** What a numbered chip holds, in the words the ledger's cards speak (`rated 3.5 of 5`). */
+function rungSpoken(v: number): string {
+  if (v === 1) return 'rated 1.5 of 5 or less';
+  if (v === 5) return 'rated 5 of 5';
+  return `rated ${v} or ${v}.5 of 5`;
+}
+
 function ratingSpoken(v: LedgerRating): string {
   if (v === 'all') return 'Show every rating';
   if (v === 'high') return `Show entries rated ${LEDGER_HIGH_FLOOR} of 5 or better`;
-  return `Show entries rated ${v} of 5`;
+  return `Show entries ${rungSpoken(v)}`;
 }
 
 export default function ProfileLedgerTab({
@@ -349,9 +356,13 @@ export default function ProfileLedgerTab({
    * question those chips ask, so those counts ARE real.
    */
   const ratings = useMemo(() => {
+    // Counted by chip: 3 and 3.5 are one chip's entries.
     const by = new Map<number, number>();
     for (const rc of ratingCounts ?? []) {
-      if (typeof rc?.rating === 'number' && typeof rc?.count === 'number') by.set(rc.rating, rc.count);
+      if (typeof rc?.rating === 'number' && rc.rating > 0 && typeof rc?.count === 'number') {
+        const rung = ledgerRung(rc.rating);
+        by.set(rung, (by.get(rung) ?? 0) + rc.count);
+      }
     }
     return by;
   }, [ratingCounts]);
@@ -486,7 +497,7 @@ export default function ProfileLedgerTab({
           title="Nothing at that mark"
           body={ledgerRatingFilter === 'high'
             ? `Nothing in the ledger is rated ${LEDGER_HIGH_FLOOR} of 5 or better.`
-            : `Nothing in the ledger is rated ${ledgerRatingFilter} of 5.`}
+            : `Nothing in the ledger is ${rungSpoken(ledgerRatingFilter)}.`}
           actionLabel="SHOW EVERY RATING"
           onAction={() => setLedgerRatingFilter('all')}
         />

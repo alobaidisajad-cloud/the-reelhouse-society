@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import { isNarrowed } from '@/src/utils/roomFilters';
 import { matchesSearch } from '@/src/utils/searchPattern';
 import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry, DomainLog, LedgerRating, WatchlistDecade, DecadeCount, ShelfSort } from '@/src/types';
-import { LEDGER_HIGH_FLOOR, decadeOf } from '@/src/types';
+import { LEDGER_HIGH_FLOOR, decadeOf, ledgerRung } from '@/src/types';
 import { standingFor } from '@/src/constants/standing';
 import { ProfileTab } from '@/src/hooks/useProfileData';
 
@@ -238,12 +238,12 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   const ledgerFiltered = useMemo(() => {
     return displayLedgerLogs.filter(log => {
       if (!log.rating && !log.review) return false;
-      // `'high'` is a range, so it cannot be an equality check — and it has to
-      // be tested BEFORE the numeric one, or `log.rating !== 'high'` is true for
-      // every entry and the filter hides the whole ledger.
+      // `'high'` has to be tested BEFORE the numbered chips, which would read it
+      // as a reel and hide the whole ledger. A numbered chip holds its reel and
+      // the half above it, exactly as the server's query does.
       if (ledgerRatingFilter === 'high') {
         if (!log.rating || log.rating < LEDGER_HIGH_FLOOR) return false;
-      } else if (ledgerRatingFilter !== 'all' && log.rating !== ledgerRatingFilter) return false;
+      } else if (ledgerRatingFilter !== 'all' && !(log.rating > 0 && ledgerRung(log.rating) === ledgerRatingFilter)) return false;
       // Title AND review, as the server searches: the Ledger is the room of words.
       if (!matchesSearch(ledgerSearch, log.title, log.review)) return false;
       return true;
