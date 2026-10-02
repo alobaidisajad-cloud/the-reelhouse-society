@@ -16,7 +16,7 @@
  * document: one frame, virtualised content, and the rails run the whole height.
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { ActivityIndicator, RefreshControl, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
 import { useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -48,6 +48,7 @@ import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import reelToast from '@/src/utils/reelToast';
 import { useUnsent } from '@/src/stores/offlineQueueStore';
+import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
 
 /** A filing, or a day's divider: one flat list, as a section list re-measures on every certify. */
 type Row =
@@ -103,6 +104,7 @@ export default function DispatchScreen() {
   const reading = loading || unread;
   const readyMark = useScreenReady('dispatch', !reading);
   const loadingMore = useDispatch((s) => s.loadingMore);
+  const moreFailed = useDispatch((s) => s.moreFailed);
   const newCount = useDispatch((s) => s.newCount);
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const savedIds = useDispatch((s) => s.savedIds);
@@ -179,7 +181,9 @@ export default function DispatchScreen() {
     return out;
   }, [filings, sort]);
 
-  const width = columnWidth(390);
+  // The column at THIS screen's width, not a 390pt phone's.
+  const { width: screenWidth } = useWindowDimensions();
+  const width = columnWidth(screenWidth);
 
   const onRefresh = useCallback(async () => {
     TactileEngine.navigate();
@@ -294,7 +298,9 @@ export default function DispatchScreen() {
               }}
               ListHeaderComponent={header}
               renderItem={renderItem as any}
-              onEndReached={() => useDispatch.getState().loadMore()}
+              // Not after a failure: the footer asks first, or the end of the list
+              // would ask again on every scroll.
+              onEndReached={() => { if (!useDispatch.getState().moreFailed) void useDispatch.getState().loadMore(); }}
               onEndReachedThreshold={0.6}
               refreshControl={
                 <RefreshControl
@@ -357,6 +363,8 @@ export default function DispatchScreen() {
                   <View style={{ paddingVertical: 20, alignItems: 'center' }}>
                     <ActivityIndicator size="small" color={colors.sepia} />
                   </View>
+                ) : moreFailed ? (
+                  <RoomMoreFailed onRetry={() => { void useDispatch.getState().loadMore(); }} />
                 ) : null
               }
             />

@@ -339,3 +339,29 @@ describe('is there new paper above the page?', () => {
     }
   });
 });
+
+describe('a next page that could not be read', () => {
+  it('says so, rather than ending the paper there — and asking again clears it', async () => {
+    mockPages = [fullPage()];
+    await useDispatch.getState().fetch();
+    expect(useDispatch.getState().moreFailed).toBe(false);
+
+    mockThrow = new Error('Network request failed');
+    await useDispatch.getState().loadMore();
+    expect(useDispatch.getState().moreFailed).toBe(true);
+    expect(useDispatch.getState().filings).toHaveLength(PAGE_SIZE);
+
+    mockThrow = null;
+    mockPages = [fullPage(PAGE_SIZE)];
+    await useDispatch.getState().loadMore();
+    expect(useDispatch.getState().moreFailed).toBe(false);
+    expect(useDispatch.getState().filings).toHaveLength(PAGE_SIZE * 2);
+  });
+
+  it('a new page of the paper starts without the old failure', async () => {
+    reset({ moreFailed: true });
+    mockPages = [fullPage()];
+    useDispatch.getState().setSection('TAKES');
+    expect(useDispatch.getState().moreFailed).toBe(false);
+  });
+});

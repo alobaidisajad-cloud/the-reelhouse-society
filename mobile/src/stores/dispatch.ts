@@ -103,6 +103,11 @@ export interface DispatchState {
    */
   pageState: 'unread' | 'read' | 'failed';
   loadingMore: boolean;
+  /**
+   * The next page could not be read. Without it the paper simply ended there,
+   * a failed read drawn as the last filing the house holds.
+   */
+  moreFailed: boolean;
   hasMore: boolean;
   /** Rows the boundary refused. Surfaced so a schema change is visible, not quiet. */
   droppedRows: number;
@@ -199,7 +204,7 @@ export type FilingUpdate = Partial<Omit<FilingDraft, 'kind' | 'options' | 'close
  */
 const A_NEW_PAGE = {
   filings: [] as Filing[], hasMore: true, newCount: 0,
-  loadingMore: false, pageState: 'unread' as DispatchState['pageState'],
+  loadingMore: false, moreFailed: false, pageState: 'unread' as DispatchState['pageState'],
 };
 
 // A fetch in flight, and the generation that says whether its answer is still wanted:
@@ -267,6 +272,7 @@ const emptyState = () => ({
   loading: false,
   pageState: 'unread' as DispatchState['pageState'],
   loadingMore: false,
+  moreFailed: false,
   hasMore: true,
   droppedRows: 0,
   newCount: 0,
@@ -384,7 +390,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     if (s.loadingMore || s.loading || !s.hasMore || s.filings.length === 0) return;
     const gen = generation;
     const startedAs = useAuthStore.getState().user?.id ?? null;
-    set({ loadingMore: true });
+    set({ loadingMore: true, moreFailed: false });
     try {
       const rows = await pageQuery(s, s.filings[s.filings.length - 1]);
       if (gen !== generation || !memberUnchanged(startedAs)) return;
@@ -396,6 +402,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       await loadViewerState(fresh, set, startedAs);
     } catch (e) {
       if (!isNetworkError(e)) captureError(e, { where: 'dispatch.loadMore' });
+      if (gen === generation) set({ moreFailed: true });
     } finally {
       if (gen === generation) set({ loadingMore: false });
     }

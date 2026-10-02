@@ -14,7 +14,7 @@
  *   its heading and narrow enough for the margin, which a date is not.
  */
 import { useCallback, useMemo } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,6 +31,7 @@ import { itemType } from '@/src/components/dispatch/paper/paperPerf';
 import { byMonth, dayOfMonth, type MonthRow } from '@/src/components/dispatch/dayLabel';
 import { useMemberRoom } from '@/src/hooks/useMemberRoom';
 import { useAuthStore } from '@/src/stores/auth';
+import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
@@ -47,7 +48,7 @@ export default function MemberRoomScreen() {
 
   const {
     author, filings, filed, certified, totalsKnown, certifiedAtFetch,
-    loading, loadingMore, missing, failed, reload, more, loadMore,
+    loading, loadingMore, missing, failed, reload, more, moreFailed, loadMore,
   } = useMemberRoom(username);
 
   // The reader's marks, from the store: one made in the feed is already lit here.
@@ -58,7 +59,9 @@ export default function MemberRoomScreen() {
   // this is, not when, and a bare day in the margin needs its month (byMonth).
   const rows = useMemo<Row[]>(() => byMonth(filings), [filings]);
 
-  const width = columnWidth(390);
+  // The column at THIS screen's width, not a 390pt phone's.
+  const { width: screenWidth } = useWindowDimensions();
+  const width = columnWidth(screenWidth);
 
   /** Whose room this is. Only the owner is offered the way to write in it. */
   const mine = !!me && !!author && me.username === author.name;
@@ -147,7 +150,8 @@ export default function MemberRoomScreen() {
               ) : null
             }
             renderItem={renderItem as any}
-            onEndReached={loadMore}
+            // Not after a failure: the foot asks first.
+            onEndReached={() => { if (!moreFailed) loadMore(); }}
             onEndReachedThreshold={0.6}
             ListEmptyComponent={
               loading ? (
@@ -178,6 +182,8 @@ export default function MemberRoomScreen() {
                 <View style={{ paddingVertical: 24, alignItems: 'center' }}>
                   <ActivityIndicator size="small" color={colors.sepia} />
                 </View>
+              ) : moreFailed ? (
+                <RoomMoreFailed onRetry={loadMore} />
               ) : more || filings.length === 0 ? null : (
                 <EndMark /> // the paper's closing mark; not under an empty room
               )

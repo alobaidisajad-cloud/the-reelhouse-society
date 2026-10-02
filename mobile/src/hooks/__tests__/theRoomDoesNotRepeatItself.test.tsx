@@ -12,6 +12,8 @@ import { useMemberRoom, ROOM_PAGE } from '../useMemberRoom';
 
 const ranges: [number, number][] = [];
 let pages: Record<string, unknown>[][] = [];
+/** When set, the next page read is refused with this. */
+let refuseNext: { message: string } | null = null;
 
 const chain = (table: string) => {
   const c: Record<string, unknown> = {};
@@ -22,6 +24,7 @@ const chain = (table: string) => {
     : { data: null, error: null });
   c.range = (from: number, to: number) => {
     ranges.push([from, to]);
+    if (refuseNext) { const error = refuseNext; refuseNext = null; return Promise.resolve({ data: null, error }); }
     return Promise.resolve({ data: pages.shift() ?? [], error: null });
   };
   return c;
@@ -78,5 +81,23 @@ describe('a member’s room', () => {
     expect(ranges[1][0]).toBe(ROOM_PAGE);
     const ids = result.current.filings.map((f) => f.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe('a next page that could not be read', () => {
+  it('says so at the foot — the list asks for more once per length, so scrolling would not', async () => {
+    pages = [page('a', false), page('b', false)];
+    const { result } = await renderHook(() => useMemberRoom('ana'));
+    await waitFor(() => expect(result.current.filings.length).toBe(ROOM_PAGE));
+
+    refuseNext = { message: 'connection reset' };
+    await act(async () => { result.current.loadMore(); });
+    await waitFor(() => expect(result.current.moreFailed).toBe(true));
+    expect(result.current.failed).toBe(false);
+    expect(result.current.filings.length).toBe(ROOM_PAGE);
+
+    await act(async () => { result.current.loadMore(); });
+    await waitFor(() => expect(result.current.filings.length).toBe(ROOM_PAGE * 2));
+    expect(result.current.moreFailed).toBe(false);
   });
 });

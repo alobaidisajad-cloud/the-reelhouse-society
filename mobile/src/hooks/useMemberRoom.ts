@@ -96,6 +96,8 @@ export interface MemberRoom {
   reload: () => void;
   more: boolean;
   loadingMore: boolean;
+  /** A later page could not be read: the pages drawn stay, and the foot says so. */
+  moreFailed: boolean;
   loadMore: () => void;
 }
 
@@ -115,6 +117,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [more, setMore] = useState(false);
+  const [moreFailed, setMoreFailed] = useState(false);
 
   /**
    * The member this hook resolved, kept out of state so paging can read it
@@ -164,8 +167,9 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
     if (rows.error) {
       logger.warn(`[room] filings: ${rows.error.message}`);
       // The first page: the room says it could not be read. A later one: the
-      // pages already drawn stay, and scrolling on asks again.
-      if (from === 0) setFailed(true);
+      // pages already drawn stay, and the foot says the rest could not be had
+      // (the list asks for more once per length, so scrolling would not).
+      if (from === 0) setFailed(true); else setMoreFailed(true);
       return;
     }
 
@@ -222,7 +226,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
     userId.current = null;
     setAuthor(null); setFilings([]); setFiled(0); setCertified(0); setTotalsKnown(false);
     setCertifiedAtFetch(new Set());
-    setMissing(false); setFailed(false); setMore(false); setLoading(true);
+    setMissing(false); setFailed(false); setMore(false); setMoreFailed(false); setLoading(true);
 
     if (!username) { setLoading(false); setMissing(true); return; }
 
@@ -265,9 +269,12 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
     if (loading || loadingMore || !more || !userId.current) return;
     const mine = gen.current;
     setLoadingMore(true);
+    setMoreFailed(false);
     void (async () => {
       try {
         await page(fetched.current, mine);
+      } catch (e) {
+        if (mine === gen.current) { logger.warn(`[room] more: ${String(e)}`); setMoreFailed(true); }
       } finally {
         if (mine === gen.current) setLoadingMore(false);
       }
@@ -276,6 +283,6 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
 
   return {
     author, filings, filed, certified, totalsKnown, certifiedAtFetch,
-    loading, loadingMore, missing, failed, reload, more, loadMore,
+    loading, loadingMore, missing, failed, reload, more, moreFailed, loadMore,
   };
 }

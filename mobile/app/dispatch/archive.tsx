@@ -15,7 +15,7 @@
  * opening one film and reading all of it in one place, and the rope is there.
  */
 import { useCallback } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ActivityIndicator, ScrollView, View, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -52,7 +52,9 @@ export default function ArchiveScreen() {
 
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const savedIds = useDispatch((s) => s.savedIds);
-  const width = columnWidth(390);
+  // The column at THIS screen's width, not a 390pt phone's.
+  const { width: screenWidth } = useWindowDimensions();
+  const width = columnWidth(screenWidth);
 
   const back = useCallback(() => {
     // Back to the search, with what they typed, first; out of the archive second.

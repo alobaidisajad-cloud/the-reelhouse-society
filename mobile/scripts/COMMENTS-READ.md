@@ -89,7 +89,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
 | app/(tabs)/_layout.tsx | 2026-10-02 | read; sound |
 | app/(tabs)/darkroom.tsx | 2026-10-02 | the next batch that could not be developed is said, and asked again |
-| app/(tabs)/dispatch.tsx | 2026-09-29 | 12 fixed; NewsService history and the pill-fix story cut |
+| app/(tabs)/dispatch.tsx | 2026-10-02 | Read whole (launch audit). A failed next page ended the paper as though it were the last filing: the foot says the rest could not be reached. The column was measured for a 390pt phone whatever the screen: the real width now. |
 | app/(tabs)/index.tsx | 2026-10-01 | the front door arrives; nav; a failed pull says so |
 | app/(tabs)/lounge.tsx | 2026-10-01 | the corridor in the present tense; the gate is for visitors only |
 | app/(tabs)/profile.tsx | 2026-10-01 | nav; a named door; the header says what it is |
@@ -97,9 +97,9 @@ without one). "Read" is the day its comments were last read against its code.
 | app/+not-found.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | app/auth-callback.tsx | 2026-10-01 | a link with no code verifies nothing; comments short |
 | app/dispatch/[id].tsx | 2026-09-29 | 26 fixed; 'SAVE THE CARD offered for a dossier' was false (the sheet never gets card); history of 3 fixes cut |
-| app/dispatch/archive.tsx | 2026-09-29 | history removed; margin label now said as a day (was '28 certified') |
+| app/dispatch/archive.tsx | 2026-10-02 | Read (launch audit). Column at the real width. Its paging re-asks on every scroll event, so a failed page is asked again: sound. |
 | app/dispatch/compose.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| app/dispatch/room/[username].tsx | 2026-09-29 | 6 fixed; history of the byline fix cut |
+| app/dispatch/room/[username].tsx | 2026-10-02 | Read (launch audit). A failed later page ended the room silently (its list asks once per length): the foot says so. Column at the real width. |
 | app/dispatch/rules.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | app/dispatch/series/[id].tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | app/dossier/[id].tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
