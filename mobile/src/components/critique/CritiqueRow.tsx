@@ -28,6 +28,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { askToWithdrawCritique } from './withdraw';
+import { authorName } from '@/src/constants/departed';
 
 export interface Critique {
   id: string;
@@ -77,6 +78,8 @@ export const CritiqueRow = React.memo(function CritiqueRow({
   const mine = !!currentUserId && currentUserId === c.user_id;
   // A profile is opened by its name: no name, no link (never a guessed one).
   const linked = !!c.user_id && !!c.username;
+  // No id: the author has left, and the handle is the database's mark, not a name.
+  const departed = !c.user_id;
   return (
     <View style={s.commentItem}>
       <View style={s.commentTopRow}>
@@ -91,16 +94,17 @@ export const CritiqueRow = React.memo(function CritiqueRow({
           pressedScale={linked ? 0.96 : 1}
           haptic={linked ? 'selection' : undefined}
           accessibilityRole={linked ? 'link' : undefined}
-          accessibilityLabel={linked ? `View profile of @${c.username}` : c.user_id ? 'Critique by a member' : 'Critique by a former member'}
+          accessibilityLabel={linked ? `View profile of @${c.username}` : `Critique by ${authorName(c.user_id, c.username)}`}
         >
           {c.avatar_url ? (
             <Image source={{ uri: c.avatar_url }} style={s.commentAvatar} cachePolicy="memory-disk" contentFit="cover" transition={150} />
           ) : (
             <View style={s.commentAvatar}>
-              <Text style={s.commentAvatarText}>{(c.username || '?').charAt(0).toUpperCase()}</Text>
+              {/* A departed member's disc is empty, as on every card: no letter of a mark. */}
+              {departed || !c.username ? null : <Text style={s.commentAvatarText}>{c.username.charAt(0).toUpperCase()}</Text>}
             </View>
           )}
-          <Text style={s.commUsername} numberOfLines={1}>{c.username ? `@${c.username}` : 'a member'}</Text>
+          <Text style={s.commUsername} numberOfLines={1}>{linked ? `@${c.username}` : authorName(c.user_id, c.username)}</Text>
         </PressableScale>
         {/* The archive's own date shape — this printed the device's short form,
             8/5/2026, directly beneath the record's AUG 5, 2026.

@@ -347,35 +347,18 @@ describe('Lists', () => {
             expect(supabase.rpc).toHaveBeenCalledWith('delete_list_cascade', { p_list_id: 'list-1' });
         });
 
-        it('falls back to sequential cascade if RPC does not exist (42883)', async () => {
-            // Mock supabase.rpc to fail with "function does not exist"
-            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ 
-                data: null, 
-                error: { code: '42883', message: 'function delete_list_cascade(uuid) does not exist' } 
+        it('raises any failure, so the queue keeps the delete, and deletes nothing table by table', async () => {
+            // There was a fallback for a database without the function: it deleted
+            // the stack's films, its critiques (other members' too) and marks one
+            // table at a time. The function is live; a failure is a failure.
+            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({
+                data: null,
+                error: { code: '42883', message: 'function delete_list_cascade(uuid) does not exist' },
             });
+            (supabase.from as jest.Mock).mockClear();
 
-            const itemsChain = createMockChain();
-            makeChainResolveTo(itemsChain, { error: null });
-            const commentsChain = createMockChain();
-            makeChainResolveTo(commentsChain, { error: null });
-            const interactionsChain = createMockChain();
-            makeChainResolveTo(interactionsChain, { error: null });
-            const listsChain = createMockChain();
-            makeChainResolveTo(listsChain, { error: null });
-
-            (supabase.from as jest.Mock)
-                .mockReturnValueOnce(itemsChain)
-                .mockReturnValueOnce(commentsChain)
-                .mockReturnValueOnce(interactionsChain)
-                .mockReturnValueOnce(listsChain);
-
-            await runMutation('delete_list', { list_id: 'list-1', user_id: 'u1' });
-
-            expect(supabase.from).toHaveBeenCalledWith('list_items');
-            expect(supabase.from).toHaveBeenCalledWith('list_comments');
-            expect(supabase.from).toHaveBeenCalledWith('interactions');
-            expect(supabase.from).toHaveBeenCalledWith('lists');
-            expect(listsChain.eq).toHaveBeenCalledWith('user_id', 'u1');
+            await expect(runMutation('delete_list', { list_id: 'list-1', user_id: 'u1' })).rejects.toBeTruthy();
+            expect(supabase.from).not.toHaveBeenCalled();
         });
     });
 

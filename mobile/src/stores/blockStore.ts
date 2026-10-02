@@ -42,7 +42,8 @@ export interface BlockState {
   // Queries (O(1) Set.has() lookups)
   isBlocked: (userId: string) => boolean;
   isMuted: (userId: string) => boolean;
-  isHidden: (userId: string) => boolean;
+  /** No id (a departed author) is nobody: nothing of theirs can be blocked or muted. */
+  isHidden: (userId: string | null | undefined) => boolean;
 
   // Mutations
   blockUser: (targetId: string) => Promise<void>;
@@ -72,7 +73,8 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
 
   isMuted: (userId: string) => get()._mutedIndex.has(userId),
 
-  isHidden: (userId: string) => {
+  isHidden: (userId) => {
+    if (!userId) return false;
     const state = get();
     return state._blockedIndex.has(userId) || state._mutedIndex.has(userId);
   },

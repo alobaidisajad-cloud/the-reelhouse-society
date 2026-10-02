@@ -18,6 +18,7 @@ import { RankBadge, rankOf, rankWord } from '@/src/components/RankBadge';
 import { LEAD_STYLE } from './paperPerf';
 import { PaperStrike } from './PaperStrike';
 import { softBreak, counted, NOT_SENT_LINE, WITHHELD_LINE } from './paperText';
+import { DEPARTED_NAME } from '@/src/constants/departed';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
 
 export type PaperKind = 'take' | 'seeking' | 'wire' | 'ballot' | 'dossier';
@@ -116,7 +117,7 @@ export const Byline = memo(function Byline({
         numberOfLines={1}
         {...scaledTextProps}
       >
-        {departed ? 'A MEMBER, DEPARTED' : author.name.toUpperCase()}
+        {departed ? DEPARTED_NAME.toUpperCase() : author.name.toUpperCase()}
       </Text>
       {/* The app's own badge, which never truncates (`★ AUT` is wrong);
           `silent` inside a control whose label already says the rank. */}

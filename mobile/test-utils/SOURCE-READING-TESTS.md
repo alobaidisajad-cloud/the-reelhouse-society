@@ -86,6 +86,7 @@ Decisions, as of 2026-09-28:
 | `src/components/film/__tests__/oneBrass.test.ts` | Every brass fill is the ramp, never a flat sepia. |
 | `src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts` | No module reads the window's size once at load. |
 | `src/components/profile/__tests__/roomInset.test.ts` | One page inset, actually shared, across the rooms. |
+| `src/constants/__tests__/aMemberWhoLeftIsNamedOneWay.test.tsx` | That the database's mark for a departed member is written in one file, and that the Lounge store keeps no "unknown" stand-in: a sweep and an absence no render can show. Behaviour: the same file renders the critique row and reads a reply aloud. |
 | `src/constants/__tests__/aRankIsSoldEnforcedAndExplained.test.ts` | Every promise the Society sells is enforced by a gate and explained by a trigger. |
 | `src/constants/__tests__/standing.test.ts` | One ladder of standing, used by every surface that names one. |
 | `src/constants/__tests__/theVaultIsThePrivateNotes.test.ts` | "The Vault" means the private notes, everywhere. |

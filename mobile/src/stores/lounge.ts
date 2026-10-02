@@ -15,6 +15,7 @@ import { useAuthStore } from './auth';
 import { memberUnchanged } from './domain/helpers/sessionGuard';
 import { useBlockStore } from './blockStore';
 import { registerStoreReset } from './resetAllStores';
+import { DEPARTED_HANDLE } from '../constants/departed';
 
 // ── Types ──
 export interface LoungeRoom {
@@ -54,7 +55,8 @@ export interface ReactionSummary {
 export interface LoungeMessage {
   id: string;
   lounge_id: string;
-  user_id: string;
+  /** Null once its author has left: the database keeps the words and clears the id. */
+  user_id: string | null;
   username: string;
   avatar_url?: string;
   content: string;
@@ -176,12 +178,14 @@ function clearTypingState(set: (partial: Partial<LoungeState>) => void) {
 }
 
 /**
- * A deleted account nulls user_id and keeps the words: "[deleted]", a settled fact.
- * A user_id whose profile did not load is "unknown", which may pass.
+ * A deleted account nulls user_id and keeps the words: the database's mark, a
+ * settled fact. A user_id whose profile did not load has no handle here (''),
+ * and the room names them as a member: "unknown" read as somebody's handle, and
+ * a reply to them saved it into the database as one.
  */
 function authorHandle(userId: string | null | undefined, username?: string | null): string {
-  if (!userId) return '[deleted]';
-  return username || 'unknown';
+  if (!userId) return DEPARTED_HANDLE;
+  return username || '';
 }
 
 // Authors of realtime messages, cached so a busy room costs one query per author.
@@ -194,14 +198,14 @@ async function resolveProfile(userId: string): Promise<{ username: string; avata
   if (cached) _profileCache.delete(userId);
   const { data: profile, error } = await supabase.from('profiles').select('username, avatar_url').eq('id', userId).single();
 
-  // A failure is never cached: "unknown" would stick to a real member for the whole
-  // TTL, and the cache is read first, so nothing could clear it.
+  // A failure is never cached: an empty name would stick to a real member for the
+  // whole TTL, and the cache is read first, so nothing could clear it.
   if (error || !profile) {
     if (error) logger.error('[LoungeStore.resolveProfile] lookup failed:', error);
-    return { username: 'unknown', avatar_url: undefined };
+    return { username: '', avatar_url: undefined };
   }
 
-  const result = { username: profile.username ?? 'unknown', avatar_url: profile.avatar_url };
+  const result = { username: profile.username ?? '', avatar_url: profile.avatar_url };
   if (_profileCache.size >= _PROFILE_CACHE_MAX) {
     const oldest = _profileCache.keys().next().value;
     if (oldest !== undefined) _profileCache.delete(oldest);

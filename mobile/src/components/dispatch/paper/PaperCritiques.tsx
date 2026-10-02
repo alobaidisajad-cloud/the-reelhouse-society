@@ -12,6 +12,7 @@ import { formatCount, COMMENT_PAGE_SIZE, actionLabelProps, CRIMSON_INK, nameOf, 
 import { EndMark } from './PaperFrame';
 import { PaperStrike } from './PaperStrike';
 import { softBreak, counted } from './paperText';
+import { DEPARTED_NAME } from '@/src/constants/departed';
 import { isRTLText } from '@/src/utils/text';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Credit, initialOf, type PaperAuthor, type PaperFilm } from './PaperPost';
@@ -171,7 +172,7 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={p.commentName} numberOfLines={1} {...scaledTextProps}>
-          {c.author ? c.author.name.toUpperCase() : 'A MEMBER, DEPARTED'}
+          {c.author ? c.author.name.toUpperCase() : DEPARTED_NAME.toUpperCase()}
           {c.mine ? '  ·  YOU' : ''}
           {/* What THE REPLY was for, without inventing a second object: ordered
               by certifies, the strongest answer is simply first, and says so. */}

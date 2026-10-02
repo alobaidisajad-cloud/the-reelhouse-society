@@ -50,6 +50,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { formatClockTime, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
+import { authorName, isDepartedHandle, quotedName } from '@/src/constants/departed';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -111,7 +112,7 @@ export const firstLink = (content: string | null | undefined) =>
 /** A message, as a screen reader hears it: what it answers, its words, what it shares. */
 export function spokenDispatch(msg: LoungeMessage): string {
   const parts: string[] = [];
-  if (msg.reply_to_content) parts.push(`In reply to ${msg.reply_to_username || 'a member'}: ${msg.reply_to_content}`);
+  if (msg.reply_to_content) parts.push(`In reply to ${quotedName(msg.reply_to_username)}: ${msg.reply_to_content}`);
   if (msg.content) parts.push(msg.content);
   const share = shareOf(msg);
   if (share) parts.push(`Shared ${share.typeLabel.toLowerCase()}${share.title ? `: ${share.title}` : ''}`);
@@ -251,11 +252,13 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
               <View style={s.authorAvatar}>
                 {msg.avatar_url
                   ? <Image source={{ uri: msg.avatar_url }} style={s.authorAvatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
-                  : <Text style={s.authorAvatarLetter}>{msg.username?.[0]?.toUpperCase()}</Text>}
+                  // A departed member's disc is empty, as on every card: no letter of a mark.
+                  : !msg.user_id || isDepartedHandle(msg.username) || !msg.username ? null
+                  : <Text style={s.authorAvatarLetter}>{msg.username[0].toUpperCase()}</Text>}
               </View>
             )}
             <Text style={[s.authorName, isSelf && s.authorNameSelf]} numberOfLines={1}>
-              {isSelf ? 'You' : msg.username}
+              {isSelf ? 'You' : authorName(msg.user_id, msg.username)}
             </Text>
             <Text style={s.authorTime}>
               {formatClockTime(msg.created_at)}
@@ -284,7 +287,7 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
               }}>
               {Boolean(msg.reply_to_content) && (
                 <View style={s.replyQuote}>
-                  <Text style={s.replyQuoteAuthor} numberOfLines={1}>{msg.reply_to_username || 'Unknown'}</Text>
+                  <Text style={s.replyQuoteAuthor} numberOfLines={1}>{quotedName(msg.reply_to_username)}</Text>
                   <Text style={s.replyQuoteContent} numberOfLines={2}>{msg.reply_to_content}</Text>
                 </View>
               )}
@@ -507,7 +510,8 @@ export default function LoungeRoomScreen() {
     if (!input.trim() || sending || !id) return;
     sendMessage(id, input.trim(), 'text', {
       reply_to_id: replyTo?.id,
-      reply_to_username: replyTo?.username,
+      // Kept with the reply: only a real handle (or the database's own mark), never a stand-in.
+      reply_to_username: replyTo?.username || undefined,
       reply_to_content: replyTo?.content,
     });
     setInput('');
@@ -706,7 +710,7 @@ export default function LoungeRoomScreen() {
           {replyTo && (
             <AnimatedView entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={s.replyBanner}>
               <View style={s.replyBannerCol}>
-                <Text style={s.replyBannerAuthor} numberOfLines={1}>Replying to {replyTo.username}</Text>
+                <Text style={s.replyBannerAuthor} numberOfLines={1}>Replying to {authorName(replyTo.user_id, replyTo.username)}</Text>
                 <Text style={s.replyBannerText} numberOfLines={1}>{replyTo.content || 'Shared content'}</Text>
               </View>
               <PressableScale onPress={() => setReplyTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button"
@@ -811,7 +815,7 @@ export default function LoungeRoomScreen() {
         onReport={handleReport}
         onBlock={handleBlock}
       />
-      {selectedMessage && (
+      {selectedMessage?.user_id && (
         <ReportSheet
           visible={reportSheetVisible}
           contentType="lounge_message"

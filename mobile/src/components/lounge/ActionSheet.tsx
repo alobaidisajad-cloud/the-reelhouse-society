@@ -131,15 +131,17 @@ function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose
               <Text style={s.actionBtnText}>COPY TEXT</Text>
             </PressableScale>
           )}
-          {!internalIsSelf && (
+          {/* A departed member's words have no account behind them to report or
+              block (as the Dispatch says of its own): no row that cannot work. */}
+          {!internalIsSelf && !!internalMsg.user_id && (
             <>
               <PressableScale style={s.actionBtn} hitSlop={null} onPress={() => { onReport?.(internalMsg); onClose(); }} accessibilityRole="button">
                 <ShieldAlert size={18} color={colors.fog} strokeWidth={1.5} />
                 <Text style={s.actionBtnText}>REPORT MESSAGE</Text>
               </PressableScale>
-              <PressableScale style={[s.actionBtn, s.actionBtnLast]} hitSlop={null} onPress={() => { onBlock?.(internalMsg.user_id); onClose(); }} accessibilityRole="button">
+              <PressableScale style={[s.actionBtn, s.actionBtnLast]} hitSlop={null} onPress={() => { if (internalMsg.user_id) onBlock?.(internalMsg.user_id); onClose(); }} accessibilityRole="button">
                 <Ban size={18} color={colors.crimson} strokeWidth={1.5} />
-                <Text style={[s.actionBtnText, s.actionBtnDanger]}>BLOCK @{internalMsg.username?.toUpperCase()}</Text>
+                <Text style={[s.actionBtnText, s.actionBtnDanger]}>{internalMsg.username ? `BLOCK @${internalMsg.username.toUpperCase()}` : 'BLOCK THIS MEMBER'}</Text>
               </PressableScale>
             </>
           )}

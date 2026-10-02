@@ -22,6 +22,7 @@ import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
 import { KIND_RULE, KIND_NAME, MARGIN_W, RULE_W, RULE_GAP, CRIMSON_INK, UNSPOKEN, AVATAR, nameOf } from './paperMetrics';
+import { DEPARTED_NAME } from '@/src/constants/departed';
 import { LEAD_STYLE } from './paperPerf';
 import { MS, PILL_Y } from './paperMotion';
 import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
@@ -631,7 +632,7 @@ export const DossierShareCard = memo(function DossierShareCard({
             <Image source={{ uri: author.avatar }} style={m.shareAvatar} contentFit="cover" />
           ) : null}
           <Text style={m.shareBy} numberOfLines={1} {...decorativeTextProps}>
-            {author ? author.name.toUpperCase() : 'A MEMBER, DEPARTED'}
+            {author ? author.name.toUpperCase() : DEPARTED_NAME.toUpperCase()}
             {author ? <Text style={m.shareByNo}>{`  ·  No. ${author.memberNo}`}</Text> : null}
           </Text>
         </View>
@@ -760,7 +761,7 @@ export const LoungeCard = memo(function LoungeCard({
           )}
           {/* No house number: that belongs on the share card, which leaves the app. */}
           <Text style={m.loungeBy} {...deckLabelProps}>
-            {author ? author.name.toUpperCase() : 'A MEMBER, DEPARTED'}
+            {author ? author.name.toUpperCase() : DEPARTED_NAME.toUpperCase()}
           </Text>
         </View>
 

@@ -416,24 +416,11 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     },
 
     delete_list: async (p: any) => {
-        const { list_id, user_id } = p;
-        // One atomic RPC (live in production); sequential deletes only on a database without it.
-        try {
-            throwIfError(await supabase.rpc('delete_list_cascade', { p_list_id: list_id }));
-        } catch (rpcErr: any) {
-            // 42883: the function does not exist.
-            const code = String(rpcErr?.code ?? '');
-            const msg = String(rpcErr?.message ?? '').toLowerCase();
-            if (code === '42883' || msg.includes('function') && msg.includes('does not exist')) {
-                logger.warn('[MutationExecutor] delete_list_cascade RPC not found — falling back to sequential cascade');
-                throwIfError(await supabase.from('list_items').delete().eq('list_id', list_id));
-                throwIfError(await supabase.from('list_comments').delete().eq('list_id', list_id));
-                throwIfError(await supabase.from('interactions').delete().eq('target_list_id', list_id));
-                throwIfError(await supabase.from('lists').delete().eq('id', list_id).eq('user_id', user_id));
-            } else {
-                throw rpcErr;
-            }
-        }
+        const { list_id } = p;
+        // One atomic call, as the store's own delete makes it. A fallback for a
+        // database without the function deleted table by table, other members'
+        // critiques included, for a database this app never meets.
+        throwIfError(await supabase.rpc('delete_list_cascade', { p_list_id: list_id }));
         return {};
     },
 

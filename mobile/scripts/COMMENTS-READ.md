@@ -469,6 +469,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx | — |  |
 | src/components/lounge/__tests__/theRopeWaitsForTheSheet.test.tsx | — |  |
 | src/components/lounge/__tests__/theSalonsSayWhenTheyCouldNotBeRead.test.tsx | — |  |
+| src/components/lounge/__tests__/theSheetOffersOnlyWhatCanWork.test.tsx | 2026-10-02 | Written in the launch audit: a departed member's message offers no report or block; a block always names who it blocks. |
 | src/components/lounge/ActionSheet.tsx | 2026-10-01 | true as written |
 | src/components/lounge/AtTheDoorPanel.tsx | 2026-10-01 | true as written |
 | src/components/lounge/CreateLoungeSheet.tsx | 2026-10-01 | the rope and the counter say why, not what they were |
@@ -616,6 +617,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/theKeyboardHasRoom.test.tsx | 2026-10-01 | written with the keyboard's room |
 | src/components/reels/__tests__/theReelSaysWhatEachControlIs.test.tsx | 2026-10-01 | written with the Reel's controls |
 | src/components/ui/NotificationBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/constants/__tests__/aMemberWhoLeftIsNamedOneWay.test.tsx | 2026-10-02 | Written in the launch audit: a departed member named one way in the paper, a critique and the Lounge; the mark written in one place. |
 | src/constants/__tests__/aRankIsSoldEnforcedAndExplained.test.ts | — |  |
 | src/constants/__tests__/deepLinks.test.ts | — |  |
 | src/constants/__tests__/standing.test.ts | — |  |
@@ -625,6 +627,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/__tests__/theVaultIsThePrivateNotes.test.ts | — |  |
 | src/constants/cacheKeys.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/constants/deepLinks.ts | 2026-10-01 | true as written |
+| src/constants/departed.ts | 2026-10-02 | Written in the launch audit: how the house names a member who has left, and one whose name it could not read: one phrase, no made-up handle. |
 | src/constants/formats.ts | 2026-10-01 | the shelf is the Physical Archive, not the Vault; no ticket tag |
 | src/constants/gatedFeatures.ts | 2026-10-02 | Read whole (launch audit). essays-legacy said dispatch_dossiers was a view over the legacy table; it is a view over dispatch_posts (live schema). Its comment and reachedThrough corrected. |
 | src/constants/membership.ts | 2026-10-01 | one list; checked against production |
