@@ -102,6 +102,7 @@ Decisions, as of 2026-09-28:
 | `src/theme/__tests__/wordsAreNotMarks.test.ts` | Words are set in inks, not pigments. |
 | `src/theme/__tests__/wordsAreSolid.test.ts` | No word is drawn at partial opacity. |
 | `src/components/layout/__tests__/everyListChoosesItsAnchor.guard.test.ts` | Every vertical FlashList chooses whether it anchors (the header race shows only on a device). |
+| `src/stores/__tests__/everyPersistedStoreWaitsForTheKey.guard.test.ts` | Every persisted store skips hydration and is rehydrated by the root layout after the encryption key. |
 | `src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts` | No pressable is hidden from screen readers by halves (a backdrop is drawn only inside its sheet). |
 | `src/utils/__tests__/everyControlHasAName.guard.test.ts` | Every control a screen reader can name, and every sheet it can leave (a render sees one screen). |
 | `src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts` | No file is double-encoded by a shell round-trip. |

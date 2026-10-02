@@ -208,9 +208,15 @@ export const useVaultStore = create<VaultState>()(
       // persisting `loaded` would let a cold start believe a log's notes are
       // known when the server has not been asked yet.
       partialize: (s) => ({ notes: s.notes, notesLog: s.notesLog }) as Partial<VaultState>,
+      // Read once the encryption key is known (the root layout), as every other
+      // persisted store is: read at import, it found the empty pre-key storage,
+      // and the notes kept for a restart were never read back.
+      skipHydration: true,
     },
   ),
 );
+
+export const rehydrateVaultStore = () => useVaultStore.persist.rehydrate();
 
 /**
  * The Vault is emptied when a member signs out — the state and the key on disk.

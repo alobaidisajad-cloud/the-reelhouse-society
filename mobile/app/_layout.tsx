@@ -17,6 +17,7 @@ import { rehydrateFilmStore } from '@/src/stores/films';
 import { rehydrateSettingsStore } from '@/src/stores/settings';
 import { rehydrateDiscoverStore } from '@/src/stores/discover';
 import { rehydrateNotificationStore } from '@/src/stores/notificationStore';
+import { rehydrateVaultStore } from '@/src/stores/vaultStore';
 import { colors } from '@/src/theme/theme';
 import { CourierPrime_400Regular, CourierPrime_400Regular_Italic, CourierPrime_700Bold } from '@expo-google-fonts/courier-prime';
 import { Rye_400Regular, useFonts } from '@expo-google-fonts/rye';
@@ -78,6 +79,7 @@ export default function RootLayout() {
           rehydrateSettingsStore(),
           rehydrateDiscoverStore(),
           rehydrateNotificationStore(),
+          rehydrateVaultStore(),
         ]);
         // COLD-START LAW: boot from the local cache (~1ms) and render NOW.
         // The network reconcile (restoreSession) runs in the background and

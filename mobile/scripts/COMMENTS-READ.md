@@ -808,6 +808,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/dispatchRefusals.test.ts | — |  |
 | src/stores/__tests__/dispatchWrites.test.ts | — |  |
 | src/stores/__tests__/encryptionAtRest.guard.test.ts | — |  |
+| src/stores/__tests__/everyPersistedStoreWaitsForTheKey.guard.test.ts | 2026-10-02 | every persisted store is read after the key |
 | src/stores/__tests__/films.test.ts | — |  |
 | src/stores/__tests__/followGraph.wiring.guard.test.ts | 2026-09-29 | follow-list wipe fixed; comments read |
 | src/stores/__tests__/interactionSlice.test.ts | — |  |
@@ -872,7 +873,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/settings.ts | — |  |
 | src/stores/socialStore.ts | 2026-10-01 | the header says where the store lives |
 | src/stores/tellMarks.ts | 2026-10-01 | true as written |
-| src/stores/vaultStore.ts | — |  |
+| src/stores/vaultStore.ts | 2026-10-02 | read after the key, as every persisted store is |
 | src/test-support/swallowedTypeError.ts | — |  |
 | src/theme/__tests__/aPhotographIsNotLit.test.ts | — |  |
 | src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts | 2026-10-01 | written: the flat-but-elevated ratchet |
