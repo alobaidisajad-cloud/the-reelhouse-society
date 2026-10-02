@@ -32,6 +32,9 @@ import { useSocialStore } from '@/src/stores/followStore';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const HITSLOP = { top: 10, bottom: 10, left: 10, right: 10 } as const;
+/** The row's gap (10) halved between DECLINE and ADMIT, so neither takes the other's tap. */
+const DECLINE_SLOP = { ...HITSLOP, right: 5 } as const;
+const ADMIT_SLOP = { ...HITSLOP, left: 5 } as const;
 
 const RequestRow = React.memo(function RequestRow({
   item, busy, onAccept, onDecline,
@@ -48,7 +51,7 @@ const RequestRow = React.memo(function RequestRow({
         style={[s.btn, s.declineBtn, busy && s.btnBusy]}
         onPress={() => onDecline(item)}
         disabled={busy}
-        hitSlop={HITSLOP}
+        hitSlop={DECLINE_SLOP}
         haptic="selection"
         accessibilityRole="button"
         accessibilityLabel={`Decline ${item.username}`}
@@ -59,7 +62,7 @@ const RequestRow = React.memo(function RequestRow({
         style={[s.btn, s.admitBtn, busy && s.btnBusy]}
         onPress={() => onAccept(item)}
         disabled={busy}
-        hitSlop={HITSLOP}
+        hitSlop={ADMIT_SLOP}
         haptic="medium"
         accessibilityRole="button"
         accessibilityLabel={`Admit ${item.username}`}

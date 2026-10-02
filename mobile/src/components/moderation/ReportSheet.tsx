@@ -252,7 +252,7 @@ function ReportSheet({
               onPress={handleDismiss}
               pressedScale={1}
               accessible={false}
-              importantForAccessibility="no"
+              importantForAccessibility="no-hide-descendants"
             >
               <View style={StyleSheet.absoluteFill} />
             </PressableScale>

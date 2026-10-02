@@ -163,7 +163,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
     <Modal statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
       <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
         {/* The ground closes it for a finger; a screen reader has the named Close. */}
-        <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no"><View /></PressableScale>
+        <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no-hide-descendants"><View /></PressableScale>
       </BlurView>
       {/* Arrive, rising from below, not a mount-time `entering` that can stall. */}
       <AnimatedView exiting={SlideOutDown.duration(MS.quick).easing(leave())} style={s.frame} pointerEvents="box-none">

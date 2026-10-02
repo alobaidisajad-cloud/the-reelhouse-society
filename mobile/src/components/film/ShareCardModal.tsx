@@ -125,7 +125,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
     <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={s.overlay} onAccessibilityEscape={onClose}>
         {/* The ground closes it for a finger; a screen reader has the named ✕. */}
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} importantForAccessibility="no" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} importantForAccessibility="no-hide-descendants" />
 
         <View style={s.modalContent}>
           <View style={s.header}>

@@ -237,7 +237,7 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
             ember={<Search size={13} color={colors.fog} strokeWidth={1.5} style={s.searchIcon} />}
           />
         </View>
-        <View style={r.chipRow}>
+        <View style={[r.chipRow, r.chipScroll]}>
           {STACK_SORTS.map(sv => (
             <RoomChip
               key={sv.id}

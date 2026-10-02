@@ -62,7 +62,7 @@ const ProviderLogo = React.memo(function ProviderLogo({ p, providerLink }: { p: 
 
   const face = p.logo_path ? (
     <Image
-      source={{ uri: tmdb.logo(p.logo_path) }}
+      source={{ uri: tmdb.logo(p.logo_path, 'w154') }}
       style={s.logo}
       contentFit="cover"
       cachePolicy="memory-disk"
@@ -78,7 +78,7 @@ const ProviderLogo = React.memo(function ProviderLogo({ p, providerLink }: { p: 
   // A logo is a picture: the service is named for a screen reader either way,
   // and it is a control only where there is somewhere to go.
   return providerLink ? (
-    <PressableScale onPress={handlePress} haptic="light" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+    <PressableScale onPress={handlePress} haptic="light" hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
       accessibilityRole="link" accessibilityLabel={`${p.provider_name}. Opens JustWatch.`}>
       {face}
     </PressableScale>

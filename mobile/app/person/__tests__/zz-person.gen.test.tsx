@@ -23,11 +23,7 @@ jest.mock('@tanstack/react-query', () => ({
   useQuery: () => mockQuery,
   useQueryClient: () => ({ setQueryData: jest.fn(), getQueryData: jest.fn(), invalidateQueries: jest.fn() }),
 }));
-jest.mock('expo-router', () => ({
-  router: { back: jest.fn(), push: jest.fn(), replace: jest.fn() },
-  useLocalSearchParams: () => ({ id: '1032' }),
-  useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
-}));
+jest.requireMock('expo-router').useLocalSearchParams.mockReturnValue({ id: '1032' });
 jest.mock('@/src/stores/films', () => {
   const state = { _loggedIndex: {} };
   const useArchiveStore = (sel?: (s: unknown) => unknown) => (sel ? sel(state) : state);

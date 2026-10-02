@@ -23,7 +23,7 @@ import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, castOf, liftOf } from '@/src/theme/theme';
 import { decorativeTextProps } from '@/src/constants/textScaling';
 import { ReelRating } from '@/src/components/Decorative';
 import { stripHtml } from '@/src/utils/html';
@@ -108,6 +108,7 @@ export function NitrateFileCard({ data }: { data: NitrateFileData }) {
         {/* Poster zone — the only flexible region; absorbs all variance */}
         <View style={s.posterZone}>
           <View style={s.posterFrame}>
+            <View style={s.posterClip}>
             {data.posterUrl ? (
               <Image source={{ uri: data.posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
             ) : (
@@ -118,6 +119,7 @@ export function NitrateFileCard({ data }: { data: NitrateFileData }) {
                 {!!data.year && <Text {...decorativeTextProps} style={s.posterFallbackYear}>{data.year}</Text>}
               </LinearGradient>
             )}
+            </View>
           </View>
 
           {/* The stamp — logged files only; inset ≥10px from every clip edge */}
@@ -258,19 +260,19 @@ const s = StyleSheet.create({
     padding: 16,
     paddingBottom: 10,
   },
-  posterFrame: { ...EDGE_LIT,
+  posterFrame: {
     height: '100%',
     aspectRatio: 2 / 3,
+    ...castOf({ shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.7, shadowRadius: 18 }),
+  },
+  posterClip: { ...EDGE_LIT,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
     borderRadius: 4,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.7,
-    shadowRadius: 18,
-    elevation: 8,
+    ...liftOf({ elevation: 8 }),
   },
   posterFallback: {
     ...StyleSheet.absoluteFillObject,

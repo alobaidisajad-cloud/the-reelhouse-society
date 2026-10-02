@@ -84,7 +84,7 @@ const Row = memo(function Row({ s, chosen, onPick }: {
     : `${s.parts.length} FILED · ${s.parts.map(roman).join(', ')}`;
   return (
     <PressableScale
-      style={x.row} onPress={onPick} haptic="selection"
+      style={x.row} onPress={onPick} haptic="selection" hitSlop={null}
       accessibilityRole="button"
       accessibilityState={{ selected: chosen }}
       accessibilityLabel={`${s.title}. ${s.parts.length} filed. This would be part ${next}.`}
@@ -247,7 +247,7 @@ function SeriesSheet({ chosen, onClose, onSet, onClear, bottomInset }: Omit<Pick
           ) : null}
 
           <PressableScale
-            style={x.row} onPress={begin} haptic="selection"
+            style={x.row} onPress={begin} haptic="selection" hitSlop={null}
             accessibilityRole="button"
             accessibilityState={{ selected: naming }}
             accessibilityLabel="Begin a new series"

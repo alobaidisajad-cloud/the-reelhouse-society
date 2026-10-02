@@ -30,7 +30,8 @@ export function SearchPartly({ onRetry }: { onRetry: () => void }) {
   return (
     <View style={s.partly}>
       <Text style={s.sub}>Part of the archive could not be reached.</Text>
-      <TryAgainLine onPress={onRetry} accessibilityLabel="Ask the archive again" />
+      {/* Reaches no lower than the note's own foot: the first result sits below it. */}
+      <TryAgainLine onPress={onRetry} accessibilityLabel="Ask the archive again" hitSlop={{ top: 6, bottom: 6, left: 15, right: 15 }} />
     </View>
   );
 }

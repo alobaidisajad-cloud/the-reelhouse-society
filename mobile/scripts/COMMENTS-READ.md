@@ -75,8 +75,8 @@ without one). "Read" is the day its comments were last read against its code.
 | app/_layout.tsx | — |  |
 | app/(admin)/__tests__/tribunal.test.tsx | — |  |
 | app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | — |  |
-| app/(admin)/_layout.tsx | — |  |
-| app/(admin)/tribunal.tsx | — |  |
+| app/(admin)/_layout.tsx | 2026-10-02 | read; sound |
+| app/(admin)/tribunal.tsx | 2026-10-02 | doors through nav; a failed docket counts nothing; the ban said as enforced |
 | app/(modals)/__tests__/list-modal.curate.test.tsx | — |  |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/cover-picker.tsx | 2026-10-01 |  |
@@ -88,7 +88,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/search-modal.tsx | 2026-10-02 | tabs named; partial results said; an emptied box empties at once; nav.dismiss |
 | app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
 | app/(tabs)/_layout.tsx | — |  |
-| app/(tabs)/darkroom.tsx | — |  |
+| app/(tabs)/darkroom.tsx | 2026-10-02 | the next batch that could not be developed is said, and asked again |
 | app/(tabs)/dispatch.tsx | 2026-09-29 | 12 fixed; NewsService history and the pill-fix story cut |
 | app/(tabs)/index.tsx | 2026-10-01 | the front door arrives; nav; a failed pull says so |
 | app/(tabs)/lounge.tsx | 2026-10-01 | the corridor in the present tense; the gate is for visitors only |
@@ -237,14 +237,15 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/critique/CritiqueRow.tsx | 2026-10-01 | a nameless author is never linked |
 | src/components/critique/withdraw.ts | 2026-10-01 | new: the one question before a critique comes off the page |
 | src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx | 2026-09-29 | new |
+| src/components/darkroom/__tests__/theNextBatchSaysWhenItCouldNotBeDeveloped.test.tsx | 2026-10-02 | the next batch says it could not be developed; moods are buttons with state and keys |
 | src/components/darkroom/__tests__/theSuggestionsComeBack.test.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/__tests__/theTraySaysWhenTheCatalogueIsAway.test.tsx | — |  |
-| src/components/darkroom/constants.ts | — |  |
-| src/components/darkroom/DarkroomCards.tsx | — |  |
+| src/components/darkroom/constants.ts | 2026-10-02 | read; sound |
+| src/components/darkroom/DarkroomCards.tsx | 2026-10-02 | doors through nav |
 | src/components/darkroom/DarkroomFilterPanel.tsx | 2026-09-29 | year applied on end of editing (iPhone number pad has no return); named fields |
 | src/components/darkroom/DarkroomHeader.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/DarkroomHero.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
-| src/components/darkroom/DarkroomMoodBar.tsx | — |  |
+| src/components/darkroom/DarkroomMoodBar.tsx | 2026-10-02 | keys; selected as a state; meaning spoken |
 | src/components/Decorative.tsx | 2026-10-01 | the dead marquee and styles gone |
 | src/components/dispatch/__tests__/aBallotsClosingTimes.test.ts | 2026-09-29 | new |
 | src/components/dispatch/__tests__/aControlsNameCanBeRead.test.ts | — |  |
@@ -386,7 +387,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/CinematicFlashList.tsx | 2026-09-29 | NOT_ANCHORED default (header race) |
 | src/components/layout/CinematicScrollbar.tsx | 2026-10-01 | the thumb maths in one place |
 | src/components/layout/CinematicScrollView.tsx | 2026-10-01 | true as written |
-| src/components/layout/ConciergeButton.tsx | — |  |
+| src/components/layout/ConciergeButton.tsx | 2026-10-02 | door through nav; the hint names all three doors |
 | src/components/layout/FrozenTab.tsx | 2026-10-01 | says it passes through; freezing carried to performance |
 | src/components/layout/navMetrics.ts | — |  |
 | src/components/layout/SectionCards.tsx | 2026-10-01 | a section title is a heading |
@@ -677,7 +678,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useArrival.ts | 2026-10-01 | written: an arrival that cannot stay invisible |
 | src/hooks/useAuthFlow.ts | 2026-10-01 | one sheet for reset or confirm; comments short |
 | src/hooks/useAuthThrottle.ts | 2026-10-01 | a lifted lock keeps the rule |
-| src/hooks/useBanCheck.ts | — |  |
+| src/hooks/useBanCheck.ts | 2026-10-02 | says what it guards, and that the server guards every write |
 | src/hooks/useCatalogueSearch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useKeyboardLift.ts | 2026-10-01 | written: a sheet over a screen rises with the keyboard |
 | src/hooks/useClearance.ts | 2026-10-01 | one answer for every gate |
@@ -724,12 +725,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/nativeOnly/revenuecatWebStub.js | — |  |
 | src/lib/pushNotifications.ts | — |  |
 | src/lib/pushPrimer.ts | 2026-10-01 | new: the house asks to send word at a moment that wants it |
-| src/lib/queryClient.ts | — |  |
+| src/lib/queryClient.ts | 2026-10-02 | read; sound |
 | src/lib/revenueCat.ts | 2026-09-29 | 17 fixed; FALSE: 'syncs the tier to profiles.role' (the server re-reads RevenueCat and ignores the tier); setup notes with prices; ticket tags |
 | src/lib/scrollBridge.ts | — |  |
 | src/lib/sentry.ts | — |  |
 | src/lib/supabase.ts | 2026-10-01 | the session kept by authSessionStorage; comments short |
-| src/lib/tmdb.ts | — |  |
+| src/lib/tmdb.ts | 2026-10-02 | read; sound |
 | src/lib/tmdbErrors.ts | — |  |
 | src/lore/fragments.ts | — |  |
 | src/providers/__tests__/androidTracking.test.ts | — |  |
@@ -855,7 +856,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/watchlistSlice.ts | — |  |
 | src/stores/films.ts | — |  |
 | src/stores/followStore.ts | 2026-10-01 | comments cut to the why |
-| src/stores/lounge.ts | 2026-09-28 | 38 findings fixed; stale 'created rooms' reason corrected (create_lounge adds the member row); loadOlderMessages→loadMoreMessages; 12 repeated sessionGuard notes dropped |
+| src/stores/lounge.ts | 2026-10-02 | read; sound (a suspension said in the house's words is an app-wide class, listed) |
 | src/stores/markCounts.ts | — |  |
 | src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
 | src/stores/notificationStore.ts | 2026-10-02 | first page ordered by time then id; moreFailed |
@@ -894,6 +895,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/social.types.ts | — |  |
 | src/types/tmdb.types.ts | — |  |
 | src/types/ui.types.ts | — |  |
+| src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-02 | a hidden pressable is hidden whole (no-hide-descendants) |
 | src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts | 2026-10-01 | new |
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
@@ -1028,11 +1030,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/tierRefusal.ts | 2026-10-01 | by the sentence, not the code |
 | src/utils/timeAgo.ts | — |  |
 | src/utils/toastBus.ts | — |  |
-| src/utils/typedRouter.ts | — |  |
+| src/utils/typedRouter.ts | 2026-10-02 | read; sound |
 | src/utils/validateUsername.ts | — |  |
 | src/utils/validateWithTelemetry.ts | 2026-10-01 | docs cut to what the types do not say |
 | src/utils/withAbortSignal.ts | — |  |
-| src/utils/withRetry.ts | — |  |
+| src/utils/withRetry.ts | 2026-10-02 | read; sound |
 | src/utils/withTimeout.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | supabase/functions/fetch-rss/index.ts | 2026-09-29 | the header said it serves the Dispatch tab; no current source calls it (kept for installed builds, per backend-contract); audit tags and the relay's history dropped |
 | supabase/functions/notify-push/index.ts | — |  |

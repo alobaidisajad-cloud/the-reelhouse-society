@@ -58,7 +58,7 @@ export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmai
           style={StyleSheet.absoluteFill}
           onPress={onClose}
           accessible={false}
-          importantForAccessibility="no"
+          importantForAccessibility="no-hide-descendants"
         />
         <View style={s.modalContent}>
           {/* Archival registration marks in the card corners */}

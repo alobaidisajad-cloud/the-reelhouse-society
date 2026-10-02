@@ -65,11 +65,11 @@ export default function ArchiveLock({ onUnlocked }: { onUnlocked: () => void }) 
             <Text {...scaledTextProps} style={styles.title}>RESTRICTED ACCESS</Text>
             <Text {...scaledTextProps} style={styles.subtitle}>Authenticate to view your private archive.</Text>
             {error ? <Text {...scaledTextProps} style={styles.error}>{error}</Text> : null}
-            <PressableScale style={styles.button} onPress={authenticate} accessibilityRole="button" accessibilityLabel="Authenticate to open your Archive">
+            <PressableScale style={styles.button} onPress={authenticate} hitSlop={{ top: 15, bottom: 9, left: 15, right: 15 }} accessibilityRole="button" accessibilityLabel="Authenticate to open your Archive">
                 <Text {...scaledTextProps} style={styles.btnText}>AUTHENTICATE</Text>
             </PressableScale>
             {noMeans && (
-                <PressableScale style={styles.settingsBtn} onPress={() => nav.push('/settings')} accessibilityRole="button" accessibilityLabel="Turn the lock off in Settings">
+                <PressableScale style={styles.settingsBtn} onPress={() => nav.push('/settings')} hitSlop={{ top: 9, bottom: 15, left: 15, right: 15 }} accessibilityRole="button" accessibilityLabel="Turn the lock off in Settings">
                     <Text {...scaledTextProps} style={styles.settingsText}>TURN THE LOCK OFF IN SETTINGS</Text>
                 </PressableScale>
             )}

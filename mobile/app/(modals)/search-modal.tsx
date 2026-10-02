@@ -167,7 +167,7 @@ export default function SearchModal() {
         key={t.key}
         style={[st.tabBtn, active && st.tabActive]}
         onPress={() => { TactileEngine.selection(); setTab(t.key); }}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        hitSlop={{ top: 10, bottom: 10, left: 2, right: 2 }}
         haptic="selection"
         accessibilityRole="tab"
         accessibilityState={{ selected: active }}

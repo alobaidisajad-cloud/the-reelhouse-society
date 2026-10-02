@@ -91,7 +91,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
       <Animated.View entering={FadeInUp.duration(MS.considered).easing(arrive())} exiting={FadeOutDown.duration(MS.quick).easing(leave())} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
         <View style={s.header}>
           <Text {...scaledTextProps} style={s.title}>UPDATE IDENTITY</Text>
-          <PressableScale onPress={() => { onClose(); }} style={s.closeBtn} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic="selection" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Close">
+          <PressableScale onPress={() => { onClose(); }} style={s.closeBtn} hitSlop={{ top: 15, bottom: 9, left: 15, right: 15 }} haptic="selection" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Close">
             <X size={20} color={colors.fog} />
           </PressableScale>
         </View>

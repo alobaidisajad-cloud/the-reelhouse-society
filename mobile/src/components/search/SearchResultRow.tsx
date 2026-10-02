@@ -63,6 +63,8 @@ export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR;
         onPress={() => onPress(item)}
         haptic="light"
         pressedScale={0.97}
+        // A row is at least its poster's 56pt tall: no halo, or stacked rows take each other's taps.
+        hitSlop={null}
         accessibilityRole="button"
         accessibilityLabel={resultLabel(item)}
         accessibilityHint="Double tap to view details"

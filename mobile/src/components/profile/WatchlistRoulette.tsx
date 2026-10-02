@@ -212,7 +212,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                     hides what it holds from VoiceOver, so a card inside it could
                     not be read. A finger closes on the ground; a screen reader has
                     the named ✕ and the escape gesture. */}
-                <Pressable style={StyleSheet.absoluteFill} onPress={close} accessible={false} importantForAccessibility="no" />
+                <Pressable style={StyleSheet.absoluteFill} onPress={close} accessible={false} importantForAccessibility="no-hide-descendants" />
                 <View style={s.card}>
 
                     {/* IDLE — Summon */}

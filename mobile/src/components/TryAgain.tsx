@@ -38,14 +38,17 @@ export default function TryAgain({ onPress, accessibilityLabel = 'Try again', hi
  * The same act one weight down: a line of small caps, for a panel too small to
  * hold the plate (a picker's pictures, a record inside a card).
  */
-export function TryAgainLine({ onPress, accessibilityLabel = 'Try again', style }: {
+export function TryAgainLine({ onPress, accessibilityLabel = 'Try again', hitSlop, style }: {
   onPress: () => void;
   accessibilityLabel?: string;
+  /** How far it reaches, where a neighbour sits closer than the default. */
+  hitSlop?: Insets;
   style?: StyleProp<ViewStyle>;
 }) {
   return (
     <PressableScale
       onPress={onPress}
+      hitSlop={hitSlop}
       style={style}
       haptic="selection"
       accessibilityRole="button"

@@ -306,7 +306,7 @@ export default function SocialModal() {
     // ── Render helpers ────────────────────────────────────────────────────────
     const renderSocialItem = useCallback(({ item, index }: { item: SocialProfile; index: number }) => (
         <Animated.View entering={FadeInUp.duration(300).delay(Math.min(index * 40, 400))}>
-            <PressableScale onPress={() => handleProfilePress(item.username)} accessibilityRole="button" accessibilityLabel={`View ${item.username}'s profile`}>
+            <PressableScale onPress={() => handleProfilePress(item.username)} hitSlop={null} accessibilityRole="button" accessibilityLabel={`View ${item.username}'s profile`}>
                 <View style={styles.userRow}>
                     {item.avatar_url && item.avatar_url.startsWith('http') ? (
                         <Image source={{ uri: item.avatar_url }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" transition={150} />
@@ -370,9 +370,9 @@ export default function SocialModal() {
             <View style={styles.dragHandleWrap}><View style={styles.dragHandle} /></View>
 
             <View style={styles.header}>
-                <View style={{ width: 40 }} />
+                <View style={styles.headerBalance} />
                 <Text style={styles.title}>{resolveTitle(mode)}</Text>
-                <PressableScale onPress={() => nav.back()} style={styles.closeBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" pressedScale={0.92} accessibilityRole="button" accessibilityLabel="Close social modal">
+                <PressableScale onPress={() => nav.back()} style={styles.closeBtn} hitSlop={null} haptic="selection" pressedScale={0.92} accessibilityRole="button" accessibilityLabel="Close social modal">
                     <X size={20} color={colors.parchment} />
                 </PressableScale>
             </View>
@@ -458,7 +458,9 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.2)',
     },
     title: { fontFamily: fonts.sub, fontSize: 12, letterSpacing: 4, color: colors.sepia },
-    closeBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
+    // 48 by its own box: a halo here reached into the first row below the rule.
+    closeBtn: { width: 48, height: 48, alignItems: 'flex-end', justifyContent: 'center' },
+    headerBalance: { width: 48 },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     moreSpace: { alignItems: 'center', paddingVertical: 16 },
 
