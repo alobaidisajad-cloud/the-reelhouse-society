@@ -11,6 +11,5 @@
 export * from './film.types';
 export * from './social.types';
 export * from './tmdb.types';
-export * from './ui.types';
 export * from './profile.types';
 export type { User, UserPreferences } from '../schemas/user';

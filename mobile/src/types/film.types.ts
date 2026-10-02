@@ -93,14 +93,6 @@ export interface WatchlistItem {
     year?: number | null
 }
 
-export interface VaultItem {
-    id: number
-    title: string
-    poster_path?: string | null
-    year?: number
-    format: string
-}
-
 export interface PhysicalArchiveItem {
     id: string | number
     filmId: number

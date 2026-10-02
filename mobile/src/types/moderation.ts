@@ -68,13 +68,6 @@ export const REPORT_REASON_LABELS: Record<ReportReason, { label: string; sublabe
   other: { label: 'OTHER', sublabel: 'Describe the infraction below' },
 };
 
-// ── Block Types ────────────────────────────────────────────────────────────
-
-/** Type of user-level content visibility restriction. */
-export const BlockType = z.enum(['block', 'mute']);
-/** Union type for block/mute distinction. */
-export type BlockType = z.infer<typeof BlockType>;
-
 // ── Moderation Actions ─────────────────────────────────────────────────────
 
 /** Graduated enforcement actions available to Tribunal admins. */
@@ -121,44 +114,6 @@ export const ReportPayloadSchema = z.object({
 );
 /** Typed report payload after validation. */
 export type ReportPayload = z.infer<typeof ReportPayloadSchema>;
-
-// ── Block Record Schema ────────────────────────────────────────────────────
-
-/**
- * Schema for a persisted block/mute record from the `user_blocks` table.
- */
-export const BlockRecordSchema = z.object({
-  /** Primary key UUID. */
-  id: z.string().uuid(),
-  /** UUID of the user who initiated the block/mute. */
-  blocker_id: z.string().uuid(),
-  /** UUID of the user being blocked/muted. */
-  blocked_id: z.string().uuid(),
-  /** Whether this is a full block or a mute. */
-  type: BlockType,
-  /** ISO timestamp of when the record was created. */
-  created_at: z.string(),
-});
-/** Typed block/mute record. */
-export type BlockRecord = z.infer<typeof BlockRecordSchema>;
-
-// ── Action Meta Schema (admin actions) ─────────────────────────────────────
-
-/**
- * Metadata accompanying an admin moderation action.
- */
-export const ActionMetaSchema = z.object({
-  /** UUID of the admin performing the action. */
-  admin_id: z.string().uuid(),
-  /** Human-readable reason for the action. */
-  reason: z.string().min(1),
-  /** Duration in hours for time-limited actions (suspend). */
-  duration_hours: z.number().positive().optional(),
-  /** Whether to send a notification to the affected user. */
-  notify_user: z.boolean().default(true),
-});
-/** Typed admin action metadata. */
-export type ActionMeta = z.infer<typeof ActionMetaSchema>;
 
 // ── Mod Action Record Schema (audit log) ───────────────────────────────────
 

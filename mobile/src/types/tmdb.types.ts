@@ -49,20 +49,6 @@ export interface TMDBSearchResult {
     matchedContext?: string
 }
 
-export interface TMDBReview {
-    id: string;
-    author: string;
-    author_details?: {
-        name?: string;
-        username?: string;
-        avatar_path?: string | null;
-        rating?: number | null;
-    };
-    content: string;
-    created_at: string;
-    url: string;
-}
-
 export interface TMDBVideo {
     id: string;
     iso_639_1: string;

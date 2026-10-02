@@ -321,10 +321,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperKeyWell.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/paperMetrics.ts | 2026-09-29 | 33 fixed: stale names (NewsService, volumeNumber, chromeHeight, plate styles, noRawKindOnThePage) gone; measure example 375->318 corrected; formatCount branch comment was wrong |
 | src/components/dispatch/paper/PaperMore.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/dispatch/paper/paperMotion.ts | — |  |
+| src/components/dispatch/paper/paperMotion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperPerf.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/PaperPost.tsx | 2026-09-29 | 17 fixed; 3 FALSE: 'the counts leave' (they sit by the icons), 'there is no kind label' (every kind leads with one), 'rule material set by tier' misread; pending/dimmed never wired (logged) |
-| src/components/dispatch/paper/PaperStrike.tsx | — |  |
+| src/components/dispatch/paper/PaperStrike.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperStyles.ts | 2026-09-28 | Rewritten to the rule. Seven comments contradicted their values (16 vs 16.5, 9/1.1 vs 10/0.9, tracking 1.2 vs 0.9, a serial number where a monogram is drawn, a speck poster that is drawn); two blocks disagreed on what the rule carries; history removed. |
 | src/components/dispatch/paper/paperText.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
@@ -566,7 +566,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/WatchlistRoulette.tsx | 2026-10-01 | a mid-spin close stops the spin; opens filmId; nav |
 | src/components/RankBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/RatingLegend.tsx | — |  |
-| src/components/ReelEyeIcon.tsx | — |  |
+| src/components/ReelEyeIcon.tsx | 2026-10-02 | Read (launch audit): artwork. Left alone. |
 | src/components/reels/__tests__/MemberRegistry.select.test.ts | 2026-10-01 | no comments |
 | src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | 2026-10-01 | carries the door's reason |
 | src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | — |  |
@@ -893,21 +893,20 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/wordsAreNotMarks.test.ts | 2026-10-01 | true as written |
 | src/theme/__tests__/wordsAreSolid.test.ts | — |  |
 | src/theme/authStyles.ts | 2026-10-01 | comments short and true |
-| src/theme/brass.ts | — |  |
+| src/theme/brass.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/light.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/motion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/ryeAdvances.ts | 2026-10-01 |  |
 | src/theme/shaders.ts | — |  |
-| src/theme/stamp.ts | — |  |
+| src/theme/stamp.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/theme.ts | 2026-10-02 | Read whole (launch audit). Dead tokens removed: typography, physics (springBouncy broke the no-bounce law), three metrics, three effects; type.caption 8.5 and type.badge 7.5 sat under the 10pt floor unused. theTypeFloor now reads the live scale. |
-| src/types/film.types.ts | — |  |
-| src/types/index.ts | — |  |
-| src/types/moderation.ts | 2026-10-02 | Read whole (launch audit): content types match reports_content_type_check; details cap matches reportDetails. Sound. |
+| src/types/film.types.ts | 2026-10-02 | Read whole (launch audit). VaultItem was used nowhere: removed. |
+| src/types/index.ts | 2026-10-02 | Read whole (launch audit). ui.types (UIState: a paywall and handbook modal that do not exist) removed from the barrel and deleted. |
+| src/types/moderation.ts | 2026-10-02 | Read whole (launch audit): content types match reports_content_type_check. BlockType, BlockRecordSchema and ActionMetaSchema were used nowhere: removed. |
 | src/types/mutations.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/types/profile.types.ts | — |  |
-| src/types/social.types.ts | — |  |
-| src/types/tmdb.types.ts | — |  |
-| src/types/ui.types.ts | — |  |
+| src/types/profile.types.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
+| src/types/social.types.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
 | src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-02 | a hidden pressable is hidden whole (no-hide-descendants) |
 | src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts | 2026-10-01 | new |
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
