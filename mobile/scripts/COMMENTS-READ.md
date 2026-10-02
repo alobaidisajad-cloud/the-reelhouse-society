@@ -193,6 +193,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/surface-jest-failure.sh | — |  |
 | scripts/test-timezones.js | 2026-09-29 | the batch story reduced to the fact it guards |
 | src/assets/logo/reelhouse-logo-data.ts | — |  |
+| src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
 | src/components/__tests__/ActionDeck.test.tsx | 2026-10-01 | rendered: owner, certify, save, stranger |
 | src/components/__tests__/animation-parking.test.ts | — |  |
@@ -218,7 +219,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/theToastIsDrawnOnTop.test.ts | — |  |
 | src/components/atmosphere/__tests__/useSharedImage.test.tsx | — |  |
 | src/components/atmosphere/RoomBloom.tsx | — |  |
-| src/components/atmosphere/RoomLight.tsx | — |  |
+| src/components/atmosphere/RoomLight.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/atmosphere/useSharedImage.ts | — |  |
 | src/components/auth/AuthChrome.tsx | 2026-10-01 | true as written |
 | src/components/auth/EmailConfirmationScreen.tsx | 2026-10-01 | true as written |
@@ -324,12 +325,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperPost.tsx | 2026-09-29 | 17 fixed; 3 FALSE: 'the counts leave' (they sit by the icons), 'there is no kind label' (every kind leads with one), 'rule material set by tier' misread; pending/dimmed never wired (logged) |
 | src/components/dispatch/paper/PaperStrike.tsx | — |  |
 | src/components/dispatch/paper/paperStyles.ts | 2026-09-28 | Rewritten to the rule. Seven comments contradicted their values (16 vs 16.5, 9/1.1 vs 10/0.9, tracking 1.2 vs 0.9, a serial number where a monogram is drawn, a speck poster that is drawn); two blocks disagreed on what the rule carries; history removed. |
-| src/components/dispatch/paper/paperText.ts | — |  |
+| src/components/dispatch/paper/paperText.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
 | src/components/dispatch/roomLink.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/SeriesPicker.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/EmptyStates.tsx | 2026-10-01 | the offline state arrives through Arrive |
-| src/components/ErrorBoundary.tsx | — |  |
+| src/components/ErrorBoundary.tsx | 2026-10-02 | Read whole (launch audit). Retries spent left a disabled PLEASE RESTART APP: the button now restarts the app (expo-updates reloadAsync), and says how only when it cannot. |
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-01 | true as written |
 | src/components/feed/ActionDeck.tsx | 2026-10-01 | owner by id; nav; comments cut to the why |
 | src/components/feed/ActivityCard.tsx | 2026-10-01 | lies flat unless an Auteur's; comments made true |
@@ -376,7 +377,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/home/ProjectorBeam.tsx | 2026-10-01 | true as written |
 | src/components/home/types.ts | 2026-10-01 | true as written |
 | src/components/home/VelvetRopeCTA.tsx | 2026-10-01 | nav; the shimmer note made true |
-| src/components/InitiationModal.tsx | — |  |
+| src/components/InitiationModal.tsx | 2026-10-02 | Read whole (launch audit). Told every new member of private notes (the Vault, an Archivist's) and a Lounge behind the brass key (the house's mark for a locked door, which it is not). Both made true. |
 | src/components/KeyboardRoom.tsx | 2026-10-01 | written: the keyboard's room on Android |
 | src/components/layout/__tests__/aSectionIsAHeading.test.tsx | 2026-10-01 | written: a section title is a heading |
 | src/components/layout/__tests__/aSwipeBackIsHeard.test.tsx | 2026-10-02 | nav's history hears the swipe back |
@@ -393,7 +394,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/navMetrics.ts | — |  |
 | src/components/layout/PathTracker.tsx | 2026-10-02 | tells openSociety and nav the screen on every navigation |
 | src/components/layout/SectionCards.tsx | 2026-10-01 | a section title is a heading |
-| src/components/layout/TopNavBar.tsx | — |  |
+| src/components/layout/TopNavBar.tsx | 2026-10-02 | Read whole (launch audit). router.navigate kept on purpose: the Lounge is a tab, and push would stack a second tab navigator. Sound. |
 | src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-09-30 | new: doors, names, states, counts, every line's room |
 | src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-09-30 | new |
 | src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-01 | both doors, every pull |
@@ -491,7 +492,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/person/PersonHero.tsx | 2026-10-01 | histories to the present |
 | src/components/person/PersonOrnaments.tsx | 2026-10-01 | the rarity mark in the present tense |
 | src/components/person/personStyles.ts | 2026-10-01 | histories to the present |
-| src/components/Preloader.tsx | — |  |
+| src/components/Preloader.tsx | 2026-10-02 | Read whole (launch audit). A comment about a noise overlay that was never drawn removed. |
 | src/components/PressableScale.tsx | 2026-09-29 | accessible / actions pass through; hitSlop comment condensed |
 | src/components/profile/__tests__/anEmptyLedgerSaysSo.test.tsx | 2026-10-01 | written: an empty ledger is said as one |
 | src/components/profile/__tests__/anHonourIsNeverBroken.test.tsx | — |  |
@@ -562,7 +563,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/TasteDNAExportCanvas.tsx | 2026-10-02 | unspoken; words fixed-size (it is a picture); history comments trimmed |
 | src/components/profile/TasteMatch.tsx | 2026-10-01 |  |
 | src/components/profile/WatchlistRoulette.tsx | 2026-10-01 | a mid-spin close stops the spin; opens filmId; nav |
-| src/components/RankBadge.tsx | — |  |
+| src/components/RankBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/RatingLegend.tsx | — |  |
 | src/components/ReelEyeIcon.tsx | — |  |
 | src/components/reels/__tests__/MemberRegistry.select.test.ts | 2026-10-01 | no comments |
@@ -599,7 +600,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/theme/CrestGlow.tsx | 2026-10-01 | the leak note to what it does |
 | src/components/theme/DiamondDivider.tsx | 2026-10-01 |  |
 | src/components/theme/OrnamentalRule.tsx | 2026-10-01 | no comments |
-| src/components/ToastHost.tsx | — |  |
+| src/components/ToastHost.tsx | 2026-10-02 | Read whole (launch audit). Messages were cut at 2 lines (4 with a button): the body face is monospaced, so a 375pt phone kept ~66 characters (48 at x1.35) and the longest sentences lost the support address. Never cut now. |
 | src/components/Toggle.tsx | 2026-10-01 | comments say what is true now |
 | src/components/TryAgain.tsx | — |  |
 | src/components/__tests__/aLabelIsSpoken.test.ts | 2026-10-01 | written: a label on a View is spoken |
@@ -615,7 +616,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/cacheKeys.ts | — |  |
 | src/constants/deepLinks.ts | 2026-10-01 | true as written |
 | src/constants/formats.ts | 2026-10-01 | the shelf is the Physical Archive, not the Vault; no ticket tag |
-| src/constants/gatedFeatures.ts | — |  |
+| src/constants/gatedFeatures.ts | 2026-10-02 | Read whole (launch audit). essays-legacy said dispatch_dossiers was a view over the legacy table; it is a view over dispatch_posts (live schema). Its comment and reachedThrough corrected. |
 | src/constants/membership.ts | 2026-10-01 | one list; checked against production |
 | src/constants/modalRoutes.ts | — |  |
 | src/constants/standing.ts | — |  |
@@ -844,7 +845,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/createSelectors.ts | — |  |
 | src/stores/discover.ts | — |  |
 | src/stores/dispatch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/stores/dispatchTypes.ts | — |  |
+| src/stores/dispatchTypes.ts | 2026-10-02 | Read whole (launch audit): row shapes match the live schema (body NOT NULL DEFAULT '', so an ended filing parses). Sound; left alone. |
 | src/stores/domain/__tests__/aFilmAlreadyQueuedStaysQueued.test.ts | 2026-10-02 | a film already on the watchlist stays, and is said to be |
 | src/stores/domain/__tests__/aShelfIsNeverHeldHostage.test.ts | — |  |
 | src/stores/domain/__tests__/aStackLosesOneFilmInOneWrite.test.ts | 2026-10-02 | a stack loses one film in one write |
@@ -888,16 +889,16 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/wordsAreSolid.test.ts | — |  |
 | src/theme/authStyles.ts | 2026-10-01 | comments short and true |
 | src/theme/brass.ts | — |  |
-| src/theme/light.ts | — |  |
+| src/theme/light.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/motion.ts | — |  |
 | src/theme/ryeAdvances.ts | 2026-10-01 |  |
 | src/theme/shaders.ts | — |  |
 | src/theme/stamp.ts | — |  |
-| src/theme/theme.ts | 2026-09-28 | 31 findings; header claimed an 'exact port of the web CSS' (false); the ladder, the see-through rule and every measured ratio kept; a stray comment about tarnishDeep sat under onBrassQuiet — moved to its token |
+| src/theme/theme.ts | 2026-10-02 | Read whole (launch audit). Dead tokens removed: typography, physics (springBouncy broke the no-bounce law), three metrics, three effects; type.caption 8.5 and type.badge 7.5 sat under the 10pt floor unused. theTypeFloor now reads the live scale. |
 | src/types/film.types.ts | — |  |
 | src/types/index.ts | — |  |
-| src/types/moderation.ts | — |  |
-| src/types/mutations.ts | — |  |
+| src/types/moderation.ts | 2026-10-02 | Read whole (launch audit): content types match reports_content_type_check; details cap matches reportDetails. Sound. |
+| src/types/mutations.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/types/profile.types.ts | — |  |
 | src/types/social.types.ts | — |  |
 | src/types/tmdb.types.ts | — |  |
@@ -1012,7 +1013,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/memberDrafts.ts | 2026-10-02 | read; sound (drafts go to storage unencrypted on a keystore failure: a trade-off, listed) |
 | src/utils/memoryManager.ts | — |  |
-| src/utils/mutationExecutor.ts | 2026-09-28 | The header said the queue pauses 100ms between mutations: it pauses 0ms. The subject_backdrop cap added (offline gate). Audit tags and history removed; each replay's reason kept, shortened. |
+| src/utils/mutationExecutor.ts | 2026-10-02 | Read whole, every handler (launch audit). A Lounge message replayed from the queue dropped its own id, so a send whose answer was lost posted twice: the id is sent now. add_dossier claimed its id made a retry safe; the view's trigger ignores it, so it is no longer sent. |
 | src/utils/networkError.ts | — |  |
 | src/utils/noticeRoute.ts | — |  |
 | src/utils/offlineQueue.ts | 2026-09-29 | histories (#77, #82, OFFQ-2) → rules; FALSE: 'reactive UI binding' store (nothing subscribes, no screen reads it); FALSE: schema branch 'MUST come before' duplicate (errorClass is one value; the order lives in classifyQueueError) |
@@ -1028,14 +1029,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/softBreak.ts | — |  |
 | src/utils/storyExporter.ts | — |  |
-| src/utils/TactileEngine.ts | — |  |
+| src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
 | src/utils/text.ts | — |  |
 | src/utils/tier.ts | — |  |
 | src/utils/tierDoor.ts | 2026-10-01 | the server sentence as a door |
 | src/utils/tierRefusal.ts | 2026-10-01 | by the sentence, not the code |
-| src/utils/timeAgo.ts | — |  |
+| src/utils/timeAgo.ts | 2026-10-02 | Read whole (launch audit). formatTMDBDate had two branches returning the same value: one. |
 | src/utils/toastBus.ts | 2026-10-02 | a toast stays long enough to read |
 | src/utils/typedRouter.ts | 2026-10-02 | read; sound |
 | src/utils/validateUsername.ts | — |  |

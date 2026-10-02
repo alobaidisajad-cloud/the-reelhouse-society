@@ -162,11 +162,12 @@ describe('the type floor', () => {
   });
 
   it('the theme\'s own scale starts at the floor', () => {
-    const theme = code(readFileSync(join(ROOT, 'src', 'theme', 'theme.ts'), 'utf8'));
-    for (const name of ['micro', 'label']) {
-      const m = new RegExp(`\\b${name}\\s*:\\s*\\{[^}]*fontSize\\s*:\\s*([\\d.]+)`).exec(theme);
-      expect(m).not.toBeNull();
-      expect(+m![1]).toBeGreaterThanOrEqual(FLOOR);
-    }
+    // Read from the module, not the text: a role reached as `type.x` is a member
+    // access the file scan above does not resolve, so a role under the floor
+    // would hand its size to any style that asked.
+    const { type } = require('@/src/theme/theme') as { type: Record<string, number> };
+    const roles = Object.entries(type);
+    expect(roles.length).toBeGreaterThan(5);
+    expect(roles.filter(([, size]) => size < FLOOR)).toEqual([]);
   });
 });

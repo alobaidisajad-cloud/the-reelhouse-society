@@ -86,8 +86,8 @@ describe('the month rail fits every phone at every text size', () => {
 });
 
 describe('the type scale keeps its own order', () => {
-  it('runs strictly downward from hero to badge', () => {
-    const order = [t.hero, t.display, t.value, t.title, t.voice, t.rail, t.meta, t.label, t.caption, t.badge];
+  it('runs strictly downward from hero to label, the floor', () => {
+    const order = [t.hero, t.display, t.value, t.title, t.voice, t.rail, t.meta, t.label];
     for (let i = 1; i < order.length; i++) {
       expect(order[i]).toBeLessThan(order[i - 1]);
     }

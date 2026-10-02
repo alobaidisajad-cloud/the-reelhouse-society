@@ -160,12 +160,8 @@ export const type = {
   rail: 12,
   /** A secondary sentence, or a live fact worth reading. */
   meta: 11,
-  /** A chip, an eyebrow: ALL, RECENT, STANDING. */
+  /** A chip, an eyebrow: ALL, RECENT, STANDING. The floor: no role is smaller. */
   label: 10,
-  /** The caption UNDER a value: LONGEST RUN. Small on purpose. */
-  caption: 8.5,
-  /** A corner badge whose meaning is already on screen: BD, RANKED. */
-  badge: 7.5,
 } as const;
 
 export type TypeRole = keyof typeof type;
@@ -207,13 +203,6 @@ export const effects = {
     shadowRadius: 24,
     elevation: 10,
   },
-  shadowSurfaceHover: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.8,
-    shadowRadius: 36,
-    elevation: 15,
-  },
   shadowPrimary: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -253,24 +242,12 @@ export const effects = {
     shadowRadius: 20,
     elevation: 5,
   },
-  glowFlicker: {
-    shadowColor: colors.flicker,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    elevation: 6,
-  },
 
   // Text glows 
   textGlowSepia: {
     textShadowColor: 'rgba(196, 150, 26, 0.4)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
-  },
-  textGlowFlicker: {
-    textShadowColor: 'rgba(248, 240, 192, 0.5)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
   },
   textShadowDeep: {
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
@@ -290,39 +267,9 @@ export const liftOf = ({ elevation }: Shadow) => ({ elevation });
 /** Warm sepia-toned blurhash — universal placeholder while images load */
 export const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
 
-export const typography = {
-  jumbo: { fontSize: 56, lineHeight: 60, fontFamily: fonts.display, letterSpacing: 1.12 },
-  h1: { fontSize: 40, lineHeight: 46, fontFamily: fonts.display, letterSpacing: 0.8 },
-  h2: { fontSize: 28, lineHeight: 32, fontFamily: fonts.display, letterSpacing: 0.56 },
-  h3: { fontSize: 22, lineHeight: 26, fontFamily: fonts.display, letterSpacing: 0.44 },
-  lg: { fontSize: 16, lineHeight: 26, fontFamily: fonts.body },
-  sub: { fontSize: 12, lineHeight: 18, fontFamily: fonts.sub, letterSpacing: 0.6 },
-  body: { fontSize: 14, lineHeight: 24, fontFamily: fonts.body },
-  bodyBold: { fontSize: 14, lineHeight: 24, fontFamily: fonts.bodyBold },
-  caption: { fontSize: 10, lineHeight: 15, fontFamily: fonts.body },
-  micro: { fontSize: 10, lineHeight: 15, fontFamily: fonts.sub, letterSpacing: 1.3 },
-  label: { fontSize: 10, lineHeight: 13.5, fontFamily: fonts.sub, letterSpacing: 2.4, textTransform: 'uppercase' as const },
-} as const;
-
 export const metrics = {
-  headerHeight: 64,
-  bottomNavHeight: 80,
-  screenWidth: 0,
   /** The film page's backdrop share of the screen; the poster is mounted on it. */
   backdropHeightRatio: 0.52,
   /** How far the poster climbs into the backdrop. */
   posterLift: 190,
-} as const;
-
-export const physics = {
-  springStiff: { damping: 20, stiffness: 200, mass: 1 },
-  springBouncy: { damping: 10, stiffness: 100, mass: 1 },
-  haptics: { heavyTriggerThreshold: -80, resetThreshold: -20 },
-  spooler: {
-    rotInputMax: -120,
-    rotOutputMax: 360,
-    scaleInputMax: -80,
-    opacityInputRange: [-30, -70] as const,
-    translateY: 100
-  }
 } as const;

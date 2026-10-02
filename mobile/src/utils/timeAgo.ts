@@ -316,7 +316,6 @@ export function formatTMDBDate(dateStr: string | undefined | null, format: 'shor
   if (!dateStr) return undefined;
   const calendar = parseCalendarDate(dateStr);
   if (calendar) return renderParts(calendar, format);
-  // TMDB returns a bare year when it doesn't know the day.
-  if (/^\d{4}$/.test(dateStr)) return dateStr;
+  // A bare year (TMDB's when it does not know the day), or anything else, as it came.
   return dateStr;
 }

@@ -217,13 +217,7 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
     opacity: flicker.value,
   }));
 
-  // We limit gate size to min(300px, 68vw) to match web
   const gateSize = Math.min(300, width * 0.68);
-
-  // Render SVG noise directly if possible, or fallback. Since iOS doesn't do SVG feTurbulence well, 
-  // we can use a repeating image, or just skip it. 
-  // Web has it at 5.5% opacity. Let's just use an absolute View with an overlay noise if we can, 
-  // or a very subtle dark overlay to ensure it feels right.
 
   return (
     <Animated.View style={[styles.container, outerContainerStyle]}>
