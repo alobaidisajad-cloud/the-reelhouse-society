@@ -89,16 +89,24 @@ describe('#122 · the fence itself does not move', () => {
 
 describe('#60 · one dossier, however the network behaved', () => {
   const exec = stripComments(read('src/utils/mutationExecutor.ts'));
+  const addDossier = exec.slice(exec.indexOf('add_dossier: async'), exec.indexOf('update_dossier: async'));
 
-  it('the offline insert carries the SAME id the optimistic row already has', () => {
-    const addDossier = exec.slice(exec.indexOf('add_dossier: async'), exec.indexOf('update_dossier: async'));
-    expect(addDossier).toMatch(/id: p\._tempId/);
+  /**
+   * The id was sent so a retry would meet the table's key. Since 2026-09-02
+   * dispatch_dossiers is a VIEW over dispatch_posts, and its trigger
+   * (dossiers_write) files every essay under a fresh id and ignores one sent —
+   * so sending it claimed a guarantee nothing kept. No build queues this kind
+   * any more (an essay is add_filing, which sends its id to dispatch_posts
+   * itself); what remains is that the optimistic row takes the answer's id.
+   */
+  it('the optimistic row is renamed to the id the server filed it under', () => {
+    expect(addDossier).toMatch(/newId: \(result\.data as \{ id: string \}\)\.id, fakeId: p\._tempId/);
+    expect(addDossier).not.toMatch(/\bid: p\._tempId/);
   });
 
-  it('which also makes a retry idempotent, not duplicating', () => {
-    // A transient failure retries this up to five times. Without an id every
-    // attempt minted a new row; with it, the retry hits the unique key and the
-    // queue's duplicate branch drops it as already-written.
+  it('the filing that replaced it sends its own id, so ITS retry meets the key', () => {
+    const addFiling = exec.slice(exec.indexOf('add_filing: async'), exec.indexOf('update_filing: async'));
+    expect(addFiling).toMatch(/id: _tempId/);
     const queue = stripComments(read('src/utils/offlineQueue.ts'));
     expect(queue).toMatch(/errorClass === 'duplicate'/);
   });

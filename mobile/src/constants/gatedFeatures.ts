@@ -252,19 +252,22 @@ export const GATED_FEATURES: GatedFeature[] = [
   {
     id: 'essays-legacy',
     rank: 'auteur',
-    // The same feature wearing its old plumbing. `dispatch_dossiers` is a VIEW
-    // over `dispatch_dossiers_legacy`, and the offline mutation path still
-    // writes through it, so the trigger on the base table is live — not an
-    // orphan withholding something we never promised.
+    // The same feature, on the table essays were kept in before the Dispatch.
+    // Nothing writes it now: `dispatch_dossiers` is a VIEW over dispatch_posts,
+    // so an essay filed through that name (the web's, or an older build's queued
+    // add_dossier) meets tr_tier_gate_dispatch like any other. But members may
+    // still write this table directly, and its trigger refuses them — listed so
+    // that refusal is a promise, not an orphan.
     promise: 'Essays & Ballots',
     enforcement: { kind: 'refuses', table: 'dispatch_dossiers_legacy', trigger: 'tr_tier_gate_dossiers' },
     gates: ['src/utils/mutationExecutor.ts'],
     reachedThrough: {
       feature: 'essays',
-      why: 'Nothing in the app enqueues add_dossier any more — it survives only as a type '
-         + 'in the offline queue, so an item written by an older build still drains. Every '
-         + 'new essay is filed through the essay desk, roped by essays and read a refusal '
-         + 'by its door; a stale queued item that is refused dead-letters, as it should.',
+      why: 'No screen reaches this table. Every new essay is filed through the essay desk, '
+         + 'roped by essays and read a refusal by its door. Nothing in the app enqueues '
+         + 'add_dossier any more; an older build\'s queued one writes the dispatch_dossiers '
+         + 'view, lands in dispatch_posts, and is refused there by tr_tier_gate_dispatch, '
+         + 'which dead-letters it, as it should.',
     },
   },
   {

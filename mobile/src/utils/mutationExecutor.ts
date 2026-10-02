@@ -619,8 +619,12 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     send_lounge_message: async (p: any) => {
         // Flush handler for lounge messages queued while offline.
         // Preserves rich metadata, threading, and username for offline list shares.
-        const { lounge_id, user_id, username, content, type: msgType, _tempId, film_id, film_title, film_poster, reply_to_id, reply_to_username, reply_to_content, metadata } = p;
+        const { id, lounge_id, user_id, username, content, type: msgType, _tempId, film_id, film_title, film_poster, reply_to_id, reply_to_username, reply_to_content, metadata } = p;
         const dbPayload = {
+            // The message's own id, as the live send: a send whose answer was lost
+            // has already landed, and a retry must hit the key (23505, "landed")
+            // rather than post the message twice.
+            id: id ?? _tempId,
             lounge_id, user_id, username,
             // One cap, the composer's: MAX_LENGTHS.loungeMessage.
             content: sanitizeInput(content as string, 'loungeMessage'),
@@ -702,10 +706,9 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     // view over dispatch_posts / dispatch_comments with an INSTEAD OF trigger. They can go
     // once no device can hold one — the launch build out longer than the 24h staleness window.
     add_dossier: async (p: any) => {
+        // No id: the view's trigger (dossiers_write) files the essay under a fresh one and
+        // ignores any sent, so the answer's id is what the optimistic row is renamed to.
         const dbPayload = {
-            // The optimistic row's own id, so a retry hits the unique key (read as "landed")
-            // instead of filing another copy.
-            id: p._tempId,
             user_id: p.user_id,
             author_username: p.author_username,
             title: p.title,

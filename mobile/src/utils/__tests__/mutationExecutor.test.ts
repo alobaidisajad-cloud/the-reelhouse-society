@@ -613,6 +613,16 @@ describe('Lounge', () => {
             ]);
         });
 
+        it('sends the message under its own id, so a retry of a send that landed is not posted twice', async () => {
+            makeChainResolveTo(mockChain, { error: null });
+            (sanitizeInput as jest.Mock).mockImplementation((s: string) => s);
+            const id = '2b1c0f7e-1111-4111-8111-111111111111';
+            await runMutation('send_lounge_message', {
+                id, _tempId: id, lounge_id: 'l1', user_id: 'u1', content: 'hello', type: 'text',
+            });
+            expect(mockChain.insert).toHaveBeenCalledWith([expect.objectContaining({ id })]);
+        });
+
         it('hands content to the sanitizer WHOLE — one cap, in one place', async () => {
             // This used to assert a `.slice(0, 500)` applied before sanitizing, and
             // it was right to exist: it is what caught the change. But the second
@@ -781,6 +791,15 @@ describe('Dossiers', () => {
             expect(mockChain.insert).toHaveBeenCalledWith([
                 expect.objectContaining({ title: 'My Review', full_content: 'Great film' }),
             ]);
+        });
+
+        it('sends no id: the view files the essay under a fresh one, and the answer renames the optimistic row', async () => {
+            // dossiers_write ignores NEW.id, so an id sent here only claimed a
+            // retry would meet the key — it never could.
+            makeChainResolveTo(mockChain, { data: { id: 'real-1' }, error: null });
+            const result = await runMutation('add_dossier', { _tempId: 'temp-1', title: 'My Review', user_id: 'u1' });
+            expect(Object.keys((mockChain.insert as jest.Mock).mock.calls[0][0][0])).not.toContain('id');
+            expect(result).toEqual({ newId: 'real-1', fakeId: 'temp-1' });
         });
     });
 
