@@ -21,6 +21,7 @@ import { logger } from '@/src/utils/logger';
 import { isArchivistPlusTier, resolveTier } from '@/src/utils/tier';
 // Imported text comes from any exporter, so it passes the same sanitiser as in-app writes.
 import { sanitizeInput } from '@/src/utils/sanitizeInput';
+import { restoreNotes } from '@/src/services/VaultService';
 import { ImportReceipt, emptyReceipt } from './importReceipt';
 import { saveReceipt } from './undoImport';
 
@@ -1516,9 +1517,8 @@ async function runJSONImport(
     const written = new Set(receipt.logIds);
     const notes = earlierNotes.filter((n) => written.has(n.log_id));
     if (notes.length > 0 && isArchivistPlusTier(resolveTier(useAuthStore.getState().user))) {
-      for (let i = 0; i < notes.length; i += BATCH_SIZE) {
-        const { error } = await supabase.from('log_private_notes').upsert(notes.slice(i, i + BATCH_SIZE), { onConflict: 'viewing_id' });
-        if (error && errors.length < MAX_COLLECTED_ERRORS) errors.push(`Private notes: ${error.message}`);
+      for (const message of await restoreNotes(notes, BATCH_SIZE)) {
+        if (errors.length < MAX_COLLECTED_ERRORS) errors.push(`Private notes: ${message}`);
       }
     }
   }

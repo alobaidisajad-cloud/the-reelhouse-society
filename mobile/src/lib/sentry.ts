@@ -149,5 +149,5 @@ export function addBreadcrumb(message: string, category: string = 'navigation') 
   } catch { /* telemetry must never break the caller — see captureError */ }
 }
 
-// Re-export Sentry's ErrorBoundary wrapper for use in _layout.tsx
+// Sentry itself, for a caller that tags the session (AppBootstrapper).
 export { Sentry };

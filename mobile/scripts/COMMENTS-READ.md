@@ -476,7 +476,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/PublicLoungeCard.tsx | 2026-10-01 | true as written |
 | src/components/lounge/reactions.tsx | 2026-10-01 | true as written |
 | src/components/lounge/roomGate.ts | 2026-09-29 | new |
-| src/components/MarkFigure.tsx | — |  |
+| src/components/MarkFigure.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/MasterLogo.tsx | — |  |
 | src/components/moderation/__tests__/ContentActionSheet.mute.test.tsx | — |  |
 | src/components/moderation/__tests__/ReportSheet.test.tsx | — |  |
@@ -731,7 +731,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/queryClient.ts | 2026-10-02 | read; sound |
 | src/lib/revenueCat.ts | 2026-09-29 | 17 fixed; FALSE: 'syncs the tier to profiles.role' (the server re-reads RevenueCat and ignores the tier); setup notes with prices; ticket tags |
 | src/lib/scrollBridge.ts | — |  |
-| src/lib/sentry.ts | — |  |
+| src/lib/sentry.ts | 2026-10-02 | Read whole (launch audit). The re-export was said to be for an ErrorBoundary wrapper in _layout; its one caller tags the session. |
 | src/lib/supabase.ts | 2026-10-01 | the session kept by authSessionStorage; comments short |
 | src/lib/tmdb.ts | 2026-10-02 | read; sound |
 | src/lib/tmdbErrors.ts | — |  |
@@ -768,6 +768,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/theRegistryRetriesAFailedRead.test.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
 | src/services/__tests__/theStackKnowsYourMark.test.ts | — |  |
 | src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx | — |  |
+| src/services/__tests__/theVaultHasOneDoor.guard.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): only VaultService queries log_private_notes. |
 | src/services/__tests__/tmdbProxyAllowsEveryPath.test.ts | — |  |
 | src/services/__tests__/VaultService.test.ts | — |  |
 | src/services/__tests__/yearInCinema.test.ts | — |  |
@@ -784,7 +785,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/ProfileDataService.ts | 2026-09-29 | 24 fixed; 'Sentry breadcrumb' was dev-only logger.info (logged for step 6); a dead file ref; ticket tags |
 | src/services/ProfileWriteService.ts | 2026-10-02 | the circle's cursors through pgLiteral |
 | src/services/StackService.ts | 2026-09-30 | the delete's comment said a refusal "is seen" and never read it; made true |
-| src/services/VaultService.ts | — |  |
+| src/services/VaultService.ts | 2026-10-02 | Read whole (launch audit). Claimed to be the only door to the notes while the import wrote the table itself: restoreNotes added and used; the claim narrowed to writes (the export reads); theVaultHasOneDoor guards it. |
 | src/services/YearInCinemaService.ts | 2026-10-01 | every page of a year, not the first 1,000 |
 | src/services/__tests__/aCountNotReadIsNotZero.test.ts | 2026-10-01 | written with the counts fix |
 | src/stores/__tests__/aBlockListLeavesWithItsMember.test.ts | 2026-10-02 | sign-out erases the saved block list |
@@ -843,7 +844,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/auth.ts | 2026-10-01 | username sign-in says what failed; comments short |
 | src/stores/blockStore.ts | 2026-10-02 | sign-out erases the leaving member's saved list |
 | src/stores/createSelectors.ts | — |  |
-| src/stores/discover.ts | — |  |
+| src/stores/discover.ts | 2026-10-02 | Read whole (launch audit). Its comment said the Darkroom's results survive a restart; the films found are not persisted, only the mood, filters and search. |
 | src/stores/dispatch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/stores/dispatchTypes.ts | 2026-10-02 | Read whole (launch audit): row shapes match the live schema (body NOT NULL DEFAULT '', so an ended filing parses). Sound; left alone. |
 | src/stores/domain/__tests__/aFilmAlreadyQueuedStaysQueued.test.ts | 2026-10-02 | a film already on the watchlist stays, and is said to be |
@@ -862,7 +863,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-02 | the log list orders by watched date (undated last) then id, as its cursor reads |
 | src/stores/domain/socialSlice.ts | 2026-09-29 | follow-list wipe fixed; comments read |
 | src/stores/domain/watchlistSlice.ts | 2026-10-02 | a film already queued stays, and is said to be |
-| src/stores/films.ts | — |  |
+| src/stores/films.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/followStore.ts | 2026-10-01 | comments cut to the why |
 | src/stores/lounge.ts | 2026-10-02 | read; sound (a suspension said in the house's words is an app-wide class, listed) |
 | src/stores/markCounts.ts | 2026-10-02 | read; sound |
@@ -1025,7 +1026,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/requestReview.ts | 2026-10-01 | never more than 3 in any 365 days, as it claimed |
 | src/utils/roomFilters.ts | 2026-10-01 | new |
 | src/utils/sanitize.ts | — |  |
-| src/utils/sanitizeInput.ts | 2026-09-28 | subjectBackdrop cap added. A literal escape sequence in a comment, two docs stacked on the wrong declarations, and a stale plan ('retires in step 3') removed; the reasons for each fence kept. |
+| src/utils/sanitizeInput.ts | 2026-10-02 | Read whole (launch audit). Stripped the two joiners everywhere: gendered and family emoji fell apart and Persian words lost their ZWNJ. Kept now where they join (emoji, joining scripts), stripped everywhere else. |
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/softBreak.ts | — |  |
 | src/utils/storyExporter.ts | — |  |
@@ -1033,7 +1034,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
 | src/utils/text.ts | — |  |
-| src/utils/tier.ts | — |  |
+| src/utils/tier.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/tierDoor.ts | 2026-10-01 | the server sentence as a door |
 | src/utils/tierRefusal.ts | 2026-10-01 | by the sentence, not the code |
 | src/utils/timeAgo.ts | 2026-10-02 | Read whole (launch audit). formatTMDBDate had two branches returning the same value: one. |

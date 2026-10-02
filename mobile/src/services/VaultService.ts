@@ -16,11 +16,12 @@ import { z } from 'zod';
  * empty Vault from a member who had written in it — and the same column, sent
  * blank on an ordinary save, could not be told apart from the member clearing
  * their note. Notes now live in `log_private_notes`, keyed by viewing, and this
- * is the ONLY place in the app that touches them.
+ * is the ONLY place in the app that writes them (the export reads them whole).
  *
- * `logs.private_notes` is never read and never written here. The database still
- * accepts it from the shipped build, and still pins whatever arrives to the
- * current viewing, but nothing in this app uses that door any more.
+ * `logs.private_notes` is never read here. The database still accepts it and
+ * pins whatever arrives to the log's current viewing (only for an Archivist);
+ * the one writer left is the archive import, whose returned log carries its
+ * current note that way — its earlier viewings' notes come through here.
  *
  * ── WHAT THE SERVER GUARANTEES (rehearsed on production, 2026-09-18) ───────
  *   · `log_private_notes` is readable only by the member who wrote the note —
@@ -91,6 +92,25 @@ export const setNote = async (logId: string, viewingId: string, notes: string): 
   if (error) throw error;
 };
 
+/**
+ * A returned archive's notes on EARLIER viewings, for logs the import has just
+ * written (the current viewing's rides its log). Written as the member's own,
+ * so the table's rank gate applies as it does to any note. Answers with what
+ * each refused batch said.
+ */
+export const restoreNotes = async (
+  rows: { log_id: string; viewing_id: string; user_id: string; notes: string }[],
+  batchSize: number,
+): Promise<string[]> => {
+  const refused: string[] = [];
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const { error } = await supabase.from('log_private_notes')
+      .upsert(rows.slice(i, i + batchSize), { onConflict: 'viewing_id' });
+    if (error) refused.push(error.message);
+  }
+  return refused;
+};
+
 /** Take a note back. Never gated; removing one that is already gone is fine. */
 export const removeNote = async (viewingId: string): Promise<void> => {
   const { error } = await supabase.rpc('viewing_note_remove', { p_viewing_id: viewingId });
@@ -140,6 +160,7 @@ export const VaultService = {
   fetchNotesForLog,
   setNote,
   removeNote,
+  restoreNotes,
   addViewing,
   removeViewing,
 };

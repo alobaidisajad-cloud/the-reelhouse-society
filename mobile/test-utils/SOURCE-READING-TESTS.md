@@ -129,6 +129,7 @@ Decisions, as of 2026-09-28:
 | `src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts` | Every client (the app and the web) files a report through submit_report, and the web offers only reasons the table accepts; the migration it relies on is rehearsed on the database. |
 | `src/services/__tests__/everyNameAClientCallsExists.test.ts` | Every table and function a client calls exists in the schema snapshot. |
 | `src/services/__tests__/tmdbProxyAllowsEveryPath.test.ts` | The edge function's allowed paths against every path the clients use. |
+| `src/services/__tests__/theVaultHasOneDoor.guard.test.ts` | No file but VaultService queries log_private_notes. |
 | `src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts` | The salon name's four limits, the column's among them. |
 | `test-utils/__tests__/everyCommentIsTrue.test.ts` | The reading ledger (scripts/COMMENTS-READ.md) against the files comment-truth checks. |
 | `src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts` | Every column of a filing, emptied or kept when it ends, against the schema snapshot. |

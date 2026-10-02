@@ -75,8 +75,8 @@ const defaultFilters = {
   yearTo: null,
 };
 
-// Persist discover state to MMKV so users don't lose their
-// darkroom results when going offline or when the store is reset by navigation.
+// The Darkroom's mood, filters and search survive a restart; the films found are
+// fetched again (see partialize).
 export const useDiscoverStore = create<DiscoverState>()(
   persist(
     (set) => ({
