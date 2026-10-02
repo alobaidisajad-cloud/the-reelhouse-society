@@ -35,7 +35,7 @@ import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import { tmdb } from '@/src/lib/tmdb';
-import { LogService } from '@/src/services/LogService';
+import { COMMENT_PAGE_SIZE, LogService } from '@/src/services/LogService';
 import { colors } from '@/src/theme/theme';
 import { isNetworkError, isForbiddenError } from '@/src/utils/networkError';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
@@ -122,6 +122,11 @@ export default function LogDetailScreen() {
 
   const queryClient = useQueryClient();
 
+  // How many of the newest critiques to read: one page, and another each time
+  // the member asks for earlier ones. A ref, so the query keeps its one key.
+  const critiqueLimit = useRef(COMMENT_PAGE_SIZE);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+
   // ── React Query: MMKV-cached log detail (instant revisits) ──
   const { data: logQueryData, isLoading: logQueryLoading, isError: logQueryFailed, refetch: rereadLog } = useQuery({
     queryKey: ['log', id],
@@ -137,7 +142,7 @@ export default function LogDetailScreen() {
 
         // One page of critiques, newest kept, plus the TRUE total, which the
         // header prints (never this page's length).
-        const { comments: commData, total: commentTotal } = await LogService.getLogComments(id, signal);
+        const { comments: commData, total: commentTotal } = await LogService.getLogComments(id, signal, critiqueLimit.current);
 
         const mappedComments = (commData || []).map((c: Record<string, any>) => ({
           id: c.id,
@@ -849,6 +854,12 @@ export default function LogDetailScreen() {
           } : undefined}
           unread={!!logQueryData?.critiquesUnread}
           onReread={() => { void rereadLog(); }}
+          loadingOlder={loadingOlder}
+          onLoadOlder={() => {
+            critiqueLimit.current += COMMENT_PAGE_SIZE;
+            setLoadingOlder(true);
+            void rereadLog().finally(() => setLoadingOlder(false));
+          }}
         />
         </View>
         </View>

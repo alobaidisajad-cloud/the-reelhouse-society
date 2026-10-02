@@ -23,7 +23,7 @@ import { deckLabelProps } from '@/src/constants/textScaling';
 import { formatCount } from '@/src/components/dispatch/paper/paperMetrics';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import { tmdb } from '@/src/lib/tmdb';
-import { StackService } from '@/src/services/StackService';
+import { STACK_COMMENT_PAGE, StackService } from '@/src/services/StackService';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useListStore } from '@/src/stores/films';
@@ -431,6 +431,11 @@ export default function StackDetailScreen() {
     }
   }, [user, id, isCertified, toggleListEndorse, isCertifying, queryClient]);
 
+  // How many of the newest critiques the sheet reads: a page, and another each
+  // time the member asks for earlier ones. A ref, so the query keeps its key.
+  const critiqueLimit = useRef(STACK_COMMENT_PAGE);
+  const [loadingEarlier, setLoadingEarlier] = useState(false);
+
   // ── COMMENTS (CQRS) ──
   // What the house holds. A failed read is a failed read: it drew the queued
   // critiques alone (or none, "No critiques yet") as though they were all.
@@ -438,7 +443,7 @@ export default function StackDetailScreen() {
     queryKey: ['stackComments', id],
     queryFn: async () => {
       try {
-        return await StackService.getStackComments(id);
+        return await StackService.getStackComments(id, critiqueLimit.current);
       } catch (error) {
         // Sentry gets genuine defects, never an offline failure.
         logger.debug('[Stack] Comments fetch failed:', error);
@@ -487,6 +492,16 @@ export default function StackDetailScreen() {
   }, [waitingHere, queryClient, id]);
 
   const nothingRead = critiquesUnread && !queryComments;
+
+  // Earlier critiques the house holds beyond the sheet's page. Offered only when
+  // the page came back full, so a count still settling never offers an empty ask.
+  const earlier = queryComments && queryComments.length >= critiqueLimit.current && critiqueCount != null
+    ? Math.max(0, critiqueCount - queryComments.length) : 0;
+  const loadEarlierCritiques = useCallback(() => {
+    critiqueLimit.current += STACK_COMMENT_PAGE;
+    setLoadingEarlier(true);
+    void rereadCritiques().finally(() => setLoadingEarlier(false));
+  }, [rereadCritiques]);
 
   /** A critique's REPORT: the report sheet, which can also block its author. */
   const handleReportCritique = useCallback((c: Critique) => {
@@ -978,6 +993,20 @@ export default function StackDetailScreen() {
                   <TryAgainLine onPress={() => { void rereadCritiques(); }} accessibilityLabel="Read the critiques again" />
                 </View>
               ) : null}
+              {/* The oldest are at the top, so the earlier ones are asked for there. */}
+              {earlier > 0 ? (
+                <PressableScale
+                  style={s.critiqueEarlier}
+                  onPress={loadEarlierCritiques}
+                  disabled={loadingEarlier}
+                  hitSlop={null}
+                  haptic="selection"
+                  accessibilityRole="button"
+                  accessibilityLabel={loadingEarlier ? 'Reading earlier critiques' : `Load ${earlier} earlier critiques`}
+                >
+                  <Text style={s.critiqueEarlierText}>{loadingEarlier ? 'READING EARLIER CRITIQUES…' : `LOAD EARLIER · ${formatCount(earlier)} MORE`}</Text>
+                </PressableScale>
+              ) : null}
               {critiques.length === 0 ? (
                 nothingRead ? null : <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
               ) : (
@@ -1131,6 +1160,8 @@ const s = StyleSheet.create({
 
   // ── Critiques Panel ──
   commentEmpty: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 12, color: colors.fogQuiet, textAlign: 'center', paddingVertical: 8 },
+  critiqueEarlier: { alignSelf: 'center', minHeight: 48, justifyContent: 'center', paddingHorizontal: 16 },
+  critiqueEarlierText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
   critiquesUnread: { alignItems: 'center', gap: 4 },
 
   trackRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, marginBottom: 20 },

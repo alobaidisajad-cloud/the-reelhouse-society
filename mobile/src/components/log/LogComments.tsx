@@ -40,6 +40,13 @@ interface LogCommentsProps {
   onReportComment?: (comment: LogComment & { user_id: string }) => void;
   /** The critiques could not be read: say so, not "No critiques yet". */
   unread?: boolean;
+  /**
+   * Ask the house for the next older page. The list holds the newest page of a
+   * thread; once SHOW MORE has shown all it holds, it asks for more with this.
+   */
+  onLoadOlder?: () => void;
+  /** An older page is on its way. */
+  loadingOlder?: boolean;
   onReread?: () => void;
   onSectionLayout?: (y: number) => void;
 }
@@ -59,6 +66,8 @@ export default function LogComments({
   onSectionLayout,
   unread = false,
   onReread,
+  onLoadOlder,
+  loadingOlder = false,
 }: LogCommentsProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE);
 
@@ -66,6 +75,10 @@ export default function LogComments({
   const ordered = useMemo(() => [...comments].reverse(), [comments]);
   const shown = useMemo(() => ordered.slice(0, visibleCount), [ordered, visibleCount]);
   const remaining = ordered.length - shown.length;
+  // What the house holds beyond the page this list has: asked for only through
+  // onLoadOlder, so without it nothing is offered that cannot be fetched.
+  const unfetched = onLoadOlder ? Math.max(0, (commentTotal ?? comments.length) - comments.length) : 0;
+  const hidden = remaining + unfetched;
 
   return (
     <SectionErrorBoundary fallbackMessage="Critiques could not be loaded.">
@@ -130,16 +143,21 @@ export default function LogComments({
                 onReport={onReportComment}
               />
             ))}
-            {remaining > 0 && (
+            {hidden > 0 && (
               <PressableScale
                 style={s.showMoreBtn}
-                onPress={() => setVisibleCount((v) => v + PAGE)}
+                onPress={() => {
+                  setVisibleCount((v) => v + PAGE);
+                  // What is held runs out with this press: the next older page.
+                  if (remaining <= PAGE && unfetched > 0) onLoadOlder?.();
+                }}
+                disabled={loadingOlder}
                 hitSlop={HITSLOP}
                 pressedScale={0.97}
                 haptic="selection"
-                accessibilityLabel={`Show ${remaining} more critiques`}
+                accessibilityLabel={loadingOlder ? 'Reading earlier critiques' : `Show ${hidden} more critiques`}
               >
-                <Text style={s.showMoreText}>SHOW MORE CRITIQUES · {remaining} MORE</Text>
+                <Text style={s.showMoreText}>{loadingOlder ? 'READING EARLIER CRITIQUES…' : `SHOW MORE CRITIQUES · ${hidden} MORE`}</Text>
                 <ChevronDown size={12} color={colors.sepia} strokeWidth={2} />
               </PressableScale>
             )}

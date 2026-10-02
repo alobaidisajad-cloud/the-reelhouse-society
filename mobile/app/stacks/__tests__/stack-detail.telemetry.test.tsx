@@ -79,6 +79,7 @@ jest.mock('@/src/stores/auth', () => ({
     useAuthStore: () => ({ user: { id: 'u1', username: 'cinephile' } }),
 }));
 jest.mock('@/src/services/StackService', () => ({
+  STACK_COMMENT_PAGE: 50,
     StackService: { getStackFullPayload: jest.fn(), getStackComments: jest.fn() },
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));

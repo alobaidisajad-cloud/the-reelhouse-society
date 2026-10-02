@@ -414,6 +414,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/wallRead.ts | 2026-09-30 | new |
 | src/components/lobby/words.ts | 2026-09-30 | new; named a test that did not exist |
 | src/components/log/__tests__/editorialDesk.test.tsx | — |  |
+| src/components/log/__tests__/everyCritiqueCanBeReached.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): SHOW MORE asks for older critiques once the page runs out. |
 | src/components/log/__tests__/logAtmosphere.test.tsx | — |  |
 | src/components/log/__tests__/logComposer.test.ts | — |  |
 | src/components/log/__tests__/logComposerRender.test.tsx | — |  |
@@ -786,7 +787,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/ModerationService.ts | 2026-10-02 | read; sound |
 | src/services/ProfileDataService.ts | 2026-09-29 | 24 fixed; 'Sentry breadcrumb' was dev-only logger.info (logged for step 6); a dead file ref; ticket tags |
 | src/services/ProfileWriteService.ts | 2026-10-02 | the circle's cursors through pgLiteral |
-| src/services/StackService.ts | 2026-10-02 | Read whole (launch audit). Critiques capped at the newest 50 with the true count shown and no way to the rest: listed (see the stack page). |
+| src/services/StackService.ts | 2026-10-02 | Read whole (launch audit). The sheet read the newest 50 critiques with the true count beside them and no way to the rest: getStackComments takes a limit (ordered by id too), and the sheet asks for earlier ones. |
 | src/services/VaultService.ts | 2026-10-02 | Read whole (launch audit). Claimed to be the only door to the notes while the import wrote the table itself: restoreNotes added and used; the claim narrowed to writes (the export reads); theVaultHasOneDoor guards it. |
 | src/services/YearInCinemaService.ts | 2026-10-01 | every page of a year, not the first 1,000 |
 | src/services/__tests__/aCountNotReadIsNotZero.test.ts | 2026-10-01 | written with the counts fix |

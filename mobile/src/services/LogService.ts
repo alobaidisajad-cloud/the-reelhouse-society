@@ -24,17 +24,13 @@ import { getOfflineQueue } from '@/src/utils/offlineQueue';
 const PROFILE_LOOKUP_BATCH = 200;
 
 /**
- * Critiques fetched per log.
+ * Critiques fetched per log, and per ask for older ones.
  *
- * ── WHY 100 AND NOT THE DOSSIER'S 30 ────────────────────────────────────────
- * The dossier screen pairs a 30-row page with a "LOAD EARLIER · N MORE" control,
- * so nothing it bounds is ever unreachable. This screen has the bounded page and
- * the honest total but no such control, so its page is set far past any thread
- * the house holds: the query is bounded, and nothing is hidden. A thread that
- * nears it needs the dossier's control, not a bigger number; the total already
- * travels beside the page, which is the hard half.
+ * The page is bounded and the TRUE total travels beside it; the log page's
+ * SHOW MORE asks for the next older page once what it holds runs out, so a
+ * thread of any length can be read to its first critique.
  */
-const COMMENT_PAGE_SIZE = 100;
+export const COMMENT_PAGE_SIZE = 100;
 
 const LogCommentPayloadSchema = z.object({
   id: z.string().uuid(),

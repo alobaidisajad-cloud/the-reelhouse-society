@@ -54,6 +54,7 @@ jest.mock('@/src/stores/blockStore', () => {
 });
 jest.mock('@/src/stores/auth', () => ({ useAuthStore: () => ({ user: { id: 'u2', username: 'visitor' } }) }));
 jest.mock('@/src/services/StackService', () => ({
+  STACK_COMMENT_PAGE: 50,
   StackService: { getStackFullPayload: jest.fn(), getStackComments: jest.fn(), addStackComment: jest.fn() },
 }));
 jest.mock('@/src/utils/offlineQueue', () => ({

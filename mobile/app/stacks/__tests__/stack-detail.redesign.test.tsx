@@ -88,6 +88,7 @@ jest.mock('@/src/stores/auth', () => ({ useAuthStore: () => ({ user: { id: 'u1',
 jest.mock('@/src/stores/tellMarks', () => ({ tellMarks: jest.fn() }));
 const mockAddComment = jest.fn();
 jest.mock('@/src/services/StackService', () => ({
+  STACK_COMMENT_PAGE: 50,
   StackService: {
     getStackFullPayload: jest.fn(), getStackComments: jest.fn(),
     addStackComment: (...a: unknown[]) => mockAddComment(...a),
@@ -427,6 +428,37 @@ describe('the critiques overlay', () => {
   it('invites the first critique rather than showing an empty box', async () => {
     const r = await openIt();
     await waitFor(() => expect(r.getByText(/Be the first to speak/)).toBeTruthy());
+  });
+
+  // The sheet read the newest 50 and printed the true count, with no way to
+  // the rest: 73 said, 50 readable.
+  const critique = (i: number) => ({
+    id: `c${i}`, list_id: 's1', user_id: 'u9', content: `critique ${i}`,
+    created_at: '2026-09-01T00:00:00Z', username: 'ana', avatar_url: null,
+  });
+
+  it('a thread past one page offers the earlier ones, and asks for them', async () => {
+    mockComments = Array.from({ length: 50 }, (_, i) => critique(i));
+    mockRereadCritiques.mockResolvedValue({});
+    try {
+      const r = await openIt({ critiqueCount: 73 });
+      await waitFor(() => expect(r.getByText('LOAD EARLIER · 23 MORE')).toBeTruthy());
+      await act(async () => { await fireEvent.press(r.getByLabelText('Load 23 earlier critiques')); });
+      expect(mockRereadCritiques).toHaveBeenCalled();
+    } finally {
+      mockComments = [];
+    }
+  });
+
+  it('a thread that fits its page offers nothing earlier', async () => {
+    mockComments = [critique(1)];
+    try {
+      const r = await openIt({ critiqueCount: 1 });
+      await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
+      expect(r.queryByText(/LOAD EARLIER/)).toBeNull();
+    } finally {
+      mockComments = [];
+    }
   });
 
   it('focuses the field on the way in and not on the way out', () => {

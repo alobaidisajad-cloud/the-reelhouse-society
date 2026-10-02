@@ -56,6 +56,9 @@ const StackCommentRowSchema = z.object({
  */
 const STACK_ITEMS_LIMIT = 500;
 
+/** Critiques per page of a stack's sheet, and per ask for earlier ones. */
+export const STACK_COMMENT_PAGE = 50;
+
 export const StackService = {
   async getStackFullPayload(stackId: string) {
     const viewer = useAuthStore.getState().user?.id ?? null;
@@ -171,13 +174,19 @@ export const StackService = {
    * Previously: 2 queries (comments → profile IDs → profiles).
    * Now: 1 query with Supabase foreign key join.
    */
-  async getStackComments(stackId: string) {
+  /**
+   * The newest `limit` critiques, oldest first for display. The sheet asks for
+   * a larger `limit` (STACK_COMMENT_PAGE more) when the member asks for earlier
+   * ones, so a thread past one page can be read to its first.
+   */
+  async getStackComments(stackId: string, limit: number = STACK_COMMENT_PAGE) {
     const { data, error } = await supabase
       .from('list_comments')
       .select('id, list_id, user_id, content, created_at, profiles!inner(username, avatar_url)')
       .eq('list_id', stackId)
       .order('created_at', { ascending: false })
-      .limit(50);
+      .order('id', { ascending: false })
+      .limit(limit);
 
     if (error) throw error;
     if (!data || data.length === 0) return [];
