@@ -156,26 +156,6 @@ describe('submitReport', () => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Entry point 5 — dossier critique  (finding 104)
-// ══════════════════════════════════════════════════════════════════════════════
-describe('buildCritiquePayload', () => {
-  const ctx = { id: 'd1', tempId: 't1', userId: 'u1', username: 'cinephile', avatarUrl: null };
-
-  it('cleans the body that both the optimistic row and the insert use', () => {
-    const { buildCritiquePayload } = require('../critiquePayload');
-    const row = buildCritiquePayload('a ‮reversed⁩ critique', ctx);
-    expect(row.body).toBe('a reversed critique');
-    expect(row.body).not.toMatch(/[‪-‮⁦-⁩]/);
-  });
-
-  it('refuses a critique that is nothing but invisible characters', () => {
-    const { buildCritiquePayload } = require('../critiquePayload');
-    expect(buildCritiquePayload('‮⁦⁩​', ctx)).toBeNull();
-    expect(buildCritiquePayload('   ', ctx)).toBeNull();
-  });
-});
-
-// ══════════════════════════════════════════════════════════════════════════════
 // The offline last gate — a stack queued by the CURRENT TestFlight build
 // ══════════════════════════════════════════════════════════════════════════════
 // The queue persists in MMKV. Entries written by the build now on TestFlight carry

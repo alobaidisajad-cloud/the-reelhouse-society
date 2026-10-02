@@ -371,7 +371,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/NitrateFileCard.tsx | 2026-10-01 | every word frozen, as its header promised |
 | src/components/film/pickCertificate.ts | 2026-10-01 | the member's own region is real now |
 | src/components/film/ShareCardModal.tsx | 2026-10-01 | a failed share says so and stays |
-| src/components/film/ShareCardTypes.ts | — |  |
 | src/components/film/TrailerModal.tsx | 2026-10-01 | names what it plays |
 | src/components/film/WatchProviders.tsx | 2026-10-01 | named for what it costs, for one named country |
 | src/components/HapticTab.tsx | 2026-10-02 | Read whole (launch audit). Its 10pt reach gave each tab's edge to its neighbour and took 10pt of the screen above the bar: removed. |
@@ -705,7 +704,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useOfflineAware.ts | 2026-10-01 | one subscription, no clock |
 | src/hooks/useProfileController.ts | 2026-10-01 | one isNarrowed for refresh and filters; a follow that throws is said; dead ref gone; no ticket history |
 | src/hooks/useProfileData.ts | 2026-10-01 | each read cancelled only by what makes it stale; failures wiped with the member; comments say what is true now |
-| src/hooks/useReportUser.ts | — |  |
 | src/hooks/useScreenReady.tsx | 2026-10-01 | true as written |
 | src/hooks/useSheetPresence.ts | 2026-10-01 | written: five sheets' rise and fall, once |
 | src/hooks/useTextScale.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -897,7 +895,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/light.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/motion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/ryeAdvances.ts | 2026-10-01 |  |
-| src/theme/shaders.ts | — |  |
 | src/theme/stamp.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/theme.ts | 2026-10-02 | Read whole (launch audit). Dead tokens removed: typography, physics (springBouncy broke the no-bounce law), three metrics, three effects; type.caption 8.5 and type.badge 7.5 sat under the 10pt floor unused. theTypeFloor now reads the live scale. |
 | src/types/film.types.ts | 2026-10-02 | Read whole (launch audit). VaultItem was used nowhere: removed. |
@@ -993,7 +990,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/withRetry.test.ts | — |  |
 | src/utils/__tests__/withTimeout.test.ts | — |  |
 | src/utils/AppError.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/utils/critiquePayload.ts | — |  |
 | src/utils/csv.ts | 2026-10-02 | read; sound |
 | src/utils/deviceRegion.ts | 2026-10-01 | new |
 | src/utils/draftSync.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |

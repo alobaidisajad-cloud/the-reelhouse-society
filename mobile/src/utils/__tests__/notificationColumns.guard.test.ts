@@ -89,8 +89,10 @@ describe('the grouping code reads the declared key and nothing else', () => {
 });
 
 describe('the group tap routes by KIND, not by film alone', () => {
-  it('the modal derives its destination from the key', () => {
-    expect(modal).toMatch(/groupRoute\(parseGroupKey\(item\.groupKey\), item\.film_id\)/);
+  it('the modal derives its destination from the key — and from nothing else', () => {
+    // The film id was a second argument once, for a certified log; a log opens
+    // the log now (endorsementGroupKey), so the key alone decides.
+    expect(modal).toMatch(/groupRoute\(parseGroupKey\(item\.groupKey\)\)/);
   });
 
   it('it no longer routes on film_id alone inside the GROUP handler', () => {
