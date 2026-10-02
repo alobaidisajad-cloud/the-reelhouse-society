@@ -58,6 +58,8 @@ perfect-clean.js
 # these, leaving the mobile app's migrations silently untracked.
 !**/supabase/**/*.sql
 !**/migrations/*.sql
+# The load test's house (load.yml).
+!mobile/e2e/load/*.sql
 
 # Scraped / cached production files
 live.js

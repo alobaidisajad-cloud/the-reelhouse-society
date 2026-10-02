@@ -44,6 +44,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/db-integration.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/e2e.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-01 | a route check added (the script claimed CI ran it); the story of each step reduced to what it guards; flow lint --strict (its warnings went unread) |
+| ../.github/workflows/load.yml | 2026-10-02 | Written in the launch audit: the load test's workflow: production's shape, sealed, filled with 100,000 members. |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
 | .maestro/auth_deep_link.yaml | 2026-09-29 | header narrowed to what it proves |
@@ -137,6 +138,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/verify-writes.mjs | 2026-09-29 | true as written |
 | e2e/flow-screens.mjs | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
+| e2e/load/probe.mjs | 2026-10-02 | Written in the launch audit: every busy screen's reads, timed as a member, against a budget. |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
 | e2e/run-flows.sh | 2026-10-01 | the keyboard's room added after the flows |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
