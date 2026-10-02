@@ -119,6 +119,44 @@ describe('softBreak — where a line may break', () => {
   });
 });
 
+describe('softBreak never cuts a character in two', () => {
+  const s = (...cps: number[]) => String.fromCodePoint(...cps);
+  const ZWSP = String.fromCodePoint(0x200b);
+  /** Every place a break was put, as [what is before it, what is after it]. */
+  const joints = (out: string) => {
+    const parts = out.split(ZWSP);
+    return parts.slice(1).map((after, i) => [parts[i], after]);
+  };
+
+  it.each([
+    ['a thumb and its skin tone', s(0x1f44d, 0x1f3fd)],
+    ['a shrug, a woman', s(0x1f937, 0x200d, 0x2640, 0xfe0f)],
+    ['a family', s(0x1f468, 0x200d, 0x1f469, 0x200d, 0x1f467, 0x200d, 0x1f466)],
+    ['a heart on fire', s(0x2764, 0xfe0f, 0x200d, 0x1f525)],
+  ])('%s, run long, stays whole at every break', (_name, emoji) => {
+    for (let lead = 0; lead < 20; lead++) {
+      const text = 'x'.repeat(lead) + emoji.repeat(6);
+      const out = softBreak(text);
+      expect(out.split(ZWSP).join('')).toBe(text);
+      for (const [, after] of joints(out)) {
+        // Nothing after a break may belong to what came before it.
+        const first = after.codePointAt(0) ?? 0;
+        expect([0x200d, 0xfe0f, 0x2640].includes(first) || (first >= 0x1f3fb && first <= 0x1f3ff)).toBe(false);
+      }
+      for (const [before] of joints(out)) {
+        expect(before.endsWith(s(0x200d))).toBe(false);
+      }
+    }
+  });
+
+  it('a run of plain emoji still breaks — between two of them', () => {
+    const fire = s(0x1f525).repeat(20);
+    const out = softBreak(fire);
+    expect(out).toContain(ZWSP);
+    expect(out.split(ZWSP).join('')).toBe(fire);
+  });
+});
+
 describe('clipToSentence — where an excerpt stops', () => {
   const at = (text: string, n: number) => clipToSentence(text, n);
 

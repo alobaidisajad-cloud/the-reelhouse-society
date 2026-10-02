@@ -16,13 +16,16 @@ export default function OfflineBanner() {
     // Track elapsed offline time
     const offlineSince = useRef<number | null>(null);
     const [elapsed, setElapsed] = useState('');
+    const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => () => { if (settle.current) clearTimeout(settle.current); }, []);
 
     useEffect(() => {
         if (netInfo.isConnected === false) {
             if (!offlineSince.current) offlineSince.current = Date.now();
             const timer = setInterval(() => {
                 const mins = Math.floor((Date.now() - (offlineSince.current || Date.now())) / 60000);
-                setElapsed(mins > 0 ? ` · ${mins}m ago` : '');
+                // The house's own measure (timeAgo): "4 MIN.", never "4m".
+                setElapsed(mins > 0 ? ` · ${mins} MIN.` : '');
             }, 30000);
             return () => clearInterval(timer);
         } else {
@@ -36,7 +39,8 @@ export default function OfflineBanner() {
     const handleRetry = async () => {
         setChecking(true);
         await NetInfo.fetch(); // Force re-check
-        setTimeout(() => setChecking(false), 1000);
+        if (settle.current) clearTimeout(settle.current);
+        settle.current = setTimeout(() => setChecking(false), 1000);
     };
 
     return (
@@ -49,7 +53,14 @@ export default function OfflineBanner() {
             {/* Arrive, not an `entering`: one stalled at opacity 0 and the E2E
                 found the device offline with no banner to say so. */}
             <Arrive name="offline-banner" duration={300} rise={-ARRIVAL_RISE} style={styles.plate}>
-                <PressableScale onPress={handleRetry} pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Retry connection">
+                {/* The label says the state as well as the act: it replaces the
+                    words on the plate, and "Retry connection" never said why. */}
+                <PressableScale
+                    onPress={handleRetry}
+                    pressedScale={0.96}
+                    accessibilityRole="button"
+                    accessibilityLabel={checking ? 'Checking the connection' : 'Offline. Check the connection again'}
+                >
                     <Text style={styles.text}>
                         {checking ? 'CHECKING CONNECTION…' : `OPERATING IN ISOLATION${elapsed}`}
                     </Text>

@@ -22,7 +22,9 @@
  * Null when the id is unknown; a handler must tolerate that and skip its
  * per-member keys rather than delete under an "undefined" key.
  */
-type ResetHandler = (previousUserId: string | null) => void | Promise<void>;
+import { logger } from '@/src/utils/logger';
+
+type ResetHandler =(previousUserId: string | null) => void | Promise<void>;
 
 const _resetHandlers: ResetHandler[] = [];
 
@@ -50,10 +52,10 @@ export async function resetAllStores(previousUserId: string | null = null): Prom
         })
     );
 
-    if (__DEV__) {
-        const failed = results.filter(r => r.status === 'rejected');
-        if (failed.length > 0) {
-            console.warn(`[resetAllStores] ${failed.length}/${results.length} handlers failed`);
-        }
+    // Reported in production too (logger.warn reaches Sentry): a reset that failed
+    // may have left the last member's records on the device for the next one.
+    const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+    if (failed.length > 0) {
+        logger.warn(`[resetAllStores] ${failed.length}/${results.length} handlers failed`, failed.map((r) => r.reason));
     }
 }
