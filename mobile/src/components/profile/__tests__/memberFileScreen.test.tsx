@@ -42,7 +42,7 @@ const makeCtl = (over: Record<string, unknown> = {}, dataOver: Record<string, un
     targetUser: baseUser(), loading: false,
     counts: { logs: 34, ledger: 12, watchlist: 22, vault: 0, lists: 1 },
     mainLogs: [], archiveLogs: [], ledgerLogs: [], watchlist: [], vault: [], lists: [],
-    analyticsLogs: [], calendarData: [], serverAnalytics: null, serverStreak: null,
+    analyticsLogs: [], calendarData: [], serverAnalytics: null, highestRated: [], serverStreak: null,
     setTargetUser: jest.fn(),
     hasMoreLogs: false, hasMoreWatchlist: false, hasMoreVault: false, hasMoreLists: false,
     isLoadingMore: false, loadMoreLogs: jest.fn(),
@@ -220,6 +220,7 @@ describe('the ident block', () => {
   it('a NON-founding member is not given the flag', async () => {
     const r = await mount();
     expect(r.queryByText('✦ FOUNDING MEMBER')).toBeNull();
+    expect(r.getByText('THE HOLDINGS')).toBeTruthy();
   });
 
   it('hides the serial gracefully when the member has no number yet', async () => {
@@ -308,6 +309,7 @@ describe('your own file differs from someone else’s', () => {
   it('does NOT duplicate "at the door" — that lives in Notices now', async () => {
     const r = await mount({ isSelf: true }, { targetUser: baseUser({ is_social_private: true }) });
     expect(r.queryByText('AT THE DOOR')).toBeNull();
+    expect(r.getByText('THE HOLDINGS')).toBeTruthy();
   });
 
   it('the Society door stays open at the top rank and only goes quiet', async () => {
@@ -351,6 +353,7 @@ describe('the atmosphere behind the plate belongs to the rank', () => {
       preferences: { favorites: [{ id: 1, title: 'Stalker', poster_path: '/s.jpg' }], backdrop: false },
     }) });
     expect(r.queryByTestId('profile-backdrop')).toBeNull();
+    expect(r.getByText('THE HOLDINGS')).toBeTruthy();
   });
 
   it('an Auteur who never touched the switch keeps theirs', async () => {
@@ -369,12 +372,14 @@ describe('the atmosphere behind the plate belongs to the rank', () => {
       mainLogs: [{ id: 'l1', filmId: 1, title: 'A', poster: '/p.jpg', year: 2001, rating: 1, status: 'watched' }],
     });
     expect(r.queryByTestId('profile-backdrop')).toBeNull();
+    expect(r.getByText('THE HOLDINGS')).toBeTruthy();
   });
 
   it('no rank below Auteur gets one', async () => {
     for (const tier of ['cinephile', 'archivist']) {
       const r = await mount({}, { targetUser: withFav({ tier }) });
       expect(r.queryByTestId('profile-backdrop')).toBeNull();
+      expect(r.getByText('THE HOLDINGS')).toBeTruthy();
     }
   });
 
@@ -433,6 +438,7 @@ describe('the page survives the edges', () => {
   it('a favourites array full of nulls is not mistaken for content', async () => {
     const r = await mount({}, { targetUser: baseUser({ preferences: { favorites: [null, null, null] } }) });
     expect(r.queryByText('THE TRIPTYCH')).toBeNull();
+    expect(r.getByText('THE HOLDINGS')).toBeTruthy();
   });
 
   it('an absurdly long name and bio do not throw', async () => {
@@ -509,5 +515,18 @@ describe('a visitor\'s room whose read failed', () => {
     r = await mount({ activeTab: 'calendar' }, { calendarData: null, tabFailed: {} });
     expect(r.getByLabelText('Retrieving the calendar')).toBeTruthy();
     expect(r.queryByText(/IN THE PAST YEAR/)).toBeNull();
+  });
+});
+
+describe('HIGHEST RATED', () => {
+  // It was picked from the logs that had loaded, so a long record showed the
+  // best of its latest pages, and a five-reel film filed last year never appeared.
+  it('is the six the server read over the whole record, never the best of what loaded', async () => {
+    const loadedOnly = { id: 'l9', filmId: 9, title: 'Loaded Only', poster: null, year: 2025, rating: 5, status: 'watched', watchedDate: '2026-09-30' };
+    const best = { id: 'l1', filmId: 1, title: 'Mirror', poster: null, year: 1975, rating: 4.5, status: 'watched', watchedDate: '2024-02-11' };
+    const r = await mount({ activeTab: 'projector' }, { mainLogs: [loadedOnly], archiveLogs: [loadedOnly], ledgerLogs: [loadedOnly], highestRated: [best] });
+    expect(r.getByText('HIGHEST RATED', { exact: false })).toBeTruthy();
+    expect(r.getByLabelText('Mirror, rated 4.5 of 5')).toBeTruthy();
+    expect(r.queryByText('Loaded Only')).toBeNull();
   });
 });

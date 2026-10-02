@@ -398,8 +398,10 @@ describe('a member’s room', () => {
 
   it('asks nothing at all without a name', async () => {
     at_route({ username: undefined });
-    await mount();
+    const r = await mount();
     expect(mockAsked).toEqual([]);
+    // …and says the one thing it can: there is nobody here.
+    expect(r.getByText('No such member.')).toBeTruthy();
   });
 });
 

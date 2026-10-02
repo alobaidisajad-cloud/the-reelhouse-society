@@ -17,7 +17,7 @@ import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFi
 import { RankBadge, rankOf, rankWord } from '@/src/components/RankBadge';
 import { LEAD_STYLE } from './paperPerf';
 import { PaperStrike } from './PaperStrike';
-import { softBreak, counted, NOT_SENT_LINE } from './paperText';
+import { softBreak, counted, NOT_SENT_LINE, WITHHELD_LINE } from './paperText';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
 
 export type PaperKind = 'take' | 'seeking' | 'wire' | 'ballot' | 'dossier';
@@ -550,7 +550,7 @@ export const PaperPost = memo(function PaperPost({
 
           {withheld ? (
             <Text style={[p.removedText, { textAlign: 'left', marginTop: 12 }]} {...scaledTextProps}>
-              Only you can see this while the house reads it.
+              {WITHHELD_LINE}
             </Text>
           ) : null}
 

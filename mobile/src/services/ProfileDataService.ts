@@ -250,6 +250,30 @@ export const ProfileDataService = {
   },
 
   /**
+   * HIGHEST RATED: the six films rated highest over the WHOLE record (4 and up),
+   * the more recent first among equals. It was picked from the logs that had
+   * loaded, so a long record showed the best of its latest pages.
+   */
+  async fetchHighestRated(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal): Promise<ProfileLog[]> {
+    const { data, error } = await withAbortSignal(
+      supabase.from('logs')
+        .select(PUBLIC_LOG_COLUMNS)
+        .eq('user_id', targetUser.id)
+        .gte('rating', 4)
+        .order('rating', { ascending: false })
+        .order('watched_date', { ascending: false, nullsFirst: false })
+        .order('id', { ascending: false })
+        .limit(6),
+      signal
+    );
+    if (error) {
+      logger.warn('[ProfileDataService] fetchHighestRated error:', error.message);
+      throw error;
+    }
+    return ((data ?? []) as LogRow[]).map(mapLogRow) as ProfileLog[];
+  },
+
+  /**
    * Another member's logs, a page at a time, by keyset: the cursor is the last
    * row's watched date and id, so a deep scroll never repeats or skips a row.
    */

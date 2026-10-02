@@ -67,7 +67,7 @@ async function open(activeTab: string, over: Record<string, unknown> = {}, data:
     data: {
       targetUser: USER, loading: false, counts: { logs: 1, ledger: 1, watchlist: 1, vault: 1, lists: 1 },
       mainLogs: [], archiveLogs: [], ledgerLogs: [], watchlist: [], vault: [], lists: [],
-      analyticsLogs: [], calendarData: [], serverAnalytics: null, serverStreak: null, setTargetUser: jest.fn(),
+      analyticsLogs: [], calendarData: [], serverAnalytics: null, highestRated: [], serverStreak: null, setTargetUser: jest.fn(),
       hasMoreMainLogs: true, hasMoreArchiveLogs: true, hasMoreLedgerLogs: true, hasMoreWatchlist: true, hasMoreVault: true, hasMoreLists: true,
       isLoadingMore: {}, loadMoreLogs, loadMoreLists, loadMoreVault, loadMoreWatchlist,
       tabFailed: {}, moreFailed: {}, loadTabData: jest.fn(), retryRoom: jest.fn(),

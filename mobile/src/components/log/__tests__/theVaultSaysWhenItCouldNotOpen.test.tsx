@@ -30,10 +30,12 @@ describe('the Vault, on the record', () => {
   it('says nothing of it to a visitor, whose device never asks', () => {
     const r = render(<LogReviewBody {...base} isOwner={false} note="" noteUnreachable />);
     expect(r.queryByText('The Vault could not be opened.')).toBeNull();
+    expect(r.getByText('Every corridor is a held breath.')).toBeTruthy();
   });
 
   it('and nothing once the note is in hand', () => {
     const r = render(<LogReviewBody {...base} isOwner note="Watched it the week she left." noteUnreachable />);
     expect(r.queryByText('The Vault could not be opened.')).toBeNull();
+    expect(r.getByText(/Watched it the week she left/)).toBeTruthy();
   });
 });

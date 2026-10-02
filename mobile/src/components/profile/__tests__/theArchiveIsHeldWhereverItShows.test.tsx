@@ -35,7 +35,7 @@ const ctl = (over: Record<string, unknown> = {}): Ctl => ({
   data: {
     targetUser: me, loading: false, counts: { logs: 1, ledger: 1, watchlist: 0, vault: 0, lists: 0 },
     mainLogs: [], archiveLogs: [], ledgerLogs: [], watchlist: [], vault: [], lists: [],
-    analyticsLogs: [], calendarData: [STALKER], serverAnalytics: null, serverStreak: null, setTargetUser: jest.fn(),
+    analyticsLogs: [], calendarData: [STALKER], serverAnalytics: null, highestRated: [STALKER], serverStreak: null, setTargetUser: jest.fn(),
     hasMoreLogs: false, hasMoreWatchlist: false, hasMoreVault: false, hasMoreLists: false,
     isLoadingMore: false, loadMoreLogs: jest.fn(), tabFailed: {}, moreFailed: {}, loadTabData: jest.fn(), retryRoom: jest.fn(),
   },

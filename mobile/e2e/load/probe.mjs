@@ -51,6 +51,8 @@ const PROBES = [
     sql: `SELECT id, film_id, film_title, rating, watched_date, status FROM public.logs WHERE user_id = '${WHALE}' ORDER BY watched_date DESC NULLS LAST, id DESC LIMIT 50` },
   { screen: 'Profile', what: 'the Ledger at one rating chip, of the whale', as: MEMBER,
     sql: `SELECT id, film_id, film_title, rating, review FROM public.logs WHERE user_id = '${WHALE}' AND rating >= 3 AND rating < 4 ORDER BY watched_date DESC NULLS LAST, id DESC LIMIT 50` },
+  { screen: 'Profile', what: 'HIGHEST RATED over the whole record, of the whale', as: MEMBER,
+    sql: `SELECT id, film_id, film_title, rating FROM public.logs WHERE user_id = '${WHALE}' AND rating >= 4 ORDER BY rating DESC, watched_date DESC NULLS LAST, id DESC LIMIT 6` },
   { screen: 'Profile', what: 'the Ledger searched, of the whale', as: MEMBER,
     sql: `SELECT id FROM public.logs WHERE user_id = '${WHALE}' AND (film_title ILIKE '%film 12%' OR review ILIKE '%film 12%') ORDER BY watched_date DESC NULLS LAST, id DESC LIMIT 50` },
   { screen: 'Profile', what: 'the watchlist, first page', as: MEMBER,

@@ -171,6 +171,8 @@ describe('ConciergeButton', () => {
   it('closing without choosing navigates nowhere', async () => {
     const api = render(<ConciergeButton />);
     await open(api);
+    // It was open, so closing it is what is being tested.
+    expect(mockModal.props.visible).toBe(true);
 
     await act(async () => { mockModal.props.onRequestClose?.(); });
     await act(async () => { mockModal.props.onDismiss?.(); });

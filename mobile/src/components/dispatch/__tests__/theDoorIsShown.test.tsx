@@ -191,6 +191,8 @@ describe('the door', () => {
     const r = render(<ComposeScreen />);
     expect(r.queryByText('The door opens shortly.')).toBeNull();
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    // Asked and answered: the member who may file is let through.
+    expect(r.getByText('WHAT ARE YOU FILING?')).toBeTruthy();
   });
 
   it('has a way back out', async () => {

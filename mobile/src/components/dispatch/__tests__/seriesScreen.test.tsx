@@ -218,8 +218,9 @@ describe('the series page', () => {
   it('says nothing extra when the list IS the series', async () => {
     mockRows = [part({ id: 'p1', part_number: 1 })];
     mockTotal = 1;
-    const { queryByText } = await mount();
+    const { queryByText, getByText } = await mount();
     expect(queryByText(/THE FIRST/)).toBeNull();
+    expect(getByText('The Empty Room')).toBeTruthy();
   });
 
   it('says so when there is nothing left, rather than showing an empty frame', async () => {
@@ -231,10 +232,15 @@ describe('the series page', () => {
   it('draws a departed member’s series without a name to open', async () => {
     // The row keeps the words and not the name. A byline that is not a member
     // must not be a control, or the tap opens `/user/[deleted]`.
-    mockRows = [part({ user_id: null, profiles: null })];
-    const { getByText, queryByText } = await mount();
+    // As the database leaves it: the handle reads [deleted] (dispatch_scrub_departed).
+    mockRows = [part({ user_id: null, profiles: null, author_username: '[deleted]' })];
+    const { getByText, queryByText, queryAllByLabelText } = await mount();
     expect(getByText('The Empty Room')).toBeTruthy();
     expect(queryByText(/tomasreyes/i)).toBeNull();
+    // Named as every card names them — it printed "[DELETED]" — and not a door.
+    expect(getByText('A MEMBER, DEPARTED')).toBeTruthy();
+    expect(queryByText(/\[deleted\]/i)).toBeNull();
+    expect(queryAllByLabelText(/Open their room/i).map((n) => n.props.accessibilityLabel)).toEqual([]);
   });
 
   it('numbers a part the member left unnumbered by its position', async () => {

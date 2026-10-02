@@ -122,6 +122,8 @@ describe('the door can be read and pressed', () => {
       await act(async () => { reelToast.info(SENTENCE, { label: '✦ ASCEND THE RANKS', onPress: jest.fn() }); });
       await act(async () => { jest.advanceTimersByTime(1000); });
       expect(AccessibilityInfo.announceForAccessibility).not.toHaveBeenCalled();
+      // …because the focus did read it.
+      expect(AccessibilityInfo.sendAccessibilityEvent).toHaveBeenCalledTimes(1);
     });
 
     it('a PLAIN toast is announced, never focused, never cut, no button', async () => {

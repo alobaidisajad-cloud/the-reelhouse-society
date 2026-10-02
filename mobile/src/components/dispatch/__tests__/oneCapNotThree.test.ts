@@ -38,6 +38,7 @@ describe('the box may not be stricter than the column', () => {
       cwd: ROOT, encoding: 'utf8',
     }).split('\n').filter((f) => /\.tsx$/.test(f) && !/__tests__/.test(f));
 
+    expect(files.length).toBeGreaterThan(10); // the Dispatch's screens were found
     const literals: string[] = [];
     for (const f of files) {
       fs.readFileSync(path.join(ROOT, f), 'utf8').split(/\r?\n/).forEach((line, i) => {

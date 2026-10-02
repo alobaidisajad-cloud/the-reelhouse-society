@@ -117,18 +117,20 @@ describe('ProjectorRoom renders a real record', () => {
 
   it('does not call a single evening a run', () => {
     // "1 NIGHTS RUNNING" is not a sentence, and one logged night is not a run.
-    const { queryByText } = render(
+    const { queryByText, getAllByText } = render(
       <ProjectorRoom stats={stats(200)} user={{}} record={{ current_streak: 1, monthly_activity: [] }} />,
     );
     expect(queryByText(/NIGHTS RUNNING/)).toBeNull();
+    expect(getAllByText('200').length).toBeGreaterThan(0);
   });
 
   it('says nothing about a run when the streak is broken or unknown', () => {
     for (const current_streak of [0, null, undefined]) {
-      const { queryByText } = render(
+      const { queryByText, getAllByText } = render(
         <ProjectorRoom stats={stats(200)} user={{}} record={{ current_streak, monthly_activity: [] }} />,
       );
       expect(queryByText(/RUNNING/)).toBeNull();
+      expect(getAllByText('200').length).toBeGreaterThan(0);
     }
   });
 

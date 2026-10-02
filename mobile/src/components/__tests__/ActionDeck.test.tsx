@@ -70,6 +70,8 @@ describe('whose log it is', () => {
     await setUser({ id: 'u1', username: 'old_name' });
     const r = render(deck({ ownerId: null }));
     expect(r.queryByText('EDIT')).toBeNull();
+    // The deck is there; only the act that is nobody's is not.
+    expect(r.getByLabelText('Save film to your watchlist')).toBeTruthy();
   });
 });
 

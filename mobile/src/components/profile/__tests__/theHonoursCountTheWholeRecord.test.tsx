@@ -29,8 +29,11 @@ const honour = (r: ReturnType<typeof render>, title: string) =>
 
 describe('every honour is judged from the whole record', () => {
   it('the honours take no logs at all, so the logs that loaded cannot judge one', () => {
+    // Three hundred films loaded, a record of three: the record decides.
+    const loaded = Array.from({ length: 300 }, (_, i) => ({ id: `l${i}`, rating: 5 }));
     // @ts-expect-error — the record is the only thing the case reads.
-    render(<Achievements logs={[]} analytics={record()} />);
+    const r = render(<Achievements logs={loaded} analytics={record({ total_logs: 3 })} />);
+    expect(honour(r, 'THE ORACLE')).toBe(false);
   });
 
   it('a 300-film member is THE ORACLE', () => {

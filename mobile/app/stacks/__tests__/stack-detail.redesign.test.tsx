@@ -242,6 +242,7 @@ describe('the hero', () => {
   it('does not title itself above its own title', async () => {
     const r = mount();
     await waitFor(() => expect(r.queryByText(/FROM THE STACKS/)).toBeNull());
+    expect(r.getAllByText(/^noir$/i).length).toBeGreaterThan(0); // its own title is there
   });
 });
 
@@ -584,12 +585,14 @@ describe('the fold is driven, not merely described', () => {
     const r = mount({ description: 'Short.' });
     await layout(r, 2);
     expect(r.queryByText(/READ MORE/)).toBeNull();
+    expect(r.getAllByText('Short.').length).toBeGreaterThan(0);
   });
 
   it('offers nothing at exactly the clamp', async () => {
     const r = mount({ description: 'Exactly four lines of prose.' }); // the off-by-one
     await layout(r, 4);
     expect(r.queryByText(/READ MORE/)).toBeNull();
+    expect(r.getAllByText('Exactly four lines of prose.').length).toBeGreaterThan(0);
   });
 
   it('measures with an UNCLAMPED copy, or it measures the clamp', async () => {
@@ -840,8 +843,9 @@ describe('the overlay’s back button, driven', () => {
   });
 
   it('registers nothing while the critiques are shut', async () => {
-    mount({ critiqueCount: 2 });
+    const r = mount({ critiqueCount: 2 });
     await waitFor(() => expect(mockBackHandlers).toHaveLength(0));
+    expect(r.getByText(/INDEXED REELS/)).toBeTruthy(); // the page, with its critiques shut
   });
 });
 
@@ -877,10 +881,11 @@ describe('a pull that reached nothing', () => {
   });
 
   it('a pull that was answered says nothing', async () => {
-    mount();
+    const r = mount();
     mockQueryState = { stack: { status: 'success' }, stackComments: { status: 'success' } };
     await act(async () => { await mockRefresh!.props.onRefresh(); });
     expect(mockToastError).not.toHaveBeenCalled();
+    expect(r.getByText(/INDEXED REELS/)).toBeTruthy(); // the stack is still on the page
   });
 });
 

@@ -74,8 +74,10 @@ describe('the Stacks room', () => {
   it('does not describe itself before the data has landed', () => {
     // `ready={false}` is the room saying "I do not know yet". It must not claim
     // an empty shelf — the difference between "you have none" and "not loaded".
-    const { queryByText } = render(<ProfileListsTab lists={[]} ready={false} isSelf />);
+    const { queryByText, getByLabelText } = render(<ProfileListsTab lists={[]} ready={false} isSelf />);
     expect(queryByText(/no stacks|nothing here|empty/i)).toBeNull();
+    // It says the one true thing: it is still retrieving.
+    expect(getByLabelText(/^Retrieving /)).toBeTruthy();
   });
 
   it('survives an empty room once it does know', () => {
@@ -111,10 +113,11 @@ describe('the Vault', () => {
   });
 
   it('does not describe itself before the data has landed', () => {
-    const { queryByText } = render(
+    const { queryByText, getByLabelText } = render(
       <ProfilePhysicalTab {...base} vault={[]} physicalFiltered={[]} ready={false} />,
     );
     expect(queryByText(/nothing shelved|no copies|empty/i)).toBeNull();
+    expect(getByLabelText(/^Retrieving /)).toBeTruthy();
   });
 
   it('shows a shelf count only when the server knew the whole collection', () => {
@@ -122,10 +125,12 @@ describe('the Vault', () => {
     // number derived from the loaded window would be a confident wrong answer —
     // the exact failure this pass existed to remove.
     const shelf = [disc('1', 'Solaris', 'bluray')];
-    const { queryByText } = render(
+    const { queryByText, getByLabelText } = render(
       <ProfilePhysicalTab {...base} vault={shelf} physicalFiltered={shelf} totalVault={900} ready vaultFormats={null} />,
     );
     expect(queryByText(/\d+ COPIES/)).toBeNull();
+    // The shelf is drawn; only the count it cannot know is not.
+    expect(getByLabelText(/^Solaris, Blu-ray/)).toBeTruthy();
   });
 
   it('shows the count once the server supplies it', () => {

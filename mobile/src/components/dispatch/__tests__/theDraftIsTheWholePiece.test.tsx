@@ -181,8 +181,10 @@ describe('the room says what it found', () => {
   });
 
   it('says nothing at all in an empty room', async () => {
-    const { queryByText } = await mount();
+    const { queryByText, getByLabelText } = await mount();
     expect(queryByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeNull();
+    // The desk is open, and empty.
+    expect(getByLabelText('Essay content body').props.value).toBe('');
   });
 
   it('goes on the first keystroke, because typing IS accepting it', async () => {

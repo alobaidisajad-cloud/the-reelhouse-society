@@ -200,7 +200,8 @@ describe('the difference between "your taste" and "your taste so far" is visible
 
   it('drops the label once everything is read', async () => {
     // "BASED ON 100 OF 100 FILMS" is noise on a finished profile.
-    const { queryByText } = render(<CinematicInsights isSelf taste={taste()} />);
+    const { queryByText, getByText } = render(<CinematicInsights isSelf taste={taste()} />);
     expect(queryByText(/BASED ON/i)).toBeNull();
+    expect(getByText('Kurosawa')).toBeTruthy();
   });
 });

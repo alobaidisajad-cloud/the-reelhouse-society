@@ -44,7 +44,9 @@ const CODE = SRC.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
 const opBody = (name: string): string => {
   const impl = new RegExp(`${name}:\\s*(async\\s*)?\\([^)]*\\)\\s*=>\\s*\\{`);
   const m = impl.exec(CODE);
-  if (!m) return '';
+  // Not found is a failure, not an empty body: `not.toMatch` on '' passes, so a
+  // renamed operation would have taken its guard with it.
+  if (!m) throw new Error(`no ${name} in the store`);
   const from = (m.index ?? 0) + m[0].length;
   const rest = CODE.slice(from);
   const next = rest.search(/\n {4}[a-zA-Z_]+:\s*(async\s*)?\(/);

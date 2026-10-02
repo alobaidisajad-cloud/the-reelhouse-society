@@ -79,6 +79,15 @@ describe('one vocabulary: the app’s', () => {
         expect(standingFor(0).level).toBe('UNSEATED')
     })
 
+    it('the favourites are the six rated highest over the whole record, not the first of what loaded', () => {
+        const page = readFileSync(join(ROOT, 'src/pages/UserProfilePage.tsx'), 'utf8')
+        const content = readFileSync(join(ROOT, 'src/features/profile/components/ProfileContent.tsx'), 'utf8')
+        expect(content).not.toMatch(/profileLogs\.filter\([^)]*rating\s*>=\s*4/)
+        expect(content).toMatch(/highestRated\.map\(/)
+        expect(page).toMatch(/\.gte\('rating', 4\)\s*\.order\('rating', \{ ascending: false \}\)/)
+        expect(page).toMatch(/\.limit\(6\)/)
+    })
+
     it('a stamp’s name breaks between words, never inside one', () => {
         expect(stampLines('MASTERPIECE HUNTER')).toEqual(['MASTERPIECE', 'HUNTER'])
         expect(stampLines('THE COLLECTOR')).toEqual(['THE COLLECTOR', ''])

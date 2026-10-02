@@ -90,6 +90,10 @@ const CTL: Ctl = {
     mainLogs: LOGS, archiveLogs: LOGS, ledgerLogs: LOGS, watchlist: [], vault: [], lists: [],
     analyticsLogs: LOGS, calendarData: LOGS.map((l) => ({ watchedDate: l.watchedDate, rating: l.rating, status: l.status })), serverStreak: 9,
     serverAnalytics: { total_films: 1247, current_streak: 9, longest_streak: 31, avg_rating: 3.8 },
+    // As the server answers it: rated 4 and up, highest first, the more recent among equals.
+    highestRated: LOGS.filter((l) => l.rating >= 4)
+      .sort((a, b) => b.rating - a.rating || String(b.watchedDate).localeCompare(String(a.watchedDate)))
+      .slice(0, 6),
     analyticsShape: { longest_streak: 31, current_streak: 9, avg_rating: 3.8, monthly_activity: [] },
     taste: null,
     setTargetUser: jest.fn(),

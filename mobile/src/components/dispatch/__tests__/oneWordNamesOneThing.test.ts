@@ -54,6 +54,11 @@ const DISPATCH_SURFACE = [
 
 const rel = (f: string) => f.slice(MOBILE.length + 1).replace(/\\/g, '/');
 
+it('reads the whole Dispatch, or its sweeps would pass by reading nothing', () => {
+  expect(DISPATCH_SURFACE.length).toBeGreaterThan(20);
+  expect(DISPATCH_SURFACE.map(rel)).toContain('src/components/dispatch/paper/paperMetrics.ts');
+});
+
 describe('the wire does not move', () => {
   it('every kind keeps the value live rows already carry', () => {
     // Renaming any of these would mean rewriting rows in `dispatch_posts`, and

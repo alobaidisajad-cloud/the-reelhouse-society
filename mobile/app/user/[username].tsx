@@ -481,17 +481,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     }
   }, [isSelf, activeTab, displayLogs.length, displayWatchlist.length, displayLists.length, displayVault.length, counts, roomFailed, roomNarrowed]);
 
-  // The six rated highest: by rating, then recency to break a tie, as the title says.
-  const highestRated = useMemo(() => {
-    return displayLogs
-      .filter((l: ProfileLog) => l.rating >= 4)
-      .slice()
-      .sort((a: ProfileLog, b: ProfileLog) => {
-        if (b.rating !== a.rating) return b.rating - a.rating;
-        return String(b.watchedDate ?? b.createdAt ?? '').localeCompare(String(a.watchedDate ?? a.createdAt ?? ''));
-      })
-      .slice(0, 6);
-  }, [displayLogs]);
+  // The six rated highest over the whole record (the server's read), as the title says.
+  const highestRated = data.highestRated;
 
   // Group by month helper
   const groupByMonth = useCallback(<T extends ProfileLog | ProfileVaultItem>(items: T[], dateKey = 'watchedDate') => {

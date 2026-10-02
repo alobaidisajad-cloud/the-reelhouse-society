@@ -56,6 +56,8 @@ export interface ProfileState {
   /** The last year of viewings, by day. Null until its read has answered. */
   calendarData: { watchedDate: string; rating: number; status: string }[] | null;
   serverAnalytics: any | null;
+  /** HIGHEST RATED, read over the whole record. Empty until the Projector's read answers. */
+  highestRated: ProfileLog[];
   watchlist: ProfileWatchlistItem[];
   vault: ProfileVaultItem[];
   lists: ProfileList[];
@@ -105,6 +107,7 @@ export type ProfileAction =
   | { type: 'SET_ANALYTICS'; payload: ProfileLog[] }
   | { type: 'SET_CALENDAR_DATA'; payload: { watchedDate: string; rating: number; status: string }[] }
   | { type: 'SET_SERVER_ANALYTICS'; payload: any }
+  | { type: 'SET_HIGHEST_RATED'; payload: ProfileLog[] }
   | { type: 'SET_TASTE'; payload: TasteProfile | null }
   | { type: 'SET_LOGS_PAGE'; tab: 'main' | 'archive' | 'ledger'; items: ProfileLog[]; cursor: string | null; append?: boolean }
   | { type: 'SET_WATCHLIST_PAGE'; items: ProfileWatchlistItem[]; cursor: string | null; append?: boolean }
@@ -126,6 +129,7 @@ export const initialState: ProfileState = {
   analyticsLogs: [],
   calendarData: null,
   serverAnalytics: null,
+  highestRated: [],
   watchlist: [],
   vault: [],
   lists: [],
@@ -195,6 +199,7 @@ export function profileReducer(state: ProfileState, action: ProfileAction): Prof
     case 'SET_ANALYTICS': return { ...state, analyticsLogs: action.payload };
     case 'SET_CALENDAR_DATA': return { ...state, calendarData: action.payload };
     case 'SET_SERVER_ANALYTICS': return { ...state, serverAnalytics: action.payload };
+    case 'SET_HIGHEST_RATED': return { ...state, highestRated: action.payload };
     case 'SET_TASTE': return { ...state, taste: action.payload };
     case 'SET_LOGS_PAGE': {
       if (action.tab === 'main') {
@@ -484,11 +489,12 @@ export function useProfileData({
         }
       } else if ((tab === 'projector' || tab === 'passport') && (!state.tabDataLoaded.analytics || forceRefresh)) {
         dispatch({ type: 'SET_TAB_LOADED', tabs: { analytics: true } });
-        const [parsedAnalytics, serverAnalyticsPayload, tastePayload] = await Promise.all([
+        const [parsedAnalytics, serverAnalyticsPayload, tastePayload, highestRated] = await Promise.all([
           ProfileDataService.fetchAnalyticsLogs(state.targetUser, isSelf, roomSignal(_roomAbortRef, 'analytics')),
           ProfileDataService.fetchProfileAnalytics(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),
           // Replaces dozens of TMDB round trips from the phone with one call.
           ProfileDataService.fetchTasteProfile(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),
+          ProfileDataService.fetchHighestRated(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),
         ]);
         // "Something changed — read whatever is outstanding." Fire and forget:
         // nothing on screen waits, and the function drains the whole backlog,
@@ -500,6 +506,7 @@ export function useProfileData({
           dispatch({ type: 'SET_SERVER_ANALYTICS', payload: serverAnalyticsPayload });
         }
         dispatch({ type: 'SET_TASTE', payload: tastePayload });
+        dispatch({ type: 'SET_HIGHEST_RATED', payload: highestRated });
       } else if (tab === 'calendar' && (!state.tabDataLoaded.calendar || forceRefresh)) {
         dispatch({ type: 'SET_TAB_LOADED', tabs: { calendar: true } });
         // Always its own read — three columns over the 52 weeks the grid draws.
@@ -780,7 +787,7 @@ export function useProfileData({
       dispatch({ type: 'SET_USER', payload: u });
     },
     loading: state.loading, error: state.error, refreshing: state.refreshing, setRefreshing: (v: boolean) => dispatch({ type: 'SET_REFRESHING', payload: v }),
-    mainLogs: state.mainLogs, archiveLogs: state.archiveLogs, ledgerLogs: state.ledgerLogs, analyticsLogs: state.analyticsLogs, calendarData: state.calendarData, serverAnalytics: state.serverAnalytics, serverStreak: state.serverStreak, analyticsShape: state.analyticsShape, taste: state.taste, watchlist: state.watchlist, vault: state.vault, lists: state.lists,
+    mainLogs: state.mainLogs, archiveLogs: state.archiveLogs, ledgerLogs: state.ledgerLogs, analyticsLogs: state.analyticsLogs, calendarData: state.calendarData, serverAnalytics: state.serverAnalytics, highestRated: state.highestRated, serverStreak: state.serverStreak, analyticsShape: state.analyticsShape, taste: state.taste, watchlist: state.watchlist, vault: state.vault, lists: state.lists,
     hasMoreMainLogs: state.hasMoreMainLogs, hasMoreArchiveLogs: state.hasMoreArchiveLogs, hasMoreLedgerLogs: state.hasMoreLedgerLogs, hasMoreWatchlist: state.hasMoreWatchlist, hasMoreVault: state.hasMoreVault, hasMoreLists: state.hasMoreLists,
     isLoadingMore: state.isLoadingMore,
     counts: state.counts, tabDataLoaded: state.tabDataLoaded, setTabDataLoaded: (v: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => {

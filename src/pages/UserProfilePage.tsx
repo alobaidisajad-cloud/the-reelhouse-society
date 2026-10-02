@@ -169,6 +169,28 @@ export default function UserProfilePage() {
 
     const profileLogs = infiniteLogsData ? infiniteLogsData.pages.flat() : []
 
+    // The six rated highest over the whole record, as the app reads them: the
+    // loaded pages hold only the latest films, and "Your Favourites" was the
+    // first six of those rated 4 and up, in the order they were watched.
+    const { data: highestRated = [] } = useQuery({
+        queryKey: ['highest-rated', targetUserId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('logs')
+                .select('id, film_id, film_title, poster_path, rating')
+                .eq('user_id', targetUserId)
+                .gte('rating', 4)
+                .order('rating', { ascending: false })
+                .order('watched_date', { ascending: false, nullsFirst: false })
+                .order('id', { ascending: false })
+                .limit(6)
+            if (error) throw error
+            return (data ?? []).map((l: any) => ({ id: l.id, filmId: l.film_id, title: l.film_title, poster: l.poster_path, rating: l.rating }))
+        },
+        enabled: !!targetUserId,
+        staleTime: 1000 * 60 * 5,
+    })
+
     // Fetch other user's lists (stacks) — single embedded query (no N+1)
     const { data: otherUserLists = [] } = useQuery({
         queryKey: ['user-profile-lists', routeUsername],
@@ -482,6 +504,7 @@ export default function UserProfilePage() {
                             isOwnProfile={isOwnProfile}
                             analytics={analytics}
                             analyticsFailed={analyticsFailed}
+                            highestRated={highestRated}
                             stats={stats}
                             logsHasMore={logsHasMore}
                             listsHasMore={listsHasMore}

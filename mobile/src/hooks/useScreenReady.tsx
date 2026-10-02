@@ -20,9 +20,15 @@ import { e2eTrace } from '@/src/utils/e2eTrace';
 const FullDisplay = Sentry.createTimeToFullDisplay({ useFocusEffect });
 
 export function useScreenReady(name: string, ready: boolean): React.ReactElement {
-  // From the first render, not the first focus (which comes after it).
+  // A wait begins at the first render (not the first focus, which comes after
+  // it), at a return to the screen, or when its content goes back to loading
+  // (a new search, a refresh) — whichever came last. Timed from the focus alone,
+  // a search a minute into the Darkroom was reported as a 77-second load.
   const startedAt = useRef(Date.now());
   const mounted = useRef(false);
+  const wasReady = useRef(ready);
+  if (wasReady.current && !ready) startedAt.current = Date.now();
+  wasReady.current = ready;
   useFocusEffect(useCallback(() => {
     if (mounted.current) startedAt.current = Date.now();
     mounted.current = true;

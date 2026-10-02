@@ -227,6 +227,8 @@ describe('membership & billing — the card that had no billing', () => {
   it('and does not claim it for a member who pays nothing', async () => {
     const free = await settle(mount());
     expect(free.queryByText('ACTIVE')).toBeNull();
+    // The standings are drawn; only the claim is not.
+    expect(free.getByText('CINEPHILE')).toBeTruthy();
   });
 
   it('never names one rank as though it were the only next step', async () => {
@@ -235,6 +237,7 @@ describe('membership & billing — the card that had no billing', () => {
     const r = await settle(mount());
     expect(r.queryByText(/RISE TO/)).toBeNull();
     expect(r.queryByText(/UPGRADE/)).toBeNull();
+    for (const rank of ['CINEPHILE', 'ARCHIVIST', 'AUTEUR']) expect(r.getByText(rank)).toBeTruthy();
   });
 
   it('shows the three standings with yours lit', async () => {
@@ -424,6 +427,8 @@ describe('notifications — four switches nobody read', () => {
     const r = await settle(mount());
     expect(r.queryByText(/WITHHOLDING/)).toBeNull();
     expect(r.queryByText(/HAS NOT BEEN ASKED/)).toBeNull();
+    // The notices themselves are there to set.
+    expect(r.getByText('New Followers')).toBeTruthy();
   });
 
   it('speaks up when the phone is withholding them', async () => {
@@ -460,6 +465,7 @@ describe('notifications — four switches nobody read', () => {
     const r = await settle(mount());
     expect(r.queryByText(/WITHHOLDING/)).toBeNull();
     expect(r.queryByText(/HAS NOT BEEN ASKED/)).toBeNull();
+    expect(r.getByText('New Followers')).toBeTruthy();
   });
 
   it('reading the permission never spends the one prompt', () => {
@@ -887,6 +893,8 @@ describe("the phone's lock, put away, and the store's subscription", () => {
     const r = await settle(mount());
     const [, , buttons] = await pressDelete(r);
     await act(async () => { await buttons.find((b) => b.text === 'DELETE')!.onPress!(); });
+    // The phone was asked, and the system put the prompt away.
+    expect(local.authenticateAsync).toHaveBeenCalled();
     expect(otp).not.toHaveBeenCalled();
     expect(mockRequestDeletion).not.toHaveBeenCalled();
     expect(r.queryByText(/6-digit cipher/)).toBeNull();

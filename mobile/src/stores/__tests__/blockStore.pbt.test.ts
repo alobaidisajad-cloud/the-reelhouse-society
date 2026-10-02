@@ -4,7 +4,7 @@
  * Validates universal correctness properties of the BlockStore
  * using fast-check arbitraries.
  */
-import fc from 'fast-check';
+import * as fc from 'fast-check';
 import { useBlockStore } from '../blockStore';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────

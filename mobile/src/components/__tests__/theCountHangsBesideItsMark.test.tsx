@@ -123,6 +123,8 @@ describe.each(Object.entries(BARS))('%s', (_name, bar) => {
       const r = render(bar(c, k, false));
       expect(r.queryAllByTestId(COUNT_BOX, HIDDEN_TOO)).toHaveLength(0);
       expect(texts(r).filter((s) => /\d/.test(s))).toEqual([]);
+      // The marks are drawn; only the number nobody could give is not.
+      expect(r.getAllByLabelText(/certif/i).length).toBeGreaterThan(0);
       r.unmount();
     }
   });
@@ -185,14 +187,20 @@ describe('the number itself', () => {
       const m = /^([\d.]+)([KMB]?)$/.exec(s)!;
       return Number(m[1]) * ({ '': 1, K: 1e3, M: 1e6, B: 1e9 } as Record<string, number>)[m[2]];
     };
+    const wrong: string[] = [];
+    let checked = 0;
     for (let n = 1; n <= 1_000_000; n += n < 2000 ? 1 : 37) {
       const s = formatCount(n)!;
-      if (back(s) > n + 1e-6 || s.length > 4) throw new Error(`${n} → ${s}`);
+      checked++;
+      if (back(s) > n + 1e-6 || s.length > 4) wrong.push(`${n} → ${s}`);
     }
     for (let n = 1e6; n < 1e12; n *= 1.37) {
       const s = formatCount(n)!;
-      if (back(s) > n + 1e-3 || s.length > 4) throw new Error(`${n} → ${s}`);
+      checked++;
+      if (back(s) > n + 1e-3 || s.length > 4) wrong.push(`${n} → ${s}`);
     }
+    expect(checked).toBeGreaterThan(20_000);
+    expect(wrong).toEqual([]);
   });
 });
 

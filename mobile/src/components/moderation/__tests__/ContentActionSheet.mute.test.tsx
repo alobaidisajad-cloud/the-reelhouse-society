@@ -112,8 +112,9 @@ beforeEach(() => { jest.clearAllMocks(); });
 
 describe('ContentActionSheet — hideMute is what made three handlers dead code', () => {
     it('renders NO Mute row when hideMute is set — the comment sheets', () => {
-        const { queryByLabelText } = render(<ContentActionSheet {...base} hideMute />);
+        const { queryByLabelText, getByLabelText } = render(<ContentActionSheet {...base} hideMute />);
         expect(queryByLabelText('Mute alice')).toBeNull();
+        expect(getByLabelText('Report alice to the Tribunal')).toBeTruthy();
         // ...and the sheet really did render, so the null above means absent, not unmounted.
         expect(queryByLabelText('Block alice')).not.toBeNull();
     });
@@ -126,8 +127,9 @@ describe('ContentActionSheet — hideMute is what made three handlers dead code'
     });
 
     it('hides Mute for an already-blocked member', () => {
-        const { queryByLabelText } = render(<ContentActionSheet {...base} showUnblock />);
+        const { queryByLabelText, getByLabelText } = render(<ContentActionSheet {...base} showUnblock />);
         expect(queryByLabelText('Mute alice')).toBeNull();
+        expect(getByLabelText('Unblock alice')).toBeTruthy();
     });
 
     it('offers Unmute instead of Mute for an already-muted member', async () => {
@@ -143,8 +145,9 @@ describe('ContentActionSheet — hideMute is what made three handlers dead code'
     it('never renders a Mute row without a handler behind it', () => {
         // The onMute ?? onClose fallback exists for type safety only. If this
         // ever fails, a member can tap Mute and be silently ignored.
-        const { queryByLabelText } = render(<ContentActionSheet {...base} hideMute />);
+        const { queryByLabelText, getByLabelText } = render(<ContentActionSheet {...base} hideMute />);
         expect(queryByLabelText('Mute alice')).toBeNull();
+        expect(getByLabelText('Report alice to the Tribunal')).toBeTruthy();
 
         const { queryByLabelText: q2 } = render(<ContentActionSheet {...base} showUnblock />);
         expect(q2('Mute alice')).toBeNull();

@@ -134,6 +134,10 @@ describe('the index, per rank', () => {
     const r = mount('auteur');
     expect(r.queryByText('THE ARCHIVIST')).toBeNull();
     expect(r.queryByText('THE AUTEUR')).toBeNull();
+    // …because every tool is simply open to them.
+    for (const name of ['THE AUTOPSY', 'THE PHYSICAL ARCHIVE', 'THE VAULT']) {
+      expect(r.getByText(name)).toBeTruthy();
+    }
   });
 });
 

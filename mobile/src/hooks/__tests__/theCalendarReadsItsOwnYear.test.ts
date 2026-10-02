@@ -25,6 +25,7 @@ jest.mock('@/src/services/ProfileDataService', () => ({
     fetchAnalyticsLogs: jest.fn(),
     fetchProfileAnalytics: jest.fn(),
     fetchTasteProfile: jest.fn(),
+    fetchHighestRated: jest.fn(),
     pingFilmSync: jest.fn(),
     fetchCalendarData: jest.fn(),
   },
@@ -63,6 +64,7 @@ beforeEach(() => {
   svc.fetchAnalyticsLogs.mockResolvedValue([]);        // what the service really returns here
   svc.fetchProfileAnalytics.mockResolvedValue(null);
   svc.fetchTasteProfile.mockResolvedValue(null);
+  svc.fetchHighestRated.mockResolvedValue([]);
   svc.fetchCalendarData.mockResolvedValue(YEAR);
 });
 
@@ -90,5 +92,16 @@ describe('the Viewing Calendar reads its own year', () => {
     const { result } = await openProfile();
     await act(async () => { await result.current.loadTabData('calendar'); });
     expect(result.current.calendarData).toHaveLength(1);
+  });
+});
+
+describe('the Projector reads HIGHEST RATED with the rest of its room', () => {
+  it('over the whole record (the service\'s read), never from the logs that loaded', async () => {
+    const BEST = [{ id: 'l1', filmId: 1, title: 'Mirror', rating: 4.5 }];
+    svc.fetchHighestRated.mockResolvedValue(BEST);
+    const { result } = await openProfile();
+    await act(async () => { await result.current.loadTabData('projector'); });
+    expect(svc.fetchHighestRated).toHaveBeenCalledWith(expect.objectContaining({ id: CINEPHILE.id }), expect.anything());
+    expect(result.current.highestRated).toBe(BEST);
   });
 });

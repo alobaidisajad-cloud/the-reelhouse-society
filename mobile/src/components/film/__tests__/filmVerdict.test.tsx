@@ -152,12 +152,15 @@ describe("TMDB's score is a particular, not a verdict", () => {
   it('is absent entirely when TMDB has no score either', () => {
     const t = render(<FilmHero {...base} film={{ ...(film as object), vote_average: 0 } as never} />);
     expect(t.queryByText(/TMDB/)).toBeNull();
+    // The hero is drawn; only the score that does not exist is not.
+    expect(t.getAllByText(/odyssey/i).length).toBeGreaterThan(0);
   });
 
   it('has stopped printing a global vote count beside the reels', () => {
     const t = render(<FilmHero {...base} />);
     expect(json(t)).not.toContain('GLOBAL');
     expect(json(t)).not.toContain('AWAITING RATINGS');
+    expect(t.getAllByText(/odyssey/i).length).toBeGreaterThan(0);
   });
 });
 
@@ -179,6 +182,8 @@ describe('the meta reads as two kinds of fact', () => {
     // was about removing exactly that.
     const t = render(<FilmHero {...base} />);
     expect(t.queryByText('Adventure')).toBeNull();
+    // The genres are there, as one line of type.
+    expect(t.getByText('ADVENTURE  ·  ACTION')).toBeTruthy();
   });
 });
 

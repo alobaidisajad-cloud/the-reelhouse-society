@@ -351,7 +351,9 @@ export const ArchiveFilm = memo(function ArchiveFilm({
   return (
     <PressableScale
       style={m.archiveRow} haptic="selection"
-      hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
+      // No reach: 65pt tall as drawn (a 45pt plate and 10 above and below). Its
+      // 2pt reached into the row below it, and into the rope under the last one.
+      hitSlop={null}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${film.title}. ${counted(filings, 'filing', 'filings')}`}

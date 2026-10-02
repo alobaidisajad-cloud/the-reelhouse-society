@@ -102,6 +102,12 @@ describe('profileReducer', () => {
     expect(result.serverAnalytics).toBe(payload);
   });
 
+  it('SET_HIGHEST_RATED replaces highestRated, which starts empty', () => {
+    expect(initialState.highestRated).toEqual([]);
+    const payload = [{ id: 'l1', rating: 5 } as any];
+    expect(profileReducer(initialState, { type: 'SET_HIGHEST_RATED', payload }).highestRated).toBe(payload);
+  });
+
   describe('SET_LOGS_PAGE', () => {
     it('replaces items for a tab when append is false', () => {
       const state = { ...initialState, mainLogs: [{ id: 'old' } as any] };

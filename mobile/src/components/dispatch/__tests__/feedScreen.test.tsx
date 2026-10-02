@@ -214,8 +214,10 @@ describe('the Dispatch feed', () => {
         filing({ id: 'c', createdAt: at(2026, 8, 27), certifyCount: 2 }),
       ],
     });
-    const { queryByText } = await mount();
+    const { queryByText, getAllByText } = await mount();
     expect(queryByText(/AUGUST 27/)).toBeNull();
+    // Both days' filings are on the page; only the divider between them is not.
+    expect(getAllByText(/A take about a film/)).toHaveLength(2);
   });
 
   it('shows the nameplate on a page with nothing on it yet', async () => {
@@ -325,8 +327,9 @@ describe('the Dispatch feed', () => {
 
   it('shows no pill when nothing has arrived', async () => {
     put({ filings: [filing()], newCount: 0 });
-    const { queryByLabelText } = await mount();
+    const { queryByLabelText, getByText } = await mount();
     expect(queryByLabelText(/new filings/)).toBeNull();
+    expect(getByText(/A take about a film/)).toBeTruthy();
   });
 
   it('lets the index scroll, so no department is unreachable at large type', async () => {
@@ -586,10 +589,14 @@ describe('what a change redraws (a render budget)', () => {
 
   it('new paper arriving above redraws no filing', async () => {
     put({ filings: TEN });
-    await mount();
+    const { getByLabelText } = await mount();
+    // The ten were drawn, so a count of none afterwards means something.
+    expect(mockRowRenders.length).toBeGreaterThanOrEqual(10);
     mockRowRenders.length = 0;
     await act(async () => { useDispatch.setState({ newCount: 2 }); });
     expect(mockRowRenders).toHaveLength(0);
+    // …and the paper did arrive: the pill says so.
+    expect(getByLabelText(/new filings/)).toBeTruthy();
   });
 });
 
@@ -718,7 +725,10 @@ describe('a pull that reached nothing', () => {
   it('a pull that was answered says nothing', async () => {
     put({ filings: [filing()] });
     await mount();
+    const asked = mockPageAsks;
     await act(async () => { await mockListProps.refreshControl.props.onRefresh(); });
+    // The pull did ask, and was answered: silence is earned, not assumed.
+    expect(mockPageAsks).toBeGreaterThan(asked);
     expect(toast().error).not.toHaveBeenCalled();
   });
 });

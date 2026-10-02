@@ -87,10 +87,10 @@ describe('no brass plate is painted flat', () => {
   it.each(files)('%s uses the ramp for any brass plate', (file) => {
     const src = strip(readFileSync(join(FILM, file), 'utf8'));
     const plates = flatPlates(src);
-    if (plates.length === 0) return;
-    // A file that fills a plate with sepia must also be drawing the ramp — the
-    // fill is then a base underneath it, not the surface a member sees.
-    expect(`${file}: ${plates.join(', ')} — ${/BRASS/.test(src)}`).toMatch(/true$/);
+    // No brass plate, or one drawn with the ramp: a file that fills a plate with
+    // sepia must also be drawing the ramp — the fill is then a base underneath
+    // it, not the surface a member sees.
+    expect(`${file}: ${plates.join(', ') || 'no brass plate'} — ${plates.length === 0 || /BRASS/.test(src)}`).toMatch(/true$/);
   });
 
   it('the plate detector can tell a plate from a hairline', () => {

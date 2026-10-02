@@ -200,10 +200,7 @@ export const RYE: Readonly<Record<string, number>> = {
   "—": 0.597,
   "–": 0.489,
   "…": 0.993,
-  "✦": 0.816,
   "›": 0.332,
-  "★": 0.833,
-  "№": 0.954,
 };
 /** A letter the table does not hold is measured as the widest it does. */
 export const RYE_WIDEST = 1.202;
@@ -406,10 +403,7 @@ export const ELITE: Readonly<Record<string, number>> = {
   "—": 1.114,
   "–": 0.612,
   "…": 1.064,
-  "✦": 0.816,
   "›": 0.295,
-  "★": 0.833,
-  "№": 0.954,
 };
 /** A letter the table does not hold is measured as the widest it does. */
 export const ELITE_WIDEST = 1.114;
@@ -612,13 +606,10 @@ export const COURIER_ITALIC: Readonly<Record<string, number>> = {
   "—": 0.6,
   "–": 0.6,
   "…": 0.6,
-  "✦": 0.816,
   "›": 0.6,
-  "★": 0.833,
-  "№": 0.943,
 };
 /** A letter the table does not hold is measured as the widest it does. */
-export const COURIER_ITALIC_WIDEST = 0.943;
+export const COURIER_ITALIC_WIDEST = 0.6;
 
 export const SPECTRAL_ITALIC: Readonly<Record<string, number>> = {
   "0": 0.5,
@@ -818,9 +809,7 @@ export const SPECTRAL_ITALIC: Readonly<Record<string, number>> = {
   "—": 1,
   "–": 0.5,
   "…": 0.639,
-  "✦": 0.816,
   "›": 0.238,
-  "★": 0.833,
   "№": 0.5,
 };
 /** A letter the table does not hold is measured as the widest it does. */

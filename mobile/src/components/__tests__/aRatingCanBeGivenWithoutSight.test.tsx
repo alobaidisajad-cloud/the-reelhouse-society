@@ -46,5 +46,6 @@ describe('the rating, to a screen reader', () => {
   it('a rating that is only SHOWN is not a control at all', () => {
     const r = render(<ReelRating rating={4} />);
     expect(r.queryByRole('adjustable')).toBeNull();
+    expect(r.toJSON()).not.toBeNull();
   });
 });

@@ -19,11 +19,13 @@ jest.mock('@/src/utils/reelToast', () => {
 
 /** What the member's read answers: `false` when it could not read. */
 let mockRead: boolean | void = undefined;
+/** The pull's read of the file, so a silent answer can be told from no read at all. */
+const mockFetchUserData = jest.fn(async () => mockRead);
 jest.mock('@/src/hooks/useProfileData', () => ({
   useProfileData: () => ({
     targetUser: { id: 'u2', username: 'tomasreyes' },
     loading: false, error: null, refreshing: false, setRefreshing: jest.fn(),
-    fetchUserData: async () => mockRead,
+    fetchUserData: () => mockFetchUserData(),
     loadTabData: jest.fn(async () => {}),
     refreshTabWithFilters: jest.fn(async () => {}),
     setTabDataLoaded: jest.fn(),
@@ -50,7 +52,10 @@ describe('a pull on a member’s file', () => {
   it('that was answered says nothing', async () => {
     mockRead = undefined;
     const { result } = await renderHook(() => useProfileController());
+    mockFetchUserData.mockClear();
     await act(async () => { await result.current.onRefresh(); });
+    // It asked, and was answered: silence is earned, not assumed.
+    expect(mockFetchUserData).toHaveBeenCalled();
     expect(mockToastError).not.toHaveBeenCalled();
   });
 });

@@ -247,8 +247,10 @@ const BOM = Buffer.from([0xef, 0xbb, 0xbf]);
 const scan = (() => {
   const mangled: string[] = [];
   const bommed: string[] = [];
+  let read = 0;
   for (const file of ROOTS.flatMap((r) => walk(r))) {
     if (file === THIS_FILE) continue;
+    read++;
     const buf = readFileSync(file);
     const name = file.slice(REPO.length + 1);
 
@@ -265,11 +267,13 @@ const scan = (() => {
         `        should be:  ${bad.shouldBe}`);
     }
   }
-  return { mangled, bommed };
+  return { mangled, bommed, read };
 })();
 
 describe('no file in this repo was round-tripped through the shell', () => {
   it('every source file is intact', () => {
+    // The repo was read, so none mangled means none.
+    expect(scan.read).toBeGreaterThan(1000);
     // If this fails: DO NOT hand-retype the characters. `git checkout --` the
     // file and re-apply the edit with a tool that reads and writes UTF-8.
     expect(scan.mangled).toEqual([]);

@@ -14,6 +14,12 @@ export { softBreak, MAX_RUN } from '@/src/utils/softBreak';
  */
 export const NOT_SENT_LINE = 'NOT SENT YET · THE HOUSE HAS NOT SEEN THIS';
 
+/**
+ * What a WITHHELD filing tells the one member who can still see it, its
+ * author: on a card under its stamp, and under an essay's head in the reader.
+ */
+export const WITHHELD_LINE = 'Only you can see this while the house reads it.';
+
 /** Roman numerals, which is how the paper prints a part. Bounded by the cap. */
 const ROMAN: [number, string][] = [
   [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],

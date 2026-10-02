@@ -232,6 +232,8 @@ describe('every door into a session', () => {
     auth.exchangeCodeForSession = jest.fn().mockResolvedValue({ data: { session: { user: { id: 'm3' } } }, error: null });
     const r = render(<AuthCallbackScreen />);
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    // The link was confirmed, so a walk onward was on its way.
+    expect(auth.exchangeCodeForSession).toHaveBeenCalled();
     r.unmount();
     await act(async () => { jest.advanceTimersByTime(5000); });
     expect(replace).not.toHaveBeenCalled();

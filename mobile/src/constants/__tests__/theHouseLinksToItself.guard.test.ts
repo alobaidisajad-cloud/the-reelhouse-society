@@ -14,13 +14,18 @@ import { HOUSE_WEB } from '@/src/constants/support';
 
 const ELSEWHERE = /reelhouse\.app\b/;
 
+/** Files the last sweep read: a sweep that read none would find nothing, and pass. */
+let scanned = 0;
+
 function naming(): string[] {
   const found: string[] = [];
+  scanned = 0;
   const walk = (dir: string) => {
     for (const name of readdirSync(dir)) {
       const p = join(dir, name);
       if (statSync(p).isDirectory()) { if (name !== '__tests__' && name !== 'node_modules') walk(p); continue; }
       if (!/\.tsx?$/.test(name) || /\.test\./.test(name)) continue;
+      scanned++;
       if (ELSEWHERE.test(readCode(p))) found.push(relative(MOBILE, p).split(sep).join('/'));
     }
   };
@@ -35,4 +40,5 @@ it('the house is its own domain', () => {
 
 it('no code sends anyone to reelhouse.app', () => {
   expect(naming()).toEqual([]);
+  expect(scanned).toBeGreaterThan(300);
 });

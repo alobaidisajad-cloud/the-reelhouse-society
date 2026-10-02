@@ -133,6 +133,8 @@ it('a pull that reaches nothing keeps the reel and says so', async () => {
 it('a pull that was answered says nothing', async () => {
   await mount();
   await act(async () => { await mockListProps.feed.onRefresh(); });
+  // The pull did ask the feed, and was answered: silence is earned, not assumed.
+  expect(mockFeeds.community.refetch).toHaveBeenCalled();
   expect(toast().error).not.toHaveBeenCalled();
 });
 

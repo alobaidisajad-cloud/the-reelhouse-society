@@ -85,5 +85,6 @@ describe('reading your own note is never gated', () => {
   it('with no note and no rank, the field is the rope — nothing to read or remove', () => {
     const r = mount(false, '');
     expect(r.queryByLabelText('Remove this note')).toBeNull();
+    expect(r.getByLabelText('THE VAULT. Opens with THE ARCHIVIST.')).toBeTruthy();
   });
 });

@@ -53,7 +53,9 @@ it('reads a tag whole, arrow functions and all', () => {
 
 it('no pressable in the app is hidden by halves', () => {
   const found: string[] = [];
-  for (const f of [...files(join(ROOT, 'src')), ...files(join(ROOT, 'app'))]) {
+  const all = [...files(join(ROOT, 'src')), ...files(join(ROOT, 'app'))];
+  expect(all.length).toBeGreaterThan(200); // the app was read, so none found means none
+  for (const f of all) {
     const src = readFileSync(f, 'utf8');
     if (!src.includes('importantForAccessibility="no"')) continue;
     for (const tag of pressableTags(src)) {

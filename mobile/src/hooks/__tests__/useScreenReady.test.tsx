@@ -61,6 +61,21 @@ describe('useScreenReady', () => {
     expect(mockTrace).toHaveBeenCalledTimes(1);
   });
 
+  it('times a second load from when it began, not from when the screen was opened', () => {
+    // The E2E's first report had the Darkroom at 76,776 ms: a search a minute
+    // in, timed from the moment the tab was focused.
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1_000);
+    const r = render(<Screen ready={false} />);
+    now.mockReturnValue(1_500);
+    r.rerender(<Screen ready />);
+    now.mockReturnValue(61_000); // a minute of reading, then a new search
+    r.rerender(<Screen ready={false} />);
+    now.mockReturnValue(61_300);
+    r.rerender(<Screen ready />);
+    now.mockRestore();
+    expect(mockTrace.mock.calls.map(([, d]) => d.ms)).toEqual([500, 300]);
+  });
+
   it('takes no room in the screen it sits in', () => {
     const r = render(<Screen ready />);
     const { holder } = reporter(r);

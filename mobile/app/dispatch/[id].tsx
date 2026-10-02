@@ -39,7 +39,7 @@ import { PaperEmpty, PaperSheet } from '@/src/components/dispatch/paper/PaperFra
 import { DossierShareCard, PaperBack } from '@/src/components/dispatch/paper/PaperMore';
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { NOT_SENT_LINE, partOf } from '@/src/components/dispatch/paper/paperText';
+import { NOT_SENT_LINE, WITHHELD_LINE, partOf } from '@/src/components/dispatch/paper/paperText';
 import { measure, KIND_NAME } from '@/src/components/dispatch/paper/paperMetrics';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { roomOf } from '@/src/components/dispatch/roomLink';
@@ -423,11 +423,13 @@ export default function FilingReader() {
               <EssayHead
                 title={live.title ?? ''}
                 series={live.seriesTitle ? partOf(live.partNumber, live.seriesTitle) : undefined}
-                author={author ?? { name: '[deleted]', memberNo: 0, tier: 'free' }}
+                // A departed member is null, which the byline draws as departed
+                // and offers no door: a stand-in name opened a room that is not there.
+                author={author}
                 readTime={readTimeOf(live.fullContent ?? live.body)}
                 filed={formatDateMonthDay(live.createdAt).toUpperCase()}
                 film={live.film}
-                onAuthor={() => openAuthor(author?.name)}
+                onAuthor={author ? () => openAuthor(author.name) : undefined}
                 onFilm={live.subjectId ? openFilm : undefined}
                 // `from` is this part, so the series page marks where the reader
                 // already is instead of making them find it.
@@ -441,6 +443,13 @@ export default function FilingReader() {
               {pending ? (
                 <Text style={[p.wireSource, { paddingLeft: 0, marginTop: 0, marginBottom: 16 }]} numberOfLines={2} {...scaledTextProps}>
                   {NOT_SENT_LINE}
+                </Text>
+              ) : null}
+              {/* Withheld, it is read by its author alone (RLS refuses the rest),
+                  and says so, as a card does under its stamp. */}
+              {live.withheldAt ? (
+                <Text style={[p.removedText, { textAlign: 'left', marginTop: 0, marginBottom: 16 }]} {...scaledTextProps}>
+                  {WITHHELD_LINE}
                 </Text>
               ) : null}
               <EssayBody text={live.fullContent ?? live.body} />

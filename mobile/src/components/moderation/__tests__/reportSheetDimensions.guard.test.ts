@@ -75,7 +75,9 @@ describe('#121 · the class, swept — no file freezes the window at load', () =
     };
 
     const offenders: string[] = [];
-    for (const file of [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))]) {
+    const all = [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))];
+    expect(all.length).toBeGreaterThan(300); // the app was read, so none found means none
+    for (const file of all) {
       const src = strip(fs.readFileSync(file, 'utf8'));
       // Module scope = no leading indentation.
       if (/^(export )?const .*=\s*Dimensions\.get\(/m.test(src)) {

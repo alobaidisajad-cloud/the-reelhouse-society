@@ -36,6 +36,35 @@ beforeEach(() => {
   const g = gaps();
   if (g) g.length = 0;
   G.__armSwallowedTypeError = undefined;
+  G.__propertyChecks = 0;
+});
+
+/**
+ * ── A TEST THAT ASSERTS NOTHING FAILS ────────────────────────────────────────
+ * "includes 100ms breathing delay between mutations" called the code, advanced
+ * the clock and asserted nothing: green with no delay at all (the delay was
+ * 0 ms, not 100). A check inside a loop over matches that found none asserts
+ * nothing too. So every test makes at least one assertion: an `expect`, or a
+ * fast-check property (`fc.assert` throws when the property fails), counted here.
+ */
+const fastCheck = require('fast-check') as { assert: (...a: unknown[]) => unknown; default?: { assert: (...a: unknown[]) => unknown } };
+for (const host of [fastCheck, fastCheck.default]) {
+  if (!host || typeof host.assert !== 'function' || (host.assert as { counted?: boolean }).counted) continue;
+  const real = host.assert;
+  const counted = Object.assign((...args: unknown[]) => {
+    G.__propertyChecks = ((G.__propertyChecks as number) ?? 0) + 1;
+    return real(...args);
+  }, { counted: true });
+  host.assert = counted;
+}
+
+afterEach(() => {
+  if (expect.getState().assertionCalls > 0 || (G.__propertyChecks as number) > 0) return;
+  throw new Error(
+    'This test asserted nothing: no expect() and no fast-check property ran, so it passes ' +
+      'whatever the code does. Assert what it is named for (and if the check sits in a loop, ' +
+      'assert that the loop found something to check).',
+  );
 });
 
 afterEach(() => {

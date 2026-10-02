@@ -124,7 +124,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
 | app/stacks/[id].tsx | 2026-10-02 | Read (launch audit): the critique sheet's paging added (620d4f4b); the heart is the server's answer (learnEndorsements writes the index). Sound otherwise. |
-| app/user/[username].tsx | 2026-09-29 | 33 fixed + ~15 unflagged history notes; commented-out CinematicMap import removed; '72 seconds' was 36 |
+| app/user/[username].tsx | 2026-10-02 | Read whole in the launch audit: HIGHEST RATED now the server's six over the whole record (fetchHighestRated). |
 | app/year-in-cinema.tsx | 2026-10-01 | nav; a single reel says so far, not the year is young |
 | ARCHITECTURE.md | — |  |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
@@ -251,7 +251,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/DarkroomCards.tsx | 2026-10-02 | doors through nav |
 | src/components/darkroom/DarkroomFilterPanel.tsx | 2026-10-02 | Read (launch audit). Its chips say their state. Sound. |
 | src/components/darkroom/DarkroomHeader.tsx | 2026-10-02 | Read (launch audit, the unsaid-selection sweep). The filter toggle had no role, no expanded state, and a bare count; CLEAR had no name. Both speak now. |
-| src/components/darkroom/DarkroomHero.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
+| src/components/darkroom/DarkroomHero.tsx | 2026-10-02 | Read whole in the launch audit: the two animated props typed. |
 | src/components/darkroom/DarkroomMoodBar.tsx | 2026-10-02 | keys; selected as a state; meaning spoken |
 | src/components/Decorative.tsx | 2026-10-01 | the dead marquee and styles gone |
 | src/components/dispatch/__tests__/aBallotsClosingTimes.test.ts | 2026-09-29 | new |
@@ -325,13 +325,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperFill.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperFrame.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperKeyWell.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/dispatch/paper/paperMetrics.ts | 2026-09-29 | 33 fixed: stale names (NewsService, volumeNumber, chromeHeight, plate styles, noRawKindOnThePage) gone; measure example 375->318 corrected; formatCount branch comment was wrong |
+| src/components/dispatch/paper/paperMetrics.ts | 2026-10-02 | Read in the launch audit: issueOf counts calendar days (summer-time bug). |
 | src/components/dispatch/paper/PaperMore.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/paperMotion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperPerf.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/PaperPost.tsx | 2026-09-29 | 17 fixed; 3 FALSE: 'the counts leave' (they sit by the icons), 'there is no kind label' (every kind leads with one), 'rule material set by tier' misread; pending/dimmed never wired (logged) |
 | src/components/dispatch/paper/PaperStrike.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/dispatch/paper/paperStyles.ts | 2026-09-28 | Rewritten to the rule. Seven comments contradicted their values (16 vs 16.5, 9/1.1 vs 10/0.9, tracking 1.2 vs 0.9, a serial number where a monogram is drawn, a speck poster that is drawn); two blocks disagreed on what the rule carries; history removed. |
+| src/components/dispatch/paper/paperStyles.ts | 2026-10-02 | Read whole in the launch audit: sound. |
 | src/components/dispatch/paper/paperText.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
 | src/components/dispatch/roomLink.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -569,7 +569,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/ProjectorRoom.tsx | 2026-10-01 | a visitor shares the standing as the member's; a failed share said plainly; comments say what is true now |
 | src/components/profile/RadarChart.tsx | 2026-10-01 |  |
 | src/components/profile/RoomParts.tsx | 2026-10-01 | RoomMoreFailed; comments say what is true now |
-| src/components/profile/roomStyles.ts | 2026-09-29 | 26 fixed; chip-halo note was stranded 100 lines from chipSlop; 'the Vault' renamed Physical Archive in prose |
+| src/components/profile/roomStyles.ts | 2026-10-02 | Read whole in the launch audit: sound. |
 | src/components/profile/TasteDNA.tsx | 2026-10-01 | says retrieving, failed, too few or still reading — never a heading over nothing; whose-words |
 | src/components/profile/TasteDNAExportCanvas.tsx | 2026-10-02 | unspoken; words fixed-size (it is a picture); history comments trimmed |
 | src/components/profile/TasteMatch.tsx | 2026-10-01 |  |
@@ -596,7 +596,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/society/GeneralAdmission.tsx | 2026-10-02 | read; sound |
 | src/components/society/PrivilegeLedger.tsx | 2026-10-02 | read; sound |
 | src/components/society/PurchaseDock.tsx | 2026-10-02 | read; sound |
-| src/components/society/purchaseStop.ts | 2026-09-30 | written with the purchase-stop fix |
+| src/components/society/purchaseStop.ts | 2026-10-02 | Read whole in the launch audit: sound. |
 | src/components/society/RankTicket.tsx | 2026-10-02 | a ticket the store does not sell says so |
 | src/components/society/SmallPrint.tsx | 2026-10-01 | its link shared with the sign-in footer |
 | src/components/society/SocietyPoster.tsx | 2026-10-02 | read; sound |
@@ -746,7 +746,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/supabase.ts | 2026-10-01 | the session kept by authSessionStorage; comments short |
 | src/lib/tmdb.ts | 2026-10-02 | read; sound |
 | src/lib/tmdbErrors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/lore/fragments.ts | — |  |
+| src/lore/fragments.ts | 2026-10-02 | Read whole in the launch audit: the false 'Ledger is encrypted' line replaced. |
 | src/providers/__tests__/androidTracking.test.ts | — |  |
 | src/providers/__tests__/theMissingSettingsAreNamed.test.ts | 2026-10-02 | Written in the launch audit: the missing-settings message, one line each. |
 | src/providers/androidTracking.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -776,6 +776,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/servicesBatch1.test.ts | — |  |
 | src/services/__tests__/servicesBatch2.test.ts | — |  |
 | src/services/__tests__/servicesBatch3.test.ts | — |  |
+| src/services/__tests__/theBestFilmsAreReadFromTheWholeRecord.test.ts | 2026-10-02 | Written in the launch audit: HIGHEST RATED asked of the database over the whole record, and a failed read throws. |
 | src/services/__tests__/theDoorCursorCarriesATiebreaker.test.ts | — |  |
 | src/services/__tests__/theRegistryRetriesAFailedRead.test.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
 | src/services/__tests__/theStackKnowsYourMark.test.ts | — |  |
@@ -794,7 +795,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/LoungeService.ts | 2026-10-01 | true as written |
 | src/services/MemberDiscoveryService.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/services/ModerationService.ts | 2026-10-02 | read; sound |
-| src/services/ProfileDataService.ts | 2026-09-29 | 24 fixed; 'Sentry breadcrumb' was dev-only logger.info (logged for step 6); a dead file ref; ticket tags |
+| src/services/ProfileDataService.ts | 2026-10-02 | Read whole in the launch audit: fetchHighestRated added; the rest sound. |
 | src/services/ProfileWriteService.ts | 2026-10-02 | the circle's cursors through pgLiteral |
 | src/services/StackService.ts | 2026-10-02 | Read whole (launch audit). The sheet read the newest 50 critiques with the true count beside them and no way to the rest: getStackComments takes a limit (ordered by id too), and the sheet asks for earlier ones. |
 | src/services/VaultService.ts | 2026-10-02 | Read whole (launch audit). Claimed to be the only door to the notes while the import wrote the table itself: restoreNotes added and used; the claim narrowed to writes (the export reads); theVaultHasOneDoor guards it. |
@@ -1007,7 +1008,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/csv.ts | 2026-10-02 | read; sound |
 | src/utils/deviceRegion.ts | 2026-10-01 | new |
 | src/utils/draftSync.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/utils/e2eTrace.ts | 2026-09-29 | new |
+| src/utils/e2eTrace.ts | 2026-10-02 | Read whole in the launch audit: sound. |
 | src/utils/endorsementGroupKey.ts | 2026-10-02 | Read whole (launch audit). A certified-log group opened the FILM, on the belief that no log page existed (app/log/[id] does), and went nowhere without a film id: it opens the log. |
 | src/utils/enter.ts | 2026-10-02 | read; sound |
 | src/utils/filterContentByBlocks.ts | 2026-10-01 | true as written |

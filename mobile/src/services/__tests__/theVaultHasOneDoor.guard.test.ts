@@ -35,5 +35,7 @@ it('the scan sees the door itself — not passing on an empty list', () => {
 });
 
 it('no other file queries the table', () => {
+  // The sweep finds the one door it allows, so it can see a query at all.
+  expect(querying()).toContain(DOOR);
   expect(querying().filter((f) => f !== DOOR)).toEqual([]);
 });

@@ -90,7 +90,9 @@ describe('the house rules', () => {
   it('and the picker without a door does not draw a dead line', async () => {
     // The prop is optional so the mockup generator can mount the picker with
     // nothing behind it. Optional must mean ABSENT, not present-and-inert.
-    const { queryByLabelText } = render(<PaperPicker />);
+    const { queryByLabelText, getByLabelText } = render(<PaperPicker />);
     expect(queryByLabelText('Read the house rules')).toBeNull();
+    // The picker itself is drawn; only the dead line is not.
+    expect(getByLabelText(/^TAKE\./)).toBeTruthy();
   });
 });

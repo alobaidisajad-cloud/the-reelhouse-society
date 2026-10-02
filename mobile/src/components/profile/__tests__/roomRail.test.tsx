@@ -60,5 +60,6 @@ describe('a rail is one line, whatever reaches it', () => {
     // A rhythm drawn from partial counts is a prettier lie than a wrong number.
     const { toJSON } = render(<RoomRail label="MARCH" count="9 FILMS" />);
     expect(JSON.stringify(toJSON())).not.toContain('no-hide-descendants');
+    expect(JSON.stringify(toJSON())).toContain('MARCH');
   });
 });

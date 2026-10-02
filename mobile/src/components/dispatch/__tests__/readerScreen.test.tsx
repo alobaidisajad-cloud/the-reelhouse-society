@@ -237,12 +237,18 @@ describe('the reader', () => {
     expect(getByText(/house/i)).toBeTruthy();
   });
 
-  it('tells a WITHHELD filing’s author the truth about it', async () => {
-    // RLS lets its author read it; "no longer here" would be a lie to them.
+  it.each([
+    ['an essay', {}],
+    ['a take', { kind: 'take', title: null, full_content: null, body: 'A take, held.' }],
+  ])('tells the author of %s held WITHHELD the truth about it', async (_kind, over) => {
+    // RLS lets its author read it; "no longer here" would be a lie to them. It
+    // only said what it was not: the essay, drawn by its own head and body,
+    // carried no word of being withheld and read as though it were published.
     mockUser = { id: 'u2', username: 'tomasreyes' };
-    mockRow = row({ withheld_at: '2026-08-29T10:00:00Z' });
-    const { queryByText } = await mount();
+    mockRow = row({ withheld_at: '2026-08-29T10:00:00Z', ...over });
+    const { queryByText, getByText } = await mount();
     expect(queryByText('This filing is no longer here.')).toBeNull();
+    expect(getByText('Only you can see this while the house reads it.')).toBeTruthy();
   });
 
   it('offers a signed-out reader nothing to do, and still lets them read', async () => {
@@ -464,8 +470,8 @@ describe('the reader', () => {
     useOfflineQueueStore.setState({ queued: [{ id: 'q1', type: 'add_filing', payload: { _tempId: 'f1' }, timestamp: 0 }] });
     try {
       const { getByText } = await mount();
-      getByText('The Empty Room');
-      getByText('NOT SENT YET · THE HOUSE HAS NOT SEEN THIS');
+      expect(getByText('The Empty Room')).toBeTruthy();
+      expect(getByText('NOT SENT YET · THE HOUSE HAS NOT SEEN THIS')).toBeTruthy();
     } finally {
       useOfflineQueueStore.setState({ queued: [] });
     }
@@ -497,8 +503,9 @@ describe('the reader', () => {
     await act(async () => { alerts[0][2].find((b) => b.text === 'Withdraw it')?.onPress?.(); });
     await act(async () => { alerts[1][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
 
-    // Gone from the page the member is on, not only from the feed.
+    // Gone from the page the member is on, not only from the feed: the tombstone stands.
     expect(queryByText('The Empty Room')).toBeNull();
+    expect(getByText('This filing was withdrawn by its author.')).toBeTruthy();
     spy.mockRestore();
   });
 
@@ -683,11 +690,17 @@ describe('the reader', () => {
     }));
     mockRow = row({ comment_count: 200 });
     const { getByLabelText } = await mount();
+    expect(useDispatch.getState().critiques.f1).toHaveLength(30);
 
+    // The next page is thirty others: it said `>= 30`, which the first page met alone.
+    mockCritiqueRows = Array.from({ length: 30 }, (_, i) => ({
+      id: 'c' + (i + 30), post_id: 'f1', user_id: 'u3', author_username: 'someone',
+      body: 'Critique ' + (i + 30), certify_count: 0,
+      created_at: '2026-08-28T21:00:00Z', edited_at: null, profiles: null,
+    }));
     await act(async () => { fireEvent.press(getByLabelText(/more critiques/)); });
     await act(async () => { await Promise.resolve(); });
-    // The same 30 again: the merge de-duplicates by id.
-    expect(useDispatch.getState().critiques.f1.length).toBeGreaterThanOrEqual(30);
+    expect(useDispatch.getState().critiques.f1).toHaveLength(60);
   });
 
   it('leaves the page when the reader blocks its author', async () => {
@@ -724,13 +737,15 @@ describe('the reader', () => {
   it('ends the LAST part with nothing at all', async () => {
     mockRow = row({ series_id: 's1', series_title: 'Ozu, in four parts', part_number: 4 });
     mockNextRows = [];
-    const { queryByLabelText } = await mount();
+    const { queryByLabelText, getByText } = await mount();
     expect(queryByLabelText(/NEXT IN THE SERIES/)).toBeNull();
+    expect(getByText(/That is the argument/)).toBeTruthy();
   });
 
   it('offers no next part on a filing that is not in a series', async () => {
-    const { queryByLabelText } = await mount();
+    const { queryByLabelText, getByText } = await mount();
     expect(queryByLabelText(/NEXT IN THE SERIES/)).toBeNull();
+    expect(getByText(/That is the argument/)).toBeTruthy();
   });
 
   it('shares an essay as a clipping AND the link, in one share', async () => {
@@ -1038,17 +1053,30 @@ describe('the ways out, and the ways it fails', () => {
   });
 
   it('offers no room to open for a member who has gone', async () => {
-    mockRow = row({ profiles: null, author_username: null });
-    const { queryAllByLabelText } = await mount();
-    expect(queryAllByLabelText(/Open their room/i)).toEqual([]);
+    // As the database leaves it (dispatch_scrub_departed, ON DELETE SET NULL): the
+    // filing stays, its author's id is gone and its handle reads [deleted]. A null
+    // handle, which the database never writes, failed to parse, so this checked
+    // "no longer here" for a byline it never drew. Drawn, the essay's head offered
+    // "[deleted]. Open their room." — a door to a room that is not there.
+    mockRow = row({ user_id: null, profiles: null, author_username: '[deleted]' });
+    const { queryAllByLabelText, getByText, queryByText } = await mount();
+    // Labels compared, not elements: a failed match on elements cannot be reported.
+    expect(queryAllByLabelText(/Open their room/i).map((n) => n.props.accessibilityLabel)).toEqual([]);
+    // Named as every card names them, and their words stay.
+    expect(getByText('A MEMBER, DEPARTED')).toBeTruthy();
+    expect(queryByText(/\[deleted\]/i)).toBeNull();
+    expect(getByText(/That is the argument/)).toBeTruthy();
   });
 
   it('does not re-read the critiques when the order is already that', async () => {
     const { getByLabelText } = await mount();
-    const before = useDispatch.getState().critiquesOrder.f1;
+    expect(useDispatch.getState().critiquesOrder.f1).toBe('CERTIFIED');
+    // A re-read would write CERTIFIED again, the value already there, so a marker
+    // stands in the store: only a re-read could replace it.
+    useDispatch.setState({ critiquesOrder: { f1: 'MARKER' } } as never);
     // By its own label: the certify controls say "certified" too now.
     await act(async () => { fireEvent.press(getByLabelText('Order by certified')); });
-    expect(useDispatch.getState().critiquesOrder.f1).toBe(before);
+    expect(useDispatch.getState().critiquesOrder.f1).toBe('MARKER');
   });
 
   it('says so when a filing will not withdraw', async () => {

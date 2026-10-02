@@ -10,6 +10,9 @@ import {
     resetStores,
     setupSentryMock,
 } from './setup';
+import { useAuthStore } from '@/src/stores/auth';
+import { useSocialStore } from '@/src/stores/followStore';
+import { useNotificationStore } from '@/src/stores/notificationStore';
 
 describe('Integration Test Infrastructure', () => {
   it('createMockSupabase returns a chainable mock object', () => {
@@ -58,8 +61,14 @@ describe('Integration Test Infrastructure', () => {
   });
 
   it('resetStores resets auth, social, and notification stores', () => {
-    // This should not throw
+    // It only asked that the call not throw: a reset that reset nothing passed.
+    useAuthStore.setState({ user: { id: 'u1' } as never, isAuthenticated: true });
+    useSocialStore.setState({ following: ['ana'], requested: ['bo'] });
+    useNotificationStore.setState({ notifications: [{ id: 'n1' }] as never, _unreadCount: 3 });
     resetStores();
+    expect(useAuthStore.getState()).toMatchObject({ user: null, isAuthenticated: false });
+    expect(useSocialStore.getState()).toMatchObject({ following: [], requested: [] });
+    expect(useNotificationStore.getState()).toMatchObject({ notifications: [], _unreadCount: 0 });
   });
 
   it('createMockNetwork controller tracks online state', () => {

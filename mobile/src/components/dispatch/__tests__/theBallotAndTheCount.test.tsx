@@ -158,7 +158,9 @@ describe('nothing in the feature glues a count to a plural again', () => {
 
   it('finds none, in any component of the paper', () => {
     const offenders: string[] = [];
-    for (const f of fs.readdirSync(DIR).filter((n) => /\.tsx?$/.test(n))) {
+    const files = fs.readdirSync(DIR).filter((n) => /\.tsx?$/.test(n));
+    expect(files.length).toBeGreaterThan(10); // the paper's components were found
+    for (const f of files) {
       const code = fs.readFileSync(path.join(DIR, f), 'utf8')
         .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
         .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -375,6 +377,8 @@ describe('a ballot row says only what can be done with it', () => {
 
   it('offers nothing on a closed ballot', () => {
     expect(labels({ closed: true }).join(' ')).not.toMatch(/Mark this/);
+    // The rest are still read out, with no act; the winner is drawn as the house's choice.
+    expect(labels({ closed: true })).toEqual(['Option 2 of 2. Late Spring.']);
   });
 });
 
@@ -420,6 +424,7 @@ describe('a ballot closed but not yet counted', () => {
     // name the first film as the house's choice on no votes at all.
     const said = draw(false);
     expect(said).not.toContain('THE HOUSE CHOSE');
+    expect(said).toContain('Which Ozu?');
   });
 
   it('and still says nobody voted when it really has been counted', () => {

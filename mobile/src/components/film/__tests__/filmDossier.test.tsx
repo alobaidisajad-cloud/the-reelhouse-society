@@ -61,6 +61,7 @@ describe('what it gained', () => {
   it('hides the studio row rather than printing an empty one', () => {
     const t = render(<FilmDossier {...base} studios={[]} />);
     expect(t.queryByText('STUDIO')).toBeNull();
+    expect(t.getByText('LANGUAGE')).toBeTruthy();
   });
 });
 
@@ -98,6 +99,7 @@ describe('a language reads as a word', () => {
   it('hides the row when there is no language at all', () => {
     const t = render(<FilmDossier {...base} film={{ ...film, original_language: undefined }} />);
     expect(t.queryByText('LANGUAGE')).toBeNull();
+    expect(t.getByText(/^STUDIOS?$/)).toBeTruthy();
   });
 });
 

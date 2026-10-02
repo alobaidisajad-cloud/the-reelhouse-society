@@ -104,11 +104,13 @@ module.exports = defineConfig([
     rules: {
       // Tests find React Native's own Text by type — that is what renders.
       'no-restricted-imports': ['error', { paths: [FLASH_LIST_RULE] }],
-      'no-restricted-syntax': 'off',
+      // The app's syntax rules are not the tests'; this one is.
+      'no-restricted-syntax': ['error', {
+        selector: "ImportDeclaration[source.value='fast-check'] > ImportDefaultSpecifier",
+        message: "import * as fc from 'fast-check': the default export's assert cannot be counted by jest.afterEnv.ts, so a property test would read as asserting nothing.",
+      }],
       '@typescript-eslint/no-require-imports': 'off',
       'react/display-name': 'off',
-      // fast-check's documented usage is `import fc from 'fast-check'; fc.assert(...)`.
-      'import/no-named-as-default-member': 'off',
     },
   },
 ]);

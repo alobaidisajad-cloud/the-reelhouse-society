@@ -251,6 +251,8 @@ describe('no drop cap on a joined script', () => {
   it('Arabic never does — on the record or on the card', async () => {
     const rec = await page({ review: ARABIC, drop_cap: true });
     expect(lifted(rec)).toEqual([]);
+    // The words are on the record, whole.
+    expect(nodes(rec).some((n) => n.type === 'Text' && textOf(n).includes('الانتظار'))).toBe(true);
     rec.unmount();
     let card!: R;
     await act(async () => {
@@ -258,6 +260,7 @@ describe('no drop cap on a joined script', () => {
         isPremium isAuteur={false} onPress={() => {}} /></View>);
     });
     expect(lifted(card)).toEqual([]);
+    expect(nodes(card).some((n) => n.type === 'Text' && textOf(n).includes('الانتظار'))).toBe(true);
   });
 });
 

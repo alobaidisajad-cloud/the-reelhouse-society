@@ -76,7 +76,8 @@ export const ESSAY_BODY = {
 export const EssayHead = memo(function EssayHead({
   title, series, author, readTime, filed, film, onSeries, onAuthor, onFilm,
 }: {
-  title: string; series?: { printed: string; said: string }; author: PaperAuthor;
+  /** Null for a departed member: the byline says so, and is not a door. */
+  title: string; series?: { printed: string; said: string }; author: PaperAuthor | null;
   readTime: string; filed: string; film?: PaperFilm | null;
   onSeries?: () => void; onAuthor?: () => void; onFilm?: () => void;
 }) {
@@ -235,7 +236,8 @@ export const TO_COME_INK = {
 export const SeriesList = memo(function SeriesList({
   title, author, parts, onPart, onAuthor,
 }: {
-  title: string; author: PaperAuthor; parts: Part[];
+  /** Null for a departed member, as on the essay's head. */
+  title: string; author: PaperAuthor | null; parts: Part[];
   /** A part that is not yet written has nowhere to go, and says so instead. */
   onPart?: (part: Part) => void;
   onAuthor?: () => void;

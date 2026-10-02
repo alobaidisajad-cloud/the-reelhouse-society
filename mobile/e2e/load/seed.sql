@@ -102,8 +102,9 @@ SELECT pg_temp.mid(1 + floor(random() * 100000)::int), l.id, 'endorse_log', l.cr
        generate_series(1, 2) e;
 
 -- ── watchlists: ~15 each ──────────────────────────────────────────────────────
+-- In bigint: n * 104729 reaches 10.5 billion, past an integer's 2.1.
 INSERT INTO public.watchlists (user_id, film_id, film_title, poster_path, year)
-SELECT pg_temp.mid(n), ((n * 104729 + j * 7) % 30000) + 1, 'Film ' || (((n * 104729 + j * 7) % 30000) + 1), '/p.jpg', 1990
+SELECT pg_temp.mid(n), ((n::bigint * 104729 + j * 7) % 30000) + 1, 'Film ' || (((n::bigint * 104729 + j * 7) % 30000) + 1), '/p.jpg', 1990
   FROM generate_series(1, 100000) n, generate_series(1, 15) j
 ON CONFLICT (user_id, film_id) DO NOTHING;
 
@@ -114,7 +115,9 @@ SELECT gen_random_uuid(), pg_temp.mid(n), 'Stack ' || n || '-' || s, 'A stack fo
   FROM generate_series(1, 100000) n, generate_series(1, 1 + n % 10) s
  WHERE n % 10 = 1;
 INSERT INTO public.list_items (list_id, film_id, film_title, rank_position, poster_path)
-SELECT l.id, ((i * 4099 + abs(hashtext(l.id::text))) % 30000) + 1, 'Film', i, '/p.jpg'
+-- In bigint: hashtext() spans the whole integer range, so adding to it (or
+-- abs() of its lowest value) would overflow.
+SELECT l.id, ((i * 4099 + abs(hashtext(l.id::text)::bigint)) % 30000) + 1, 'Film', i, '/p.jpg'
   FROM public.lists l, generate_series(1, 15) i
 ON CONFLICT (list_id, film_id) DO NOTHING;
 

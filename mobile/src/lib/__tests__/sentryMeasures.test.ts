@@ -63,6 +63,7 @@ describe('what Sentry is never sent', () => {
     // and a lounge message's label is the message.
     const root = path.join(__dirname, '..', '..', '..');
     const offenders: string[] = [];
+    let scanned = 0;
     const walk = (dir: string) => {
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
         if (e.name === 'node_modules' || e.name === '__tests__' || e.name.startsWith('.')) continue;
@@ -70,12 +71,14 @@ describe('what Sentry is never sent', () => {
         if (e.isDirectory()) walk(p);
         else if (/\.(tsx?|jsx?)$/.test(e.name)) {
           const src = fs.readFileSync(p, 'utf8');
+          scanned++;
           if (/Sentry\.wrap\(|TouchEventBoundary/.test(src)) offenders.push(path.relative(root, p));
         }
       }
     };
     walk(path.join(root, 'app'));
     walk(path.join(root, 'src'));
+    expect(scanned).toBeGreaterThan(300); // the app was read, so none found means none
     expect(offenders).toEqual([]);
   });
 });

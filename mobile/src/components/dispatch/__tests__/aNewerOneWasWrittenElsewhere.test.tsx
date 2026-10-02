@@ -183,8 +183,10 @@ describe('a newer one written elsewhere', () => {
 
   it('and says nothing at all when the house is holding nothing', async () => {
     local(OLDER, 'On this phone.');
-    const { queryByText } = await mount();
+    const { queryByText, getByLabelText } = await mount();
     expect(queryByText('A NEWER ONE WAS WRITTEN ELSEWHERE')).toBeNull();
+    // …and the phone's own copy is the one on the desk.
+    expect(getByLabelText('Essay content body').props.value).toBe('On this phone.');
   });
 });
 

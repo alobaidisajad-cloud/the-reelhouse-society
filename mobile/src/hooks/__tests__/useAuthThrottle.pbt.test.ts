@@ -9,7 +9,7 @@
  * evaluateAuthThrottle is now the rule the hook itself calls, so these tests
  * bind to what actually runs.
  */
-import fc from 'fast-check';
+import * as fc from 'fast-check';
 import { act, renderHook } from '@testing-library/react-native';
 import { evaluateAuthThrottle, MAX_ATTEMPTS, WINDOW_MS, useAuthThrottle } from '../useAuthThrottle';
 

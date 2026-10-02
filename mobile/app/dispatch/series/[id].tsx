@@ -190,9 +190,8 @@ export default function SeriesScreen() {
         <PaperSheet>
           <SeriesList
             title={title}
-            // The same stand-in the reader prints for a departed member, so one
-            // author reads the same on both pages.
-            author={author ?? { name: '[deleted]', memberNo: 0, tier: 'free' }}
+            // Null for a departed member, drawn as on every card and the reader.
+            author={author}
             parts={rows}
             // Matched back by INDEX, not by the printed number: two parts a
             // member numbered `2` by hand would both point at the first one.

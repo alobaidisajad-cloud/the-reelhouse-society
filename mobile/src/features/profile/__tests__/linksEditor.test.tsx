@@ -50,7 +50,9 @@ describe('the remove control clears the floor by its own geometry', () => {
   });
 
   it('needs no halo, so it can take nothing from anything', () => {
-    for (const btn of removeButtons(mount())) expect(btn.props.hitSlop).toBeNull();
+    const buttons = removeButtons(mount());
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const btn of buttons) expect(btn.props.hitSlop).toBeNull();
   });
 
   it('hangs off the card, because a 22pt row could not deliver a 48pt target', () => {

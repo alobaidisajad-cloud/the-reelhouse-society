@@ -873,18 +873,22 @@ describe('executeMutation wrapper', () => {
         expect(mockChain.eq).toHaveBeenCalledWith('id', 'original-id');
     });
 
-    it('includes 100ms breathing delay between mutations', async () => {
+    it('yields the JS thread (a 0 ms macrotask) before each mutation, then sends it', async () => {
+        // This was "includes 100ms breathing delay" and asserted nothing: it passed
+        // with no yield at all, and the yield is 0 ms, not 100.
         makeChainResolveTo(mockChain, { error: null });
 
         const promise = executeMutation(
             { id: 'test', type: 'remove_log', payload: { log_id: 'x' }, timestamp: Date.now() },
             {}
         );
-        // Should not resolve immediately (100ms delay)
-        jest.advanceTimersByTime(50);
-        // Advance past delay
-        jest.advanceTimersByTime(60);
+        await Promise.resolve();
+        await Promise.resolve();
+        // Held behind the macrotask: nothing has been sent yet.
+        expect(mockChain.eq).not.toHaveBeenCalled();
+        jest.advanceTimersByTime(0);
         await promise;
+        expect(mockChain.eq).toHaveBeenCalledWith('id', 'x');
     });
 });
 

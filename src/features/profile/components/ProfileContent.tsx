@@ -35,6 +35,8 @@ interface ProfileContentProps {
     analyticsFailed: boolean;
     /** The standing, from the record; null until it is read. */
     stats: Standing | null;
+    /** The six rated highest over the whole record (4 and up), highest first. */
+    highestRated: { id: string; filmId: number; title: string; poster: string | null; rating: number }[];
     logsHasMore: boolean;
     listsHasMore: boolean;
     archiveSieve: string;
@@ -51,7 +53,7 @@ interface ProfileContentProps {
 
 export function ProfileContent({
     activeTab, profileUser, profileLogs, profileWatchlist, profileLists, physicalArchive,
-    isOwnProfile, analytics, analyticsFailed, stats, logsHasMore, listsHasMore,
+    isOwnProfile, analytics, analyticsFailed, stats, highestRated, logsHasMore, listsHasMore,
     archiveSieve, archiveVisibleCount, archiveFilteredLogs, currentLogs,
     setViewLog, fetchLogs, fetchLists, setArchiveSieve, setArchiveVisibleCount, setShowDNA
 }: ProfileContentProps) {
@@ -115,12 +117,12 @@ export function ProfileContent({
                                 <Achievements analytics={analytics} failed={analyticsFailed} />
                             </div>
 
-                            {profileLogs.filter((l: any) => l.rating >= 4).length > 0 && (
+                            {highestRated.length > 0 && (
                                 <div>
                                     <SectionHeader label="HIGHEST RATED" title="Your Favourites" />
                                     <div className="card" style={{ padding: '1.25rem' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                            {profileLogs.filter((l: any) => l.rating >= 4).slice(0, 6).map((log: any) => (
+                                            {highestRated.map((log) => (
                                                 <Link key={log.id} to={`/film/${log.filmId}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
                                                     {log.poster && (
                                                         <div style={{ width: 28, height: 42, flexShrink: 0, borderRadius: '2px', overflow: 'hidden', filter: 'sepia(0.3)' }}>

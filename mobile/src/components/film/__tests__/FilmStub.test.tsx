@@ -75,6 +75,8 @@ describe('the stub states what is true, and only what is true', () => {
     // would read as a verdict of nothing.
     const t = render(<FilmStub {...base} existingLog={{ status: 'watched', rating: 0 }} />);
     expect(t.queryByLabelText(/reels?/i)).toBeNull();
+    // Still SEEN: only the rail is missing, not the stub.
+    expect(textOf(t)).toContain('SEEN');
   });
 });
 

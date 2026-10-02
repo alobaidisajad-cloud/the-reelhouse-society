@@ -371,12 +371,18 @@ describe('the archive', () => {
 
   it('and a guest who finds films is offered the way in, which the wall never was', async () => {
     mockUser = { id: 'u1', username: 'me', tier: 'free' };
+    mockSearchRows = [hit()];
     const r = render(<ArchiveScreen />);
     await act(async () => { await Promise.resolve(); });
+    // It never searched, so the rope it is named for was never drawn or looked for.
+    await type(r, 'stalker');
 
     // The old screen's single worst property: it explained the rank and then
     // offered nothing to do about it. "ARCHIVIST AND ABOVE" as a full stop.
     expect(r.queryByText('ARCHIVIST AND ABOVE')).toBeNull();
+    // What it found, and under it the way in.
+    expect(r.getByText('Stalker')).toBeTruthy();
+    expect(r.getByLabelText(/^The Archive\. Clearance required\..*Opens the Society\.$/)).toBeTruthy();
   });
 
   it('is reachable — the index row carries the door, and the head does not', async () => {

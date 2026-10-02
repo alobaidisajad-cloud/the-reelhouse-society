@@ -114,6 +114,8 @@ describe('on Android', () => {
 
   it('stops listening when it goes', async () => {
     const { r } = draw();
+    // It was listening, so none left after is the unmount's doing.
+    expect(listeners.keyboardDidShow.length).toBeGreaterThan(0);
     r.unmount();
     expect(listeners.keyboardDidShow).toEqual([]);
     expect(listeners.keyboardDidHide).toEqual([]);

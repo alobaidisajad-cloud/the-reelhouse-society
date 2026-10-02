@@ -48,6 +48,9 @@ it('on iOS, where a live region is silent, the screen announces the seal itself 
 
 it('on Android the live region speaks it, so nothing announces it as well', async () => {
   onPlatform('android');
-  await act(async () => { render(<EditProfileScreen />); });
+  let r!: ReturnType<typeof render>;
+  await act(async () => { r = render(<EditProfileScreen />); });
   expect(AccessibilityInfo.announceForAccessibility).not.toHaveBeenCalled();
+  // The seal is on the page, for the live region to speak.
+  expect(r.getByText('DOSSIER AMENDED')).toBeTruthy();
 });

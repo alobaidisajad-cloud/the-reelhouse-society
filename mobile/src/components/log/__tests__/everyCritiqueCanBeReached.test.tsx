@@ -54,4 +54,6 @@ it('while the page is on its way it says so, and takes no second press', () => {
 it('without a way to fetch, nothing is offered that could not be reached', () => {
   const r = mount(5, 140);
   expect(r.queryByText(/SHOW MORE/)).toBeNull();
+  // The five it holds are all drawn.
+  expect(r.getAllByText(/^critique \d$/)).toHaveLength(5);
 });

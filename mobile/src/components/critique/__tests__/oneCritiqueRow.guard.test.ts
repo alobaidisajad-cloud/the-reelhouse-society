@@ -37,6 +37,8 @@ it('finds the row where it lives (the scan can see)', () => {
 });
 
 it('no other screen draws a critique row of its own', () => {
+  // The whole app is read, or "none" would be the answer of an empty scan.
+  expect(sources.length).toBeGreaterThan(300);
   expect(sources.filter((f) => f !== HOME && drawing(f))).toEqual([]);
 });
 

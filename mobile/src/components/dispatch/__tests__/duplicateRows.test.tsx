@@ -191,12 +191,15 @@ describe('the foot of the critiques', () => {
 
   it('is the ornament, not a control, once they have all been read', () => {
     const asked: number[] = [];
-    const { queryByLabelText } = render(
+    const { queryByLabelText, toJSON } = render(
       <CritiqueFooter shown={22} total={22} onMore={() => asked.push(1)} />,
     );
     // Nothing to press, because there is nothing left to fetch — a live control
     // here would be its own small dead end.
     expect(queryByLabelText(/more critiques/)).toBeNull();
+    // The thread still closes: the ornament is drawn in its place.
+    expect(toJSON()).not.toBeNull();
+    expect(asked).toEqual([]);
   });
 });
 
