@@ -194,7 +194,7 @@ describe('the Society opens over you', () => {
     it('the path is tracked by one component in the root layout', () => {
       const layout = code(read('app/_layout.tsx'));
       expect(layout).toMatch(/<PathTracker \/>/);
-      expect(layout).toMatch(/noteCurrentPath\(pathname\)/);
+      expect(code(read('src/components/layout/PathTracker.tsx'))).toMatch(/noteCurrentPath\(pathname\)/);
     });
   });
 });

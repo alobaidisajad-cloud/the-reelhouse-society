@@ -1,18 +1,8 @@
 /**
- * Expo Push Notifications — The Overnight Programme
- *
- * Manages push notification registration, permissions, and token
- * storage in Supabase for server-side notification delivery.
- *
- * The three modules are imported like any other: they are installed, and the
- * Notices screen already imports expo-notifications directly. They were loaded
- * with a dynamic import "to avoid crashes if not installed" — a case that no
- * longer exists, and one that kept registration from ever running in a test.
- *
- * Notification types:
- * - Social: endorsements, follows, comments
- * - Nudges: watchlist reminders, weekly digest
- * - System: subscription expiry, feature announcements
+ * Push notices: the permission (read, and asked only on a press), this
+ * device's token (registered with the house, removed on sign-out), and the
+ * tap that opens one. What is sent is the house's notices: follows,
+ * certifications, annotations and the house's own (see the Settings switches).
  */
 
 import { Platform } from 'react-native';
@@ -29,6 +19,19 @@ import Constants from 'expo-constants';
  * row: a member signed in on two phones keeps the other one.
  */
 export const PUSH_TOKEN_KEY = 'push_token_this_device';
+
+/** A notice that arrives while the app is open: a banner and in the list, with its sound and badge. */
+export const FOREGROUND_NOTICES = {
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+};
+// Set as the module loads, not after a token registers: a notice that arrives
+// before registration, or on a phone whose registration failed, is shown too.
+Notifications.setNotificationHandler(FOREGROUND_NOTICES);
 
 // ── Type Definitions ──
 
@@ -125,18 +128,6 @@ export async function registerForPushNotifications(userId: string): Promise<stri
         lightColor: colors.champagne, // Nitrate Noir sepia
       });
     }
-
-    // Configure notification behavior
-    // shouldShowBanner + shouldShowList: shouldShowAlert is deprecated, and the
-    // two it stood for are asked for by name.
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-      }),
-    });
 
     return token;
   } catch (err) {
@@ -237,11 +228,7 @@ export async function removePushToken(userId: string): Promise<boolean> {
   }
 }
 
-/**
- * A notification response → its data, handed on once per notification request.
- * Pure, so the "once" can be tested without the native module (which this file
- * loads with a dynamic import Jest cannot run).
- */
+/** A notification response → its data, handed on once per notification request (pure, so testable). */
 export function deliverEachTapOnce(onTap: (data: Record<string, string>) => void) {
   const delivered = new Set<string>();
   return (response: any) => {

@@ -1,6 +1,6 @@
 import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { Stack, ErrorBoundary as RouterErrorBoundary, usePathname } from 'expo-router';
+import { Stack, ErrorBoundary as RouterErrorBoundary } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -28,7 +28,7 @@ import OfflineBanner from '@/src/components/OfflineBanner';
 import { KeyboardRoom } from '@/src/components/KeyboardRoom';
 import { captureError, initSentry, markAppLoaded } from '@/src/lib/sentry';
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
-import { noteCurrentPath } from '@/src/utils/openSociety';
+import { PathTracker } from '@/src/components/layout/PathTracker';
 export { RouterErrorBoundary as ErrorBoundary };
 
 // Before the first render: the app's start and any error in it are measured,
@@ -193,18 +193,6 @@ export default function RootLayout() {
       </SafeAreaProvider>
     </GlobalErrorBoundary>
   );
-}
-
-/**
- * Tells `openSociety` which screen the member is on, so a rope in a store can
- * know whether it stands on a presented screen or a pushed one. Its own tiny
- * component, so the pathname changing on every navigation re-renders this and
- * nothing else — never the root layout and everything beneath it.
- */
-function PathTracker() {
-  const pathname = usePathname();
-  useEffect(() => { noteCurrentPath(pathname); }, [pathname]);
-  return null;
 }
 
 const styles = StyleSheet.create({

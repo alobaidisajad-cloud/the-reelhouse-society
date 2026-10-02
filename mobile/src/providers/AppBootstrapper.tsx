@@ -6,7 +6,7 @@ import * as Linking from 'expo-linking';
 import * as Updates from 'expo-updates';
 import { useEffect, useRef } from 'react';
 import { Alert, AppState } from 'react-native';
-import { router } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import { resolveHandleNotice } from '../utils/handleNotice';
 import { PUSH_TOKEN_KEY, registerForPushNotifications, setupNotificationResponseHandler } from '../lib/pushNotifications';
 import { initRevenueCat, reconcileRank } from '../lib/revenueCat';
@@ -55,7 +55,7 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
             '',
             '  See .env.example for reference.',
             '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-          ].join('\\n');
+          ].join('\n');
           throw new Error(message);
         }
 
@@ -161,7 +161,7 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         if (!notice) return;
         Alert.alert('A note on your handle', notice, [
           { text: 'Keep it', style: 'cancel' },
-          { text: 'Change it', onPress: () => { try { router.push('/edit-profile'); } catch { /* never block on a route */ } } },
+          { text: 'Change it', onPress: () => { try { nav.push('/edit-profile'); } catch { /* never block on a route */ } } },
         ]);
       } catch (e) {
         logger.warn('[Bootstrapper] handle notice check failed:', e);

@@ -8,7 +8,7 @@
  * remembered, still every token of the platform: the previous member's notices
  * must never reach this device.
  */
-import { registerForPushNotifications, removePushToken, PUSH_TOKEN_KEY } from '../pushNotifications';
+import { registerForPushNotifications, removePushToken, PUSH_TOKEN_KEY, FOREGROUND_NOTICES } from '../pushNotifications';
 
 const mockStore = new Map<string, string>();
 jest.mock('@/src/stores/mmkv-storage', () => ({
@@ -83,9 +83,15 @@ describe('registering remembers which token is this device', () => {
   });
 
   it('shows a notice as a banner and in the list — never the deprecated alert', async () => {
-    await registerForPushNotifications('member-1');
+    expect(await FOREGROUND_NOTICES.handleNotification()).toEqual({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: true });
+  });
+
+  it('is set as the app loads, with no token registered', () => {
+    // It was set only after a token registered: a notice arriving before then,
+    // or on a phone whose registration failed, was not shown while the app was open.
     const { setNotificationHandler } = jest.requireMock('expo-notifications');
-    const behaviour = await setNotificationHandler.mock.calls.at(-1)[0].handleNotification();
-    expect(behaviour).toEqual({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: true });
+    setNotificationHandler.mockClear();
+    jest.isolateModules(() => { require('../pushNotifications'); });
+    expect(setNotificationHandler).toHaveBeenCalledTimes(1);
   });
 });

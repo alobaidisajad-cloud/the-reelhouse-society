@@ -72,7 +72,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ANDROID_LAUNCH.md | — |  |
 | app.config.js | — |  |
 | app/__tests__/boot-structure.test.tsx | — |  |
-| app/_layout.tsx | — |  |
+| app/_layout.tsx | 2026-10-02 | PathTracker moved out, and now tells nav too |
 | app/(admin)/__tests__/tribunal.test.tsx | — |  |
 | app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | — |  |
 | app/(admin)/_layout.tsx | 2026-10-02 | read; sound |
@@ -87,7 +87,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/notifications-modal.tsx | 2026-10-02 | rows say new/who/what/when; the rest could not be reached; history comments trimmed |
 | app/(modals)/search-modal.tsx | 2026-10-02 | tabs named; partial results said; an emptied box empties at once; nav.dismiss |
 | app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
-| app/(tabs)/_layout.tsx | — |  |
+| app/(tabs)/_layout.tsx | 2026-10-02 | read; sound |
 | app/(tabs)/darkroom.tsx | 2026-10-02 | the next batch that could not be developed is said, and asked again |
 | app/(tabs)/dispatch.tsx | 2026-09-29 | 12 fixed; NewsService history and the pill-fix story cut |
 | app/(tabs)/index.tsx | 2026-10-01 | the front door arrives; nav; a failed pull says so |
@@ -379,6 +379,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/InitiationModal.tsx | — |  |
 | src/components/KeyboardRoom.tsx | 2026-10-01 | written: the keyboard's room on Android |
 | src/components/layout/__tests__/aSectionIsAHeading.test.tsx | 2026-10-01 | written: a section title is a heading |
+| src/components/layout/__tests__/aSwipeBackIsHeard.test.tsx | 2026-10-02 | nav's history hears the swipe back |
 | src/components/layout/__tests__/ConciergeButton.test.tsx | — |  |
 | src/components/layout/__tests__/everyListChoosesItsAnchor.guard.test.ts | 2026-09-29 | new |
 | src/components/layout/__tests__/flashListKeyboard.test.tsx | 2026-09-29 | anchor tests |
@@ -390,6 +391,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/ConciergeButton.tsx | 2026-10-02 | door through nav; the hint names all three doors |
 | src/components/layout/FrozenTab.tsx | 2026-10-01 | says it passes through; freezing carried to performance |
 | src/components/layout/navMetrics.ts | — |  |
+| src/components/layout/PathTracker.tsx | 2026-10-02 | tells openSociety and nav the screen on every navigation |
 | src/components/layout/SectionCards.tsx | 2026-10-01 | a section title is a heading |
 | src/components/layout/TopNavBar.tsx | — |  |
 | src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-09-30 | new: doors, names, states, counts, every line's room |
@@ -723,7 +725,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/defensiveParse.ts | — |  |
 | src/lib/gateMetricsSink.ts | — |  |
 | src/lib/nativeOnly/revenuecatWebStub.js | — |  |
-| src/lib/pushNotifications.ts | — |  |
+| src/lib/pushNotifications.ts | 2026-10-02 | the foreground handler is set as the module loads; comments say what is true |
 | src/lib/pushPrimer.ts | 2026-10-01 | new: the house asks to send word at a moment that wants it |
 | src/lib/queryClient.ts | 2026-10-02 | read; sound |
 | src/lib/revenueCat.ts | 2026-09-29 | 17 fixed; FALSE: 'syncs the tier to profiles.role' (the server re-reads RevenueCat and ignores the tier); setup notes with prices; ticket tags |
@@ -735,7 +737,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lore/fragments.ts | — |  |
 | src/providers/__tests__/androidTracking.test.ts | — |  |
 | src/providers/androidTracking.ts | — |  |
-| src/providers/AppBootstrapper.tsx | — |  |
+| src/providers/AppBootstrapper.tsx | 2026-10-02 | the env message breaks its lines; the handle door through nav |
 | src/providers/FilmDetailProvider.tsx | 2026-10-01 | reviewsFailed and playVideo, said |
 | src/schemas/__tests__/aFeedRowWithANullIsStillDrawn.test.ts | 2026-10-01 | written with the null-status fix |
 | src/schemas/__tests__/schemas.test.ts | — |  |
