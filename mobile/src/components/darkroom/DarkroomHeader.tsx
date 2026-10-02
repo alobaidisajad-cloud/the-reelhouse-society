@@ -277,6 +277,10 @@ export const DarkroomHeader = React.memo(() => {
               onPress={() => setFiltersVisible(!filtersVisible)}
               haptic="medium"
               hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              // The badge's number was read alone, after the words: said with them.
+              accessibilityRole="button"
+              accessibilityState={{ expanded: filtersVisible }}
+              accessibilityLabel={`${filtersVisible ? 'Hide' : 'Show'} the filters${activeFilterCount > 0 ? `, ${activeFilterCount} applied` : ''}`}
             >
               <SlidersHorizontal size={14} color={filtersVisible ? colors.sepia : colors.fog} />
               <Text style={[s.filterToggleText, filtersVisible && s.filterToggleTextActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
@@ -288,7 +292,8 @@ export const DarkroomHeader = React.memo(() => {
             </PressableScale>
 
             {activeFilterCount > 0 && (
-              <PressableScale onPress={() => { clearFilters(); setPage(1); }} haptic="light" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <PressableScale onPress={() => { clearFilters(); setPage(1); }} haptic="light" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button" accessibilityLabel="Clear the filters">
                 <Text style={s.clearFiltersText}>CLEAR</Text>
               </PressableScale>
             )}

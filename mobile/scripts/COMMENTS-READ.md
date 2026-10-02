@@ -239,13 +239,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/critique/CritiqueRow.tsx | 2026-10-01 | a nameless author is never linked |
 | src/components/critique/withdraw.ts | 2026-10-01 | new: the one question before a critique comes off the page |
 | src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx | 2026-09-29 | new |
+| src/components/darkroom/__tests__/theFiltersSayWhatTheyHold.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the filter toggle and CLEAR speak. |
 | src/components/darkroom/__tests__/theNextBatchSaysWhenItCouldNotBeDeveloped.test.tsx | 2026-10-02 | the next batch says it could not be developed; moods are buttons with state and keys |
 | src/components/darkroom/__tests__/theSuggestionsComeBack.test.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/__tests__/theTraySaysWhenTheCatalogueIsAway.test.tsx | — |  |
 | src/components/darkroom/constants.ts | 2026-10-02 | read; sound |
 | src/components/darkroom/DarkroomCards.tsx | 2026-10-02 | doors through nav |
 | src/components/darkroom/DarkroomFilterPanel.tsx | 2026-09-29 | year applied on end of editing (iPhone number pad has no return); named fields |
-| src/components/darkroom/DarkroomHeader.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
+| src/components/darkroom/DarkroomHeader.tsx | 2026-10-02 | Read (launch audit, the unsaid-selection sweep). The filter toggle had no role, no expanded state, and a bare count; CLEAR had no name. Both speak now. |
 | src/components/darkroom/DarkroomHero.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/DarkroomMoodBar.tsx | 2026-10-02 | keys; selected as a state; meaning spoken |
 | src/components/Decorative.tsx | 2026-10-01 | the dead marquee and styles gone |
