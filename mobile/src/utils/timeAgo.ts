@@ -216,6 +216,28 @@ export function timeAgo(dateStr: string | Date | undefined | null): string {
 }
 
 /**
+ * How long until an instant, in the house voice: "IN 3 DAYS", "IN 5 HRS.",
+ * "IN 20 MIN.", "IN MOMENTS". '' once it has passed — the caller says that.
+ *
+ * timeAgo is for the past and clamps a future instant to now, so an open
+ * ballot asked it when it closes and read "CLOSES MOMENTS AGO" for days.
+ */
+export function timeUntil(value: string | Date | undefined | null): string {
+  if (!value) return '';
+  const then = toInstant(value);
+  if (then === null) return '';
+  const ahead = then - Date.now();
+  if (ahead <= 0) return '';
+  const mins = Math.floor(ahead / 60000);
+  if (mins < 1) return 'IN MOMENTS';
+  if (mins < 60) return mins === 1 ? 'IN 1 MIN.' : `IN ${mins} MIN.`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs === 1 ? 'IN 1 HR.' : `IN ${hrs} HRS.`;
+  const days = Math.floor(hrs / 24);
+  return days === 1 ? 'IN 1 DAY' : `IN ${days} DAYS`;
+}
+
+/**
  * A date in words. Calendar dates keep their own day; timestamps take the reader's.
  */
 export function formatDate(dateStr: string | Date | undefined | null, format: 'short' | 'long' = 'short'): string {

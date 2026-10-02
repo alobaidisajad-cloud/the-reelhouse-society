@@ -271,6 +271,22 @@ describe('the reader', () => {
     expect(useDispatch.getState().myVotes.f1).toBe(1);
   });
 
+  it('an open ballot says when it closes — ahead, never "moments ago"', async () => {
+    // timeAgo clamps the future to now, so every open ballot read
+    // "CLOSES MOMENTS AGO" until the day it closed.
+    mockRow = row({
+      kind: 'ballot', title: 'What tonight?', body: 'What tonight?',
+      options: [
+        { film_id: 1, title: 'Tokyo Story', poster_path: null },
+        { film_id: 2, title: 'Late Spring', poster_path: null },
+      ],
+      closes_at: new Date(Date.now() + 3 * 86_400_000 + 60_000).toISOString(),
+    });
+    const { getByText, queryByText } = await mount();
+    expect(getByText('CLOSES IN 3 DAYS')).toBeTruthy();
+    expect(queryByText(/MOMENTS AGO/)).toBeNull();
+  });
+
   it('moves the marks from the docked bar', async () => {
     const { getByLabelText } = await mount();
     // The dock names what it certifies — the page above has its own control.

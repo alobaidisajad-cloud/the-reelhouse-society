@@ -96,7 +96,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/reels.tsx | 2026-10-01 | every comment short and true; the door's reason lives in its test |
 | app/+not-found.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | app/auth-callback.tsx | 2026-10-01 | a link with no code verifies nothing; comments short |
-| app/dispatch/[id].tsx | 2026-09-29 | 26 fixed; 'SAVE THE CARD offered for a dossier' was false (the sheet never gets card); history of 3 fixes cut |
+| app/dispatch/[id].tsx | 2026-10-02 | Read whole (launch audit). An open ballot said 'CLOSES MOMENTS AGO' (timeAgo clamps the future): timeUntil now. Measured at the real width (the share card keeps a fixed 390 measure on purpose). Its share link went to another company's domain (fixed in f01e7408). |
 | app/dispatch/archive.tsx | 2026-10-02 | Read (launch audit). Column at the real width. Its paging re-asks on every scroll event, so a failed page is asked again: sound. |
 | app/dispatch/compose.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | app/dispatch/room/[username].tsx | 2026-10-02 | Read (launch audit). A failed later page ended the room silently (its list asks once per length): the foot says so. Column at the real width. |

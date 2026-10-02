@@ -16,7 +16,7 @@
  * phone's screen and leave the writing in a slot.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Platform, ScrollView, Share, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Platform, ScrollView, Share, View, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -55,7 +55,7 @@ import type { CritiqueOrder, Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
 import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
-import { timeAgo, formatDateMonthDay } from '@/src/utils/timeAgo';
+import { timeAgo, timeUntil, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
@@ -72,6 +72,8 @@ const FIRST_ORDER: CritiqueOrder = 'CERTIFIED';
 export default function FilingReader() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  // The page is measured at THIS screen's width, not a 390pt phone's.
+  const { width: screenWidth } = useWindowDimensions();
   const me = useAuthStore((s) => s.user);
 
   const filings = useDispatch((s) => s.filings);
@@ -368,7 +370,7 @@ export default function FilingReader() {
   const mine = !!me && live.authorId === me.id;
   const certified = certifiedIds.has(live.id);
   const saved = savedIds.has(live.id);
-  const width = measure(390);
+  const width = measure(screenWidth);
 
   // A filing takes acts only while it stands and the house has it: not once
   // withdrawn, not while withheld, not before it is sent. The house refuses
@@ -480,7 +482,7 @@ export default function FilingReader() {
               }))}
               myVote={myVotes[live.id] ?? null}
               closed={!!live.closesAt && new Date(live.closesAt) <= new Date()}
-              closesLabel={live.closesAt ? `closes ${timeAgo(live.closesAt)}` : ''}
+              closesLabel={live.closesAt && timeUntil(live.closesAt) ? `closes ${timeUntil(live.closesAt)}` : ''}
               // Whether the result has actually been COUNTED, not merely whether
               // the ballot has closed. Without it every option reads 0 and the
               // page announced NO BALLOTS WERE CAST under a question members had
@@ -649,7 +651,8 @@ export default function FilingReader() {
               author={author}
               filed={formatDateMonthDay(live.createdAt).toUpperCase()}
               logo={Image.resolveAssetSource(HOUSE_MARK).uri}
-              width={width}
+              // A picture, the same on every phone: a 390pt page's measure.
+              width={measure(390)}
             />
           </ViewShot>
         </View>

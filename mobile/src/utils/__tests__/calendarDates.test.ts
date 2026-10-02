@@ -26,7 +26,7 @@
  *
  * Rendering either one the other way is the whole bug.
  */
-import { formatDate, formatDateMonthYear, formatDateMonthDay, formatClockTime, localCalendarDate, timeAgo } from '../timeAgo';
+import { formatDate, formatDateMonthYear, formatDateMonthDay, formatClockTime, localCalendarDate, timeAgo, timeUntil } from '../timeAgo';
 import { formatDossierDate } from '@/src/components/person/PersonHero';
 import { buildFilingMark } from '@/src/components/log/logRecord';
 
@@ -201,5 +201,21 @@ describe(`malformed input is survivable [TZ=${TZ}]`, () => {
   it('an unparseable string is echoed rather than shown as NaN', () => {
     expect(formatDate('not-a-date')).toBe('not-a-date');
     expect(timeAgo('not-a-date')).toBe('not-a-date');
+  });
+});
+
+describe('timeUntil — the future, said forward', () => {
+  const at = (ms: number) => new Date(Date.now() + ms).toISOString();
+  it('counts down in the house measure', () => {
+    expect(timeUntil(at(3 * 86_400_000 + 60_000))).toBe('IN 3 DAYS');
+    expect(timeUntil(at(86_400_000 + 60_000))).toBe('IN 1 DAY');
+    expect(timeUntil(at(5 * 3_600_000 + 60_000))).toBe('IN 5 HRS.');
+    expect(timeUntil(at(20 * 60_000 + 5_000))).toBe('IN 20 MIN.');
+    expect(timeUntil(at(10_000))).toBe('IN MOMENTS');
+  });
+  it('says nothing of a time already passed, or of nothing', () => {
+    expect(timeUntil(at(-60_000))).toBe('');
+    expect(timeUntil(null)).toBe('');
+    expect(timeUntil('not a date')).toBe('');
   });
 });
