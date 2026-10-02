@@ -370,7 +370,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/LogShareCard.tsx | 2026-10-01 | the unused modal mode gone; the card alone |
 | src/components/film/NitrateFileCard.tsx | 2026-10-01 | every word frozen, as its header promised |
 | src/components/film/pickCertificate.ts | 2026-10-01 | the member's own region is real now |
-| src/components/film/ShareCardModal.tsx | 2026-10-01 | a failed share says so and stays |
+| src/components/film/ShareCardModal.tsx | 2026-10-02 | Read (launch audit). Its text share linked to reelhouse.app/film, another company's domain: HOUSE_WEB. |
 | src/components/film/TrailerModal.tsx | 2026-10-01 | names what it plays |
 | src/components/film/WatchProviders.tsx | 2026-10-01 | named for what it costs, for one named country |
 | src/components/HapticTab.tsx | 2026-10-02 | Read whole (launch audit). Its 10pt reach gave each tab's edge to its neighbour and took 10pt of the screen above the bar: removed. |
@@ -612,6 +612,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/__tests__/deepLinks.test.ts | — |  |
 | src/constants/__tests__/standing.test.ts | — |  |
 | src/constants/__tests__/taste.test.ts | — |  |
+| src/constants/__tests__/theHouseLinksToItself.guard.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): no link goes to reelhouse.app, another company's domain. |
 | src/constants/__tests__/theRanksAreWellFormed.test.ts | — |  |
 | src/constants/__tests__/theVaultIsThePrivateNotes.test.ts | — |  |
 | src/constants/cacheKeys.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -621,7 +622,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/membership.ts | 2026-10-01 | one list; checked against production |
 | src/constants/modalRoutes.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/constants/standing.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/constants/support.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/constants/support.ts | 2026-10-02 | Read whole (launch audit). HOUSE_WEB added: the house's web address, said once. |
 | src/constants/taste.ts | 2026-10-01 | coverageNote says your or their |
 | src/constants/textScaling.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/features/archive/__tests__/anImportMergesIntoTheStackItFinds.test.ts | — |  |

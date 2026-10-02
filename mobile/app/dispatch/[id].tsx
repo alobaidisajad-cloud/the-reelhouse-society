@@ -61,6 +61,7 @@ import { TryAgainLine } from '@/src/components/TryAgain';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useUnsent } from '@/src/stores/offlineQueueStore';
+import { HOUSE_WEB } from '@/src/constants/support';
 
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
 const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
@@ -199,7 +200,7 @@ export default function FilingReader() {
     if (!live) return;
     setSharing(false);
 
-    const link = 'https://reelhouse.app/dispatch';
+    const link = `${HOUSE_WEB}/dispatch`;
     if (live.kind === 'dossier' && cardRef.current) {
       try {
         const uri = await captureRef(cardRef, { format: 'png', quality: 1, result: 'tmpfile' });

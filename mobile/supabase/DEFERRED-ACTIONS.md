@@ -127,8 +127,10 @@ web address. The web's own share button reflects that — it sends
 read it. The mobile share now sends a clipping — an image carrying the masthead,
 the title, the opening and the byline — plus a link. That link was
 `reelhouse://dispatch/<id>`, which opens nothing for anybody without the app, and
-briefly `https://reelhouse.app/dispatch/<id>`, which is a 404. It is now
-`https://reelhouse.app/dispatch`, which exists.
+then `https://reelhouse.app/dispatch`, which is ANOTHER COMPANY'S domain (a
+household film-picker also called Reelhouse; its /dispatch is a 404). It is now
+`https://www.thereelhousesociety.com/dispatch` (HOUSE_WEB in
+src/constants/support.ts), the house's own web app, which routes it.
 
 So the share works and is honest. What it cannot yet do is take somebody to the
 essay itself.
@@ -139,7 +141,7 @@ essay itself.
    table the mobile reader uses, so no new backend.
 2. `DispatchPage`'s share sending that URL instead of the index.
 3. `associatedDomains` (iOS) and `intentFilters` (Android) in `mobile/app.json`
-   for `reelhouse.app`, so the link opens the APP for members who have it and the
+   for `www.thereelhousesociety.com`, so the link opens the APP for members who have it and the
    page for everyone else. Requires an `apple-app-site-association` file and an
    `assetlinks.json` served from the domain.
 4. Then, and only then, point the mobile share at `/dispatch/<id>`. The test

@@ -12,6 +12,13 @@
  */
 export const SUPPORT_EMAIL = 'support@thereelhousesociety.com';
 
+/**
+ * The house on the web, for every link a member sends out of the app. Not
+ * `reelhouse.app`: that domain belongs to another company's film app, and a
+ * shared essay or film sent strangers there (its /dispatch is a 404).
+ */
+export const HOUSE_WEB = 'https://www.thereelhousesociety.com';
+
 /** The help page — the same one the App Store and Google Play list as the Support URL. */
 export const SUPPORT_URL = 'https://www.thereelhousesociety.com/support';
 

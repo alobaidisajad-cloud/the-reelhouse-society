@@ -15,6 +15,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
 import { truncateReview } from '@/src/utils/text';
+import { HOUSE_WEB } from '@/src/constants/support';
 import { stripHtml } from '@/src/utils/html';
 import {
   NitrateFileCard,
@@ -96,7 +97,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
           dialogTitle: `${film.title} • The Nitrate File`,
         });
       } else {
-        const deepLink = `https://reelhouse.app/film/${film.id}`;
+        const deepLink = `${HOUSE_WEB}/film/${film.id}`;
         const ratingText = log && log.rating > 0 ? ` • ${log.rating}/5 reels` : '';
         const reviewLine = log?.review ? `\n\n"${truncateReview(stripHtml(log.review))}"` : '';
         await Share.share({

@@ -514,7 +514,7 @@ describe('the reader', () => {
     await act(async () => { fireEvent.press(getByLabelText('Share')); });
     await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
 
-    expect(shared[0].message).toContain('https://reelhouse.app/dispatch');
+    expect(shared[0].message).toContain('https://www.thereelhousesociety.com/dispatch');
     expect(shared[0].message).not.toContain('reelhouse://');
     // Not `/dispatch/<id>`: the web has no page for one filing yet (a 404).
     expect(shared[0].message).not.toMatch(/dispatch\/[0-9a-f-]{8}/);
@@ -737,7 +737,7 @@ describe('the reader', () => {
 
     expect(shared).toHaveLength(1);
     expect(shared[0].url).toBe('file:///clipping.png');
-    expect(shared[0].message).toContain('https://reelhouse.app/dispatch');
+    expect(shared[0].message).toContain('https://www.thereelhousesociety.com/dispatch');
     // One share, not two: the file-only path is not also taken.
     expect(shareAsync).not.toHaveBeenCalled();
 
@@ -805,7 +805,7 @@ describe('the reader', () => {
     await act(async () => { fireEvent.press(getByLabelText('Share')); });
     await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
 
-    expect(shared[0].message).toContain('https://reelhouse.app/dispatch');
+    expect(shared[0].message).toContain('https://www.thereelhousesociety.com/dispatch');
     capture.mockRestore(); spy.mockRestore();
   });
 
