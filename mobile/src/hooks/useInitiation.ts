@@ -50,9 +50,17 @@ export function useInitiation() {
   const [visible, setVisible] = useState(false);
   // One decision per mounted session per user — prevents re-evaluation loops.
   const decidedFor = useRef<string | null>(null);
+  // The breath, held apart from the decision. When it was the effect's own
+  // cleanup, the profile replacing the sign-in's user (the same created_at,
+  // written differently) inside the breath cancelled it — after the flag had
+  // burned, so a new member never saw it at all. Only leaving cancels it now.
+  const breath = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (breath.current) clearTimeout(breath.current); }, []);
 
   useEffect(() => {
-    if (!user?.id || decidedFor.current === user.id) return;
+    // Decided only once the account's age is known: a user without it yet is
+    // not a "no", and deciding then would never ask again.
+    if (!user?.id || !user.created_at || decidedFor.current === user.id) return;
     decidedFor.current = user.id;
 
     const seen = storage.getBoolean(flagKey(user.id)) === true;
@@ -62,8 +70,12 @@ export function useInitiation() {
     // ever cause a second showing.
     storage.set(flagKey(user.id), true);
 
-    const breath = setTimeout(() => setVisible(true), BREATH_MS);
-    return () => clearTimeout(breath);
+    const decided = user.id;
+    breath.current = setTimeout(() => {
+      breath.current = null;
+      // Still the member it was decided for: a sign-out inside the breath shows nothing.
+      if (useAuthStore.getState().user?.id === decided) setVisible(true);
+    }, BREATH_MS);
   }, [user?.id, user?.created_at]);
 
   return {

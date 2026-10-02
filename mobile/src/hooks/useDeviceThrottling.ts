@@ -1,45 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
-import { storage } from '../stores/mmkv-storage';
-
-const THROTTLE_KEY = 'reelhouse_animation_throttle';
 
 /**
- * useDeviceThrottling — Performance Optimization.
+ * Whether this phone is one to spare heavy animation on: under 3GB of memory,
+ * or an Android older than 9 (API 28).
  *
- * Detects low-end hardware (based on OS versions, memory, or explicit settings)
- * and automatically throttles heavy animations like grain, blur views, and
- * complex physics to preserve UI-thread frame rates (60fps target).
+ * Known on the FIRST render. Everything it reads is synchronous, and it used to
+ * be decided in an effect, after the first render had already answered "no" —
+ * so the preloader, deciding then, started its once-only countdown on exactly
+ * the phones it meant to spare, then lost the countdown's digits mid-way.
  */
+export function throttledDevice(): boolean {
+    if (Device.totalMemory && Device.totalMemory < 3 * 1024 * 1024 * 1024) return true;
+    return Platform.OS === 'android' && !!Device.platformApiLevel && Device.platformApiLevel < 28;
+}
+
 export function useDeviceThrottling(): boolean {
-    const [isThrottled, setIsThrottled] = useState(false);
-
-    useEffect(() => {
-        // Allow user override from settings
-        const userSetting = storage.getBoolean(THROTTLE_KEY);
-        if (userSetting !== undefined) {
-            setIsThrottled(userSetting);
-            return;
-        }
-
-        let throttle = false;
-        
-        // Capability-based detection instead of hardcoded strings
-        // If device has less than 3GB of RAM, throttle heavy animations
-        if (Device.totalMemory && Device.totalMemory < 3 * 1024 * 1024 * 1024) {
-            throttle = true;
-        }
-
-        if (Platform.OS === 'android') {
-            // Devices before API 28 (Android 9) often struggle with heavy reanimated shaders
-            if (Device.platformApiLevel && Device.platformApiLevel < 28) {
-                throttle = true;
-            }
-        }
-
-        setIsThrottled(throttle);
-    }, []);
-
+    const [isThrottled] = useState(throttledDevice);
     return isThrottled;
 }

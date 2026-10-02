@@ -17,7 +17,11 @@ export function HapticTab(props: BottomTabBarButtonProps) {
   return (
     <Pressable
       {...(props as any)}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      // No reach past its own edges: a tab is a fifth of the screen wide and the
+      // bar's full height, and the tabs sit edge to edge. A 10pt reach gave each
+      // tab's right edge to its neighbour (opened on the touch DOWN) and took
+      // 10pt of the screen above the bar.
+      hitSlop={undefined}
       style={(state) => [
         typeof props.style === 'function' ? (props.style as any)(state) : props.style,
         state.pressed && { opacity: 0.85 },
