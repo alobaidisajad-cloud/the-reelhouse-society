@@ -7,6 +7,7 @@
  * Usage: Wrap the root <Stack /> in _layout.tsx
  */
 import { router } from 'expo-router';
+import * as Updates from 'expo-updates';
 import React, { Component, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -26,12 +27,14 @@ interface State {
   error: Error | null;
   errorId: string | null;
   retryCount: number;
+  /** The app could not restart itself (development, or no updates module). */
+  restartFailed: boolean;
 }
 
 const MAX_RETRIES = 3;
 
 export default class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false, error: null, errorId: null, retryCount: 0 };
+  state: State = { hasError: false, error: null, errorId: null, retryCount: 0, restartFailed: false };
   private _stabilityTimer: ReturnType<typeof setTimeout> | null = null;
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -105,6 +108,16 @@ export default class ErrorBoundary extends Component<Props, State> {
     }));
   };
 
+  /**
+   * Retries spent: the house restarts itself — the same as closing and
+   * reopening it, and it runs an update already downloaded, which may be the
+   * fix. A disabled "please restart" left a member at a button that did
+   * nothing. Only when the restart is refused does the sentence ask them.
+   */
+  handleRestart = () => {
+    Updates.reloadAsync().catch(() => this.setState({ restartFailed: true }));
+  };
+
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
@@ -135,18 +148,31 @@ export default class ErrorBoundary extends Component<Props, State> {
               </Text>
             )}
 
-            <PressableScale
-              style={[styles.retryButton, retriesExhausted && styles.retryButtonDisabled]}
-              onPress={this.handleRetry}
-              disabled={retriesExhausted}
-              pressedScale={0.97}
-              accessibilityRole="button"
-              accessibilityLabel="Retry loading the screen"
-            >
-              <Text style={styles.retryText}>
-                {retriesExhausted ? '◆ PLEASE RESTART APP' : `◆ RETRY SCREENING (${MAX_RETRIES - this.state.retryCount} left)`}
-              </Text>
-            </PressableScale>
+            {!retriesExhausted ? (
+              <PressableScale
+                style={styles.retryButton}
+                onPress={this.handleRetry}
+                pressedScale={0.97}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading the screen"
+              >
+                <Text style={styles.retryText}>
+                  {`◆ RETRY SCREENING (${MAX_RETRIES - this.state.retryCount} left)`}
+                </Text>
+              </PressableScale>
+            ) : this.state.restartFailed ? (
+              <Text style={styles.subtitle}>Close the app and open it again.</Text>
+            ) : (
+              <PressableScale
+                style={styles.retryButton}
+                onPress={this.handleRestart}
+                pressedScale={0.97}
+                accessibilityRole="button"
+                accessibilityLabel="Restart the app"
+              >
+                <Text style={styles.retryText}>◆ RESTART THE APP</Text>
+              </PressableScale>
+            )}
           </View>
         </View>
       );
@@ -231,9 +257,5 @@ const styles = StyleSheet.create({
     color: colors.fogQuiet,
     letterSpacing: 0.8,
     marginBottom: 16,
-  },
-  retryButtonDisabled: {
-    opacity: 0.4,
-    borderColor: colors.fog,
   },
 });

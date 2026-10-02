@@ -4,7 +4,7 @@
  * FLAW-07: Tests the root crash shield — fallback rendering,
  * retry counting, safe mode trigger, and thematic error lore.
  */
-import { render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import ErrorBoundary from '../ErrorBoundary';
 
@@ -20,6 +20,9 @@ jest.mock('../../stores/mmkv-storage', () => ({
   storage: { clearAll: jest.fn(), getString: jest.fn(), set: jest.fn(), delete: jest.fn() },
   getSecureStorage: jest.fn().mockResolvedValue({ clearAll: jest.fn() }),
 }));
+
+const mockReload = jest.fn();
+jest.mock('expo-updates', () => ({ reloadAsync: () => mockReload() }));
 
 // Suppress console.error from React's error boundary logging
 const originalConsoleError = console.error;
@@ -90,6 +93,38 @@ describe('ErrorBoundary', () => {
 
 
 
+
+  describe('with the retries spent', () => {
+    beforeEach(() => { jest.useFakeTimers(); mockReload.mockReset(); });
+    afterEach(() => jest.useRealTimers());
+
+    // Each retry re-mounts the bomb, which throws again. The clock moves between
+    // presses, which are debounced against it.
+    const spend = async (r: ReturnType<typeof render>) => {
+      for (let i = 0; i < 3; i++) {
+        await act(async () => { await fireEvent.press(r.getByLabelText('Retry loading the screen')); });
+        await act(async () => { jest.advanceTimersByTime(1000); });
+      }
+    };
+
+    it('the button restarts the app — never a disabled "please restart"', async () => {
+      mockReload.mockResolvedValue(undefined);
+      const r = render(<ErrorBoundary><Bomb shouldThrow={true} /></ErrorBoundary>);
+      await spend(r);
+      expect(r.queryByLabelText('Retry loading the screen')).toBeNull();
+      await act(async () => { await fireEvent.press(r.getByLabelText('Restart the app')); });
+      expect(mockReload).toHaveBeenCalledTimes(1);
+    });
+
+    it('and when the app cannot restart itself, it says how', async () => {
+      mockReload.mockRejectedValue(new Error('ERR_UPDATES_DISABLED'));
+      const r = render(<ErrorBoundary><Bomb shouldThrow={true} /></ErrorBoundary>);
+      await spend(r);
+      await act(async () => { await fireEvent.press(r.getByLabelText('Restart the app')); });
+      expect(r.getByText('Close the app and open it again.')).toBeTruthy();
+      expect(r.queryByLabelText('Restart the app')).toBeNull();
+    });
+  });
 
   it('has accessible retry button', () => {
     const { getByLabelText } = render(

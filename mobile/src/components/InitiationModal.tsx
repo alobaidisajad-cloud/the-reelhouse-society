@@ -46,13 +46,17 @@ const BEATS: Beat[] = [
     numeral: 'II',
     eyebrow: 'II · THE LEDGER',
     title: 'Every film, in ink.',
-    body: 'Log what you watch. Rate it on five reels. Write critiques worth keeping — rewatches, abandonments, private notes and all.',
+    // No private notes here: they are the Vault, an Archivist's, and a new
+    // member's record begins without them.
+    body: 'Log what you watch. Rate it on five reels. Write critiques worth keeping — rewatches, abandonments and all.',
   },
   {
     numeral: 'III',
     eyebrow: 'III · THE ROOMS',
     title: 'The house is larger than it looks.',
-    body: 'The Reel, where the society talks. The Stacks, where taste is curated. The Lounge, behind the brass key. The Darkroom, where you develop what to watch next.',
+    // The brass key means a locked door, and the Lounge is not one: every
+    // member walks in and listens; speaking is the Archivist's.
+    body: 'The Reel, where the society talks. The Stacks, where taste is curated. The Lounge, where all listen and Archivists speak. The Darkroom, where you develop what to watch next.',
   },
   {
     numeral: 'IV',
