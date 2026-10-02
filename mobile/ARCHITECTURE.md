@@ -47,7 +47,7 @@ src/
 | State | Props-only or shared store | Feature-specific state |
 | Reusability | Used by 2+ screens | Tied to 1 screen/flow |
 | Imports | Theme, utils | Services, stores, schemas |
-| Example | PressableScale, SkeletonPulse | SettingsScreen, EditProfileScreen |
+| Example | PressableScale, ToastHost | SettingsScreen, EditProfileScreen |
 
 ---
 
@@ -90,7 +90,7 @@ src/
 | Image Caching | expo-image with memory-disk caching |
 | Animation | Reanimated 4 worklets (native thread) |
 | Prefetching | onPressIn poster prefetch + staggered batch |
-| Skeleton Screens | FilmHeroSkeleton, SkeletonPulse, SkeletonShimmer |
+| Loading States | FilmHeroSkeleton, RoomRetrieving |
 | New Architecture | Fabric + TurboModules (RN 0.81) |
 | Sentry Performance | Route-aware TTID/TTFD + app start + frame tracking |
 

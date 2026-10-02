@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * The point of this whole body of work was to market the ranks inside the app:
  * show the feature, gate the act, offer the door. There is currently no way to
- * know whether any of it works. `useAnalytics` is the MEMBER'S analytics —
+ * know whether any of it works. The app's analytics are the MEMBER'S —
  * Cinema DNA, the Projector Room, what they have watched — not the product's.
  *
  * Marketing you cannot measure is decoration, so this is the seam. Every rope

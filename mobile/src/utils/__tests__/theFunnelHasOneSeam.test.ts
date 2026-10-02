@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * The whole point of this work was to sell the ranks from inside the app: show
  * the feature, gate the act, offer the door. There was no way to know whether
- * any of it worked. `useAnalytics` is the MEMBER'S analytics — Cinema DNA, the
+ * any of it worked. The app's analytics are the MEMBER'S — Cinema DNA, the
  * Projector Room — not the product's.
  *
  * The funnel is four events: a rope tapped, the Society page opened, a rank

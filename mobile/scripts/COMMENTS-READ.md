@@ -232,7 +232,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/CinematicOverlays.tsx | 2026-10-01 | the dead film grain gone |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
 | src/components/clearance/Clearance.tsx | 2026-10-01 | show it, locked; a second copy lives in the log (carried forward) |
-| src/components/ContentSkeleton.tsx | — |  |
 | src/components/ControlledInput.tsx | 2026-10-01 | comments in plain words |
 | src/components/critique/__tests__/aCritiqueIsWithdrawnOrReported.test.tsx | 2026-10-01 | new |
 | src/components/critique/__tests__/oneCritiqueRow.guard.test.ts | 2026-09-30 | written with the shared critique row |
@@ -567,7 +566,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/TasteMatch.tsx | 2026-10-01 |  |
 | src/components/profile/WatchlistRoulette.tsx | 2026-10-01 | a mid-spin close stops the spin; opens filmId; nav |
 | src/components/RankBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/RatingLegend.tsx | — |  |
 | src/components/ReelEyeIcon.tsx | 2026-10-02 | Read (launch audit): artwork. Left alone. |
 | src/components/reels/__tests__/MemberRegistry.select.test.ts | 2026-10-01 | no comments |
 | src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | 2026-10-01 | carries the door's reason |
@@ -583,8 +581,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/search/SearchUnreachable.tsx | 2026-10-02 | SearchPartly: above results that came back while a source did not |
 | src/components/SectionErrorBoundary.tsx | 2026-10-01 | retries; comments made true |
 | src/components/ShareToLoungeModal.tsx | 2026-10-01 | only salons it may speak in; subscribes only when open |
-| src/components/SkeletonPulse.tsx | — |  |
-| src/components/SkeletonShimmer.tsx | — |  |
 | src/components/society/__tests__/theSocietySellsWhatItSays.test.tsx | — |  |
 | src/components/society/BillingSwitch.tsx | 2026-10-02 | read; sound |
 | src/components/society/FoundingCertificate.tsx | 2026-10-02 | read; sound |
@@ -684,7 +680,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useProfileData.reducer.test.ts | — |  |
 | src/hooks/__tests__/useScreenReady.test.tsx | — |  |
 | src/hooks/useAmbientGlow.ts | 2026-10-01 |  |
-| src/hooks/useAnalytics.ts | — |  |
 | src/hooks/useArrival.ts | 2026-10-01 | written: an arrival that cannot stay invisible |
 | src/hooks/useAuthFlow.ts | 2026-10-01 | one sheet for reset or confirm; comments short |
 | src/hooks/useAuthThrottle.ts | 2026-10-01 | a lifted lock keeps the rule |
@@ -718,7 +713,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | — |  |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | — |  |
 | src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-01 | written: the unread-error sweep, both shapes |
-| src/lib/__tests__/defensiveParse.test.ts | — |  |
 | src/lib/__tests__/revenueCat.selectPackage.test.ts | — |  |
 | src/lib/__tests__/sentryMeasures.test.ts | — |  |
 | src/lib/__tests__/signingOutSilencesOnlyThisDevice.test.ts | — |  |
@@ -729,7 +723,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/theTokenMustNotSurviveLogout.test.ts | — |  |
 | src/lib/__tests__/tmdb.test.ts | — |  |
 | src/lib/authSessionStorage.ts | 2026-10-01 | written: the session outgrew SecureStore |
-| src/lib/defensiveParse.ts | — |  |
 | src/lib/gateMetricsSink.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lib/nativeOnly/revenuecatWebStub.js | — |  |
 | src/lib/pushNotifications.ts | 2026-10-02 | the foreground handler is set as the module loads; comments say what is true |
@@ -974,7 +967,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | — |  |
 | src/utils/__tests__/roomFilters.test.ts | 2026-10-01 | written: one answer to is-this-room-narrowed |
 | src/utils/__tests__/sanitisationCallSites.test.ts | — |  |
-| src/utils/__tests__/sanitize.test.ts | — |  |
 | src/utils/__tests__/sanitizeInput.test.ts | — |  |
 | src/utils/__tests__/schemaSnapshot.guard.test.ts | — |  |
 | src/utils/__tests__/searchFieldsDoNotAutocorrect.guard.test.ts | 2026-09-29 | new guard |
@@ -1030,11 +1022,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/reelToast.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/requestReview.ts | 2026-10-01 | never more than 3 in any 365 days, as it claimed |
 | src/utils/roomFilters.ts | 2026-10-01 | new |
-| src/utils/sanitize.ts | 2026-10-02 | Read whole (launch audit). Not wired anywhere; kept by the owner's decision (DEEP-VERIFY-131) for post-launch. Note: wired as written it would delete competitor names from members' own words. |
 | src/utils/sanitizeInput.ts | 2026-10-02 | Read whole (launch audit). Stripped the two joiners everywhere: gendered and family emoji fell apart and Persian words lost their ZWNJ. Kept now where they join (emoji, joining scripts), stripped everywhere else. |
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/softBreak.ts | 2026-10-02 | Read whole (launch audit). Its blind cut could fall inside an emoji (a skin tone, a joined sequence): it waits for the next character to start. |
-| src/utils/storyExporter.ts | — |  |
 | src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |

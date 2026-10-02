@@ -50,12 +50,6 @@ const KNOWN_UNPARKED: Record<string, string> = {
     // motion and unmounts itself when the app is ready. Correct as-is.
     'src/components/Preloader.tsx': 'mounts outside the navigator; one-shot, self-unmounting',
 
-    // Loading placeholders. They unmount the moment data arrives, so the loop is
-    // bounded by the fetch rather than by the session. Worth parking eventually,
-    // but not a session-length leak.
-    'src/components/SkeletonPulse.tsx': 'transient — unmounts when data lands',
-    'src/components/SkeletonShimmer.tsx': 'transient — unmounts when data lands',
-
     // ── Pending their own page's polish pass ──────────────────────────────
     // Each is a genuine session-length loop. They are scheduled with the page
     // they live on; delete the entry when that page is polished.

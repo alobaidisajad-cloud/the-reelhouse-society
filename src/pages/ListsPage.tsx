@@ -13,7 +13,6 @@ import ListActions from '../components/ListActions'
 import { motion } from 'framer-motion'
 
 import { useViewport } from '../hooks/useViewport'
-import { sanitizeDescription, sanitizeListTitle } from '../utils/sanitize'
 import { useBanCheck } from '../hooks/useBanCheck'
 import ReportButton from '../components/ReportButton'
 import '../styles/stacks.css'
@@ -102,12 +101,12 @@ function CommunityListCard({ list, index }: { list: any; index: number }) {
 
                     {/* Title */}
                     <h3 className="stack-card-title">
-                        {sanitizeListTitle(list.title).toUpperCase()}
+                        {list.title.toUpperCase()}
                     </h3>
 
                     {/* Description — desktop only */}
-                    {!IS_TOUCH && sanitizeDescription(list.desc) && (
-                        <p className="stack-card-desc">{sanitizeDescription(list.desc)}</p>
+                    {!IS_TOUCH && list.desc?.trim() && (
+                        <p className="stack-card-desc">{list.desc.trim()}</p>
                     )}
 
                     {/* Curator */}

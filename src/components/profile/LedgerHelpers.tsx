@@ -5,7 +5,6 @@ import { Film, BookOpen, Check, RotateCcw, X } from 'lucide-react'
 import { useAuthStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
-import { sanitizeDescription, sanitizeListTitle } from '../../utils/sanitize'
 import '../../styles/stacks.css'
 
 import { useViewport } from '../../hooks/useViewport'
@@ -311,12 +310,12 @@ export function ListsSection({ lists, user, hasMoreLists, onLoadMoreLists }: { l
 
                                     {/* Title */}
                                     <h3 className="stack-card-title">
-                                        {sanitizeListTitle(list.title).toUpperCase()}
+                                        {list.title.toUpperCase()}
                                     </h3>
 
                                     {/* Description */}
-                                    {sanitizeDescription(list.description) && (
-                                        <p className="stack-card-desc">{sanitizeDescription(list.description)}</p>
+                                    {list.description?.trim() && (
+                                        <p className="stack-card-desc">{list.description.trim()}</p>
                                     )}
 
                                     {/* Privacy indicator */}
