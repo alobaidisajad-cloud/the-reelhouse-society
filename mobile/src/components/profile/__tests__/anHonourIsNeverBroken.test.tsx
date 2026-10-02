@@ -22,8 +22,8 @@ const titlesOf = () => {
     if (n.type === 'Text' && n.props.numberOfLines === 2) out.push(n);
     (n.children ?? []).forEach(walk);
   };
-  const record = { stamps: { total_logs: 0, pre_1960_count: 0, perfect_ratings_count: 0, has_physical_media: null, has_abandoned: null, decades_logged_count: 0, has_rewatched: false } };
-  walk(render(<Achievements logs={[]} analytics={record} />).toJSON());
+  const record = { stamps: { total_logs: 0, pre_1960_count: 0, perfect_ratings_count: 0, has_physical_media: null, has_abandoned: null, decades_logged_count: 0, has_rewatched: false, reviews_count: 0, genres_count: 0, busiest_day_count: 0, unrated_count: 0 } };
+  walk(render(<Achievements analytics={record} />).toJSON());
   return out;
 };
 const nameOf = (t: any) => [t.children].flat(3).filter((c: unknown) => typeof c === 'string').join('');

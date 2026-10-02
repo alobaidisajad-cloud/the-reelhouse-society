@@ -24,15 +24,17 @@ const record = (over: Partial<Stamps> = {}): ProfileAnalyticsPayload => ({
     ...over,
   },
 });
-/** Fifty films, none reviewed, rated or dated alike: what a visitor's first page might hold. */
-const window50 = Array.from({ length: 50 }, () => ({ rating: 0, review: null }));
-
 const honour = (r: ReturnType<typeof render>, title: string) =>
   r.getByLabelText(new RegExp(`^${title}, (earned|not yet earned)$`)).props.accessibilityLabel.endsWith(', earned');
 
 describe('every honour is judged from the whole record', () => {
-  it('a 300-film member is THE ORACLE, whatever fifty films loaded', () => {
-    const r = render(<Achievements logs={window50} analytics={record()} />);
+  it('the honours take no logs at all, so the logs that loaded cannot judge one', () => {
+    // @ts-expect-error — the record is the only thing the case reads.
+    render(<Achievements logs={[]} analytics={record()} />);
+  });
+
+  it('a 300-film member is THE ORACLE', () => {
+    const r = render(<Achievements analytics={record()} />);
     expect(honour(r, 'THE ORACLE')).toBe(true);
   });
 
@@ -43,25 +45,19 @@ describe('every honour is judged from the whole record', () => {
     ['THE COMPLETIONIST', { unrated_count: 0 }, { unrated_count: 1 }],
     ['THE CONNOISSEUR', { perfect_ratings_count: 5 }, { perfect_ratings_count: 4 }],
     ['DECADE DRIFTER', { decades_logged_count: 4 }, { decades_logged_count: 3 }],
-  ] as const)('%s, on the record\'s count and not the logs in hand', (title, on, off) => {
-    expect(honour(render(<Achievements logs={window50} analytics={record(on)} />), title)).toBe(true);
-    expect(honour(render(<Achievements logs={window50} analytics={record(off)} />), title)).toBe(false);
-  });
-
-  it('until the record carries a count, that honour is counted over the logs in hand', () => {
-    const reviewed = Array.from({ length: 10 }, () => ({ rating: 4, review: 'Held its nerve to the last frame.' }));
-    const r = render(<Achievements logs={reviewed} analytics={record({ reviews_count: undefined })} />);
-    expect(honour(r, 'THE CRITIC')).toBe(true);
+  ] as const)('%s, on the record\'s count', (title, on, off) => {
+    expect(honour(render(<Achievements analytics={record(on)} />), title)).toBe(true);
+    expect(honour(render(<Achievements analytics={record(off)} />), title)).toBe(false);
   });
 });
 
 describe('a record not yet read is said, never guessed', () => {
   it('the honours: retrieving, then could not be reached with the way to ask again', async () => {
-    let r = render(<Achievements logs={window50} analytics={null} />);
+    let r = render(<Achievements analytics={null} />);
     expect(r.getByLabelText('Retrieving the honours')).toBeTruthy();
     expect(r.queryByLabelText(/THE ORACLE/)).toBeNull();
     const retry = jest.fn();
-    r = render(<Achievements logs={window50} analytics={null} failed onRetry={retry} />);
+    r = render(<Achievements analytics={null} failed onRetry={retry} />);
     expect(r.getByText('The honours could not be reached.')).toBeTruthy();
     await act(async () => { fireEvent.press(r.getByLabelText('Ask for the honours again')); });
     expect(retry).toHaveBeenCalled();

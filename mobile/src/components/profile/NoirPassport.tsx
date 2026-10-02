@@ -17,11 +17,10 @@ export interface ProfileAnalyticsPayload {
         has_abandoned: boolean | null;
         decades_logged_count: number;
         has_rewatched: boolean;
-        /** From 20261002_01: absent until it is applied. */
-        reviews_count?: number;
-        genres_count?: number;
-        busiest_day_count?: number;
-        unrated_count?: number;
+        reviews_count: number;
+        genres_count: number;
+        busiest_day_count: number;
+        unrated_count: number;
     };
     dna?: any;
     autopsy_math?: any;

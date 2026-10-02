@@ -879,7 +879,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     {/* Society Honors */}
                     <View>
                       <SectionDivider label="SOCIETY HONORS" />
-                      <Achievements logs={analyticsLogs.length > 0 ? analyticsLogs : displayLogs} analytics={serverAnalytics} totalFilms={totalFilms} failed={roomFailed} onRetry={retryRoom} />
+                      <Achievements analytics={serverAnalytics} totalFilms={totalFilms} failed={roomFailed} onRetry={retryRoom} />
                     </View>
 
                     {/* HIGHEST RATED (`highestRated`) */}

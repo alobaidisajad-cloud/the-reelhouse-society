@@ -16,6 +16,7 @@ const record = (total: number): ProfileAnalyticsPayload => ({
   stamps: {
     total_logs: total, pre_1960_count: 0, perfect_ratings_count: 0, has_physical_media: false,
     has_abandoned: false, decades_logged_count: 3, has_rewatched: false,
+    reviews_count: 0, genres_count: 0, busiest_day_count: 0, unrated_count: 0,
   },
   dna: { avg_rating: 3.6, top_decades: [{ '1970s': 40 }, { '1990s': 30 }] },
 });

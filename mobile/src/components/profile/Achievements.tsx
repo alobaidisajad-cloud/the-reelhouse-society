@@ -10,15 +10,6 @@ import { rungAt } from '@/src/constants/standing';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomRetrieving, RoomUnreachable } from './RoomParts';
 
-/** A log as the honours read it, before the record carries a count (see `counted`). */
-interface AchievementLog {
-    rating: number;
-    review?: string | null;
-    genres?: { id: number | string }[] | number[];
-    watchedDate?: string | Date | null;
-    createdAt?: string | null;
-}
-
 /** The member's record over the WHOLE history (the server's count). */
 type Stamps = NonNullable<ProfileAnalyticsPayload['stamps']>;
 
@@ -32,20 +23,12 @@ function filmCount(s: Stamps, reconciled?: number): number {
   return s.total_logs;
 }
 
-/**
- * A count the record carries from 20261002_01, or — until that is applied —
- * the same count over the logs in hand.
- */
-function counted(n: number | undefined, logs: AchievementLog[], fallback: (logs: AchievementLog[]) => number): number {
-  return typeof n === 'number' ? n : fallback(logs);
-}
-
 interface Badge {
   id: string;
   title: string;
   desc: string;
   glyph: string;
-  check: (logs: AchievementLog[], s: Stamps, total?: number) => boolean;
+  check: (s: Stamps, total?: number) => boolean;
 }
 
 const BADGES: Badge[] = [
@@ -54,88 +37,70 @@ const BADGES: Badge[] = [
     title: 'FIRST REEL',
     desc: 'Log your first film',
     glyph: '✦',
-    check: (_logs, s, total) => filmCount(s, total) >= rungAt('FIRST REEL'),
+    check: (s, total) => filmCount(s, total) >= rungAt('FIRST REEL'),
   },
   {
     id: 'the-regular',
     title: 'THE REGULAR',
     desc: 'Log 10 films',
     glyph: '❖',
-    check: (_logs, s, total) => filmCount(s, total) >= rungAt('THE REGULAR'),
+    check: (s, total) => filmCount(s, total) >= rungAt('THE REGULAR'),
   },
   {
     id: 'midnight-devotee',
     title: 'MIDNIGHT DEVOTEE',
     desc: 'Log 25 films',
     glyph: '◆',
-    check: (_logs, s, total) => filmCount(s, total) >= rungAt('MIDNIGHT DEVOTEE'),
+    check: (s, total) => filmCount(s, total) >= rungAt('MIDNIGHT DEVOTEE'),
   },
   {
     id: 'the-oracle',
     title: 'THE ORACLE',
     desc: 'Log 100 films',
     glyph: '◈',
-    check: (_logs, s, total) => filmCount(s, total) >= rungAt('THE ORACLE'),
+    check: (s, total) => filmCount(s, total) >= rungAt('THE ORACLE'),
   },
   {
     id: 'the-connoisseur',
     title: 'THE CONNOISSEUR',
     desc: 'Rate 5 films with 5 reels',
     glyph: '✧',
-    check: (_logs, s) => s.perfect_ratings_count >= 5,
+    check: (s) => s.perfect_ratings_count >= 5,
   },
   {
     id: 'the-critic',
     title: 'THE CRITIC',
     desc: 'Write 10 reviews',
     glyph: '§',
-    check: (logs, s) => counted(s.reviews_count, logs, (ls) => ls.filter((l) => (l.review?.length || 0) > 20).length) >= 10,
+    check: (s) => s.reviews_count >= 10,
   },
   {
     id: 'genre-explorer',
     title: 'GENRE EXPLORER',
     desc: 'Log films in 5+ genres',
     glyph: '⊕',
-    check: (logs, s) => counted(s.genres_count, logs, (ls) => {
-      const genres = new Set<string>();
-      ls.forEach((l) => {
-        if (Array.isArray(l.genres)) {
-          l.genres.forEach((g) => {
-            if (g !== null) genres.add(typeof g === 'object' ? String((g as any).id) : String(g));
-          });
-        }
-      });
-      return genres.size;
-    }) >= 5,
+    check: (s) => s.genres_count >= 5,
   },
   {
     id: 'decade-drifter',
     title: 'DECADE DRIFTER',
     desc: 'Watch films from 4+ decades',
     glyph: '⊗',
-    check: (_logs, s) => s.decades_logged_count >= 4,
+    check: (s) => s.decades_logged_count >= 4,
   },
   {
     id: 'marathon-runner',
     title: 'MARATHON RUNNER',
     desc: 'Log 3+ films in one day',
     glyph: '⟐',
-    check: (logs, s) => counted(s.busiest_day_count, logs, (ls) => {
-      const counts: Record<string, number> = {};
-      ls.forEach((l) => {
-        const d = (l.watchedDate instanceof Date ? l.watchedDate.toISOString() : String(l.watchedDate || l.createdAt || '')).slice(0, 10);
-        if (d) counts[d] = (counts[d] || 0) + 1;
-      });
-      return Math.max(0, ...Object.values(counts));
-    }) >= 3,
+    check: (s) => s.busiest_day_count >= 3,
   },
   {
     id: 'the-completionist',
     title: 'THE COMPLETIONIST',
     desc: 'Rate every logged film',
     glyph: '⊛',
-    check: (logs, s, total) => filmCount(s, total) >= 5
-      && counted(s.unrated_count, logs, (ls) => ls.filter((l) => !(l.rating > 0)).length) === 0,
+    check: (s, total) => filmCount(s, total) >= 5 && s.unrated_count === 0,
   },
 ];
 
@@ -144,8 +109,7 @@ const BADGES: Badge[] = [
  * been read the case says so (and, if it could not be, offers to ask again):
  * an honour is never judged from the logs that happened to load.
  */
-export function Achievements({ logs, analytics, totalFilms, failed, onRetry }: {
-  logs: AchievementLog[];
+export function Achievements({ analytics, totalFilms, failed, onRetry }: {
   analytics?: ProfileAnalyticsPayload | null;
   totalFilms?: number;
   /** The record's read failed. */
@@ -154,8 +118,8 @@ export function Achievements({ logs, analytics, totalFilms, failed, onRetry }: {
 }) {
   const stamps = analytics?.stamps;
   const earned = useMemo(() =>
-    stamps ? BADGES.map(b => ({ ...b, unlocked: b.check(logs, stamps, totalFilms) })) : [],
-    [logs, stamps, totalFilms]
+    stamps ? BADGES.map(b => ({ ...b, unlocked: b.check(stamps, totalFilms) })) : [],
+    [stamps, totalFilms]
   );
 
   const unlockedCount = earned.filter(b => b.unlocked).length;

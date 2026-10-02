@@ -2061,7 +2061,7 @@ CREATE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS json
     ELSE (
       WITH user_logs AS (
         SELECT *,
-          -- THE ONLY CHANGE IN THIS FUNCTION: was '^\d+$'
+          -- A year of one to four digits; anything else is not a year.
           CASE WHEN year::text ~ '^\d{1,4}$' THEN year::text::int END AS year_int
         FROM public.logs WHERE user_id = p_user_id
       ),
@@ -2073,7 +2073,21 @@ CREATE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS json
           bool_or(physical_media IS NOT NULL) AS has_physical_media,
           bool_or(status = 'abandoned') AS has_abandoned,
           COUNT(DISTINCT (year_int / 10) * 10) FILTER (WHERE year_int IS NOT NULL) AS decades_logged_count,
-          EXISTS(SELECT 1 FROM user_logs GROUP BY film_id HAVING COUNT(*) > 1) AS has_rewatched
+          -- A rewatch is kept on its log; two logs of one film count too.
+          -- (coalesce: a member with no logs has rewatched nothing, not "unknown".)
+          (coalesce(bool_or(status = 'rewatched' OR coalesce(view_count, 1) > 1), false)
+            OR EXISTS (SELECT 1 FROM user_logs GROUP BY film_id HAVING COUNT(*) > 1)) AS has_rewatched,
+          COUNT(*) FILTER (WHERE length(review) > 20) AS reviews_count,
+          COUNT(*) FILTER (WHERE coalesce(rating, 0) <= 0) AS unrated_count,
+          (SELECT coalesce(max(n), 0) FROM (
+             SELECT COUNT(*) AS n FROM user_logs
+              GROUP BY coalesce(watched_date, (created_at AT TIME ZONE 'UTC')::date)
+           ) days) AS busiest_day_count,
+          (SELECT COUNT(DISTINCT g) FROM (
+             SELECT DISTINCT film_id FROM user_logs WHERE film_id > 0
+           ) mine
+           JOIN public.films f ON f.id = mine.film_id,
+           LATERAL unnest(f.genres) AS g) AS genres_count
         FROM user_logs
       ),
       decades AS (
@@ -4466,9 +4480,13 @@ BEGIN
     RAISE EXCEPTION 'Cannot report your own profile';
   END IF;
 
-  INSERT INTO reports (reporter_id, content_id, content_type, reason, details, target_user_id, status)
-  VALUES (v_reporter_id, p_content_id, p_content_type, p_reason, p_details, p_target_user_id, 'pending')
-  RETURNING id INTO v_report_id;
+  BEGIN
+    INSERT INTO reports (reporter_id, content_id, content_type, reason, details, target_user_id, status)
+    VALUES (v_reporter_id, p_content_id, p_content_type, p_reason, p_details, p_target_user_id, 'pending')
+    RETURNING id INTO v_report_id;
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'Already reported' USING ERRCODE = '23505';
+  END;
 
   RETURN v_report_id;
 END;
@@ -6720,6 +6738,13 @@ CREATE UNIQUE INDEX profiles_username_lower_unique ON public.profiles USING btre
 
 
 --
+-- Name: reports_one_pending_per_member; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX reports_one_pending_per_member ON public.reports USING btree (reporter_id, content_type, content_id) WHERE (status = 'pending'::text);
+
+
+--
 -- Name: viewings_log_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8293,15 +8318,6 @@ CREATE POLICY admins_select_mod_actions ON public.mod_actions FOR SELECT USING (
 
 
 --
--- Name: reports admins_update_reports; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY admins_update_reports ON public.reports FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM public.profiles
-  WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'admin'::text)))));
-
-
---
 -- Name: analytics_events; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -9069,13 +9085,6 @@ CREATE POLICY users_delete_own_blocks ON public.user_blocks FOR DELETE USING ((b
 --
 
 CREATE POLICY users_insert_own_blocks ON public.user_blocks FOR INSERT WITH CHECK ((blocker_id = auth.uid()));
-
-
---
--- Name: reports users_insert_own_reports; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY users_insert_own_reports ON public.reports FOR INSERT TO authenticated WITH CHECK ((reporter_id = auth.uid()));
 
 
 --
@@ -11193,8 +11202,8 @@ GRANT ALL ON TABLE public.push_tokens TO service_role;
 -- Name: TABLE reports; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.reports TO anon;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.reports TO authenticated;
+GRANT SELECT ON TABLE public.reports TO anon;
+GRANT SELECT ON TABLE public.reports TO authenticated;
 GRANT ALL ON TABLE public.reports TO service_role;
 
 
