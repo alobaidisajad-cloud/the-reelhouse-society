@@ -231,8 +231,7 @@ function ToastPill({ toast, leaving, slide, inSheet = false }: {
    *     Measured from the fonts' own advance widths, the widest label takes
    *     186pt, leaving a 375pt phone's message 73pt for two lines — every one of
    *     the six refusal sentences was truncated, on every phone size, including
-   *     430pt. The label now takes its own row; the longest sentence needs three
-   *     lines at the smallest phone at ×1.35, so four are allowed.
+   *     430pt. The label now takes its own row.
    *   · THE BUTTON WAS UNREADABLE. It wore the toast's accent, and an error's is
    *     bloodReel: 1.25–1.49:1 on this ground. It is champagne now, 5.4–6.5:1.
    *   · IT WAS A 26pt TARGET WITH NO ROLE. A Pressable with a button role, a
@@ -261,7 +260,6 @@ function ToastPill({ toast, leaving, slide, inSheet = false }: {
               <Text
                 ref={messageRef}
                 style={styles.message}
-                numberOfLines={4}
                 {...scaledTextProps}
                 accessibilityLabel={`${toast.message}. ${spokenLabel(action.label)}, available.`}
               >
@@ -281,7 +279,7 @@ function ToastPill({ toast, leaving, slide, inSheet = false }: {
         ) : (
           <>
             <Text style={[styles.glyph, { color: accent }]} {...UNSPOKEN}>{glyph}</Text>
-            <Text style={styles.message} numberOfLines={2}>{toast.message}</Text>
+            <Text style={styles.message}>{toast.message}</Text>
           </>
         )}
       </View>
@@ -327,6 +325,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 16,
   },
+  // Never cut short: the body face is monospaced, so two lines held about 66
+  // characters on a 375pt phone and 48 at ×1.35, and the house's longest
+  // sentences end with the address to write to.
   message: {
     fontFamily: fonts.body,
     fontSize: 13,

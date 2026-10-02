@@ -39,10 +39,10 @@ afterEach(() => {
 });
 
 describe('the door can be read and pressed', () => {
-  it('the whole sentence is allowed room — four lines, not two', async () => {
+  it('the whole sentence is allowed room — never cut to a line count', async () => {
     const r = render(<ToastHost layer="root" />);
     await act(async () => { reelToast.info(SENTENCE, { label: '✦ ASCEND THE RANKS', onPress: jest.fn() }); });
-    expect(r.getByText(SENTENCE).props.numberOfLines).toBe(4);
+    expect(r.getByText(SENTENCE).props.numberOfLines).toBeUndefined();
   });
 
   it('the button is on its OWN row, so it can never squeeze the sentence again', async () => {
@@ -124,14 +124,14 @@ describe('the door can be read and pressed', () => {
       expect(AccessibilityInfo.announceForAccessibility).not.toHaveBeenCalled();
     });
 
-    it('a PLAIN toast is announced, never focused, two lines, no button', async () => {
+    it('a PLAIN toast is announced, never focused, never cut, no button', async () => {
       const r = render(<ToastHost layer="root" />);
       await act(async () => { reelToast.success('Filed'); });
       await act(async () => { jest.advanceTimersByTime(1000); });
       expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledTimes(1);
       expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith('Filed');
       expect(AccessibilityInfo.sendAccessibilityEvent).not.toHaveBeenCalled();
-      expect(r.getByText('Filed').props.numberOfLines).toBe(2);
+      expect(r.getByText('Filed').props.numberOfLines).toBeUndefined();
       expect(r.queryByRole('button')).toBeNull();
     });
   });
