@@ -3,6 +3,55 @@
  */
 
 /**
+ * A code point drawn as part of the character before it: a joiner or what a
+ * joiner joins, a variation selector, a skin tone, a combining mark, a keycap,
+ * a flag's tag. No cut may fall in front of one — 👍🏽 cut there is a thumb and
+ * a swatch, and 🤷‍♀️ a shrug and a sign.
+ */
+export const joinsThePrevious = (cp: number, prev: number): boolean =>
+  prev === 0x200d || cp === 0x200d || cp === 0x200c
+  || (cp >= 0xfe00 && cp <= 0xfe0f) || (cp >= 0x1f3fb && cp <= 0x1f3ff)
+  || (cp >= 0x0300 && cp <= 0x036f) || cp === 0x20e3 || (cp >= 0xe0020 && cp <= 0xe007f);
+
+const isHigh = (c: number) => c >= 0xd800 && c <= 0xdbff;
+const isLow = (c: number) => c >= 0xdc00 && c <= 0xdfff;
+const isFlagHalf = (cp: number) => cp >= 0x1f1e6 && cp <= 0x1f1ff;
+
+/** The code point that ends just before `i`, and where it starts. */
+function before(text: string, i: number): [number, number] {
+  const start = i >= 2 && isLow(text.charCodeAt(i - 1)) && isHigh(text.charCodeAt(i - 2)) ? i - 2 : i - 1;
+  return [text.codePointAt(start) ?? 0, start];
+}
+
+/** Whether a cut at UTF-16 index `i` leaves every character whole. */
+export function isCharacterBoundary(text: string, i: number): boolean {
+  if (i <= 0 || i >= text.length) return true;
+  if (isLow(text.charCodeAt(i)) && isHigh(text.charCodeAt(i - 1))) return false;
+  const cp = text.codePointAt(i) ?? 0;
+  const [prev] = before(text, i);
+  if (joinsThePrevious(cp, prev)) return false;
+  // A flag is two halves: inside a run of them, only an even count is a seam.
+  if (isFlagHalf(cp) && isFlagHalf(prev)) {
+    let halves = 0;
+    for (let j = i; j > 0;) {
+      const [p, start] = before(text, j);
+      if (!isFlagHalf(p)) break;
+      halves += 1;
+      j = start;
+    }
+    return halves % 2 === 0;
+  }
+  return true;
+}
+
+/** The last place at or before `at` where a cut leaves every character whole. */
+export function characterStart(text: string, at: number): number {
+  let i = Math.max(0, Math.min(at, text.length));
+  while (!isCharacterBoundary(text, i)) i -= 1;
+  return i;
+}
+
+/**
  * Extracts the first grapheme (Unicode-aware character) and the remainder of the text.
  * Backed by Intl.Segmenter for O(1) performance with fallback for older JS engines.
  * 
@@ -32,9 +81,11 @@ export function extractDropCap(text: string): { first: string; rest: string } {
         first = segments[Symbol.iterator]().next().value?.segment ?? coreText.charAt(0);
         rest = coreText.slice(first.length);
     } else {
-        // high-performance regex fallback for surrogate pairs
-        const fallbackMatch = coreText.match(/^./su);
-        first = fallbackMatch ? fallbackMatch[0] : coreText.charAt(0);
+        // Hermes has no Segmenter: the first CHARACTER, every code point of it —
+        // one code point alone would set the woman of 👩‍💻 as the drop cap.
+        let end = 1;
+        while (end < coreText.length && !isCharacterBoundary(coreText, end)) end += 1;
+        first = coreText.slice(0, end);
         rest = coreText.slice(first.length);
     }
 
@@ -183,21 +234,14 @@ export function truncateReview(text: string, max = 350): string {
     const at = space > 40 ? space : max;
 
     // ── A CUT AT A CODE-UNIT INDEX CAN SPLIT AN EMOJI ───────────────────────
-    // `slice` counts UTF-16 units, so cutting at `at` can land BETWEEN the two
-    // halves of an astral character and leave a lone high surrogate, which
-    // renders as a replacement mark at the end of the excerpt.
+    // `slice` counts UTF-16 units, so cutting at `at` could land inside a
+    // character: between a surrogate pair's halves (a replacement mark), or
+    // inside a joined emoji or a skin tone. The cut steps back to the start of
+    // the character it fell in.
     //
     // It is not the exotic path it looks like. The word-boundary branch above
     // only applies when there IS a space in the first 350 characters — and a
     // review written in Chinese or Japanese has none, so those fall through to
-    // the raw index every time.
-    //
-    // sanitizeInput's cleanForStorage carries this same guard, with the note
-    // that an unpaired surrogate also makes PostgreSQL refuse the whole
-    // request. This is the display-side twin of it.
-    const cut = raw.slice(0, at);
-    const last = cut.charCodeAt(cut.length - 1);
-    const safe = last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut;
-
-    return safe.trimEnd() + '…';
+    // the raw index every time. sanitizeInput's cap uses the same step.
+    return raw.slice(0, characterStart(raw, at)).trimEnd() + '…';
 }

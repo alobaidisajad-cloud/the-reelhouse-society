@@ -34,6 +34,7 @@
  * It lived in the Dispatch's `paperText` until the film page needed it; that
  * file re-exports it, so the Dispatch reads it where it always did.
  */
+import { isCharacterBoundary } from './text';
 
 /**
  * The longest unbroken run allowed before a wrap point is offered.
@@ -77,16 +78,6 @@ const BREAK_BEFORE = new Set(['.', '?', '&', '#', '=', '+']);
  */
 const MIN_SEGMENT = 3;
 
-/**
- * A code point that belongs to the character before it, so no break may go in
- * front of it: a joiner or what a joiner joins, a variation selector, a skin
- * tone, a combining mark, a keycap. A break there drew 👍🏽 as a thumb and a
- * swatch, and 🤷‍♀️ as a shrug and a sign.
- */
-const continues = (cp: number, prev: number) =>
-  prev === 0x200d || cp === 0x200d || cp === 0x200c
-  || (cp >= 0xfe00 && cp <= 0xfe0f) || (cp >= 0x1f3fb && cp <= 0x1f3ff)
-  || (cp >= 0x0300 && cp <= 0x036f) || cp === 0x20e3 || (cp >= 0xe0020 && cp <= 0xe007f);
 
 /** Where a break may go at character `i` of `s`, or -1. */
 function jointAt(s: string, i: number): number {
@@ -129,7 +120,7 @@ export function softBreak(text: string, run: number = MAX_RUN): string {
     // Never cut a character in two: the break waits until the next one starts.
     // An emoji sequence can run a few units past `run` — it is drawn far
     // narrower than its units (a family of four is eleven units, one glyph).
-    if (continues(text.codePointAt(pos) ?? 0, ch.codePointAt(0) ?? 0)) continue;
+    if (!isCharacterBoundary(text, pos)) continue;
 
     /**
      * How many characters stay on the line. The LAST joint wins, so the line

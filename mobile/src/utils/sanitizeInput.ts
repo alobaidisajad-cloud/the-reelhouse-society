@@ -4,6 +4,7 @@
  * Strips zero-width and control characters and caps each field's length, at the
  * store's mutation layer and again at the offline queue's replay.
  */
+import { characterStart } from './text';
 
 // Invisible characters, all THREE bidi families (the test enumerates every bidi codepoint):
 // marks, isolates, embeddings/overrides \u2014 U+202E reorders what is shown from what is stored.
@@ -125,12 +126,10 @@ export function sanitizeInput(text: string, fieldType: FieldType): string {
   // The last-resort fence: a cut here is silent, so a caller that can warn asks isOverLimit.
   if (clean.length <= maxLen) return clean;
 
-  // A cut can split an emoji's surrogate pair, and PostgreSQL (17) refuses the whole
-  // request over the lone half — so the dangling high surrogate is dropped.
-  const cut = clean.slice(0, maxLen);
-  const last = cut.charCodeAt(maxLen - 1);
-  // A high surrogate in the final position lost its partner to the cut; drop it.
-  return last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut;
+  // The cut steps back to the start of the character it fell in. Inside a
+  // surrogate pair, PostgreSQL (17) refuses the whole request over the lone
+  // half; inside a joined emoji, the member's last emoji is stored broken.
+  return clean.slice(0, characterStart(clean, maxLen));
 }
 
 /**

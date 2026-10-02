@@ -906,6 +906,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/profile.types.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/types/social.types.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
+| src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): the cap, the excerpt and the drop cap cut between characters. |
 | src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-02 | a hidden pressable is hidden whole (no-hide-descendants) |
 | src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts | 2026-10-01 | new |
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
@@ -1026,7 +1027,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/reelToast.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/requestReview.ts | 2026-10-01 | never more than 3 in any 365 days, as it claimed |
 | src/utils/roomFilters.ts | 2026-10-01 | new |
-| src/utils/sanitize.ts | — |  |
+| src/utils/sanitize.ts | 2026-10-02 | Read whole (launch audit). Not wired anywhere; kept by the owner's decision (DEEP-VERIFY-131) for post-launch. Note: wired as written it would delete competitor names from members' own words. |
 | src/utils/sanitizeInput.ts | 2026-10-02 | Read whole (launch audit). Stripped the two joiners everywhere: gendered and family emoji fell apart and Persian words lost their ZWNJ. Kept now where they join (emoji, joining scripts), stripped everywhere else. |
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/softBreak.ts | 2026-10-02 | Read whole (launch audit). Its blind cut could fall inside an emoji (a skin tone, a joined sequence): it waits for the next character to start. |
@@ -1034,7 +1035,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
-| src/utils/text.ts | — |  |
+| src/utils/text.ts | 2026-10-02 | Read whole (launch audit). The drop cap on a phone (no Intl.Segmenter) took one code point, and truncateReview mended only a lone surrogate: both cut between characters now (isCharacterBoundary, shared with the sanitiser's cap and softBreak). |
 | src/utils/tier.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/tierDoor.ts | 2026-10-01 | the server sentence as a door |
 | src/utils/tierRefusal.ts | 2026-10-01 | by the sentence, not the code |
