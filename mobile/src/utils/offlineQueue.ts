@@ -166,6 +166,10 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
     logger.debug(`[OfflineSync] Queued ${mutation.type} for background sync.`);
 }
 
+/** "A change made offline", "3 changes made offline" — never "3 offline action(s)". */
+export const changesMadeOffline = (n: number) =>
+    n === 1 ? 'A change made offline' : `${n} changes made offline`;
+
 let isFlushing = false;
 
 export async function flushOfflineQueue() {
@@ -297,7 +301,7 @@ export async function flushOfflineQueue() {
     const stalePruned = preFilterLength - queue.length;
     if (stalePruned > 0) {
         logger.warn(`[OfflineSync] Pruned ${stalePruned} stale mutations (>24h old)`);
-        reelToast.error(`${stalePruned} offline action(s) expired (>24h old).`);
+        reelToast.error(`${changesMadeOffline(stalePruned)} ${stalePruned === 1 ? 'was' : 'were'} over a day old, and not sent.`);
     }
 
     logger.debug(`[OfflineSync] Flushing ${queue.length} queued mutations...`);
@@ -406,7 +410,7 @@ export async function flushOfflineQueue() {
             const combined = [...prev, ...deadLetterQueue].slice(-50);
             storage.set(QUEUE_KEY + '_dead_letter', JSON.stringify(combined));
         } catch { /* storage write failure — nothing we can do */ }
-        reelToast.error(`${deadLetterQueue.length} offline action(s) couldn't be synced.`);
+        reelToast.error(`${changesMadeOffline(deadLetterQueue.length)} could not be sent.`);
     }
 
     // Read again, not the snapshot above: a write queued while this send waited

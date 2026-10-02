@@ -11,6 +11,7 @@ import {
   getOfflineQueue,
   getQueueLength,
   clearOfflineQueue,
+  changesMadeOffline,
 } from '../offlineQueue';
 
 jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
@@ -101,5 +102,12 @@ describe('offlineQueue — holding a write until the network returns', () => {
     const { storage } = require('@/src/stores/mmkv-storage');
     (storage.getString as jest.Mock).mockReturnValueOnce('{ not json');
     expect(() => getOfflineQueue()).not.toThrow();
+  });
+});
+
+describe('what a member is told about changes that did not go', () => {
+  it('counts in words, never "action(s)"', () => {
+    expect(changesMadeOffline(1)).toBe('A change made offline');
+    expect(changesMadeOffline(3)).toBe('3 changes made offline');
   });
 });
