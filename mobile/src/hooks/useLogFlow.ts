@@ -365,12 +365,19 @@ export function useLogFlow() {
         if (storedNote) setMoreOpen(true);
     }, [editLogId, vaultLoaded, editViewingId, storedNote, noteHydratedFor]);
 
+    /**
+     * The film a restored draft's note was written for. That note is the
+     * member's own writing, waiting to be sent: untouched-and-unsent was right
+     * for an empty field, and it silently dropped a restored note at the seal.
+     */
+    const draftNoteFor = useRef<number | null>(null);
+
     // A new log, or a rewatch, begins with an empty note — and an empty note
     // that has not been touched is never sent, so nothing is cleared by it.
     useEffect(() => {
         if (editLogId) return;
         setNoteHydratedFor(null);
-        setNoteTouched(false);
+        setNoteTouched(draftNoteFor.current !== null && draftNoteFor.current === film?.id);
     }, [editLogId, film?.id]);
 
     /**
@@ -410,13 +417,21 @@ export function useLogFlow() {
                     setStep(1);
                     if (parsed.review) setReview(parsed.review);
                     if (parsed.rating) setRating(parsed.rating);
-                    if (parsed.privateNotes) setPrivateNotes(parsed.privateNotes);
-                } 
+                    if (parsed.privateNotes) {
+                        draftNoteFor.current = parsed.filmId;
+                        setPrivateNotes(parsed.privateNotes);
+                        setNoteTouched(true);
+                    }
+                }
                 // If already on the film, just hydrate the fields
                 else if (parsed.filmId === film?.id) {
                     if (parsed.review) setReview(parsed.review);
                     if (parsed.rating) setRating(parsed.rating);
-                    if (parsed.privateNotes) setPrivateNotes(parsed.privateNotes);
+                    if (parsed.privateNotes) {
+                        draftNoteFor.current = parsed.filmId;
+                        setPrivateNotes(parsed.privateNotes);
+                        setNoteTouched(true);
+                    }
                 }
             } catch (err: unknown) { if (__DEV__) console.warn('[LogModal] draft restore failed:', err); }
         }

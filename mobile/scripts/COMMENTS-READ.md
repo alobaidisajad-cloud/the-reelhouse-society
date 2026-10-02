@@ -650,6 +650,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
 | src/hooks/__tests__/aNewMemberStartsUnfiltered.test.tsx | 2026-10-01 | written: every filter wiped for a new member |
 | src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx | 2026-10-01 | written: each read cancelled only by what makes it stale |
+| src/hooks/__tests__/aRestoredNoteIsSent.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a draft's restored private note is sealed with the record. |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
 | src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-01 | written with useSheetPresence |
 | src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-01 | written with useKeyboardLift |
@@ -696,7 +697,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useFilmDetail.ts | 2026-10-01 | an unread verdict is null, never silence |
 | src/hooks/useFollowRequests.ts | 2026-10-02 | failed + moreFailed + retry; the count never below 0; decline-all restores paging |
 | src/hooks/useInitiation.ts | 2026-10-02 | Read whole (launch audit). The breath was the effect's cleanup, so a user replaced inside it lost the welcome after the flag burned; a user without created_at was decided no for good. Both closed. |
-| src/hooks/useLogFlow.ts | 2026-09-29 | 22 fixed; line refs (:351-352, logOperations.ts:574) and a 30-line history of the erase bug cut to the rule |
+| src/hooks/useLogFlow.ts | 2026-10-02 | Read whole (launch audit). A draft's restored private note was untouched (and the restored film reset the touch), so sealing the restored record dropped the note: it travels now. |
 | src/hooks/useMemberRoom.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useMembershipPricing.ts | 2026-10-02 | read; sound |
 | src/hooks/useModalKeyboardPadding.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -730,7 +731,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/pushNotifications.ts | 2026-10-02 | the foreground handler is set as the module loads; comments say what is true |
 | src/lib/pushPrimer.ts | 2026-10-01 | new: the house asks to send word at a moment that wants it |
 | src/lib/queryClient.ts | 2026-10-02 | read; sound |
-| src/lib/revenueCat.ts | 2026-09-29 | 17 fixed; FALSE: 'syncs the tier to profiles.role' (the server re-reads RevenueCat and ignores the tier); setup notes with prices; ticket tags |
+| src/lib/revenueCat.ts | 2026-10-02 | Read whole (launch audit). syncEntitlementToSupabase asks auth.getUser (the network) for an id the session holds, so offline it queues nothing: left for the payments pass, as the owner set. |
 | src/lib/scrollBridge.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lib/sentry.ts | 2026-10-02 | Read whole (launch audit). The re-export was said to be for an ErrorBoundary wrapper in _layout; its one caller tags the session. |
 | src/lib/supabase.ts | 2026-10-01 | the session kept by authSessionStorage; comments short |
@@ -781,11 +782,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/logCounts.ts | 2026-10-01 | true as written |
 | src/services/LogService.ts | 2026-10-01 | a missing log is null; histories to the present |
 | src/services/LoungeService.ts | 2026-10-01 | true as written |
-| src/services/MemberDiscoveryService.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
+| src/services/MemberDiscoveryService.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/services/ModerationService.ts | 2026-10-02 | read; sound |
 | src/services/ProfileDataService.ts | 2026-09-29 | 24 fixed; 'Sentry breadcrumb' was dev-only logger.info (logged for step 6); a dead file ref; ticket tags |
 | src/services/ProfileWriteService.ts | 2026-10-02 | the circle's cursors through pgLiteral |
-| src/services/StackService.ts | 2026-09-30 | the delete's comment said a refusal "is seen" and never read it; made true |
+| src/services/StackService.ts | 2026-10-02 | Read whole (launch audit). Critiques capped at the newest 50 with the true count shown and no way to the rest: listed (see the stack page). |
 | src/services/VaultService.ts | 2026-10-02 | Read whole (launch audit). Claimed to be the only door to the notes while the import wrote the table itself: restoreNotes added and used; the claim narrowed to writes (the export reads); theVaultHasOneDoor guards it. |
 | src/services/YearInCinemaService.ts | 2026-10-01 | every page of a year, not the first 1,000 |
 | src/services/__tests__/aCountNotReadIsNotZero.test.ts | 2026-10-01 | written with the counts fix |
@@ -863,7 +864,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/listSlice.ts | 2026-10-02 | a film leaves a stack in one write |
 | src/stores/domain/logSlice.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-02 | the log list orders by watched date (undated last) then id, as its cursor reads |
-| src/stores/domain/socialSlice.ts | 2026-09-29 | follow-list wipe fixed; comments read |
+| src/stores/domain/socialSlice.ts | 2026-10-02 | Read (launch audit). Cursor values are timestamps and uuids (no commas), safe unquoted. Sound. |
 | src/stores/domain/watchlistSlice.ts | 2026-10-02 | a film already queued stays, and is said to be |
 | src/stores/films.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/followStore.ts | 2026-10-01 | comments cut to the why |
@@ -1016,7 +1017,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/mutationExecutor.ts | 2026-10-02 | Read whole, every handler (launch audit). A Lounge message replayed from the queue dropped its own id, so a send whose answer was lost posted twice: the id is sent now. add_dossier claimed its id made a retry safe; the view's trigger ignores it, so it is no longer sent. |
 | src/utils/networkError.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/noticeRoute.ts | 2026-10-02 | Read whole (launch audit). Follows groupRoute's one argument. |
-| src/utils/offlineQueue.ts | 2026-09-29 | histories (#77, #82, OFFQ-2) → rules; FALSE: 'reactive UI binding' store (nothing subscribes, no screen reads it); FALSE: schema branch 'MUST come before' duplicate (errorClass is one value; the order lives in classifyQueueError) |
+| src/utils/offlineQueue.ts | 2026-10-02 | Read whole (launch audit). Its two notices counted 'action(s)': counted in words. |
 | src/utils/openNoticeFromPush.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/openSociety.ts | 2026-10-02 | Read whole (launch audit). URLSearchParams.set is implemented in RN 0.81's polyfill (checked). Sound. |
 | src/utils/profileCountsCache.ts | 2026-10-02 | read; sound |
