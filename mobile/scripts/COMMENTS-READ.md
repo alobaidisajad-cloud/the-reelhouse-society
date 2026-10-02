@@ -527,6 +527,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx | 2026-10-02 | a failed door is said; a failed count keeps the last; @handles; decline-all asks first |
 | src/components/profile/__tests__/theHonoursCountTheWholeRecord.test.tsx | 2026-10-01 | written: honours and stamps from the whole record |
 | src/components/profile/__tests__/theOracleClosesClean.test.tsx | 2026-10-01 | written: the Oracle closes clean |
+| src/components/profile/__tests__/theProfileRedrawsForItsOwn.guard.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): the member page never takes the whole film store. |
 | src/components/profile/__tests__/theRestCouldNotBeReached.test.tsx | 2026-10-01 | written: a failed "more" is said in every room |
 | src/components/profile/__tests__/theSharedCardIsAPicture.test.tsx | 2026-10-02 | the share card is unspoken and fixed-size |
 | src/components/profile/__tests__/yearMarker.test.tsx | — |  |

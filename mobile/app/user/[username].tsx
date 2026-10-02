@@ -9,6 +9,7 @@ import AnimatedRN, { Easing, Extrapolation, FadeIn, cancelAnimation, interpolate
 import Svg, { Defs, Ellipse, RadialGradient as SvgRadialGradient, Stop } from 'react-native-svg';
 
 import { useFilmStore } from '@/src/stores/films';
+import { useShallow } from 'zustand/react/shallow';
 
 import type { ProfileLog, ProfileVaultItem, ProfileWatchlistItem } from '@/src/types';
 
@@ -205,7 +206,14 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const { archiveSieve, archiveSearch, listsSearch, physicalSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, setArchiveSieve, setArchiveSearch, setListsSearch, setPhysicalSearch, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setWatchlistDecade, setPhysicalFilter, setPhysicalSort, setListsSort } = ctrl;
 
 
-  const filmStore = useFilmStore();
+  // The eight fields this page reads, compared shallowly: the whole store
+  // redrew this page on every log, watchlist or stack change anywhere.
+  const filmStore = useFilmStore(useShallow((st) => ({
+    logsHasMore: st.logsHasMore, watchlistHasMore: st.watchlistHasMore,
+    listsHasMore: st.listsHasMore, archiveHasMore: st.archiveHasMore,
+    _fetchingLogs: st._fetchingLogs, _fetchingWatchlist: st._fetchingWatchlist,
+    _fetchingLists: st._fetchingLists, _fetchingArchive: st._fetchingArchive,
+  })));
 
   // ── Moderation State ──
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
@@ -254,8 +262,6 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const closeRoulette = useCallback(() => setRouletteOpen(false), [setRouletteOpen]);
   const onRouletteSelect = useCallback((id: number) => { setRouletteOpen(false); nav.push(`/film/${id}`); }, [setRouletteOpen]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { fetchLogs, fetchWatchlist, fetchPhysicalArchive, fetchLists } = filmStore;
   const loadMoreLogs = data.loadMoreLogs;
   const loadMoreWatchlist = data.loadMoreWatchlist;
   const loadMoreVault = data.loadMoreVault;
