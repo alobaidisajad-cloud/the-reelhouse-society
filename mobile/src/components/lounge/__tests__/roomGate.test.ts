@@ -47,6 +47,10 @@ describe('the gate of a public room', () => {
   it('is the transcript for a member', () => {
     expect(gate('approved', { isPrivate: false })).toBe('chat');
   });
+
+  it('a member the host banned is told so, never offered a seat the house refuses', () => {
+    expect(gate('banned', { isPrivate: false })).toBe('banned');
+  });
 });
 
 describe('the house recognises its members at the door', () => {

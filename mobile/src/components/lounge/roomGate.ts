@@ -44,8 +44,11 @@ export function roomGate(room: {
   const { isPrivate, isCreator, standing, requesting, rosterFailed } = room;
   if (isCreator || standing === 'approved' || standing === 'muted') return 'chat';
   if (standing === 'unknown') return rosterFailed ? 'unreachable' : 'knocking';
+  // Before the public room's preview: a member the host has banned was offered
+  // TAKE A SEAT, which the house refuses ("cannot join"), and was told to
+  // check the connection.
+  if (standing === 'banned') return 'banned';
   if (!isPrivate) return 'preview';
   if (standing === 'pending' || requesting) return 'pending';
-  if (standing === 'banned') return 'banned';
   return 'request';
 }

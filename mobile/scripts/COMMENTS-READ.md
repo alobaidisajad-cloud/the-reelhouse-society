@@ -245,7 +245,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/__tests__/theTraySaysWhenTheCatalogueIsAway.test.tsx | — |  |
 | src/components/darkroom/constants.ts | 2026-10-02 | read; sound |
 | src/components/darkroom/DarkroomCards.tsx | 2026-10-02 | doors through nav |
-| src/components/darkroom/DarkroomFilterPanel.tsx | 2026-09-29 | year applied on end of editing (iPhone number pad has no return); named fields |
+| src/components/darkroom/DarkroomFilterPanel.tsx | 2026-10-02 | Read (launch audit). Its chips say their state. Sound. |
 | src/components/darkroom/DarkroomHeader.tsx | 2026-10-02 | Read (launch audit, the unsaid-selection sweep). The filter toggle had no role, no expanded state, and a bare count; CLEAR had no name. Both speak now. |
 | src/components/darkroom/DarkroomHero.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/DarkroomMoodBar.tsx | 2026-10-02 | keys; selected as a state; meaning spoken |
@@ -307,7 +307,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx | — |  |
 | src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | — |  |
 | src/components/dispatch/ComposeDesks.tsx | 2026-09-29 | 16 fixed; 'FILE IT unlit until the film is named' was false (it waits for the SOURCE) |
-| src/components/dispatch/dayLabel.ts | 2026-09-29 | 24-hour reason moved here from paperMetrics; 'margin never scales' was false (displayTextProps 1.2) |
+| src/components/dispatch/dayLabel.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/EssayBody.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
 | src/components/dispatch/FilingRow.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -387,7 +387,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/__tests__/flashListKeyboard.test.tsx | 2026-09-29 | anchor tests |
 | src/components/layout/__tests__/theThumbStaysInItsTrack.test.ts | 2026-10-01 | runs the real maths |
 | src/components/layout/__tests__/TopNavBar.test.tsx | — |  |
-| src/components/layout/CinematicFlashList.tsx | 2026-09-29 | NOT_ANCHORED default (header race) |
+| src/components/layout/CinematicFlashList.tsx | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/components/layout/CinematicScrollbar.tsx | 2026-10-01 | the thumb maths in one place |
 | src/components/layout/CinematicScrollView.tsx | 2026-10-01 | true as written |
 | src/components/layout/ConciergeButton.tsx | 2026-10-02 | door through nav; the hint names all three doors |
@@ -477,7 +477,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/MemberFaceStack.tsx | 2026-10-01 | the faces are fixed, not the words; no "today's card" |
 | src/components/lounge/PublicLoungeCard.tsx | 2026-10-01 | true as written |
 | src/components/lounge/reactions.tsx | 2026-10-01 | true as written |
-| src/components/lounge/roomGate.ts | 2026-09-29 | new |
+| src/components/lounge/roomGate.ts | 2026-10-02 | Read whole (launch audit). A member banned from a PUBLIC room got the preview (TAKE A SEAT), which the house refuses: banned is decided before the preview now. Verified on the server: protect_lounge_member_status refuses any status change but the host's, so neither a muted nor a banned member can seat themselves. |
 | src/components/MarkFigure.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/MasterLogo.tsx | 2026-10-02 | Read (launch audit): artwork. Left alone. |
 | src/components/moderation/__tests__/ContentActionSheet.mute.test.tsx | — |  |
@@ -495,7 +495,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/person/PersonOrnaments.tsx | 2026-10-01 | the rarity mark in the present tense |
 | src/components/person/personStyles.ts | 2026-10-01 | histories to the present |
 | src/components/Preloader.tsx | 2026-10-02 | Read whole (launch audit). A comment about a noise overlay that was never drawn removed. |
-| src/components/PressableScale.tsx | 2026-09-29 | accessible / actions pass through; hitSlop comment condensed |
+| src/components/PressableScale.tsx | 2026-10-02 | Read whole (launch audit). A suspected dropped disabled state was disproved (RN's Pressable merges it). Sound; left alone. |
 | src/components/profile/__tests__/anEmptyLedgerSaysSo.test.tsx | 2026-10-01 | written: an empty ledger is said as one |
 | src/components/profile/__tests__/anHonourIsNeverBroken.test.tsx | — |  |
 | src/components/profile/__tests__/aRoomKeepsWhatTheServerFound.test.ts | 2026-10-01 | written: a room's search on the phone is the server's |
@@ -548,7 +548,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/NoirPassport.tsx | 2026-10-01 | stamps from the whole record only; labels broken between words; said while unread or failed |
 | src/components/profile/ProfileArchiveTab.tsx | 2026-10-01 | nav; IMPORT lands on the import panel; comments say what is true now |
 | src/components/profile/ProfileBackdrop.tsx | 2026-10-02 | comments say what is true now; poster via tmdb.poster |
-| src/components/profile/profileComputed.ts | 2026-09-29 | 24 fixed; T3 ticket notes, 'until the migration lands', histories cut |
+| src/components/profile/profileComputed.ts | 2026-10-02 | Read (launch audit): date work is hand-built or ordering-only. Sound. |
 | src/components/profile/ProfileHelpers.tsx | 2026-10-01 | comments say what is true now |
 | src/components/profile/ProfileLedgerTab.tsx | 2026-10-01 | an empty ledger said as one; the high chip counts from the shared floor; nav; comments say what is true now |
 | src/components/profile/ProfileListsTab.tsx | 2026-10-01 | a search that found nothing is said; nav; no ticket tags or history |

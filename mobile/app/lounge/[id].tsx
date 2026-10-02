@@ -742,6 +742,15 @@ export default function LoungeRoomScreen() {
         </View>
       )}
 
+      {/* A public room still reads for a member the host has banned; they are
+          told why there is no seat, not offered one. */}
+      {gate === 'banned' && canRead && (
+        <View style={[s.mutedBar, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+          <VolumeX size={13} color={colors.fog} strokeWidth={1.5} />
+          <Text style={s.mutedText}>You no longer have a seat in this salon — you can read, but not post.</Text>
+        </View>
+      )}
+
       {gate === 'chat' && isMuted && (
         <View style={[s.mutedBar, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
           <VolumeX size={13} color={colors.fog} strokeWidth={1.5} />
