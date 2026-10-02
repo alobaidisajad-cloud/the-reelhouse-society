@@ -122,7 +122,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-09-29 | 13 fixed + test that runs the real queryFn |
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
-| app/stacks/[id].tsx | 2026-09-29 | 24 fixed; FOUND: critique count dropped by the screen's hand-copied mapping (never shown on a phone); now the payload whole, tested, mutation-killed; a FALSE 'length threshold' fold note |
+| app/stacks/[id].tsx | 2026-10-02 | Read (launch audit): the critique sheet's paging added (620d4f4b); the heart is the server's answer (learnEndorsements writes the index). Sound otherwise. |
 | app/user/[username].tsx | 2026-09-29 | 33 fixed + ~15 unflagged history notes; commented-out CinematicMap import removed; '72 seconds' was 36 |
 | app/year-in-cinema.tsx | 2026-10-01 | nav; a single reel says so far, not the year is young |
 | ARCHITECTURE.md | — |  |
@@ -306,7 +306,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theWritingRoomExplainsItself.test.ts | — |  |
 | src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx | — |  |
 | src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | — |  |
-| src/components/dispatch/ComposeDesks.tsx | 2026-09-29 | 16 fixed; 'FILE IT unlit until the film is named' was false (it waits for the SOURCE) |
+| src/components/dispatch/ComposeDesks.tsx | 2026-10-02 | Read (launch audit, the ballot desk). Sound. |
 | src/components/dispatch/dayLabel.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/EssayBody.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
@@ -392,7 +392,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/CinematicScrollView.tsx | 2026-10-01 | true as written |
 | src/components/layout/ConciergeButton.tsx | 2026-10-02 | door through nav; the hint names all three doors |
 | src/components/layout/FrozenTab.tsx | 2026-10-01 | says it passes through; freezing carried to performance |
-| src/components/layout/navMetrics.ts | — |  |
+| src/components/layout/navMetrics.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/layout/PathTracker.tsx | 2026-10-02 | tells openSociety and nav the screen on every navigation |
 | src/components/layout/SectionCards.tsx | 2026-10-01 | a section title is a heading |
 | src/components/layout/TopNavBar.tsx | 2026-10-02 | Read whole (launch audit). router.navigate kept on purpose: the Lounge is a tab, and push would stack a second tab navigator. Sound. |
