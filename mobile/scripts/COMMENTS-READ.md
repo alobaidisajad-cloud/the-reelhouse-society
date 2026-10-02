@@ -80,7 +80,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/__tests__/list-modal.curate.test.tsx | — |  |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/cover-picker.tsx | 2026-10-01 |  |
-| app/(modals)/list-modal.tsx | 2026-09-29 | histories -> rules; orphan style comments removed; header named the web port and wrong labels |
+| app/(modals)/list-modal.tsx | 2026-10-02 | Read whole (launch audit). Ordering was a drag only (a screen reader heard 'Reorder' and could do nothing): move up/down actions added. The four terms toggles said nothing of which was chosen: selected states. |
 | app/(modals)/log-modal.tsx | 2026-10-01 | Arrive; the scroll needs no Animated |
 | app/(modals)/login.tsx | 2026-10-01 | the terms open; every comment short and true |
 | app/(modals)/membership.tsx | 2026-10-02 | restore asks a visitor to sign in; FOUNDING.seats; one readFoundingCount; no seat offered the store does not sell |

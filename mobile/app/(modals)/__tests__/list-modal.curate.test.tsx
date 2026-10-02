@@ -606,3 +606,26 @@ describe('the search says what happened', () => {
     await waitFor(() => expect(r.getByText('Already in this stack.')).toBeTruthy(), { timeout: 2000 });
   });
 });
+
+describe('a stack can be ordered, and its terms read, without sight', () => {
+  it('the drag has a screen reader’s twin: a film moves one step at a time', async () => {
+    mockParams = { editId: STACK_ID };
+    mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: 2 } };
+    const r = mount();
+    await waitFor(() => expect(r.getByLabelText('Reorder Blade Runner')).toBeTruthy());
+    const row = r.getByLabelText('Reorder Blade Runner');
+    expect(row.props.accessibilityActions.map((a: { name: string }) => a.name)).toEqual(['moveUp', 'moveDown']);
+    await act(async () => { fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'moveDown' } }); });
+    await act(async () => { fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
+    await waitFor(() => expect(mockUpdateList).toHaveBeenCalled());
+    expect(mockUpdateList.mock.calls[0][1].films.map((f: { title: string }) => f.title)).toEqual(['Chinatown', 'Blade Runner']);
+  });
+
+  it('each of the terms says whether it is the one chosen', async () => {
+    const r = mount();
+    expect(r.getByLabelText('Set stack to public').props.accessibilityState).toMatchObject({ selected: true });
+    expect(r.getByLabelText('Set stack to private').props.accessibilityState).toMatchObject({ selected: false });
+    expect(r.getByLabelText('Set stack to unranked').props.accessibilityState).toMatchObject({ selected: true });
+    expect(r.getByLabelText('Set stack to ranked').props.accessibilityState).toMatchObject({ selected: false });
+  });
+});

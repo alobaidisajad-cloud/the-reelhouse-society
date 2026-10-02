@@ -53,7 +53,7 @@ interface SearchResult {
 }
 
  
-const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove }: { item: ListFilm, index: number | undefined, drag: () => void, isActive: boolean, sealed: boolean, onRemove: (id: number) => void }) => {
+const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove, onMove }: { item: ListFilm, index: number | undefined, drag: () => void, isActive: boolean, sealed: boolean, onRemove: (id: number) => void, onMove: (id: number, by: -1 | 1) => void }) => {
     // Cache the index during active drag so the number never flashes to a hyphen.
     const lastIndex = React.useRef<number | undefined>(index);
     if (index !== undefined) {
@@ -76,6 +76,18 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove
                 haptic="light"
                 accessibilityRole={sealed ? 'text' : 'button'}
                 accessibilityLabel={sealed ? item.title : `Reorder ${item.title}`}
+                // A drag a screen reader cannot make: the same order, one step
+                // at a time. Without these a ranked stack could not be ordered
+                // by a member who cannot see it.
+                accessibilityHint={sealed ? undefined : `Number ${displayIndex}. Its actions move it up or down.`}
+                accessibilityActions={sealed ? undefined : [
+                    { name: 'moveUp', label: 'Move up' },
+                    { name: 'moveDown', label: 'Move down' },
+                ]}
+                onAccessibilityAction={sealed ? undefined : (e) => {
+                    if (e.nativeEvent.actionName === 'moveUp') onMove(item.id, -1);
+                    else if (e.nativeEvent.actionName === 'moveDown') onMove(item.id, 1);
+                }}
             >
                 {!sealed && <GripVertical size={16} color={isActive ? colors.sepia : colors.fog} style={s.gripOpacity} />}
                 <View style={[s.rankWrap, isActive && s.rankWrapActive]}>
@@ -267,6 +279,19 @@ export default function ListModal() {
         TactileEngine.mutate();
     }, []);
 
+    /** One step up or down, said aloud: the screen reader's drag. */
+    const moveFilm = useCallback((filmId: number, by: -1 | 1) => {
+        const list = filmsRef.current;
+        const from = list.findIndex(f => f.id === filmId);
+        const to = from + by;
+        if (from < 0 || to < 0 || to >= list.length) return;
+        const next = [...list];
+        [next[from], next[to]] = [next[to], next[from]];
+        setFilms(next);
+        AccessibilityInfo.announceForAccessibility(`${next[to].title}, now number ${to + 1}.`);
+        TactileEngine.selection();
+    }, []);
+
     const handleSave = async () => {
         Keyboard.dismiss();
         // Before setSaving, which only the catch undoes: a return after it would
@@ -329,9 +354,10 @@ export default function ListModal() {
                 isActive={isActive}
                 sealed={holdingsAreSealed}
                 onRemove={removeFilm}
+                onMove={moveFilm}
             />
         );
-    }, [removeFilm, holdingsAreSealed]);
+    }, [removeFilm, moveFilm, holdingsAreSealed]);
 
     const ListHeader = (
         <>
@@ -477,6 +503,7 @@ export default function ListModal() {
                         haptic="selection"
                         accessibilityRole="button"
                         accessibilityLabel="Set stack to public"
+                        accessibilityState={{ selected: !isPrivate }}
                     >
                         <Globe size={14} color={!isPrivate ? colors.ink : colors.fog} />
                         <Text style={[s.toggleText, !isPrivate && s.toggleTextActive]}>PUBLIC</Text>
@@ -488,6 +515,7 @@ export default function ListModal() {
                         haptic="selection"
                         accessibilityRole="button"
                         accessibilityLabel="Set stack to private"
+                        accessibilityState={{ selected: isPrivate }}
                     >
                         <Lock size={14} color={isPrivate ? colors.ink : colors.fog} />
                         <Text style={[s.toggleText, isPrivate && s.toggleTextActive]}>PRIVATE</Text>
@@ -505,6 +533,7 @@ export default function ListModal() {
                         haptic="selection"
                         accessibilityRole="button"
                         accessibilityLabel="Set stack to unranked"
+                        accessibilityState={{ selected: !isRanked }}
                     >
                         <List size={14} color={!isRanked ? colors.ink : colors.fog} />
                         <Text style={[s.toggleText, !isRanked && s.toggleTextActive]}>UNRANKED</Text>
@@ -519,6 +548,7 @@ export default function ListModal() {
                         haptic="selection"
                         accessibilityRole="button"
                         accessibilityLabel="Set stack to ranked"
+                        accessibilityState={{ selected: isRanked }}
                     >
                         <ListOrdered size={14} color={isRanked ? colors.ink : colors.fog} />
                         <Text style={[s.toggleText, isRanked && s.toggleTextActive]}>RANKED</Text>
