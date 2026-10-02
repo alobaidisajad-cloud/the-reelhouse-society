@@ -162,7 +162,6 @@ describe('FilmStore Integration Tests (T2-4)', () => {
             lists: [],
             interactions: [],
             physicalArchive: [],
-            stubs: [],
             _loggedIndex: {},
             _watchlistIndex: {},
             _endorsedIndex: {},

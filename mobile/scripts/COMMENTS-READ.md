@@ -779,11 +779,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/MemberDiscoveryService.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
 | src/services/ModerationService.ts | 2026-10-02 | read; sound |
 | src/services/ProfileDataService.ts | 2026-09-29 | 24 fixed; 'Sentry breadcrumb' was dev-only logger.info (logged for step 6); a dead file ref; ticket tags |
-| src/services/ProfileWriteService.ts | — |  |
+| src/services/ProfileWriteService.ts | 2026-10-02 | the circle's cursors through pgLiteral |
 | src/services/StackService.ts | 2026-09-30 | the delete's comment said a refusal "is seen" and never read it; made true |
 | src/services/VaultService.ts | — |  |
 | src/services/YearInCinemaService.ts | 2026-10-01 | every page of a year, not the first 1,000 |
 | src/services/__tests__/aCountNotReadIsNotZero.test.ts | 2026-10-01 | written with the counts fix |
+| src/stores/__tests__/aBlockListLeavesWithItsMember.test.ts | 2026-10-02 | sign-out erases the saved block list |
 | src/stores/__tests__/aFailedLoadKeepsWhoYouFollow.test.ts | 2026-09-29 | follow-list wipe fixed; comments read |
 | src/stores/__tests__/aFailedReadIsSaid.test.ts | 2026-10-01 | written: a failed read is answered as failed |
 | src/stores/__tests__/aFailedSettingStaysUndone.test.ts | 2026-09-29 | new |
@@ -836,24 +837,27 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/vaultStore.test.ts | — |  |
 | src/stores/__tests__/watchlistSlice.test.ts | — |  |
 | src/stores/auth.ts | 2026-10-01 | username sign-in says what failed; comments short |
-| src/stores/blockStore.ts | — |  |
+| src/stores/blockStore.ts | 2026-10-02 | sign-out erases the leaving member's saved list |
 | src/stores/createSelectors.ts | — |  |
 | src/stores/discover.ts | — |  |
 | src/stores/dispatch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/stores/dispatchTypes.ts | — |  |
+| src/stores/domain/__tests__/aFilmAlreadyQueuedStaysQueued.test.ts | 2026-10-02 | a film already on the watchlist stays, and is said to be |
 | src/stores/domain/__tests__/aShelfIsNeverHeldHostage.test.ts | — |  |
+| src/stores/domain/__tests__/aStackLosesOneFilmInOneWrite.test.ts | 2026-10-02 | a stack loses one film in one write |
 | src/stores/domain/__tests__/cursorPagination.test.ts | — |  |
 | src/stores/domain/__tests__/logOperations.pure.test.ts | — |  |
 | src/stores/domain/__tests__/logReconciliation.test.ts | — |  |
-| src/stores/domain/archiveSlice.ts | — |  |
+| src/stores/domain/__tests__/theDiaryPagesWithoutGaps.test.ts | 2026-10-02 | the log list orders as its cursor reads |
+| src/stores/domain/archiveSlice.ts | 2026-10-02 | the dropped ticket stubs removed |
 | src/stores/domain/helpers/promiseMutex.ts | — |  |
 | src/stores/domain/helpers/sessionGuard.ts | 2026-10-01 | true as written |
-| src/stores/domain/interactionSlice.ts | — |  |
-| src/stores/domain/listSlice.ts | — |  |
+| src/stores/domain/interactionSlice.ts | 2026-10-02 | read; sound |
+| src/stores/domain/listSlice.ts | 2026-10-02 | a film leaves a stack in one write |
 | src/stores/domain/logSlice.ts | — |  |
-| src/stores/domain/logSlice/helpers/logOperations.ts | — |  |
+| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-02 | the log list orders by watched date (undated last) then id, as its cursor reads |
 | src/stores/domain/socialSlice.ts | 2026-09-29 | follow-list wipe fixed; comments read |
-| src/stores/domain/watchlistSlice.ts | — |  |
+| src/stores/domain/watchlistSlice.ts | 2026-10-02 | a film already queued stays, and is said to be |
 | src/stores/films.ts | — |  |
 | src/stores/followStore.ts | 2026-10-01 | comments cut to the why |
 | src/stores/lounge.ts | 2026-10-02 | read; sound (a suspension said in the house's words is an app-wide class, listed) |
@@ -1001,7 +1005,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/lastTab.ts | 2026-10-01 | new: back within the half hour, back on the tab |
 | src/utils/linking.ts | — |  |
 | src/utils/logger.ts | — |  |
-| src/utils/mappers.ts | — |  |
+| src/utils/mappers.ts | 2026-10-02 | dead mappers removed (dossier, lounge message, watchlist, archive) |
 | src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/memberDrafts.ts | — |  |
 | src/utils/memoryManager.ts | — |  |

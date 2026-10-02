@@ -143,22 +143,3 @@ export interface HalfLifeEntry {
     trajectory: 'ASCENDING' | 'DECAYING' | 'ETERNAL';
     delta: number;
 }
-
-// ── Ticket Stub ──
-export interface TicketStub {
-    id: string
-    filmTitle?: string
-    film_title?: string
-    venue_name?: string  // Legacy — kept for existing ticket stubs in DB
-    showtime_date?: string
-    date?: string
-    seat_label?: string
-    seat?: string
-    ticketType?: string
-    amount?: number
-    qrCode?: string | null
-    screenName?: string | null
-    poster_path?: string | null
-    createdAt?: string
-    created_at?: string
-}

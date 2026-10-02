@@ -168,6 +168,10 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
                     // one that speaks for itself. Sighted members see the row
                     // appear; without this a VoiceOver member got nothing at all.
                     try { require('react-native').AccessibilityInfo.announceForAccessibility('Added to watchlist'); } catch { /* test env */ }
+                } else if ((error as { code?: string }).code === '23505') {
+                    // Already on it: saved beyond the pages this phone has loaded.
+                    // It stays, and is said as what it is, never as a failure.
+                    reelToast(`"${newEntry.title}" is already on your watchlist.`);
                 } else {
                     // Not a network failure — the offline branch above owns those.
                     captureError(error, { scope: 'watchlistSlice.addToWatchlist', filmId: film.id });

@@ -54,7 +54,8 @@ export interface BlockState {
   hydrateFromCache: (userId: string) => void;
   persistToCache: (userId: string) => void;
   syncFromServer: (userId: string) => Promise<void>;
-  clearOnLogout: () => void;
+  /** Empties the lists, and erases the saved copy of `userId`'s (the member leaving). */
+  clearOnLogout: (userId?: string | null) => void;
 }
 
 // ── Store Implementation ────────────────────────────────────────────────────
@@ -429,11 +430,13 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
     }
   },
 
-  clearOnLogout: () => {
-    const currentUser = useAuthStore.getState().user;
-    if (currentUser) {
+  clearOnLogout: (userId) => {
+    // The id the reset is handed: logout clears the signed-in member BEFORE the
+    // resets run, so reading it here found no one and the saved list stayed.
+    const leaving = userId ?? useAuthStore.getState().user?.id ?? null;
+    if (leaving) {
       try {
-        storage.delete(MMKV_KEY(currentUser.id));
+        storage.delete(MMKV_KEY(leaving));
       } catch (e) {
         logger.warn('[BlockStore] clearOnLogout MMKV delete failed:', e);
       }
@@ -449,6 +452,6 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
 }));
 
 // ── Register cleanup handler for centralized logout ──────────────────────────
-registerStoreReset(() => {
-  useBlockStore.getState().clearOnLogout();
+registerStoreReset((previousUserId) => {
+  useBlockStore.getState().clearOnLogout(previousUserId);
 });

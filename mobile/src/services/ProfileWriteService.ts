@@ -7,6 +7,7 @@ import { withAbortSignal } from '../utils/withAbortSignal';
 import { storage } from '../stores/mmkv-storage';
 import { CACHE_KEYS } from '../constants/cacheKeys';
 import { rememberPreviousHandle } from '../utils/handleHistory';
+import { pgLiteral } from '../utils/keysetCursor';
 
 /**
  * Canonical column list for auth-bootstrap profile SELECT queries.
@@ -270,8 +271,8 @@ export const ProfileService = {
         if (cursor) {
             if (cursor.includes('|')) {
                 const [cursorDate, cursorId] = cursor.split('|');
-                const safeId = /^\d+$/.test(String(cursorId)) ? cursorId : `"${cursorId}"`;
-                query = query.or(`created_at.lt."${cursorDate}",and(created_at.eq."${cursorDate}",user_id.lt.${safeId})`);
+                const at = pgLiteral(cursorDate);
+                query = query.or(`created_at.lt.${at},and(created_at.eq.${at},user_id.lt.${pgLiteral(cursorId)})`);
             } else {
                 query = query.lt('created_at', cursor);
             }
@@ -297,8 +298,8 @@ export const ProfileService = {
         if (cursor) {
             if (cursor.includes('|')) {
                 const [cursorDate, cursorId] = cursor.split('|');
-                const safeId = /^\d+$/.test(String(cursorId)) ? cursorId : `"${cursorId}"`;
-                query = query.or(`created_at.lt."${cursorDate}",and(created_at.eq."${cursorDate}",target_user_id.lt.${safeId})`);
+                const at = pgLiteral(cursorDate);
+                query = query.or(`created_at.lt.${at},and(created_at.eq.${at},target_user_id.lt.${pgLiteral(cursorId)})`);
             } else {
                 query = query.lt('created_at', cursor);
             }

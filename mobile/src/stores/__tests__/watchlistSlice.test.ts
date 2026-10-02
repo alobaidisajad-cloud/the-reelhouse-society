@@ -209,14 +209,16 @@ describe('watchlistSlice', () => {
         it('should rollback on non-network server error', async () => {
             (supabase.from as jest.Mock) = jest.fn(() => ({
                 insert: jest.fn().mockReturnValue({
+                    // A refusal. (A duplicate, 23505, is a film already queued: it
+                    // stays — see aFilmAlreadyQueuedStaysQueued.)
                     then: jest.fn((cb) => cb({
-                        error: { message: 'Duplicate key violation', code: '23505' },
+                        error: { message: 'new row violates row-level security policy', code: '42501' },
                     })),
                 }),
             }));
 
             await useLogStore.getState().addToWatchlist({
-                id: 6000, title: 'Dupe Film', poster_path: '/dupe.jpg',
+                id: 6000, title: 'Refused Film', poster_path: '/dupe.jpg',
             });
 
             // Wait for the detached promise chain to complete

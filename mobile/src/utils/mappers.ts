@@ -1,136 +1,17 @@
 /**
- * mappers.ts — Shared Row → Domain Mapping Functions
- * ───────────────────────────────────────────────────
- * Single source of truth for transforming Supabase row shapes
- * into domain model types. Eliminates duplicated mapping logic
- * across stores (content.ts, lounge.ts).
- *
- * Rules:
- *   • Every function is PURE — no side effects, no imports from stores
- *   • Every function is TYPED — no `any`, explicit input and output
- *   • Every optional field has a safe fallback
+ * mappers.ts — Supabase rows into the app's shapes, in one place: logs, stacks,
+ * and the store's records into the profile screen's. Pure functions, typed,
+ * with a safe fallback for every optional field.
  */
 
 import type { DomainLog, FilmList, PhysicalArchiveItem, WatchlistItem } from '../types';
-import { formatDate } from './timeAgo';
 import type { ProfileList, ProfileLog, ProfileVaultItem, ProfileWatchlistItem } from '../types/profile.types';
 
 function safeJsonParse(val: string) {
   try { return JSON.parse(val); } catch { return null; }
 }
 
-export interface DossierRow {
-  id: string;
-  title: string;
-  excerpt?: string | null;
-  full_content?: string | null;
-  author_username?: string | null;
-  user_id: string;
-  views?: number | null;
-  certify_count?: number | null;
-  created_at: string;
-}
-
-export interface Dossier {
-  id: string;
-  title: string;
-  excerpt: string;
-  fullContent: string;
-  author: string;
-  authorUsername: string;
-  authorId: string;
-  views: number;
-  certifyCount: number;
-  date: string;
-  raw_created_at: string;
-}
-
-/**
- * Maps a Supabase dossier row to the domain Dossier type.
- * Handles all null/undefined fields with safe fallbacks.
- */
-export function mapDossierRow(d: DossierRow): Dossier {
-  return {
-    id: d.id,
-    title: d.title,
-    excerpt: d.excerpt ?? '',
-    fullContent: d.full_content ?? '',
-    author: d.author_username?.toUpperCase() ?? 'ANONYMOUS',
-    authorUsername: d.author_username ?? '',
-    authorId: d.user_id,
-    views: d.views ?? 0,
-    certifyCount: d.certify_count ?? 0,
-    // The house formatter, not Intl (which the phone's Hermes has no polyfill for).
-    date: formatDate(d.created_at),
-    raw_created_at: d.created_at,
-  };
-}
-
-// ── Lounge Message Types ──
-
-export interface LoungeMessageRow {
-  id: string;
-  lounge_id: string;
-  user_id: string;
-  content: string;
-  type: string;
-  reply_to_id?: string | null;
-  reply_to_username?: string | null;
-  reply_to_content?: string | null;
-  film_id?: number | null;
-  film_title?: string | null;
-  film_poster?: string | null;
-  metadata?: Record<string, unknown> | null;
-  created_at: string;
-  profiles: { username: string; avatar_url?: string } | { username: string; avatar_url?: string }[] | null;
-}
-
-export interface MappedLoungeMessage {
-  id: string;
-  lounge_id: string;
-  user_id: string;
-  username: string;
-  avatar_url?: string;
-  content: string;
-  type: 'text' | 'film_share' | 'log_share' | 'list_share' | 'dossier_share' | 'system';
-  reply_to_id?: string | null;
-  reply_to_username?: string | null;
-  reply_to_content?: string | null;
-  film_id?: number | null;
-  film_title?: string | null;
-  film_poster?: string | null;
-  metadata?: Record<string, unknown> | null;
-  created_at: string;
-}
-
-/**
- * Maps a Supabase lounge_messages join row to the domain LoungeMessage type.
- * Handles the polymorphic profiles join (can be object or array depending on
- * Supabase query config).
- */
-export function mapMessageRow(m: LoungeMessageRow): MappedLoungeMessage {
-  const profileData = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
-
-  return {
-    id: m.id,
-    lounge_id: m.lounge_id,
-    user_id: m.user_id,
-    username: profileData?.username ?? 'unknown',
-    avatar_url: profileData?.avatar_url,
-    content: m.content,
-    type: (m.type as MappedLoungeMessage['type']) ?? 'text',
-    reply_to_id: m.reply_to_id,
-    reply_to_username: m.reply_to_username,
-    reply_to_content: m.reply_to_content,
-    film_id: m.film_id,
-    film_title: m.film_title,
-    film_poster: m.film_poster,
-    metadata: m.metadata,
-    created_at: m.created_at,
-  };
-}
-
-// ── Log Row Types (F-08 APEX FIX) ──
+// ── Logs ──
 
 export interface LogRow {
   id: string;
@@ -168,17 +49,9 @@ export interface LogRow {
 
 
 /**
- * Single source of truth for Supabase log row → domain mapping: the log store,
- * the profile's reads and Year in Cinema all map a row here, so every consumer
- * handles its fields and nulls the same way.
- */
-/**
- * Centralized select column string — single source of truth.
- * Used by logSlice.fetchLogs() and any future log-fetching queries.
- * When adding a new column to the logs table, update this constant
- * AND the LogRow interface above in a single commit.
- */
-/**
+ * The columns a member's own logs are read with; a new logs column is added
+ * here and to LogRow together.
+ *
  * `private_notes` is NOT here, and must never come back.
  *
  * The column is kept blank by a trigger on purpose: a note belongs to a VIEWING
@@ -201,6 +74,7 @@ export const LOG_SELECT_COLUMNS = 'id, user_id, film_id, film_title, poster_path
  */
 export const PUBLIC_LOG_COLUMNS = 'id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, watched_with, abandoned_reason, physical_media, is_autopsied, autopsy, alt_poster, editorial_header, drop_cap, pull_quote, video_url, format, created_at, view_count, viewing_history, viewing_id' as const;
 
+/** The one mapping of a logs row: the log store, the profile's reads and Year in Cinema use it. */
 export function mapLogRow(dbLog: LogRow): DomainLog {
   return {
     id: dbLog.id,
@@ -232,15 +106,9 @@ export function mapLogRow(dbLog: LogRow): DomainLog {
 }
 
 /**
- * Reverse mapper — DomainLog fields → Supabase column names.
- * Eliminates the manual 20-line if-chain in logSlice.updateLog().
- * Only includes keys that are present in the updates object.
- */
-/**
- * T5-02 REFACTOR: Declarative field map replaces 18-line if-chain.
- * Adding a new log column = one entry in this table + updating LogRow and DomainLog.
- * The `defaultOnNull` is used when the domain field can be undefined but the DB column
- * must have a value (e.g., review defaults to '' instead of NULL).
+ * DomainLog fields → the logs table's columns, for an edit: only the keys an
+ * update carries. `defaultOnNull` is for a column that must hold a value
+ * (a review is '' rather than NULL).
  */
 const LOG_FIELD_MAP: { domain: keyof DomainLog; db: string; defaultOnNull?: string | number | boolean }[] = [
   { domain: 'rating', db: 'rating' },
@@ -276,91 +144,7 @@ export function mapLogToDbPayload(updates: Partial<Record<keyof DomainLog, Domai
   return db;
 }
 
-// ── Watchlist Row Types (T2-1 FIX) ──
-
-export interface WatchlistRow {
-  id: string;
-  user_id: string;
-  film_id: number;
-  film_title: string;
-  poster_path?: string | null;
-  year?: number | null;
-  created_at: string;
-}
-
-export interface MappedWatchlistItem {
-  /** @deprecated Use `filmId` for TMDB lookups or `rowId` for mutations. Ambiguous — will be removed in v2. */
-  id: number;
-  /** BLOCK6-B: Supabase primary key — use for delete/update mutations */
-  rowId: string;
-  /** BLOCK6-B: TMDB film ID — use for detail lookups and dedup */
-  filmId: number;
-  title: string;
-  poster: string | null;
-  year: number | null;
-}
-
-/** Canonical select columns for watchlist queries. */
-export const WATCHLIST_SELECT_COLUMNS = 'id, user_id, film_id, film_title, poster_path, year, created_at' as const;
-
-/** Single source of truth for Supabase watchlist row → domain mapping. */
-export function mapWatchlistRow(w: WatchlistRow): MappedWatchlistItem {
-  return {
-    id: w.film_id,      // DEPRECATED: backward compat
-    rowId: w.id,         // Supabase PK
-    filmId: w.film_id,   // TMDB ID
-    title: w.film_title,
-    poster: w.poster_path ?? null,
-    year: w.year ?? null,
-  };
-}
-
-// ── Archive Row Types (T2-1 FIX) ──
-
-export interface ArchiveRow {
-  id: string;
-  user_id: string;
-  film_id: number;
-  film_title: string;
-  poster_path?: string | null;
-  year?: number | null;
-  formats?: string[] | null;
-  notes?: string | null;
-  condition?: string | null;
-  created_at: string;
-}
-
-export interface MappedArchiveItem {
-  id: string;
-  filmId: number;
-  title: string;
-  poster: string | null;
-  year: number | null;
-  formats: string[];
-  notes: string;
-  condition: string;
-  createdAt: string;
-}
-
-/** Canonical select columns for physical_archive queries. */
-export const ARCHIVE_SELECT_COLUMNS = 'id, user_id, film_id, film_title, poster_path, year, formats, notes, condition, created_at' as const;
-
-/** Single source of truth for Supabase archive row → domain mapping. */
-export function mapArchiveRow(row: ArchiveRow): MappedArchiveItem {
-  return {
-    id: row.id,
-    filmId: row.film_id,
-    title: row.film_title,
-    poster: row.poster_path ?? null,
-    year: row.year ?? null,
-    formats: row.formats ?? [],
-    notes: row.notes ?? '',
-    condition: row.condition ?? 'good',
-    createdAt: row.created_at,
-  };
-}
-
-// ── List Row Types (T2-1 FIX) ──
+// ── Stacks ──
 
 export interface ListItemRow {
   id: string;

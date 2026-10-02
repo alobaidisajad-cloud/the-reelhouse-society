@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import { supabase } from '../../lib/supabase';
-import { PhysicalArchiveItem, TicketStub } from '../../types';
+import { PhysicalArchiveItem } from '../../types';
 import { enqueueMutation } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
 import { isArchivistPlusTier } from '../../utils/tier';
@@ -17,7 +17,6 @@ export interface ArchiveSliceData {
     archivePage: number;
     _fetchingArchive: boolean;
     _archiveCursor: string | null;
-    stubs: TicketStub[];
 }
 
 /** A FUNCTION, never a shared constant — see `logSliceInitialState`. */
@@ -27,7 +26,6 @@ export const archiveSliceInitialState = (): ArchiveSliceData => ({
     archivePage: 0,
     _fetchingArchive: false,
     _archiveCursor: null,
-    stubs: [],
 });
 
 export interface ArchiveSlice extends ArchiveSliceData {
@@ -36,9 +34,6 @@ export interface ArchiveSlice extends ArchiveSliceData {
     addToPhysicalArchive: (film: { id: number; title?: string; name?: string; poster_path?: string | null; poster?: string | null; release_date?: string }, formats: string[], notes?: string, condition?: string) => Promise<void>;
     removeFromPhysicalArchive: (filmId: number) => Promise<void>;
     updatePhysicalArchiveItem: (filmId: number, updates: Partial<PhysicalArchiveItem>) => Promise<void>;
-    
-    fetchStubs: () => Promise<void>;
-    saveStub: (stub: Partial<TicketStub> & { showtimeId?: string, slotId?: string }) => Promise<string | null>;
 }
 
 export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice> = (set, get) => ({
@@ -114,7 +109,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
                 const nextCursor = hasMore && lastRow ? `${lastRow.created_at}|${lastRow.id}` : null;
 
                 if (!userId || userId === useAuthStore.getState().user?.id) {
-                    set((prev) => ({ 
+                    set((prev) => ({
                         physicalArchive: loadMore ? [...prev.physicalArchive, ...items] : items,
                         archiveHasMore: hasMore,
                         archivePage: (loadMore ? prev.archivePage : 0) + 1,
@@ -153,7 +148,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
 
         const existingItem = get().physicalArchive.find(item => item.filmId === film.id);
         const newFormats = existingItem ? Array.from(new Set([...existingItem.formats, ...formats])) : formats;
-        
+
         const newItem: PhysicalArchiveItem = {
             id: String(existingItem ? existingItem.id : `-${Date.now()}`),
             filmId: film.id,
@@ -187,17 +182,17 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             // Left mid-write — see sessionGuard. The row is saved server-side
             // either way; the writes below would put it in the next member's store.
             if (!stillSignedIn(user.id)) return;
-            
+
             if (error) throw error;
-            
+
             if (data && !existingItem) {
                 set(state => ({
-                    physicalArchive: state.physicalArchive.map(item => 
+                    physicalArchive: state.physicalArchive.map(item =>
                         item.filmId === film.id ? { ...item, id: data.id } : item
                     )
                 }));
             }
-         
+
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'archiveSlice.addToPhysicalArchive' });
             if (isNetworkError(e)) {
@@ -214,8 +209,8 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             }
             set((state) => {
                 const filtered = state.physicalArchive.filter(i => i.filmId !== film.id);
-                return { 
-                    physicalArchive: existingItem ? [existingItem, ...filtered] : filtered 
+                return {
+                    physicalArchive: existingItem ? [existingItem, ...filtered] : filtered
                 };
             });
             reelToast.error('Failed to update physical archive.');
@@ -249,7 +244,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             const { error } = await supabase.from('physical_archive').delete().eq('user_id', user.id).eq('film_id', filmId);
             if (!stillSignedIn(user.id)) return;
             if (error) throw error;
-         
+
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'archiveSlice.removeFromPhysicalArchive' });
             if (isNetworkError(e)) {
@@ -268,11 +263,11 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
     updatePhysicalArchiveItem: async (filmId: number, updates: Partial<PhysicalArchiveItem>) => {
         const user = useAuthStore.getState().user;
         if (!user || !isArchivistPlusTier(user)) return;
-        
+
         const prevItem = get().physicalArchive.find(a => a.filmId === filmId);
-        
+
         set((state) => ({ physicalArchive: state.physicalArchive.map(a => a.filmId === filmId ? { ...a, ...updates } : a) }));
-        
+
         try {
             const dbUpdates: Record<string, any> = {};
             if (updates.formats) dbUpdates.formats = updates.formats;
@@ -281,7 +276,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             const { error } = await supabase.from('physical_archive').update(dbUpdates).eq('user_id', user.id).eq('film_id', filmId);
             if (!stillSignedIn(user.id)) return;
             if (error) throw error;
-         
+
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'archiveSlice.updatePhysicalArchiveItem' });
             if (isNetworkError(e)) {
@@ -301,14 +296,4 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
         }
     },
 
-    // fetchStubs and saveStub were removed with batch 31. They read and wrote
-    // `tickets` and `showtimes`, two tables from an abandoned cinema-booking
-    // feature that has now been dropped. Neither had a single call site in the
-    // app or in the shipped TestFlight build — verified across the whole history
-    // — so they were unreachable code pointing at tables that no longer exist.
-    //
-    // `stubs` stays on the slice as an empty array so nothing reading it breaks;
-    // removing the field is a UI decision, not cleanup.
-    fetchStubs: async () => { /* removed with batch 31 — `tickets` no longer exists */ },
-    saveStub: async () => null,
 });

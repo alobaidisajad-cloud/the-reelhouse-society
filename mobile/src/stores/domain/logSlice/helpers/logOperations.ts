@@ -71,10 +71,13 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
 
         const PAGE_SIZE = 50;
 
+        // Ordered as the next page is asked for: by watched date (undated last,
+        // as the cursor reads them), then by id. Films watched on one day share a
+        // date, and a tie broken any other way is skipped or repeated at a page edge.
         let query = supabase
             .from('logs').select(LOG_SELECT_COLUMNS).eq('user_id', user.id)
-            .order('watched_date', { ascending: false })
-            .order('created_at', { ascending: false })
+            .order('watched_date', { ascending: false, nullsFirst: false })
+            .order('id', { ascending: false })
             .limit(PAGE_SIZE);
 
         const cursor = loadMore ? state._logsCursor : null;

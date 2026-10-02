@@ -14,20 +14,10 @@
 import * as fc from 'fast-check';
 import {
     mapLogRow,
-    mapWatchlistRow,
     mapListRow,
-    mapArchiveRow,
-    mapDossierRow,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    mapMessageRow,
     mapLogToDbPayload,
     type LogRow,
-    type WatchlistRow,
     type ListRow,
-    type ArchiveRow,
-    type DossierRow,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    type LoungeMessageRow,
 } from '../../src/utils/mappers';
 // `MappedLog` was imported from mappers and has never existed there. mapLogRow
 // returns DomainLog, which is what the two `keyof` uses below actually want.
@@ -66,31 +56,6 @@ const arbLogRow: fc.Arbitrary<LogRow> = fc.record({
     view_count: fc.option(fc.integer({ min: 0 }), { nil: null }),
     viewing_history: fc.option(fc.constant([]), { nil: null }),
 });
-
-const arbWatchlistRow: fc.Arbitrary<WatchlistRow> = fc.record({
-    id: fc.uuid(),
-    user_id: fc.uuid(),
-    film_id: fc.integer({ min: 1, max: 999999 }),
-    film_title: fc.string({ minLength: 1, maxLength: 100 }),
-    poster_path: fc.option(fc.string(), { nil: null }),
-    year: fc.option(fc.integer({ min: 1888, max: 2030 }), { nil: null }),
-    created_at: arbISODate,
-});
-
-const arbArchiveRow: fc.Arbitrary<ArchiveRow> = fc.record({
-    id: fc.uuid(),
-    user_id: fc.uuid(),
-    film_id: fc.integer({ min: 1, max: 999999 }),
-    film_title: fc.string({ minLength: 1, maxLength: 100 }),
-    poster_path: fc.option(fc.string(), { nil: null }),
-    year: fc.option(fc.integer({ min: 1888, max: 2030 }), { nil: null }),
-    formats: fc.option(fc.array(fc.string(), { maxLength: 5 }), { nil: null }),
-    notes: fc.option(fc.string(), { nil: null }),
-    condition: fc.option(fc.constantFrom('excellent', 'good', 'fair', 'poor'), { nil: null }),
-    created_at: arbISODate,
-});
-
-// ── Unit Tests ──
 
 describe('mappers', () => {
     // ── mapLogRow ──
@@ -176,73 +141,6 @@ describe('mappers', () => {
         });
     });
 
-    // ── mapWatchlistRow ──
-
-    describe('mapWatchlistRow', () => {
-        it('should correctly map watchlist fields', () => {
-            const input: WatchlistRow = {
-                id: 'wl-123',
-                user_id: 'user-1',
-                film_id: 550,
-                film_title: 'Fight Club',
-                poster_path: '/poster.jpg',
-                year: 1999,
-                created_at: '2024-01-15T12:00:00Z',
-            };
-
-            const result = mapWatchlistRow(input);
-
-            expect(result.rowId).toBe('wl-123');
-            expect(result.filmId).toBe(550);
-            expect(result.id).toBe(550); // deprecated alias
-            expect(result.title).toBe('Fight Club');
-            expect(result.poster).toBe('/poster.jpg');
-            expect(result.year).toBe(1999);
-        });
-
-        it('should handle null poster_path and year', () => {
-            const input: WatchlistRow = {
-                id: 'wl-124',
-                user_id: 'user-1',
-                film_id: 100,
-                film_title: 'No Poster Film',
-                created_at: '2024-01-01T00:00:00Z',
-            };
-
-            const result = mapWatchlistRow(input);
-            expect(result.poster).toBeNull();
-            expect(result.year).toBeNull();
-        });
-    });
-
-    // ── mapArchiveRow ──
-
-    describe('mapArchiveRow', () => {
-        it('should correctly map archive fields with defaults', () => {
-            const input: ArchiveRow = {
-                id: 'arc-1',
-                user_id: 'user-1',
-                film_id: 550,
-                film_title: 'Fight Club',
-                poster_path: null,
-                year: null,
-                formats: null,
-                notes: null,
-                condition: null,
-                created_at: '2024-01-01T00:00:00Z',
-            };
-
-            const result = mapArchiveRow(input);
-
-            expect(result.poster).toBeNull();
-            expect(result.year).toBeNull();
-            expect(result.formats).toEqual([]);
-            expect(result.notes).toBe('');
-            expect(result.condition).toBe('good'); // Default
-        });
-    });
-
-    // ── mapListRow ──
 
     describe('mapListRow', () => {
         it('should correctly map list with items', () => {
@@ -289,29 +187,6 @@ describe('mappers', () => {
         });
     });
 
-    // ── mapDossierRow ──
-
-    describe('mapDossierRow', () => {
-        it('should correctly map dossier with null fields', () => {
-            const input: DossierRow = {
-                id: 'dos-1',
-                title: 'Test Dossier',
-                user_id: 'user-1',
-                created_at: '2024-06-15T12:00:00Z',
-            };
-
-            const result = mapDossierRow(input);
-
-            expect(result.excerpt).toBe('');
-            expect(result.fullContent).toBe('');
-            expect(result.author).toBe('ANONYMOUS');
-            expect(result.authorUsername).toBe('');
-            expect(result.views).toBe(0);
-            expect(result.certifyCount).toBe(0);
-        });
-    });
-
-    // ── mapLogToDbPayload (reverse mapper) ──
 
     describe('mapLogToDbPayload', () => {
         it('should reverse-map domain fields to DB columns', () => {
@@ -368,49 +243,6 @@ describe('mappers', () => {
                 fc.property(arbLogRow, (row) => {
                     // Should not throw
                     mapLogRow(row);
-                    return true;
-                }),
-                { numRuns: 100 },
-            );
-        });
-
-        it('PROPERTY: mapWatchlistRow always produces required fields', () => {
-            fc.assert(
-                fc.property(arbWatchlistRow, (row) => {
-                    const result = mapWatchlistRow(row);
-                    return (
-                        typeof result.rowId === 'string' &&
-                        typeof result.filmId === 'number' &&
-                        typeof result.title === 'string' &&
-                        result.id === result.filmId // deprecated alias
-                    );
-                }),
-                { numRuns: 100 },
-            );
-        });
-
-        it('PROPERTY: mapArchiveRow always produces required fields', () => {
-            fc.assert(
-                fc.property(arbArchiveRow, (row) => {
-                    const result = mapArchiveRow(row);
-                    return (
-                        typeof result.id === 'string' &&
-                        typeof result.filmId === 'number' &&
-                        typeof result.title === 'string' &&
-                        Array.isArray(result.formats) &&
-                        typeof result.notes === 'string' &&
-                        typeof result.condition === 'string' &&
-                        typeof result.createdAt === 'string'
-                    );
-                }),
-                { numRuns: 100 },
-            );
-        });
-
-        it('PROPERTY: mapArchiveRow never throws on valid input', () => {
-            fc.assert(
-                fc.property(arbArchiveRow, (row) => {
-                    mapArchiveRow(row);
                     return true;
                 }),
                 { numRuns: 100 },

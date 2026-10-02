@@ -430,53 +430,26 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         if (!filmToRemove) return;
         
         const filmToRemoveIndex = currentList.films.findIndex(f => f.id === filmId);
-
-        // Remove film and recompute positions
         const newFilms = currentList.films.filter((f) => f.id !== filmId);
-        // Only compute positions for trailing films that mathematically shifted.
-        const trailing_films = newFilms.slice(filmToRemoveIndex).map((f, idx) => ({ id: f.id, title: f.title, poster: f.poster, rank_position: filmToRemoveIndex + idx }));
 
         set((state) => ({
             lists: state.lists.map((l) => l.id === listId ? { ...l, films: newFilms } : l),
         }));
 
         try {
+            // One write: this film, and nothing else. The films after it keep
+            // their positions; a gap in rank_position orders exactly as before,
+            // and a new film is placed after the last (max + 1). A second write
+            // renumbering them could fail after this one had landed, and the
+            // revert below then showed a film the server no longer held.
             const { error } = await supabase.from('list_items').delete().eq('list_id', listId).eq('film_id', filmId);
             if (!stillSignedIn(startedAs)) return;
             if (error) throw error;
-
-            // Sync trailing films online to fix Position-Shift paradox
-            if (trailing_films.length > 0) {
-                const rows = trailing_films.map(f => ({
-                    list_id: listId, film_id: f.id, film_title: f.title ?? 'Unknown', poster_path: f.poster ?? null, rank_position: f.rank_position
-                }));
-                const { error: upsertError } = await supabase.from('list_items').upsert(rows, { onConflict: 'list_id,film_id' });
-                if (upsertError) {
-                    // Instead of trying to re-insert the deleted film (which also requires network),
-                    // queue ONLY the trailing position fix. The delete already succeeded (correct behavior),
-                    // so we just need the positions fixed on next flush.
-                    if (isNetworkError(upsertError)) {
-                        const currentUser = useAuthStore.getState().user;
-                        if (currentUser) {
-                            enqueueMutation({ type: 'update_list', payload: {
-                                list_id: listId, user_id: currentUser.id, updates: {},
-                                films: newFilms.map((f, idx) => ({ id: f.id, title: f.title, poster_path: f.poster, position: idx })),
-                                removed_film_ids: [],
-                            } });
-                        }
-                        queryClient.invalidateQueries({ queryKey: ['stack', listId] });
-                        reelToast('Positions saved offline. Will sync when connected.');
-                        return;
-                    }
-                    throw upsertError;
-                }
-            }
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.removeFilmFromList' });
             if (isNetworkError(e)) {
-                // Queue for offline sync
-                enqueueMutation({ type: 'remove_film_from_list', payload: { list_id: listId, film_id: filmId, trailing_films } });
+                enqueueMutation({ type: 'remove_film_from_list', payload: { list_id: listId, film_id: filmId } });
                 queryClient.invalidateQueries({ queryKey: ['stack', listId] });
                 reelToast('Film removed offline. Will sync when connected.');
                 return;

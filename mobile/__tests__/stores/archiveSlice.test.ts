@@ -87,7 +87,6 @@ describe('archiveSlice', () => {
             physicalArchive: [],
             archiveHasMore: true,
             _archiveCursor: null,
-            stubs: [],
             logs: [],
             _loggedIndex: {},
             interactions: [],
