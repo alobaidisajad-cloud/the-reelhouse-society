@@ -80,3 +80,39 @@ describe('remainingChars', () => {
     expect(remainingChars(overLimit, 'bio')).toBeLessThan(0);
   });
 });
+
+describe('the joiners are kept where they join, and only there', () => {
+  // Built from code points, so what each case holds is not left to an editor.
+  const s = (...cps: number[]) => String.fromCodePoint(...cps);
+  const ZWJ = 0x200d;
+  const ZWNJ = 0x200c;
+
+  it.each([
+    ['a shrug, a woman', s(0x1f937, ZWJ, 0x2640, 0xfe0f)],
+    ['a technologist', s(0x1f469, ZWJ, 0x1f4bb)],
+    ['a rainbow flag', s(0x1f3f3, 0xfe0f, ZWJ, 0x1f308)],
+    ['a heart on fire', s(0x2764, 0xfe0f, ZWJ, 0x1f525)],
+    ['a family', s(0x1f468, ZWJ, 0x1f469, ZWJ, 0x1f467)],
+    ['a skin tone, then a joiner', s(0x1f469, 0x1f3fd, ZWJ, 0x1f4bb)],
+  ])('%s stays one emoji', (_name, emoji) => {
+    expect(sanitizeInput(`Loved it ${emoji}`, 'loungeMessage')).toBe(`Loved it ${emoji}`);
+  });
+
+  it('a Persian word keeps the non-joiner it is spelled with', () => {
+    const word = s(0x0645, 0x06cc, ZWNJ, 0x062e, 0x0648, 0x0627, 0x0647, 0x0645);
+    expect(sanitizeInput(word, 'review')).toBe(word);
+  });
+
+  it('a joiner that joins nothing goes: between Latin letters, at an edge, doubled', () => {
+    expect(sanitizeInput(`Ka${s(ZWJ)}ne`, 'review')).toBe('Kane');
+    expect(sanitizeInput(`Ka${s(ZWNJ)}ne`, 'review')).toBe('Kane');
+    expect(sanitizeInput(`${s(ZWJ)}Kane${s(ZWNJ)}`, 'review')).toBe('Kane');
+    expect(sanitizeInput(s(0x1f469, ZWJ, ZWJ, 0x1f4bb), 'review')).toBe(s(0x1f469, ZWJ, 0x1f4bb));
+    expect(sanitizeInput(`${s(0x1f469, ZWJ)} done`, 'review')).toBe(`${s(0x1f469)} done`);
+  });
+
+  it('the length helpers measure the same kept joiners', () => {
+    const emoji = s(0x1f469, ZWJ, 0x1f4bb);
+    expect(remainingChars(emoji, 'bio')).toBe(MAX_LENGTHS.bio - emoji.length);
+  });
+});

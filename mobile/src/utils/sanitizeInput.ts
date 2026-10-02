@@ -9,7 +9,43 @@
 // marks, isolates, embeddings/overrides \u2014 U+202E reorders what is shown from what is stored.
 // A string, so guards build a NON-global RegExp: a /g regex's test() alternates its answers.
 export const INVISIBLE_CHAR_CLASS = '\\u200B\\u200C\\u200D\\u200E\\u200F\\u202A-\\u202E\\uFEFF\\u00AD\\u034F\\u2028\\u2029\\u2060\\u2061\\u2062\\u2063\\u2064\\u2066\\u2067\\u2068\\u2069\\u206A-\\u206F';
-const INVISIBLE_CHARS = new RegExp(`[${INVISIBLE_CHAR_CLASS}]`, 'g');
+/** Everything above but the two joiners, which `joinersThatJoin` decides. */
+const INVISIBLE_CHARS = new RegExp(`[${INVISIBLE_CHAR_CLASS.replace('\\u200C\\u200D', '')}]`, 'g');
+
+const ZWNJ = 0x200c;
+const ZWJ = 0x200d;
+
+/** A letter of a script whose letters join: Arabic and Persian, Syriac, N'Ko, the Indic scripts, Myanmar, Khmer, Mongolian. */
+const joins = (c: number) =>
+  (c >= 0x0600 && c <= 0x08ff) || (c >= 0x0900 && c <= 0x0dff) || (c >= 0x1000 && c <= 0x109f)
+  || (c >= 0x1780 && c <= 0x18af) || (c >= 0xfb50 && c <= 0xfdff) || (c >= 0xfe70 && c <= 0xfefc);
+/** The end of an emoji: its low surrogate, the emoji presentation selector, or a symbol (♀ ❤ ⚕). */
+const endsEmoji = (c: number) => (c >= 0xdc00 && c <= 0xdfff) || c === 0xfe0f || (c >= 0x2190 && c <= 0x2bff);
+/** The start of an emoji: its high surrogate, or a symbol. */
+const startsEmoji = (c: number) => (c >= 0xd800 && c <= 0xdbff) || (c >= 0x2190 && c <= 0x2bff);
+
+/**
+ * The joiners are kept where they join, and only there.
+ *
+ * They are part of the writing: 🤷‍♀️ and 👩‍💻 are emoji joined by U+200D, and
+ * Persian sets می‌خواهم with U+200C. Stripped, the first became a shrug and a
+ * female sign, and the word fell apart. Anywhere else — between Latin letters,
+ * at an edge, doubled — a joiner joins nothing and hides something, and goes.
+ */
+function joinersThatJoin(text: string): string {
+  let out = '';
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (c === ZWNJ || c === ZWJ) {
+      const before = out.charCodeAt(out.length - 1);
+      const after = text.charCodeAt(i + 1);
+      const keep = (joins(before) && joins(after)) || (c === ZWJ && endsEmoji(before) && startsEmoji(after));
+      if (!keep) continue;
+    }
+    out += text[i];
+  }
+  return out;
+}
 
 /** Control characters except newline (\n), carriage return (\r), and tab (\t) */
 const CONTROL_CHARS = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
@@ -71,11 +107,11 @@ export type FieldType = keyof typeof MAX_LENGTHS;
  */
 export function cleanForStorage(text: string): string {
   if (!text) return '';
-  return text
+  return joinersThatJoin(text
     .replace(INVISIBLE_CHARS, '')
-    .replace(CONTROL_CHARS, '')
+    .replace(CONTROL_CHARS, ''))
     .replace(/\n{4,}/g, '\n\n\n')  // max 3 consecutive newlines
-    .replace(/[ \t]{10,}/g, '  ')   // max 2 consecutive spaces
+    .replace(/[ \t]{10,}/g, '  ')   // a run of ten or more spaces becomes two
     .trim();
 }
 
