@@ -864,7 +864,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/films.ts | — |  |
 | src/stores/followStore.ts | 2026-10-01 | comments cut to the why |
 | src/stores/lounge.ts | 2026-10-02 | read; sound (a suspension said in the house's words is an app-wide class, listed) |
-| src/stores/markCounts.ts | — |  |
+| src/stores/markCounts.ts | 2026-10-02 | read; sound |
 | src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
 | src/stores/notificationStore.ts | 2026-10-02 | first page ordered by time then id; moreFailed |
 | src/stores/offlineQueueStore.ts | — |  |
@@ -1010,7 +1010,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/logger.ts | — |  |
 | src/utils/mappers.ts | 2026-10-02 | dead mappers removed (dossier, lounge message, watchlist, archive) |
 | src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/utils/memberDrafts.ts | — |  |
+| src/utils/memberDrafts.ts | 2026-10-02 | read; sound (drafts go to storage unencrypted on a keystore failure: a trade-off, listed) |
 | src/utils/memoryManager.ts | — |  |
 | src/utils/mutationExecutor.ts | 2026-09-28 | The header said the queue pauses 100ms between mutations: it pauses 0ms. The subject_backdrop cap added (offline gate). Audit tags and history removed; each replay's reason kept, shortened. |
 | src/utils/networkError.ts | — |  |
@@ -1036,7 +1036,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/tierDoor.ts | 2026-10-01 | the server sentence as a door |
 | src/utils/tierRefusal.ts | 2026-10-01 | by the sentence, not the code |
 | src/utils/timeAgo.ts | — |  |
-| src/utils/toastBus.ts | — |  |
+| src/utils/toastBus.ts | 2026-10-02 | a toast stays long enough to read |
 | src/utils/typedRouter.ts | 2026-10-02 | read; sound |
 | src/utils/validateUsername.ts | — |  |
 | src/utils/validateWithTelemetry.ts | 2026-10-01 | docs cut to what the types do not say |

@@ -166,3 +166,13 @@ describe('a toast has one home', () => {
     expect(AccessibilityInfo.announceForAccessibility).not.toHaveBeenCalled();
   });
 });
+
+describe('a toast stays long enough to read', () => {
+  it('a short one keeps the floor; a long one stays for its length; none outstays nine seconds', () => {
+    expect(toastDuration({ message: 'Saved.' })).toBe(2500);
+    expect(toastDuration({ message: 'Saved.', action: { label: 'Undo', onPress: () => {} } })).toBe(5000);
+    const long = 'The payment went through, but the rank has not reached the house yet. Tap RESTORE, or write to support@example.com.';
+    expect(toastDuration({ message: long })).toBe(long.length * 67);
+    expect(toastDuration({ message: 'x'.repeat(400) })).toBe(9000);
+  });
+});

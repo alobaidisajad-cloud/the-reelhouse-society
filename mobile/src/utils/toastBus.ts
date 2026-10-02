@@ -45,8 +45,14 @@ export interface ToastPayload {
   };
 }
 
-/** A toast that asks for a response stays twice as long. */
-export const toastDuration = (toast: Pick<ToastPayload, 'action'>) => (toast.action ? 5000 : 2500);
+/**
+ * Long enough to read, at about fifteen characters a second: never under 2.5s
+ * (5s for one that asks for a response), never over 9s. A fixed 2.5s left the
+ * house's longest sentences ("The payment went through, but the rank has not
+ * reached the house yet…") gone before they could be read.
+ */
+export const toastDuration = (toast: { action?: ToastPayload['action']; message?: string }) =>
+  Math.min(9000, Math.max(toast.action ? 5000 : 2500, (toast.message?.length ?? 0) * 67));
 /** The exit animation's length, plus a beat — the toast is removed after it. */
 export const TOAST_EXIT_MS = 450;
 /** Toasts allowed to wait behind the one on screen. */
