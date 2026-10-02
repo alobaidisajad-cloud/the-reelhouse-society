@@ -99,7 +99,7 @@ describe('describeGroup — the copy the old code got wrong', () => {
 
 describe('groupRoute — the dead tap target', () => {
   it('every kind has somewhere to go', () => {
-    expect(groupRoute({ kind: 'log', id: 'L1' }, 1234)).toBe('/film/1234');
+    expect(groupRoute({ kind: 'log', id: 'L1' })).toBe('/log/L1');
     expect(groupRoute({ kind: 'list', id: 'S1' })).toBe('/stacks/S1');
     expect(groupRoute({ kind: 'dossier', id: 'D1' })).toBe('/dossier/D1');
   });
@@ -108,12 +108,12 @@ describe('groupRoute — the dead tap target', () => {
     // The old handler was `if (item.film_id) push('/film/' + film_id)`. Stacks and
     // dossiers have no film, so the sheet closed and nothing happened — a dead button
     // that only appears once grouping starts working.
-    expect(groupRoute({ kind: 'list', id: 'S1' }, undefined)).not.toBeNull();
-    expect(groupRoute({ kind: 'dossier', id: 'D1' }, undefined)).not.toBeNull();
+    expect(groupRoute({ kind: 'list', id: 'S1' })).not.toBeNull();
+    expect(groupRoute({ kind: 'dossier', id: 'D1' })).not.toBeNull();
   });
 
-  it('a log with no film resolves to no route rather than a broken one', () => {
-    expect(groupRoute({ kind: 'log', id: 'L1' }, undefined)).toBeNull();
+  it('a certified log opens the log — the film was the wrong room, and no film was no room', () => {
+    expect(groupRoute({ kind: 'log', id: 'L1' })).toBe('/log/L1');
     expect(groupRoute(null)).toBeNull();
   });
 });

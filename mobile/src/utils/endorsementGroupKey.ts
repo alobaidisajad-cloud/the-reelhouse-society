@@ -99,21 +99,18 @@ export function describeGroup(count: number, kind: EndorseKind, title?: string):
 }
 
 /**
- * Where tapping a group should go.
+ * Where tapping a group should go: to the thing that was certified.
  *
- * The old handler routed by `film_id` and nothing else, so a stack or dossier group
- * would have closed the sheet and navigated nowhere — a dead button that only appears
- * once grouping starts working. Every kind now has a destination, and all three routes
- * exist (`/film/[id]`, `/stacks/[id]`, `/dossier/[id]`).
- *
- * Logs route to the FILM because there is no per-log screen; that also matches what the
- * individual-notification row already does.
+ * A log opens the LOG — what was certified is the member's own entry, and the
+ * Lobby's notice for a log already opens it there. It went to the film, on the
+ * belief that there was no page for a log; there is (`/log/[id]`), and a notice
+ * that came without a film went nowhere at all.
  */
-export function groupRoute(target: EndorseTarget | null, filmId?: number): string | null {
+export function groupRoute(target: EndorseTarget | null): string | null {
   if (!target) return null;
   switch (target.kind) {
     case 'log':
-      return filmId ? `/film/${filmId}` : null;
+      return `/log/${target.id}`;
     case 'list':
       return `/stacks/${target.id}`;
     case 'post':

@@ -38,7 +38,7 @@ export function lobbyRoute(key: string | null | undefined): string | null {
 export function noticeRoute(notice: Pick<AppNotification, 'group_key' | 'film_id' | 'from_username'>): string | null {
   const honoured = lobbyRoute(notice.group_key);
   if (honoured) return honoured;
-  const about = groupRoute(parseGroupKey(notice.group_key), notice.film_id);
+  const about = groupRoute(parseGroupKey(notice.group_key));
   if (about) return about;
   if (notice.film_id) return `/film/${notice.film_id}`;
   if (notice.from_username) return `/user/${notice.from_username}`;

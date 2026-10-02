@@ -52,7 +52,7 @@ describe('where a notice leads', () => {
     expect(noticeRoute(notice({ group_key: `endorse:dossier:${ESSAY}` }))).toBe(`/dossier/${ESSAY}`);
     expect(noticeRoute(notice({ group_key: 'endorse:list:s1' }))).toBe('/stacks/s1');
     expect(noticeRoute(notice({ group_key: 'endorse:post:p1' }))).toBe('/dispatch/p1');
-    expect(noticeRoute(notice({ group_key: 'endorse:log:l1', film_id: 603 }))).toBe('/film/603');
+    expect(noticeRoute(notice({ group_key: 'endorse:log:l1', film_id: 603 }))).toBe('/log/l1');
     expect(noticeRoute(notice({ film_id: 603, from_username: 'marguerite' }))).toBe('/film/603');
     expect(noticeRoute(notice({ type: 'follow', from_username: 'marguerite' }))).toBe('/user/marguerite');
     expect(noticeRoute(notice({}))).toBeNull();

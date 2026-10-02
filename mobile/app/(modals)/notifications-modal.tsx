@@ -129,8 +129,8 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
     }
     nav.back();
     InteractionManager.runAfterInteractions(() => {
-      // By what the group is about: a log, a stack or a dossier.
-      const route = groupRoute(parseGroupKey(item.groupKey), item.film_id);
+      // By what the group is about: a log, a stack, an essay or a filing.
+      const route = groupRoute(parseGroupKey(item.groupKey));
       if (route) nav.push(route as never);
     });
   };
