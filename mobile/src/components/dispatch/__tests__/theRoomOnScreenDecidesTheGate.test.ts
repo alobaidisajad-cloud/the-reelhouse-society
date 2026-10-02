@@ -111,4 +111,19 @@ describe('the standing waits for the roster', () => {
     const code = stripComments(SRC);
     expect(code).toMatch(/roomGate\(\{[\s\S]*standing: myStatus,[\s\S]*rosterFailed,[\s\S]*\}\)/);
   });
+
+  it('the header counts one member as one MEMBER', () => {
+    // It printed `1 MEMBERS`; the gate below it already said "1 member".
+    expect(stripComments(SRC)).toMatch(/\{seated\} \{seated === 1 \? 'MEMBER' : 'MEMBERS'\}/);
+    expect(stripComments(SRC)).not.toMatch(/\|\| 0\)\} MEMBERS/);
+  });
+
+  it('a new room starts without the last room’s record', () => {
+    // The reset cleared standing, roster and verdicts but kept `localLounge`:
+    // the last room's name, privacy and host drew the header and decided the
+    // gate until this room's answer came — and for good if it failed.
+    const code = stripComments(SRC);
+    const effect = code.slice(code.indexOf('setNotFound(false);'), code.indexOf('const loadLounge = async ()'));
+    expect(effect).toMatch(/setLocalLounge\(null\);/);
+  });
 });

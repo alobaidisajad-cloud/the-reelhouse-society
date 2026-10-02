@@ -414,6 +414,9 @@ export default function LoungeRoomScreen() {
     // A new room starts found: the last room's verdict is not this one's.
     setNotFound(false);
     setLoadFailed(false);
+    // Nor its record: the last room's name, privacy and host drew the header and
+    // decided the gate until this one's answer came — and for good if it failed.
+    setLocalLounge(null);
     const loadLounge = async () => {
       const { data: loungeData, error } = await supabase.from('lounges').select('*').eq('id', id).maybeSingle();
       if (cancelled) return;
@@ -437,6 +440,8 @@ export default function LoungeRoomScreen() {
   const canRead = isApproved || isMuted || (activeLounge ? !activeLounge.is_private : false);
   const canPost = isApproved && !isMuted;
   const pendingMembers = useMemo(() => members.filter(m => m.status === 'pending'), [members]);
+  // Seated: the roster's, or the room's own count until the roster is read.
+  const seated = members.filter(m => m.status !== 'pending').length || activeLounge?.member_count || 0;
 
   // What gate (if any) replaces the transcript.
   const gate: RoomGate = !activeLounge ? 'chat' : roomGate({
@@ -591,7 +596,7 @@ export default function LoungeRoomScreen() {
           <Text style={s.headerTitle} numberOfLines={1}>{activeLounge.name}</Text>
           <View style={s.headerMeta}>
             <Text style={s.headerMetaText} numberOfLines={1}>
-              {(members.filter(m => m.status !== 'pending').length || activeLounge.member_count || 0)} MEMBERS
+              {seated} {seated === 1 ? 'MEMBER' : 'MEMBERS'}
             </Text>
             {/* THE HOUSE PULSE — the ember glows only when the room truly breathes */}
             {presentCount >= 2 && (
@@ -666,7 +671,7 @@ export default function LoungeRoomScreen() {
         <GateView
           gate={gate}
           lounge={activeLounge}
-          memberCount={members.filter(m => m.status !== 'pending').length || activeLounge.member_count || 0}
+          memberCount={seated}
           onRequest={handleRequest}
           onRetry={retryRoster}
           pending={pending}

@@ -113,7 +113,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | 2026-10-01 | a failed read and a missing log said apart; nav; Arrive |
 | app/lounge.tsx | 2026-10-01 | true as written |
-| app/lounge/[id].tsx | 2026-09-29 | standing unknown until the roster is read; messages spoken + actions; unnamed controls; histories to rules |
+| app/lounge/[id].tsx | 2026-10-02 | Read whole (launch audit). A new room kept the last room's record (name, privacy, host) until its own answer came, and for good if that failed: cleared with the rest. The header said '1 MEMBERS'. |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | — |  |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | 2026-10-01 | the not-found way out says where it goes; histories to the present |
@@ -219,7 +219,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/theToastHasOneHome.test.tsx | — |  |
 | src/components/__tests__/theToastIsDrawnOnTop.test.ts | — |  |
 | src/components/atmosphere/__tests__/useSharedImage.test.tsx | — |  |
-| src/components/atmosphere/RoomBloom.tsx | — |  |
+| src/components/atmosphere/RoomBloom.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/atmosphere/RoomLight.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/atmosphere/useSharedImage.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/auth/AuthChrome.tsx | 2026-10-01 | true as written |
@@ -1005,7 +1005,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/handleGuard.ts | 2026-10-02 | Read whole (launch audit). Still rejects both joiners in a handle (the full class). Sound. |
 | src/utils/handleHistory.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/handleNotice.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/utils/housePages.ts | — |  |
+| src/utils/housePages.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/html.ts | 2026-10-01 | ticket numbers out of the header |
 | src/utils/imagePrefetcher.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/keysetCursor.ts | 2026-10-02 | quotes escaped with a backslash, as PostgREST reads them (measured 2026-10-02) |
