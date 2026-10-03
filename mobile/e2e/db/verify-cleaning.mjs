@@ -11,6 +11,7 @@
  * Needs API_URL and ANON_KEY (from `supabase status -o env`) and the seeded
  * member's E2E_MEMBER_USERNAME / E2E_MEMBER_PASSWORD.
  */
+import { Buffer } from 'node:buffer';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
