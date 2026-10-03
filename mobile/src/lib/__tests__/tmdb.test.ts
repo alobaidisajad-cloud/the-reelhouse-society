@@ -200,14 +200,22 @@ describe('tmdb.search', () => {
   });
 
   it('falls back to the typo tier when tier 1 returns no results, dropping the worst-fit word', async () => {
-    mockFetchOnce({ results: [] });
-    mockFetchOnce(null, false, 404);
-    mockFetchOnce({
-      results: [{ id: 5, title: 'The Matrix', media_type: 'movie', popularity: 200 }],
+    // Answered by what is ASKED, not by the order of the calls: each word left
+    // out is its own search, and both find something, so the tier has to choose.
+    // Leaving out "teh" finds the film; leaving out "matrix" finds a stray.
+    const answers: Record<string, unknown[]> = {
+      'teh matrix': [],
+      matrix: [{ id: 5, title: 'The Matrix', media_type: 'movie', popularity: 200 }],
+      teh: [{ id: 6, title: 'Teh Stray', media_type: 'movie', popularity: 3 }],
+    };
+    (global.fetch as jest.Mock).mockImplementation(async (_url: string, init: { body: string }) => {
+      const asked = new URL('https://proxy' + JSON.parse(init.body).path).searchParams.get('query') ?? '';
+      return { ok: true, status: 200, json: async () => ({ results: answers[asked] ?? [] }) };
     });
     const result = await tmdb.search('teh matrix');
     expect(result.searchType).toBe('typo');
-    expect(result.matchedContext).toContain('IGNORED');
+    expect(result.matchedContext).toBe('IGNORED "TEH"');
+    expect(result.results.map((r: any) => r.id)).toEqual([5]);
   }, 10000);
 });
 

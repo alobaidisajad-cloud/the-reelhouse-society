@@ -38,6 +38,8 @@ it('the catalogue down alone is carried with the answer, and the answer is not k
   expect(result.current.data?._down).toEqual({ films: true, users: false, logs: false, lists: false });
   expect(result.current.data?._partial).toBe(true);
   expect(result.current.data?.users.length).toBe(1);   // the rest of the search still works
+  // Not kept: a partial answer is stale at once, so the next look asks again.
+  expect(result.current.isStale).toBe(true);
 });
 
 it('a search every source answered is clean', async () => {
@@ -45,4 +47,6 @@ it('a search every source answered is clean', async () => {
   await waitFor(() => expect(result.current.isSuccess).toBe(true));
   expect(result.current.data?._down).toEqual({ films: false, users: false, logs: false, lists: false });
   expect(result.current.data?._partial).toBe(false);
+  // A clean answer is worth keeping.
+  expect(result.current.isStale).toBe(false);
 });

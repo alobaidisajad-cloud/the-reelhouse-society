@@ -46,9 +46,13 @@ it('once what it holds runs out, the press asks for the next older page', async 
   expect(older).toHaveBeenCalledTimes(1);
 });
 
-it('while the page is on its way it says so, and takes no second press', () => {
-  const r = mount(5, 140, jest.fn(), true);
+it('while the page is on its way it says so, and takes no second press', async () => {
+  const older = jest.fn();
+  const r = mount(5, 140, older, true);
   expect(r.getByText('READING EARLIER CRITIQUES…')).toBeTruthy();
+  // The second press, pressed: it must not ask the house for the page again.
+  await act(async () => { await fireEvent.press(r.getByLabelText('Reading earlier critiques')); });
+  expect(older).not.toHaveBeenCalled();
 });
 
 it('without a way to fetch, nothing is offered that could not be reached', () => {

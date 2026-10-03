@@ -25,7 +25,17 @@ jest.mock('@/src/utils/offlineQueue', () => ({
   flushOfflineQueue: jest.fn(),
 }));
 
-const mockIsNetworkError = jest.fn((_e: unknown) => false);
+/**
+ * Network only for the network's own sentence — never "yes" to everything, or a
+ * failed read misfiled as "no such member" would be queued as if it were offline.
+ */
+const mockSaysNetwork = (e: unknown) =>
+  /Network request failed/.test(typeof e === 'string' ? e : String((e as { message?: unknown })?.message ?? ''));
+const mockIsNetworkError = jest.fn(mockSaysNetwork);
+/** A profiles read as supabase-js answers it: RESOLVED, with the failure in `error`. */
+const profilesRead = (answer: { data: unknown; error: unknown }) => ({
+  select: jest.fn(() => ({ eq: jest.fn(() => ({ maybeSingle: jest.fn().mockResolvedValue(answer) })) })),
+});
 jest.mock('@/src/utils/networkError', () => ({
   isNetworkError: (e: unknown) => mockIsNetworkError(e),
 }));
@@ -66,7 +76,7 @@ const { followUser, clearSocialCaches } = socialSlice;
 describe('Social Rollback Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockIsNetworkError.mockReturnValue(false);
+    mockIsNetworkError.mockImplementation(mockSaysNetwork);
     clearSocialCaches();
     // Reset to clean state using REAL store
     useSocialStore.setState({
@@ -89,17 +99,9 @@ describe('Social Rollback Integration', () => {
     // Snapshot pre-state
     const preFollowing = [...useSocialStore.getState().following];
 
-    // Mock: profiles lookup throws a server error (non-network)
+    // Mock: the profiles lookup answers with a server error (non-network)
     mockSupabaseFrom.mockImplementation((table: string) => {
-      if (table === 'profiles') {
-        return {
-          select: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockRejectedValue(new Error('Database connection lost')),
-            }),
-          }),
-        };
-      }
+      if (table === 'profiles') return profilesRead({ data: null, error: { message: 'Database connection lost', code: '57P01' } });
       return {};
     });
 
@@ -128,20 +130,10 @@ describe('Social Rollback Integration', () => {
       _requestedIndex: new Set(),
     });
 
-    // Configure: network error detection
-    mockIsNetworkError.mockReturnValue(true);
-
-    // Mock: profiles lookup fails with network error
+    // Mock: the profiles lookup answers with the network's failure, as supabase-js
+    // does — resolved, with the error in `error`, never thrown.
     mockSupabaseFrom.mockImplementation((table: string) => {
-      if (table === 'profiles') {
-        return {
-          select: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockRejectedValue(new TypeError('Network request failed')),
-            }),
-          }),
-        };
-      }
+      if (table === 'profiles') return profilesRead({ data: null, error: { message: 'TypeError: Network request failed' } });
       return {};
     });
 

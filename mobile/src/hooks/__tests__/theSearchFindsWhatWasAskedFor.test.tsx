@@ -96,6 +96,18 @@ describe('a row says what it is', () => {
     );
     expect(r.queryByText(/◉/, { includeHiddenElements: true })).toBeNull();
     expect(r.getByRole('button', { name: 'Log of Vertigo by @kane, rated 3.5 of 5. "Tom & Jerry"' })).toBeTruthy();
+    // Drawn: the five reels as they are painted — three whole, one half, one empty.
+    const reels: string[] = [];
+    const walk = (n: unknown) => {
+      if (!n || typeof n !== 'object') return;
+      if (Array.isArray(n)) { n.forEach(walk); return; }
+      const node = n as { props?: { source?: { testUri?: string } }; children?: unknown[] };
+      const kind = /rating-(full|half|empty)\.png$/.exec(node.props?.source?.testUri ?? '');
+      if (kind) reels.push(kind[1]);
+      (node.children ?? []).forEach(walk);
+    };
+    walk(r.toJSON());
+    expect(reels).toEqual(['full', 'full', 'full', 'half', 'empty']);
   });
 });
 

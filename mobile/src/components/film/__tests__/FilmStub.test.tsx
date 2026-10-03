@@ -73,8 +73,13 @@ describe('the stub states what is true, and only what is true', () => {
   it('shows no reels for a log that carries no rating', () => {
     // A rating of zero is "not rated", not "zero reels". Drawing an empty rail
     // would read as a verdict of nothing.
+    // Counted by the reels' own pictures. The rail carries no label on the stub,
+    // so asking for one by name found nothing whether the rail was drawn or not.
+    const reels = (tree: ReturnType<typeof render>) => (textOf(tree).match(/rating-(full|half|empty)\.png/g) || []).length;
+    const rated = render(<FilmStub {...base} existingLog={{ status: 'watched', rating: 4 }} />);
+    expect(reels(rated)).toBe(5);   // the instrument sees a rail when there is one
     const t = render(<FilmStub {...base} existingLog={{ status: 'watched', rating: 0 }} />);
-    expect(t.queryByLabelText(/reels?/i)).toBeNull();
+    expect(reels(t)).toBe(0);
     // Still SEEN: only the rail is missing, not the stub.
     expect(textOf(t)).toContain('SEEN');
   });

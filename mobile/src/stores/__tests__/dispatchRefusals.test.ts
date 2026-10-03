@@ -20,6 +20,8 @@ import type { Filing } from '../dispatchTypes';
 type Outcome = 'ok' | 'refused' | 'offline' | 'throw';
 let mockOutcome: Outcome = 'ok';
 let mockReadFails = false;
+/** Only the member's own marks (the `.in()` reads) are refused; the page still answers. */
+let mockViewerReadFails = false;
 let mockUser: { id: string; username: string } | null = { id: 'u1', username: 'me' };
 let mockPages: unknown[][] = [];
 let mockCount: number | null = 0;
@@ -74,9 +76,13 @@ jest.mock('../../lib/supabase', () => ({
       };
       chain.eq = () => self(); chain.is = () => self(); chain.gt = () => self();
       chain.order = () => self(); chain.or = () => self();
-      chain.in = () => (mockReadFails
-        ? Promise.reject(new Error('viewer read failed'))
-        : Promise.resolve({ data: [], error: null }));
+      chain.in = () => {
+        if (mockReadFails) return Promise.reject(new Error('viewer read failed'));
+        if (mockViewerReadFails) {
+          return Promise.resolve({ data: null, error: { message: 'permission denied for table dispatch_certifications', code: '42501' } });
+        }
+        return Promise.resolve({ data: [], error: null });
+      };
       chain.limit = () => settle(mockPages.shift() ?? []);
       chain.range = () => settle(mockPages.shift() ?? []);
       chain.maybeSingle = () => settle(null);
@@ -140,7 +146,7 @@ const reset = (over: Record<string, unknown> = {}) => {
 const settle = () => new Promise((r) => setTimeout(r, 0));
 
 beforeEach(() => {
-  mockOutcome = 'ok'; mockReadFails = false; mockMidFlight = null;
+  mockOutcome = 'ok'; mockReadFails = false; mockViewerReadFails = false; mockMidFlight = null;
   mockUser = { id: 'u1', username: 'me' };
   mockPages = []; mockCount = 0;
   mockAsks.length = 0; mockCapture.mockClear();
@@ -297,12 +303,19 @@ describe('a read that fails', () => {
   });
 
   it('leaves the marks alone when the viewer’s own state cannot be read', async () => {
-    mockPages = [[rowOf(1)]];
-    mockReadFails = true;
-    await useDispatch.getState().fetch().catch(() => {});
-    // Nothing is invented: no mark is set from a read that did not happen.
-    expect(useDispatch.getState().certifiedIds.size).toBe(0);
-    expect(useDispatch.getState().savedIds.size).toBe(0);
+    // The page answers; only the member's own marks are refused. Failing the
+    // page as well would end the fetch before the marks were ever asked for.
+    reset({ certifiedIds: new Set(['f1']), savedIds: new Set(['f1']), myVotes: { f1: 2 } });
+    mockPages = [[rowOf(1), rowOf(2)]];
+    mockViewerReadFails = true;
+    await useDispatch.getState().fetch();
+    // The page landed and the marks were asked for: that read is the one that failed.
+    expect(useDispatch.getState().filings.map((f) => f.id)).toEqual(['f1', 'f2']);
+    expect(mockCapture).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ where: 'dispatch.viewerState' }));
+    // Nothing held is taken away, and nothing is invented for the filing beside it.
+    expect([...useDispatch.getState().certifiedIds]).toEqual(['f1']);
+    expect([...useDispatch.getState().savedIds]).toEqual(['f1']);
+    expect(useDispatch.getState().myVotes).toEqual({ f1: 2 });
   });
 
   it('keeps the critique footer pressable when a page of them fails', async () => {

@@ -93,24 +93,27 @@ describe('pressing an act runs it', () => {
 /**
  * ── THE ORDER THAT MAKES THE OVERLAY SAFE ───────────────────────────────────
  * `actThenClose` is the shape of the modal-over-modal decision: the tray comes
- * down FIRST, then the act runs. This reproduces it exactly rather than
- * importing it, because what matters is the ORDER, and an assertion that both
- * things happened would pass with them the wrong way round.
+ * down FIRST, then the act runs.
+ *
+ * Read from the layout's own source, because a render cannot see it: React
+ * batches the close and whatever the act sets into ONE render either way round,
+ * so the order exists only for the native side. This used to test a copy of
+ * the function written here — which could never fail when the real one flipped.
  */
 describe('an act that travels closes the tray first', () => {
-  const actThenClose = (setOpen: (v: boolean) => void, run: () => void) => () => {
-    setOpen(false);
-    run();
-  };
+  const ORDER = /const actThenClose = useCallback\(\(run: \(\) => void\) => \(\) => \{\s*setTrayOpen\(false\);\s*run\(\);\s*\}, \[\]\);/;
 
   it('closes before it runs', () => {
-    const order: string[] = [];
-    const handler = actThenClose(
-      () => order.push('closed'),
-      () => order.push('ran'),
-    );
-    handler();
-    expect(order).toEqual(['closed', 'ran']);
+    const src = require('fs').readFileSync(
+      require('path').join(__dirname, '..', 'FilmDetailLayout.tsx'), 'utf8');
+    expect(src).toMatch(ORDER);
+  });
+
+  it('the order check can say no', () => {
+    expect('const actThenClose = useCallback((run: () => void) => () => {\n  run();\n  setTrayOpen(false);\n}, []);')
+      .not.toMatch(ORDER);
+    expect('const actThenClose = useCallback((run: () => void) => () => {\n  setTrayOpen(false);\n  run();\n}, []);')
+      .toMatch(ORDER);
   });
 
   it('and the layout builds its travelling acts that way', () => {

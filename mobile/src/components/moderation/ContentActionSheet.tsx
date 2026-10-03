@@ -37,8 +37,8 @@ export interface ContentActionSheetProps {
   onClose: () => void;
   onReport: () => void;
   onBlock: () => void;
-  /** Optional: callers that pass `hideMute` never render the Mute row, so they
-   *  have no handler to give. Mirrors onUnblock/onUnmute below. */
+  /** Optional: a sheet given no handler draws no Mute row at all. A row that
+   *  only closed the sheet would let a member tap Mute and be ignored. */
   onMute?: () => void;
   onUnblock?: () => void;
   onUnmute?: () => void;
@@ -138,14 +138,15 @@ export function ContentActionSheet({
       onPress: onUnmute ?? onClose,
       accessibilityLabel: `Unmute ${targetUsername}`,
     });
-  } else if (!showUnblock && !hideMute) {
-    // Mute only visible when NOT showing unblock (per spec condition)
+  } else if (!showUnblock && !hideMute && onMute) {
+    // Mute only visible when NOT showing unblock (per spec condition), and only
+    // with a handler behind it: no row that silently closes instead of muting.
     options.push({
       key: 'mute',
       label: `MUTE @${targetUsername.toUpperCase()}`,
       icon: <VolumeX size={18} color={colors.fog} strokeWidth={1.5} />,
       destructive: false,
-      onPress: onMute ?? onClose,
+      onPress: onMute,
       accessibilityLabel: `Mute ${targetUsername}`,
     });
   }

@@ -356,6 +356,17 @@ describe('the Dispatch feed', () => {
     expect(src).toMatch(/alwaysBounceHorizontal=\{false\}/);
   });
 
+  it('opens the archive from the index row — the door the archive is reached by', async () => {
+    // `PaperChrome` draws the door only when it is handed one, so a feed that
+    // stopped handing it would lose the archive without a word; the archive's
+    // own test mounts the chrome with a door of its own and could not see that.
+    put({ filings: [filing()] });
+    const { getByLabelText } = await mount();
+    mockPushed.length = 0;
+    await act(async () => { fireEvent.press(getByLabelText(/The archive\./)); });
+    expect(mockPushed).toEqual(['/dispatch/archive']);
+  });
+
   it('gives a member the live marks', async () => {
     put({ filings: [filing()] });
     const { getByLabelText } = await mount();

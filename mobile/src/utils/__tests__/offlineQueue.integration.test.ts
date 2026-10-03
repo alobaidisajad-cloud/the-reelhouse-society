@@ -244,8 +244,12 @@ describe('Offline Queue — Integration Tests', () => {
 
       await flushOfflineQueue();
 
-      // applyIdMapToPayload should have been called on remaining mutations
-      expect(mockApplyIdMapToPayload).toHaveBeenCalled();
+      // The two writes left behind now name the list's real id, not the one it was queued under.
+      const remaining = getOfflineQueue();
+      expect(remaining.map((m) => [m.payload.list_id, m.payload.film_id])).toEqual([
+        ['real-list-xyz', 200],
+        ['real-list-xyz', 300],
+      ]);
     });
 
     it('does not route network errors to dead-letter', async () => {

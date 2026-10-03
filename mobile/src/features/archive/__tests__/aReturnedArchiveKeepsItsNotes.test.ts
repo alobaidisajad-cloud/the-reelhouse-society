@@ -75,7 +75,10 @@ describe('the house archive, brought back', () => {
 
   it('below the Archivist, an earlier note is discarded, as the database discards the current one', async () => {
     mockTier = 'cinephile';
-    await importArchiveJSON(archive as never, 'member-1');
+    const result = await importArchiveJSON(archive as never, 'member-1');
+    // The import itself went through: the record is written, only the note is not.
+    expect(result.errors).toEqual([]);
+    expect(logWrite()).toEqual(expect.objectContaining({ film_id: 19 }));
     expect(noteWrites()).toEqual([]);
   });
 

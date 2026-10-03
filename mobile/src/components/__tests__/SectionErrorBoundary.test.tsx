@@ -5,7 +5,7 @@
  * Validates crash recovery, retry logic, and exhaustion behavior.
  */
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import { SectionErrorBoundary } from '../SectionErrorBoundary';
 
@@ -57,20 +57,21 @@ describe('SectionErrorBoundary', () => {
     expect(getByText(/RETRY \(2 left\)/)).toBeTruthy();
   });
 
-  it('shows exhaustion message after max retries', () => {
-    // We can't directly setState reliably in class components in RNTL,
-    // so we test the initial render shows "2 left" (MAX_SECTION_RETRIES=2)
-    // which proves the retry budget mechanism is wired up correctly.
-    const { getByText } = render(
+  it('shows exhaustion message after max retries', async () => {
+    // It used to assert the first render's "2 left" and call that exhaustion.
+    // Now the retries are spent: the section throws again on every remount.
+    const { getByText, getByLabelText, queryByLabelText, queryByText } = render(
       <SectionErrorBoundary section="reels">
         <Bomb shouldThrow={true} />
       </SectionErrorBoundary>
     );
+    await act(async () => { fireEvent.press(getByLabelText('Retry loading the reels')); });
+    expect(getByText(/RETRY \(1 left\)/)).toBeTruthy();
+    await act(async () => { fireEvent.press(getByLabelText('Retry loading the reels')); });
 
-    // Verify retry budget shows correct initial count
-    expect(getByText(/RETRY \(2 left\)/)).toBeTruthy();
-    // Verify error message is the default one
-    expect(getByText(/encountered an error/i)).toBeTruthy();
+    expect(getByText('This section could not recover. Try restarting the app.')).toBeTruthy();
+    expect(queryByLabelText('Retry loading the reels')).toBeNull();
+    expect(queryByText(/encountered an error/i)).toBeNull();
   });
 
 });

@@ -12,72 +12,12 @@
  * Uses direct component render validation and store mock verification.
  */
 
-// Reanimated mock with complete Easing (overrides global jest.setup)
-import { render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import { REPORT_REASON_LABELS, ReportReason } from '@/src/types/moderation';
+import { colors } from '@/src/theme/theme';
 import ReportSheet from '../ReportSheet';
-
-jest.mock('react-native-reanimated', () => {
-  const React = require('react');
-  const { View, Text, ScrollView } = require('react-native');
-
-  const animatedComponent = (Component: any) =>
-    React.forwardRef((props: any, ref: any) =>
-      React.createElement(Component, { ...props, ref })
-    );
-
-  return {
-    __esModule: true,
-    default: {
-      View: animatedComponent(View),
-      Text: animatedComponent(Text),
-      ScrollView: animatedComponent(ScrollView),
-      Image: animatedComponent(View),
-      FlatList: animatedComponent(View),
-      createAnimatedComponent: animatedComponent,
-    },
-    useSharedValue: (v: any) => ({ value: v }),
-    useAnimatedStyle: (fn: any) => fn(),
-    useDerivedValue: (fn: any) => ({ value: fn() }),
-    withTiming: (v: any) => v,
-    withSpring: (v: any) => v,
-    withSequence: (...args: any[]) => args[0],
-    withRepeat: (v: any) => v,
-    withDelay: (_d: any, v: any) => v,
-    Easing: {
-      out: (_easing: any) => 'easing-out-fn',
-      in: (_easing: any) => 'easing-in-fn',
-      inOut: (_easing: any) => 'easing-inout-fn',
-      cubic: 'cubic',
-      linear: 'linear',
-      ease: 'ease',
-      bezier: () => 'bezier-fn',
-    },
-    FadeIn: { duration: function() { return this; }, delay: function() { return this; } },
-    FadeOut: { duration: function() { return this; }, delay: function() { return this; } },
-    FadeInUp: { duration: function() { return this; }, delay: function() { return this; } },
-    FadeOutUp: { duration: function() { return this; }, delay: function() { return this; } },
-    FadeInDown: { duration: function() { return this; }, delay: function() { return this; } },
-    FadeOutDown: { duration: function() { return this; }, delay: function() { return this; } },
-    SlideInRight: { duration: function() { return this; } },
-    SlideOutLeft: { duration: function() { return this; } },
-    SlideInLeft: { duration: function() { return this; } },
-    SlideOutRight: { duration: function() { return this; } },
-    Layout: { duration: function() { return this; }, springify: function() { return this; } },
-    LinearTransition: { duration: function() { return this; }, springify: function() { return this; } },
-    cancelAnimation: () => {},
-    runOnJS: (fn: any) => fn,
-    runOnUI: (fn: any) => fn,
-    interpolate: (v: any) => v,
-    Extrapolate: { CLAMP: 'clamp', EXTEND: 'extend' },
-    createAnimatedComponent: animatedComponent,
-    useAnimatedRef: () => ({ current: null }),
-    measure: () => ({ x: 0, y: 0, width: 0, height: 0, pageX: 0, pageY: 0 }),
-    scrollTo: () => {},
-    useReducedMotion: () => false,
-  };
-});
 
 // Mock gesture handler (native module)
 jest.mock('react-native-gesture-handler', () => {
@@ -181,18 +121,17 @@ describe('ReportSheet', () => {
       });
     });
 
-    it('only one reason can be selected at a time (radio behavior by design)', () => {
-      // Verify the component uses radio role (single-selection)
+    it('only one reason can be selected at a time: choosing a second lets go of the first', async () => {
       const { getAllByRole } = render(<ReportSheet {...defaultProps} />);
+      const selected = () => getAllByRole('radio')
+        .map((chip, i) => (chip.props.accessibilityState.selected ? i : -1))
+        .filter((i) => i >= 0);
 
-      const chips = getAllByRole('radio');
-      // All radio buttons exist and only one can be selected at a time
-      // (enforced by the component's single selectedReason state)
-      expect(chips.length).toBe(9);
-      const selectedChips = chips.filter(
-        (chip) => chip.props.accessibilityState.selected === true
-      );
-      expect(selectedChips.length).toBe(0); // none selected initially
+      await act(async () => { fireEvent.press(getAllByRole('radio')[0]); });
+      expect(selected()).toEqual([0]);
+
+      await act(async () => { fireEvent.press(getAllByRole('radio')[3]); });
+      expect(selected()).toEqual([3]);
     });
   });
 
@@ -263,35 +202,25 @@ describe('ReportSheet', () => {
   });
 
   describe('Character counter', () => {
-    it('component enforces 500 char max via TextInput maxLength prop', () => {
-      // The character counter is rendered with format "{count}/500"
-      // and the TextInput has maxLength=500. We verify the constant
-      // is correctly set in the component's source code via render check.
-      const { getByLabelText } = render(<ReportSheet {...defaultProps} />);
+    it('the details field stops at 500 characters, and its counter says so', async () => {
+      // The field opens only once a reason is chosen.
+      const { getAllByRole, getByLabelText, getByText } = render(<ReportSheet {...defaultProps} />);
+      await act(async () => { fireEvent.press(getAllByRole('radio')[0]); });
 
-      // The component renders - verify the structure exists
-      expect(getByLabelText('File report')).toBeTruthy();
+      expect(getByLabelText('Additional details').props.maxLength).toBe(500);
+      expect(getByText('0/500')).toBeTruthy();
     });
 
-    it('counter threshold at 450 chars switches to bloodReel color', () => {
-      // This test validates the design spec: character counter color
-      // shifts at 450 chars from fog to bloodReel. The constant
-      // COUNTER_WARN_THRESHOLD = 450 is used in the component.
-      // Verified by testing the schema accepts exactly 500 chars.
-      const { ReportPayloadSchema } = require('@/src/types/moderation');
+    it('the counter turns to crimson ink at 450 characters, and not before', async () => {
+      const { getAllByRole, getByLabelText, getByText } = render(<ReportSheet {...defaultProps} />);
+      await act(async () => { fireEvent.press(getAllByRole('radio')[0]); });
+      const counterColor = (count: number) => StyleSheet.flatten(getByText(`${count}/500`).props.style).color;
 
-      const payload500 = {
-        reporter_id: '550e8400-e29b-41d4-a716-446655440000',
-        content_id: '550e8400-e29b-41d4-a716-446655440001',
-        content_type: 'log',
-        reason: 'harassment',
-        details: 'x'.repeat(500),
-        target_user_id: '550e8400-e29b-41d4-a716-446655440002',
-      };
-      expect(ReportPayloadSchema.safeParse(payload500).success).toBe(true);
+      await act(async () => { fireEvent.changeText(getByLabelText('Additional details'), 'x'.repeat(449)); });
+      expect(counterColor(449)).toBe(colors.fog);
 
-      const payload501 = { ...payload500, details: 'x'.repeat(501) };
-      expect(ReportPayloadSchema.safeParse(payload501).success).toBe(false);
+      await act(async () => { fireEvent.changeText(getByLabelText('Additional details'), 'x'.repeat(450)); });
+      expect(counterColor(450)).toBe(colors.crimsonInk);
     });
   });
 

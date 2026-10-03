@@ -72,9 +72,12 @@ interface _TestItem {
   content: string;
 }
 
+/** One small cast writes the items AND fills the hidden set: two random uuids never meet. */
+const CAST = ['ana', 'ben', 'cyd', 'dee', 'eli'];
+const hiddenArb = fc.subarray(CAST);
 const testItemArb = fc.record({
   id: fc.uuid(),
-  user_id: fc.uuid(),
+  user_id: fc.constantFrom(...CAST),
   content: fc.string({ minLength: 0, maxLength: 50 }),
 });
 
@@ -96,7 +99,7 @@ describe('filterContentByBlocks PBT — Property 3: Excludes blocked/muted', () 
     fc.assert(
       fc.property(
         fc.array(testItemArb, { minLength: 0, maxLength: 50 }),
-        fc.uniqueArray(fc.uuid(), { minLength: 0, maxLength: 10 }),
+        hiddenArb,
         (items, hiddenUserIds) => {
           const hiddenSet = new Set(hiddenUserIds);
 
@@ -113,11 +116,11 @@ describe('filterContentByBlocks PBT — Property 3: Excludes blocked/muted', () 
     );
   });
 
-  it('items from non-hidden authors are all preserved in the result', () => {
+  it('items from non-hidden authors are all preserved in the result, in order', () => {
     fc.assert(
       fc.property(
         fc.array(testItemArb, { minLength: 0, maxLength: 50 }),
-        fc.uniqueArray(fc.uuid(), { minLength: 0, maxLength: 10 }),
+        hiddenArb,
         (items, hiddenUserIds) => {
           const hiddenSet = new Set(hiddenUserIds);
 
@@ -125,13 +128,28 @@ describe('filterContentByBlocks PBT — Property 3: Excludes blocked/muted', () 
 
           const result = filterContentByBlocks(items, (item) => item.user_id);
 
-          // All non-hidden items should be in the result
+          // Exactly the non-hidden items, the same objects, in the same order.
           const expectedItems = items.filter((item) => !hiddenSet.has(item.user_id));
-          return result.length === expectedItems.length;
+          return result.length === expectedItems.length
+            && result.every((item, i) => item === expectedItems[i]);
         },
       ),
       { numRuns: 200 },
     );
+  });
+
+  it('asks about each item by the author the getter names, and drops that author', () => {
+    const items = [
+      { id: 'i1', user_id: 'ana', content: 'a' },
+      { id: 'i2', user_id: 'ben', content: 'b' },
+      { id: 'i3', user_id: 'ana', content: 'c' },
+    ];
+    mockIsHidden.mockImplementation((userId: string) => userId === 'ben');
+
+    const result = filterContentByBlocks(items, (item) => item.user_id);
+
+    expect(mockIsHidden.mock.calls.map(([id]) => id)).toEqual(['ana', 'ben', 'ana']);
+    expect(result.map((item) => item.id)).toEqual(['i1', 'i3']);
   });
 
   it('when hidden set is empty, all items are returned', () => {
@@ -183,7 +201,7 @@ describe('filterContentByBlocks PBT — Property 4: No input mutation', () => {
     fc.assert(
       fc.property(
         fc.array(testItemArb, { minLength: 0, maxLength: 50 }),
-        fc.uniqueArray(fc.uuid(), { minLength: 0, maxLength: 10 }),
+        hiddenArb,
         (items, hiddenUserIds) => {
           const hiddenSet = new Set(hiddenUserIds);
           mockIsHidden.mockImplementation((userId: string) => hiddenSet.has(userId));

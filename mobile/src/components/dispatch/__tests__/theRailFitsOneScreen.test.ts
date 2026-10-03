@@ -128,6 +128,9 @@ describe('the writing room rail fits one screen', () => {
     // The gap is one constant now, shared with the tools' touch areas.
     expect(src).toMatch(/const TOOL_GAP = 6;/);
     expect(src).toMatch(/toolsScroll:\s*\{[^}]*?gap:\s*TOOL_GAP\b/);
+    // And the rail's own padding, which the budget counts twice — left unpinned,
+    // it could grow past the phone with every number above still matching.
+    expect(src).toMatch(new RegExp(`toolsScroll:\\s*\\{[^}]*?paddingHorizontal:\\s*${RAIL.paddingHorizontal}\\b`));
     // The names must SCALE. A frozen label is what made 6.5pt unfixable from
     // the member's own settings.
     expect(src).toMatch(/style=\{styles\.toolWord\} \{\.\.\.scaledTextProps\}/);

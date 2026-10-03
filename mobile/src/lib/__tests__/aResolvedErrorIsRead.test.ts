@@ -149,6 +149,21 @@ export function unreadErrors(rel: string, text: string): string[] {
         if (shape) found.push(`${rel} · [${kind}] ${shape}`);
       }
     }
+    // supabase….then(({ data }) => …) or .then((res) => …): the answer taken in a callback
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === 'then') {
+      const kind = supabaseIn(node.expression.expression);
+      const handler = node.arguments[0];
+      const local = kind === 'auth' && AUTH_LOCAL.test(node.expression.expression.getText(sf));
+      if (kind && !local && handler && (ts.isArrowFunction(handler) || ts.isFunctionExpression(handler)) && handler.parameters[0]) {
+        const p = handler.parameters[0].name;
+        if (ts.isObjectBindingPattern(p)) {
+          const names = p.elements.map((el) => (el.propertyName || el.name).getText(sf));
+          if (!names.includes('error')) found.push(`${rel} · [${kind}] then without error (${names.join(', ')})`);
+        } else if (ts.isIdentifier(p) && !reads(handler, p.text)) {
+          found.push(`${rel} · [${kind}] then, ${p.text}.error never read`);
+        }
+      }
+    }
     // const [a, b] = await Promise.all([supabase…, supabase…])
     if (ts.isVariableDeclaration(node) && node.initializer && ts.isArrayBindingPattern(node.name)) {
       const init = ts.isAwaitExpression(node.initializer) ? node.initializer.expression : node.initializer;
@@ -195,6 +210,9 @@ describe('a resolved error is read', () => {
       "  const [held, maybe] = await Promise.all([withAbortSignal(q, s), on ? supabase.from('w').select('a') : skip]);",
       '  void held.data; void maybe.data;',
       "  const { data: d2, error } = await supabase.from('u').select('y');",
+      "  supabase.from('t').select('x').then(({ data: d3 }) => use(d3));",
+      "  supabase.from('t').select('x').then((res) => use(res.data));",
+      "  supabase.from('t').select('x').then(({ data: d4, error: e4 }) => use(e4 ? null : d4));",
       '  return [data, one.data, d2, error];',
       '}',
     ].join('\n');
@@ -203,6 +221,8 @@ describe('a resolved error is read', () => {
       'probe.ts · Promise.all · one',
       'probe.ts · Promise.all · held',
       'probe.ts · Promise.all · maybe',
+      'probe.ts · [from] then without error (data)',
+      'probe.ts · [from] then, res.error never read',
     ]);
   });
 

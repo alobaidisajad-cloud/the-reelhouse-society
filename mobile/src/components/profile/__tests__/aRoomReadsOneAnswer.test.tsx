@@ -108,6 +108,8 @@ describe('your own rooms page from your own store, by the right flag', () => {
   });
 
   it('your Stacks page by your store, never by the visitor’s flag (true until read)', async () => {
+    mockStore = { ...mockStore, listsHasMore: true };
+    expect((await open('lists', {}, { hasMoreLists: false })).onLoadMore).toBe(loadMoreLists);
     mockStore = { ...mockStore, listsHasMore: false };
     expect((await open('lists', {}, { hasMoreLists: true })).onLoadMore).toBeUndefined();
   });

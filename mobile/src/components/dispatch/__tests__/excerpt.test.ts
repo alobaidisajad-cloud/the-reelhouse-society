@@ -91,6 +91,9 @@ describe('the stored excerpt', () => {
     const wall = 'x'.repeat(400);
     const got = excerptFor(wall);
     expect(got.length).toBeLessThanOrEqual(EXCERPT_CHARS + 1);
+    // CUT, not emptied: the whole measure of the run is kept, then the mark.
+    // A bare "…" also fits under the ceiling, and says nothing on a card.
+    expect(got).toBe('x'.repeat(EXCERPT_CHARS) + '…');
   });
 
   it('fits inside what the column allows for a dossier', () => {

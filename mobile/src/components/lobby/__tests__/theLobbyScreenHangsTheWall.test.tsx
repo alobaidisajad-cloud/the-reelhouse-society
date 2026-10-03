@@ -14,7 +14,7 @@ import React, { act } from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
-import { WALL_KEY } from '../wallRead';
+import { PROGRAMME_KEY, WALL_KEY, featureKey } from '../wallRead';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
@@ -167,6 +167,17 @@ describe('a visitor', () => {
     expect(wallAsks()).toBe(0);
     expect(mockFetchLogs).not.toHaveBeenCalled();
     expect(r.queryByText('The Lobby')).toBeNull();
+  });
+
+  it('is asked for the programme and its feature at the front door, so a member who signs in finds the bill up', async () => {
+    mockSignedIn = false;
+    const { tmdb } = jest.requireMock('@/src/lib/tmdb');
+    tmdb.trending.mockResolvedValueOnce({ results: [{ id: 935, title: 'Dr. Strangelove' }, { id: 62, title: 'Seven Samurai' }] });
+    const { client } = await mount();
+    expect(client.getQueryData(PROGRAMME_KEY)).toEqual(expect.objectContaining({ feature: expect.objectContaining({ id: 935 }) }));
+    expect(client.getQueryState(featureKey(935))?.status).toBe('success');
+    expect(tmdb.keyArt).toHaveBeenCalledWith(935);
+    expect(wallAsks()).toBe(0);
   });
 
   it('ALREADY A MEMBER? opens the sign-in form, whichever was open last', async () => {

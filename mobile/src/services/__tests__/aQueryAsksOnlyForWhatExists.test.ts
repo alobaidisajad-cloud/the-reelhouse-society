@@ -33,6 +33,15 @@ const MOBILE = join(__dirname, '..', '..', '..');
 const REPO = join(MOBILE, '..');
 const SCHEMA = readFileSync(join(MOBILE, 'supabase', 'schema', 'live-schema.sql'), 'utf8').replace(/\r/g, '');
 
+/**
+ * The tables a member may read whole. On the others SELECT is granted column by
+ * column, and `*` names the columns a member may not read, so PostgREST refuses
+ * the whole query: the website's sign-in by emailed link read `profiles` with `*`
+ * and never once had the member's profile.
+ */
+const READ_WHOLE = new Set([...SCHEMA.matchAll(/^GRANT ([A-Z,]+) ON TABLE public\.(\w+) TO authenticated;$/gm)]
+  .filter((m) => /(^|,)(SELECT|ALL)(,|$)/.test(m[1])).map((m) => m[2]));
+
 /** Split at commas outside brackets and quotes. */
 function topLevel(s: string, sep = ','): string[] {
   const out: string[] = [];
@@ -359,7 +368,11 @@ export function readQueries(src: string, where: string, tables: Map<string, Set<
   };
   const selectList = (table: string, list: string) => {
     for (let item of topLevel(list.replace(/\s+/g, ' '))) {
-      if (!item || item === '*') continue;
+      if (!item) continue;
+      if (item === '*') {
+        if (!READ_WHOLE.has(table)) found.push(`${at}: selects * from ${table}, whose columns a member may not all read`);
+        continue;
+      }
       item = item.replace(/^\.\.\./, '');
       const embed = /^(?:\w+:)?(\w+)(?:!\w+)*\s*\(([\s\S]*)\)$/.exec(item);
       if (embed) {
@@ -530,6 +543,11 @@ describe('the reader can say no', () => {
     expect(read(`supabase.from('lists').select('id').order('rank', { ascending: true })`)).toEqual(['x.ts:1: orders by lists.rank does not exist']);
     expect(read(`supabase.from('lounge_members').select('user_id, profiles!lounge_members_user_id_fkey(username, handle)')`)).toEqual(['x.ts:1: selects profiles.handle does not exist']);
     expect(read(`supabase.from('no_such_room').select('*')`)).toEqual(['x.ts:1: no_such_room is not a table or view']);
+  });
+  it('finds a * on a table a member may read only column by column, and passes it on one read whole', () => {
+    expect(read(`supabase.from('profiles').select('*').eq('id', id)`)).toEqual(['x.ts:1: selects * from profiles, whose columns a member may not all read']);
+    expect(read(`supabase.from('lists').select('id, profiles(*)')`)).toEqual(['x.ts:1: selects * from profiles, whose columns a member may not all read']);
+    expect(read(`supabase.from('logs').select('*').eq('id', id)`)).toEqual([]);
   });
   it('follows a query built in steps, a constant built from parts, and both sides of a choice', () => {
     expect(read(`let q = supabase.from('lists').select('id');\nq = q.order('rank', { ascending: true });`)).toEqual(['x.ts:1: orders by lists.rank does not exist']);

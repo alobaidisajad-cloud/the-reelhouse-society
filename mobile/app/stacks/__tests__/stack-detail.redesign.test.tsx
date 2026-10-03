@@ -734,14 +734,30 @@ describe('the film card, actually rendered', () => {
   });
 
   it('a film that has been logged is marked, and one that has not is bare', async () => {
-    const r = mount({ films: FILMS, filmCount: 3 });
-    await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
-    // No logs in the mocked store, so nothing should be badged.
-    const badges = walk(r).filter(n => {
-      const st = Object.assign({}, ...[n.props?.style].flat(2).filter(Boolean));
-      return st.borderRadius === 11 && st.width === 22;
-    });
-    expect(badges).toHaveLength(0);
+    // The member has logged Perfect Blue (film 1) and nothing else in the stack.
+    const store = jest.requireMock('@/src/stores/films').useListStore.getState() as { logs: unknown[] };
+    store.logs = [{ id: 'log-1', filmId: 1 }];
+    try {
+      const r = mount({ films: FILMS, filmCount: 3 });
+      await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
+      // One tree, walked once: every toJSON() builds new nodes.
+      const all = walk(r);
+      const badges = all.filter(n => {
+        const st = Object.assign({}, ...[n.props?.style].flat(2).filter(Boolean));
+        return st.borderRadius === 11 && st.width === 22;
+      });
+      // One badge, and it sits in Perfect Blue's own card: the innermost node
+      // holding the badge and a film's title names that film and no other.
+      expect(badges).toHaveLength(1);
+      const holds = (n: Node, target: Node): boolean =>
+        n === target || (n.children ?? []).some(c => typeof c !== 'string' && holds(c, target));
+      const titles = FILMS.map(f => f.title);
+      const cards = all.filter(n => holds(n, badges[0]) && titles.some(t => flatText(n).includes(t)));
+      const innermost = cards[cards.length - 1];
+      expect(titles.filter(t => flatText(innermost).includes(t))).toEqual(['Perfect Blue']);
+    } finally {
+      store.logs = [];
+    }
   });
 });
 
@@ -765,11 +781,19 @@ describe('filing a critique — what the action actually does', () => {
     .map(c => (typeof c[1] === 'function' ? c[1]({ list: { critiqueCount: 3 } }) : c[1]));
 
   it('shows the critique before the server has answered', async () => {
-    mockAddComment.mockResolvedValue({ id: 'real', user_id: 'u1', username: 'morpho', content: 'x', created_at: '2026-01-01' });
+    // The server is held: nothing has answered while the page is read.
+    let answer!: (v: unknown) => void;
+    mockAddComment.mockImplementation(() => new Promise((res) => { answer = res; }));
     const r = await open();
+    mockSetQueryData.mockClear();
     await file(r, 'The Others belongs here.');
-    const commentWrites = mockSetQueryData.mock.calls.filter(c => c[0][0] === 'stackComments');
-    expect(commentWrites.length).toBeGreaterThan(0);
+    expect(mockAddComment).toHaveBeenCalledTimes(1);
+    // The critique is on the page already, in the comments the sheet draws.
+    const shown = mockSetQueryData.mock.calls
+      .filter(c => c[0][0] === 'stackComments')
+      .reduce((held, [, w]) => (typeof w === 'function' ? w(held) : w), [] as unknown) as { content: string }[];
+    expect(shown.map(c => c.content)).toEqual(['The Others belongs here.']);
+    await act(async () => { answer({ id: 'real', user_id: 'u1', username: 'morpho', content: 'The Others belongs here.', created_at: '2026-01-01' }); });
   });
 
   it('moves the number in step with the list', async () => {

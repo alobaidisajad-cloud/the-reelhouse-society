@@ -66,11 +66,16 @@ describe('the counter names nobody', () => {
   it('works with a thenable that has no .catch — which is what PostgREST returns', async () => {
     // The first version called `.catch` on the builder and did not typecheck,
     // because the query builder is a PromiseLike, not a Promise.
+    // A builder sends nothing until its `.then` is called. A sink that reached
+    // for `.catch` threw — swallowed by recordGateEvent, so nothing showed —
+    // and the count never left the phone. So the proof is that `.then` ran.
     installGateMetricsSink();
-    const thenableOnly = { then: (_ok: unknown, bad: (e: unknown) => void) => { bad(new Error('refused')); } };
+    let sent = false;
+    const thenableOnly = { then: (_ok: unknown, bad: (e: unknown) => void) => { sent = true; bad(new Error('refused')); } };
     mockRpc.mockReturnValueOnce(thenableOnly);
     expect(() => recordGateEvent('membership_opened')).not.toThrow();
     await flush();
+    expect(sent).toBe(true);
   });
 
   it('even a sink that throws synchronously cannot take the caller down', () => {

@@ -486,6 +486,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/MarkFigure.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/MasterLogo.tsx | 2026-10-02 | Read (launch audit): artwork. Left alone. |
 | src/components/moderation/__tests__/ContentActionSheet.mute.test.tsx | — |  |
+| src/components/moderation/__tests__/everyModerationRowActs.guard.test.ts | 2026-10-03 | Written in the test-reading pass: every BLOCK, MUTE, UNBLOCK and UNMUTE handler given to the moderation sheet performs its act (the Dispatch reader's BLOCK blocked no one). |
 | src/components/moderation/__tests__/ReportSheet.test.tsx | — |  |
 | src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/moderation/ContentActionSheet.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |

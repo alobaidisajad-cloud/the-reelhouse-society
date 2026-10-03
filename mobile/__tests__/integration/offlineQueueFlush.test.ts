@@ -23,6 +23,8 @@ jest.mock('@/src/services/InteractionService', () => ({
   InteractionService: {
     addEndorsement: jest.fn(async (p: any) => {
       executionLog.push(`interaction:${p.type}`);
+      // Into the same log as the database writes, so the order of all three is one sequence.
+      require('@/src/lib/supabase').__getExecutionLog().push(`interaction:${p.type}`);
     }),
   },
 }));
@@ -55,6 +57,8 @@ jest.mock('@/src/lib/supabase', () => {
   // We need to track calls from inside the mock factory, so we use a
   // module-level array accessible via the mock's closure.
   const _executionLog: string[] = [];
+  /** What each upsert SENT, so a test can read the ids that reached the database. */
+  const _upserts: { table: string; rows: unknown[] }[] = [];
   let _mockIdCounter = 0;
 
   // Expose reset helpers on the mock module for tests to use
@@ -83,6 +87,7 @@ jest.mock('@/src/lib/supabase', () => {
         // Override upsert to track execution and return proper chained results
         chain.upsert = jest.fn().mockImplementation((rows: unknown[], _opts?: unknown) => {
           _executionLog.push(`upsert:${table}`);
+          _upserts.push({ table, rows });
           const innerChain = mockMakeChain();
           // For lists table, simulate returning a new ID
           if (table === 'lists') {
@@ -108,14 +113,17 @@ jest.mock('@/src/lib/supabase', () => {
 
         return chain;
       }),
-      // A stack is saved whole (save_stack): logged, and answering with the row.
-      rpc: jest.fn().mockImplementation(async (name: string, args: Record<string, unknown>) => {
+      // A stack is saved whole (save_stack): logged, and answering with the row —
+      // under an id of the SERVER's, not the one the phone sent, so a write that
+      // follows can only carry the right id if the queue mapped it.
+      rpc: jest.fn().mockImplementation(async (name: string, _args: Record<string, unknown>) => {
         _executionLog.push(`rpc:${name}`);
-        return { data: name === 'save_stack' ? { id: args.p_id } : null, error: null };
+        return { data: name === 'save_stack' ? { id: 'server-list-id-1' } : null, error: null };
       }),
     },
     __getExecutionLog: () => _executionLog,
-    __resetExecutionLog: () => { _executionLog.length = 0; },
+    __getUpserts: () => _upserts,
+    __resetExecutionLog: () => { _executionLog.length = 0; _upserts.length = 0; },
     __resetIdCounter: () => { _mockIdCounter = 0; },
   };
 
@@ -148,6 +156,7 @@ jest.mock('@/src/stores/auth', () => ({
  
 const supabaseMock = require('@/src/lib/supabase') as {
   __getExecutionLog: () => string[];
+  __getUpserts: () => { table: string; rows: unknown[] }[];
   __resetExecutionLog: () => void;
   __resetIdCounter: () => void;
 };
@@ -193,14 +202,10 @@ describe('Offline Queue Flush Integration', () => {
     // Get the execution log from the supabase mock
     const log = supabaseMock.__getExecutionLog();
 
-    // Verify FIFO order:
-    // add_log → inserts into 'logs'
-    // endorse_log → uses InteractionService (tracked in executionLog)
-    // add_watchlist → inserts into 'watchlists'
-    expect(log[0]).toBe('insert:logs');
-    // endorse_log uses InteractionService, not supabase.from directly
-    expect(executionLog[0]).toBe('interaction:endorse_log');
-    expect(log[1]).toBe('insert:watchlists');
+    // FIFO, as ONE sequence: the endorsement goes through InteractionService,
+    // which writes into the same log, so its place between the two is checked too.
+    expect(log).toEqual(['insert:logs', 'interaction:endorse_log', 'insert:watchlists']);
+    expect(executionLog).toEqual(['interaction:endorse_log']);
 
     // Queue should be empty after successful flush
     expect(getOfflineQueue()).toHaveLength(0);
@@ -233,6 +238,10 @@ describe('Offline Queue Flush Integration', () => {
     expect(log[0]).toBe('rpc:save_stack');
     // The add_film_to_list should upsert into list_items
     expect(log[1]).toBe('upsert:list_items');
+    // …under the id the SERVER gave the stack, never the phone's temporary one.
+    const items = supabaseMock.__getUpserts().filter((u) => u.table === 'list_items');
+    expect(items).toHaveLength(1);
+    expect(items[0].rows).toEqual([expect.objectContaining({ list_id: 'server-list-id-1', film_id: 550 })]);
 
     // Queue should be empty
     expect(getOfflineQueue()).toHaveLength(0);

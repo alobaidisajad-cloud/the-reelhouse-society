@@ -117,8 +117,12 @@ describe('buildLogPayload', () => {
     it('never travels on the log row itself', () => {
       // A note belongs to a viewing and is written by viewing_note_set. If this
       // key ever reaches mapLogToDbPayload again, the blank column comes back.
+      // The payload DOES carry the note (it goes on to viewing_note_set), so the
+      // proof is in the row built from it, which must have no column for it.
+      const { mapLogToDbPayload } = require('../../utils/mappers');
       const payload = buildLogPayload(basePayloadInput({ noteTouched: true, isPremium: true, privateNotes: 'mine' }));
-      expect('private_notes' in payload).toBe(false);
+      expect(payload.privateNotes).toBe('mine');
+      expect('private_notes' in mapLogToDbPayload(payload)).toBe(false);
     });
   });
 

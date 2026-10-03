@@ -130,17 +130,19 @@ describe('Feed Flow Integration', () => {
     expect(typeof items[0].rating).toBe('number');
   });
 
-  it('consecutive cursor pages have zero overlapping IDs', async () => {
+  it('the second page is asked for from where the first one ended', async () => {
+    // Real uuids: the function's p_cursor_id is a uuid, and anything else is dropped.
+    const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
     const page1Rows = [
-      makeRpcRow('log-10', '2024-06-10T10:00:00Z'),
-      makeRpcRow('log-9', '2024-06-09T10:00:00Z'),
-      makeRpcRow('log-8', '2024-06-08T10:00:00Z'),
+      makeRpcRow(id(10), '2024-06-10T10:00:00Z'),
+      makeRpcRow(id(9), '2024-06-09T10:00:00Z'),
+      makeRpcRow(id(8), '2024-06-08T10:00:00Z'),
     ];
     // Page 2 — different IDs, older timestamps
     const page2Rows = [
-      makeRpcRow('log-7', '2024-06-07T10:00:00Z'),
-      makeRpcRow('log-6', '2024-06-06T10:00:00Z'),
-      makeRpcRow('log-5', '2024-06-05T10:00:00Z'),
+      makeRpcRow(id(7), '2024-06-07T10:00:00Z'),
+      makeRpcRow(id(6), '2024-06-06T10:00:00Z'),
+      makeRpcRow(id(5), '2024-06-05T10:00:00Z'),
     ];
     mockRpc
       .mockResolvedValueOnce({ data: page1Rows, error: null })
@@ -160,12 +162,12 @@ describe('Feed Flow Integration', () => {
     const page2Items = await FeedService.getCommunityFeed({ pageParam: cursor });
     expect(page2Items).toHaveLength(3);
 
-    // Verify: zero overlapping IDs between pages
-    const page1Ids = new Set(page1Items.map((i: { id: string }) => i.id));
-    const page2Ids = new Set(page2Items.map((i: { id: string }) => i.id));
-    const overlap = [...page2Ids].filter(id => page1Ids.has(id));
-
-    expect(overlap).toHaveLength(0);
+    // The pages differ only because the server was ASKED from the cursor: the
+    // first read from nothing, the second from the first page's last row.
+    expect(mockRpc.mock.calls.map(([name, args]) => [name, args.p_cursor_created_at, args.p_cursor_id])).toEqual([
+      ['get_community_feed_auth_cursor', null, null],
+      ['get_community_feed_auth_cursor', lastItem.created_at, id(8)],
+    ]);
   });
 
   // The function filters blocked and muted authors server-side, so a page's

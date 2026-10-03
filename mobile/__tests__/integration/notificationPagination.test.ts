@@ -36,7 +36,7 @@ const mockPage1Notifications: AppNotification[] = Array.from({ length: 30 }, (_,
   created_at: `2024-06-${String(30 - i).padStart(2, '0')}T10:00:00Z`,
 }));
 
-const mockPage2Notifications: AppNotification[] = Array.from({ length: 20 }, (_, i) => ({
+const mockPage2New: AppNotification[] = Array.from({ length: 20 }, (_, i) => ({
   id: `notif-page2-${String(i).padStart(2, '0')}`,
   user_id: 'test-user-id',
   type: 'system',
@@ -44,6 +44,13 @@ const mockPage2Notifications: AppNotification[] = Array.from({ length: 20 }, (_,
   read: true,
   created_at: `2024-05-${String(30 - i).padStart(2, '0')}T10:00:00Z`,
 }));
+/**
+ * Page 2 as a server may send it: led by page 1's last row again (one that
+ * arrived over the socket, or a tie on the boundary), then twenty new ones.
+ */
+const mockPage2Notifications: AppNotification[] = [mockPage1Notifications[29], ...mockPage2New];
+/** Every chain the store built, in order, so a test can read what each read ASKED. */
+const mockChains: Record<string, jest.Mock>[] = [];
 
 function mockMakeNotifChain(data: AppNotification[]) {
   const chain: Record<string, jest.Mock> = {};
@@ -55,6 +62,7 @@ function mockMakeNotifChain(data: AppNotification[]) {
   chain.or = jest.fn().mockImplementation(self);
   chain.lt = jest.fn().mockImplementation(self);
   chain.then = jest.fn((cb) => Promise.resolve(cb({ data, error: null })));
+  mockChains.push(chain);
   return chain;
 }
 
@@ -84,6 +92,7 @@ describe('Notification Pagination Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockFetchCallCount = 0;
+    mockChains.length = 0;
     // Configure the mock to return different data per call
     mockSupabaseFrom.mockImplementation((table: string) => {
       if (table === 'notifications') {
@@ -130,26 +139,23 @@ describe('Notification Pagination Integration', () => {
 
     const stateAfterPage2 = useNotificationStore.getState();
 
-    // Verify page 2 was appended
-    expect(stateAfterPage2.notifications.length).toBe(50); // 30 + 20
+    // The second read ASKED from the cursor: older than its time, or the same
+    // time and a lower id. Without it the server answers page 1 again.
+    const page2Chain = mockChains[mockChains.length - 1];
+    const [at, id] = [lastPage1.created_at, lastPage1.id];
+    expect(page2Chain.or).toHaveBeenCalledWith(`created_at.lt.${at},and(created_at.eq.${at},id.lt.${id})`);
 
-    // 3. Verify ZERO overlap between page 1 and page 2 IDs
-    const page1Ids = new Set(mockPage1Notifications.map(n => n.id));
-    const page2Ids = new Set(mockPage2Notifications.map(n => n.id));
-    const overlap = [...page2Ids].filter(id => page1Ids.has(id));
-
-    expect(overlap).toHaveLength(0);
-
-    // Also verify via the store's merged state
+    // Page 2 was appended, and the row it repeated is drawn once: 30 + 20, not 51.
+    expect(stateAfterPage2.notifications.length).toBe(50);
     const allIds = stateAfterPage2.notifications.map(n => n.id);
-    const uniqueIds = new Set(allIds);
-    expect(uniqueIds.size).toBe(allIds.length); // No duplicates in merged state
+    expect(new Set(allIds).size).toBe(allIds.length);
+    expect(allIds.filter((x) => x === lastPage1.id)).toHaveLength(1);
 
     // Verify cursor updated to last page 2 item
     const lastPage2 = mockPage2Notifications[mockPage2Notifications.length - 1];
     expect(stateAfterPage2._cursor).toBe(`${lastPage2.created_at}|${lastPage2.id}`);
 
-    // Verify _hasMore is false since page 2 returned < PAGE_SIZE (20 < 30)
+    // Verify _hasMore is false since page 2 returned < PAGE_SIZE (21 < 30)
     expect(stateAfterPage2._hasMore).toBe(false);
   });
 });

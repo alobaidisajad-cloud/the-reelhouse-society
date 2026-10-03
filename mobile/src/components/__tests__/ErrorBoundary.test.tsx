@@ -2,7 +2,7 @@
  * ErrorBoundary.test.tsx — Component Tests
  * ─────────────────────────────────────────
  * FLAW-07: Tests the root crash shield — fallback rendering,
- * retry counting, safe mode trigger, and thematic error lore.
+ * retry counting, the restart once retries are spent, and the development error box.
  */
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { Text } from 'react-native';
@@ -53,13 +53,14 @@ describe('ErrorBoundary', () => {
     expect(getByText('PROJECTION FAILURE')).toBeTruthy();
   });
 
-  it('maps network errors to thematic lore', () => {
+  it('shows the error message in development', () => {
+    // It was named "maps network errors to thematic lore": there is no such
+    // mapping. What it checks is the raw message the development box shows.
     const { getByText } = render(
       <ErrorBoundary>
         <Bomb shouldThrow={true} />
       </ErrorBoundary>
     );
-    // In __DEV__ mode, the actual error message is displayed in the error box
     expect(getByText(/Network request failed/i)).toBeTruthy();
   });
 

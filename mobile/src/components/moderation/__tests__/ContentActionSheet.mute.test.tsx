@@ -7,9 +7,9 @@
  * renders and the handlers could never run. That claim was verified by reading
  * the call sites; this proves it by rendering.
  *
- * It also pins the other half: `onPress: onMute ?? onClose` must stay
- * unreachable. A Mute row that silently closes instead of muting is exactly the
- * bug finding 110 described, so the row must never render without a handler.
+ * It also pins the other half: a Mute row that silently closes instead of
+ * muting is exactly the bug finding 110 described, so the row never renders
+ * without a handler — whatever a caller passes or leaves out.
  */
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
@@ -143,13 +143,18 @@ describe('ContentActionSheet — hideMute is what made three handlers dead code'
     });
 
     it('never renders a Mute row without a handler behind it', () => {
-        // The onMute ?? onClose fallback exists for type safety only. If this
-        // ever fails, a member can tap Mute and be silently ignored.
+        // If this ever fails, a member can tap Mute and be silently ignored.
         const { queryByLabelText, getByLabelText } = render(<ContentActionSheet {...base} hideMute />);
         expect(queryByLabelText('Mute alice')).toBeNull();
         expect(getByLabelText('Report alice to the Tribunal')).toBeTruthy();
 
         const { queryByLabelText: q2 } = render(<ContentActionSheet {...base} showUnblock />);
         expect(q2('Mute alice')).toBeNull();
+
+        // The case the rule is for: no hideMute, no showUnblock, and no handler.
+        // The sheet is drawn (Block is there), and still offers no Mute.
+        const bare = render(<ContentActionSheet {...base} />);
+        expect(bare.getByLabelText('Block alice')).toBeTruthy();
+        expect(bare.queryByLabelText('Mute alice')).toBeNull();
     });
 });

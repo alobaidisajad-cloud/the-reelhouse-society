@@ -197,8 +197,10 @@ describe('the foot of the critiques', () => {
     // Nothing to press, because there is nothing left to fetch — a live control
     // here would be its own small dead end.
     expect(queryByLabelText(/more critiques/)).toBeNull();
-    // The thread still closes: the ornament is drawn in its place.
+    // The thread still closes: the ornament is drawn in its place — the mark
+    // itself, not merely something that is not nothing.
     expect(toJSON()).not.toBeNull();
+    expect(JSON.stringify(toJSON())).toContain('"✦"');
     expect(asked).toEqual([]);
   });
 });

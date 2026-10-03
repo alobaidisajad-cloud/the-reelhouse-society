@@ -134,8 +134,10 @@ describe('may this member speak in this room', () => {
 describe('sending — where a member’s words can go missing', () => {
   it('refuses an empty message rather than writing a blank row', async () => {
     const ok = await useLoungeStore.getState().sendMessage(L1, '   ');
+    // A message is written with `upsert` (keyed by its own id), so that is the
+    // write to look for; looking for an `insert` found nothing whatever happened.
+    expect(on('lounge_messages').some((r) => r.op === 'upsert')).toBe(false);
     expect(ok).toBe(false);
-    expect(on('lounge_messages').some((r) => r.op === 'insert')).toBe(false);
   });
 
   it('refuses when nobody is signed in', async () => {

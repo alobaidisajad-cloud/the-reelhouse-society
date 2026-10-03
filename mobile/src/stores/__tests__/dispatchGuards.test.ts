@@ -188,12 +188,14 @@ describe('the session guard', () => {
     useDispatch.getState().certify('f1', true);
     expect(useDispatch.getState().filings[0].certifyCount).toBe(11);
 
-    // They sign out while the write is in flight, and the store is cleared.
+    // They sign out mid-write; the reader's page then holds the same filing (an
+    // empty page could not show this: the rollback only patches rows it finds).
     mockUser = null;
-    reset({ filings: [] });
+    reset({ filings: [filing({ certifyCount: 10 })] });
 
     await new Promise((r) => setTimeout(r, 0));
-    expect(useDispatch.getState().filings).toHaveLength(0);
+    // Unguarded, the rollback would take one off a count this reader never moved.
+    expect(useDispatch.getState().filings[0].certifyCount).toBe(10);
   });
 
   it('does not roll a filing back into a DIFFERENT member’s store', async () => {
@@ -201,11 +203,13 @@ describe('the session guard', () => {
     reset({ filings: [filing()] });
     const p = useDispatch.getState().amend('f1', { body: 'Changed.' });
 
+    // The next member's page holds the same filing, as they read it.
     mockUser = { id: 'u2', username: 'someone-else' };
-    reset({ filings: [] });
+    reset({ filings: [filing({ body: 'As the next member reads it.' })] });
 
     await p.catch(() => {});
-    expect(useDispatch.getState().filings).toHaveLength(0);
+    // Unguarded, the rollback would write the previous member's copy over it.
+    expect(useDispatch.getState().filings[0].body).toBe('As the next member reads it.');
   });
 });
 

@@ -1,16 +1,16 @@
 /**
  * markdownSafety.test.ts — the markdown link allowlist bypass and parser cap (#103)
  * ─────────────────────────────────────────────────────────────────────
- * These tests do NOT trust a convention. They replicate the installed library's
- * actual `openUrl` implementation and assert what reaches the operating system,
+ * These tests do NOT trust a convention. They run the installed library's own
+ * `openUrl` and assert what reaches the operating system (`Linking.openURL`),
  * because the convention is backwards here: this library treats a `true` return as
  * "ALSO open it yourself", so the intuitive fix reopens the hole it closes.
  *
- * Replicated verbatim from react-native-markdown-display@7.0.2
- * (src/lib/util/openUrl.js). If a future upgrade changes those semantics, the
- * contract test at the bottom fails and tells us — which a test of our own function
- * alone never could.
+ * Run as installed (react-native-markdown-display, src/lib/util/openUrl.js), so an
+ * upgrade that changes those semantics fails here — which a test of our own
+ * function alone never could.
  */
+import { Linking } from 'react-native';
 import { onMarkdownLinkPress, capMarkdownForRender } from '../markdownSafety';
 import { MAX_LENGTHS } from '../sanitizeInput';
 import { safeOpenURL } from '../linking';
@@ -19,17 +19,22 @@ jest.mock('../linking', () => ({ safeOpenURL: jest.fn(async () => true) }));
 
 const mockSafeOpenURL = safeOpenURL as jest.MockedFunction<typeof safeOpenURL>;
 
-/** The library's real behaviour, reproduced so we can assert against it. */
+/** The library's own opener — the code every <Markdown> link tap runs. */
+const installedOpenUrl = require('react-native-markdown-display/src/lib/util/openUrl').default as (
+  url: string | undefined, customCallback?: (u: string) => unknown,
+) => void;
+
+/** Taps a link through the installed library; `rawOpen` hears what reaches the OS. */
 function libraryOpenUrl(
   url: string | undefined,
   customCallback: ((u: string) => unknown) | undefined,
   rawOpen: jest.Mock,
 ) {
-  if (customCallback) {
-    const result = customCallback(url as string);
-    if (url && result && typeof result === 'boolean') rawOpen(url);
-  } else if (url) {
-    rawOpen(url);
+  const os = jest.spyOn(Linking, 'openURL').mockImplementation(async (u: string) => { rawOpen(u); return true; });
+  try {
+    installedOpenUrl(url, customCallback);
+  } finally {
+    os.mockRestore();
   }
 }
 
@@ -135,9 +140,13 @@ describe('capMarkdownForRender', () => {
   });
 
   it('is the SAME limit the sanitiser enforces on write — not a second threshold', () => {
-    // One number, one meaning, both sides. If someone raises the write cap without
-    // thinking about render cost, this test is where they find out they are linked.
-    expect(MAX_LENGTHS.dossierContent).toBe(25000);
+    // One number, one meaning, both sides: an essay at the write cap is shown whole,
+    // and one character past it is cut there. If someone raises the write cap
+    // without thinking about render cost, this test is where they find out.
+    const max = MAX_LENGTHS.filingEssay;
+    expect(max).toBe(25000);
+    expect(capMarkdownForRender('x'.repeat(max))).toBe('x'.repeat(max));
+    expect(capMarkdownForRender('x'.repeat(max + 1))).toBe(`${'x'.repeat(max)}\n\n…`);
   });
 
   it('survives empty and missing content', () => {

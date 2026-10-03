@@ -119,15 +119,16 @@ beforeEach(() => {
 describe('a restored draft is the whole piece', () => {
   it('gives back the film, with its cover', async () => {
     seed({ title: 'The Long Silence', content: 'An opening.', film: FILM });
-    const { getByLabelText } = await mount();
+    const { getByLabelText, toJSON } = await mount();
 
     // The slot names the film it holds.
     expect(getByLabelText(/The film is Tokyo Story/)).toBeTruthy();
 
     // And the essay's cover travelled with it: the preview draws the head, and
-    // the head draws a band only when there is a backdrop.
-    const written = JSON.parse(mockStore.get(draftKey('u1', 'dossier'))!);
-    expect(written.data.film.backdrop).toBe('https://x/backdrop.jpg');
+    // the head draws a band only when there is a backdrop. Read off the ROOM,
+    // not off storage — storage still holds the draft this test put there.
+    await act(async () => { fireEvent.press(getByLabelText('Preview the essay')); });
+    expect(JSON.stringify(toJSON())).toContain('https://x/backdrop.jpg');
   });
 
   it('gives back the series', async () => {

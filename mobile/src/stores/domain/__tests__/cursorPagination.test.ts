@@ -57,14 +57,35 @@ describe('parseCursor — REFUSES anything malformed', () => {
     // The parser must be a filter, never a transformer. Anything it hands back
     // is interpolated into query filters, so it must be a verbatim substring of
     // the input — never something it constructed or coerced.
+    //
+    // A random string is almost never a valid timestamp or id, so the inputs
+    // are built from valid parts in every spelling the parser accepts (space or
+    // T, any fraction, every zone form, either case) mixed with noise — and the
+    // runs that accepted something are counted, so this cannot pass on nulls.
+    const two = (max: number) => fc.integer({ min: 0, max }).map((n) => String(n).padStart(2, '0'));
+    const stamp = fc.tuple(
+      fc.integer({ min: 1900, max: 2100 }), two(12), two(28), fc.constantFrom('T', ' '), two(23), two(59), two(59),
+      fc.constantFrom('', '.1', '.123', '.123456'),
+      fc.constantFrom('', 'Z', '+00:00', '-05:30', '+0530', '+05'),
+    ).map(([y, mo, d, sep, h, mi, s, frac, zone]) => `${y}-${mo}-${d}${sep}${h}:${mi}:${s}${frac}${zone}`);
+    const id = fc.tuple(fc.uuid(), fc.boolean()).map(([u, upper]) => (upper ? u.toUpperCase() : u));
+    const cursor = fc.tuple(fc.oneof(stamp, fc.string()), fc.oneof(id, fc.string()), fc.option(fc.string()))
+      .map(([date, key, extra]) => (extra === null ? `${date}|${key}` : `${date}|${key}|${extra}`));
+
+    let datesAccepted = 0;
+    let idsAccepted = 0;
     fc.assert(
-      fc.property(fc.string(), (raw) => {
+      fc.property(fc.oneof(cursor, fc.string()), (raw) => {
         const { cursorDate, cursorId } = parseCursor(raw);
-        if (cursorDate !== null) expect(raw.split('|')[0]).toBe(cursorDate);
-        if (cursorId !== null) expect(raw.split('|')[1]).toBe(cursorId);
+        if (cursorDate !== null) { datesAccepted += 1; expect(cursorDate).toBe(raw.split('|')[0]); }
+        if (cursorId !== null) { idsAccepted += 1; expect(cursorId).toBe(raw.split('|')[1]); }
       }),
       { numRuns: 500 },
     );
+    // About a quarter of the runs hand back each part; a property that only ever
+    // saw nulls has checked nothing.
+    expect(datesAccepted).toBeGreaterThan(50);
+    expect(idsAccepted).toBeGreaterThan(50);
   });
 
   it('PROPERTY: never throws, whatever it is handed', () => {

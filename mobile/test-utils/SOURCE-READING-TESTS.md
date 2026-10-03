@@ -84,6 +84,7 @@ Decisions, as of 2026-09-28:
 | `src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts` | One word names one thing, across the app's copy. |
 | `src/components/dispatch/__tests__/theDispatchSaysEssay.test.ts` | The printed word is ESSAY wherever a member reads it; the wire word stays in the wire. |
 | `src/components/film/__tests__/oneBrass.test.ts` | Every brass fill is the ramp, never a flat sepia. |
+| `src/components/moderation/__tests__/everyModerationRowActs.guard.test.ts` | Every BLOCK, MUTE, UNBLOCK and UNMUTE handler a screen gives the moderation sheet performs its act: the sheet acts through its handlers alone, and a render of one screen cannot see the others. |
 | `src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts` | No module reads the window's size once at load. |
 | `src/components/profile/__tests__/roomInset.test.ts` | One page inset, actually shared, across the rooms. |
 | `src/constants/__tests__/aMemberWhoLeftIsNamedOneWay.test.tsx` | That the database's mark for a departed member is written in one file, and that the Lounge store keeps no "unknown" stand-in: a sweep and an absence no render can show. Behaviour: the same file renders the critique row and reads a reply aloud. |

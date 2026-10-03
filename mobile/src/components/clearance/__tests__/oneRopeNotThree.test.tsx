@@ -16,9 +16,10 @@
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { ClearanceGate, Locked } from '../Clearance';
+import { colors } from '@/src/theme/theme';
 import { GATED_FEATURES, RANK_WEIGHT } from '@/src/constants/gatedFeatures';
 
 describe('one rope, not three', () => {
@@ -55,9 +56,13 @@ describe('one rope, not three', () => {
     });
 
     it('wears the rank’s own ink — brass for one, ruby for the other', () => {
-      const arch = JSON.stringify(render(<ClearanceGate rank="archivist" names="The Vault" onPress={() => {}} />).toJSON());
-      const aut = JSON.stringify(render(<ClearanceGate rank="auteur" names="The Autopsy" onPress={() => {}} />).toJSON());
-      expect(arch).not.toEqual(aut);
+      // The ink itself, read off the words that ask: two whole trees always
+      // differed (their names and ranks are different words), whatever the ink.
+      const ink = (rank: 'archivist' | 'auteur') => StyleSheet.flatten(
+        render(<ClearanceGate rank={rank} names="The Vault" onPress={() => {}} />).getByText('✦ ASCEND THE RANKS').props.style,
+      ).color;
+      expect(ink('archivist')).toBe(colors.sepia);
+      expect(ink('auteur')).toBe(colors.crimsonInk);
     });
 
     it('speaks the whole refusal aloud, including the way out', () => {

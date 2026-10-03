@@ -181,6 +181,9 @@ describe('groupNotifications end to end', () => {
       three('endorse:log:L1', 'Metropolis').map((x, i) => ({ ...x, read: i !== 0 })),
       NOW,
     );
+    // Read and unread rows still form ONE group — or nothing below is checked.
+    expect(items).toHaveLength(1);
+    expect(items[0].kind).toBe('group');
     if (items[0].kind === 'group') {
       expect(items[0].hasUnread).toBe(true);
       expect(items[0].ids).toHaveLength(3);   // what bulk dismiss/mark-read act on

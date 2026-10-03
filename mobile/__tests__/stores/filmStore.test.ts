@@ -37,6 +37,8 @@ jest.mock('react-native-mmkv', () => ({
     })),
 }));
 
+/** What the phone holds for the store, by key — read back by a rehydrate. */
+const mockPersisted: Record<string, unknown> = {};
 jest.mock('../../src/stores/mmkv-storage', () => ({
     storage: {
         getString: jest.fn(() => undefined),
@@ -52,7 +54,7 @@ jest.mock('../../src/stores/mmkv-storage', () => ({
         removeItem: jest.fn(),
     },
     createAsyncMMKVStorage: jest.fn(() => ({
-        getItem: jest.fn(() => null),
+        getItem: jest.fn((name: string) => mockPersisted[name] ?? null),
         setItem: jest.fn(),
         removeItem: jest.fn(),
     })),
@@ -214,28 +216,47 @@ describe('FilmStore Integration Tests (T2-4)', () => {
     // ─────────────────────────────────────────────────────
 
     // ─────────────────────────────────────────────────────
-    // INVARIANT 2: Partialize includes all required fields
+    // INVARIANT 2: What is persisted, and what is rebuilt from it
+    //
+    // These two used to assert that the store HAD its index and fetch-flag keys —
+    // which the beforeEach above had just written, so they could not fail. And
+    // the first claimed the indexes were persisted, which they are not: only the
+    // records are, and every index is rebuilt from them on rehydrate.
     // ─────────────────────────────────────────────────────
 
-    describe('Partialize Allowlist', () => {
-        it('includes all pre-computed indexes in persistence', () => {
-            // The partialize function should include all index fields
-            const state = useFilmStore.getState();
-            // '_archiveIndex' was in this list and is not a field on the store.
-            // It only ever "existed" because the beforeEach above created it.
-            const indexKeys = ['_loggedIndex', '_watchlistIndex', '_endorsedIndex', '_listEndorsedIndex'];
-
-            for (const key of indexKeys) {
-                expect(state).toHaveProperty(key);
-            }
+    describe('Persistence', () => {
+        it('persists the five record arrays, and no index, fetch flag or action', () => {
+            const persist = (useFilmStore as unknown as {
+                persist: { getOptions: () => { partialize: (s: unknown) => Record<string, unknown> } };
+            }).persist;
+            const saved = persist.getOptions().partialize(useFilmStore.getState());
+            expect(Object.keys(saved).sort()).toEqual(['interactions', 'lists', 'logs', 'physicalArchive', 'watchlist']);
         });
 
-        it('excludes function fields and fetch flags from state shape', () => {
-            const state = useFilmStore.getState();
-            // Verify fetch flags exist (they should NOT be persisted, but exist in runtime)
-            expect(typeof state._fetchingLogs).toBe('boolean');
-            expect(typeof state._fetchingWatchlist).toBe('boolean');
-            expect(typeof state._fetchingLists).toBe('boolean');
+        it('rebuilds every index from the persisted records when it rehydrates', async () => {
+            const { rehydrateFilmStore } = require('../../src/stores/films');
+            const log = { id: 'log-1', filmId: 42, title: 'Sunrise', rating: 5, createdAt: '2026-01-01T00:00:00Z' };
+            mockPersisted['reelhouse-films'] = {
+                version: 0,
+                state: {
+                    logs: [log],
+                    watchlist: [{ id: 7, title: 'Ikiru' }],
+                    interactions: [
+                        { type: 'endorse', targetId: 'log-9' },
+                        { type: 'endorse_list', targetId: 'list-3' },
+                    ],
+                },
+            };
+            try {
+                await rehydrateFilmStore();
+                const s = useFilmStore.getState();
+                expect(s._loggedIndex[42]).toEqual(log);
+                expect(s._watchlistIndex[7]).toBe(true);
+                expect(s._endorsedIndex['log-9']).toEqual(expect.objectContaining({ targetId: 'log-9' }));
+                expect(s._listEndorsedIndex['list-3']).toEqual(expect.objectContaining({ targetId: 'list-3' }));
+            } finally {
+                delete mockPersisted['reelhouse-films'];
+            }
         });
     });
 
@@ -305,22 +326,27 @@ describe('FilmStore Integration Tests (T2-4)', () => {
     // ─────────────────────────────────────────────────────
 
     describe('Derived State: getCinephileStats', () => {
-        it('returns correct level for 0 logs', () => {
+        it('a member with no films stands on the first rung', () => {
             useFilmStore.setState({ logs: [] });
             const stats = useFilmStore.getState().getCinephileStats(0);
             expect(stats.count).toBe(0);
-            expect(stats.level).toBeDefined();
+            expect(stats.level).toBe('UNSEATED');
         });
 
-        it('level progresses with more logs', () => {
+        it('the rung rises with the films logged', () => {
             useFilmStore.setState({ logs: [] });
-            const stats10 = useFilmStore.getState().getCinephileStats(10);
-            const stats50 = useFilmStore.getState().getCinephileStats(50);
-            const stats100 = useFilmStore.getState().getCinephileStats(100);
+            const level = (n: number) => useFilmStore.getState().getCinephileStats(n).level;
+            // The ladder's own thresholds (src/constants/standing.ts), named here.
+            expect([0, 1, 10, 50, 100].map(level)).toEqual(
+                ['UNSEATED', 'FIRST REEL', 'THE REGULAR', 'MIDNIGHT DEVOTEE', 'THE ORACLE'],
+            );
+        });
 
-            // Higher counts should have equal or higher progress
-            expect(stats50.count).toBeGreaterThanOrEqual(stats10.count);
-            expect(stats100.count).toBeGreaterThanOrEqual(stats50.count);
+        it('with no count given, counts the logs it holds', () => {
+            useFilmStore.setState({ logs: Array.from({ length: 10 }, (_, i) => ({ id: `l${i}`, filmId: i })) as never });
+            expect(useFilmStore.getState().getCinephileStats()).toEqual(
+                expect.objectContaining({ count: 10, level: 'THE REGULAR' }),
+            );
         });
     });
 });

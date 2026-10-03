@@ -33,8 +33,9 @@ describe('a lounge message, heard', () => {
     expect(spokenDispatch(msg({ type: 'film_share', film_id: 238, film_title: 'The Godfather' })))
       .toBe('Shared film: The Godfather.');
     // A take shared down the dossier path says TAKE, not the long form.
+    // Said as what it IS: "not ESSAY" was also true of no label at all.
     expect(shareOf(msg({ type: 'dossier_share', film_title: 'On Ozu', metadata: { kind: 'take' } }))?.typeLabel)
-      .not.toBe('ESSAY');
+      .toBe('TAKE');
   });
 });
 

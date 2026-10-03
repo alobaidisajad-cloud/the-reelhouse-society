@@ -142,6 +142,9 @@ describe('taking one back', () => {
   it('refused, it comes back and says the stack’s sentence', async () => {
     mockLogService.deleteLogComment.mockRejectedValue(Object.assign(new Error('refused'), { code: '42501' }));
     await takeBack(await mount());
+    expect(mockLogService.deleteLogComment).toHaveBeenCalledWith('c-mine');
+    // Back in the comments the page holds, where it was taken from.
+    expect((mockCache?.comments as { id: string }[]).map((c) => c.id)).toEqual(['c-mine']);
     expect(mockToastError).toHaveBeenCalledWith('Your critique could not be removed.');
   });
 

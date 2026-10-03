@@ -35,7 +35,17 @@ jest.mock('../../src/utils/offlineQueue', () => ({
     flushOfflineQueue: jest.fn(),
 }));
 
-const mockIsNetworkError = jest.fn((_e: unknown) => false);
+/**
+ * Network only for the network's own sentence — never "yes" to everything, or a
+ * failed read misfiled as "no such member" would be queued as if it were offline.
+ */
+const mockSaysNetwork = (e: unknown) =>
+    /Network request failed/.test(typeof e === 'string' ? e : String((e as { message?: unknown })?.message ?? ''));
+const mockIsNetworkError = jest.fn(mockSaysNetwork);
+/** A profiles read as supabase-js answers it: RESOLVED, with the failure in `error`. */
+const mockProfilesRead = (answer: { data: unknown; error: unknown }) => ({
+    select: jest.fn(() => ({ eq: jest.fn(() => ({ maybeSingle: jest.fn().mockResolvedValue(answer) })) })),
+});
 jest.mock('../../src/utils/networkError', () => ({
     isNetworkError: (e: unknown) => mockIsNetworkError(e),
 }));
@@ -58,7 +68,7 @@ jest.mock('expo-haptics', () => ({
 describe('socialSlice', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        mockIsNetworkError.mockReturnValue(false);
+        mockIsNetworkError.mockImplementation(mockSaysNetwork);
         clearSocialCaches();
         useSocialStore.setState({
             following: [],
@@ -110,17 +120,8 @@ describe('socialSlice', () => {
         });
 
         it('should enqueue mutation on network error and keep optimistic state (P0-1)', async () => {
-            const networkError = new TypeError('Network request failed');
-            mockIsNetworkError.mockReturnValue(true);
-
             (supabase.from as jest.Mock) = jest.fn((table: string) => {
-                if (table === 'profiles') return {
-                    select: jest.fn(() => ({
-                        eq: jest.fn(() => ({
-                            single: jest.fn().mockRejectedValue(networkError),
-                        })),
-                    })),
-                };
+                if (table === 'profiles') return mockProfilesRead({ data: null, error: { message: 'TypeError: Network request failed' } });
                 return {};
             });
 
@@ -139,20 +140,16 @@ describe('socialSlice', () => {
 
         it('should rollback on non-network error', async () => {
             (supabase.from as jest.Mock) = jest.fn((table: string) => {
-                if (table === 'profiles') return {
-                    select: jest.fn(() => ({
-                        eq: jest.fn(() => ({
-                            single: jest.fn().mockRejectedValue(new Error('Database timeout')),
-                        })),
-                    })),
-                };
+                if (table === 'profiles') return mockProfilesRead({ data: null, error: { message: 'Database timeout', code: '57014' } });
                 return {};
             });
 
-            await followUser('failuser');
+            const result = await followUser('failuser');
 
             const state = useSocialStore.getState();
+            expect(result).toBe(false);
             expect(state.following).not.toContain('failuser');
+            expect(mockEnqueue).not.toHaveBeenCalled();
         });
     });
 
@@ -190,16 +187,9 @@ describe('socialSlice', () => {
 
         it('should enqueue mutation on network error and keep optimistic state (P0-1)', async () => {
             useSocialStore.setState({ following: ['offlineuser'], _followingIndex: new Set(['offlineuser']) });
-            mockIsNetworkError.mockReturnValue(true);
 
             (supabase.from as jest.Mock) = jest.fn((table: string) => {
-                if (table === 'profiles') return {
-                    select: jest.fn(() => ({
-                        eq: jest.fn(() => ({
-                            single: jest.fn().mockRejectedValue(new TypeError('Network request failed')),
-                        })),
-                    })),
-                };
+                if (table === 'profiles') return mockProfilesRead({ data: null, error: { message: 'TypeError: Network request failed' } });
                 return {};
             });
 

@@ -190,7 +190,10 @@ describe('undoImport — scope', () => {
     mockDeletes();
 
     await undoImport(r, USER);
-    for (const c of calls.filter(c => c.table !== 'list_items')) {
+    const scoped = calls.filter(c => c.table !== 'list_items');
+    // Every table the receipt names was asked, so the loop below has all four to check.
+    expect(scoped.map(c => c.table).sort()).toEqual(['lists', 'logs', 'physical_archive', 'watchlists']);
+    for (const c of scoped) {
       expect(c.eq).toContainEqual(['user_id', USER]);
     }
   });

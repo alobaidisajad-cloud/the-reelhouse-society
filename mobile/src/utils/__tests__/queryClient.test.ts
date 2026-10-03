@@ -72,11 +72,42 @@ describe('mmkvPersister — cache size ceiling', () => {
     expect(storage.delete).toHaveBeenCalled();
   });
 
-  it('measures BYTES, not string length — multi-byte characters must not slip through', () => {
-    // A cache of emoji or CJK is roughly double its .length in UTF-8. Sizing by
-    // .length alone would let a ~4 MB cache pass a 2 MB check.
-    const s = '🎬'.repeat(10);
-    expect(s.length * 2).toBeGreaterThan(s.length);
+  /** A cache whose serialised form is `fill` plus a fixed frame; and that frame's UTF-8 size. */
+  const filled = (fill: string) => client({ clientState: { mutations: [], queries: [{ big: fill }] } });
+  const MAX = 2 * 1024 * 1024;
+  const frame = Buffer.byteLength(JSON.stringify(filled('')), 'utf8');
+
+  it('measures the bytes it would store: a cache of exactly 2 MB is kept, one byte more is not', async () => {
+    await mmkvPersister.persistClient(filled('x'.repeat(MAX - frame)));
+    expect(setSensitive).toHaveBeenCalledTimes(1);
+
+    (setSensitive as jest.Mock).mockClear();
+    await mmkvPersister.persistClient(filled('x'.repeat(MAX - frame + 1)));
+    expect(setSensitive).not.toHaveBeenCalled();
+    expect(storage.delete).toHaveBeenCalled();
+  });
+
+  it('measures BYTES, not string length — CJK text cannot slip past the ceiling', async () => {
+    // Each 観 is one UTF-16 unit and three UTF-8 bytes: this cache is just over
+    // 2 MB stored, while its .length is barely a third of that.
+    const fill = '観'.repeat(Math.ceil((MAX - frame + 1) / 3));
+    expect(Buffer.byteLength(JSON.stringify(filled(fill)), 'utf8')).toBeGreaterThan(MAX);
+    expect(JSON.stringify(filled(fill)).length * 2).toBeLessThan(MAX);
+    await mmkvPersister.persistClient(filled(fill));
+    expect(setSensitive).not.toHaveBeenCalled();
+    expect(storage.delete).toHaveBeenCalled();
+  });
+
+  it('counts a character outside the BMP as the four bytes it is, not six', async () => {
+    // 🎬 is a surrogate pair: two UTF-16 units, four bytes. As many as fit are kept;
+    // one more is refused.
+    const fits = Math.floor((MAX - frame) / 4);
+    await mmkvPersister.persistClient(filled('🎬'.repeat(fits)));
+    expect(setSensitive).toHaveBeenCalledTimes(1);
+
+    (setSensitive as jest.Mock).mockClear();
+    await mmkvPersister.persistClient(filled('🎬'.repeat(fits + 1)));
+    expect(setSensitive).not.toHaveBeenCalled();
   });
 });
 
@@ -93,10 +124,10 @@ describe('mmkvPersister — restore', () => {
   });
 
   it('round-trips a real cache', async () => {
-    const c = client();
+    const c = client({ clientState: { mutations: [], queries: [{ queryKey: ['film', 1], state: { data: 'Ozu' } }] } });
     await mmkvPersister.persistClient(c);
     const back = await mmkvPersister.restoreClient();
-    expect(back).toBeTruthy();
+    expect(back).toEqual(c);
   });
 
   it('removeClient clears the cache', async () => {

@@ -242,11 +242,13 @@ describe('TasteDNA draws only what the server counted', () => {
   });
 
   it('divides by films READ, not by the whole archive', () => {
-    // 40 Drama of 50 read is 80%. Dividing by films_total would print 40% —
-    // an honest-looking number from two different denominators.
-    const { getByText } = render(
-      <TasteDNA isSelf taste={taste({ films_total: 50, films_known: 50 })} username="kane" />,
+    // 40 Drama of 46 read is 87%. Dividing by the 50 in the archive would print
+    // 80% — an honest-looking number from two different denominators. (46 of 50
+    // is above the coverage floor, so the strip is drawn at all.)
+    const { getByText, queryByText } = render(
+      <TasteDNA isSelf taste={taste({ films_total: 50, films_known: 46 })} username="kane" />,
     );
-    expect(getByText('80%')).toBeTruthy();
+    expect(getByText('87%')).toBeTruthy();
+    expect(queryByText('80%')).toBeNull();
   });
 });

@@ -82,11 +82,12 @@ const AnimatedView = Animated.createAnimatedComponent(View);
  * that reached the Tribunal accused a member of something the reporter never
  * chose.
  *
- * 4 is half the real gap, so two chips meet without ever overlapping. The chip
- * is ~42pt tall, so it still clears the 48dp floor with the halo (42 + 8), and
- * it is the full width of the sheet — no neighbour sideways.
+ * 3 leaves 2pt clear between two chips, even while a pressed chip swells to
+ * 1.02 (half the gap, 4, let it reach into the next). The chip is ~44pt tall,
+ * so it still clears the 48dp floor with the halo (44 + 6), and it is the full
+ * width of the sheet — no neighbour sideways.
  */
-const REASON_SLOP = { top: 4, bottom: 4, left: 4, right: 4 } as const;
+const REASON_SLOP = { top: 3, bottom: 3, left: 3, right: 3 } as const;
 
 interface ReasonChipProps {
   reason: ReportReason;
@@ -506,6 +507,9 @@ const styles = StyleSheet.create({
   submitButton: {
     backgroundColor: colors.bloodReel,
     borderRadius: radii.sm,
+    // Its own 48pt, so it needs no halo reaching over DISMISS below it.
+    minHeight: 48,
+    justifyContent: 'center',
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: spacing.lg,
@@ -524,9 +528,15 @@ const styles = StyleSheet.create({
     color: colors.parchment,
   },
   // ── Dismiss Link ──
+  // A target of its own, 48pt tall: a bare line of 11pt text borrowed the 15pt
+  // default halo, which reached 14pt into FILE REPORT above it. The text stays
+  // where it was (spacing.md below the button, less the target's own padding).
   dismissLink: {
     alignSelf: 'center',
-    marginTop: spacing.md,
+    minHeight: 48,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    marginTop: 0,
   },
   dismissText: {
     fontFamily: fonts.sub,

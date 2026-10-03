@@ -219,7 +219,7 @@ describe('TribunalScreen Integration', () => {
     it('renders an empty container for non-admin users', () => {
       mockAuthStore.user = NON_ADMIN_USER;
 
-      const { toJSON } = renderTribunal();
+      const { toJSON, queryByLabelText, queryByText } = renderTribunal();
       const tree = toJSON();
 
       // The component returns <View style={s.container} /> which is just an empty View
@@ -227,6 +227,12 @@ describe('TribunalScreen Integration', () => {
       expect(tree).toBeTruthy();
       // The pending reports query should NOT have been called (enabled: false)
       expect(mockGetPendingReports).not.toHaveBeenCalled();
+      // And none of the Tribunal's own chrome is drawn — the query is gated on its
+      // own, so its silence alone would not show the screen was refused. Each of
+      // these is found on an admin's screen by the tests below.
+      expect(queryByLabelText('Priority queue view')).toBeNull();
+      expect(queryByLabelText('Enter multi-select mode')).toBeNull();
+      expect(queryByText(/matters? awaits? judgment/)).toBeNull();
     });
   });
 
@@ -577,6 +583,12 @@ describe('TribunalScreen Integration', () => {
       // 20 cards meant 20 unbounded requests. The mock in this file previously
       // pointed at the per-card method, which no longer exists: the test passed
       // while exercising nothing.
+      // A repeat offender: two reports against the same member, so the
+      // de-duplication below has something to remove.
+      mockGetPriorityQueue.mockResolvedValue([
+        ...PRIORITY_REPORTS,
+        { ...PRIORITY_REPORTS[1], id: 'priority-003', content_id: 'content-jkl', reason: 'Harassment again' },
+      ]);
       const { getByLabelText, getByText } = renderTribunal();
       await waitFor(() => {
         expect(getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy();
@@ -594,9 +606,8 @@ describe('TribunalScreen Integration', () => {
       const calls = mockGetModerationHistoryForUsers.mock.calls;
       expect(calls.length).toBe(1);
       const [userIds] = calls[0];
-      expect(Array.isArray(userIds)).toBe(true);
-      // De-duplicated: a repeat offender appears once.
-      expect(new Set(userIds).size).toBe(userIds.length);
+      // Every member on the docket, and the repeat offender once.
+      expect([...userIds].sort()).toEqual(['target-user-3', 'target-user-4']);
     });
   });
 

@@ -45,6 +45,7 @@ import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { roomOf } from '@/src/components/dispatch/roomLink';
 import { hourLabel } from '@/src/components/dispatch/dayLabel';
 import { useAuthStore } from '@/src/stores/auth';
+import { useBlockStore } from '@/src/stores/blockStore';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { useDispatch } from '@/src/stores/dispatch';
 import ViewShot, { captureRef } from 'react-native-view-shot';
@@ -75,6 +76,8 @@ export default function FilingReader() {
   // The page is measured at THIS screen's width, not a 390pt phone's.
   const { width: screenWidth } = useWindowDimensions();
   const me = useAuthStore((s) => s.user);
+  const blockUser = useBlockStore((s) => s.blockUser);
+  const muteUser = useBlockStore((s) => s.muteUser);
 
   const filings = useDispatch((s) => s.filings);
   const critiques = useDispatch((s) => s.critiques);
@@ -688,8 +691,13 @@ export default function FilingReader() {
             });
           }}
           onBlock={() => {
+            void blockUser(live.authorId as string);
             setActions(false);
             nav.back(); // blocked: their filing is not what the member wants to see
+          }}
+          onMute={() => {
+            void muteUser(live.authorId as string);
+            setActions(false);
           }}
         />
       ) : null}

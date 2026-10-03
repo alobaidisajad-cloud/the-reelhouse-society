@@ -18,9 +18,9 @@
  * find that out at the end.
  */
 import React, { act } from 'react';
-import { Alert, AppState } from 'react-native';
+import { Alert, AppState, InteractionManager } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 import ComposeScreen from '@/app/dispatch/compose';
 
@@ -175,11 +175,18 @@ describe('the door', () => {
     // end by a rule they were never shown.
     mockUser = { id: 'u1', username: 'me', tier: 'cinephile' };
     at({ kind: 'dossier' });
+    (router.back as jest.Mock).mockClear();
+    // The way out waits for the entrance to settle; here it settles at once.
+    jest.spyOn(InteractionManager, 'runAfterInteractions').mockImplementation(
+      ((fn: () => void) => { fn(); return { cancel() {} }; }) as never,
+    );
     render(<ComposeScreen />);
     await flush();
     // In the house's own words, and naming the FORM. "Auteur tier required" is
     // a settings screen talking about a subscription.
     expect(mockToast.error).toHaveBeenCalledWith('The essay is an Auteur’s to file.');
+    // And turned AWAY: told, then taken back out, never left at the desk.
+    expect(router.back).toHaveBeenCalledTimes(1);
   });
 
   it('and tells a LAPSED Auteur their unfinished one is kept', async () => {
@@ -470,10 +477,13 @@ describe('leaving the room', () => {
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(
       ((t: string) => { alerts.push(t); }) as never,
     );
+    (router.back as jest.Mock).mockClear();
     const { getByLabelText } = await open();
     await press(getByLabelText(/Cancel/));
     // A confirmation over an empty page is a dialog that exists to be dismissed.
     expect(alerts).toHaveLength(0);
+    // …and it LEAVES. Silence alone would also be true of a button that did nothing.
+    expect(router.back).toHaveBeenCalledTimes(1);
     spy.mockRestore();
   });
 });

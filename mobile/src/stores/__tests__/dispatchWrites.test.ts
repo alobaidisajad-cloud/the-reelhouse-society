@@ -24,6 +24,8 @@ let mockOutcome: 'ok' | 'refused' | 'offline' | 'silent' = 'ok';
 const mockSent: { table: string; op: string; row: unknown }[] = [];
 const mockQueued: { type: string; payload: Record<string, unknown> }[] = [];
 const mockRpc: { fn: string; args: unknown }[] = [];
+/** Every `.select(columns)`, with the write it followed (or 'read' when it followed none). */
+const mockSelects: { table: string; op: string; columns: unknown }[] = [];
 
 const REFUSED = { data: null, error: { message: 'refused', code: '42501' } };
 const networkError = () => Object.assign(new TypeError('Network request failed'), { name: 'TypeError' });
@@ -40,7 +42,8 @@ jest.mock('../../lib/supabase', () => ({
       const self = () => chain;
       /** Set by `update`/`delete`, so `then` can answer with a row rather than nothing. */
       let updated = false;
-      chain.select = () => self();
+      let lastOp = 'read';
+      chain.select = (columns?: unknown) => { mockSelects.push({ table, op: lastOp, columns }); return self(); };
       chain.eq = () => self();
       chain.is = () => self();
       chain.order = () => self();
@@ -63,6 +66,7 @@ jest.mock('../../lib/supabase', () => ({
       chain.update = (row: unknown) => {
         mockSent.push({ table, op: 'update', row });
         updated = true;
+        lastOp = 'update';
         return self();
       };
       /**
@@ -76,6 +80,7 @@ jest.mock('../../lib/supabase', () => ({
       chain.delete = () => {
         mockSent.push({ table, op: 'delete', row: null });
         updated = true;
+        lastOp = 'delete';
         return self();
       };
       chain.then = (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
@@ -142,7 +147,7 @@ const sentTo = (table: string, op: string) => mockSent.filter((s) => s.table ===
 
 beforeEach(() => {
   mockOutcome = 'ok';
-  mockSent.length = 0; mockQueued.length = 0; mockRpc.length = 0;
+  mockSent.length = 0; mockQueued.length = 0; mockRpc.length = 0; mockSelects.length = 0;
   reset();
 });
 
@@ -460,6 +465,9 @@ describe('an update the house refuses in silence', () => {
 
     const row = sentTo('dispatch_posts', 'update')[0].row as Record<string, unknown>;
     expect(row.answer_id).toBe('c-new');
+    // Without the rows back, a real update answers `data: null` on EVERY write,
+    // landed or not, and every answer would be taken back.
+    expect(mockSelects).toContainEqual({ table: 'dispatch_posts', op: 'update', columns: 'id' });
     expect(useDispatch.getState().filings[0].answerId).toBeNull();
   });
 });

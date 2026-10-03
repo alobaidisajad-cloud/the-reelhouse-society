@@ -10,7 +10,8 @@
  * in one of them: it was in there being two expressions at all. FILMS already used
  * `Math.max` for self while every pill used `||`, so the file had already drifted once.
  */
-import { reconcileCount } from '../profileComputed';
+import { renderHook } from '@testing-library/react-native';
+import { reconcileCount, useProfileComputed } from '../profileComputed';
 
 const SELF = true;
 const OTHER = false;
@@ -21,13 +22,23 @@ describe('the cold-start case that caused #86', () => {
     expect(reconcileCount(0, 42, SELF)).toBe(42);
   });
 
-  it('shows the same number for a StatCard and a pill, because there is one number', () => {
-    // Whatever the inputs, both consumers call this — so they cannot disagree.
-    for (const [server, local] of [[0, 42], [42, 42], [300, 150], [7, 0], [0, 0]] as const) {
-      const a = reconcileCount(server, local, SELF);
-      const b = reconcileCount(server, local, SELF);
-      expect(a).toBe(b);
-    }
+  it('shows the same number for a StatCard and a pill, because there is one number', async () => {
+    // The screen's WATCHLIST StatCard reads `totalWatchlist`; the WATCHLIST pill
+    // reads its collection card. On the cold start both must say the 42 the
+    // device holds, not the seeded 0.
+    const queue = Array.from({ length: 42 }, (_, i) => ({ id: i + 1, title: `Film ${i + 1}`, poster: null, year: 1950 }));
+    const c = (await renderHook(() => useProfileComputed({
+      isSelf: true, myLogs: [], myWatchlist: queue, myVault: [], myLists: [],
+      mainLogs: [], archiveLogs: [], ledgerLogs: [], analyticsLogs: [], watchlist: [], vault: [], lists: [],
+      counts: { logs: 0, ledger: 0, watchlist: 0, vault: 0, lists: 0 },
+      isArchivistPlus: false, isAuteurPlus: false, targetUser: { id: 'me' }, username: 'tomas', serverStreak: null,
+      archiveSieve: 'all', archiveSearch: '', listsSearch: '', physicalSearch: '',
+      ledgerSearch: '', ledgerRatingFilter: 'all', watchlistDecade: null,
+      watchlistSearch: '', watchlistSort: 'default', physicalFilter: null,
+      physicalSort: 'default', listsSort: 'default',
+    } as never))).result.current;
+    expect(c.totalWatchlist).toBe(42);
+    expect(c.COLLECTION_CARDS.find((card) => card.id === 'watchlist')?.count).toBe('42');
   });
 });
 

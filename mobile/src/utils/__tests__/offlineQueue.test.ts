@@ -101,7 +101,9 @@ describe('offlineQueue — holding a write until the network returns', () => {
     // write path that enqueues, not just the read.
     const { storage } = require('@/src/stores/mmkv-storage');
     (storage.getString as jest.Mock).mockReturnValueOnce('{ not json');
-    expect(() => getOfflineQueue()).not.toThrow();
+    let read: unknown;
+    expect(() => { read = getOfflineQueue(); }).not.toThrow();
+    expect(read).toEqual([]);
   });
 });
 

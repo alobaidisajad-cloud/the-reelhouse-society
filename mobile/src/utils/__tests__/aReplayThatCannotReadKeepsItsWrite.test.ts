@@ -55,14 +55,15 @@ describe('a replay that cannot read keeps its write', () => {
     ['a follow request', 'follow_request_user', { user_id: 'member-1', target_username: 'kane' }],
     ['a log whose history must be merged', 'update_log', { id: 'l1', updates: { viewing_history: [{ date: '2026-09-01' }] } }],
   ])('%s is raised, not reported done, and writes nothing', async (_what, type, payload) => {
-    await expect(replay(type, payload)).rejects.toBeTruthy();
+    // The read's own failure, not any error: a replay that broke some other way proves nothing.
+    await expect(replay(type, payload)).rejects.toBe(OFFLINE);
     expect(mockWrites).toEqual([]);
   });
 
   it('a log that lost the race to another device is merged — and if the winner cannot be read, raised', async () => {
     // The insert meets its unique key; the read of the winning row fails.
     mockAnswers = [{ data: null, error: { code: '23505', message: 'duplicate key value' } }, { data: null, error: OFFLINE }];
-    await expect(replay('add_log', { user_id: 'member-1', film_id: 11, film_title: 'Sunrise' })).rejects.toBeTruthy();
+    await expect(replay('add_log', { user_id: 'member-1', film_id: 11, film_title: 'Sunrise' })).rejects.toBe(OFFLINE);
   });
 
   it('a member who truly does not exist is still skipped, as before', async () => {

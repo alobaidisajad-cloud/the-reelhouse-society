@@ -18,9 +18,11 @@
  *   asserts the line presses through to the route rather than merely existing.
  */
 import React, { act } from 'react';
+import { InteractionManager } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 
 import RulesScreen from '@/app/dispatch/rules';
+import ComposeScreen from '@/app/dispatch/compose';
 import { PaperPicker, CLAUSES } from '@/src/components/dispatch/paper/PaperMore';
 
 const mockPushed: string[] = [];
@@ -85,6 +87,22 @@ describe('the house rules', () => {
     const { getByLabelText } = render(<PaperPicker onRules={onRules} />);
     await act(async () => { fireEvent.press(getByLabelText('Read the house rules')); });
     expect(onRules).toHaveBeenCalled();
+  });
+
+  it('and the writing room hands its picker that door, which opens the rules page', async () => {
+    // The line is drawn only when a door is handed to it, so a writing room that
+    // stopped handing one would lose the line silently — the rules unreachable,
+    // and the picker test above still green.
+    const push = jest.requireMock('expo-router').router.push as jest.Mock;
+    push.mockClear();
+    // A visitor is sent back after the entrance settles; held, so nothing leaves.
+    const held = jest.spyOn(InteractionManager, 'runAfterInteractions')
+      .mockReturnValue({ cancel() {} } as never);
+    const { getByLabelText } = render(<ComposeScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await act(async () => { fireEvent.press(getByLabelText('Read the house rules')); });
+    expect(push).toHaveBeenCalledWith('/dispatch/rules');
+    held.mockRestore();
   });
 
   it('and the picker without a door does not draw a dead line', async () => {

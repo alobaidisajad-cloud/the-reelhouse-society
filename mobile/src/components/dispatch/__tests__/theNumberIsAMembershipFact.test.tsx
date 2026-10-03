@@ -54,7 +54,16 @@ describe('a member’s number is not a fact about their post', () => {
   it('puts the member’s initial there instead', () => {
     const { toJSON } = render(<Byline author={ANA} trailing="31 CRITIQUES" />);
     // 'A' from Ana — and the name beside it, so the disc repeats nothing.
-    expect(textOf(toJSON())).toContain('A');
+    // Asked of each string on its own: the joined line holds an A in "ANA"
+    // whether the disc printed its letter or not.
+    const strings: string[] = [];
+    const walk = (n: any) => {
+      if (!n) return;
+      if (typeof n === 'string') { strings.push(n.trim()); return; }
+      (n.children ?? []).forEach(walk);
+    };
+    walk(toJSON());
+    expect(strings).toContain('A');
     expect(initialOf('Ana')).toBe('A');
   });
 

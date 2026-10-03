@@ -9,6 +9,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const APP = path.join(__dirname, '..', '..', '..', 'app');
 const EXPORT = /export\s*\{\s*RouteErrorBoundary\s+as\s+ErrorBoundary\s*\}\s*from\s*'@\/src\/components\/RouteErrorBoundary'/;
@@ -32,8 +33,9 @@ describe('every route has its own crash net', () => {
     expect(all).toEqual(expect.arrayContaining(['film/[id].tsx', '(tabs)/index.tsx', '(modals)/log-modal.tsx', ROOT]));
   });
 
+  // Read as code, comments blanked: an export switched off by `//` is no net.
   it('each exports the house boundary, except the root', () => {
-    const bare = all.filter((r) => r !== ROOT && !EXPORT.test(fs.readFileSync(path.join(APP, r), 'utf8')));
+    const bare = all.filter((r) => r !== ROOT && !EXPORT.test(readCode(path.join(APP, r))));
     expect(bare).toEqual([]);
   });
 

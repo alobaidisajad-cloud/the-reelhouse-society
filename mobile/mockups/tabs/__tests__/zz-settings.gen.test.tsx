@@ -71,9 +71,10 @@ whenRendering('settings generator', () => {
   it('writes Settings with the password panel open', async () => {
     let r!: ReturnType<typeof render>;
     await act(async () => { r = render(<SettingsScreen />); });
-    const toggle = r.queryByLabelText('Change password');
-    if (toggle) await act(async () => { await fireEvent.press(toggle); });
-    else console.log('NO PASSWORD PANEL. On screen:', JSON.stringify(r.toJSON()).replace(/[^A-Za-z &]+/g, ' ').slice(0, 400));
+    // Found or the run fails: this plate is the only drawing of the panel's well,
+    // and a plate written without it would pass as if it held it.
+    const toggle = r.getByLabelText('Change password');
+    await act(async () => { await fireEvent.press(toggle); });
     const html = toHtml(r.toJSON(), { local: LOCAL_ART });
     writeScreen('settings', html);
     console.log('settings:', html.length, 'bytes |', (html.match(/<input|TextInput/g) || []).length, 'fields');

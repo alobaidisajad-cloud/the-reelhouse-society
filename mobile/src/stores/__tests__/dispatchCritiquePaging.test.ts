@@ -176,11 +176,14 @@ describe('paging a filing’s critiques', () => {
 });
 
 describe('the number the footer prints', () => {
-  it('is the number the store actually asks for', () => {
+  it('is the number of critiques the paging read actually asks for', async () => {
     // The whole defect in one assertion: these were 30 and 50, in two files,
-    // and the footer described a page size nothing used.
-    const metrics = require('@/src/components/dispatch/paper/paperMetrics');
-    expect(metrics.COMMENT_PAGE_SIZE).toBe(COMMENT_PAGE_SIZE);
-    expect(metrics.PAGE_SIZE).toBe(require('../dispatchTypes').PAGE_SIZE);
+    // and the footer described a page size nothing used. So the footer's number
+    // is held to the read's own request, not to the constant it re-exports.
+    const printed = require('@/src/components/dispatch/paper/paperMetrics').COMMENT_PAGE_SIZE;
+    mockRows = [fullPage(0)];
+    await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    const [from, to] = mockAsks.find((a) => a.range)!.range!;
+    expect(printed).toBe(to - from + 1);
   });
 });

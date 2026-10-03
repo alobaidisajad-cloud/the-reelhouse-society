@@ -29,7 +29,7 @@ import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { LobbyWall } from '@/src/components/lobby/LobbyWall';
-import { LIVE_LOBBY_READS, useProgramme } from '@/src/components/lobby/wallRead';
+import { LIVE_LOBBY_READS, useFeature, useProgramme } from '@/src/components/lobby/wallRead';
 import reelToast from '@/src/utils/reelToast';
 import { nav } from '@/src/utils/typedRouter';
 import { Arrive } from '@/src/components/Arrive';
@@ -69,8 +69,11 @@ export default function LobbyScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // The wall's reads persist, so a cold start shows the last wall; ready when the programme is.
+  // The programme is public, so the welcome asks for it too, and its feature: a member who
+  // signs in finds the bill already up.
   const queryClient = useQueryClient();
-  const programme = useProgramme(isAuthenticated);
+  const programme = useProgramme(true);
+  useFeature(programme.data?.feature ?? null);
   const readyMark = useScreenReady(isAuthenticated ? 'lobby' : 'welcome', !isAuthenticated || !programme.isPending);
 
   // Scroll tracking: the top bar's blur and tint follow the page.

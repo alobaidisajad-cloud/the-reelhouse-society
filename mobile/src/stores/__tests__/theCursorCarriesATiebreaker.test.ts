@@ -21,7 +21,7 @@ import { hydrateFollowing } from '../domain/socialSlice';
 const ME = '55555555-5555-4555-8555-555555555555';
 const TIE = '2026-09-11T10:00:00.000Z';
 
-/** Every `.or(...)` filter the store sent, in order. */
+/** Every `.or(...)` and `.gt(...)` the store sent, in order (a bare `.gt` skips tied rows). */
 const filters: string[] = [];
 let pages: Record<string, unknown>[][] = [];
 let pageIndex = 0;
@@ -29,7 +29,8 @@ let pageIndex = 0;
 const chain = () => {
   const c: Record<string, unknown> = {};
   const self = () => c;
-  for (const f of ['select', 'eq', 'in', 'order', 'limit', 'gt'] as const) c[f] = () => self();
+  for (const f of ['select', 'eq', 'in', 'order', 'limit'] as const) c[f] = () => self();
+  c.gt = (col: string, value: unknown) => { filters.push(`${col}.gt.${String(value)}`); return self(); };
   c.or = (expr: string) => { filters.push(expr); return self(); };
   c.then = (res: (v: unknown) => unknown) => {
     const page = pages[pageIndex] ?? [];

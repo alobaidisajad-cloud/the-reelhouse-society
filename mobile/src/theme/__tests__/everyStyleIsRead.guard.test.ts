@@ -61,12 +61,16 @@ for (const f of files) {
   visit(sf);
 }
 
-/** Where a key may be read: the file, and for an exported sheet every file that names its module. */
-const readersOf = (sh: Sheet): string => {
-  const own = code.get(sh.file)!;
-  if (!sh.exported) return own;
+/** In its own file a key is read only as `<sheet>.<key>`: a film's `.title` is not the sheet's. */
+const readInOwnFile = (sheet: string, k: string, src: string): boolean =>
+  new RegExp(`\\b${sheet}\\.${k}\\b`).test(src);
+
+/** Read in its own file, or (exported) in any file naming its module, under any imported name. */
+const isRead = (sh: Sheet, k: string): boolean => {
+  if (readInOwnFile(sh.name, k, code.get(sh.file)!)) return true;
+  if (!sh.exported) return false;
   const stem = rel(sh.file).replace(/\.tsx?$/, '').split('/').pop()!;
-  return [own, ...files.filter((g) => g !== sh.file && code.get(g)!.includes(stem)).map((g) => code.get(g)!)].join('\n');
+  return files.some((g) => g !== sh.file && code.get(g)!.includes(stem) && new RegExp(`\\.${k}\\b`).test(code.get(g)!));
 };
 
 it('finds the sheets at all — a sweep of nothing proves nothing', () => {
@@ -79,12 +83,17 @@ it('every key of every sheet is drawn somewhere in the app', () => {
   for (const sh of sheets) {
     if (COMPUTED[`${rel(sh.file)} · ${sh.name}`]) continue;
     // A key's own definition (`key: {`) is not a read of it.
-    const readers = readersOf(sh);
     for (const k of sh.keys) {
-      if (!new RegExp(`\\.${k}\\b`).test(readers)) dead.push(`${rel(sh.file)} · ${sh.name}.${k}`);
+      if (!isRead(sh, k)) dead.push(`${rel(sh.file)} · ${sh.name}.${k}`);
     }
   }
   expect(dead).toEqual([]);
+});
+
+it('the detector says no to a key whose name is only read off something else', () => {
+  const src = 'const s = StyleSheet.create({ title: {} });\nconst heading = film.title;';
+  expect(readInOwnFile('s', 'title', src)).toBe(false);
+  expect(readInOwnFile('s', 'title', `${src}\n<Text style={s.title} />`)).toBe(true);
 });
 
 it('every sheet read by a computed key still is — the list cannot rot', () => {

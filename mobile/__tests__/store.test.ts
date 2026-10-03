@@ -1,4 +1,5 @@
 import { useFilmStore } from '../src/stores/films';
+import { useAuthStore } from '../src/stores/auth';
 
 // Mock MMKV
 jest.mock('react-native-mmkv', () => ({
@@ -19,6 +20,7 @@ jest.mock('@/src/lib/supabase', () => ({
     from: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     single: jest.fn(),
   },
@@ -40,34 +42,30 @@ describe('FilmStore Offline State & Indices', () => {
     });
   });
 
-  it('updates derived indices when logs are added', () => {
-    const mockLog = { id: 1, filmId: 100, rating: 5, review: 'Masterpiece' };
-    
-    useFilmStore.setState({
-      logs: [mockLog as any],
-      _loggedIndex: { 100: mockLog as any }
-    });
+  // These two used to write an index with setState and read it straight back,
+  // so the store's own index code never ran. The rebuild of every index from
+  // the records the phone kept is tested through a real rehydrate in
+  // stores/filmStore.test.ts; these drive the actions that keep the watchlist's
+  // index in step while the app runs.
+  afterEach(() => { useAuthStore.setState({ user: null }); });
 
+  it('saving a film marks it in the watchlist index at once', async () => {
+    useAuthStore.setState({ user: { id: 'u1', username: 'kane' } as never });
+    await useFilmStore.getState().addToWatchlist({ id: 100, title: 'Sunrise', poster_path: null } as never);
     const state = useFilmStore.getState();
-    
-    expect(state.logs.length).toBe(1);
-    expect(state._loggedIndex[100]).toBeDefined();
-    
-    // Verify derived checks work correctly
-    expect(state._loggedIndex[100]).toBeDefined();
-    expect(state._loggedIndex[200]).toBeUndefined();
+    expect(state.watchlist.map((w) => w.id)).toEqual([100]);
+    expect(state._watchlistIndex[100]).toBe(true);
+    expect(state._watchlistIndex[200]).toBeUndefined();
   });
 
-  it('handles watchlist indexing correctly', () => {
-    const mockWatchlistItem = { id: 50, filmId: 100 };
-    
-    useFilmStore.setState({
-      watchlist: [mockWatchlistItem as any],
-      _watchlistIndex: { 100: true }
-    });
-
+  it('taking a film off the watchlist unmarks it, and leaves the others marked', async () => {
+    useAuthStore.setState({ user: { id: 'u1', username: 'kane' } as never });
+    await useFilmStore.getState().addToWatchlist({ id: 100, title: 'Sunrise', poster_path: null } as never);
+    await useFilmStore.getState().addToWatchlist({ id: 200, title: 'Ikiru', poster_path: null } as never);
+    await useFilmStore.getState().removeFromWatchlist(100);
     const state = useFilmStore.getState();
-    expect(state.watchlist.length).toBe(1);
-    expect(state._watchlistIndex[100]).toBe(true);
+    expect(state.watchlist.map((w) => w.id)).toEqual([200]);
+    expect(state._watchlistIndex[100]).toBeUndefined();
+    expect(state._watchlistIndex[200]).toBe(true);
   });
 });

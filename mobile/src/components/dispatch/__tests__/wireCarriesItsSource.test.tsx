@@ -20,6 +20,7 @@
  * prints' and then printed something else".
  */
 import React, { act } from 'react';
+import { InteractionManager } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 
 import { ComposeShortScreen, ComposeBallotScreen } from '@/src/components/dispatch/ComposeDesks';
@@ -81,7 +82,9 @@ jest.mock('expo-router', () => {
   const actual = jest.requireActual('expo-router');
   return {
     ...actual,
-    router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), setParams: jest.fn() },
+    // `canGoBack` as the real router has it: `nav.back()` asks it first, and
+    // without it the way back out of a desk threw instead of going.
+    router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), setParams: jest.fn(), canGoBack: () => true },
     useLocalSearchParams: () => ({ edit: mockEditId }),
     Stack: { Screen: () => null },
   };
@@ -359,6 +362,12 @@ describe('a signed-out reader who reaches a desk', () => {
     ['a ballot', () => <ComposeBallotScreen />],
   ] as const) {
     it(`${name} — is told why, and taken back`, async () => {
+      const back = jest.requireMock('expo-router').router.back as jest.Mock;
+      back.mockClear();
+      // The pop waits for the entrance to settle; here it settles at once.
+      const settled = jest.spyOn(InteractionManager, 'runAfterInteractions').mockImplementation(
+        ((fn: () => void) => { fn(); return { cancel() {} }; }) as never,
+      );
       const { toJSON } = render(mount());
       await act(async () => { await Promise.resolve(); });
 
@@ -366,6 +375,9 @@ describe('a signed-out reader who reaches a desk', () => {
       // sentence already on screen, rather than a screen a member is left on.
       expect(noBody(toJSON())).toEqual([]);
       expect(String(mockToast.error.mock.calls[0]?.[0])).toBe('Filing is for members.');
+      // And TAKEN BACK, once: a sentence over a desk they cannot use is not a way out.
+      expect(back).toHaveBeenCalledTimes(1);
+      settled.mockRestore();
     });
   }
 });
@@ -506,13 +518,17 @@ describe('a desk opened on a filing that already exists', () => {
     expect(mockToast.success).not.toHaveBeenCalledWith('Amended');
   });
 
-  it('sends only the words — never the film the critiques are arguing about', () => {
+  it('sends only the words — never the film the critiques are arguing about', async () => {
     // `amend` takes a narrow set of fields and the SUBJECT is not among them:
     // changing the film under forty replies turns them into replies to
     // something else.
     const r = render(<ComposeShortScreen kind="take" />);
-    void press(r.getByLabelText('Amend it'));
-    const sent = Object.keys((mockAmended[0]?.updates ?? {}) as Record<string, unknown>);
+    await press(r.getByLabelText('Amend it'));
+    // The amendment went — so the keys below are what was SENT, not an empty
+    // object standing in for a press that never landed.
+    expect(mockAmended).toHaveLength(1);
+    const sent = Object.keys(mockAmended[0].updates as Record<string, unknown>);
+    expect(sent).toContain('body');
     expect(sent).not.toContain('film');
     expect(sent).not.toContain('subjectId');
   });

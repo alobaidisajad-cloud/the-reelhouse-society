@@ -89,6 +89,9 @@ describe('the essay body', () => {
     // print the asterisks, so the design gives way rather than the guard.
     const { toJSON } = render(<EssayBody text={`*${OPENING}*\n\n${SECOND}`} />);
     expect(capOf(toJSON())).toBeNull();
+    // …and SET, as an ordinary paragraph. No cap is also what a paragraph that
+    // was dropped altogether looks like.
+    expect(JSON.stringify(toJSON())).toContain('Ozu frames a room and then leaves it.');
   });
 
   it('renders nothing at all for an empty body', () => {
@@ -182,6 +185,9 @@ describe('the essay’s ornaments and its refusals', () => {
      */
     expect(hasDropCap('**Ozu** frames a room and then leaves it entirely alone.')).toBe(false);
     expect(hasDropCap('![a still](https://example.com/x.png)')).toBe(false);
+    // Refused a cap, still printed: an opening that vanished would also have none.
+    expect(draw('**Ozu** frames a room and then leaves it entirely alone.')).toContain('frames a room and then leaves it');
+    expect(draw('![a still](https://example.com/x.png)')).toContain('[image: a still]');
   });
 
   it('draws nothing at all for an essay with no words in it', () => {

@@ -77,5 +77,15 @@ describe('a filing shared to a room actually reaches it', () => {
     // The clamp reads MAX_LENGTHS, so raising the column later moves one value.
     expect(MAX_LENGTHS.loungeShareTitle).toBeGreaterThan(0);
     expect(MAX_LENGTHS.loungeShareTitle).toBeLessThan(COLUMN_CEILING);
+    // And the clamp really READS it: move the constant and the cut moves with
+    // it. A clamp holding its own copy of the number would ignore this.
+    const moved = jest.replaceProperty(MAX_LENGTHS as { loungeShareTitle: number }, 'loungeShareTitle', 100);
+    try {
+      const out = cardTitle(LONG_TAKE)!;
+      expect(out.length).toBeLessThanOrEqual(100 + 1);
+      expect(out.endsWith('…')).toBe(true);
+    } finally {
+      moved.restore();
+    }
   });
 });

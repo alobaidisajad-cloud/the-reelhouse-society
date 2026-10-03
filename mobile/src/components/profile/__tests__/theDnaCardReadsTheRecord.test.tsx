@@ -45,6 +45,8 @@ it('the film page\'s mark is the one the record averages (the rehearsal reads th
 
 it('with no member number on file, invents none', () => {
   const r = render(<CinemaDNACard user={{ username: 'vesper', member_no: null }} analytics={record(120)} onClose={jest.fn()} />);
+  // The card is drawn, reading in full; only the number it does not have is missing.
+  expect(r.getByText('THE ORACLE')).toBeTruthy();
   expect(r.queryByText(/CASE №|MEMBER Nº/)).toBeNull();
 });
 

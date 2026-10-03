@@ -51,9 +51,14 @@ describe('withTimeout', () => {
   });
 
   it('uses default 15s timeout when ms not specified', async () => {
-    // Should resolve immediately since no actual timeout occurs
-    const result = await withTimeout(async () => 42);
-    expect(result).toBe(42);
+    const clock = jest.spyOn(AbortSignal, 'timeout');
+    try {
+      const result = await withTimeout(async () => 42);
+      expect(result).toBe(42);
+      expect(clock).toHaveBeenCalledWith(15_000);
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it('throws AppError TIMEOUT when OUR timeout fires (AbortError + signal aborted)', async () => {

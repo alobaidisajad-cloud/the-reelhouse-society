@@ -36,9 +36,23 @@ describe('EmptyStates', () => {
     });
 
     it('omits subtitle when not provided', () => {
-      const { queryByText } = render(<EmptyState title="T" />);
-      // Only title should be present, no subtitle
-      expect(queryByText('T')).toBeTruthy();
+      // Every Text drawn, hidden ones too: an empty subtitle line is still a line.
+      const texts = (el: React.ReactElement) => {
+        let n = 0;
+        const walk = (node: unknown) => {
+          if (!node || typeof node !== 'object') return;
+          if (Array.isArray(node)) { node.forEach(walk); return; }
+          const j = node as { type: string; children: unknown[] | null };
+          if (j.type === 'Text') n++;
+          (j.children ?? []).forEach(walk);
+        };
+        walk(render(el).toJSON());
+        return n;
+      };
+      const without = render(<EmptyState title="T" />);
+      expect(without.getByText('T')).toBeTruthy();
+      // The same state with a subtitle draws exactly one Text more: without one, nothing stands in its place.
+      expect(texts(<EmptyState title="T" subtitle="Sub text" />) - texts(<EmptyState title="T" />)).toBe(1);
     });
 
     it('renders Buster when useBuster=true', () => {

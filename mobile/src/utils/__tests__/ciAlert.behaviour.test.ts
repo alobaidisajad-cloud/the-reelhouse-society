@@ -128,6 +128,18 @@ it('a cancelled or skipped run says nothing', async () => {
   expect(gh.labels.size).toBe(0);
 });
 
+it('a cancelled or skipped run leaves an open alert open — a newer push superseded it, nothing went green', async () => {
+  const gh = fakeGitHub();
+  gh.setJobs([failing('Jest')]);
+  await fire(gh, run('failure'));
+  expect(gh.issues.map((i) => i.state)).toEqual(['open']);
+
+  await fire(gh, run('cancelled'));
+  await fire(gh, run('skipped'));
+  expect(gh.issues.map((i) => i.state)).toEqual(['open']);
+  expect(gh.comments).toEqual([]);
+});
+
 it('two workflows red at once are two alerts, and each closes on its own', async () => {
   const gh = fakeGitHub();
   gh.setJobs([failing('Jest')]);

@@ -12,7 +12,27 @@ import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative } from 'path';
 import { MOBILE, stripComments } from '@/test-utils/readCode';
 
-/** Every style object that spreads `effects.flat` and still carries elevation. */
+/** In one file's code: the line of each flat style object that keeps elevation. */
+function flatButElevatedIn(code: string): number[] {
+  const lines: number[] = [];
+  let at = code.indexOf('...effects.flat');
+  while (at >= 0) {
+    // The style object it sits in: back to its opening brace.
+    let depth = 0;
+    let start = at;
+    for (; start > 0; start--) {
+      const ch = code[start];
+      if (ch === '}') depth++;
+      if (ch === '{') { if (depth === 0) break; depth--; }
+    }
+    const obj = code.slice(start, at);
+    if (/\belevation\s*:|\.\.\.effects\.shadow\w+/.test(obj)) lines.push(code.slice(0, at).split('\n').length);
+    at = code.indexOf('...effects.flat', at + 1);
+  }
+  return lines;
+}
+
+/** Every style object in the app that spreads `effects.flat` and still carries elevation. */
 function flatButElevated(): string[] {
   const out: string[] = [];
   const walk = (dir: string) => {
@@ -21,22 +41,7 @@ function flatButElevated(): string[] {
       if (statSync(p).isDirectory()) { if (name !== '__tests__' && name !== 'node_modules') walk(p); continue; }
       if (!/\.tsx?$/.test(name)) continue;
       const code = stripComments(readFileSync(p, 'utf8'), p);
-      let at = code.indexOf('...effects.flat');
-      while (at >= 0) {
-        // The style object it sits in: back to its opening brace.
-        let depth = 0;
-        let start = at;
-        for (; start > 0; start--) {
-          const ch = code[start];
-          if (ch === '}') depth++;
-          if (ch === '{') { if (depth === 0) break; depth--; }
-        }
-        const obj = code.slice(start, at);
-        if (/\belevation\s*:|\.\.\.effects\.shadow\w+/.test(obj)) {
-          out.push(`${relative(MOBILE, p)}:${code.slice(0, at).split('\n').length}`);
-        }
-        at = code.indexOf('...effects.flat', at + 1);
-      }
+      for (const line of flatButElevatedIn(code)) out.push(`${relative(MOBILE, p)}:${line}`);
     }
   };
   walk(join(MOBILE, 'src'));
@@ -63,8 +68,12 @@ describe('a flat surface', () => {
     expect(flatButElevated().filter((s) => /[\\/]log[\\/]/i.test(s))).toEqual([]);
   });
 
-  it('the detector sees one', () => {
-    const src = "const s = { card: { ...effects.shadowSurface, ...effects.flat } };";
-    expect(/\belevation\s*:|\.\.\.effects\.shadow\w+/.test(src.slice(src.indexOf('{ card') + 8, src.indexOf('...effects.flat')))).toBe(true);
+  it('the detector sees one — by a spread shadow, or by elevation written out', () => {
+    expect(flatButElevatedIn('const s = {\n  card: { ...effects.shadowSurface, ...effects.flat },\n};')).toEqual([2]);
+    expect(flatButElevatedIn('const s = { card: { elevation: 4, ...effects.flat } };')).toEqual([1]);
+  });
+
+  it('and says no to a flat surface that carries none', () => {
+    expect(flatButElevatedIn('const s = { card: { borderRadius: 2, ...effects.flat }, lift: { elevation: 4 } };')).toEqual([]);
   });
 });

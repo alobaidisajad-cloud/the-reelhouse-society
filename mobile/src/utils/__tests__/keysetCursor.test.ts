@@ -133,9 +133,10 @@ describe('paging a whole shelf never repeats or skips a row', () => {
    * The property the whole file exists for, checked against a real dataset
    * rather than by reading the predicate.
    *
-   * Simulates the server: order the rows on the axis, apply the keyset
-   * predicate, take a page, hand back a cursor, repeat. If the predicate and
-   * the cursor disagree about which column they mean, this loses rows.
+   * Simulates the server: order the rows on the axis, apply the filter
+   * keysetFilter actually emits (read here as PostgREST reads it), take a page,
+   * hand back a cursor, repeat. If the filter and the cursor disagree, this
+   * loses or repeats rows.
    */
   const rows = [
     { id: '1', film_title: 'Alien', created_at: '2026-03-01' },
@@ -147,11 +148,44 @@ describe('paging a whole shelf never repeats or skips a row', () => {
     { id: '7', film_title: 'Eraserhead', created_at: '2026-03-07' },
   ];
 
+  type Row = typeof rows[0];
+  type Cond = { column: string; op: string; value: string };
+
+  /** One `column.op.value` at `at`: a bare integer, or a quoted string with escapes. */
+  function readCond(f: string, at: number): [Cond, number] {
+    const m = /^(\w+)\.(gt|lt|eq)\./.exec(f.slice(at));
+    if (!m) throw new Error(`no condition at ${at}: ${f}`);
+    let i = at + m[0].length;
+    let value = '';
+    if (f[i] === '"') {
+      for (i += 1; f[i] !== '"'; i += 1) value += f[i] === '\\' ? f[++i] : f[i];
+      i += 1;
+    } else {
+      for (; /\d/.test(f[i] ?? ''); i += 1) value += f[i];
+    }
+    return [{ column: m[1], op: m[2], value }, i];
+  }
+
+  /** The `.or()` keysetFilter emits — `a,and(b,c)` — read as a predicate on a row. */
+  function asPredicate(f: string): (r: Row) => boolean {
+    const [a, i] = readCond(f, 0);
+    if (!f.startsWith(',and(', i)) throw new Error(`not a keyset filter: ${f}`);
+    const [b, j] = readCond(f, i + 5);
+    const [c, k] = readCond(f, j + 1);
+    if (f.slice(k) !== ')') throw new Error(`not a keyset filter: ${f}`);
+    const holds = ({ column, op, value }: Cond) => (r: Row) => {
+      const v = String((r as Record<string, string>)[column]);
+      const d = /^\d+$/.test(v) && /^\d+$/.test(value) ? Number(v) - Number(value) : v < value ? -1 : v > value ? 1 : 0;
+      return op === 'gt' ? d > 0 : op === 'lt' ? d < 0 : d === 0;
+    };
+    return (r) => holds(a)(r) || (holds(b)(r) && holds(c)(r));
+  }
+
   function page(sort: 'default' | 'az' | 'za', size: number) {
     const axis = sortAxis(sort, 'film_title');
     const asc = axis.direction === 'asc';
-    const key = (r: typeof rows[0]) => [String((r as any)[axis.column]), r.id] as const;
-    const cmp = (a: typeof rows[0], b: typeof rows[0]) => {
+    const key = (r: Row) => [String((r as any)[axis.column]), r.id] as const;
+    const cmp = (a: Row, b: Row) => {
       const [ap, ai] = key(a); const [bp, bi] = key(b);
       const d = ap < bp ? -1 : ap > bp ? 1 : (Number(ai) - Number(bi));
       return asc ? d : -d;
@@ -161,15 +195,8 @@ describe('paging a whole shelf never repeats or skips a row', () => {
     const seen: string[] = [];
     let cursor: string | null = null;
     for (let guard = 0; guard < 20; guard++) {
-      const parsed = parseCursor(cursor);
-      const after = parsed
-        ? ordered.filter((r) => {
-            const [p, i] = key(r);
-            return asc
-              ? p > parsed.primary || (p === parsed.primary && Number(i) > Number(parsed.id))
-              : p < parsed.primary || (p === parsed.primary && Number(i) < Number(parsed.id));
-          })
-        : ordered;
+      const filter = keysetFilter(axis.column, parseCursor(cursor), axis.direction);
+      const after = filter ? ordered.filter(asPredicate(filter)) : ordered;
       const batch = after.slice(0, size);
       if (batch.length === 0) break;
       seen.push(...batch.map((r) => r.id));

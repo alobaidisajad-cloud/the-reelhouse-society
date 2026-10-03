@@ -3,12 +3,11 @@
  * ───────────────────────────────────────────
  * Validates core invariants of the log domain slice:
  *   1. O(1) _loggedIndex integrity after fetch/add/remove
- *   2. 500-entry cap enforcement
- *   3. _fetchingLogs mutex prevents concurrent fetches
- *   4. _addLogMutex prevents double-submit
- *   5. getCinephileStats tier boundary logic
- *   6. Incremental index on loadMore (P1-1 fix)
- *   7. Optimistic rollback on removeLog server error
+ *   2. _fetchingLogs mutex prevents concurrent fetches
+ *   3. _addLogMutex prevents double-submit
+ *   4. getCinephileStats tier boundary logic
+ *   5. Incremental index on loadMore (P1-1 fix)
+ *   6. Optimistic rollback on removeLog server error
  */
 
 import { supabase } from '../../lib/supabase';
@@ -127,32 +126,6 @@ describe('logSlice', () => {
                 expect(state._loggedIndex[1000 + i]).toBeDefined();
                 expect(state._loggedIndex[1000 + i].id).toBe(`log-${i}`);
             }
-        });
-
-        it('should cap logs at 500 entries', async () => {
-            const mockRows = Array.from({ length: 50 }, (_, i) => makeLogRow(i));
-            const mockResult = { data: mockRows, error: null };
-            const chainable = {
-                select: jest.fn().mockReturnThis(),
-                eq: jest.fn().mockReturnThis(),
-                order: jest.fn().mockReturnThis(),
-                limit: jest.fn().mockReturnThis(),
-                or: jest.fn().mockReturnThis(),
-                is: jest.fn().mockReturnThis(),
-                lt: jest.fn().mockReturnThis(),
-                then: jest.fn((cb: any) => Promise.resolve(cb(mockResult))),
-            };
-            const fromMock = jest.fn(() => chainable);
-            (supabase.from as jest.Mock) = fromMock;
-
-            // Pre-fill with 480 entries so that fetch pushes past 500
-            const existingLogs = Array.from({ length: 480 }, (_, i) => makeFilmLog(i + 100));
-            useLogStore.setState({ logs: existingLogs as any[] });
-
-            await useLogStore.getState().fetchLogs(); // loadMore=false replaces, so result is still ≤50
-
-            const state = useLogStore.getState();
-            expect(state.logs.length).toBeLessThanOrEqual(500);
         });
 
         it('should prevent concurrent fetches via _fetchingLogs mutex', async () => {

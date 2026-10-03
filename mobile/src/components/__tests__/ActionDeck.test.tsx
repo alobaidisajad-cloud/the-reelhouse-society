@@ -98,9 +98,11 @@ describe('the acts', () => {
   it('a stranger is asked for a name at the act, and nothing is marked', async () => {
     await setUser(null);
     const r = render(deck());
+    // Each act asks on its own: one sign-in for certifying, one for saving.
     await fireEvent.press(r.getByLabelText(/certif/i));
+    expect(mockPush.mock.calls).toEqual([['/login']]);
     await fireEvent.press(r.getByLabelText('Save film to your watchlist'));
-    expect(mockPush).toHaveBeenCalledWith('/login');
+    expect(mockPush.mock.calls).toEqual([['/login'], ['/login']]);
     expect(mockWatch.toggleEndorse).not.toHaveBeenCalled();
     expect(mockWatch.addToWatchlist).not.toHaveBeenCalled();
   });

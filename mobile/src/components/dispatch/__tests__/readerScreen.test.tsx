@@ -14,13 +14,14 @@
  * screen is tested against the store, not against an idea of it.
  */
 import React, { act } from 'react';
-import { Alert, Share } from 'react-native';
+import { Alert, ScrollView, Share } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 
 import FilingReader from '@/app/dispatch/[id]';
 import { useDispatch } from '@/src/stores/dispatch';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
+import { useBlockStore } from '@/src/stores/blockStore';
 import { toFiling } from '@/src/stores/dispatchTypes';
 
 let mockRow: Record<string, unknown> | null = null;
@@ -37,12 +38,15 @@ jest.mock('@/src/utils/reelToast', () => {
   const fn = Object.assign(jest.fn(), {
     error: (...a: unknown[]) => mockToastError(...a),
     success: (...a: unknown[]) => mockToastSuccess(...a),
+    info: jest.fn(),
   });
   return { __esModule: true, default: fn };
 });
 const mockPushed: string[] = [];
 
 const mockBack = jest.fn();
+/** What the block store wrote: a BLOCK or MUTE row that writes nothing is a dead control. */
+const mockUpserts: { table: string; row: Record<string, unknown> }[] = [];
 jest.mock('@/src/utils/typedRouter', () => ({
   nav: { push: (p: string) => { mockPushed.push(p); }, replace: jest.fn(), back: () => mockBack() },
 }));
@@ -59,9 +63,10 @@ jest.mock('@/src/stores/auth', () => ({
 
 jest.mock('@/src/lib/supabase', () => ({
   supabase: {
-    from: () => {
+    from: (table: string) => {
       const chain: Record<string, unknown> = {};
       const self = () => chain;
+      chain.upsert = (row: Record<string, unknown>) => { mockUpserts.push({ table, row }); return Promise.resolve({ data: null, error: null }); };
       /** Set by `update`, so `then` can answer with the row it changed. */
       let updated = false;
       chain.select = () => self();
@@ -258,6 +263,11 @@ describe('the reader', () => {
     // No dock and no More: every act behind them needs an account.
     expect(queryByLabelText(/More, for this filing/)).toBeNull();
     expect(queryByLabelText(/^Critique$/)).toBeNull();
+    // The dock by its own controls' names — CRITIQUE there is "Write a critique",
+    // so the line above alone could never have seen a dock drawn for a stranger.
+    expect(queryByLabelText(/^Write a critique/)).toBeNull();
+    expect(queryByLabelText(/^Certify this filing/)).toBeNull();
+    expect(queryByLabelText(/^(Save|Saved)$/)).toBeNull();
   });
 
   it('draws a ballot with its options, and marks one', async () => {
@@ -481,7 +491,14 @@ describe('the reader', () => {
     mockUser = { id: 'u9', username: 'someone' };
     mockRow = row({ ended_at: new Date().toISOString(), ended_by: 'house', comment_count: 3 });
     const { getByLabelText, queryByLabelText } = await mount();
+    const scrolled = jest.spyOn(ScrollView.prototype, 'scrollTo');
+    scrolled.mockClear();
     await act(async () => { fireEvent.press(getByLabelText(/^Critique\. 3 critiques remain/)); });
+    // REACHED: the mark carries the page down to the critiques that survive.
+    // The control has no disabled state, so without this a mark with no
+    // handler would pass as one that leads somewhere.
+    expect(scrolled).toHaveBeenCalledWith(expect.objectContaining({ animated: true }));
+    scrolled.mockRestore();
     expect(queryByLabelText('File this critique. Write something first.')).toBeNull();
     expect(queryByLabelText('File this critique')).toBeNull();
   });
@@ -703,11 +720,26 @@ describe('the reader', () => {
     expect(useDispatch.getState().critiques.f1).toHaveLength(60);
   });
 
-  it('leaves the page when the reader blocks its author', async () => {
+  it('blocks the author, then leaves the page', async () => {
+    mockUpserts.length = 0;
     const { getByLabelText } = await mount();
     await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+    const author = mockSheetProps[0].targetUserId;
     await act(async () => { (mockSheetProps[0].onBlock as () => void)(); });
+    expect(mockUpserts).toEqual([{ table: 'user_blocks', row: expect.objectContaining({ blocked_id: author, type: 'block' }) }]);
     expect(mockBack).toHaveBeenCalled();
+  });
+
+  it('mutes the author from the same sheet', async () => {
+    mockUpserts.length = 0;
+    // The test before blocked this author, and a block outranks a mute: start clean.
+    useBlockStore.setState({ blocked: [], muted: [], _blockedIndex: new Set(), _mutedIndex: new Set() });
+    const { getByLabelText } = await mount();
+    await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+    const author = mockSheetProps[0].targetUserId;
+    expect(typeof mockSheetProps[0].onMute).toBe('function');
+    await act(async () => { (mockSheetProps[0].onMute as () => void)(); });
+    expect(mockUpserts).toEqual([{ table: 'user_blocks', row: expect.objectContaining({ blocked_id: author, type: 'mute' }) }]);
   });
 
   it('carries a report from the sheet into the report sheet', async () => {
@@ -806,13 +838,17 @@ describe('the reader', () => {
   it('opens the lounge from the sheet, rather than the world', async () => {
     // TO THE LOUNGE opens the salon picker, never the OS sheet.
     const plain = jest.spyOn(Share, 'share');
-    const { getByLabelText, queryByLabelText } = await mount();
+    const { getByLabelText, queryByLabelText, getByText } = await mount();
     await act(async () => { fireEvent.press(getByLabelText('Share')); });
     await act(async () => { fireEvent.press(getByLabelText(/TO THE LOUNGE/)); });
 
     // The share sheet closes and nothing is handed to the operating system.
     expect(queryByLabelText(/ELSEWHERE/)).toBeNull();
     expect(plain).not.toHaveBeenCalled();
+    // …and the salon picker OPENS, carrying this filing. A sheet that only
+    // closed would satisfy both lines above.
+    expect(getByText('Share to Lounge')).toBeTruthy();
+    expect(getByText('SHARING ESSAY: THE EMPTY ROOM')).toBeTruthy();
     plain.mockRestore();
   });
 
