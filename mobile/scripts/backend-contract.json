@@ -90,6 +90,10 @@
       "signature": "get_salon_member_faces(p_lounge_ids uuid[])"
     },
     {
+      "name": "get_taste_match",
+      "signature": "get_taste_match(p_user_id uuid)"
+    },
+    {
       "name": "get_taste_profile",
       "signature": "get_taste_profile(p_user_id uuid)"
     },

@@ -149,7 +149,8 @@ describe('the database cleans as the app does', () => {
   });
 
   it('the corpus is written in printable ASCII, every other character escaped', () => {
-    const text = readFileSync(CORPUS_PATH, 'utf8');
+    // A Windows checkout ends its lines with CRLF; the line ends are not the corpus.
+    const text = readFileSync(CORPUS_PATH, 'utf8').replace(/\r\n/g, '\n');
     const outside = [...text].filter((c) => c !== '\n' && (c < ' ' || c > '~'));
     expect(outside).toEqual([]);
   });

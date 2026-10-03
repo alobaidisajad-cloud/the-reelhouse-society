@@ -901,10 +901,10 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                       <NoirPassport analytics={serverAnalytics} failed={roomFailed} onRetry={retryRoom} />
                     </View>
 
-                    {/* Taste Match (other users only) */}
-                    {!isSelf && myLogs.length >= 5 && (
-                      <TasteMatch {...{myLogs, theirLogs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, theirUsername: targetUser.username} as any} />
-                    )}
+                    {/* Taste Match (other members only), over both whole records */}
+                    {!isSelf && targetUser?.id ? (
+                      <TasteMatch userId={targetUser.id} theirUsername={targetUser.username} />
+                    ) : null}
                   </View>
                 </View>
             )}

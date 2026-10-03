@@ -42,7 +42,6 @@ interface ProfileContentProps {
     archiveSieve: string;
     archiveVisibleCount: number;
     archiveFilteredLogs: any[];
-    currentLogs: any[];
     setViewLog: (log: any) => void;
     fetchLogs: (loadMore?: boolean) => void;
     fetchLists: (loadMore?: boolean) => void;
@@ -54,7 +53,7 @@ interface ProfileContentProps {
 export function ProfileContent({
     activeTab, profileUser, profileLogs, profileWatchlist, profileLists, physicalArchive,
     isOwnProfile, analytics, analyticsFailed, stats, highestRated, logsHasMore, listsHasMore,
-    archiveSieve, archiveVisibleCount, archiveFilteredLogs, currentLogs,
+    archiveSieve, archiveVisibleCount, archiveFilteredLogs,
     setViewLog, fetchLogs, fetchLists, setArchiveSieve, setArchiveVisibleCount, setShowDNA
 }: ProfileContentProps) {
     const { isTouch: IS_TOUCH } = useViewport();
@@ -193,8 +192,8 @@ export function ProfileContent({
                         WATCHLIST count as "N TITLES WITHIN — Private. Mysterious.
                         Yours alone.", and 0 on everyone else's profile. The Vault
                         is the private notes, which live on each log. */}
-                    {!isOwnProfile && currentLogs.length >= 5 && (
-                        <TasteMatch myLogs={currentLogs} theirLogs={profileLogs} theirUsername={profileUser?.username || ''} />
+                    {!isOwnProfile && profileUser?.id && (
+                        <TasteMatch userId={profileUser.id} theirUsername={profileUser.username || ''} />
                     )}
 
                     {isOwnProfile && <FilmRecommendations />}

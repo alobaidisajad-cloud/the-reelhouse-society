@@ -557,7 +557,6 @@ export default function UserProfilePage() {
                             archiveSieve={archiveSieve}
                             archiveVisibleCount={archiveVisibleCount}
                             archiveFilteredLogs={archiveFilteredLogs}
-                            currentLogs={currentLogs}
                             setViewLog={setViewLog}
                             fetchLogs={fetchLogs}
                             fetchLists={fetchLists}

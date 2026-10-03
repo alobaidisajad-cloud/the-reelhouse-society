@@ -4,69 +4,33 @@ import { Text } from '@/src/components/text';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { EDGE_LIT } from '@/src/theme/light';
-
-interface TasteLog {
-  rating: number;
-  year?: number;
-}
+import { TryAgainLine } from '@/src/components/TryAgain';
+import { tasteMatchOf, useTasteMatch } from './tasteMatchRead';
 
 interface TasteMatchProps {
-  myLogs: TasteLog[];
-  theirLogs: TasteLog[];
+  /** The member whose file this is. */
+  userId: string;
   theirUsername: string;
 }
 
-function getRatingVector(logs: TasteLog[]) {
-  const counts = [0, 0, 0, 0, 0]; // 1-5 stars
-  logs.forEach((l) => {
-    const r = Math.round(l.rating || 0);
-    if (r >= 1 && r <= 5) counts[r - 1]++;
-  });
-  const total = counts.reduce((a, b) => a + b, 0) || 1;
-  return counts.map(c => c / total);
-}
+/** How alike the viewer and this member are, read over both whole records. */
+export function TasteMatch({ userId, theirUsername }: TasteMatchProps) {
+  const read = useTasteMatch(userId);
 
-function getDecadeVector(logs: TasteLog[]) {
-  const decades: Record<number, number> = {};
-  logs.forEach((l) => {
-    if (l.year) {
-      const d = Math.floor(l.year / 10) * 10;
-      decades[d] = (decades[d] || 0) + 1;
-    }
-  });
-  return decades;
-}
-
-function cosineSimilarity(a: number[], b: number[]) {
-  let dot = 0, magA = 0, magB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    magA += a[i] * a[i];
-    magB += b[i] * b[i];
+  if (read.isLoading || read.isError) {
+    return (
+      <View style={s.container}>
+        <Text {...scaledTextProps} style={s.header}>TASTE COMPATIBILITY</Text>
+        <Text {...scaledTextProps} style={s.description}>
+          {read.isError ? 'Your records could not be compared just now.' : 'Comparing your records…'}
+        </Text>
+        {read.isError ? <TryAgainLine onPress={() => { void read.refetch(); }} /> : null}
+      </View>
+    );
   }
-  if (magA === 0 || magB === 0) return 0;
-  return dot / (Math.sqrt(magA) * Math.sqrt(magB));
-}
-
-export function TasteMatch({ myLogs = [], theirLogs = [], theirUsername }: TasteMatchProps) {
-  if (myLogs.length < 5 || theirLogs.length < 5) return null;
-
-  // Rating pattern similarity (how similarly do you rate films?)
-  const myRatings = getRatingVector(myLogs);
-  const theirRatings = getRatingVector(theirLogs);
-  const ratingMatch = cosineSimilarity(myRatings, theirRatings);
-
-  // Decade preference overlap (do you watch films from the same eras?)
-  const myDecades = getDecadeVector(myLogs);
-  const theirDecades = getDecadeVector(theirLogs);
-  const allDecades = [...new Set([...Object.keys(myDecades), ...Object.keys(theirDecades)].map(Number))].sort();
-  const myDecadeVec = allDecades.map(d => myDecades[d] || 0);
-  const theirDecadeVec = allDecades.map(d => theirDecades[d] || 0);
-  const decadeMatch = cosineSimilarity(myDecadeVec, theirDecadeVec);
-
-  // Overall match (weighted average)
-  const match = Math.round((ratingMatch * 0.5 + decadeMatch * 0.5) * 100);
-
+  // A record the viewer may not read, or too little on either side: nothing to compare.
+  const match = read.data ? tasteMatchOf(read.data.mine, read.data.theirs) : null;
+  if (match === null) return null;
   const label = match >= 80 ? 'KINDRED SPIRITS' : match >= 60 ? 'SIMILAR TASTES' : match >= 40 ? 'PARALLEL REELS' : 'DIVERGENT PATHS';
   const color = match >= 80 ? colors.sepia : match >= 60 ? colors.flicker : match >= 40 ? colors.bone : colors.fog;
 

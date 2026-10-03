@@ -511,6 +511,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx | 2026-10-01 | written: rows, paging and failure from one answer |
 | src/components/profile/__tests__/aSearchKeepsItsBox.test.tsx | 2026-10-01 | written: every searchable room, searched to nothing |
 | src/components/profile/__tests__/aStandingIsSharedAsWhoseItIs.test.tsx | 2026-10-01 | written: a standing is shared as whose it is |
+| src/components/profile/__tests__/aTasteMatchReadsBothRecords.test.tsx | 2026-10-03 | Written with the Taste Match client: the card compares both whole records (get_taste_match), says when they could not be compared, and draws nothing for a record the viewer may not read. |
 | src/components/profile/__tests__/computeDailyStreak.test.ts | — |  |
 | src/components/profile/__tests__/decadeCounts.test.ts | — |  |
 | src/components/profile/__tests__/everyRatingHasAChip.test.tsx | 2026-10-02 | Written in the launch audit: a half rating sits under the chip below it, in room, query and counts. |
@@ -576,6 +577,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/TasteDNA.tsx | 2026-10-01 | says retrieving, failed, too few or still reading — never a heading over nothing; whose-words |
 | src/components/profile/TasteDNAExportCanvas.tsx | 2026-10-02 | unspoken; words fixed-size (it is a picture); history comments trimmed |
 | src/components/profile/TasteMatch.tsx | 2026-10-01 |  |
+| src/components/profile/tasteMatchRead.ts | 2026-10-03 | Written with the Taste Match client: the read of both members' whole-record shapes, and the comparison the card shows. |
 | src/components/profile/WatchlistRoulette.tsx | 2026-10-01 | a mid-spin close stops the spin; opens filmId; nav |
 | src/components/RankBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/ReelEyeIcon.tsx | 2026-10-02 | Read (launch audit): artwork. Left alone. |
