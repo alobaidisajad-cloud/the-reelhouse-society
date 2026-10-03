@@ -529,8 +529,8 @@ const styles = StyleSheet.create({
   },
   // ── Dismiss Link ──
   // A target of its own, 48pt tall: a bare line of 11pt text borrowed the 15pt
-  // default halo, which reached 14pt into FILE REPORT above it. The text stays
-  // where it was (spacing.md below the button, less the target's own padding).
+  // default halo, which reached 14pt into FILE REPORT above it. The target's own
+  // height now spaces the text from the button, where its margin did.
   dismissLink: {
     alignSelf: 'center',
     minHeight: 48,
