@@ -1,0 +1,27 @@
+{
+ "path": "/search/keyword?query=the+godf",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 346039,
+    "name": "the wolf"
+   },
+   {
+    "id": 383031,
+    "name": "the body"
+   },
+   {
+    "id": 329323,
+    "name": "the godfather"
+   },
+   {
+    "id": 314238,
+    "name": "the godfather's influence"
+   }
+  ],
+  "total_pages": 1,
+  "total_results": 4
+ }
+}

@@ -1,0 +1,91 @@
+{
+ "path": "/search/keyword?query=the+m",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 359373,
+    "name": "the v"
+   },
+   {
+    "id": 356031,
+    "name": "the 1%"
+   },
+   {
+    "id": 302183,
+    "name": "the method"
+   },
+   {
+    "id": 316935,
+    "name": "the madoff"
+   },
+   {
+    "id": 335938,
+    "name": "the mars"
+   },
+   {
+    "id": 299327,
+    "name": "the microphones"
+   },
+   {
+    "id": 256552,
+    "name": "the maritimes"
+   },
+   {
+    "id": 335446,
+    "name": "the manitou"
+   },
+   {
+    "id": 274931,
+    "name": "the mailman"
+   },
+   {
+    "id": 275772,
+    "name": "the micronauts"
+   },
+   {
+    "id": 338011,
+    "name": "the metamorphosis"
+   },
+   {
+    "id": 315768,
+    "name": "the messnger"
+   },
+   {
+    "id": 327260,
+    "name": "the muse"
+   },
+   {
+    "id": 336112,
+    "name": "the mother"
+   },
+   {
+    "id": 304441,
+    "name": "the mutilator"
+   },
+   {
+    "id": 318219,
+    "name": "the midwest"
+   },
+   {
+    "id": 345444,
+    "name": "the maya"
+   },
+   {
+    "id": 345776,
+    "name": "the mind"
+   },
+   {
+    "id": 357519,
+    "name": "the mack"
+   },
+   {
+    "id": 366669,
+    "name": "the moment"
+   }
+  ],
+  "total_pages": 14,
+  "total_results": 266
+ }
+}

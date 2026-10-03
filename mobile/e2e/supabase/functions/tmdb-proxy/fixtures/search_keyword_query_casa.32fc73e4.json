@@ -1,0 +1,91 @@
+{
+ "path": "/search/keyword?query=casa",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 308512,
+    "name": "casa"
+   },
+   {
+    "id": 343031,
+    "name": "caça"
+   },
+   {
+    "id": 373298,
+    "name": "caña"
+   },
+   {
+    "id": 334225,
+    "name": "casa bamba"
+   },
+   {
+    "id": 332327,
+    "name": "casa preti"
+   },
+   {
+    "id": 364382,
+    "name": "casa branca"
+   },
+   {
+    "id": 370783,
+    "name": "casa rosada"
+   },
+   {
+    "id": 372804,
+    "name": "casa casulo"
+   },
+   {
+    "id": 311321,
+    "name": "ust-casa"
+   },
+   {
+    "id": 337020,
+    "name": "casa italiana zerilli"
+   },
+   {
+    "id": 322502,
+    "name": "casa do artista"
+   },
+   {
+    "id": 382402,
+    "name": "a casa automatica"
+   },
+   {
+    "id": 384084,
+    "name": "benvenuto a casa"
+   },
+   {
+    "id": 367914,
+    "name": "casa e decoração"
+   },
+   {
+    "id": 328398,
+    "name": "casal"
+   },
+   {
+    "id": 226243,
+    "name": "caja"
+   },
+   {
+    "id": 179507,
+    "name": "cash"
+   },
+   {
+    "id": 308235,
+    "name": "capa"
+   },
+   {
+    "id": 329692,
+    "name": "cava"
+   },
+   {
+    "id": 335452,
+    "name": "cama"
+   }
+  ],
+  "total_pages": 3,
+  "total_results": 47
+ }
+}

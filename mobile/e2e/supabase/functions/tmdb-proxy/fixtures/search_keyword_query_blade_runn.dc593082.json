@@ -1,0 +1,15 @@
+{
+ "path": "/search/keyword?query=blade+runn",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 233512,
+    "name": "blade runner"
+   }
+  ],
+  "total_pages": 1,
+  "total_results": 1
+ }
+}

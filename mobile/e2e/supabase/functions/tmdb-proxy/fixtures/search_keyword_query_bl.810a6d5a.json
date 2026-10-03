@@ -1,0 +1,91 @@
+{
+ "path": "/search/keyword?query=bl",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 363397,
+    "name": "bl"
+   },
+   {
+    "id": 328692,
+    "name": "taiwan bl"
+   },
+   {
+    "id": 320085,
+    "name": "chinese bl"
+   },
+   {
+    "id": 328728,
+    "name": "korean bl"
+   },
+   {
+    "id": 312166,
+    "name": "japenese bl"
+   },
+   {
+    "id": 324501,
+    "name": "myanmar bl"
+   },
+   {
+    "id": 378485,
+    "name": "filipino bl"
+   },
+   {
+    "id": 289844,
+    "name": "boys' love (bl)"
+   },
+   {
+    "id": 308109,
+    "name": "pinoy bl series"
+   },
+   {
+    "id": 2583,
+    "name": "blackout"
+   },
+   {
+    "id": 2636,
+    "name": "blues"
+   },
+   {
+    "id": 155207,
+    "name": "black gold"
+   },
+   {
+    "id": 155488,
+    "name": "black cat"
+   },
+   {
+    "id": 155812,
+    "name": "color blindness"
+   },
+   {
+    "id": 155843,
+    "name": "black bird"
+   },
+   {
+    "id": 156193,
+    "name": "ice block"
+   },
+   {
+    "id": 3302,
+    "name": "bloodthirstiness"
+   },
+   {
+    "id": 3405,
+    "name": "blow job"
+   },
+   {
+    "id": 4252,
+    "name": "black magic"
+   },
+   {
+    "id": 157375,
+    "name": "bludgeoning"
+   }
+  ],
+  "total_pages": 44,
+  "total_results": 879
+ }
+}

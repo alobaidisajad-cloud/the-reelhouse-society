@@ -1,0 +1,728 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=blade+r",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg",
+    "id": 335984,
+    "title": "Blade Runner 2049",
+    "original_title": "Blade Runner 2049",
+    "overview": "Thirty years after the events of the first film, a new blade runner, LAPD Officer K, unearths a long-buried secret that has the potential to plunge what's left of society into chaos. K's discovery leads him on a quest to find Rick Deckard, a former LAPD blade runner who has been missing for 30 years.",
+    "poster_path": "/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     18
+    ],
+    "popularity": 73.5055,
+    "release_date": "2017-10-04",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.608,
+    "vote_count": 15767
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/2spEHYDcyE9r9mS7AFEscfKVDzO.jpg",
+    "id": 78,
+    "title": "Blade Runner",
+    "original_title": "Blade Runner",
+    "overview": "In the smog-choked dystopian Los Angeles of 2019, blade runner Rick Deckard is called out of retirement to terminate a quartet of replicants who have escaped to Earth seeking their creator for a way to extend their short life spans.",
+    "poster_path": "/63N9uy8nd9j7Eog2axPQ8lbr3Wj.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     18,
+     53
+    ],
+    "popularity": 25.3908,
+    "release_date": "1982-06-25",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.936,
+    "vote_count": 15464
+   },
+   {
+    "adult": false,
+    "id": 161867,
+    "name": "Richard Blade",
+    "original_name": "Richard Blade",
+    "media_type": "person",
+    "popularity": 0.6244,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/hb0FyVEmEDNYw5fwvKBRABARG8r.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/8m0msdeGoPzK8gCEMIGPlzyx5Ys.jpg",
+      "id": 16263,
+      "title": "Girls Just Want to Have Fun",
+      "original_title": "Girls Just Want to Have Fun",
+      "overview": "Janey is new in town. She soon meets Lynne, a classmate who shares her passion for the local show 'Dance TV'. When a competition is announced to find new Dance TV performers, Janey and Lynne are determined to audition. The only problem is that Janey's father doesn't approve of that kind of thing.",
+      "poster_path": "/yhbuTnTA6wu5hOXL5uc3rRFLnCl.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       35,
+       10751,
+       10402,
+       10749
+      ],
+      "popularity": 3.5975,
+      "release_date": "1985-04-12",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.1,
+      "vote_count": 197
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/a1Vr3kMvIYqk7yOMMK23B3xDTb6.jpg",
+      "id": 112525,
+      "title": "Spellcaster",
+      "original_title": "Spellcaster",
+      "overview": "A group of people are killed one by one while participating at a million dollar treasure hunt in a mysterious Italian castle.",
+      "poster_path": "/39xRU4lRSIZuVvvAG35eNYmy0iw.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       27,
+       9648
+      ],
+      "popularity": 1.6083,
+      "release_date": "1988-01-14",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.3,
+      "vote_count": 27
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/3cZ7w2t84XuI35SvOWlqK3fdlfo.jpg",
+      "id": 51579,
+      "title": "Long Lost Son",
+      "original_title": "Long Lost Son",
+      "overview": "Fourteen years after her son and estranged husband were presumed lost at sea, Kristen believes she glimpses them in the background of a friend's recent vacation video.",
+      "poster_path": "/hdRCh7cWdnni1XjQuECGCLU55ep.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       9648,
+       10770
+      ],
+      "popularity": 1.7118,
+      "release_date": "2006-07-24",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.6,
+      "vote_count": 17
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1310486,
+    "name": "Raewyn Blade",
+    "original_name": "Raewyn Blade",
+    "media_type": "person",
+    "popularity": 0.3126,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/jX1lMK3YIJZyNTV7mK6f2LRaQk6.jpg",
+      "id": 39293,
+      "title": "The Human Factor",
+      "original_title": "The Human Factor",
+      "overview": "When a leak of information in the African section of British Intelligence is discovered, a security man is brought in to investigate.",
+      "poster_path": "/9u3aUUbjPGFKgdtkR0wlHGPddMh.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       53
+      ],
+      "popularity": 2.8031,
+      "release_date": "1979-12-18",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.8,
+      "vote_count": 33
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 265001,
+      "title": "Bonjour Timothy",
+      "original_title": "Bonjour Timothy",
+      "overview": "Timothy and his family is expecting a French-Canadian male exchange student, that turns out to be an  attractive girl, to which Timothy proceeds to make a fool of himself, trying to impress. When Michelle becomes ill from  drinking spiked punch at a party, Timothy notices a tattoo while helping her to bed. He foolishly tells a friend about the tattoo, who proceeds to tell the whole school, which does not go down well with Michelle.",
+      "poster_path": "/gqYpU0CM91I1gnQNltq4KL7t8fi.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       10751,
+       35
+      ],
+      "popularity": 0.9482,
+      "release_date": "1995-04-16",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.7,
+      "vote_count": 3
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 324678,
+      "name": "Life at Stake",
+      "original_name": "Life at Stake",
+      "overview": "A series of eight dramatic reconstructions of stories which made the headlines.",
+      "poster_path": null,
+      "media_type": "tv",
+      "original_language": "en",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 3.8829,
+      "first_air_date": "1978-02-17",
+      "softcore": false,
+      "vote_average": 0,
+      "vote_count": 0,
+      "origin_country": [
+       "GB"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1437462,
+    "name": "Blade Rogers",
+    "original_name": "Blade Rogers",
+    "media_type": "person",
+    "popularity": 0.4127,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/5rKlzF8eXuifUr6KKZAuX95kEsF.jpg",
+      "id": 204584,
+      "title": "Special Delivery",
+      "original_title": "Special Delivery",
+      "overview": "A bonded courier transports a bratty teenager on an international flight, but realizes a trap has been set up for them when they reach the U.S.",
+      "poster_path": "/jKRUIsQJOKjVwan6Q83b3Z0XN1D.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       35,
+       10770
+      ],
+      "popularity": 2.1854,
+      "release_date": "2008-12-21",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.6,
+      "vote_count": 9
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 329768,
+      "title": "Flight 29 Down: The Hotel Tango",
+      "original_title": "Flight 29 Down: The Hotel Tango",
+      "overview": "Flight 29 Down series finale. The castaways split into two groups. One stays on the beach, and one travels to find life on the island. Just when they think the place is deserted, they find an old concrete hotel used in WWII, along with other old buildings rotting away. They find the pilot, and the two other survivors in the hotel. The pilot has a bad sickness that makes him go crazy.",
+      "poster_path": "/iw4Ki94n2R0ha75NlitwLHdQ43e.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       10751,
+       12,
+       18,
+       10770
+      ],
+      "popularity": 1.9762,
+      "release_date": "2007-08-25",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.8,
+      "vote_count": 4
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/dyPKSBIG3KZTNc1h34UvprtM66e.jpg",
+      "id": 1732,
+      "name": "Flight 29 Down",
+      "original_name": "Flight 29 Down",
+      "overview": "Some teenagers are stranded on a desert island in Micronesia. Their plane crashed and led them into a one-in-a-lifetime eco-adventure. They will have to learn to navigate the challenges that come before them in the tropical paradise in Hawaii using intelligence, wit, and instincts. They also have to learn to live with each other.",
+      "poster_path": "/gNI4PCGldy4kzi0nD5FQrLBuL5d.jpg",
+      "media_type": "tv",
+      "original_language": "en",
+      "genre_ids": [
+       10759,
+       18
+      ],
+      "popularity": 4.7244,
+      "first_air_date": "2005-10-01",
+      "softcore": false,
+      "vote_average": 8.3,
+      "vote_count": 18,
+      "origin_country": [
+       "US"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1222968,
+    "name": "Richard Blade",
+    "original_name": "Richard Blade",
+    "media_type": "person",
+    "popularity": 0.4384,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 83079,
+      "title": "Crystal Heart",
+      "original_title": "Crystal Heart",
+      "overview": "A 22 year old man who has lived inside a crystal room because of a rare illness, meets an up and coming rock star, and the two fall in love.",
+      "poster_path": "/xZz58JwJu9ELqDkOP30fRDCSbuS.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       10402,
+       10749
+      ],
+      "popularity": 1.1079,
+      "release_date": "1986-02-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.4,
+      "vote_count": 22
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/kBHTKoJgciatWm4AHY897sM2uUI.jpg",
+      "id": 4571,
+      "name": "Hunter",
+      "original_name": "Hunter",
+      "overview": "Hunter is an American police drama television series created by Frank Lupo, and starring Fred Dryer as Sgt. Rick Hunter and Stepfanie Kramer as Sgt. Dee Dee McCall, which ran on NBC from 1984 to 1991. However, Kramer left after the sixth season to pursue other acting and musical opportunities. In the seventh season, Hunter partnered with two different women officers. The titular character, Sgt. Rick Hunter, was a wily, physically imposing, and often rule-breaking homicide detective with the Los Angeles Police Department. The show's main characters, Hunter and McCall, resolve many of their cases by shooting dead the perpetrators.\n\nThe show's executive producer during the first season was Stephen J. Cannell, whose company produced the series.",
+      "poster_path": "/ekbguSlAI6RIbM9l9WAR78zJNZ7.jpg",
+      "media_type": "tv",
+      "original_language": "en",
+      "genre_ids": [
+       10759,
+       18
+      ],
+      "popularity": 37.3015,
+      "first_air_date": "1984-09-18",
+      "softcore": false,
+      "vote_average": 7.1,
+      "vote_count": 103,
+      "origin_country": [
+       "US"
+      ]
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/3cNv8zXTNIjYMk9apIbvn9LpxDE.jpg",
+      "id": 34300,
+      "name": "Glory Daze",
+      "original_name": "Glory Daze",
+      "overview": "Glory Daze is an American comedy-drama television series. The one-hour series revolves around a group of college freshmen who pledge a fraternity in 1986.",
+      "poster_path": "/mNx3Bw7YQ03yqjRKxUFF6kDF5Ld.jpg",
+      "media_type": "tv",
+      "original_language": "en",
+      "genre_ids": [
+       35
+      ],
+      "popularity": 8.6155,
+      "first_air_date": "2010-11-16",
+      "softcore": false,
+      "vote_average": 5.7,
+      "vote_count": 12,
+      "origin_country": [
+       "US"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/uOlIq21Rx0Sl7y39b1znTfQYGb7.jpg",
+    "id": 171802,
+    "name": "Blade Runner 2099",
+    "original_name": "Blade Runner 2099",
+    "overview": "Fifty years after the events of Blade Runner 2049, Los Angeles has been reborn, just not by humanity. Cora, a fugitive in a final bid to stop running, takes on one last identity: a Blade Runner. Forced to partner with Olwen, a Replicant days from dying, she hunts down a runaway hiding a truth that could collapse their fragile city.",
+    "poster_path": "/hr5aLuCdLC5X423c9G1pPkWR6Ud.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10765
+    ],
+    "popularity": 6.6623,
+    "first_air_date": "2026-11-25",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3172171,
+    "name": "Romello Blade",
+    "original_name": "Romello Blade",
+    "media_type": "person",
+    "popularity": 0.4796,
+    "gender": 0,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/fLwVwtfQsYtYHlIgyVMiWu9G3tk.jpg",
+      "id": 854176,
+      "title": "Gray People",
+      "original_title": "Gray People",
+      "overview": "Nick, facing mounting pressure from his mother to find a job and desperately trying to own a start-up, enlists the help of his best friend Kyle, a privileged slacker, living his best life. Running out of time and options, the two are presented with an opportunity that they can't refuse.",
+      "poster_path": "/cWgUelRfMYzc0qBqrdZJ7e9VBS1.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       28,
+       35
+      ],
+      "popularity": 1.5675,
+      "release_date": "2022-10-27",
+      "softcore": false,
+      "video": false,
+      "vote_average": 4,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3993583,
+    "name": "Rhyan Blade",
+    "original_name": "Rhyan Blade",
+    "media_type": "person",
+    "popularity": 0.3207,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/zFtLSCe9FCOOdonpxrtuQ2xgoJo.jpg",
+      "id": 74102,
+      "title": "Hit List",
+      "original_title": "Hit List",
+      "overview": "Charlotte is a woman with anger management issues whose therapist suggests she write a journal to keep her emotions in check. Unlucky in love, she ventures online to find a boyfriend. Just as she reaches her limit of unsuccessful dates, Charlotte meets her soul mate Lyle. Everything is perfect until Lyle finds Charlotte's journal and sets out to prove just how deeply he loves her.",
+      "poster_path": "/tAd5jgCcv4a3g4UNnfJMGZ7Q9kk.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       35,
+       10749,
+       10770
+      ],
+      "popularity": 2.0867,
+      "release_date": "2011-10-05",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.1,
+      "vote_count": 15
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2823570,
+    "name": "Blade Roces",
+    "original_name": "Blade Roces",
+    "media_type": "person",
+    "popularity": 0.3022,
+    "gender": 0,
+    "known_for_department": "Production",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/2vjq4wgFIUFY7wyPx3wAOpyhw5U.jpg",
+      "id": 755757,
+      "title": "Good Times Bad",
+      "original_title": "Good Times Bad",
+      "overview": "Two grieving strangers make an unexpected connection over a lost suitcase and toolbox.",
+      "poster_path": "/xWsMGoMnQgvxyYI3ZEBKPEclhb4.jpg",
+      "media_type": "movie",
+      "original_language": "tl",
+      "genre_ids": [
+       35,
+       18
+      ],
+      "popularity": 0.9081,
+      "release_date": "2020-11-11",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1954160,
+    "name": "Ric Blade",
+    "original_name": "Ric Blade",
+    "media_type": "person",
+    "popularity": 0.3107,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/s04SQ7kDxuIJHLs9mvkgVI3ErDI.jpg",
+      "id": 496465,
+      "title": "CZW Cage of Death 1",
+      "original_title": "CZW Cage of Death 1",
+      "overview": "The first Cage Of Death was held on October 16, 1999, in Mantua, NJ where Lobo defeated Justice Pain in the first Cage of Death match for the Iron Man title. The first Cage of Death that could be a separate built unit or put on a ring with the ropes taken down. Two parallel sides of the cage are made of steel chain link fencing and the two others are made of steel bars. Inside the cage, littered in a ring, and attached to cage walls are full of different weapons (barbed wire, glass panes, cacti, tables, ladders, light tubes, trash cans, etc.) There is a scaffold across the top of the cage and elevated barbed wire boards on the outside of the ring.",
+      "poster_path": "/1s2irRX0C1uanAjqm6tvLXZ5rxz.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       28
+      ],
+      "popularity": 0.9225,
+      "release_date": "1999-10-15",
+      "softcore": false,
+      "video": true,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 6487630,
+    "name": "Ricky Blade",
+    "original_name": "Ricky Blade",
+    "media_type": "person",
+    "popularity": 0.2563,
+    "gender": 0,
+    "known_for_department": "Visual Effects",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/keow9fa9WaXAyQzBpCaQPHM5Jvw.jpg",
+      "id": 1279865,
+      "title": "A New Dawn",
+      "original_title": "花緑青が明ける日に",
+      "overview": "The Obinata Fireworks Shop factory is getting prepared for an administrative action for confiscation tomorrow. It has been six years since Keitaro has been holed up in a closed-down factory creating fireworks by himself, chasing after an illusion of his father who vanished. It is a story about three young people who overcome the extreme weather conditions, disasters and environmental problems imposed on them and establish their own identities.",
+      "poster_path": "/tYGMWBZtLAPLhxZei9pRJWubbo0.jpg",
+      "media_type": "movie",
+      "original_language": "ja",
+      "genre_ids": [
+       16,
+       18
+      ],
+      "popularity": 5.5168,
+      "release_date": "2026-03-06",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.2,
+      "vote_count": 11
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/vRyC5WT7ytRflfEFFyRmGeZc0Cf.jpg",
+    "id": 84553,
+    "name": "Blade Runner: Black Lotus",
+    "original_name": "Blade Runner: Black Lotus",
+    "overview": "Los Angeles 2032. A young woman wakes up with no memories, and possessing deadly skills. The only clues to her mystery are a locked data device and a tattoo of a black lotus. Putting together the pieces, she must hunt down the people responsible for her brutal and bloody past to find the truth of her lost identity.",
+    "poster_path": "/aR06SJRDGqRmGQYXAXqeOkRZq7T.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     16,
+     10765,
+     10759
+    ],
+    "popularity": 12.1543,
+    "first_air_date": "2021-11-14",
+    "softcore": false,
+    "vote_average": 7.1,
+    "vote_count": 243,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/iSDQjFsfmI1JUaI4Nzv1jRAb0Gc.jpg",
+    "id": 833898,
+    "title": "The Blade Runner Phenomenon",
+    "original_title": "Das Phänomen Blade Runner",
+    "overview": "Ridley Scott's cult film Blade Runner, based on a novel by Philip K. Dick and released in 1982, is one of the most influential science fiction films ever made. Its depiction of Los Angeles in the year 2019 is oppressively prophetic: climate catastrophe, increasing public surveillance, powerful monopolistic corporations, highly evolved artificial intelligence; a fantastic vision of the future world that has become a frightening reality.",
+    "poster_path": "/2ANJtUxqBlCLpV8CXv3BPLo0FV5.jpg",
+    "media_type": "movie",
+    "original_language": "de",
+    "genre_ids": [
+     99,
+     36,
+     10770
+    ],
+    "popularity": 1.9488,
+    "release_date": "2021-05-27",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.8,
+    "vote_count": 10
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/zUJVZEZy3nOZVlD4iMozAD2fWG1.jpg",
+    "id": 1282139,
+    "title": "Ruthless Blade",
+    "original_title": "喵十一",
+    "overview": "A white tiger swordsman fighting its archenemy in the dream, only to discover unexpected ties and buried emotions as the feline fantasy unfolds.",
+    "poster_path": "/8ID4snsM9dpisuHncAP3QTKEntt.jpg",
+    "media_type": "movie",
+    "original_language": "zh",
+    "genre_ids": [
+     16
+    ],
+    "popularity": 1.3907,
+    "release_date": "2024-04-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/Agmql14wnN8jd9F9NRCt9L9xpNE.jpg",
+    "id": 1357239,
+    "title": "Blade Rollers",
+    "original_title": "Blade Rollers",
+    "overview": "Honour West and Joan Camuglia-May share their experiences in this upbeat roller-skating documentary.",
+    "poster_path": "/cvU6qpkJtghMvsWjXSgnSRbHASr.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 0.9137,
+    "release_date": "2024-08-31",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 28331,
+    "title": "Roller Blade",
+    "original_title": "Roller Blade",
+    "overview": "In a futuristic society, rebels fighting against a fascist state are aided by a group of roller-skating nuns called the Bod Sisters.",
+    "poster_path": "/vqz5NMcjVHdQaEFZGbW4vm8GAUe.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     878
+    ],
+    "popularity": 1.4692,
+    "release_date": "1986-07-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 3.5,
+    "vote_count": 15
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/75gk7vS6Rrr4KoMbWJfA3QfQHly.jpg",
+    "id": 969452,
+    "title": "Blade Runner: Mundos Replicantes",
+    "original_title": "Blade Runner: Mundos Replicantes",
+    "overview": "",
+    "poster_path": "/bwbU3u8edLju8gi58OG4LC1aFSu.jpg",
+    "media_type": "movie",
+    "original_language": "es",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.0671,
+    "release_date": "2018-07-09",
+    "softcore": false,
+    "video": false,
+    "vote_average": 4,
+    "vote_count": 2
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 55858,
+    "title": "Reclaiming the Blade",
+    "original_title": "Reclaiming the Blade",
+    "overview": "The Medieval and Renaissance blade, a profound and beautiful object handcrafted by master artisans of old. An object of great complexity, yet one with a singular use in mind- it is designed to kill. The truth of the sword has been shrouded in antiquity, and the Renaissance martial arts that brought it to being are long forgotten. The ancient practitioners lent us all they knew through their manuscripts. As gunslingers of the Renaissance they were western heroes with swords, and they lived and died by them. Yet today their history remains cloaked under a shadow of legend.",
+    "poster_path": "/8Tr8EtQtAOnJ0m1tdjd01OQo4QI.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.7507,
+    "release_date": "2009-04-15",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.9,
+    "vote_count": 12
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1561962,
+    "title": "Razor Blade Sunshine",
+    "original_title": "Razor Blade Sunshine",
+    "overview": "A young woman enters an extreme detox program to beat her addiction, but discovers something sinister intends to prey upon her.",
+    "poster_path": "/5iFkF0VEha0ujZOvyhLzAzZP1uj.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     27
+    ],
+    "popularity": 0.9256,
+    "release_date": "2025-08-21",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   }
+  ],
+  "total_pages": 6,
+  "total_results": 106
+ }
+}

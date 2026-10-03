@@ -1,0 +1,91 @@
+{
+ "path": "/search/keyword?query=the+go",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 328937,
+    "name": "the go-go's"
+   },
+   {
+    "id": 369310,
+    "name": "when the hallways go quiet"
+   },
+   {
+    "id": 356031,
+    "name": "the 1%"
+   },
+   {
+    "id": 267237,
+    "name": "the who"
+   },
+   {
+    "id": 337523,
+    "name": "the fox"
+   },
+   {
+    "id": 326555,
+    "name": "the boy"
+   },
+   {
+    "id": 314436,
+    "name": "the bog"
+   },
+   {
+    "id": 366352,
+    "name": "the lox"
+   },
+   {
+    "id": 348568,
+    "name": "the box"
+   },
+   {
+    "id": 379495,
+    "name": "tae bo"
+   },
+   {
+    "id": 359373,
+    "name": "the v"
+   },
+   {
+    "id": 304922,
+    "name": "theo"
+   },
+   {
+    "id": 329323,
+    "name": "the godfather"
+   },
+   {
+    "id": 380944,
+    "name": "the goonies"
+   },
+   {
+    "id": 282440,
+    "name": "gor the grave"
+   },
+   {
+    "id": 345888,
+    "name": "the good cut"
+   },
+   {
+    "id": 198649,
+    "name": "venus the goddess"
+   },
+   {
+    "id": 331211,
+    "name": "the golden broadcast"
+   },
+   {
+    "id": 283178,
+    "name": "the long goodbye"
+   },
+   {
+    "id": 286097,
+    "name": "spreading the gospel"
+   }
+  ],
+  "total_pages": 2,
+  "total_results": 40
+ }
+}

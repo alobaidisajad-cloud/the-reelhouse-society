@@ -1,0 +1,91 @@
+{
+ "path": "/search/keyword?query=the+mat",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 384656,
+    "name": "the man"
+   },
+   {
+    "id": 335938,
+    "name": "the mars"
+   },
+   {
+    "id": 328624,
+    "name": "the act"
+   },
+   {
+    "id": 286314,
+    "name": "the jam"
+   },
+   {
+    "id": 271918,
+    "name": "the pit"
+   },
+   {
+    "id": 320860,
+    "name": "the path"
+   },
+   {
+    "id": 302400,
+    "name": "the car"
+   },
+   {
+    "id": 351379,
+    "name": "the oath"
+   },
+   {
+    "id": 275775,
+    "name": "the jag"
+   },
+   {
+    "id": 288140,
+    "name": "the past"
+   },
+   {
+    "id": 345444,
+    "name": "the maya"
+   },
+   {
+    "id": 357519,
+    "name": "the mack"
+   },
+   {
+    "id": 356470,
+    "name": "the last"
+   },
+   {
+    "id": 356654,
+    "name": "the mea"
+   },
+   {
+    "id": 344126,
+    "name": "themet"
+   },
+   {
+    "id": 325002,
+    "name": "heimat"
+   },
+   {
+    "id": 378920,
+    "name": "the matrix"
+   },
+   {
+    "id": 358033,
+    "name": "the last match"
+   },
+   {
+    "id": 318977,
+    "name": "glitch in the matrix"
+   },
+   {
+    "id": 338261,
+    "name": "mater harold... and the boys"
+   }
+  ],
+  "total_pages": 1,
+  "total_results": 20
+ }
+}

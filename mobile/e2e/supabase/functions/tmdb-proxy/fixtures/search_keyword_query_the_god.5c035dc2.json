@@ -1,0 +1,75 @@
+{
+ "path": "/search/keyword?query=the+god",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 355185,
+    "name": "god save the king"
+   },
+   {
+    "id": 385092,
+    "name": "am not the god of drama"
+   },
+   {
+    "id": 337523,
+    "name": "the fox"
+   },
+   {
+    "id": 220760,
+    "name": "the end"
+   },
+   {
+    "id": 326555,
+    "name": "the boy"
+   },
+   {
+    "id": 314436,
+    "name": "the bog"
+   },
+   {
+    "id": 366352,
+    "name": "the lox"
+   },
+   {
+    "id": 348568,
+    "name": "the box"
+   },
+   {
+    "id": 381600,
+    "name": "the kid"
+   },
+   {
+    "id": 383031,
+    "name": "the body"
+   },
+   {
+    "id": 329323,
+    "name": "the godfather"
+   },
+   {
+    "id": 198649,
+    "name": "venus the goddess"
+   },
+   {
+    "id": 348542,
+    "name": "the godking pharaoh"
+   },
+   {
+    "id": 217314,
+    "name": "the goddess of gyeongju"
+   },
+   {
+    "id": 341423,
+    "name": "investiture of the gods"
+   },
+   {
+    "id": 314238,
+    "name": "the godfather's influence"
+   }
+  ],
+  "total_pages": 1,
+  "total_results": 16
+ }
+}

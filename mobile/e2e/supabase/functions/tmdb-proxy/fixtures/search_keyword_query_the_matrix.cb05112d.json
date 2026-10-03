@@ -1,0 +1,19 @@
+{
+ "path": "/search/keyword?query=the+matrix",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 378920,
+    "name": "the matrix"
+   },
+   {
+    "id": 318977,
+    "name": "glitch in the matrix"
+   }
+  ],
+  "total_pages": 1,
+  "total_results": 2
+ }
+}

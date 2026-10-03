@@ -1,0 +1,431 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=the+matr",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/tlm8UkiQsitc8rSuIAscQDCnP8d.jpg",
+    "id": 603,
+    "title": "The Matrix",
+    "original_title": "The Matrix",
+    "overview": "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
+    "poster_path": "/dXNAPwY7VrqMAo51EKhhCJfaGb5.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     878
+    ],
+    "popularity": 53.7435,
+    "release_date": "1999-03-31",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.26,
+    "vote_count": 28857
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/ihOJcrorpDQtHTzIOrobbOhpJsj.jpg",
+    "id": 604,
+    "title": "The Matrix Reloaded",
+    "original_title": "The Matrix Reloaded",
+    "overview": "The Resistance builds in numbers as humans are freed from the Matrix and brought to the city of Zion. Neo discovers his superpowers, including the ability to see the code inside the Matrix. With machine sentinels digging to Zion in 72 hours, Neo, Morpheus and Trinity must find the Keymaker to ultimately reach the Source.",
+    "poster_path": "/8xEVAe84zlL9rkfYT6dZXero4KK.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     12,
+     28,
+     53,
+     878
+    ],
+    "popularity": 23.2528,
+    "release_date": "2003-05-15",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.086,
+    "vote_count": 12363
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/533xAMhhVyjTy8hwMUFEt5TuDfR.jpg",
+    "id": 605,
+    "title": "The Matrix Revolutions",
+    "original_title": "The Matrix Revolutions",
+    "overview": "The human city of Zion defends itself against the massive invasion of the machines as Neo fights to end the war at another front while also opposing the rogue Agent Smith.",
+    "poster_path": "/qEWiBXJGXK28jGBAm8oFKKTB0WD.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     12,
+     28,
+     53,
+     878
+    ],
+    "popularity": 17.7654,
+    "release_date": "2003-11-05",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.76,
+    "vote_count": 11177
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/eNI7PtK6DEYgZmHWP9gQNuff8pv.jpg",
+    "id": 624860,
+    "title": "The Matrix Resurrections",
+    "original_title": "The Matrix Resurrections",
+    "overview": "Plagued by strange memories, Neo's life takes an unexpected turn when he finds himself back inside the Matrix.",
+    "poster_path": "/8c4a8kE7PizaGQQnditMmI1xbRp.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     28,
+     12
+    ],
+    "popularity": 13.0799,
+    "release_date": "2021-12-16",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.3,
+    "vote_count": 6755
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/1DvzeUYmTylr9eeHZpecLWDVDc3.jpg",
+    "id": 1427915,
+    "title": "The Matriarch",
+    "original_title": "Die Matriarchin",
+    "overview": "Seventeen-year-old Kim lives with her emotionally distant mother, mute younger brother, and strangers hiding in a secret room in their apartment at the Baltic coast. Vietnamese migrants regularly pass through their home as her mother, a key figure in a criminal network, runs human trafficking operations. When her mother's associate Luc defects to start a rival operation, Kim seizes her chance to prove herself to her mother. She navigates her first romance while entering a clandestine family business. As her good intentions drag her into a dark and brutal underworld that contradicts her sensitive nature, Kim begins to question the true costs of earning respect by crossing her own boundaries.",
+    "poster_path": "/dTaoF2xsKQR0NFCzi6b1BK3Vceo.jpg",
+    "media_type": "movie",
+    "original_language": "de",
+    "genre_ids": [
+     80,
+     53,
+     18
+    ],
+    "popularity": 1.8237,
+    "release_date": "",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/9SChZsIzeCGyJrd0EceR6Y1fxw4.jpg",
+    "id": 1260968,
+    "title": "The Matriarch",
+    "original_title": "The Matriarch",
+    "overview": "Thirteen-year-old Missy kills her addict mother's boyfriend, Trent, in self defence. When her vengeful mother Annette tries to murder her as penance, Missy is forced to fight for survival in her own home.",
+    "poster_path": "/89X0k6DpFdMUy10auKziPKYUkd9.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     27,
+     53
+    ],
+    "popularity": 2.1858,
+    "release_date": "2024-10-09",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.2,
+    "vote_count": 2
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/2P3FyI9ZTe9duRIGpGPiDC3mQMf.jpg",
+    "id": 1217455,
+    "title": "The Matrix: Generation",
+    "original_title": "Matrix génération",
+    "overview": "After the 1999 premiere of the first Matrix movie, it became a pop culture phenomenon. A special documentary about the Matrix saga and its prophetic aspects.",
+    "poster_path": "/53McB8R9RUBxfINRxWaPwUMtL5Q.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 2.8377,
+    "release_date": "2023-12-13",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.9,
+    "vote_count": 25
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/dZYI0DTtau9o5mpl9dFbWNuNhf4.jpg",
+    "id": 1687105,
+    "title": "The Secrets of the Matriarch",
+    "original_title": "The Secrets of the Matriarch",
+    "overview": "Danielle travels to New Orleans to meet her grandmother and uncover the truth about her mother's death. Drawn into a dangerous feud with the rival Benoit family, Danielle learns her mother’s death was no accident and must navigate treachery, uncover secrets, and decide whether to destroy both families' legacies to find justice.",
+    "poster_path": "/jDChix3mI1CTWE27RBcAGgkszlP.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     53,
+     10770
+    ],
+    "popularity": 1.5145,
+    "release_date": "2026-05-08",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.5,
+    "vote_count": 2
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 221495,
+    "title": "The Matrix Recalibrated",
+    "original_title": "The Matrix Recalibrated",
+    "overview": "The making of Matrix Revolutions, The (2003) is briefly touched on here in this documentary. Interviews with various cast and crew members inform us how they were affected by the deaths of Gloria Foster and Aaliyah, and also delve into the making of the visual effects that takes up a lot of screen time. Written by Rhyl Donnelly",
+    "poster_path": "/gRni1Q651AZPnLqZczmahiIxG0s.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     99,
+     878
+    ],
+    "popularity": 1.7424,
+    "release_date": "2004-04-06",
+    "softcore": false,
+    "video": true,
+    "vote_average": 6.9,
+    "vote_count": 61
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/XyW7tqOG3ITFc7btXxk9NgDsJv.jpg",
+    "id": 162955,
+    "title": "The Matrimonial Bed",
+    "original_title": "The Matrimonial Bed",
+    "overview": "Five years after Adolphe's death in a train wreck, he is discovered very much alive and with amnesia. Unfortunately he and his first wife are remarried and with children.",
+    "poster_path": "/aDIWKuD1N4q7pHh2CWhybQtf3Hn.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 1.2778,
+    "release_date": "1930-08-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.4,
+    "vote_count": 5
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/4FuxMYW1E1LHqSkWov2YwaziID3.jpg",
+    "id": 684431,
+    "title": "Making \"The Matrix\"",
+    "original_title": "Making \"The Matrix\"",
+    "overview": "A promotional making-of documentary for the film The Matrix (1999) that devotes its time to explaining the digital and practical effects contained in the film. This is very interesting, seeing as how they're giving away the cinematic secrets that they created solely for the this movie, that have now been spoofed and referenced in countless other films.",
+    "poster_path": "/m2yIfRJYwpCgHON1Ig1pNKMWTxp.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.9921,
+    "release_date": "1999-09-21",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.4,
+    "vote_count": 56
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/2WtGZrNxYItKG8Sh518fpUhJTJJ.jpg",
+    "id": 1223598,
+    "title": "Free Your Mind: The Matrix Now",
+    "original_title": "Free Your Mind: The Matrix Now",
+    "overview": "Experience the classic sci-fi film The Matrix like never before in this spectacular live show brought to life through mind-expanding dance and the latest immersive design.",
+    "poster_path": "/nw4cbGwILICx8DaNgZT8HYj6TbX.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     10770
+    ],
+    "popularity": 1.3299,
+    "release_date": "2023-12-31",
+    "softcore": false,
+    "video": false,
+    "vote_average": 4,
+    "vote_count": 2
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/mfPup8TitefIGDqfjoUz2aD8w0U.jpg",
+    "id": 1731594,
+    "title": "How Do You Remember The Matrix?",
+    "original_title": "How Do You Remember The Matrix?",
+    "overview": "In the year 2073, where all copies of films have been lost in a sea of AI-generated replicas, two detectives seek out the original copy of 'The Matrix'.",
+    "poster_path": "/3Ju2UcOtyPJXxKHrj7dLGDOLC7H.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     18
+    ],
+    "popularity": 1.1702,
+    "release_date": "2026-06-27",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/lBdXACywnLwKUZmZkZ87djDQBeV.jpg",
+    "id": 14543,
+    "title": "The Matrix Revisited",
+    "original_title": "The Matrix Revisited",
+    "overview": "The film goes behind the scenes of the 1999 sci-fi movie The Matrix.",
+    "poster_path": "/fNG2JOskhQnttmAaj2knM5h59Io.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 2.1357,
+    "release_date": "2001-11-19",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.9,
+    "vote_count": 215
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/fbAcotuSwzsYRubMr19K4OYilhh.jpg",
+    "id": 172445,
+    "title": "The Matrimaniac",
+    "original_title": "The Matrimaniac",
+    "overview": "A young couple attempts to elope, with the bride's irate father in hot pursuit. The train stops briefly and the young man dashes off to find a minister, but before he can get himself and the minister onto the train, it leaves, carrying his bride-to- be away. Now the young man, minister in tow, pursues his bride while her father and a horde of lawmen pursue them both.",
+    "poster_path": "/4UGbI5ee4TdLFNTUNgVdH7C5rdJ.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     10749,
+     35
+    ],
+    "popularity": 0.9312,
+    "release_date": "1916-12-16",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.5,
+    "vote_count": 11
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/lAdR6GvEP2o5AM9hWbzVRHCg3RD.jpg",
+    "id": 116501,
+    "name": "Escape The Matrix",
+    "original_name": "Escape The Matrix",
+    "overview": "You cannot escape the matrix unless you know you are in it. Join David Icke as he unravels the nature of the reality that we have been taught to believe is truth, through a lifetime of deep programming.",
+    "poster_path": "/ur6GSomJqsmpkY16zvXi4q9CtRK.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.4587,
+    "first_air_date": "2020-07-01",
+    "softcore": false,
+    "vote_average": 10,
+    "vote_count": 4,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1268926,
+    "title": "The Matrix 5",
+    "original_title": "The Matrix 5",
+    "overview": "A new instalment in the franchise. Plot TBA.",
+    "poster_path": null,
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     28,
+     12
+    ],
+    "popularity": 1.0097,
+    "release_date": "",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 591955,
+    "title": "The Matrix Reloaded Revisited",
+    "original_title": "The Matrix Reloaded Revisited",
+    "overview": "The making of The Matrix Reloaded:  Go to the middle movie's furthest reaches via five documentary paths revealing 21 featurettes.",
+    "poster_path": "/gb7C4oRzYWXWCuZMR1cwtHa53Pz.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.7827,
+    "release_date": "2004-12-07",
+    "softcore": false,
+    "video": true,
+    "vote_average": 6.8,
+    "vote_count": 30
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 684721,
+    "title": "The Matrix Revolutions: Super Big Mini Models",
+    "original_title": "The Matrix Revolutions: Super Big Mini Models",
+    "overview": "This making-of piece includes remarks from production designer Owen Paterson, concept artist George Hull, visual effects supervisor John Gaeta, US unit production manager L. Dean Jones Jr., US model unit special effects coordinator Geoffrey Heron, Zion unit sequence lead Rodney Iwashina, high speed first assistant camera Paul Sanchez, US model unit art director Nanci Noblett, conceptual designer Geofrey Darrow, model shop supervisor Michael Lynch, US model unit producer David Dranitzke, prop maker foremen Dave Fogler and Fon Davis, and visual effects supervisor John \"DJ\" Des Jardin.",
+    "poster_path": "/aFSXTzdOYevM3jytFNySwvzYE9q.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.2908,
+    "release_date": "2004-04-06",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.9,
+    "vote_count": 4
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1372686,
+    "title": "The Matrimonial Web",
+    "original_title": "The Matrimonial Web",
+    "overview": "",
+    "poster_path": "/bY6H0PJbhUhuwjAQ6uerVArDdau.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 0.8815,
+    "release_date": "1921-10-02",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8,
+    "vote_count": 1
+   }
+  ],
+  "total_pages": 11,
+  "total_results": 216
+ }
+}

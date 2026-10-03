@@ -1,0 +1,806 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=casablanc",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "id": 227071,
+    "name": "Pedro Casablanc",
+    "original_name": "Pedro Casablanc",
+    "media_type": "person",
+    "popularity": 1.4088,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/7oXGl8Nr2w7SaES4tbzjw4RYtF0.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/o1JapnInSBCgedfWnj15ytjGC70.jpg",
+      "id": 519010,
+      "title": "Pain and Glory",
+      "original_title": "Dolor y gloria",
+      "overview": "Salvador Mallo, a filmmaker in the twilight of his career, remembers his life: his mother, his lovers, the actors he worked with. The sixties in a small village in Valencia, the eighties in Madrid, the present, when he feels an immeasurable emptiness, facing his mortality, the incapability of continuing filming, the impossibility of separating creation from his own life. The need of narrating his past can be his salvation.",
+      "poster_path": "/cMlueArJXXwZbeLpb4NhC3pxmBk.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 7.7225,
+      "release_date": "2019-03-22",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.37,
+      "vote_count": 1957
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/60XJOemSR9LQRDgBMRN7qkdLsPH.jpg",
+      "id": 392207,
+      "title": "The Invisible Guardian",
+      "original_title": "El guardián invisible",
+      "overview": "When the naked body of a teenage girl is found on the banks of the River Baztán, it is quickly linked to a similar murder one month before. Soon, rumours are flying in the nearby village of Elizondo. Is this the work of a ritualistic killer or is it the basajaun, the ‘invisible guardian’ of Basque mythology?  Inspector Amaia Salazar leads the investigation, taking her back to the heart of the Basque country where she was born, and where she hoped never to return. Shrouded in mist and surrounded by impenetrable forests, it is a place of unresolved conflicts and a terrible secret from Amaia’s childhood that will come back to haunt her.  Faced with the superstitions of the village, Amaia must fight the demons of her past to confront the reality of a serial killer on the loose. But as she is drawn deeper into the investigation, she feels the presence of something darker lurking in the shadows…",
+      "poster_path": "/uxR7CqLRdQ2QuOPP9ymunPrRBCq.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       53,
+       80,
+       9648
+      ],
+      "popularity": 3.4989,
+      "release_date": "2017-03-03",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.5,
+      "vote_count": 752
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/isazfkX14Unin8m6meZMfm7QDfn.jpg",
+      "id": 613099,
+      "title": "The Legacy of the Bones",
+      "original_title": "Legado en los huesos",
+      "overview": "Inspector Amaia Salazar must return to the Baztan valley in order to solve a series of suicides that seem to follow a similar pattern.",
+      "poster_path": "/ufzXGRCnufpalqpkyrGnlWzO503.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       53,
+       80,
+       9648
+      ],
+      "popularity": 3.8549,
+      "release_date": "2019-12-05",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.6,
+      "vote_count": 477
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/87wqeMeUeMRLjsE1IWNKJcPlpuC.jpg",
+    "id": 289,
+    "title": "Casablanca",
+    "original_title": "Casablanca",
+    "overview": "In Casablanca, Morocco in December 1941, a cynical American expatriate meets a former lover, with unforeseen complications.",
+    "poster_path": "/lGCEKlJo2CnWydQj7aamY7s1S7Q.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     10749
+    ],
+    "popularity": 13.3148,
+    "release_date": "1943-01-15",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.139,
+    "vote_count": 6255
+   },
+   {
+    "adult": false,
+    "id": 216731,
+    "name": "Julian Casablancas",
+    "original_name": "Julian Casablancas",
+    "media_type": "person",
+    "popularity": 0.8121,
+    "gender": 2,
+    "known_for_department": "Sound",
+    "profile_path": "/2b6UlHs1vYiiz2SppFHtStNRUYi.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/2gnd4l61CMHGFKPutWXxwXXiPwQ.jpg",
+      "id": 247420,
+      "title": "In Transit",
+      "original_title": "In Transit",
+      "overview": "The Strokes headlined United Kingdom's Carling Weekend festivals in 2002, and their misadventures were largely chronicled by this short documentary 'In Transit', which was released to members of the now-defunct 'Alone, Together' fan club back in 2004.",
+      "poster_path": "/KjaDKNeLtypBviBnYEMbRZJ4L9.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       99,
+       10402
+      ],
+      "popularity": 1.6061,
+      "release_date": "2004-09-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.5,
+      "vote_count": 4
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/y0VHs6Q5VenxKAPAZXhMWRXUXv6.jpg",
+      "id": 771104,
+      "title": "The Strokes: MTV $2 Bill Concert",
+      "original_title": "The Strokes: MTV $2 Bill Concert",
+      "overview": "The seminal live performance by The Strokes, performing on a brightly lit-stage before an intimate audience at Zoetrope Studios in Los Angeles.",
+      "poster_path": "/7KjpYdR6K89DKGn0L9nryyVVmGa.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       10402,
+       99,
+       10770
+      ],
+      "popularity": 1.2589,
+      "release_date": "2002-02-02",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.5,
+      "vote_count": 4
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/2sMuYhMKYLEVgXryR2j19yFrz6O.jpg",
+      "id": 98196,
+      "title": "The Strokes Live at London University",
+      "original_title": "The Strokes Live at London University",
+      "overview": "The Strokes played an intimate gig in front of just 800 people at the London University uLU on November 29th, 2005.",
+      "poster_path": "/sEjtrrxi5O9p2Dhv9aP8tD2dpCp.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       10402
+      ],
+      "popularity": 1.0819,
+      "release_date": "2005-11-29",
+      "softcore": false,
+      "video": true,
+      "vote_average": 2,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/7S0EaMEXJgCdNAcdOl2RI0XZxjr.jpg",
+    "id": 92913,
+    "title": "Casablanca, Nest of Spies",
+    "original_title": "Noches de Casablanca",
+    "overview": "Casablanca 1942. While French Police Chief Maurice Desjardins is busy having careless fun with some loose girls, members of the French Resistance kill a man at the harbor and steal his briefcase full of important documents from the Third Reich. At an apartment building in the distance, Andre Kuhn watches the whole operation through his powerful binoculars. He is posing as a businessman but actually working as a spy for the Germans a fact totally ignored by his live-in girlfriend Teresa Villar, a beautiful Spanish singer who works at El Dorado Night Club. Andre telephones Max von Stauffen, the head of German Intelligence in Casablanca, to inform him of what he has just witnessed. Max tells him to stay put until he arrives in order to get the information personally but, by the time he reaches Andres apartment, he finds him dead with a gun shot on his temple.",
+    "poster_path": "/zv4MnDFWsweuPRf9v2Evs2EuJcg.jpg",
+    "media_type": "movie",
+    "original_language": "es",
+    "genre_ids": [
+     18,
+     10402,
+     80
+    ],
+    "popularity": 1.5601,
+    "release_date": "1963-10-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 4.7,
+    "vote_count": 6
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/1OtFzaNzxFaajr24we1LNAu3zCt.jpg",
+    "id": 330066,
+    "title": "Dirty Game in Casablanca",
+    "original_title": "Juego Sucio en Casablanca",
+    "overview": "Dean, a failed American writer, receives some unexpected news: his wife, who belongs to a wealthy family, has filed for divorce. Stunned, he decides to commit suicide. His initial attempt fails when he has second thought. But during a drunken blackout spent gambling he wins big and promises all the winnings to the man who can kill him...but they must possess a special playing card.",
+    "poster_path": "/jvoUgMdLab9gBcrRUYlasYa9bUa.jpg",
+    "media_type": "movie",
+    "original_language": "es",
+    "genre_ids": [
+     28,
+     53
+    ],
+    "popularity": 1.328,
+    "release_date": "1985-06-17",
+    "softcore": false,
+    "video": false,
+    "vote_average": 3.9,
+    "vote_count": 7
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/4UoSHGSqwXe1HeyzbouZ6Lm40H5.jpg",
+    "id": 424988,
+    "title": "Casablancas: The Man Who Loved Women",
+    "original_title": "Casablancas, l'homme qui aimait les femmes",
+    "overview": "In the last 30 years of the 2nd millennium, John Casablancas created the Elite modeling agency and invented the supermodels. If the names as Naomi, Cindy, Linda, Kate or Claudia are today so famous in the pop culture, it is mostly his doing. He lived a life dreamt by many, surrounded by glamour and beauty. John Casablancas tells his own story.",
+    "poster_path": "/zFOemhiN6kiG378YKPWJVyFjtsn.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.8697,
+    "release_date": "2016-06-29",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.4,
+    "vote_count": 9
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 76529,
+    "title": "Operation Casablanca",
+    "original_title": "Opération Casablanca",
+    "overview": "Mistaken for a dangerous Islamist, Saadi - a regular guy who happens to be an illegal Arab immigrant - sets out on the most dangerous day of his life. A satirical and thrilling comedy where a wrongly accused suspect gets mixed up in a worldwide terrorist plot.",
+    "poster_path": "/tOocP3pLcr1Nz9wo9KIH8iLtq0.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     28,
+     35
+    ],
+    "popularity": 1.0264,
+    "release_date": "2011-11-09",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.5,
+    "vote_count": 6
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/8Zkn88XkqkPAwSivKfU4gZkqTUd.jpg",
+    "id": 278716,
+    "name": "Los Casablanca",
+    "original_name": "Los Casablanca",
+    "overview": "",
+    "poster_path": "/bvjoHeb1g7Tux7tiychqO9ACBJY.jpg",
+    "media_type": "tv",
+    "original_language": "es",
+    "genre_ids": [
+     18,
+     9648,
+     10751
+    ],
+    "popularity": 4.7088,
+    "first_air_date": "2024-12-03",
+    "softcore": false,
+    "vote_average": 7.8,
+    "vote_count": 9,
+    "origin_country": [
+     "CL"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 57909,
+    "title": "The Circus Casablanca",
+    "original_title": "Cirkus Casablanca",
+    "overview": "Film about a pair of traveling entertainers and con-men and their problems with jobs, money and women. We follow them in a period there it goes downhill with engagements. It's hard for them to realize that entertainers of their kind are about to become extinct.",
+    "poster_path": "/vdKVIqETTFaaXpSa2pRlYkAj1Rf.jpg",
+    "media_type": "movie",
+    "original_language": "da",
+    "genre_ids": [
+     18,
+     35
+    ],
+    "popularity": 1.5558,
+    "release_date": "1981-02-27",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.4,
+    "vote_count": 7
+   },
+   {
+    "adult": false,
+    "id": 2576931,
+    "name": "Daniel Casablanca",
+    "original_name": "Daniel Casablanca",
+    "media_type": "person",
+    "popularity": 0.3364,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": "/eX6AWVuZ1DiRbbPuhv4zlqLwRNw.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/qockJIX0NNDiny7q5BoLywOVZxW.jpg",
+      "id": 16916,
+      "title": "A Boyfriend for My Wife",
+      "original_title": "Un novio para mi mujer",
+      "overview": "El Tenso does not know how to face his ill-tempered wife, Tana, to tell her that he wants to separate. Carlos, a friend of Tenso, suggests him to invert the situation and cause Tana to leave him by hiring Cuervo Flores, an irresistible seducer, to try and charm his wife until she falls in love with him.",
+      "poster_path": "/ybMKaNMoBie2ebXf4TIz1Sh70Iq.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       10749,
+       35,
+       18
+      ],
+      "popularity": 1.6818,
+      "release_date": "2008-08-14",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.3,
+      "vote_count": 69
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/oE7aakVOcEnDClBYydzILrThOFU.jpg",
+      "id": 685978,
+      "title": "100% lucha, el amo de los clones",
+      "original_title": "100% lucha, el amo de los clones",
+      "overview": "Damián is the neighbor of Viloni, the most popular wrestler of 100 % Lucha. He has always hated Viloni for his popularity. That's why, taking advantage of his bio-technical knowledge, he creates lots of clones who look exactly like the wrestlers of 100 % Lucha (including Viloni). Viloni will be forced to ally with his enemies on 100 % Lucha to stop the evil doctor.",
+      "poster_path": "/3MfDFtrmqdRGUdW2Kg6zdFyBzkh.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       28,
+       12,
+       35
+      ],
+      "popularity": 1.0975,
+      "release_date": "2009-07-16",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5,
+      "vote_count": 2
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/vvNRQYa407YNV3gMKPqCJHbl4S0.jpg",
+      "id": 146722,
+      "title": "City in Heat",
+      "original_title": "Ciudad en celo",
+      "overview": "A group of friends in their 30's meet at a bar in Buenos Aires everyday. They used to hang here as students, laughing at the world, and now they still dream of changing the world from the cafe's table. Unable discuss politics or football, the only thing they can talk about is women. When one of their friends commits suicide, a female from his past shows up to confront old feelings.",
+      "poster_path": "/2SVfZg3ykGXD7cu6PQsD3kS8shx.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       35,
+       10749
+      ],
+      "popularity": 1.1372,
+      "release_date": "2007-03-22",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.2,
+      "vote_count": 3
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3738891,
+    "name": "Fernando Casablancas",
+    "original_name": "Fernando Casablancas",
+    "media_type": "person",
+    "popularity": 0.4252,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": "/qbpZraicg8AcFSYcY4zvLnLc42g.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/uplZIzadn8wcbKeBiy1469ThBRV.jpg",
+      "id": 1082543,
+      "title": "National Anthem",
+      "original_title": "National Anthem",
+      "overview": "A 21-year old construction worker in rural New Mexico joins a community of queer ranchers and rodeo performers in search of their own version of the American dream.",
+      "poster_path": "/sUFTNOFBoJzCGu8c9XRJAy7G6xu.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       10749
+      ],
+      "popularity": 3.5232,
+      "release_date": "2024-07-12",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.6,
+      "vote_count": 34
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1034985,
+      "title": "Wetiko",
+      "original_title": "Wetiko",
+      "overview": "In the Maya jungle, a young Maya man’s journey with sacred toads collides with a fight for spirit and land—against outsiders led by a predatory white cult leader.",
+      "poster_path": "/3zkUfnHzz5LraC6rOXybUABK93T.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       12,
+       14
+      ],
+      "popularity": 1.8338,
+      "release_date": "2025-12-31",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 106189,
+    "title": "Our Man in Casablanca",
+    "original_title": "Il nostro agente a Casablanca",
+    "overview": "A man whose hand has been replaced by a steel one finds that his new hand has the ability to retain enough electricity so he can kill his enemies, which is exactly what he starts to do.",
+    "poster_path": "/eBmMchBsu8tIMdkq83dJ5smNJuu.jpg",
+    "media_type": "movie",
+    "original_language": "it",
+    "genre_ids": [
+     28
+    ],
+    "popularity": 1.4955,
+    "release_date": "1966-08-19",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.5,
+    "vote_count": 2
+   },
+   {
+    "adult": false,
+    "id": 1862807,
+    "name": "Momo Casablanca",
+    "original_name": "Momo Casablanca",
+    "media_type": "person",
+    "popularity": 0.3791,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/7mPXbslVTC4lH5mFRMLtSLUFxxA.jpg",
+      "id": 80015,
+      "title": "Hollywoo",
+      "original_title": "Hollywoo",
+      "overview": "Sometimes, when you think you have it all, everything falls apart. That is exactly the story of Jeanne .Just when she is offered the chance to dub famous American actress Jennifer Marshall in a successful American TV Show and her salary is about to triple, Marshall decides to withdraw from the show. So Jeanne makes a crazy decision, fly to Hollywood herself and make Jennifer change her mind about leaving the series...",
+      "poster_path": "/oI0om8vqiiBmIifxLr73nsWBFcB.jpg",
+      "media_type": "movie",
+      "original_language": "fr",
+      "genre_ids": [
+       35
+      ],
+      "popularity": 1.5323,
+      "release_date": "2011-12-07",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.4,
+      "vote_count": 613
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/bLGsVMO8rSjJnV5JHpgtE7nrTAN.jpg",
+      "id": 121677,
+      "title": "The Reluctant Fundamentalist",
+      "original_title": "The Reluctant Fundamentalist",
+      "overview": "In New York, a Pakistani native finds that his American Dream has collapsed in the wake of the 9/11 terrorist attacks.",
+      "poster_path": "/nbdiRDhStWuAPmrscejIlRCFrQt.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       53
+      ],
+      "popularity": 3.4096,
+      "release_date": "2013-04-24",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.6,
+      "vote_count": 251
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/5rpJwtIXntYcKRONrT5EKSAMX1o.jpg",
+      "id": 283700,
+      "title": "Pasolini",
+      "original_title": "Pasolini",
+      "overview": "We are with Pasolini during the last hours of his life, as he talks with his beloved family and friends, writes, gives a brutally honest interview, shares a meal with Ninetto Davoli, and cruises for the roughest rough trade in his gun-metal gray Alfa Romeo. Over the course of the action, Pasolini’s life and his art are constantly refracted and intermingled to the point where they become one.",
+      "poster_path": "/tmlo7J7FjX6XJA7iNRPGqjx5atx.jpg",
+      "media_type": "movie",
+      "original_language": "it",
+      "genre_ids": [
+       36,
+       18
+      ],
+      "popularity": 1.7028,
+      "release_date": "2014-09-25",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.667,
+      "vote_count": 239
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2161122,
+    "name": "Andy Casablanca",
+    "original_name": "Andy Casablanca",
+    "media_type": "person",
+    "popularity": 0.2559,
+    "gender": 2,
+    "known_for_department": "Sound",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/t5OZGqcLWXYXEU2CZMsG307Bxv4.jpg",
+      "id": 502071,
+      "title": "Sapo",
+      "original_title": "Sapo",
+      "overview": "A retelling of Jeremías Gallardo's story, a prominent Chilean journalist who, on January 29, 1985, covered the last death sentence in Chile, perpetrated in the Valparaíso prison.",
+      "poster_path": "/eYilGjbaa9dkcLgKeghwE3bmbev.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       18,
+       80,
+       53
+      ],
+      "popularity": 0.7723,
+      "release_date": "2018-01-11",
+      "softcore": false,
+      "video": false,
+      "vote_average": 3,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4368945,
+    "name": "Rue Casablancas",
+    "original_name": "Rue Casablancas",
+    "media_type": "person",
+    "popularity": 0.4119,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/f1MvCnMPwSW6H6lZnG5dKD0DBlk.jpg",
+      "id": 1203418,
+      "title": "Reverie",
+      "original_title": "Reverie",
+      "overview": "​​A teenager finds out his two dads have genetically engineered his sexual orientation. He confronts them about hiding this from him and we learn what factors made them make this decision.",
+      "poster_path": "/guPjeO6SsnHOvtRXj0XfRqA19DM.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.7713,
+      "release_date": "2022-06-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 10,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1733810,
+    "name": "Johanna Casablanca",
+    "original_name": "Johanna Casablanca",
+    "media_type": "person",
+    "popularity": 0.3422,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 433517,
+      "title": "Liebesschule blutjunger Mädchen",
+      "original_title": "Liebesschule blutjunger Mädchen",
+      "overview": "",
+      "poster_path": "/xIsxJOI7A7ppng536pcKZiZdXg0.jpg",
+      "media_type": "movie",
+      "original_language": "de",
+      "genre_ids": [
+       35
+      ],
+      "popularity": 0.7197,
+      "release_date": "1973-03-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 3.3,
+      "vote_count": 3
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2377154,
+    "name": "Casablanca",
+    "original_name": "Casablanca",
+    "media_type": "person",
+    "popularity": 0.2901,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/dv7ptSyfzyr64PU064Hj4cfdfPq.jpg",
+      "id": 620120,
+      "title": "Become the King",
+      "original_title": "王様になれ",
+      "overview": "The new film, entitled Ousama ni Nare (\"Become the King\"), features music and an original story by Sawao Yamanaka (guitar and vocals for The Pillows) as well as a script and direction by Shûji Okui. The film stars actor Amane Okayama as Yuusuke, a young man who works in a ramen shop frequented by numerous Japanese rock bands. Yuusuke dreams of being a photographer, and he decides to follow his dreams by becoming a cameraman for live concert events.  (Source: Crunchyroll News)",
+      "poster_path": "/fuYULgbdmw3aMvob74pY1JuIhnt.jpg",
+      "media_type": "movie",
+      "original_language": "ja",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.9552,
+      "release_date": "2019-09-13",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4812484,
+    "name": "Casablanca",
+    "original_name": "Casablanca",
+    "media_type": "person",
+    "popularity": 0.2835,
+    "gender": 0,
+    "known_for_department": "Editing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 220783,
+      "title": "Soul's Ark",
+      "original_title": "Soul's Ark",
+      "overview": "After disappearances during an archelogical dig, Stella Grant (Carole Ann Ford) sends in her two top agents, played by Colin Baker and Wendy Padbury, to investigate.",
+      "poster_path": "/oWUCa8vkG9Enu6AWg5GTrtoAVgu.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.8288,
+      "release_date": "1999-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 10,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2129503,
+    "name": "Zane Casablanca",
+    "original_name": "Zane Casablanca",
+    "media_type": "person",
+    "popularity": 0.5887,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/4KI5Ij6R7L8jCvkgcmrwlQ2zyuK.jpg",
+      "id": 617772,
+      "title": "Doll Cemetery",
+      "original_title": "Doll Cemetery",
+      "overview": "Brendan Cobbs, a famous novelist, is sent to a remote cottage in rural England to find inspiration for his next novel. He believes he found his next subject when he encounters Alfred, a child size doll who can come to life.",
+      "poster_path": "/cAHjOqNIZgU03yieJqyOUTr4yxO.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       27
+      ],
+      "popularity": 1.2424,
+      "release_date": "2019-08-23",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.7,
+      "vote_count": 23
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 464880,
+      "title": "The Howling",
+      "original_title": "The Howling",
+      "overview": "A local myth will be discovered to be true by a group of teenagers on a night out on remote farmland. Is there a bloodthirsty creature that has been wandering the land?",
+      "poster_path": "/j79Tu57Ub58H4cFlQCaQFBQqCqN.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       27,
+       878,
+       53
+      ],
+      "popularity": 0.9189,
+      "release_date": "2017-10-09",
+      "softcore": false,
+      "video": false,
+      "vote_average": 4.6,
+      "vote_count": 5
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/5BIY5hMbVDbe5SjkIDD9TI7hPCI.jpg",
+      "id": 2321,
+      "name": "The Unit",
+      "original_name": "The Unit",
+      "overview": "A covert team of special forces operatives risk their lives on undercover missions around the globe, while their wives maintain the homefront, protecting their husbands' secrets.",
+      "poster_path": "/ftwhXqizcVRo4pgqFnTysR9tAIM.jpg",
+      "media_type": "tv",
+      "original_language": "en",
+      "genre_ids": [
+       10759,
+       18
+      ],
+      "popularity": 51.2188,
+      "first_air_date": "2006-03-07",
+      "softcore": false,
+      "vote_average": 7.356,
+      "vote_count": 229,
+      "origin_country": [
+       "US"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/msSyQ0ZxOUyYVghCDHpUOYnhnxs.jpg",
+    "id": 1661045,
+    "title": "Ino Casablanca @ARTE Dans le Club - ARTE Concert",
+    "original_title": "Ino Casablanca @ARTE Dans le Club - ARTE Concert",
+    "overview": "Ino Casablanca takes the reins at ARTE Dans le Club! The new sensation on the French-speaking rap scene is taking the Gaîté Lyrique by storm with his hybrid sound and exceptionally talented live musicians.  Flanked by live musicians and surrounded by a frenzied audience, the young prodigy from Montblanc takes over ARTE Dans le Club with all his audacity and generosity.  Tracklist:\r 0:00 BISSAP DU 20E\r 4:06 PARAMOUR\r 7:31 FLOCAGE\r 9:56 EXTAZ\r 13:44 RACAILLE\r 16:40 ORANJ\r 19:50 ALBUFEIRA  24:35 CIAO, MY LOVE !\r 27:50 CLUBMASTER  31:02 Derrière moi\r 32:57 MAYET\r 38:15 MOULA SOLITUDE\r 41:10 KITLÉ  45:33 BLICKY (ft.Linlin)\r 49:00 BLICKY (ft.Linlin)\r 52:40 DIMA RAVE ENCORE  54:02 NOUVO GROOVE  56:41 DIMA RAVE\r 59:18 DIMA RAVE\r 1:01:58 MOULA SOLITUDE  1:07:52 BISSAP DU 20E",
+    "poster_path": "/qFtTCiqxGil2NAgYzPIYxWKn11x.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     10402
+    ],
+    "popularity": 1.0435,
+    "release_date": "2026-03-27",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   }
+  ],
+  "total_pages": 5,
+  "total_results": 99
+ }
+}

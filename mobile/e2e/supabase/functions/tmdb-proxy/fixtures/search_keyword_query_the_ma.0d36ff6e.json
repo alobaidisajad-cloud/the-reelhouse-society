@@ -1,0 +1,91 @@
+{
+ "path": "/search/keyword?query=the+ma",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 384656,
+    "name": "the man"
+   },
+   {
+    "id": 356031,
+    "name": "the 1%"
+   },
+   {
+    "id": 356654,
+    "name": "the mea"
+   },
+   {
+    "id": 335938,
+    "name": "the mars"
+   },
+   {
+    "id": 345444,
+    "name": "the maya"
+   },
+   {
+    "id": 357519,
+    "name": "the mack"
+   },
+   {
+    "id": 228305,
+    "name": "thelema"
+   },
+   {
+    "id": 286314,
+    "name": "the jam"
+   },
+   {
+    "id": 302400,
+    "name": "the car"
+   },
+   {
+    "id": 275775,
+    "name": "the jag"
+   },
+   {
+    "id": 345777,
+    "name": "bheema"
+   },
+   {
+    "id": 278657,
+    "name": "theia"
+   },
+   {
+    "id": 359373,
+    "name": "the v"
+   },
+   {
+    "id": 190318,
+    "name": "hema"
+   },
+   {
+    "id": 246516,
+    "name": "she-ra"
+   },
+   {
+    "id": 316935,
+    "name": "the madoff"
+   },
+   {
+    "id": 256552,
+    "name": "the maritimes"
+   },
+   {
+    "id": 335446,
+    "name": "the manitou"
+   },
+   {
+    "id": 274931,
+    "name": "the mailman"
+   },
+   {
+    "id": 362060,
+    "name": "the mango"
+   }
+  ],
+  "total_pages": 6,
+  "total_results": 120
+ }
+}

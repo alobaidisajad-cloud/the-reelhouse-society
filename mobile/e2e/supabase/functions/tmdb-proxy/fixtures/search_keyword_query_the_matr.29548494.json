@@ -1,0 +1,51 @@
+{
+ "path": "/search/keyword?query=the+matr",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 378920,
+    "name": "the matrix"
+   },
+   {
+    "id": 335938,
+    "name": "the mars"
+   },
+   {
+    "id": 320860,
+    "name": "the path"
+   },
+   {
+    "id": 351379,
+    "name": "the oath"
+   },
+   {
+    "id": 230702,
+    "name": "the later"
+   },
+   {
+    "id": 345444,
+    "name": "the maya"
+   },
+   {
+    "id": 357519,
+    "name": "the mack"
+   },
+   {
+    "id": 302400,
+    "name": "the car"
+   },
+   {
+    "id": 384656,
+    "name": "the man"
+   },
+   {
+    "id": 318977,
+    "name": "glitch in the matrix"
+   }
+  ],
+  "total_pages": 1,
+  "total_results": 10
+ }
+}

@@ -1,0 +1,91 @@
+{
+ "path": "/search/keyword?query=the+g",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 359373,
+    "name": "the v"
+   },
+   {
+    "id": 356031,
+    "name": "the 1%"
+   },
+   {
+    "id": 228038,
+    "name": "the grudge"
+   },
+   {
+    "id": 338319,
+    "name": "the gears"
+   },
+   {
+    "id": 316400,
+    "name": "the garden"
+   },
+   {
+    "id": 194665,
+    "name": "the game"
+   },
+   {
+    "id": 308131,
+    "name": "the gambia"
+   },
+   {
+    "id": 329323,
+    "name": "the godfather"
+   },
+   {
+    "id": 326213,
+    "name": "the girl"
+   },
+   {
+    "id": 317718,
+    "name": "the gunner"
+   },
+   {
+    "id": 348487,
+    "name": "the gift"
+   },
+   {
+    "id": 322807,
+    "name": "the griffins"
+   },
+   {
+    "id": 361658,
+    "name": "the gravities"
+   },
+   {
+    "id": 356323,
+    "name": "the gamblers"
+   },
+   {
+    "id": 378960,
+    "name": "the gaze"
+   },
+   {
+    "id": 380944,
+    "name": "the goonies"
+   },
+   {
+    "id": 265178,
+    "name": "the girl in the woods"
+   },
+   {
+    "id": 379742,
+    "name": "the girl in the trunk"
+   },
+   {
+    "id": 191222,
+    "name": "the big game"
+   },
+   {
+    "id": 220078,
+    "name": "the gas man"
+   }
+  ],
+  "total_pages": 8,
+  "total_results": 154
+ }
+}

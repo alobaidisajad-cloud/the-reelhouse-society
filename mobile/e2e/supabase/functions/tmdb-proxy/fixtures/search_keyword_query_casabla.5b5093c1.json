@@ -1,0 +1,39 @@
+{
+ "path": "/search/keyword?query=casabla",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 276391,
+    "name": "carabela"
+   },
+   {
+    "id": 220438,
+    "name": "masala"
+   },
+   {
+    "id": 367337,
+    "name": "casaca"
+   },
+   {
+    "id": 328398,
+    "name": "casal"
+   },
+   {
+    "id": 1623,
+    "name": "casablanca, morocco"
+   },
+   {
+    "id": 314409,
+    "name": "casablanca records"
+   },
+   {
+    "id": 348864,
+    "name": "casablanca"
+   }
+  ],
+  "total_pages": 1,
+  "total_results": 7
+ }
+}

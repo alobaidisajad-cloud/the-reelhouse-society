@@ -1,0 +1,553 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=ca",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/ldZArbGvcQ84xXdJWskpdoHQuxZ.jpg",
+    "id": 85796,
+    "name": "Ça finit bien la semaine",
+    "original_name": "Ça finit bien la semaine",
+    "overview": "A unique all-access pass to your favourite Quebec stars in a friendly, timely and entertaining format that matches the hosts’ personalities.",
+    "poster_path": "/apqyvjTS8c3m0GFk7vTdp5ioRjN.jpg",
+    "media_type": "tv",
+    "original_language": "fr",
+    "genre_ids": [
+     10767
+    ],
+    "popularity": 15.7029,
+    "first_air_date": "2010-09-24",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "CA"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/yyVfW9p5whb9FKWyWUU5Z4r3DO5.jpg",
+    "id": 1538,
+    "name": "Malibu, CA",
+    "original_name": "Malibu, CA",
+    "overview": "Fraternal twins Scott and Jason Collins relocate to Malibu, Calif., to live with their dad.",
+    "poster_path": "/6FmIvct9Ru24WglLeCHX53NjcRc.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 4.1502,
+    "first_air_date": "1998-10-11",
+    "softcore": false,
+    "vote_average": 7.5,
+    "vote_count": 5,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/roa8caGlOG0SRTjXTFuWZDfYs7P.jpg",
+    "id": 230020,
+    "name": "Half CA",
+    "original_name": "Half CA",
+    "overview": "Two CA Aspirants from two different ends of the spectrum of the course, Archie and Niraj embark on the journey of one of the toughest courses and face the obstacles it has to offer.",
+    "poster_path": "/4ckzFeoUzaBYR23uv0f3C6BfeH5.jpg",
+    "media_type": "tv",
+    "original_language": "hi",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 1.5521,
+    "first_air_date": "2023-07-26",
+    "softcore": false,
+    "vote_average": 7.9,
+    "vote_count": 13,
+    "origin_country": [
+     "IN"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/sq6xJCU93A1JJxEUnYRzVrIrwxs.jpg",
+    "id": 11536,
+    "name": "Une grenade avec ça?",
+    "original_name": "Une grenade avec ça?",
+    "overview": "A sitcom set in the struggling Montreal franchise of a fictional multinational fast-food chain.",
+    "poster_path": "/n78IRHIduGoZ0we1cu7G0nUcMuB.jpg",
+    "media_type": "tv",
+    "original_language": "fr",
+    "genre_ids": [
+     35,
+     18
+    ],
+    "popularity": 9.5268,
+    "first_air_date": "2002-09-29",
+    "softcore": false,
+    "vote_average": 7,
+    "vote_count": 4,
+    "origin_country": [
+     "CA"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/uWGJmuPYGncqGNFrF0mslL9urrF.jpg",
+    "id": 37164,
+    "name": "The Board",
+    "original_name": "C.A.",
+    "overview": "Ten years after hanging their diploma on the wall, four friends who graduated together from a business management school reach a conclusion: while they believed that their academic training would be the corner stone of their lives, that is not the case.",
+    "poster_path": "/azFTgEVQmRRTGdhMkwjDXNP80yd.jpg",
+    "media_type": "tv",
+    "original_language": "fr",
+    "genre_ids": [
+     18,
+     35
+    ],
+    "popularity": 2.5493,
+    "first_air_date": "2006-09-18",
+    "softcore": false,
+    "vote_average": 6,
+    "vote_count": 8,
+    "origin_country": [
+     "CA"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 5812099,
+    "name": "Ca Ca Ca",
+    "original_name": "Ca Ca Ca",
+    "media_type": "person",
+    "popularity": 0.323,
+    "gender": 0,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1579340,
+      "title": "Washing Machine",
+      "original_title": "Washing Machine",
+      "overview": "Extreme and violent fantasies intertwine around a washing machine.",
+      "poster_path": "/bkkHwhetZuBgGTeUbyT1n4TBnwh.jpg",
+      "media_type": "movie",
+      "original_language": "fr",
+      "genre_ids": [],
+      "popularity": 0.9127,
+      "release_date": "2007-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1583021,
+      "title": "Erotic Exercise",
+      "original_title": "Exercice En Érotisme",
+      "overview": "A series of vignettes that are closely or loosely related to the search for or representation of eroticism, in the manner of transcendental mediation or contemplation.",
+      "poster_path": "/kBWxuUPTYcpVF0E2vTZrbEklVI4.jpg",
+      "media_type": "movie",
+      "original_language": "fr",
+      "genre_ids": [],
+      "popularity": 0.5524,
+      "release_date": "2007-04-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/yRrU6B1lVxftuM4PYnR6MqAxHWr.jpg",
+    "id": 27004,
+    "title": "Ca$h",
+    "original_title": "Ca$h",
+    "overview": "A stroke of good luck turns lethal for Sam Phelan and his wife Leslie when they are faced with a life-changing decision that brings strange and sinister Pyke Kubic to their doorstep. As Pyke leads Sam and Leslie on a tumultuous adventure through the streets of Chicago, each are pulled deeper and deeper into a desperate spiral of deception and violence – all in the name of money.",
+    "poster_path": "/e5B7nG6xREL6lNnS34ZoAvXbB9l.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     80,
+     53,
+     35,
+     9648
+    ],
+    "popularity": 3.5905,
+    "release_date": "2010-03-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.9,
+    "vote_count": 259
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 372338,
+    "title": "CA Sisters",
+    "original_title": "美姉妹スチュワーデス 制服けいれん",
+    "overview": "Beautiful sisters Misato and Kaori are both star stewardesses for a new airline. When they hear a rumor that a major airline is sending investigators to poach the top stewardesses from other airlines,  they offer sexual services to customers who look like investigators, but...",
+    "poster_path": "/lcuqseqcSl1C2UbaTXoBWeaQ4FL.jpg",
+    "media_type": "movie",
+    "original_language": "ja",
+    "genre_ids": [
+     18,
+     10749
+    ],
+    "popularity": 0.8794,
+    "release_date": "2001-10-19",
+    "softcore": false,
+    "video": false,
+    "vote_average": 2,
+    "vote_count": 2
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 367611,
+    "title": "Lancaster, CA",
+    "original_title": "Lancaster, CA",
+    "overview": "A conversation about love and life in the California desert. Another collaboration between Ott and one-of-a-kind actor Cory Zacharia (Littlerock), the two forge a slice of character and an idiosyncratic portrait of loneliness.",
+    "poster_path": "/uCqdBLLnDn2VmLdlcAh4dAQMmHu.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     35,
+     18
+    ],
+    "popularity": 1.6631,
+    "release_date": "2015-11-07",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5,
+    "vote_count": 1
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/qVmypVCKbbbwlSK7zMjiW9KxPOd.jpg",
+    "id": 35690,
+    "name": "Fais pas ci, fais pas ça",
+    "original_name": "Fais pas ci, fais pas ça",
+    "overview": "The daily life of two neighboring families, the Bouley and the Lepic, with literally opposite educational methods. Despite their social and cultural differences, they are friends and do not hesitate to face worries...",
+    "poster_path": "/kbhDlWULVibcsiNLYDBVXnpINfW.jpg",
+    "media_type": "tv",
+    "original_language": "fr",
+    "genre_ids": [
+     35,
+     10751
+    ],
+    "popularity": 8.7557,
+    "first_air_date": "2007-09-08",
+    "softcore": false,
+    "vote_average": 7.4,
+    "vote_count": 29,
+    "origin_country": [
+     "FR"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/is88QhLQV0Iub3nqVZ2CNT6Jd4z.jpg",
+    "id": 1273849,
+    "title": "Our Home",
+    "original_title": "Ca Nostra",
+    "overview": "A film in which the author seeks to express the love he feels for the central figure of the family: his grandmother. By documenting her daily life and interviewing family members about their feelings toward her, this documentary becomes a love letter.",
+    "poster_path": "/ywx5HcHr4hsRW0bV6UnVxVsqOjs.jpg",
+    "media_type": "movie",
+    "original_language": "ca",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.4344,
+    "release_date": "2024-07-04",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/gtgE02vlDumpMBjJRlZlvf2spfY.jpg",
+    "id": 258035,
+    "name": "Tribhuvan Mishra CA Topper",
+    "original_name": "त्रिभुवन मिश्रा - सीए टॉपर",
+    "overview": "A banking crisis forces CA topper Tribhuvan Mishra to take up sex work. Will this dual existence alleviate his troubles — or create entirely new ones?",
+    "poster_path": "/OELqaq5LTrsR8l8GsjrArbxN0a.jpg",
+    "media_type": "tv",
+    "original_language": "hi",
+    "genre_ids": [
+     18,
+     35,
+     80
+    ],
+    "popularity": 4.3163,
+    "first_air_date": "2024-07-18",
+    "softcore": false,
+    "vote_average": 7.1,
+    "vote_count": 12,
+    "origin_country": [
+     "IN"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1038483,
+    "name": "Kita Ca",
+    "original_name": "Kita Ca",
+    "media_type": "person",
+    "popularity": 0.4161,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/sY0thMd2lBKUmOfRFP8tY6VCuAz.jpg",
+      "id": 29952,
+      "title": "Bombón El Perro",
+      "original_title": "El perro",
+      "overview": "Patagonia, Argentina. A mechanic who dreams of a different life begins to think big after his adopted puppy Bombón wins first prize at a local dog show.",
+      "poster_path": "/gITCip9kvCsVqTQVUQLh5aWuR1P.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.5724,
+      "release_date": "2004-09-23",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.9,
+      "vote_count": 58
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1102082,
+      "title": "El infinito sin estrellas",
+      "original_title": "El infinito sin estrellas",
+      "overview": "It tells of the troubled and difficult relationship between Beatriz, a single mother, and her 11-year-old son Mario. The action takes place in a post-industrial neighborhood of San Martín, where Beatriz tries to earn a living as an embroiderer. When he brings shrouds to his house to embroider, the story gains tension and suspense since, according to Mario, the house is full of the dead.",
+      "poster_path": "/lcHc7DrMlVBHIOlckiXBJctjOap.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.1735,
+      "release_date": "2007-11-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 17465,
+    "name": "Rockville, CA",
+    "original_name": "Rockville, CA",
+    "overview": "",
+    "poster_path": null,
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 1.6484,
+    "first_air_date": "2009-03-17",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 724068,
+    "title": "Mr. Ca",
+    "original_title": "Don Ca",
+    "overview": "Immersed in the middle of the Colombian jungle, surrounded by nature and the violence that gravitates in the area, Mr. Ca left the city behind to be a mentor to the community. This is his portrait.",
+    "poster_path": "/s5wWOehpQcktKPXHJsqgDqBubvJ.jpg",
+    "media_type": "movie",
+    "original_language": "es",
+    "genre_ids": [],
+    "popularity": 2.0743,
+    "release_date": "2013-06-05",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/mDcjEU4WjhpWQxt272003s6UNOR.jpg",
+    "id": 330321,
+    "name": "Abra-ca-Empty",
+    "original_name": "짐쌀라비움",
+    "overview": "Four travelers with completely opposite packing styles must share a single suitcase on a minimalist getaway. Every new item packed means something else has to be left behind, forcing nonstop negotiations, hilarious compromises, and unexpected conflicts. As a packing expert, a maximalist, a beauty lover, and a photography enthusiast battle over limited space, their friendship is put to the ultimate test. Will they survive the trip with both their suitcase—and their bond—intact?",
+    "poster_path": "/xozHlLL6XSxoPW1Ox0kBA38P3Nw.jpg",
+    "media_type": "tv",
+    "original_language": "ko",
+    "genre_ids": [
+     10764
+    ],
+    "popularity": 2.176,
+    "first_air_date": "2026-08-01",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "KR"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4001336,
+    "name": "CA Daygon",
+    "original_name": "CA Daygon",
+    "media_type": "person",
+    "popularity": 0.2753,
+    "gender": 0,
+    "known_for_department": "Writing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1110827,
+      "title": "sa mga bagaheng nawalan na ng timbang",
+      "original_title": "sa mga bagaheng nawalan na ng timbang",
+      "overview": "A short poem about healing after a traumatic event in the narrator's life.",
+      "poster_path": "/n21UYehjcBdHtPnPe4x6VWWovdX.jpg",
+      "media_type": "movie",
+      "original_language": "tl",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.4978,
+      "release_date": "2023-04-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 10,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4001333,
+    "name": "CA Daygon",
+    "original_name": "CA Daygon",
+    "media_type": "person",
+    "popularity": 0.2875,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1110827,
+      "title": "sa mga bagaheng nawalan na ng timbang",
+      "original_title": "sa mga bagaheng nawalan na ng timbang",
+      "overview": "A short poem about healing after a traumatic event in the narrator's life.",
+      "poster_path": "/n21UYehjcBdHtPnPe4x6VWWovdX.jpg",
+      "media_type": "movie",
+      "original_language": "tl",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.4978,
+      "release_date": "2023-04-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 10,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1453699,
+    "name": "Ca Yu",
+    "original_name": "Ca Yu",
+    "media_type": "person",
+    "popularity": 0.2724,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/mNINSJHjxQ7D1dDsV7gZg1exVST.jpg",
+      "id": 86868,
+      "title": "Would I Lie to You? 3",
+      "original_title": "La Vérité si je mens ! 3",
+      "overview": "Eddie, Dov, Yvan and the others ... Our warm friends have migrated from the moribund Sentier to the flourishing suburb of Aubervilliers ... Where the old Jewish entrepreneurs left the ground to young courageous and dynamic Chinese wholesalers ...  The little band is as close to each other as in previous episodes, and life goes on at the mercy of small family events and business.  Dov still seems frivolous, enterprising Eddie, chilled Yvan, casual Karine, resolute Sandra, naive Chochana, irresponsible Serge and mythomaniac. As for Patrick, he is in love and the happy elected is far from easy to access.  Everything would be fine until a bad wind brings its share of adversity seriously compromising the cohesion of the group.  Will they succumb under the storm to the turmoil, or, once again, by mutual aid, cunning and skill, will they triumph over the crisis with panache?",
+      "poster_path": "/i2U9VV2WWBXeA3Zc0jQFfYqnqB0.jpg",
+      "media_type": "movie",
+      "original_language": "fr",
+      "genre_ids": [
+       35
+      ],
+      "popularity": 2.3328,
+      "release_date": "2012-01-31",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.5,
+      "vote_count": 352
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4469614,
+    "name": "Idhan Ca",
+    "original_name": "Idhan Ca",
+    "media_type": "person",
+    "popularity": 0.2552,
+    "gender": 0,
+    "known_for_department": "Production",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/plXZR3lhtA5VjQ4CDpUXNwgwYIi.jpg",
+      "id": 780632,
+      "title": "June & Kopi",
+      "original_title": "June & Kopi",
+      "overview": "A street dog is taken in by a young couple, and the family pit becomes an instant accomplice as he adjusts to his new, loving home.",
+      "poster_path": "/wY3bXOBc513NcZIdkYBoj46fPaH.jpg",
+      "media_type": "movie",
+      "original_language": "id",
+      "genre_ids": [
+       35,
+       18,
+       10751
+      ],
+      "popularity": 1.6294,
+      "release_date": "2021-01-28",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.1,
+      "vote_count": 13
+     }
+    ]
+   }
+  ],
+  "total_pages": 500,
+  "total_results": 10000
+ }
+}

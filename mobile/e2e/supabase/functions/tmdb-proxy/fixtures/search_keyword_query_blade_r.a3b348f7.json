@@ -1,0 +1,43 @@
+{
+ "path": "/search/keyword?query=blade+r",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 365186,
+    "name": "bladee"
+   },
+   {
+    "id": 40884,
+    "name": "blade"
+   },
+   {
+    "id": 175233,
+    "name": "razor blade"
+   },
+   {
+    "id": 233512,
+    "name": "blade runner"
+   },
+   {
+    "id": 196242,
+    "name": "ruben blades"
+   },
+   {
+    "id": 207676,
+    "name": "roller blades"
+   },
+   {
+    "id": 321286,
+    "name": "blame reagan"
+   },
+   {
+    "id": 340735,
+    "name": "blake returns"
+   }
+  ],
+  "total_pages": 1,
+  "total_results": 8
+ }
+}
