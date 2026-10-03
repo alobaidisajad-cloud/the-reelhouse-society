@@ -17,6 +17,7 @@ import { isArchivistPlusTier, isAuteurPlusTier } from '../../utils/tier'
 import { useLogNote } from '../../hooks/useVault'
 import { useVaultStore } from '../../stores/vault'
 import { LOG_DRAFT_PREFIX, logDraftKey } from '../../utils/logDrafts'
+import { LIMITS } from '../../utils/limits'
 
 const AUTOPSY_INIT = Object.freeze({ story: 0, script: 0, acting: 0, cinematography: 0, editing: 0, sound: 0 })
 const ABANDONED_REASONS = ['Too Slow', 'Too Upsetting', 'Life Got in the Way', "I'll Return Someday", "Lost the Plot", "Wrong Mood"]
@@ -498,7 +499,7 @@ export default function LogForm({ film }: { film: any }) {
                     placeholder="A name, a memory, or @username..."
                     value={watchedWith}
                     onChange={(e) => setWatchedWith(e.target.value)}
-                    maxLength={60}
+                    maxLength={LIMITS.watchedWith}
                 />
             </div>
 
@@ -630,7 +631,7 @@ export default function LogForm({ film }: { film: any }) {
                             placeholder="Hidden from the public. Your personal thoughts, contexts, or reminders..."
                             value={privateNotes}
                             onChange={(e) => setPrivateNotes(e.target.value)}
-                            maxLength={1000}
+                            maxLength={LIMITS.privateNotes}
                         />
                         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', marginTop: '0.3rem', alignItems: 'flex-start' }}>
                             {/* Said once, where the surprise would be: a rewatch
@@ -639,8 +640,8 @@ export default function LogForm({ film }: { film: any }) {
                             <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', lineHeight: 1.5, color: 'var(--fog)' }}>
                                 {isRewatchMode ? 'This note belongs to this viewing. Notes from your earlier viewings stay with them.' : ''}
                             </span>
-                            <span style={{ flexShrink: 0, fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: privateNotes.length > 800 ? 'var(--flicker)' : 'var(--fog)', transition: 'color 0.3s' }}>
-                                {privateNotes.length}/1000
+                            <span style={{ flexShrink: 0, fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: privateNotes.length > LIMITS.privateNotes * 0.8 ? 'var(--flicker)' : 'var(--fog)', transition: 'color 0.3s' }}>
+                                {privateNotes.length}/{LIMITS.privateNotes}
                             </span>
                         </div>
                     </>

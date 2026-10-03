@@ -1,4 +1,5 @@
 import { tmdb } from '../../tmdb'
+import { LIMITS } from '../../utils/limits'
 
 interface EditorialDeskProps {
     dropCap: boolean
@@ -45,7 +46,7 @@ export default function EditorialDesk({ dropCap, setDropCap, pullQuote, setPullQ
                     placeholder="Highlight a memorable line from your review..."
                     value={pullQuote}
                     onChange={(e) => setPullQuote(e.target.value)}
-                    maxLength={120}
+                    maxLength={LIMITS.pullQuote}
                     style={{ borderStyle: 'dashed', borderColor: 'var(--sepia)', fontFamily: 'var(--font-sub)', fontStyle: 'italic' }}
                 />
             </div>

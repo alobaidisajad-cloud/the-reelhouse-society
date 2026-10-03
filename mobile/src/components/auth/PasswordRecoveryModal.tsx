@@ -10,6 +10,7 @@ import { SocietyEyebrow, HaloIcon, RegistrationBrackets } from './AuthChrome';
 import { ToastHost } from '@/src/components/ToastHost';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 import type { EmailLinkPurpose } from '@/src/hooks/useAuthFlow';
+import { EMAIL_MAX } from '@/src/constants/inputLimits';
 
 /** The sheet's words for each email it sends; the sheet itself is the same. */
 const WORDS = {
@@ -130,7 +131,7 @@ export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmai
                   returnKeyType="go"
                   onSubmitEditing={onSubmit}
                   autoCorrect={false}
-                  maxLength={254}
+                  maxLength={EMAIL_MAX}
                   keyboardAppearance="dark"
                   accessibilityLabel="Recovery email address"
                   textContentType="emailAddress"

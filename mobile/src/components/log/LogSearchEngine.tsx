@@ -14,6 +14,7 @@ import { st as modalSt } from '@/src/components/log/LogModalStyles';
 import PressableScale from '@/src/components/PressableScale';
 import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
+import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 export interface LogSearchResult {
     id: number;
@@ -120,7 +121,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                     onChangeText={setQuery}
                     autoFocus
                     returnKeyType="search"
-                    maxLength={120}
+                    maxLength={SEARCH_MAX}
                     selectionColor={colors.sepia}
                     cursorColor={colors.sepia}
                     disableFullscreenUI={true}

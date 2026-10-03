@@ -227,33 +227,6 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
 });
 
 // ════════════════════════════════════════════════════════════════
-//  BRASS SHEEN (For Primary Call to Action)
-// ════════════════════════════════════════════════════════════════
- 
-export const ReelBrassSheen = memo(() => {
-    const sheen = useSharedValue(-2);
-    useEffect(() => {
-       sheen.value = withRepeat(
-         withTiming(2, { duration: 4000, easing: Easing.inOut(Easing.quad) }),
-         -1, false
-       );
-       return () => cancelAnimation(sheen);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-    const sheenStyle = useAnimatedStyle(() => ({
-       transform: [{ translateX: interpolate(sheen.value, [-2, 2], [-200, 300]) }]
-    }));
-    return (
-       <View style={st.sheenWrap}>
-          <Animated.View style={[st.sheenAnim, sheenStyle]}>
-             <LinearGradient colors={['transparent', '#FFF', 'transparent']} start={{x:0,y:0}} end={{x:1,y:0}} style={StyleSheet.absoluteFillObject} />
-          </Animated.View>
-       </View>
-    );
-});
-
-
-// ════════════════════════════════════════════════════════════════
 //  TUNGSTEN SPOOLING (God-Tier Loading sequence)
 // ════════════════════════════════════════════════════════════════
 export const TungstenSpooling = memo(function TungstenSpooling() {
@@ -377,19 +350,6 @@ const st = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
   },
-  sheenWrap: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    overflow: 'hidden',
-  },
-  sheenAnim: {
-    width: '150%',
-    height: '100%',
-    opacity: 0.15,
-  },
   spoolingWrap: {
     height: 300,
     justifyContent: 'center',
@@ -413,4 +373,3 @@ const st = StyleSheet.create({
 });
 
 
-ReelBrassSheen.displayName = 'ReelBrassSheen';

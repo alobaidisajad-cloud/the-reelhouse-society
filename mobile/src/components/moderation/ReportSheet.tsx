@@ -41,6 +41,7 @@ import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { ToastHost } from '@/src/components/ToastHost';
 import { arrive, MS } from '@/src/theme/motion';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -62,8 +63,8 @@ export interface ReportSheetProps {
  */
 const SHEET_HEIGHT_RATIO = 0.75;
 const REASON_OPTIONS = ReportReasonEnum.options;
-const MAX_DETAILS_LENGTH = 500;
-const COUNTER_WARN_THRESHOLD = 450;
+const MAX_DETAILS_LENGTH = MAX_LENGTHS.reportDetails;
+const COUNTER_WARN_THRESHOLD = Math.floor(MAX_DETAILS_LENGTH * 0.9);
 
 // ── Animated Components ─────────────────────────────────────────────────────
 

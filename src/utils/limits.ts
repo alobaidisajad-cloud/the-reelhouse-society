@@ -1,7 +1,8 @@
 /**
  * limits.ts — how long a member's writing is allowed to be, on the web.
  * ─────────────────────────────────────────────────────────────────────
- * These mirror MAX_LENGTHS in the mobile app (mobile/src/utils/sanitizeInput.ts).
+ * These mirror MAX_LENGTHS in the mobile app (mobile/src/utils/sanitizeInput.ts),
+ * and the-two-apps-keep-one-limit.test holds each shared number equal to it.
  * Both clients write to ONE database, so a number that exists in only one of
  * them is not a limit — it is a suggestion the other app ignores.
  *
@@ -39,20 +40,24 @@ export const LIMITS = {
    * seconds. Measured in the mobile app, which renders the same text.
    */
   dossierContent: 25000,
-  /**
-   * A lounge's name and blurb.
-   *
-   * ⚠️ `loungeName` is 60 here and 50 in the mobile app — a real disagreement,
-   * not an oversight. The database ceiling is set to 60, the MORE GENEROUS of
-   * the two, because a ceiling at 50 would reject names this app already lets
-   * people type. Lower this to 50 to match mobile if you want them identical;
-   * do NOT raise the ceiling's twin below it.
-   */
+  /** A lounge's name and blurb. */
   loungeName: 60,
   loungeDescription: 300,
-  /** Profile fields. */
+  /** A log's other words: the Vault note, the pull quote, who it was watched with. */
+  privateNotes: 1000,
+  pullQuote: 120,
+  watchedWith: 60,
+  /** Profile fields. The box said 30 for a name the app, the form and the column all take at 50. */
   bio: 160,
-  displayName: 30,
+  displayName: 50,
+  username: 30,
+  linkTitle: 40,
+  linkUrl: 300,
+  /** A shelf entry's notes. */
+  physicalNotes: 2000,
 } as const;
 
 export type LimitField = keyof typeof LIMITS;
+
+/** The code Supabase Auth sends by email to confirm a security change (as the app's inputLimits). */
+export const EMAIL_CODE_DIGITS = 6;

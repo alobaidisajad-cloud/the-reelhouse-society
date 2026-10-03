@@ -487,8 +487,10 @@ describe('the plate, and the reach', () => {
   });
 
   it('the note may run to the length the database already allows', () => {
-    expect(SOURCE).toMatch(/maxLength=\{1000\}/);
-    expect(SOURCE).not.toMatch(/maxLength=\{500\}/);
+    // The stack's own caps, which everyCapAnswersToItsColumn holds to lists_*_len.
+    expect(SOURCE).toMatch(/maxLength=\{MAX_LENGTHS\.listDescription\}/);
+    expect(SOURCE).toMatch(/maxLength=\{MAX_LENGTHS\.listTitle\}/);
+    expect(SOURCE).not.toMatch(/maxLength=\{\d+\}/);
   });
 
   it('every control reaches 48 by its own geometry', () => {

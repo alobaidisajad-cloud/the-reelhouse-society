@@ -27,11 +27,13 @@ import { loginStyles as s } from '@/src/theme/authStyles';
 
 import { AuthBackdrop, SocietyEyebrow, RegistrationBrackets, Est1924 } from '@/src/components/auth/AuthChrome';
 import { SocietySeal } from '@/src/components/auth/SocietySeal';
-import { PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
+import { PasswordStrengthMeter, PASSWORD_MAX_BYTES } from '@/src/components/auth/PasswordStrengthMeter';
 import { EmailConfirmationScreen } from '@/src/components/auth/EmailConfirmationScreen';
 import { PasswordRecoveryModal } from '@/src/components/auth/PasswordRecoveryModal';
 import { arrive, MS } from '@/src/theme/motion';
 import { e2eTrace } from '@/src/utils/e2eTrace';
+import { EMAIL_MAX } from '@/src/constants/inputLimits';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
@@ -282,7 +284,7 @@ export default function LoginScreen() {
                   else if (passwordRef.current) passwordRef.current.focus();
                 }}
                 blurOnSubmit={false}
-                maxLength={254}
+                maxLength={EMAIL_MAX}
                 keyboardAppearance="dark"
                 accessibilityLabel={isLogin ? 'Email or username' : 'Email address'}
                 textContentType={isLogin ? 'username' : 'emailAddress'}
@@ -317,7 +319,7 @@ export default function LoginScreen() {
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   blurOnSubmit={false}
                   autoCorrect={false}
-                  maxLength={30}
+                  maxLength={MAX_LENGTHS.username}
                   keyboardAppearance="dark"
                   accessibilityLabel="Username handle"
                 />
@@ -366,7 +368,7 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 spellCheck={false}
-                maxLength={128}
+                maxLength={PASSWORD_MAX_BYTES}
                 keyboardAppearance="dark"
                 accessibilityLabel="Password"
                 textContentType={isLogin ? 'password' : 'newPassword'}

@@ -14,6 +14,31 @@ export function getPasswordChecks(pw: string) {
   };
 }
 
+/**
+ * Supabase Auth keeps a password as a bcrypt hash, and bcrypt reads only its
+ * first 72 BYTES: past them a longer password is cut or refused, so the boxes
+ * stop there and a password made of wider letters (Arabic, an emoji) is
+ * measured in bytes, as the lock measures it.
+ */
+export const PASSWORD_MAX_BYTES = 72;
+export const PASSWORD_TOO_LONG = `Too long for the lock: ${PASSWORD_MAX_BYTES} characters at most.`;
+
+export function passwordBytes(pw: string): number {
+  let n = 0;
+  for (const ch of pw) {
+    const cp = ch.codePointAt(0)!;
+    n += cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
+  }
+  return n;
+}
+
+export const passwordFits = (pw: string) => passwordBytes(pw) <= PASSWORD_MAX_BYTES;
+
+/** The one answer every screen asks before it sends a new password: every check met, and it fits the lock. */
+export function passwordIsAccepted(pw: string): boolean {
+  return Object.values(getPasswordChecks(pw)).every(Boolean) && passwordFits(pw);
+}
+
 export type PwCheckKey = keyof ReturnType<typeof getPasswordChecks>;
 export const PW_CHECK_LABELS: [PwCheckKey, string][] = [
   ['length', '8+ characters'],
@@ -67,6 +92,9 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
           </View>
         ))}
       </View>
+      {!passwordFits(password) && (
+        <Text style={[s.checkLabel, { color: colors.crimsonInk }]} accessibilityLiveRegion="polite">{PASSWORD_TOO_LONG}</Text>
+      )}
     </Animated.View>
   );
 }

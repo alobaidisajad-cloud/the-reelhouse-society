@@ -8,6 +8,7 @@ import { isNetworkError } from '@/src/utils/networkError';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
 import { useAuthStore } from '@/src/stores/auth';
 import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
+import { sanitizeInput } from '@/src/utils/sanitizeInput';
 
 /**
  * THE VAULT, on the device.
@@ -147,7 +148,8 @@ export const useVaultStore = create<VaultState>()(
         }),
 
       saveNote: async (logId, viewingId, note) => {
-        const text = (note ?? '').trim();
+        // Cleaned and capped as the offline replay cleans it: one note, one rule.
+        const text = sanitizeInput(note ?? '', 'privateNotes');
         const before = get().notes[viewingId];
         const askedBy = useAuthStore.getState().user?.id ?? null;
 

@@ -6,6 +6,7 @@ import reelToast from '../../utils/reelToast';
 import { isArchivistPlusTier } from '../../utils/tier';
 import { useAuthStore } from '../auth';
 import { stillSignedIn } from './helpers/sessionGuard';
+import { fileOnShelf } from '../../services/ShelfService';
 
 import { captureError } from '../../lib/sentry';
 import { isNetworkError } from '../../utils/networkError';
@@ -31,7 +32,8 @@ export const archiveSliceInitialState = (): ArchiveSliceData => ({
 export interface ArchiveSlice extends ArchiveSliceData {
     /** True when the read was answered (or there was nothing to read); false when it failed. */
     fetchPhysicalArchive: (userId?: string, loadMore?: boolean) => Promise<boolean>;
-    addToPhysicalArchive: (film: { id: number; title?: string; name?: string; poster_path?: string | null; poster?: string | null; release_date?: string }, formats: string[], notes?: string, condition?: string) => Promise<void>;
+    /** Files formats on the shelf: a new entry whole, an existing one only gains them (ShelfService). */
+    addToPhysicalArchive: (film: { id: number; title?: string; name?: string; poster_path?: string | null; poster?: string | null; release_date?: string }, formats: string[]) => Promise<void>;
     removeFromPhysicalArchive: (filmId: number) => Promise<void>;
     updatePhysicalArchiveItem: (filmId: number, updates: Partial<PhysicalArchiveItem>) => Promise<void>;
 }
@@ -125,7 +127,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
         }
     },
 
-    addToPhysicalArchive: async (film, formats, notes = '', condition = 'good') => {
+    addToPhysicalArchive: async (film, formats) => {
         const user = useAuthStore.getState().user;
         /**
          * SILENT ON PURPOSE — read this before "fixing" it into a rope.
@@ -147,63 +149,50 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
         if (!user || !isArchivistPlusTier(user)) return;
 
         const existingItem = get().physicalArchive.find(item => item.filmId === film.id);
-        const newFormats = existingItem ? Array.from(new Set([...existingItem.formats, ...formats])) : formats;
-
-        const newItem: PhysicalArchiveItem = {
-            id: String(existingItem ? existingItem.id : `-${Date.now()}`),
-            filmId: film.id,
-            title: film.title ?? film.name ?? 'Unknown',
-            poster: film.poster_path ?? film.poster ?? null,
+        const entry = {
+            user_id: user.id,
+            film_id: film.id,
+            film_title: film.title ?? film.name ?? 'Unknown',
             poster_path: film.poster_path ?? film.poster ?? null,
-            year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : undefined,
-            formats: newFormats,
-            notes,
-            condition,
-            createdAt: existingItem ? existingItem.createdAt : new Date().toISOString(),
+            year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : null,
         };
 
-        set((state) => {
-            const filtered = state.physicalArchive.filter(i => i.filmId !== film.id);
-            return { physicalArchive: [newItem, ...filtered] };
-        });
+        // Shown at once: an entry already here keeps its note and condition and
+        // gains the formats; a new one starts as the column does.
+        const shown: PhysicalArchiveItem = existingItem
+            ? { ...existingItem, formats: Array.from(new Set([...existingItem.formats, ...formats])) }
+            : {
+                id: `-${Date.now()}`,
+                filmId: film.id,
+                title: entry.film_title,
+                poster: entry.poster_path,
+                poster_path: entry.poster_path,
+                year: entry.year ?? undefined,
+                formats,
+                notes: '',
+                condition: 'good',
+                createdAt: new Date().toISOString(),
+            };
+        set((state) => ({ physicalArchive: [shown, ...state.physicalArchive.filter(i => i.filmId !== film.id)] }));
 
         try {
-            const { data, error } = await supabase.from('physical_archive').upsert([{
-                user_id: user.id,
-                film_id: film.id,
-                film_title: film.title ?? film.name ?? 'Unknown',
-                poster_path: film.poster_path ?? film.poster ?? null,
-                year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : null,
-                formats: newFormats,
-                notes,
-                condition,
-            }], { onConflict: 'user_id, film_id' }).select().single();
+            const shelved = await fileOnShelf(entry, formats);
 
             // Left mid-write — see sessionGuard. The row is saved server-side
             // either way; the writes below would put it in the next member's store.
             if (!stillSignedIn(user.id)) return;
 
-            if (error) throw error;
-
-            if (data && !existingItem) {
-                set(state => ({
-                    physicalArchive: state.physicalArchive.map(item =>
-                        item.filmId === film.id ? { ...item, id: data.id } : item
-                    )
-                }));
-            }
-
+            // The server's formats, not the device's guess: it may hold some this device never loaded.
+            set(state => ({
+                physicalArchive: state.physicalArchive.map(item =>
+                    item.filmId === film.id ? { ...item, id: String(shelved.id), formats: shelved.formats } : item
+                )
+            }));
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'archiveSlice.addToPhysicalArchive' });
             if (isNetworkError(e)) {
-                // Queue for offline sync
-                enqueueMutation({ type: 'add_archive', payload: {
-                    user_id: user.id, film_id: film.id,
-                    film_title: film.title ?? film.name ?? 'Unknown',
-                    poster_path: film.poster_path ?? film.poster ?? null,
-                    year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : null,
-                    formats: newFormats, notes, condition,
-                } });
+                // Queued as what to ADD; the replay merges it with the server's entry the same way.
+                enqueueMutation({ type: 'add_archive', payload: { ...entry, formats } });
                 reelToast('Archive saved offline. Will sync when connected.');
                 return;
             }

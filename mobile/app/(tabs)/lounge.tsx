@@ -45,6 +45,7 @@ import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { Arrive } from '@/src/components/Arrive';
 import reelToast from '@/src/utils/reelToast';
+import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -261,7 +262,7 @@ export default function LoungeScreen() {
               placeholderTextColor={colors.fog}
               value={searchQuery}
               onChangeText={handleSearchQueryChange}
-              maxLength={120}
+              maxLength={SEARCH_MAX}
               selectionColor={colors.sepia}
               keyboardAppearance="dark"
               accessibilityLabel="Search salons"

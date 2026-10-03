@@ -8,6 +8,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { TryAgainLine } from '@/src/components/TryAgain';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 interface Props {
     dropCap: boolean;
@@ -68,7 +69,7 @@ export default React.memo(function EditorialDesk({
             
             <View>
                 <Text style={st.editLabel}>PULL QUOTE</Text>
-                <TextInput style={st.pullQuoteInput} placeholder="Highlight a memorable line..." placeholderTextColor={colors.fog} value={pullQuote} onChangeText={setPullQuote} maxLength={120} multiline={true} textAlignVertical="top" {...scaledTextProps} selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Pull quote" />
+                <TextInput style={st.pullQuoteInput} placeholder="Highlight a memorable line..." placeholderTextColor={colors.fog} value={pullQuote} onChangeText={setPullQuote} maxLength={MAX_LENGTHS.pullQuote} multiline={true} textAlignVertical="top" {...scaledTextProps} selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Pull quote" />
             </View>
             
             <View>

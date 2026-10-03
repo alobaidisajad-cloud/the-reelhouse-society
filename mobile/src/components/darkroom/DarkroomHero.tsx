@@ -17,6 +17,7 @@ import type { DiscoverFilm } from '@/src/stores/discover';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 import { arrive, MS } from '@/src/theme/motion';
+import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
@@ -82,7 +83,7 @@ export const DarkroomHero = React.memo(function DarkroomHero({
             selectionColor={colors.selection}
             value={inputVal}
             onChangeText={handleInputValChange}
-            maxLength={120}
+            maxLength={SEARCH_MAX}
             // Names, not words: autocorrect turns "Ozu" into "Out", and on
             // Android its composing let the last letter miss the search.
             autoCorrect={false}

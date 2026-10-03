@@ -181,8 +181,8 @@ export default function EditProfilePage() {
     // ── Save ──
     const handleSave = async () => {
         if (!isSupabaseConfigured || !user) return
-        if (displayName.trim().length > 50) { reelToast.error('Display name must be 50 or fewer characters.'); return }
-        if (bio.trim().length > 500) { reelToast.error('Bio must be 500 or fewer characters.'); return }
+        if (displayName.trim().length > LIMITS.displayName) { reelToast.error(`Display name must be ${LIMITS.displayName} or fewer characters.`); return }
+        if (bio.trim().length > LIMITS.bio) { reelToast.error(`Bio must be ${LIMITS.bio} or fewer characters.`); return }
 
         if (username !== user.username) {
             const isValid = await validateUsername(username)
@@ -329,7 +329,7 @@ export default function EditProfilePage() {
                             className="settings-input"
                             value={username}
                             onChange={e => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setUsernameError('') }}
-                            maxLength={20}
+                            maxLength={LIMITS.username}
                             style={{ paddingLeft: '2rem' }}
                         />
                     </div>
@@ -339,7 +339,7 @@ export default function EditProfilePage() {
                         </div>
                     )}
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.1em', color: 'var(--ash)', marginTop: '0.3rem' }}>
-                        Letters, numbers, and underscores only · 3-20 characters
+                        Letters, numbers, and underscores only · 3-{LIMITS.username} characters
                     </div>
                 </div>
 
@@ -446,7 +446,7 @@ export default function EditProfilePage() {
                                     value={link.title}
                                     onChange={e => updateLink(link.id, 'title', e.target.value)}
                                     placeholder="e.g. My Portfolio, Blog, Channel..."
-                                    maxLength={40}
+                                    maxLength={LIMITS.linkTitle}
                                 />
                             </div>
 
@@ -457,6 +457,7 @@ export default function EditProfilePage() {
                                     className="settings-input"
                                     value={link.url}
                                     onChange={e => updateLink(link.id, 'url', e.target.value)}
+                                    maxLength={LIMITS.linkUrl}
                                     placeholder="https://..."
                                 />
                             </div>

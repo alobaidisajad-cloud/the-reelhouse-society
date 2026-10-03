@@ -62,16 +62,27 @@ export const MAX_LENGTHS = {
   logComment: 2000,
   dossierComment: 2000,
   loungeName: 60,  // lounges_name_len, and what CreateLoungeSheet's box and counter offer
+  loungeDescription: 300,
+  // A log's other words (everyCapAnswersToItsColumn says why two are smaller than their columns).
+  privateNotes: 1000,
+  pullQuote: 120,
+  watchedWith: 60,
+  // A shelf entry's own words.
+  physicalNotes: 2000,
+  physicalCondition: 100,
   username: 30,
   // ProfileUpdateSchema's own limits (schemas/profile.schema.ts); Zod caps the length,
   // these strip the character classes too.
   displayName: 50,
   persona: 50,
-  // A profile link's title, as the editor's box takes it.
+  // A profile link's title, as the editor's box takes it, and its address.
   linkTitle: 40,
+  linkUrl: 300,
   // Free text a member writes ABOUT another member, read by moderators in the
   // Tribunal — the one screen guaranteed to be shown hostile input.
   reportDetails: 500,
+  // A moderator's reason for an action, which the member is told in their notice.
+  modReason: 500,
   dossierTitle: 200,
   dossierExcerpt: 500,
   loungeShareTitle: 180, // a shared card's two lines, under lounge_messages.film_title's 300

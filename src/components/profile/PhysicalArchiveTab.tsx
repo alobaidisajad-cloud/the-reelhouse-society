@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom'
 import { useViewport } from '../../hooks/useViewport'
 import reelToast from '../../utils/reelToast'
 import type { PhysicalArchiveItem } from '../../types'
+import { LIMITS } from '../../utils/limits'
 
 const FORMATS = [
     { id: '4k', label: '4K UHD', color: '#a855f7' },
@@ -374,6 +375,7 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId, user
                                         placeholder="Edition, pressing, special features..."
                                         value={notes}
                                         onChange={e => setNotes(e.target.value)}
+                                        maxLength={LIMITS.physicalNotes}
                                         rows={2}
                                         style={{ resize: 'vertical', marginBottom: '1.25rem', fontSize: '0.85rem' }}
                                     />

@@ -15,6 +15,10 @@ import { sanitizeInput } from '../sanitizeInput';
 
 jest.mock('../../lib/supabase');
 jest.mock('../../services/InteractionService');
+const mockFileOnShelf = jest.fn(async () => ({ id: 'row', formats: [] }));
+jest.mock('../../services/ShelfService', () => ({
+  fileOnShelf: (...args: unknown[]) => (mockFileOnShelf as (...a: unknown[]) => unknown)(...args),
+}));
 jest.mock('../sanitizeInput', () => ({
     sanitizeInput: jest.fn((input: string) => input),
 }));
@@ -174,6 +178,16 @@ describe('Logs', () => {
             makeChainResolveTo(mockChain, { error: { message: 'update failed' } });
             await expect(runMutation('update_log', { id: 'x', updates: {} })).rejects.toBeTruthy();
         });
+
+        it('cleans every word a queued log carries, each by its own cap', async () => {
+            // An older build queued these raw; they flush through here.
+            makeChainResolveTo(mockChain, { error: null });
+            (sanitizeInput as jest.Mock).mockClear();
+            await runMutation('update_log', { id: 'log-1', updates: { review: 'r', pull_quote: 'p', watched_with: 'w', private_notes: 'n' } });
+            expect((sanitizeInput as jest.Mock).mock.calls).toEqual(
+                expect.arrayContaining([['r', 'review'], ['p', 'pullQuote'], ['w', 'watchedWith'], ['n', 'privateNotes']]),
+            );
+        });
     });
 
     describe('remove_log', () => {
@@ -220,7 +234,8 @@ describe('The Vault', () => {
         // through this code after the source was fixed.
         (sanitizeInput as jest.Mock).mockImplementationOnce((s: string) => `clean:${s}`);
         await runMutation('set_viewing_note', { log_id: LOG, viewing_id: V1, notes: 'raw' });
-        expect(sanitizeInput).toHaveBeenCalledWith('raw', 'review');
+        // A note's own cap (1000), not the review's (5000): the column refuses more.
+        expect(sanitizeInput).toHaveBeenCalledWith('raw', 'privateNotes');
         expect(rpc).toHaveBeenCalledWith('viewing_note_set', { p_log_id: LOG, p_viewing_id: V1, p_notes: 'clean:raw' });
     });
 
@@ -470,14 +485,12 @@ describe('Lists', () => {
 
 describe('Archive', () => {
     describe('add_archive', () => {
-        it('upserts to physical_archive', async () => {
-            makeChainResolveTo(mockChain, { error: null });
+        it('files the formats and nothing else — the queued note and condition are not written', async () => {
             const payload = { user_id: 'u1', film_id: 550, film_title: 'FC', poster_path: '/fc', year: 1999, formats: ['blu-ray'], notes: '', condition: 'mint' };
             await runMutation('add_archive', payload);
-            expect(supabase.from).toHaveBeenCalledWith('physical_archive');
-            expect(mockChain.upsert).toHaveBeenCalledWith(
-                [expect.objectContaining({ film_id: 550, condition: 'mint' })],
-                { onConflict: 'user_id, film_id' }
+            expect(mockFileOnShelf).toHaveBeenCalledWith(
+                { user_id: 'u1', film_id: 550, film_title: 'FC', poster_path: '/fc', year: 1999 },
+                ['blu-ray'],
             );
         });
     });

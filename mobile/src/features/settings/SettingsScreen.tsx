@@ -48,6 +48,7 @@ import { st } from '@/src/features/settings/settings.styles';
 import { ToastHost } from '@/src/components/ToastHost';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
+import { EMAIL_CODE_DIGITS } from '@/src/constants/inputLimits';
 
 const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<T> => {
   return new Promise((resolve) => {
@@ -617,7 +618,7 @@ export function SettingsScreen() {
               value={otpCode}
               onChangeText={(t) => { setOtpCode(t); if (otpError) setOtpError(null); }}
               keyboardType="number-pad"
-              maxLength={6}
+              maxLength={EMAIL_CODE_DIGITS}
               placeholder="000000"
               placeholderTextColor={colors.fog}
               selectionColor={colors.selection}

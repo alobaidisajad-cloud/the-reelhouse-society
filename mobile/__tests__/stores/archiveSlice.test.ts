@@ -28,6 +28,10 @@ jest.mock('../../src/utils/offlineQueue', () => ({
     flushOfflineQueue: jest.fn(),
 }));
 
+const mockFileOnShelf = jest.fn();
+jest.mock('../../src/services/ShelfService', () => ({
+    fileOnShelf: (...args: unknown[]) => mockFileOnShelf(...args),
+}));
 const mockIsNetworkError = jest.fn((_e: unknown) => false);
 jest.mock('../../src/utils/networkError', () => ({
     isNetworkError: (e: unknown) => mockIsNetworkError(e),
@@ -159,44 +163,38 @@ describe('archiveSlice', () => {
 
     describe('addToPhysicalArchive', () => {
         it('should optimistically add item to archive', async () => {
-            // Mock the full chain: .upsert().select().single()
-            (supabase.from as jest.Mock) = jest.fn(() => ({
-                upsert: jest.fn(() => ({
-                    select: jest.fn(() => ({
-                        single: jest.fn().mockResolvedValue({
-                            data: { id: 'server-id-123', created_at: '2024-01-01T00:00:00Z' },
-                            error: null,
-                        }),
-                    })),
-                })),
-            }));
+            mockFileOnShelf.mockResolvedValueOnce({ id: 'server-id-123', formats: ['Blu-ray'] });
 
             await useFilmStore.getState().addToPhysicalArchive(
                 { id: 3000, title: 'New Archive Film', poster_path: '/new.jpg', release_date: '2020-01-01' },
                 ['Blu-ray'],
-                'Mint condition',
-                'excellent'
             );
 
+            // The formats, and the film — never a note or a condition to write over.
+            expect(mockFileOnShelf).toHaveBeenCalledWith(
+                { user_id: expect.any(String), film_id: 3000, film_title: 'New Archive Film', poster_path: '/new.jpg', year: 2020 },
+                ['Blu-ray'],
+            );
             const state = useFilmStore.getState();
             expect(state.physicalArchive.length).toBe(1);
-            expect(state.physicalArchive[0].filmId).toBe(3000);
-            expect(state.physicalArchive[0].title).toBe('New Archive Film');
+            expect(state.physicalArchive[0]).toEqual(expect.objectContaining({ id: 'server-id-123', filmId: 3000, title: 'New Archive Film', formats: ['Blu-ray'] }));
+        });
+
+        it('an entry already on the shelf keeps its note and condition, and shows the server\'s formats', async () => {
+            useFilmStore.setState({ physicalArchive: [{ ...(makeLocalArchive(0) as any), filmId: 3002, notes: 'Slipcase torn', condition: 'worn', formats: ['DVD'] }] });
+            // The server holds a format this device never loaded.
+            mockFileOnShelf.mockResolvedValueOnce({ id: 'row-9', formats: ['DVD', 'Laserdisc', 'Blu-ray'] });
+
+            await useFilmStore.getState().addToPhysicalArchive({ id: 3002, title: 'Kept', poster_path: null }, ['Blu-ray']);
+
+            expect(useFilmStore.getState().physicalArchive[0]).toEqual(expect.objectContaining({
+                filmId: 3002, notes: 'Slipcase torn', condition: 'worn', formats: ['DVD', 'Laserdisc', 'Blu-ray'],
+            }));
         });
 
         it('should enqueue mutation on network error and keep optimistic state', async () => {
             mockIsNetworkError.mockReturnValue(true);
-
-            (supabase.from as jest.Mock) = jest.fn(() => ({
-                upsert: jest.fn(() => ({
-                    select: jest.fn(() => ({
-                        single: jest.fn().mockResolvedValue({
-                            data: null,
-                            error: new TypeError('Network request failed'),
-                        }),
-                    })),
-                })),
-            }));
+            mockFileOnShelf.mockRejectedValueOnce(new TypeError('Network request failed'));
 
             await useFilmStore.getState().addToPhysicalArchive(
                 { id: 3001, title: 'Offline Film', poster_path: '/offline.jpg' },
@@ -208,9 +206,11 @@ describe('archiveSlice', () => {
             expect(state.physicalArchive.length).toBe(1);
             expect(state.physicalArchive[0].filmId).toBe(3001);
             // Should enqueue
-            expect(mockEnqueue).toHaveBeenCalledWith(expect.objectContaining({
+            // Queued as what to add: the replay merges it the same way.
+            expect(mockEnqueue).toHaveBeenCalledWith({
                 type: 'add_archive',
-            }));
+                payload: { user_id: expect.any(String), film_id: 3001, film_title: 'Offline Film', poster_path: '/offline.jpg', year: null, formats: ['DVD'] },
+            });
         });
     });
 

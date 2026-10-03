@@ -38,6 +38,18 @@ const isDuplicateKey = (error: unknown): boolean => {
 };
 
 /** "A write of this kind is already in flight", as a CODE the screen can match, not prose. */
+/**
+ * A log's member-written words — the review, the pull quote, who it was
+ * watched with — cleaned and capped by their own limits (MAX_LENGTHS). The
+ * pull quote and the companion were written raw, every control and invisible
+ * character kept, on every path.
+ */
+export function cleanLogWords(l: { review?: string | null; pullQuote?: string | null; watchedWith?: string | null }): void {
+    if (l.review !== undefined) l.review = sanitizeInput(l.review ?? '', 'review');
+    if (typeof l.pullQuote === 'string') l.pullQuote = sanitizeInput(l.pullQuote, 'pullQuote');
+    if (typeof l.watchedWith === 'string') l.watchedWith = sanitizeInput(l.watchedWith, 'watchedWith') || null;
+}
+
 export const LOG_BUSY = 'LOG_BUSY' as const;
 
 // A SUCCESS, spoken: it has no toast ("RECORD SEALED" is visual). A failure's toast is
@@ -289,12 +301,10 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
         const user = useAuthStore.getState().user;
         if (!user) return;
 
-        // Single sanitization choke point: clean the review BEFORE the online/
-        // offline branch so the DB write, optimistic cache, and offline-queued
-        // payload all carry identical, length-capped, control-char-free text.
-        if (log.review !== undefined) {
-            log.review = sanitizeInput(log.review ?? '', 'review');
-        }
+        // Single sanitization choke point: clean the member's words BEFORE the
+        // online/offline branch so the DB write, optimistic cache, and offline-
+        // queued payload all carry identical, length-capped, control-char-free text.
+        cleanLogWords(log);
 
         // Anchor date to noon UTC to prevent timezone shifting
         if (log.watchedDate && log.watchedDate.length === 10) {
@@ -539,10 +549,8 @@ export const updateLogOp = async (
         const cleanUpdates = { ...updates };
 
         // Single sanitization choke point (parity with addLogOp): clean the
-        // review on the clone before any online/offline path consumes it.
-        if (cleanUpdates.review !== undefined) {
-            cleanUpdates.review = sanitizeInput(cleanUpdates.review ?? '', 'review');
-        }
+        // member's words on the clone before any online/offline path consumes it.
+        cleanLogWords(cleanUpdates);
 
         // Anchor date to noon UTC to prevent timezone shifting (strictly on the clone)
         if (cleanUpdates.watchedDate && cleanUpdates.watchedDate.length === 10) {

@@ -353,7 +353,8 @@ describe('the verdict, and the seal that cannot disagree with the save', () => {
   it('rated: the word, and the score printed once — the hint is gone', async () => {
     const r = await mount('auteur', { editLogId: 'log-1' });
     expect(r.getByText('Masterpiece')).toBeTruthy();
-    expect(words(r).filter((w) => /\/ ?5/.test(w))).toEqual(['4.5 / 5']);
+    // A score ends "/ 5"; the review's counter ("19/5000") is not one.
+    expect(words(r).filter((w) => /\/ ?5$/.test(w))).toEqual(['4.5 / 5']);
     expect(r.queryByText('TAP LEFT HALF FOR ½ REELS')).toBeNull();
   });
 

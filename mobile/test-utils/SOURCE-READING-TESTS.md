@@ -136,6 +136,8 @@ Decisions, as of 2026-09-28:
 | `src/constants/__tests__/theHouseLinksToItself.guard.test.ts` | No code sends a link to reelhouse.app, another company's domain. |
 | `src/components/profile/__tests__/theProfileRedrawsForItsOwn.guard.test.ts` | The member page subscribes to its eight film-store fields, never the whole store. |
 | `src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts` | The salon name's four limits, the column's among them. |
+| `src/components/theme/__tests__/oneBrassSheen.test.tsx` | Both brass plates import the one BrassSheen, and no screen keeps a copy. Behaviour: the same file renders it in front, behind a tab and under Reduce Motion. |
+| `src/components/lounge/__tests__/theSealSaysWhatTheCountMeans.test.tsx` | The card's unread limit against the LIMIT in the SQL that counts it. Behaviour: the same file renders the card at each count. |
 | `src/stores/__tests__/aReactionIsOneOfFive.test.ts` | The app's five reactions against the CHECK in the schema snapshot. |
 | `test-utils/__tests__/everyCommentIsTrue.test.ts` | The reading ledger (scripts/COMMENTS-READ.md) against the files comment-truth checks. |
 | `src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts` | Every column of a filing, emptied or kept when it ends, against the schema snapshot. |

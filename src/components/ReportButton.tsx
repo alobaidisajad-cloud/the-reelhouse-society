@@ -3,6 +3,7 @@ import { Flag, X, AlertTriangle } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from '../store'
 import reelToast from '../utils/reelToast'
+import { LIMITS } from '../utils/limits'
 
 interface ReportButtonProps {
     contentType: 'log' | 'list' | 'list_comment' | 'user'
@@ -214,7 +215,7 @@ export default function ReportButton({ contentType, contentId, size = 14 }: Repo
                             value={details}
                             onChange={e => setDetails(e.target.value)}
                             placeholder="Additional context (optional)..."
-                            maxLength={500}
+                            maxLength={LIMITS.reportDetails}
                             style={{
                                 width: '100%',
                                 minHeight: 70,

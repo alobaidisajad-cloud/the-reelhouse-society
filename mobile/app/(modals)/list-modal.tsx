@@ -27,6 +27,7 @@ import { Globe, GripVertical, List, ListOrdered, Lock, Plus, Search, X } from 'l
 import { EDGE_LIT } from '@/src/theme/light';
 import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 // At module scope: made inside the component, it would be a new type, and remount, each render.
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -392,7 +393,7 @@ export default function ListModal() {
                     placeholderTextColor={colors.fog}
                     autoFocus
                     testID="stack-title-input"
-                    maxLength={100}
+                    maxLength={MAX_LENGTHS.listTitle}
                     selectionColor={'rgba(218,165,32,0.3)'}
                     cursorColor={colors.sepia}
                     disableFullscreenUI={true}
@@ -479,7 +480,7 @@ export default function ListModal() {
                     placeholderTextColor={colors.fog}
                     multiline
                     textAlignVertical="top"
-                    maxLength={1000}
+                    maxLength={MAX_LENGTHS.listDescription}
                     selectionColor={'rgba(218,165,32,0.3)'}
                     cursorColor={colors.sepia}
                     disableFullscreenUI={true}

@@ -28,16 +28,16 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/interpolateMock.test.ts | — |  |
 | __tests__/moderationActs.test.ts | — |  |
 | __tests__/notificationsMockCoverage.test.ts | — |  |
-| __tests__/schemaLengthCaps.test.ts | — |  |
+| __tests__/schemaLengthCaps.test.ts | 2026-10-03 | edited: the salon box names its cap; a typed number is refused |
 | __tests__/searchPathHardening.test.ts | — |  |
 | __tests__/store.test.ts | — |  |
-| __tests__/stores/archiveSlice.test.ts | — |  |
+| __tests__/stores/archiveSlice.test.ts | 2026-10-03 | edited: a shelf filing sends no note or condition; the server's formats win |
 | __tests__/stores/filmStore.test.ts | — |  |
 | __tests__/stores/listSlice.test.ts | — |  |
 | __tests__/stores/socialSlice.test.ts | — |  |
 | __tests__/tmdbMockCoverage.test.ts | — |  |
 | __tests__/utils/mappers.test.ts | — |  |
-| __tests__/utils/mutationExecutor.test.ts | — |  |
+| __tests__/utils/mutationExecutor.test.ts | 2026-10-03 | edited: add_archive replays as a filing that only adds |
 | __tests__/utils/offlineQueue.test.ts | 2026-10-03 | edited: the kind list matches the queue's union |
 | ../.github/workflows/ci-alert.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
@@ -77,13 +77,13 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(admin)/__tests__/tribunal.test.tsx | — |  |
 | app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | app/(admin)/_layout.tsx | 2026-10-02 | read; sound |
-| app/(admin)/tribunal.tsx | 2026-10-02 | doors through nav; a failed docket counts nothing; the ban said as enforced |
-| app/(modals)/__tests__/list-modal.curate.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| app/(admin)/tribunal.tsx | 2026-10-03 | edited: the reason is cleaned and held to what the member's notice can carry |
+| app/(modals)/__tests__/list-modal.curate.test.tsx | 2026-10-03 | edited: the stack's boxes name their caps |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/cover-picker.tsx | 2026-10-01 |  |
-| app/(modals)/list-modal.tsx | 2026-10-02 | Read whole (launch audit). Ordering was a drag only (a screen reader heard 'Reorder' and could do nothing): move up/down actions added. The four terms toggles said nothing of which was chosen: selected states. |
+| app/(modals)/list-modal.tsx | 2026-10-03 | edited: title and description name their caps |
 | app/(modals)/log-modal.tsx | 2026-10-01 | Arrive; the scroll needs no Animated |
-| app/(modals)/login.tsx | 2026-10-01 | the terms open; every comment short and true |
+| app/(modals)/login.tsx | 2026-10-03 | edited: email, handle and password name their limits |
 | app/(modals)/membership.tsx | 2026-10-02 | restore asks a visitor to sign in; FOUNDING.seats; one readFoundingCount; no seat offered the store does not sell |
 | app/(modals)/notifications-modal.tsx | 2026-10-02 | rows say new/who/what/when; the rest could not be reached; history comments trimmed |
 | app/(modals)/search-modal.tsx | 2026-10-02 | tabs named; partial results said; an emptied box empties at once; nav.dismiss |
@@ -91,10 +91,10 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/_layout.tsx | 2026-10-02 | read; sound |
 | app/(tabs)/darkroom.tsx | 2026-10-02 | the next batch that could not be developed is said, and asked again |
 | app/(tabs)/dispatch.tsx | 2026-10-02 | Read whole (launch audit). A failed next page ended the paper as though it were the last filing: the foot says the rest could not be reached. The column was measured for a 390pt phone whatever the screen: the real width now. |
-| app/(tabs)/index.tsx | 2026-10-01 | the front door arrives; nav; a failed pull says so |
-| app/(tabs)/lounge.tsx | 2026-10-01 | the corridor in the present tense; the gate is for visitors only |
+| app/(tabs)/index.tsx | 2026-10-03 | edited: the join plate draws the shared BrassSheen |
+| app/(tabs)/lounge.tsx | 2026-10-03 | edited: the search box names SEARCH_MAX |
 | app/(tabs)/profile.tsx | 2026-10-01 | nav; a named door; the header says what it is |
-| app/(tabs)/reels.tsx | 2026-10-01 | every comment short and true; the door's reason lives in its test |
+| app/(tabs)/reels.tsx | 2026-10-03 | edited: the curate plate draws the shared BrassSheen |
 | app/+not-found.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | app/auth-callback.tsx | 2026-10-01 | a link with no code verifies nothing; comments short |
 | app/dispatch/[id].tsx | 2026-10-02 | Read whole (launch audit). An open ballot said 'CLOSES MOMENTS AGO' (timeAgo clamps the future): timeUntil now. Measured at the real width (the share card keeps a fixed 390 measure on purpose). Its share link went to another company's domain (fixed in f01e7408). |
@@ -118,7 +118,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | — |  |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | 2026-10-01 | the not-found way out says where it goes; histories to the present |
-| app/reset-password.tsx | 2026-10-01 | navigates through nav; comments short |
+| app/reset-password.tsx | 2026-10-03 | edited: a new password must fit the lock (72 bytes) |
 | app/settings.tsx | 2026-10-02 | read; sound |
 | app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-09-29 | 13 fixed + test that runs the real queryFn |
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
@@ -205,7 +205,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/aRatingCanBeGivenWithoutSight.test.tsx | — |  |
 | src/components/__tests__/aScreenThatFailsLetsYouLeave.test.tsx | — |  |
 | src/components/__tests__/authRouting.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/__tests__/ControlledInput.test.tsx | — |  |
+| src/components/__tests__/ControlledInput.test.tsx | 2026-10-03 | edited: the counter reads the bio's cap |
 | src/components/__tests__/EmptyStates.test.tsx | — |  |
 | src/components/__tests__/ErrorBoundary.test.tsx | — |  |
 | src/components/__tests__/OfflineBanner.test.tsx | — |  |
@@ -228,15 +228,15 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/atmosphere/useSharedImage.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/auth/AuthChrome.tsx | 2026-10-01 | true as written |
 | src/components/auth/EmailConfirmationScreen.tsx | 2026-10-01 | true as written |
-| src/components/auth/PasswordRecoveryModal.tsx | 2026-10-01 | says reset or confirm, one sheet |
-| src/components/auth/PasswordStrengthMeter.tsx | 2026-10-01 | true as written |
+| src/components/auth/PasswordRecoveryModal.tsx | 2026-10-03 | edited: the email box names EMAIL_MAX |
+| src/components/auth/PasswordStrengthMeter.tsx | 2026-10-03 | read whole: one answer for a new password; says when it is too long for the lock |
 | src/components/auth/SocietySeal.tsx | 2026-10-01 | true as written |
 | src/components/AutopsyGauge.tsx | 2026-10-01 | true as written |
 | src/components/Buster.tsx | 2026-10-01 | true as written |
 | src/components/CinematicOverlays.tsx | 2026-10-01 | the dead film grain gone |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
 | src/components/clearance/Clearance.tsx | 2026-10-01 | show it, locked; a second copy lives in the log (carried forward) |
-| src/components/ControlledInput.tsx | 2026-10-01 | comments in plain words |
+| src/components/ControlledInput.tsx | 2026-10-03 | edited: the bio's default limit is the bio's cap |
 | src/components/critique/__tests__/aCritiqueIsWithdrawnOrReported.test.tsx | 2026-10-01 | new |
 | src/components/critique/__tests__/oneCritiqueRow.guard.test.ts | 2026-09-30 | written with the shared critique row |
 | src/components/critique/CritiqueRow.tsx | 2026-10-01 | a nameless author is never linked |
@@ -248,9 +248,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/__tests__/theTraySaysWhenTheCatalogueIsAway.test.tsx | — |  |
 | src/components/darkroom/constants.ts | 2026-10-02 | read; sound |
 | src/components/darkroom/DarkroomCards.tsx | 2026-10-02 | doors through nav |
-| src/components/darkroom/DarkroomFilterPanel.tsx | 2026-10-02 | Read (launch audit). Its chips say their state. Sound. |
+| src/components/darkroom/DarkroomFilterPanel.tsx | 2026-10-03 | edited: the year boxes name YEAR_DIGITS |
 | src/components/darkroom/DarkroomHeader.tsx | 2026-10-02 | Read (launch audit, the unsaid-selection sweep). The filter toggle had no role, no expanded state, and a bare count; CLEAR had no name. Both speak now. |
-| src/components/darkroom/DarkroomHero.tsx | 2026-10-02 | Read whole in the launch audit: the two animated props typed. |
+| src/components/darkroom/DarkroomHero.tsx | 2026-10-03 | edited: the search box names SEARCH_MAX |
 | src/components/darkroom/DarkroomMoodBar.tsx | 2026-10-02 | keys; selected as a state; meaning spoken |
 | src/components/Decorative.tsx | 2026-10-01 | the dead marquee and styles gone |
 | src/components/dispatch/__tests__/aBallotsClosingTimes.test.ts | 2026-09-29 | new |
@@ -279,7 +279,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/noIntlInTheDispatch.test.ts | — |  |
 | src/components/dispatch/__tests__/nothingIsLostQuietly.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/nothingLivesOnlyInTheMockups.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/dispatch/__tests__/oneCapNotThree.test.ts | 2026-10-03 | read whole: holds the Dispatch boxes; the column side is dispatchFieldCaps' |
+| src/components/dispatch/__tests__/oneCapNotThree.test.ts | 2026-10-03 | read whole: no box in the app types its own limit |
 | src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/paperTextLogic.test.ts | — |  |
 | src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-09-29 | 25 fixed; FOUND a \u-eaten regex (Arabic never matched) |
@@ -381,7 +381,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/HapticTab.tsx | 2026-10-02 | Read whole (launch audit). Its 10pt reach gave each tab's edge to its neighbour and took 10pt of the screen above the bar: removed. |
 | src/components/home/ProjectorBeam.tsx | 2026-10-01 | true as written |
 | src/components/home/types.ts | 2026-10-01 | true as written |
-| src/components/home/VelvetRopeCTA.tsx | 2026-10-01 | nav; the shimmer note made true |
+| src/components/home/VelvetRopeCTA.tsx | 2026-10-03 | read whole: its sheen moved to theme/BrassSheen |
 | src/components/InitiationModal.tsx | 2026-10-02 | Read whole (launch audit). Told every new member of private notes (the Vault, an Archivist's) and a Lounge behind the brass key (the house's mark for a locked door, which it is not). Both made true. |
 | src/components/KeyboardRoom.tsx | 2026-10-01 | written: the keyboard's room on Android |
 | src/components/layout/__tests__/aSectionIsAHeading.test.tsx | 2026-10-01 | written: a section title is a heading |
@@ -429,21 +429,21 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/__tests__/logStacksChips.test.tsx | — |  |
 | src/components/log/__tests__/logSurfaces.test.ts | — |  |
 | src/components/log/__tests__/logTouchTargets.test.ts | — |  |
-| src/components/log/__tests__/theComposerKeepsItsWord.test.tsx | — |  |
+| src/components/log/__tests__/theComposerKeepsItsWord.test.tsx | 2026-10-03 | edited: a score ends / 5; the counter is not one |
 | src/components/log/__tests__/theLapsedMemberReadsTheirNote.test.tsx | — |  |
 | src/components/log/__tests__/theNoteSheetOffersOnlyWhatIsReal.test.tsx | — |  |
 | src/components/log/__tests__/theVaultBelongsToItsViewing.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/log/__tests__/theVaultSaysWhenItCouldNotOpen.test.tsx | 2026-10-01 | written: the Vault on the record, when it could not open |
 | src/components/log/__tests__/zz-composer.gen.test.tsx | — |  |
 | src/components/log/AuteurToolkit.tsx | 2026-10-01 | histories to the present |
-| src/components/log/EditorialDesk.tsx | 2026-10-01 | stills named as buttons; histories to the present |
+| src/components/log/EditorialDesk.tsx | 2026-10-03 | edited: the pull quote names its cap |
 | src/components/log/LogActionDeck.tsx | 2026-10-01 | the autopsy toggle named; Arrive; a dead prop gone |
 | src/components/log/LogAtmosphere.tsx | 2026-10-01 | the film behind the composer, said as why |
 | src/components/log/LogChronicle.tsx | 2026-10-01 | the typed card, said as why |
 | src/components/log/LogClearanceGate.tsx | 2026-10-01 | the rope said as what it is |
 | src/components/log/LogComments.tsx | 2026-10-01 | true as written |
 | src/components/log/logDetailStyles.ts | 2026-10-01 | flat record card; the Vault's unread line |
-| src/components/log/LogForm.tsx | 2026-10-01 | a private stack wears its lock; histories to the present |
+| src/components/log/LogForm.tsx | 2026-10-03 | edited: review, note and companion name their caps; the review counter reads the cap |
 | src/components/log/LogFormBody.tsx | 2026-10-01 | true as written |
 | src/components/log/LogHero.tsx | 2026-10-01 | the filing mark in the present tense |
 | src/components/log/LogIndexEntry.tsx | 2026-10-01 | a held-but-unshown entry said as holding something |
@@ -451,7 +451,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/logRecord.ts | 2026-10-01 | histories to the present |
 | src/components/log/LogReviewBody.tsx | 2026-10-01 | a Vault that could not open says so |
 | src/components/log/LogSealBar.tsx | 2026-10-01 | histories to the present |
-| src/components/log/LogSearchEngine.tsx | 2026-10-01 | TMDB named, never a bare star; rows named |
+| src/components/log/LogSearchEngine.tsx | 2026-10-03 | edited: the search box names SEARCH_MAX |
 | src/components/log/LogVerdict.tsx | 2026-10-01 | histories to the present |
 | src/components/log/NoteSheet.tsx | 2026-10-01 | true as written |
 | src/components/log/VaultNote.tsx | 2026-10-01 | true as written |
@@ -468,12 +468,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx | 2026-10-03 | read whole: sound |
 | src/components/lounge/__tests__/theRopeWaitsForTheSheet.test.tsx | 2026-10-03 | read whole: sound |
 | src/components/lounge/__tests__/theSalonsSayWhenTheyCouldNotBeRead.test.tsx | 2026-10-03 | read whole: sound |
+| src/components/lounge/__tests__/theSealSaysWhatTheCountMeans.test.tsx | 2026-10-03 | written whole: the unread seal seen and said at each count, and its limit against the SQL |
 | src/components/lounge/__tests__/theSheetOffersOnlyWhatCanWork.test.tsx | 2026-10-02 | Written in the launch audit: a departed member's message offers no report or block; a block always names who it blocks. |
 | src/components/lounge/ActionSheet.tsx | 2026-10-01 | true as written |
 | src/components/lounge/AtTheDoorPanel.tsx | 2026-10-01 | true as written |
-| src/components/lounge/CreateLoungeSheet.tsx | 2026-10-01 | the rope and the counter say why, not what they were |
+| src/components/lounge/CreateLoungeSheet.tsx | 2026-10-03 | edited: name and description name their caps, boxes and counters |
 | src/components/lounge/EmptyMyLounges.tsx | 2026-10-01 | contrast history to its reason |
-| src/components/lounge/JoinedLoungeCard.tsx | 2026-10-01 | true as written |
+| src/components/lounge/JoinedLoungeCard.tsx | 2026-10-03 | read whole: says "more than 99" where the server stops counting |
 | src/components/lounge/LoungeGate.tsx | 2026-10-01 | the door names membership, without its history |
 | src/components/lounge/LoungeSettingsPanel.tsx | 2026-10-01 | contrast history dropped |
 | src/components/lounge/LoungeStyles.ts | 2026-10-01 | true as written |
@@ -488,7 +489,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/moderation/__tests__/ReportSheet.test.tsx | — |  |
 | src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/moderation/ContentActionSheet.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/moderation/ReportSheet.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/moderation/ReportSheet.tsx | 2026-10-03 | edited: the details cap is MAX_LENGTHS.reportDetails |
 | src/components/NitrateCalendar.tsx | 2026-10-01 | the header without a stale line count |
 | src/components/OfflineBanner.tsx | 2026-10-02 | Read whole (launch audit). Elapsed time in the house measure (MIN.), the label says it is offline, and the settle timer is cleared on unmount. |
 | src/components/person/canon.ts | 2026-10-01 | the order, not the sort it replaced |
@@ -580,7 +581,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | — |  |
 | src/components/reels/MemberRegistry.tsx | 2026-10-01 | nav; comments cut to the why |
-| src/components/reels/ReelsCards.tsx | 2026-10-01 | chips share no tap; comments cut to the why |
+| src/components/reels/ReelsCards.tsx | 2026-10-03 | edited: its ungated sheen copy removed |
 | src/components/reels/ReelsFeedList.tsx | 2026-10-01 | stale contrast note gone |
 | src/components/reels/ReelsHeader.tsx | 2026-10-01 | comments cut to the why |
 | src/components/reels/ReelsStackList.tsx | 2026-10-01 | true as written |
@@ -606,6 +607,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | — |  |
 | src/components/text/AnimatedText.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/text/index.tsx | 2026-10-01 | the fourth promise: a word stops at the floor |
+| src/components/theme/__tests__/oneBrassSheen.test.tsx | 2026-10-03 | written whole: the sheen sweeps only in front, and both plates draw it |
+| src/components/theme/BrassSheen.tsx | 2026-10-03 | written whole: the one sheen both brass plates draw; still behind another tab and under Reduce Motion |
 | src/components/theme/CrestGlow.tsx | 2026-10-01 | the leak note to what it does |
 | src/components/theme/DiamondDivider.tsx | 2026-10-01 |  |
 | src/components/theme/OrnamentalRule.tsx | 2026-10-01 | no comments |
@@ -629,6 +632,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/departed.ts | 2026-10-02 | Written in the launch audit: how the house names a member who has left, and one whose name it could not read: one phrase, no made-up handle. |
 | src/constants/formats.ts | 2026-10-01 | the shelf is the Physical Archive, not the Vault; no ticket tag |
 | src/constants/gatedFeatures.ts | 2026-10-02 | Read whole (launch audit). essays-legacy said dispatch_dossiers was a view over the legacy table; it is a view over dispatch_posts (live schema). Its comment and reachedThrough corrected. |
+| src/constants/inputLimits.ts | 2026-10-03 | written whole: the limits of boxes that write no column (email, search, year, email code) |
 | src/constants/membership.ts | 2026-10-01 | one list; checked against production |
 | src/constants/modalRoutes.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/constants/standing.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -640,23 +644,23 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/archive/__tests__/archiveImport.test.ts | — |  |
 | src/features/archive/__tests__/aReturnedArchiveKeepsItsNotes.test.ts | 2026-10-02 | fresh viewing ids; notes follow their viewings; not-an-archive refused; undo keeps only what failed |
 | src/features/archive/__tests__/undoImport.test.ts | — |  |
-| src/features/archive/archiveImport.ts | 2026-10-02 | fresh viewing ids; notes follow their viewings; one archive gate |
+| src/features/archive/archiveImport.ts | 2026-10-03 | edited: each imported field cleaned by its own cap |
 | src/features/archive/importReceipt.ts | 2026-10-02 | read; sound |
 | src/features/archive/undoImport.ts | 2026-10-02 | a partial undo keeps only what failed |
 | src/features/profile/__tests__/aLinkSaysWhyBeforeItVanishes.test.tsx | 2026-10-01 | written: a link says why before it vanishes |
 | src/features/profile/__tests__/linksEditor.test.tsx | — |  |
 | src/features/profile/__tests__/theDossierSealIsSpoken.test.tsx | — |  |
 | src/features/profile/__tests__/theEditDeskSaysWhatWentWrong.test.tsx | 2026-10-01 | written: the edit desk says what went wrong |
-| src/features/profile/EditProfileScreen.tsx | 2026-10-01 | a refused backdrop said; the photo line is true; history comments trimmed |
-| src/features/profile/LinksEditor.tsx | 2026-10-01 | no handle that does not drag; ADD LINK stops at the cap; title errors shown |
+| src/features/profile/EditProfileScreen.tsx | 2026-10-03 | edited: handle, name and bio name their caps |
+| src/features/profile/LinksEditor.tsx | 2026-10-03 | edited: the link title and address name their caps |
 | src/features/profile/profile.styles.ts | 2026-10-01 | 19 styles nothing read, removed |
-| src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-03 | edited: the password panel asks passwordIsAccepted |
 | src/features/settings/__tests__/anExportIsWhole.test.ts | 2026-10-01 | written: an export holds every row once |
 | src/features/settings/DataVault.tsx | 2026-10-02 | no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
 | src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
 | src/features/settings/settings.styles.ts | 2026-10-02 | read; sound |
-| src/features/settings/SettingsScreen.tsx | 2026-10-02 | a put-away lock is not a failure; paying members told of the store subscription; one amendments() |
-| src/features/settings/SettingsSections.tsx | 2026-10-02 | joining's meter; the lock says what it guards; the store named per platform |
+| src/features/settings/SettingsScreen.tsx | 2026-10-03 | edited: the code box names EMAIL_CODE_DIGITS |
+| src/features/settings/SettingsSections.tsx | 2026-10-03 | edited: a new password is judged by passwordIsAccepted |
 | src/generated/lucideIcons.js | 2026-10-03 | generated by scripts/lucide-icons.js; its --check guard holds it |
 | src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx | 2026-10-01 | written: a follow that throws is said and rolled back |
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
@@ -693,7 +697,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useScreenReady.test.tsx | — |  |
 | src/hooks/useAmbientGlow.ts | 2026-10-01 |  |
 | src/hooks/useArrival.ts | 2026-10-01 | written: an arrival that cannot stay invisible |
-| src/hooks/useAuthFlow.ts | 2026-10-01 | one sheet for reset or confirm; comments short |
+| src/hooks/useAuthFlow.ts | 2026-10-03 | edited: joining refuses a password too long for the lock, first |
 | src/hooks/useAuthThrottle.ts | 2026-10-01 | a lifted lock keeps the rule |
 | src/hooks/useBanCheck.ts | 2026-10-02 | says what it guards, and that the server guards every write |
 | src/hooks/useCatalogueSearch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -702,7 +706,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useDeviceThrottling.ts | 2026-10-02 | Read whole (launch audit). Answered in an effect, after the preloader had decided on the first render; known synchronously now. A settings override no screen ever wrote removed. |
 | src/hooks/useDispatchArchive.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useDoor.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/hooks/useEditProfile.ts | 2026-10-01 | links said field by field; the cap; SAVE refused says so; a stored handle never held to today's rules |
+| src/hooks/useEditProfile.ts | 2026-10-03 | edited: a link address past its cap is named before the save |
 | src/hooks/useFeeds.ts | 2026-10-01 | one cursor rule; the fallback note gone with the fallback |
 | src/hooks/useFilmAnimations.ts | 2026-10-01 | each loop only while seen |
 | src/hooks/useFilmDetail.ts | 2026-10-01 | an unread verdict is null, never silence |
@@ -765,6 +769,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/aMissingLogIsAnAnswer.test.tsx | 2026-10-01 | written: a missing log is null; a nameless author is never unknown |
 | src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts | 2026-10-03 | Written in the launch audit: every column a query names, in both clients and the functions, exists in production. |
 | src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts | 2026-10-01 | written with 20261001_03 |
+| src/services/__tests__/aShelfEntryIsOnlyAddedTo.test.ts | 2026-10-03 | written whole: the shelf as a table that holds its rows; old replay payloads take nothing away |
 | src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/aYearIsReadToTheLast.test.ts | 2026-10-01 | written: a year is read to the last row |
 | src/services/__tests__/certifyCountAuthority.test.ts | 2026-10-03 | read whole: the migration loses its SQL (--) comments, not JS ones |
@@ -800,6 +805,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/ModerationService.ts | 2026-10-02 | read; sound |
 | src/services/ProfileDataService.ts | 2026-10-02 | Read whole in the launch audit: fetchHighestRated added; the rest sound. |
 | src/services/ProfileWriteService.ts | 2026-10-02 | the circle's cursors through pgLiteral |
+| src/services/ShelfService.ts | 2026-10-03 | written whole: a shelf filing adds formats, never rewrites the entry |
 | src/services/StackService.ts | 2026-10-02 | Read whole (launch audit). The sheet read the newest 50 critiques with the true count beside them and no way to the rest: getStackComments takes a limit (ordered by id too), and the sheet asks for earlier ones. |
 | src/services/VaultService.ts | 2026-10-02 | Read whole (launch audit). Claimed to be the only door to the notes while the import wrote the table itself: restoreNotes added and used; the claim narrowed to writes (the export reads); theVaultHasOneDoor guards it. |
 | src/services/YearInCinemaService.ts | 2026-10-01 | every page of a year, not the first 1,000 |
@@ -865,24 +871,25 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/dispatch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/stores/dispatchTypes.ts | 2026-10-02 | Read whole (launch audit): row shapes match the live schema (body NOT NULL DEFAULT '', so an ended filing parses). Sound; left alone. |
 | src/stores/domain/__tests__/aFilmAlreadyQueuedStaysQueued.test.ts | 2026-10-02 | a film already on the watchlist stays, and is said to be |
+| src/stores/domain/__tests__/aLogsWordsAreCleanedEverywhere.test.ts | 2026-10-03 | written whole: a log's words cleaned and capped by their own limits |
 | src/stores/domain/__tests__/aShelfIsNeverHeldHostage.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/stores/domain/__tests__/aStackLosesOneFilmInOneWrite.test.ts | 2026-10-02 | a stack loses one film in one write |
 | src/stores/domain/__tests__/cursorPagination.test.ts | — |  |
 | src/stores/domain/__tests__/logOperations.pure.test.ts | — |  |
 | src/stores/domain/__tests__/logReconciliation.test.ts | 2026-10-03 | rewritten whole: drives overlayQueuedLogs and oneOfEachLog |
 | src/stores/domain/__tests__/theDiaryPagesWithoutGaps.test.ts | 2026-10-02 | the log list orders as its cursor reads |
-| src/stores/domain/archiveSlice.ts | 2026-10-02 | the dropped ticket stubs removed |
+| src/stores/domain/archiveSlice.ts | 2026-10-03 | read whole: the shelf filing goes through ShelfService |
 | src/stores/domain/helpers/promiseMutex.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/domain/helpers/sessionGuard.ts | 2026-10-01 | true as written |
 | src/stores/domain/interactionSlice.ts | 2026-10-03 | read whole: a certification made before the answer is kept (index and list) |
 | src/stores/domain/listSlice.ts | 2026-10-02 | a film leaves a stack in one write |
 | src/stores/domain/logSlice.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-03 | read whole: queued logs overlay only their owner; one row per log |
+| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-03 | read whole: cleanLogWords on add and update |
 | src/stores/domain/socialSlice.ts | 2026-10-02 | Read (launch audit). Cursor values are timestamps and uuids (no commas), safe unquoted. Sound. |
 | src/stores/domain/watchlistSlice.ts | 2026-10-02 | a film already queued stays, and is said to be |
 | src/stores/films.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/followStore.ts | 2026-10-01 | comments cut to the why |
-| src/stores/lounge.ts | 2026-10-03 | the roster asked for lounge_members.created_at, which does not exist: every private salon's guest list failed since June (now joined_at, first come first); no made-up "user" handle |
+| src/stores/lounge.ts | 2026-10-03 | edited: a salon description is cleaned by its own cap |
 | src/stores/markCounts.ts | 2026-10-02 | read; sound |
 | src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
 | src/stores/notificationStore.ts | 2026-10-02 | first page ordered by time then id; moreFailed |
@@ -892,7 +899,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/settings.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/socialStore.ts | 2026-10-01 | the header says where the store lives |
 | src/stores/tellMarks.ts | 2026-10-01 | true as written |
-| src/stores/vaultStore.ts | 2026-10-02 | read after the key, as every persisted store is |
+| src/stores/vaultStore.ts | 2026-10-03 | edited: the note is cleaned by its own cap on the live save |
 | src/test-support/swallowedTypeError.ts | 2026-10-03 | read whole: sound |
 | src/theme/__tests__/aPhotographIsNotLit.test.ts | — |  |
 | src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts | 2026-10-01 | written: the flat-but-elevated ratchet |
@@ -944,7 +951,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/edgeFunctions.guard.test.ts | — |  |
 | src/utils/__tests__/endorsementGrouping.test.ts | — |  |
 | src/utils/__tests__/everyBackHasAWayOut.guard.test.ts | — |  |
-| src/utils/__tests__/everyCapAnswersToItsColumn.test.ts | 2026-10-03 | Written in the launch audit: every length cap the app allows is at most its column's CHECK, read from the snapshot; a smaller one says why. |
+| src/utils/__tests__/everyCapAnswersToItsColumn.test.ts | 2026-10-03 | read whole: every new cap answers to its column or says why it is smaller |
 | src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | — |  |
 | src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -969,7 +976,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
-| src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | edited: only the two endorse kinds; removal by target_list_id |
+| src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | edited: the replay's caps per field |
 | src/utils/__tests__/networkError.test.ts | — |  |
 | src/utils/__tests__/noControlCharacters.guard.test.ts | 2026-09-29 | extended: a \u eaten from a char class; red on the one damaged line, then green |
 | src/utils/__tests__/noMachinePaths.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -1032,7 +1039,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/memberDrafts.ts | 2026-10-02 | read; sound (drafts go to storage unencrypted on a keystore failure: a trade-off, listed) |
 | src/utils/memoryManager.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/utils/mutationExecutor.ts | 2026-10-03 | read whole: the dead endorse_film / endorse_review handlers removed |
+| src/utils/mutationExecutor.ts | 2026-10-03 | read whole: the replay cleans each field by its own cap; a shelf filing only adds |
 | src/utils/networkError.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/noticeRoute.ts | 2026-10-02 | Read whole (launch audit). Follows groupRoute's one argument. |
 | src/utils/offlineQueue.ts | 2026-10-03 | read whole: its kind union matches the executor |
@@ -1043,7 +1050,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/reelToast.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/requestReview.ts | 2026-10-01 | never more than 3 in any 365 days, as it claimed |
 | src/utils/roomFilters.ts | 2026-10-01 | new |
-| src/utils/sanitizeInput.ts | 2026-10-02 | Read whole (launch audit). Stripped the two joiners everywhere: gendered and family emoji fell apart and Persian words lost their ZWNJ. Kept now where they join (emoji, joining scripts), stripped everywhere else. |
+| src/utils/sanitizeInput.ts | 2026-10-03 | read whole: the caps of every field a member writes |
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/softBreak.ts | 2026-10-02 | Read whole (launch audit). Its blind cut could fall inside an emoji (a skin tone, a joined sequence): it waits for the next character to start. |
 | src/utils/standing.ts | 2026-10-02 | Written in the launch audit: the member's standing, read with the profile and on refusal. |
@@ -1074,6 +1081,6 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/contractEnv.ts | 2026-10-03 | read whole: sound; "all 5,000 tests" is every unit test |
 | test-utils/react-native-testing-library.js | 2026-10-03 | read whole: sound (setRenderResult fills screen) |
 | test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
-| test-utils/SOURCE-READING-TESTS.md | 2026-10-03 | read whole: rows for the stripper guard and the reaction CHECK reader |
+| test-utils/SOURCE-READING-TESTS.md | 2026-10-03 | read whole: rows for the new source readers |
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
 | types/react-test-renderer.d.ts | 2026-09-29 | history reduced to the reason |

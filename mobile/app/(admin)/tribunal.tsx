@@ -37,6 +37,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { formatDate } from '@/src/utils/timeAgo';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { nav } from '@/src/utils/typedRouter';
+import { MAX_LENGTHS, sanitizeInput } from '@/src/utils/sanitizeInput';
 
 interface TribunalTarget {
   id: string;
@@ -185,7 +186,8 @@ function ActionModal({
       reelToast.error('Duration must be a positive number of hours.');
       return;
     }
-    onSubmit(state.action, reason.trim(), hours);
+    // Told to the member in their notice: cleaned, and kept to what that notice can hold.
+    onSubmit(state.action, sanitizeInput(reason, 'modReason'), hours);
     reset();
   }, [state.action, reason, durationHours, onSubmit, reset]);
 
@@ -285,7 +287,7 @@ function ActionModal({
               multiline
               numberOfLines={3}
               textAlignVertical="top"
-              maxLength={500}
+              maxLength={MAX_LENGTHS.modReason}
               accessibilityLabel="Reason for this action"
             />
           </View>

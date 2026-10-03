@@ -22,7 +22,8 @@ import { SocietySeal } from '@/src/components/auth/SocietySeal';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 import { ProjectorBeam } from '@/src/components/home/ProjectorBeam';
-import { VelvetRopeCTA, BrassSheen } from '@/src/components/home/VelvetRopeCTA';
+import { VelvetRopeCTA } from '@/src/components/home/VelvetRopeCTA';
+import { BrassSheen } from '@/src/components/theme/BrassSheen';
 import { NAV_ROW_MIN_H, navTopPadding, tabBarHeight } from '@/src/components/layout/navMetrics';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';

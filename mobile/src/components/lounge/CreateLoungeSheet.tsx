@@ -17,6 +17,7 @@ import { useClearance } from '@/src/hooks/useClearance';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ToastHost } from '@/src/components/ToastHost';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
 
@@ -157,12 +158,12 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
               placeholderTextColor={colors.fog}
               value={name}
               onChangeText={setName}
-              maxLength={60}
+              maxLength={MAX_LENGTHS.loungeName}
               selectionColor={colors.sepia}
               keyboardAppearance="dark"
               accessibilityLabel="Salon name"
             />
-            <Text style={s.fieldCharCount}>{name.length}/60</Text>
+            <Text style={s.fieldCharCount}>{name.length}/{MAX_LENGTHS.loungeName}</Text>
           </View>
 
           <View style={s.field}>
@@ -173,13 +174,13 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
               placeholderTextColor={colors.fog}
               value={description}
               onChangeText={setDescription}
-              maxLength={300}
+              maxLength={MAX_LENGTHS.loungeDescription}
               multiline
               selectionColor={colors.sepia}
               keyboardAppearance="dark"
               accessibilityLabel="Salon description"
             />
-            <Text style={s.fieldCharCount}>{description.length}/300</Text>
+            <Text style={s.fieldCharCount}>{description.length}/{MAX_LENGTHS.loungeDescription}</Text>
           </View>
 
           <View style={s.toggleRow}>

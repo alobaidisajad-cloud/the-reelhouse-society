@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/auth';
 import { InteractionService } from '../services/InteractionService';
 import { VaultService } from '../services/VaultService';
+import { fileOnShelf } from '../services/ShelfService';
 import { logger } from './logger';
 import type { QueuedMutation } from './offlineQueue';
 import { sanitizeInput, type FieldType } from './sanitizeInput';
@@ -132,8 +133,11 @@ export class UnknownMutationError extends Error {
  * too, though owner-only: a rule with exceptions is a rule nobody can check.
  */
 function cleanProse<T extends Record<string, unknown>>(o: T): T {
-    if (typeof o.review === 'string') (o as Record<string, unknown>).review = sanitizeInput(o.review, 'review');
-    if (typeof o.private_notes === 'string') (o as Record<string, unknown>).private_notes = sanitizeInput(o.private_notes, 'review');
+    const w = o as Record<string, unknown>;
+    if (typeof o.review === 'string') w.review = sanitizeInput(o.review, 'review');
+    if (typeof o.private_notes === 'string') w.private_notes = sanitizeInput(o.private_notes, 'privateNotes');
+    if (typeof o.pull_quote === 'string') w.pull_quote = sanitizeInput(o.pull_quote, 'pullQuote');
+    if (typeof o.watched_with === 'string') w.watched_with = sanitizeInput(o.watched_with, 'watchedWith') || null;
     return o;
 }
 
@@ -265,7 +269,8 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     // queue flushed twice — the classic way a retry becomes a second rewatch —
     // leaves the archive exactly as one flush would.
     add_viewing: async (p: any) => {
-        await VaultService.addViewing(p.log_id as string, p.viewing_id as string, (p.fields ?? {}) as Record<string, unknown>);
+        // A rewatch's words, cleaned as a log's are: an older build queued them raw.
+        await VaultService.addViewing(p.log_id as string, p.viewing_id as string, cleanProse({ ...((p.fields ?? {}) as Record<string, unknown>) }));
         return {};
     },
     remove_viewing: async (p: any) => {
@@ -276,7 +281,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         // Cleaned here as well as at the source, for the same reason every other
         // prose does: this queue PERSISTS, so an entry written by an older build
         // flushes through this code long after the source was fixed.
-        const notes = typeof p.notes === 'string' ? sanitizeInput(p.notes, 'review') : '';
+        const notes = typeof p.notes === 'string' ? sanitizeInput(p.notes, 'privateNotes') : '';
         await VaultService.setNote(p.log_id as string, p.viewing_id as string, notes);
         return {};
     },
@@ -512,11 +517,12 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     },
 
     // ── Archive ──
+    // A queued shelf filing only ADDS formats. An older build queued a blank note
+    // and 'good' with it; those are ignored, so a replay never wipes what the
+    // member wrote on the entry (ShelfService).
     add_archive: async (p: any) => {
-        const { user_id, film_id, film_title, poster_path, year, formats, notes, condition } = p;
-        throwIfError(await supabase.from('physical_archive').upsert([{
-            user_id, film_id, film_title, poster_path, year, formats, notes, condition,
-        }], { onConflict: 'user_id, film_id' }));
+        const { user_id, film_id, film_title, poster_path, year, formats } = p;
+        await fileOnShelf({ user_id, film_id, film_title, poster_path: poster_path ?? null, year: year ?? null }, formats ?? []);
         return {};
     },
 
@@ -733,7 +739,9 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
 
     update_dossier_comment: async (p: any) => {
         const { id, user_id, updates } = p;
-        throwIfError(await supabase.from('dossier_comments').update(updates as Record<string, unknown>).eq('id', id).eq('user_id', user_id));
+        const clean = { ...(updates as Record<string, unknown>) };
+        if (typeof clean.body === 'string') clean.body = sanitizeInput(clean.body, 'dossierComment');
+        throwIfError(await supabase.from('dossier_comments').update(clean).eq('id', id).eq('user_id', user_id));
         return {};
     },
 

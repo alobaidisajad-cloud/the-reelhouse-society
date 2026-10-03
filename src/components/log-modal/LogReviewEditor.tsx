@@ -1,3 +1,4 @@
+import { LIMITS } from '../../utils/limits'
 interface LogReviewEditorProps {
     review: string
     setReview: (review: string) => void
@@ -47,7 +48,7 @@ export default function LogReviewEditor({ review, setReview, isSpoiler, setIsSpo
                     e.currentTarget.style.borderColor = 'var(--ash)'
                     e.currentTarget.style.boxShadow = 'none'
                 }}
-                maxLength={2000}
+                maxLength={LIMITS.review}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.4rem', alignItems: 'center' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', letterSpacing: '0.1em', cursor: 'pointer' }}>
@@ -61,10 +62,10 @@ export default function LogReviewEditor({ review, setReview, isSpoiler, setIsSpo
                 </label>
                 <span style={{
                     fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em',
-                    color: review.length > 1800 ? 'var(--flicker)' : 'var(--fog)',
+                    color: review.length > LIMITS.review * 0.9 ? 'var(--flicker)' : 'var(--fog)',
                     transition: 'color 0.3s',
                 }}>
-                    {review.length}/2000
+                    {review.length}/{LIMITS.review}
                 </span>
             </div>
         </div>

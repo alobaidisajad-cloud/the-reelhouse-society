@@ -31,7 +31,7 @@ import {
 } from '@/src/components/reels/types';
 import { SharedReelHeader } from '@/src/components/reels/ReelsHeader';
 import { 
-  ReelProjectorBeam, TungstenSpooling, FilterChip, ReelBrassSheen, FILTER_GAP,
+  ReelProjectorBeam, TungstenSpooling, FilterChip, FILTER_GAP,
 } from '@/src/components/reels/ReelsCards';
 import { useCommunityFeed, useFollowingFeed, useStacksFeed } from '@/src/hooks/useFeeds';
 import { ReelsFeedList } from '@/src/components/reels/ReelsFeedList';
@@ -43,6 +43,7 @@ import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import reelToast from '@/src/utils/reelToast';
+import { BrassSheen } from '@/src/components/theme/BrassSheen';
 
 const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: string; onChangeText: (text: string) => void; onClear: () => void }) => {
   const [localText, setLocalText] = useState(value);
@@ -367,7 +368,7 @@ export default function ReelScreen() {
         onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.destroy(); nav.push('/list-modal'); }}
         accessibilityRole="button" accessibilityLabel="Curate a collection"
       >
-        <ReelBrassSheen />
+        <BrassSheen />
         <LinearGradient
           colors={['transparent', 'rgba(184,137,26,0.06)', 'transparent']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}

@@ -3,6 +3,7 @@ import { TextInputProps, View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { useController, useFormContext } from 'react-hook-form';
 import { colors, fonts } from '@/src/theme/theme';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 interface ControlledInputProps extends TextInputProps {
   name: string;
@@ -27,7 +28,7 @@ export const ControlledInput = React.memo(function ControlledInput({ name, style
 });
 
 /** The bio, with its count of characters beside it (redrawn with the field alone). */
-export const ControlledBioInput = React.memo(function ControlledBioInput({ name, maxLength = 300, ...props }: ControlledInputProps) {
+export const ControlledBioInput = React.memo(function ControlledBioInput({ name, maxLength = MAX_LENGTHS.bio, ...props }: ControlledInputProps) {
   const { control } = useFormContext();
   const { field } = useController({ name, control });
 

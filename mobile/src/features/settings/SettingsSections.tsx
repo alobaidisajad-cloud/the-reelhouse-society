@@ -26,7 +26,7 @@ import { AuthService } from '@/src/services/AuthService';
 import { supabase } from '@/src/lib/supabase';
 import { isAuteurPlusTier, isArchivistPlusTier, getDisplayTier } from '@/src/utils/tier';
 import { firstPrivilegesOf } from '@/src/constants/membership';
-import { getPasswordChecks, PW_CHECK_LABELS, PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
+import { passwordIsAccepted, passwordFits, PASSWORD_TOO_LONG, PASSWORD_MAX_BYTES, PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
 import { STORE } from '@/src/components/society/SmallPrint';
 import { Toggle } from '@/src/components/Toggle';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
@@ -296,13 +296,12 @@ export function PasswordChangePanel() {
   }, []);
 
   // Joining's standard, all five checks, and joining's meter: one rule for a cipher.
-  const pwChecks = getPasswordChecks(newPassword);
-  const pwPassed = Object.values(pwChecks).filter(Boolean).length;
-  const pwStrong = pwPassed === PW_CHECK_LABELS.length;
+  const pwStrong = passwordIsAccepted(newPassword);
   const canSubmit = !!currentPassword && pwStrong && newPassword === confirmPassword;
 
   const handlePasswordChange = async () => {
     if (!currentPassword) { reelToast.error('Current cipher required.'); return; }
+    if (!passwordFits(newPassword)) { reelToast.error(PASSWORD_TOO_LONG); return; }
     if (!pwStrong) { reelToast.error('Your cipher does not meet Society encryption standards.'); return; }
     if (newPassword !== confirmPassword) { reelToast.error('Ciphers do not match.'); return; }
     setChangingPassword(true);
@@ -367,12 +366,12 @@ export function PasswordChangePanel() {
               </View>
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>NEW PASSWORD</Text>
-                <TextInput ref={newPasswordRef} style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => confirmPasswordRef.current?.focus()} placeholder="To the Society's standard" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="New password" {...scaledTextProps} />
+                <TextInput ref={newPasswordRef} style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} maxLength={PASSWORD_MAX_BYTES} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => confirmPasswordRef.current?.focus()} placeholder="To the Society's standard" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="New password" {...scaledTextProps} />
                 <PasswordStrengthMeter password={newPassword} />
               </View>
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>CONFIRM PASSWORD</Text>
-                <TextInput ref={confirmPasswordRef} style={st.fieldInput} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="done" onSubmitEditing={handlePasswordChange} placeholder="Repeat password" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Confirm password" {...scaledTextProps} />
+                <TextInput ref={confirmPasswordRef} style={st.fieldInput} value={confirmPassword} onChangeText={setConfirmPassword} maxLength={PASSWORD_MAX_BYTES} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="done" onSubmitEditing={handlePasswordChange} placeholder="Repeat password" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Confirm password" {...scaledTextProps} />
                 {confirmPassword.length > 0 && newPassword !== confirmPassword && (
                   <Text style={st.pwMismatch} {...scaledTextProps}>The two ciphers do not match.</Text>
                 )}

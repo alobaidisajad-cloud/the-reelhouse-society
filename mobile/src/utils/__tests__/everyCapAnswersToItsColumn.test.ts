@@ -20,10 +20,16 @@ import { MAX_LENGTHS } from '../sanitizeInput';
 
 const SNAPSHOT = fs.readFileSync(path.join(__dirname, '..', '..', '..', 'supabase', 'schema', 'live-schema.sql'), 'utf8');
 
-/** Every `char_length(column) <= n` CHECK in the snapshot, by constraint name. */
+/**
+ * Every one-column length CHECK in the snapshot, by constraint name: a ceiling
+ * (`char_length(c) <= n`) or a range (`length(c) >= 1 AND length(c) <= n`).
+ */
 const LIMITS = new Map<string, { table: string; column: string; limit: number }>();
 for (const t of SNAPSHOT.matchAll(/CREATE TABLE public\.(\w+) \(([\s\S]*?)\n\);/g)) {
   for (const c of t[2].matchAll(/CONSTRAINT (\w+) CHECK \(\(char_length\((\w+)\) <= (\d+)\)\)/g)) {
+    LIMITS.set(c[1], { table: t[1], column: c[2], limit: Number(c[3]) });
+  }
+  for (const c of t[2].matchAll(/CONSTRAINT (\w+) CHECK \(\(\(length\((\w+)\) >= \d+\) AND \(length\(\2\) <= (\d+)\)\)\)/g)) {
     LIMITS.set(c[1], { table: t[1], column: c[2], limit: Number(c[3]) });
   }
 }
@@ -45,9 +51,18 @@ const ANSWERS: Record<keyof typeof MAX_LENGTHS, Answer> = {
   listDescription: { constraint: 'lists_description_len' },
   listComment: { constraint: 'list_comments_content_len' },
   logComment: { constraint: 'log_comments_body_len' },
-  // older builds' queued critiques replay through the legacy dossier view
-  dossierComment: { constraint: 'dossier_comments_body_len' },
+  // older builds' queued critiques replay through the dossier_comments view,
+  // whose trigger writes dispatch_comments: that table's ceiling is the one met
+  dossierComment: { constraint: 'critique_ceiling' },
   loungeName: { constraint: 'lounges_name_len' },
+  loungeDescription: { constraint: 'lounges_description_len', smaller: 'the salon card prints it whole; both apps\' boxes and counters stop at 300' },
+  privateNotes: { constraint: 'log_private_notes_notes_check' },
+  pullQuote: { constraint: 'logs_pull_quote_len', smaller: 'one line, set large on the log page; both apps\' boxes stop at 120' },
+  watchedWith: { constraint: 'logs_watched_with_len', smaller: 'a name or a memory on one line ("· WITH …"); both apps\' boxes stop at 60' },
+  physicalNotes: { constraint: 'physical_archive_notes_len' },
+  physicalCondition: { constraint: 'physical_archive_condition_len' },
+  linkUrl: { noColumn: 'a link\'s address is one field inside profiles.social_links (jsonb, 4000 in all): ten links of a 40-character title and a 300-character address fit with room for the JSON around them' },
+  modReason: { constraint: 'notifications_message_len', smaller: 'the reason is told to the member in a notice (1000) after a sentence of up to ~95 characters; mod_actions and warnings hold 2000' },
   username: { constraint: 'profiles_username_len', smaller: 'a handle is at most 30 by enforce_username_policy; the column holds 100' },
   displayName: { constraint: 'profiles_display_name_len' },
   persona: { constraint: 'profiles_persona_len' },

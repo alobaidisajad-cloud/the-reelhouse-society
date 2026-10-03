@@ -18,6 +18,7 @@ import exportLogsCSV from '../components/profile/exportLogsCSV'
 import '../styles/settings.css'
 import { SUPPORT_EMAIL } from '../constants/support'
 import { isArchivistPlusTier } from '../utils/tier'
+import { EMAIL_CODE_DIGITS } from '../utils/limits'
 
 export default function SettingsPage() {
     const { user, isAuthenticated, logout } = useAuthStore()
@@ -742,7 +743,7 @@ export default function SettingsPage() {
                                 className="settings-input"
                                 inputMode="numeric"
                                 autoComplete="one-time-code"
-                                maxLength={10}
+                                maxLength={EMAIL_CODE_DIGITS}
                                 value={eraseCode}
                                 onChange={(e) => setEraseCode(e.target.value.replace(/\D/g, ''))}
                                 placeholder="6-digit code"

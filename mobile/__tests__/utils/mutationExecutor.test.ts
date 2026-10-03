@@ -39,6 +39,10 @@ jest.mock('../../src/lib/supabase', () => ({
 }));
 
 const mockAddEndorsement = jest.fn().mockResolvedValue(undefined);
+const mockFileOnShelf = jest.fn(async () => ({ id: 'row', formats: [] }));
+jest.mock('../../src/services/ShelfService', () => ({
+    fileOnShelf: (...args: unknown[]) => (mockFileOnShelf as (...a: unknown[]) => unknown)(...args),
+}));
 jest.mock('../../src/services/InteractionService', () => ({
     InteractionService: { addEndorsement: (...args: unknown[]) => mockAddEndorsement(...args) },
 }));
@@ -137,10 +141,7 @@ describe('mutationExecutor', () => {
             expect(mockFrom).toHaveBeenCalledWith('watchlists');
         });
 
-        it('should execute add_archive with upsert', async () => {
-            mockChain.upsert.mockResolvedValue({ error: null });
-            mockFrom.mockReturnValue({ ...mockChain, upsert: mockChain.upsert });
-
+        it('should execute add_archive as a filing that only adds formats', async () => {
             await executeMutation(
                 makeQueuedMutation('add_archive', {
                     user_id: 'u1', film_id: 42, film_title: 'Test',
@@ -149,7 +150,11 @@ describe('mutationExecutor', () => {
                 {},
             );
 
-            expect(mockFrom).toHaveBeenCalledWith('physical_archive');
+            // The queued condition is not written: a filing never rewrites an entry.
+            expect(mockFileOnShelf).toHaveBeenCalledWith(
+                { user_id: 'u1', film_id: 42, film_title: 'Test', poster_path: null, year: null },
+                ['Blu-ray'],
+            );
         });
 
         it('should execute send_lounge_message with sanitization', async () => {

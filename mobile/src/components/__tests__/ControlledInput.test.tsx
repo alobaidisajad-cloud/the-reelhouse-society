@@ -15,6 +15,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { useForm, FormProvider } from 'react-hook-form';
 import { ControlledInput, ControlledBioInput, ControlledUsernameInput } from '../ControlledInput';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 /** Wraps a field in the real form context it reads from. */
 function Harness({ children, defaultValues = {} }: { children: React.ReactNode; defaultValues?: Record<string, unknown> }) {
@@ -59,7 +60,7 @@ describe('ControlledBioInput', () => {
         <ControlledBioInput name="bio" accessibilityLabel="Bio" />
       </Harness>,
     );
-    expect(getByText('4/300')).toBeTruthy();
+    expect(getByText(`4/${MAX_LENGTHS.bio}`)).toBeTruthy();
   });
 
   it('shows 0 for an empty bio rather than crashing on undefined', () => {
@@ -68,7 +69,7 @@ describe('ControlledBioInput', () => {
         <ControlledBioInput name="bio" accessibilityLabel="Bio" />
       </Harness>,
     );
-    expect(getByText('0/300')).toBeTruthy();
+    expect(getByText(`0/${MAX_LENGTHS.bio}`)).toBeTruthy();
   });
 
   it('the counter follows what is typed', async () => {
@@ -78,7 +79,7 @@ describe('ControlledBioInput', () => {
       </Harness>,
     );
     await fireEvent.changeText(getByTestId('bio'), 'Twelve chars');
-    await waitFor(() => expect(getByText('12/300')).toBeTruthy());
+    await waitFor(() => expect(getByText(`12/${MAX_LENGTHS.bio}`)).toBeTruthy());
   });
 });
 

@@ -13,7 +13,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Lock } from 'lucide-react-native';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
-import { getPasswordChecks, PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
+import { passwordIsAccepted, passwordFits, PASSWORD_TOO_LONG, PASSWORD_MAX_BYTES, PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { nav } from '@/src/utils/typedRouter';
@@ -35,7 +35,7 @@ export default function ResetPasswordScreen() {
   useEffect(() => { return () => { if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current); }; }, []);
 
   // The sign-up form's rules and meter: one password rule, drawn one way.
-  const strong = Object.values(getPasswordChecks(password)).every(Boolean);
+  const strong = passwordIsAccepted(password);
 
   useEffect(() => {
     (async () => {
@@ -47,6 +47,10 @@ export default function ResetPasswordScreen() {
   }, []);
 
   const handleReset = async () => {
+    if (!passwordFits(password)) {
+      reelToast.error(PASSWORD_TOO_LONG);
+      return;
+    }
     if (!strong) {
       reelToast.error('Password does not meet security requirements.');
       return;
@@ -223,7 +227,7 @@ export default function ResetPasswordScreen() {
                 returnKeyType="next"
                 onSubmitEditing={() => confirmRef.current?.focus()}
                 blurOnSubmit={false}
-                maxLength={128}
+                maxLength={PASSWORD_MAX_BYTES}
                 keyboardAppearance="dark"
                 accessibilityLabel="New password"
               />
@@ -259,7 +263,7 @@ export default function ResetPasswordScreen() {
                 autoCorrect={false}
                 returnKeyType="go"
                 onSubmitEditing={handleReset}
-                maxLength={128}
+                maxLength={PASSWORD_MAX_BYTES}
                 keyboardAppearance="dark"
                 accessibilityLabel="Confirm new password"
               />

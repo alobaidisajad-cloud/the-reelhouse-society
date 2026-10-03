@@ -30,8 +30,17 @@ import type { useLogFlow } from '@/src/hooks/useLogFlow';
 import { useSocialStore } from '@/src/stores/followStore';
 
 import type { User } from '@/src/types';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { nav } from '@/src/utils/typedRouter';
+
+/**
+ * The review takes what the column takes: a box stricter than the record
+ * would cut an imported 3,000-character review to 2,000 when it is edited on
+ * Android (its length filter runs on the text it is given, not only on what
+ * is typed). The counter warms at nine tenths, as it did at 1,800 of 2,000.
+ */
+const REVIEW_WARN_AT = Math.floor(MAX_LENGTHS.review * 0.9);
 
 interface LogFormProps {
     flow: ReturnType<typeof useLogFlow>;
@@ -318,13 +327,13 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         FROM THE DESK OF @{deskName}
                     </Text>
                 </View>
-                <TextInput testID="review-input" style={[st.reviewInput, isRTLText(review) && st.rtlText]} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={setReview} multiline maxLength={2000} textAlignVertical="top" {...scaledTextProps} selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
+                <TextInput testID="review-input" style={[st.reviewInput, isRTLText(review) && st.rtlText]} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={setReview} multiline maxLength={MAX_LENGTHS.review} textAlignVertical="top" {...scaledTextProps} selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
                 <View style={st.reviewFooter}>
                     <PressableScale style={st.spoilerRow} onPress={() => { setIsSpoiler(!isSpoiler); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isSpoiler }} accessibilityLabel="Contains spoilers">
                         <View style={[st.cbox, isSpoiler && st.cboxOn]}>{isSpoiler && <Check size={10} color={colors.ink} />}</View>
                         <Text style={st.spoilerText}>CONTAINS SPOILERS</Text>
                     </PressableScale>
-                    <Text style={[st.charCount, review.length > 1800 && st.charCountWarn]}>{review.length}/2000</Text>
+                    <Text style={[st.charCount, review.length > REVIEW_WARN_AT && st.charCountWarn]}>{review.length}/{MAX_LENGTHS.review}</Text>
                 </View>
             </View>
 
@@ -483,7 +492,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                             </View>
                         ) : (
                             <View style={!vault.held && st.lockedPanel} {...inert(vault.held)}>
-                                <TextInput style={[st.reviewInput, st.privateNotesInput, isRTLText(privateNotes) && st.rtlText]} placeholder="Notes for the cutting room floor…" placeholderTextColor={colors.fog} value={privateNotes} onChangeText={setPrivateNotes} multiline maxLength={1000} textAlignVertical="top" {...scaledTextProps} keyboardAppearance="dark" accessibilityLabel="Private notes" selectionColor={'rgba(220,166,58,0.3)'} />
+                                <TextInput style={[st.reviewInput, st.privateNotesInput, isRTLText(privateNotes) && st.rtlText]} placeholder="Notes for the cutting room floor…" placeholderTextColor={colors.fog} value={privateNotes} onChangeText={setPrivateNotes} multiline maxLength={MAX_LENGTHS.privateNotes} textAlignVertical="top" {...scaledTextProps} keyboardAppearance="dark" accessibilityLabel="Private notes" selectionColor={'rgba(220,166,58,0.3)'} />
                                 {/* Said once, where the surprise would be: a
                                     rewatch begins a new viewing, and its note
                                     starts blank because the one before it is
@@ -526,7 +535,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
 
                         <View style={{ marginTop: 18 }}>
                             <FieldLabel>WATCHED WITH</FieldLabel>
-                            <TextInput style={st.ruledField} placeholder="A name, a memory, or @username…" placeholderTextColor={colors.fog} value={watchedWith} onChangeText={setWatchedWith} maxLength={60} {...scaledTextProps} selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} autoCorrect={false} autoCapitalize="none" keyboardAppearance="dark" accessibilityLabel="Watched with companion" />
+                            <TextInput style={st.ruledField} placeholder="A name, a memory, or @username…" placeholderTextColor={colors.fog} value={watchedWith} onChangeText={setWatchedWith} maxLength={MAX_LENGTHS.watchedWith} {...scaledTextProps} selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} autoCorrect={false} autoCapitalize="none" keyboardAppearance="dark" accessibilityLabel="Watched with companion" />
                             {(watchedWith || '').includes('@') && following && following.length > 0 && (() => {
                                 const atMatch = watchedWith.match(/@([\w.]*)$/);
                                 if (!atMatch) return null;

@@ -22,12 +22,18 @@ import path from 'node:path';
 const ROOT = path.resolve(__dirname, '../../../..');
 
 describe('the box may not be stricter than the column', () => {
-  it('no Dispatch input hardcodes a LITERAL maxLength', () => {
-    const files = execFileSync('git', ['ls-files', 'app/dispatch', 'src/components/dispatch'], {
+  // Every box in the app, not the Dispatch's alone: the film review stopped at
+  // 2,000 against a column, a cleaner and an import that all kept 5,000, and on
+  // Android a box's limit cuts the text it is GIVEN — an imported long review
+  // would have been cut on its first edit. A box names its cap (MAX_LENGTHS,
+  // held to its column by everyCapAnswersToItsColumn) or a named limit of its own.
+  it('no input in the app hardcodes a LITERAL maxLength', () => {
+    const files = execFileSync('git', ['ls-files', 'app', 'src'], {
       cwd: ROOT, encoding: 'utf8',
     }).split('\n').filter((f) => /\.tsx$/.test(f) && !/__tests__/.test(f));
 
-    expect(files.length).toBeGreaterThan(10); // the Dispatch's screens were found
+    expect(files.length).toBeGreaterThan(200); // the app's screens were found
+    expect(files).toContain('src/components/log/LogForm.tsx');
     const literals: string[] = [];
     for (const f of files) {
       fs.readFileSync(path.join(ROOT, f), 'utf8').split(/\r?\n/).forEach((line, i) => {

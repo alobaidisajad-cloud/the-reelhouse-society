@@ -622,30 +622,49 @@ export const useFilmStore = create<FilmState>()(
                 return []
             },
 
-            addToPhysicalArchive: async (film, formats, notes = '', condition = 'good') => {
+            // A film not on the shelf is filed whole. One already there GAINS the
+            // formats, merged with what the server holds, and its note and condition
+            // change only when they are given: the shelf form gives them, the log's
+            // format sync does not. It used to upsert the whole row, so logging a
+            // film on Blu-ray left a described "DVD, 4K" entry a bare Blu-ray with
+            // a blank note and 'good'.
+            addToPhysicalArchive: async (film, formats, notes, condition) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                // Upsert — if film already exists, update formats
-                const { data, error } = await supabase.from('physical_archive').upsert([{
+                const entry = {
                     user_id: user.id,
                     film_id: film.id,
                     film_title: film.title || film.name || 'Unknown',
                     poster_path: film.poster_path || null,
                     year: film.release_date ? new Date(film.release_date).getFullYear() : null,
-                    formats,
-                    notes,
-                    condition,
-                }], { onConflict: 'user_id,film_id' }).select().single()
-                if (error) throw error
-                if (data) {
-                    set((state) => {
-                        const exists = state.physicalArchive.find(a => a.filmId === film.id)
-                        if (exists) {
-                            return { physicalArchive: state.physicalArchive.map(a => a.filmId === film.id ? { ...a, formats, notes, condition } : a) }
-                        }
-                        return { physicalArchive: [{ id: data.id, filmId: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path || null, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined, formats, notes, condition, createdAt: data.created_at }, ...state.physicalArchive] }
-                    })
                 }
+                const made = await supabase.from('physical_archive')
+                    .upsert([{ ...entry, formats, notes: notes ?? '', condition: condition ?? 'good' }], { onConflict: 'user_id,film_id', ignoreDuplicates: true })
+                    .select('id, formats, notes, condition, created_at')
+                if (made.error) throw made.error
+                let row = made.data?.[0]
+                if (!row) {
+                    const held = await supabase.from('physical_archive')
+                        .select('id, formats').eq('user_id', user.id).eq('film_id', film.id).maybeSingle()
+                    if (held.error) throw held.error
+                    if (!held.data) throw new Error('The archive entry was neither made nor found')
+                    const merged = Array.from(new Set([...(held.data.formats ?? []), ...formats]))
+                    const grown = await supabase.from('physical_archive')
+                        .update({ formats: merged, ...(notes !== undefined && { notes }), ...(condition !== undefined && { condition }) })
+                        .eq('id', held.data.id)
+                        .select('id, formats, notes, condition, created_at')
+                        .single()
+                    if (grown.error) throw grown.error
+                    row = grown.data
+                }
+                const shown = { formats: row.formats, notes: row.notes ?? '', condition: row.condition ?? 'good' }
+                set((state) => {
+                    const exists = state.physicalArchive.find(a => a.filmId === film.id)
+                    if (exists) {
+                        return { physicalArchive: state.physicalArchive.map(a => a.filmId === film.id ? { ...a, ...shown } : a) }
+                    }
+                    return { physicalArchive: [{ id: row.id, filmId: film.id, title: entry.film_title, poster_path: entry.poster_path, year: entry.year ?? undefined, ...shown, createdAt: row.created_at }, ...state.physicalArchive] }
+                })
             },
 
             removeFromPhysicalArchive: async (filmId: number) => {

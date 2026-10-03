@@ -293,9 +293,7 @@ export async function importArchiveZip(
     }
     
     const listFiles: { name: string; data: Record<string, string>[]; rawPreview: string }[] = []
-    const allZipPaths: string[] = []
     for (const [path, entry] of Object.entries(zip.files)) {
-        allZipPaths.push(path)
         // Match any path that contains /lists/ and ends with .csv
         if ((path.includes('/lists/') || path.startsWith('lists/')) && path.endsWith('.csv') && !entry.dir) {
             const text = await entry.async('text')
@@ -308,37 +306,7 @@ export async function importArchiveZip(
         }
     }
     
-    // Store comprehensive diagnostics in a log entry for remote debugging
-    const diagParts: string[] = []
-    diagParts.push(`ZIP paths: ${allZipPaths.filter(p => p.includes('list')).join(' | ')}`)
-    diagParts.push(`Lists found: ${listFiles.length}`)
-    if (listFiles.length > 0) {
-        const lf = listFiles[0]
-        diagParts.push(`First list: "${lf.name}" (${lf.data.length} rows)`)
-        if (lf.data.length > 0) {
-            diagParts.push(`Cols: ${Object.keys(lf.data[0]).join(', ')}`)
-            diagParts.push(`Row0 Name="${getFilmName(lf.data[0])}" Year="${getFilmYear(lf.data[0])}"`)
-        }
-        diagParts.push(`Raw: ${lf.rawPreview.slice(0, 200)}`)
-    }
     result.errors.push(`[INFO] Found ${listFiles.length} list CSVs`)
-    
-    // Write diagnostics to DB so we can query remotely
-    try {
-        await supabase.from('logs').insert([{
-            user_id: user.id,
-            film_id: 0,
-            film_title: '__import_debug',
-            poster_path: null,
-            year: null,
-            rating: 0,
-            review: diagParts.join('\n'),
-            status: 'watched',
-            is_spoiler: false,
-            watched_date: '2000-01-01',
-            format: 'Debug',
-        }])
-    } catch { /* ignore debug insert errors */ }
     
     // Log diagnostics to errors array too
     if (listFiles.length > 0) {

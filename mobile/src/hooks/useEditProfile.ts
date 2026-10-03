@@ -7,6 +7,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { setSensitive } from '@/src/stores/mmkv-storage';
 import { ProfileService } from '@/src/services/ProfileWriteService';
 import { validateUsername } from '@/src/utils/validateUsername';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { queryClient } from '@/src/lib/queryClient';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { captureError } from '@/src/lib/sentry';
@@ -29,6 +30,8 @@ const linkSchema = z.object({ title: z.string(), url: z.string() }).superRefine(
   if (!title && !url) return;   // an empty pair is dropped, and nothing was lost
   if (!url) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['url'], message: 'Add the link’s address.' });
   else if (!normalizeSocialUrl(url)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['url'], message: 'Not a web address that can be opened.' });
+  // Ten links share one 4,000-character column; an address past its share would fail the whole save.
+  else if (url.length > MAX_LENGTHS.linkUrl) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['url'], message: `At most ${MAX_LENGTHS.linkUrl} characters.` });
   if (!title) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['title'], message: 'Give the link a title.' });
 });
 

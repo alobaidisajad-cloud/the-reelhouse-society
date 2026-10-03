@@ -1448,7 +1448,8 @@ async function runJSONImport(
       const logId = Crypto.randomUUID();
       const { history, renamed } = freshViewings(log.viewingHistory ?? log.viewing_history);
       for (const [oldId, newId] of renamed) {
-        const note = sanitizeInput(noteFor(oldId) ?? '', 'review').slice(0, 1000);
+        // Its own cap, at a character boundary: a .slice could split a surrogate pair, which Postgres refuses.
+        const note = sanitizeInput(noteFor(oldId) ?? '', 'privateNotes');
         if (note) earlierNotes.push({ log_id: logId, viewing_id: newId, user_id: userId, notes: note });
       }
       const currentNote = ((log.privateNotes ?? log.private_notes) as string | null) || noteFor(log.viewingId ?? log.viewing_id) || null;
@@ -1475,9 +1476,9 @@ async function runJSONImport(
         status:           (log.status ?? 'watched') as string,
         watched_date:     watchedDate,
         is_spoiler:       (log.isSpoiler ?? log.is_spoiler ?? false) as boolean,
-        watched_with:     (log.watchedWith ?? log.watched_with ?? null) as string | null,
+        watched_with:     typeof (log.watchedWith ?? log.watched_with) === 'string' ? (sanitizeInput((log.watchedWith ?? log.watched_with) as string, 'watchedWith') || null) : null,
         // Filed by the database on the log's current viewing (sanitised, as all imported text).
-        private_notes:    currentNote ? sanitizeInput(currentNote, 'review') : null,
+        private_notes:    currentNote ? sanitizeInput(currentNote, 'privateNotes') : null,
         abandoned_reason: (log.abandonedReason ?? log.abandoned_reason ?? null) as string | null,
         physical_media:   (log.physicalMedia ?? log.physical_media ?? null) as string | null,
         is_autopsied:     (log.isAutopsied ?? log.is_autopsied ?? false) as boolean,
@@ -1485,7 +1486,7 @@ async function runJSONImport(
         alt_poster:       (log.altPoster ?? log.alt_poster ?? null) as string | null,
         editorial_header: (log.editorialHeader ?? log.editorial_header ?? null) as string | null,
         drop_cap:         (log.dropCap ?? log.drop_cap ?? false) as boolean,
-        pull_quote:       (log.pullQuote ?? log.pull_quote ?? '') as string,
+        pull_quote:       sanitizeInput((log.pullQuote ?? log.pull_quote ?? '') as string, 'pullQuote'),
         video_url:        (log.videoUrl ?? log.video_url ?? null) as string | null,
         format:           (log.format ?? 'digital') as string,
         view_count:       (log.viewCount ?? log.view_count ?? 1) as number,
@@ -1578,9 +1579,9 @@ async function runJSONImport(
         poster_path: (item.poster ?? item.poster_path ?? null) as string | null,
         year:        (item.year ?? null) as number | null,
         formats:     (item.formats ?? []) as string[],
-        // Untrusted text: the review sanitiser and cap (lossless for anything written in-app).
-        notes:       rawNotes ? sanitizeInput(rawNotes, 'review') : null,
-        condition:   (item.condition ?? null) as string | null,
+        // Untrusted text: each field's own sanitiser and cap (lossless for anything written in-app).
+        notes:       rawNotes ? sanitizeInput(rawNotes, 'physicalNotes') : null,
+        condition:   typeof item.condition === 'string' ? (sanitizeInput(item.condition, 'physicalCondition') || null) : null,
         ...(originalCreated ? { created_at: originalCreated } : {}),
       });
     }

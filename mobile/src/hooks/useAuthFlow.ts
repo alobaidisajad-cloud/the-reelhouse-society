@@ -6,7 +6,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
 import reelToast from '@/src/utils/reelToast';
-import { getPasswordChecks } from '@/src/components/auth/PasswordStrengthMeter';
+import { getPasswordChecks, passwordIsAccepted, passwordFits, PASSWORD_TOO_LONG } from '@/src/components/auth/PasswordStrengthMeter';
 import { useAuthThrottle } from './useAuthThrottle';
 import { validateUsername } from '@/src/utils/validateUsername';
 
@@ -30,6 +30,9 @@ export function validateLoginSubmission(input: LoginSubmissionInput): string | n
   }
   if (isLogin && !canAttempt) {
     return `Credentials suspended. Retry in ${secondsRemaining}s.`;
+  }
+  if (!isLogin && !passwordFits(password)) {
+    return PASSWORD_TOO_LONG;
   }
   if (!isLogin && !pwStrong) {
     return 'Your cipher does not meet Society encryption standards.';
@@ -131,8 +134,7 @@ export function useAuthFlow() {
   const credentialsRef = useRef({ email: '', password: '' });
 
   const pwChecks = getPasswordChecks(password);
-  const pwPassed = Object.values(pwChecks).filter(Boolean).length;
-  const pwStrong = pwPassed === 5;
+  const pwStrong = passwordIsAccepted(password);
 
   const isMounted = useRef(true);
   useEffect(() => {

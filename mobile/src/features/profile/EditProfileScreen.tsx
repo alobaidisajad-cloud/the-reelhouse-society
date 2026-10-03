@@ -35,6 +35,7 @@ import { Image } from 'expo-image';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import reelToast from '@/src/utils/reelToast';
 import { logger } from '@/src/utils/logger';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 /**
  * THE BACKDROP — an Auteur privilege, and now a choice.
@@ -249,7 +250,7 @@ export function EditProfileScreen() {
               <Text {...scaledTextProps} style={st.fieldLabel}>USERNAME</Text>
               <ControlledUsernameInput
                 name="username"
-                placeholderTextColor={colors.fog} maxLength={30} keyboardAppearance="dark" accessibilityLabel="Username" selectionColor={colors.sepia}
+                placeholderTextColor={colors.fog} maxLength={MAX_LENGTHS.username} keyboardAppearance="dark" accessibilityLabel="Username" selectionColor={colors.sepia}
               />
               {!!errors.username && <Text {...scaledTextProps} style={st.errorText}>{errors.username.message}</Text>}
               <Text {...scaledTextProps} style={st.helperText}>Lowercase letters, numbers, and underscores only · 3-30 characters</Text>
@@ -260,7 +261,7 @@ export function EditProfileScreen() {
               <ControlledInput
                 name="displayName"
                 style={st.fieldInput}
-                placeholderTextColor={colors.fog} placeholder="Your name in the credits..." maxLength={50} keyboardAppearance="dark" accessibilityLabel="Display name" selectionColor={colors.sepia}
+                placeholderTextColor={colors.fog} placeholder="Your name in the credits..." maxLength={MAX_LENGTHS.displayName} keyboardAppearance="dark" accessibilityLabel="Display name" selectionColor={colors.sepia}
               />
               {!!errors.displayName && <Text {...scaledTextProps} style={st.errorText}>{errors.displayName.message}</Text>}
             </View>
@@ -269,7 +270,7 @@ export function EditProfileScreen() {
               <Text {...scaledTextProps} style={st.fieldLabel}>BIO</Text>
               <ControlledBioInput
                 name="bio"
-                maxLength={160}
+                maxLength={MAX_LENGTHS.bio}
                 placeholderTextColor={colors.fog} placeholder="A brief dispatch about your cinematic journey..." keyboardAppearance="dark" accessibilityLabel="Bio" selectionColor={colors.sepia} returnKeyType="done" blurOnSubmit={true}
               />
               {!!errors.bio && <Text {...scaledTextProps} style={st.errorText}>{errors.bio.message}</Text>}

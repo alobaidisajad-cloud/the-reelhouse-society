@@ -344,8 +344,9 @@ describe('the password panel upheld a weaker standard than the front door', () =
     // Joining requires all five tests. Changing a password here required one —
     // eight characters — so a member could downgrade from inside the house.
     expect(SECTIONS).toMatch(/from '@\/src\/components\/auth\/PasswordStrengthMeter'/);
-    expect(SECTIONS).toMatch(/getPasswordChecks/);
-    expect(SECTIONS).toMatch(/pwPassed === PW_CHECK_LABELS\.length/);
+    // One answer for every screen that sets a password: all five checks, and it fits the lock.
+    expect(SECTIONS).toMatch(/const pwStrong = passwordIsAccepted\(newPassword\)/);
+    expect(CODE_SECTIONS).not.toMatch(/pwPassed/);
   });
 
   it('and no longer advertises the weaker bar', () => {

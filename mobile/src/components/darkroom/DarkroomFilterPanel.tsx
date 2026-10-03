@@ -16,6 +16,7 @@ import { Chip } from './DarkroomHeader';
 import PressableScale from '@/src/components/PressableScale';
 import { useDiscoverStore } from '@/src/stores/discover';
 import { EDGE_LIT } from '@/src/theme/light';
+import { YEAR_DIGITS } from '@/src/constants/inputLimits';
 
 type Filters = ReturnType<typeof useDiscoverStore.getState>['filters'];
 
@@ -86,7 +87,7 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
           selectionColor={colors.selection}
           keyboardType="number-pad"
           keyboardAppearance="dark"
-          maxLength={4}
+          maxLength={YEAR_DIGITS}
           value={localYearFrom}
           onChangeText={setLocalYearFrom}
           onEndEditing={() => commitYear('from')}
@@ -101,7 +102,7 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
           selectionColor={colors.selection}
           keyboardType="number-pad"
           keyboardAppearance="dark"
-          maxLength={4}
+          maxLength={YEAR_DIGITS}
           value={localYearTo}
           onChangeText={setLocalYearTo}
           onEndEditing={() => commitYear('to')}

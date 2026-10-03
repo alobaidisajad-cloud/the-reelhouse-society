@@ -334,7 +334,7 @@ export default function ComposeDossierPage() {
                         placeholder="Enter your headline…"
                         value={title}
                         onChange={e => setTitle(e.target.value)}
-                        maxLength={200}
+                        maxLength={LIMITS.dossierTitle}
                         autoFocus={!isMobile}
                     />
 

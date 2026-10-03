@@ -7,6 +7,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { MAX_LINKS } from '@/src/hooks/useEditProfile';
+import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 export interface LinksEditorProps {
   links: { id: string; title: string; url: string }[];
@@ -46,7 +47,7 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
                       <Text {...scaledTextProps} style={st.fieldLabel}>TITLE</Text>
                       <ControlledInput
                         name={`links.${index}.title` as const}
-                        style={st.fieldInput} placeholder="Portfolio, Blog, Channel…" placeholderTextColor={colors.fog} maxLength={40} keyboardAppearance="dark" accessibilityLabel="Link title" selectionColor={colors.sepia}
+                        style={st.fieldInput} placeholder="Portfolio, Blog, Channel…" placeholderTextColor={colors.fog} maxLength={MAX_LENGTHS.linkTitle} keyboardAppearance="dark" accessibilityLabel="Link title" selectionColor={colors.sepia}
                       />
                       {!!errors.links?.[index]?.title && <Text {...scaledTextProps} style={st.errorText}>{errors.links[index]?.title?.message}</Text>}
                   </View>
@@ -55,7 +56,7 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
                       <Text {...scaledTextProps} style={st.fieldLabel}>URL</Text>
                       <ControlledInput
                         name={`links.${index}.url` as const}
-                        style={st.fieldInput} placeholder="https://..." placeholderTextColor={colors.fog} keyboardType="url" autoCapitalize="none" autoCorrect={false} keyboardAppearance="dark" accessibilityLabel="Link URL" selectionColor={colors.sepia}
+                        style={st.fieldInput} placeholder="https://..." placeholderTextColor={colors.fog} maxLength={MAX_LENGTHS.linkUrl} keyboardType="url" autoCapitalize="none" autoCorrect={false} keyboardAppearance="dark" accessibilityLabel="Link URL" selectionColor={colors.sepia}
                       />
                       {!!errors.links?.[index]?.url && <Text {...scaledTextProps} style={st.errorText}>{errors.links[index]?.url?.message}</Text>}
                   </View>

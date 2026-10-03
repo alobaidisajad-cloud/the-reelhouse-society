@@ -18,6 +18,9 @@ import PressableScale from '@/src/components/PressableScale';
 import { MemberFaceStack } from '@/src/components/lounge/MemberFaceStack';
 import { EDGE_LIT } from '@/src/theme/light';
 
+/** Where the server stops counting a salon's unread dispatches. */
+export const UNREAD_COUNTED_TO = 100;
+
 export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge: LoungeRoom; index: number }) => {
   const coverUrl = lounge.cover_image
     ? tmdb.backdrop(lounge.cover_image, 'w500')
@@ -27,6 +30,8 @@ export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
   const isAwaiting = lounge.membership_status === 'pending';
   const atDoor = lounge.pending_count || 0;
   const unreadLabel = unread > 9 ? '9+ NEW' : `${unread} NEW`;
+  // get_lounge_unread_counts stops counting at UNREAD_COUNTED_TO, so a count there means at least that.
+  const unreadSpoken = unread >= UNREAD_COUNTED_TO ? `more than ${UNREAD_COUNTED_TO - 1}` : `${unread}`;
 
   return (
     <View style={s.joinedCast}>
@@ -39,7 +44,7 @@ export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
         accessibilityLabel={`Enter salon ${lounge.name}${
           isAwaiting ? ', awaiting the host'
             : atDoor > 0 ? `, ${atDoor} at your door`
-              : hasUnread ? `, ${unread} new dispatches` : ''}`}
+              : hasUnread ? `, ${unreadSpoken} new dispatches` : ''}`}
       >
         <View style={s.joinedImgWrap}>
           {coverUrl ? (

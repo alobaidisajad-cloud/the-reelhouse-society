@@ -165,12 +165,13 @@ describe('database ceilings vs both clients', () => {
       // The claim that would have caught it. A box whose maxLength exceeds the
       // sanitiser's cap promises the member characters that are silently
       // trimmed before the write — which is exactly what CreateLoungeSheet did.
+      // The box now names the sanitiser's own cap, so the two cannot drift; a
+      // typed number anywhere in the app is refused by oneCapNotThree.
       const sheet = readFileSync(
         join(__dirname, '..', 'src/components/lounge/CreateLoungeSheet.tsx'), 'utf8',
       );
-      const box = /maxLength=\{?(\d+)\}?/.exec(sheet);
-      expect(box).not.toBeNull();
-      expect(Number(box![1])).toBeLessThanOrEqual(MAX_LENGTHS.loungeName);
+      expect(sheet).toMatch(/maxLength=\{MAX_LENGTHS\.loungeName\}/);
+      expect(sheet).not.toMatch(/maxLength=\{?\d+\}?/);
     });
   });
 

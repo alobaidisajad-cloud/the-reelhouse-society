@@ -1,5 +1,6 @@
 /**
- * VelvetRopeCTA, ShimmerRule & BrassSheen — the front door's second button, and its brass.
+ * VelvetRopeCTA & ShimmerRule — the front door's second button, and its line (its brass plate's
+ * sheen is the shared BrassSheen).
  */
 import { memo, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -63,45 +64,11 @@ export const VelvetRopeCTA = memo(() => {
     );
 });
 
- 
-export const BrassSheen = memo(() => {
-    const isFocused = useIsFocused();
-    const reducedMotion = useReducedMotion();
-    const sheen = useSharedValue(-2);
-    // Parked off-frame at -2, the plate reads as it does between sweeps.
-    useEffect(() => {
-       if (!isFocused || reducedMotion) {
-         cancelAnimation(sheen);
-         sheen.value = -2;
-         return;
-       }
-       sheen.value = -2;
-       sheen.value = withRepeat(
-         withTiming(2, { duration: 4000, easing: Easing.inOut(Easing.quad) }),
-         -1, false
-       );
-       return () => cancelAnimation(sheen);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isFocused, reducedMotion]);
-    const sheenStyle = useAnimatedStyle(() => ({
-       transform: [{ translateX: interpolate(sheen.value, [-2, 2], [-200, 300]) }]
-    }));
-    return (
-       <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, overflow: 'hidden' }}>
-          <Animated.View style={[{ width: '150%', height: '100%', opacity: 0.15 }, sheenStyle]}>
-             <LinearGradient colors={['transparent', '#FFF', 'transparent']} start={{x:0,y:0}} end={{x:1,y:0}} style={StyleSheet.absoluteFillObject} />
-          </Animated.View>
-       </View>
-    );
-});
-
 const s = StyleSheet.create({
   ctaSecondaryNoir: { paddingVertical: 12, paddingHorizontal: 24 },
   ctaSecondaryNoirText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 3, color: colors.fogQuiet },
 });
 
-
-BrassSheen.displayName = 'BrassSheen';
 
 VelvetRopeCTA.displayName = 'VelvetRopeCTA';
 

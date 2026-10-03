@@ -793,7 +793,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     if (!user) return null;
 
     const trimmedName = sanitizeInput(name, 'loungeName');
-    const trimmedDesc = sanitizeInput(description, 'listDescription');
+    const trimmedDesc = sanitizeInput(description, 'loungeDescription');
     if (!trimmedName || trimmedName.length < 2) {
       reelToast.error('Lounge name must be at least 2 characters.');
       return null;
