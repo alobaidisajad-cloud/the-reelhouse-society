@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
+import { cutChars } from '../utils/cutChars'
 
 /**
  * The author of a message, when the author may be gone.
@@ -531,7 +532,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                 type,
                 metadata,
                 reply_to_id: replyTo?.id || null,
-                reply_to_content: replyTo?.content?.slice(0, 200) || null,
+                reply_to_content: replyTo?.content ? cutChars(replyTo.content, 200) : null,
                 reply_to_username: replyTo?.username || null,
             }])
             .select()

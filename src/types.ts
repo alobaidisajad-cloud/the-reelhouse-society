@@ -32,7 +32,8 @@ export interface User {
     preferences?: Record<string, unknown>
     is_banned?: boolean
     ban_reason?: string
-    social_links?: Record<string, string>
+    /** A list of { title, url } as both apps write it; a few old rows hold a { title: url } map. */
+    social_links?: { title: string; url: string }[] | Record<string, string>
 }
 
 /**

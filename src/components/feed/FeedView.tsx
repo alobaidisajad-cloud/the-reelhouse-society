@@ -12,6 +12,7 @@ import AnnotationPanel from './AnnotationPanel'
 import { DossierExportHTML } from './DossierExportHTML'
 import type { ActivityCardViewProps } from './types'
 import { RankBadge } from '../RankBadge';
+import { cutChars } from '../../utils/cutChars'
 
 const RadarChart = lazy(() => import('../UI').then(m => ({ default: m.RadarChart })))
 const ShareToLoungeModal = lazy(() => import('../ShareToLoungeModal'))
@@ -286,7 +287,7 @@ export default function FeedView({
                                 poster: log.film?.poster,
                                 rating: log.rating,
                                 reviewer: log.user,
-                                review: log.review?.slice(0, 200),
+                                review: log.review ? cutChars(log.review, 200) : log.review,
                             },
                         }}
                         onClose={() => setShowShareLounge(false)}

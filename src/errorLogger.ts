@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
+import { cutChars } from './utils/cutChars'
 
 /**
  * Log errors to Supabase error_logs table for production monitoring.
@@ -30,8 +31,8 @@ export async function logError({ type = 'runtime', message, stack, component, us
         await supabase.from('error_logs').insert([{
             user_id: userId || null,
             error_type: type,
-            error_message: message?.slice?.(0, 2000) || String(message).slice(0, 2000) || 'Unknown error',
-            error_stack: stack?.slice?.(0, 5000) || null,
+            error_message: cutChars(String(message ?? ''), 2000) || 'Unknown error',
+            error_stack: stack ? cutChars(String(stack), 5000) : null,
             component: component || null,
             url: typeof window !== 'undefined' ? window.location.href : null,
             user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,

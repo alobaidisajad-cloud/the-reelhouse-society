@@ -222,19 +222,18 @@ export default function EditProfilePage() {
                 .eq('id', user.id)
             if (error) throw error
 
-            useAuthStore.getState().updateUser({
-                bio: bio.trim(),
-                avatar_url: avatarUrl,
-                display_name: displayName.trim(),
-                username: username.trim(),
-                social_links: cleanedLinks,
-            } as any)
+            // The row is written; the member's copy takes what was written. (This called
+            // updateUser, which wrote the profile a SECOND time — with the handle as
+            // typed rather than the sanitized one just checked — and could answer a
+            // successful save with "Saving too frequently".)
+            const written = { bio: updateData.bio, avatar_url: avatarUrl, display_name: updateData.display_name, social_links: cleanedLinks, ...(updateData.username ? { username: updateData.username } : {}) }
+            useAuthStore.setState((s) => ({ user: s.user ? { ...s.user, ...written } : null }))
 
             setAvatarFile(null)
             reelToast.success('Profile updated ✦')
 
             if (username !== user.username) {
-                navigate(`/user/${username}`, { replace: true })
+                navigate(`/user/${updateData.username}`, { replace: true })
             }
         } catch (e: any) {
             reelToast.error(e.message || 'Failed to save profile')
