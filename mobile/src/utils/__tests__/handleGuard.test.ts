@@ -91,8 +91,8 @@ describe('what it still refuses, and why each refusal is real', () => {
   it('rejects zero-width and bidi characters — the homograph vector', () => {
     // Two handles that look identical but resolve to different members is exactly what
     // the sanitiser exists to prevent, and a lookup is the moment it matters.
-    const vectors = ['​', '‌', '‍', '‎', '‏',
-                     '‪', '‮', '⁦', '⁩', '﻿', '­', '͏'];
+    const vectors = ['\u200B', '‌', '‍', '\u200E', '\u200F',
+                     '\u202A', '\u202E', '\u2066', '\u2069', '\uFEFF', '\u00AD', '\u034F'];
     for (const ch of vectors) {
       expect(isLookupSafeHandle('mor' + ch + 'pho')).toBe(false);
     }
@@ -120,7 +120,7 @@ describe('the guard is stateless across calls', () => {
     // `.test()` on a global regex advances lastIndex and returns alternating answers,
     // so the guard builds its own non-global copy. This is that hazard, pinned.
     for (let i = 0; i < 10; i++) {
-      expect(isLookupSafeHandle('mor​pho')).toBe(false);
+      expect(isLookupSafeHandle('mor\u200Bpho')).toBe(false);
       expect(isLookupSafeHandle('morpho')).toBe(true);
       expect(isLookupSafeHandle('sajad.s.alobaidi')).toBe(true);
     }

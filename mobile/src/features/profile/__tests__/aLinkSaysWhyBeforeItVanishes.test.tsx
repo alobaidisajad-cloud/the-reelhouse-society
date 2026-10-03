@@ -68,7 +68,7 @@ describe('a link\'s title is cleaned like every other piece of public profile te
     (supabase.auth.getSession as jest.Mock) = jest.fn(async () => ({ data: { session: { user: { id: 'u1' } } }, error: null }));
     const update = jest.fn(() => ({ eq: jest.fn(async () => ({ error: null })) }));
     (supabase.from as unknown) = jest.fn(() => ({ update }));
-    await ProfileService.updateProfile('u1', { social_links: [{ title: 'Blog‮gnp.exe', url: ' https://two.example ' }] } as never);
+    await ProfileService.updateProfile('u1', { social_links: [{ title: 'Blog\u202Egnp.exe', url: ' https://two.example ' }] } as never);
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ social_links: [{ title: 'Bloggnp.exe', url: 'https://two.example' }] }));
   });
 });

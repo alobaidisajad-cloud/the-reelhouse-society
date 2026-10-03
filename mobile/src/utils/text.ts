@@ -123,7 +123,7 @@ export function extractDropCap(text: string): { first: string; rest: string } {
  * Ranges: Hebrew, Arabic (incl. supplement + extended-A), Syriac/Thaana/N'Ko,
  * and the Arabic presentation forms.
  */
-const RTL_STRONG = /[֐-׿؀-޿ࢠ-ࣿיִ-﷿ﹰ-﻿]/;
+const RTL_STRONG = /[֐-׿؀-޿ࢠ-ࣿיִ-﷿ﹰ-\uFEFF]/;
 const LTR_STRONG = /[A-Za-zÀ-ʯͰ-֏]/;
 
 /**
@@ -147,7 +147,7 @@ const LTR_STRONG = /[A-Za-zÀ-ʯͰ-֏]/;
  * It is printed as its OWN child of the outer <Text>, never concatenated into a
  * label, so `TAKE — ` stays exactly `TAKE — ` for everything that matches on it.
  */
-export const RTL_MARK = '‏';
+export const RTL_MARK = '\u200F';
 
 export function isRTLText(text: string | null | undefined): boolean {
     if (!text) return false;

@@ -13,9 +13,9 @@
  * function and asserts on what was handed to the database.
  */
 
-const HOSTILE_TITLE = 'Best of ‮1999⁦⁩';   // RLO + isolates
-const HOSTILE_BIO = 'critic​‌‍ and ‮archivist';
-const HOSTILE_DETAILS = 'they wrote ‮something⁩ vile';
+const HOSTILE_TITLE = 'Best of \u202E1999\u2066\u2069';   // RLO + isolates
+const HOSTILE_BIO = 'critic\u200B‌‍ and \u202Earchivist';
+const HOSTILE_DETAILS = 'they wrote \u202Esomething\u2069 vile';
 
 // ── module mocks ──────────────────────────────────────────────────────────────
 jest.mock('react-native', () => ({
@@ -98,8 +98,8 @@ describe('createList / updateList', () => {
     const call = captured.rpc.find((c: any) => c.name === 'save_stack');
     expect(call).toBeTruthy();
     expect(call.args.p_title).toBe('Best of 1999');
-    expect(call.args.p_title).not.toMatch(/[‪-‮⁦-⁩]/);
-    expect(call.args.p_description).not.toMatch(/[​-‍‪-‮]/);
+    expect(call.args.p_title).not.toMatch(/[\u202A-\u202E\u2066-\u2069]/);
+    expect(call.args.p_description).not.toMatch(/[\u200B-‍\u202A-\u202E]/);
   });
 
   it('cleans an edit too, not just a create', async () => {
@@ -125,7 +125,7 @@ describe('ProfileService.updateProfile', () => {
 
   it('cleans display_name and persona as well', async () => {
     const { ProfileService } = require('../../services/ProfileWriteService');
-    await ProfileService.updateProfile('u1', { display_name: 'The ‮Oracle', persona: 'a‌b' } as any);
+    await ProfileService.updateProfile('u1', { display_name: 'The \u202EOracle', persona: 'a‌b' } as any);
 
     const row = captured.update[0];
     expect(row.display_name).toBe('The Oracle');
@@ -151,7 +151,7 @@ describe('submitReport', () => {
     const call = captured.rpc.find(c => c.name === 'submit_report');
     expect(call).toBeDefined();
     expect(call.args.p_details).toBe('they wrote something vile');
-    expect(call.args.p_details).not.toMatch(/[‪-‮⁦-⁩]/);
+    expect(call.args.p_details).not.toMatch(/[\u202A-\u202E\u2066-\u2069]/);
   });
 });
 
@@ -186,7 +186,7 @@ describe('offline last gate — every handler that writes member prose', () => {
   it('add_log cleans review and private notes', async () => {
     const { executeMutation } = require('../mutationExecutor');
     await executeMutation({ id: 'm3', type: 'add_log', timestamp: Date.now(),
-      payload: { id: 'g1', user_id: 'u1', film_id: 1, review: 'a‮b', private_notes: 'c\u200Bd' } } as any, {});
+      payload: { id: 'g1', user_id: 'u1', film_id: 1, review: 'a\u202Eb', private_notes: 'c\u200Bd' } } as any, {});
     const row = Array.isArray(captured.insert[0]) ? captured.insert[0][0] : captured.insert[0];
     expect(row.review).toBe('ab');
     expect(row.private_notes).toBe('cd');
@@ -195,7 +195,7 @@ describe('offline last gate — every handler that writes member prose', () => {
   it('update_log cleans them too', async () => {
     const { executeMutation } = require('../mutationExecutor');
     await executeMutation({ id: 'm4', type: 'update_log', timestamp: Date.now(),
-      payload: { id: 'g1', updates: { review: 'x‮y' } } } as any, {});
+      payload: { id: 'g1', updates: { review: 'x\u202Ey' } } } as any, {});
     expect(captured.update[0].review).toBe('xy');
   });
 
@@ -203,7 +203,7 @@ describe('offline last gate — every handler that writes member prose', () => {
     const { executeMutation } = require('../mutationExecutor');
     await executeMutation({ id: 'm5', type: 'submit_report', timestamp: Date.now(),
       payload: { reporter_id: 'r', content_id: 'c', content_type: 'log', reason: 'spam',
-                 details: 'vile‮text', target_user_id: 't' } } as any, {});
+                 details: 'vile\u202Etext', target_user_id: 't' } } as any, {});
     const call = captured.rpc.find((c: any) => c.name === 'submit_report');
     expect(call.args.p_details).toBe('viletext');
   });
@@ -213,8 +213,8 @@ describe('offline dossier handlers — the markdown this batch renders', () => {
   it('add_dossier cleans title, excerpt and full_content', async () => {
     const { executeMutation } = require('../mutationExecutor');
     await executeMutation({ id: 'd1', type: 'add_dossier', timestamp: Date.now(),
-      payload: { user_id: 'u1', author_username: 'c', title: 'On ‮Ozu',
-                 excerpt: 'a\u200Bb', full_content: 'body‮text', is_published: true } } as any, {});
+      payload: { user_id: 'u1', author_username: 'c', title: 'On \u202EOzu',
+                 excerpt: 'a\u200Bb', full_content: 'body\u202Etext', is_published: true } } as any, {});
     const row = Array.isArray(captured.insert[0]) ? captured.insert[0][0] : captured.insert[0];
     expect(row.title).toBe('On Ozu');
     expect(row.excerpt).toBe('ab');
@@ -224,7 +224,7 @@ describe('offline dossier handlers — the markdown this batch renders', () => {
   it('update_dossier cleans them too', async () => {
     const { executeMutation } = require('../mutationExecutor');
     await executeMutation({ id: 'd2', type: 'update_dossier', timestamp: Date.now(),
-      payload: { id: 'x', user_id: 'u1', updates: { full_content: 'p‮q' } } } as any, {});
+      payload: { id: 'x', user_id: 'u1', updates: { full_content: 'p\u202Eq' } } } as any, {});
     expect(captured.update[0].full_content).toBe('pq');
   });
 

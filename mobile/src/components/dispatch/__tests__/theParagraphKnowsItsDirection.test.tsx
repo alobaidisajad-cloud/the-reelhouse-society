@@ -49,9 +49,9 @@ const ENGLISH = 'Stalker is not slow, it is patient, and the difference is the w
  * all: `Character.getDirectionality` reports U+200F as RIGHT_TO_LEFT, which is
  * the whole reason the mark works.
  */
-const STRONG_RTL = /[֐-ࣿ‏؜יִ-﷿ﹰ-﻿]/;
+const STRONG_RTL = /[֐-ࣿ\u200F؜יִ-﷿ﹰ-\uFEFF]/;
 /** Strong left-to-right: Latin, Greek, Cyrillic, and its own invisible mark. */
-const STRONG_LTR = /[A-Za-zÀ-ʯͰ-֏‎]/;
+const STRONG_LTR = /[A-Za-zÀ-ʯͰ-֏\u200E]/;
 
 /**
  * What a text engine is handed: every string in the tree, in document order.
@@ -150,7 +150,7 @@ describe('the paragraph knows its own direction', () => {
         expect(`${kind} paragraph found: ${para != null}`).toBe(`${kind} paragraph found: true`);
         // The mark must NOT be printed for English — an invisible RTL character
         // in front of an English sentence would turn the paragraph the wrong way.
-        expect(para).not.toContain('‏');
+        expect(para).not.toContain('\u200F');
         expect(`${kind}: ${firstStrong(para as string)}`).toBe(`${kind}: ltr`);
       });
     }
@@ -185,7 +185,7 @@ describe('the paragraph knows its own direction', () => {
 
   it('the rule itself can say NO — it is not answering rtl to everything', () => {
     expect(firstStrong('TAKE — ' + ARABIC)).toBe('ltr');
-    expect(firstStrong('‏' + 'TAKE — ' + ARABIC)).toBe('rtl');
+    expect(firstStrong('\u200F' + 'TAKE — ' + ARABIC)).toBe('rtl');
     expect(firstStrong(ARABIC)).toBe('rtl');
     expect(firstStrong('1953 · ')).toBe('none');
   });

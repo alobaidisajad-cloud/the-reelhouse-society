@@ -54,7 +54,7 @@ describe('parseCSVRows / parseCSV', () => {
   });
 
   it('strips BOM and survives CRLF line endings', () => {
-    const text = '﻿Title,Year\r\nHeat,1995\r\n';
+    const text = '\uFEFFTitle,Year\r\nHeat,1995\r\n';
     const records = parseCSV(text);
     expect(records).toHaveLength(1);
     expect(records[0].Title).toBe('Heat');

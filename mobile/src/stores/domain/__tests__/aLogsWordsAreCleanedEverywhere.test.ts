@@ -11,9 +11,9 @@
 import { cleanLogWords } from '../logSlice/helpers/logOperations';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
-const RLO = '‮';      // right-to-left override: turns what follows backwards on screen
-const ZWSP = '​';     // zero-width space
-const BELL = '\u0007';
+const RLO = String.fromCharCode(0x202e);   // right-to-left override: turns what follows backwards on screen
+const ZWSP = String.fromCharCode(0x200b);  // zero-width space
+const BELL = String.fromCharCode(0x07);    // a control character
 
 describe('the live save cleans every word a log carries', () => {
   it('the pull quote and the companion lose what no one meant to type', () => {

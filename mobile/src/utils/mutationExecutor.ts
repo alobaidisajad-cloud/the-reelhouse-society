@@ -78,35 +78,14 @@ const handleDuplicateLogMerge = async (error: any, dbPayload: any, _fakeId?: str
                 return _fakeId ? { newId: existingData.id, fakeId: _fakeId as string } : {};
             }
 
-            const oldHistory = Array.isArray(existingData.viewing_history) ? existingData.viewing_history : [];
-            const archivedEntry = {
-                date: existingData.watched_date ?? existingData.created_at ?? new Date().toISOString(),
-                rating: existingData.rating ?? 0,
-                review: existingData.review ?? '',
-                watchedWith: existingData.watched_with ?? null,
-                physicalMedia: existingData.physical_media ?? 'None',
-                status: existingData.status ?? 'watched',
-                abandonedReason: existingData.abandoned_reason ?? null,
-                isAutopsied: existingData.is_autopsied ?? false,
-                autopsy: existingData.autopsy ?? null,
-                altPoster: existingData.alt_poster ?? null,
-                editorialHeader: existingData.editorial_header ?? null,
-                dropCap: existingData.drop_cap ?? false,
-                pullQuote: existingData.pull_quote ?? '',
-                privateNotes: existingData.private_notes ?? null,
-                isSpoiler: existingData.is_spoiler ?? false,
-                videoUrl: existingData.video_url ?? null,
-                format: existingData.format ?? 'digital',
-            };
-            const newHistory = [archivedEntry, ...oldHistory];
-            
-            const { id: _dropId, created_at: _dropCreatedAt, ...updatePayload } = dbPayload;
-            
-            // Inject preserved history and increment view count
-            updatePayload.viewing_history = newHistory;
-            updatePayload.view_count = (existingData.view_count || 1) + 1;
-            
-            throwIfError(await supabase.from('logs').update(updatePayload).eq('id', existingData.id));
+            // Another device logged this film first: this log becomes a rewatch, made where
+            // every rewatch is — log_viewing_add archives the viewing the log is on and files
+            // this one, with identities, under the viewing id this device already gave it.
+            // A retry after a lost answer finds that viewing filed and does nothing. (It was
+            // built here by hand, without a viewing id, carrying a note the row never holds.)
+            const viewingId = (dbPayload.viewing_id as string | undefined) ?? (dbPayload.id as string);
+            const { id: _i, user_id: _u, film_id: _f, created_at: _c, viewing_id: _v, viewing_history: _h, view_count: _n, private_notes: _p, ...fields } = dbPayload;
+            await VaultService.addViewing(existingData.id, viewingId, fields);
             if (_fakeId) {
                 return { newId: existingData.id, fakeId: _fakeId as string };
             }
@@ -213,6 +192,9 @@ const insertLog = async (p: any): Promise<MutationResult> => {
     cleanProse(raw);
     const dbPayload = {
         id: raw.id,
+        // The viewing the device already named (a note queued offline is filed to it). Left
+        // out, the database made its own, and that note looked for a viewing that never existed.
+        viewing_id: raw.viewing_id,
         user_id: raw.user_id, film_id: raw.film_id, film_title: raw.film_title,
         poster_path: raw.poster_path, rating: raw.rating, review: raw.review,
         watched_date: raw.watched_date, status: raw.status, year: raw.year,

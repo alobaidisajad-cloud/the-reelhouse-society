@@ -456,8 +456,8 @@ describe('the page survives the edges', () => {
     const r = await mount({}, { targetUser: baseUser({ bio: `Programme at ${link}` }) });
     const shown = r.getByText(/Programme at/);
     const text = [shown.props.children].flat(3).filter((c) => typeof c === 'string').join('');
-    expect(text).toContain('​');
-    expect(text.replace(/​/g, '')).toContain(link);
+    expect(text).toContain('\u200B');
+    expect(text.replace(/\u200B/g, '')).toContain(link);
   });
 
   it('preferences being null does not break the page', async () => {

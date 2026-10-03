@@ -9,7 +9,14 @@ import { characterStart } from './text';
 // Invisible characters, all THREE bidi families (the test enumerates every bidi codepoint):
 // marks, isolates, embeddings/overrides \u2014 U+202E reorders what is shown from what is stored.
 // A string, so guards build a NON-global RegExp: a /g regex's test() alternates its answers.
-export const INVISIBLE_CHAR_CLASS = '\\u200B\\u200C\\u200D\\u200E\\u200F\\u202A-\\u202E\\uFEFF\\u00AD\\u034F\\u2028\\u2029\\u2060\\u2061\\u2062\\u2063\\u2064\\u2066\\u2067\\u2068\\u2069\\u206A-\\u206F';
+export const INVISIBLE_CHAR_CLASS = '\\u200B\\u200C\\u200D\\u200E\\u200F\\u202A-\\u202E\\uFEFF\\u00AD\\u034F\\u2060\\u2061\\u2062\\u2063\\u2064\\u2066\\u2067\\u2068\\u2069\\u206A-\\u206F';
+/**
+ * U+2028 and U+2029 are not invisible: they are a line and a paragraph break,
+ * as text pasted from some editors carries them. Deleted, "the ending.⏎Then"
+ * became "the ending.Then"; they are written as the breaks they are.
+ */
+const LINE_SEPARATOR = new RegExp(String.fromCharCode(0x2028), 'g');
+const PARAGRAPH_SEPARATOR = new RegExp(String.fromCharCode(0x2029), 'g');
 /** Everything above but the two joiners, which `joinersThatJoin` decides. */
 const INVISIBLE_CHARS = new RegExp(`[${INVISIBLE_CHAR_CLASS.replace('\\u200C\\u200D', '')}]`, 'g');
 
@@ -120,6 +127,8 @@ export type FieldType = keyof typeof MAX_LENGTHS;
 export function cleanForStorage(text: string): string {
   if (!text) return '';
   return joinersThatJoin(text
+    .replace(LINE_SEPARATOR, '\n')
+    .replace(PARAGRAPH_SEPARATOR, '\n\n')
     .replace(INVISIBLE_CHARS, '')
     .replace(CONTROL_CHARS, ''))
     .replace(/\n{4,}/g, '\n\n\n')  // max 3 consecutive newlines

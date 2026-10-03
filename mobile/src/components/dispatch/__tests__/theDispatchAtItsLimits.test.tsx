@@ -105,7 +105,7 @@ describe('a card at the length the database allows', () => {
         <PaperPost {...base(kind, { body: unbroken(600), title: unbroken(200) })} />,
       );
       const longest = strings(toJSON())
-        .flatMap((s) => s.split(/\s|​/))       // zero-width space is a joint
+        .flatMap((s) => s.split(/\s|\u200B/))       // zero-width space is a joint
         .reduce((a, b) => (b.length > a.length ? b : a), '');
       expect(`longest unbroken run ${longest.length} <= ${MAX_RUN}`)
         .toBe(`longest unbroken run ${Math.min(longest.length, MAX_RUN)} <= ${MAX_RUN}`);

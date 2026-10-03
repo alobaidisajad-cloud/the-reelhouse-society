@@ -37,7 +37,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/stores/socialSlice.test.ts | — |  |
 | __tests__/tmdbMockCoverage.test.ts | — |  |
 | __tests__/utils/mappers.test.ts | — |  |
-| __tests__/utils/mutationExecutor.test.ts | 2026-10-03 | edited: add_archive replays as a filing that only adds |
+| __tests__/utils/mutationExecutor.test.ts | 2026-10-03 | edited: the duplicate merge is a server rewatch under the device viewing id; the insert keeps it |
 | __tests__/utils/offlineQueue.test.ts | 2026-10-03 | edited: the kind list matches the queue's union |
 | ../.github/workflows/ci-alert.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
@@ -173,7 +173,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tabs/__tests__/zz-settings.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/tabs/flashListMock.tsx | 2026-10-01 | rows handed extraData, as FlashList does |
 | mockups/tools/drawn.cjs | 2026-10-03 | read whole: controls counted through stripComments.js |
-| mockups/tools/face-advances.cjs | 2026-10-02 | Written in the launch audit: one generator for every face's letter widths, read from the font files, with --check in CI. |
+| mockups/tools/face-advances.cjs | 2026-10-03 | edited: writes a hidden key as its escape |
 | mockups/tools/harness.cjs | 2026-09-28 | 5 findings; the header's middle sentence was garbled by an insertion; open() said 1.35 was the most a word grows (uncapped grows to 3.1) |
 | mockups/tools/layout.cjs | 2026-09-28 | 12 findings; the header said it measured 'x1 and x1.35' (it runs five passes, iOS to 3.1 and Android to 2) and left SMALL, SHORT and LOST unlisted; two stacked JSDocs merged |
 | mockups/tools/contrast.cjs | 2026-09-30 | new: every word against the pixels under it |
@@ -281,7 +281,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/nothingLivesOnlyInTheMockups.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/oneCapNotThree.test.ts | 2026-10-03 | read whole: no box in the app types its own limit |
 | src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/dispatch/__tests__/paperTextLogic.test.ts | — |  |
+| src/components/dispatch/__tests__/paperTextLogic.test.ts | 2026-10-03 | edited: hidden characters written as escapes |
 | src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-09-29 | 25 fixed; FOUND a \u-eaten regex (Arabic never matched) |
 | src/components/dispatch/__tests__/roomScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/rulesScreen.test.tsx | — |  |
@@ -289,7 +289,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/signedOutHasNoInertControls.test.tsx | — |  |
 | src/components/dispatch/__tests__/spokenAloud.test.tsx | — |  |
 | src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/dispatch/__tests__/theDispatchAtItsLimits.test.tsx | — |  |
+| src/components/dispatch/__tests__/theDispatchAtItsLimits.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
 | src/components/dispatch/__tests__/theDispatchSaysEssay.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theDoorIsShown.test.tsx | — |  |
 | src/components/dispatch/__tests__/theDraftIsTheWholePiece.test.tsx | — |  |
@@ -299,7 +299,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theIssueIsTheCalendarDay.test.ts | 2026-10-02 | Written in the launch audit: the issue number counted in calendar days, every hour of two years. |
 | src/components/dispatch/__tests__/theMarginSaysWhatItCounts.test.tsx | 2026-09-29 | new |
 | src/components/dispatch/__tests__/theNumberIsAMembershipFact.test.tsx | — |  |
-| src/components/dispatch/__tests__/theParagraphKnowsItsDirection.test.tsx | — |  |
+| src/components/dispatch/__tests__/theParagraphKnowsItsDirection.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
 | src/components/dispatch/__tests__/thePreviewIsThePage.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theSeriesSheet.test.tsx | 2026-10-01 | written: the series sheet says what it read |
 | src/components/dispatch/__tests__/theRailFitsOneScreen.test.ts | — |  |
@@ -517,7 +517,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/holdingsFit.test.ts | — |  |
 | src/components/profile/__tests__/memberFile.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/memberFileRooms.test.tsx | — |  |
-| src/components/profile/__tests__/memberFileScreen.test.tsx | — |  |
+| src/components/profile/__tests__/memberFileScreen.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
 | src/components/profile/__tests__/projectorRoom.test.tsx | — |  |
 | src/components/profile/__tests__/railFits.test.ts | — |  |
 | src/components/profile/__tests__/reconcileCount.test.ts | — |  |
@@ -641,13 +641,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/textScaling.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/features/archive/__tests__/anImportMergesIntoTheStackItFinds.test.ts | — |  |
 | src/features/archive/__tests__/anImportNeverDropsWhatItCouldNotAsk.test.ts | — |  |
-| src/features/archive/__tests__/archiveImport.test.ts | — |  |
+| src/features/archive/__tests__/archiveImport.test.ts | 2026-10-03 | edited: the byte-order mark written as an escape |
 | src/features/archive/__tests__/aReturnedArchiveKeepsItsNotes.test.ts | 2026-10-02 | fresh viewing ids; notes follow their viewings; not-an-archive refused; undo keeps only what failed |
 | src/features/archive/__tests__/undoImport.test.ts | — |  |
 | src/features/archive/archiveImport.ts | 2026-10-03 | edited: each imported field cleaned by its own cap |
 | src/features/archive/importReceipt.ts | 2026-10-02 | read; sound |
 | src/features/archive/undoImport.ts | 2026-10-02 | a partial undo keeps only what failed |
-| src/features/profile/__tests__/aLinkSaysWhyBeforeItVanishes.test.tsx | 2026-10-01 | written: a link says why before it vanishes |
+| src/features/profile/__tests__/aLinkSaysWhyBeforeItVanishes.test.tsx | 2026-10-03 | edited: the override written as an escape |
 | src/features/profile/__tests__/linksEditor.test.tsx | — |  |
 | src/features/profile/__tests__/theDossierSealIsSpoken.test.tsx | — |  |
 | src/features/profile/__tests__/theEditDeskSaysWhatWentWrong.test.tsx | 2026-10-01 | written: the edit desk says what went wrong |
@@ -871,7 +871,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/dispatch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/stores/dispatchTypes.ts | 2026-10-02 | Read whole (launch audit): row shapes match the live schema (body NOT NULL DEFAULT '', so an ended filing parses). Sound; left alone. |
 | src/stores/domain/__tests__/aFilmAlreadyQueuedStaysQueued.test.ts | 2026-10-02 | a film already on the watchlist stays, and is said to be |
-| src/stores/domain/__tests__/aLogsWordsAreCleanedEverywhere.test.ts | 2026-10-03 | written whole: a log's words cleaned and capped by their own limits |
+| src/stores/domain/__tests__/aLogsWordsAreCleanedEverywhere.test.ts | 2026-10-03 | edited: its hidden characters built from code points |
 | src/stores/domain/__tests__/aShelfIsNeverHeldHostage.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/stores/domain/__tests__/aStackLosesOneFilmInOneWrite.test.ts | 2026-10-02 | a stack loses one film in one write |
 | src/stores/domain/__tests__/cursorPagination.test.ts | — |  |
@@ -915,7 +915,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/wordsAreSolid.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/theme/authStyles.ts | 2026-10-01 | comments short and true |
 | src/theme/brass.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/theme/faceAdvances.ts | 2026-10-02 | Written in the launch audit: generated; the one table of letter widths, header only. |
+| src/theme/faceAdvances.ts | 2026-10-03 | edited: the soft hyphen's key written as an escape |
 | src/theme/light.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/motion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/stamp.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -959,14 +959,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts | — |  |
 | src/utils/__tests__/feedInvalidation.guard.test.ts | — |  |
 | src/utils/__tests__/filterContentByBlocks.pbt.test.ts | — |  |
-| src/utils/__tests__/handleGuard.test.ts | — |  |
+| src/utils/__tests__/handleGuard.test.ts | 2026-10-03 | edited: the vectors written as escapes |
 | src/utils/__tests__/handleGuard.wiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/handleHistory.test.ts | — |  |
 | src/utils/__tests__/handleHistory.wiring.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.reader.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.test.ts | — |  |
 | src/utils/__tests__/html.test.ts | — |  |
-| src/utils/__tests__/inputTrustBoundary.test.ts | — |  |
+| src/utils/__tests__/inputTrustBoundary.test.ts | 2026-10-03 | edited: a pasted separator stays a break; hidden test characters written as escapes |
 | src/utils/__tests__/keysetCursor.test.ts | — |  |
 | src/utils/__tests__/logger.test.ts | — |  |
 | src/utils/__tests__/logScreenPolish.guard.test.ts | — |  |
@@ -978,7 +978,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
 | src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | edited: the replay's caps per field |
 | src/utils/__tests__/networkError.test.ts | — |  |
-| src/utils/__tests__/noControlCharacters.guard.test.ts | 2026-09-29 | extended: a \u eaten from a char class; red on the one damaged line, then green |
+| src/utils/__tests__/noControlCharacters.guard.test.ts | 2026-10-03 | read whole: raw bidi, invisible and separator characters refused in source too (Trojan Source) |
 | src/utils/__tests__/noMachinePaths.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/notificationColumns.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/offlineIsSaidOneWay.guard.test.ts | — |  |
@@ -994,7 +994,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | — |  |
 | src/utils/__tests__/roomFilters.test.ts | 2026-10-01 | written: one answer to is-this-room-narrowed |
-| src/utils/__tests__/sanitisationCallSites.test.ts | — |  |
+| src/utils/__tests__/sanitisationCallSites.test.ts | 2026-10-03 | edited: the hostile samples written as escapes |
 | src/utils/__tests__/sanitizeInput.test.ts | — |  |
 | src/utils/__tests__/schemaSnapshot.guard.test.ts | — |  |
 | src/utils/__tests__/searchFieldsDoNotAutocorrect.guard.test.ts | 2026-09-29 | new guard |
@@ -1039,7 +1039,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/memberDrafts.ts | 2026-10-02 | read; sound (drafts go to storage unencrypted on a keystore failure: a trade-off, listed) |
 | src/utils/memoryManager.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/utils/mutationExecutor.ts | 2026-10-03 | read whole: the replay cleans each field by its own cap; a shelf filing only adds |
+| src/utils/mutationExecutor.ts | 2026-10-03 | read whole: a queued log keeps its viewing id; a duplicate becomes a server rewatch (log_viewing_add) |
 | src/utils/networkError.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/noticeRoute.ts | 2026-10-02 | Read whole (launch audit). Follows groupRoute's one argument. |
 | src/utils/offlineQueue.ts | 2026-10-03 | read whole: its kind union matches the executor |
@@ -1050,14 +1050,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/reelToast.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/requestReview.ts | 2026-10-01 | never more than 3 in any 365 days, as it claimed |
 | src/utils/roomFilters.ts | 2026-10-01 | new |
-| src/utils/sanitizeInput.ts | 2026-10-03 | read whole: the caps of every field a member writes |
+| src/utils/sanitizeInput.ts | 2026-10-03 | read whole: U+2028/U+2029 kept as the breaks they are, not stripped |
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/utils/softBreak.ts | 2026-10-02 | Read whole (launch audit). Its blind cut could fall inside an emoji (a skin tone, a joined sequence): it waits for the next character to start. |
+| src/utils/softBreak.ts | 2026-10-03 | edited: the zero-width space written as an escape |
 | src/utils/standing.ts | 2026-10-02 | Written in the launch audit: the member's standing, read with the profile and on refusal. |
 | src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
-| src/utils/text.ts | 2026-10-02 | Read whole (launch audit). The drop cap on a phone (no Intl.Segmenter) took one code point, and truncateReview mended only a lone surrogate: both cut between characters now (isCharacterBoundary, shared with the sanitiser's cap and softBreak). |
+| src/utils/text.ts | 2026-10-03 | edited: the marks in its patterns written as escapes |
 | src/utils/tier.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/tierDoor.ts | 2026-10-01 | the server sentence as a door |
 | src/utils/tierRefusal.ts | 2026-10-01 | by the sentence, not the code |

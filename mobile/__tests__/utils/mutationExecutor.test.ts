@@ -43,6 +43,10 @@ const mockFileOnShelf = jest.fn(async () => ({ id: 'row', formats: [] }));
 jest.mock('../../src/services/ShelfService', () => ({
     fileOnShelf: (...args: unknown[]) => (mockFileOnShelf as (...a: unknown[]) => unknown)(...args),
 }));
+const mockAddViewing = jest.fn(async () => 'viewing');
+jest.mock('../../src/services/VaultService', () => ({
+    VaultService: { addViewing: (...args: unknown[]) => (mockAddViewing as (...a: unknown[]) => unknown)(...args) },
+}));
 jest.mock('../../src/services/InteractionService', () => ({
     InteractionService: { addEndorsement: (...args: unknown[]) => mockAddEndorsement(...args) },
 }));
@@ -339,18 +343,31 @@ describe('mutationExecutor', () => {
                 // Existing row was created on another device — DIFFERENT id
                 .mockResolvedValueOnce({ data: { id: 'log-OLD', user_id: 'u1', film_id: 42, view_count: 1, viewing_history: [] }, error: null });
 
+            mockAddViewing.mockClear();
             const result = await executeMutation(
-                makeQueuedMutation('add_log', { id: 'log-NEW', user_id: 'u1', film_id: 42, rating: 5 }),
+                makeQueuedMutation('add_log', { id: 'log-NEW', viewing_id: 'view-NEW', user_id: 'u1', film_id: 42, rating: 5, review: 'Again.' }),
                 {},
             );
 
-            // Rewatch merge: row is updated with an archived history entry + bumped count.
-            expect(mockChain.update).toHaveBeenCalledTimes(1);
-            const updatePayload = (mockChain.update as jest.Mock).mock.calls[0][0];
-            expect(updatePayload.view_count).toBe(2);
-            expect(Array.isArray(updatePayload.viewing_history)).toBe(true);
-            expect(updatePayload.viewing_history).toHaveLength(1);
+            // A rewatch, made by the server under the viewing id the device gave it — not a
+            // history built and written here (the row is never updated directly).
+            expect(mockChain.update).not.toHaveBeenCalled();
+            expect(mockAddViewing).toHaveBeenCalledWith('log-OLD', 'view-NEW', expect.objectContaining({ rating: 5, review: 'Again.' }));
+            const fields = (mockAddViewing.mock.calls[0] as unknown[])[2] as Record<string, unknown>;
+            expect(Object.keys(fields)).not.toEqual(expect.arrayContaining(['viewing_history']));
+            expect(fields).not.toHaveProperty('view_count');
+            expect(fields).not.toHaveProperty('id');
             expect(result).toEqual({});
+        });
+
+        it('a queued log keeps the viewing id the device gave it', async () => {
+            mockChain.maybeSingle.mockResolvedValueOnce({ data: { id: 'log-Q' }, error: null });
+            await executeMutation(
+                makeQueuedMutation('add_log', { id: 'log-Q', viewing_id: 'view-Q', user_id: 'u1', film_id: 7, rating: 4 }),
+                {},
+            );
+            const inserted = (mockChain.insert as jest.Mock).mock.calls.at(-1)![0][0];
+            expect(inserted).toEqual(expect.objectContaining({ id: 'log-Q', viewing_id: 'view-Q' }));
         });
     });
 });

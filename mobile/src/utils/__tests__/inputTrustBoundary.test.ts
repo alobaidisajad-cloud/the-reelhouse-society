@@ -19,12 +19,12 @@
 import { sanitizeInput, MAX_LENGTHS } from '../sanitizeInput';
 
 /** Bidi override + isolates + zero-width joiner + a C0 control, wrapped in real words. */
-const HOSTILE = 'Citizen‮⁦⁧Kane​\u0007⁩⁩';
+const HOSTILE = 'Citizen\u202E\u2066\u2067Kane\u200B\u0007\u2069\u2069';
 const CLEAN = 'CitizenKane';
 
 /** Every invisible codepoint the sanitiser is responsible for removing. */
-const INVISIBLES = ['​', '‌', '‍', '‎', '‏', '﻿', '­',
-  '⁦', '⁧', '⁨', '⁩', '‮', '\u0007'];
+const INVISIBLES = ['\u200B', '‌', '‍', '\u200E', '\u200F', '\uFEFF', '\u00AD',
+  '\u2066', '\u2067', '\u2068', '\u2069', '\u202E', '\u0007'];
 
 describe('the sanitiser removes the class that matters', () => {
   it('strips bidi controls, isolates, zero-width and control characters', () => {
@@ -44,6 +44,15 @@ describe('the sanitiser removes the class that matters', () => {
 
   it('preserves the newlines an essay depends on', () => {
     expect(sanitizeInput('one\n\ntwo', 'review')).toBe('one\n\ntwo');
+  });
+
+  it('keeps a pasted line or paragraph separator as the break it is', () => {
+    // U+2028 and U+2029 were stripped as if invisible, so "the ending.<LS>Then"
+    // was stored "the ending.Then" (five reviews in production carried them).
+    const LS = String.fromCharCode(0x2028);
+    const PS = String.fromCharCode(0x2029);
+    expect(sanitizeInput(`the ending.${LS}Then the credits.`, 'review')).toBe('the ending.\nThen the credits.');
+    expect(sanitizeInput(`One part.${PS}Another.`, 'review')).toBe('One part.\n\nAnother.');
   });
 });
 

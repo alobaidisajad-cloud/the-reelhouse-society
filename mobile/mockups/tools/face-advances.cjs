@@ -110,7 +110,7 @@ for (const [name, file] of FACES) {
   for (const ch of CHARS) {
     // A soft hyphen is drawn only where a line breaks at it; within a line it
     // takes no room, in any face, whether or not the face has a glyph for it.
-    if (ch === '­') { t[ch] = 0; continue; }
+    if (ch === '\u00AD') { t[ch] = 0; continue; }
     const gid = face.glyphOf(ch.codePointAt(0));
     if (gid === 0) continue; // the face does not draw it: the app measures it as the widest
     t[ch] = Math.round((face.advanceOf(gid) / face.unitsPerEm) * 1000) / 1000;
@@ -120,7 +120,8 @@ for (const [name, file] of FACES) {
 
 const block = (name, table) => {
   const widest = Math.max(...Object.values(table));
-  const rows = Object.entries(table).map(([ch, w]) => `  ${JSON.stringify(ch)}: ${w},`).join('\n');
+  // A hidden character is written as its escape: raw, it is invisible in review (noControlCharacters).
+  const rows = Object.entries(table).map(([ch, w]) => `  ${JSON.stringify(ch).replace(/[\u00AD\u200B-\u200F\u2028\u2029\u2060-\u2064\uFEFF]/g, (h) => '\\u' + h.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0'))}: ${w},`).join('\n');
   return `export const ${name}: Readonly<Record<string, number>> = {\n${rows}\n};\n/** A letter the table does not hold is measured as the widest it does. */\nexport const ${name}_WIDEST = ${widest};\n`;
 };
 const out = `/**

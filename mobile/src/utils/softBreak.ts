@@ -46,7 +46,7 @@ import { isCharacterBoundary } from './text';
  */
 export const MAX_RUN = 18;
 
-const ZWSP = '​';
+const ZWSP = '\u200B';
 
 /**
  * ── AND WHERE, INSIDE THAT RUN, THE BREAK SHOULD GO ─────────────────────────

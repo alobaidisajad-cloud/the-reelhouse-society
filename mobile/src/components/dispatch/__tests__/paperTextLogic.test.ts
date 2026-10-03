@@ -29,7 +29,7 @@ describe('softBreak — where a line may break', () => {
     // No zero-width joiners inside normal words: the whole point is that a
     // reader cannot tell it ran.
     const plain = 'Ozu frames a room and then leaves it.';
-    expect(softBreak(plain).replace(/[​­]/g, '')).toBe(plain);
+    expect(softBreak(plain).replace(/[\u200B\u00AD]/g, '')).toBe(plain);
   });
 
   it('gives a long unbroken run somewhere to break', () => {
@@ -39,7 +39,7 @@ describe('softBreak — where a line may break', () => {
     const out = softBreak(url);
     expect(out.length).toBeGreaterThan(url.length);
     // And nothing was lost doing it.
-    expect(out.replace(/[​­]/g, '')).toBe(url);
+    expect(out.replace(/[\u200B\u00AD]/g, '')).toBe(url);
   });
 
   /**
@@ -48,7 +48,7 @@ describe('softBreak — where a line may break', () => {
    * example came apart as `https://www.bfi.or` / `g.uk/news/…` — a URL split
    * through the middle of `org`, which reads as a typo rather than a link.
    */
-  const ZWSP = '​';
+  const ZWSP = '\u200B';
   const segmentsOf = (s: string) => softBreak(s).split(ZWSP);
 
   it('breaks a link at its joints', () => {
