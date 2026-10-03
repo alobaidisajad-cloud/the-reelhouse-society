@@ -44,7 +44,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/db-integration.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/e2e.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-01 | a route check added (the script claimed CI ran it); the story of each step reduced to what it guards; flow lint --strict (its warnings went unread) |
-| ../.github/workflows/load.yml | 2026-10-02 | Written in the launch audit: the load test's workflow: production's shape, sealed, filled with 100,000 members. |
+| ../.github/workflows/load.yml | 2026-10-03 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
 | .maestro/auth_deep_link.yaml | 2026-09-29 | header narrowed to what it proves |
@@ -139,7 +139,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/verify-writes.mjs | 2026-09-29 | true as written |
 | e2e/flow-screens.mjs | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
-| e2e/load/probe.mjs | 2026-10-03 | the paper and followers probes ask what the app asks; an over-budget read's plan rides in its annotation |
+| e2e/load/probe.mjs | 2026-10-03 | read whole: the paper in all four orders, critiques newest first, the following feed for a member of 2,000 follows; nested plans via auto_explain |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
 | e2e/run-flows.sh | 2026-10-01 | the keyboard's room added after the flows |
 | e2e/screen-times.mjs | 2026-10-02 | Written in the launch audit: each screen's time to its content, read from the E2E device log; a gate once ceilings are set. |

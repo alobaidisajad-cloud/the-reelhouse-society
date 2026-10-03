@@ -94,6 +94,10 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.interactions (user_id, target_user_id, type)
 SELECT pg_temp.mid(n), pg_temp.mid(2), 'follow' FROM generate_series(3, 100000) n WHERE n % 3 = 0
 ON CONFLICT DO NOTHING;
+-- And one member (4) who follows 2,000: the following feed is timed for them too.
+INSERT INTO public.interactions (user_id, target_user_id, type)
+SELECT pg_temp.mid(4), pg_temp.mid(n), 'follow' FROM generate_series(10, 2009) n
+ON CONFLICT DO NOTHING;
 
 -- ── endorsements: ~2,000,000 on logs with words ───────────────────────────────
 INSERT INTO public.interactions (user_id, target_log_id, type, created_at)

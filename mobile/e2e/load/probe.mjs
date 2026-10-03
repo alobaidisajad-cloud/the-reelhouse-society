@@ -14,7 +14,7 @@
  * Writes go to $GITHUB_STEP_SUMMARY when it is set. Run on the CI runner only:
  * it refuses any database but the runner's own.
  */
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 
 const DB = process.env.LOAD_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
@@ -40,6 +40,7 @@ const PROBES = [
   { screen: 'Reel', what: 'the house feed, first page', as: MEMBER, sql: 'SELECT * FROM public.get_community_feed_auth_cursor(40)' },
   { screen: 'Reel', what: 'the following feed, first page (follows ~25)', as: MEMBER, sql: 'SELECT * FROM public.get_following_feed_auth_cursor(40)' },
   { screen: 'Reel', what: 'the following feed, for a member who follows the celebrity', as: mid(3), sql: 'SELECT * FROM public.get_following_feed_auth_cursor(40)' },
+  { screen: 'Reel', what: 'the following feed, for a member who follows 2,000', as: mid(4), sql: 'SELECT * FROM public.get_following_feed_auth_cursor(40)' },
   { screen: 'Reel', what: 'stacks, first page', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('', false, 60)" },
   { screen: 'Reel', what: 'stacks, searched', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('stack 12', false, 60)" },
   // A member's file
@@ -70,6 +71,15 @@ const PROBES = [
   { screen: 'Dispatch', what: 'the paper, first page', as: MEMBER,
     // as the app's pageQuery asks it: published and not withheld (an ended ballot stays in the paper)
     sql: 'SELECT id, kind, author_username, title, body, certify_count, comment_count, created_at FROM public.dispatch_posts WHERE is_published AND withheld_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 30' },
+  // …and in its other orders: most certified, and one section (TAKES) in each.
+  { screen: 'Dispatch', what: 'the paper, most certified first', as: MEMBER,
+    sql: 'SELECT id, kind, author_username, title, body, certify_count, comment_count, created_at FROM public.dispatch_posts WHERE is_published AND withheld_at IS NULL ORDER BY certify_count DESC, id DESC LIMIT 30' },
+  { screen: 'Dispatch', what: 'one section of the paper, newest first', as: MEMBER,
+    sql: "SELECT id, kind, author_username, title, body, certify_count, comment_count, created_at FROM public.dispatch_posts WHERE is_published AND withheld_at IS NULL AND kind = 'take' ORDER BY created_at DESC, id DESC LIMIT 30" },
+  { screen: 'Dispatch', what: 'one section of the paper, most certified first', as: MEMBER,
+    sql: "SELECT id, kind, author_username, title, body, certify_count, comment_count, created_at FROM public.dispatch_posts WHERE is_published AND withheld_at IS NULL AND kind = 'take' ORDER BY certify_count DESC, id DESC LIMIT 30" },
+  { screen: 'Dispatch', what: 'the hot post\'s critiques, newest first', as: MEMBER,
+    sql: `SELECT id, author_username, body, certify_count, created_at FROM public.dispatch_comments WHERE post_id = '${HOT_POST}' ORDER BY created_at DESC LIMIT 30` },
   { screen: 'Dispatch', what: 'the hot post\'s critiques, most certified first', as: MEMBER,
     sql: `SELECT id, author_username, body, certify_count, created_at FROM public.dispatch_comments WHERE post_id = '${HOT_POST}' ORDER BY certify_count DESC, created_at DESC LIMIT 30` },
   // The Lounge
@@ -102,9 +112,17 @@ function time(p) {
   return times.sort((a, b) => a - b);
 }
 
+/**
+ * The plan of a read over budget. A function's call plans as one "Function
+ * Scan", which says nothing; auto_explain (when the role may load it) prints
+ * the plan of every statement the function runs, and those come first.
+ */
 function plan(p) {
-  const sql = `BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', '${claims(p.as)}', true);\nEXPLAIN (ANALYZE, BUFFERS) ${p.sql};\nROLLBACK;`;
-  try { return execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-c', sql], { encoding: 'utf8' }); } catch (e) { return String(e.stderr || e.message); }
+  const inner = "LOAD 'auto_explain'; SET auto_explain.log_min_duration = 0; SET auto_explain.log_analyze = on; SET auto_explain.log_buffers = on; SET auto_explain.log_nested_statements = on; SET client_min_messages = log;";
+  const sql = `${inner}\nBEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', '${claims(p.as)}', true);\nEXPLAIN (ANALYZE, BUFFERS) ${p.sql};\nROLLBACK;`;
+  const r = spawnSync('psql', [DB, '-X', '-q', '-t', '-A', '-c', sql], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const nested = (r.stderr || '').trim();
+  return [nested && `── inside the function (auto_explain) ──\n${nested}`, `── the call ──\n${r.stdout || ''}`].filter(Boolean).join('\n');
 }
 
 const rows = [];

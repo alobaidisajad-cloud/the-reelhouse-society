@@ -105,5 +105,30 @@ jobs:
           fi
           exit $rc
 
+      # A change waiting to be applied to production is measured here first, on
+      # the full house: in one transaction, as postgres (who owns production's
+      # objects), then vacuumed so its new index and table are read as they will be.
+      - name: Apply the change under measurement (e2e/load/proposed.sql)
+        run: |
+          if grep -qvE '^\s*(--.*)?$' mobile/e2e/load/proposed.sql; then
+            set +e
+            psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 --single-transaction \
+              -f mobile/e2e/load/proposed.sql > "$RUNNER_TEMP/proposed.log" 2>&1
+            rc=$?
+            cat "$RUNNER_TEMP/proposed.log"
+            if [ $rc -ne 0 ]; then
+              grep -nE 'ERROR|DETAIL|HINT|CONTEXT|LINE|psql:' "$RUNNER_TEMP/proposed.log" | tail -n 12 > "$RUNNER_TEMP/proposed-errors.txt"
+              node mobile/e2e/annotate.mjs "The proposed change failed to apply" "$RUNNER_TEMP/proposed-errors.txt"
+              exit $rc
+            fi
+            psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 -c 'VACUUM ANALYZE'
+          else
+            echo "no change under measurement"
+          fi
+
+      # As supabase_admin, so a read over budget can show the plan INSIDE a
+      # function as well as its call (auto_explain needs a superuser to load).
       - name: Time every busy screen's reads
+        env:
+          LOAD_DB_URL: postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres
         run: node mobile/e2e/load/probe.mjs
