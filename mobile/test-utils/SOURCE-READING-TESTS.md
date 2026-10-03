@@ -226,6 +226,5 @@ Decisions, as of 2026-09-28:
 | File | What it reads |
 |---|---|
 | `mockups/paper/__tests__/zz-paper.gen.test.tsx` | Poster art and fixture JSON for its drawings. |
-| `src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts` | The handle filter's word lists in the database migration and the live schema, and the website's copy of the rule: one rule in three places, which no render reaches. Behaviour: the same file's cases, and `a_handle_is_judged_by_its_words_rehearsal.sql` on production. |
 | `src/theme/__tests__/everyStyleIsRead.guard.test.ts` | Every key of every StyleSheet is read somewhere in the app: a style nobody draws renders nothing, so no render can find it. |
 | `src/components/__tests__/aComponentHasOneName.guard.test.ts` | Which module exports a component name: a fact about the code that no render shows. |
