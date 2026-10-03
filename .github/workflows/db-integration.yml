@@ -1,9 +1,11 @@
 name: DB Security Integration Tests
 
-# Runs the REAL database security tests (RLS + triggers) against a throwaway
-# Postgres that GitHub spins up for free — no paid Supabase branching, no test
-# project needed. Unlike the Jest suite (mocked Supabase), this exercises the
-# actual security rules.
+# Production's row rules, asked as visitors and members. The database is
+# production's shape, built from the committed snapshot (mobile/supabase/schema)
+# by mobile/e2e/db/bootstrap.mjs on a local Supabase stack, sealed from
+# production as the E2E world is, and checked against the snapshot; then
+# mobile/e2e/db/security.sql asks it what each may see and write. Nothing in the
+# test defines a rule, so a change to production's rules is what it tests.
 
 on:
   push:
@@ -22,22 +24,13 @@ on:
   schedule:
     - cron: '0 6 * * 1'
 
+permissions:
+  contents: read
+
 jobs:
   db-security:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    timeout-minutes: 25
     steps:
       - name: Fire drill — fail on purpose
         if: ${{ inputs.fire_drill }}
@@ -48,10 +41,45 @@ jobs:
       # Pinned to one commit (see god_tier_ci.yml).
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
-      - name: Run database security integration tests
-        env:
-          PGPASSWORD: postgres
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+
+      # The snapshot was taken with pg_dump 18 (see e2e.yml).
+      - name: Postgres 18 client tools
         run: |
-          psql -h localhost -U postgres -d postgres \
-            -v ON_ERROR_STOP=1 \
-            -f mobile/__tests__/integration/db_security.test.sql
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+
+      # Only the database, as load.yml. config.toml names sign-in-with-username,
+      # and the CLI checks what it names.
+      - name: Start the local database
+        run: |
+          cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          cd mobile/e2e && supabase start -x studio,imgproxy,logflare,vector,supavisor,postgres-meta,gotrue,realtime,storage-api,edge-runtime,kong,mailpit,postgrest
+
+      # The snapshot's push sender names production; bootstrap proves it cannot reach it.
+      - name: Seal it — production's host goes nowhere
+        run: bash mobile/e2e/db/seal.sh "DB security seal"
+
+      - name: Build production's shape from the snapshot
+        run: node mobile/e2e/db/bootstrap.mjs
+
+      - name: Fidelity — the copy must produce the same snapshot as production
+        env:
+          SNAPSHOT_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          SNAPSHOT_SAME_MAJOR: '1'
+        run: node mobile/scripts/schema-snapshot.mjs --check
+
+      # As supabase_admin: the house is laid down with triggers off, and each case
+      # is asked as anon or authenticated.
+      - name: Production's row rules, asked as visitors and members
+        run: |
+          psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" \
+            -X -q -v ON_ERROR_STOP=1 -f mobile/e2e/db/security.sql

@@ -24,10 +24,13 @@
  *   MOCKUPS=1 MOCKUPS_YOGA=1 npx jest "zz-.*\.gen"       (draw with the styles on)
  *   node mockups/tools/yoga-parity.cjs [--src DIR] [--only a,b] [--width 390]
  *        [--factor 1.35 --platform ios|android] [--tolerance 1] [--why] [--all] [--show N]
- *   exits 1 when any box differs by more than the tolerance (points).
+ *   exits 1 when any box differs by more than the tolerance (points), and 2 when
+ *   it compared nothing: no screen, an --only name with no file, or a screen with
+ *   no box to compare (drawn without MOCKUPS_YOGA=1, so no box carries `data-rn`).
  *   --why   where each size difference BEGINS, with its children and ancestors
  *   --all   every differing box, not only the outermost of each group
  */
+const fs = require('fs');
 const path = require('path');
 const { chromium, open, screens, MOBILE, WIDTH } = require('./harness.cjs');
 
@@ -174,10 +177,18 @@ function readTree() {
     return { n, d, moved, kids };
   };
 
+  // A check that compared nothing has proved nothing.
+  const refuse = (why) => { console.error(`✗ ${why}`); process.exit(2); };
+  const absent = (ONLY || []).filter((n) => !fs.existsSync(path.join(SRC, `${n}.html`)));
+  if (absent.length) refuse(`--only names no screen in ${SRC}: ${absent.join(', ')}`);
+  const names = screens(SRC, ONLY);
+  if (!names.length) refuse(`no screen to compare in ${SRC}`);
+
   const browser = await chromium.launch();
   let total = 0, compared = 0;
   const report = [];
-  for (const screen of screens(SRC, ONLY)) {
+  const empty = [];
+  for (const screen of names) {
     const page = await open(browser, path.join(SRC, screen + '.html'), { width: PHONE_W, factor: FACTOR, platform: PLATFORM });
     const tree = await page.evaluate(readTree);
     await page.close();
@@ -284,7 +295,8 @@ function readTree() {
     root.freeRecursive();
     total += off.length;
     report.push({ screen, off });
-    console.log(`${screen.padEnd(40)} ${off.length ? `${off.length} box(es) apart` : 'agrees'}   (${boxes} boxes)`);
+    if (!boxes) empty.push(screen);
+    console.log(`${screen.padEnd(40)} ${off.length ? `${off.length} box(es) apart` : boxes ? 'agrees' : 'COMPARED NO BOX'}   (${boxes} boxes)`);
     const f = (v) => (v >= 0 ? '+' : '') + v.toFixed(1);
     const shown = [...off.filter((x) => args.includes('--all') || !x.inherited), ...notes];
     for (const o of shown.slice(0, SHOW)) {
@@ -297,5 +309,8 @@ function readTree() {
   }
   await browser.close();
   console.log(total ? `\n${total} box(es) placed differently by the browser and by Yoga (of ${compared} compared)` : `\nALL ${compared} BOXES AGREE with Yoga`);
+  if (empty.length) {
+    refuse(`${empty.length} screen(s) compared no box — drawn without MOCKUPS_YOGA=1, no box carries data-rn: ${empty.slice(0, 12).join(', ')}${empty.length > 12 ? ', …' : ''}`);
+  }
   process.exit(total ? 1 : 0);
 })();

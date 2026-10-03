@@ -19,6 +19,7 @@ on:
       - 'supabase/migrations/**'
       - 'mobile/e2e/load/**'
       - 'mobile/e2e/db/bootstrap.mjs'
+      - 'mobile/e2e/db/seal.sh'
       - '.github/workflows/load.yml'
   schedule:
     - cron: '0 7 * * 1'
@@ -65,22 +66,7 @@ jobs:
       # As e2e.yml: production's addresses rejected for every container, its name
       # pointed nowhere; bootstrap then proves the database cannot reach it.
       - name: Seal it — production's host goes nowhere
-        run: |
-          HOST=$(node -e "console.log(new URL(require('./mobile/eas.json').build.production.env.EXPO_PUBLIC_SUPABASE_URL).hostname)")
-          echo "E2E_PROD_HOST=$HOST" >> "$GITHUB_ENV"
-          V4=$(getent ahostsv4 "$HOST" | awk '{print $1}' | sort -u)
-          V6=$(getent ahostsv6 "$HOST" | awk '{print $1}' | grep ':' | sort -u || true)
-          [ -n "$V4" ] || { echo "::error title=Load seal::could not resolve $HOST to seal it"; exit 1; }
-          for ip in $V4; do sudo iptables -I DOCKER-USER -d "$ip" -j REJECT; done
-          for ip in $V6; do sudo ip6tables -I DOCKER-USER -d "$ip" -j REJECT 2>/dev/null || true; done
-          echo "E2E_PROD_IPS=$(echo $V4 | tr ' ' ',')" >> "$GITHUB_ENV"
-          echo "0.0.0.0 $HOST" | sudo tee -a /etc/hosts > /dev/null
-          for c in $(docker ps --format '{{.Names}}' | grep reelhouse-e2e); do
-            docker exec -u root "$c" sh -c "echo '0.0.0.0 $HOST' >> /etc/hosts" 2>/dev/null || true
-          done
-          if curl -sS -m 5 -o /dev/null "https://$HOST"; then
-            echo "::error title=Load seal::the runner can still reach $HOST by name"; exit 1
-          fi
+        run: bash mobile/e2e/db/seal.sh "Load seal"
 
       - name: Build production's shape from the snapshot
         run: node mobile/e2e/db/bootstrap.mjs

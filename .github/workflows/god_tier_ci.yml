@@ -23,6 +23,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Read only: every package install runs with this token, and no step writes back
+# (annotations are workflow commands, which need no permission).
+permissions:
+  contents: read
+
 # ── NODE 24, EVERY JOB: the version the code is written on. Versions disagree
 # (Node 20's TextDecoder reads windows-1252 as ISO-8859-1, and the encoding guard
 # everyFileSurvivedTheShell depends on it).

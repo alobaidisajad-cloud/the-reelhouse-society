@@ -48,7 +48,8 @@
  *   node mockups/tools/layout.cjs [--src DIR] [--only a,b] [--skip c,d]
  *     [--passes ios@1,android@2] [--width 360] [--kinds STEAL,NAMELESS] [--shorts]
  *     [--json OUT] [--sites OUT] [--require FILE] [--allow FILE] [--allow-short FILE]
- *   exits 1 when anything is found.
+ *   exits 1 when anything is found, and 2 when there is nothing to measure: no
+ *   screen, or an --only name with no file.
  */
 const fs = require('fs');
 const path = require('path');
@@ -503,10 +504,17 @@ async function audit(page) {
 }
 
 (async () => {
+  // A check that measured nothing has proved nothing.
+  const refuse = (why) => { console.error(`✗ ${why}`); process.exit(2); };
+  const absent = (ONLY || []).filter((n) => !fs.existsSync(path.join(SRC, `${n}.html`)));
+  if (absent.length) refuse(`--only names no screen in ${SRC}: ${absent.join(', ')}`);
+  const names = screens(SRC, ONLY).filter((n) => !SKIP.includes(n));
+  if (!names.length) refuse(`no screen to measure in ${SRC}`);
+
   const browser = await chromium.launch();
   const report = {};
   let faults = 0;
-  for (const name of screens(SRC, ONLY).filter((n) => !SKIP.includes(n))) {
+  for (const name of names) {
     for (const { platform, f } of PASSES) {
       const page = await open(browser, path.join(SRC, name + '.html'), { factor: f, platform, width: PHONE_W });
       // The whole page in view, so "which text is on top here" can be asked

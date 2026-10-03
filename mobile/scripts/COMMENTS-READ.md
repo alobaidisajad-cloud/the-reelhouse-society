@@ -41,7 +41,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/utils/offlineQueue.test.ts | 2026-10-03 | edited: the kind list matches the queue's union |
 | ../.github/workflows/ci-alert.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
-| ../.github/workflows/db-integration.yml | 2026-09-29 | history reduced to the rule each step keeps |
+| ../.github/workflows/db-integration.yml | 2026-10-03 | rebuilt in the tooling audit: production's shape from the snapshot, then e2e/db/security.sql; the copy of production's rules it tested is gone |
 | ../.github/workflows/e2e.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-01 | a route check added (the script claimed CI ran it); the story of each step reduced to what it guards; flow lint --strict (its warnings went unread) |
 | ../.github/workflows/load.yml | 2026-10-03 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans |
@@ -134,6 +134,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/screenTimes.test.ts | 2026-10-02 | Written in the launch audit: the screen-time reader on threadtime log lines, and every way its gate says no. |
 | e2e/annotate.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/db/bootstrap.mjs | 2026-09-28 | 7 findings; stale function count and 'how this was found' asides dropped |
+| e2e/db/seal.sh | 2026-10-03 | Written in the tooling audit: the seal e2e.yml and load.yml each carried, in one place for three workflows. |
 | e2e/db/seed.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |

@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch: # Manual trigger only — no more email spam on every push
 
+# Read only: every package install runs with this token.
+permissions:
+  contents: read
+
 jobs:
   lighthouse:
     name: Lighthouse Audit

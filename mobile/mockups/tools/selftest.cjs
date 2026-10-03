@@ -283,11 +283,11 @@ if (!noneOk) bad++;
 console.log(`${noneOk ? 'ok  ' : 'FAIL'}  allow-none   CUT           want a refused pattern  got exit ${none.status}`);
 fs.rmSync(SH, { recursive: true, force: true });
 fs.rmSync(srcDir, { recursive: true, force: true });
-// Not asked for by name: SMALL is not reported at all.
+// Not asked for by name: SMALL is not reported at all — on a screen that WAS measured.
 const quiet = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', XDIR, '--passes', 'ios@1', '--only', 'small'], { encoding: 'utf8' });
-const quietOk = !/SMALL/.test(quiet.stdout);
+const quietOk = quiet.status === 0 && /^small\s+×1\s+clean/m.test(quiet.stdout) && !/SMALL/.test(quiet.stdout);
 if (!quietOk) bad++;
-console.log(`${quietOk ? 'ok  ' : 'FAIL'}  small-quiet  default kinds  want no SMALL  got ${quietOk ? 'none' : 'SMALL'}`);
+console.log(`${quietOk ? 'ok  ' : 'FAIL'}  small-quiet  default kinds  want exit 0, "small ×1 clean", no SMALL  got exit ${quiet.status}${/SMALL/.test(quiet.stdout) ? ', SMALL' : ''}`);
 fs.rmSync(XDIR, { recursive: true, force: true });
 
 // yoga-parity.cjs: NO to a box drawn wrong, nothing to a right one, and RN's own
@@ -319,6 +319,26 @@ for (const [name, [, want]] of Object.entries(YCASES)) {
   console.log(`${ok ? 'ok  ' : 'FAIL'}  ${name.padEnd(12)} yoga-parity   want ${want ? 'apart' : 'agrees'}  got ${r.status === 0 ? 'agrees' : r.status === 1 ? 'apart' : `exit ${r.status}: ${(r.stderr || '').trim().slice(0, 200)}`}`);
 }
 fs.rmSync(YDIR, { recursive: true, force: true });
+
+// Both tools refuse to pass on nothing: no screen, an --only name with no file, and
+// (yoga-parity) a screen drawn without MOCKUPS_YOGA=1, which has no box to compare.
+const RDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'refuse-selftest-'));
+const EDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'refuse-empty-'));
+fs.writeFileSync(path.join(RDIR, 'plain.html'), box('padding:20px', T('font-size:12px;line-height:16px', 'Ozu frames a room and then leaves it.')));
+for (const [label, tool, args, want] of [
+  ['layout-empty', 'layout.cjs', ['--src', EDIR], /no screen to measure/],
+  ['layout-only', 'layout.cjs', ['--src', RDIR, '--only', 'plain,missing'], /--only names no screen .*: missing$/m],
+  ['yoga-empty', 'yoga-parity.cjs', ['--src', EDIR], /no screen to compare/],
+  ['yoga-only', 'yoga-parity.cjs', ['--src', RDIR, '--only', 'missing'], /--only names no screen .*: missing$/m],
+  ['yoga-nobox', 'yoga-parity.cjs', ['--src', RDIR], /1 screen\(s\) compared no box .*: plain$/m],
+]) {
+  const r = spawnSync(process.execPath, [path.join(__dirname, tool), ...args, '--passes', 'ios@1'], { encoding: 'utf8' });
+  const ok = r.status === 2 && want.test(r.stderr);
+  if (!ok) bad++;
+  console.log(`${ok ? 'ok  ' : 'FAIL'}  ${label.padEnd(12)} refuses       want exit 2 ${want}  got exit ${r.status}: ${(r.stderr || '').trim().slice(0, 120)}`);
+}
+fs.rmSync(RDIR, { recursive: true, force: true });
+fs.rmSync(EDIR, { recursive: true, force: true });
 
 console.log(bad ? `\n${bad} wrong — the tools cannot be trusted` : '\nthe tools say NO to every fault they exist to catch, and nothing to a clean page');
 process.exit(bad ? 1 : 0);
