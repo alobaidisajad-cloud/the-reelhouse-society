@@ -230,8 +230,20 @@ $$;
 -- Stacks: the page is chosen from lists alone, walking their newest-first
 -- index, and only its rows are dressed; before, every public stack was joined
 -- to its author and tested for hiding before the sort could start.
+--
+-- A SEARCH walked thousands of stacks to find sixty, and each paid the row
+-- policy (can_view_user_data, a function call) before the cheap test of its
+-- title could turn it away. DEFINER, so the title and the handle are asked
+-- first and the reader's right to see the author only of what matched — the
+-- very rule lists_select_authorized applies to a public stack. The handles
+-- that match are found once (an indexed set), not per stack; and trigram
+-- indexes find a rare title or handle without walking the shelf at all.
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
+CREATE INDEX lists_title_trigram ON public.lists USING gin (title extensions.gin_trgm_ops) WHERE is_private = false;
+CREATE INDEX profiles_username_trigram ON public.profiles USING gin (username extensions.gin_trgm_ops);
+
 CREATE OR REPLACE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT ''::text, p_filter_following boolean DEFAULT false, p_limit integer DEFAULT 60, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid, p_poster_count integer DEFAULT 4) RETURNS TABLE(id uuid, title text, description text, username text, user_id uuid, created_at timestamp with time zone, films jsonb, film_count bigint, certify_count bigint, is_ranked boolean)
-    LANGUAGE sql STABLE
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
   WITH page AS (
@@ -242,12 +254,12 @@ CREATE OR REPLACE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search te
        AND (
          COALESCE(p_search, '') = ''
          OR l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-         OR EXISTS (
-           SELECT 1 FROM profiles pu
-            WHERE pu.id = l.user_id
-              AND pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+         OR l.user_id IN (
+           SELECT pu.id FROM profiles pu
+            WHERE pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
          )
        )
+       AND public.can_view_user_data(l.user_id)
        AND (
          p_filter_following = false
          OR EXISTS (
