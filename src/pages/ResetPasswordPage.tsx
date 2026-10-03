@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
 import { Lock, Eye, EyeOff, Check, Circle, ArrowLeft } from 'lucide-react'
 import reelToast from '../utils/reelToast'
+import { initAuthSync } from '../store'
 import PageSEO from '../components/PageSEO'
 
 export default function ResetPasswordPage() {
@@ -39,12 +40,12 @@ export default function ResetPasswordPage() {
             // Clear recovery mode so the auth listener can properly sign the user in
             sessionStorage.removeItem('reelhouse_recovery')
             reelToast.success('Password updated successfully!')
-            // Re-trigger auth so the user gets properly logged in with their new password
-            const { data: { session } } = await supabase.auth.getSession()
-            if (session) {
-                // Force a re-auth by refreshing the session
-                await supabase.auth.refreshSession()
-            }
+            // Recovery is over, so the session it opened is the member's own. The sign-in
+            // listener is started again: it is handed that session at once and signs the
+            // member in, profile and all, as on any page load. (A refreshed session was
+            // asked for here before, which the listener does not act on, so the member
+            // arrived signed out until a reload.)
+            initAuthSync()
             setTimeout(() => navigate('/'), 2500)
         } catch (err: any) {
             reelToast.error(err.message || 'Failed to reset password.')

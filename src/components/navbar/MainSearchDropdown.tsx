@@ -10,6 +10,7 @@ export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolea
     const [query, setQuery] = useState('')
     const [suggestions, setSuggestions] = useState<any[]>([])
     const [searching, setSearching] = useState(false)
+    const [searchFailed, setSearchFailed] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
@@ -33,8 +34,11 @@ export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolea
             try {
                 const results = await tmdb.searchMulti(query)
                 setSuggestions(results || [])
+                setSearchFailed(false)
             } catch {
-                setSuggestions([]) // Network failure — show empty results, fail silently
+                // A search that could not run is said so, never "no results".
+                setSuggestions([])
+                setSearchFailed(true)
             } finally {
                 setSearching(false)
             }
@@ -99,7 +103,7 @@ export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolea
                                 )}
                                 {!searching && suggestions.length === 0 && query.trim() && (
                                     <div style={{ padding: '1rem 1.25rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>
-                                        NO RESULTS FOUND IN THE ARCHIVE
+                                        {searchFailed ? 'THE ARCHIVE COULD NOT BE SEARCHED. TRY AGAIN.' : 'NO RESULTS FOUND IN THE ARCHIVE'}
                                     </div>
                                 )}
                                 {!searching && suggestions.map((item: any) => {

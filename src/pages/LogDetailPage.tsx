@@ -32,13 +32,16 @@ export default function LogDetailPage() {
                     profiles!logs_user_id_fkey ( username, role, public_prefs )
                 `)
                 .eq('id', logId)
-                .single()
+                .maybeSingle()
 
-            if (error || !data) throw new Error('Dossier not found.')
+            // A failed read says "try again"; only a log that is not there says "not found".
+            if (error) throw error
+            if (!data) { setLog(null); return }
 
             // Need to get endorsement count efficiently
-            const { count } = await supabase.from('interactions').select('id', { count: 'exact', head: true })
+            const { count, error: countError } = await supabase.from('interactions').select('id', { count: 'exact', head: true })
                 .eq('target_log_id', logId).eq('type', 'endorse_log')
+            if (countError) console.error('Error counting endorsements:', countError)
 
             const profileData: any = data.profiles
 
@@ -70,7 +73,8 @@ export default function LogDetailPage() {
                 editorialHeader: data.editorial_header || null,
                 isSpoiler: data.is_spoiler || false,
                 timestamp: new Date(data.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase(),
-                endorsementCount: count || 0,
+                // A count that could not be read is left unknown, never 0.
+                endorsementCount: countError ? undefined : count || 0,
                 isAutopsied: data.is_autopsied,
                 autopsy: data.autopsy,
                 viewingHistory: (() => {
@@ -112,10 +116,18 @@ export default function LogDetailPage() {
                 <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(139,105,20,0.2)', display: 'flex', alignItems: 'center', position: 'sticky', top: 0, background: 'rgba(10,7,3,0.9)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
                     <button onClick={() => navigate(-1)} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--fog)' }}><ArrowLeft size={18} /></button>
                 </div>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', padding: '2rem', textAlign: 'center' }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.15em', color: 'var(--blood-reel)' }}>SIGNAL LOST</div>
-                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)' }}>This transmission could not be deciphered or has been scrubbed from the archive.</p>
-                </div>
+                {error ? (
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', padding: '2rem', textAlign: 'center' }}>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.15em', color: 'var(--blood-reel)' }}>SIGNAL LOST</div>
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)' }}>This transmission could not be loaded. Check your connection and try again.</p>
+                        <button onClick={() => fetchLog()} className="btn btn-ghost">TRY AGAIN</button>
+                    </div>
+                ) : (
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', padding: '2rem', textAlign: 'center' }}>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.15em', color: 'var(--blood-reel)' }}>NOT IN THE ARCHIVE</div>
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)' }}>This transmission could not be found. It may have been removed.</p>
+                    </div>
+                )}
             </div>
         )
     }

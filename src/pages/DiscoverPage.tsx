@@ -298,15 +298,18 @@ export default function DiscoverPage() {
             try {
                 const raw = await tmdb.searchMulti(inputVal.trim())
                 setSuggestions(raw)
-            } catch { }
+            } catch { setSuggestions([]) } // never the last word's suggestions; the full search says it failed
         }, 200)
         return () => clearTimeout(id)
     }, [inputVal])
 
-    const { data: searchResults, isLoading: searchLoading, isFetching: searchFetching } = useQuery({
+    // tmdb.search already asks again before it gives up: a second layer of retries
+    // only kept the member waiting longer for the same answer.
+    const { data: searchResults, isLoading: searchLoading, isFetching: searchFetching, isError: searchIsError, refetch: searchAgain } = useQuery({
         queryKey: ['search', query, page],
         queryFn: () => tmdb.search(query, page),
         enabled: !!query,
+        retry: false,
     })
 
     const { data: discoverResults, isLoading: discoverLoading, isFetching: discoverFetching } = useQuery({
@@ -333,6 +336,8 @@ export default function DiscoverPage() {
     const currentResults = isSearching ? searchResults : discoverResults
     const isLoading = (isSearching ? searchLoading : discoverLoading) && accumulatedFilms.length === 0
     const isFetching = isSearching ? searchFetching : discoverFetching
+    // A search that could not run: said so, never "no titles match" or the films shown before it.
+    const searchFailed = isSearching && searchIsError && page === 1
 
     useEffect(() => {
         if (currentResults?.results) {
@@ -361,7 +366,9 @@ export default function DiscoverPage() {
     const sectionLabel = isSearching
         ? (searchResults?.searchType === 'person' ? `ARTIST DOSSIER: ${searchResults.matchedContext?.toUpperCase()}` : `ARCHIVE SEARCH: "${query.toUpperCase()}"`)
         : mood ? `MOOD: ${mood.label.toUpperCase()}` : 'THE ARCHIVE STACKS'
-    const sectionTitle = isSearching
+    const sectionTitle = searchFailed
+        ? 'The Search Could Not Be Run'
+        : isSearching
         ? `${searchResults?.total_results || accumulatedFilms.length || 0} Matches Found`
         : mood ? mood.sub : 'Discover Titles'
 
@@ -541,7 +548,13 @@ export default function DiscoverPage() {
                     <SectionHeader label={String(sectionLabel)} title={sectionTitle} />
 
                     {/* ── FILM GRID ── */}
-                    {isLoading && accumulatedFilms.length === 0 ? (
+                    {searchFailed ? (
+                        <div style={{ padding: '3rem 1.5rem', textAlign: 'center', background: 'rgba(18,14,9,0.6)', border: '1px solid rgba(139,105,20,0.12)', borderLeft: '2px solid rgba(139,105,20,0.3)', borderRadius: '0 6px 6px 0', position: 'relative', overflow: 'hidden', maxWidth: 600, margin: '2rem auto' }}>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.6, marginBottom: '0.75rem' }}>SIGNAL LOST</div>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', opacity: 0.65, marginBottom: '0.4rem' }}>The archive could not be searched.</div>
+                            <button type="button" className="btn btn-ghost" style={{ marginTop: '1rem' }} onClick={() => { void searchAgain() }}>TRY AGAIN</button>
+                        </div>
+                    ) : isLoading && accumulatedFilms.length === 0 ? (
                         <LoadingReel />
                     ) : (
                         <>

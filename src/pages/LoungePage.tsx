@@ -142,6 +142,8 @@ function JoinedLoungeCard({ lounge, unread }: { lounge: any; unread: number }) {
     const navigate = useNavigate()
     const coverUrl = lounge.cover_image ? tmdb.backdrop(lounge.cover_image, 'w300') : null
     const [showInfo, setShowInfo] = useState(false)
+    // A request still with the host is not a room the member is in (the app's AWAITING seal)
+    const isAwaiting = lounge.membership_status === 'pending'
 
     const handleInfoClick = (e: React.MouseEvent) => {
         e.stopPropagation()
@@ -155,6 +157,7 @@ function JoinedLoungeCard({ lounge, unread }: { lounge: any; unread: number }) {
                 onClick={() => navigate(`/lounge/${lounge.id}`)}
                 role="button"
                 tabIndex={0}
+                aria-label={isAwaiting ? `${lounge.name}, awaiting the host` : undefined}
             >
                 {coverUrl && <img src={coverUrl} alt="" className="lounge-card-cover" loading="lazy" decoding="async" />}
 
@@ -162,13 +165,16 @@ function JoinedLoungeCard({ lounge, unread }: { lounge: any; unread: number }) {
                     <Info size={14} />
                 </button>
 
-                {unread > 0 && (
+                {unread > 0 && !isAwaiting && (
                     <div className="lounge-unread-badge">{unread > 99 ? '99+' : unread}</div>
                 )}
 
                 <div className="lounge-card-content">
                     <div className="lounge-card-name">{lounge.name}</div>
-                    {lounge.last_message && (
+                    {isAwaiting && (
+                        <div className="lounge-card-meta">AWAITING THE HOST</div>
+                    )}
+                    {!isAwaiting && lounge.last_message && (
                         <div className="lounge-card-preview">
                             <strong>{lounge.last_message.username}:</strong> {lounge.last_message.content}
                         </div>
@@ -292,7 +298,7 @@ function PublicLoungeCard({ lounge }: { lounge: any }) {
 export default function LoungePage() {
     const user = useAuthStore(s => s.user)
     const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-    const { myLounges, publicLounges, unreadCounts, fetchMyLounges, fetchPublicLounges, fetchUnreadCounts, searchQuery, setSearchQuery } = useLoungeStore()
+    const { myLounges, publicLounges, unreadCounts, fetchMyLounges, fetchPublicLounges, fetchUnreadCounts, searchQuery, setSearchQuery, myLoungesFailed, publicLoungesFailed } = useLoungeStore()
     const [showCreate, setShowCreate] = useState(false)
 
     const isArchivist = isArchivistPlusTier(user)
@@ -400,7 +406,17 @@ export default function LoungePage() {
                     </section>
                 )}
 
-                {myLounges.length === 0 && !searchQuery && (
+                {/* A list that could not be read is unknown, not empty */}
+                {myLounges.length === 0 && myLoungesFailed && (
+                    <div className="lounge-empty" style={{ marginBottom: '3rem' }}>
+                        <div className="lounge-empty-text">
+                            Your lounges could not be loaded.
+                        </div>
+                        <button className="btn btn-ghost" onClick={() => fetchMyLounges()}>TRY AGAIN</button>
+                    </div>
+                )}
+
+                {myLounges.length === 0 && !myLoungesFailed && !searchQuery && (
                     <div className="lounge-empty" style={{ marginBottom: '3rem' }}>
                         <div className="lounge-empty-icon"><MessageCircle size={48} strokeWidth={1} /></div>
                         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>
@@ -426,6 +442,13 @@ export default function LoungePage() {
                                     lounge={lounge}
                                 />
                             ))}
+                        </div>
+                    ) : publicLounges.length === 0 && publicLoungesFailed ? (
+                        <div className="lounge-empty">
+                            <div className="lounge-empty-text">
+                                Public salons could not be loaded.
+                            </div>
+                            <button className="btn btn-ghost" onClick={() => fetchPublicLounges()}>TRY AGAIN</button>
                         </div>
                     ) : (
                         <div className="lounge-empty">

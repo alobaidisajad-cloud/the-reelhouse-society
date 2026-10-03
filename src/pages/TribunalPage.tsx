@@ -22,7 +22,7 @@ export default function TribunalPage() {
     const isAdmin = user?.id === ADMIN_ID
 
     // ── Fetch reports ──
-    const { data: reports = [], isLoading } = useQuery({
+    const { data: reports = [], isLoading, isLoadingError, refetch } = useQuery({
         queryKey: ['tribunal-reports', filter],
         queryFn: async () => {
             let q = supabase.from('reports').select('*').order('created_at', { ascending: false })
@@ -35,7 +35,8 @@ export default function TribunalPage() {
             const reporterIds = [...new Set((data || []).map((r: any) => r.reporter_id).filter(Boolean))]
             let reporterMap: Record<string, string> = {}
             if (reporterIds.length > 0) {
-                const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', reporterIds)
+                const { data: profiles, error: profilesError } = await supabase.from('profiles').select('id, username').in('id', reporterIds)
+                if (profilesError) throw profilesError
                 reporterMap = Object.fromEntries((profiles || []).map((p: any) => [p.id, p.username]))
             }
 
@@ -245,6 +246,24 @@ export default function TribunalPage() {
                         <div className="shimmer" style={{ height: 60, borderRadius: '3px', marginBottom: '1rem' }} />
                         <div className="shimmer" style={{ height: 60, borderRadius: '3px', marginBottom: '1rem' }} />
                         <div className="shimmer" style={{ height: 60, borderRadius: '3px' }} />
+                    </div>
+                ) : isLoadingError ? (
+                    // A docket that could not be read is never "All Clear".
+                    <div style={{
+                        padding: '4rem 2rem',
+                        textAlign: 'center',
+                        background: 'rgba(22,18,12,0.4)',
+                        border: '1px dashed rgba(139,105,20,0.2)',
+                        borderRadius: '3px',
+                    }}>
+                        <AlertTriangle size={40} style={{ color: 'var(--sepia)', marginBottom: '1rem' }} />
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>
+                            Could Not Load
+                        </div>
+                        <div style={{ fontFamily: 'var(--font-sub)', color: 'var(--fog)' }}>
+                            The reports could not be loaded. Check your connection and try again.
+                        </div>
+                        <button onClick={() => refetch()} className="btn btn-ghost" style={{ marginTop: '1.5rem' }}>TRY AGAIN</button>
                     </div>
                 ) : reports.length === 0 ? (
                     <div style={{

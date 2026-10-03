@@ -86,7 +86,7 @@ export default function LogModalSearch({ query, searching, results, searchType, 
 
             {!searching && query && results.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--fog)', fontFamily: 'var(--font-sub)', fontSize: '0.85rem' }}>
-                    No films found for "{query}"
+                    {searchType === 'unreached' ? 'The archive could not be searched just now. Try again.' : `No films found for "${query}"`}
                 </div>
             )}
         </div>

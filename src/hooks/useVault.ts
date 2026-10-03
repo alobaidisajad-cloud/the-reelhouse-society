@@ -64,6 +64,7 @@ export function useLogVault(logId: string | null | undefined, isOwner: boolean) 
 export function useLogNote(editLogId: string | null | undefined) {
     const storeViewing = useFilmStore(s => (editLogId ? s.logs.find(l => l.id === editLogId)?.viewingId ?? null : null))
     const [fetchedViewing, setFetchedViewing] = useState<string | null>(null)
+    const [viewingUnread, setViewingUnread] = useState(false)
     const loadForLog = useVaultStore(s => s.loadForLog)
     const loaded = useVaultStore(s => (editLogId ? s.loaded[editLogId] === true : false))
     const unreachable = useVaultStore(s => (editLogId ? s.unreachable[editLogId] === true : false))
@@ -78,17 +79,21 @@ export function useLogNote(editLogId: string | null | undefined) {
     // A log cached before viewings had names does not know its own; ask once.
     useEffect(() => {
         setFetchedViewing(null)
+        setViewingUnread(false)
         if (!editLogId || storeViewing) return
         let live = true
-        void supabase.from('logs').select('viewing_id').eq('id', editLogId).maybeSingle().then(({ data }) => {
-            if (live) setFetchedViewing((data as { viewing_id?: string } | null)?.viewing_id ?? null)
+        // Unread, the field stays shut and says so: never a box with no viewing to keep it.
+        void supabase.from('logs').select('viewing_id').eq('id', editLogId).maybeSingle().then(({ data, error }) => {
+            if (!live) return
+            if (error) setViewingUnread(true)
+            else setFetchedViewing((data as { viewing_id?: string } | null)?.viewing_id ?? null)
         })
         return () => { live = false }
     }, [editLogId, storeViewing])
 
     return {
         ready: !editLogId || (loaded && !!viewingId),
-        unreachable: !!editLogId && unreachable && !loaded,
+        unreachable: !!editLogId && ((unreachable && !loaded) || (viewingUnread && !viewingId)),
         note,
         viewingId,
     }

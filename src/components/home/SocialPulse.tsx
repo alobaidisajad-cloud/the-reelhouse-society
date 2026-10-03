@@ -15,10 +15,11 @@ const SocialPulse = memo(function SocialPulse() {
     const { isTouch: IS_TOUCH } = useViewport()
 
     // ── Real community logs from Supabase — not local store ──
-    const { data: communityLogs = [] } = useQuery({
+    // isPending, not isLoading: a read paused offline has not answered either.
+    const { data: communityLogs = [], isError, isPending } = useQuery({
         queryKey: ['community-pulse'],
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('logs')
                 .select(`
                     id, film_id, film_title, poster_path, rating, review, status, watched_with, pull_quote, drop_cap, editorial_header, created_at, user_id,
@@ -28,6 +29,8 @@ const SocialPulse = memo(function SocialPulse() {
                 .not('review', 'is', null)
                 .order('created_at', { ascending: false })
                 .limit(6)
+            // A failed read throws, so it is never shown as a quiet foyer.
+            if (error) throw error
             return (data || []).map((log: any) => ({
                 id: log.id,
                 type: 'log',
@@ -88,9 +91,9 @@ const SocialPulse = memo(function SocialPulse() {
                     overflow: 'hidden',
                 }}>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${emptyGlyphColor}, transparent)` }} />
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.3em', color: emptyGlyphColor, opacity: 0.6, marginBottom: '1rem' }}>SIGNAL QUIET</div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.3rem' : '1.5rem', color: 'var(--parchment)', opacity: 0.70, marginBottom: '0.75rem' }}>The screening room is dark.</div>
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', opacity: 0.50, lineHeight: 1.6, fontStyle: 'italic', maxWidth: 400, margin: '0 auto' }}>When a member logs their first film, it will appear here.</div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.3em', color: emptyGlyphColor, opacity: 0.6, marginBottom: '1rem' }}>{isPending ? 'RETRIEVING' : isError ? 'SIGNAL LOST' : 'SIGNAL QUIET'}</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.3rem' : '1.5rem', color: 'var(--parchment)', opacity: 0.70, marginBottom: '0.75rem' }}>{isPending ? 'Retrieving the latest dispatches...' : isError ? 'The dispatches could not be retrieved.' : 'The screening room is dark.'}</div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', opacity: 0.50, lineHeight: 1.6, fontStyle: 'italic', maxWidth: 400, margin: '0 auto' }}>{isPending ? '' : isError ? 'Try again shortly.' : 'When a member logs their first film, it will appear here.'}</div>
                     <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.15), transparent)', margin: '1.5rem auto 0', maxWidth: 200 }} />
                 </div>
             ) : (

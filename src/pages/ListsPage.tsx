@@ -131,7 +131,7 @@ function CommunityListCard({ list, index }: { list: any; index: number }) {
                         ) : (
                             <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.25rem' }}>
                                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: list.isCertified ? 'var(--sepia)' : 'var(--fog)', opacity: list.isCertified ? 1 : 0.6 }}><Award size={9} /> {list.certifyCount || 0}</span>
-                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--fog)', opacity: 0.6 }}><MessageCircle size={9} /> {list.commentCount || 0}</span>
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--fog)', opacity: 0.6 }}><MessageCircle size={9} /> {list.commentCount ?? ''}</span>
                             </div>
                         )}
                         <ReportButton contentType="list" contentId={list.id} size={IS_TOUCH ? 10 : 12} />
@@ -208,7 +208,12 @@ export default function ListsPage() {
                 film_title: film.title,
                 poster_path: film.poster_path || null,
             }))
-            await supabase.from('list_items').insert(filmRows)
+            const { error: itemsError } = await supabase.from('list_items').insert(filmRows)
+            if (itemsError) {
+                reelToast.error('The collection was created, but its films could not be added. Add them from the stack.')
+                queryClient.invalidateQueries({ queryKey: ['all-public-lists'] })
+                return
+            }
         }
 
         reelToast.success('Collection created!')
@@ -246,7 +251,7 @@ export default function ListsPage() {
 
     // Fetch public community lists from Supabase
     // Fetch ALL public lists from Supabase (no user exclusion)
-    const { data: allLists = [], isLoading } = useQuery({
+    const { data: allLists = [], isLoading, isLoadingError, refetch } = useQuery({
         queryKey: ['all-public-lists'],
         queryFn: async () => {
             const q = supabase
@@ -258,8 +263,8 @@ export default function ListsPage() {
             const { data, error } = await q
             if (error) {
                 console.error('[Stacks] lists query failed:', error.message, error.code, error.details)
-                // Don't bail on auth errors — retry without RLS by fetching individual columns
-                return []
+                // A failed read throws, so the shelf says it could not load rather than "empty".
+                throw error
             }
             if (!data || data.length === 0) return []
 
@@ -267,7 +272,8 @@ export default function ListsPage() {
             const userIds = [...new Set(data.map((l: any) => l.user_id).filter(Boolean))]
             let usernameMap: Record<string, string> = {}
             if (userIds.length > 0) {
-                const { data: p } = await supabase.from('profiles').select('id, username').in('id', userIds)
+                const { data: p, error: profilesError } = await supabase.from('profiles').select('id, username').in('id', userIds)
+                if (profilesError) throw profilesError
                 if (p) usernameMap = Object.fromEntries(p.map((x: any) => [x.id, x.username]))
             }
 
@@ -275,7 +281,8 @@ export default function ListsPage() {
             const listIds = data.map((l: any) => l.id)
             let itemsMap: Record<string, any[]> = {}
             if (listIds.length > 0) {
-                const { data: items } = await supabase.from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds)
+                const { data: items, error: itemsError } = await supabase.from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds)
+                if (itemsError) throw itemsError
                 if (items) {
                     items.forEach((item: any) => {
                         if (!itemsMap[item.list_id]) itemsMap[item.list_id] = []
@@ -288,12 +295,17 @@ export default function ListsPage() {
             let endorseMap: Record<string, number> = {}
             let userEndorsed: Record<string, boolean> = {}
             let commentCountMap: Record<string, number> = {}
+            let commentsFailed = false
             if (listIds.length > 0) {
                 const [endorsementsResp, commentsResp] = await Promise.all([
                     supabase.from('interactions').select('target_list_id, user_id, type').in('target_list_id', listIds).eq('type', 'endorse_list'),
                     // list_comments table doesn't exist — use interactions table instead
                     supabase.from('interactions').select('target_list_id').in('target_list_id', listIds).eq('type', 'comment_list')
                 ])
+                // The certifications also say which you certified, so a failed read fails the shelf.
+                if (endorsementsResp.error) throw endorsementsResp.error
+                // A comment count that could not be read shows no number, never 0.
+                commentsFailed = !!commentsResp.error
 
                 if (endorsementsResp.data) {
                     endorsementsResp.data.forEach((e: any) => {
@@ -320,7 +332,7 @@ export default function ListsPage() {
                 count: (itemsMap[l.id] || []).length,
                 certifyCount: endorseMap[l.id] || 0,
                 isCertified: userEndorsed[l.id] || false,
-                commentCount: commentCountMap[l.id] || 0,
+                commentCount: commentsFailed ? null : commentCountMap[l.id] || 0,
             }))
         },
         staleTime: 1000 * 60 * 2,
@@ -352,7 +364,8 @@ export default function ListsPage() {
 
         // Following filter
         if (isCommunity && followingOnly && user?.following && Array.isArray(user.following) && user.following.length > 0) {
-            result = result.filter((l: any) => (user.following as string[]).includes(l.userId))
+            // `following` holds usernames, so it is matched to the curator's username, not their id.
+            result = result.filter((l: any) => (user.following as string[]).includes(l.user))
         }
 
         // Sort
@@ -372,6 +385,14 @@ export default function ListsPage() {
 
     const sortLabels: Record<SortOption, string> = { 'newest': 'NEWEST', 'oldest': 'OLDEST', 'most-certified': 'MOST CERTIFIED' }
     const hasActiveFilters = timeFilter !== 'all' || followingOnly || debouncedQuery.trim().length > 0
+
+    // An empty shelf says why: "ARCHIVE EMPTY" only when no filter hid anything.
+    const followingApplied = followingOnly && Array.isArray(user?.following) && user.following.length > 0
+    const timeWindow = timeFilter === 'week' ? 'this week' : timeFilter === 'month' ? 'this month' : null
+    const emptyByFilter = debouncedQuery.trim() ? 'No collections match your search.'
+        : followingApplied ? `None of the members you follow have filed a stack ${timeWindow ?? 'yet'}.`
+        : timeWindow ? `No stacks were filed ${timeWindow}.`
+        : null
 
     return (
         <div className="stacks-page">
@@ -509,7 +530,7 @@ export default function ListsPage() {
                 </div>
 
                     {/* Results count */}
-                    {!IS_TOUCH && (
+                    {!IS_TOUCH && !isLoadingError && (
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--fog)', opacity: 0.6 }}>
                             {hasActiveFilters ? `${totalResults} RESULTS` : `${totalResults} ARCHIVES`}
                         </div>
@@ -532,7 +553,7 @@ export default function ListsPage() {
                             <div>
                                 <div className="stacks-section-eyebrow">SOCIETY ARCHIVES</div>
                                 <div className="stacks-section-title">
-                                    {debouncedQuery ? `Results (${filteredLists.length})` : 'Curated Stacks'}
+                                    {debouncedQuery && !isLoadingError ? `Results (${filteredLists.length})` : 'Curated Stacks'}
                                 </div>
                             </div>
                         </div>
@@ -543,23 +564,39 @@ export default function ListsPage() {
                                     <div key={i} className="shimmer stacks-skeleton" style={{ animationDelay: `${i * 0.1}s` }} />
                                 ))}
                             </div>
+                        ) : isLoadingError ? (
+                            /* ── A shelf that could not be read is never shown as empty ── */
+                            <div className="stacks-empty">
+                                <div className="stacks-empty-rule" />
+                                <Buster size={IS_TOUCH ? 50 : 60} mood="peeking" />
+                                <div className="stacks-empty-label">ARCHIVE UNREACHABLE</div>
+                                <div className="stacks-empty-title">The stacks could not be loaded.</div>
+                                <div className="stacks-empty-desc">Check your connection and try again.</div>
+                                <button
+                                    className="btn btn-ghost"
+                                    onClick={() => refetch()}
+                                    style={{ marginTop: '1rem', padding: '0.5rem 1.5rem', fontSize: '0.55rem', letterSpacing: '0.12em' }}
+                                >
+                                    TRY AGAIN
+                                </button>
+                            </div>
                         ) : filteredLists.length === 0 ? (
                             /* ── EMPTY STATE — "The Empty Shelf" ── */
                             <div className="stacks-empty">
                                 <div className="stacks-empty-rule" />
                                 <Buster size={IS_TOUCH ? 50 : 60} mood="peeking" />
                                 <div className="stacks-empty-label">
-                                    {debouncedQuery ? 'NO MATCHES' : 'ARCHIVE EMPTY'}
+                                    {emptyByFilter ? 'NO MATCHES' : 'ARCHIVE EMPTY'}
                                 </div>
                                 <div className="stacks-empty-title">
-                                    {debouncedQuery ? 'No collections match your search.' : 'The Archive Awaits Its First Curator.'}
+                                    {emptyByFilter ? emptyByFilter : 'The Archive Awaits Its First Curator.'}
                                 </div>
-                                {!debouncedQuery && (
+                                {!emptyByFilter && (
                                     <div className="stacks-empty-desc">
                                         Every great library began with a single volume. Be the one to forge a permanent stack for the Society.
                                     </div>
                                 )}
-                                {debouncedQuery && (
+                                {emptyByFilter && (
                                     <button
                                         className="btn btn-ghost"
                                         onClick={() => { setQuery(''); setTimeFilter('all'); setFollowingOnly(false) }}

@@ -27,6 +27,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
     const [searchQuery, setSearchQuery] = useState('')
     const [searchResults, setSearchResults] = useState<any[]>([])
     const [isSearching, setIsSearching] = useState(false)
+    const [searchFailed, setSearchFailed] = useState(false)
     const searchRef = useRef<NodeJS.Timeout>(null)
 
     // Debounced Search
@@ -42,8 +43,12 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
                 const data = await tmdb.search(searchQuery)
                 const movies = (data?.results || []).filter((r: any) => r.media_type === 'movie' && r.poster_path)
                 setSearchResults(movies.slice(0, 10))
+                setSearchFailed(false)
             } catch (err) {
                 console.error(err)
+                // Said so — never the last query's films, never "no matches".
+                setSearchResults([])
+                setSearchFailed(true)
             } finally {
                 setIsSearching(false)
             }
@@ -246,7 +251,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
                                         ))}
                                     </div>
                                 ) : searchQuery ? (
-                                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.7rem' }}>NO MATCHES FOUND</div>
+                                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.7rem' }}>{searchFailed ? 'THE ARCHIVE COULD NOT BE SEARCHED. TRY AGAIN.' : 'NO MATCHES FOUND'}</div>
                                 ) : null}
                             </div>
                         </motion.div>

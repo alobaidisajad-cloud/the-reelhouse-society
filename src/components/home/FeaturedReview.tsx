@@ -21,13 +21,15 @@ const FeaturedReview = memo(function FeaturedReview() {
     const openLogModal = useUIStore(state => state.openLogModal)
     const [autopsyOpen, setAutopsyOpen] = useState(false)
 
-    const { data: featuredCritique } = useQuery({
+    // isPending, not isLoading: a read paused offline has not answered either.
+    const { data: featuredCritique, isError, isPending } = useQuery({
         queryKey: ['featured-critique-24h'],
         queryFn: async () => {
             const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
             // Strategy 1: Find the log with most engagement in the last 24h
-            const { data: hotLogs } = await supabase
+            // Every read throws on failure: a failed read is never "nothing filed yet".
+            const { data: hotLogs, error: hotError } = await supabase
                 .from('logs')
                 .select(`
                     id, film_id, film_title, poster_path, rating, review, created_at, user_id, autopsy, is_autopsied,
@@ -39,6 +41,7 @@ const FeaturedReview = memo(function FeaturedReview() {
                 .gte('created_at', twentyFourHoursAgo)
                 .order('created_at', { ascending: false })
                 .limit(20)
+            if (hotError) throw hotError
 
             if (hotLogs && hotLogs.length > 0) {
                 const logIds = hotLogs.map((l: any) => l.id)
@@ -53,6 +56,9 @@ const FeaturedReview = memo(function FeaturedReview() {
                         .select('log_id')
                         .in('log_id', logIds),
                 ])
+                // Unread engagement would crown the newest critique, not the hottest.
+                if (endorseResult.error) throw endorseResult.error
+                if (commentResult.error) throw commentResult.error
 
                 const engagement: Record<string, number> = {}
                 ;(endorseResult.data || []).forEach((e: any) => {
@@ -84,7 +90,7 @@ const FeaturedReview = memo(function FeaturedReview() {
             }
 
             // Fallback: most recent reviewed log of all time
-            const { data: fallback } = await supabase
+            const { data: fallback, error: fallbackError } = await supabase
                 .from('logs')
                 .select(`
                     id, film_id, film_title, poster_path, rating, review, created_at, user_id, autopsy, is_autopsied,
@@ -96,6 +102,7 @@ const FeaturedReview = memo(function FeaturedReview() {
                 .order('created_at', { ascending: false })
                 .limit(1)
                 .maybeSingle()
+            if (fallbackError) throw fallbackError
 
             if (!fallback) return null
 
@@ -116,7 +123,7 @@ const FeaturedReview = memo(function FeaturedReview() {
 
     const displayReview = featuredCritique
         ? { logId: featuredCritique.logId, text: featuredCritique.text, author: featuredCritique.author, rating: featuredCritique.rating, film: featuredCritique.film, autopsy: featuredCritique.autopsy, isAutopsied: featuredCritique.isAutopsied }
-        : { logId: null as string | null, text: 'The projection box awaits. Be the first to file a dispatch on any title and claim this space in the archive.', author: 'THE SOCIETY', rating: 0, film: null, autopsy: null, isAutopsied: false }
+        : { logId: null as string | null, text: isPending ? 'Retrieving the featured critique...' : isError ? 'The featured critique could not be retrieved just now. Try again shortly.' : 'The projection box awaits. Be the first to file a dispatch on any title and claim this space in the archive.', author: 'THE SOCIETY', rating: 0, film: null, autopsy: null, isAutopsied: false }
 
     const film = displayReview.film
     const isArchivistCritique = featuredCritique?.authorRole === 'archivist'

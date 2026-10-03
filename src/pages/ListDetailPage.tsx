@@ -63,7 +63,7 @@ export default function ListDetailPage() {
 
 
     // Fetch list detail from Supabase
-    const { data: remoteList, isLoading } = useQuery({
+    const { data: remoteList, isLoading, isLoadingError, refetch } = useQuery({
         queryKey: ['list-detail', id],
         queryFn: async () => {
             const { data, error } = await supabase
@@ -71,22 +71,27 @@ export default function ListDetailPage() {
                 .select('id, title, description, created_at, user_id, is_private')
                 .eq('id', id)
                 .maybeSingle()
-            if (error || !data) return null
+            // Not found is null ("Archive Missing"); a failed read throws and says so.
+            if (error) throw error
+            if (!data) return null
 
             // Resolve username
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
                 .from('profiles').select('username').eq('id', data.user_id).maybeSingle()
+            if (profileError) throw profileError
 
             // Resolve list items
-            const { data: items } = await supabase
+            const { data: items, error: itemsError } = await supabase
                 .from('list_items').select('film_id, film_title, poster_path').eq('list_id', id)
+            if (itemsError) throw itemsError
 
             // Fetch counts
             const [endorsementsResp, commentsResp] = await Promise.all([
                 supabase.from('interactions').select('user_id', { count: 'exact', head: false }).eq('target_list_id', id).eq('type', 'endorse_list'),
-                // list_comments table may not exist yet — gracefully fallback to 0
-                supabase.from('interactions').select('id', { count: 'exact', head: true }).eq('target_list_id', id).eq('type', 'comment_list').then(r => r, () => ({ count: 0, data: null }))
+                supabase.from('interactions').select('id', { count: 'exact', head: true }).eq('target_list_id', id).eq('type', 'comment_list'),
             ])
+            // The certifications also say whether you certified it, so a failed read is a failed page.
+            if (endorsementsResp.error) throw endorsementsResp.error
             const classify = (endorsementsResp.data || []).find((e: any) => e.user_id === currentUser?.id)
 
             return {
@@ -104,7 +109,8 @@ export default function ListDetailPage() {
                 isPrivate: data.is_private,
                 certifyCount: endorsementsResp.count || endorsementsResp.data?.length || 0,
                 isCertified: !!classify,
-                commentCount: commentsResp.count || 0,
+                // A count that could not be read shows no number (ListActions hides 0).
+                commentCount: commentsResp.error ? 0 : commentsResp.count || 0,
             }
         },
         enabled: !!id,
@@ -137,6 +143,19 @@ export default function ListDetailPage() {
     )
 
     const list = remoteList
+
+    if (isLoadingError) {
+        return (
+            <div style={{ paddingTop: 100, textAlign: 'center', minHeight: '100dvh', background: 'var(--ink)' }}>
+                <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--sepia)' }}>Archive Unreachable</h1>
+                <p style={{ color: 'var(--fog)', marginTop: '1rem', fontFamily: 'var(--font-ui)' }}>This stack could not be loaded. Check your connection and try again.</p>
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
+                    <button onClick={() => refetch()} className="btn btn-ghost">TRY AGAIN</button>
+                    <button onClick={() => navigate(-1)} className="btn btn-ghost">GO BACK</button>
+                </div>
+            </div>
+        )
+    }
 
     if (!list) {
         return (
@@ -373,6 +392,8 @@ export default function ListDetailPage() {
                             if (error) throw error
 
                             // 2. Sync films (diff old vs new)
+                            // Each film that could not be changed is counted, so the toast never claims them.
+                            let unsaved = 0
                             if (updates.films) {
                                 const oldIds = new Set(list.films.map((f: any) => f.id))
                                 const newIds = new Set(updates.films.map((f: any) => f.id))
@@ -381,24 +402,23 @@ export default function ListDetailPage() {
                                 const toRemove = list.films.filter((f: any) => !newIds.has(f.id))
 
                                 for (const f of toAdd) {
-                                    try {
-                                        await supabase.from('list_items').insert({
-                                            list_id: list.id,
-                                            film_id: f.id,
-                                            film_title: f.title || 'Unknown',
-                                            poster_path: f.poster_path || null,
-                                        })
-                                    } catch (e) { console.error(e) }
+                                    const { error: addError } = await supabase.from('list_items').insert({
+                                        list_id: list.id,
+                                        film_id: f.id,
+                                        film_title: f.title || 'Unknown',
+                                        poster_path: f.poster_path || null,
+                                    })
+                                    if (addError) { console.error(addError); unsaved++ }
                                 }
                                 for (const f of toRemove) {
-                                    try {
-                                        await supabase.from('list_items').delete()
-                                            .eq('list_id', list.id).eq('film_id', f.id)
-                                    } catch (e) { console.error(e) }
+                                    const { error: removeError } = await supabase.from('list_items').delete()
+                                        .eq('list_id', list.id).eq('film_id', f.id)
+                                    if (removeError) { console.error(removeError); unsaved++ }
                                 }
                             }
 
-                            reelToast.success('Collection updated!')
+                            if (unsaved) reelToast.error(`The collection was saved, but ${unsaved} ${unsaved === 1 ? 'film' : 'films'} could not be changed. Try again.`)
+                            else reelToast.success('Collection updated!')
                             // Refresh detail + stacks page
                             queryClient.invalidateQueries({ queryKey: ['list-detail', id] })
                             queryClient.invalidateQueries({ queryKey: ['all-public-lists'] })
@@ -423,10 +443,12 @@ export default function ListDetailPage() {
                             <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setIsDeleting(false)}>ABORT</button>
                             <button className="btn" style={{ flex: 1, justifyContent: 'center', background: 'var(--soot)', color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={async () => {
                                 try {
-                                    // Delete list items first, then the list
-                                    await supabase.from('list_items').delete().eq('list_id', list.id)
-                                    const { error } = await supabase.from('lists').delete().eq('id', list.id).eq('user_id', currentUser!.id)
+                                    // The list alone: its films go with it (ON DELETE CASCADE), so
+                                    // a failure can never leave the list standing without its films.
+                                    // A refused delete returns no error and no row, so the row is asked for.
+                                    const { data: gone, error } = await supabase.from('lists').delete().eq('id', list.id).eq('user_id', currentUser!.id).select('id')
                                     if (error) throw error
+                                    if (!gone?.length) throw new Error('The list was not deleted.')
                                     reelToast.success('Archive destroyed.')
                                     queryClient.invalidateQueries({ queryKey: ['all-public-lists'] })
                                     navigate('/stacks')

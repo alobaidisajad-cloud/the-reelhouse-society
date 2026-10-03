@@ -20,18 +20,20 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
     const [query, setQuery] = useState('')
     const [results, setResults] = useState<any[]>([])
     const [searching, setSearching] = useState(false)
+    const [searchFailed, setSearchFailed] = useState(false)
     const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const searchTMDB = (q: string) => {
         setQuery(q)
-        if (!q.trim()) { setResults([]); setSearching(false); return }
+        if (!q.trim()) { setResults([]); setSearchFailed(false); setSearching(false); return }
         setSearching(true)
         if (searchTimeout.current) clearTimeout(searchTimeout.current)
         searchTimeout.current = setTimeout(async () => {
             try {
                 const res = await tmdb.search(q, 1)
                 setResults((res.results || []).filter((r: any) => r.media_type === 'movie' || !r.media_type).slice(0, 5))
-            } catch { setResults([]) }
+                setSearchFailed(false)
+            } catch { setResults([]); setSearchFailed(true) }
             finally { setSearching(false) }
         }, 500)
     }
@@ -129,6 +131,10 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
                                 </button>
                             )}
                         </div>
+
+                        {searchFailed && query && !searching && (
+                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic', margin: '0.5rem 0' }}>The archive could not be searched just now. Try again.</div>
+                        )}
 
                         {/* Search Results Dropdown */}
                         {results.length > 0 && (

@@ -43,13 +43,15 @@ export default function MembershipPage() {
     const [csvImportOpen, setCsvImportOpen] = useState(false)
 
     // ── Founding seat cap ──────────────────────────────────────
+    // Counted on a column a visitor may read ('*' is refused outright). A count that
+    // could not be read stays unknown, and the offer stays hidden: never a seat that may be gone.
     const [foundingCount, setFoundingCount] = useState<number | null>(null)
     useEffect(() => {
         supabase
             .from('profiles')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('is_founding', true)
-            .then(({ count }) => setFoundingCount(count ?? 0))
+            .then(({ count, error }) => setFoundingCount(error || count === null ? null : count))
     }, [])
 
     const containerVariants = {

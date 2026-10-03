@@ -60,6 +60,7 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId, user
     const [query, setQuery] = useState('')
     const [results, setResults] = useState<any[]>([])
     const [searching, setSearching] = useState(false)
+    const [searchFailed, setSearchFailed] = useState(false)
     const [selectedFilm, setSelectedFilm] = useState<any | null>(null)
     const [selectedFormats, setSelectedFormats] = useState<string[]>([])
     const [notes, setNotes] = useState('')
@@ -79,13 +80,14 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId, user
 
     // Search TMDB
     useEffect(() => {
-        if (!query.trim()) { setResults([]); return }
+        if (!query.trim()) { setResults([]); setSearchFailed(false); return }
         setSearching(true)
         const timer = setTimeout(async () => {
             try {
                 const data = await tmdb.searchMulti(query)
                 setResults((data || []).filter((r: any) => r.media_type !== 'person').slice(0, 8))
-            } catch { setResults([]) }
+                setSearchFailed(false)
+            } catch { setResults([]); setSearchFailed(true) }
             finally { setSearching(false) }
         }, 400)
         return () => clearTimeout(timer)
@@ -262,6 +264,10 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId, user
                                             style={{ paddingLeft: '2.25rem' }}
                                         />
                                     </div>
+
+                                    {searchFailed && !searching && query.trim() && (
+                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', padding: '1rem', textAlign: 'center' }}>THE ARCHIVE COULD NOT BE SEARCHED. TRY AGAIN.</div>
+                                    )}
 
                                     {/* Results */}
                                     {(searching || results.length > 0) && (

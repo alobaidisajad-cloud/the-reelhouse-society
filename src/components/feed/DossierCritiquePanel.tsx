@@ -15,6 +15,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
     const [text, setText] = useState('')
     const [comments, setComments] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
+    const [failed, setFailed] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [showAll, setShowAll] = useState(false)
     const [editingId, setEditingId] = useState<string | null>(null)
@@ -29,13 +30,15 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
     const loadComments = async () => {
         if (!isSupabaseConfigured || !dossierId) return
         setLoading(true)
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('dossier_comments')
             .select('id, username, body, created_at')
             .eq('dossier_id', dossierId)
             .order('created_at', { ascending: true })
             .limit(50)
-        setComments(data || [])
+        // A failed read is said so, never counted as no critiques.
+        setFailed(!!error)
+        if (!error) setComments(data || [])
         setLoading(false)
     }
 
@@ -96,10 +99,11 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
     return (
         <div style={{ marginTop: '1.5rem', borderTop: '1px dashed rgba(139,105,20,0.2)', paddingTop: '1rem' }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>
-                CRITIQUES ({comments.length})
+                {failed ? 'CRITIQUES' : `CRITIQUES (${comments.length})`}
             </div>
 
             {loading && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>RETRIEVING CRITIQUES…</div>}
+            {failed && !loading && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>THE CRITIQUES COULD NOT BE RETRIEVED.</div>}
 
             {comments.length > 3 && !showAll && (
                 <button

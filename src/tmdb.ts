@@ -20,9 +20,18 @@ import type { TMDBMovie, TMDBPaginatedResponse, TMDBPerson, TMDBCredits } from '
 // ── Response cache: prevents redundant API calls across components (5min TTL) ──
 const _responseCache = new LRUCache<unknown>(200, 5 * 60 * 1000)
 
-// Resilient fetch wrapper — 10s timeout, retry on 429/503, LRU cached, deduped
-// `path` is the TMDB API path (e.g. /search/multi?query=...)
-async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): Promise<T | null> {
+/** TMDB could not be reached, or answered with an error. Never "no results". */
+export class TMDBUnreachable extends Error {
+    constructor(path: string) {
+        super(`TMDB could not be reached for ${path}`)
+        this.name = 'TMDBUnreachable'
+    }
+}
+
+// Resilient fetch wrapper — 10s timeout, retry on 429/503, LRU cached, deduped.
+// `path` is the TMDB API path (e.g. /search/multi?query=...). A request that
+// fails throws TMDBUnreachable, so a search can tell "TMDB is down" from "nothing".
+async function fetchTMDBOrThrow<T = unknown>(path: string): Promise<T> {
     const cached = _responseCache.get(path)
     if (cached !== undefined) return cached as T
 
@@ -63,7 +72,8 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
                 return data as T
             } catch (e: unknown) {
                 lastError = e
-                if (e instanceof Error && e.name === 'AbortError') return fallback
+                // Timed out: give up at once, as before.
+                if (e instanceof Error && e.name === 'AbortError') throw new TMDBUnreachable(path)
                 if (attempt < 2) {
                     await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)))
                     continue
@@ -73,8 +83,18 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
         if (lastError) {
             console.error(`TMDB fetch failed for ${path}:`, lastError)
         }
-        return fallback
+        throw new TMDBUnreachable(path)
     })
+}
+
+// The same request, for a caller that truly wants its fallback on failure
+// (browsing, enrichment) rather than a search the member typed.
+async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): Promise<T | null> {
+    try {
+        return await fetchTMDBOrThrow<T>(path)
+    } catch {
+        return fallback
+    }
 }
 
 function decodeEntities(str: string): string {
@@ -89,12 +109,12 @@ function decodeEntities(str: string): string {
 export type MultiSearchResult = (TMDBMovie & { media_type: 'movie' }) | (TMDBPerson & { media_type: 'person', popularity?: number, known_for?: any[] })
 
 export const tmdb = {
+    // A search the member typed: a failed request throws (TMDBUnreachable), so it
+    // is never shown as "no films found". The rescue lookups below stay quiet.
     search: async (query: string, page: number = 1) => {
-        const data = await fetchTMDB<TMDBPaginatedResponse<MultiSearchResult> & { searchType?: string, matchedContext?: string }>(
-            `/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false`,
-            { results: [], total_pages: 0, total_results: 0, page: 1 }
+        const data = await fetchTMDBOrThrow<TMDBPaginatedResponse<MultiSearchResult> & { searchType?: string, matchedContext?: string }>(
+            `/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false`
         )
-        if (!data) return { results: [], searchType: 'failed' }
 
         let items: MultiSearchResult[] = []
         let topPerson: string | null = null
@@ -261,10 +281,10 @@ export const tmdb = {
         { results: [], total_pages: 0, total_results: 0, page: 1 }
     ),
 
+    // A search the member typed: a failed request throws (TMDBUnreachable).
     searchMulti: async (query: string) => {
-        const data = await fetchTMDB<TMDBPaginatedResponse<MultiSearchResult>>(
-            `/search/multi?query=${encodeURIComponent(query)}&page=1&include_adult=false`,
-            { results: [], total_pages: 0, total_results: 0, page: 1 }
+        const data = await fetchTMDBOrThrow<TMDBPaginatedResponse<MultiSearchResult>>(
+            `/search/multi?query=${encodeURIComponent(query)}&page=1&include_adult=false`
         )
         return (data?.results || [])
             .filter((r) => r.media_type === 'movie' || (r.media_type === 'person' && r.profile_path))
@@ -284,20 +304,21 @@ export const tmdb = {
      * Tries the precise search first (title + year), then falls back to the title
      * alone, so a wrong or missing year in someone's export costs precision
      * rather than the whole row.
+     *
+     * null means TMDB answered and knows no such film. A request that could not
+     * run throws TMDBUnreachable: that film was not looked up, not unidentified.
      */
     searchByTitleYear: async (title: string, year?: number | null) => {
         const q = encodeURIComponent(title)
         if (year) {
-            const exact = await fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(
-                `/search/movie?query=${q}&year=${year}&page=1&include_adult=false`,
-                { results: [], total_pages: 0, total_results: 0, page: 1 }
+            const exact = await fetchTMDBOrThrow<TMDBPaginatedResponse<TMDBMovie>>(
+                `/search/movie?query=${q}&year=${year}&page=1&include_adult=false`
             )
             const hit = exact?.results?.find((r) => r.id)
             if (hit) return hit
         }
-        const loose = await fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(
-            `/search/movie?query=${q}&page=1&include_adult=false`,
-            { results: [], total_pages: 0, total_results: 0, page: 1 }
+        const loose = await fetchTMDBOrThrow<TMDBPaginatedResponse<TMDBMovie>>(
+            `/search/movie?query=${q}&page=1&include_adult=false`
         )
         return loose?.results?.find((r) => r.id) ?? null
     },

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
 import { cutChars } from '../utils/cutChars'
+import reelToast from '../utils/reelToast'
 
 /**
  * The author of a message, when the author may be gone.
@@ -25,6 +26,8 @@ export function authorOf(userId: string | null | undefined, username?: string | 
 
 
 // ── TYPES ──
+export type MembershipStatus = 'approved' | 'pending' | 'muted' | 'banned'
+
 export interface Lounge {
     id: string
     name: string
@@ -37,7 +40,10 @@ export interface Lounge {
     member_count: number
     max_members: number
     created_at: string
+    /** True only for an approved seat: the one the house lets post. */
     is_member?: boolean
+    /** The member's row in the room, as the house keeps it; null when they have none. */
+    membership_status?: MembershipStatus | null
     last_message?: {
         content: string
         username: string
@@ -70,11 +76,16 @@ export interface LoungeStoreState {
     isSending: boolean
     hasMoreMessages: boolean
     searchQuery: string
+    /** The last read of each list failed: an empty list then is unknown, not empty. */
+    myLoungesFailed: boolean
+    publicLoungesFailed: boolean
+    /** The last open failed: no room is shown, and it is not "not found". */
+    openFailed: boolean
 
     setSearchQuery: (query: string) => void
     fetchMyLounges: () => Promise<void>
     fetchPublicLounges: () => Promise<void>
-    createLounge: (data: { name: string; description: string; isPrivate: boolean; coverImage?: string }) => Promise<string | null>
+    createLounge: (data: { name: string; description: string; isPrivate: boolean }) => Promise<string | null>
     joinLounge: (loungeId: string) => Promise<void>
     joinByInviteCode: (code: string) => Promise<string | null>
     leaveLounge: (loungeId: string) => Promise<void>
@@ -100,6 +111,16 @@ let _activeChannel: ReturnType<typeof supabase.channel> | null = null
 const _messageThrottles = new Map<string, number>()
 const PAGE_SIZE = 50
 
+/**
+ * Tells the member a read or write failed. supabase-js resolves a failure as
+ * `{ error }` rather than throwing, so each caller reads it and keeps what the
+ * screen already shows: a failed read is never taken for "none".
+ */
+function reportFailure(message: string, error: unknown) {
+    console.error(`[Lounge] ${message}`, error)
+    reelToast.error(message, { id: message })
+}
+
 // generateInviteCode() removed with the invite-code feature.
 //
 // Mobile retired codes in the Editorial Salon overhaul — a private room is
@@ -121,6 +142,9 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
     isSending: false,
     hasMoreMessages: true,
     searchQuery: '',
+    myLoungesFailed: false,
+    publicLoungesFailed: false,
+    openFailed: false,
 
     setSearchQuery: (query) => set({ searchQuery: query }),
 
@@ -128,36 +152,53 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         const user = useAuthStore.getState().user
         if (!user) return
 
-        const { data: memberships } = await supabase
+        const { data: memberships, error: membershipsError } = await supabase
             .from('lounge_members')
-            .select('lounge_id, last_read_at')
+            .select('lounge_id, last_read_at, status')
             .eq('user_id', user.id)
 
-        if (!memberships?.length) { set({ myLounges: [] }); return }
+        if (membershipsError) { set({ myLoungesFailed: true }); reportFailure('Your lounges could not be loaded. Please try again.', membershipsError); return }
+        if (!memberships?.length) { set({ myLounges: [], myLoungesFailed: false }); return }
 
         const loungeIds = memberships.map(m => m.lounge_id)
-        const { data: lounges } = await supabase
+        const { data: lounges, error: loungesError } = await supabase
             .from('lounges')
             .select('*, profiles!lounges_creator_id_fkey(username)')
             .in('id', loungeIds)
             .order('created_at', { ascending: false })
 
+        if (loungesError) { set({ myLoungesFailed: true }); reportFailure('Your lounges could not be loaded. Please try again.', loungesError); return }
         if (!lounges) return
 
-        // Fetch latest message for each lounge
+        // Each room carries the member's seat: a request still with the host is not a room they are in
+        const statusOf = new Map(memberships.map(m => [m.lounge_id, (m.status as MembershipStatus | null) ?? null]))
+        const seat = (id: string) => {
+            const membership_status = statusOf.get(id) ?? null
+            return { membership_status, is_member: membership_status === 'approved' }
+        }
+
+        // Fetch latest message for each lounge; one that fails keeps the one already shown
+        const held = get().myLounges
+        let previewError: unknown = null
         const enriched = await Promise.all(lounges.map(async (l) => {
-            const { data: lastMsg } = await supabase
+            const { data: lastMsg, error: lastMsgError } = await supabase
                 .from('lounge_messages')
                 .select('content, created_at, profiles!lounge_messages_user_id_fkey(username)')
                 .eq('lounge_id', l.id)
                 .order('created_at', { ascending: false })
                 .limit(1)
-                .single()
+                .maybeSingle()
+
+            if (lastMsgError) {
+                previewError = lastMsgError
+                return { ...l, ...seat(l.id), creator_username: l.profiles?.username, last_message: held.find(h => h.id === l.id)?.last_message }
+            }
 
             const parsedLastMsg = lastMsg as { content: string; created_at: string; profiles?: { username: string } } | null
 
             return {
                 ...l,
+                ...seat(l.id),
                 creator_username: l.profiles?.username,
                 last_message: parsedLastMsg ? {
                     content: parsedLastMsg.content,
@@ -166,6 +207,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                 } : undefined,
             }
         }))
+        if (previewError) reportFailure('The latest messages could not be loaded. Please try again.', previewError)
 
         // Sort by last message time (most recent first)
         enriched.sort((a, b) => {
@@ -174,7 +216,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             return new Date(bTime).getTime() - new Date(aTime).getTime()
         })
 
-        set({ myLounges: enriched })
+        set({ myLounges: enriched, myLoungesFailed: false })
     },
 
     fetchPublicLounges: async () => {
@@ -182,10 +224,13 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         if (!user) return
 
         // Get user's joined lounge IDs to exclude them
-        const { data: memberships } = await supabase
+        const { data: memberships, error: membershipsError } = await supabase
             .from('lounge_members')
             .select('lounge_id')
             .eq('user_id', user.id)
+
+        // without them, every lounge already joined would be offered again
+        if (membershipsError) { set({ publicLoungesFailed: true }); reportFailure('Public lounges could not be loaded. Please try again.', membershipsError); return }
 
         const joinedIds = memberships?.map(m => m.lounge_id) || []
 
@@ -201,7 +246,8 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             // Supabase doesn't support NOT IN directly, we'll filter client-side
         }
 
-        const { data } = await query
+        const { data, error } = await query
+        if (error) { set({ publicLoungesFailed: true }); reportFailure('Public lounges could not be loaded. Please try again.', error); return }
         if (!data) return
 
         const filtered = data.filter((l) => !joinedIds.includes(l.id))
@@ -209,59 +255,48 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             publicLounges: filtered.map((l) => ({
                 ...l,
                 creator_username: l.profiles?.username,
-            }))
+            })),
+            publicLoungesFailed: false,
         })
     },
 
-    createLounge: async ({ name, description, isPrivate, coverImage }) => {
+    createLounge: async ({ name, description, isPrivate }) => {
         const user = useAuthStore.getState().user
         if (!user) return null
 
-        // Always null now — see the note where generateInviteCode() used to be.
-        // The column is still WRITTEN rather than dropped from the insert so the
-        // currently shipped mobile build, which selects it, keeps working until
-        // that build is replaced.
-        const invite_code = null
+        // The house opens the room and seats its creator in one step, as the app
+        // does: a member may not write a seat into lounge_members directly.
+        const { data: loungeId, error } = await supabase.rpc('create_lounge', {
+            p_name: name,
+            p_description: description,
+            p_is_private: isPrivate,
+        })
 
-        const { data, error } = await supabase
-            .from('lounges')
-            .insert([{
-                name,
-                description,
-                creator_id: user.id,
-                is_private: isPrivate,
-                invite_code,
-                cover_image: coverImage || null,
-                member_count: 0, // Begins at 0; auto-join trigger increments to 1
-            }])
-            .select()
-            .single()
-
-        if (error || !data) {
+        if (error || !loungeId) {
             console.error('[Lounge] Create failed:', error)
             return null
         }
 
-        // Auto-join the creator
-        await supabase.from('lounge_members').insert([{
-            lounge_id: data.id,
-            user_id: user.id,
-        }])
-
         // Refresh lists
         await get().fetchMyLounges()
 
-        return data.id
+        return loungeId as string
     },
 
     joinLounge: async (loungeId) => {
         const user = useAuthStore.getState().user
         if (!user) return
 
-        await supabase.from('lounge_members').insert([{
-            lounge_id: loungeId,
-            user_id: user.id,
-        }])
+        // A public room seats the member; a private one sends their request to the host.
+        const { activeLounge, publicLounges, myLounges } = get()
+        const room = [activeLounge, ...publicLounges, ...myLounges].find(l => l?.id === loungeId)
+        const { error } = room?.is_private
+            ? await supabase.rpc('request_lounge_membership', { p_lounge_id: loungeId })
+            : await supabase.rpc('join_public_lounge', { p_lounge_id: loungeId })
+        if (error) {
+            reportFailure(room?.is_private ? 'Could not send your request. Please try again.' : 'Could not take a seat. Please try again.', error)
+            throw error
+        }
 
         // Rely on trigger_sync_lounge_member_count for member_count
 
@@ -283,10 +318,11 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         if (!user) return
 
         // Silent leave — no system message
-        await supabase.from('lounge_members')
+        const { error } = await supabase.from('lounge_members')
             .delete()
             .eq('lounge_id', loungeId)
             .eq('user_id', user.id)
+        if (error) { reportFailure('Could not leave this lounge. Please try again.', error); throw error }
 
         // Rely on trigger_sync_lounge_member_count for member_count
 
@@ -298,37 +334,50 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
     },
 
     openLounge: async (loungeId) => {
-        set({ isLoading: true, messages: [], hasMoreMessages: true })
+        // A failed open puts back what was shown and throws, so a caller never
+        // goes on to act in a room that did not open.
+        const { messages: shown, hasMoreMessages: hadMore } = get()
+        const failed = (error: unknown) => {
+            set({ isLoading: false, messages: shown, hasMoreMessages: hadMore, openFailed: true })
+            reportFailure('This lounge could not be opened. Please try again.', error)
+            return error
+        }
+        set({ isLoading: true, messages: [], hasMoreMessages: true, openFailed: false })
 
         // Fetch lounge details
-        const { data: lounge } = await supabase
+        const { data: lounge, error: loungeError } = await supabase
             .from('lounges')
             .select('*, profiles!lounges_creator_id_fkey(username)')
             .eq('id', loungeId)
-            .single()
+            .maybeSingle()
 
+        if (loungeError) throw failed(loungeError)
         if (!lounge) { set({ isLoading: false }); return }
 
-        // Check if user is member
+        // The member's seat: only an approved one may post (the house's send rule)
         const user = useAuthStore.getState().user
-        let is_member = false
+        let membership_status: MembershipStatus | null = null
         if (user) {
-            const { data: memberCheck } = await supabase
+            const { data: memberCheck, error: memberError } = await supabase
                 .from('lounge_members')
-                .select('id')
+                .select('status')
                 .eq('lounge_id', loungeId)
                 .eq('user_id', user.id)
-                .single()
-            is_member = !!memberCheck
+                .maybeSingle()
+            if (memberError) throw failed(memberError)
+            membership_status = (memberCheck?.status as MembershipStatus | undefined) ?? null
         }
+        const is_member = membership_status === 'approved'
 
         // Fetch initial messages
-        const { data: msgs } = await supabase
+        const { data: msgs, error: msgsError } = await supabase
             .from('lounge_messages')
             .select('*, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
             .eq('lounge_id', loungeId)
             .order('created_at', { ascending: false })
             .limit(PAGE_SIZE)
+
+        if (msgsError) throw failed(msgsError)
 
         const messages: LoungeMessage[] = (msgs || []).reverse().map((m: { id: string, lounge_id: string, user_id: string, content: string, type: LoungeMessage['type'], metadata: Record<string, unknown>, created_at: string, reply_to_id: string | null, reply_to_content: string | null, reply_to_username: string | null, profiles?: { username: string, avatar_url: string } }) => ({
             id: m.id,
@@ -346,7 +395,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         }))
 
         set({
-            activeLounge: { ...lounge, creator_username: (lounge as { profiles?: { username?: string } }).profiles?.username, is_member },
+            activeLounge: { ...lounge, creator_username: (lounge as { profiles?: { username?: string } }).profiles?.username, is_member, membership_status },
             messages,
             isLoading: false,
             hasMoreMessages: (msgs || []).length === PAGE_SIZE,
@@ -374,18 +423,20 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             }, async (payload: { new: { id: string, lounge_id: string, user_id: string, content: string, type?: LoungeMessage['type'], metadata?: Record<string, unknown>, created_at: string, reply_to_id?: string | null, reply_to_content?: string | null, reply_to_username?: string | null } }) => {
                 const currentUserId = useAuthStore.getState().user?.id
                 // Fetch the profile for the new message
-                const { data: profile } = await supabase
+                const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('username, avatar_url')
                     .eq('id', payload.new.user_id)
                     .single()
+                // A profile that did not load takes the name this author already shows in the room
+                const known = profileError ? get().messages.find(m => m.user_id === payload.new.user_id) : undefined
 
                 const newMsg: LoungeMessage = {
                     id: payload.new.id,
                     lounge_id: payload.new.lounge_id,
                     user_id: payload.new.user_id,
-                    username: authorOf(payload.new.user_id, profile?.username).username,
-                    avatar_url: profile?.avatar_url,
+                    username: authorOf(payload.new.user_id, profile?.username ?? known?.username).username,
+                    avatar_url: profile?.avatar_url ?? known?.avatar_url,
                     content: payload.new.content,
                     type: payload.new.type || 'text',
                     metadata: payload.new.metadata || {},
@@ -433,7 +484,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             supabase.removeChannel(_activeChannel)
             _activeChannel = null
         }
-        set({ activeLounge: null, messages: [] })
+        set({ activeLounge: null, messages: [], openFailed: false })
     },
 
     pauseRealtime: () => {
@@ -453,12 +504,14 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         // Fetch any messages we missed while asleep
         const lastKnownMessageDate = messages.length > 0 ? messages[messages.length - 1].created_at : new Date(0).toISOString()
         
-        const { data: missedMsgs } = await supabase
+        const { data: missedMsgs, error: missedError } = await supabase
             .from('lounge_messages')
             .select('*, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
             .eq('lounge_id', activeLounge.id)
             .gt('created_at', lastKnownMessageDate)
             .order('created_at', { ascending: true })
+
+        if (missedError) reportFailure('Messages sent while you were away could not be loaded. Reopen the lounge to see them.', missedError)
 
         if (missedMsgs && missedMsgs.length > 0) {
             const mappedMissed: LoungeMessage[] = missedMsgs.map((m: { id: string, lounge_id: string, user_id: string, content: string, type: LoungeMessage['type'], metadata: Record<string, unknown>, created_at: string, reply_to_id: string | null, reply_to_content: string | null, reply_to_username: string | null, profiles?: { username: string, avatar_url: string } }) => ({
@@ -539,8 +592,11 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             .single()
 
         if (error) {
-            // Remove optimistic on failure
+            // Remove optimistic on failure, and say so: a caller must not report it sent
             set(s => ({ messages: s.messages.filter(m => m.id !== optimisticId) }))
+            set({ isSending: false })
+            reportFailure('Your message could not be sent. Please try again.', error)
+            throw error
         } else if (data) {
             // Replace optimistic with real message
             set(s => ({
@@ -556,13 +612,26 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         if (!user) return
 
         // Optimistic removal
+        const removed = get().messages.find(m => m.id === messageId)
         set(s => ({ messages: s.messages.filter(m => m.id !== messageId) }))
 
-        await supabase
+        const { error } = await supabase
             .from('lounge_messages')
             .delete()
             .eq('id', messageId)
             .eq('user_id', user.id) // Only delete own messages
+
+        if (error) {
+            // Put it back in its place in time
+            if (removed) {
+                set(s => {
+                    if (s.messages.some(m => m.id === messageId)) return s
+                    const at = s.messages.findIndex(m => m.created_at > removed.created_at)
+                    return { messages: at === -1 ? [...s.messages, removed] : [...s.messages.slice(0, at), removed, ...s.messages.slice(at)] }
+                })
+            }
+            reportFailure('The message could not be deleted. Please try again.', error)
+        }
     },
 
     markAsRead: async (loungeId) => {
@@ -602,13 +671,16 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
 
         const oldestMessage = messages[0]
 
-        const { data: olderMsgs } = await supabase
+        const { data: olderMsgs, error } = await supabase
             .from('lounge_messages')
             .select('*, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
             .eq('lounge_id', activeLounge.id)
             .lt('created_at', oldestMessage.created_at)
             .order('created_at', { ascending: false })
             .limit(PAGE_SIZE)
+
+        // a failed read is not the beginning of the room: there may be more
+        if (error) { reportFailure('Earlier messages could not be loaded. Please try again.', error); return }
 
         if (!olderMsgs || olderMsgs.length === 0) {
             set({ hasMoreMessages: false })
@@ -646,30 +718,28 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             .eq('id', loungeId)
             .eq('creator_id', user.id) // Only creator can update
 
-        // If toggling private, generate invite code
-        
-        if (!error) {
-            set(s => {
-                const newActive = s.activeLounge?.id === loungeId
-                    ? { ...s.activeLounge, ...updates }
-                    : s.activeLounge
+        if (error) { reportFailure('The lounge could not be updated. Please try again.', error); throw error }
 
-                // Turning a salon private no longer mints a code. It used to
-                // generate one here AND fire a second, unawaited write to
-                // persist it — so a room could become private and hand out a
-                // shared secret in the same action, with no error path if that
-                // write failed. Privacy is the request/admit flow now.
-                if (newActive) {
-                    newActive.invite_code = null
-                }
+        set(s => {
+            const newActive = s.activeLounge?.id === loungeId
+                ? { ...s.activeLounge, ...updates }
+                : s.activeLounge
 
-                return {
-                    activeLounge: newActive as Lounge,
-                    myLounges: s.myLounges.map(l => l.id === loungeId ? { ...l, ...updates } : l),
-                    publicLounges: s.publicLounges.map(l => l.id === loungeId ? { ...l, ...updates } : l)
-                }
-            })
-        }
+            // Turning a salon private no longer mints a code. It used to
+            // generate one here AND fire a second, unawaited write to
+            // persist it — so a room could become private and hand out a
+            // shared secret in the same action, with no error path if that
+            // write failed. Privacy is the request/admit flow now.
+            if (newActive) {
+                newActive.invite_code = null
+            }
+
+            return {
+                activeLounge: newActive as Lounge,
+                myLounges: s.myLounges.map(l => l.id === loungeId ? { ...l, ...updates } : l),
+                publicLounges: s.publicLounges.map(l => l.id === loungeId ? { ...l, ...updates } : l)
+            }
+        })
     },
 
     kickMember: async (loungeId, userId) => {
@@ -680,10 +750,11 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         const lounge = get().myLounges.find(l => l.id === loungeId) || get().activeLounge
         if (lounge?.creator_id !== user.id) return
 
-        await supabase.from('lounge_members')
+        const { error } = await supabase.from('lounge_members')
             .delete()
             .eq('lounge_id', loungeId)
             .eq('user_id', userId)
+        if (error) { reportFailure('Could not remove this member. Please try again.', error); throw error }
 
         // Rely on trigger_sync_lounge_member_count for member_count
     },
@@ -696,9 +767,10 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         const lounge = get().myLounges.find(l => l.id === loungeId) || get().activeLounge
         if (lounge?.creator_id !== user.id) return
 
-        await supabase.from('lounges')
+        const { error } = await supabase.from('lounges')
             .delete()
             .eq('id', loungeId)
+        if (error) { reportFailure('The lounge could not be deleted. Please try again.', error); throw error }
 
         set(s => ({
             myLounges: s.myLounges.filter(l => l.id !== loungeId),
@@ -709,12 +781,14 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
     },
 
     fetchMembers: async (loungeId) => {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('lounge_members')
             .select('user_id, joined_at, profiles!lounge_members_user_id_fkey(username, avatar_url)')
             .eq('lounge_id', loungeId)
             .order('joined_at', { ascending: true })
 
+        // a failed read is not an empty roster
+        if (error) { reportFailure('Members could not be loaded. Please try again.', error); throw error }
         if (!data) return []
         return data.map((m: any) => ({
             user_id: m.user_id,
@@ -763,13 +837,15 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                         .eq('id', payload.new.user_id)
                         .single()
 
-                    const { data: lounge } = await supabase
+                    const { data: lounge, error: loungeError } = await supabase
                         .from('lounges')
                         .select('name')
                         .eq('id', payload.new.lounge_id)
                         .single()
+                    // a name that did not load is the one already in the member's list
+                    const heldName = loungeError ? myLounges.find(l => l.id === payload.new.lounge_id)?.name : undefined
 
-                    new Notification(lounge?.name || 'The Lounge', {
+                    new Notification(lounge?.name || heldName || 'The Lounge', {
                         body: `${profile?.username || 'Someone'}: ${payload.new.content?.slice(0, 80) || 'Shared something'}`,
                         icon: '/reelhouse-logo.svg',
                         tag: payload.new.lounge_id, // Deduplicate per lounge

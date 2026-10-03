@@ -369,7 +369,9 @@ export const useFilmStore = create<FilmState>()(
                         .from('watchlists').select('id, user_id, film_id, film_title, poster_path, year, created_at').eq('user_id', user.id)
                         .order('created_at', { ascending: false })
                         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
-                    if (error || !data || data.length === 0) break
+                    // A failed page keeps the watchlist already held, never a shortened one.
+                    if (error) return
+                    if (!data || data.length === 0) break
                     allItems = allItems.concat(data)
                     if (data.length < PAGE_SIZE) break
                     page++
@@ -401,8 +403,10 @@ export const useFilmStore = create<FilmState>()(
                     const listIds = lists.map(l => l.id)
                     let allItems: { list_id: string; film_id: number; film_title: string; poster_path: string | null }[] = []
                     if (listIds.length > 0) {
-                        const { data: items } = await supabase
+                        const { data: items, error: itemsError } = await supabase
                             .from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds).limit(1000)
+                        // A failed read keeps the lists already held, never shows them empty.
+                        if (itemsError) return
                         allItems = items || []
                     }
                     // Group items by list_id client-side
@@ -469,7 +473,18 @@ export const useFilmStore = create<FilmState>()(
                 setTimeout(() => _undoCallbacks.delete(toastId), 5500)
 
                 // Schedule actual deletion — cancellable via undo
-                scheduleDeletion(`log-${id}`, async () => { await supabase.from('logs').delete().eq('id', id) })
+                scheduleDeletion(`log-${id}`, async () => {
+                    const { error } = await supabase.from('logs').delete().eq('id', id)
+                    if (!error) return
+                    // Refused: the log is still kept, so it is shown again.
+                    set((state) => {
+                        if (state.logs.some((l) => l.id === id)) return {}
+                        const nextIdx = { ...state._loggedIndex }
+                        if (logToRemove.filmId) nextIdx[logToRemove.filmId] = logToRemove
+                        return { logs: [logToRemove, ...state.logs], _loggedIndex: nextIdx }
+                    })
+                    reelToast.error(`"${logToRemove.title}" could not be removed. Please try again.`)
+                })
             },
 
             addToWatchlist: async (film) => {
@@ -528,7 +543,18 @@ export const useFilmStore = create<FilmState>()(
 
                 // Schedule actual deletion — cancellable via undo
                 const uid = user.id
-                scheduleDeletion(`wl-${filmId}`, async () => { await supabase.from('watchlists').delete().eq('user_id', uid).eq('film_id', filmId) })
+                scheduleDeletion(`wl-${filmId}`, async () => {
+                    const { error } = await supabase.from('watchlists').delete().eq('user_id', uid).eq('film_id', filmId)
+                    if (!error) return
+                    // Refused: the film is still on the watchlist, so it is shown again.
+                    if (itemToRemove) {
+                        set((state) => state.watchlist.some((f) => f.id === filmId) ? {} : {
+                            watchlist: [itemToRemove, ...state.watchlist],
+                            _watchlistIndex: { ...state._watchlistIndex, [filmId]: true }
+                        })
+                    }
+                    reelToast.error(`"${itemToRemove?.title || 'Film'}" could not be removed from your watchlist. Please try again.`)
+                })
             },
 
             createList: async (list) => {
@@ -671,7 +697,9 @@ export const useFilmStore = create<FilmState>()(
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { error } = await supabase.from('physical_archive').delete().eq('user_id', user.id).eq('film_id', filmId)
-                if (!error) set((state) => ({ physicalArchive: state.physicalArchive.filter(a => a.filmId !== filmId) }))
+                // Thrown, as the other shelf writes are, so the shelf says it failed instead of "removed".
+                if (error) throw error
+                set((state) => ({ physicalArchive: state.physicalArchive.filter(a => a.filmId !== filmId) }))
             },
 
             updatePhysicalArchiveItem: async (filmId: number, updates: Partial<PhysicalArchiveItem>) => {

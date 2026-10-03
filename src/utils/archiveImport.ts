@@ -1,6 +1,6 @@
 /**
- * Archive Import Engine — "THE TRANSFER PROTOCOL" v5 (Final)
- * 
+ * Archive Import Engine — "THE TRANSFER PROTOCOL"
+ *
  * Parses an archive ZIP export and imports all data into ReelHouse:
  * - diary.csv → Film Logs (with dates, ratings, rewatch status)
  * - reviews.csv → Review text merged into matching logs
@@ -9,15 +9,17 @@
  * - watchlist.csv → Watchlist items
  * - lists/*.csv → Stacks (film lists)
  * 
- * v5 fixes:
  *  - Handles nested ZIP folders (e.g. archive-export-2026-04-01/diary.csv)
- *  - Proper date handling — NEVER uses today's date as fallback
- *  - Lists populated by a direct batched insert into list_items
- *  - created_at set from watched_date for correct chronological ordering
+ *  - Never uses today's date as a fallback; created_at follows watched_date
+ *  - The member is told only what went wrong, in words: a row the database
+ *    refuses costs itself and not its batch, an archive that cannot be read
+ *    stops the import before it writes, and a review past the limit is cut
  */
 import JSZip from 'jszip'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from '../store'
+import { cutChars } from './cutChars'
+import { LIMITS } from './limits'
 
 // ── TMDB API for film matching ──
 // Routed through the tmdb-proxy edge function so the key is never in the bundle.
@@ -132,12 +134,19 @@ function getWatchedDate(row: Record<string, string>): string {
 }
 
 // ── TMDB FILM MATCHER (rate-limited, batched) ──
+/** TMDB could not be asked (busy past its retries, down, or offline): not the same as "no such film". */
+const UNREACHABLE = 'unreachable' as const
+type Lookup = TMDBMatch | null | typeof UNREACHABLE
+
 const matchCache = new Map<string, TMDBMatch | null>()
 
-async function matchFilmToTMDB(title: string, year?: string): Promise<TMDBMatch | null> {
+/** How many times a busy TMDB is asked again before the film is left for the next import. */
+const TMDB_RETRIES = 3
+
+async function matchFilmToTMDB(title: string, year?: string, attempt = 0): Promise<Lookup> {
     const cacheKey = `${title}::${year || ''}`
     if (matchCache.has(cacheKey)) return matchCache.get(cacheKey) || null
-    
+
     try {
         const yearParam = year ? `&year=${year}` : ''
         const res = await fetch(PROXY_URL, {
@@ -151,30 +160,28 @@ async function matchFilmToTMDB(title: string, year?: string): Promise<TMDBMatch 
                 path: `/search/movie?query=${encodeURIComponent(title)}${yearParam}&page=1`,
             }),
         })
-        
+
         if (res.status === 429) {
-            await sleep(2000)
-            return matchFilmToTMDB(title, year)
+            if (attempt >= TMDB_RETRIES) return UNREACHABLE
+            await sleep(2000 * (attempt + 1))
+            return matchFilmToTMDB(title, year, attempt + 1)
         }
-        
-        if (!res.ok) {
-            matchCache.set(cacheKey, null)
-            return null
-        }
-        
+
+        if (!res.ok) return UNREACHABLE
+
         const data = await res.json()
         const results = data.results || []
-        
+
         if (results.length === 0) {
             if (year) {
                 const fallback = await matchFilmToTMDB(title)
-                matchCache.set(cacheKey, fallback)
+                if (fallback !== UNREACHABLE) matchCache.set(cacheKey, fallback)
                 return fallback
             }
             matchCache.set(cacheKey, null)
             return null
         }
-        
+
         const match = results[0]
         const result: TMDBMatch = {
             id: match.id,
@@ -185,14 +192,46 @@ async function matchFilmToTMDB(title: string, year?: string): Promise<TMDBMatch 
         matchCache.set(cacheKey, result)
         return result
     } catch {
-        matchCache.set(cacheKey, null)
-        return null
+        return UNREACHABLE
     }
 }
 
 function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
+
+/**
+ * Writes rows fifty at a time. A batch the database refuses is written again
+ * row by row, so one bad row costs itself and not its forty-nine neighbours. A
+ * row already kept (the film is already in the archive or the stack) is not a
+ * failure. Returns the rows saved and how many could not be.
+ */
+async function saveRows<T>(
+    table: 'logs' | 'watchlists' | 'list_items',
+    rows: T[],
+    onBatch?: (done: number) => void,
+): Promise<{ saved: T[]; failed: number }> {
+    const saved: T[] = []
+    let failed = 0
+    for (let i = 0; i < rows.length; i += 50) {
+        const chunk = rows.slice(i, i + 50)
+        const { error } = await supabase.from(table).insert(chunk)
+        if (!error) {
+            saved.push(...chunk)
+        } else {
+            for (const row of chunk) {
+                const { error: rowError } = await supabase.from(table).insert([row])
+                if (!rowError) saved.push(row)
+                else if (rowError.code !== '23505') failed++
+            }
+        }
+        onBatch?.(Math.min(i + 50, rows.length))
+    }
+    return { saved, failed }
+}
+
+/** "1 diary entry" / "3 diary entries". */
+const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 // ── Convert imported rating (0-5 with halves) to ReelHouse rating (0-5) ──
 function convertRating(lbRating: string): number {
@@ -213,7 +252,7 @@ export async function importArchiveZip(
     const result: ImportResult = { logs: 0, reviews: 0, watchlist: 0, lists: 0, skipped: 0, errors: [] }
     
     // ── Step 1: Extract ZIP ──
-    onProgress({ phase: '[v5] Extracting archive...', current: 0, total: 1 })
+    onProgress({ phase: 'Extracting archive...', current: 0, total: 1 })
     const zip = await JSZip.loadAsync(file)
     
     // ── Step 2: Smart CSV reader — handles nested folders ──
@@ -245,9 +284,7 @@ export async function importArchiveZip(
     const ratings = await readCSV('ratings.csv')
     const watched = await readCSV('watched.csv')
     const watchlist = await readCSV('watchlist.csv')
-    
-    result.errors.push(`[INFO] Found: ${diary.length} diary, ${ratings.length} ratings, ${watched.length} watched, ${reviews.length} reviews, ${watchlist.length} watchlist`)
-    
+
     // ── Find list CSVs — handles nested folders ──
     // Imported list CSVs can have metadata rows at the top like:
     //   Name,My List
@@ -292,7 +329,7 @@ export async function importArchiveZip(
         return rows
     }
     
-    const listFiles: { name: string; data: Record<string, string>[]; rawPreview: string }[] = []
+    const listFiles: { name: string; data: Record<string, string>[] }[] = []
     for (const [path, entry] of Object.entries(zip.files)) {
         // Match any path that contains /lists/ and ends with .csv
         if ((path.includes('/lists/') || path.startsWith('lists/')) && path.endsWith('.csv') && !entry.dir) {
@@ -302,23 +339,10 @@ export async function importArchiveZip(
             const listName = fileName.replace('.csv', '').replace(/-/g, ' ')
             // Use special list CSV parser that handles metadata rows
             const parsed = parseListCSV(text)
-            listFiles.push({ name: listName, data: parsed, rawPreview: text.slice(0, 500) })
+            listFiles.push({ name: listName, data: parsed })
         }
     }
-    
-    result.errors.push(`[INFO] Found ${listFiles.length} list CSVs`)
-    
-    // Log diagnostics to errors array too
-    if (listFiles.length > 0) {
-        const lf = listFiles[0]
-        if (lf.data.length > 0) {
-            result.errors.push(`[DEBUG] List "${lf.name}" cols: ${Object.keys(lf.data[0]).join(', ')}`)
-            result.errors.push(`[DEBUG] Row[0]: Name="${getFilmName(lf.data[0])}", Year="${getFilmYear(lf.data[0])}"`)
-        } else {
-            result.errors.push(`[DEBUG] List "${lf.name}" = 0 rows. Raw: ${lf.rawPreview.slice(0, 150)}`)
-        }
-    }
-    
+
     // ── Step 3: Collect all unique films to match ──
     const allFilms = new Map<string, { title: string; year?: string }>()
     
@@ -334,15 +358,14 @@ export async function importArchiveZip(
     watched.forEach(r => addFilm(getFilmName(r), getFilmYear(r)))
     watchlist.forEach(r => addFilm(getFilmName(r), getFilmYear(r)))
     listFiles.forEach(list => list.data.forEach(r => addFilm(getFilmName(r), getFilmYear(r))))
-    
-    result.errors.push(`[INFO] ${allFilms.size} unique films to match`)
-    
+
     // ── Step 4: Match all films to TMDB (batched) ──
     const filmMap = new Map<string, TMDBMatch>()
     const filmEntries = Array.from(allFilms.entries())
     const total = filmEntries.length
     
     const BATCH_SIZE = 4
+    let unreachable = 0
     for (let i = 0; i < filmEntries.length; i += BATCH_SIZE) {
         const batch = filmEntries.slice(i, i + BATCH_SIZE)
         const matches = await Promise.all(
@@ -353,7 +376,8 @@ export async function importArchiveZip(
         )
         
         for (const { key, match } of matches) {
-            if (match) filmMap.set(key, match)
+            if (match === UNREACHABLE) unreachable++
+            else if (match) filmMap.set(key, match)
             else result.skipped++
         }
         
@@ -371,27 +395,42 @@ export async function importArchiveZip(
         }
     }
     
-    result.errors.push(`[INFO] Matched ${filmMap.size}/${allFilms.size} films`)
-    
+    if (unreachable > 0) {
+        result.errors.push(`${count(unreachable, 'film', 'films')} could not be looked up just now. Import the same file again to add ${unreachable === 1 ? 'it' : 'them'}.`)
+    }
+
     // ── Step 5: Fetch existing logs to prevent duplicates ──
+    // An archive that could not be read is not an empty one: everything already
+    // logged would be sent again and refused, fifty at a time.
+    const unreadable = 'Your archive could not be read just now, so nothing was imported. Please try again.'
     onProgress({ phase: 'Checking existing archive...', current: 0, total: 1 })
     const existingFilmIds = new Set<number>()
     let ePage = 0
     while (true) {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('logs').select('film_id').eq('user_id', user.id)
             .range(ePage * 1000, (ePage + 1) * 1000 - 1)
+        if (error) throw new Error(unreadable)
         if (!data || data.length === 0) break
         data.forEach((l: any) => existingFilmIds.add(l.film_id))
         if (data.length < 1000) break
         ePage++
     }
-    
+
     const existingWatchlistIds = new Set<number>()
-    const { data: existingWatchlist } = await supabase
+    const { data: existingWatchlist, error: watchlistError } = await supabase
         .from('watchlists').select('film_id').eq('user_id', user.id)
+    if (watchlistError) throw new Error(unreadable)
     ;(existingWatchlist || []).forEach((w: any) => existingWatchlistIds.add(w.film_id))
-    
+
+    // A review past the house's limit is cut between characters, and the member told.
+    let shortened = 0
+    const fit = (review: string) => {
+        const cut = cutChars(review, LIMITS.review)
+        if (cut.length < review.length) shortened++
+        return cut
+    }
+
     // ── Step 6: Build review map from reviews.csv ──
     const reviewMap = new Map<string, string>()
     reviews.forEach(r => {
@@ -416,7 +455,7 @@ export async function importArchiveZip(
         if (existingFilmIds.has(film.id)) continue
         
         const rating = convertRating(entry.Rating || entry.rating || '')
-        const reviewText = reviewMap.get(key) || ''
+        const reviewText = fit(reviewMap.get(key) || '')
         const isRewatch = (entry.Rewatch || entry.rewatch || '') === 'Yes'
         
         // Use WatchedDate from diary, fall back to Date, then release year
@@ -441,24 +480,18 @@ export async function importArchiveZip(
             format: 'Digital',
         })
         existingFilmIds.add(film.id)
-        if (reviewText) result.reviews++
-        
+
         if (i % 10 === 0) {
             onProgress({ phase: 'Preparing diary logs...', current: i + 1, total: diary.length, detail: film.title })
         }
     }
-    
+
     onProgress({ phase: 'Saving diary logs...', current: 0, total: logsToInsert.length })
-    for (let i = 0; i < logsToInsert.length; i += 50) {
-        const chunk = logsToInsert.slice(i, i + 50)
-        const { error } = await supabase.from('logs').insert(chunk)
-        if (error) {
-            result.errors.push(`Diary batch ${Math.floor(i/50)}: ${error.message}`)
-        } else {
-            result.logs += chunk.length
-        }
-        onProgress({ phase: 'Saving diary logs...', current: Math.min(i + 50, logsToInsert.length), total: logsToInsert.length })
-    }
+    const diarySaved = await saveRows('logs', logsToInsert, (done) =>
+        onProgress({ phase: 'Saving diary logs...', current: done, total: logsToInsert.length }))
+    result.logs += diarySaved.saved.length
+    result.reviews += diarySaved.saved.filter((r) => r.review).length
+    if (diarySaved.failed > 0) result.errors.push(`${count(diarySaved.failed, 'diary entry', 'diary entries')} could not be saved.`)
     
     // ── Step 8: Gap-fill from Ratings ──
     const ratingsToInsert: any[] = []
@@ -472,8 +505,8 @@ export async function importArchiveZip(
         const rating = convertRating(entry.Rating || entry.rating || '')
         if (rating === 0) continue
         
-        const reviewText = reviewMap.get(key) || ''
-        
+        const reviewText = fit(reviewMap.get(key) || '')
+
         // Use the imported Date column (when rating was added), then release date
         let ratingDate = entry.Date || entry.date || ''
         if (!ratingDate && film.release_date) ratingDate = film.release_date
@@ -494,17 +527,14 @@ export async function importArchiveZip(
             format: 'Digital',
         })
         existingFilmIds.add(film.id)
-        if (reviewText) result.reviews++
     }
-    
+
     onProgress({ phase: 'Saving ratings...', current: 0, total: ratingsToInsert.length })
-    for (let i = 0; i < ratingsToInsert.length; i += 50) {
-        const chunk = ratingsToInsert.slice(i, i + 50)
-        const { error } = await supabase.from('logs').insert(chunk)
-        if (!error) result.logs += chunk.length
-        else result.errors.push(`Ratings batch: ${error.message}`)
-        onProgress({ phase: 'Saving ratings...', current: Math.min(i + 50, ratingsToInsert.length), total: ratingsToInsert.length })
-    }
+    const ratingsSaved = await saveRows('logs', ratingsToInsert, (done) =>
+        onProgress({ phase: 'Saving ratings...', current: done, total: ratingsToInsert.length }))
+    result.logs += ratingsSaved.saved.length
+    result.reviews += ratingsSaved.saved.filter((r) => r.review).length
+    if (ratingsSaved.failed > 0) result.errors.push(`${count(ratingsSaved.failed, 'rated film', 'rated films')} could not be saved.`)
     
     // ── Step 9: Gap-fill from Watched ──
     const watchedToInsert: any[] = []
@@ -537,12 +567,10 @@ export async function importArchiveZip(
     }
     
     onProgress({ phase: 'Saving watched films...', current: 0, total: watchedToInsert.length })
-    for (let i = 0; i < watchedToInsert.length; i += 50) {
-        const chunk = watchedToInsert.slice(i, i + 50)
-        const { error } = await supabase.from('logs').insert(chunk)
-        if (!error) result.logs += chunk.length
-        onProgress({ phase: 'Saving watched films...', current: Math.min(i + 50, watchedToInsert.length), total: watchedToInsert.length })
-    }
+    const watchedSaved = await saveRows('logs', watchedToInsert, (done) =>
+        onProgress({ phase: 'Saving watched films...', current: done, total: watchedToInsert.length }))
+    result.logs += watchedSaved.saved.length
+    if (watchedSaved.failed > 0) result.errors.push(`${count(watchedSaved.failed, 'watched film', 'watched films')} could not be saved.`)
     
     // ── Step 10: Import Watchlist ──
     const watchlistToInsert: any[] = []
@@ -563,26 +591,28 @@ export async function importArchiveZip(
     }
     
     onProgress({ phase: 'Importing watchlist...', current: 0, total: watchlistToInsert.length })
-    for (let i = 0; i < watchlistToInsert.length; i += 50) {
-        const chunk = watchlistToInsert.slice(i, i + 50)
-        const { error } = await supabase.from('watchlists').insert(chunk)
-        if (!error) result.watchlist += chunk.length
-    }
+    const watchlistSaved = await saveRows('watchlists', watchlistToInsert, (done) =>
+        onProgress({ phase: 'Importing watchlist...', current: done, total: watchlistToInsert.length }))
+    result.watchlist += watchlistSaved.saved.length
+    if (watchlistSaved.failed > 0) result.errors.push(`${count(watchlistSaved.failed, 'watchlist film', 'watchlist films')} could not be saved.`)
     
     // ── Step 11: Import Lists as Stacks ──
     for (let li = 0; li < listFiles.length; li++) {
         const listFile = listFiles[li]
         onProgress({ phase: 'Creating stacks...', current: li + 1, total: listFiles.length, detail: listFile.name })
-        
+        const listTitle = cutChars(listFile.name.charAt(0).toUpperCase() + listFile.name.slice(1), LIMITS.listTitle)
+
         try {
-            const listTitle = listFile.name.charAt(0).toUpperCase() + listFile.name.slice(1)
-            
             // Check if list already exists
-            const { data: existingList } = await supabase
+            const { data: existingList, error: findError } = await supabase
                 .from('lists').select('id').eq('user_id', user.id).eq('title', listTitle).maybeSingle()
-            
+            if (findError) {
+                result.errors.push(`The stack "${listTitle}" could not be checked just now, so it was not imported.`)
+                continue
+            }
+
             let listId: string
-            
+
             if (existingList) {
                 listId = existingList.id
             } else {
@@ -590,18 +620,18 @@ export async function importArchiveZip(
                     .from('lists')
                     .insert([{ user_id: user.id, title: listTitle, description: '', is_private: false }])
                     .select().single()
-                
+
                 if (listError || !listData) {
-                    result.errors.push(`List "${listFile.name}": ${listError?.message || 'create failed'}`)
+                    result.errors.push(`The stack "${listTitle}" could not be created.`)
                     continue
                 }
                 listId = listData.id
             }
-            
+
             // Collect films, deduplicate
             const seenFilmIds = new Set<number>()
-            const listItems: { film_id: number; film_title: string; poster_path: string | null }[] = []
-            
+            const listItems: { list_id: string; film_id: number; film_title: string; poster_path: string | null }[] = []
+
             for (const entry of listFile.data) {
                 const name = getFilmName(entry)
                 const year = getFilmYear(entry)
@@ -611,67 +641,35 @@ export async function importArchiveZip(
                 if (!film) continue
                 if (seenFilmIds.has(film.id)) continue
                 seenFilmIds.add(film.id)
-                
+
                 listItems.push({
+                    list_id: listId,
                     film_id: film.id,
                     film_title: film.title,
                     poster_path: film.poster_path,
                 })
             }
-            
-            // Report diagnostics
-            if (listItems.length === 0 && listFile.data.length > 0) {
-                const sampleRow = listFile.data[0]
-                result.errors.push(`List "${listFile.name}": ${listFile.data.length} rows, 0 matched. Name="${getFilmName(sampleRow) || '?'}"`)
-            }
-            
-            // This used to call a `batch_insert_list_items` RPC first and fall back
-            // to direct inserts when it failed. That RPC DOES NOT EXIST on the
-            // database — verified live under every signature, including the exact
-            // parameter names used here. So every list paid for a guaranteed-failing
-            // round trip, then silently took the fallback, and the member was shown
-            // a raw `[DEBUG] RPC error:` line for their trouble.
-            //
-            // The fallback was the only thing ever doing the work, and it works:
-            // list_items carries an owner INSERT policy, and 247 rows across 9 lists
-            // were written by exactly this path. So the RPC is gone and the direct
-            // insert is now the only path — batched, rather than one row at a time.
-            //
-            // Note the RPC also took an owner id as a PARAMETER. Inserting directly
-            // means RLS derives the owner from the session instead, which is the
-            // correct shape and one less caller-supplied identity in the codebase.
-            let itemsInserted = 0
-            if (listItems.length > 0) {
-                const rows = listItems.map(item => ({ list_id: listId, ...item }))
-                const { error } = await supabase.from('list_items').insert(rows)
 
-                if (!error) {
-                    itemsInserted = rows.length
-                } else {
-                    // A single bad row fails the whole batch, so fall back to
-                    // per-row inserts and keep whatever succeeds.
-                    for (const row of rows) {
-                        const { error: rowError } = await supabase.from('list_items').insert([row])
-                        if (!rowError) itemsInserted++
-                    }
-                    if (itemsInserted === 0 && li === 0) {
-                        result.errors.push(`List "${listFile.name}" could not be saved: ${error.message}`)
-                    }
-                }
+            if (listItems.length === 0 && listFile.data.length > 0) {
+                result.errors.push(`None of the films in "${listTitle}" could be matched.`)
             }
-            
-            if (itemsInserted > 0) {
-                result.errors.push(`[OK] "${listFile.name}": ${itemsInserted} films`)
-            } else if (listItems.length > 0) {
-                result.errors.push(`"${listFile.name}": 0/${listItems.length} failed`)
+
+            // Inserted directly: RLS takes the owner from the session.
+            const itemsSaved = await saveRows('list_items', listItems)
+            if (itemsSaved.failed > 0) {
+                result.errors.push(`${count(itemsSaved.failed, 'film', 'films')} in "${listTitle}" could not be added.`)
             }
-            
+
             result.lists++
-        } catch (e: any) {
-            result.errors.push(`List "${listFile.name}": ${e.message}`)
+        } catch {
+            result.errors.push(`The stack "${listTitle}" could not be imported.`)
         }
     }
-    
+
+    if (shortened > 0) {
+        result.errors.push(`${count(shortened, 'review was', 'reviews were')} longer than ${LIMITS.review.toLocaleString('en-US')} characters, so ${shortened === 1 ? 'it was' : 'they were'} shortened to fit.`)
+    }
+
     // ── Final ──
     onProgress({ phase: 'Import complete!', current: 1, total: 1 })
     

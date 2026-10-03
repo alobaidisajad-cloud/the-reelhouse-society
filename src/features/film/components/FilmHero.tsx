@@ -40,7 +40,9 @@ export function FilmHero({ film, onPlayTrailer }: any) {
         queryKey: ['local-reviews', film?.id],
         queryFn: async () => {
             if (!film?.id) return 0
-            const { count } = await supabase.from('logs').select('id', { count: 'exact', head: true }).eq('film_id', film.id)
+            const { count, error } = await supabase.from('logs').select('id', { count: 'exact', head: true }).eq('film_id', film.id)
+            // A failed count throws (and is retried), never cached as 0; meanwhile the hero shows the global figure.
+            if (error) throw error
             return count || 0
         },
         enabled: !!film?.id

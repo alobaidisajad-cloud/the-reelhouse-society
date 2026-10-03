@@ -55,6 +55,12 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
     /** Films whose title could not be matched to a real film. Reported to the
      *  member rather than silently dropped — see the success screen. */
     const [skippedCount, setSkippedCount] = useState(0)
+    /** Films TMDB could not be asked about just now — not unidentified, so said apart. */
+    const [unreachableCount, setUnreachableCount] = useState(0)
+    /** Films identified but whose write failed — never counted as imported. */
+    const [unsavedCount, setUnsavedCount] = useState(0)
+    /** Films already in the member's archive — skipped, never counted as imported. */
+    const [alreadyHeldCount, setAlreadyHeldCount] = useState(0)
     const fileRef = useRef<any>(null)
 
     const handleFile = useCallback((file: any) => {
@@ -112,6 +118,7 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
         const RESOLVE_BATCH = 5 // TMDB allows 40 requests / 10s; stay well under
         const resolved: Resolved[] = []
         let unidentified = 0
+        let unreachable = 0
         let processed = 0
 
         for (let i = 0; i < entries.length; i += RESOLVE_BATCH) {
@@ -128,6 +135,8 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
             }))
             for (const r of results) {
                 if (r.status === 'fulfilled' && r.value) resolved.push(r.value)
+                // A lookup that could not run is not a title TMDB does not know.
+                else if (r.status === 'rejected') unreachable += 1
                 else unidentified += 1
             }
             processed += batch.length
@@ -143,6 +152,8 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
 
         const BATCH = 20
         let count = 0
+        let unsaved = 0
+        let alreadyHeld = 0
         for (let i = 0; i < unique.length; i += BATCH) {
             const batch = unique.slice(i, i + BATCH)
             const dbRows = batch.map((e) => ({
@@ -164,15 +175,27 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
             }))
 
             // Now a real constraint backs this: films already in the archive are
-            // skipped instead of duplicated.
-            const { error } = await supabase
+            // skipped instead of duplicated. With ignoreDuplicates the insert is
+            // ON CONFLICT DO NOTHING, so the rows it returns are only the ones
+            // it wrote — the rest were already there.
+            const { data: written, error } = await supabase
                 .from('logs')
                 .upsert(dbRows, { onConflict: 'user_id,film_id', ignoreDuplicates: true })
+                .select('film_id')
 
-            if (!error) count += batch.length
+            // A failed write is said, never just missing from the count.
+            if (error) unsaved += batch.length
+            else {
+                const n = written?.length ?? 0
+                count += n
+                alreadyHeld += batch.length - n
+            }
         }
         setImportCount(count)
+        setAlreadyHeldCount(alreadyHeld)
         setSkippedCount(unidentified)
+        setUnreachableCount(unreachable)
+        setUnsavedCount(unsaved)
 
         // Refresh local store
         const { fetchLogs } = await import('../store').then(m => m.useFilmStore.getState())
@@ -254,12 +277,32 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
                             </div>
                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)', opacity: 0.8, marginBottom: '2rem' }}>
                                 {importCount} films successfully imported into The Society.
+                                {alreadyHeldCount > 0 && (
+                                    <>
+                                        {' '}
+                                        {alreadyHeldCount} {alreadyHeldCount === 1 ? 'was' : 'were'} already in your archive.
+                                    </>
+                                )}
                                 {skippedCount > 0 && (
                                     <>
                                         {' '}
                                         {skippedCount} {skippedCount === 1 ? 'title' : 'titles'} could not be
                                         identified and {skippedCount === 1 ? 'was' : 'were'} left out — you can add
                                         {skippedCount === 1 ? ' it' : ' them'} by hand.
+                                    </>
+                                )}
+                                {unreachableCount > 0 && (
+                                    <>
+                                        {' '}
+                                        {unreachableCount} {unreachableCount === 1 ? 'film' : 'films'} could not be looked up just now.
+                                        Import the same file again to add {unreachableCount === 1 ? 'it' : 'them'}.
+                                    </>
+                                )}
+                                {unsavedCount > 0 && (
+                                    <>
+                                        {' '}
+                                        {unsavedCount} {unsavedCount === 1 ? 'film' : 'films'} could not be saved just now.
+                                        Import the same file again to add {unsavedCount === 1 ? 'it' : 'them'}.
                                     </>
                                 )}
                             </div>

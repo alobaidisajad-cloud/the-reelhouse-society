@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut, RotateCcw, X, ChevronRight, ChevronLeft, Archive, Bookmark, LayoutList, Ticket, LineChart, BookOpen, Disc } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore } from '../store'
-import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
+import { ReelRating, SectionHeader, FilmCard, QueryErrorBanner } from '../components/UI'
 import Buster from '../components/Buster'
 import { tmdb } from '../tmdb'
 import reelToast from '../utils/reelToast'
@@ -42,10 +42,10 @@ export default function UserProfilePage() {
     const isOwnProfile = !routeUsername || routeUsername === currentUser?.username || routeUsername === 'me'
 
     // Fetch the profile from Supabase for other users' pages
-    const { data: fetchedProfile, isLoading: profileLoading } = useQuery({
+    const { data: fetchedProfile, isLoading: profileLoading, isLoadingError: profileFailed, refetch: refetchProfile } = useQuery({
         queryKey: ['profile-by-username', routeUsername],
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('profiles')
                 // `public_prefs` is a whitelist projection of `preferences` (see
                 // supabase/migrations/20260731_08). This query only ever runs for
@@ -53,7 +53,9 @@ export default function UserProfilePage() {
                 // raw column — that leaks notification settings to anyone.
                 .select('id, username, role, bio, avatar_url, followers_count, following_count, is_social_private, public_prefs, created_at, tier, social_links')
                 .eq('username', routeUsername)
-                .single()
+                .maybeSingle()
+            // Not found is null; a failed read throws, so it is never "Member Not Found".
+            if (error) throw error
             if (!data) return null
             const publicPrefs = (data as any).public_prefs || {}
             return {
@@ -82,11 +84,13 @@ export default function UserProfilePage() {
     const { data: ownCounts } = useQuery({
         queryKey: ['own-profile-counts', currentUser?.id],
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('profiles')
                 .select('followers_count, following_count')
                 .eq('id', (currentUser as any)?.id)
                 .single()
+            // A failed read keeps the last counts (or the header's own) rather than 0.
+            if (error) throw error
             return { followersCount: data?.followers_count || 0, followingCount: data?.following_count || 0 }
         },
         enabled: isOwnProfile && !!currentUser?.id,
@@ -122,7 +126,9 @@ export default function UserProfilePage() {
         data: infiniteLogsData,
         fetchNextPage: fetchNextLogs,
         hasNextPage: logsHasMore,
-        isFetchingNextPage: isFetchingLogs
+        isFetchingNextPage: isFetchingLogs,
+        isLoadingError: logsFailed,
+        refetch: refetchLogs,
     } = useInfiniteQuery({
         queryKey: ['user-profile-logs', targetUserId],
         queryFn: async ({ pageParam = 0 }) => {
@@ -139,7 +145,8 @@ export default function UserProfilePage() {
                 .order('watched_date', { ascending: false })
                 .range(from, to)
                 
-            if (error || !allLogs) return []
+            if (error) throw error
+            if (!allLogs) return []
             return allLogs.map((l: any) => ({
                 id: l.id,
                 filmId: l.film_id,
@@ -192,18 +199,20 @@ export default function UserProfilePage() {
     })
 
     // Fetch other user's lists (stacks) — single embedded query (no N+1)
-    const { data: otherUserLists = [] } = useQuery({
+    const { data: otherUserLists = [], isLoadingError: listsFailed, refetch: refetchTheirLists } = useQuery({
         queryKey: ['user-profile-lists', routeUsername],
         queryFn: async () => {
-            const { data: prof } = await supabase
-                .from('profiles').select('id').eq('username', routeUsername).single()
+            const { data: prof, error: profError } = await supabase
+                .from('profiles').select('id').eq('username', routeUsername).maybeSingle()
+            if (profError) throw profError
             if (!prof) return []
-            const { data: lists } = await supabase
+            const { data: lists, error } = await supabase
                 .from('lists')
                 .select('*, list_items(film_id, film_title, poster_path)')
                 .eq('user_id', prof.id)
                 .eq('is_private', false)
                 .order('created_at', { ascending: false })
+            if (error) throw error
             if (!lists) return []
             return lists.map((list: any) => ({
                 id: list.id, title: list.title, description: list.description || '',
@@ -217,14 +226,16 @@ export default function UserProfilePage() {
     })
 
     // Fetch other user's watchlist
-    const { data: otherUserWatchlist = [] } = useQuery({
+    const { data: otherUserWatchlist = [], isLoadingError: watchlistFailed, refetch: refetchTheirWatchlist } = useQuery({
         queryKey: ['user-profile-watchlist', routeUsername],
         queryFn: async () => {
-            const { data: prof } = await supabase
-                .from('profiles').select('id').eq('username', routeUsername).single()
+            const { data: prof, error: profError } = await supabase
+                .from('profiles').select('id').eq('username', routeUsername).maybeSingle()
+            if (profError) throw profError
             if (!prof) return []
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('watchlists').select('*').eq('user_id', prof.id).order('created_at', { ascending: false })
+            if (error) throw error
             return (data || []).map((w: any) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path || null, year: w.year || null }))
         },
         enabled: !isOwnProfile && !!routeUsername,
@@ -276,42 +287,50 @@ export default function UserProfilePage() {
             const pUser: any = profileUser
             if (type === 'followers') {
                 // Step 1: get IDs of people who follow this profile
-                const { data: rows } = await supabase
+                const { data: rows, error } = await supabase
                     .from('interactions')
                     .select('user_id')
                     .eq('target_user_id', pUser.id)
                     .eq('type', 'follow')
                     .limit(100)
+                if (error) throw error
                 const ids = (rows || []).map((r: any) => r.user_id)
                 if (ids.length > 0) {
-                    const { data: profiles } = await supabase
+                    const { data: profiles, error: profilesError } = await supabase
                         .from('profiles')
                         .select('username, avatar_url, followers_count')
                         .in('id', ids)
+                    if (profilesError) throw profilesError
                     setSocialModal({ title: 'Followers', list: profiles || [] })
                 } else {
                     setSocialModal({ title: 'Followers', list: [] })
                 }
             } else {
                 // Step 1: get IDs of people this profile follows
-                const { data: rows } = await supabase
+                const { data: rows, error } = await supabase
                     .from('interactions')
                     .select('target_user_id')
                     .eq('user_id', pUser.id)
                     .eq('type', 'follow')
                     .limit(100)
+                if (error) throw error
                 const ids = (rows || []).map((r: any) => r.target_user_id)
                 if (ids.length > 0) {
-                    const { data: profiles } = await supabase
+                    const { data: profiles, error: profilesError } = await supabase
                         .from('profiles')
                         .select('username, avatar_url, followers_count')
                         .in('id', ids)
+                    if (profilesError) throw profilesError
                     setSocialModal({ title: 'Following', list: profiles || [] })
                 } else {
                     setSocialModal({ title: 'Following', list: [] })
                 }
             }
-        } catch { setSocialModal((prev: any) => prev ? { ...prev, list: [] } : null) }
+        } catch {
+            // A list that could not be read is closed and said, never shown as nobody.
+            setSocialModal(null)
+            reelToast.error(`The ${type === 'followers' ? 'followers' : 'following'} list could not be loaded. Try again.`)
+        }
         finally { setSocialLoading(false) }
     }
 
@@ -320,21 +339,33 @@ export default function UserProfilePage() {
         if (followLoading || isOwnProfile) return
         setFollowLoading(true)
         const pUser: any = profileUser
+        // The store rolls a failure back and says so itself; only what it then
+        // holds is told, and only that moves the follower count.
+        const holds = () => {
+            const u = useAuthStore.getState().user
+            return { following: (u?.following || []).includes(pUser.username), requested: (u?.requested || []).includes(pUser.username) }
+        }
         try {
             if (isFollowing || isRequested) {
                 await unfollowUser(pUser.username)
-                queryClient.setQueryData(['profile-by-username', routeUsername], (old: any) =>
-                    old ? { ...old, followersCount: Math.max(0, (old.followersCount || 1) - (isFollowing ? 1 : 0)) } : old
-                )
-                reelToast.success(isRequested ? `Cancelled request to @${pUser.username}` : `Unfollowed @${pUser.username}`)
+                const now = holds()
+                if (!now.following && !now.requested) {
+                    queryClient.setQueryData(['profile-by-username', routeUsername], (old: any) =>
+                        old ? { ...old, followersCount: Math.max(0, (old.followersCount || 1) - (isFollowing ? 1 : 0)) } : old
+                    )
+                    reelToast.success(isRequested ? `Cancelled request to @${pUser.username}` : `Unfollowed @${pUser.username}`)
+                }
             } else {
                 await followUser(pUser.username)
-                if (!fetchedProfile?.isSocialPrivate) {
+                const now = holds()
+                if (now.following) {
                     queryClient.setQueryData(['profile-by-username', routeUsername], (old: any) =>
                         old ? { ...old, followersCount: (old.followersCount || 0) + 1 } : old
                     )
+                    reelToast.success(`Now following @${pUser.username} ✨`)
+                } else if (now.requested) {
+                    reelToast.success(`Requested to follow @${pUser.username}`)
                 }
-                reelToast.success(fetchedProfile?.isSocialPrivate ? `Requested to follow @${pUser.username}` : `Now following @${pUser.username} ✨`)
             }
         } finally {
             setFollowLoading(false)
@@ -382,6 +413,21 @@ export default function UserProfilePage() {
     if (!isOwnProfile && profileLoading) return (
         <div style={{ paddingTop: 120, textAlign: 'center', padding: '6rem 1.5rem' }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.3em', color: 'var(--sepia)', animation: 'pulse 1.8s ease-in-out infinite' }}>✦ RETRIEVING DOSSIER ✦</div>
+        </div>
+    )
+
+    // A record that could not be read is said, never shown as an empty one.
+    if (profileFailed || logsFailed || listsFailed || watchlistFailed) return (
+        <div style={{ paddingTop: 120, textAlign: 'center', padding: '6rem 1.5rem' }}>
+            <QueryErrorBanner
+                message={`${isOwnProfile ? 'Your' : 'This member’s'} record could not be loaded. Check your connection and try again.`}
+                onRetry={() => {
+                    if (profileFailed) refetchProfile()
+                    if (logsFailed) refetchLogs()
+                    if (listsFailed) refetchTheirLists()
+                    if (watchlistFailed) refetchTheirWatchlist()
+                }}
+            />
         </div>
     )
 

@@ -24,7 +24,9 @@ interface Props {
 }
 
 export default function ShareToLoungeModal({ payload, onClose }: Props) {
-    const { myLounges, fetchMyLounges, sendMessage, openLounge, closeLounge, activeLounge } = useLoungeStore()
+    const { myLounges: allLounges, myLoungesFailed, fetchMyLounges, sendMessage, openLounge, closeLounge, activeLounge } = useLoungeStore()
+    // Only a room the member may post in is a share target, as in the app: not a request still with the host
+    const myLounges = allLounges.filter(l => l.is_member)
     const [sentTo, setSentTo] = useState<string | null>(null)
     const [sending, setSending] = useState<string | null>(null)
 
@@ -35,6 +37,7 @@ export default function ShareToLoungeModal({ payload, onClose }: Props) {
     const handleShare = async (lounge: Lounge) => {
         if (sending) return
         setSending(lounge.id)
+        const previousLoungeId = activeLounge?.id
 
         try {
             // Build the dispatch message
@@ -47,13 +50,13 @@ export default function ShareToLoungeModal({ payload, onClose }: Props) {
                         : `${payload.title}`
 
             // We need to open the lounge channel to send, then restore previous state
-            const previousLoungeId = activeLounge?.id
             await openLounge(lounge.id)
             await sendMessage(caption, payload.type, payload.metadata)
 
             // Restore previous active lounge or close
             if (previousLoungeId && previousLoungeId !== lounge.id) {
-                await openLounge(previousLoungeId)
+                // the share is sent either way; a room that will not reopen is told by the store
+                await openLounge(previousLoungeId).catch(() => {})
             } else if (!previousLoungeId) {
                 closeLounge()
             }
@@ -61,7 +64,13 @@ export default function ShareToLoungeModal({ payload, onClose }: Props) {
             setSentTo(lounge.id)
             setTimeout(() => onClose(), 1200)
         } catch (err) {
+            // the store has told the member; nothing is marked sent, and the room left open is put back
             console.error('Share to lounge failed:', err)
+            if (previousLoungeId && previousLoungeId !== useLoungeStore.getState().activeLounge?.id) {
+                await openLounge(previousLoungeId).catch(() => {})
+            } else if (!previousLoungeId) {
+                closeLounge()
+            }
         } finally {
             setSending(null)
         }
@@ -182,7 +191,7 @@ export default function ShareToLoungeModal({ payload, onClose }: Props) {
                                 color: 'var(--fog)',
                                 marginBottom: '0.3rem',
                             }}>
-                                No Lounges Yet
+                                {myLoungesFailed ? 'Your lounges could not be loaded' : 'No Lounges Yet'}
                             </div>
                             <div style={{
                                 fontFamily: 'var(--font-ui)',
@@ -190,7 +199,7 @@ export default function ShareToLoungeModal({ payload, onClose }: Props) {
                                 letterSpacing: '0.1em',
                                 color: 'var(--ash)',
                             }}>
-                                Join or create a lounge to share content
+                                {myLoungesFailed ? 'Close and try again' : 'Join or create a lounge to share content'}
                             </div>
                         </div>
                     ) : (

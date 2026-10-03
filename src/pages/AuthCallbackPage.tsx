@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from '../store'
+import { claimSignupPersona } from '../stores/auth'
 import { motion } from 'framer-motion'
 import { CheckCircle2, XCircle, Loader } from 'lucide-react'
 import PageSEO from '../components/PageSEO'
+import reelToast from '../utils/reelToast'
+import { logError } from '../errorLogger'
 
 // ── AUTH CALLBACK PAGE ──
 // Supabase sends users here after clicking the confirmation email link.
@@ -41,16 +44,29 @@ export default function AuthCallbackPage() {
 
                     if (data?.session) {
                         // Fetch the user profile and set auth state
-                        const { data: profile } = await supabase
+                        // Named columns: a member may not read every column ('*' is refused).
+                        const { data: profile, error: profileError } = await supabase
                             .from('profiles')
-                            .select('*')
+                            .select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, social_links, created_at')
                             .eq('id', data.session.user.id)
                             .single()
 
-                        useAuthStore.setState({
-                            user: { ...data.session.user, ...profile },
-                            isAuthenticated: true,
-                        })
+                        if (!profileError) {
+                            // A confirmed address is usually the first sign-in: the persona chosen at sign-up is written now.
+                            const persona = await claimSignupPersona(data.session.user, profile)
+                            useAuthStore.setState({
+                                user: { ...data.session.user, ...profile, ...(persona ? { persona } : {}) },
+                                isAuthenticated: true,
+                            })
+                        } else {
+                            // Verified and signed in; only the profile read failed. The member
+                            // already held for this account is kept, never replaced by an empty one.
+                            logError({ type: 'auth', message: `[callback] profile read failed: ${profileError.message}`, component: 'AuthCallbackPage' })
+                            if (useAuthStore.getState().user?.id !== data.session.user.id) {
+                                useAuthStore.setState({ user: { ...data.session.user } as any, isAuthenticated: true })
+                                reelToast.error('Your profile could not be loaded. Please refresh the page.', { id: 'profile-unloaded' })
+                            }
+                        }
 
                         // Hydration is handled by initAuthSync() via SIGNED_IN event —
                         // no manual fetch calls here to prevent double-fetch.

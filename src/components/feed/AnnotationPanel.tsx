@@ -11,6 +11,7 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
     const [annotateText, setAnnotateText] = useState('')
     const [comments, setComments] = useState<any[]>([])
     const [commentsLoading, setCommentsLoading] = useState(false)
+    const [commentsFailed, setCommentsFailed] = useState(false)
     const [submittingComment, setSubmittingComment] = useState(false)
     const [showAllComments, setShowAllComments] = useState(false)
     const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
@@ -27,13 +28,16 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
     const loadComments = async () => {
         if (!isSupabaseConfigured || !logId) return
         setCommentsLoading(true)
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('log_comments')
-            .select('id, username, body, created_at')
+            // user_id is what tells a living author from a deleted account below.
+            .select('id, user_id, username, body, created_at')
             .eq('log_id', logId)
             .order('created_at', { ascending: true })
             .limit(30)
-        setComments(data || [])
+        // A failed read is said so, never shown as a log with no critiques.
+        setCommentsFailed(!!error)
+        if (!error) setComments(data || [])
         setCommentsLoading(false)
     }
 
@@ -82,7 +86,7 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
         
         if (!error) {
             // Using the actual returned ID prevents UI bugs if the user tries to edit a newly created comment
-            setComments(prev => [...prev, { id: data.id, username: currentUser.username, body: annotateText.trim(), created_at: new Date().toISOString() }])
+            setComments(prev => [...prev, { id: data.id, user_id: currentUser.id, username: currentUser.username, body: annotateText.trim(), created_at: new Date().toISOString() }])
             setAnnotateText('')
             if (textareaRef.current) textareaRef.current.style.height = 'auto'
             reelToast.success('Critique filed.')
@@ -100,7 +104,8 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
     return (
         <div style={{ marginTop: '1rem', borderTop: '1px dashed rgba(139,105,20,0.2)', paddingTop: '1rem' }}>
             {commentsLoading && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>RETRIEVING CRITIQUES...</div>}
-            
+            {commentsFailed && !commentsLoading && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>THE CRITIQUES COULD NOT BE RETRIEVED.</div>}
+
             {comments.length > 1 && !showAllComments && (
                 <button 
                     onClick={() => setShowAllComments(true)}

@@ -14,7 +14,9 @@ const _USERNAME_CACHE_MAX = 200
 async function resolveUsernameToId(username: string): Promise<string | null> {
     const cached = _usernameIdCache.get(username)
     if (cached) return cached
-    const { data } = await supabase.from('profiles').select('id').eq('username', username).single()
+    // A failed lookup throws: it is not "no such member".
+    const { data, error } = await supabase.from('profiles').select('id').eq('username', username).maybeSingle()
+    if (error) throw error
     if (data?.id) {
         // Evict oldest if at capacity
         if (_usernameIdCache.size >= _USERNAME_CACHE_MAX) {
@@ -61,6 +63,27 @@ async function signIn(identifier: string, password: string) {
     if (error) throw error
     if (!data.user || !data.session) throw usernameRefusal(null)
     return { user: data.user, session: data.session }
+}
+
+// ── The persona chosen at sign-up ──
+// When the address must be confirmed first there is no session to write it with,
+// so it waits in the account's sign-up details and is written on the first
+// sign-in that finds the profile without one. Then it is cleared from there, so
+// it is written once. Returns the persona written, or null.
+export async function claimSignupPersona(
+    authUser: { id: string; user_metadata?: Record<string, unknown> },
+    profile: { persona?: string | null } | null,
+): Promise<string | null> {
+    const chosen = authUser.user_metadata?.persona
+    if (typeof chosen !== 'string' || !chosen || !profile || profile.persona) return null
+    const { error } = await supabase.from('profiles').update({ persona: chosen }).eq('id', authUser.id)
+    if (error) {
+        logError({ type: 'store', message: `[signup] persona not saved: ${error.message}`, component: 'auth.claimSignupPersona', userId: authUser.id })
+        return null
+    }
+    const { error: clearError } = await supabase.auth.updateUser({ data: { persona: null } })
+    if (clearError) logError({ type: 'store', message: `[signup] persona left in sign-up details: ${clearError.message}`, component: 'auth.claimSignupPersona', userId: authUser.id })
+    return chosen
 }
 
 // ── Action throttle: prevents spam-clicking social buttons ──
@@ -130,24 +153,27 @@ export async function hydrateFollowing() {
     if (!userId) return
     try {
         // Get all follow interactions by this user
-        const { data: followRows } = await supabase
+        // A failed read throws, so the list already held is kept, never emptied.
+        const { data: followRows, error: followError } = await supabase
             .from('interactions')
             .select('target_user_id, type')
             .eq('user_id', userId)
             .in('type', ['follow', 'follow_request'])
             .limit(5000)
+        if (followError) throw followError
         if (!followRows || followRows.length === 0) {
             useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: [], requested: [] } : null }))
             return
         }
         // Resolve target IDs to usernames
         const targetIds = followRows.map(r => r.target_user_id)
-        const { data: profiles } = await supabase
+        const { data: profiles, error: profilesError } = await supabase
             .from('profiles')
             .select('id, username')
             .in('id', targetIds)
             .limit(5000)
-            
+        if (profilesError) throw profilesError
+
         const following: string[] = []
         const requested: string[] = []
         if (profiles) {
@@ -192,15 +218,24 @@ export const useAuthStore = create<AuthState>()(
             login: async (identifier, password) => {
                 const data = await signIn(identifier.trim(), password)
 
-                // Set authenticated IMMEDIATELY with minimal auth data so the UI responds instantly
-                set({ user: { ...data.user, following: [], requested: [] } as unknown as User, isAuthenticated: true })
+                // Set authenticated IMMEDIATELY so the UI responds instantly. The sign-in
+                // listener has usually loaded this member with their profile already;
+                // that fuller copy is kept, never cut back to the bare auth record.
+                set((s) => s.user?.id === data.user.id
+                    ? { isAuthenticated: true }
+                    : { user: { ...data.user, following: [], requested: [] } as unknown as User, isAuthenticated: true })
 
                 // Fetch full profile in the background — UI is already updated
                 Promise.resolve(supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user.id).single())
-                    .then(({ data: profile }) => {
-                        if (profile) {
-                            set((s) => ({ user: s.user ? { ...s.user, ...profile } : null }))
+                    .then(async ({ data: profile, error }) => {
+                        // A failed read keeps the member as held; it never strips them.
+                        if (error || !profile) {
+                            logError({ type: 'store', message: `[login] profile read failed: ${error?.message ?? 'no profile row'}`, component: 'auth.login', userId: data.user.id })
+                            if (!get().user?.username) reelToast.error('Your profile could not be loaded. Please refresh the page.', { id: 'profile-unloaded' })
+                            return
                         }
+                        const persona = await claimSignupPersona(data.user, profile)
+                        set((s) => ({ user: s.user?.id === profile.id ? { ...s.user, ...profile, ...(persona ? { persona } : {}) } : s.user }))
                     })
                     .catch(() => { /* profile enrichment is non-critical */ })
 
@@ -223,11 +258,14 @@ export const useAuthStore = create<AuthState>()(
                 const { data, error } = await supabase.auth.signUp({
                     email, password,
                     options: {
-                        // SECURITY: Only send username in metadata.
+                        // SECURITY: Never send role in metadata.
                         // Role is determined server-side by the DB trigger (handle_new_user).
                         // Sending role here was a vector for free premium access - removed.
+                        // The persona rides along: with no session yet, it is
+                        // written on the first sign-in (claimSignupPersona).
                         data: {
                             username,
+                            persona: persona || 'The Cinephile',
                         },
                         emailRedirectTo: redirectTo,
                     }
@@ -239,12 +277,23 @@ export const useAuthStore = create<AuthState>()(
                 // If confirmation is disabled (dev mode), session is returned immediately.
                 if (data?.session) {
                     // Save persona to profiles. Role and tier are securely handled by Postgres triggers.
-                    await supabase.from('profiles').update({
+                    const { error: personaError } = await supabase.from('profiles').update({
                         username,
                         persona: persona || 'The Cinephile',
                     }).eq('id', data.user!.id)
-                    const { data: profile } = await supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user!.id).single()
-                    set({ user: { ...data.user, ...profile, following: [], requested: [] } as User, isAuthenticated: true })
+                    if (personaError) {
+                        logError({ type: 'store', message: `[signup] persona not saved: ${personaError.message}`, component: 'auth.signup' })
+                        reelToast.error('Your persona could not be saved.')
+                    }
+                    const { data: profile, error: profileError } = await supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user!.id).single()
+                    if (profileError) {
+                        // The account is made and signed in; only its profile read failed.
+                        // The member already held for this account is kept, never emptied.
+                        logError({ type: 'store', message: `[signup] profile read failed: ${profileError.message}`, component: 'auth.signup' })
+                        if (get().user?.id !== data.user!.id) set({ user: { ...data.user, username, following: [], requested: [] } as unknown as User, isAuthenticated: true })
+                    } else {
+                        set({ user: { ...data.user, ...profile, following: [], requested: [] } as User, isAuthenticated: true })
+                    }
                     hydrateUserData()
                 }
                 // Return data — SignupModal checks data.session to decide
@@ -375,7 +424,12 @@ export const useAuthStore = create<AuthState>()(
                 
                 // Keep the target username in a loading state array if needed, but since we await DB
                 // we'll fetch ID and is_social_private
-                const { data: profile } = await supabase.from('profiles').select('id, is_social_private').eq('username', targetUsername).single()
+                const { data: profile, error: profileError } = await supabase.from('profiles').select('id, is_social_private').eq('username', targetUsername).maybeSingle()
+                // A failed lookup is not "not found".
+                if (profileError) {
+                    reelToast.error('Follow failed — please try again.')
+                    return
+                }
                 if (!profile) {
                     reelToast.error('User not found.')
                     return

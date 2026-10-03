@@ -210,29 +210,44 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
     const [description, setDescription] = useState(lounge.description || '')
     const [isPrivate, setIsPrivate] = useState(lounge.is_private)
     const [members, setMembers] = useState<Array<{ user_id: string; username: string; avatar_url: string | null; joined_at: string }>>([])
+    // null while the roster is read; false when it could not be: never shown as "0"
+    const [membersLoaded, setMembersLoaded] = useState<boolean | null>(null)
     const [saving, setSaving] = useState(false)
 
-    useEffect(() => {
-        fetchMembers(lounge.id).then(setMembers)
+    const loadMembers = useCallback(() => {
+        setMembersLoaded(null)
+        fetchMembers(lounge.id)
+            .then(list => { setMembers(list); setMembersLoaded(true) })
+            .catch(() => setMembersLoaded(false))
     }, [lounge.id])
 
+    useEffect(() => {
+        loadMembers()
+    }, [loadMembers])
+
+    // Each store action below has already told the member when it failed.
     const handleSave = async () => {
         setSaving(true)
         const updates: any = {}
         if (name.trim() !== lounge.name) updates.name = name.trim()
         if (description.trim() !== (lounge.description || '')) updates.description = description.trim()
         if (isPrivate !== lounge.is_private) updates.is_private = isPrivate
-        
-        if (Object.keys(updates).length > 0) {
-            await updateLounge(lounge.id, updates)
-            reelToast.success('Lounge updated.')
+
+        try {
+            if (Object.keys(updates).length > 0) {
+                await updateLounge(lounge.id, updates)
+                reelToast.success('Lounge updated.')
+            }
+        } catch { /* told by the store */ } finally {
+            setSaving(false)
         }
-        setSaving(false)
     }
 
     const handleKick = async (userId: string, username: string) => {
         if (!confirm(`Remove @${username} from this lounge?`)) return
-        await kickMember(lounge.id, userId)
+        try {
+            await kickMember(lounge.id, userId)
+        } catch { return }
         setMembers(m => m.filter(member => member.user_id !== userId))
         reelToast.success(`@${username} removed.`)
     }
@@ -241,7 +256,9 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
 
     const handleLeave = async () => {
         if (!confirm('Leave this lounge?')) return
-        await leaveLounge(lounge.id)
+        try {
+            await leaveLounge(lounge.id)
+        } catch { return }
         reelToast.success('You stepped out.')
         navigate('/lounge')
     }
@@ -328,8 +345,16 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
 
                     {/* Members */}
                     <div className="lounge-settings-section">
-                        <div className="lounge-settings-section-label">MEMBERS ({members.length})</div>
-                        {members.map(member => (
+                        <div className="lounge-settings-section-label">{membersLoaded ? `MEMBERS (${members.length})` : 'MEMBERS'}</div>
+                        {membersLoaded === false && (
+                            <div className="lounge-member-item">
+                                <div className="lounge-member-name">Members could not be loaded.</div>
+                                <button className="lounge-member-kick" onClick={loadMembers}>
+                                    TRY AGAIN
+                                </button>
+                            </div>
+                        )}
+                        {membersLoaded && members.map(member => (
                             <div className="lounge-member-item" key={member.user_id}>
                                 <div className="lounge-member-avatar">
                                     {member.avatar_url ? (
@@ -364,8 +389,9 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
                                 onClick={async () => {
                                     if (!confirm('INCINERATE LOUNGE?\n\nThis will permanently delete the lounge and all its history. This action cannot be undone.')) return
                                     const store = useLoungeStore.getState()
-                                    // Make sure deleteLounge is accessible. Since it's in the store we can call it.
-                                    await store.deleteLounge(lounge.id)
+                                    try {
+                                        await store.deleteLounge(lounge.id)
+                                    } catch { return }
                                     reelToast.success('Lounge incinerated.')
                                     navigate('/lounge')
                                 }}
@@ -392,10 +418,11 @@ export default function LoungeRoomPage() {
     const { isTouch } = useViewport()
 
     const {
-        activeLounge, messages, isLoading, isSending,
+        activeLounge, messages, isLoading, isSending, openFailed,
         openLounge, closeLounge, sendMessage, deleteMessage,
         loadMoreMessages, hasMoreMessages,
     } = useLoungeStore()
+    const [joining, setJoining] = useState(false)
 
     const [input, setInput] = useState('')
     const [settingsOpen, setSettingsOpen] = useState(false)
@@ -418,7 +445,8 @@ export default function LoungeRoomPage() {
 
     // Open lounge on mount, close on unmount
     useEffect(() => {
-        if (loungeId) openLounge(loungeId)
+        // a failed open is told by the store and shown below
+        if (loungeId) openLounge(loungeId).catch(() => {})
         return () => closeLounge()
     }, [loungeId])
 
@@ -481,7 +509,9 @@ export default function LoungeRoomPage() {
     const handleSend = () => {
         if (!input.trim()) return
         const reply = replyTo ? { id: replyTo.id, content: replyTo.content, username: replyTo.username } : null
-        sendMessage(input.trim(), 'text', {}, reply)
+        const text = input.trim()
+        // a message that was not sent comes back to the box (the store has said why)
+        sendMessage(text, 'text', {}, reply).catch(() => setInput(current => current || text))
         setInput('')
         setReplyTo(null)
         inputRef.current?.focus()
@@ -517,8 +547,11 @@ export default function LoungeRoomPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 64px)' }}>
                 <div style={{ textAlign: 'center' }}>
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>
-                        Lounge not found
+                        {openFailed ? 'This lounge could not be opened' : 'Lounge not found'}
                     </div>
+                    {openFailed && loungeId && (
+                        <button className="btn btn-ghost" onClick={() => { openLounge(loungeId).catch(() => {}) }}>TRY AGAIN</button>
+                    )}
                     <button className="btn btn-ghost" onClick={() => navigate('/lounge')}>← BACK TO THE LOUNGE</button>
                 </div>
             </div>
@@ -653,21 +686,34 @@ export default function LoungeRoomPage() {
                         </div>
                     </>
                 ) : (
+                    // Only an approved seat may post; every other standing is said, as the app says it.
                     <div className="lounge-preview-banner">
                         <div className="lounge-preview-banner-text">
-                            You are previewing this salon.
+                            {activeLounge.membership_status === 'pending' ? 'Your request is with the host.'
+                                : activeLounge.membership_status === 'muted' ? 'You’ve been muted — you can read, but not post.'
+                                : activeLounge.membership_status === 'banned' ? 'You no longer have a seat in this salon.'
+                                : activeLounge.is_private ? 'This room is by invitation of the host.'
+                                : 'You are previewing this salon.'}
                         </div>
-                        <button 
-                            className="btn btn-primary" 
-                            style={{ letterSpacing: '0.15em', padding: '0.5rem 1rem', fontSize: '0.65rem' }}
-                            onClick={async () => {
-                                await useLoungeStore.getState().joinLounge(activeLounge.id)
-                                // Trigger a re-fetch of openLounge to refresh membership state
-                                await useLoungeStore.getState().openLounge(activeLounge.id)
-                            }}
-                        >
-                            TAKE A SEAT
-                        </button>
+                        {!activeLounge.membership_status && (
+                            <button
+                                className="btn btn-primary"
+                                style={{ letterSpacing: '0.15em', padding: '0.5rem 1rem', fontSize: '0.65rem' }}
+                                disabled={joining}
+                                onClick={async () => {
+                                    setJoining(true)
+                                    try {
+                                        await useLoungeStore.getState().joinLounge(activeLounge.id)
+                                        // Trigger a re-fetch of openLounge to refresh membership state
+                                        await useLoungeStore.getState().openLounge(activeLounge.id)
+                                    } catch { /* told by the store */ } finally {
+                                        setJoining(false)
+                                    }
+                                }}
+                            >
+                                {activeLounge.is_private ? 'REQUEST A SEAT' : 'TAKE A SEAT'}
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

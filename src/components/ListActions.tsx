@@ -23,19 +23,22 @@ export default function ListActions({ listId, certifyCount: initialCertifyCount,
     const { toggleListEndorse } = useFilmStore()
 
     // Fetch comments for this list
-    const { data: comments = [] } = useQuery({
+    const { data: comments = [], isError: commentsUnread, isPending: commentsLoading } = useQuery({
         queryKey: ['list-comments', listId],
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('list_comments')
                 .select('id, user_id, content, created_at')
                 .eq('list_id', listId)
                 .order('created_at', { ascending: true })
                 .limit(30)
+            // A failed read throws, so it is never shown as "no remarks yet".
+            if (error) throw error
             if (!data || data.length === 0) return []
             // Resolve usernames
             const uids = [...new Set(data.map((c: any) => c.user_id))]
-            const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', uids)
+            const { data: profiles, error: profilesError } = await supabase.from('profiles').select('id, username').in('id', uids)
+            if (profilesError) throw profilesError
             const umap = Object.fromEntries((profiles || []).map((p: any) => [p.id, p.username]))
             return data.map((c: any) => ({ ...c, username: umap[c.user_id] || 'anon' }))
         },
@@ -48,15 +51,24 @@ export default function ListActions({ listId, certifyCount: initialCertifyCount,
         e.stopPropagation()
         if (!isAuthenticated) { navigate('/join'); return }
         // Optimistic
-        if (isCertified) {
+        const wasCertified = isCertified
+        const before = useFilmStore.getState().hasListEndorsed(listId)
+        if (wasCertified) {
             setCertifyCount(c => Math.max(0, c - 1))
             setIsCertified(false)
         } else {
             setCertifyCount(c => c + 1)
             setIsCertified(true)
-            reelToast.success('Certified!')
         }
         await toggleListEndorse(listId)
+        // The store puts its own mark back when the write fails (and says so).
+        // Unchanged after the toggle means it failed: this button goes back too.
+        if (useFilmStore.getState().hasListEndorsed(listId) === before) {
+            setCertifyCount(c => wasCertified ? c + 1 : Math.max(0, c - 1))
+            setIsCertified(wasCertified)
+            return
+        }
+        if (!wasCertified) reelToast.success('Certified!')
     }
 
     const handleSubmitComment = async (e: React.MouseEvent) => {
@@ -139,7 +151,7 @@ export default function ListActions({ listId, certifyCount: initialCertifyCount,
                 }}>
                     {comments.length === 0 && (
                         <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', textAlign: 'center', padding: '0.5rem 0', opacity: 0.7 }}>
-                            No remarks yet. Be the first to speak.
+                            {commentsLoading ? 'Retrieving remarks...' : commentsUnread ? 'The remarks could not be retrieved just now.' : 'No remarks yet. Be the first to speak.'}
                         </div>
                     )}
                     {comments.map((c: any) => (

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Film, Lock, Mail, RefreshCw, Check, AlertCircle, Circle, ArrowLeft } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from '../store'
+import { claimSignupPersona } from '../stores/auth'
 import reelToast from '../utils/reelToast'
 import { isDisposableEmail, isValidEmailFormat } from '../utils/disposableEmails'
 import { validateUsername } from '../utils/validateUsername'
@@ -103,8 +104,18 @@ export default function AuthPage({ mode }: { mode: 'join' | 'login' | 'verify' |
                 const { data, error } = await supabase.auth.signInWithPassword({ email: verifyEmail, password })
                 if (!error && data?.session && !cancelled) {
                     clearInterval(poll)
-                    const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.session.user.id).single()
-                    useAuthStore.setState({ user: { ...data.session.user, ...profile, following: [] } as any, isAuthenticated: true })
+                    // Named columns: a member may not read every column ('*' is refused).
+                    const { data: profile, error: profileError } = await supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, social_links, created_at').eq('id', data.session.user.id).single()
+                    // Signed in either way. A failed profile read keeps the member already
+                    // held for this account, never replaces them with an empty one.
+                    if (!profileError) {
+                        // The first sign-in after confirming: the persona chosen at sign-up is written now.
+                        const persona = await claimSignupPersona(data.session.user, profile)
+                        useAuthStore.setState({ user: { ...data.session.user, ...profile, ...(persona ? { persona } : {}), following: [] } as any, isAuthenticated: true })
+                    } else if (useAuthStore.getState().user?.id !== data.session.user.id) {
+                        useAuthStore.setState({ user: { ...data.session.user, following: [] } as any, isAuthenticated: true })
+                        reelToast.error('Your profile could not be loaded. Please refresh the page.', { id: 'profile-unloaded' })
+                    }
                     reelToast.success(`Welcome to The ReelHouse Society! 🎬`)
                     navigate('/')
                 }

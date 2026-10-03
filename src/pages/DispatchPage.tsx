@@ -179,6 +179,8 @@ export default function DispatchPage() {
     const DOSSIERS_PER_PAGE = 6
 
     const scrollPos = useRef(0)
+    // True when the open dossier's certification could not be read.
+    const certifyUnknown = useRef(false)
     const canWrite = isAuteurPlusTier(user)
 
     useEffect(() => {
@@ -210,6 +212,7 @@ export default function DispatchPage() {
         scrollPos.current = window.scrollY
         setSelectedArticle(item)
         setCertified(false)
+        certifyUnknown.current = false
         setCritiqueOpen(false)
         setShowShareLounge(false)
         setLocalCertifyCount(item.certifyCount || 0)
@@ -227,14 +230,19 @@ export default function DispatchPage() {
             // Check if current user already certified this dossier
             if (user) {
                 try {
-                    const { data } = await supabase
+                    const { data, error } = await supabase
                         .from('dossier_certifications')
                         .select('id')
                         .eq('user_id', user.id)
                         .eq('dossier_id', item.id)
                         .maybeSingle()
+                    if (error) throw error
                     setCertified(!!data)
-                } catch {}
+                } catch {
+                    // Unknown is not "not certified": a toggle now could undo a certification.
+                    certifyUnknown.current = true
+                    reelToast.error('Your certification could not be checked. Reopen the dossier to try again.')
+                }
             }
         }
     }
@@ -261,6 +269,10 @@ export default function DispatchPage() {
 
     const handleCertify = async () => {
         if (!user || !selectedArticle?.id || selectedArticle.id.startsWith('seed-') || certifyLoading) return
+        if (certifyUnknown.current) {
+            reelToast.error('Your certification could not be checked. Reopen the dossier to try again.')
+            return
+        }
         setCertifyLoading(true)
         // Optimistic update
         const wasCertified = certified

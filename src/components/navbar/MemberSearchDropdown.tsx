@@ -13,6 +13,7 @@ export default function MemberSearchDropdown({ isOpen, onClose }: { isOpen: bool
     const [query, setQuery] = useState('')
     const [suggestions, setSuggestions] = useState<any[]>([])
     const [searching, setSearching] = useState(false)
+    const [searchFailed, setSearchFailed] = useState(false)
     const [followingLoading, setFollowingLoading] = useState<Record<string, boolean>>({})
 
     useEffect(() => {
@@ -22,6 +23,7 @@ export default function MemberSearchDropdown({ isOpen, onClose }: { isOpen: bool
     useEffect(() => {
         if (!query.trim()) {
             setSuggestions([])
+            setSearchFailed(false)
             setSearching(false)
             return
         }
@@ -35,9 +37,13 @@ export default function MemberSearchDropdown({ isOpen, onClose }: { isOpen: bool
                     .or(`username.ilike.%${query}%,bio.ilike.%${query}%`)
                     .order('username', { ascending: true })
                     .limit(8)
-                if (!error && data) setSuggestions(data)
+                if (error) throw error
+                setSuggestions(data || [])
+                setSearchFailed(false)
             } catch {
-                // Autocomplete search failed — return no results, UI handles empty state
+                // A failed search is said so — never "no members found", never the last query's names.
+                setSuggestions([])
+                setSearchFailed(true)
             } finally {
                 setSearching(false)
             }
@@ -95,7 +101,7 @@ export default function MemberSearchDropdown({ isOpen, onClose }: { isOpen: bool
                                 )}
                                 {!searching && suggestions.length === 0 && query.trim() && (
                                     <div style={{ padding: '1rem 1.25rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>
-                                        NO MEMBERS FOUND
+                                        {searchFailed ? 'THE MEMBERS COULD NOT BE SEARCHED. TRY AGAIN.' : 'NO MEMBERS FOUND'}
                                     </div>
                                 )}
                                 {!searching && suggestions.map((member: any) => (
@@ -115,42 +121,46 @@ export default function MemberSearchDropdown({ isOpen, onClose }: { isOpen: bool
                                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--sepia)', letterSpacing: '0.15em', marginTop: '0.35rem' }}>{(member.role || 'cinephile').toUpperCase()}</div>
                                             {member.bio && <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '400px' }}>"{member.bio}"</div>}
                                         </div>
-                                        {user && member.username !== user.username && (
+                                        {user && member.username !== user.username && (() => {
+                                            const isFollowing = (user.following || []).includes(member.username)
+                                            const isRequested = (user.requested || []).includes(member.username)
+                                            return (
                                             <button
-                                                className={`btn ${(user.following || []).includes(member.username) ? 'btn-ghost' : 'btn-primary'}`}
+                                                className={`btn ${isFollowing || isRequested ? 'btn-ghost' : 'btn-primary'}`}
                                                 onClick={async (e) => {
                                                     e.preventDefault()
                                                     e.stopPropagation()
                                                     if (followingLoading[member.username]) return
                                                     setFollowingLoading(prev => ({ ...prev, [member.username]: true }))
-                                                    const alreadyFollowing = (user.following || []).includes(member.username)
                                                     try {
-                                                        if (alreadyFollowing) {
-                                                            useAuthStore.getState().updateUser({ following: (user.following || []).filter((u: string) => u !== member.username) })
-                                                            reelToast.success(`Unfollowed @${member.username}`)
-                                                            await supabase.from('interactions').delete()
-                                                                .eq('user_id', user.id)
-                                                                .eq('target_user_id', member.id)
-                                                                .eq('type', 'follow')
-                                                        } else {
-                                                            useAuthStore.getState().updateUser({ following: [...(user.following || []), member.username] })
-                                                            reelToast.success(`Now following @${member.username} ✦`)
-                                                            await supabase.from('interactions').insert({
-                                                                user_id: user.id,
-                                                                target_user_id: member.id,
-                                                                type: 'follow'
-                                                            })
-                                                            // DB Trigger dynamically creates notification
+                                                        // Through the store, as on a profile: a private member's
+                                                        // follow becomes a request (the database makes it one), a
+                                                        // request can be withdrawn, and a failure is rolled back and
+                                                        // said by the store. Only what the store then holds is told.
+                                                        const holds = () => {
+                                                            const u = useAuthStore.getState().user
+                                                            return { following: (u?.following || []).includes(member.username), requested: (u?.requested || []).includes(member.username) }
                                                         }
-                                                    } catch { reelToast.error('Something went wrong.') }
+                                                        if (isFollowing || isRequested) {
+                                                            await useAuthStore.getState().unfollowUser(member.username)
+                                                            const now = holds()
+                                                            if (!now.following && !now.requested) reelToast.success(isRequested ? `Cancelled request to @${member.username}` : `Unfollowed @${member.username}`)
+                                                        } else {
+                                                            await useAuthStore.getState().followUser(member.username)
+                                                            const now = holds()
+                                                            if (now.requested) reelToast.success(`Requested to follow @${member.username}`)
+                                                            else if (now.following) reelToast.success(`Now following @${member.username} ✦`)
+                                                        }
+                                                    }
                                                     finally { setFollowingLoading(prev => ({ ...prev, [member.username]: false })) }
                                                 }}
                                                 style={{ flexShrink: 0, fontSize: '0.5rem', padding: '0.35rem 0.7rem', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.3rem', minWidth: 'auto' }}
                                                 disabled={followingLoading[member.username]}
                                             >
-                                                {followingLoading[member.username] ? '...' : (user.following || []).includes(member.username) ? <><UserCheck size={11} /> FOLLOWING</> : <><UserPlus size={11} /> FOLLOW</>}
+                                                {followingLoading[member.username] ? '...' : isFollowing ? <><UserCheck size={11} /> FOLLOWING</> : isRequested ? <><UserCheck size={11} /> REQUESTED</> : <><UserPlus size={11} /> FOLLOW</>}
                                             </button>
-                                        )}
+                                            )
+                                        })()}
                                     </Link>
                                 ))}
                             </motion.div>

@@ -8,10 +8,11 @@ import { ReelRating, SectionHeader } from '../UI'
 export default function CommunityReviews({ filmId }: { filmId: string | number }) {
     const { logs } = useFilmStore()
     const { user: authUser } = useAuthStore()
-    const { data: dbReviews } = useQuery({
+    // isPending, not isLoading: a read paused offline has not answered either.
+    const { data: dbReviews, isError, isPending } = useQuery({
         queryKey: ['film-reviews', filmId],
         queryFn: async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('logs')
                 .select('user_id, review, rating, created_at')
                 .eq('film_id', filmId)
@@ -19,12 +20,16 @@ export default function CommunityReviews({ filmId }: { filmId: string | number }
                 .neq('review', '')
                 .order('created_at', { ascending: false })
                 .limit(6)
+            // A failed read throws, so it is never shown as a film nobody reviewed.
+            if (error) throw error
             if (!data || data.length === 0) return []
             const userIds = [...new Set(data.map((l: any) => l.user_id).filter(Boolean))]
             let usernameMap: Record<string, { username: string; role: string }> = {}
             if (userIds.length > 0) {
-                const { data: profilesData } = await supabase
+                const { data: profilesData, error: profilesError } = await supabase
                     .from('profiles').select('id, username, role').in('id', userIds)
+                // Unread names would sign every review "anonymous".
+                if (profilesError) throw profilesError
                 if (profilesData) usernameMap = Object.fromEntries(profilesData.map((p: any) => [p.id, p]))
             }
             return data.map((r: any) => ({ ...r, profiles: usernameMap[r.user_id] || { username: 'anonymous', role: 'cinephile' } }))
@@ -58,11 +63,24 @@ export default function CommunityReviews({ filmId }: { filmId: string | number }
     }
 
     const noReviews = reviews.length === 0
+    // Failed with nothing read before it: the room's reviews are unknown, not absent.
+    const unread = isError && !dbReviews
 
     return (
         <div>
             <SectionHeader label="FROM THE CRITICS" title="Community Reviews" />
-            {noReviews ? (
+            {unread && !noReviews && (
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', fontStyle: 'italic', marginBottom: '1rem' }}>The other reviews could not be retrieved just now.</div>
+            )}
+            {noReviews && isPending ? (
+                <div style={{ padding: '2rem', border: '1px dashed rgba(139,105,20,0.2)', borderRadius: '2px', textAlign: 'center' }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>RETRIEVING REVIEWS...</div>
+                </div>
+            ) : noReviews && unread ? (
+                <div style={{ padding: '2rem', border: '1px dashed rgba(139,105,20,0.2)', borderRadius: '2px', textAlign: 'center' }}>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', fontStyle: 'italic' }}>The reviews could not be retrieved just now. Try again shortly.</div>
+                </div>
+            ) : noReviews ? (
                 <div style={{ padding: '2rem', border: '1px dashed rgba(139,105,20,0.2)', borderRadius: '2px', textAlign: 'center' }}>
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--sepia)', marginBottom: '0.5rem' }}>The projection box awaits.</div>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', fontStyle: 'italic' }}>No transmissions yet. Log this film to be the first voice in the archive.</div>

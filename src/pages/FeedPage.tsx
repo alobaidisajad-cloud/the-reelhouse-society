@@ -12,6 +12,7 @@ import RatingLegend from '../components/feed/RatingLegend'
 import SectionErrorBoundary from '../components/SectionErrorBoundary'
 import WeeklyChallenge from '../components/profile/WeeklyChallenge'
 import PageSEO from '../components/PageSEO'
+import { QueryErrorBanner } from '../components/UI'
 
 import { useViewport } from '../hooks/useViewport'
 import { useScrollRevealAll } from '../hooks/useScrollReveal'
@@ -139,13 +140,16 @@ export default function FeedPage() {
 
         if (mode === 'following') {
             const followingArr = user?.following || []
-            const { data: followedProfiles } = await supabase.from('profiles').select('id').in('username', followingArr)
+            const { data: followedProfiles, error: followedError } = await supabase.from('profiles').select('id').in('username', followingArr)
+            if (followedError) throw followedError
             if (!followedProfiles?.length) return { items: [], nextCursor: null }
             query = query.in('user_id', followedProfiles.map((p: any) => p.id))
         }
 
         const { data, error } = await query
-        if (error || !data?.length) return { items: [], nextCursor: null }
+        // A failed read throws, so the Reel says it could not load rather than "no transmissions".
+        if (error) throw error
+        if (!data?.length) return { items: [], nextCursor: null }
         
         const nextCursor = data.length === 20 ? data[19].created_at : null
 
@@ -164,6 +168,7 @@ export default function FeedPage() {
         hasNextPage: hasNextCommunity,
         isFetchingNextPage: isFetchingNextCommunity,
         isLoading: feedLoading,
+        isLoadingError: feedFailed,
         refetch: refetchCommunity
     } = useInfiniteQuery({
         queryKey: ['feed', 'for-you'],
@@ -178,6 +183,7 @@ export default function FeedPage() {
         hasNextPage: hasNextFollowing,
         isFetchingNextPage: isFetchingNextFollowing,
         isLoading: followingLoading,
+        isLoadingError: followingFailed,
         refetch: refetchFollowing
     } = useInfiniteQuery({
         queryKey: ['feed', 'following', user?.following?.length],
@@ -187,7 +193,7 @@ export default function FeedPage() {
         getNextPageParam: (lastPage) => lastPage.nextCursor || undefined
     })
 
-    const { data: societyPicks = [] } = useQuery({
+    const { data: societyPicks = [], isLoadingError: picksFailed } = useQuery({
         queryKey: ['society_picks_live'],
         queryFn: async () => {
             if (!isSupabaseConfigured) return []
@@ -198,7 +204,8 @@ export default function FeedPage() {
                 .not('review', 'is', null)
                 .order('created_at', { ascending: false })
                 .limit(3)
-            if (error) return []
+            // A failed read says so, never "AWAITING TRANSMISSIONS...".
+            if (error) throw error
             // Deduplicate by film_id
             const unique = new Map()
             data.forEach((l: any) => { if (!unique.has(l.film_id)) unique.set(l.film_id, l) })
@@ -208,43 +215,18 @@ export default function FeedPage() {
 
     // Virtuoso handles infinite scroll natively via endReached — no manual IntersectionObserver needed
 
-    // ── Sidebar Data (TanStack cached — no redundant fetches on navigation) ──
-    const { data: recentLists = [] } = useQuery({
-        queryKey: ['sidebar_lists'],
-        queryFn: async () => {
-            if (!isSupabaseConfigured) return []
-            const { data: listsData } = await supabase
-                .from('lists')
-                .select('id, title, description, user_id')
-                .order('created_at', { ascending: false })
-                .limit(3)
-            if (!listsData) return []
-            const curatorIds = [...new Set(listsData.map((l: any) => l.user_id).filter(Boolean))]
-            let curatorMap: { [key: string]: string } = {}
-            if (curatorIds.length > 0) {
-                const { data: curatorsData } = await supabase
-                    .from('profiles').select('id, username').in('id', curatorIds)
-                if (curatorsData) curatorMap = Object.fromEntries(curatorsData.map((p: { id: string, username: string }) => [p.id, p.username]))
-            }
-            return listsData.map((l: { id: string, title: string, user_id: string }) => ({
-                id: l.id, title: l.title,
-                curator: curatorMap[l.user_id] || 'The Society'
-            }))
-        },
-        staleTime: 5 * 60 * 1000, // 5 minutes
-    })
-
     // ── Active Members Discovery for Empty State ──
     const { data: activeMembers = [] } = useQuery({
         queryKey: ['active_members'],
         queryFn: async () => {
             if (!isSupabaseConfigured) return []
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('profiles')
                 .select('id, username, avatar_url, role, bio')
                 .in('role', ['archivist', 'auteur'])
                 .order('followers_count', { ascending: false })
                 .limit(10)
+            if (error) throw error
             return data || []
         },
         enabled: feedTab === 'following' && isAuthenticated && !feedLoading,
@@ -257,6 +239,7 @@ export default function FeedPage() {
     const followingFeed = useMemo(() => followingData?.pages.flatMap(p => p.items) || [], [followingData])
     const activeFeed = feedTab === 'following' ? followingFeed : communityFeed
     const isLoading = feedTab === 'following' ? followingLoading : feedLoading
+    const loadFailed = feedTab === 'following' ? followingFailed : feedFailed
 
     // ── Derived stats (no new API calls) ──
     const thisWeekCount = useMemo(() => {
@@ -447,7 +430,7 @@ export default function FeedPage() {
                         )}
 
                         {/* Following tab — empty state */}
-                        {feedTab === 'following' && isAuthenticated && !isLoading && activeFeed.length === 0 && (
+                        {feedTab === 'following' && isAuthenticated && !isLoading && !loadFailed && activeFeed.length === 0 && (
                             <div className="bg-wireframe" style={{
                                 border: '1px solid rgba(139,105,20,0.15)',
                                 padding: IS_TOUCH ? '2.5rem 1.5rem' : '3rem 2rem',
@@ -532,6 +515,11 @@ export default function FeedPage() {
                                     <div key={i} className="skeleton" style={{ height: 140, borderRadius: '4px' }} />
                                 ))}
                             </div>
+                        ) : loadFailed ? (
+                            <QueryErrorBanner
+                                message="The Reel could not be loaded. Check your connection and try again."
+                                onRetry={() => { if (feedTab === 'following') refetchFollowing(); else refetchCommunity() }}
+                            />
                         ) : activeFeed.length === 0 && feedTab === 'for-you' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                 {/* Premium empty state */}
@@ -588,7 +576,7 @@ export default function FeedPage() {
                                     </Link>
                                 )) : (
                                     <div style={{ padding: '1rem', textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--ash)' }}>
-                                        AWAITING TRANSMISSIONS...
+                                        {picksFailed ? 'THE PICKS COULD NOT BE LOADED.' : 'AWAITING TRANSMISSIONS...'}
                                     </div>
                                 )}
                             </div>

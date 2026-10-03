@@ -78,7 +78,8 @@ export default function LogModal() {
                 setSearchContext(data.matchedContext || '')
             } catch (e) {
                 if (e instanceof DOMException && e.name === 'AbortError') return
-                setResults([]); setSearchType('exact')
+                // A search that could not run is said so, never "no films found".
+                setResults([]); setSearchType('unreached')
             }
             finally { setSearching(false) }
         }, 400)

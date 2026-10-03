@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
+import reelToast from '../utils/reelToast'
 
 // Premium monochrome thematic glyphs — no colorful Unicode emojis
 const REACTIONS = [
@@ -14,7 +15,7 @@ const REACTIONS = [
 
 export default function ReactionBar({ logId, cachedReactions, onReactionChange }: {
     logId: string;
-    /** Pre-fetched reactions from useBatchReactions — if provided, skips independent fetch */
+    /** Pre-fetched reactions from a parent — if provided, skips independent fetch */
     cachedReactions?: Record<string, string[]>;
     /** Callback when a reaction changes — parent can refresh batch data */
     onReactionChange?: () => void;
@@ -22,6 +23,10 @@ export default function ReactionBar({ logId, cachedReactions, onReactionChange }
     const [hoveredEmoji, setHoveredEmoji] = useState<string | null>(null)
     const [reactions, setReactions] = useState<Record<string, string[]>>({})  // { emoji: [username, ...] }
     const [loading, setLoading] = useState(false)
+    // The reactions could not be read: unknown, not none — so a tap cannot toggle the wrong way.
+    const [unread, setUnread] = useState(false)
+    // Bumped by a tap on a bar that could not be read: the read is asked again.
+    const [readAttempt, setReadAttempt] = useState(0)
     const user = useAuthStore(s => s.user)
     const isAuthenticated = useAuthStore(s => s.isAuthenticated)
 
@@ -29,6 +34,7 @@ export default function ReactionBar({ logId, cachedReactions, onReactionChange }
     useEffect(() => {
         if (cachedReactions) {
             setReactions(cachedReactions)
+            setUnread(false)
             return
         }
     }, [cachedReactions])
@@ -45,14 +51,17 @@ export default function ReactionBar({ logId, cachedReactions, onReactionChange }
                 .eq('target_log_id', logId)
                 .like('type', 'react_%')
 
-            if (error || cancelled) return
+            if (cancelled) return
+            if (error) { setUnread(true); return }
 
             // Batch resolve usernames
             const userIds = [...new Set((data || []).map(r => r.user_id).filter(Boolean))]
             let usernameMap: Record<string, string> = {}
             if (userIds.length > 0) {
-                const { data: profilesData } = await supabase
+                const { data: profilesData, error: profilesError } = await supabase
                     .from('profiles').select('id, username').in('id', userIds)
+                // Unread names would sign every reaction "anon", the member's own included.
+                if (profilesError) { if (!cancelled) setUnread(true); return }
                 if (profilesData) usernameMap = Object.fromEntries(profilesData.map((p: any) => [p.id, p.username]))
             }
 
@@ -64,15 +73,20 @@ export default function ReactionBar({ logId, cachedReactions, onReactionChange }
                 if (!grouped[emoji]) grouped[emoji] = []
                 grouped[emoji].push(username)
             }
-            if (!cancelled) setReactions(grouped)
+            if (!cancelled) { setReactions(grouped); setUnread(false) }
         }
 
         fetchReactions()
         return () => { cancelled = true }
-    }, [logId, cachedReactions])
+    }, [logId, cachedReactions, readAttempt])
 
     const handleReact = async (emoji: string) => {
         if (!isAuthenticated || !user || loading) return
+        if (unread) {
+            setReadAttempt((n) => n + 1)
+            reelToast.error('The reactions could not be loaded. Reading them again.')
+            return
+        }
         setLoading(true)
 
         const username = user?.username || 'anonymous'
@@ -119,8 +133,9 @@ export default function ReactionBar({ logId, cachedReactions, onReactionChange }
             // Notify parent to refresh batch data if available
             onReactionChange?.()
         } catch {
-            // Rollback to snapshot on failure
+            // Rollback to snapshot on failure, and say so
             setReactions(snapshot)
+            reelToast.error('Could not save your reaction.')
         } finally {
             setLoading(false)
         }
@@ -154,7 +169,7 @@ export default function ReactionBar({ logId, cachedReactions, onReactionChange }
                             alignItems: 'center',
                             gap: '0.3em',
                             transition: 'all 0.2s',
-                            opacity: isAuthenticated ? (loading ? 0.5 : 1) : 0.5,
+                            opacity: isAuthenticated ? (loading || unread ? 0.5 : 1) : 0.5,
                         }}
                     >
                         <span>{r.emoji}</span>

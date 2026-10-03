@@ -35,6 +35,8 @@ export default function CommandPalette() {
     const [searchContext, setSearchContext] = useState('')
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [searching, setSearching] = useState(false)
+    // What could not be searched: a failed search is never "no records".
+    const [unreached, setUnreached] = useState('')
     const inputRef = useRef<HTMLInputElement>(null)
     const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
     const abortRef = useRef<AbortController | null>(null)
@@ -65,6 +67,7 @@ export default function CommandPalette() {
         if (open) {
             setQuery('')
             setResults([])
+            setUnreached('')
             setSelectedIndex(0)
             setTimeout(() => inputRef.current?.focus(), 100)
         }
@@ -81,7 +84,7 @@ export default function CommandPalette() {
         if (searchTimeout.current) clearTimeout(searchTimeout.current)
         // Abort any in-flight search to prevent out-of-order results
         abortRef.current?.abort()
-        if (!q.trim()) { setResults([]); return }
+        if (!q.trim()) { setResults([]); setUnreached(''); return }
         setSearching(true)
 
         searchTimeout.current = setTimeout(async () => {
@@ -107,36 +110,44 @@ export default function CommandPalette() {
 
                 // Remote: search Supabase profiles
                 let userMatches = []
+                let membersUnreached = false
                 if (isSupabaseConfigured && q.length >= 2) {
                     try {
-                        const { data } = await supabase
+                        const { data, error } = await supabase
                             .from('profiles')
                             .select('username, avatar_url, role')
                             .ilike('username', `%${q}%`)
                             .limit(3)
                             .abortSignal(controller.signal)
+                        if (error) throw error
                         userMatches = (data || []).map((u: any) => ({
                             ...u, _source: 'user', id: u.username,
                             title: `@${u.username}`, media_type: 'person',
                             profile_path: u.avatar_url,
                         }))
-                    } catch { /* silent */ }
+                    } catch { membersUnreached = true }
                 }
 
                 // Bail if aborted before TMDB
                 if (controller.signal.aborted) return
 
-                // Remote: TMDB search
-                const data = await tmdb.search(q)
+                // Remote: TMDB search. A failed one throws; the member's own matches still show.
+                let data: { results?: any[], searchType?: string, matchedContext?: string } = { results: [] }
+                let filmsUnreached = false
+                try { data = await tmdb.search(q) } catch { filmsUnreached = true }
                 if (controller.signal.aborted) return
                 const tmdbResults = (data.results?.slice(0, 5) || []).map((r: any) => ({ ...r, _source: 'tmdb' }))
 
                 setResults([...localLogMatches, ...localListMatches, ...userMatches, ...tmdbResults])
                 setSearchType(data.searchType || 'exact')
                 setSearchContext(data.matchedContext || '')
+                setUnreached(filmsUnreached
+                    ? (membersUnreached ? 'The archive could not be searched just now. Try again.' : 'The films could not be searched just now. Try again.')
+                    : membersUnreached ? 'The members could not be searched just now.' : '')
             } catch (e) {
                 if (e instanceof DOMException && e.name === 'AbortError') return
                 setResults([]); setSearchType('exact')
+                setUnreached('The archive could not be searched just now. Try again.')
             }
             finally { setSearching(false) }
         }, 300)
@@ -262,6 +273,9 @@ export default function CommandPalette() {
                                 </div>
                             ) : results.length > 0 ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                    {unreached && (
+                                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', fontStyle: 'italic', padding: '0.25rem 1rem' }}>{unreached}</div>
+                                    )}
                                     {searchType === 'person' && (
                                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--sepia)', letterSpacing: '0.1em', padding: '0.25rem 1rem' }}>✦ ACTOR/DIRECTOR MATCH: {searchContext.toUpperCase()}</div>
                                     )}
@@ -341,7 +355,7 @@ export default function CommandPalette() {
                                 </div>
                             ) : (
                                 <div style={{ padding: '3rem', textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', fontStyle: 'italic' }}>
-                                    No records found in the archive.
+                                    {unreached || 'No records found in the archive.'}
                                 </div>
                             )}
                         </div>

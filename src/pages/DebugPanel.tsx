@@ -18,7 +18,7 @@ export default function DebugPanel() {
     const { logs, watchlist, lists } = useFilmStore()
     const { badges } = useAchievements(user?.id, logs.length)
     const { currentStreak, longestStreak } = useStreak(logs)
-    const [analyticsCount, setAnalyticsCount] = useState<number | null>(null)
+    const [analyticsCount, setAnalyticsCount] = useState<number | string | null>(null)
     const [profileData, setProfileData] = useState<any>(null)
     const [buildInfo, setBuildInfo] = useState({ size: '303KB', date: new Date().toISOString().slice(0, 10) })
 
@@ -26,14 +26,17 @@ export default function DebugPanel() {
     useEffect(() => {
         if (!isSupabaseConfigured || !user?.id) return
         supabase.from('analytics_events').select('id', { count: 'exact', head: true }).eq('user_id', user.id)
-            .then(({ count }) => setAnalyticsCount(count || 0))
+            .then(({ count, error }) => setAnalyticsCount(error ? 'could not be read' : count ?? 0))
     }, [user?.id])
 
-    // Fetch raw profile data
+    // Fetch raw profile data. Named columns: a member may not read every column of
+    // profiles, so '*' is refused outright.
     useEffect(() => {
         if (!isSupabaseConfigured || !user?.id) return
-        supabase.from('profiles').select('*').eq('id', user.id).single()
-            .then(({ data }) => setProfileData(data))
+        supabase.from('profiles')
+            .select('id, username, role, tier, created_at, display_name, social_visibility, followers_count, following_count')
+            .eq('id', user.id).single()
+            .then(({ data, error }) => setProfileData(error ? { error: error.message } : data))
     }, [user?.id])
 
     if (!isAuthenticated || (user as any)?.role !== 'auteur') {

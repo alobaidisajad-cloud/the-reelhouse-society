@@ -165,9 +165,13 @@ export function useAddLog() {
 
             let existingLog = log.filmId ? useFilmStore.getState()._loggedIndex[log.filmId] : undefined;
             if (!existingLog && log.filmId) {
-                const { data: serverCheck } = await supabase.from('logs')
+                const { data: serverCheck, error: checkError } = await supabase.from('logs')
                     .select('id, viewing_id, rating, review, watched_date, watched_with, view_count, viewing_history, created_at, status')
                     .eq('user_id', user.id).eq('film_id', log.filmId).maybeSingle();
+                // A failed check is not "never logged": filing a first watch on it
+                // would set a second log beside the real one. Offline, the insert
+                // below fails the same way and is queued, as before.
+                if (checkError && !Vault.isNetworkError(checkError)) throw checkError;
 
                 if (serverCheck) {
                     existingLog = {
@@ -366,10 +370,12 @@ export function useUpdateLog() {
             if (note !== undefined) {
                 let viewingId = useFilmStore.getState().logs.find(l => l.id === id)?.viewingId ?? null;
                 if (!viewingId) {
-                    const { data } = await supabase.from('logs').select('viewing_id').eq('id', id).maybeSingle();
-                    viewingId = (data as { viewing_id?: string } | null)?.viewing_id ?? null;
+                    const { data, error } = await supabase.from('logs').select('viewing_id').eq('id', id).maybeSingle();
+                    if (!error) viewingId = (data as { viewing_id?: string } | null)?.viewing_id ?? null;
                 }
+                // With no viewing to write it on, the note is not kept — and the member is told.
                 if (viewingId) await saveNoteQuietly(id, viewingId, note);
+                else reelToast.error('Your record is filed, but the note could not be kept. Try again from the log.');
             }
             return { id, updates };
         },

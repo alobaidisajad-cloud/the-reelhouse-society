@@ -35,9 +35,10 @@ const upsertCalls: { rows: any[]; options: any }[] = []
 vi.mock('../../supabaseClient', () => ({
   supabase: {
     from: () => ({
+      // In the server's shape: `.select()` after the upsert returns the rows written.
       upsert: (rows: any[], options: any) => {
         upsertCalls.push({ rows, options })
-        return Promise.resolve({ error: null })
+        return { select: () => Promise.resolve({ data: rows.map((r) => ({ film_id: r.film_id })), error: null }) }
       },
     }),
   },
