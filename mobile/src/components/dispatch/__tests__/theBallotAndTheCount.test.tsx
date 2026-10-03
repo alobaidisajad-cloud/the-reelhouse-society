@@ -20,6 +20,7 @@
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
+import { readCode } from '@/test-utils/readCode';
 
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { PaperBallot, shares } from '@/src/components/dispatch/paper/PaperBallot';
@@ -161,10 +162,7 @@ describe('nothing in the feature glues a count to a plural again', () => {
     const files = fs.readdirSync(DIR).filter((n) => /\.tsx?$/.test(n));
     expect(files.length).toBeGreaterThan(10); // the paper's components were found
     for (const f of files) {
-      const code = fs.readFileSync(path.join(DIR, f), 'utf8')
-        .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/[^\n]*/g, '');
+      const code = readCode(path.join(DIR, f));
       // `${anything} WORDS` or `${anything} words` — a count against a plural.
       for (const m of code.matchAll(/\$\{[^{}]*\}\s+([A-Za-z]+[sS])\b/g)) {
         // `counted(...)` is the sanctioned form and produces the whole phrase,

@@ -2,12 +2,12 @@
  * interactionSlice.test.ts — Domain Slice Unit Tests
  * ───────────────────────────────────────────────────
  * Validates core invariants of the interaction domain slice:
- *   1. O(1) _endorsedIndex integrity on toggle
- *   2. INTERACTIONS_CAP enforcement (P2 hardening)
- *   3. Endorsement throttle prevents double-tap race
- *   4. Throttle map pruning prevents memory leak
- *   5. Paginated fetch builds complete index
- *   6. Optimistic rollback on server error
+ *   1. the index on toggle, for logs and for stacks
+ *   2. a fetch builds the index, keeps what it already knew, and keeps it in
+ *      the list the index is rebuilt from at the next launch
+ *   3. a failed fetch keeps everything it had
+ *   4. the count every bar draws moves with the heart (markCounts)
+ *   5. the heart is the server's answer, post by post (learnEndorsements)
  */
 
 import { supabase } from '../../lib/supabase';
@@ -168,10 +168,53 @@ describe('interactionSlice', () => {
 
             await useLogStore.getState().fetchEndorsements();
 
-            // Non-endorse interactions should be preserved, but endorsements get replaced
-            // The error breaks out of the loop, so we get an empty result merged
+            // A read that failed is not an empty history: the heart stays, in the
+            // index and in the list it is rebuilt from.
             const state = useLogStore.getState();
-            expect(state._endorsedIndex).toBeDefined();
+            expect(state._endorsedIndex.existing).toBeTruthy();
+            expect(state.interactions.map((i) => i.targetId)).toEqual(['existing']);
+        });
+
+        it('keeps a certification made before the answer — in the index AND the list it is rebuilt from', async () => {
+            // Certified a moment ago (still sending, or queued offline): the server's
+            // page does not have it yet. The index kept it, but the list dropped it,
+            // and the list is what the index is rebuilt from at the next launch — so
+            // after a restart the heart was empty while the certification was queued.
+            useLogStore.setState({
+                interactions: [endorsement('just-now')],
+                _endorsedIndex: { 'just-now': endorsement('just-now') },
+            });
+            (supabase.from as jest.Mock) = jest.fn(() => ({
+                select: jest.fn().mockReturnThis(),
+                eq: jest.fn().mockReturnThis(),
+                order: jest.fn().mockReturnThis(),
+                limit: jest.fn().mockResolvedValue({ data: [{ target_log_id: 'log-1', created_at: '2024-01-03' }], error: null }),
+            }));
+
+            await useLogStore.getState().fetchEndorsements();
+
+            const state = useLogStore.getState();
+            expect(Object.keys(state._endorsedIndex).sort()).toEqual(['just-now', 'log-1']);
+            expect(state.interactions.filter((i) => i.type === 'endorse').map((i) => i.targetId).sort()).toEqual(['just-now', 'log-1']);
+        });
+
+        it('and the same for a stack', async () => {
+            useLogStore.setState({
+                interactions: [endorsement('stack-now', 'endorse_list')],
+                _listEndorsedIndex: { 'stack-now': endorsement('stack-now', 'endorse_list') },
+            });
+            (supabase.from as jest.Mock) = jest.fn(() => ({
+                select: jest.fn().mockReturnThis(),
+                eq: jest.fn().mockReturnThis(),
+                order: jest.fn().mockReturnThis(),
+                limit: jest.fn().mockResolvedValue({ data: [{ target_list_id: 'list-1', created_at: '2024-01-03' }], error: null }),
+            }));
+
+            await useLogStore.getState().fetchListEndorsements();
+
+            const state = useLogStore.getState();
+            expect(Object.keys(state._listEndorsedIndex).sort()).toEqual(['list-1', 'stack-now']);
+            expect(state.interactions.filter((i) => i.type === 'endorse_list').map((i) => i.targetId).sort()).toEqual(['list-1', 'stack-now']);
         });
     });
 

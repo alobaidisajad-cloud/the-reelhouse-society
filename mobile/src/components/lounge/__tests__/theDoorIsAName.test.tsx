@@ -12,6 +12,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { readCode } from '@/test-utils/readCode';
 
 const mockPush = jest.fn();
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: (...a: unknown[]) => mockPush(...a) } }));
@@ -22,8 +23,7 @@ jest.mock('@/src/components/theme/OrnamentalRule', () => ({ OrnamentalRule: () =
 import { LoungeGate } from '../LoungeGate';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
-const code = (p: string) => readFileSync(join(ROOT, p), 'utf8')
-  .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
+const code = (p: string) => readCode(join(ROOT, p));
 
 beforeEach(() => mockPush.mockReset());
 

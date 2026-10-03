@@ -18,12 +18,12 @@
  * so on screen.
  */
 import React from 'react';
-import { readFileSync } from 'fs';
 import { join } from 'path';
 import { render } from '@testing-library/react-native';
 
 import { CinematicInsights } from '../CinematicInsights';
 import type { TasteProfile } from '@/src/constants/taste';
+import { readCode } from '@/test-utils/readCode';
 
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
@@ -32,10 +32,8 @@ jest.mock('expo-haptics', () => ({
 }));
 
 const HERE = join(__dirname, '..');
-const read = (f: string) => readFileSync(join(HERE, f), 'utf8');
 /** These files DOCUMENT what they deleted; prose must not satisfy its own guard. */
-const code = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+const code = (f: string) => readCode(join(HERE, f));
 
 const person = (id: number, name: string, count: number) => ({
   id,
@@ -73,7 +71,7 @@ describe('neither panel builds a portrait from the phone any more', () => {
     // showing six bars instead of forty is a layout decision and always was.
     // Slicing the films the ranking is DERIVED from is the bug, and the two
     // look identical if you only match `slice(0, N)`.
-    expect(code(read(f))).not.toMatch(/\b\w*(?:[Ii]ds|[Ff]ilms|[Ll]ogs)\s*\??\.?\s*slice\s*\(/);
+    expect(code(f)).not.toMatch(/\b\w*(?:[Ii]ds|[Ff]ilms|[Ll]ogs)\s*\??\.?\s*slice\s*\(/);
   });
 
   it.each(PANELS)('%s calls nothing on the TMDB client', (f) => {
@@ -81,12 +79,12 @@ describe('neither panel builds a portrait from the phone any more', () => {
     // reaches the network is not. Enumerated rather than listed: every member
     // EXCEPT the four URL builders is a fetch.
     const IMAGE_BUILDERS = /^(poster|backdrop|profile|logo|posterThumb|youtubeThumbnail)$/;
-    const calls = [...code(read(f)).matchAll(/\btmdb\.(\w+)\s*\(/g)].map((m) => m[1]);
+    const calls = [...code(f).matchAll(/\btmdb\.(\w+)\s*\(/g)].map((m) => m[1]);
     expect(calls.filter((c) => !IMAGE_BUILDERS.test(c))).toEqual([]);
   });
 
   it.each(PANELS)('%s hand-rolls no cache, batch, or retry apparatus', (f) => {
-    const src = code(read(f));
+    const src = code(f);
     for (const ghost of ['LRUCache', 'GLOBAL_TMDB_CACHE', 'INFLIGHT_TMDB_REQUESTS', 'GENRE_MAP']) {
       expect(src).not.toContain(ghost);
     }
@@ -95,13 +93,13 @@ describe('neither panel builds a portrait from the phone any more', () => {
   it.each(PANELS)('%s takes the payload as a prop rather than fetching it', (f) => {
     // Behavioural, not name-based: the component must DESTRUCTURE `taste`. A
     // guard on the word "taste" alone would pass on the import line.
-    expect(code(read(f))).toMatch(/\{\s*taste[,\s}]/);
+    expect(code(f)).toMatch(/\{\s*taste[,\s}]/);
   });
 
   it('the deleted machinery is gone from the whole module, not just its callers', () => {
     // Both caches were EXPORTED. Deleting the use while leaving the export is
     // how dead code survives a cleanup — and how it gets re-adopted later.
-    expect(code(read('CinematicInsights.tsx'))).not.toMatch(/export\s+const\s+(GLOBAL_TMDB_CACHE|INFLIGHT_TMDB_REQUESTS)/);
+    expect(code('CinematicInsights.tsx')).not.toMatch(/export\s+const\s+(GLOBAL_TMDB_CACHE|INFLIGHT_TMDB_REQUESTS)/);
   });
 });
 

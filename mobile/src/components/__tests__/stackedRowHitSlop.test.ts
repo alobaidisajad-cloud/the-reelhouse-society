@@ -14,6 +14,7 @@
  */
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = join(__dirname, '..', '..', '..');
 
@@ -195,8 +196,7 @@ describe('neighbouring controls do not overlap each other’s touch targets', ()
     const label = `${rule.file} :: ${rule.style}`;
 
     it(`${label} — slop ≤ half the gap (${rule.note})`, () => {
-      const src = readFileSync(join(ROOT, rule.file), 'utf8')
-        .replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+      const src = readCode(rule.file);
       // Most controls are found by their style name. A row that carries no
       // style at all — the critique wrapper is a bare PressableScale around a
       // styled View — is keyed on `match` against the whole tag instead.
@@ -239,11 +239,6 @@ const SWEEP_EXTRA = ['app/user/[username].tsx'];
  * a chip's vertical slop against its row's horizontal gap.
  */
 describe('the sweep: no repeated control may inherit the default halo', () => {
-  const read = (f: string) =>
-    readFileSync(join(ROOT, f), 'utf8')
-      .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
-      .replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
-
   const files: string[] = [];
   for (const dir of SWEEP_DIRS) {
     const walk = (d: string) => {
@@ -290,7 +285,7 @@ describe('the sweep: no repeated control may inherit the default halo', () => {
     let repeated = 0;
 
     for (const f of files) {
-      const src = read(f);
+      const src = readCode(f);
       const spans = mapSpans(src);
       for (const tag of ['PressableScale', 'Pressable', 'TouchableOpacity']) {
         for (const t of scanTags(src, tag)) {
@@ -339,7 +334,7 @@ describe('the sweep: no repeated control may inherit the default halo', () => {
     /** Component tags rendered in a repeated position, anywhere in the sweep. */
     const repeatedTags = new Set<string>();
     for (const f of files) {
-      const src = read(f);
+      const src = readCode(f);
       const spans = mapSpans(src);
       // A `render…` callback, whose result FlashList repeats: its BODY, not its parameters.
       for (const m of src.matchAll(/\brender[A-Z]\w*\s*[=:]/g)) {
@@ -383,7 +378,7 @@ describe('the sweep: no repeated control may inherit the default halo', () => {
     const unresolved: string[] = [];
     const checkedIn: string[] = [];
     for (const f of files) {
-      const src = read(f);
+      const src = readCode(f);
       for (const name of repeatedTags) {
         if (!new RegExp(`\\b(?:function|const)\\s+${name}\\b`).test(src)) continue;
         const span = bodyOf(src, name);
@@ -414,14 +409,9 @@ describe('the top bar’s own icon cluster', () => {
   const NAV_BAR = 'src/components/layout/TopNavBar.tsx';
   const METRICS = 'src/components/layout/navMetrics.ts';
 
-  const read = (f: string) =>
-    readFileSync(join(ROOT, f), 'utf8')
-      .replace(/\/\/[^\n]*/g, '')
-      .replace(/\/\*[\s\S]*?\*\//g, '');
-
   /** Effective slop of the bar's single shared NavIconButton. */
   function navSlop() {
-    const body = read(NAV_BAR).match(/hitSlop=\{\{([^}]*)\}\}/);
+    const body = readCode(NAV_BAR).match(/hitSlop=\{\{([^}]*)\}\}/);
     expect(body).not.toBeNull();
     return (n: string) => {
       const m = body![1].match(new RegExp(`${n}\\s*:\\s*(\\d+)`));
@@ -432,7 +422,7 @@ describe('the top bar’s own icon cluster', () => {
   it('claims at most half the cluster gap sideways', () => {
     // The gap is read from the stylesheet rather than assumed: respace the
     // cluster and this test moves with it instead of enshrining today's number.
-    const gap = Number((read(NAV_BAR).match(/sideCluster:\s*\{[\s\S]*?gap:\s*(\d+)/) || [])[1]);
+    const gap = Number((readCode(NAV_BAR).match(/sideCluster:\s*\{[\s\S]*?gap:\s*(\d+)/) || [])[1]);
     expect(gap).toBe(NAV_CLUSTER_GAP);
 
     const side = navSlop();
@@ -443,7 +433,7 @@ describe('the top bar’s own icon cluster', () => {
   });
 
   it('still clears 44pt across, slop included', () => {
-    const size = Number((read(METRICS).match(/NAV_BTN_SIZE\s*=\s*(\d+)/) || [])[1]);
+    const size = Number((readCode(METRICS).match(/NAV_BTN_SIZE\s*=\s*(\d+)/) || [])[1]);
     expect(size).toBeGreaterThan(0); // a failed parse must not pass vacuously
 
     const side = navSlop();

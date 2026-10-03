@@ -21,12 +21,13 @@
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { readCode, stripComments } from '@/test-utils/readCode';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
-const code = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
 
 const SEAM = read('src/utils/gateTelemetry.ts');
+const CODE_SEAM = stripComments(SEAM, 'gateTelemetry.ts');
 
 describe('the funnel has one seam', () => {
   it('the four events that make a funnel are all declared', () => {
@@ -39,7 +40,7 @@ describe('the funnel has one seam', () => {
     // The argument for the refactor, stated as a test: one line instruments
     // seventeen gates. If a gate ever stops going through useClearance it stops
     // being measured, and `aRankIsSoldEnforcedAndExplained` is what catches that.
-    const hook = code(read('src/hooks/useClearance.ts'));
+    const hook = readCode('src/hooks/useClearance.ts');
     expect(hook).toMatch(/recordGateEvent\('gate_tapped'/);
     // With the door it came from, or the event answers "somebody tapped
     // something" and nothing more.
@@ -47,7 +48,7 @@ describe('the funnel has one seam', () => {
   });
 
   it('the far end is instrumented too, or there is no conversion to read', () => {
-    const membership = code(read('app/(modals)/membership.tsx'));
+    const membership = readCode('app/(modals)/membership.tsx');
     expect(membership).toMatch(/recordGateEvent\('membership_opened'/);
     expect(membership).toMatch(/recordGateEvent\('rank_purchased'/);
     // Both carry the door that sent them, which is the only way to answer
@@ -57,7 +58,7 @@ describe('the funnel has one seam', () => {
 
   it('and a rank ending is recorded as well as a rank beginning', () => {
     // Churn is half a funnel. Without it the numbers only ever go up.
-    expect(code(read('src/lib/revenueCat.ts'))).toMatch(/recordGateEvent\('rank_relinquished'\)/);
+    expect(readCode('src/lib/revenueCat.ts')).toMatch(/recordGateEvent\('rank_relinquished'\)/);
   });
 
   describe('the sink', () => {
@@ -71,6 +72,7 @@ describe('the funnel has one seam', () => {
      * quietly undo.
      */
     const SINK = read('src/lib/gateMetricsSink.ts');
+    const CODE_SINK = stripComments(SINK, 'gateMetricsSink.ts');
 
     it('is wired, and still in exactly one place', () => {
       expect(SEAM).toMatch(/let sink: Sink \| null = null;/);
@@ -79,7 +81,7 @@ describe('the funnel has one seam', () => {
       // the second silently replaces the first and half the funnel vanishes.
       expect(SINK).toMatch(/setGateTelemetrySink\(/);
       const callers = ['app/_layout.tsx']
-        .filter((p) => code(read(p)).includes('installGateMetricsSink()'));
+        .filter((p) => readCode(p).includes('installGateMetricsSink()'));
       expect(callers).toEqual(['app/_layout.tsx']);
     });
 
@@ -93,20 +95,20 @@ describe('the funnel has one seam', () => {
       // the raw text failed on its own reasoning — the comment trap, where an
       // absence check is defeated by the comment that documents the absence.
       const VENDORS = /posthog|amplitude|mixpanel|segment|firebase|appsflyer|adjust/i;
-      for (const f of [SEAM, SINK]) {
-        expect(code(f)).not.toMatch(VENDORS);
+      for (const f of [CODE_SEAM, CODE_SINK]) {
+        expect(f).not.toMatch(VENDORS);
       }
       // And the stripper really is removing the prose that would otherwise
       // match, rather than the files happening to be clean.
       expect(SINK).toMatch(VENDORS);
-      expect(code(SINK)).toMatch(/supabase\s*\n?\s*\.rpc\('record_gate_event'/);
+      expect(CODE_SINK).toMatch(/supabase\s*\n?\s*\.rpc\('record_gate_event'/);
     });
 
     it('sends NOTHING that could name a member', () => {
       // The whole argument for allowing this at all. If a later diff adds a
       // user id, a device id or a session id to the payload, the counter stops
       // being a counter and becomes a behavioural record of a person.
-      const payload = /\.rpc\('record_gate_event',\s*\{([\s\S]*?)\}\)/.exec(code(SINK));
+      const payload = /\.rpc\('record_gate_event',\s*\{([\s\S]*?)\}\)/.exec(CODE_SINK);
       expect(payload).not.toBeNull();
       const keys = [...(payload?.[1] ?? '').matchAll(/(\w+):/g)].map((m) => m[1]);
       // A tripwire: if the regex ever stops finding the real call, an empty
@@ -119,13 +121,13 @@ describe('the funnel has one seam', () => {
       // A member being refused a feature is already a bad moment. A crash on
       // top of it, from the code that was only ever meant to COUNT the moment,
       // is inexcusable.
-      expect(code(SEAM)).toMatch(/try \{\s*sink\(event, detail\);\s*\} catch \{/);
+      expect(CODE_SEAM).toMatch(/try \{\s*sink\(event, detail\);\s*\} catch \{/);
     });
 
     it('leaves a breadcrumb regardless, and says why that is not measurement', () => {
       // Breadcrumbs surface only when something throws, so no rate can be read
       // from them — but they turn "it wouldn't let me in" into a readable trail.
-      expect(code(SEAM)).toMatch(/addBreadcrumb\(/);
+      expect(CODE_SEAM).toMatch(/addBreadcrumb\(/);
       expect(SEAM).toMatch(/NOT measurement/);
     });
   });

@@ -22,8 +22,9 @@
  * the app does not mount is not a record, it is a proposal — and one that will
  * be mistaken for a record the moment nobody remembers the difference.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readdirSync } from 'fs';
 import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 
@@ -39,10 +40,16 @@ const collect = (dir: string, out: string[] = []): string[] => {
   return out;
 };
 
-/** Comments name symbols without using them; a docstring is not a call site. */
-const stripComments = (s: string): string => s
-  .replace(/\/\*[\s\S]*?\*\//g, ' ')
-  .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
+/**
+ * Comments name symbols without using them; a docstring is not a call site.
+ * Each file is parsed once and kept: the sweeps below read every app source
+ * once per exported name.
+ */
+const CODE = new Map<string, string>();
+const code = (file: string): string => {
+  if (!CODE.has(file)) CODE.set(file, readCode(file));
+  return CODE.get(file)!;
+};
 
 /**
  * ── A NAME IS NOT AN IMPORT ─────────────────────────────────────────────────
@@ -171,7 +178,7 @@ describe('the design record draws the app, not a second copy of it', () => {
 
     for (const file of files) {
       const rel = file.slice(ROOT.length + 1).replace(/\\/g, '/');
-      const src = stripComments(readFileSync(file, 'utf8'));
+      const src = code(file);
 
       /**
        * Exported COMPONENTS — the things a screen or a plate can mount.
@@ -202,7 +209,7 @@ describe('the design record draws the app, not a second copy of it', () => {
         const re = new RegExp('\\b' + n + '\\b');
         const usedByApp = appSources.some((other) => {
           if (other === file) return false;
-          const src2 = stripComments(readFileSync(other, 'utf8'));
+          const src2 = code(other);
           // The name AND an import of this module. Either alone is not a use:
           // the name alone matched a same-named component in another folder,
           // and the import alone says nothing about which export is taken.
@@ -231,7 +238,7 @@ describe('the design record draws the app, not a second copy of it', () => {
       const re = new RegExp('\\b' + name + '\\b');
       const live = appSources.some((other) => {
         if (other === file) return false;
-        const src = stripComments(readFileSync(other, 'utf8'));
+        const src = code(other);
         return re.test(src) && importsFrom(src, base);
       });
       if (live) stale.push(entry + '   (now mounted — take it off the list)');

@@ -53,7 +53,7 @@ describe('StackService', () => {
 
     describe('getStackFullPayload', () => {
         it('fetches stack full payload from lists table', async () => {
-            const listData = { id: 's1', title: 'Best of 2024', user_id: 'u1', is_public: true, created_at: '2024-01-01', description: null, cover_film_poster: null, is_private: false, is_ranked: false, profiles: { username: 'cinephile' } };
+            const listData = { id: 's1', title: 'Best of 2024', user_id: 'u1', created_at: '2024-01-01', description: null, is_private: false, is_ranked: false, profiles: { username: 'cinephile' } };
             const itemsData = [{ film_id: 550, film_title: 'Fight Club', poster_path: '/fc.jpg' }];
             
             const listChain = chain({ data: listData, error: null });

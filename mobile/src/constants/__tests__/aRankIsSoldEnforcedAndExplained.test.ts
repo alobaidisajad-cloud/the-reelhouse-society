@@ -31,6 +31,7 @@
  */
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 import {
   GATED_FEATURES,
@@ -68,7 +69,12 @@ const collect = (dir: string, out: string[] = []): string[] => {
 };
 
 const rel = (file: string) => file.slice(ROOT.length + 1).replace(/\\/g, '/');
-const stripComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
+/** A file as code, comments blanked; each file is parsed once, as the scans below re-read the app. */
+const CODE = new Map<string, string>();
+const code = (file: string): string => {
+  if (!CODE.has(file)) CODE.set(file, readCode(file));
+  return CODE.get(file)!;
+};
 
 /**
  * Every `useClearance('<id>')` in the client, by file.
@@ -83,7 +89,7 @@ const clearanceCalls = (): Map<string, string[]> => {
   for (const file of [...collect(join(ROOT, 'src')), ...collect(join(ROOT, 'app'))]) {
     const r = rel(file);
     if (r === 'src/hooks/useClearance.ts') continue;
-    const ids = [...stripComments(readFileSync(file, 'utf8')).matchAll(/useClearance\('([^']+)'/g)].map((m) => m[1]);
+    const ids = [...code(file).matchAll(/useClearance\('([^']+)'/g)].map((m) => m[1]);
     if (ids.length) out.set(r, ids);
   }
   return out;
@@ -245,7 +251,7 @@ describe('a rank is sold, enforced, and explained', () => {
       [...collect(join(ROOT, 'src')), ...collect(join(ROOT, 'app'))]
         .map(rel)
         .filter((f) => f !== 'src/utils/tierDoor.ts')
-        .filter((f) => /showTierDoor\(/.test(stripComments(readFileSync(join(ROOT, f), 'utf8')))),
+        .filter((f) => /showTierDoor\(/.test(code(join(ROOT, f)))),
     );
 
     it('none is left with nothing between the member and "something went wrong"', () => {
@@ -277,7 +283,7 @@ describe('a rank is sold, enforced, and explained', () => {
     });
 
     it('and the door itself still reads the sentence table', () => {
-      const door = stripComments(readFileSync(join(ROOT, 'src/utils/tierDoor.ts'), 'utf8'));
+      const door = code(join(ROOT, 'src/utils/tierDoor.ts'));
       expect(door).toMatch(/asTierRefusal\(e\)/);
     });
   });
@@ -298,7 +304,7 @@ describe('a rank is sold, enforced, and explained', () => {
     it('and the badge still draws each rank in words a member can read', () => {
       // The mark is a promise the RENDERING keeps. If RankBadge ever stopped
       // drawing a rank, the privilege would be sold with nothing behind it.
-      const badge = stripComments(readFileSync(join(ROOT, 'src/components/RankBadge.tsx'), 'utf8'));
+      const badge = code(join(ROOT, 'src/components/RankBadge.tsx'));
       expect(badge).toMatch(/✦ ARCHIVIST/);
       expect(badge).toMatch(/★ AUTEUR/);
       const { rankOf } = require('@/src/components/RankBadge');
@@ -334,8 +340,8 @@ describe('a rank is sold, enforced, and explained', () => {
     it('no rank claims a popularity it has not earned', () => {
       // "MOST POPULAR" was printed over a rank nobody had bought. A
       // recommendation is an opinion and says so; exactly one rank carries it.
-      const src = stripComments(readFileSync(join(ROOT, 'src/constants/membership.ts'), 'utf8'))
-        + stripComments(readFileSync(join(ROOT, 'app/(modals)/membership.tsx'), 'utf8'));
+      const src = code(join(ROOT, 'src/constants/membership.ts'))
+        + code(join(ROOT, 'app/(modals)/membership.tsx'));
       expect(src).not.toMatch(/MOST POPULAR|FILLING FAST|popular:/i);
       expect(RANKS.filter((r) => r.recommended).length).toBe(1);
     });
@@ -408,10 +414,8 @@ describe('a rank is sold, enforced, and explained', () => {
 
   it('the Gilded Frame is gone, and stays gone', () => {
     // The specific lie, pinned by name. If it ever comes back it must come back
-    // with something built behind it.
-    // Comments blanked FIRST. The note explaining why each name was removed
-    // necessarily contains the removed name, so asserting absence against raw
-    // source fails on the very comment that records the fix.
+    // with something built behind it. Read from the list a member is shown,
+    // not the file: the note recording each removal names the removed thing.
     const lists = PRIVILEGES.map((p) => `${p.name} ${p.detail}`).join('\n');
     expect(lists).not.toMatch(/Gilded Frame/);
     expect(lists).not.toMatch(/Poster Glow/);

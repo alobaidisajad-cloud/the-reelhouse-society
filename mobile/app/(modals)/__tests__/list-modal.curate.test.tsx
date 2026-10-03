@@ -17,6 +17,7 @@ import * as RN from 'react-native';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { stripComments } from '@/test-utils/readCode';
 
 import ListModal from '../list-modal';
 
@@ -470,9 +471,8 @@ describe('the plate, and the reach', () => {
   it('the plate wraps rather than shrinks', () => {
     // Comments stripped first: this field's own comment EXPLAINS why it does not
     // shrink to fit, so a naive search of the slice finds the phrase it forbids.
-    const field = SOURCE
-      .slice(SOURCE.indexOf('style={s.plate}'), SOURCE.indexOf('accessibilityLabel="Stack title"'))
-      .replace(/\/\/[^\n]*/g, '');
+    const field = stripComments(SOURCE, 'list-modal.tsx')
+      .slice(SOURCE.indexOf('style={s.plate}'), SOURCE.indexOf('accessibilityLabel="Stack title"'));
     expect(field).toMatch(/\n\s*multiline\n/);
     expect(field).not.toMatch(/adjustsFontSizeToFit/);
   });

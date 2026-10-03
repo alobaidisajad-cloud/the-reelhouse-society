@@ -19,19 +19,16 @@
  * that stops being written is itself a failure, so the list cannot rot.
  */
 import { execFileSync } from 'node:child_process';
-import fs from 'node:fs';
 import path from 'node:path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = path.resolve(__dirname, '../../..');
-
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
 const sources = (): { f: string; src: string }[] =>
   execFileSync('git', ['ls-files', 'src', 'app'], { cwd: ROOT, encoding: 'utf8' })
     .split('\n')
     .filter((f) => /\.tsx?$/.test(f) && !/__tests__|\.test\.|\.d\.ts$/.test(f))
-    .map((f) => ({ f, src: stripComments(fs.readFileSync(path.join(ROOT, f), 'utf8')) }));
+    .map((f) => ({ f, src: readCode(path.join(ROOT, f)) }));
 
 /**
  * Storage key prefixes, taken from the literal that opens the key. A key is

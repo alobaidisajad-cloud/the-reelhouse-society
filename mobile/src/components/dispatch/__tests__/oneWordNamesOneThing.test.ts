@@ -25,6 +25,7 @@
  */
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 import { KIND_NAME, nameOf } from '../paper/paperMetrics';
 import { SECTIONS } from '../../../stores/dispatch';
@@ -40,10 +41,6 @@ const walk = (dir: string, out: string[] = []): string[] => {
   }
   return out;
 };
-
-/** Comments are prose about the code and are not what a member reads. */
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
 
 const DISPATCH_SURFACE = [
   ...walk(join(MOBILE, 'src', 'components', 'dispatch')),
@@ -91,7 +88,7 @@ describe('nothing prints a kind raw', () => {
     for (const file of DISPATCH_SURFACE) {
       // `nameOf` itself owns the only `toUpperCase` on a kind — that IS the table.
       if (rel(file).endsWith('paper/paperMetrics.ts')) continue;
-      stripComments(readFileSync(file, 'utf8')).split('\n').forEach((line, i) => {
+      readCode(file).split('\n').forEach((line, i) => {
         if (/\bkind\.toUpperCase\(\)/.test(line)) offenders.push(`${rel(file)}:${i + 1}`);
       });
     }
@@ -118,7 +115,7 @@ describe('the Dispatch says essay, and only the Dispatch decides that', () => {
   it('no printed string in the Dispatch calls the long form a dossier', () => {
     const offenders: string[] = [];
     for (const file of DISPATCH_SURFACE) {
-      stripComments(readFileSync(file, 'utf8')).split('\n').forEach((line, i) => {
+      readCode(file).split('\n').forEach((line, i) => {
         for (const m of line.matchAll(/'([^'\\\n]*)'|"([^"\\\n]*)"/g)) {
           const s = m[1] ?? m[2];
           if (!s || !/dossier/i.test(s)) continue;

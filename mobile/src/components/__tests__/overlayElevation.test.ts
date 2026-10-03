@@ -20,6 +20,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const SCAN = ['src/components', 'src/theme', 'app'];
@@ -114,7 +115,13 @@ const files = SCAN.flatMap((d) => walk(path.join(ROOT, d)));
 describe('absolute overlays declare an elevation', () => {
     const overlays: { file: string; name: string; body: string }[] = [];
     for (const file of files) {
-        const src = fs.readFileSync(file, 'utf8');
+        // Comments are stripped FIRST, for the whole file. The first version of
+        // the check below matched `elevation:` anywhere in the block — including
+        // inside the comments explaining why the elevation was added
+        // ("joinedCard sits at elevation 8"). It passed on a fade whose elevation
+        // had been deleted, because the prose describing the fix satisfied the
+        // test. A mutation run is the only reason that was caught.
+        const src = readCode(file);
         for (const { name, body } of styleBlocks(src)) {
             if (!OVERLAY.test(name)) continue;
             if (!/position:\s*'absolute'/.test(body)) continue;
@@ -127,14 +134,8 @@ describe('absolute overlays declare an elevation', () => {
     });
 
     it('every one sets elevation, so Android cannot paint content over it', () => {
-        // Comments are stripped FIRST. The first version of this check matched
-        // `elevation:` anywhere in the block — including inside the comments
-        // explaining why the elevation was added ("joinedCard sits at
-        // elevation 8"). It passed on a fade whose elevation had been deleted,
-        // because the prose describing the fix satisfied the test. A mutation
-        // run is the only reason that was caught.
-        const declaresElevation = (body: string) =>
-            /elevation:\s*\d+/.test(body.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, ''));
+        // The blocks were read with their comments stripped, above.
+        const declaresElevation = (body: string) => /elevation:\s*\d+/.test(body);
 
         const offenders = overlays
             .filter((o) => !declaresElevation(o.body) && !(o.name in EXEMPT))

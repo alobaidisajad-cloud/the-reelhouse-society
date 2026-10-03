@@ -15,8 +15,8 @@
  * the network, the toast, the telemetry sink and the traveller are stand-ins,
  * because those are what is being observed.
  */
-import { readFileSync } from 'fs';
 import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 import { useLoungeStore } from '../lounge';
 import { showTierDoor } from '../../utils/tierDoor';
@@ -242,8 +242,7 @@ describe('the house says why', () => {
        * the one thing that cannot help. The line may survive only in the catch,
        * for a genuine crash that sendMessage never got to describe.
        */
-      const src = readFileSync(join(__dirname, '..', '..', '..', 'app', '(modals)', 'social-modal.tsx'), 'utf8')
-        .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
+      const src = readCode(join(__dirname, '..', '..', '..', 'app', '(modals)', 'social-modal.tsx'));
       const share = src.slice(src.indexOf('const handleShareToLounge'), src.indexOf('}, [user?.id, mode,'));
       // Tripwire: the slice must be the real handler, or both checks pass on ''.
       expect(share).toMatch(/await sendMessage\(/);
@@ -253,14 +252,13 @@ describe('the house says why', () => {
     });
 
     it('and every other caller of sendMessage already stays quiet on false', () => {
-      const root = join(__dirname, '..', '..', '..');
-      const strip = (p: string) => readFileSync(join(root, p), 'utf8')
-        .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
-      const room = strip('app/lounge/[id].tsx');
-      const sheet = strip('src/components/ShareToLoungeModal.tsx');
+      const room = readCode('app/lounge/[id].tsx');
+      const sheet = readCode('src/components/ShareToLoungeModal.tsx');
       expect(room).toMatch(/sendMessage\(id, input\.trim\(\)/);
       expect(sheet).toMatch(/sendMessage\(/);
-      for (const s of [room, sheet]) expect(s).not.toMatch(/if \(!(ok|success|sent)\)[\s\S]{0,40}reelToast\.error/);
+      // Whitespace collapsed: a comment is blanked to its full width, and a
+      // note between the check and the toast must not carry them 40 apart.
+      for (const s of [room, sheet]) expect(s.replace(/\s+/g, ' ')).not.toMatch(/if \(!(ok|success|sent)\)[\s\S]{0,40}reelToast\.error/);
     });
   });
 

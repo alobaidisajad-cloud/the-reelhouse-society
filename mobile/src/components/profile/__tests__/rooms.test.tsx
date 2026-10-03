@@ -9,12 +9,31 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
+// Comments name what they replaced; prose must not satisfy its own guard.
+import { readCode } from '@/test-utils/readCode';
 import { posterColumns, roomTier, chipSlop, CHIP_SLOP_Y, ROOM_INSET, GRID_GAP_4, GRID_GAP_3, EMBER_REST, EMBER_BEATS, completeCount, countLabel } from '../roomStyles';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
-/** Comments name what they replaced; prose must not satisfy its own guard. */
-const code = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+/** The top-level arguments of the call whose `(` ends just before `from`, each trimmed. */
+function repeatArgs(src: string, from: number): string[] {
+  const args: string[] = [];
+  let depth = 0, start = from;
+  for (let i = start; i < src.length; i++) {
+    const c = src[i];
+    if (c === '(' || c === '[' || c === '{') depth++;
+    else if ((c === ')' || c === ']' || c === '}') && depth > 0) depth--;
+    else if (c === ')' || c === ',') {
+      if (depth === 0) {
+        args.push(src.slice(start, i).trim());
+        if (c === ')') break;
+        start = i + 1;
+      }
+    }
+  }
+  return args;
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // THE GRID — the row that overflowed on every phone
@@ -68,7 +87,7 @@ describe('a poster row fits the page it is drawn on', () => {
     // One source of truth. A room that does its own arithmetic is a room that
     // can drift back out of step with its own gap.
     for (const f of ['app/user/[username].tsx']) {
-      expect(code(read(f))).not.toMatch(/windowWidth - 32 - 1[68]/);
+      expect(readCode(f)).not.toMatch(/windowWidth - 32 - 1[68]/);
     }
   });
 });
@@ -105,7 +124,7 @@ describe('the rooms carry the member’s rank, exactly as the profile does', () 
     // Chips, buttons and search must never take the tier: a member has to know
     // what is pressable at a glance, and that has to mean the same thing on
     // everyone's profile.
-    const styles = code(read('src/components/profile/roomStyles.ts'));
+    const styles = readCode('src/components/profile/roomStyles.ts');
     const chip = styles.slice(styles.indexOf('chip: {'), styles.indexOf('rail: {'));
     expect(chip).not.toMatch(/tier/i);
     const search = styles.slice(styles.indexOf('search: {'), styles.indexOf('state: {'));
@@ -144,7 +163,7 @@ describe('a chip may never reach past half its gap', () => {
   });
 
   it('is what the chip actually uses — derived, never typed out', () => {
-    const parts = code(read('src/components/profile/RoomParts.tsx'));
+    const parts = readCode('src/components/profile/RoomParts.tsx');
     expect(parts).toMatch(/hitSlop=\{chipSlop\(gap\)\}/);
     // The old form, spelled out per room, is what drifted from four containers.
     expect(parts).not.toMatch(/hitSlop=\{\{\s*top:\s*10[^}]*left:\s*\d/);
@@ -154,7 +173,7 @@ describe('a chip may never reach past half its gap', () => {
     // The derivation is only as true as the number passed to it. Each room's
     // chips sit in `r.chipRow`, whose gap is the one they must be told about —
     // so a respacing of that row cannot leave the targets behind.
-    const styles = code(read('src/components/profile/roomStyles.ts'));
+    const styles = readCode('src/components/profile/roomStyles.ts');
     const rowGap = Number(/chipRow:\s*\{[^}]*gap:\s*(\d+)/.exec(styles)?.[1]);
     expect(rowGap).toBeGreaterThan(0);        // a failed parse must not pass
 
@@ -167,7 +186,7 @@ describe('a chip may never reach past half its gap', () => {
     const wrong: string[] = [];
     let seen = 0;
     for (const f of ROOMS_WITH_CHIPS) {
-      const src = code(read(f));
+      const src = readCode(f);
       for (const m of src.matchAll(/gap=\{(\d+)\}/g)) {
         seen++;
         if (Number(m[1]) !== rowGap) wrong.push(`${f}: gap={${m[1]}} but chipRow is ${rowGap}`);
@@ -195,14 +214,28 @@ describe('an animation ends, and ends telling the truth', () => {
     // FILED. The Ledger's and the Watchlist's search embers were the same
     // defect two files away and survived, because a fix applied to the
     // instance in front of you is not a fix applied to the class.
+    // The count is the call's SECOND argument, found by balanced brackets: the
+    // first argument is itself a call (`withTiming(1, { easing: Easing.inOut(…) })`),
+    // so a pattern that stops at the first `)` never reaches the count.
     const offenders: string[] = [];
+    let calls = 0;
     for (const f of ANIMATED_ROOMS) {
-      const src = code(read(f));
-      for (const m of src.matchAll(/withRepeat\([\s\S]{0,200}?\)/g)) {
-        if (/,\s*-1\s*,/.test(m[0])) offenders.push(`${f}: ${m[0].slice(0, 60)}`);
+      const src = readCode(f);
+      for (const m of src.matchAll(/withRepeat\(/g)) {
+        calls++;
+        const count = repeatArgs(src, m.index! + m[0].length)[1] ?? '';
+        // Reanimated repeats forever on any count of zero or below.
+        if (!/^[A-Za-z_$][\w$.]*$|^[1-9]\d*$/.test(count)) offenders.push(`${f}: withRepeat(…, ${count}, …)`);
       }
     }
+    expect(calls).toBeGreaterThan(1);
     expect(offenders).toEqual([]);
+  });
+
+  it('the repeat sweep reads the count past a nested call', () => {
+    const src = 'withRepeat(withTiming(1, { easing: Easing.inOut(Easing.ease) }), -1, true)';
+    expect(repeatArgs(src, 'withRepeat('.length)[1]).toBe('-1');
+    expect(repeatArgs('withRepeat(a(b(c)), EMBER_BEATS, true)', 'withRepeat('.length)[1]).toBe('EMBER_BEATS');
   });
 
   it('the ember settles LIT, because an odd count reverses an odd number of times', () => {
@@ -219,7 +252,7 @@ describe('an animation ends, and ends telling the truth', () => {
     // 0.5 beside a constant that also happened to be 0.5, the two could drift
     // and the icon would sit permanently red — or never light at all.
     for (const f of ['src/components/profile/ProfileLedgerTab.tsx', 'src/components/profile/ProfileWatchlistTab.tsx']) {
-      const src = code(read(f));
+      const src = readCode(f);
       expect(src).toMatch(/searchEmberOpacity\.value > EMBER_REST/);
       expect(src).not.toMatch(/searchEmberOpacity\.value > 0\.\d/);
     }
@@ -276,7 +309,7 @@ describe('a number is stated only when it is knowable', () => {
       'src/components/profile/ProfileLedgerTab.tsx',
       'src/components/profile/ProfilePhysicalTab.tsx',
     ]) {
-      const src = code(read(f));
+      const src = readCode(f);
       // A count passed to a rail must not be derived from a local array length.
       if (/count:\s*`\$\{items\.length\}/.test(src)) offenders.push(`${f}: rail counts items.length`);
       if (/count=\{`\$\{item\.count\}/.test(src)) offenders.push(`${f}: rail counts the loaded slice`);
@@ -318,7 +351,7 @@ describe('every room that can grow can be searched', () => {
     // Gating on `logs.length` would make the box appear and vanish as a member
     // scrolls — the same small-data mistake as counting a month from one page.
     for (const [, f] of ROOMS) {
-      const src = code(read(f));
+      const src = readCode(f);
       const gate = /const showSearch = ([^;]+);/.exec(src)?.[1];
       if (!gate) continue;
       // `held` is the room's size from its total (and never less than in hand).
@@ -332,7 +365,7 @@ describe('every room that can grow can be searched', () => {
     // hardened after a live injection turned a four-letter search into "match
     // every member". A room that interpolates its own filter bypasses it.
     for (const [, f] of ROOMS) {
-      const src = code(read(f));
+      const src = readCode(f);
       expect(src).not.toMatch(/\.ilike\(|\.or\(`/);
     }
   });
@@ -344,17 +377,17 @@ describe('every room that can grow can be searched', () => {
 describe('what the member wrote reaches a screen', () => {
   it('the Ledger shows the headline an Archivist paid for', () => {
     // `editorial_header` is fetched on every log and was rendered in NO room.
-    expect(code(read('src/components/profile/ProfileLedgerTab.tsx'))).toMatch(/editorialHeader/);
+    expect(readCode('src/components/profile/ProfileLedgerTab.tsx')).toMatch(/editorialHeader/);
   });
 
   it('the Ledger shows who they watched it with', () => {
-    expect(code(read('src/components/profile/ProfileLedgerTab.tsx'))).toMatch(/watchedWith/);
+    expect(readCode('src/components/profile/ProfileLedgerTab.tsx')).toMatch(/watchedWith/);
   });
 
   it('a walk-out reason has somewhere to live', () => {
     // The Ledger holds only rated-or-reviewed films, and an abandoned one has
     // neither — so this sentence had no home in the app at all.
-    const src = code(read('src/components/profile/ProfileArchiveTab.tsx'));
+    const src = readCode('src/components/profile/ProfileArchiveTab.tsx');
     expect(src).toMatch(/abandonedReason/);
     // DERIVED FROM THE SIEVE, not merely mentioned. A mutation pass set this to
     // a flat `false` — the room silently went back to being a grid and the
@@ -368,16 +401,16 @@ describe('what the member wrote reaches a screen', () => {
     // All three are free-text member input. Without a cut, a member who pastes
     // four thousand characters leaves the whole string to be measured by the
     // text engine on every pass of a recycled row.
-    const ledger = code(read('src/components/profile/ProfileLedgerTab.tsx'));
-    const archive = code(read('src/components/profile/ProfileArchiveTab.tsx'));
+    const ledger = readCode('src/components/profile/ProfileLedgerTab.tsx');
+    const archive = readCode('src/components/profile/ProfileArchiveTab.tsx');
     expect(ledger).toMatch(/truncateReview\([^)]*ROW_HEADER_CHARS/);
     expect(ledger).toMatch(/truncateReview\([^)]*ROW_WITH_CHARS/);
     expect(archive).toMatch(/truncateReview\(plain,\s*\d+\)/);
   });
 
   it('and passes through stripHTML — these arrive as markup', () => {
-    expect(code(read('src/components/profile/ProfileLedgerTab.tsx'))).toMatch(/stripHTML\(String\(log\.editorialHeader/);
-    expect(code(read('src/components/profile/ProfileArchiveTab.tsx'))).toMatch(/stripHTML\(String\(log\.abandonedReason/);
+    expect(readCode('src/components/profile/ProfileLedgerTab.tsx')).toMatch(/stripHTML\(String\(log\.editorialHeader/);
+    expect(readCode('src/components/profile/ProfileArchiveTab.tsx')).toMatch(/stripHTML\(String\(log\.abandonedReason/);
   });
 });
 
@@ -406,7 +439,7 @@ describe('the six rooms are furnished from one place', () => {
     const DUPLICATED = ['emptyTitle:', 'emptyDesc:', 'emptyTitleSelf:', 'filterChip:', 'filterChipActive:', 'ctaBtn:', 'ctaBtnSelf:'];
     const offenders: string[] = [];
     for (const f of ROOMS) {
-      const src = code(read(f));
+      const src = readCode(f);
       for (const key of DUPLICATED) if (src.includes(key)) offenders.push(`${f} :: ${key}`);
     }
     expect(offenders).toEqual([]);
@@ -417,7 +450,7 @@ describe('the six rooms are furnished from one place', () => {
       expect(read(f)).toMatch(/RoomFoot/);
       // `paddingBottom: 100` was a guess in all five — too much on a pushed
       // route, too little under a tab bar.
-      expect(code(read(f))).not.toMatch(/paddingBottom:\s*100/);
+      expect(readCode(f)).not.toMatch(/paddingBottom:\s*100/);
     }
   });
 

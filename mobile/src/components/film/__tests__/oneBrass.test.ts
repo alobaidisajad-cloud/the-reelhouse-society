@@ -16,13 +16,10 @@
  */
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
+import { readCode, stripComments } from '@/test-utils/readCode';
 
 const FILM = join(__dirname, '..');
 const BRASS_FILE = join(__dirname, '..', '..', '..', 'theme', 'brass.ts');
-
-const strip = (s: string) => s
-  .replace(/\/\*[\s\S]*?\*\//g, '')
-  .split('\n').filter((l) => !/^\s*(\/\/|\*)/.test(l)).join('\n');
 
 describe('the ramp is stated once', () => {
   const brass = readFileSync(BRASS_FILE, 'utf8');
@@ -38,7 +35,7 @@ describe('the ramp is stated once', () => {
     const concierge = readFileSync(
       join(__dirname, '..', '..', 'layout', 'ConciergeButton.tsx'), 'utf8');
     expect(concierge).toMatch(/from '@\/src\/theme\/brass'/);
-    expect(strip(concierge)).not.toMatch(/const BRASS = \[/);
+    expect(stripComments(concierge, 'ConciergeButton.tsx')).not.toMatch(/const BRASS = \[/);
   });
 });
 
@@ -85,7 +82,7 @@ describe('no brass plate is painted flat', () => {
     .filter((f) => !NOT_THIS_PAGES_CHROME.includes(f));
 
   it.each(files)('%s uses the ramp for any brass plate', (file) => {
-    const src = strip(readFileSync(join(FILM, file), 'utf8'));
+    const src = readCode(join(FILM, file));
     const plates = flatPlates(src);
     // No brass plate, or one drawn with the ramp: a file that fills a plate with
     // sepia must also be drawing the ramp — the fill is then a base underneath
@@ -141,7 +138,7 @@ describe('the AUTEUR badge is no longer this page\u2019s brass problem', () => {
     // The rule this file exists for still applies to the mark. It simply passes
     // by not being brass now, rather than by using the ramp.
     const badge = readFileSync(join(__dirname, '..', '..', 'RankBadge.tsx'), 'utf8');
-    expect(flatPlates(strip(badge))).toEqual([]);
+    expect(flatPlates(stripComments(badge, 'RankBadge.tsx'))).toEqual([]);
   });
 
   it('and no surface that draws a rank keeps a hand-mixed gold', () => {
@@ -156,7 +153,7 @@ describe('the AUTEUR badge is no longer this page\u2019s brass problem', () => {
       ['..', '..', 'reels', 'MemberRegistry.tsx'],
       ['..', '..', 'RankBadge.tsx'],
     ]) {
-      const src = strip(readFileSync(join(__dirname, ...rel), 'utf8'));
+      const src = readCode(join(__dirname, ...rel));
       expect(`${rel[rel.length - 1]}: ${src.match(/#D[A4]A?[0-9A-F]{3,4}/gi) ?? []}`)
         .toMatch(/: $/);
     }

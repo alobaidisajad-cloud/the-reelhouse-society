@@ -34,10 +34,11 @@ jest.mock('expo-router', () => ({
 import { MODAL_PATHS, isModalPath } from '@/src/constants/modalRoutes';
 // eslint-disable-next-line import/first
 import { noteCurrentPath, openSociety, societyHref } from '@/src/utils/openSociety';
+// eslint-disable-next-line import/first
+import { readCode, stripComments } from '@/test-utils/readCode';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
-const code = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
 
 const HREF = societyHref('the-lounge', 'archivist', '/lounge/abc');
 
@@ -145,7 +146,7 @@ describe('the Society opens over you', () => {
     });
 
     it('the Society page does not act on it yet — and says why, where it would', () => {
-      const params = /const \{([^}]*)\} = useLocalSearchParams</.exec(code(page))?.[1] ?? '';
+      const params = /const \{([^}]*)\} = useLocalSearchParams</.exec(stripComments(page, 'app/(modals)/membership.tsx'))?.[1] ?? '';
       // Tripwire: the destructuring must be found, or "not read" passes on nothing.
       expect(params).toMatch(/\breason\b/);
       expect(params).not.toMatch(/\breturnTo\b/);
@@ -178,7 +179,7 @@ describe('the Society opens over you', () => {
 
   describe('there is one traveller', () => {
     it('the rope no longer decides for itself', () => {
-      const hook = code(read('src/hooks/useClearance.ts'));
+      const hook = readCode('src/hooks/useClearance.ts');
       expect(hook).toMatch(/openSociety\(societyHref\(featureId, rank, returnTo\)\)/);
       // The old rule, exactly. If it comes back, the salon closes again.
       expect(hook).not.toMatch(/router\.canGoBack\(\)/);
@@ -186,15 +187,15 @@ describe('the Society opens over you', () => {
     });
 
     it('and neither does the refusal', () => {
-      const door = code(read('src/utils/tierDoor.ts'));
+      const door = readCode('src/utils/tierDoor.ts');
       expect(door).toMatch(/openSociety\(societyHref\(/);
       expect(door).not.toMatch(/router\./);
     });
 
     it('the path is tracked by one component in the root layout', () => {
-      const layout = code(read('app/_layout.tsx'));
+      const layout = readCode('app/_layout.tsx');
       expect(layout).toMatch(/<PathTracker \/>/);
-      expect(code(read('src/components/layout/PathTracker.tsx'))).toMatch(/noteCurrentPath\(pathname\)/);
+      expect(readCode('src/components/layout/PathTracker.tsx')).toMatch(/noteCurrentPath\(pathname\)/);
     });
   });
 });

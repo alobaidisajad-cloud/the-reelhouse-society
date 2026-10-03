@@ -19,12 +19,14 @@
  * It is the same shape of defect as the comment page size reading 30 while the
  * query asked for 50, and the ballot desk hard-coding its own two-to-six.
  */
-import fs from 'fs';
 import path from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
-const store = fs.readFileSync(path.join(ROOT, 'src', 'stores', 'dispatch.ts'), 'utf8');
-const executor = fs.readFileSync(path.join(ROOT, 'src', 'utils', 'mutationExecutor.ts'), 'utf8');
+// Comments first: a column named in prose is not a column written, and a brace
+// in prose would throw off the walk that finds a body.
+const store = readCode(path.join(ROOT, 'src', 'stores', 'dispatch.ts'));
+const executor = readCode(path.join(ROOT, 'src', 'utils', 'mutationExecutor.ts'));
 
 /** The body of a function, from its declaration to the matching close brace. */
 function bodyOf(src: string, marker: string): string {
@@ -47,12 +49,7 @@ function bodyOf(src: string, marker: string): string {
  * is exactly the half a naive object-literal scan would miss, and the half that
  * grows when somebody adds a field.
  */
-function columnsIn(body: string): Set<string> {
-  // Comments first: a column named in prose is not a column written.
-  const code = body
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/\/\/[^\n]*/g, '');
-
+function columnsIn(code: string): Set<string> {
   const out = new Set<string>();
   // Preceded by `{`, `,` or a line start — NOT merely line-leading, which was
   // the first draft and counted one key per line. The handler writes several

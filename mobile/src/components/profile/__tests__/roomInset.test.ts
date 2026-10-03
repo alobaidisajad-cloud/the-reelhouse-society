@@ -15,16 +15,13 @@
  * Both are the same failure: fixing the instance in front of me instead of the
  * class. So the class is the test.
  */
-import { readFileSync } from 'fs';
 import { join } from 'path';
 import { ROOM_INSET } from '../roomStyles';
+// Comments name the literals they replaced; prose must not fail its own guard.
+import { readCode } from '@/test-utils/readCode';
 
 const HERE = join(__dirname, '..');
 const APP = join(__dirname, '..', '..', '..', '..', 'app');
-const read = (p: string) => readFileSync(p, 'utf8');
-/** Comments name the literals they replaced; prose must not fail its own guard. */
-const code = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
 
 /**
  * Style rules that position content relative to the SCREEN EDGE.
@@ -45,7 +42,7 @@ const PAGE_INSET_RULES = [
 
 describe('one inset from the screen edge, named once', () => {
   it.each(PAGE_INSET_RULES)('%s → %s derives its inset from ROOM_INSET', (file, rule) => {
-    const src = code(read(join(HERE, file)));
+    const src = readCode(join(HERE, file));
     // Grab the rule body: `name: { ... }` up to its closing brace.
     const m = new RegExp(`\\b${rule}\\s*:\\s*\\{([\\s\\S]*?)\\}`).exec(src);
     expect(m).not.toBeNull();
@@ -70,7 +67,7 @@ describe('one inset from the screen edge, named once', () => {
 });
 
 describe('the Projector tab does not put one card outside the margin', () => {
-  const screen = code(read(join(APP, 'user', '[username].tsx')));
+  const screen = readCode(join(APP, 'user', '[username].tsx'));
 
   it('wraps ProjectorRoom in the same inset as its neighbours', () => {
     // The defect: `<ProjectorRoom …/>` sat as a direct child of a container

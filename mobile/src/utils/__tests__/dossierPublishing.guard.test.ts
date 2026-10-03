@@ -11,17 +11,11 @@
  *         two different dossiers — and a retried mutation made ANOTHER one.
  *   #12   the zip guard failed closed only when EVERY entry was unmeasurable.
  */
-import * as fs from 'fs';
-import * as path from 'path';
 import { MAX_LENGTHS, isOverLimit, remainingChars, sanitizeInput } from '../sanitizeInput';
-
-const ROOT = path.join(__dirname, '..', '..', '..');
-const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8');
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+import { readCode } from '@/test-utils/readCode';
 
 describe('#122 · an over-length essay is refused, never silently cut', () => {
-  const compose = stripComments(read('app/dispatch/compose.tsx'));
+  const compose = readCode('app/dispatch/compose.tsx');
 
   it('the composer uses the limit helpers that shipped with zero callers', () => {
     expect(compose).toMatch(/isOverLimit/);
@@ -54,7 +48,7 @@ describe('#122 · the fence itself does not move', () => {
     // measured at 6877ms for 80k of nested emphasis. It was raised to 60000
     // during this batch and put back for exactly that reason.
     expect(MAX_LENGTHS.filingEssay).toBe(25000);
-    const render = stripComments(read('src/utils/markdownSafety.ts'));
+    const render = readCode('src/utils/markdownSafety.ts');
     expect(render).toMatch(/content\.length <= MAX_LENGTHS\.filingEssay/);
   });
 
@@ -88,7 +82,7 @@ describe('#122 · the fence itself does not move', () => {
 });
 
 describe('#60 · one dossier, however the network behaved', () => {
-  const exec = stripComments(read('src/utils/mutationExecutor.ts'));
+  const exec = readCode('src/utils/mutationExecutor.ts');
   const addDossier = exec.slice(exec.indexOf('add_dossier: async'), exec.indexOf('update_dossier: async'));
 
   /**
@@ -107,13 +101,13 @@ describe('#60 · one dossier, however the network behaved', () => {
   it('the filing that replaced it sends its own id, so ITS retry meets the key', () => {
     const addFiling = exec.slice(exec.indexOf('add_filing: async'), exec.indexOf('update_filing: async'));
     expect(addFiling).toMatch(/id: _tempId/);
-    const queue = stripComments(read('src/utils/offlineQueue.ts'));
+    const queue = readCode('src/utils/offlineQueue.ts');
     expect(queue).toMatch(/errorClass === 'duplicate'/);
   });
 });
 
 describe('#12 · the zip guard fails closed on ANY unmeasurable entry', () => {
-  const imp = stripComments(read('src/features/archive/archiveImport.ts'));
+  const imp = readCode('src/features/archive/archiveImport.ts');
 
   it('no longer requires that EVERY entry be unmeasurable', () => {
     // One measurable entry alongside 1,999 unmeasurable ones used to pass both
@@ -133,8 +127,8 @@ describe('#12 · the zip guard fails closed on ANY unmeasurable entry', () => {
  * component that will discard it on the next render.
  */
 describe('the Dispatch feed stops carrying essay bodies', () => {
-  const types = stripComments(read('src/stores/dispatchTypes.ts'));
-  const store = stripComments(read('src/stores/dispatch.ts'));
+  const types = readCode('src/stores/dispatchTypes.ts');
+  const store = readCode('src/stores/dispatch.ts');
 
   it('the card columns do not include the essay', () => {
     // Asking for full_content on a twenty-row page is 83% payload nobody draws.
@@ -166,7 +160,7 @@ describe('the Dispatch feed stops carrying essay bodies', () => {
     const hydrate = store.slice(start, store.indexOf('file: async (draft)'));
     expect(hydrate).toMatch(/set\(\(st\)/);
 
-    const reader = stripComments(read('app/dispatch/[id].tsx'));
+    const reader = readCode('app/dispatch/[id].tsx');
     expect(reader).toMatch(/hydrate\(id\)/);
     expect(reader).toMatch(/filings\.find\(/);
   });

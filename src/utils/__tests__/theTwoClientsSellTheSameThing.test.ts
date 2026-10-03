@@ -28,13 +28,11 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
+import { readCode } from '../../test/readCode'
 
 const WEB_ROOT = join(__dirname, '..', '..')
 const WEB_MEMBERSHIP = join(WEB_ROOT, 'pages', 'MembershipPage.tsx')
 const MOBILE_MEMBERSHIP = join(__dirname, '..', '..', '..', 'mobile', 'src', 'constants', 'membership.ts')
-
-/** Comments blanked first — every note explaining a removal names the thing removed. */
-const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ')
 
 const tidy = (v: string) => v.replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim()
 
@@ -51,15 +49,16 @@ const tidy = (v: string) => v.replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim()
  * `features: [ … ]` plus a `featuredFeature` title. Both are read from those
  * shapes and nothing else.
  */
+/** Read from the page as CODE (readCode): every note explaining a removal names the thing removed. */
 const webFeatures = (src: string): Set<string> => {
     const out = new Set<string>()
-    for (const block of strip(src).matchAll(/\{\s*\[([\s\S]*?)\]\s*\.map\(\s*\(\s*feature/g)) {
+    for (const block of src.matchAll(/\{\s*\[([\s\S]*?)\]\s*\.map\(\s*\(\s*feature/g)) {
         for (const m of block[1].matchAll(/'([^']+)'/g)) out.add(tidy(m[1]))
     }
     // The two featured features are drawn separately, not from an array — and
     // their titles carry a <br/>, so the capture has to allow tags inside and
     // strip them afterwards. `[^<]+` stopped at the break and matched nothing.
-    for (const m of strip(src).matchAll(/featured-feature-title[^>]*>([\s\S]*?)<\/div>/g)) {
+    for (const m of src.matchAll(/featured-feature-title[^>]*>([\s\S]*?)<\/div>/g)) {
         out.add(tidy(m[1].replace(/<[^>]+>/g, ' ')))
     }
     return out
@@ -73,7 +72,7 @@ const webFeatures = (src: string): Set<string> => {
  */
 const mobileFeatures = (src: string): Set<string> => {
     const out = new Set<string>()
-    const block = /export const PRIVILEGES[^=]*=\s*\[([\s\S]*?)\n\];/.exec(strip(src).replace(/\r\n/g, '\n'))?.[1] ?? ''
+    const block = /export const PRIVILEGES[^=]*=\s*\[([\s\S]*?)\n\];/.exec(src.replace(/\r\n/g, '\n'))?.[1] ?? ''
     for (const m of block.matchAll(/\{\s*id:\s*'[^']+',\s*name:\s*'([^']+)'/g)) out.add(tidy(m[1]))
     return out
 }
@@ -84,12 +83,12 @@ describe('the two clients sell the same thing', () => {
         // so a broken path would make all of them pass by comparing nothing.
         expect(existsSync(WEB_MEMBERSHIP)).toBe(true)
         expect(existsSync(MOBILE_MEMBERSHIP)).toBe(true)
-        expect(mobileFeatures(readFileSync(MOBILE_MEMBERSHIP, 'utf8')).size).toBeGreaterThan(8)
-        expect(webFeatures(readFileSync(WEB_MEMBERSHIP, 'utf8')).size).toBeGreaterThan(8)
+        expect(mobileFeatures(readCode(MOBILE_MEMBERSHIP)).size).toBeGreaterThan(8)
+        expect(webFeatures(readCode(WEB_MEMBERSHIP)).size).toBeGreaterThan(8)
     })
 
     it('neither client still sells the three that were never built', () => {
-        const both = strip(readFileSync(WEB_MEMBERSHIP, 'utf8')) + strip(readFileSync(MOBILE_MEMBERSHIP, 'utf8'))
+        const both = readCode(WEB_MEMBERSHIP) + readCode(MOBILE_MEMBERSHIP)
         expect(both).not.toMatch(/Gilded Frame/)
         expect(both).not.toMatch(/Poster Glow/)
         expect(both).not.toMatch(/Gold Foil/)
@@ -99,8 +98,8 @@ describe('the two clients sell the same thing', () => {
     })
 
     it('every feature mobile sells, web sells too', () => {
-        const mobile = mobileFeatures(readFileSync(MOBILE_MEMBERSHIP, 'utf8'))
-        const web = webFeatures(readFileSync(WEB_MEMBERSHIP, 'utf8'))
+        const mobile = mobileFeatures(readCode(MOBILE_MEMBERSHIP))
+        const web = webFeatures(readCode(WEB_MEMBERSHIP))
         // Named, not counted — "2 differences" tells nobody which promise the
         // two platforms disagree about, and that is the whole point.
         const onlyMobile = [...mobile].filter((f) => !web.has(f))
@@ -108,15 +107,15 @@ describe('the two clients sell the same thing', () => {
     })
 
     it('and every feature web sells, mobile sells too', () => {
-        const mobile = mobileFeatures(readFileSync(MOBILE_MEMBERSHIP, 'utf8'))
-        const web = webFeatures(readFileSync(WEB_MEMBERSHIP, 'utf8'))
+        const mobile = mobileFeatures(readCode(MOBILE_MEMBERSHIP))
+        const web = webFeatures(readCode(WEB_MEMBERSHIP))
         const onlyWeb = [...web].filter((f) => !mobile.has(f))
         expect(onlyWeb).toEqual([])
     })
 })
 
 describe('the founding offer, on the web', () => {
-    const page = () => strip(readFileSync(WEB_MEMBERSHIP, 'utf8'))
+    const page = () => readCode(WEB_MEMBERSHIP)
 
     it('states its limit, never its count', () => {
         // "N SEATS REMAINING" told every visitor how many had joined — at launch,
@@ -150,7 +149,7 @@ describe('nothing else on the web sells what the Society does not', () => {
         }
         const files = collect(WEB_ROOT)
         expect(files.length).toBeGreaterThan(100)
-        const offenders = files.filter((f) => /gold (Dispatch )?badge|Gold Foil/i.test(strip(readFileSync(f, 'utf8'))))
+        const offenders = files.filter((f) => /gold (Dispatch )?badge|Gold Foil/i.test(readCode(f)))
         expect(offenders).toEqual([])
     })
 })
@@ -176,7 +175,7 @@ describe('who web lets through the door', () => {
     it('no access gate decides a rank from `role` alone', () => {
         const offenders: string[] = []
         for (const file of collect(WEB_ROOT)) {
-            const src = strip(readFileSync(file, 'utf8'))
+            const src = readCode(file)
             for (const m of src.matchAll(ACCESS)) {
                 const rhs = m[2]
                 if (/role\s*===|\[\s*'archivist'\s*,\s*'auteur'\s*\]\s*\.includes/.test(rhs)) {
@@ -190,7 +189,7 @@ describe('who web lets through the door', () => {
     it('the scan can SEE access gates — it is not passing on an empty read', () => {
         let found = 0
         for (const file of collect(WEB_ROOT)) {
-            found += [...strip(readFileSync(file, 'utf8')).matchAll(ACCESS)].length
+            found += [...readCode(file).matchAll(ACCESS)].length
         }
         expect(found).toBeGreaterThanOrEqual(5)
     })

@@ -23,17 +23,11 @@
  * mocks to ask "is this name present" ends up testing the mocks. It also means a
  * name deleted from the union cannot be quietly kept alive by a stale import.
  */
-import * as fs from 'fs';
-import * as path from 'path';
+import { readCode } from '@/test-utils/readCode';
 import { MutationSchemaMap } from '../../types/mutations';
 
-const ROOT = path.join(__dirname, '..', '..', '..');
-const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8');
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-
-const queueSrc = read('src/utils/offlineQueue.ts');
-const execSrc = read('src/utils/mutationExecutor.ts');
+const queueCode = readCode('src/utils/offlineQueue.ts');
+const execCode = readCode('src/utils/mutationExecutor.ts');
 
 /**
  * The union, taken from the declaration itself.
@@ -44,7 +38,7 @@ const execSrc = read('src/utils/mutationExecutor.ts');
  * trap noted in this repo before: strip comments before asserting on source.
  */
 const declaredTypes: string[] = (() => {
-  const clean = stripComments(queueSrc);
+  const clean = queueCode;
   const start = clean.indexOf('type:');
   const end = clean.indexOf(';', start);
   expect(start).toBeGreaterThan(-1);
@@ -79,7 +73,7 @@ describe('registry 2 · a schema, or the payload is never validated at all', () 
     // The premise of this whole file. If this branch is ever changed to fail
     // closed, these checks become belt-and-braces instead of load-bearing — and
     // whoever changes it should see this test say so.
-    expect(stripComments(queueSrc)).toMatch(/const schema = MutationSchemaMap\[mutation\.type\];\s*if \(schema\)/);
+    expect(queueCode).toMatch(/const schema = MutationSchemaMap\[mutation\.type\];\s*if \(schema\)/);
   });
 
   it('every declared type has one', () => {
@@ -112,7 +106,7 @@ describe('registry 3 · a handler', () => {
    * `>`. The map is sliced out by its own declaration and both forms are read.
    */
   const handlerNames = (() => {
-    const clean = stripComments(execSrc);
+    const clean = execCode;
     const start = clean.indexOf('const handlers: Record<');
     const end = clean.indexOf('\nconst _exhaustiveCheck', start);
     expect(start).toBeGreaterThan(-1);
@@ -139,7 +133,7 @@ describe('registry 3 · a handler', () => {
 
 describe('registry 4 · id remapping, which nothing else checks', () => {
   const idMapSrc = (() => {
-    const clean = stripComments(execSrc);
+    const clean = execCode;
     const start = clean.indexOf('export function applyIdMapToPayload');
     expect(start).toBeGreaterThan(-1);
     return clean.slice(start, clean.indexOf('\n}', start));

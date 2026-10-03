@@ -21,6 +21,7 @@
  */
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 import { CLAUSES } from '../paper/PaperMore';
 
 const SCHEMA = readFileSync(
@@ -165,11 +166,6 @@ describe('every clause that can be checked is', () => {
 describe('no surface repeats a claim the house cannot keep', () => {
   const APP = [join(__dirname, '..', '..', '..'), join(__dirname, '..', '..', '..', '..', 'app')];
 
-  /** A docstring quoting a struck sentence is a record, not a claim. */
-  const stripComments = (s: string): string => s
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
-
   const collect = (dir: string, out: string[] = []): string[] => {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
       if (['node_modules', '__tests__', 'mockups', 'android', 'ios', '.expo'].includes(e.name)) continue;
@@ -187,8 +183,9 @@ describe('no surface repeats a claim the house cannot keep', () => {
     expect(FILES.some((f) => f.endsWith('ReportSheet.tsx'))).toBe(true);
   });
 
+  /** Read as code: a docstring quoting a struck sentence is a record, not a claim. */
   const offenders = (re: RegExp) => FILES
-    .filter((f) => re.test(stripComments(readFileSync(f, 'utf8'))))
+    .filter((f) => re.test(readCode(f)))
     .map((f) => f.slice(f.lastIndexOf('src')).replace(/\\/g, '/'));
 
   it('names no number of reports that makes anything happen', () => {

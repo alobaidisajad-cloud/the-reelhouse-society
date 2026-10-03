@@ -16,6 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 const { MOBILE } = require('./harness.cjs');
+const { stripComments } = require('../../test-utils/stripComments');
 
 const args = process.argv.slice(2);
 const opt = (k) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args.splice(i, 2)[1] : null; };
@@ -36,7 +37,7 @@ let missing = 0, total = 0;
 for (const rel of files) {
   const raw = fs.readFileSync(path.join(MOBILE, rel), 'utf8');
   // Comments blanked in place: line numbers survive, a commented-out control is not counted.
-  const src = raw.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' ')).replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
+  const src = stripComments(raw, rel);
   for (let i = src.indexOf('<PressableScale'); i !== -1; i = src.indexOf('<PressableScale', i + 1)) {
     total++;
     const site = `${rel}:${src.slice(0, i).split('\n').length}`;

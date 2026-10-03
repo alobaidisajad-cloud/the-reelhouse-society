@@ -8,13 +8,11 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
-const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8');
-const strip = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
-const mmkv = strip(read('src/stores/mmkv-storage.ts'));
+const mmkv = readCode('src/stores/mmkv-storage.ts');
 
 describe('#49 · a failure to encrypt is never silent', () => {
   it('both failure paths report — neither is dev-only', () => {
@@ -28,11 +26,14 @@ describe('#49 · a failure to encrypt is never silent', () => {
 
   it('the false justification is gone', () => {
     // Two claims, both untrue: the cached data is NOT non-sensitive (the film
-    // store persists logs carrying privateNotes, and the profile cache carries
+    // store persists a member's whole record, and the profile cache carries
     // the member's email), and it does NOT degrade to "the unencrypted
     // instance" — nothing is assigned, so `storage` stays the placeholder.
-    expect(mmkv).not.toMatch(/the cached data is non-sensitive/);
-    expect(mmkv).not.toMatch(/Degrade gracefully to\s*\n?\s*\/\/ the unencrypted instance/);
+    // Both lived in COMMENTS, so the file is read as written, comments and all.
+    const written = fs.readFileSync(path.join(ROOT, 'src/stores/mmkv-storage.ts'), 'utf8');
+    expect(written).toMatch(/initEncryptedStorage/);
+    expect(written).not.toMatch(/the cached data is non-sensitive/);
+    expect(written).not.toMatch(/Degrade gracefully to\s*\n?\s*\/\/ the unencrypted instance/);
   });
 });
 
@@ -104,12 +105,12 @@ describe('#49 · member content never reaches disk unencrypted', () => {
   it('the stores holding member content declare themselves sensitive', () => {
     // Declared at the ONE line that decides where a store is written, so a store
     // adding a new persisted field later cannot forget it.
-    expect(strip(read('src/stores/films.ts')))
+    expect(readCode('src/stores/films.ts'))
       .toMatch(/createAsyncMMKVStorage\(\{ sensitive: true \}\)/);
-    expect(strip(read('src/stores/notificationStore.ts')))
+    expect(readCode('src/stores/notificationStore.ts'))
       .toMatch(/createJSONStorage\(\(\) => zustandMMKVStorageSensitive\)/);
     // The Vault: a member's private notes. The most sensitive thing on disk.
-    expect(strip(read('src/stores/vaultStore.ts')))
+    expect(readCode('src/stores/vaultStore.ts'))
       .toMatch(/createJSONStorage\(\(\) => zustandMMKVStorageSensitive\)/);
   });
 
@@ -128,7 +129,7 @@ describe('#49 · member content never reaches disk unencrypted', () => {
     const persisted = fsMod.readdirSync(dir)
       .filter((f: string) => /\.ts$/.test(f))
       .map((f: string) => `src/stores/${f}`)
-      .filter((f: string) => /\bpersist\(/.test(strip(read(f))));
+      .filter((f: string) => /\bpersist\(/.test(readCode(f)));
     // The detector must find something, or it would pass on an empty set.
     expect(persisted.length).toBeGreaterThanOrEqual(5);
     // Read from the `storage:` line itself — the one that decides where the
@@ -140,7 +141,7 @@ describe('#49 · member content never reaches disk unencrypted', () => {
       /createJSONStorage\(\(\) => zustandMMKVStorageSensitive\)|createAsyncMMKVStorage\(\{ sensitive: true \}\)/.test(line);
     const unsafe = persisted.filter((f: string) => {
       if (f in NOT_MEMBER_CONTENT) return false;
-      const lines = storageLines(strip(read(f)));
+      const lines = storageLines(readCode(f));
       return lines.length === 0 || !lines.every(isSensitive);
     });
     expect(unsafe).toEqual([]);
@@ -164,7 +165,7 @@ describe('#49 · member content never reaches disk unencrypted', () => {
 
     const offenders: string[] = [];
     for (const file of [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))]) {
-      const src = strip(fs.readFileSync(file, 'utf8'));
+      const src = readCode(file);
       if (/storage\.set\(\s*`ironvault_user_cache_/.test(src) ||
           /storage\.set\(\s*CACHE_KEYS\.USER\(/.test(src)) {
         offenders.push(path.relative(ROOT, file).replace(/\\/g, '/'));
@@ -177,7 +178,7 @@ describe('#49 · member content never reaches disk unencrypted', () => {
     // Missed entirely on the first pass: this persists whatever queries ran —
     // profiles, feeds, logs. A pure cache, refetchable, and already deleted on
     // logout, so gating it costs only a colder start.
-    const qc = strip(read('src/lib/queryClient.ts'));
+    const qc = readCode('src/lib/queryClient.ts');
     expect(qc).toMatch(/setSensitive\(CACHE_KEY, serialized\)/);
     expect(qc).not.toMatch(/storage\.set\(CACHE_KEY/);
   });
@@ -197,20 +198,20 @@ describe('#49 · member content never reaches disk unencrypted', () => {
      * Anchored on the actual write, so moving it again without keeping the rule
      * fails here.
      */
-    const drafts = strip(read('src/utils/memberDrafts.ts'));
+    const drafts = readCode('src/utils/memberDrafts.ts');
     expect(drafts).toMatch(/storage\.set\(draftKey\(/);
     expect(drafts).not.toMatch(/setSensitive/);
 
     // And no screen writes a draft by hand any more, which is what stops a
     // second, unkeyed path appearing beside the module.
-    expect(strip(read('app/dispatch/compose.tsx'))).not.toMatch(/storage\.set\(/);
-    expect(strip(read('src/hooks/useLogFlow.ts'))).not.toMatch(/storage\.set\(DRAFT_KEY/);
+    expect(readCode('app/dispatch/compose.tsx')).not.toMatch(/storage\.set\(/);
+    expect(readCode('src/hooks/useLogFlow.ts')).not.toMatch(/storage\.set\(DRAFT_KEY/);
   });
 
   it('the profile cache — which carries the member EMAIL — is gated', () => {
     // `{ ...session.user, ...profile }`, and JSON.stringify keeps every
     // property. This was the worst of the plaintext writes.
-    const auth = strip(read('src/stores/auth.ts'));
+    const auth = readCode('src/stores/auth.ts');
     expect(auth).not.toMatch(/storage\.set\(`ironvault_user_cache_/);
     expect(auth).toMatch(/setSensitive\(`ironvault_user_cache_/);
   });
@@ -221,7 +222,7 @@ describe('#49 · member content never reaches disk unencrypted', () => {
     // 'true' flag. Gating that cache meant the flag survived and its payload did
     // not: the reconciler found "unsynced" with nothing to sync, skipped
     // silently, and left the flag set forever. The member's change was gone.
-    const auth = strip(read('src/stores/auth.ts'));
+    const auth = readCode('src/stores/auth.ts');
 
     // The key now HOLDS the preferences, and is written ungated.
     expect(auth).toMatch(/storage\.set\(`dirty_prefs_\$\{user\.id\}`, JSON\.stringify\(prefs\)\)/);
@@ -235,7 +236,7 @@ describe('#49 · member content never reaches disk unencrypted', () => {
     // A device that wrote 'true' before this change still has its values in the
     // cache. Discarding them to fix a bug about discarding them would be absurd,
     // so the helper reads the legacy shape too.
-    const auth = strip(read('src/stores/auth.ts'));
+    const auth = readCode('src/stores/auth.ts');
     const helper = auth.slice(auth.indexOf('function readPendingPrefs'));
     expect(helper.slice(0, 900)).toMatch(/raw === 'true'/);
     expect(helper.slice(0, 900)).toMatch(/ironvault_user_cache_\$\{userId\}/);
@@ -246,9 +247,9 @@ describe('#49 · member content never reaches disk unencrypted', () => {
     // skipping it costs a slower first paint. A pending write is the member's
     // own unsaved work, so skipping it destroys it — the exact loss the offline
     // queue exists to prevent.
-    const auth = strip(read('src/stores/auth.ts'));
+    const auth = readCode('src/stores/auth.ts');
     expect(auth).toMatch(/storage\.set\(`dirty_profile_/);
     expect(auth).toMatch(/storage\.set\(`dirty_prefs_/);
-    expect(strip(read('src/utils/offlineQueue.ts'))).toMatch(/storage\.set\(QUEUE_KEY/);
+    expect(readCode('src/utils/offlineQueue.ts')).toMatch(/storage\.set\(QUEUE_KEY/);
   });
 });

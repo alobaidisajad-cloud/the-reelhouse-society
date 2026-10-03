@@ -18,6 +18,7 @@
  */
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const SCAN = ['src', 'app'];
@@ -56,10 +57,6 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-const strip = (s: string) => s
-  .replace(/\/\*[\s\S]*?\*\//g, '')
-  .split('\n').filter((l) => !/^\s*(\/\/|\*)/.test(l)).join('\n');
-
 describe('one rank mark, drawn in one place', () => {
   const files = SCAN.flatMap((d) => walk(d));
 
@@ -75,7 +72,7 @@ describe('one rank mark, drawn in one place', () => {
   it('no unsanctioned file draws the mark itself', () => {
     const offenders = files
       .filter((f) => !SANCTIONED[f])
-      .filter((f) => DRAWN_MARK.test(strip(readFileSync(join(ROOT, f), 'utf8'))));
+      .filter((f) => DRAWN_MARK.test(readCode(join(ROOT, f))));
     expect(offenders).toEqual([]);
   });
 
@@ -98,7 +95,7 @@ describe('one rank mark, drawn in one place', () => {
     // The web client has ONE badge class and four sizes, two of them set by
     // inline overrides at the call site. The prop that allows that is the whole
     // mechanism, so the component must not offer one.
-    const src = strip(readFileSync(join(ROOT, 'src/components/RankBadge.tsx'), 'utf8'));
+    const src = readCode('src/components/RankBadge.tsx');
     expect(src).not.toMatch(/\bsize\?:/);
     expect(src).not.toMatch(/\bvariant\?:/);
     expect(src).not.toMatch(/\bcolor\?:/);

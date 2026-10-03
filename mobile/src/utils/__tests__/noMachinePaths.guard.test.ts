@@ -12,8 +12,9 @@
  * every source, test, script and tool the project runs and fails on any
  * absolute path into a user's home, a temp folder, or a drive letter.
  */
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readdirSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const ROOTS = ['app', 'src', 'mockups', 'scripts', 'test-utils', '.claude'];
@@ -38,9 +39,6 @@ function files(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-/** Code only: a comment may tell the story of the path that broke CI. */
-const code = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
-
 describe('no code names a place on one computer', () => {
   const all = ROOTS.flatMap((r) => files(join(MOBILE, r)));
 
@@ -51,7 +49,8 @@ describe('no code names a place on one computer', () => {
   it('every path is relative to the file that needs it', () => {
     const bad = all
       .filter((f) => f !== __filename) // its own examples below are meant to match
-      .filter((f) => MACHINE.test(code(readFileSync(f, 'utf8'))))
+      // Code only: a comment may tell the story of the path that broke CI.
+      .filter((f) => MACHINE.test(readCode(f)))
       .map((f) => relative(MOBILE, f).split(sep).join('/'));
     expect(bad).toEqual([]);
   });

@@ -24,6 +24,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const read = (p: string) => fs.readFileSync(path.join(__dirname, '..', '..', '..', '..', p), 'utf8');
 
@@ -37,10 +38,7 @@ const FEED = read('app/(tabs)/dispatch.tsx');
  * component as missing one. This project has a standing rule about it and I
  * broke it inside the test written to enforce a different rule.
  */
-const ROW = read('src/components/dispatch/paper/PaperPost.tsx')
-  .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
-  .replace(/\/\*[\s\S]*?\*\//g, '')
-  .replace(/^\s*\/\/[^\n]*$/gm, '');
+const ROW = readCode('src/components/dispatch/paper/PaperPost.tsx');
 
 describe('the feed row can actually be recycled', () => {
   it('read the files', () => {
@@ -211,9 +209,7 @@ describe('paperPerf is wired, all of it', () => {
      * on a feed row, where its padding sets the row's first line height.
      */
     const styles = (() => {
-      const src = fs.readFileSync(path.join(DIR, 'paperStyles.ts'), 'utf8');
-      const pad = (s: string) => s.replace(/[^\n]/g, ' ');
-      const code = src.replace(/\/\*[\s\S]*?\*\//g, pad).replace(/\/\/[^\n]*/g, pad);
+      const code = readCode(path.join(DIR, 'paperStyles.ts'));
       const out: { name: string; body: string }[] = [];
       const re = /^ {2}([A-Za-z_]\w*):\s*\{/gm;
       let m: RegExpExecArray | null;
@@ -259,10 +255,7 @@ describe('paperPerf is wired, all of it', () => {
     // The frozen constants are one per kind for the life of the process.
     const offenders: string[] = [];
     for (const f of fs.readdirSync(DIR).filter((n) => /\.tsx$/.test(n))) {
-      const code = fs.readFileSync(path.join(DIR, f), 'utf8')
-        .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/[^\n]*/g, '');
+      const code = readCode(path.join(DIR, f));
       for (const m of code.matchAll(/\{\s*color:\s*KIND_RULE[.[][\w.\]]*\s*\}/g)) {
         // The one legitimate form: a lookup with a fallback for a kind that is
         // not one of the five, which a frozen record cannot express.

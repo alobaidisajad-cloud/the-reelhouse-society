@@ -98,6 +98,8 @@ async function openRoom() {
   useLoungeStore.setState({ currentMessages: FORTY, lounges: [ROOM] });
   const r = render(<LoungeRoomScreen />);
   await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+  // The rows were drawn: "redraws none" below means nothing of a room that drew nothing.
+  expect(mockRowRenders.length).toBeGreaterThan(0);
   mockRowRenders.length = 0;
   return r;
 }

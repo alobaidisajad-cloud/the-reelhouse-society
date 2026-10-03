@@ -19,15 +19,11 @@
  * So this guards the SHAPE of the fix, at all three layers, because a
  * regression at any one of them looks like a working page from the other two.
  */
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
-const ROOT = join(__dirname, '..', '..', '..', '..');
-const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
-
-const corridor = strip(readFileSync(join(ROOT, 'app/(tabs)/lounge.tsx'), 'utf8'));
-const room = strip(readFileSync(join(ROOT, 'app/lounge/[id].tsx'), 'utf8'));
-const nav = strip(readFileSync(join(ROOT, 'src/components/layout/TopNavBar.tsx'), 'utf8'));
+const corridor = readCode('app/(tabs)/lounge.tsx');
+const room = readCode('app/lounge/[id].tsx');
+const nav = readCode('src/components/layout/TopNavBar.tsx');
 
 describe('the corridor is open', () => {
   describe('layer 1 — the screen', () => {

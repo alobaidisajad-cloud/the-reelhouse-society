@@ -10,6 +10,7 @@
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 import { STANDING_LADDER, standingFor, rungAt } from '../standing';
 
@@ -177,7 +178,7 @@ describe('no room keeps a ladder of its own any more', () => {
     'src/components/profile/profileComputed.ts',
     'src/stores/domain/logSlice/helpers/logOperations.ts',
   ])('%s reads the shared one', (f) => {
-    const src = read(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+    const src = readCode(f);
     expect(src).toMatch(/standingFor\(/);
     // The names that used to be written out here.
     expect(src).not.toMatch(/'THE ORACLE'|'MIDNIGHT DEVOTEE'|'THE INITIATE'|'THE DEVOTEE'/);

@@ -27,6 +27,7 @@
  */
 import { readFileSync, readdirSync } from 'fs';
 import { join, relative, sep } from 'path';
+import { stripComments } from '@/test-utils/readCode';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const HOOK = 'src/hooks/useTextScale.ts';
@@ -49,7 +50,7 @@ function sources(): { file: string; src: string }[] {
 }
 
 /** Code only: a comment may name `fontScale` to explain why it is not read. */
-const code = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+const code = (s: string, file: string) => stripComments(s, file);
 
 const ALL = sources();
 
@@ -84,7 +85,7 @@ function fieldStyles(): Set<string> {
 describe('the text-size setting is read in one place', () => {
   it('nothing but useTextScale reads fontScale', () => {
     const readers = ALL
-      .filter(({ file, src }) => file !== HOOK && /\bfontScale\b|getFontScale\s*\(/.test(code(src)))
+      .filter(({ file, src }) => file !== HOOK && /\bfontScale\b|getFontScale\s*\(/.test(code(src, file)))
       .map(({ file }) => file);
     expect(readers).toEqual([]);
   });
@@ -142,7 +143,7 @@ describe('the scale multiplies boxes, never type', () => {
    * none. If either ever sets one, this fails and the rail must change hooks.
    */
   it('a box around a SET lineHeight uses useLineScale; useTextScale only where none is set', () => {
-    const at = (f: string) => code(ALL.find(({ file }) => file === f)!.src);
+    const at = (f: string) => code(ALL.find(({ file }) => file === f)!.src, f);
     expect(at('src/components/person/PersonFilmography.tsx')).toMatch(/useLineScale\(/);
     expect(at('app/stacks/[id].tsx')).toMatch(/useLineScale\(/);
     expect(at('src/components/lobby/LobbyWall.tsx')).toMatch(/useLineScale\(/);
@@ -158,18 +159,18 @@ describe('the scale multiplies boxes, never type', () => {
   it.each(['fontSize', 'lineHeight'])('no file that reads the scale puts it into a %s', (prop) => {
     for (const { file, src } of users) {
       // the names this file gives the scale, or anything computed from it
-      const names = [...code(src).matchAll(new RegExp(`(?:const|let)\\s+(?:\\{\\s*)?([A-Za-z_$][\\w$]*)[^=\\n]*=\\s*[^;\\n]*${HOOKS}\\s*\\(`, 'g'))].map((m) => m[1]);
+      const names = [...code(src, file).matchAll(new RegExp(`(?:const|let)\\s+(?:\\{\\s*)?([A-Za-z_$][\\w$]*)[^=\\n]*=\\s*[^;\\n]*${HOOKS}\\s*\\(`, 'g'))].map((m) => m[1]);
       const inline = new RegExp(`\\b${prop}\\s*:[^,}\\n]*${HOOKS}`);
-      expect({ file, hit: inline.test(code(src)) }).toEqual({ file, hit: false });
+      expect({ file, hit: inline.test(code(src, file)) }).toEqual({ file, hit: false });
       for (const n of names) {
         const viaName = new RegExp(`\\b${prop}\\s*:[^,}\\n]*\\b${n}\\b`);
-        expect({ file, name: n, hit: viaName.test(code(src)) }).toEqual({ file, name: n, hit: false });
+        expect({ file, name: n, hit: viaName.test(code(src, file)) }).toEqual({ file, name: n, hit: false });
       }
     }
   });
 
   it('the essay no longer grows its own leading', () => {
-    const all = ALL.map(({ src }) => code(src)).join('\n');
+    const all = ALL.map(({ file, src }) => code(src, file)).join('\n');
     expect(all).not.toMatch(/\bwithLeading\b|\buseEssayLeading\b/);
   });
 });
@@ -186,7 +187,7 @@ describe('a text style carries no fixed height, unless it is a typing field', ()
     const bad: string[] = [];
     let seen = 0;
     for (const { file, src } of ALL) {
-      for (const { name, prop } of fixedTextBoxes(code(src))) {
+      for (const { name, prop } of fixedTextBoxes(code(src, file))) {
         seen++;
         if (!fields.has(name)) bad.push(`${file}  ${name}  (${prop})`);
       }

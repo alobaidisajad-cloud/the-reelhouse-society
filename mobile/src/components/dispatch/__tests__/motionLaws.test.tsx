@@ -30,6 +30,7 @@ import { render } from '@testing-library/react-native';
 import { PaperFill } from '@/src/components/dispatch/paper/PaperFill';
 import { PaperStrike } from '@/src/components/dispatch/paper/PaperStrike';
 import { MS, EASE, STRIKE_SCALE, STAGGER_MS, PILL_Y } from '@/src/components/dispatch/paper/paperMotion';
+import { readCode } from '@/test-utils/readCode';
 
 const DIR = path.join(__dirname, '..', 'paper');
 
@@ -38,10 +39,7 @@ const sources = fs.readdirSync(DIR)
   .filter((f) => /\.tsx?$/.test(f))
   .map((f) => ({
     name: f,
-    code: fs.readFileSync(path.join(DIR, f), 'utf8')
-      .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/^\s*\/\/[^\n]*$/gm, ''),
+    code: readCode(path.join(DIR, f)),
   }));
 
 describe('the motion design is actually wired', () => {

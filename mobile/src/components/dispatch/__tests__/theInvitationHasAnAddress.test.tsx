@@ -16,12 +16,12 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { readCode } from '@/test-utils/readCode';
 
 import { PaperPicker, FORMS } from '../paper/PaperMore';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
-const code = (p: string) => readFileSync(join(ROOT, p), 'utf8')
-  .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
+const code = (p: string) => readCode(join(ROOT, p));
 
 const lockedForms = FORMS.map((f) => ({ ...f, locked: !!f.locked }));
 

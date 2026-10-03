@@ -2,10 +2,9 @@
  * InteractionService.test.ts — Zod Boundary Validation Tests
  * ───────────────────────────────────────────────────────────
  * Validates that the InteractionService correctly:
- *   1. Accepts valid endorsement payloads
+ *   1. Accepts the two certifications a member can make — a log, a stack
  *   2. Rejects invalid payloads with clear Zod errors
  *   3. Enforces the "at least one target ID" refinement
- *   4. Handles TMDB numeric film IDs correctly
  */
 
 // The service's own schema: a copy here would pass whatever the real one became.
@@ -26,29 +25,12 @@ describe('InteractionPayloadSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should accept TMDB numeric film IDs', () => {
-    const payload = {
+  it('should accept a valid endorsement with stack target', () => {
+    const result = InteractionPayloadSchema.safeParse({
       user_id: validUserId,
-      type: 'endorse_film' as const,
-      target_film_id: 550, // Fight Club's TMDB id
-    };
-
-    const result = InteractionPayloadSchema.safeParse(payload);
-    expect(result.success).toBe(true);
-    if (result.success) {
-      // Numeric IDs should be coerced to string
-      expect(result.data.target_film_id).toBe('550');
-    }
-  });
-
-  it('should accept string numeric film IDs', () => {
-    const payload = {
-      user_id: validUserId,
-      type: 'endorse_film' as const,
-      target_film_id: '12345',
-    };
-
-    const result = InteractionPayloadSchema.safeParse(payload);
+      type: 'endorse_list' as const,
+      target_list_id: validLogId,
+    });
     expect(result.success).toBe(true);
   });
 
@@ -84,11 +66,17 @@ describe('InteractionPayloadSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('refuses the film and review kinds — nothing in the house makes them', () => {
+    for (const type of ['endorse_film', 'endorse_review']) {
+      expect(InteractionPayloadSchema.safeParse({ user_id: validUserId, type, target_log_id: validLogId }).success).toBe(false);
+    }
+  });
+
   it('should reject payloads with no target IDs (refinement check)', () => {
     const payload = {
       user_id: validUserId,
       type: 'endorse_log' as const,
-      // No target_log_id, target_list_id, target_film_id, or target_review_id
+      // No target_log_id or target_list_id
     };
 
     const result = InteractionPayloadSchema.safeParse(payload);
@@ -98,36 +86,5 @@ describe('InteractionPayloadSchema', () => {
         issue => issue.message === 'Interaction requires at least one target ID'
       )).toBe(true);
     }
-  });
-
-  it('should reject negative film IDs', () => {
-    const payload = {
-      user_id: validUserId,
-      type: 'endorse_film' as const,
-      target_film_id: -1,
-    };
-
-    const result = InteractionPayloadSchema.safeParse(payload);
-    expect(result.success).toBe(false);
-  });
-
-  it('should accept all 4 endorsement types', () => {
-    const types = ['endorse_log', 'endorse_list', 'endorse_film', 'endorse_review'] as const;
-
-    types.forEach((type) => {
-      const payload: Record<string, unknown> = {
-        user_id: validUserId,
-        type,
-      };
-
-      // Assign the correct target ID for each type
-      if (type === 'endorse_log') payload.target_log_id = validLogId;
-      else if (type === 'endorse_list') payload.target_list_id = validLogId;
-      else if (type === 'endorse_film') payload.target_film_id = '550';
-      else if (type === 'endorse_review') payload.target_review_id = validLogId;
-
-      const result = InteractionPayloadSchema.safeParse(payload);
-      expect(result.success).toBe(true);
-    });
   });
 });

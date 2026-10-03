@@ -34,6 +34,13 @@ describe('stripComments', () => {
     expect(out).not.toContain('gone');
   });
 
+  it('reads a generic arrow in text with no file name, which TSX would take for a tag', () => {
+    const text = 'const f = <T>(x: T): T => x; // gone\nconst s = "// kept";';
+    const out = stripComments(text);
+    expect(out).not.toContain('gone');
+    expect(out).toContain('"// kept"');
+  });
+
   it('reads a real file of the app', () => {
     const code = readCode('src/components/text/index.tsx');
     expect(code).toMatch(/export const Text/);

@@ -4,7 +4,7 @@
  * Validates core invariants of the watchlist domain slice:
  *   1. O(1) _watchlistIndex integrity on add/remove
  *   2. Deduplication — no double-add
- *   3. 500-entry cap enforcement
+ *   3. no cap: a long watchlist pages whole (the cap that dropped items past 500 is gone)
  *   4. Optimistic rollback on non-network server error
  *   5. _fetchingWatchlist mutex prevents concurrent fetches
  *   6. loadMore pagination appends correctly

@@ -35,13 +35,12 @@ const dispatchFiles = (): string[] =>
 /**
  * Quoted runs that read like PROSE — containing whitespace or ending a
  * sentence. An identifier such as `dossier_share`, a table name, or a kind
- * value has neither, which is exactly how the wire word is left alone.
+ * value has neither, which is exactly how the wire word is left alone. The
+ * text comes with its comments already blanked by the parser.
  */
 const proseStrings = (src: string): { line: number; text: string }[] => {
   const out: { line: number; text: string }[] = [];
-  src.split(/\r?\n/).forEach((raw, i) => {
-    // drop line comments and jsdoc continuation lines
-    const code = raw.replace(/\/\/.*$/, '').replace(/^\s*\*.*$/, '');
+  src.split(/\r?\n/).forEach((code, i) => {
     for (const m of code.matchAll(/(['"`])((?:(?!\1)[^\\]|\\.)*)\1/g)) {
       const s = m[2];
       if (!s) continue;

@@ -13,6 +13,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 
@@ -74,13 +75,10 @@ const ESTABLISHES_A_MEMBER = new Set([
   'login', 'signup', 'restoreSession', 'logout', 'deleteAccount',
 ]);
 
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-
 type Op = { file: string; name: string; line: number };
 
 function opsWritingAfterAwait(file: string): Op[] {
-  const src = stripComments(fs.readFileSync(path.join(ROOT, file), 'utf8'));
+  const src = readCode(path.join(ROOT, file));
   const lines = src.split(/\r?\n/);
 
   // Boundaries include NON-async members too. They were async-only at first, so
@@ -156,9 +154,7 @@ describe('a write that lands after logout must not repopulate the store', () => 
   it('the detector actually finds operations — it is not passing on an empty set', () => {
     // A sweep that matches nothing passes silently. This pins that the walker
     // still recognises the shape it is meant to police.
-    const src = stripComments(
-      fs.readFileSync(path.join(ROOT, 'src/stores/domain/logSlice/helpers/logOperations.ts'), 'utf8')
-    );
+    const src = readCode(path.join(ROOT, 'src/stores/domain/logSlice/helpers/logOperations.ts'));
     expect((src.match(/stillSignedIn\(/g) ?? []).length).toBeGreaterThanOrEqual(4);
   });
 
@@ -195,7 +191,7 @@ describe('a write that lands after logout must not repopulate the store', () => 
     // handler and wrote into the store the reset had just cleared. Nulling a
     // variable is not unsubscribing. notificationStore tears its channel down;
     // this one did not.
-    const lounge = stripComments(fs.readFileSync(path.join(ROOT, 'src/stores/lounge.ts'), 'utf8'));
+    const lounge = readCode(path.join(ROOT, 'src/stores/lounge.ts'));
     const reset = lounge.slice(lounge.lastIndexOf('registerStoreReset('));
     expect(reset).toMatch(/supabase\.removeChannel\(_activeChannel\)/);
     expect(reset).toMatch(/_activeChannel = null/);
@@ -207,7 +203,7 @@ describe('a write that lands after logout must not repopulate the store', () => 
     // wrote exactly that once while building this; the id must be captured
     // before the await.
     for (const file of SLICES) {
-      const src = stripComments(fs.readFileSync(path.join(ROOT, file), 'utf8'));
+      const src = readCode(path.join(ROOT, file));
       expect(src).not.toMatch(/stillSignedIn\(\s*useAuthStore\.getState\(\)/);
     }
   });

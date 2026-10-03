@@ -96,7 +96,7 @@ jest.mock('expo-crypto', () => ({
 
 const MUTATION_TYPES = [
     'add_log', 'remove_log', 'add_watchlist', 'remove_watchlist',
-    'endorse_log', 'endorse_list', 'endorse_film',
+    'endorse_log', 'endorse_list',
     'follow_user', 'unfollow_user',
     'add_archive', 'remove_archive',
 ] as const;

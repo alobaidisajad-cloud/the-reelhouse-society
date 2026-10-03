@@ -21,11 +21,9 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = path.resolve(__dirname, '../../../..');
-
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
 const dispatchFiles = (): string[] =>
   execFileSync('git', ['ls-files', 'app/dispatch', 'src/components/dispatch'], {
@@ -40,7 +38,7 @@ describe('a member wears their own rank', () => {
     const offences: string[] = [];
 
     for (const f of dispatchFiles()) {
-      const src = stripComments(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+      const src = readCode(path.join(ROOT, f));
       src.split(/\r?\n/).forEach((line, i) => {
         const m = /(^|[^\w])tier:\s*'(\w+)'/.exec(line);
         if (!m) return;

@@ -16,6 +16,7 @@ import React, { act } from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { stripComments } from '@/test-utils/readCode';
 
 import { SettingsScreen } from '../SettingsScreen';
 
@@ -127,10 +128,9 @@ const settle = async (r: ReturnType<typeof mount>) => {
  * storage.clearAll()". Asserting absence against raw source therefore fails on
  * the very prose that documents the fix. Strip first, always.
  */
-const code = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-const CODE_SCREEN = code(SCREEN);
-const CODE_SECTIONS = code(SECTIONS);
-const CODE_VAULT = code(VAULT);
+const CODE_SCREEN = stripComments(SCREEN, 'SettingsScreen.tsx');
+const CODE_SECTIONS = stripComments(SECTIONS, 'SettingsSections.tsx');
+const CODE_VAULT = stripComments(VAULT, 'DataVault.tsx');
 
 /** Brace-matched — never `[^}]*`, which stops inside a nested object. */
 function styleBody(src: string, name: string): string {

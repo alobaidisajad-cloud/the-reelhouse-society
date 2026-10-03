@@ -25,6 +25,7 @@
  */
 import { readFileSync, readdirSync } from 'fs';
 import { join, relative, sep } from 'path';
+import { stripComments } from '@/test-utils/readCode';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const FLOOR = 10;
@@ -95,9 +96,6 @@ function sources(): { file: string; src: string }[] {
   return out;
 }
 
-/** Comments out, so a sentence ABOUT a size is not read as one. */
-const code = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' ')).replace(/(^|[^:])\/\/.*$/gm, '$1');
-
 /** The name of the style object enclosing index i: `name: {` or `(inline)`. */
 function styleName(s: string, i: number): string {
   let depth = 0;
@@ -116,7 +114,8 @@ type Size = { key: string; file: string; size: number; line: number };
 function sizes(): Size[] {
   const out: Size[] = [];
   for (const { file, src } of sources()) {
-    const s = code(src);
+    // Comments out, so a sentence ABOUT a size is not read as one.
+    const s = stripComments(src, file);
     const consts = new Map<string, number>();
     for (const m of s.matchAll(/(?:^|\n)\s*(?:export\s+)?const\s+([A-Z_][A-Z0-9_]*)\s*=\s*([\d.]+)\s*;/g)) consts.set(m[1], +m[2]);
     for (const m of s.matchAll(/fontSize\s*:\s*([\d.]+|[A-Z_][A-Z0-9_]*)\b/g)) {

@@ -24,7 +24,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/integration/setup.test.ts | — |  |
 | __tests__/integration/setup.ts | — |  |
 | __tests__/integration/socialRollback.test.ts | — |  |
-| __tests__/InteractionService.test.ts | 2026-10-01 | reads the service's own schema |
+| __tests__/InteractionService.test.ts | 2026-10-03 | rewritten whole: only the two kinds that exist |
 | __tests__/interpolateMock.test.ts | — |  |
 | __tests__/moderationActs.test.ts | — |  |
 | __tests__/notificationsMockCoverage.test.ts | — |  |
@@ -38,7 +38,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/tmdbMockCoverage.test.ts | — |  |
 | __tests__/utils/mappers.test.ts | — |  |
 | __tests__/utils/mutationExecutor.test.ts | — |  |
-| __tests__/utils/offlineQueue.test.ts | — |  |
+| __tests__/utils/offlineQueue.test.ts | 2026-10-03 | edited: the kind list matches the queue's union |
 | ../.github/workflows/ci-alert.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-09-29 | history reduced to the rule each step keeps |
@@ -75,10 +75,10 @@ without one). "Read" is the day its comments were last read against its code.
 | app/__tests__/boot-structure.test.tsx | — |  |
 | app/_layout.tsx | 2026-10-02 | PathTracker moved out, and now tells nav too |
 | app/(admin)/__tests__/tribunal.test.tsx | — |  |
-| app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | — |  |
+| app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | app/(admin)/_layout.tsx | 2026-10-02 | read; sound |
 | app/(admin)/tribunal.tsx | 2026-10-02 | doors through nav; a failed docket counts nothing; the ban said as enforced |
-| app/(modals)/__tests__/list-modal.curate.test.tsx | — |  |
+| app/(modals)/__tests__/list-modal.curate.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/cover-picker.tsx | 2026-10-01 |  |
 | app/(modals)/list-modal.tsx | 2026-10-02 | Read whole (launch audit). Ordering was a drag only (a screen reader heard 'Reorder' and could do nothing): move up/down actions added. The four terms toggles said nothing of which was chosen: selected states. |
@@ -172,7 +172,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tabs/__tests__/zz-rooms.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/tabs/__tests__/zz-settings.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/tabs/flashListMock.tsx | 2026-10-01 | rows handed extraData, as FlashList does |
-| mockups/tools/drawn.cjs | 2026-09-29 | 1 finding |
+| mockups/tools/drawn.cjs | 2026-10-03 | read whole: controls counted through stripComments.js |
 | mockups/tools/face-advances.cjs | 2026-10-02 | Written in the launch audit: one generator for every face's letter widths, read from the font files, with --check in CI. |
 | mockups/tools/harness.cjs | 2026-09-28 | 5 findings; the header's middle sentence was garbled by an insertion; open() said 1.35 was the most a word grows (uncapped grows to 3.1) |
 | mockups/tools/layout.cjs | 2026-09-28 | 12 findings; the header said it measured 'x1 and x1.35' (it runs five passes, iOS to 3.1 and Android to 2) and left SMALL, SHORT and LOST unlisted; two stacked JSDocs merged |
@@ -189,7 +189,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/coverage-ratchet.js | 2026-09-29 | the header's why-stories reduced to the rule |
 | scripts/edge-functions.cjs | 2026-09-29 | fetch-rss 'read by visitors' was stale (installed builds call it); history dropped |
 | scripts/functions-check.mjs | 2026-09-29 | now tells a comment-only difference (a note) from a code difference (a failure), by the compiler's tokens; a one-letter code change fails it |
-| scripts/gates-check.js | 2026-09-28 | 5 findings plus 4 unflagged incident stories; passes against production after |
+| scripts/gates-check.js | 2026-10-03 | read whole: the door sweep reads code through stripComments.js |
 | scripts/lucide-icons.js | 2026-10-03 | read whole: sound |
 | scripts/schema-snapshot.mjs | 2026-09-28 | 5 findings; an orphan note trailed its code; the case for the snapshot kept, the incident counts dropped |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
@@ -204,17 +204,17 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/animation-parking.test.ts | — |  |
 | src/components/__tests__/aRatingCanBeGivenWithoutSight.test.tsx | — |  |
 | src/components/__tests__/aScreenThatFailsLetsYouLeave.test.tsx | — |  |
-| src/components/__tests__/authRouting.test.ts | — |  |
+| src/components/__tests__/authRouting.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/__tests__/ControlledInput.test.tsx | — |  |
 | src/components/__tests__/EmptyStates.test.tsx | — |  |
 | src/components/__tests__/ErrorBoundary.test.tsx | — |  |
 | src/components/__tests__/OfflineBanner.test.tsx | — |  |
-| src/components/__tests__/oneRankMark.test.ts | — |  |
-| src/components/__tests__/overlayElevation.test.ts | — |  |
+| src/components/__tests__/oneRankMark.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/__tests__/overlayElevation.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/__tests__/PressableScale.hitSlop.test.tsx | — |  |
 | src/components/__tests__/SectionErrorBoundary.test.tsx | — |  |
 | src/components/__tests__/SpoilerVeil.test.tsx | 2026-10-01 | records every frame |
-| src/components/__tests__/stackedRowHitSlop.test.ts | 2026-09-29 | histories → rules; FALSE: '15pt on EVERY side' (PressableScale drops it on an axis ≥48pt); iOS source cited is Fabric's RCTViewComponentView; BUG: mapSpans treated a backtick string as code ('\'' twice) — fixed |
+| src/components/__tests__/stackedRowHitSlop.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/__tests__/textContrast.test.ts | — |  |
 | src/components/__tests__/theCountHangsBesideItsMark.test.tsx | — |  |
 | src/components/__tests__/theDoorCanBeReadAndPressed.test.tsx | — |  |
@@ -270,17 +270,17 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/essayBody.test.tsx | — |  |
 | src/components/dispatch/__tests__/everyCardSaysSomething.test.tsx | — |  |
 | src/components/dispatch/__tests__/everyLeadInIsAccountedFor.test.ts | — |  |
-| src/components/dispatch/__tests__/everyRuleIsTrue.test.ts | — |  |
+| src/components/dispatch/__tests__/everyRuleIsTrue.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/everyTextHasACeiling.test.ts | — |  |
 | src/components/dispatch/__tests__/excerpt.test.ts | — |  |
-| src/components/dispatch/__tests__/feedRowIsRecyclable.test.ts | — |  |
+| src/components/dispatch/__tests__/feedRowIsRecyclable.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/feedScreen.test.tsx | — |  |
-| src/components/dispatch/__tests__/motionLaws.test.tsx | — |  |
+| src/components/dispatch/__tests__/motionLaws.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/noIntlInTheDispatch.test.ts | — |  |
-| src/components/dispatch/__tests__/nothingIsLostQuietly.test.tsx | — |  |
-| src/components/dispatch/__tests__/nothingLivesOnlyInTheMockups.test.ts | — |  |
-| src/components/dispatch/__tests__/oneCapNotThree.test.ts | — |  |
-| src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts | — |  |
+| src/components/dispatch/__tests__/nothingIsLostQuietly.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/dispatch/__tests__/nothingLivesOnlyInTheMockups.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/dispatch/__tests__/oneCapNotThree.test.ts | 2026-10-03 | read whole: holds the Dispatch boxes; the column side is dispatchFieldCaps' |
+| src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/paperTextLogic.test.ts | — |  |
 | src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-09-29 | 25 fixed; FOUND a \u-eaten regex (Arabic never matched) |
 | src/components/dispatch/__tests__/roomScreen.test.tsx | — |  |
@@ -288,28 +288,28 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/seriesScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/signedOutHasNoInertControls.test.tsx | — |  |
 | src/components/dispatch/__tests__/spokenAloud.test.tsx | — |  |
-| src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx | — |  |
+| src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theDispatchAtItsLimits.test.tsx | — |  |
-| src/components/dispatch/__tests__/theDispatchSaysEssay.test.ts | — |  |
+| src/components/dispatch/__tests__/theDispatchSaysEssay.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theDoorIsShown.test.tsx | — |  |
 | src/components/dispatch/__tests__/theDraftIsTheWholePiece.test.tsx | — |  |
 | src/components/dispatch/__tests__/theEssayAtLargeType.test.tsx | — |  |
 | src/components/dispatch/__tests__/theHardcodedWidthIsHarmless.test.ts | — |  |
-| src/components/dispatch/__tests__/theInvitationHasAnAddress.test.tsx | — |  |
+| src/components/dispatch/__tests__/theInvitationHasAnAddress.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theIssueIsTheCalendarDay.test.ts | 2026-10-02 | Written in the launch audit: the issue number counted in calendar days, every hour of two years. |
 | src/components/dispatch/__tests__/theMarginSaysWhatItCounts.test.tsx | 2026-09-29 | new |
 | src/components/dispatch/__tests__/theNumberIsAMembershipFact.test.tsx | — |  |
 | src/components/dispatch/__tests__/theParagraphKnowsItsDirection.test.tsx | — |  |
-| src/components/dispatch/__tests__/thePreviewIsThePage.test.tsx | — |  |
+| src/components/dispatch/__tests__/thePreviewIsThePage.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theSeriesSheet.test.tsx | 2026-10-01 | written: the series sheet says what it read |
 | src/components/dispatch/__tests__/theRailFitsOneScreen.test.ts | — |  |
 | src/components/dispatch/__tests__/theReaderAtFullLength.test.tsx | — |  |
-| src/components/dispatch/__tests__/theRoomOnScreenDecidesTheGate.test.ts | — |  |
+| src/components/dispatch/__tests__/theRoomOnScreenDecidesTheGate.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theRoomSaysWhatItHolds.test.tsx | — |  |
 | src/components/dispatch/__tests__/theSetOfTheType.test.tsx | — |  |
-| src/components/dispatch/__tests__/theWritingRoomExplainsItself.test.ts | — |  |
+| src/components/dispatch/__tests__/theWritingRoomExplainsItself.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx | — |  |
-| src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | — |  |
+| src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/ComposeDesks.tsx | 2026-10-02 | Read (launch audit, the ballot desk). Sound. |
 | src/components/dispatch/dayLabel.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/EssayBody.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -337,7 +337,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/SeriesPicker.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/EmptyStates.tsx | 2026-10-01 | the offline state arrives through Arrive |
 | src/components/ErrorBoundary.tsx | 2026-10-02 | Read whole (launch audit). Retries spent left a disabled PLEASE RESTART APP: the button now restarts the app (expo-updates reloadAsync), and says how only when it cannot. |
-| src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-01 | true as written |
+| src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/feed/ActionDeck.tsx | 2026-10-01 | owner by id; nav; comments cut to the why |
 | src/components/feed/ActivityCard.tsx | 2026-10-01 | lies flat unless an Auteur's; comments made true |
 | src/components/feed/AutopsyView.tsx | 2026-10-01 | each score read whole |
@@ -347,12 +347,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/castRailFits.test.ts | — |  |
 | src/components/film/__tests__/FilmActionTray.test.tsx | — |  |
 | src/components/film/__tests__/filmDossier.test.tsx | — |  |
-| src/components/film/__tests__/filmPageWiring.test.ts | — |  |
+| src/components/film/__tests__/filmPageWiring.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/film/__tests__/FilmStub.test.tsx | — |  |
 | src/components/film/__tests__/filmStubMetrics.test.ts | — |  |
 | src/components/film/__tests__/filmVerdict.test.tsx | — |  |
 | src/components/film/__tests__/footageRailFits.test.ts | — |  |
-| src/components/film/__tests__/oneBrass.test.ts | — |  |
+| src/components/film/__tests__/oneBrass.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/film/__tests__/pickCertificate.test.ts | — |  |
 | src/components/film/__tests__/stubFits.test.ts | — |  |
 | src/components/film/__tests__/trayActsFire.test.tsx | — |  |
@@ -432,7 +432,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/__tests__/theComposerKeepsItsWord.test.tsx | — |  |
 | src/components/log/__tests__/theLapsedMemberReadsTheirNote.test.tsx | — |  |
 | src/components/log/__tests__/theNoteSheetOffersOnlyWhatIsReal.test.tsx | — |  |
-| src/components/log/__tests__/theVaultBelongsToItsViewing.test.tsx | — |  |
+| src/components/log/__tests__/theVaultBelongsToItsViewing.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/log/__tests__/theVaultSaysWhenItCouldNotOpen.test.tsx | 2026-10-01 | written: the Vault on the record, when it could not open |
 | src/components/log/__tests__/zz-composer.gen.test.tsx | — |  |
 | src/components/log/AuteurToolkit.tsx | 2026-10-01 | histories to the present |
@@ -455,16 +455,16 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogVerdict.tsx | 2026-10-01 | histories to the present |
 | src/components/log/NoteSheet.tsx | 2026-10-01 | true as written |
 | src/components/log/VaultNote.tsx | 2026-10-01 | true as written |
-| src/components/lounge/__tests__/aKeystrokeRedrawsNoMessage.test.tsx | — |  |
+| src/components/lounge/__tests__/aKeystrokeRedrawsNoMessage.test.tsx | 2026-10-03 | read whole: openRoom proves rows were drawn before counting redraws |
 | src/components/lounge/__tests__/aMessageCanBeHeardAndActedOn.test.ts | 2026-09-29 | new |
 | src/components/lounge/__tests__/MemberFaceStack.model.test.ts | 2026-10-03 | read whole: sound |
 | src/components/lounge/__tests__/roomGate.test.ts | 2026-09-29 | new |
 | src/components/lounge/__tests__/aRefusedLeaveStaysInTheRoom.test.tsx | 2026-10-01 | written: the salon panel leaves only on success |
-| src/components/lounge/__tests__/theCorridorIsOpen.test.ts | — |  |
+| src/components/lounge/__tests__/theCorridorIsOpen.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/lounge/__tests__/theDoorAdmits.test.tsx | 2026-10-01 | written: the host's panel, mounted |
-| src/components/lounge/__tests__/theDoorIsAName.test.tsx | — |  |
+| src/components/lounge/__tests__/theDoorIsAName.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/lounge/__tests__/theDoorWaitsForTheGuestList.test.tsx | 2026-09-29 | new |
-| src/components/lounge/__tests__/thePollRunsWhileWatched.test.ts | — |  |
+| src/components/lounge/__tests__/thePollRunsWhileWatched.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx | 2026-10-03 | read whole: sound |
 | src/components/lounge/__tests__/theRopeWaitsForTheSheet.test.tsx | 2026-10-03 | read whole: sound |
 | src/components/lounge/__tests__/theSalonsSayWhenTheyCouldNotBeRead.test.tsx | 2026-10-03 | read whole: sound |
@@ -486,7 +486,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/MasterLogo.tsx | 2026-10-02 | Read (launch audit): artwork. Left alone. |
 | src/components/moderation/__tests__/ContentActionSheet.mute.test.tsx | — |  |
 | src/components/moderation/__tests__/ReportSheet.test.tsx | — |  |
-| src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts | — |  |
+| src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/moderation/ContentActionSheet.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/moderation/ReportSheet.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/NitrateCalendar.tsx | 2026-10-01 | the header without a stale line count |
@@ -512,22 +512,22 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/decadeCounts.test.ts | — |  |
 | src/components/profile/__tests__/everyRatingHasAChip.test.tsx | 2026-10-02 | Written in the launch audit: a half rating sits under the chip below it, in room, query and counts. |
 | src/components/profile/__tests__/heroNameSize.test.ts | — |  |
-| src/components/profile/__tests__/hideStatsRemoved.guard.test.ts | — |  |
+| src/components/profile/__tests__/hideStatsRemoved.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/holdingsFit.test.ts | — |  |
-| src/components/profile/__tests__/memberFile.test.tsx | — |  |
+| src/components/profile/__tests__/memberFile.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/memberFileRooms.test.tsx | — |  |
 | src/components/profile/__tests__/memberFileScreen.test.tsx | — |  |
 | src/components/profile/__tests__/projectorRoom.test.tsx | — |  |
 | src/components/profile/__tests__/railFits.test.ts | — |  |
 | src/components/profile/__tests__/reconcileCount.test.ts | — |  |
 | src/components/profile/__tests__/roomContrast.test.tsx | — |  |
-| src/components/profile/__tests__/roomInset.test.ts | — |  |
+| src/components/profile/__tests__/roomInset.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/roomRail.test.tsx | — |  |
-| src/components/profile/__tests__/rooms.test.tsx | — |  |
-| src/components/profile/__tests__/roomSearch.test.tsx | — |  |
+| src/components/profile/__tests__/rooms.test.tsx | 2026-10-03 | read whole: the repeat count is read past a nested call |
+| src/components/profile/__tests__/roomSearch.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/roomSearchWiring.test.tsx | — |  |
 | src/components/profile/__tests__/roomsRender.test.tsx | — |  |
-| src/components/profile/__tests__/taste.test.tsx | — |  |
+| src/components/profile/__tests__/taste.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/theArchiveIsHeldWhereverItShows.test.tsx | 2026-10-02 | Written in the launch audit: the Archive's lock holds every place the own file shows it. |
 | src/components/profile/__tests__/theArchiveLockHolds.test.tsx | 2026-10-01 | written: the archive lock holds |
 | src/components/profile/__tests__/theCalendarDrawsToday.test.tsx | 2026-10-01 | written: the calendar draws today and counts what it draws |
@@ -577,7 +577,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/RankBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/ReelEyeIcon.tsx | 2026-10-02 | Read (launch audit): artwork. Left alone. |
 | src/components/reels/__tests__/MemberRegistry.select.test.ts | 2026-10-01 | no comments |
-| src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | 2026-10-01 | carries the door's reason |
+| src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | — |  |
 | src/components/reels/MemberRegistry.tsx | 2026-10-01 | nav; comments cut to the why |
 | src/components/reels/ReelsCards.tsx | 2026-10-01 | chips share no tap; comments cut to the why |
@@ -590,7 +590,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/search/SearchUnreachable.tsx | 2026-10-02 | SearchPartly: above results that came back while a source did not |
 | src/components/SectionErrorBoundary.tsx | 2026-10-01 | retries; comments made true |
 | src/components/ShareToLoungeModal.tsx | 2026-10-01 | only salons it may speak in; subscribes only when open |
-| src/components/society/__tests__/theSocietySellsWhatItSays.test.tsx | — |  |
+| src/components/society/__tests__/theSocietySellsWhatItSays.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/society/BillingSwitch.tsx | 2026-10-02 | read; sound |
 | src/components/society/FoundingCertificate.tsx | 2026-10-02 | read; sound |
 | src/components/society/GeneralAdmission.tsx | 2026-10-02 | read; sound |
@@ -617,9 +617,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/__tests__/theReelSaysWhatEachControlIs.test.tsx | 2026-10-01 | written with the Reel's controls |
 | src/components/ui/NotificationBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/constants/__tests__/aMemberWhoLeftIsNamedOneWay.test.tsx | 2026-10-02 | Written in the launch audit: a departed member named one way in the paper, a critique and the Lounge; the mark written in one place. |
-| src/constants/__tests__/aRankIsSoldEnforcedAndExplained.test.ts | — |  |
+| src/constants/__tests__/aRankIsSoldEnforcedAndExplained.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/constants/__tests__/deepLinks.test.ts | — |  |
-| src/constants/__tests__/standing.test.ts | — |  |
+| src/constants/__tests__/standing.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/constants/__tests__/taste.test.ts | — |  |
 | src/constants/__tests__/theHouseLinksToItself.guard.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): no link goes to reelhouse.app, another company's domain. |
 | src/constants/__tests__/theRanksAreWellFormed.test.ts | — |  |
@@ -650,7 +650,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/EditProfileScreen.tsx | 2026-10-01 | a refused backdrop said; the photo line is true; history comments trimmed |
 | src/features/profile/LinksEditor.tsx | 2026-10-01 | no handle that does not drag; ADD LINK stops at the cap; title errors shown |
 | src/features/profile/profile.styles.ts | 2026-10-01 | 19 styles nothing read, removed |
-| src/features/settings/__tests__/settings.redesign.test.tsx | — |  |
+| src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/features/settings/__tests__/anExportIsWhole.test.ts | 2026-10-01 | written: an export holds every row once |
 | src/features/settings/DataVault.tsx | 2026-10-02 | no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
 | src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
@@ -671,7 +671,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
 | src/hooks/__tests__/theArchiveDoesNotRepeatItself.test.tsx | — |  |
 | src/hooks/__tests__/theRoomDoesNotRepeatItself.test.tsx | 2026-10-01 | written: the room pages on what the server gave |
-| src/hooks/__tests__/theArchivePagesOnWhatTheServerGave.test.ts | — |  |
+| src/hooks/__tests__/theArchivePagesOnWhatTheServerGave.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/hooks/__tests__/theCalendarReadsItsOwnYear.test.ts | — |  |
 | src/hooks/__tests__/theNoteWaitsForItsViewing.test.tsx | — |  |
 | src/hooks/__tests__/theSealLeavesWithTheScreen.test.tsx | — |  |
@@ -767,18 +767,18 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts | 2026-10-01 | written with 20261001_03 |
 | src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/aYearIsReadToTheLast.test.ts | 2026-10-01 | written: a year is read to the last row |
-| src/services/__tests__/certifyCountAuthority.test.ts | — |  |
-| src/services/__tests__/everyNameAClientCallsExists.test.ts | 2026-10-03 | read whole: sound; now points to its column-level sibling |
+| src/services/__tests__/certifyCountAuthority.test.ts | 2026-10-03 | read whole: the migration loses its SQL (--) comments, not JS ones |
+| src/services/__tests__/everyNameAClientCallsExists.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/services/__tests__/FeedService.test.ts | 2026-10-01 | cursor note made true |
 | src/services/__tests__/getFilmVerdict.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/loungeEmbeds.contract.test.ts | 2026-10-03 | read whole: sound (the FK names; columns are the query guard's) |
 | src/services/__tests__/loungeSharePayloads.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/ProfileDataService.test.ts | 2026-10-03 | read whole: sound |
-| src/services/__tests__/profileRoomFilters.test.ts | 2026-10-01 | the guard follows the one room-filters memo both reads send |
+| src/services/__tests__/profileRoomFilters.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/services/__tests__/profileService.test.ts | 2026-10-03 | read whole: sound |
-| src/services/__tests__/servicesBatch1.test.ts | — |  |
-| src/services/__tests__/servicesBatch2.test.ts | — |  |
-| src/services/__tests__/servicesBatch3.test.ts | — |  |
+| src/services/__tests__/servicesBatch1.test.ts | 2026-10-03 | edited: endorse_list routing and the log error case |
+| src/services/__tests__/servicesBatch2.test.ts | 2026-10-03 | edited: the stack fixture has only real columns |
+| src/services/__tests__/servicesBatch3.test.ts | 2026-10-03 | edited: the header names what the file tests |
 | src/services/__tests__/theBestFilmsAreReadFromTheWholeRecord.test.ts | 2026-10-02 | Written in the launch audit: HIGHEST RATED asked of the database over the whole record, and a failed read throws. |
 | src/services/__tests__/theDoorCursorCarriesATiebreaker.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/theRegistryRetriesAFailedRead.test.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
@@ -792,7 +792,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/FeedService.ts | 2026-10-01 | the cursor note made true: RPC arguments |
 | src/services/FilmService.ts | 2026-10-01 | a failed verdict read is thrown; histories to the present |
 | src/services/FollowRequestService.ts | 2026-10-02 | a failed read throws; a failed count is null; @ stripped |
-| src/services/InteractionService.ts | 2026-10-01 | its schema is what its test reads |
+| src/services/InteractionService.ts | 2026-10-03 | read whole: endorse_log / endorse_list only; the dead film/review kinds removed |
 | src/services/logCounts.ts | 2026-10-01 | true as written |
 | src/services/LogService.ts | 2026-10-01 | a missing log is null; histories to the present |
 | src/services/LoungeService.ts | 2026-10-01 | true as written |
@@ -810,9 +810,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/aFailedSettingStaysUndone.test.ts | 2026-09-29 | new |
 | src/stores/__tests__/aFollowMadeOfflineIsKept.test.ts | — |  |
 | src/stores/__tests__/aMarkReadThatFailedIsHeard.test.ts | 2026-10-01 | written with the marks fix |
-| src/stores/__tests__/aNoticeIsNarrowedToItsOwner.test.ts | — |  |
+| src/stores/__tests__/aNoticeIsNarrowedToItsOwner.test.ts | 2026-10-03 | edited: a notice type the house sends |
 | src/stores/__tests__/aProfileChangeIsNeverDropped.test.ts | — |  |
-| src/stores/__tests__/aReactionIsOneOfFive.test.ts | — |  |
+| src/stores/__tests__/aReactionIsOneOfFive.test.ts | 2026-10-03 | read whole: the five against the CHECK in the snapshot |
 | src/stores/__tests__/aRefusedWriteIsNotSuccess.test.ts | — |  |
 | src/stores/__tests__/aResetThatFailedIsHeard.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): a failed sign-out reset reaches the logger in production. |
 | src/stores/__tests__/aSalonKeepsItsCoverAndItsDoor.test.ts | 2026-10-01 | written: the corridor reads covers; a rank refusal is a door |
@@ -826,38 +826,38 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/dispatchReads.test.ts | — |  |
 | src/stores/__tests__/dispatchRefusals.test.ts | — |  |
 | src/stores/__tests__/dispatchWrites.test.ts | — |  |
-| src/stores/__tests__/encryptionAtRest.guard.test.ts | — |  |
+| src/stores/__tests__/encryptionAtRest.guard.test.ts | 2026-10-03 | read whole: the false-justification check reads the file as written |
 | src/stores/__tests__/everyPersistedStoreWaitsForTheKey.guard.test.ts | 2026-10-02 | every persisted store is read after the key |
 | src/stores/__tests__/films.test.ts | — |  |
-| src/stores/__tests__/followGraph.wiring.guard.test.ts | 2026-09-29 | follow-list wipe fixed; comments read |
-| src/stores/__tests__/interactionSlice.test.ts | — |  |
+| src/stores/__tests__/followGraph.wiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/stores/__tests__/interactionSlice.test.ts | 2026-10-03 | read whole: a certification made before the answer survives |
 | src/stores/__tests__/logoutBeatsTheRollback.test.ts | — |  |
-| src/stores/__tests__/logoutClearsEveryModuleCache.test.ts | — |  |
-| src/stores/__tests__/logoutLeavesNoTrace.guard.test.ts | — |  |
+| src/stores/__tests__/logoutClearsEveryModuleCache.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/stores/__tests__/logoutLeavesNoTrace.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/stores/__tests__/logSlice.test.ts | — |  |
 | src/stores/__tests__/lounge.test.ts | — |  |
 | src/stores/__tests__/loungeActs.test.ts | 2026-10-01 | a stale line count dropped |
-| src/stores/__tests__/loungeErrors.guard.test.ts | — |  |
+| src/stores/__tests__/loungeErrors.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/stores/__tests__/markCounts.test.ts | — |  |
 | src/stores/__tests__/notificationCap.test.ts | — |  |
 | src/stores/__tests__/reportStore.pbt.test.ts | — |  |
 | src/stores/__tests__/socialSlice.hydrationReconcile.test.ts | — |  |
 | src/stores/__tests__/socialSlice.unfollow.test.ts | — |  |
-| src/stores/__tests__/staleWriteGuard.test.ts | — |  |
+| src/stores/__tests__/staleWriteGuard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/stores/__tests__/telemetryGating.test.ts | — |  |
 | src/stores/__tests__/theBoardSaysWhenItCouldNotBeRead.test.tsx | — |  |
 | src/stores/__tests__/theCursorCarriesATiebreaker.test.ts | — |  |
-| src/stores/__tests__/theHouseSaysWhy.test.ts | — |  |
+| src/stores/__tests__/theHouseSaysWhy.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/stores/__tests__/theLiveWireKnowsTheRoom.test.ts | — |  |
 | src/stores/__tests__/theLogSaysWhatHappened.test.ts | — |  |
 | src/stores/__tests__/theNoticesSayWhatTheyCouldNotReach.test.tsx | 2026-10-02 | first page ordered by time then id; older page failure said; rows say who, what, when |
 | src/stores/__tests__/theRoomYouAreActuallyIn.test.ts | — |  |
 | src/stores/__tests__/theSalonListIsWholeOrSaysSo.test.ts | 2026-10-01 | written with the salon-list fix |
-| src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts | — |  |
+| src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts | 2026-10-03 | read whole: the column's ceiling read from the snapshot |
 | src/stores/__tests__/theStoreOpensOnEveryLaunch.test.ts | 2026-10-01 | written with the 16-byte key fix |
 | src/stores/__tests__/theThrottleIsPerRoom.test.ts | — |  |
 | src/stores/__tests__/vaultStore.test.ts | — |  |
-| src/stores/__tests__/watchlistSlice.test.ts | — |  |
+| src/stores/__tests__/watchlistSlice.test.ts | 2026-10-03 | edited: the header names what the file tests |
 | src/stores/auth.ts | 2026-10-01 | username sign-in says what failed; comments short |
 | src/stores/blockStore.ts | 2026-10-02 | sign-out erases the leaving member's saved list |
 | src/stores/createSelectors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -865,19 +865,19 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/dispatch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/stores/dispatchTypes.ts | 2026-10-02 | Read whole (launch audit): row shapes match the live schema (body NOT NULL DEFAULT '', so an ended filing parses). Sound; left alone. |
 | src/stores/domain/__tests__/aFilmAlreadyQueuedStaysQueued.test.ts | 2026-10-02 | a film already on the watchlist stays, and is said to be |
-| src/stores/domain/__tests__/aShelfIsNeverHeldHostage.test.ts | — |  |
+| src/stores/domain/__tests__/aShelfIsNeverHeldHostage.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/stores/domain/__tests__/aStackLosesOneFilmInOneWrite.test.ts | 2026-10-02 | a stack loses one film in one write |
 | src/stores/domain/__tests__/cursorPagination.test.ts | — |  |
 | src/stores/domain/__tests__/logOperations.pure.test.ts | — |  |
-| src/stores/domain/__tests__/logReconciliation.test.ts | — |  |
+| src/stores/domain/__tests__/logReconciliation.test.ts | 2026-10-03 | rewritten whole: drives overlayQueuedLogs and oneOfEachLog |
 | src/stores/domain/__tests__/theDiaryPagesWithoutGaps.test.ts | 2026-10-02 | the log list orders as its cursor reads |
 | src/stores/domain/archiveSlice.ts | 2026-10-02 | the dropped ticket stubs removed |
 | src/stores/domain/helpers/promiseMutex.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/domain/helpers/sessionGuard.ts | 2026-10-01 | true as written |
-| src/stores/domain/interactionSlice.ts | 2026-10-02 | read; sound |
+| src/stores/domain/interactionSlice.ts | 2026-10-03 | read whole: a certification made before the answer is kept (index and list) |
 | src/stores/domain/listSlice.ts | 2026-10-02 | a film leaves a stack in one write |
 | src/stores/domain/logSlice.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-02 | the log list orders by watched date (undated last) then id, as its cursor reads |
+| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-03 | read whole: queued logs overlay only their owner; one row per log |
 | src/stores/domain/socialSlice.ts | 2026-10-02 | Read (launch audit). Cursor values are timestamps and uuids (no commas), safe unquoted. Sound. |
 | src/stores/domain/watchlistSlice.ts | 2026-10-02 | a film already queued stays, and is said to be |
 | src/stores/films.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -898,14 +898,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts | 2026-10-01 | written: the flat-but-elevated ratchet |
 | src/theme/__tests__/everyStyleIsRead.guard.test.ts | 2026-10-02 | Written in the launch audit: every style a sheet defines is drawn by the app. |
 | src/theme/__tests__/lightFloor.test.ts | — |  |
-| src/theme/__tests__/nothingOvershoots.guard.test.ts | — |  |
+| src/theme/__tests__/nothingOvershoots.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/theme/__tests__/theGroundLadder.test.ts | — |  |
-| src/theme/__tests__/theRoomIsLit.test.ts | — |  |
-| src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | — |  |
-| src/theme/__tests__/theTypeFloor.test.ts | — |  |
+| src/theme/__tests__/theRoomIsLit.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/theme/__tests__/theTypeFloor.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/theme/__tests__/theVeilMeetsTheLight.test.ts | — |  |
 | src/theme/__tests__/wordsAreNotMarks.test.ts | 2026-10-01 | true as written |
-| src/theme/__tests__/wordsAreSolid.test.ts | — |  |
+| src/theme/__tests__/wordsAreSolid.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/theme/authStyles.ts | 2026-10-01 | comments short and true |
 | src/theme/brass.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/faceAdvances.ts | 2026-10-02 | Written in the launch audit: generated; the one table of letter widths, header only. |
@@ -916,7 +916,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/film.types.ts | 2026-10-02 | Read whole (launch audit). VaultItem was used nowhere: removed. |
 | src/types/index.ts | 2026-10-02 | Read whole (launch audit). ui.types (UIState: a paywall and handbook modal that do not exist) removed from the barrel and deleted. |
 | src/types/moderation.ts | 2026-10-02 | Read whole (launch audit): content types match reports_content_type_check. BlockType, BlockRecordSchema and ActionMetaSchema were used nowhere: removed. |
-| src/types/mutations.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/types/mutations.ts | 2026-10-03 | read whole: the dead endorse_film / endorse_review kinds removed |
 | src/types/profile.types.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
@@ -930,16 +930,16 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
 | src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-10-02 | Written in the launch audit: a suspended member's queued writes wait for the end. |
 | src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | — |  |
-| src/utils/__tests__/boundedCounts.guard.test.ts | — |  |
+| src/utils/__tests__/boundedCounts.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
 | src/utils/__tests__/ciAlert.behaviour.test.ts | — |  |
 | src/utils/__tests__/ciWorkflows.guard.test.ts | — |  |
 | src/utils/__tests__/csv.test.ts | — |  |
 | src/utils/__tests__/dispatchExecutors.test.ts | — |  |
 | src/utils/__tests__/dispatchFieldCaps.test.ts | 2026-09-28 | Claimed to reconcile every live ceiling but read three old migrations, so subject_backdrop_ceiling had no cap. Reads the live snapshot now, and fails on any ceiling without an app cap or a stated reason. |
-| src/utils/__tests__/dispatchMutationRegistry.test.ts | — |  |
-| src/utils/__tests__/dispatchOfflineParity.test.ts | — |  |
-| src/utils/__tests__/dossierPublishing.guard.test.ts | — |  |
+| src/utils/__tests__/dispatchMutationRegistry.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/utils/__tests__/dispatchOfflineParity.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/utils/__tests__/dossierPublishing.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/e2eTrace.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/edgeFunctions.guard.test.ts | — |  |
 | src/utils/__tests__/endorsementGrouping.test.ts | — |  |
@@ -947,13 +947,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyCapAnswersToItsColumn.test.ts | 2026-10-03 | Written in the launch audit: every length cap the app allows is at most its column's CHECK, read from the snapshot; a smaller one says why. |
 | src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | — |  |
-| src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | — |  |
+| src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/everyPullSaysWhatItReached.guard.test.ts | — |  |
 | src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts | — |  |
 | src/utils/__tests__/feedInvalidation.guard.test.ts | — |  |
 | src/utils/__tests__/filterContentByBlocks.pbt.test.ts | — |  |
 | src/utils/__tests__/handleGuard.test.ts | — |  |
-| src/utils/__tests__/handleGuard.wiring.guard.test.ts | — |  |
+| src/utils/__tests__/handleGuard.wiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/handleHistory.test.ts | — |  |
 | src/utils/__tests__/handleHistory.wiring.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.reader.guard.test.ts | — |  |
@@ -968,12 +968,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
-| src/utils/__tests__/mutationExecutor.pbt.test.ts | — |  |
-| src/utils/__tests__/mutationExecutor.test.ts | — |  |
+| src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
+| src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | edited: only the two endorse kinds; removal by target_list_id |
 | src/utils/__tests__/networkError.test.ts | — |  |
 | src/utils/__tests__/noControlCharacters.guard.test.ts | 2026-09-29 | extended: a \u eaten from a char class; red on the one damaged line, then green |
-| src/utils/__tests__/noMachinePaths.guard.test.ts | — |  |
-| src/utils/__tests__/notificationColumns.guard.test.ts | — |  |
+| src/utils/__tests__/noMachinePaths.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/utils/__tests__/notificationColumns.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/offlineIsSaidOneWay.guard.test.ts | — |  |
 | src/utils/__tests__/offlineQueue.integration.test.ts | — |  |
 | src/utils/__tests__/offlineQueue.test.ts | — |  |
@@ -992,15 +992,15 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/schemaSnapshot.guard.test.ts | — |  |
 | src/utils/__tests__/searchFieldsDoNotAutocorrect.guard.test.ts | 2026-09-29 | new guard |
 | src/utils/__tests__/searchPattern.test.ts | — |  |
-| src/utils/__tests__/searchWiring.guard.test.ts | — |  |
+| src/utils/__tests__/searchWiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
 | src/utils/__tests__/theDeadLetterIsNobodyElsesToKeep.test.ts | — |  |
 | src/utils/__tests__/theDraftIsYours.test.ts | — |  |
-| src/utils/__tests__/theFrontDeskAnswers.test.ts | — |  |
-| src/utils/__tests__/theFunnelHasOneSeam.test.ts | — |  |
+| src/utils/__tests__/theFrontDeskAnswers.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/utils/__tests__/theFunnelHasOneSeam.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/theRecordingsTravel.test.ts | — |  |
-| src/utils/__tests__/theSocietyOpensOverYou.test.ts | — |  |
-| src/utils/__tests__/theTappedNoticeOpensIt.test.ts | — |  |
+| src/utils/__tests__/theSocietyOpensOverYou.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/utils/__tests__/theTappedNoticeOpensIt.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/tier.test.ts | — |  |
 | src/utils/__tests__/tier.warning.test.ts | — |  |
 | src/utils/__tests__/validateUsername.test.ts | — |  |
@@ -1032,10 +1032,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/memberDrafts.ts | 2026-10-02 | read; sound (drafts go to storage unencrypted on a keystore failure: a trade-off, listed) |
 | src/utils/memoryManager.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/utils/mutationExecutor.ts | 2026-10-02 | Read whole, every handler (launch audit). A Lounge message replayed from the queue dropped its own id, so a send whose answer was lost posted twice: the id is sent now. add_dossier claimed its id made a retry safe; the view's trigger ignores it, so it is no longer sent. |
+| src/utils/mutationExecutor.ts | 2026-10-03 | read whole: the dead endorse_film / endorse_review handlers removed |
 | src/utils/networkError.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/noticeRoute.ts | 2026-10-02 | Read whole (launch audit). Follows groupRoute's one argument. |
-| src/utils/offlineQueue.ts | 2026-10-02 | Read whole (launch audit). Its two notices counted 'action(s)': counted in words. |
+| src/utils/offlineQueue.ts | 2026-10-03 | read whole: its kind union matches the executor |
 | src/utils/openNoticeFromPush.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/openSociety.ts | 2026-10-02 | Read whole (launch audit). URLSearchParams.set is implemented in RN 0.81's polyfill (checked). Sound. |
 | src/utils/profileCountsCache.ts | 2026-10-02 | read; sound |
@@ -1069,9 +1069,11 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/functions/sync-entitlement/index.ts | 2026-09-28 | the header described a flow the code does not have (client sends a tier, which is validated); it trusts only RevenueCat's record. 'cryptographically verified' dropped (it is an HTTPS fetch) |
 | test-utils/__tests__/everyCommentIsTrue.test.ts | — |  |
 | test-utils/__tests__/everySourceReaderIsLedgered.test.ts | — |  |
-| test-utils/__tests__/readCode.test.ts | — |  |
+| test-utils/__tests__/oneCommentStripper.test.ts | 2026-10-03 | written whole: the guard that no file strips comments with its own regex |
+| test-utils/__tests__/readCode.test.ts | 2026-10-03 | read whole: adds the generic-arrow case TSX misreads |
 | test-utils/contractEnv.ts | 2026-10-03 | read whole: sound; "all 5,000 tests" is every unit test |
 | test-utils/react-native-testing-library.js | 2026-10-03 | read whole: sound (setRenderResult fills screen) |
-| test-utils/readCode.ts | 2026-10-03 | read whole: sound; the query guard now reads code through it |
-| test-utils/SOURCE-READING-TESTS.md | 2026-10-03 | read whole: the query guard's row added |
+| test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
+| test-utils/SOURCE-READING-TESTS.md | 2026-10-03 | read whole: rows for the stripper guard and the reaction CHECK reader |
+| test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
 | types/react-test-renderer.d.ts | 2026-09-29 | history reduced to the reason |

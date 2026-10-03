@@ -1,6 +1,6 @@
 /**
  * Service Layer Tests — Batch 3: Write & Utility Services
- * ProfileWriteService, ModerationService, NewsService
+ * ProfileWriteService, ModerationService
  */
 import { supabase } from '@/src/lib/supabase';
 

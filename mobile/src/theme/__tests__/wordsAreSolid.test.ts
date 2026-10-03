@@ -19,6 +19,7 @@
  * A quiet WORD wears a quieter solid ink instead: fogQuiet, fog, bone, sepia.
  */
 import { readdirSync, readFileSync } from 'fs';
+import { stripComments } from '@/test-utils/readCode';
 import { join } from 'path';
 import { colors } from '../theme';
 
@@ -97,7 +98,7 @@ function blocks(src: string) {
       else if (ch === '}') depth--;
       else if (depth === 0) flat += ch;
     }
-    out.push({ key: m[2], body: flat.replace(/\/\/[^\n]*/g, '') });
+    out.push({ key: m[2], body: flat });
   }
   return out;
 }
@@ -107,7 +108,8 @@ function census(): string[] {
   for (const dir of SCAN) {
     for (const file of walk(dir)) {
       if (file === 'src/theme/theme.ts') continue;
-      const src = readFileSync(join(ROOT, file), 'utf8');
+      // Comments blanked by the parser: a brace or a `color:` in a comment is not a style.
+      const src = stripComments(readFileSync(join(ROOT, file), 'utf8'), file);
 
       // 1 · text styles in a sheet
       for (const b of blocks(src)) {

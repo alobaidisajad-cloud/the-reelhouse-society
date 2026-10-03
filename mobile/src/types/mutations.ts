@@ -28,8 +28,6 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
   // ── Endorsements ──
   endorse_log: z.object({ user_id: z.string(), type: z.string(), target_log_id: z.string() }).passthrough(),
   endorse_list: z.object({ user_id: z.string(), type: z.string(), target_list_id: z.string() }).passthrough(),
-  endorse_film: z.object({ user_id: z.string(), type: z.string(), target_film_id: z.union([z.string(), z.number()]) }).passthrough(),
-  endorse_review: z.object({ user_id: z.string(), type: z.string(), target_review_id: z.string() }).passthrough(),
   remove_endorsement: z.object({ user_id: z.string() }).passthrough(),
 
   // ── Logs ──

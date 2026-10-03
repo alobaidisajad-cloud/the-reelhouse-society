@@ -13,10 +13,9 @@
  * at all (see ActionDeck.test.tsx, which says so), so this is also the first
  * time its rank gate has actually been exercised.
  */
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
+import { readCode } from '@/test-utils/readCode';
 
 jest.mock('@/src/stores/auth', () => {
   const { create } = jest.requireActual('zustand');
@@ -116,22 +115,20 @@ describe('the key leads where it says', () => {
 describe('the other two places that promised a locked corridor', () => {
   // Read as source: both screens need a TMDB query and a navigator to render,
   // and what is being pinned is which door they name, not how they draw.
-  const code = (p: string) => readFileSync(join(__dirname, '..', '..', '..', '..', p), 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
 
   it('the person page ropes the share, and no longer walks anyone to the corridor', () => {
-    const page = code('app/person/[id].tsx');
+    const page = readCode('app/person/[id].tsx');
     const share = page.slice(page.indexOf('const handleLoungeShare'), page.indexOf('}, [user, canShare'));
     expect(share).toMatch(/nav\.push\('\/social-modal'/); // tripwire: the real handler
     expect(share).toMatch(/if \(!canShare\) \{\s*openShare\(\);/);
     expect(share).not.toMatch(/'\/lounge'/);
     expect(page).toMatch(/useClearance\('lounge-speaking', `\/person\/\$\{id\}`\)/);
     // And the button says where it leads, instead of "requires a higher rank".
-    expect(code('src/components/person/PersonHero.tsx')).toMatch(/accessibilityLabel=\{shareLabel\}/);
+    expect(readCode('src/components/person/PersonHero.tsx')).toMatch(/accessibilityLabel=\{shareLabel\}/);
   });
 
   it('the film tray stops calling an open room locked', () => {
-    const layout = code('src/components/film/FilmDetailLayout.tsx');
+    const layout = readCode('src/components/film/FilmDetailLayout.tsx');
     const act = layout.slice(layout.indexOf("key: 'lounge'"), layout.indexOf('return acts;'));
     expect(act).toMatch(/Icon: TrayIcons\.MessageCircle,/);
     expect(act).not.toMatch(/KeyRound/);

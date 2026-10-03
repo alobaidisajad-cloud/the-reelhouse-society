@@ -18,6 +18,7 @@
  */
 import { readdirSync, readFileSync } from 'fs';
 import { join, relative } from 'path';
+import { stripComments } from '@/test-utils/readCode';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const REPO = join(MOBILE, '..');
@@ -44,17 +45,15 @@ const FILES = [
   ...walk(join(REPO, 'src')), ...walk(join(REPO, 'api')),
 ];
 
-const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:'"`])\/\/[^\n]*/g, '$1 ');
-
 type Call = { kind: 'table' | 'rpc' | 'bucket'; name: string; at: string };
 
 /** Every name a source asks the database for. */
 export const callsIn = (file: string, raw: string): Call[] => {
-  const src = strip(raw);
+  const src = stripComments(raw, file);
   const calls: Call[] = [];
   const line = (i: number) => `${file}:${src.slice(0, i).split('\n').length}`;
   for (const m of src.matchAll(/\.from\(\s*['"`]([A-Za-z_0-9-]+)['"`]\s*\)/g)) {
-    const before = src.slice(Math.max(0, m.index! - 40), m.index);
+    const before = src.slice(0, m.index).trimEnd().slice(-40);
     calls.push({ kind: /storage\s*$/.test(before) ? 'bucket' : 'table', name: m[1], at: line(m.index!) });
   }
   for (const m of src.matchAll(/\.rpc\(\s*['"`]([A-Za-z_0-9]+)['"`]/g)) {

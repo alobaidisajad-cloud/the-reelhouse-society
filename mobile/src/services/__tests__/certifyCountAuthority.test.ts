@@ -10,13 +10,19 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8');
-const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+/**
+ * For the migration only: it is SQL, which the TypeScript parser cannot read,
+ * and its comments are `--` lines. Only a function's header is read after this,
+ * where no string holds a `--`.
+ */
+const strip = (s: string) => s.replace(/--[^\n]*/g, '');
 
-const stackSvc = strip(read('src/services/StackService.ts'));
-const feedSvc = strip(read('src/services/FeedService.ts'));
+const stackSvc = readCode('src/services/StackService.ts');
+const feedSvc = readCode('src/services/FeedService.ts');
 const migration = read('supabase/migrations/20260809_01_authoritative_certify_counts.sql');
 
 describe('#39 · the endorsement count does not depend on who is looking', () => {

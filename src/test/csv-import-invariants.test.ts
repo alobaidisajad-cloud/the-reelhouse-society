@@ -28,24 +28,13 @@
  *     like the member's file is at fault.
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readCode } from './readCode';
 
-const importSrc = readFileSync(join(__dirname, '..', 'components', 'CSVImport.tsx'), 'utf8');
-const tmdbSrc = readFileSync(join(__dirname, '..', 'tmdb.ts'), 'utf8');
-
-/** Source minus comments, so the documentation of an old bug never satisfies a test. */
-function code(src: string): string {
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .split('\n')
-    .filter((l) => !/^\s*\/\//.test(l))
-    .join('\n');
-}
+/** Source as code (readCode), so the documentation of an old bug never satisfies a test. */
+const imp = readCode('components/CSVImport.tsx');
+const tm = readCode('tmdb.ts');
 
 describe('CSV import invariants', () => {
-  const imp = code(importSrc);
-
   it('upserts on the unique index that exists, not on film_title', () => {
     expect(imp).toContain("onConflict: 'user_id,film_id'");
     expect(imp).not.toContain("onConflict: 'user_id,film_title'");
@@ -71,7 +60,7 @@ describe('CSV import invariants', () => {
 
   it('reports titles it could not identify instead of dropping them silently', () => {
     expect(imp).toContain('setSkippedCount');
-    expect(code(importSrc)).toContain('skippedCount');
+    expect(imp).toContain('skippedCount');
   });
 
   it('de-duplicates within one import, so a request cannot conflict with itself', () => {
@@ -80,8 +69,6 @@ describe('CSV import invariants', () => {
 });
 
 describe('TMDB lookup invariants', () => {
-  const tm = code(tmdbSrc);
-
   it('passes the year as a parameter and never appends it to the query', () => {
     expect(tm).toContain('searchByTitleYear');
     expect(tm).toMatch(/&year=\$\{year\}/);

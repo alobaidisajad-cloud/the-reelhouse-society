@@ -12,6 +12,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const SRC = path.join(__dirname, '..', '..');
 const APP = path.join(__dirname, '..', '..', '..', 'app');
@@ -29,12 +30,9 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-
 const FILES = [...walk(SRC), ...walk(APP)].map(f => ({
   path: path.relative(path.join(SRC, '..'), f).replace(/\\/g, '/'),
-  code: stripComments(fs.readFileSync(f, 'utf8')),
+  code: readCode(f),
 }));
 
 describe('the quoted form is gone from every search', () => {

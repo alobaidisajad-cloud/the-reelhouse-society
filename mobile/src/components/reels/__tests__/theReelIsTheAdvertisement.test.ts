@@ -21,13 +21,12 @@
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
-const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
 
-const RAW_REEL = readFileSync(join(ROOT, 'app/(tabs)/reels.tsx'), 'utf8');
-const reel = strip(RAW_REEL);
-const corridor = strip(readFileSync(join(ROOT, 'app/(tabs)/lounge.tsx'), 'utf8'));
+const reel = readCode('app/(tabs)/reels.tsx');
+const corridor = readCode('app/(tabs)/lounge.tsx');
 
 describe('the reel is the advertisement', () => {
   it('the scans can SEE these files — not passing on an empty read', () => {

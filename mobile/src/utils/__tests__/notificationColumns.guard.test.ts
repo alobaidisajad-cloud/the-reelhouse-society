@@ -18,6 +18,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { stripComments } from '@/test-utils/readCode';
 
 const ROOT = path.join(__dirname, '..', '..');
 const store = fs.readFileSync(path.join(ROOT, 'stores', 'notificationStore.ts'), 'utf8');
@@ -25,18 +26,20 @@ const modal = fs.readFileSync(path.join(ROOT, '..', 'app', '(modals)', 'notifica
 const grouping = fs.readFileSync(path.join(ROOT, 'utils', 'groupNotifications.ts'), 'utf8');
 
 /** Comments stripped — prose explaining a rule must not satisfy the rule. */
-const code = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+const CODE_STORE = stripComments(store, 'notificationStore.ts');
+const CODE_MODAL = stripComments(modal, 'notifications-modal.tsx');
+const CODE_GROUPING = stripComments(grouping, 'groupNotifications.ts');
 
 describe('GATE 1 · one column list, and it carries the new fields', () => {
   it('there is exactly ONE list, not two copies that can drift', () => {
     expect(store).toMatch(/const NOTIFICATION_COLUMNS = '/);
     // The literal must not reappear inline anywhere.
-    const inline = code(store).match(/select\('id, user_id, type/g) ?? [];
+    const inline = CODE_STORE.match(/select\('id, user_id, type/g) ?? [];
     expect(inline).toHaveLength(0);
   });
 
   it('every read path uses it', () => {
-    const uses = code(store).match(/\.select\(NOTIFICATION_COLUMNS\)/g) ?? [];
+    const uses = CODE_STORE.match(/\.select\(NOTIFICATION_COLUMNS\)/g) ?? [];
     // fetchNotifications + loadMoreNotifications + getNotice (a tapped push,
     // read by id — it must parse the same row the list does).
     expect(uses).toHaveLength(3);
@@ -76,15 +79,15 @@ describe('the grouping code reads the declared key and nothing else', () => {
     // It must NOT return the raw value. A key from a newer server would then form a
     // group and fall back to the log wording, labelling it "certified your log of …".
     // Unknown means ungrouped — which renders as ordinary rows, not as a wrong label.
-    expect(code(grouping)).toMatch(/parseGroupKey\(n\.group_key\)/);
-    expect(code(grouping)).not.toMatch(/return n\.group_key \?\? null;/);
+    expect(CODE_GROUPING).toMatch(/parseGroupKey\(n\.group_key\)/);
+    expect(CODE_GROUPING).not.toMatch(/return n\.group_key \?\? null;/);
   });
 
   it('the message regex is GONE from the module, not merely unused', () => {
     // Repairing it to match today's copy would have re-armed the same trap for the next
     // copy edit. It was deleted.
-    expect(code(grouping)).not.toMatch(/your review of/);
-    expect(code(grouping)).not.toMatch(/extractFilmName/);
+    expect(CODE_GROUPING).not.toMatch(/your review of/);
+    expect(CODE_GROUPING).not.toMatch(/extractFilmName/);
   });
 });
 
@@ -96,8 +99,8 @@ describe('the group tap routes by KIND, not by film alone', () => {
   });
 
   it('it no longer routes on film_id alone inside the GROUP handler', () => {
-    const group = modal.slice(modal.indexOf('GroupedNotificationItem'), modal.indexOf('export default function'));
-    expect(code(group)).not.toMatch(/if \(item\.film_id\) nav\.push/);
+    const group = CODE_MODAL.slice(modal.indexOf('GroupedNotificationItem'), modal.indexOf('export default function'));
+    expect(group).not.toMatch(/if \(item\.film_id\) nav\.push/);
   });
 });
 

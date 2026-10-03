@@ -169,10 +169,12 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 // member had just made optimistically.
                 const idx: Record<string, Interaction> = { ...state._endorsedIndex };
                 mapped.forEach(i => { if (i.type === 'endorse') idx[i.targetId] = i; });
+                // The list is what the index is rebuilt from at the next launch
+                // (films.ts, on rehydrate), so it holds exactly what the index holds.
                 return {
                     interactions: [
                         ...state.interactions.filter(i => i.type !== 'endorse'),
-                        ...mapped
+                        ...Object.values(idx),
                     ],
                     _endorsedIndex: idx,
                 };
@@ -334,17 +336,18 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 timestamp: r.created_at,
             }));
             
-            // MERGE, never replace — same reason as the log index above.
-            const idx: Record<string, Interaction> = { ...get()._listEndorsedIndex };
-            newListEndorsements.forEach(i => { idx[i.targetId] = i; });
-
-            set((state) => ({
-                interactions: [
-                    ...state.interactions.filter(i => i.type !== 'endorse_list'), 
-                    ...newListEndorsements
-                ],
-                _listEndorsedIndex: idx
-            }));
+            // MERGE, never replace, and read inside the write — same reasons as the log index above.
+            set((state) => {
+                const idx: Record<string, Interaction> = { ...state._listEndorsedIndex };
+                newListEndorsements.forEach(i => { idx[i.targetId] = i; });
+                return {
+                    interactions: [
+                        ...state.interactions.filter(i => i.type !== 'endorse_list'),
+                        ...Object.values(idx),
+                    ],
+                    _listEndorsedIndex: idx,
+                };
+            });
         }
     },
 });

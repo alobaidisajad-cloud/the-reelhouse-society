@@ -14,13 +14,13 @@
  *     land in one and not the others.
  */
 import { describe, it, expect } from 'vitest'
-import { readFileSync, readdirSync } from 'fs'
+import { readdirSync } from 'fs'
 import { join, relative } from 'path'
+import { readCode } from './readCode'
 
 const SRC = join(__dirname, '..')
-const read = (p: string) => readFileSync(join(SRC, p), 'utf8')
-/** Source minus comments, so the history of a bug never satisfies a test. */
-const code = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+/** Source as code (readCode), so the history of a bug never satisfies a test. */
+const code = (p: string) => readCode(join(SRC, p))
 
 const walk = (dir: string, out: string[] = []): string[] => {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -30,7 +30,7 @@ const walk = (dir: string, out: string[] = []): string[] => {
     }
     return out
 }
-const ALL = walk(SRC).map(f => ({ file: relative(SRC, f).replace(/\\/g, '/'), src: code(readFileSync(f, 'utf8')) }))
+const ALL = walk(SRC).map(f => ({ file: relative(SRC, f).replace(/\\/g, '/'), src: readCode(f) }))
 
 describe('a note is never read from, or written to, the log row', () => {
     it('no web file names the `private_notes` column', () => {
@@ -48,7 +48,7 @@ describe('a note is never read from, or written to, the log row', () => {
     })
 
     it('the member’s own log list carries the viewing, which is what a note belongs to', () => {
-        const films = code(read('stores/films.ts'))
+        const films = code('stores/films.ts')
         const select = films.match(/from\('logs'\)\.select\('([^']+)'\)/)
         expect(select).not.toBeNull()
         expect(select![1]).toMatch(/\bviewing_id\b/)
@@ -82,7 +82,7 @@ describe('a viewing is added by the server, never by rewriting the history', () 
     })
 
     it('a rewatch goes through log_viewing_add, naming its viewing before the write', () => {
-        const m = code(read('features/film/hooks/useFilmMutations.ts'))
+        const m = code('features/film/hooks/useFilmMutations.ts')
         expect(m).toMatch(/const newViewingId = crypto\.randomUUID\(\)/)
         expect(m).toMatch(/Vault\.addViewing\(existingLog\.id, newViewingId, fields\)/)
         // …and offline, it queues the same act by the same name.
@@ -90,19 +90,19 @@ describe('a viewing is added by the server, never by rewriting the history', () 
     })
 
     it('every new log names its first viewing, so a note can be written on it at once', () => {
-        const m = code(read('features/film/hooks/useFilmMutations.ts'))
+        const m = code('features/film/hooks/useFilmMutations.ts')
         expect((m.match(/viewing_id: crypto\.randomUUID\(\)/g) ?? []).length).toBe(2) // a first log, and marking watched
     })
 
     it('there is ONE way to write a log — the unused copies are gone', () => {
-        const films = code(read('stores/films.ts'))
+        const films = code('stores/films.ts')
         for (const gone of ['addLog:', 'markAsWatched:', 'unmarkWatched:', 'updateLog:']) expect(films).not.toContain(gone)
         expect(ALL.some(f => f.file === 'api/supabase.ts')).toBe(false)
-        expect(code(read('features/film/hooks/useFilmMutations.ts'))).not.toMatch(/export function useUnmarkWatched/)
+        expect(code('features/film/hooks/useFilmMutations.ts')).not.toMatch(/export function useUnmarkWatched/)
     })
 
     it('the offline queue replays all four Vault acts', () => {
-        const q = code(read('utils/offlineQueue.ts'))
+        const q = code('utils/offlineQueue.ts')
         for (const [type, rpc] of [
             ['add_viewing', 'log_viewing_add'], ['remove_viewing', 'log_viewing_remove'],
             ['set_viewing_note', 'viewing_note_set'], ['remove_viewing_note', 'viewing_note_remove'],
@@ -114,7 +114,7 @@ describe('a viewing is added by the server, never by rewriting the history', () 
 })
 
 describe('the form waits for the Vault, and sends a note only when touched', () => {
-    const form = code(read('components/log-modal/LogForm.tsx'))
+    const form = code('components/log-modal/LogForm.tsx')
 
     it('the field is shut until the note is in hand', () => {
         expect(form).toMatch(/!noteReady \?/)
@@ -147,34 +147,34 @@ describe('the form waits for the Vault, and sends a note only when touched', () 
 
 describe('nothing of a member’s writing outlives their sign-out', () => {
     it('drafts are kept under the member, and swept by prefix on sign-out', () => {
-        const form = code(read('components/log-modal/LogForm.tsx'))
+        const form = code('components/log-modal/LogForm.tsx')
         expect(form).toMatch(/logDraftKey\(user\.id, film\.id\)/)
         expect(form).not.toMatch(/`reelhouse_draft_\$\{film\.id\}`/)
-        const auth = code(read('stores/auth.ts'))
+        const auth = code('stores/auth.ts')
         expect(auth).toMatch(/key\.startsWith\(LOG_DRAFT_PREFIX\)/)
         expect(auth).toMatch(/await clearOfflineQueue\(\)/)
     })
 
     it('the Vault store is never written to the browser’s disk', () => {
-        const store = code(read('stores/vault.ts'))
+        const store = code('stores/vault.ts')
         expect(store).not.toMatch(/persist\(|localStorage|sessionStorage|idb-keyval/)
     })
 
     it('the profile ledger never previews a note', () => {
-        expect(code(read('components/profile/LedgerHelpers.tsx'))).not.toMatch(/privateNotes/)
+        expect(code('components/profile/LedgerHelpers.tsx')).not.toMatch(/privateNotes/)
     })
 })
 
 describe('only the writer ever sees a note', () => {
     it('the log page decides ownership by member id, not by username', () => {
-        const card = code(read('components/feed/ActivityCard.tsx'))
+        const card = code('components/feed/ActivityCard.tsx')
         expect(card).toMatch(/const ownsLog = !!currentUser\?\.id && [^\n]*=== currentUser\.id/)
         // …and a feed card never asks for a note at all.
         expect(card).toMatch(/useLogVault\(isExpandedView && ownsLog \? log\.id : null, isExpandedView && ownsLog\)/)
     })
 
     it('the page draws a note only for its owner', () => {
-        const page = code(read('components/feed/FocusView.tsx'))
+        const page = code('components/feed/FocusView.tsx')
         expect(page).toMatch(/const noteFor = ownsLog && vault \? vault\.noteFor : \(\) => ''/)
         expect(page).toMatch(/\{ownsLog && vault\?\.openedNote && \(/)
     })

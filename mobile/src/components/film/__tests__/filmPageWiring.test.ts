@@ -8,17 +8,14 @@
  */
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const FILM = join(__dirname, '..');
 const HOOKS = join(__dirname, '..', '..', '..', 'hooks');
 const read = (p: string) => readFileSync(p, 'utf8');
 
-/** Comments quote the very strings these assertions look for. */
-const code = (src: string) =>
-  src.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter((l) => !/^\s*(\/\/|\*)/.test(l)).join('\n');
-
 describe('the backdrop stops following you down the page', () => {
-  const anim = code(read(join(HOOKS, 'useFilmAnimations.ts')));
+  const anim = readCode(join(HOOKS, 'useFilmAnimations.ts'));
 
   /**
    * It used to settle at 0.3 and STOP, so a photograph sat behind the synopsis,
@@ -41,7 +38,7 @@ describe('the backdrop stops following you down the page', () => {
 });
 
 describe('the header takes over from the floating back button', () => {
-  const anim = code(read(join(HOOKS, 'useFilmAnimations.ts')));
+  const anim = readCode(join(HOOKS, 'useFilmAnimations.ts'));
 
   it('is the exact inverse, over the same fifty points', () => {
     // Both are computed from the same clamp, so they cannot drift apart and
@@ -56,7 +53,7 @@ describe('the header takes over from the floating back button', () => {
 });
 
 describe('what the page retired', () => {
-  const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
+  const layout = readCode(join(FILM, 'FilmDetailLayout.tsx'));
 
   it('no longer mounts the six-control console', () => {
     expect(layout).not.toMatch(/<FilmActionRow/);
@@ -92,7 +89,7 @@ describe('what the page retired', () => {
 });
 
 describe('the order of the page', () => {
-  const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
+  const layout = readCode(join(FILM, 'FilmDetailLayout.tsx'));
   const at = (needle: string) => layout.indexOf(needle);
 
   it('puts YOURS above the house, and both above the credit', () => {
@@ -167,8 +164,8 @@ describe('the order of the page', () => {
 });
 
 describe('the skeleton promises what actually arrives', () => {
-  const skeleton = code(read(join(FILM, 'FilmHeroSkeleton.tsx')));
-  const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
+  const skeleton = readCode(join(FILM, 'FilmHeroSkeleton.tsx'));
+  const layout = readCode(join(FILM, 'FilmDetailLayout.tsx'));
 
   /**
    * A skeleton is a promise about the page that is coming. This one was
@@ -198,10 +195,10 @@ describe('the skeleton promises what actually arrives', () => {
 });
 
 describe('what the scrim must cover, and what it must not', () => {
-  const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
-  const tray = code(read(join(FILM, 'FilmActionTray.tsx')));
-  const header = code(read(join(FILM, 'FilmScrollHeader.tsx')));
-  const stub = code(read(join(FILM, 'FilmStub.tsx')));
+  const layout = readCode(join(FILM, 'FilmDetailLayout.tsx'));
+  const tray = readCode(join(FILM, 'FilmActionTray.tsx'));
+  const header = readCode(join(FILM, 'FilmScrollHeader.tsx'));
+  const stub = readCode(join(FILM, 'FilmStub.tsx'));
   const zOf = (src: string, re = /zIndex:\s*(\d+)/) => Number(re.exec(src)?.[1]);
 
   /**
@@ -224,8 +221,8 @@ describe('what the scrim must cover, and what it must not', () => {
 });
 
 describe('a modal that cannot be talked around', () => {
-  const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
-  const header = code(read(join(FILM, 'FilmScrollHeader.tsx')));
+  const layout = readCode(join(FILM, 'FilmDetailLayout.tsx'));
+  const header = readCode(join(FILM, 'FilmScrollHeader.tsx'));
 
   /**
    * `accessibilityViewIsModal` is iOS-ONLY. The tray sets it and its own
@@ -259,15 +256,15 @@ describe('the stub stays put when the tray is up', () => {
    * out — which is the opposite of what the whole design promises.
    */
   it('the dock outranks the tray layer', () => {
-    const stub = code(read(join(FILM, 'FilmStub.tsx')));
-    const tray = code(read(join(FILM, 'FilmActionTray.tsx')));
+    const stub = readCode(join(FILM, 'FilmStub.tsx'));
+    const tray = readCode(join(FILM, 'FilmActionTray.tsx'));
     const zOf = (src: string) => Number(/zIndex:\s*(\d+)/.exec(src)?.[1]);
     expect(zOf(stub)).toBeGreaterThan(zOf(tray));
   });
 });
 
 describe('nothing was left computing into the void', () => {
-  const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
+  const layout = readCode(join(FILM, 'FilmDetailLayout.tsx'));
 
   /**
    * The bookmark bounce survived the console's removal by accident: the style
@@ -284,7 +281,7 @@ describe('nothing was left computing into the void', () => {
 });
 
 describe('the page must not scroll behind an open tray', () => {
-  const layout = code(read(join(FILM, 'FilmDetailLayout.tsx')));
+  const layout = readCode(join(FILM, 'FilmDetailLayout.tsx'));
   it('freezes its own scroll, which a Modal would have done for it', () => {
     expect(layout).toMatch(/scrollEnabled=\{!trayOpen\}/);
   });
@@ -300,13 +297,13 @@ describe('nothing on this page reaches for Intl', () => {
     'FilmStub.tsx', 'FilmActionTray.tsx', 'FilmScrollHeader.tsx',
     'FilmDossier.tsx', 'FilmHero.tsx', 'FilmDetailLayout.tsx',
   ])('%s', (file) => {
-    const src = code(read(join(FILM, file)));
+    const src = readCode(join(FILM, file));
     expect(src).not.toMatch(/toLocaleDateString|toLocaleString|Intl\./);
   });
 });
 
 describe('the trailer row opens a trailer', () => {
-  const route = code(read(join(__dirname, '..', '..', '..', '..', 'app', 'film', '[id].tsx')));
+  const route = readCode(join(__dirname, '..', '..', '..', '..', 'app', 'film', '[id].tsx'));
 
   it('no longer falls through to any video at all', () => {
     // It used to end `|| videos[0]`, so a film with only press-junket

@@ -13,6 +13,7 @@
  */
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, relative } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const mockOpenURL = jest.fn();
 const mockAlert = jest.fn();
@@ -111,7 +112,7 @@ describe('writing to the desk', () => {
   });
 
   it('asks the mail app directly — never canOpenURL, which says NO on iOS without a plist entry', () => {
-    const src = readFileSync(join(__dirname, '..', 'housePages.ts'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const src = readCode(join(__dirname, '..', 'housePages.ts'));
     expect(src).not.toMatch(/canOpenURL\(/);
   });
 

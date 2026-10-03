@@ -17,6 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { stripComments } = require('../test-utils/stripComments');
 
 const MOBILE = path.join(__dirname, '..');
 
@@ -237,11 +238,11 @@ const walk = (dir, out = []) => {
   }
   return out;
 };
-const noComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
+const code = (f) => stripComments(fs.readFileSync(f, 'utf8'), f);
 const doorCallers = [...walk(path.join(MOBILE, 'src')), ...walk(path.join(MOBILE, 'app'))]
   .filter((f) => !f.replace(/\\/g, '/').endsWith('src/utils/tierDoor.ts'))
-  .filter((f) => /showTierDoor\(/.test(noComments(fs.readFileSync(f, 'utf8'))));
-const doorReads = /asTierRefusal\(/.test(noComments(fs.readFileSync(path.join(MOBILE, 'src/utils/tierDoor.ts'), 'utf8')));
+  .filter((f) => /showTierDoor\(/.test(code(f)));
+const doorReads = /asTierRefusal\(/.test(code(path.join(MOBILE, 'src/utils/tierDoor.ts')));
 
 if (!doorReads) {
   problems.push('tierDoor.ts no longer reads the sentence table — every refusal would reach a member as a generic failure');

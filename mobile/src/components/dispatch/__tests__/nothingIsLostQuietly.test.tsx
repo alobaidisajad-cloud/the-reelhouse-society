@@ -17,6 +17,7 @@
 import {
   clearDraft, draftKey, readDraft, writeDraft, evictOldest, SCOPED_KEPT,
 } from '@/src/utils/memberDrafts';
+import { stripComments } from '@/test-utils/readCode';
 
 const mockStore = new Map<string, string>();
 jest.mock('@/src/stores/mmkv-storage', () => ({
@@ -132,7 +133,7 @@ describe('the two sentences a refusal gets', () => {
   it('and neither of them says "Transmission failed" any more', () => {
     // It named the wire and told the member nothing about their work.
     const room = read('app/dispatch/compose.tsx');
-    const strings = room.replace(/\/\*[\s\S]*?\*\//g, ' ');
+    const strings = stripComments(room, 'compose.tsx');
     expect(strings).not.toContain("reelToast.error('Transmission failed')");
   });
 });

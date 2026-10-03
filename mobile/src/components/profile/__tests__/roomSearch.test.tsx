@@ -16,9 +16,10 @@
  * no room may build its own search box.
  */
 import React from 'react';
-import { readFileSync, readdirSync } from 'fs';
+import { readdirSync } from 'fs';
 import { join } from 'path';
 import { render } from '@testing-library/react-native';
+import { readCode } from '@/test-utils/readCode';
 
 import { RoomSearch } from '../RoomParts';
 
@@ -29,9 +30,7 @@ jest.mock('expo-haptics', () => ({
 }));
 
 const HERE = join(__dirname, '..');
-const read = (f: string) => readFileSync(join(HERE, f), 'utf8');
-const code = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+const code = (f: string) => readCode(join(HERE, f));
 
 /** Enumerated from the filesystem, so a seventh room is covered on arrival. */
 const ROOMS = readdirSync(HERE).filter((f) => /^Profile\w+Tab\.tsx$/.test(f));
@@ -45,12 +44,12 @@ describe('no room builds its own search box', () => {
   it.each(ROOMS)('%s renders no bare TextInput', (room) => {
     // The Ledger and Watchlist each had one. Both looked right and neither
     // carried the flags that keep a film title intact.
-    expect(code(read(room))).not.toMatch(/<TextInput/);
+    expect(code(room)).not.toMatch(/<TextInput/);
   });
 
   it.each(ROOMS)('%s does not import TextInput at all', (room) => {
     // Import removed with the copy: leaving it invites the next one back.
-    expect(code(read(room))).not.toMatch(/\bTextInput\b/);
+    expect(code(room)).not.toMatch(/\bTextInput\b/);
   });
 });
 

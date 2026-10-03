@@ -21,6 +21,7 @@
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { dirname, join, relative, resolve } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = join(__dirname, '..', '..', '..');
 
@@ -52,13 +53,20 @@ function files(dir: string): string[] {
 }
 const rel = (p: string) => relative(ROOT, p).split('\\').join('/');
 const read = (p: string) => readFileSync(p, 'utf8');
-/** Comments out, so a sentence about `flex: 1` is not a style. */
-const code = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+/**
+ * Comments out, so a sentence about `flex: 1` is not a style. Each file is
+ * parsed once: a shared module is read again by every file that imports it.
+ */
+const CODE = new Map<string, string>();
+const code = (file: string): string => {
+  if (!CODE.has(file)) CODE.set(file, readCode(file));
+  return CODE.get(file)!;
+};
 
 /** Names of house-coloured SCREEN styles in each StyleSheet.create object of a file. */
-function sheets(src: string): Record<string, Set<string>> {
+function sheets(file: string): Record<string, Set<string>> {
   const out: Record<string, Set<string>> = {};
-  const clean = code(src);
+  const clean = code(file);
   for (const m of clean.matchAll(/(?:export\s+)?const\s+(\w+)\s*=\s*StyleSheet\.create\(\{/g)) {
     const start = (m.index ?? 0) + m[0].length - 1;
     let depth = 0;
@@ -85,11 +93,11 @@ function resolveImport(from: string, spec: string): string | null {
 
 /** The style objects a file can name: its own, and the ones it imports. */
 function styleObjects(file: string, src: string): Record<string, Set<string>> {
-  const objs = { ...sheets(src) };
+  const objs = { ...sheets(file) };
   for (const m of src.matchAll(/import\s*\{([^}]*)\}\s*from\s*'([^']+)'/g)) {
     const mod = resolveImport(file, m[2]);
     if (!mod) continue;
-    const remote = sheets(read(mod));
+    const remote = sheets(mod);
     for (const part of m[1].split(',')) {
       const [orig, alias] = part.trim().split(/\s+as\s+/);
       if (remote[orig]) objs[alias || orig] = remote[orig];
@@ -106,7 +114,7 @@ interface Root { where: string; key: string; lit: boolean }
  * nothing (a fragment, `<FrozenTab>`: no props at all) are looked through.
  */
 function houseRoots(file: string): Root[] {
-  const src = code(read(file));
+  const src = code(file);
   const objs = styleObjects(file, read(file));
   const out: Root[] = [];
   const re = /return\s*\(?\s*(?:(?:<[A-Z]?[\w.]*>|\{\s*\})\s*)*<([A-Z][\w.]*)\b((?:[^>]|=>)*?)(\/?)>/g;
@@ -145,7 +153,7 @@ describe('the room is lit', () => {
   });
 
   it('every route draws the light — in its own file or one it renders', () => {
-    const litFiles = new Set(ALL.filter((f) => /<(RoomLight|AuthBackdrop)\b/.test(code(read(f)))).map(rel));
+    const litFiles = new Set(ALL.filter((f) => /<(RoomLight|AuthBackdrop)\b/.test(code(f))).map(rel));
     const dark: string[] = [];
     for (const route of ROUTES) {
       const name = rel(route);

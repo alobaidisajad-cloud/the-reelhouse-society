@@ -12,6 +12,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = path.join(__dirname, '..', '..', '..', '..');
 const FILES = [
@@ -24,10 +25,9 @@ const FILES = [
 
 describe('hide_stats is gone from every client surface', () => {
   it.each(FILES)('%s does not read or branch on it', (rel) => {
-    const src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
     // Strip comments: the removal is deliberately documented, and that prose must not
     // trip the guard it explains.
-    const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    const code = readCode(path.join(ROOT, rel));
     expect(code).not.toMatch(/hide_stats/);
     expect(code).not.toMatch(/hideStats/);
   });

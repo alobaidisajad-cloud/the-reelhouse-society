@@ -70,10 +70,15 @@ describe('an unknown reaction goes last, never first', () => {
 
 describe('the app’s five and the database’s five are ONE list', () => {
   it('matches the CHECK constraint applied to lounge_message_reactions', () => {
-    // Written out rather than imported so that adding a reaction to
-    // LOUNGE_REACTIONS without adding it to the constraint FAILS here — which
-    // is the only way the two stay in step. The live constraint is:
-    //   CHECK (reaction = ANY (ARRAY['bravo','adored','riveting','quoted','panned']))
-    expect([...LOUNGE_REACTIONS]).toEqual(['bravo', 'adored', 'riveting', 'quoted', 'panned']);
+    // Read from the snapshot of production (kept true by `npm run schema:check`),
+    // not written out here: a copy typed from memory is a third list.
+    const snapshot = require('fs').readFileSync(
+      require('path').join(__dirname, '..', '..', '..', 'supabase', 'schema', 'live-schema.sql'), 'utf8',
+    ) as string;
+    const check = /CONSTRAINT lounge_message_reactions_reaction_curated CHECK \(\(reaction = ANY \(ARRAY\[([^\]]+)\]\)\)\)/.exec(snapshot);
+    expect(check).not.toBeNull();
+    const curated = [...check![1].matchAll(/'(\w+)'::text/g)].map((m) => m[1]);
+    expect(curated).toHaveLength(5);
+    expect([...LOUNGE_REACTIONS]).toEqual(curated);
   });
 });

@@ -82,7 +82,7 @@ async function runMutation(type: string, payload: Record<string, unknown>, idMap
 // ════════════════════════════════════════════════════════════════════
 
 describe('Endorsements', () => {
-    const endorseTypes = ['endorse_log', 'endorse_list', 'endorse_film', 'endorse_review'] as const;
+    const endorseTypes = ['endorse_log', 'endorse_list'] as const;
 
     endorseTypes.forEach((type) => {
         it(`${type}: calls InteractionService.addEndorsement with correct type`, async () => {
@@ -110,18 +110,11 @@ describe('Endorsements', () => {
             expect(mockChain.eq).toHaveBeenCalledWith('type', 'endorse_log');
         });
 
-        it('deletes by target_film_id', async () => {
+        it('deletes by target_list_id', async () => {
             makeChainResolveTo(mockChain, { error: null });
-            await runMutation('remove_endorsement', { user_id: 'u1', target_film_id: '550' });
-            expect(mockChain.eq).toHaveBeenCalledWith('target_film_id', '550');
-            expect(mockChain.eq).toHaveBeenCalledWith('type', 'endorse_film');
-        });
-
-        it('deletes by target_review_id', async () => {
-            makeChainResolveTo(mockChain, { error: null });
-            await runMutation('remove_endorsement', { user_id: 'u1', target_review_id: 'r1' });
-            expect(mockChain.eq).toHaveBeenCalledWith('target_review_id', 'r1');
-            expect(mockChain.eq).toHaveBeenCalledWith('type', 'endorse_review');
+            await runMutation('remove_endorsement', { user_id: 'u1', target_list_id: 'l1' });
+            expect(mockChain.eq).toHaveBeenCalledWith('target_list_id', 'l1');
+            expect(mockChain.eq).toHaveBeenCalledWith('type', 'endorse_list');
         });
 
         it('throws on Supabase error', async () => {

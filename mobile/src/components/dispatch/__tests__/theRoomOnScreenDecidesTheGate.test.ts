@@ -26,18 +26,13 @@
  * and exact: the two writes are conditional on the room still being the shown
  * one. That is what is pinned.
  */
-import fs from 'node:fs';
-import path from 'node:path';
+import { readCode } from '@/test-utils/readCode';
 
-const ROOT = path.resolve(__dirname, '../../../..');
-const SRC = fs.readFileSync(path.join(ROOT, 'app/lounge/[id].tsx'), 'utf8');
-
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+const CODE = readCode('app/lounge/[id].tsx');
 
 /** The body of a named function or arrow, by brace matching. */
 const bodyOf = (needle: string): string => {
-  const code = stripComments(SRC);
+  const code = CODE;
   const at = code.indexOf(needle);
   expect(at).toBeGreaterThan(-1);
   const brace = code.indexOf('{', at);
@@ -60,7 +55,7 @@ describe('the room on screen decides what the screen shows', () => {
   it('the effect that starts it actually SETS the flag on teardown', () => {
     // Half of this fix is the cleanup. Without it `cancelled` is permanently
     // false and the check above is decoration.
-    expect(stripComments(SRC)).toMatch(/return \(\) => \{ cancelled = true; \};/);
+    expect(CODE).toMatch(/return \(\) => \{ cancelled = true; \};/);
   });
 
   it('refreshMembership compares the room it fetched FOR against the shown one', () => {
@@ -70,7 +65,7 @@ describe('the room on screen decides what the screen shows', () => {
 
   it('the ref tracking the shown room is kept current on every render', () => {
     // A ref set once at mount would answer with the first room for ever.
-    expect(stripComments(SRC)).toMatch(/shownRoomRef\.current = id;/);
+    expect(CODE).toMatch(/shownRoomRef\.current = id;/);
   });
 
   it('neither guard sits AFTER the state it is meant to protect', () => {
@@ -90,11 +85,11 @@ describe('the room on screen decides what the screen shows', () => {
 // which drew the request door for a member who had a seat.
 describe('the standing waits for the roster', () => {
   it('starts from what the list knows of this room, by its id', () => {
-    expect(stripComments(SRC)).toMatch(/useState<RoomStanding>\(\(\) => knownStanding\(useLoungeStore\.getState\(\)\.lounges, id\)\)/);
+    expect(CODE).toMatch(/useState<RoomStanding>\(\(\) => knownStanding\(useLoungeStore\.getState\(\)\.lounges, id\)\)/);
   });
 
   it('starts again in every room the screen is reused for — from that room’s own entry, with nothing of the last', () => {
-    const code = stripComments(SRC);
+    const code = CODE;
     const reset = code.slice(code.indexOf('let cancelled = false;'), code.indexOf('const loadLounge = async ()'));
     for (const call of ['setMyStatus(knownStanding(useLoungeStore.getState().lounges, id))', 'setRosterFailed(false)', 'setPending(false)', 'setMembers([])']) {
       expect(reset).toContain(call);
@@ -108,21 +103,21 @@ describe('the standing waits for the roster', () => {
   });
 
   it('the gate is decided by roomGate, and knows whether the roster failed', () => {
-    const code = stripComments(SRC);
+    const code = CODE;
     expect(code).toMatch(/roomGate\(\{[\s\S]*standing: myStatus,[\s\S]*rosterFailed,[\s\S]*\}\)/);
   });
 
   it('the header counts one member as one MEMBER', () => {
     // It printed `1 MEMBERS`; the gate below it already said "1 member".
-    expect(stripComments(SRC)).toMatch(/\{seated\} \{seated === 1 \? 'MEMBER' : 'MEMBERS'\}/);
-    expect(stripComments(SRC)).not.toMatch(/\|\| 0\)\} MEMBERS/);
+    expect(CODE).toMatch(/\{seated\} \{seated === 1 \? 'MEMBER' : 'MEMBERS'\}/);
+    expect(CODE).not.toMatch(/\|\| 0\)\} MEMBERS/);
   });
 
   it('a new room starts without the last room’s record', () => {
     // The reset cleared standing, roster and verdicts but kept `localLounge`:
     // the last room's name, privacy and host drew the header and decided the
     // gate until this room's answer came — and for good if it failed.
-    const code = stripComments(SRC);
+    const code = CODE;
     const effect = code.slice(code.indexOf('setNotFound(false);'), code.indexOf('const loadLounge = async ()'));
     expect(effect).toMatch(/setLocalLounge\(null\);/);
   });

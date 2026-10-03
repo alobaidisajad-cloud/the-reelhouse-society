@@ -15,14 +15,12 @@
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { stripComments } from '@/test-utils/readCode';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 const COMPOSE = readFileSync(join(ROOT, 'app', 'dispatch', 'compose.tsx'), 'utf8');
 
-const strip = (s: string) => s
-  .replace(/\/\*[\s\S]*?\*\//g, '')
-  .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
-  .split('\n').filter((l) => !/^\s*(\/\/|\*)/.test(l)).join('\n');
+const strip = (s: string) => stripComments(s, 'app/dispatch/compose.tsx');
 
 const CODE = strip(COMPOSE);
 

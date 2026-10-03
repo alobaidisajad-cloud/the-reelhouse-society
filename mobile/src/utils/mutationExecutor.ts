@@ -239,23 +239,19 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     // ── Endorsements ──
     endorse_log: async (p: any) => { await InteractionService.addEndorsement({ ...p, type: 'endorse_log' }); return {}; },
     endorse_list: async (p: any) => { await InteractionService.addEndorsement({ ...p, type: 'endorse_list' }); return {}; },
-    endorse_film: async (p: any) => { await InteractionService.addEndorsement({ ...p, type: 'endorse_film' }); return {}; },
-    endorse_review: async (p: any) => { await InteractionService.addEndorsement({ ...p, type: 'endorse_review' }); return {}; },
 
     remove_endorsement: async (p: any) => {
         // Direct Supabase delete — mirrors the online path in interactionSlice.ts.
-        const { user_id, target_log_id, target_list_id, target_film_id, target_review_id, type: endorseType } = p;
+        const { user_id, target_log_id, target_list_id, type: endorseType } = p;
         
         // Invariant guard to prevent mass deletion
-        if (!target_log_id && !target_list_id && !target_film_id && !target_review_id) {
+        if (!target_log_id && !target_list_id) {
             throw new Error('[MutationExecutor] remove_endorsement requires a valid target ID to prevent mass deletion.');
         }
 
         let deleteQuery = supabase.from('interactions').delete().eq('user_id', user_id as string);
         if (target_log_id)          deleteQuery = deleteQuery.eq('target_log_id', target_log_id as string).eq('type', 'endorse_log');
         else if (target_list_id)    deleteQuery = deleteQuery.eq('target_list_id', target_list_id as string).eq('type', (endorseType as string) ?? 'endorse_list');
-        else if (target_film_id)    deleteQuery = deleteQuery.eq('target_film_id', target_film_id as string).eq('type', 'endorse_film');
-        else if (target_review_id)  deleteQuery = deleteQuery.eq('target_review_id', target_review_id as string).eq('type', 'endorse_review');
         
         throwIfError(await deleteQuery);
         return {};
@@ -980,7 +976,6 @@ export function applyIdMapToPayload(payload: Record<string, unknown>, idMap: Rec
     const payloadDossierUuid = mapped.dossier_uuid as string | undefined;
     const payloadTargetLogId = mapped.target_log_id as string | undefined;
     const payloadTargetListId = mapped.target_list_id as string | undefined;
-    const payloadTargetReviewId = mapped.target_review_id as string | undefined;
     const payloadCommentId = mapped.comment_id as string | undefined;
     const payloadMessageId = mapped.message_id as string | undefined;
     const payloadReplyToId = mapped.reply_to_id as string | undefined;
@@ -995,7 +990,6 @@ export function applyIdMapToPayload(payload: Record<string, unknown>, idMap: Rec
     if (payloadDossierUuid && Object.prototype.hasOwnProperty.call(idMap, payloadDossierUuid)) mapped.dossier_uuid = idMap[payloadDossierUuid];
     if (payloadTargetLogId && Object.prototype.hasOwnProperty.call(idMap, payloadTargetLogId)) mapped.target_log_id = idMap[payloadTargetLogId];
     if (payloadTargetListId && Object.prototype.hasOwnProperty.call(idMap, payloadTargetListId)) mapped.target_list_id = idMap[payloadTargetListId];
-    if (payloadTargetReviewId && Object.prototype.hasOwnProperty.call(idMap, payloadTargetReviewId)) mapped.target_review_id = idMap[payloadTargetReviewId];
     if (payloadCommentId && Object.prototype.hasOwnProperty.call(idMap, payloadCommentId)) mapped.comment_id = idMap[payloadCommentId];
     if (payloadMessageId && Object.prototype.hasOwnProperty.call(idMap, payloadMessageId)) mapped.message_id = idMap[payloadMessageId];
     if (payloadReplyToId && Object.prototype.hasOwnProperty.call(idMap, payloadReplyToId)) mapped.reply_to_id = idMap[payloadReplyToId];

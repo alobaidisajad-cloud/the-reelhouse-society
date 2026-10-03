@@ -10,6 +10,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { readCode } from '@/test-utils/readCode';
 import { useFilmStore } from '../films';
 import { resetAllStores } from '../resetAllStores';
 import { logSliceInitialState } from '../domain/logSlice';
@@ -139,8 +140,8 @@ describe('#64 · a logout leaves no trace of the previous member', () => {
 
   it('deletes the persisted copy rather than trusting a deferred overwrite', async () => {
     // This store's disk writes are deferred up to 1.5s, so overwriting with
-    // blanks does not close the window — the previous member's last 150 logs,
-    // private notes included, would survive the app closing.
+    // blanks does not close the window — the previous member's logs would
+    // survive the app closing.
     //
     // Drives the reset itself: `beforeEach` empties the recorder, so asserting
     // on a deletion made by an earlier test would have proved nothing.
@@ -188,8 +189,7 @@ describe('#64 · a logout leaves no trace of the previous member', () => {
 });
 
 describe('#64 · BOTH ways a session ends must erase', () => {
-  const auth = fs.readFileSync(path.join(__dirname, '..', 'auth.ts'), 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  const auth = readCode('src/stores/auth.ts');
 
   it('the stale-session path erases, not just the logout button', () => {
     // It used to clear the auth flag and return. Worse, that DISABLED the
@@ -336,8 +336,7 @@ describe('#64 · every per-member cache on disk is erased', () => {
     // A module that CAN erase a key is not a logout that DOES. One member's
     // unpublished essay used to survive a sign-out and sit in the writing room
     // for the next person on that phone.
-    const authSrc = fs.readFileSync(path.join(__dirname, '..', 'auth.ts'), 'utf8')
-      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    const authSrc = readCode('src/stores/auth.ts');
     expect(authSrc).toMatch(/clearAllDrafts\(previousUserId\)/);
 
     /**
@@ -364,9 +363,7 @@ describe('#64 · every per-member cache on disk is erased', () => {
      * looks removable to somebody tidying up, and because "logout already
      * cleared it" is only true of the keys logout knows about.
      */
-    const settings = fs.readFileSync(
-      path.join(__dirname, '..', '..', 'features', 'settings', 'SettingsScreen.tsx'), 'utf8',
-    ).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    const settings = readCode('src/features/settings/SettingsScreen.tsx');
 
     const deletion = settings.slice(settings.indexOf('completeAccountDeletion'));
     expect(deletion).toMatch(/storage\.clearAll\(\)/);

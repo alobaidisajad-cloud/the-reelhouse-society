@@ -24,11 +24,14 @@
  */
 import { sanitizeInput, MAX_LENGTHS } from '../../utils/sanitizeInput';
 
-/** The live ceiling, read off production on 2026-09-12. */
-const LOUNGES_NAME_LEN = 60;
+/** The column's ceiling, from the snapshot of production (kept true by `npm run schema:check`). */
+const LOUNGES_NAME_LEN = Number(/CONSTRAINT lounges_name_len CHECK \(\(char_length\(name\) <= (\d+)\)\)/.exec(
+  require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', '..', 'supabase', 'schema', 'live-schema.sql'), 'utf8'),
+)?.[1]);
 
 describe('a salon name survives the trip to the database', () => {
   it('the cap matches the column — the box and the counter already did', () => {
+    expect(LOUNGES_NAME_LEN).toBe(60);
     expect(MAX_LENGTHS.loungeName).toBe(LOUNGES_NAME_LEN);
   });
 
@@ -40,7 +43,6 @@ describe('a salon name survives the trip to the database', () => {
   it('the old cap would have eaten ten characters — this is what was happening', () => {
     // Not a hypothetical: 60 in, 50 out, silently.
     const typed = 'A'.repeat(60);
-    expect(typed.slice(0, 50)).toHaveLength(50);
     expect(sanitizeInput(typed, 'loungeName').length).toBeGreaterThan(50);
   });
 

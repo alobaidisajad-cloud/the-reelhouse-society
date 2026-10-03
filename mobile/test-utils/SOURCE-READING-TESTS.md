@@ -136,6 +136,7 @@ Decisions, as of 2026-09-28:
 | `src/constants/__tests__/theHouseLinksToItself.guard.test.ts` | No code sends a link to reelhouse.app, another company's domain. |
 | `src/components/profile/__tests__/theProfileRedrawsForItsOwn.guard.test.ts` | The member page subscribes to its eight film-store fields, never the whole store. |
 | `src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts` | The salon name's four limits, the column's among them. |
+| `src/stores/__tests__/aReactionIsOneOfFive.test.ts` | The app's five reactions against the CHECK in the schema snapshot. |
 | `test-utils/__tests__/everyCommentIsTrue.test.ts` | The reading ledger (scripts/COMMENTS-READ.md) against the files comment-truth checks. |
 | `src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts` | Every column of a filing, emptied or kept when it ends, against the schema snapshot. |
 | `src/utils/__tests__/appConfig.guard.test.ts` | The build configs: only the E2E build differs. |
@@ -149,6 +150,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/theTappedNoticeOpensIt.test.ts` | The push payload the edge function sends, against what the app reads. |
 | `src/utils/__tests__/theRecordingsTravel.test.ts` | The sealed E2E world's TMDB recordings: every one its index names exists, and no `.gitignore` pattern hides it. |
 | `test-utils/__tests__/readCode.test.ts` | The comment stripper itself. |
+| `test-utils/__tests__/oneCommentStripper.test.ts` | No file takes comments out with a regex of its own; the parser is the only stripper. |
 
 ## Mounted
 
@@ -224,5 +226,6 @@ Decisions, as of 2026-09-28:
 | File | What it reads |
 |---|---|
 | `mockups/paper/__tests__/zz-paper.gen.test.tsx` | Poster art and fixture JSON for its drawings. |
+| `src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts` | The handle filter's word lists in the database migration and the live schema, and the website's copy of the rule: one rule in three places, which no render reaches. Behaviour: the same file's cases, and `a_handle_is_judged_by_its_words_rehearsal.sql` on production. |
 | `src/theme/__tests__/everyStyleIsRead.guard.test.ts` | Every key of every StyleSheet is read somewhere in the app: a style nobody draws renders nothing, so no render can find it. |
 | `src/components/__tests__/aComponentHasOneName.guard.test.ts` | Which module exports a component name: a fact about the code that no render shows. |

@@ -21,6 +21,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const SCAN = ['app', 'src'];
@@ -124,12 +125,11 @@ describe('a gate opens the form its label promises', () => {
             return out;
         };
         for (const file of files) {
-            // Line comments are stripped because one inside a tag can hold an
+            // Comments are stripped because one inside a tag can hold an
             // apostrophe ("the sign-UP form's job") that would open a false
-            // quote — but NOT a `//` after a colon, which is a URL in a string,
-            // and cutting it would leave a real quote unclosed.
-            const src = fs.readFileSync(file, 'utf8')
-                .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/gm, '$1 ');
+            // quote — and only comments: a `//` inside a string is a URL, and
+            // cutting it would leave a real quote unclosed.
+            const src = readCode(file);
             for (const el of openingTags(src)) {
                 if (!PROMISES_MEMBERSHIP.test(el)) continue;
                 seen++;

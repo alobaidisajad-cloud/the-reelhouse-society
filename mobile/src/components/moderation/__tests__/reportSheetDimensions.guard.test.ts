@@ -9,14 +9,10 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = path.join(__dirname, '..', '..', '..', '..');
-const strip = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-
-const sheet = strip(
-  fs.readFileSync(path.join(ROOT, 'src/components/moderation/ReportSheet.tsx'), 'utf8'),
-);
+const sheet = readCode('src/components/moderation/ReportSheet.tsx');
 
 describe('#121 · the sheet measures the window when it opens', () => {
   it('takes the reactive hook, not a frozen read', () => {
@@ -78,7 +74,7 @@ describe('#121 · the class, swept — no file freezes the window at load', () =
     const all = [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))];
     expect(all.length).toBeGreaterThan(300); // the app was read, so none found means none
     for (const file of all) {
-      const src = strip(fs.readFileSync(file, 'utf8'));
+      const src = readCode(file);
       // Module scope = no leading indentation.
       if (/^(export )?const .*=\s*Dimensions\.get\(/m.test(src)) {
         offenders.push(path.relative(ROOT, file).replace(/\\/g, '/'));

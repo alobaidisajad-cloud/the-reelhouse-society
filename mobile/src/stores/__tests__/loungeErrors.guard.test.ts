@@ -15,12 +15,11 @@
  * — is a property of the client library, not of this codebase; what this codebase can
  * get wrong is failing to look. That is exactly what is pinned here.
  */
-import * as fs from 'fs';
 import * as path from 'path';
+import { readCode } from '@/test-utils/readCode';
 
-const src = fs.readFileSync(path.join(__dirname, '..', 'lounge.ts'), 'utf8');
 /** Comments stripped — prose about a rule must not satisfy the rule. */
-const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+const code = readCode(path.join(__dirname, '..', 'lounge.ts'));
 
 /**
  * Slice one function body out of the source.
@@ -174,7 +173,9 @@ describe('#54 · unread counts are computed once, on the server', () => {
     const body = f();
     expect(body).toMatch(/if \(unreadError\) \{/);
     expect(body).toMatch(/logger\.error\('\[LoungeStore\.fetchLounges\] unread counts failed:/);
-    expect(body).not.toMatch(/if \(unreadError\)[\s\S]{0,120}throw/);
+    // A stripped comment leaves blanks, so the space is squeezed before the
+    // window is measured, or a comment could push a `throw` out of reach.
+    expect(body.replace(/\s+/g, ' ')).not.toMatch(/if \(unreadError\)[\s\S]{0,120}throw/);
   });
 
   it('every room the member belongs to still gets an entry', () => {

@@ -19,6 +19,7 @@ import { deliverEachTapOnce } from '@/src/lib/pushNotifications';
 import { useNotificationStore, type AppNotification } from '@/src/stores/notificationStore';
 import { nav } from '@/src/utils/typedRouter';
 import { supabase } from '@/src/lib/supabase';
+import { readCode } from '@/test-utils/readCode';
 
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), back: jest.fn(), replace: jest.fn() } }));
 jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn() } }));
@@ -159,7 +160,7 @@ describe('the contract, both sides', () => {
   });
 
   it('one tap listener for the life of the app — not one per sign-in — released on unmount', () => {
-    const boot = read('src/providers/AppBootstrapper.tsx').replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '');
+    const boot = readCode('src/providers/AppBootstrapper.tsx');
     const bootFn = boot.slice(boot.indexOf('async function boot('), boot.indexOf('function checkHandle('));
     expect(bootFn).not.toMatch(/setupNotificationResponseHandler/);
     expect((boot.match(/setupNotificationResponseHandler\(/g) ?? []).length).toBe(1);
@@ -170,7 +171,7 @@ describe('the contract, both sides', () => {
   });
 
   it('nothing reads a `screen` from a push any more', () => {
-    const boot = read('src/providers/AppBootstrapper.tsx').replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '');
+    const boot = readCode('src/providers/AppBootstrapper.tsx');
     expect(boot).not.toMatch(/data\.screen/);
     expect(read('src/constants/deepLinks.ts')).not.toMatch(/export function isValidDeepLink/);
   });

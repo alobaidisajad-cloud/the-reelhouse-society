@@ -18,16 +18,9 @@
  * same instant could swap places between requests, which hands the reader a
  * duplicate at the page seam even when nothing fails to parse.
  */
-import fs from 'node:fs';
-import path from 'node:path';
+import { readCode } from '@/test-utils/readCode';
 
-const ROOT = path.resolve(__dirname, '../../..');
-const SRC = fs.readFileSync(path.join(ROOT, 'src/hooks/useDispatchArchive.ts'), 'utf8');
-
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-
-const CODE = stripComments(SRC);
+const CODE = readCode('src/hooks/useDispatchArchive.ts');
 
 describe('the archive pages on what the server gave', () => {
   it('loadMore does NOT use the number of rows on screen as the offset', () => {
@@ -66,6 +59,8 @@ describe('the archive pages on what the server gave', () => {
 
   it('the detector would SEE the old shape — not passing on an empty file', () => {
     expect(/page\(\s*filings\.length\s*\)/.test('void page(filings.length);')).toBe(true);
-    expect(CODE.length).toBeGreaterThan(2000);
+    // Blanked comments keep their width, so the code is measured with its
+    // whitespace collapsed: a file of nothing but comments still reads as empty.
+    expect(CODE.replace(/\s+/g, ' ').length).toBeGreaterThan(2000);
   });
 });

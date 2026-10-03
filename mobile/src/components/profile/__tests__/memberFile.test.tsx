@@ -26,6 +26,7 @@ import { StyleSheet } from 'react-native';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
+import { readCode, stripComments } from '@/test-utils/readCode';
 
 // One import, at the top. `jest.mock` factories are hoisted above every import
 // by babel-plugin-jest-hoist, so the component picks up the mocks below even
@@ -39,12 +40,10 @@ import { ProfileBackdrop, backdropIsOn, backdropSource } from '../ProfileBackdro
 const ROOT = join(__dirname, '..', '..', '..', '..');
 const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
 /** Comments name what they removed; they must not satisfy an absence check. */
-const code = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-
-const SCREEN = read('app/user/[username].tsx');
-const CODE_SCREEN = code(SCREEN);
-const STYLES = read('src/components/profile/profileStyles.ts');
+const CODE_SCREEN = readCode('app/user/[username].tsx');
+const CODE_STYLES = readCode('src/components/profile/profileStyles.ts');
 const TRIPTYCH = read('src/components/profile/ProfileTriptych.tsx');
+const CODE_TRIPTYCH = stripComments(TRIPTYCH, 'ProfileTriptych.tsx');
 
 // ════════════════════════════════════════════════════════════════════════════
 // THE ALTARPIECE — geometry
@@ -98,9 +97,9 @@ describe('the altarpiece fits the phone it is hung on', () => {
   it('the geometry is derived, not typed in', () => {
     // If someone re-introduces literal panel widths, the sweep above passes at
     // whatever width they chose and fails everywhere else — so pin the source.
-    const body = code(TRIPTYCH).slice(
-      code(TRIPTYCH).indexOf('export function triptychMetrics'),
-      code(TRIPTYCH).indexOf('HANGING_ORDER'),
+    const body = CODE_TRIPTYCH.slice(
+      CODE_TRIPTYCH.indexOf('export function triptychMetrics'),
+      CODE_TRIPTYCH.indexOf('HANGING_ORDER'),
     );
     expect(body).toMatch(/windowWidth/);
     expect(body).not.toMatch(/\b(85|140|128|210)\b/);
@@ -109,7 +108,7 @@ describe('the altarpiece fits the phone it is hung on', () => {
   it('the mounts hang left-wing, centre, right-wing', () => {
     // The stored order is [centre, wing, wing]; the HUNG order is not the
     // stored order, and getting that backwards puts the big panel on the left.
-    expect(code(TRIPTYCH)).toMatch(/HANGING_ORDER\s*=\s*\[1,\s*CENTRE_MOUNT,\s*2\]/);
+    expect(CODE_TRIPTYCH).toMatch(/HANGING_ORDER\s*=\s*\[1,\s*CENTRE_MOUNT,\s*2\]/);
     expect(CENTRE_MOUNT).toBe(0);
     expect(MOUNT_COUNT).toBe(3);
   });
@@ -147,16 +146,6 @@ describe('nothing on the member file is anonymous to a screen reader', () => {
     return found;
   })();
 
-  /**
-   * Blanks comments WITHOUT collapsing lines. Replacing a block comment with
-   * '' shifts every line number after it — the first run of this sweep
-   * reported all five of its findings at the wrong places because of exactly
-   * that.
-   */
-  const blank = (s: string) => s
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
-    .replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
-
   /** Brace-tracked: a lazy match to `>` ends the tag early on `() =>`. */
   function scanTags(src: string, name: string) {
     const out: { attrs: string; line: number }[] = [];
@@ -188,7 +177,7 @@ describe('nothing on the member file is anonymous to a screen reader', () => {
     const unnamed: string[] = [];
     let total = 0;
     for (const f of A11Y_FILES) {
-      const src = blank(read(f));
+      const src = readCode(f);
       for (const tag of ['PressableScale', 'Pressable', 'TouchableOpacity', 'Switch', 'TextInput']) {
         for (const t of scanTags(src, tag)) {
           total++;
@@ -215,7 +204,7 @@ describe('nothing on the member file is anonymous to a screen reader', () => {
     const uncapped: string[] = [];
     let total = 0;
     for (const f of A11Y_FILES) {
-      const src = blank(read(f));
+      const src = readCode(f);
       for (const t of scanTags(src, 'Text')) {
         total++;
         const capped = /\.\.\.(scaledTextProps|displayTextProps|decorativeTextProps|deckLabelProps)/.test(t.attrs)
@@ -289,7 +278,7 @@ describe('the page is dressed from the centre of the altarpiece', () => {
     // panels appear on screen (wing, centre, wing). Iterating HANGING_ORDER
     // here would silently dress the page from the left wing.
     expect(pickBackdropFilm([A, B, B])!.title).toBe('A');
-    expect(code(read('src/components/profile/favourites.ts'))).not.toMatch(/HANGING_ORDER/);
+    expect(readCode('src/components/profile/favourites.ts')).not.toMatch(/HANGING_ORDER/);
   });
 
   it('falls to the first filled wing rather than stripping the backdrop', () => {
@@ -314,7 +303,7 @@ describe('the page is dressed from the centre of the altarpiece', () => {
     expect(TRIPTYCH).toMatch(/from '\.\/favourites'/);
     expect(read('src/components/profile/ProfileBackdrop.tsx')).toMatch(/pickBackdropFilm.*from '\.\/favourites'/s);
     // And the backdrop no longer rolls its own filter.
-    expect(code(read('src/components/profile/ProfileBackdrop.tsx'))).not.toMatch(/safeFavorites/);
+    expect(readCode('src/components/profile/ProfileBackdrop.tsx')).not.toMatch(/safeFavorites/);
   });
 });
 
@@ -382,7 +371,7 @@ describe('the Auteur backdrop is a choice, and absent means on', () => {
   it('the switch is SHOWN to everyone and gated, not hidden from those without the rank', () => {
     const edit = read('src/features/profile/EditProfileScreen.tsx');
     // The defect exactly: the row conditional on the rank.
-    expect(code(edit)).not.toMatch(/isAuteurPlusTier\(user\)\s*&&/);
+    expect(stripComments(edit, 'EditProfileScreen.tsx')).not.toMatch(/isAuteurPlusTier\(user\)\s*&&/);
     // The rank is asked from the registry, so this and the Society page can
     // never disagree about which rank opens it.
     expect(edit).toMatch(/useClearance\('the-backdrop'/);
@@ -395,7 +384,7 @@ describe('the Auteur backdrop is a choice, and absent means on', () => {
   });
 
   it('and the backdrop honours it', () => {
-    expect(code(read('src/components/profile/ProfileBackdrop.tsx'))).toMatch(/backdropIsOn\(user\?\.preferences\)/);
+    expect(readCode('src/components/profile/ProfileBackdrop.tsx')).toMatch(/backdropIsOn\(user\?\.preferences\)/);
   });
 });
 
@@ -406,7 +395,7 @@ describe('the hero is a composition, not a stack of eleven centred rows', () => 
   it('no longer opens on a flat 120pt of nothing', () => {
     // 120 cleared the back button on a pushed profile and left ~50pt of dead
     // space above your own portrait on the tab, where there is no back button.
-    expect(code(STYLES)).not.toMatch(/paddingTop:\s*120/);
+    expect(CODE_STYLES).not.toMatch(/paddingTop:\s*120/);
     expect(CODE_SCREEN).toMatch(/heroTop/);
     // Derived from the same expression the back button itself uses.
     expect(CODE_SCREEN).toMatch(/usernameOverride\s*\n?\s*\?\s*insets\.top/);
@@ -440,7 +429,7 @@ describe('the hero is a composition, not a stack of eleven centred rows', () => 
   it('carries the serial and the join date on ONE line', () => {
     expect(CODE_SCREEN).toMatch(/serialLine/);
     expect(CODE_SCREEN).not.toMatch(/MEMBER SINCE/);
-    expect(code(STYLES)).not.toMatch(/\bmemberSince:/);
+    expect(CODE_STYLES).not.toMatch(/\bmemberSince:/);
   });
 
   it('sizes the name and the bio in fixed steps, not by auto-shrinking', () => {
@@ -478,7 +467,7 @@ describe('the body says the same six things in half the height', () => {
     expect(CODE_SCREEN).toMatch(/latelyIndex/);
     // The old row required a poster, so the three films shown could silently
     // not be the three most recently watched.
-    expect(code(read('src/components/profile/profileComputed.ts')))
+    expect(readCode('src/components/profile/profileComputed.ts'))
       .not.toMatch(/poster\.length\s*>\s*5/);
     // A rewatch says more than a date.
     expect(CODE_SCREEN).toMatch(/rewatched/);
@@ -703,9 +692,9 @@ describe('the altarpiece, driven', () => {
     // Dismissing one RN Modal to present another in the same tick is the
     // modal-over-modal race that has bitten this app before: the second sheet
     // simply never appears. Swapping the content of one mounted Modal cannot.
-    const modals = code(TRIPTYCH).match(/<Modal\b/g) ?? [];
+    const modals = CODE_TRIPTYCH.match(/<Modal\b/g) ?? [];
     expect(modals.length).toBe(1);
-    expect(code(TRIPTYCH)).toMatch(/mode: 'plate' \| 'search'/);
+    expect(CODE_TRIPTYCH).toMatch(/mode: 'plate' \| 'search'/);
   });
 
   it.each(['cinephile', 'archivist', 'auteur'])(

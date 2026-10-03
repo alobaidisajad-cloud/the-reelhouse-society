@@ -8,12 +8,10 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { readCode, stripComments } from '@/test-utils/readCode';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const OVERSHOOT = /\bwithSpring\b|\.springify\(|\bwithDecay\b|Easing\.(bounce|elastic|back)\b|Animated\.spring\b|\bBounce(In|Out)\w*\b/;
-
-/** Comments out, so a file may explain the law without breaking it. */
-const code = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 function sources(dir: string, out: string[] = []): string[] {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -33,8 +31,9 @@ describe('nothing in the app overshoots', () => {
   });
 
   it('springs nowhere, bounces nowhere', () => {
+    // Comments out, so a file may explain the law without breaking it.
     const offenders = files
-      .filter((f) => OVERSHOOT.test(code(fs.readFileSync(f, 'utf8'))))
+      .filter((f) => OVERSHOOT.test(readCode(f)))
       .map((f) => path.relative(ROOT, f).split(path.sep).join('/'));
     expect(offenders).toEqual([]);
   });
@@ -43,8 +42,8 @@ describe('nothing in the app overshoots', () => {
     for (const bad of [
       'scale.value = withSpring(1)', 'SlideInDown.springify()', 'withDecay({ velocity: 1 })',
       'Easing.bounce', 'Easing.elastic(1)', 'Easing.back(2)', 'Animated.spring(v, {})', 'entering={BounceInDown}',
-    ]) expect(OVERSHOOT.test(code(bad))).toBe(true);
-    expect(OVERSHOOT.test(code('withTiming(1, { duration: MS.quick, easing: arrive() })'))).toBe(false);
-    expect(OVERSHOOT.test(code('// withSpring is not used here'))).toBe(false);
+    ]) expect(OVERSHOOT.test(stripComments(bad))).toBe(true);
+    expect(OVERSHOOT.test(stripComments('withTiming(1, { duration: MS.quick, easing: arrive() })'))).toBe(false);
+    expect(OVERSHOOT.test(stripComments('// withSpring is not used here'))).toBe(false);
   });
 });

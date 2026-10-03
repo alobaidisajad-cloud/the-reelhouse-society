@@ -47,7 +47,7 @@ jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
 jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }) } }));
 
 const notice = (id: string, read = false) => ({
-  id, type: 'critique', read, created_at: '2026-09-11T10:00:00Z',
+  id, type: 'comment', read, created_at: '2026-09-11T10:00:00Z',
   user_id: ME, from_user_id: null, message: 'x',
 });
 

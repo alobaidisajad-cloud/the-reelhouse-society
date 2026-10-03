@@ -25,11 +25,9 @@
  * always read it, and may always withdraw it. Adding and changing are the paid
  * acts.
  */
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
-const SRC = readFileSync(join(__dirname, '..', 'archiveSlice.ts'), 'utf8');
-const CODE = SRC.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
+const CODE = readCode('src/stores/domain/archiveSlice.ts');
 
 /**
  * The IMPLEMENTATION body of one operation.

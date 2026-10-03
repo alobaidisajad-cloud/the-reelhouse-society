@@ -56,6 +56,50 @@ export const sortLogs = (logs: DomainLog[]) => logs.sort((a, b) => {
     const dateB = b.watchedDate || b.createdAt || '1970-01-01T00:00:00Z';
     return dateB.localeCompare(dateA);
 });
+
+type QueuedWrite = { type: string; payload: Record<string, unknown> };
+
+/**
+ * The page the server sent, with the member's writes still waiting in the
+ * offline queue laid over it: a queued removal hides its row, a queued change is
+ * applied on top of it, and a queued log the house does not have yet is ready to
+ * stand ahead of a fresh page.
+ *
+ * Only the member's OWN writes. A crash or a force-quit before sign-out can leave
+ * another member's writes in the queue (flushOfflineQueue dead-letters them
+ * unsent), and their logs must never be drawn in this member's archive. A queued
+ * change names no member, only its log, so it can only ever meet this member's rows.
+ */
+export function overlayQueuedLogs(
+    memberId: string,
+    rows: readonly Record<string, unknown>[],
+    queue: readonly QueuedWrite[],
+): { queuedAdds: DomainLog[]; page: DomainLog[] } {
+    const mine = queue.filter((q) => {
+        const owner = q.payload?.user_id;
+        return owner === undefined || owner === memberId;
+    });
+    const removed = new Set(mine.filter((q) => q.type === 'remove_log').map((q) => q.payload.log_id));
+    const changes = mine.filter((q) => q.type === 'update_log');
+    const changed = (row: Record<string, unknown>) => changes
+        .filter((c) => c.payload.id === row.id)
+        .reduce((acc, c) => ({ ...acc, ...(c.payload.updates as Record<string, unknown>) }), { ...row });
+    const queuedAdds = mine
+        .filter((q) => (q.type === 'add_log' || q.type === 'mark_watched') && !removed.has(q.payload.id))
+        .map((q) => mapLogRow(changed(q.payload) as never) as DomainLog);
+    const page = rows
+        .filter((r) => !removed.has(r.id))
+        .map((r) => mapLogRow(changed(r) as never) as DomainLog);
+    return { queuedAdds, page };
+}
+
+/** One entry per log (the last one seen wins: a list key is never repeated), newest first. */
+export function oneOfEachLog(logs: readonly DomainLog[]): DomainLog[] {
+    const byId = new Map<string, DomainLog>();
+    logs.forEach((l) => byId.set(l.id, l));
+    return sortLogs(Array.from(byId.values()));
+}
+
 type SetState = StoreApi<FilmState>['setState'];
 type GetState = StoreApi<FilmState>['getState'];
 
@@ -123,37 +167,12 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
             wasDateNull: (lastRow as any).watched_date === null
         }) : null;
 
-        // --- Prevent optimistic clobbering ---
-        const queue = getOfflineQueue();
-        const pendingRemoves = new Set(queue.filter(q => q.type === 'remove_log').map(q => q.payload.log_id));
-        const pendingUpdates = queue.filter(q => q.type === 'update_log');
-        const pendingAdds = queue.filter(q => (q.type === 'add_log' || q.type === 'mark_watched') && !pendingRemoves.has((q.payload as any).id)).map(q => {
-            let finalPayload = { ...(q.payload as any) };
-            const upds = pendingUpdates.filter(up => up.payload.id === finalPayload.id);
-            for (const up of upds) {
-                finalPayload = { ...finalPayload, ...(up.payload.updates as any) };
-            }
-            return mapLogRow(finalPayload) as DomainLog;
-        });
-        
-        const newLogs = data
-            .filter((dbLog: any) => !pendingRemoves.has(dbLog.id))
-            .map((dbLog: any) => {
-                let finalDbLog = { ...dbLog };
-                const upds = pendingUpdates.filter(q => q.payload.id === dbLog.id);
-                for (const up of upds) {
-                    finalDbLog = { ...finalDbLog, ...(up.payload.updates as any) };
-                }
-                return mapLogRow(finalDbLog as any) as DomainLog;
-            });
-
-        const nextLogs = loadMore ? [...state.logs, ...newLogs] : [...pendingAdds, ...newLogs];
-        // ------------------------------------------------
-        
-        // Deduplicate to prevent React key collisions
-        const uniqueLogsMap = new Map<string, DomainLog>();
-        nextLogs.forEach(l => uniqueLogsMap.set(l.id, l as DomainLog));
-        const deduplicatedLogs = sortLogs(Array.from(uniqueLogsMap.values()));
+        // The member's own writes still in the queue, laid over the page, so none flickers back.
+        const { queuedAdds, page: newLogs } = overlayQueuedLogs(
+            user.id, data as Record<string, unknown>[], getOfflineQueue() as QueuedWrite[],
+        );
+        const nextLogs = loadMore ? [...state.logs, ...newLogs] : [...queuedAdds, ...newLogs];
+        const deduplicatedLogs = oneOfEachLog(nextLogs);
 
         const idx: Record<number, DomainLog> = {};
         deduplicatedLogs.forEach(l => { if (l.filmId && !idx[l.filmId]) idx[l.filmId] = l as DomainLog; });

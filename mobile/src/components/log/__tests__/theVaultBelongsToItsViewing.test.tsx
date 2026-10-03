@@ -18,11 +18,10 @@ import fs from 'fs';
 import path from 'path';
 import React from 'react';
 import { render } from '@testing-library/react-native';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = path.join(__dirname, '..', '..', '..', '..');
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8');
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
 // Every file that talks to the logs table or builds what is sent to it.
 const CLIENT_FILES = [
@@ -45,7 +44,7 @@ describe('a note is never read from, or written to, the log row', () => {
   it('no client file selects private_notes', () => {
     // The column is blank by design. Selecting it is how both apps came to show
     // an empty Vault to the member who had written in it.
-    const offenders = CLIENT_FILES.filter((f) => /['"`][^'"`]*\bprivate_notes\b/.test(stripComments(read(f))));
+    const offenders = CLIENT_FILES.filter((f) => /['"`][^'"`]*\bprivate_notes\b/.test(readCode(f)));
     expect(offenders).toEqual([]);
   });
 
@@ -75,13 +74,13 @@ describe('a note is never read from, or written to, the log row', () => {
     // Everything else goes through the store, which goes through the service.
     // A second door is how a rule ends up enforced in one place and not another.
     const others = CLIENT_FILES.filter((f) => f !== 'src/services/VaultService.ts')
-      .filter((f) => /from\s*\(?\s*['"]log_private_notes['"]|rpc\(\s*['"]viewing_note_/.test(stripComments(read(f))));
+      .filter((f) => /from\s*\(?\s*['"]log_private_notes['"]|rpc\(\s*['"]viewing_note_/.test(readCode(f)));
     expect(others).toEqual([]);
   });
 });
 
 describe('a viewing is added and removed by the server, never by rewriting history', () => {
-  const ops = stripComments(read('src/stores/domain/logSlice/helpers/logOperations.ts'));
+  const ops = readCode('src/stores/domain/logSlice/helpers/logOperations.ts');
 
   it('both acts name the viewing they are about', () => {
     // Naming it is what makes a retry harmless: the same call twice is the same
@@ -111,16 +110,16 @@ describe('a viewing is added and removed by the server, never by rewriting histo
     for (const t of ['add_viewing', 'remove_viewing', 'set_viewing_note', 'remove_viewing_note']) {
       expect(queue).toMatch(new RegExp(`'${t}'`));
       // …and each has a handler, or it would throw on flush.
-      expect(stripComments(read('src/utils/mutationExecutor.ts'))).toMatch(new RegExp(`${t}:\\s*async`));
+      expect(readCode('src/utils/mutationExecutor.ts')).toMatch(new RegExp(`${t}:\\s*async`));
       // …and a schema, or it would flush unvalidated.
-      expect(stripComments(read('src/types/mutations.ts'))).toMatch(new RegExp(`${t}:\\s*z\\.object`));
+      expect(readCode('src/types/mutations.ts')).toMatch(new RegExp(`${t}:\\s*z\\.object`));
     }
   });
 });
 
 describe('the note field waits for the Vault', () => {
-  const form = stripComments(read('src/components/log/LogForm.tsx'));
-  const flow = stripComments(read('src/hooks/useLogFlow.ts'));
+  const form = readCode('src/components/log/LogForm.tsx');
+  const flow = readCode('src/hooks/useLogFlow.ts');
 
   it('the form shows a closed field until the note is in hand', () => {
     expect(form).toMatch(/!noteReady/);
@@ -144,7 +143,7 @@ describe('the note field waits for the Vault', () => {
 });
 
 describe('who may be offered EDIT on the log page', () => {
-  const page = stripComments(read('app/log/[id].tsx'));
+  const page = readCode('app/log/[id].tsx');
 
   it('it is the READER’s clearance, through useClearance', () => {
     // It first used `isArchivist` — built from `profile.role`, the log AUTHOR's

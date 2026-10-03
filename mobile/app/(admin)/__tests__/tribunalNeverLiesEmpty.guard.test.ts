@@ -14,14 +14,13 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { stripComments } from '@/test-utils/readCode';
 
 const screen = fs.readFileSync(
   path.join(__dirname, '..', 'tribunal.tsx'),
   'utf8',
 );
-const strip = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-const code = strip(screen);
+const code = stripComments(screen, 'tribunal.tsx');
 
 describe('#24 · a docket that failed can never render as a docket that is clear', () => {
   it('EVERY queue query reports failure — enumerated, not spot-checked', () => {
@@ -84,6 +83,8 @@ describe('#24 · the client keyset still matches the RPC ordering', () => {
     expect(code).toMatch(/created_at: last\.created_at/);
     expect(code).toMatch(/id: last\.id/);
     // Nothing may re-order the accumulated list, or `last` stops meaning last.
-    expect(code).not.toMatch(/priorityItems[\s\S]{0,40}\.sort\(/);
+    // A stripped comment leaves blanks, so the space is squeezed before the
+    // window is measured, or a comment could push a `.sort(` out of reach.
+    expect(code.replace(/\s+/g, ' ')).not.toMatch(/priorityItems[\s\S]{0,40}\.sort\(/);
   });
 });

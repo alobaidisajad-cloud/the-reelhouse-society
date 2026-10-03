@@ -31,7 +31,7 @@ export interface QueuedMutation {
      * replays as a withdrawal. The Vault's four name the viewing the app chose,
      * so replaying one that already happened does nothing.
      */
-    type: 'endorse_log' | 'endorse_list' | 'endorse_film' | 'endorse_review' | 'mark_watched' | 'remove_log' | 'remove_watchlist' | 'remove_endorsement' | 'add_log' | 'update_log' | 'update_profile'
+    type: 'endorse_log' | 'endorse_list' | 'mark_watched' | 'remove_log' | 'remove_watchlist' | 'remove_endorsement' | 'add_log' | 'update_log' | 'update_profile'
         | 'add_watchlist' | 'create_list' | 'update_list' | 'delete_list' | 'add_film_to_list' | 'remove_film_from_list' | 'add_list_items' | 'restore_list_items'
         | 'add_archive' | 'update_archive' | 'remove_archive' | 'save_stub'
         | 'follow_user' | 'follow_request_user' | 'unfollow_user' | 'send_lounge_message' | 'withdraw_lounge_message'

@@ -6,7 +6,7 @@
  * Tests the ID remapping function used during offline queue flush.
  * applyIdMapToPayload only remaps specific known keys:
  * id, log_id, list_id, dossier_id, dossier_uuid, target_log_id,
- * target_list_id, target_review_id, comment_id, message_id, reply_to_id
+ * target_list_id, comment_id, message_id, reply_to_id, post_id, answer_id
  */
 
 import * as fc from 'fast-check';
@@ -38,8 +38,10 @@ jest.mock('../../stores/auth', () => ({
 describe('applyIdMapToPayload — Property-Based Tests', () => {
   const REMAPPABLE_KEYS = [
     'id', 'log_id', 'list_id', 'dossier_id', 'dossier_uuid',
-    'target_log_id', 'target_list_id', 'target_review_id',
+    'target_log_id', 'target_list_id',
     'comment_id', 'message_id', 'reply_to_id',
+    // a critique, mark, vote or answer may name a filing queued with it
+    'post_id', 'answer_id',
   ] as const;
 
   it('property: all remappable keys present in idMap are remapped in output', () => {

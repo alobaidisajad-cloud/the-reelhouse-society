@@ -29,11 +29,9 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = path.resolve(__dirname, '../../..');
-
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
 /** Files that register a logout reset — the ones this rule applies to. */
 const storesWithResets = (): string[] =>
@@ -110,7 +108,7 @@ describe('logout clears what a store keeps outside itself', () => {
     expect(stores.length).toBeGreaterThanOrEqual(5);
 
     const withCaches = stores.filter(
-      (f) => moduleCaches(stripComments(fs.readFileSync(path.join(ROOT, f), 'utf8'))).length > 0,
+      (f) => moduleCaches(readCode(path.join(ROOT, f))).length > 0,
     );
     expect(withCaches.length).toBeGreaterThanOrEqual(2);
   });
@@ -118,7 +116,7 @@ describe('logout clears what a store keeps outside itself', () => {
   it('EVERY module cache in EVERY store is named in that store’s reset', () => {
     const offences: string[] = [];
     for (const f of storesWithResets()) {
-      const code = stripComments(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+      const code = readCode(path.join(ROOT, f));
       const body = resetBody(code);
       const missed = moduleCaches(code).filter((n) => !body.includes(n));
       if (missed.length) offences.push(`${f}: ${missed.join(', ')}`);
@@ -127,14 +125,14 @@ describe('logout clears what a store keeps outside itself', () => {
   });
 
   it('the lounge send throttle is cleared, not merely mentioned', () => {
-    const code = stripComments(fs.readFileSync(path.join(ROOT, 'src/stores/lounge.ts'), 'utf8'));
+    const code = readCode(path.join(ROOT, 'src/stores/lounge.ts'));
     expect(resetBody(code)).toMatch(/_lastSendAt\.clear\(\)/);
   });
 
   it('the lounge realtime channel is torn down, not just forgotten', () => {
     // Nulling the reference left the socket live, and messages kept arriving
     // into a store the reset had just cleared.
-    const body = resetBody(stripComments(fs.readFileSync(path.join(ROOT, 'src/stores/lounge.ts'), 'utf8')));
+    const body = resetBody(readCode(path.join(ROOT, 'src/stores/lounge.ts')));
     expect(body).toMatch(/removeChannel\(/);
     expect(body).toMatch(/_activeChannel\s*=\s*null/);
   });
@@ -172,7 +170,7 @@ describe('logout clears what a store keeps outside itself', () => {
   it('the Dispatch drops the in-flight fetch AND bumps its generation', () => {
     // Only bumping the generation discards the stale answer and still hands
     // back the stale promise, so the page stays empty either way.
-    const body = resetBody(stripComments(fs.readFileSync(path.join(ROOT, 'src/stores/dispatch.ts'), 'utf8')));
+    const body = resetBody(readCode(path.join(ROOT, 'src/stores/dispatch.ts')));
     expect(body).toMatch(/invalidateInflight\(\)/);
   });
 });

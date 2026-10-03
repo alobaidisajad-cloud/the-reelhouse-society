@@ -207,16 +207,17 @@ describe('InteractionService', () => {
             expect(supabase.from).toHaveBeenCalledWith('interactions');
         });
 
-        it('routes endorse_film to interactions (direct)', async () => {
+        it('routes endorse_list to interactions (direct)', async () => {
             const c = chain({ error: null });
             (supabase.from as jest.Mock).mockReturnValue(c);
 
             await InteractionService.addEndorsement({
                 user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-                type: 'endorse_film',
-                target_film_id: '550',
+                type: 'endorse_list',
+                target_list_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12',
             });
             expect(supabase.from).toHaveBeenCalledWith('interactions');
+            expect(c.insert).toHaveBeenCalledWith([expect.objectContaining({ type: 'endorse_list' })]);
         });
 
         it('rejects payload missing all target IDs', async () => {
@@ -226,26 +227,14 @@ describe('InteractionService', () => {
             })).rejects.toThrow();
         });
 
-        it('accepts numeric film_id (TMDB IDs are integers)', async () => {
-            const c = chain({ error: null });
-            (supabase.from as jest.Mock).mockReturnValue(c);
-
-            await InteractionService.addEndorsement({
-                user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-                type: 'endorse_film',
-                target_film_id: 550,
-            });
-            expect(supabase.from).toHaveBeenCalledWith('interactions');
-        });
-
         it('throws on Supabase error', async () => {
             const c = chain({ error: { message: 'insert failed' } });
             (supabase.from as jest.Mock).mockReturnValue(c);
 
             await expect(InteractionService.addEndorsement({
                 user_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-                type: 'endorse_review',
-                target_review_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13',
+                type: 'endorse_log',
+                target_log_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13',
             })).rejects.toEqual({ message: 'insert failed' });
         });
     });

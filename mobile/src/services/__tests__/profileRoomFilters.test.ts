@@ -12,6 +12,7 @@
  */
 import { ProfileDataService } from '../ProfileDataService';
 import { supabase } from '@/src/lib/supabase';
+import { readCode } from '@/test-utils/readCode';
 
 jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn() } }));
 jest.mock('@/src/utils/logger', () => ({
@@ -187,12 +188,6 @@ describe('a sort moves the ORDER BY and the cursor together', () => {
 // THE CLASS — a filter in the UI that never reaches the server
 // ════════════════════════════════════════════════════════════════════════════
 describe('every filter the controller holds reaches the query that pages it', () => {
-  const { readFileSync } = require('fs');
-  const { join } = require('path');
-  const ROOT = join(__dirname, '..', '..', '..');
-  const read = (f: string) => readFileSync(join(ROOT, f), 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-
   /**
    * Enumerated from the source, never listed by hand.
    *
@@ -201,7 +196,7 @@ describe('every filter the controller holds reaches the query that pages it', ()
    * piece of filter state in the controller is found mechanically, and each one
    * must appear in the effect that pushes filters to the server.
    */
-  const controller = read('src/hooks/useProfileController.ts');
+  const controller = readCode('src/hooks/useProfileController.ts');
   const filterState = [...controller.matchAll(/const \[(\w*(?:Filter|Sort|Search|Decade|Sieve))\s*,/g)].map(m => m[1]);
 
   it('finds the filter state at all', () => {
@@ -236,7 +231,7 @@ describe('every filter the controller holds reaches the query that pages it', ()
       controller,
       'const roomFilters = useMemo(',
       // The deps array's own opening — everything before it is body. Anchoring
-      // on the comment above it does not work: `read()` strips comments. And a
+      // on the comment above it does not work: `readCode()` strips comments. And a
       // multi-line anchor does not work either: these files are CRLF.
       '}), [archiveSieve',
     );

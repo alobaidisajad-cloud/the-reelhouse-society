@@ -12,6 +12,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { stripComments } from '@/test-utils/readCode';
 
 const slice = fs.readFileSync(
   path.join(__dirname, '..', '..', 'stores', 'domain', 'socialSlice.ts'), 'utf8',
@@ -38,7 +39,7 @@ describe('the username lookup uses the shared guard', () => {
   it('the old charset is GONE, not merely bypassed', () => {
     // Leaving it anywhere in this file invites someone to reinstate it as "stricter".
     // It is not stricter — it is wrong, and it locked out 5 of 32 live members.
-    const code = slice.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    const code = stripComments(slice, 'socialSlice.ts');
     expect(code).not.toMatch(/\[a-zA-Z0-9_\]\{1,30\}/);
   });
 });

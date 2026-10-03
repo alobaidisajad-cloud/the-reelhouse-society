@@ -22,6 +22,7 @@ import { join } from 'path';
 import { PRIVILEGES, RANK_ORDER, privilegesOf } from '@/src/constants/membership';
 import { ticketPrice, savePercent, foundingPitch, SEATS_LINE } from '../societyPricing';
 import { LEDGER_COLUMN_ORDER } from '../PrivilegeLedger';
+import { readCode } from '@/test-utils/readCode';
 
 // ── the world the page is rendered in ───────────────────────────────────────
 const mockRestore = jest.fn();
@@ -515,7 +516,6 @@ describe('the window is as tall as it says, and the page makes room for it', () 
 // ════════════════════════════════════════════════════════════════════════════
 describe('every other sentence about a rank reads from the same list', () => {
   const { firstPrivilegesOf } = require('@/src/constants/membership');
-  const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
 
   it('says what a rank opens in the names its ticket sells', () => {
     expect(firstPrivilegesOf('archivist')).toBe('The Vault, The Editorial Desk and The Lounge');
@@ -524,7 +524,7 @@ describe('every other sentence about a rank reads from the same list', () => {
 
   it('Settings names what the next rank opens from it — never by hand', () => {
     // It promised "the gold Dispatch badge" at Auteur: the mark is crimson.
-    const settings = strip(readFileSync(join(ROOT, 'src/features/settings/SettingsSections.tsx'), 'utf8'));
+    const settings = readCode('src/features/settings/SettingsSections.tsx');
     expect(settings).toMatch(/\$\{firstPrivilegesOf\('archivist'\)\} open at Archivist\./);
     expect(settings).toMatch(/\$\{firstPrivilegesOf\('auteur'\)\} open at Auteur\./);
   });
@@ -540,7 +540,7 @@ describe('every other sentence about a rank reads from the same list', () => {
     };
     const files = [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'src'))];
     expect(files.length).toBeGreaterThan(300);
-    expect(files.filter((f) => /gold (Dispatch )?badge|Gold Foil/i.test(strip(readFileSync(f, 'utf8'))))).toEqual([]);
+    expect(files.filter((f) => /gold (Dispatch )?badge|Gold Foil/i.test(readCode(f)))).toEqual([]);
   });
 });
 

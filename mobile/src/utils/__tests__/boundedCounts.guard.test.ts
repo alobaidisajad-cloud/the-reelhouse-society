@@ -14,16 +14,10 @@
  * beside it must come from the server. A future limit added without a count is
  * the exact regression these tests exist to stop.
  */
-import * as fs from 'fs';
-import * as path from 'path';
-
-const ROOT = path.join(__dirname, '..', '..', '..');
-const read = (p: string) => fs.readFileSync(path.join(ROOT, p), 'utf8');
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+import { readCode } from '@/test-utils/readCode';
 
 describe('#45 · the stacks feed ships posters, not whole stacks', () => {
-  const feed = stripComments(read('src/services/FeedService.ts'));
+  const feed = readCode('src/services/FeedService.ts');
 
   it('calls the function that caps the poster array', () => {
     expect(feed).toMatch(/get_filtered_stacks_auth_cursor_v2/);
@@ -44,7 +38,7 @@ describe('#45 · the stacks feed ships posters, not whole stacks', () => {
 
 describe('#45 · the count is REQUIRED, so omitting it cannot compile', () => {
   it('film_count is not optional on the feed row', () => {
-    const schema = stripComments(read('src/schemas/feed.schema.ts'));
+    const schema = readCode('src/schemas/feed.schema.ts');
     expect(schema).toMatch(/film_count: z\.union/);
     // Zod strips unknown keys — a column selected but not declared is silently
     // dropped, which is exactly how the old count would come back.
@@ -53,7 +47,7 @@ describe('#45 · the count is REQUIRED, so omitting it cannot compile', () => {
 });
 
 describe('#44 · log critiques are bounded, and still counted honestly', () => {
-  const svc = stripComments(read('src/services/LogService.ts'));
+  const svc = readCode('src/services/LogService.ts');
 
   it('the fetch is bounded', () => {
     expect(svc).toMatch(/COMMENT_PAGE_SIZE/);
@@ -75,7 +69,7 @@ describe('#44 · log critiques are bounded, and still counted honestly', () => {
     // Formatted and hidden at zero now (`CRITIQUES (1.2K)`, or `CRITIQUES`);
     // still the TOTAL. Rendered with no comments loaded and a total of 1,200 in
     // theCountHangsBesideItsMark.test.tsx, which reads `CRITIQUES (1.2K)`.
-    const ui = stripComments(read('src/components/log/LogComments.tsx'));
+    const ui = readCode('src/components/log/LogComments.tsx');
     expect(ui).toMatch(/CRITIQUES \(\$\{formatCount\(commentTotal \?\? comments\.length\)\}\)/);
   });
 
@@ -92,7 +86,7 @@ describe('#44 · log critiques are bounded, and still counted honestly', () => {
 });
 
 describe('#52 · one malformed row cannot end a member\'s history', () => {
-  const store = stripComments(read('src/stores/notificationStore.ts'));
+  const store = readCode('src/stores/notificationStore.ts');
 
   it('paging asks what the SERVER returned, not what survived validation', () => {
     expect(store).not.toMatch(/_hasMore: validated\.length >= PAGE_SIZE/);
@@ -112,7 +106,7 @@ describe('#52 · one malformed row cannot end a member\'s history', () => {
 });
 
 describe('the unread badge is server truth, and survives a failed action', () => {
-  const store = stripComments(read('src/stores/notificationStore.ts'));
+  const store = readCode('src/stores/notificationStore.ts');
 
   it('asks the database how many are unread', () => {
     expect(store).toMatch(/\.eq\('is_read', false\)/);
@@ -127,8 +121,8 @@ describe('the unread badge is server truth, and survives a failed action', () =>
 });
 
 describe('#94 · the Tribunal asks once, for the whole docket', () => {
-  const tribunal = stripComments(read('app/(admin)/tribunal.tsx'));
-  const svc = stripComments(read('src/services/ModerationService.ts'));
+  const tribunal = readCode('app/(admin)/tribunal.tsx');
+  const svc = readCode('src/services/ModerationService.ts');
 
   it('no per-card query remains', () => {
     expect(tribunal).not.toMatch(/getUserModerationHistory/);
@@ -149,7 +143,7 @@ describe('#94 · the Tribunal asks once, for the whole docket', () => {
 });
 
 describe('stack positions belong to the server', () => {
-  const slice = stripComments(read('src/stores/domain/listSlice.ts'));
+  const slice = readCode('src/stores/domain/listSlice.ts');
 
   it('adding a film no longer guesses its position from an array length', () => {
     // `rank_position: currentList.films.length` made the array's completeness
@@ -160,7 +154,7 @@ describe('stack positions belong to the server', () => {
 });
 
 describe('the endorsement index is merged, never replaced', () => {
-  const slice = stripComments(read('src/stores/domain/interactionSlice.ts'));
+  const slice = readCode('src/stores/domain/interactionSlice.ts');
 
   it('both hydrations preserve what is already known', () => {
     // It used to build a fresh index and assign it, so a re-run discarded

@@ -22,16 +22,18 @@
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { readCode } from '@/test-utils/readCode';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
-const RAW = readFileSync(join(ROOT, 'app/(tabs)/lounge.tsx'), 'utf8');
-const CODE = RAW.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
+const CODE = readCode(join(ROOT, 'app/(tabs)/lounge.tsx'));
 
 const STORE = readFileSync(join(ROOT, 'src/stores/lounge.ts'), 'utf8');
 
 describe('the poll runs while the screen is watched', () => {
   it('the scan can see the file — not passing on an empty read', () => {
-    expect(CODE.length).toBeGreaterThan(4000);
+    // Blanked comments keep their width, so the code is measured with its
+    // whitespace collapsed: a file of nothing but comments still reads as empty.
+    expect(CODE.replace(/\s+/g, ' ').length).toBeGreaterThan(4000);
     expect(CODE).toMatch(/fetchLounges/);
   });
 
@@ -69,7 +71,7 @@ describe('the poll runs while the screen is watched', () => {
      * against.
      */
     const beforeListener = focus.slice(0, focus.indexOf('AppState.addEventListener'));
-    expect(beforeListener.length).toBeGreaterThan(200);
+    expect(beforeListener.replace(/\s+/g, ' ').length).toBeGreaterThan(200);
 
     // A member coming back from a room must not see a stale badge for up to
     // thirty seconds.
