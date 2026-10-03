@@ -143,7 +143,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
 | e2e/load/probe.mjs | 2026-10-03 | read whole: the paper in all four orders, critiques newest first, the following feed for a member of 2,000 follows; nested plans via auto_explain |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
-| e2e/run-flows.sh | 2026-10-01 | the keyboard's room added after the flows |
+| e2e/run-flows.sh | 2026-10-03 | every flow begins with the network on: a failed offline flow no longer takes the next one down |
 | e2e/screen-times.mjs | 2026-10-02 | Written in the launch audit: each screen's time to its content, read from the E2E device log; a gate once ceilings are set. |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/supabase/functions/tmdb-proxy/index.ts | 2026-09-29 | history reduced to the rule |

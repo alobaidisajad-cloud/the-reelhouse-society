@@ -182,6 +182,9 @@ for flow in $(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort); do
     echo "[Skipped] $name (the flows' ${MINUTES} minutes ran out)" >> "$OUT/maestro.log"; rc=1; continue
   fi
   echo "── $name" >> "$OUT/maestro.log"
+  # Every flow begins connected: one that failed with airplane mode on (it is
+  # turned off again only at its own end) took the next flow down with it.
+  timeout 20 adb shell cmd connectivity airplane-mode disable > /dev/null 2>&1 || true
   # The device's clock as the flow starts, so its log can be read on its own.
   # (Quoted twice: adb hands the device's shell one line, which splits it again.)
   since=$(timeout 20 adb shell "date +'%m-%d %H:%M:%S.000'" 2>/dev/null | tr -d '\r')
