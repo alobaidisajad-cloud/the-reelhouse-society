@@ -135,6 +135,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/annotate.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/db/bootstrap.mjs | 2026-09-28 | 7 findings; stale function count and 'how this was found' asides dropped |
 | e2e/db/seed.mjs | 2026-09-29 | true as written |
+| e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-writes.mjs | 2026-09-29 | true as written |
 | e2e/flow-screens.mjs | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
@@ -930,8 +931,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
 | src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): the cap, the excerpt and the drop cap cut between characters. |
 | src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
+| src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts | 2026-10-02 | Written in the launch audit: the handle filter judged by words, one rule in apps and database. |
 | src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-02 | a hidden pressable is hidden whole (no-hide-descendants) |
 | src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts | 2026-10-01 | new |
+| src/utils/__tests__/aMembersWordsAreCleaned.test.ts | 2026-10-03 | Written with 20261003_05: every text column a member can write is cleaned by its table's trigger or named with the reason it is not. |
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/appConfig.guard.test.ts | — |  |
@@ -1002,6 +1005,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/searchPattern.test.ts | — |  |
 | src/utils/__tests__/searchWiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
+| src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts | 2026-10-03 | Written with 20261003_05: the corpus holds every character the cleaning acts on, with cleanForStorage's answer. |
 | src/utils/__tests__/theDeadLetterIsNobodyElsesToKeep.test.ts | — |  |
 | src/utils/__tests__/theDraftIsYours.test.ts | — |  |
 | src/utils/__tests__/theFrontDeskAnswers.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -1070,8 +1074,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/withAbortSignal.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/withRetry.ts | 2026-10-02 | read; sound |
 | src/utils/withTimeout.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| supabase/diagnostics/apply.cjs | 2026-10-03 | Applies one migration file to production as a single transaction; the database URL is read from .env.local and never printed. |
 | supabase/functions/fetch-rss/index.ts | 2026-09-29 | the header said it serves the Dispatch tab; no current source calls it (kept for installed builds, per backend-contract); audit tags and the relay's history dropped |
-| supabase/functions/notify-push/index.ts | — |  |
+| supabase/functions/notify-push/index.ts | 2026-10-03 | v4: the sender is named whenever there is one; an accepted request has its title; a house notice is The Lounge only about a salon |
 | supabase/functions/revenuecat-webhook/decide.ts | 2026-09-28 | 6 findings; the rules kept, shortened |
 | supabase/functions/revenuecat-webhook/index.ts | 2026-09-28 | the auth note claimed a length check stops timing leaks; the compare is a plain !== (reported); header moved above the imports |
 | supabase/functions/sync-entitlement/index.ts | 2026-09-28 | the header described a flow the code does not have (client sends a tier, which is validated); it trusts only RevenueCat's record. 'cryptographically verified' dropped (it is an HTTPS fetch) |

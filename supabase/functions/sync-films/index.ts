@@ -79,6 +79,7 @@ interface TmdbFilm {
   title?: string
   release_date?: string
   runtime?: number
+  popularity?: number
   poster_path?: string | null
   genres?: { id: number; name: string }[]
   production_countries?: { iso_3166_1: string }[]
@@ -156,6 +157,10 @@ function shape(id: number, m: TmdbFilm) {
     // 1870s; anything past next decade is a typo or a placeholder.
     year: year && Number(year) >= 1870 && Number(year) <= 2100 ? Number(year) : null,
     runtime: typeof m.runtime === 'number' && m.runtime > 0 && m.runtime < 3000 ? m.runtime : null,
+    // The OBSCURITY INDEX reads it. Never null once read: a film with none is
+    // read again forever (the claim takes a film with no popularity), and 0 is
+    // what TMDB means by it — nobody is looking.
+    popularity: typeof m.popularity === 'number' && Number.isFinite(m.popularity) && m.popularity > 0 ? m.popularity : 0,
     poster_path: cut(m.poster_path, 200),
     genres: fit((m.genres ?? []).map((g) => g.name).filter(Boolean), 12, 300),
 

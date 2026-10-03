@@ -1,0 +1,1152 @@
+[
+ {
+  "case": "U+200B between two Latin letters",
+  "input": "a\u200bb",
+  "output": "ab"
+ },
+ {
+  "case": "U+200B between two joining letters",
+  "input": "\u0628\u200b\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+200C between two Latin letters",
+  "input": "a\u200cb",
+  "output": "ab"
+ },
+ {
+  "case": "U+200C between two joining letters",
+  "input": "\u0628\u200c\u0628",
+  "output": "\u0628\u200c\u0628"
+ },
+ {
+  "case": "U+200D between two Latin letters",
+  "input": "a\u200db",
+  "output": "ab"
+ },
+ {
+  "case": "U+200D between two joining letters",
+  "input": "\u0628\u200d\u0628",
+  "output": "\u0628\u200d\u0628"
+ },
+ {
+  "case": "U+200E between two Latin letters",
+  "input": "a\u200eb",
+  "output": "ab"
+ },
+ {
+  "case": "U+200E between two joining letters",
+  "input": "\u0628\u200e\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+200F between two Latin letters",
+  "input": "a\u200fb",
+  "output": "ab"
+ },
+ {
+  "case": "U+200F between two joining letters",
+  "input": "\u0628\u200f\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+202A between two Latin letters",
+  "input": "a\u202ab",
+  "output": "ab"
+ },
+ {
+  "case": "U+202A between two joining letters",
+  "input": "\u0628\u202a\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+202B between two Latin letters",
+  "input": "a\u202bb",
+  "output": "ab"
+ },
+ {
+  "case": "U+202B between two joining letters",
+  "input": "\u0628\u202b\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+202C between two Latin letters",
+  "input": "a\u202cb",
+  "output": "ab"
+ },
+ {
+  "case": "U+202C between two joining letters",
+  "input": "\u0628\u202c\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+202D between two Latin letters",
+  "input": "a\u202db",
+  "output": "ab"
+ },
+ {
+  "case": "U+202D between two joining letters",
+  "input": "\u0628\u202d\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+202E between two Latin letters",
+  "input": "a\u202eb",
+  "output": "ab"
+ },
+ {
+  "case": "U+202E between two joining letters",
+  "input": "\u0628\u202e\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+FEFF between two Latin letters",
+  "input": "a\ufeffb",
+  "output": "ab"
+ },
+ {
+  "case": "U+FEFF between two joining letters",
+  "input": "\u0628\ufeff\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+00AD between two Latin letters",
+  "input": "a\u00adb",
+  "output": "ab"
+ },
+ {
+  "case": "U+00AD between two joining letters",
+  "input": "\u0628\u00ad\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+034F between two Latin letters",
+  "input": "a\u034fb",
+  "output": "ab"
+ },
+ {
+  "case": "U+034F between two joining letters",
+  "input": "\u0628\u034f\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+2060 between two Latin letters",
+  "input": "a\u2060b",
+  "output": "ab"
+ },
+ {
+  "case": "U+2060 between two joining letters",
+  "input": "\u0628\u2060\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+2061 between two Latin letters",
+  "input": "a\u2061b",
+  "output": "ab"
+ },
+ {
+  "case": "U+2061 between two joining letters",
+  "input": "\u0628\u2061\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+2062 between two Latin letters",
+  "input": "a\u2062b",
+  "output": "ab"
+ },
+ {
+  "case": "U+2062 between two joining letters",
+  "input": "\u0628\u2062\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+2063 between two Latin letters",
+  "input": "a\u2063b",
+  "output": "ab"
+ },
+ {
+  "case": "U+2063 between two joining letters",
+  "input": "\u0628\u2063\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+2064 between two Latin letters",
+  "input": "a\u2064b",
+  "output": "ab"
+ },
+ {
+  "case": "U+2064 between two joining letters",
+  "input": "\u0628\u2064\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+2066 between two Latin letters",
+  "input": "a\u2066b",
+  "output": "ab"
+ },
+ {
+  "case": "U+2066 between two joining letters",
+  "input": "\u0628\u2066\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+2067 between two Latin letters",
+  "input": "a\u2067b",
+  "output": "ab"
+ },
+ {
+  "case": "U+2067 between two joining letters",
+  "input": "\u0628\u2067\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+2068 between two Latin letters",
+  "input": "a\u2068b",
+  "output": "ab"
+ },
+ {
+  "case": "U+2068 between two joining letters",
+  "input": "\u0628\u2068\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+2069 between two Latin letters",
+  "input": "a\u2069b",
+  "output": "ab"
+ },
+ {
+  "case": "U+2069 between two joining letters",
+  "input": "\u0628\u2069\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+206A between two Latin letters",
+  "input": "a\u206ab",
+  "output": "ab"
+ },
+ {
+  "case": "U+206A between two joining letters",
+  "input": "\u0628\u206a\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+206B between two Latin letters",
+  "input": "a\u206bb",
+  "output": "ab"
+ },
+ {
+  "case": "U+206B between two joining letters",
+  "input": "\u0628\u206b\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+206C between two Latin letters",
+  "input": "a\u206cb",
+  "output": "ab"
+ },
+ {
+  "case": "U+206C between two joining letters",
+  "input": "\u0628\u206c\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+206D between two Latin letters",
+  "input": "a\u206db",
+  "output": "ab"
+ },
+ {
+  "case": "U+206D between two joining letters",
+  "input": "\u0628\u206d\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+206E between two Latin letters",
+  "input": "a\u206eb",
+  "output": "ab"
+ },
+ {
+  "case": "U+206E between two joining letters",
+  "input": "\u0628\u206e\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "U+206F between two Latin letters",
+  "input": "a\u206fb",
+  "output": "ab"
+ },
+ {
+  "case": "U+206F between two joining letters",
+  "input": "\u0628\u206f\u0628",
+  "output": "\u0628\u0628"
+ },
+ {
+  "case": "control U+0001 between two letters",
+  "input": "a\u0001b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0002 between two letters",
+  "input": "a\u0002b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0003 between two letters",
+  "input": "a\u0003b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0004 between two letters",
+  "input": "a\u0004b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0005 between two letters",
+  "input": "a\u0005b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0006 between two letters",
+  "input": "a\u0006b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0007 between two letters",
+  "input": "a\u0007b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0008 between two letters",
+  "input": "a\bb",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0009 between two letters",
+  "input": "a\tb",
+  "output": "a\tb"
+ },
+ {
+  "case": "control U+000A between two letters",
+  "input": "a\nb",
+  "output": "a\nb"
+ },
+ {
+  "case": "control U+000B between two letters",
+  "input": "a\u000bb",
+  "output": "ab"
+ },
+ {
+  "case": "control U+000C between two letters",
+  "input": "a\fb",
+  "output": "ab"
+ },
+ {
+  "case": "control U+000D between two letters",
+  "input": "a\rb",
+  "output": "a\rb"
+ },
+ {
+  "case": "control U+000E between two letters",
+  "input": "a\u000eb",
+  "output": "ab"
+ },
+ {
+  "case": "control U+000F between two letters",
+  "input": "a\u000fb",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0010 between two letters",
+  "input": "a\u0010b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0011 between two letters",
+  "input": "a\u0011b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0012 between two letters",
+  "input": "a\u0012b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0013 between two letters",
+  "input": "a\u0013b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0014 between two letters",
+  "input": "a\u0014b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0015 between two letters",
+  "input": "a\u0015b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0016 between two letters",
+  "input": "a\u0016b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0017 between two letters",
+  "input": "a\u0017b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0018 between two letters",
+  "input": "a\u0018b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+0019 between two letters",
+  "input": "a\u0019b",
+  "output": "ab"
+ },
+ {
+  "case": "control U+001A between two letters",
+  "input": "a\u001ab",
+  "output": "ab"
+ },
+ {
+  "case": "control U+001B between two letters",
+  "input": "a\u001bb",
+  "output": "ab"
+ },
+ {
+  "case": "control U+001C between two letters",
+  "input": "a\u001cb",
+  "output": "ab"
+ },
+ {
+  "case": "control U+001D between two letters",
+  "input": "a\u001db",
+  "output": "ab"
+ },
+ {
+  "case": "control U+001E between two letters",
+  "input": "a\u001eb",
+  "output": "ab"
+ },
+ {
+  "case": "control U+001F between two letters",
+  "input": "a\u001fb",
+  "output": "ab"
+ },
+ {
+  "case": "control U+007F between two letters",
+  "input": "a\u007fb",
+  "output": "ab"
+ },
+ {
+  "case": "U+0009 at both ends",
+  "input": "\twords\t",
+  "output": "words"
+ },
+ {
+  "case": "U+0009 inside",
+  "input": "two\twords",
+  "output": "two\twords"
+ },
+ {
+  "case": "U+000A at both ends",
+  "input": "\nwords\n",
+  "output": "words"
+ },
+ {
+  "case": "U+000A inside",
+  "input": "two\nwords",
+  "output": "two\nwords"
+ },
+ {
+  "case": "U+000B at both ends",
+  "input": "\u000bwords\u000b",
+  "output": "words"
+ },
+ {
+  "case": "U+000B inside",
+  "input": "two\u000bwords",
+  "output": "twowords"
+ },
+ {
+  "case": "U+000C at both ends",
+  "input": "\fwords\f",
+  "output": "words"
+ },
+ {
+  "case": "U+000C inside",
+  "input": "two\fwords",
+  "output": "twowords"
+ },
+ {
+  "case": "U+000D at both ends",
+  "input": "\rwords\r",
+  "output": "words"
+ },
+ {
+  "case": "U+000D inside",
+  "input": "two\rwords",
+  "output": "two\rwords"
+ },
+ {
+  "case": "U+0020 at both ends",
+  "input": " words ",
+  "output": "words"
+ },
+ {
+  "case": "U+0020 inside",
+  "input": "two words",
+  "output": "two words"
+ },
+ {
+  "case": "U+00A0 at both ends",
+  "input": "\u00a0words\u00a0",
+  "output": "words"
+ },
+ {
+  "case": "U+00A0 inside",
+  "input": "two\u00a0words",
+  "output": "two\u00a0words"
+ },
+ {
+  "case": "U+1680 at both ends",
+  "input": "\u1680words\u1680",
+  "output": "words"
+ },
+ {
+  "case": "U+1680 inside",
+  "input": "two\u1680words",
+  "output": "two\u1680words"
+ },
+ {
+  "case": "U+2000 at both ends",
+  "input": "\u2000words\u2000",
+  "output": "words"
+ },
+ {
+  "case": "U+2000 inside",
+  "input": "two\u2000words",
+  "output": "two\u2000words"
+ },
+ {
+  "case": "U+2001 at both ends",
+  "input": "\u2001words\u2001",
+  "output": "words"
+ },
+ {
+  "case": "U+2001 inside",
+  "input": "two\u2001words",
+  "output": "two\u2001words"
+ },
+ {
+  "case": "U+2002 at both ends",
+  "input": "\u2002words\u2002",
+  "output": "words"
+ },
+ {
+  "case": "U+2002 inside",
+  "input": "two\u2002words",
+  "output": "two\u2002words"
+ },
+ {
+  "case": "U+2003 at both ends",
+  "input": "\u2003words\u2003",
+  "output": "words"
+ },
+ {
+  "case": "U+2003 inside",
+  "input": "two\u2003words",
+  "output": "two\u2003words"
+ },
+ {
+  "case": "U+2004 at both ends",
+  "input": "\u2004words\u2004",
+  "output": "words"
+ },
+ {
+  "case": "U+2004 inside",
+  "input": "two\u2004words",
+  "output": "two\u2004words"
+ },
+ {
+  "case": "U+2005 at both ends",
+  "input": "\u2005words\u2005",
+  "output": "words"
+ },
+ {
+  "case": "U+2005 inside",
+  "input": "two\u2005words",
+  "output": "two\u2005words"
+ },
+ {
+  "case": "U+2006 at both ends",
+  "input": "\u2006words\u2006",
+  "output": "words"
+ },
+ {
+  "case": "U+2006 inside",
+  "input": "two\u2006words",
+  "output": "two\u2006words"
+ },
+ {
+  "case": "U+2007 at both ends",
+  "input": "\u2007words\u2007",
+  "output": "words"
+ },
+ {
+  "case": "U+2007 inside",
+  "input": "two\u2007words",
+  "output": "two\u2007words"
+ },
+ {
+  "case": "U+2008 at both ends",
+  "input": "\u2008words\u2008",
+  "output": "words"
+ },
+ {
+  "case": "U+2008 inside",
+  "input": "two\u2008words",
+  "output": "two\u2008words"
+ },
+ {
+  "case": "U+2009 at both ends",
+  "input": "\u2009words\u2009",
+  "output": "words"
+ },
+ {
+  "case": "U+2009 inside",
+  "input": "two\u2009words",
+  "output": "two\u2009words"
+ },
+ {
+  "case": "U+200A at both ends",
+  "input": "\u200awords\u200a",
+  "output": "words"
+ },
+ {
+  "case": "U+200A inside",
+  "input": "two\u200awords",
+  "output": "two\u200awords"
+ },
+ {
+  "case": "U+2028 at both ends",
+  "input": "\u2028words\u2028",
+  "output": "words"
+ },
+ {
+  "case": "U+2028 inside",
+  "input": "two\u2028words",
+  "output": "two\nwords"
+ },
+ {
+  "case": "U+2029 at both ends",
+  "input": "\u2029words\u2029",
+  "output": "words"
+ },
+ {
+  "case": "U+2029 inside",
+  "input": "two\u2029words",
+  "output": "two\n\nwords"
+ },
+ {
+  "case": "U+202F at both ends",
+  "input": "\u202fwords\u202f",
+  "output": "words"
+ },
+ {
+  "case": "U+202F inside",
+  "input": "two\u202fwords",
+  "output": "two\u202fwords"
+ },
+ {
+  "case": "U+205F at both ends",
+  "input": "\u205fwords\u205f",
+  "output": "words"
+ },
+ {
+  "case": "U+205F inside",
+  "input": "two\u205fwords",
+  "output": "two\u205fwords"
+ },
+ {
+  "case": "U+3000 at both ends",
+  "input": "\u3000words\u3000",
+  "output": "words"
+ },
+ {
+  "case": "U+3000 inside",
+  "input": "two\u3000words",
+  "output": "two\u3000words"
+ },
+ {
+  "case": "U+FEFF at both ends",
+  "input": "\ufeffwords\ufeff",
+  "output": "words"
+ },
+ {
+  "case": "U+FEFF inside",
+  "input": "two\ufeffwords",
+  "output": "twowords"
+ },
+ {
+  "case": "a line separator",
+  "input": "the ending.\u2028Then",
+  "output": "the ending.\nThen"
+ },
+ {
+  "case": "a paragraph separator",
+  "input": "the ending.\u2029Then",
+  "output": "the ending.\n\nThen"
+ },
+ {
+  "case": "a line separator at each end",
+  "input": "\u2028words\u2028",
+  "output": "words"
+ },
+ {
+  "case": "a separator that makes four breaks",
+  "input": "a\n\n\u2028\nb",
+  "output": "a\n\n\nb"
+ },
+ {
+  "case": "1 line breaks",
+  "input": "a\nb",
+  "output": "a\nb"
+ },
+ {
+  "case": "2 line breaks",
+  "input": "a\n\nb",
+  "output": "a\n\nb"
+ },
+ {
+  "case": "3 line breaks",
+  "input": "a\n\n\nb",
+  "output": "a\n\n\nb"
+ },
+ {
+  "case": "4 line breaks",
+  "input": "a\n\n\n\nb",
+  "output": "a\n\n\nb"
+ },
+ {
+  "case": "5 line breaks",
+  "input": "a\n\n\n\n\nb",
+  "output": "a\n\n\nb"
+ },
+ {
+  "case": "6 line breaks",
+  "input": "a\n\n\n\n\n\nb",
+  "output": "a\n\n\nb"
+ },
+ {
+  "case": "four carriage-return line breaks",
+  "input": "a\r\n\r\n\r\n\r\nb",
+  "output": "a\r\n\r\n\r\n\r\nb"
+ },
+ {
+  "case": "2 spaces",
+  "input": "a  b",
+  "output": "a  b"
+ },
+ {
+  "case": "9 spaces",
+  "input": "a         b",
+  "output": "a         b"
+ },
+ {
+  "case": "10 spaces",
+  "input": "a          b",
+  "output": "a  b"
+ },
+ {
+  "case": "11 spaces",
+  "input": "a           b",
+  "output": "a  b"
+ },
+ {
+  "case": "30 spaces",
+  "input": "a                              b",
+  "output": "a  b"
+ },
+ {
+  "case": "ten tabs",
+  "input": "a\t\t\t\t\t\t\t\t\t\tb",
+  "output": "a  b"
+ },
+ {
+  "case": "spaces and tabs, ten in all",
+  "input": "a \t \t \t \t \tb",
+  "output": "a  b"
+ },
+ {
+  "case": "a control character that joins two runs of five spaces",
+  "input": "a     \u0001     b",
+  "output": "a  b"
+ },
+ {
+  "case": "empty",
+  "input": "",
+  "output": ""
+ },
+ {
+  "case": "only spaces",
+  "input": "   ",
+  "output": ""
+ },
+ {
+  "case": "only invisible characters",
+  "input": "\u200b\u202e\ufeff",
+  "output": ""
+ },
+ {
+  "case": "a Persian word with its non-joiner",
+  "input": "\u0645\u06cc\u200c\u062e\u0648\u0627\u0647\u0645",
+  "output": "\u0645\u06cc\u200c\u062e\u0648\u0627\u0647\u0645"
+ },
+ {
+  "case": "two non-joiners between joining letters",
+  "input": "\u0628\u200c\u200c\u0628",
+  "output": "\u0628\u200c\u0628"
+ },
+ {
+  "case": "a joiner and a non-joiner between joining letters",
+  "input": "\u0628\u200d\u200c\u0628",
+  "output": "\u0628\u200c\u0628"
+ },
+ {
+  "case": "a non-joiner after an invisible character",
+  "input": "\u0628\u200b\u200c\u0628",
+  "output": "\u0628\u200c\u0628"
+ },
+ {
+  "case": "a non-joiner at the start",
+  "input": "\u200c\u0628",
+  "output": "\u0628"
+ },
+ {
+  "case": "a non-joiner at the end",
+  "input": "\u0628\u200c",
+  "output": "\u0628"
+ },
+ {
+  "case": "a non-joiner before a space",
+  "input": "\u0628\u200c \u0628",
+  "output": "\u0628 \u0628"
+ },
+ {
+  "case": "a joiner between Latin letters",
+  "input": "a\u200db",
+  "output": "ab"
+ },
+ {
+  "case": "a non-joiner between two emoji",
+  "input": "\ud83d\udc69\u200c\ud83d\udcbb",
+  "output": "\ud83d\udc69\ud83d\udcbb"
+ },
+ {
+  "case": "a woman technologist",
+  "input": "\ud83d\udc69\u200d\ud83d\udcbb",
+  "output": "\ud83d\udc69\u200d\ud83d\udcbb"
+ },
+ {
+  "case": "a woman shrugging",
+  "input": "\ud83e\udd37\u200d\u2640\ufe0f",
+  "output": "\ud83e\udd37\u200d\u2640\ufe0f"
+ },
+ {
+  "case": "a heart on fire",
+  "input": "\u2764\ufe0f\u200d\ud83d\udd25",
+  "output": "\u2764\ufe0f\u200d\ud83d\udd25"
+ },
+ {
+  "case": "a rainbow flag",
+  "input": "\ud83c\udff3\ufe0f\u200d\ud83c\udf08",
+  "output": "\ud83c\udff3\ufe0f\u200d\ud83c\udf08"
+ },
+ {
+  "case": "a family",
+  "input": "\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67",
+  "output": "\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67"
+ },
+ {
+  "case": "a joiner after an emoji, before a letter",
+  "input": "\ud83d\udc69\u200da",
+  "output": "\ud83d\udc69a"
+ },
+ {
+  "case": "a joiner after a letter, before an emoji",
+  "input": "a\u200d\ud83d\udc69",
+  "output": "a\ud83d\udc69"
+ },
+ {
+  "case": "a non-joiner between two U+05FF",
+  "input": "\u05ff\u200c\u05ff",
+  "output": "\u05ff\u05ff"
+ },
+ {
+  "case": "a joiner between two U+05FF",
+  "input": "\u05ff\u200d\u05ff",
+  "output": "\u05ff\u05ff"
+ },
+ {
+  "case": "a non-joiner between two U+0600",
+  "input": "\u0600\u200c\u0600",
+  "output": "\u0600\u200c\u0600"
+ },
+ {
+  "case": "a joiner between two U+0600",
+  "input": "\u0600\u200d\u0600",
+  "output": "\u0600\u200d\u0600"
+ },
+ {
+  "case": "a non-joiner between two U+0DFF",
+  "input": "\u0dff\u200c\u0dff",
+  "output": "\u0dff\u200c\u0dff"
+ },
+ {
+  "case": "a joiner between two U+0DFF",
+  "input": "\u0dff\u200d\u0dff",
+  "output": "\u0dff\u200d\u0dff"
+ },
+ {
+  "case": "a non-joiner between two U+0E00",
+  "input": "\u0e00\u200c\u0e00",
+  "output": "\u0e00\u0e00"
+ },
+ {
+  "case": "a joiner between two U+0E00",
+  "input": "\u0e00\u200d\u0e00",
+  "output": "\u0e00\u0e00"
+ },
+ {
+  "case": "a non-joiner between two U+0FFF",
+  "input": "\u0fff\u200c\u0fff",
+  "output": "\u0fff\u0fff"
+ },
+ {
+  "case": "a joiner between two U+0FFF",
+  "input": "\u0fff\u200d\u0fff",
+  "output": "\u0fff\u0fff"
+ },
+ {
+  "case": "a non-joiner between two U+1000",
+  "input": "\u1000\u200c\u1000",
+  "output": "\u1000\u200c\u1000"
+ },
+ {
+  "case": "a joiner between two U+1000",
+  "input": "\u1000\u200d\u1000",
+  "output": "\u1000\u200d\u1000"
+ },
+ {
+  "case": "a non-joiner between two U+109F",
+  "input": "\u109f\u200c\u109f",
+  "output": "\u109f\u200c\u109f"
+ },
+ {
+  "case": "a joiner between two U+109F",
+  "input": "\u109f\u200d\u109f",
+  "output": "\u109f\u200d\u109f"
+ },
+ {
+  "case": "a non-joiner between two U+10A0",
+  "input": "\u10a0\u200c\u10a0",
+  "output": "\u10a0\u10a0"
+ },
+ {
+  "case": "a joiner between two U+10A0",
+  "input": "\u10a0\u200d\u10a0",
+  "output": "\u10a0\u10a0"
+ },
+ {
+  "case": "a non-joiner between two U+177F",
+  "input": "\u177f\u200c\u177f",
+  "output": "\u177f\u177f"
+ },
+ {
+  "case": "a joiner between two U+177F",
+  "input": "\u177f\u200d\u177f",
+  "output": "\u177f\u177f"
+ },
+ {
+  "case": "a non-joiner between two U+1780",
+  "input": "\u1780\u200c\u1780",
+  "output": "\u1780\u200c\u1780"
+ },
+ {
+  "case": "a joiner between two U+1780",
+  "input": "\u1780\u200d\u1780",
+  "output": "\u1780\u200d\u1780"
+ },
+ {
+  "case": "a non-joiner between two U+18AF",
+  "input": "\u18af\u200c\u18af",
+  "output": "\u18af\u200c\u18af"
+ },
+ {
+  "case": "a joiner between two U+18AF",
+  "input": "\u18af\u200d\u18af",
+  "output": "\u18af\u200d\u18af"
+ },
+ {
+  "case": "a non-joiner between two U+18B0",
+  "input": "\u18b0\u200c\u18b0",
+  "output": "\u18b0\u18b0"
+ },
+ {
+  "case": "a joiner between two U+18B0",
+  "input": "\u18b0\u200d\u18b0",
+  "output": "\u18b0\u18b0"
+ },
+ {
+  "case": "a non-joiner between two U+FB4F",
+  "input": "\ufb4f\u200c\ufb4f",
+  "output": "\ufb4f\ufb4f"
+ },
+ {
+  "case": "a joiner between two U+FB4F",
+  "input": "\ufb4f\u200d\ufb4f",
+  "output": "\ufb4f\ufb4f"
+ },
+ {
+  "case": "a non-joiner between two U+FB50",
+  "input": "\ufb50\u200c\ufb50",
+  "output": "\ufb50\u200c\ufb50"
+ },
+ {
+  "case": "a joiner between two U+FB50",
+  "input": "\ufb50\u200d\ufb50",
+  "output": "\ufb50\u200d\ufb50"
+ },
+ {
+  "case": "a non-joiner between two U+FDFF",
+  "input": "\ufdff\u200c\ufdff",
+  "output": "\ufdff\u200c\ufdff"
+ },
+ {
+  "case": "a joiner between two U+FDFF",
+  "input": "\ufdff\u200d\ufdff",
+  "output": "\ufdff\u200d\ufdff"
+ },
+ {
+  "case": "a non-joiner between two U+FE00",
+  "input": "\ufe00\u200c\ufe00",
+  "output": "\ufe00\ufe00"
+ },
+ {
+  "case": "a joiner between two U+FE00",
+  "input": "\ufe00\u200d\ufe00",
+  "output": "\ufe00\ufe00"
+ },
+ {
+  "case": "a non-joiner between two U+FE6F",
+  "input": "\ufe6f\u200c\ufe6f",
+  "output": "\ufe6f\ufe6f"
+ },
+ {
+  "case": "a joiner between two U+FE6F",
+  "input": "\ufe6f\u200d\ufe6f",
+  "output": "\ufe6f\ufe6f"
+ },
+ {
+  "case": "a non-joiner between two U+FE70",
+  "input": "\ufe70\u200c\ufe70",
+  "output": "\ufe70\u200c\ufe70"
+ },
+ {
+  "case": "a joiner between two U+FE70",
+  "input": "\ufe70\u200d\ufe70",
+  "output": "\ufe70\u200d\ufe70"
+ },
+ {
+  "case": "a non-joiner between two U+FEFC",
+  "input": "\ufefc\u200c\ufefc",
+  "output": "\ufefc\u200c\ufefc"
+ },
+ {
+  "case": "a joiner between two U+FEFC",
+  "input": "\ufefc\u200d\ufefc",
+  "output": "\ufefc\u200d\ufefc"
+ },
+ {
+  "case": "a non-joiner between two U+FEFD",
+  "input": "\ufefd\u200c\ufefd",
+  "output": "\ufefd\ufefd"
+ },
+ {
+  "case": "a joiner between two U+FEFD",
+  "input": "\ufefd\u200d\ufefd",
+  "output": "\ufefd\ufefd"
+ },
+ {
+  "case": "a joiner from U+218F to an emoji",
+  "input": "\u218f\u200d\ud83d\udd25",
+  "output": "\u218f\ud83d\udd25"
+ },
+ {
+  "case": "a joiner from an emoji to U+218F",
+  "input": "\ud83d\udd25\u200d\u218f",
+  "output": "\ud83d\udd25\u218f"
+ },
+ {
+  "case": "a joiner from U+2190 to an emoji",
+  "input": "\u2190\u200d\ud83d\udd25",
+  "output": "\u2190\u200d\ud83d\udd25"
+ },
+ {
+  "case": "a joiner from an emoji to U+2190",
+  "input": "\ud83d\udd25\u200d\u2190",
+  "output": "\ud83d\udd25\u200d\u2190"
+ },
+ {
+  "case": "a joiner from U+2BFF to an emoji",
+  "input": "\u2bff\u200d\ud83d\udd25",
+  "output": "\u2bff\u200d\ud83d\udd25"
+ },
+ {
+  "case": "a joiner from an emoji to U+2BFF",
+  "input": "\ud83d\udd25\u200d\u2bff",
+  "output": "\ud83d\udd25\u200d\u2bff"
+ },
+ {
+  "case": "a joiner from U+2C00 to an emoji",
+  "input": "\u2c00\u200d\ud83d\udd25",
+  "output": "\u2c00\ud83d\udd25"
+ },
+ {
+  "case": "a joiner from an emoji to U+2C00",
+  "input": "\ud83d\udd25\u200d\u2c00",
+  "output": "\ud83d\udd25\u2c00"
+ },
+ {
+  "case": "a joiner from U+FE0E to an emoji",
+  "input": "\ufe0e\u200d\ud83d\udd25",
+  "output": "\ufe0e\ud83d\udd25"
+ },
+ {
+  "case": "a joiner from an emoji to U+FE0E",
+  "input": "\ud83d\udd25\u200d\ufe0e",
+  "output": "\ud83d\udd25\ufe0e"
+ },
+ {
+  "case": "a joiner from U+FE0F to an emoji",
+  "input": "\ufe0f\u200d\ud83d\udd25",
+  "output": "\ufe0f\u200d\ud83d\udd25"
+ },
+ {
+  "case": "a joiner from an emoji to U+FE0F",
+  "input": "\ud83d\udd25\u200d\ufe0f",
+  "output": "\ud83d\udd25\ufe0f"
+ },
+ {
+  "case": "a review as it is pasted",
+  "input": "\u00a0The ending lands.\u2028\u2028\u0645\u06cc\u200c\u062e\u0648\u0627\u0647\u0645 \ud83d\udc69\u200d\ud83d\udcbb\u202ereversed\u202c   \u00a0",
+  "output": "The ending lands.\n\n\u0645\u06cc\u200c\u062e\u0648\u0627\u0647\u0645 \ud83d\udc69\u200d\ud83d\udcbbreversed"
+ },
+ {
+  "case": "an essay at the longest the Dispatch takes",
+  "input": "word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  \u0628\u200c\u0628\n\n\n\nword   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   \u0628\u200c\u0628\n\n\n\nword   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   \u0628\u200c\u0628\n\n\n\nword   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   \u0628\u200c\u0628\n\n\n\nword   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   \u0628\u200c\u0628\n\n\n\nword   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   \u0628\u200c\u0628\n\n\n\nword\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   word\u200b  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\n\n",
+  "output": "word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\nword   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  \u0628\u200c\u0628\n\n\nword   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   \u0628\u200c\u0628\n\n\nword   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   \u0628\u200c\u0628\n\n\nword   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   \u0628\u200c\u0628\n\n\nword   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   \u0628\u200c\u0628\n\n\nword   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   \u0628\u200c\u0628\n\n\nword  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\nword   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  \u0628\u200c\u0628\n\n\nword   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   \u0628\u200c\u0628\n\n\nword   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   \u0628\u200c\u0628\n\n\nword   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   \u0628\u200c\u0628\n\n\nword   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   \u0628\u200c\u0628\n\n\nword   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   \u0628\u200c\u0628\n\n\nword  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\nword   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  \u0628\u200c\u0628\n\n\nword   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   \u0628\u200c\u0628\n\n\nword   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   \u0628\u200c\u0628\n\n\nword   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   \u0628\u200c\u0628\n\n\nword   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   \u0628\u200c\u0628\n\n\nword   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   \u0628\u200c\u0628\n\n\nword  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\nword   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  \u0628\u200c\u0628\n\n\nword   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   \u0628\u200c\u0628\n\n\nword   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   \u0628\u200c\u0628\n\n\nword   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   \u0628\u200c\u0628\n\n\nword   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   \u0628\u200c\u0628\n\n\nword   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   \u0628\u200c\u0628\n\n\nword  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\nword   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  \u0628\u200c\u0628\n\n\nword   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   \u0628\u200c\u0628\n\n\nword   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   \u0628\u200c\u0628\n\n\nword   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   \u0628\u200c\u0628\n\n\nword   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   \u0628\u200c\u0628\n\n\nword   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   \u0628\u200c\u0628\n\n\nword  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\nword   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  \u0628\u200c\u0628\n\n\nword   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   \u0628\u200c\u0628\n\n\nword   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   \u0628\u200c\u0628\n\n\nword   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   \u0628\u200c\u0628\n\n\nword   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   \u0628\u200c\u0628\n\n\nword   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   \u0628\u200c\u0628\n\n\nword  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   \u0628\u200c\u0628\n\n\nword   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  \u0628\u200c\u0628\n\n\nword   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   \u0628\u200c\u0628\n\n\nword   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   \u0628\u200c\u0628\n\n\nword   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   \u0628\u200c\u0628\n\n\nword   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   \u0628\u200c\u0628\n\n\nword   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   \u0628\u200c\u0628\n\n\nword  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   word  word   word   word   word   word   word   \u0628\u200c\u0628"
+ }
+]

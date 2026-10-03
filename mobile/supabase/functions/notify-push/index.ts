@@ -13,6 +13,10 @@
  * The DB trigger reads the secret from Supabase Vault and sends it automatically.
  * Stale tokens that Expo reports as DeviceNotRegistered are pruned automatically.
  *
+ * v4 (2026-10-03): the sender is named whenever there is one (20261003_02 keeps
+ * every message free of it), an accepted request has its own title, and a house
+ * notice is "The Lounge" only when it is about a salon.
+ *
  * v3 (2026-09-27): fail-closed auth (was fail-open when secret unset), accept
  * both ExponentPushToken and ExpoPushToken formats, verify Expo API response.
  *
@@ -43,6 +47,7 @@ interface NotificationRecord {
   type?: string
   from_username?: string | null
   message?: string
+  related_lounge_id?: string | null
 }
 
 // ── The banner voice ────────────────────────────────────────────────────────
@@ -50,25 +55,24 @@ interface NotificationRecord {
 const TYPE_TITLES: Record<string, string> = {
   follow: 'A New Follower',
   follow_request: 'At Your Door',
+  follow_accept: 'The Door Is Open',
   endorse: 'A Certification',
   comment: 'A New Critique',
-  system: 'The Lounge',                 // lounge doors: requests + admissions
   moderation: 'A Notice from the House',
 }
 const DEFAULT_TITLE = 'The ReelHouse Society'
 
-// Social notices store the actor separately (in-app renders "@name message");
-// the push body must do the same or the banner has no WHO. Lounge/house
-// messages are already complete sentences — never prefix those.
-const ACTOR_PREFIXED_TYPES = new Set(['follow', 'follow_request', 'endorse', 'comment'])
-
+// The sender lives in from_username and the message never repeats it (the table
+// refuses a named notice that begins with "@"), so the banner prints "@name
+// message" whenever there is a sender — as the notices sheet does.
 function composeBanner(record: NotificationRecord): { title: string; body: string } {
   const type = record.type ?? 'system'
-  const title = TYPE_TITLES[type] ?? DEFAULT_TITLE
+  // a house notice is about a salon when it names one: a request to enter, an admission
+  const title = type === 'system'
+    ? (record.related_lounge_id ? 'The Lounge' : DEFAULT_TITLE)
+    : TYPE_TITLES[type] ?? DEFAULT_TITLE
   const message = record.message ?? ''
-  const body = ACTOR_PREFIXED_TYPES.has(type) && record.from_username
-    ? `@${record.from_username} ${message}`
-    : message
+  const body = record.from_username ? `@${record.from_username} ${message}` : message
   return { title, body }
 }
 

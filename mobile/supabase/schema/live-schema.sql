@@ -36,6 +36,24 @@ COMMENT ON SCHEMA public IS 'standard public schema';
 
 
 --
+-- Name: a_request_takes_its_notice(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.a_request_takes_its_notice() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  DELETE FROM public.notifications
+   WHERE user_id = OLD.target_user_id
+     AND type = 'follow_request'
+     AND from_user_id = OLD.user_id;
+  RETURN NULL;
+END;
+$$;
+
+
+--
 -- Name: accept_follow_request(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -43,23 +61,28 @@ CREATE FUNCTION public.accept_follow_request(requester_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
+DECLARE
+  v_me uuid := auth.uid();
+  v_granted integer;
 BEGIN
+  IF v_me IS NULL THEN RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501'; END IF;
+
   -- Convert follow_request → follow
   UPDATE public.interactions
-  SET type = 'follow'
-  WHERE user_id = requester_id
-    AND target_user_id = auth.uid()
-    AND type = 'follow_request';
+     SET type = 'follow'
+   WHERE user_id = requester_id
+     AND target_user_id = v_me
+     AND type = 'follow_request';
+  GET DIAGNOSTICS v_granted = ROW_COUNT;
+  IF v_granted = 0 THEN RETURN; END IF;
 
-  -- Increment follower count for current user
-  UPDATE public.profiles
-  SET followers_count = COALESCE(followers_count, 0) + 1
-  WHERE id = auth.uid();
+  -- the follow count trigger counts inserts and deletes; a granted request is an update, so it is counted here
+  UPDATE public.profiles SET followers_count = COALESCE(followers_count, 0) + 1 WHERE id = v_me;
+  UPDATE public.profiles SET following_count = COALESCE(following_count, 0) + 1 WHERE id = requester_id;
 
-  -- Increment following count for the requester
-  UPDATE public.profiles
-  SET following_count = COALESCE(following_count, 0) + 1
-  WHERE id = requester_id;
+  INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
+  SELECT requester_id, 'follow_accept', p.username, v_me, 'accepted your follow request. You can now view their archive.'
+    FROM public.profiles p WHERE p.id = v_me;
 END;
 $$;
 
@@ -160,16 +183,16 @@ BEGIN
     RAISE EXCEPTION 'Unauthorized: admin role required' USING ERRCODE = '42501';
   END IF;
 
-  UPDATE reports
-  SET status = 'resolved', resolved_at = now(), resolved_by = v_admin_id, resolution_action = 'dismiss'
-  WHERE id = ANY(p_report_ids) AND status = 'pending';
+  WITH dismissed AS (
+    UPDATE reports
+       SET status = 'resolved', resolved_at = now(), resolved_by = v_admin_id, resolution_action = 'dismiss'
+     WHERE id = ANY(p_report_ids) AND status = 'pending'
+    RETURNING id, target_user_id
+  )
+  INSERT INTO mod_actions (report_id, target_user_id, admin_id, action, reason)
+  SELECT d.id, d.target_user_id, v_admin_id, 'dismiss', p_reason FROM dismissed d;
 
   GET DIAGNOSTICS v_count = ROW_COUNT;
-
-  INSERT INTO mod_actions (report_id, target_user_id, admin_id, action, reason)
-  SELECT r.id, r.target_user_id, v_admin_id, 'dismiss', p_reason
-  FROM reports r WHERE r.id = ANY(p_report_ids);
-
   RETURN v_count;
 END;
 $$;
@@ -294,10 +317,10 @@ BEGIN
    WHERE f.id IN (
      SELECT c.id
        FROM public.films c
-      WHERE c.synced_at IS NULL
+      WHERE (c.synced_at IS NULL OR c.popularity IS NULL)
         AND c.sync_failed < 3
         AND (c.sync_claimed_at IS NULL OR c.sync_claimed_at < now() - interval '10 minutes')
-      ORDER BY c.id
+      ORDER BY c.synced_at IS NOT NULL, c.id
       LIMIT v_limit
       FOR UPDATE SKIP LOCKED
    )
@@ -343,6 +366,125 @@ BEGIN
   WHERE id = p_user_id;
 
   RETURN true;
+END;
+$$;
+
+
+--
+-- Name: clean_member_text(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.clean_member_text(words text) RETURNS text
+    LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    AS $$
+DECLARE
+  s text;
+  chars text[];
+  kept text[] := '{}';
+  n integer;
+  c integer;
+  before integer;
+  after integer;
+BEGIN
+  IF words IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  -- A line and a paragraph separator are the breaks they are.
+  s := replace(replace(words, chr(8232), E'\n'), chr(8233), E'\n\n');
+
+  -- The invisible characters but the two joiners, then the control characters
+  -- but newline, carriage return and tab.
+  s := regexp_replace(s,
+    '[' || chr(8203) || chr(8206) || chr(8207) || chr(8234) || '-' || chr(8238)
+        || chr(65279) || chr(173) || chr(847) || chr(8288) || '-' || chr(8292)
+        || chr(8294) || '-' || chr(8303)
+        || chr(1) || '-' || chr(8) || chr(11) || chr(12) || chr(14) || '-' || chr(31) || chr(127)
+    || ']', '', 'g');
+
+  -- A joiner is kept between two letters of a joining script, and a zero-width
+  -- joiner between the end of an emoji and the start of the next; elsewhere it
+  -- joins nothing and goes.
+  IF strpos(s, chr(8204)) > 0 OR strpos(s, chr(8205)) > 0 THEN
+    chars := string_to_array(s, NULL);
+    n := coalesce(array_length(chars, 1), 0);
+    FOR i IN 1..n LOOP
+      c := ascii(chars[i]);
+      IF c = 8204 OR c = 8205 THEN
+        after := CASE WHEN i < n THEN ascii(chars[i + 1]) END;
+        IF NOT coalesce(
+             ((before BETWEEN 1536 AND 3583 OR before BETWEEN 4096 AND 4255 OR before BETWEEN 6016 AND 6319
+               OR before BETWEEN 64336 AND 65023 OR before BETWEEN 65136 AND 65276)
+              AND (after BETWEEN 1536 AND 3583 OR after BETWEEN 4096 AND 4255 OR after BETWEEN 6016 AND 6319
+               OR after BETWEEN 64336 AND 65023 OR after BETWEEN 65136 AND 65276))
+             OR (c = 8205
+                 AND (before >= 65536 OR before = 65039 OR before BETWEEN 8592 AND 11263)
+                 AND (after >= 65536 OR after BETWEEN 8592 AND 11263)),
+             false) THEN
+          CONTINUE;
+        END IF;
+      END IF;
+      kept := kept || chars[i];
+      before := c;
+    END LOOP;
+    s := array_to_string(kept, '');
+  END IF;
+
+  s := regexp_replace(s, E'\n{4,}', E'\n\n\n', 'g');
+  s := regexp_replace(s, E'[ \t]{10,}', '  ', 'g');
+
+  -- The ends, as String.prototype.trim finds them.
+  RETURN btrim(s, E' \t\n\r' || chr(11) || chr(12) || chr(160) || chr(5760)
+    || chr(8192) || chr(8193) || chr(8194) || chr(8195) || chr(8196) || chr(8197)
+    || chr(8198) || chr(8199) || chr(8200) || chr(8201) || chr(8202)
+    || chr(8232) || chr(8233) || chr(8239) || chr(8287) || chr(12288) || chr(65279));
+END;
+$$;
+
+
+--
+-- Name: clean_member_words(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.clean_member_words() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  fields  jsonb := to_jsonb(NEW);
+  patch   jsonb := '{}';
+  arg     text;
+  col     text;
+  key     text;
+  v       jsonb;
+  cleaned jsonb;
+BEGIN
+  FOREACH arg IN ARRAY TG_ARGV LOOP
+    col := split_part(arg, '.', 1);
+    key := nullif(split_part(arg, '.', 2), '');
+    v := coalesce(patch -> col, fields -> col);
+    IF key IS NULL AND jsonb_typeof(v) = 'string' THEN
+      cleaned := to_jsonb(public.clean_member_text(v #>> '{}'));
+    ELSIF key IS NOT NULL AND jsonb_typeof(v) = 'array' THEN
+      SELECT coalesce(jsonb_agg(
+               CASE WHEN jsonb_typeof(e -> key) = 'string'
+                    THEN jsonb_set(e, ARRAY[key], to_jsonb(public.clean_member_text(e ->> key)))
+                    ELSE e END ORDER BY n), '[]'::jsonb)
+        INTO cleaned
+        FROM jsonb_array_elements(v) WITH ORDINALITY AS a(e, n);
+    ELSE
+      CONTINUE;
+    END IF;
+    IF cleaned IS DISTINCT FROM v THEN
+      patch := patch || jsonb_build_object(col, cleaned);
+    END IF;
+  END LOOP;
+
+  IF patch <> '{}'::jsonb THEN
+    NEW := jsonb_populate_record(NEW, patch);
+  END IF;
+  RETURN NEW;
 END;
 $$;
 
@@ -401,10 +543,11 @@ CREATE FUNCTION public.decline_follow_request(requester_id uuid) RETURNS void
     SET search_path TO 'public', 'pg_temp'
     AS $$
 BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501'; END IF;
   DELETE FROM public.interactions
-  WHERE user_id = requester_id
-    AND target_user_id = auth.uid()
-    AND type = 'follow_request';
+   WHERE user_id = requester_id
+     AND target_user_id = auth.uid()
+     AND type = 'follow_request';
 END;
 $$;
 
@@ -1267,14 +1410,8 @@ DECLARE
     'settings','login','signup','logout','feed','discover',
     'profile','edit','delete','create','new','user','users'
   ];
-  profanity text[] := ARRAY[
-    'f+u+c+k','s+h+i+t','a+s+s+h+o+l+e','b+i+t+c+h',
-    'd+i+c+k','p+u+s+s+y','c+u+n+t','n+i+g+g',
-    'f+a+g+g','r+e+t+a+r+d','w+h+o+r+e','s+l+u+t'
-  ];
   v_raw    text;
   v_clean  text;
-  v_pat    text;
   v_hex    text;
   v_base   text;
   v_n      integer;
@@ -1317,11 +1454,9 @@ BEGIN
     IF v_clean = ANY(reserved) THEN
       RAISE EXCEPTION 'This username is reserved.' USING ERRCODE = '23514';
     END IF;
-    FOREACH v_pat IN ARRAY profanity LOOP
-      IF v_clean ~ v_pat THEN
-        RAISE EXCEPTION 'This username is not allowed.' USING ERRCODE = '23514';
-      END IF;
-    END LOOP;
+    IF public.handle_is_unwelcome(v_clean) THEN
+      RAISE EXCEPTION 'This username is not allowed.' USING ERRCODE = '23514';
+    END IF;
     IF EXISTS (SELECT 1 FROM public.profiles
                 WHERE lower(username) = v_clean AND id <> NEW.id) THEN
       RAISE EXCEPTION 'This username is already taken.' USING ERRCODE = '23505';
@@ -1342,12 +1477,9 @@ BEGIN
     v_clean := 'user_' || substr(v_hex, 1, 6);
   END IF;
 
-  FOREACH v_pat IN ARRAY profanity LOOP
-    IF v_clean ~ v_pat THEN
-      v_clean := 'user_' || substr(v_hex, 1, 6);
-      EXIT;
-    END IF;
-  END LOOP;
+  IF public.handle_is_unwelcome(v_clean) THEN
+    v_clean := 'user_' || substr(v_hex, 1, 6);
+  END IF;
 
   v_base := btrim(left(v_clean, 23), '_');
   v_n    := 0;
@@ -1426,19 +1558,18 @@ CREATE FUNCTION public.get_community_feed_auth_cursor(p_limit integer DEFAULT 40
     p.username, p.avatar_url, p.role,
     l.editorial_header, l.pull_quote, l.watched_with,
     l.is_autopsied, l.autopsy, l.is_spoiler,
-    (SELECT count(*)::integer FROM interactions ie
-      WHERE ie.target_log_id = l.id AND ie.type = 'endorse_log') AS certify_count,
-    (SELECT count(*)::integer FROM log_comments lc
-      WHERE lc.log_id = l.id) AS critique_count,
+    COALESCE(c.certify_count, 0) AS certify_count,
+    COALESCE(c.critique_count, 0) AS critique_count,
     (auth.uid() IS NOT NULL AND EXISTS (
       SELECT 1 FROM interactions im
        WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'
     )) AS certified
   FROM logs l
   JOIN profiles p ON p.id = l.user_id
+  LEFT JOIN log_counts c ON c.log_id = l.id
   WHERE l.review IS NOT NULL
     AND l.review <> ''
-    AND (auth.uid() IS NULL OR NOT is_hidden_by(auth.uid(), l.user_id))
+    AND NOT COALESCE(l.user_id = ANY ((SELECT hidden_authors())::uuid[]), false)
     AND (
       p_cursor_created_at IS NULL
       OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
@@ -1446,33 +1577,6 @@ CREATE FUNCTION public.get_community_feed_auth_cursor(p_limit integer DEFAULT 40
   ORDER BY l.created_at DESC, l.id DESC
   LIMIT p_limit;
 $$;
-
-
---
--- Name: get_dispatch_feed(integer, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.get_dispatch_feed(p_limit integer DEFAULT 20, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE(id text, title text, excerpt text, author_username text, user_id text, views integer, certify_count integer, created_at timestamp with time zone)
-    LANGUAGE sql STABLE
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-      SELECT p.id::text,
-             p.title,
-             p.body            AS excerpt,
-             p.author_username,
-             p.user_id::text,
-             0                 AS views,
-             p.certify_count,
-             p.created_at
-        FROM public.dispatch_posts p
-       WHERE p.kind = 'dossier'
-         AND p.is_published
-         AND p.withheld_at IS NULL
-         AND p.ended_at IS NULL
-         AND (p_cursor_created_at IS NULL OR p.created_at < p_cursor_created_at)
-       ORDER BY p.created_at DESC, p.id DESC
-       LIMIT greatest(1, least(coalesce(p_limit, 20), 100));
-    $$;
 
 
 --
@@ -1497,174 +1601,44 @@ END;
 $$;
 
 
-SET default_tablespace = '';
-
-SET default_table_access_method = heap;
-
---
--- Name: logs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.logs (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    user_id uuid NOT NULL,
-    film_id integer NOT NULL,
-    film_title text NOT NULL,
-    rating numeric,
-    review text,
-    watched_date date NOT NULL,
-    format text,
-    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
-    poster_path text,
-    year text,
-    status text DEFAULT 'watched'::text,
-    is_spoiler boolean DEFAULT false,
-    watched_with text,
-    private_notes text,
-    abandoned_reason text,
-    physical_media text,
-    is_autopsied boolean DEFAULT false,
-    autopsy jsonb,
-    alt_poster text,
-    editorial_header text,
-    drop_cap boolean DEFAULT false,
-    pull_quote text,
-    updated_at timestamp with time zone DEFAULT now(),
-    video_url text,
-    viewing_history jsonb DEFAULT '[]'::jsonb,
-    view_count integer DEFAULT 1,
-    viewing_id uuid DEFAULT gen_random_uuid() NOT NULL,
-    CONSTRAINT check_rating_range CHECK (((rating >= (0)::numeric) AND (rating <= (5)::numeric))),
-    CONSTRAINT check_title_not_empty CHECK (((film_title IS NOT NULL) AND (film_title <> ''::text))),
-    CONSTRAINT logs_abandoned_reason_len CHECK ((char_length(abandoned_reason) <= 500)),
-    CONSTRAINT logs_alt_poster_len CHECK ((char_length(alt_poster) <= 2048)),
-    CONSTRAINT logs_autopsy_len CHECK ((char_length((autopsy)::text) <= 20000)),
-    CONSTRAINT logs_editorial_header_len CHECK ((char_length(editorial_header) <= 2048)),
-    CONSTRAINT logs_film_title_len CHECK ((char_length(film_title) <= 300)),
-    CONSTRAINT logs_format_len CHECK ((char_length(format) <= 100)),
-    CONSTRAINT logs_physical_media_len CHECK ((char_length(physical_media) <= 100)),
-    CONSTRAINT logs_poster_path_len CHECK ((char_length(poster_path) <= 2048)),
-    CONSTRAINT logs_private_notes_len CHECK ((char_length(private_notes) <= 1000)),
-    CONSTRAINT logs_pull_quote_len CHECK ((char_length(pull_quote) <= 500)),
-    CONSTRAINT logs_rating_check CHECK (((rating >= (0)::numeric) AND (rating <= (5)::numeric))),
-    CONSTRAINT logs_review_len CHECK ((char_length(review) <= 5000)),
-    CONSTRAINT logs_status_len CHECK ((char_length(status) <= 100)),
-    CONSTRAINT logs_video_url_len CHECK ((char_length(video_url) <= 2048)),
-    CONSTRAINT logs_viewing_history_len CHECK ((char_length((viewing_history)::text) <= 50000)),
-    CONSTRAINT logs_watched_with_len CHECK ((char_length(watched_with) <= 200)),
-    CONSTRAINT logs_year_len CHECK ((char_length(year) <= 20))
-);
-
-
---
--- Name: get_featured_critique(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.get_featured_critique() RETURNS SETOF public.logs
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    l.id,                              -- 1
-    l.user_id,                         -- 2
-    l.film_id,                         -- 3
-    l.film_title,                      -- 4
-    l.rating,                          -- 5
-    l.review,                          -- 6
-    NULL::date,                        -- 7  watched_date
-    NULL::text,                        -- 8  format
-    l.created_at,                      -- 9
-    l.poster_path,                     -- 10
-    NULL::text,                        -- 11 year
-    l.status,                          -- 12
-    l.is_spoiler,                      -- 13
-    l.watched_with,                    -- 14
-    NULL::text,                        -- 15 private_notes   <-- the leak, closed
-    l.abandoned_reason,                -- 16
-    NULL::text,                        -- 17 physical_media
-    l.is_autopsied,                    -- 18
-    l.autopsy,                         -- 19
-    NULL::text,                        -- 20 alt_poster
-    l.editorial_header,                -- 21
-    l.drop_cap,                        -- 22
-    l.pull_quote,                      -- 23
-    NULL::timestamptz,                 -- 24 updated_at
-    NULL::text,                        -- 25 video_url
-    NULL::jsonb,                       -- 26 viewing_history <-- also closed
-    NULL::integer,                     -- 27 view_count
-    NULL::uuid                         -- 28 viewing_id      <-- 2026-09-17
-  FROM public.logs l
-  JOIN public.profiles p ON p.id = l.user_id
-  WHERE l.review IS NOT NULL
-    AND l.review <> ''
-    AND LENGTH(l.review) > 100
-    AND l.rating >= 4
-    AND COALESCE(p.is_social_private, false) = false
-  ORDER BY l.created_at DESC
-  LIMIT 1;
-END;
-$$;
-
-
---
--- Name: get_filtered_stacks_auth_cursor(text, boolean, integer, timestamp with time zone, uuid); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.get_filtered_stacks_auth_cursor(p_search text DEFAULT ''::text, p_filter_following boolean DEFAULT false, p_limit integer DEFAULT 60, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, title text, description text, username text, user_id uuid, created_at timestamp with time zone, films jsonb, certify_count bigint, is_ranked boolean)
-    LANGUAGE sql STABLE
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT
-    l.id, l.title, l.description,
-    p.username, l.user_id, l.created_at,
-    COALESCE(
-      (SELECT jsonb_agg(
-        jsonb_build_object('id', li.film_id, 'title', li.film_title, 'poster_path', li.poster_path)
-        ORDER BY li.created_at ASC
-      )
-      FROM list_items li WHERE li.list_id = l.id),
-      '[]'::jsonb
-    ) AS films,
-    (SELECT COUNT(*) FROM interactions i
-     WHERE i.target_list_id = l.id AND i.type = 'endorse_list') AS certify_count,
-    l.is_ranked
-  FROM lists l
-  JOIN profiles p ON p.id = l.user_id
-  WHERE l.is_private = false
-    AND (auth.uid() IS NULL OR NOT is_hidden_by(auth.uid(), l.user_id))
-    AND (
-      COALESCE(p_search, '') = ''
-      OR l.title    ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-      OR p.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-    )
-    AND (
-      p_filter_following = false
-      OR EXISTS (
-        SELECT 1 FROM interactions i
-        WHERE i.target_user_id = l.user_id
-          AND i.user_id = auth.uid()
-          AND i.type = 'follow'
-      )
-    )
-    AND (
-      p_cursor_created_at IS NULL
-      OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
-    )
-  ORDER BY l.created_at DESC, l.id DESC
-  LIMIT p_limit;
-$$;
-
-
 --
 -- Name: get_filtered_stacks_auth_cursor_v2(text, boolean, integer, timestamp with time zone, uuid, integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT ''::text, p_filter_following boolean DEFAULT false, p_limit integer DEFAULT 60, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid, p_poster_count integer DEFAULT 4) RETURNS TABLE(id uuid, title text, description text, username text, user_id uuid, created_at timestamp with time zone, films jsonb, film_count bigint, certify_count bigint, is_ranked boolean)
-    LANGUAGE sql STABLE
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
+  WITH page AS (
+    SELECT l.id
+      FROM lists l
+     WHERE l.is_private = false
+       AND NOT COALESCE(l.user_id = ANY ((SELECT hidden_authors())::uuid[]), false)
+       AND (
+         COALESCE(p_search, '') = ''
+         OR l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+         OR l.user_id IN (
+           SELECT pu.id FROM profiles pu
+            WHERE pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+         )
+       )
+       AND public.can_view_user_data(l.user_id)
+       AND (
+         p_filter_following = false
+         OR EXISTS (
+           SELECT 1 FROM interactions i
+           WHERE i.target_user_id = l.user_id
+             AND i.user_id = auth.uid()
+             AND i.type = 'follow'
+         )
+       )
+       AND (
+         p_cursor_created_at IS NULL
+         OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
+       )
+     ORDER BY l.created_at DESC, l.id DESC
+     LIMIT p_limit
+  )
   SELECT
     l.id, l.title, l.description,
     p.username, l.user_id, l.created_at,
@@ -1684,30 +1658,10 @@ CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT 
     (SELECT COUNT(*) FROM list_items li WHERE li.list_id = l.id) AS film_count,
     public.list_certify_count(l.id) AS certify_count,
     l.is_ranked
-  FROM lists l
+  FROM page pg
+  JOIN lists l ON l.id = pg.id
   JOIN profiles p ON p.id = l.user_id
-  WHERE l.is_private = false
-    AND (auth.uid() IS NULL OR NOT is_hidden_by(auth.uid(), l.user_id))
-    AND (
-      COALESCE(p_search, '') = ''
-      OR l.title    ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-      OR p.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-    )
-    AND (
-      p_filter_following = false
-      OR EXISTS (
-        SELECT 1 FROM interactions i
-        WHERE i.target_user_id = l.user_id
-          AND i.user_id = auth.uid()
-          AND i.type = 'follow'
-      )
-    )
-    AND (
-      p_cursor_created_at IS NULL
-      OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
-    )
-  ORDER BY l.created_at DESC, l.id DESC
-  LIMIT p_limit;
+  ORDER BY l.created_at DESC, l.id DESC;
 $$;
 
 
@@ -1716,9 +1670,33 @@ $$;
 --
 
 CREATE FUNCTION public.get_following_feed_auth_cursor(p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb, is_spoiler boolean, certify_count integer, critique_count integer, certified boolean)
-    LANGUAGE sql STABLE
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
+  WITH followed AS (
+    SELECT i.target_user_id AS author
+      FROM public.interactions i
+     WHERE i.user_id = auth.uid()
+       AND i.type = 'follow'
+       AND NOT COALESCE(i.target_user_id = ANY ((SELECT public.hidden_authors())::uuid[]), false)
+       AND public.can_view_user_data(i.target_user_id)
+  ),
+  page AS (
+    SELECT r.id, r.created_at
+      FROM followed f
+      CROSS JOIN LATERAL (
+        SELECT l.id, l.created_at
+          FROM public.logs l
+         WHERE l.user_id = f.author
+           AND l.review IS NOT NULL
+           AND l.review <> ''
+           AND (p_cursor_created_at IS NULL OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id))
+         ORDER BY l.created_at DESC, l.id DESC
+         LIMIT p_limit
+      ) r
+     ORDER BY r.created_at DESC, r.id DESC
+     LIMIT p_limit
+  )
   SELECT
     l.id, l.film_id, l.film_title, l.poster_path, l.rating, l.review,
     l.drop_cap, l.status, l.abandoned_reason, l.created_at, l.year,
@@ -1726,57 +1704,17 @@ CREATE FUNCTION public.get_following_feed_auth_cursor(p_limit integer DEFAULT 40
     p.username, p.avatar_url, p.role,
     l.editorial_header, l.pull_quote, l.watched_with,
     l.is_autopsied, l.autopsy, l.is_spoiler,
-    (SELECT count(*)::integer FROM interactions ie
-      WHERE ie.target_log_id = l.id AND ie.type = 'endorse_log') AS certify_count,
-    (SELECT count(*)::integer FROM log_comments lc
-      WHERE lc.log_id = l.id) AS critique_count,
-    (auth.uid() IS NOT NULL AND EXISTS (
-      SELECT 1 FROM interactions im
+    COALESCE(c.certify_count, 0) AS certify_count,
+    COALESCE(c.critique_count, 0) AS critique_count,
+    EXISTS (
+      SELECT 1 FROM public.interactions im
        WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'
-    )) AS certified
-  FROM logs l
-  JOIN profiles p ON p.id = l.user_id
-  JOIN interactions i ON i.target_user_id = l.user_id AND i.type = 'follow'
-  WHERE i.user_id = auth.uid()
-    AND l.review IS NOT NULL
-    AND l.review <> ''
-    AND NOT is_hidden_by(auth.uid(), l.user_id)
-    AND (
-      p_cursor_created_at IS NULL
-      OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
-    )
-  ORDER BY l.created_at DESC, l.id DESC
-  LIMIT p_limit;
-$$;
-
-
---
--- Name: get_following_feed_cursor(text[], integer, timestamp with time zone, uuid); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.get_following_feed_cursor(p_usernames text[], p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb)
-    LANGUAGE sql STABLE
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-  SELECT
-    l.id, l.film_id, l.film_title, l.poster_path, l.rating, l.review,
-    l.drop_cap, l.status, l.abandoned_reason, l.created_at, l.year,
-    l.user_id,
-    p.username, p.avatar_url, p.role,
-    l.editorial_header, l.pull_quote, l.watched_with,
-    l.is_autopsied, l.autopsy
-  FROM logs l
-  JOIN profiles p ON p.id = l.user_id
-  WHERE p.username = ANY(p_usernames)
-    AND l.review IS NOT NULL
-    AND l.review <> ''
-    AND (
-      p_cursor_created_at IS NULL
-      OR
-      (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
-    )
-  ORDER BY l.created_at DESC, l.id DESC
-  LIMIT p_limit;
+    ) AS certified
+  FROM page pg
+  JOIN public.logs l ON l.id = pg.id
+  JOIN public.profiles p ON p.id = l.user_id
+  LEFT JOIN public.log_counts c ON c.log_id = l.id
+  ORDER BY pg.created_at DESC, pg.id DESC;
 $$;
 
 
@@ -1878,25 +1816,32 @@ COMMENT ON FUNCTION public.get_lobby() IS 'The Lobby wall for the member asking:
 --
 
 CREATE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(lounge_id uuid, unread_count bigint, last_message_at timestamp with time zone)
-    LANGUAGE sql STABLE
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH my_rooms AS (
-    SELECT lm.lounge_id, lm.last_read_at
-      FROM public.lounge_members lm
-     WHERE lm.user_id = auth.uid()
+  WITH me AS (SELECT auth.uid() AS id, public.hidden_authors() AS hidden),
+  rooms AS (
+    SELECT lm.lounge_id, lm.last_read_at, (NOT l.is_private OR lm.status = 'approved') AS readable
+      FROM me
+      JOIN public.lounge_members lm ON lm.user_id = me.id
+      JOIN public.lounges l ON l.id = lm.lounge_id
   )
   SELECT
     r.lounge_id,
-    COUNT(m.id) FILTER (
-      -- Somebody ELSE said it, and they said it after you last looked.
-      WHERE m.user_id <> auth.uid()
-        AND (r.last_read_at IS NULL OR m.created_at > r.last_read_at)
-    ) AS unread_count,
-    MAX(m.created_at) AS last_message_at
-  FROM my_rooms r
-  LEFT JOIN public.lounge_messages m ON m.lounge_id = r.lounge_id
-  GROUP BY r.lounge_id;
+    CASE WHEN r.readable THEN (
+      SELECT count(*) FROM (
+        SELECT 1 FROM public.lounge_messages m
+         WHERE m.lounge_id = r.lounge_id
+           AND m.user_id <> me.id
+           AND (r.last_read_at IS NULL OR m.created_at > r.last_read_at)
+           AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
+         LIMIT 100
+      ) unread
+    ) ELSE 0 END AS unread_count,
+    CASE WHEN r.readable THEN (
+      SELECT max(m.created_at) FROM public.lounge_messages m WHERE m.lounge_id = r.lounge_id
+    ) END AS last_message_at
+  FROM rooms r CROSS JOIN me;
 $$;
 
 
@@ -2095,10 +2040,23 @@ CREATE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS json
         FROM user_logs WHERE year_int IS NOT NULL
         GROUP BY decade ORDER BY c DESC LIMIT 3
       ),
+      -- The film page's obscurity mark (obscurityScore), for each film read.
+      obscurity AS (
+        SELECT
+          round(avg(CASE WHEN f.popularity <= 0 THEN 99
+                         ELSE greatest(2, least(99, round(100 - (log(greatest(f.popularity, 1)) / log(5000)) * 98)))
+                    END)) AS obscurity_index,
+          COUNT(*) AS obscurity_films
+        FROM (SELECT DISTINCT film_id FROM user_logs WHERE film_id > 0) mine
+        JOIN public.films f ON f.id = mine.film_id
+        WHERE f.popularity IS NOT NULL
+      ),
       dna AS (
         SELECT
           AVG(rating) FILTER (WHERE rating > 0) AS avg_rating,
-          (SELECT jsonb_agg(jsonb_build_object(d.decade::text || 's', d.c)) FROM decades d) AS top_decades
+          (SELECT jsonb_agg(jsonb_build_object(d.decade::text || 's', d.c)) FROM decades d) AS top_decades,
+          (SELECT o.obscurity_index FROM obscurity o) AS obscurity_index,
+          (SELECT o.obscurity_films FROM obscurity o) AS obscurity_films
         FROM user_logs
       ),
       autopsies AS (
@@ -2252,6 +2210,22 @@ CREATE FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) RETURNS TABLE
   )
   SELECT lounge_id, username, avatar_url, rn::integer
   FROM ranked WHERE rn <= 3 ORDER BY lounge_id, rn;
+$$;
+
+
+--
+-- Name: get_taste_match(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_taste_match(p_user_id uuid) RETURNS jsonb
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT CASE
+    WHEN auth.uid() IS NULL OR NOT public.can_view_user_data(p_user_id)
+      THEN '{"error": "forbidden"}'::jsonb
+    ELSE jsonb_build_object('mine', public.taste_shape(auth.uid()), 'theirs', public.taste_shape(p_user_id))
+  END;
 $$;
 
 
@@ -2591,6 +2565,25 @@ CREATE FUNCTION public.handle_follow_count_change() RETURNS trigger
 
 
 --
+-- Name: handle_is_unwelcome(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.handle_is_unwelcome(p_handle text) RETURNS boolean
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+  WITH r AS (SELECT translate(lower(coalesce(p_handle, '')), '013457', 'oieast') AS s)
+  SELECT r.s ~ 'n+i+g+g+(e+r|a+|u+h)|f+a+g+g*o+t|w+e+t+b+a+c+k|f+u+c+k|b+i+t+c+h|w+h+o+r+e|a+s+s+h+o+l+e'
+      OR EXISTS (
+           SELECT 1 FROM regexp_split_to_table(r.s, '[^a-z]+') AS w(word)
+            WHERE w.word = ANY (ARRAY['pussy', 'pussies', 'slut', 'sluts', 'slutty', 'retard', 'retards', 'retarded', 'kike', 'kikes', 'spic', 'spics', 'chink', 'chinks', 'tranny', 'trannies'])
+               OR w.word ~ '^(shit|cunt)'
+               OR w.word ~ '(shit|cunt)$')
+  FROM r;
+$_$;
+
+
+--
 -- Name: handle_new_user(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2696,6 +2689,29 @@ CREATE FUNCTION public.has_tier_at_least(min_weight integer) RETURNS boolean
      WHERE p.id = auth.uid()
        AND public.profile_tier_weight(p.tier, p.role, p.is_founding) >= min_weight);
 $$;
+
+
+--
+-- Name: hidden_authors(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.hidden_authors() RETURNS uuid[]
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT COALESCE(array_agg(DISTINCT h.author), '{}'::uuid[]) FROM (
+    SELECT b.blocked_id AS author FROM public.user_blocks b WHERE b.blocker_id = auth.uid()
+    UNION ALL
+    SELECT b.blocker_id FROM public.user_blocks b WHERE b.blocked_id = auth.uid() AND b.type = 'block'
+  ) h;
+$$;
+
+
+--
+-- Name: FUNCTION hidden_authors(); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.hidden_authors() IS 'The members whose words are hidden from the caller: those they blocked or muted, and those who blocked them. The same rule as is_hidden_by, asked once per statement. It names no one is_hidden_by does not already answer for.';
 
 
 --
@@ -3036,6 +3052,46 @@ $$;
 --
 
 COMMENT ON FUNCTION public.lobby_choose_edition(p_edition date) IS 'Chooses the Lobby''s edition for a day, once: the never-honoured first, by the day''s regard, the honour spread round the house. Run by the lobby-edition job; no role may call it.';
+
+
+--
+-- Name: log_counts_keep_certify(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.log_counts_keep_certify() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF TG_OP IN ('DELETE', 'UPDATE') AND OLD.type = 'endorse_log' AND OLD.target_log_id IS NOT NULL THEN
+    UPDATE public.log_counts SET certify_count = GREATEST(0, certify_count - 1) WHERE log_id = OLD.target_log_id;
+  END IF;
+  IF TG_OP IN ('INSERT', 'UPDATE') AND NEW.type = 'endorse_log' AND NEW.target_log_id IS NOT NULL THEN
+    INSERT INTO public.log_counts AS c (log_id, certify_count) VALUES (NEW.target_log_id, 1)
+      ON CONFLICT (log_id) DO UPDATE SET certify_count = c.certify_count + 1;
+  END IF;
+  RETURN NULL;
+END $$;
+
+
+--
+-- Name: log_counts_keep_critique(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.log_counts_keep_critique() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF TG_OP IN ('DELETE', 'UPDATE') THEN
+    UPDATE public.log_counts SET critique_count = GREATEST(0, critique_count - 1) WHERE log_id = OLD.log_id;
+  END IF;
+  IF TG_OP IN ('INSERT', 'UPDATE') THEN
+    INSERT INTO public.log_counts AS c (log_id, critique_count) VALUES (NEW.log_id, 1)
+      ON CONFLICT (log_id) DO UPDATE SET critique_count = c.critique_count + 1;
+  END IF;
+  RETURN NULL;
+END $$;
 
 
 --
@@ -4061,8 +4117,12 @@ BEGIN
     WHERE public.lounge_members.status NOT IN ('banned','approved');
   SELECT username INTO v_uname FROM public.profiles WHERE id = auth.uid();
   IF v_creator IS NOT NULL AND v_creator <> auth.uid() THEN
+    -- the sender is from_username; every reader prints it before the message
     INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, related_lounge_id)
-    VALUES (v_creator, 'system', v_uname, auth.uid(), '@' || UPPER(COALESCE(v_uname,'someone')) || ' is asking to enter ' || COALESCE(v_lname,'your lounge') || '.', p_lounge_id);
+    VALUES (v_creator, 'system', v_uname, auth.uid(),
+            CASE WHEN v_uname IS NULL THEN 'A member is asking' ELSE 'is asking' END
+              || ' to enter ' || COALESCE(v_lname,'your lounge') || '.',
+            p_lounge_id);
   END IF;
 END $$;
 
@@ -4256,6 +4316,10 @@ BEGIN
 END;
 $$;
 
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
 
 --
 -- Name: lists; Type: TABLE; Schema: public; Owner: -
@@ -4518,6 +4582,30 @@ BEGIN
   END IF;
   RETURN NULL;  -- AFTER trigger: the return value is ignored
 END $$;
+
+
+--
+-- Name: taste_shape(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.taste_shape(p_user_id uuid) RETURNS jsonb
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+  WITH l AS (
+    SELECT round(rating) AS reel,
+           CASE WHEN year::text ~ '^\d{1,4}$' THEN (year::text::int / 10) * 10 END AS decade
+      FROM public.logs WHERE user_id = p_user_id
+  )
+  SELECT jsonb_build_object(
+    'logs', (SELECT count(*) FROM l),
+    'ratings', (SELECT jsonb_agg((SELECT count(*) FROM l WHERE l.reel = r) ORDER BY r)
+                  FROM generate_series(1, 5) AS r),
+    'decades', coalesce((SELECT jsonb_object_agg(decade::text, n)
+                           FROM (SELECT decade, count(*) AS n FROM l
+                                  WHERE decade IS NOT NULL AND decade > 0 GROUP BY decade) d), '{}'::jsonb)
+  );
+$_$;
 
 
 --
@@ -5061,6 +5149,7 @@ CREATE TABLE public.films (
     avg_rating numeric,
     rating_count integer DEFAULT 0 NOT NULL,
     log_count integer DEFAULT 0 NOT NULL,
+    popularity numeric,
     CONSTRAINT films_array_shape CHECK (((cardinality(cast_ids) = cardinality(cast_names)) AND (cardinality(cast_ids) = cardinality(cast_profiles)) AND (cardinality(cast_ids) <= 10) AND (cardinality(genres) <= 12) AND (cardinality(country_codes) <= 12))),
     CONSTRAINT films_text_ceilings CHECK (((char_length(title) <= 300) AND (char_length(poster_path) <= 200) AND (char_length(director) <= 200) AND (char_length(director_profile) <= 200) AND (char_length(array_to_string(genres, ','::text)) <= 300) AND (char_length(array_to_string(cast_names, ','::text)) <= 1000) AND (char_length(array_to_string(cast_profiles, ','::text)) <= 1000) AND (char_length(array_to_string(country_codes, ','::text)) <= 200)))
 );
@@ -5163,12 +5252,10 @@ CREATE TABLE public.list_items (
     film_id integer NOT NULL,
     film_title text NOT NULL,
     rank_position integer,
-    notes text,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at timestamp with time zone DEFAULT now(),
     poster_path text,
     CONSTRAINT list_items_film_title_len CHECK ((char_length(film_title) <= 300)),
-    CONSTRAINT list_items_notes_len CHECK ((char_length(notes) <= 2000)),
     CONSTRAINT list_items_poster_path_len CHECK ((char_length(poster_path) <= 2048))
 );
 
@@ -5235,6 +5322,26 @@ CREATE TABLE public.log_comments (
 
 
 --
+-- Name: log_counts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.log_counts (
+    log_id uuid NOT NULL,
+    certify_count integer DEFAULT 0 NOT NULL,
+    critique_count integer DEFAULT 0 NOT NULL,
+    CONSTRAINT log_counts_certify_count_check CHECK ((certify_count >= 0)),
+    CONSTRAINT log_counts_critique_count_check CHECK ((critique_count >= 0))
+);
+
+
+--
+-- Name: TABLE log_counts; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.log_counts IS 'Every certification and critique of a log, kept by triggers on interactions and log_comments. A log with no row has none. Read-only to clients; the same for every reader.';
+
+
+--
 -- Name: log_private_notes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5245,6 +5352,61 @@ CREATE TABLE public.log_private_notes (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     viewing_id uuid NOT NULL,
     CONSTRAINT log_private_notes_notes_check CHECK (((length(notes) >= 1) AND (length(notes) <= 1000)))
+);
+
+
+--
+-- Name: logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.logs (
+    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
+    user_id uuid NOT NULL,
+    film_id integer NOT NULL,
+    film_title text NOT NULL,
+    rating numeric,
+    review text,
+    watched_date date NOT NULL,
+    format text,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    poster_path text,
+    year text,
+    status text DEFAULT 'watched'::text,
+    is_spoiler boolean DEFAULT false,
+    watched_with text,
+    private_notes text,
+    abandoned_reason text,
+    physical_media text,
+    is_autopsied boolean DEFAULT false,
+    autopsy jsonb,
+    alt_poster text,
+    editorial_header text,
+    drop_cap boolean DEFAULT false,
+    pull_quote text,
+    updated_at timestamp with time zone DEFAULT now(),
+    video_url text,
+    viewing_history jsonb DEFAULT '[]'::jsonb,
+    view_count integer DEFAULT 1,
+    viewing_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    CONSTRAINT check_rating_range CHECK (((rating >= (0)::numeric) AND (rating <= (5)::numeric))),
+    CONSTRAINT check_title_not_empty CHECK (((film_title IS NOT NULL) AND (film_title <> ''::text))),
+    CONSTRAINT logs_abandoned_reason_len CHECK ((char_length(abandoned_reason) <= 500)),
+    CONSTRAINT logs_alt_poster_len CHECK ((char_length(alt_poster) <= 2048)),
+    CONSTRAINT logs_autopsy_len CHECK ((char_length((autopsy)::text) <= 20000)),
+    CONSTRAINT logs_editorial_header_len CHECK ((char_length(editorial_header) <= 2048)),
+    CONSTRAINT logs_film_title_len CHECK ((char_length(film_title) <= 300)),
+    CONSTRAINT logs_format_len CHECK ((char_length(format) <= 100)),
+    CONSTRAINT logs_physical_media_len CHECK ((char_length(physical_media) <= 100)),
+    CONSTRAINT logs_poster_path_len CHECK ((char_length(poster_path) <= 2048)),
+    CONSTRAINT logs_private_notes_len CHECK ((char_length(private_notes) <= 1000)),
+    CONSTRAINT logs_pull_quote_len CHECK ((char_length(pull_quote) <= 500)),
+    CONSTRAINT logs_rating_check CHECK (((rating >= (0)::numeric) AND (rating <= (5)::numeric))),
+    CONSTRAINT logs_review_len CHECK ((char_length(review) <= 5000)),
+    CONSTRAINT logs_status_len CHECK ((char_length(status) <= 100)),
+    CONSTRAINT logs_video_url_len CHECK ((char_length(video_url) <= 2048)),
+    CONSTRAINT logs_viewing_history_len CHECK ((char_length((viewing_history)::text) <= 500000)),
+    CONSTRAINT logs_watched_with_len CHECK ((char_length(watched_with) <= 200)),
+    CONSTRAINT logs_year_len CHECK ((char_length(year) <= 20))
 );
 
 
@@ -5432,6 +5594,7 @@ CREATE TABLE public.notifications (
     CONSTRAINT notifications_message_len CHECK ((char_length(message) <= 1000)),
     CONSTRAINT notifications_metadata_len CHECK ((char_length((metadata)::text) <= 8000)),
     CONSTRAINT notifications_poster_path_len CHECK ((char_length(poster_path) <= 2048)),
+    CONSTRAINT notifications_sender_named_once CHECK (((from_username IS NULL) OR (message !~~ '@%'::text))),
     CONSTRAINT notifications_title_len CHECK ((char_length(title) <= 200)),
     CONSTRAINT notifications_type_check CHECK ((type = ANY (ARRAY['follow'::text, 'endorse'::text, 'comment'::text, 'annotate'::text, 'retransmit'::text, 'system'::text, 'reaction'::text, 'follow_request'::text, 'follow_accept'::text, 'moderation'::text, 'featured'::text])))
 );
@@ -5864,6 +6027,14 @@ ALTER TABLE ONLY public.log_comments
 
 
 --
+-- Name: log_counts log_counts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.log_counts
+    ADD CONSTRAINT log_counts_pkey PRIMARY KEY (log_id);
+
+
+--
 -- Name: log_private_notes log_private_notes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6157,6 +6328,13 @@ CREATE INDEX dispatch_comments_post ON public.dispatch_comments USING btree (pos
 
 
 --
+-- Name: dispatch_comments_post_certified; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_comments_post_certified ON public.dispatch_comments USING btree (post_id, certify_count DESC, created_at DESC);
+
+
+--
 -- Name: dispatch_comments_user; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6185,17 +6363,38 @@ CREATE INDEX dispatch_posts_author ON public.dispatch_posts USING btree (user_id
 
 
 --
--- Name: dispatch_posts_feed; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX dispatch_posts_feed ON public.dispatch_posts USING btree (created_at DESC, id) WHERE ((ended_at IS NULL) AND (withheld_at IS NULL) AND is_published);
-
-
---
 -- Name: dispatch_posts_kind; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX dispatch_posts_kind ON public.dispatch_posts USING btree (kind, created_at DESC);
+
+
+--
+-- Name: dispatch_posts_paper_certified; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_posts_paper_certified ON public.dispatch_posts USING btree (certify_count DESC, id DESC) WHERE (is_published AND (withheld_at IS NULL));
+
+
+--
+-- Name: dispatch_posts_paper_latest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_posts_paper_latest ON public.dispatch_posts USING btree (created_at DESC, id DESC) WHERE (is_published AND (withheld_at IS NULL));
+
+
+--
+-- Name: dispatch_posts_section_certified; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_posts_section_certified ON public.dispatch_posts USING btree (kind, certify_count DESC, id DESC) WHERE (is_published AND (withheld_at IS NULL));
+
+
+--
+-- Name: dispatch_posts_section_latest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX dispatch_posts_section_latest ON public.dispatch_posts USING btree (kind, created_at DESC, id DESC) WHERE (is_published AND (withheld_at IS NULL));
 
 
 --
@@ -6279,7 +6478,7 @@ CREATE INDEX idx_error_logs_created_at ON public.error_logs USING btree (created
 -- Name: idx_films_unsynced; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_films_unsynced ON public.films USING btree (id) WHERE ((synced_at IS NULL) AND (sync_failed < 3));
+CREATE INDEX idx_films_unsynced ON public.films USING btree (id) WHERE (((synced_at IS NULL) OR (popularity IS NULL)) AND (sync_failed < 3));
 
 
 --
@@ -6437,20 +6636,6 @@ CREATE INDEX idx_notifications_from_user_id ON public.notifications USING btree 
 
 
 --
--- Name: idx_notifications_is_read; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_notifications_is_read ON public.notifications USING btree (user_id) WHERE (is_read = false);
-
-
---
--- Name: idx_notifications_user_id_read; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_notifications_user_id_read ON public.notifications USING btree (user_id, is_read);
-
-
---
 -- Name: idx_physical_archive_created_at_id_desc; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6605,6 +6790,13 @@ CREATE INDEX interactions_endorse_log_idx ON public.interactions USING btree (ta
 
 
 --
+-- Name: interactions_followers_newest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX interactions_followers_newest ON public.interactions USING btree (target_user_id, created_at DESC, user_id DESC) WHERE (type = 'follow'::text);
+
+
+--
 -- Name: interactions_regard_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6623,6 +6815,13 @@ CREATE INDEX list_comments_created_at ON public.list_comments USING btree (creat
 --
 
 CREATE INDEX list_comments_list_id_idx ON public.list_comments USING btree (list_id);
+
+
+--
+-- Name: lists_title_trigram; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX lists_title_trigram ON public.lists USING gin (title extensions.gin_trgm_ops) WHERE (is_private = false);
 
 
 --
@@ -6682,6 +6881,20 @@ CREATE INDEX logs_pulse_idx ON public.logs USING btree (created_at DESC) WHERE (
 
 
 --
+-- Name: logs_reviewed_by_author; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX logs_reviewed_by_author ON public.logs USING btree (user_id, created_at DESC, id DESC) WHERE ((review IS NOT NULL) AND (review <> ''::text));
+
+
+--
+-- Name: logs_reviewed_newest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX logs_reviewed_newest ON public.logs USING btree (created_at DESC, id DESC) WHERE ((review IS NOT NULL) AND (review <> ''::text));
+
+
+--
 -- Name: logs_user_film_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6696,10 +6909,10 @@ CREATE UNIQUE INDEX logs_viewing_id_key ON public.logs USING btree (viewing_id);
 
 
 --
--- Name: lounge_messages_lounge_created_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: lounge_messages_room_newest; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX lounge_messages_lounge_created_id_idx ON public.lounge_messages USING btree (lounge_id, created_at DESC, id DESC);
+CREATE INDEX lounge_messages_room_newest ON public.lounge_messages USING btree (lounge_id, created_at DESC, id DESC) INCLUDE (user_id);
 
 
 --
@@ -6707,6 +6920,20 @@ CREATE INDEX lounge_messages_lounge_created_id_idx ON public.lounge_messages USI
 --
 
 CREATE INDEX notifications_created_at_idx ON public.notifications USING btree (created_at DESC);
+
+
+--
+-- Name: notifications_member_newest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notifications_member_newest ON public.notifications USING btree (user_id, created_at DESC, id DESC);
+
+
+--
+-- Name: notifications_member_unread; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notifications_member_unread ON public.notifications USING btree (user_id) INCLUDE (from_user_id) WHERE (is_read = false);
 
 
 --
@@ -6738,6 +6965,13 @@ CREATE UNIQUE INDEX profiles_username_lower_unique ON public.profiles USING btre
 
 
 --
+-- Name: profiles_username_trigram; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profiles_username_trigram ON public.profiles USING gin (username extensions.gin_trgm_ops);
+
+
+--
 -- Name: reports_one_pending_per_member; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6749,6 +6983,118 @@ CREATE UNIQUE INDEX reports_one_pending_per_member ON public.reports USING btree
 --
 
 CREATE INDEX viewings_log_idx ON public.viewings USING btree (log_id);
+
+
+--
+-- Name: dispatch_comments a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF body ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('body');
+
+
+--
+-- Name: dispatch_dossiers_legacy a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF title, excerpt, full_content ON public.dispatch_dossiers_legacy FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('title', 'excerpt', 'full_content');
+
+
+--
+-- Name: dispatch_posts a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF title, body, full_content, series_title, subject_title, subject_sub, spoiler_label, source, options ON public.dispatch_posts FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('title', 'body', 'full_content', 'series_title', 'subject_title', 'subject_sub', 'spoiler_label', 'source', 'options.title');
+
+
+--
+-- Name: dossier_comments_legacy a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF body ON public.dossier_comments_legacy FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('body');
+
+
+--
+-- Name: list_comments a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF content ON public.list_comments FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('content');
+
+
+--
+-- Name: lists a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF title, description ON public.lists FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('title', 'description');
+
+
+--
+-- Name: log_comments a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF body ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('body');
+
+
+--
+-- Name: log_private_notes a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF notes ON public.log_private_notes FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('notes');
+
+
+--
+-- Name: logs a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF review, pull_quote, watched_with, private_notes, abandoned_reason, viewing_history ON public.logs FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('review', 'pull_quote', 'watched_with', 'private_notes', 'abandoned_reason', 'viewing_history.review', 'viewing_history.pullQuote', 'viewing_history.watchedWith', 'viewing_history.abandonedReason');
+
+
+--
+-- Name: lounge_messages a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF content, reply_to_content ON public.lounge_messages FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('content', 'reply_to_content');
+
+
+--
+-- Name: lounges a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF name, description ON public.lounges FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('name', 'description');
+
+
+--
+-- Name: mod_actions a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF reason ON public.mod_actions FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('reason');
+
+
+--
+-- Name: physical_archive a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF notes, condition ON public.physical_archive FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('notes', 'condition');
+
+
+--
+-- Name: profiles a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF bio, display_name, persona, social_links ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('bio', 'display_name', 'persona', 'social_links.title');
+
+
+--
+-- Name: reports a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF details, resolution_notes ON public.reports FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('details', 'resolution_notes');
+
+
+--
+-- Name: warnings a_clean_member_text; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_clean_member_text BEFORE INSERT OR UPDATE OF reason ON public.warnings FOR EACH ROW EXECUTE FUNCTION public.clean_member_words('reason');
 
 
 --
@@ -6784,6 +7130,13 @@ CREATE TRIGGER a_register_viewings_insert AFTER INSERT ON public.logs FOR EACH R
 --
 
 CREATE TRIGGER a_register_viewings_update AFTER UPDATE ON public.logs FOR EACH ROW WHEN (((old.viewing_id IS DISTINCT FROM new.viewing_id) OR (old.viewing_history IS DISTINCT FROM new.viewing_history))) EXECUTE FUNCTION public.logs_register_viewings();
+
+
+--
+-- Name: interactions a_request_takes_its_notice; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_request_takes_its_notice AFTER DELETE OR UPDATE OF type ON public.interactions FOR EACH ROW WHEN ((old.type = 'follow_request'::text)) EXECUTE FUNCTION public.a_request_takes_its_notice();
 
 
 --
@@ -6826,6 +7179,48 @@ CREATE TRIGGER dossiers_write INSTEAD OF INSERT OR DELETE OR UPDATE ON public.di
 --
 
 CREATE TRIGGER enforce_interaction_rate_limit BEFORE INSERT ON public.interactions FOR EACH ROW EXECUTE FUNCTION public.check_interaction_rate_limit();
+
+
+--
+-- Name: interactions log_counts_certify_delete; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER log_counts_certify_delete AFTER DELETE ON public.interactions FOR EACH ROW WHEN ((old.type = 'endorse_log'::text)) EXECUTE FUNCTION public.log_counts_keep_certify();
+
+
+--
+-- Name: interactions log_counts_certify_insert; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER log_counts_certify_insert AFTER INSERT ON public.interactions FOR EACH ROW WHEN ((new.type = 'endorse_log'::text)) EXECUTE FUNCTION public.log_counts_keep_certify();
+
+
+--
+-- Name: interactions log_counts_certify_update; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER log_counts_certify_update AFTER UPDATE OF type, target_log_id ON public.interactions FOR EACH ROW WHEN ((((old.type = 'endorse_log'::text) OR (new.type = 'endorse_log'::text)) AND ((old.type IS DISTINCT FROM new.type) OR (old.target_log_id IS DISTINCT FROM new.target_log_id)))) EXECUTE FUNCTION public.log_counts_keep_certify();
+
+
+--
+-- Name: log_comments log_counts_critique_delete; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER log_counts_critique_delete AFTER DELETE ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.log_counts_keep_critique();
+
+
+--
+-- Name: log_comments log_counts_critique_insert; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER log_counts_critique_insert AFTER INSERT ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.log_counts_keep_critique();
+
+
+--
+-- Name: log_comments log_counts_critique_update; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER log_counts_critique_update AFTER UPDATE OF log_id ON public.log_comments FOR EACH ROW WHEN ((old.log_id IS DISTINCT FROM new.log_id)) EXECUTE FUNCTION public.log_counts_keep_critique();
 
 
 --
@@ -7642,6 +8037,14 @@ ALTER TABLE ONLY public.log_comments
 
 
 --
+-- Name: log_counts log_counts_log_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.log_counts
+    ADD CONSTRAINT log_counts_log_id_fkey FOREIGN KEY (log_id) REFERENCES public.logs(id) ON DELETE CASCADE;
+
+
+--
 -- Name: log_private_notes log_private_notes_log_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8432,7 +8835,7 @@ CREATE POLICY certs_ban_insert ON public.dispatch_certifications AS RESTRICTIVE 
 -- Name: dispatch_certifications certs_block; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY certs_block ON public.dispatch_certifications AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT public.is_hidden_by(auth.uid(), user_id)));
+CREATE POLICY certs_block ON public.dispatch_certifications AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
 
 
 --
@@ -8490,7 +8893,7 @@ CREATE POLICY critiques_ban_update ON public.dispatch_comments AS RESTRICTIVE FO
 -- Name: dispatch_comments critiques_block; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY critiques_block ON public.dispatch_comments AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT public.is_hidden_by(auth.uid(), user_id)));
+CREATE POLICY critiques_block ON public.dispatch_comments AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
 
 
 --
@@ -8578,7 +8981,7 @@ ALTER TABLE public.dossier_certifications_legacy ENABLE ROW LEVEL SECURITY;
 -- Name: dossier_comments_legacy dossier_comments_hide_blocked; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY dossier_comments_hide_blocked ON public.dossier_comments_legacy AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT public.is_hidden_by(auth.uid(), user_id)));
+CREATE POLICY dossier_comments_hide_blocked ON public.dossier_comments_legacy AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
 
 
 --
@@ -8655,7 +9058,7 @@ CREATE POLICY list_comments_annotate_gate ON public.list_comments AS RESTRICTIVE
 -- Name: list_comments list_comments_hide_blocked; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY list_comments_hide_blocked ON public.list_comments AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT public.is_hidden_by(auth.uid(), user_id)));
+CREATE POLICY list_comments_hide_blocked ON public.list_comments AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
 
 
 --
@@ -8731,7 +9134,7 @@ CREATE POLICY log_comments_annotate_gate ON public.log_comments AS RESTRICTIVE F
 -- Name: log_comments log_comments_hide_blocked; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY log_comments_hide_blocked ON public.log_comments AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT public.is_hidden_by(auth.uid(), user_id)));
+CREATE POLICY log_comments_hide_blocked ON public.log_comments AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
 
 
 --
@@ -8741,6 +9144,21 @@ CREATE POLICY log_comments_hide_blocked ON public.log_comments AS RESTRICTIVE FO
 CREATE POLICY log_comments_select_authorized ON public.log_comments FOR SELECT USING ((EXISTS ( SELECT 1
    FROM public.logs l
   WHERE ((l.id = log_comments.log_id) AND public.can_view_user_data(l.user_id)))));
+
+
+--
+-- Name: log_counts; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.log_counts ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: log_counts log_counts_read; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY log_counts_read ON public.log_counts FOR SELECT TO authenticated, anon USING ((EXISTS ( SELECT 1
+   FROM public.logs l
+  WHERE (l.id = log_counts.log_id))));
 
 
 --
@@ -8871,7 +9289,7 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 -- Name: notifications notifications_hide_blocked; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY notifications_hide_blocked ON public.notifications AS RESTRICTIVE FOR SELECT TO authenticated USING (((from_user_id IS NULL) OR (NOT public.is_hidden_by(auth.uid(), from_user_id))));
+CREATE POLICY notifications_hide_blocked ON public.notifications AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((from_user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
 
 
 --
@@ -8935,7 +9353,7 @@ CREATE POLICY posts_ban_update ON public.dispatch_posts AS RESTRICTIVE FOR UPDAT
 -- Name: dispatch_posts posts_block; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY posts_block ON public.dispatch_posts AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT public.is_hidden_by(auth.uid(), user_id)));
+CREATE POLICY posts_block ON public.dispatch_posts AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
 
 
 --
@@ -9188,10 +9606,18 @@ GRANT USAGE ON SCHEMA public TO service_role;
 
 
 --
+-- Name: FUNCTION a_request_takes_its_notice(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.a_request_takes_its_notice() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.a_request_takes_its_notice() TO service_role;
+
+
+--
 -- Name: FUNCTION accept_follow_request(requester_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.accept_follow_request(requester_id uuid) TO anon;
+REVOKE ALL ON FUNCTION public.accept_follow_request(requester_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.accept_follow_request(requester_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.accept_follow_request(requester_id uuid) TO service_role;
 
@@ -9302,6 +9728,22 @@ GRANT ALL ON FUNCTION public.claim_founding_seat(p_user_id uuid, p_max_seats int
 
 
 --
+-- Name: FUNCTION clean_member_text(words text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.clean_member_text(words text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.clean_member_text(words text) TO service_role;
+
+
+--
+-- Name: FUNCTION clean_member_words(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.clean_member_words() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.clean_member_words() TO service_role;
+
+
+--
 -- Name: FUNCTION create_lounge(p_name text, p_description text, p_is_private boolean); Type: ACL; Schema: public; Owner: -
 --
 
@@ -9314,7 +9756,7 @@ GRANT ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is
 -- Name: FUNCTION decline_all_follow_requests(); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.decline_all_follow_requests() TO anon;
+REVOKE ALL ON FUNCTION public.decline_all_follow_requests() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.decline_all_follow_requests() TO authenticated;
 GRANT ALL ON FUNCTION public.decline_all_follow_requests() TO service_role;
 
@@ -9323,7 +9765,7 @@ GRANT ALL ON FUNCTION public.decline_all_follow_requests() TO service_role;
 -- Name: FUNCTION decline_follow_request(requester_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
-GRANT ALL ON FUNCTION public.decline_follow_request(requester_id uuid) TO anon;
+REVOKE ALL ON FUNCTION public.decline_follow_request(requester_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.decline_follow_request(requester_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.decline_follow_request(requester_id uuid) TO service_role;
 
@@ -9628,237 +10070,11 @@ GRANT ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_c
 
 
 --
--- Name: FUNCTION get_dispatch_feed(p_limit integer, p_cursor_created_at timestamp with time zone); Type: ACL; Schema: public; Owner: -
---
-
-REVOKE ALL ON FUNCTION public.get_dispatch_feed(p_limit integer, p_cursor_created_at timestamp with time zone) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.get_dispatch_feed(p_limit integer, p_cursor_created_at timestamp with time zone) TO anon;
-GRANT ALL ON FUNCTION public.get_dispatch_feed(p_limit integer, p_cursor_created_at timestamp with time zone) TO authenticated;
-GRANT ALL ON FUNCTION public.get_dispatch_feed(p_limit integer, p_cursor_created_at timestamp with time zone) TO service_role;
-
-
---
 -- Name: FUNCTION get_email_by_username(lookup_username text); Type: ACL; Schema: public; Owner: -
 --
 
 REVOKE ALL ON FUNCTION public.get_email_by_username(lookup_username text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_email_by_username(lookup_username text) TO service_role;
-
-
---
--- Name: TABLE logs; Type: ACL; Schema: public; Owner: -
---
-
-GRANT INSERT,DELETE,UPDATE ON TABLE public.logs TO anon;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.logs TO authenticated;
-GRANT ALL ON TABLE public.logs TO service_role;
-
-
---
--- Name: COLUMN logs.id; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(id) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.user_id; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(user_id) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.film_id; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(film_id) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.film_title; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(film_title) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.rating; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(rating) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.review; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(review) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.watched_date; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(watched_date) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.format; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(format) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.created_at; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(created_at) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.poster_path; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(poster_path) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.year; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(year) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.status; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(status) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.is_spoiler; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(is_spoiler) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.watched_with; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(watched_with) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.abandoned_reason; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(abandoned_reason) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.physical_media; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(physical_media) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.is_autopsied; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(is_autopsied) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.autopsy; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(autopsy) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.alt_poster; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(alt_poster) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.editorial_header; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(editorial_header) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.drop_cap; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(drop_cap) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.pull_quote; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(pull_quote) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.updated_at; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(updated_at) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.video_url; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(video_url) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.viewing_history; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(viewing_history) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.view_count; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(view_count) ON TABLE public.logs TO anon;
-
-
---
--- Name: COLUMN logs.viewing_id; Type: ACL; Schema: public; Owner: -
---
-
-GRANT SELECT(viewing_id) ON TABLE public.logs TO anon;
-
-
---
--- Name: FUNCTION get_featured_critique(); Type: ACL; Schema: public; Owner: -
---
-
-GRANT ALL ON FUNCTION public.get_featured_critique() TO anon;
-GRANT ALL ON FUNCTION public.get_featured_critique() TO authenticated;
-GRANT ALL ON FUNCTION public.get_featured_critique() TO service_role;
-
-
---
--- Name: FUNCTION get_filtered_stacks_auth_cursor(p_search text, p_filter_following boolean, p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid); Type: ACL; Schema: public; Owner: -
---
-
-GRANT ALL ON FUNCTION public.get_filtered_stacks_auth_cursor(p_search text, p_filter_following boolean, p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO anon;
-GRANT ALL ON FUNCTION public.get_filtered_stacks_auth_cursor(p_search text, p_filter_following boolean, p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO authenticated;
-GRANT ALL ON FUNCTION public.get_filtered_stacks_auth_cursor(p_search text, p_filter_following boolean, p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO service_role;
 
 
 --
@@ -9878,15 +10094,6 @@ GRANT ALL ON FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text, p
 GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO service_role;
-
-
---
--- Name: FUNCTION get_following_feed_cursor(p_usernames text[], p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid); Type: ACL; Schema: public; Owner: -
---
-
-GRANT ALL ON FUNCTION public.get_following_feed_cursor(p_usernames text[], p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO anon;
-GRANT ALL ON FUNCTION public.get_following_feed_cursor(p_usernames text[], p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO authenticated;
-GRANT ALL ON FUNCTION public.get_following_feed_cursor(p_usernames text[], p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO service_role;
 
 
 --
@@ -9971,6 +10178,15 @@ GRANT ALL ON FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) TO serv
 
 
 --
+-- Name: FUNCTION get_taste_match(p_user_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.get_taste_match(p_user_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_taste_match(p_user_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.get_taste_match(p_user_id uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION get_taste_profile(p_user_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -10023,6 +10239,15 @@ GRANT ALL ON FUNCTION public.handle_follow_count_change() TO service_role;
 
 
 --
+-- Name: FUNCTION handle_is_unwelcome(p_handle text); Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON FUNCTION public.handle_is_unwelcome(p_handle text) TO anon;
+GRANT ALL ON FUNCTION public.handle_is_unwelcome(p_handle text) TO authenticated;
+GRANT ALL ON FUNCTION public.handle_is_unwelcome(p_handle text) TO service_role;
+
+
+--
 -- Name: FUNCTION handle_new_user(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -10056,6 +10281,16 @@ GRANT ALL ON FUNCTION public.handle_user_deletion() TO service_role;
 REVOKE ALL ON FUNCTION public.has_tier_at_least(min_weight integer) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.has_tier_at_least(min_weight integer) TO authenticated;
 GRANT ALL ON FUNCTION public.has_tier_at_least(min_weight integer) TO service_role;
+
+
+--
+-- Name: FUNCTION hidden_authors(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.hidden_authors() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.hidden_authors() TO anon;
+GRANT ALL ON FUNCTION public.hidden_authors() TO authenticated;
+GRANT ALL ON FUNCTION public.hidden_authors() TO service_role;
 
 
 --
@@ -10139,6 +10374,22 @@ GRANT ALL ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) TO service_r
 
 REVOKE ALL ON FUNCTION public.lobby_choose_edition(p_edition date) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.lobby_choose_edition(p_edition date) TO service_role;
+
+
+--
+-- Name: FUNCTION log_counts_keep_certify(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.log_counts_keep_certify() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.log_counts_keep_certify() TO service_role;
+
+
+--
+-- Name: FUNCTION log_counts_keep_critique(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.log_counts_keep_critique() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.log_counts_keep_critique() TO service_role;
 
 
 --
@@ -10507,6 +10758,14 @@ GRANT ALL ON FUNCTION public.sync_denormalized_username() TO service_role;
 
 
 --
+-- Name: FUNCTION taste_shape(p_user_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.taste_shape(p_user_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.taste_shape(p_user_id uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION tg_notify_push(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -10822,11 +11081,218 @@ GRANT ALL ON TABLE public.log_comments TO service_role;
 
 
 --
+-- Name: TABLE log_counts; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.log_counts TO service_role;
+GRANT SELECT ON TABLE public.log_counts TO anon;
+GRANT SELECT ON TABLE public.log_counts TO authenticated;
+
+
+--
 -- Name: TABLE log_private_notes; Type: ACL; Schema: public; Owner: -
 --
 
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.log_private_notes TO authenticated;
 GRANT ALL ON TABLE public.log_private_notes TO service_role;
+
+
+--
+-- Name: TABLE logs; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT INSERT,DELETE,UPDATE ON TABLE public.logs TO anon;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.logs TO authenticated;
+GRANT ALL ON TABLE public.logs TO service_role;
+
+
+--
+-- Name: COLUMN logs.id; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(id) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.user_id; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(user_id) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.film_id; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(film_id) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.film_title; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(film_title) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.rating; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(rating) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.review; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(review) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.watched_date; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(watched_date) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.format; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(format) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.created_at; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(created_at) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.poster_path; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(poster_path) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.year; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(year) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.status; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(status) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.is_spoiler; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(is_spoiler) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.watched_with; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(watched_with) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.abandoned_reason; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(abandoned_reason) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.physical_media; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(physical_media) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.is_autopsied; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(is_autopsied) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.autopsy; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(autopsy) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.alt_poster; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(alt_poster) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.editorial_header; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(editorial_header) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.drop_cap; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(drop_cap) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.pull_quote; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(pull_quote) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.updated_at; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(updated_at) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.video_url; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(video_url) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.viewing_history; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(viewing_history) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.view_count; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(view_count) ON TABLE public.logs TO anon;
+
+
+--
+-- Name: COLUMN logs.viewing_id; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(viewing_id) ON TABLE public.logs TO anon;
 
 
 --
