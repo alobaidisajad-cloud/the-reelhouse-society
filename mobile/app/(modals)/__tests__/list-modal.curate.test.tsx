@@ -473,7 +473,7 @@ describe('the plate, and the reach', () => {
     // shrink to fit, so a naive search of the slice finds the phrase it forbids.
     const field = stripComments(SOURCE, 'list-modal.tsx')
       .slice(SOURCE.indexOf('style={s.plate}'), SOURCE.indexOf('accessibilityLabel="Stack title"'));
-    expect(field).toMatch(/\n\s*multiline\n/);
+    expect(field).toMatch(/\n\s*multiline\r?\n/);
     expect(field).not.toMatch(/adjustsFontSizeToFit/);
   });
 
