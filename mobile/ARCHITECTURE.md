@@ -1,6 +1,6 @@
 # ReelHouse Mobile — Architecture Guide
 
-> **Last read against the code:** 2026-09-30 | **Stack:** Expo 54, React 19.1, RN 0.81, TypeScript Strict
+> **Last read against the code:** 2026-10-03 | **Stack:** Expo 54, React 19.1, RN 0.81, TypeScript Strict
 
 ---
 
@@ -13,7 +13,7 @@ app/                          # Expo Router file-based routes
   film/[id].tsx               # Film detail (dynamic route)
 
 src/
-  components/                 # Shared UI components (pure, stateless)
+  components/                 # Shared UI components
     auth/                     # Sign-in, recovery, email confirmation
     darkroom/                 # Darkroom discovery engine
     lounge/                   # Lounge chat UI
@@ -26,8 +26,8 @@ src/
     profile/                  # Edit profile, links editor
     settings/                 # Settings screen, sections, data vault
 
-  services/                   # Supabase data access layer (CQRS reads)
-  stores/                     # Zustand state stores (CQRS writes + cache)
+  services/                   # Supabase data access: what a screen reads and writes
+  stores/                     # Zustand stores: the state a room owns, read and written
     domain/                   # Domain-specific slices (social, interaction, list)
 
   hooks/                      # Custom React hooks
@@ -37,7 +37,6 @@ src/
   types/                      # Shared type definitions
   theme/                      # Design tokens (colors, fonts, effects)
   constants/                  # App constants, limits, deep links
-  assets/                     # Static assets (logo SVG data)
 ```
 
 ### Convention: components/ vs features/
@@ -51,9 +50,11 @@ src/
 
 ---
 
-## State Management (CQRS Pattern)
+## State Management
 
-- **Reads:** TanStack Query v5 with staleTime, background refetch, MMKV persistence
+- **Reads:** TanStack Query v5 for most screens (staleTime, background refetch, the
+  cache persisted in MMKV); the Lounge, the Dispatch and the notices keep their
+  state in Zustand stores, which read it themselves
 - **Writes:** Zustand stores -> Supabase mutations -> query invalidation
 - **Offline:** a write made offline is queued in MMKV and sent, in order, when the
   connection returns (offlineQueue.ts)
@@ -114,4 +115,4 @@ says why and how to get through.
 | Stores | camelCase + Store | followStore.ts |
 | Schemas | camelCase + `schema` | film.schema.ts |
 | Utils | camelCase | withTimeout.ts |
-| Constants | SCREAMING_SNAKE | CACHE_MAX_AGE in limits.ts |
+| Constants | SCREAMING_SNAKE | CACHE_KEYS in cacheKeys.ts |

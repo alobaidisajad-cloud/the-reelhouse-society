@@ -411,7 +411,7 @@ export default function FocusView({
                     )}
 
                     <div style={{ marginTop: '0.5rem' }}>
-                        <ReactionBar logId={log.id} logAuthor={log.user} filmTitle={log.film?.title} />
+                        <ReactionBar logId={log.id} />
                     </div>
 
                 </div>

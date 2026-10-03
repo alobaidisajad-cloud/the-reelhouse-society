@@ -921,8 +921,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('lounge_members')
-        .select('user_id, status, created_at, profiles!lounge_members_user_id_fkey(username, avatar_url)')
-        .eq('lounge_id', loungeId);
+        .select('user_id, status, joined_at, profiles!lounge_members_user_id_fkey(username, avatar_url)')
+        .eq('lounge_id', loungeId)
+        .order('joined_at', { ascending: true });
       if (error || !data) {
         logger.warn('[LoungeStore.fetchMembers] could not read the roster:', error?.message);
         return null;
@@ -932,10 +933,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         const p = profile as { username?: string; avatar_url?: string } | undefined;
         return {
           user_id: m.user_id as string,
-          username: p?.username ?? 'user',
+          username: p?.username ?? '',
           avatar_url: p?.avatar_url,
           status: (m.status as LoungeMember['status']) ?? 'approved',
-          created_at: m.created_at as string | undefined,
+          joined_at: m.joined_at as string | undefined,
         } satisfies LoungeMember;
       });
     } catch (e) {

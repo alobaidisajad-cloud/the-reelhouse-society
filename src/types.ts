@@ -182,7 +182,8 @@ export interface Dossier {
 // ── Notification ──
 export interface Notification {
     id: string
-    type: 'endorse' | 'follow' | 'annotate' | 'retransmit' | 'system' | 'reaction'
+    /** notifications_type_check, live */
+    type: 'follow' | 'follow_request' | 'follow_accept' | 'endorse' | 'comment' | 'annotate' | 'retransmit' | 'system' | 'reaction' | 'moderation' | 'featured'
     message?: string
     from?: string
     from_user?: string

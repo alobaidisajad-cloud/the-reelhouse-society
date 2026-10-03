@@ -13,7 +13,8 @@
  * `.rpc('function')` and `storage.from('bucket')` in the mobile app and the web
  * app must name something in the committed snapshot of production —
  * supabase/schema/live-schema.sql and live-outside-public.sql, which `npm run
- * schema:check` compares against the live database.
+ * schema:check` compares against the live database. The columns each query
+ * asks for are held by aQueryAsksOnlyForWhatExists.
  */
 import { readdirSync, readFileSync } from 'fs';
 import { join, relative } from 'path';

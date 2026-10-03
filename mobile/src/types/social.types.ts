@@ -29,8 +29,8 @@ export interface LoungeMember {
     avatar_url?: string
     /** Membership standing. Absent on legacy rows → treated as 'approved'. */
     status?: LoungeMemberStatus
-    /** When the request/membership row was created — used to order "At the Door". */
-    created_at?: string
+    /** When the member asked or took their seat; the roster arrives in this order, so "At the Door" is first come, first seen. */
+    joined_at?: string
 }
 
 export interface DossierComment {

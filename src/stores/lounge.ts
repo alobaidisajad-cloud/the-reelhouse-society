@@ -583,15 +583,16 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         const user = useAuthStore.getState().user
         if (!user) return
 
-        const { data } = await supabase.rpc('get_lounge_unread_counts', {
-            p_user_id: user.id,
-        })
+        // The function takes no arguments: the member is the session. Asked with a
+        // `p_user_id` it does not have, it was refused on every call, so the website
+        // never showed a salon's unread count.
+        const { data, error } = await supabase.rpc('get_lounge_unread_counts')
+        // a read that failed keeps the counts already shown
+        if (error || !data) return
 
-        if (data) {
-            const counts: Record<string, number> = {}
-            data.forEach((r: { lounge_id: string; unread_count: number }) => { counts[r.lounge_id] = r.unread_count })
-            set({ unreadCounts: counts })
-        }
+        const counts: Record<string, number> = {}
+        data.forEach((r: { lounge_id: string; unread_count: number | string }) => { counts[r.lounge_id] = Number(r.unread_count) || 0 })
+        set({ unreadCounts: counts })
     },
 
     loadMoreMessages: async () => {

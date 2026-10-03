@@ -1,13 +1,15 @@
 # Android Launch Runbook
 
-> Written 2026-07-13 from a full Android-readiness audit. **DECISION: iOS and
-> Android launch TOGETHER** — §1 (accounts/keys) and the §4 device pass are
-> therefore PRE-LAUNCH requirements, not a later milestone. Android has never
-> been run on a device; payments + push have no Android wiring until §1 is done.
-> The codebase itself is Android-aware (24 Platform branches, `elevation`
-> fallbacks in 35 files, `includeFontPadding: false` throughout, adaptive +
-> monochrome icons, `edgeToEdgeEnabled`, `dimezisBlurView` on the nav bars) —
-> the gaps below are wiring + verification, not architecture.
+> Written 2026-07-13 from a full Android-readiness audit; read against the code
+> again 2026-10-03. **DECISION: iOS and Android launch TOGETHER** — §1
+> (accounts/keys) and the §4 device pass are therefore PRE-LAUNCH requirements,
+> not a later milestone. Android runs on every push in the sealed E2E world
+> (e2e.yml, an emulator), but has never run on a physical device; payments and
+> push have no Android wiring until §1 is done. The codebase itself is
+> Android-aware (Platform branches, `elevation` fallbacks, `includeFontPadding:
+> false` throughout, adaptive + monochrome icons, `edgeToEdgeEnabled`,
+> `dimezisBlurView` on the nav bars) — the gaps below are wiring + verification,
+> not architecture.
 
 ## 1 · Blocking config (no code) — do these FIRST
 
@@ -21,33 +23,25 @@
 
 ## 2 · Code items to verify ON A DEVICE (deliberately NOT fixed blind)
 
-These are Android-only props (inert on iOS) but with device-visible effects —
-changing them blind on an untested platform risks creating bugs worse than the
-ones they fix. Verify each on the first Android build:
+These have device-visible effects on Android that no emulator run or render
+measures. Verify each on the first Android build:
 
-- **View shadows with no `elevation`** → shadows render invisible on Android
-  (flatness, not breakage). Files (view-shadow count):
-  `feed/AutopsyView.tsx` (2) ·
-  `film/FilmSectionHeader.tsx` (1) · `home/MarqueeBoard.tsx` (1) ·
-  `home/SocialPulse.tsx` (2) · `log/LogModalStyles.ts` (1) ·
-  `moderation/ReportSheet.tsx` (1) · `Preloader.tsx` (5) ·
-  `profile/AvatarCropSheet.tsx` (1) · `profile/profileStyles.ts` (5).
-  CAUTION: `elevation` changes Android z-order and needs opaque backgrounds —
-  add per-view with eyes on the screen, not in bulk.
-- ~~Transparent `<Modal>`s without `statusBarTranslucent`~~ — **DONE 2026-07-13.**
-  All 20 transparent overlay modals now set it (each triaged first: all are
-  bottom-sheets / centered cards, so only the backdrop gains top coverage; the
-  prop is iOS-inert). On the device pass just confirm backdrops reach the top
-  edge and no modal content sits under the status bar.
+- ~~View shadows with no `elevation`~~ — **DONE.** Read again 2026-10-03: no
+  view in the files this listed carries a shadow without `elevation` (two of
+  them no longer exist; the Preloader's are text shadows, which Android draws).
+  On the device pass, confirm cards and sheets are not flat.
+- ~~Transparent `<Modal>`s without `statusBarTranslucent`~~ — **DONE.** All 18
+  transparent modals set it (counted 2026-10-03). On the device pass just
+  confirm backdrops reach the top edge and no modal content sits under the
+  status bar.
 - **BlurView degradation** — 19 files use BlurView; only the two nav bars set
-  `experimentalBlurMethod="dimezisBlurView"`. The other 17 render as a plain
+  `experimentalBlurMethod="dimezisBlurView"`. The others render as a plain
   tint on Android (acceptable — most pair the blur with an rgba overlay), but
   eyeball each sheet. Blanket-enabling dimezis is a PERF risk on old devices.
-- **`.springify()` feel** — 8 components; spring physics can feel different on
-  Android's frame pacing.
-- **Keyboard flows** — `useAnimatedKeyboard` in `CreateLoungeSheet` is already
-  iOS-branched (`Platform.OS === 'ios' ? keyboard.height : 0`); verify Android
-  keyboard behavior in: log form, lounge chat composer, search modals, DataVault.
+- **Keyboard flows** — edge-to-edge stops Android resizing the window for the
+  keyboard; `KeyboardRoom` at the root restores it, and the composers measure
+  the keyboard with `useAnimatedKeyboard`. Verify on the device: the log form,
+  the lounge composer, the Dispatch composer, the search and stack sheets.
 
 ## 3 · Verified fine already (no action)
 

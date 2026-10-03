@@ -129,6 +129,8 @@ Decisions, as of 2026-09-28:
 | `src/services/__tests__/certifyCountAuthority.test.ts` | The migration and the backend contract the count comes from. |
 | `src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts` | Every client (the app and the web) files a report through submit_report, and the web offers only reasons the table accepts; the migration it relies on is rehearsed on the database. |
 | `src/services/__tests__/everyNameAClientCallsExists.test.ts` | Every table and function a client calls exists in the schema snapshot. |
+| `src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts` | Every column a query in the app, the website or an edge function selects, filters, orders by or writes exists in the schema snapshot, and every function is called with arguments it takes: a mocked client accepts any column and any argument, so only the source and the snapshot can say. |
+| `src/utils/__tests__/everyCapAnswersToItsColumn.test.ts` | Every cap in MAX_LENGTHS against its column's CHECK, parsed from the schema snapshot: the limit lives only in the database. |
 | `src/services/__tests__/tmdbProxyAllowsEveryPath.test.ts` | The edge function's allowed paths against every path the clients use. |
 | `src/services/__tests__/theVaultHasOneDoor.guard.test.ts` | No file but VaultService queries log_private_notes. |
 | `src/constants/__tests__/theHouseLinksToItself.guard.test.ts` | No code sends a link to reelhouse.app, another company's domain. |

@@ -14,7 +14,7 @@
  *
  *   · Far worse, `'https://dummy.supabase.co'` is the thing that stops a unit
  *     test which accidentally builds a real client from reaching PRODUCTION.
- *     Giving all 5,000 tests a live URL and a working key, to save the contract
+ *     Giving every unit test a live URL and a working key, to save the contract
  *     tests from skipping, trades a real safety net for a cosmetic green tick.
  *
  * So the credentials are read HERE, returned to the tests that ask, and never

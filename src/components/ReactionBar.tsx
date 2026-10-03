@@ -12,10 +12,8 @@ const REACTIONS = [
     { emoji: '⌀', label: 'Void' },
 ]
 
-export default function ReactionBar({ logId, logAuthor, filmTitle, cachedReactions, onReactionChange }: {
+export default function ReactionBar({ logId, cachedReactions, onReactionChange }: {
     logId: string;
-    logAuthor?: string;
-    filmTitle?: string;
     /** Pre-fetched reactions from useBatchReactions — if provided, skips independent fetch */
     cachedReactions?: Record<string, string[]>;
     /** Callback when a reaction changes — parent can refresh batch data */
@@ -117,26 +115,6 @@ export default function ReactionBar({ logId, logAuthor, filmTitle, cachedReactio
                     .insert([{ user_id: user.id, target_log_id: logId, type: reactionType }])
 
                 if (error) throw error
-
-                // Push notification to log author (background — non-blocking)
-                if (logAuthor && logAuthor !== username) {
-                    supabase
-                        .from('profiles')
-                        .select('id')
-                        .eq('username', logAuthor)
-                        .single()
-                        .then(({ data: authorProfile }) => {
-                            if (authorProfile) {
-                                supabase.from('notifications').insert({
-                                    user_id: authorProfile.id,
-                                    type: 'reaction',
-                                    from_username: username,
-                                    message: `@${username} reacted ${emoji} to your log of ${filmTitle || 'a film'}`,
-                                    read: false,
-                                })
-                            }
-                        })
-                }
             }
             // Notify parent to refresh batch data if available
             onReactionChange?.()

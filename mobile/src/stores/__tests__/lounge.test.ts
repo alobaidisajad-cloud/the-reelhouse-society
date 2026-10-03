@@ -109,14 +109,23 @@ describe('LoungeStore', () => {
   // read as an empty room: that shows a member of a private room the request door.
   describe('fetchMembers', () => {
     const answering = (answer: unknown) => {
-      const q = { select: () => q, eq: () => Promise.resolve(answer) };
+      const order = jest.fn(() => Promise.resolve(answer));
+      const q: { select: () => unknown; eq: () => unknown; order: typeof order } = { select: () => q, eq: () => q, order };
       mockFrom.mockReturnValueOnce(q);
+      return q;
     };
 
-    it('returns the roster it read', async () => {
-      answering({ data: [{ user_id: 'u1', status: 'approved', profiles: { username: 'ada' } }], error: null });
+    it('returns the roster it read, first come first', async () => {
+      const q = answering({ data: [{ user_id: 'u1', status: 'approved', joined_at: '2026-09-01T00:00:00Z', profiles: { username: 'ada' } }], error: null });
       const roster = await useLoungeStore.getState().fetchMembers('room');
-      expect(roster).toEqual([expect.objectContaining({ user_id: 'u1', username: 'ada', status: 'approved' })]);
+      expect(roster).toEqual([expect.objectContaining({ user_id: 'u1', username: 'ada', status: 'approved', joined_at: '2026-09-01T00:00:00Z' })]);
+      expect(q.order).toHaveBeenCalledWith('joined_at', { ascending: true });
+    });
+
+    it('makes up no handle for a name it could not read', async () => {
+      answering({ data: [{ user_id: 'u1', status: 'pending', profiles: null }], error: null });
+      const roster = await useLoungeStore.getState().fetchMembers('room');
+      expect(roster).toEqual([expect.objectContaining({ user_id: 'u1', username: '', status: 'pending' })]);
     });
 
     it('an empty room is an empty roster', async () => {

@@ -1,14 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, X, Check, Trash2 } from 'lucide-react'
+import { Bell, X, Check } from 'lucide-react'
 import { useNotificationStore, useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import { Portal } from './UI'
 import { useViewport } from '../hooks/useViewport'
+import reelToast from '../utils/reelToast'
+
+/** The columns the bell reads: the read mark is `is_read` (there is no `read`). */
+const NOTICE_COLUMNS = 'id, type, from_username, message, is_read, created_at'
+
+/** A pending request to follow, read from the request itself — never from a notice, which can outlive it. */
+interface DoorRequest { user_id: string; username: string }
 
 const NOTIF_ICONS: Record<string, string> = {
     follow: '◆',
+    follow_accept: '◆',
     reaction: '✧',
     endorse: '✦',
     comment: '¶',
@@ -55,45 +63,57 @@ export default function NotificationBell({ isOpen, onOpenChange }: NotificationB
     const markAllRead = useNotificationStore(s => s.markAllRead)
     const dismiss = useNotificationStore(s => s.dismiss)
     const markRead = useNotificationStore(s => s.markRead)
-    const unreadCount = notifications.filter(n => !n.read).length
+    const [requests, setRequests] = useState<DoorRequest[]>([])
+    const [readFailed, setReadFailed] = useState(false)
+    const unreadCount = notifications.filter(n => !n.read).length + requests.length
     const { isTouch } = useViewport()
 
     // ══════════════════════════════════════
-    //  FETCH + REALTIME (singleton channel)
+    //  FETCH — the house's record is the truth; a failed write is answered by reading it again
+    // ══════════════════════════════════════
+    const fetchNotifs = useCallback(async () => {
+        if (!user?.id || !isSupabaseConfigured) return
+        const [notices, door] = await Promise.all([
+            supabase
+                .from('notifications')
+                .select(NOTICE_COLUMNS)
+                .eq('user_id', user.id)
+                .neq('type', 'follow_request')
+                .order('created_at', { ascending: false })
+                .limit(50),
+            supabase
+                .from('interactions')
+                .select('user_id, profiles!interactions_user_id_fkey(username)')
+                .eq('target_user_id', user.id)
+                .eq('type', 'follow_request')
+                .order('created_at', { ascending: true }),
+        ])
+        if (useAuthStore.getState().user?.id !== user.id) return
+        if (notices.error || door.error) {
+            // a failed read is not an empty bell: what is shown stays, and the bell says so
+            setReadFailed(true)
+            return
+        }
+        setReadFailed(false)
+        setNotifications((notices.data || []).map((n: any) => ({
+            id: n.id,
+            type: n.type || 'system',
+            from: n.from_username || '',
+            message: n.message || '',
+            read: !!n.is_read,
+            timestamp: n.created_at,
+        })))
+        setRequests((door.data || []).map((r: any) => {
+            const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles
+            return { user_id: r.user_id, username: p?.username || '' }
+        }))
+    }, [user?.id, setNotifications])
+
+    // ══════════════════════════════════════
+    //  REALTIME (singleton channel)
     // ══════════════════════════════════════
     useEffect(() => {
         if (!user?.id || !isSupabaseConfigured) return
-        let cancelled = false
-
-        // Fetch existing notifications from DB
-        const fetchNotifs = async () => {
-            const { data, error } = await supabase
-                .from('notifications')
-                .select('id, user_id, type, from_username, message, read, created_at')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
-                .limit(50)
-
-            if (!error && data && !cancelled) {
-                const currentLocalStore = useNotificationStore.getState().notifications
-                const deletedIds = (useNotificationStore.getState() as any).deletedIds || []
-                
-                const formatted = data.map((n: any) => {
-                    const localVersion = currentLocalStore.find(x => x.id === n.id)
-                    return {
-                        id: n.id,
-                        type: n.type || 'system',
-                        from: n.from_username || '',
-                        message: n.message || '',
-                        // Prioritize local read state to mask database constraint update failures
-                        read: (localVersion && localVersion.read) ? true : !!n.read,
-                        timestamp: n.created_at,
-                    }
-                }).filter((n: any) => !deletedIds.includes(n.id))
-                
-                setNotifications(formatted)
-            }
-        }
 
         fetchNotifs()
 
@@ -112,6 +132,8 @@ export default function NotificationBell({ isOpen, onOpenChange }: NotificationB
                     { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
                     (payload: any) => {
                         const n = payload.new
+                        // a request is read from the requests when the bell opens, never from its notice
+                        if (n.type === 'follow_request') return
                         useNotificationStore.getState().push({
                             id: n.id,
                             type: n.type || 'system',
@@ -124,9 +146,7 @@ export default function NotificationBell({ isOpen, onOpenChange }: NotificationB
                 )
                 .subscribe()
         }
-
-        return () => { cancelled = true }
-    }, [user?.id])
+    }, [user?.id, fetchNotifs])
 
     // Close on outside click (desktop only)
     useEffect(() => {
@@ -142,57 +162,96 @@ export default function NotificationBell({ isOpen, onOpenChange }: NotificationB
     //  MARK ALL READ — zustand + Supabase
     // ══════════════════════════════════════
     const handleMarkAllRead = useCallback(async () => {
+        if (!user?.id) return
         markAllRead()
-        if (user?.id) {
-            await supabase
-                .from('notifications')
-                .update({ read: true })
-                .eq('user_id', user.id)
-                .eq('read', false)
-        }
-    }, [user?.id, markAllRead])
+        const { error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('user_id', user.id)
+            .eq('is_read', false)
+        if (error) fetchNotifs()
+    }, [user?.id, markAllRead, fetchNotifs])
 
-    // Mark as read when panel opens (if there are unread)
+    // Opening the bell reads it afresh, then marks what it shows as read
     const handleOpen = useCallback(async () => {
         setOpen(v => !v)
-        // If we're opening and there are unreads, mark them read
-        if (!open && unreadCount > 0) {
-            handleMarkAllRead()
-        }
-    }, [open, unreadCount, handleMarkAllRead, setOpen])
+        if (open) return
+        await fetchNotifs()
+        if (useNotificationStore.getState().notifications.some(n => !n.read)) handleMarkAllRead()
+    }, [open, fetchNotifs, handleMarkAllRead, setOpen])
 
     // ══════════════════════════════════════
     //  INDIVIDUAL ACTIONS
     // ══════════════════════════════════════
     const handleNotifClick = useCallback(async (n: any) => {
-        // Mark single as read in zustand + DB
         if (!n.read) {
             markRead(n.id)
-            supabase.from('notifications').update({ read: true }).eq('id', n.id).then(({ error }) => {
-                if (error) console.error('Failed to mark read in DB:', error)
+            supabase.from('notifications').update({ is_read: true }).eq('id', n.id).then(({ error }) => {
+                if (error) fetchNotifs()
             })
         }
-        // Navigate based on type
-        if (n.type === 'follow' && n.from) {
-            navigate(`/user/${n.from}`)
-        } else if (n.type === 'reaction' || n.type === 'endorse' || n.type === 'comment') {
+        // What the notice is about: a certification or critique opens the feed; anything else
+        // with a sender (a follow, an accepted request, a salon request) opens the sender
+        if (n.type === 'reaction' || n.type === 'endorse' || n.type === 'comment') {
             navigate('/feed')
+        } else if (n.from) {
+            navigate(`/user/${n.from}`)
         }
         setOpen(false)
-    }, [navigate, markRead, setOpen])
+    }, [navigate, markRead, setOpen, fetchNotifs])
 
     const handleDismiss = useCallback(async (id: string) => {
         dismiss(id)
-        supabase.from('notifications').delete().eq('id', id).then(({ error }) => {
-            if (error) console.error('Failed to dismiss in DB:', error)
-        })
-    }, [dismiss])
+        const { error } = await supabase.from('notifications').delete().eq('id', id)
+        if (error) {
+            reelToast.error('That notice could not be cleared. Try again.')
+            fetchNotifs()
+        }
+    }, [dismiss, fetchNotifs])
+
+    // A request at the door, answered: the house moves the counts and tells the requester
+    const answerRequest = useCallback(async (requesterId: string, admit: boolean) => {
+        setRequests(prev => prev.filter(r => r.user_id !== requesterId))
+        const { error } = await supabase.rpc(admit ? 'accept_follow_request' : 'decline_follow_request', { requester_id: requesterId })
+        if (error) {
+            reelToast.error(admit ? 'They could not be let in. Try again.' : 'The request could not be declined. Try again.')
+            fetchNotifs()
+        }
+    }, [fetchNotifs])
 
     // ══════════════════════════════════════
     //  NOTIFICATION LIST (shared between layouts)
     // ══════════════════════════════════════
-    const renderNotifList = () => {
+    const renderNotifList = () => (
+        <>
+            {readFailed && (
+                <div role="status" style={{ padding: '0.6rem 1rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--blood-reel)', borderBottom: '1px solid rgba(139,105,20,0.06)' }}>
+                    THE BELL COULD NOT BE READ. <button onClick={() => fetchNotifs()} style={{ background: 'none', border: 'none', color: 'var(--sepia)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit', letterSpacing: 'inherit', padding: 0, textDecoration: 'underline' }}>TRY AGAIN</button>
+                </div>
+            )}
+            {requests.map(r => (
+                <div key={r.user_id} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', padding: '0.85rem 1rem', borderBottom: '1px solid rgba(139,105,20,0.06)', borderLeft: '2px solid var(--sepia)', background: 'rgba(139,105,20,0.04)' }}>
+                    <span style={{ fontSize: '1.1rem', lineHeight: 1, minWidth: 20, textAlign: 'center', color: 'var(--sepia)' }}>◆</span>
+                    <div style={{ flex: 1, minWidth: 0, fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--parchment)', lineHeight: 1.4 }}>
+                        {r.username ? <strong style={{ color: 'var(--flicker)' }}>@{r.username}</strong> : 'A member'} is at your door — asking to follow you.
+                    </div>
+                    <button onClick={() => answerRequest(r.user_id, false)} aria-label={`Decline ${r.username || 'this request'}`}
+                        style={{ background: 'none', border: '1px solid var(--ash)', color: 'var(--fog)', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', padding: '0.3rem 0.5rem', borderRadius: '2px' }}>
+                        DECLINE
+                    </button>
+                    <button onClick={() => answerRequest(r.user_id, true)} aria-label={`Admit ${r.username || 'this request'}`}
+                        style={{ background: 'var(--sepia)', border: 'none', color: 'var(--ink)', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', padding: '0.3rem 0.5rem', borderRadius: '2px' }}>
+                        ADMIT
+                    </button>
+                </div>
+            ))}
+            {renderNotices()}
+        </>
+    )
+
+    const renderNotices = () => {
         if (notifications.length === 0) {
+            if (requests.length > 0 || readFailed) return null
             return (
                 <div style={{ padding: '2.5rem 1rem', textAlign: 'center' }}>
                     <div style={{ fontSize: '1.8rem', marginBottom: '0.75rem', opacity: 0.3 }}>◬</div>
@@ -230,7 +289,8 @@ export default function NotificationBell({ isOpen, onOpenChange }: NotificationB
                         color: n.read ? 'var(--fog)' : 'var(--parchment)',
                         lineHeight: 1.4,
                     }}>
-                        {n.message}
+                        {/* the sender is named once, from its own column; the message never repeats it */}
+                        {n.from ? <><strong style={{ color: 'var(--flicker)' }}>@{n.from}</strong>{' '}</> : null}{n.message}
                     </div>
                     <div style={{
                         fontFamily: 'var(--font-ui)', fontSize: '0.5rem',

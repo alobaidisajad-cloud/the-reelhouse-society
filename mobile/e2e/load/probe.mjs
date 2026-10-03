@@ -58,7 +58,8 @@ const PROBES = [
   { screen: 'Profile', what: 'the watchlist, first page', as: MEMBER,
     sql: `SELECT id, film_id, film_title FROM public.watchlists WHERE user_id = '${WHALE}' ORDER BY created_at DESC, id DESC LIMIT 60` },
   { screen: 'Profile', what: 'followers of the celebrity, first page', as: MEMBER,
-    sql: `SELECT user_id, created_at FROM public.interactions WHERE target_user_id = '${CELEBRITY}' AND type = 'follow' ORDER BY created_at DESC LIMIT 50` },
+    // as ProfileWriteService.getSocialConnections asks it
+    sql: `SELECT user_id, created_at FROM public.interactions WHERE target_user_id = '${CELEBRITY}' AND type = 'follow' ORDER BY created_at DESC, user_id DESC LIMIT 51` },
   // A film
   { screen: 'Film', what: 'the house\'s logs of the hot film, first page', as: MEMBER,
     sql: 'SELECT id, user_id, rating, review, created_at FROM public.logs WHERE film_id = 1 ORDER BY created_at DESC LIMIT 20' },
@@ -67,7 +68,8 @@ const PROBES = [
   { screen: 'Dispatch', what: 'the door (dispatch_door)', as: MEMBER, sql: 'SELECT public.dispatch_door()' },
   { screen: 'Dispatch', what: 'a member\'s room totals', as: MEMBER, sql: `SELECT public.dispatch_room_totals('${CELEBRITY}')` },
   { screen: 'Dispatch', what: 'the paper, first page', as: MEMBER,
-    sql: 'SELECT id, kind, author_username, title, body, certify_count, comment_count, created_at FROM public.dispatch_posts WHERE is_published ORDER BY created_at DESC, id DESC LIMIT 30' },
+    // as the app's pageQuery asks it: published and not withheld (an ended ballot stays in the paper)
+    sql: 'SELECT id, kind, author_username, title, body, certify_count, comment_count, created_at FROM public.dispatch_posts WHERE is_published AND withheld_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 30' },
   { screen: 'Dispatch', what: 'the hot post\'s critiques, most certified first', as: MEMBER,
     sql: `SELECT id, author_username, body, certify_count, created_at FROM public.dispatch_comments WHERE post_id = '${HOT_POST}' ORDER BY certify_count DESC, created_at DESC LIMIT 30` },
   // The Lounge
@@ -83,6 +85,9 @@ const PROBES = [
   { screen: 'Search', what: 'members by handle', as: MEMBER,
     sql: "SELECT id, username FROM public.profiles WHERE username ILIKE '%m123%' AND NOT coalesce(is_banned, false) ORDER BY followers_count DESC NULLS LAST LIMIT 20" },
 ];
+
+/** An annotation holds one message; GitHub encodes its line breaks as %0A. */
+const escape = (s) => s.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
 
 const claims = (sub) => JSON.stringify({ sub, role: 'authenticated' }).replace(/'/g, "''");
 
@@ -114,8 +119,11 @@ for (const p of PROBES) {
     rows.push(`| ${p.screen} | ${p.what} | ${median.toFixed(1)} | ${t[4].toFixed(1)} | ${budget} | ${ok ? '✓' : '✗ OVER'} |`);
     console.log(`${ok ? '✓' : '✗'} ${p.screen} · ${p.what}: median ${median.toFixed(1)} ms, worst ${t[4].toFixed(1)} ms (budget ${budget})`);
     if (!ok) {
-      console.log(`::error title=Load — ${p.screen}: ${p.what}::median ${median.toFixed(1)} ms over a budget of ${budget} ms`);
-      console.log(plan(p));
+      // the plan rides in the annotation: a run's logs need a signed-in reader, its annotations do not
+      const shown = plan(p);
+      console.log(shown);
+      const head = shown.trim().split('\n').slice(0, 45).join('\n').slice(0, 3800);
+      console.log(`::error title=Load — ${p.screen}: ${p.what}::median ${median.toFixed(1)} ms over a budget of ${budget} ms%0A${escape(head)}`);
     }
   } catch (e) {
     over++;

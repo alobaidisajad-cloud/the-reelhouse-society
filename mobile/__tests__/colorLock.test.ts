@@ -23,7 +23,6 @@ const BASELINE_PATH = join(ROOT, 'scripts', 'color-lock-baseline.json');
 /** Artwork / design-data — exempt by design, not by neglect. */
 const EXEMPT = [
   'src/theme/theme.ts',
-  'src/assets/logo/reelhouse-logo-data.ts',
   'src/components/MasterLogo.tsx',
   'src/components/Buster.tsx',
   'src/components/ReelEyeIcon.tsx',

@@ -122,9 +122,8 @@ module.exports = {
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
-    // app/ is every screen in the product — 36 files, ~15k lines — and it was
-    // absent from this list, so no floor, ratchet or gate had ever looked at a
-    // single one. The old "26.8% coverage" was 26.8% of src/ alone. Including it
+    // app/ is every screen in the product, and it was absent from this list, so
+    // no floor, ratchet or gate had ever looked at a single one. The old "26.8% coverage" was 26.8% of src/ alone. Including it
     // makes the number smaller and true, which is the only kind worth gating on.
     'app/**/*.{ts,tsx}',
     '!**/*.d.ts',

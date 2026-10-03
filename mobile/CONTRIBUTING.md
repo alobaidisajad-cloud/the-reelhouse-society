@@ -41,9 +41,14 @@ A development build, not Expo Go: MMKV, Skia and RevenueCat are native modules.
 
 ### Accessibility
 - All interactive elements (PressableScale, buttons) require `accessibilityLabel`
-- All modals must include `accessibilityViewIsModal={true}` on the content wrapper
+- A `<Modal>` is its own window: a screen reader stays inside it. An overlay drawn
+  inside the screen instead (a tray, a sheet) must say it is modal itself:
+  `accessibilityViewIsModal` for VoiceOver, and the page beneath
+  `importantForAccessibility="no-hide-descendants"` for TalkBack (FilmActionTray)
 - Use Reanimated's `useReducedMotion()` to gate animations: it knows the setting on the first frame
-- After successful mutations, call `AccessibilityInfo.announceForAccessibility()`
+- A toast is spoken (toastBus.ts on iOS, a live region on Android). A write whose
+  success shows no toast says it with `AccessibilityInfo.announceForAccessibility()`;
+  one that does show a toast never announces too
 
 ### Date Formatting
 - Use `formatDate()`, `formatDateMonthYear()`, or `formatTMDBDate()` from `src/utils/timeAgo.ts`

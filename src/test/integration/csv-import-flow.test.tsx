@@ -17,7 +17,7 @@
  *   · the same film listed twice is written once
  *   · titles that cannot be identified are reported, not silently dropped
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
 Object.defineProperty(window, 'matchMedia', {
@@ -91,7 +91,11 @@ async function importCSV() {
   return screen
 }
 
-describe('CSV import — the real component, driven like a member', () => {
+// Each case may wait up to 10 s for the upsert (importCSV's waitFor), so each is allowed 15 s.
+describe('CSV import — the real component, driven like a member', { timeout: 15000 }, () => {
+  // Loading the component and its motion library once costs seconds on a busy
+  // machine; paid here, it no longer lands inside the first case's 5 s.
+  beforeAll(async () => { await import('../../components/CSVImport') }, 30000)
   beforeEach(() => { upsertCalls.length = 0 })
 
   it('writes real film ids, never the placeholder that broke every import', async () => {

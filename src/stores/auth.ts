@@ -291,6 +291,10 @@ export const useAuthStore = create<AuthState>()(
                 // The offline queue can hold private notes waiting for a signal.
                 await clearOfflineQueue()
 
+                // The member's record is kept in IndexedDB, which the sweep above never reaches.
+                // (films.ts imports this store, so it is loaded here, not at the top.)
+                await (await import('./films')).forgetSavedRecord()
+
                 // Clear all session storage tokens holding recovery flags
                 sessionStorage.clear()
 

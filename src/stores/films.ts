@@ -100,6 +100,13 @@ export interface FilmState {
     _loggedIndex: Record<number, FilmLog>
 }
 
+// The browser's copy of the record, and the write waiting to refresh it.
+let _pendingWrite: ReturnType<typeof setTimeout> | null = null
+let _pendingValue: string | null = null
+let _pendingName: string | null = null
+/** From a sign-out to the next sign-in nothing is written: a late answer must not save the member who left. */
+let _sealed = false
+
 export const useFilmStore = create<FilmState>()(
     persist(
         (set, get) => ({
@@ -664,9 +671,6 @@ export const useFilmStore = create<FilmState>()(
             name: 'reelhouse-films',
             storage: createJSONStorage(() => {
                 // Debounce IDB writes — coalesces rapid mutations into a single write
-                let _pendingWrite: ReturnType<typeof setTimeout> | null = null
-                let _pendingValue: string | null = null
-                let _pendingName: string | null = null
                 const DEBOUNCE_MS = 2000
 
                 return {
@@ -674,6 +678,7 @@ export const useFilmStore = create<FilmState>()(
                         return (await get(name)) || null
                     },
                     setItem: async (name: string, value: string): Promise<void> => {
+                        if (_sealed) return
                         _pendingValue = value
                         _pendingName = name
                         if (_pendingWrite) clearTimeout(_pendingWrite)
@@ -705,3 +710,26 @@ export const useFilmStore = create<FilmState>()(
         }
     )
 )
+
+/**
+ * Forget the member's record in this browser: the write still waiting is dropped
+ * and the saved copy erased. Sign-out sweeps localStorage; this record lives in
+ * IndexedDB, where that sweep never reached.
+ */
+export async function forgetSavedRecord(): Promise<void> {
+    _sealed = true
+    if (_pendingWrite) { clearTimeout(_pendingWrite); _pendingWrite = null }
+    _pendingValue = null
+    // and the copy in memory, so a member signing in on this page never sees the last one's
+    useFilmStore.setState({
+        logs: [], watchlist: [], lists: [], interactions: [], physicalArchive: [],
+        logsHasMore: true, logsPage: 0, listsHasMore: true, listsPage: 0,
+        _endorsedIndex: {}, _listEndorsedIndex: {}, _watchlistIndex: {}, _loggedIndex: {},
+    })
+    await del('reelhouse-films')
+}
+
+/** A member is signed in: their record may be saved again. */
+export function unsealSavedRecord(): void {
+    _sealed = false
+}

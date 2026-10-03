@@ -70,8 +70,8 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/subflows/open_a_film.yaml | 2026-09-29 | true as written |
 | .maestro/subflows/open_the_stub.yaml | 2026-09-30 | written with the stub's single tap |
 | .maestro/subflows/sign_in.yaml | 2026-09-29 | rewritten this session: passes through the Initiation |
-| ANDROID_LAUNCH.md | — |  |
-| app.config.js | — |  |
+| ANDROID_LAUNCH.md | 2026-10-03 | read against the code: shadows and modals done, springify gone, keyboard via KeyboardRoom; the emulator runs every push |
+| app.config.js | 2026-10-03 | read whole: sound |
 | app/__tests__/boot-structure.test.tsx | — |  |
 | app/_layout.tsx | 2026-10-02 | PathTracker moved out, and now tells nav too |
 | app/(admin)/__tests__/tribunal.test.tsx | — |  |
@@ -126,9 +126,9 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/[id].tsx | 2026-10-02 | Read (launch audit): the critique sheet's paging added (620d4f4b); the heart is the server's answer (learnEndorsements writes the index). Sound otherwise. |
 | app/user/[username].tsx | 2026-10-02 | Read whole in the launch audit: HIGHEST RATED now the server's six over the whole record (fetchHighestRated). |
 | app/year-in-cinema.tsx | 2026-10-01 | nav; a single reel says so far, not the year is young |
-| ARCHITECTURE.md | — |  |
+| ARCHITECTURE.md | 2026-10-03 | read against the code: reads are not all TanStack Query (the Lounge, the Dispatch and notices read in their stores); CACHE_MAX_AGE in limits.ts never existed (now CACHE_KEYS) |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
-| CONTRIBUTING.md | — |  |
+| CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
 | e2e/__tests__/flowScreens.test.ts | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
 | e2e/__tests__/screenTimes.test.ts | 2026-10-02 | Written in the launch audit: the screen-time reader on threadtime log lines, and every way its gate says no. |
@@ -139,7 +139,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/verify-writes.mjs | 2026-09-29 | true as written |
 | e2e/flow-screens.mjs | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
-| e2e/load/probe.mjs | 2026-10-02 | Written in the launch audit: every busy screen's reads, timed as a member, against a budget. |
+| e2e/load/probe.mjs | 2026-10-03 | the paper and followers probes ask what the app asks; an over-budget read's plan rides in its annotation |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
 | e2e/run-flows.sh | 2026-10-01 | the keyboard's room added after the flows |
 | e2e/screen-times.mjs | 2026-10-02 | Written in the launch audit: each screen's time to its content, read from the E2E device log; a gate once ceilings are set. |
@@ -148,8 +148,8 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/supabase/functions/tmdb-proxy/normalize.mjs | 2026-09-29 | true as written |
 | e2e/tmdb/record.mjs | 2026-09-29 | true as written |
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
-| jest.afterEnv.ts | — |  |
-| jest.config.js | — |  |
+| jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
+| jest.config.js | 2026-10-03 | read whole: sound; the app/ size that had drifted (36 files) is no longer a number |
 | jest.setup.ts | 2026-09-29 | 15 findings; each mock's discovery story cut to the rule it keeps |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
@@ -181,8 +181,8 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/selftest.cjs | 2026-09-28 | 19 findings; the bordered-pair note sat over scaledbeside, moved to its case |
 | mockups/tools/shoot.cjs | 2026-09-29 | true as written |
 | mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
-| README.md | — |  |
-| scripts/bundle-size.js | — |  |
+| README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
+| scripts/bundle-size.js | 2026-10-03 | read whole: sound |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route) |
 | scripts/check-backend-live.mjs | 2026-09-28 | 13 findings; section numbers ran 1-5,9,10,8,6,7,8 and the admin-RPC note sat above the TRUNCATE block — renumbering dropped, each note moved over its own code; '#24' output replaced with what it means |
 | scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added |
@@ -190,12 +190,11 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/edge-functions.cjs | 2026-09-29 | fetch-rss 'read by visitors' was stale (installed builds call it); history dropped |
 | scripts/functions-check.mjs | 2026-09-29 | now tells a comment-only difference (a note) from a code difference (a failure), by the compiler's tokens; a one-letter code change fails it |
 | scripts/gates-check.js | 2026-09-28 | 5 findings plus 4 unflagged incident stories; passes against production after |
-| scripts/lucide-icons.js | — |  |
+| scripts/lucide-icons.js | 2026-10-03 | read whole: sound |
 | scripts/schema-snapshot.mjs | 2026-09-28 | 5 findings; an orphan note trailed its code; the case for the snapshot kept, the incident counts dropped |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
-| scripts/surface-jest-failure.sh | — |  |
+| scripts/surface-jest-failure.sh | 2026-10-03 | read whole: sound |
 | scripts/test-timezones.js | 2026-09-29 | the batch story reduced to the fact it guards |
-| src/assets/logo/reelhouse-logo-data.ts | — |  |
 | src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-02 | Written in the launch audit: no two modules export a component under one name. |
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
@@ -458,7 +457,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/VaultNote.tsx | 2026-10-01 | true as written |
 | src/components/lounge/__tests__/aKeystrokeRedrawsNoMessage.test.tsx | — |  |
 | src/components/lounge/__tests__/aMessageCanBeHeardAndActedOn.test.ts | 2026-09-29 | new |
-| src/components/lounge/__tests__/MemberFaceStack.model.test.ts | — |  |
+| src/components/lounge/__tests__/MemberFaceStack.model.test.ts | 2026-10-03 | read whole: sound |
 | src/components/lounge/__tests__/roomGate.test.ts | 2026-09-29 | new |
 | src/components/lounge/__tests__/aRefusedLeaveStaysInTheRoom.test.tsx | 2026-10-01 | written: the salon panel leaves only on success |
 | src/components/lounge/__tests__/theCorridorIsOpen.test.ts | — |  |
@@ -466,9 +465,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/__tests__/theDoorIsAName.test.tsx | — |  |
 | src/components/lounge/__tests__/theDoorWaitsForTheGuestList.test.tsx | 2026-09-29 | new |
 | src/components/lounge/__tests__/thePollRunsWhileWatched.test.ts | — |  |
-| src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx | — |  |
-| src/components/lounge/__tests__/theRopeWaitsForTheSheet.test.tsx | — |  |
-| src/components/lounge/__tests__/theSalonsSayWhenTheyCouldNotBeRead.test.tsx | — |  |
+| src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx | 2026-10-03 | read whole: sound |
+| src/components/lounge/__tests__/theRopeWaitsForTheSheet.test.tsx | 2026-10-03 | read whole: sound |
+| src/components/lounge/__tests__/theSalonsSayWhenTheyCouldNotBeRead.test.tsx | 2026-10-03 | read whole: sound |
 | src/components/lounge/__tests__/theSheetOffersOnlyWhatCanWork.test.tsx | 2026-10-02 | Written in the launch audit: a departed member's message offers no report or block; a block always names who it blocks. |
 | src/components/lounge/ActionSheet.tsx | 2026-10-01 | true as written |
 | src/components/lounge/AtTheDoorPanel.tsx | 2026-10-01 | true as written |
@@ -658,7 +657,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/settings/settings.styles.ts | 2026-10-02 | read; sound |
 | src/features/settings/SettingsScreen.tsx | 2026-10-02 | a put-away lock is not a failure; paying members told of the store subscription; one amendments() |
 | src/features/settings/SettingsSections.tsx | 2026-10-02 | joining's meter; the lock says what it guards; the store named per platform |
-| src/generated/lucideIcons.js | — |  |
+| src/generated/lucideIcons.js | 2026-10-03 | generated by scripts/lucide-icons.js; its --check guard holds it |
 | src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx | 2026-10-01 | written: a follow that throws is said and rolled back |
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
 | src/hooks/__tests__/aNewMemberStartsUnfiltered.test.tsx | 2026-10-01 | written: every filter wiped for a new member |
@@ -738,7 +737,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/tmdb.test.ts | — |  |
 | src/lib/authSessionStorage.ts | 2026-10-01 | written: the session outgrew SecureStore |
 | src/lib/gateMetricsSink.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/lib/nativeOnly/revenuecatWebStub.js | — |  |
+| src/lib/nativeOnly/revenuecatWebStub.js | 2026-10-03 | read whole: sound |
 | src/lib/pushNotifications.ts | 2026-10-02 | the foreground handler is set as the module loads; comments say what is true |
 | src/lib/pushPrimer.ts | 2026-10-01 | new: the house asks to send word at a moment that wants it |
 | src/lib/queryClient.ts | 2026-10-02 | read; sound |
@@ -764,30 +763,31 @@ without one). "Read" is the day its comments were last read against its code.
 | src/schemas/user.ts | 2026-10-02 | Read whole (launch audit). UserSchema is a type only (never parsed), so its role list cannot refuse a member. Sound. |
 | src/services/__tests__/aMemberTakesBackOnlyTheirOwnStackCritique.test.ts | 2026-09-30 | written with the stack critique delete |
 | src/services/__tests__/aMissingLogIsAnAnswer.test.tsx | 2026-10-01 | written: a missing log is null; a nameless author is never unknown |
+| src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts | 2026-10-03 | Written in the launch audit: every column a query names, in both clients and the functions, exists in production. |
 | src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts | 2026-10-01 | written with 20261001_03 |
-| src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | — |  |
+| src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/aYearIsReadToTheLast.test.ts | 2026-10-01 | written: a year is read to the last row |
 | src/services/__tests__/certifyCountAuthority.test.ts | — |  |
-| src/services/__tests__/everyNameAClientCallsExists.test.ts | — |  |
+| src/services/__tests__/everyNameAClientCallsExists.test.ts | 2026-10-03 | read whole: sound; now points to its column-level sibling |
 | src/services/__tests__/FeedService.test.ts | 2026-10-01 | cursor note made true |
-| src/services/__tests__/getFilmVerdict.test.ts | — |  |
-| src/services/__tests__/loungeEmbeds.contract.test.ts | — |  |
-| src/services/__tests__/loungeSharePayloads.test.ts | — |  |
-| src/services/__tests__/ProfileDataService.test.ts | — |  |
+| src/services/__tests__/getFilmVerdict.test.ts | 2026-10-03 | read whole: sound |
+| src/services/__tests__/loungeEmbeds.contract.test.ts | 2026-10-03 | read whole: sound (the FK names; columns are the query guard's) |
+| src/services/__tests__/loungeSharePayloads.test.ts | 2026-10-03 | read whole: sound |
+| src/services/__tests__/ProfileDataService.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/profileRoomFilters.test.ts | 2026-10-01 | the guard follows the one room-filters memo both reads send |
-| src/services/__tests__/profileService.test.ts | — |  |
+| src/services/__tests__/profileService.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/servicesBatch1.test.ts | — |  |
 | src/services/__tests__/servicesBatch2.test.ts | — |  |
 | src/services/__tests__/servicesBatch3.test.ts | — |  |
 | src/services/__tests__/theBestFilmsAreReadFromTheWholeRecord.test.ts | 2026-10-02 | Written in the launch audit: HIGHEST RATED asked of the database over the whole record, and a failed read throws. |
-| src/services/__tests__/theDoorCursorCarriesATiebreaker.test.ts | — |  |
+| src/services/__tests__/theDoorCursorCarriesATiebreaker.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/theRegistryRetriesAFailedRead.test.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
-| src/services/__tests__/theStackKnowsYourMark.test.ts | — |  |
-| src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx | — |  |
+| src/services/__tests__/theStackKnowsYourMark.test.ts | 2026-10-03 | read whole: sound |
+| src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx | 2026-10-03 | read whole: sound |
 | src/services/__tests__/theVaultHasOneDoor.guard.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): only VaultService queries log_private_notes. |
-| src/services/__tests__/tmdbProxyAllowsEveryPath.test.ts | — |  |
-| src/services/__tests__/VaultService.test.ts | — |  |
-| src/services/__tests__/yearInCinema.test.ts | — |  |
+| src/services/__tests__/tmdbProxyAllowsEveryPath.test.ts | 2026-10-03 | read whole: sound |
+| src/services/__tests__/VaultService.test.ts | 2026-10-03 | read whole: sound |
+| src/services/__tests__/yearInCinema.test.ts | 2026-10-03 | read whole: sound |
 | src/services/AuthService.ts | 2026-10-01 | true as written |
 | src/services/FeedService.ts | 2026-10-01 | the cursor note made true: RPC arguments |
 | src/services/FilmService.ts | 2026-10-01 | a failed verdict read is thrown; histories to the present |
@@ -882,7 +882,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/watchlistSlice.ts | 2026-10-02 | a film already queued stays, and is said to be |
 | src/stores/films.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/followStore.ts | 2026-10-01 | comments cut to the why |
-| src/stores/lounge.ts | 2026-10-02 | read; sound (a suspension said in the house's words is an app-wide class, listed) |
+| src/stores/lounge.ts | 2026-10-03 | the roster asked for lounge_members.created_at, which does not exist: every private salon's guest list failed since June (now joined_at, first come first); no made-up "user" handle |
 | src/stores/markCounts.ts | 2026-10-02 | read; sound |
 | src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
 | src/stores/notificationStore.ts | 2026-10-02 | first page ordered by time then id; moreFailed |
@@ -893,7 +893,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/socialStore.ts | 2026-10-01 | the header says where the store lives |
 | src/stores/tellMarks.ts | 2026-10-01 | true as written |
 | src/stores/vaultStore.ts | 2026-10-02 | read after the key, as every persisted store is |
-| src/test-support/swallowedTypeError.ts | — |  |
+| src/test-support/swallowedTypeError.ts | 2026-10-03 | read whole: sound |
 | src/theme/__tests__/aPhotographIsNotLit.test.ts | — |  |
 | src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts | 2026-10-01 | written: the flat-but-elevated ratchet |
 | src/theme/__tests__/everyStyleIsRead.guard.test.ts | 2026-10-02 | Written in the launch audit: every style a sheet defines is drawn by the app. |
@@ -918,7 +918,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/moderation.ts | 2026-10-02 | Read whole (launch audit): content types match reports_content_type_check. BlockType, BlockRecordSchema and ActionMetaSchema were used nowhere: removed. |
 | src/types/mutations.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/types/profile.types.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
-| src/types/social.types.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
 | src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): the cap, the excerpt and the drop cap cut between characters. |
 | src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
@@ -944,6 +944,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/edgeFunctions.guard.test.ts | — |  |
 | src/utils/__tests__/endorsementGrouping.test.ts | — |  |
 | src/utils/__tests__/everyBackHasAWayOut.guard.test.ts | — |  |
+| src/utils/__tests__/everyCapAnswersToItsColumn.test.ts | 2026-10-03 | Written in the launch audit: every length cap the app allows is at most its column's CHECK, read from the snapshot; a smaller one says why. |
 | src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | — |  |
 | src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | — |  |
@@ -1069,8 +1070,8 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/__tests__/everyCommentIsTrue.test.ts | — |  |
 | test-utils/__tests__/everySourceReaderIsLedgered.test.ts | — |  |
 | test-utils/__tests__/readCode.test.ts | — |  |
-| test-utils/contractEnv.ts | — |  |
-| test-utils/react-native-testing-library.js | — |  |
-| test-utils/readCode.ts | — |  |
-| test-utils/SOURCE-READING-TESTS.md | — |  |
+| test-utils/contractEnv.ts | 2026-10-03 | read whole: sound; "all 5,000 tests" is every unit test |
+| test-utils/react-native-testing-library.js | 2026-10-03 | read whole: sound (setRenderResult fills screen) |
+| test-utils/readCode.ts | 2026-10-03 | read whole: sound; the query guard now reads code through it |
+| test-utils/SOURCE-READING-TESTS.md | 2026-10-03 | read whole: the query guard's row added |
 | types/react-test-renderer.d.ts | 2026-09-29 | history reduced to the reason |

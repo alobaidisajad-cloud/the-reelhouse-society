@@ -6,24 +6,6 @@
  * that has to run around each test lives here instead.
  */
 
-/**
- * ── A MOCK THAT IS MISSING A PIECE MUST NOT PASS QUIETLY ────────────────────
- * jest.setup.ts mocks the common native modules with their whole export
- * surface. A test file that re-mocks the same module WINS, and 109 local
- * factories do — several with a shorter hand-list. When the code under test
- * calls a dropped export it throws `X is not a function`, the caller's own
- * try/catch swallows it, and the suite stays green having exercised nothing:
- *
- *   followStore.persistFollowing -> setSensitive is not a function  (6 suites)
- *   socialSlice.hydrateFollowing -> data.forEach is not a function  (1 suite)
- *
- * Both were invisible for as long as they had existed. The failure always
- * surfaces as a TypeError reported through a logger, so jest.setup.ts records
- * any such text from console.warn/console.error and this fails the test that
- * produced it. Recorded and asserted afterwards rather than thrown on the spot,
- * because a throw raised inside a catch block is what an outer catch swallows
- * again.
- */
 /** A capture run draws every screen a test mounts (mockups/capture.ts). */
 if (process.env.MOCKUPS_CAPTURE) {
   require('./mockups/capture').captureAfterEach();
@@ -67,6 +49,24 @@ afterEach(() => {
   );
 });
 
+/**
+ * ── A MOCK THAT IS MISSING A PIECE MUST NOT PASS QUIETLY ────────────────────
+ * jest.setup.ts mocks the common native modules with their whole export
+ * surface. A test file that re-mocks the same module WINS, and many local
+ * factories do — several with a shorter hand-list. When the code under test
+ * calls a dropped export it throws `X is not a function`, the caller's own
+ * try/catch swallows it, and the suite stays green having exercised nothing:
+ *
+ *   followStore.persistFollowing -> setSensitive is not a function  (6 suites)
+ *   socialSlice.hydrateFollowing -> data.forEach is not a function  (1 suite)
+ *
+ * Both were invisible for as long as they had existed. The failure always
+ * surfaces as a TypeError reported through a logger, so jest.setup.ts records
+ * any such text from console.warn/console.error and this fails the test that
+ * produced it. Recorded and asserted afterwards rather than thrown on the spot,
+ * because a throw raised inside a catch block is what an outer catch swallows
+ * again.
+ */
 afterEach(() => {
   const g = gaps();
   const seen = g ? [...new Set(g)] : [];

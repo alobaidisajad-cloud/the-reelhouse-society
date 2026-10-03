@@ -12,8 +12,7 @@ A premium mobile film-tracking and social-cinema app built with Expo, React Nati
 | UI | React 19.1 · React Native 0.81 |
 | Language | TypeScript (strict) |
 | Auth & Database | Supabase (Auth + Postgres + Realtime) |
-| State (writes) | Zustand (CQRS pattern) |
-| State (reads) | TanStack Query v5 |
+| State | Zustand stores · TanStack Query v5 |
 | Offline persistence | MMKV |
 | Animations | Reanimated 4 |
 | Navigation | Expo Router (file-based routing) |
@@ -41,10 +40,10 @@ RevenueCat) do not run in Expo Go. After the first build, `npm start` serves it.
 ```
 app/          # Expo Router file-based routes
 src/
-  components/ # Shared UI (pure, stateless)
+  components/ # Shared UI
   features/   # Screen-scoped modules (stateful)
-  services/   # Supabase data access (CQRS reads)
-  stores/     # Zustand stores (CQRS writes)
+  services/   # Supabase data access
+  stores/     # Zustand stores
   hooks/      # Custom React hooks
   lib/        # SDK wrappers (Sentry, Supabase, RevenueCat)
   theme/      # Design tokens (colors, fonts, effects)

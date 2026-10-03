@@ -1,7 +1,7 @@
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import { queryClient } from '../queryClient'
 import { useAuthStore, hydrateFollowing } from './auth'
-import { useFilmStore } from './films'
+import { useFilmStore, forgetSavedRecord, unsealSavedRecord } from './films'
 
 // ── REALTIME + AUTH SYNC ──
 // These are module-level side effects, not stores.
@@ -61,6 +61,7 @@ export const initAuthSync = () => {
 
         if (event === 'INITIAL_SESSION') {
             if (session) {
+                unsealSavedRecord()
                 const { data: profile } = await supabase
                     .from('profiles').select(PROFILE_COLUMNS).eq('id', session.user.id).single()
                 useAuthStore.setState({
@@ -69,7 +70,9 @@ export const initAuthSync = () => {
                 })
                 hydrateAllStores()
             } else {
+                // no one is signed in: a record left by a session that ended while away is not kept
                 useAuthStore.setState({ user: null, isAuthenticated: false })
+                void forgetSavedRecord()
             }
             return
         }
@@ -78,6 +81,7 @@ export const initAuthSync = () => {
             const currentUser = useAuthStore.getState().user
             if (currentUser && currentUser.id === session.user.id) return
 
+            unsealSavedRecord()
             const { data: profile } = await supabase
                 .from('profiles').select(PROFILE_COLUMNS).eq('id', session.user.id).single()
             useAuthStore.setState({
@@ -90,6 +94,8 @@ export const initAuthSync = () => {
         if (event === 'SIGNED_OUT') {
             useAuthStore.setState({ user: null, isAuthenticated: false })
             supabase.removeAllChannels()
+            // however the session ended — the button, another tab, or its expiry
+            void forgetSavedRecord()
         }
     })
     _authSub = subscription
