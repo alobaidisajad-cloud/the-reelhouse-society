@@ -1,0 +1,67 @@
+{
+ "path": "/search/keyword?query=casabl",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 328398,
+    "name": "casal"
+   },
+   {
+    "id": 290395,
+    "name": "casual"
+   },
+   {
+    "id": 307203,
+    "name": "casaio"
+   },
+   {
+    "id": 187203,
+    "name": "casbah"
+   },
+   {
+    "id": 367337,
+    "name": "casaca"
+   },
+   {
+    "id": 332765,
+    "name": "wasabi"
+   },
+   {
+    "id": 294069,
+    "name": "cabal"
+   },
+   {
+    "id": 319715,
+    "name": "masal"
+   },
+   {
+    "id": 34041,
+    "name": "canal"
+   },
+   {
+    "id": 371059,
+    "name": "cajal"
+   },
+   {
+    "id": 308512,
+    "name": "casa"
+   },
+   {
+    "id": 1623,
+    "name": "casablanca, morocco"
+   },
+   {
+    "id": 314409,
+    "name": "casablanca records"
+   },
+   {
+    "id": 348864,
+    "name": "casablanca"
+   }
+  ],
+  "total_pages": 1,
+  "total_results": 14
+ }
+}

@@ -1,0 +1,506 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=runn",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/aeRJW7ELxCVZMfjQXvjJKhWlyse.jpg",
+    "id": 1318175,
+    "title": "RUNN",
+    "original_title": "RUNN",
+    "overview": "\"RUNN\" is a heartfelt portrayal of one man’s, Nedd Brockmann’s, extraordinary mission to make a difference. As he runs across Australia raising money for homelessness, we witness Nedd's humour, grit, mullet and profound humanity, reminding us that even in the vastness of the Australian landscape, one person's determination can ignite a movement and change lives for the better.",
+    "poster_path": "/oTaVHwgo5GVOxQQzyptcIGC3OqP.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.3444,
+    "release_date": "2024-07-16",
+    "softcore": false,
+    "video": false,
+    "vote_average": 10,
+    "vote_count": 1
+   },
+   {
+    "adult": false,
+    "id": 2450035,
+    "name": "Runn Tiyakorn",
+    "original_name": "Runn Tiyakorn",
+    "media_type": "person",
+    "popularity": 0.48,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": "/rcEJRTlDEXFBWFaERW3ZtVUco7F.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/speP4LZvX7JLJdCWTXzTFWXPjYq.jpg",
+      "id": 101422,
+      "name": "Ingredients",
+      "original_name": "ส่วนผสมที่ลงตัว",
+      "overview": "Tops, a passionate cook, and Marvin, a charming musician, bond over their shared love for creativity, exploring their growing relationship through food.",
+      "poster_path": "/9FRy0ragoM300hywcJ3xtuYNRpK.jpg",
+      "media_type": "tv",
+      "original_language": "th",
+      "genre_ids": [
+       35,
+       18
+      ],
+      "popularity": 1.9634,
+      "first_air_date": "2020-04-04",
+      "softcore": false,
+      "vote_average": 6.5,
+      "vote_count": 6,
+      "origin_country": [
+       "TH"
+      ]
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/xQaEwJqoLZCI6xpTaAyWMBJdJZ2.jpg",
+      "id": 95210,
+      "name": "He She It",
+      "original_name": "ตาย ไม่ ตาย",
+      "overview": "A tragedy of complicated relationships between teenage friends. Difficult decisions to follow the heart or follow the rules.",
+      "poster_path": "/1SKGmr7P2FI6B0YvxX2G9ah94wY.jpg",
+      "media_type": "tv",
+      "original_language": "th",
+      "genre_ids": [
+       18,
+       9648,
+       10765
+      ],
+      "popularity": 1.5953,
+      "first_air_date": "2019-10-31",
+      "softcore": false,
+      "vote_average": 7,
+      "vote_count": 3,
+      "origin_country": [
+       "TH"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4685165,
+    "name": "Laurel Runn",
+    "original_name": "Laurel Runn",
+    "media_type": "person",
+    "popularity": 0.2541,
+    "gender": 0,
+    "known_for_department": "Sound",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 60637,
+      "title": "The Devil and Daniel Mouse",
+      "original_title": "The Devil and Daniel Mouse",
+      "overview": "When a young female mouse makes a deal with the devil to become a rock star and learns the price, her boyfriend has to help her avoid damnation.",
+      "poster_path": "/15Iq0acwEd90gs2vLwNN0kNwIQX.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       16,
+       10402,
+       14,
+       35,
+       10770
+      ],
+      "popularity": 1.7702,
+      "release_date": "1978-10-05",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.9,
+      "vote_count": 13
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/wsHj4oHQJoe7DMYaqNFwVoyLiAh.jpg",
+    "id": 33238,
+    "name": "Running Man",
+    "original_name": "런닝맨",
+    "overview": "These days, as variety shows are gradually disappearing, this is one of Korea’s representative variety shows that has been responsible for Sunday evenings for over 10 years. This program features numerous stars and members going around various places, playing games, and completing missions. In particular, among the many fun elements of variety shows, this one focuses solely on laughter.\n\nOpen your eyes! Big fun is coming in!\n\nOpen your mouth! Big laughter is coming in!\n\nOpen your heart! Useful lessons are coming in!",
+    "poster_path": "/2Wmmu1MkqxJ48J7aySET9EKEjXz.jpg",
+    "media_type": "tv",
+    "original_language": "ko",
+    "genre_ids": [
+     35,
+     10764
+    ],
+    "popularity": 504.5097,
+    "first_air_date": "2010-07-11",
+    "softcore": false,
+    "vote_average": 8.2,
+    "vote_count": 220,
+    "origin_country": [
+     "KR"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/2c9zNZJL0ZdagD6JbmU3hH4hovs.jpg",
+    "id": 1377237,
+    "title": "Runner",
+    "original_title": "Runner",
+    "overview": "A former soldier is thrown into a brutal race against time when a critical medical delivery makes him and his unlikely partner the targets of a ruthless cartel. As the mission spirals into a deadly manhunt, every detour, delay, and bullet pushes them closer to failure. With betrayal closing in from every side, they must survive the chase and deliver their cargo to save the life of a little girl.",
+    "poster_path": "/yBKMAIj7clP42UkFejhGDBBoTpb.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     35
+    ],
+    "popularity": 255.8538,
+    "release_date": "2026-09-07",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.262,
+    "vote_count": 267
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/jzBWExXacS33rMQ2zLBrqIVweyG.jpg",
+    "id": 1386315,
+    "title": "The Runner",
+    "original_title": "The Runner",
+    "overview": "Maia Marten, a brilliant London lawyer, has her life shattered by a single call on her morning run: her son has been taken. To get him back, she must keep running, obey every ruthless command, and trust no one-each second a test of how far a mother will go to save her child.",
+    "poster_path": "/uxCaBoYXsDC4A0SqTm3SISj0OwK.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     53,
+     28
+    ],
+    "popularity": 66.6102,
+    "release_date": "2026-09-03",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.761,
+    "vote_count": 621
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/yMt8BWPju0d5ThofCDMNBRWhPTd.jpg",
+    "id": 283571,
+    "name": "The Running of Love and Money",
+    "original_name": "The Running เงิน งาน ความรัก",
+    "overview": "A group of friends known as Gen Me navigate lives filled with love, dreams, and the challenges of survival in a fast-paced society. As they enter adulthood, they struggle with relationships, personal aspirations, and growing responsibilities, learning difficult lessons along the way while relying on one another for support.",
+    "poster_path": "/prtgYWMJ0tvN5kgHyVflsMXjwof.jpg",
+    "media_type": "tv",
+    "original_language": "th",
+    "genre_ids": [],
+    "popularity": 6.5123,
+    "first_air_date": "2026-06-28",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "TH"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg",
+    "id": 335984,
+    "title": "Blade Runner 2049",
+    "original_title": "Blade Runner 2049",
+    "overview": "Thirty years after the events of the first film, a new blade runner, LAPD Officer K, unearths a long-buried secret that has the potential to plunge what's left of society into chaos. K's discovery leads him on a quest to find Rick Deckard, a former LAPD blade runner who has been missing for 30 years.",
+    "poster_path": "/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     18
+    ],
+    "popularity": 78.9601,
+    "release_date": "2017-10-04",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.6,
+    "vote_count": 15766
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/pXss1GWhPOcf6SrmRJ4JSkIU3sE.jpg",
+    "id": 98031,
+    "name": "Keep Running",
+    "original_name": "奔跑吧",
+    "overview": "Hurry Up, Brother! is a Chinese variety show based off the original Korean variety show, Running Man. It is created by SBS and co-produced with Zhejiang Television. It first aired on October 10, 2014. This show is classified as a game-variety show, where the MCs and guests complete missions in a landmark to win a race. In 2017, the show officially changed its name to \"Keep Running\".",
+    "poster_path": "/lr4er9w2jHqFx8VFyASN8Q1LWzB.jpg",
+    "media_type": "tv",
+    "original_language": "zh",
+    "genre_ids": [
+     35,
+     10764
+    ],
+    "popularity": 72.588,
+    "first_air_date": "2014-10-10",
+    "softcore": false,
+    "vote_average": 5.7,
+    "vote_count": 14,
+    "origin_country": [
+     "CN"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/aHj7d7wSLqrg5cjAcgHhiGr97Ih.jpg",
+    "id": 798645,
+    "title": "The Running Man",
+    "original_title": "The Running Man",
+    "overview": "Desperate to save his sick daughter, working-class Ben Richards is convinced by The Running Man's charming but ruthless producer to enter the deadly competition game as a last resort. But Ben's defiance, instincts, and grit turn him into an unexpected fan favorite — and a threat to the entire system. As ratings skyrocket, so does the danger, and Ben must outwit not just the Hunters, but a nation addicted to watching him fall.",
+    "poster_path": "/dKL78O9zxczVgjtNcQ9UkbYLzqX.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     53,
+     878
+    ],
+    "popularity": 28.2345,
+    "release_date": "2025-11-11",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.7,
+    "vote_count": 2020
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/eTlcNXGv32zkVI7ZDHhfeaKHXKQ.jpg",
+    "id": 198663,
+    "title": "The Maze Runner",
+    "original_title": "The Maze Runner",
+    "overview": "A teenager with no memory of his past finds himself among a group of boys living in a walled enclosure surrounded by a massive, ever-changing maze. As he struggles to adapt to their rules and society, he begins to uncover clues that may lead to escape and the truth behind their confinement.",
+    "poster_path": "/ode14q7WtDugFDp78fo9lCsmay9.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     9648,
+     878,
+     53
+    ],
+    "popularity": 30.2027,
+    "release_date": "2014-09-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.19,
+    "vote_count": 18514
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/tWQf1KymwEvTlwnlQOMN36Ixiv1.jpg",
+    "id": 302662,
+    "name": "Running Man Vietnam",
+    "original_name": "Running Man Việt Nam",
+    "overview": "",
+    "poster_path": "/dYC5weBZpF3JjQIYVDRehZXTOry.jpg",
+    "media_type": "tv",
+    "original_language": "vi",
+    "genre_ids": [
+     10764
+    ],
+    "popularity": 3.3,
+    "first_air_date": "2019-04-07",
+    "softcore": false,
+    "vote_average": 10,
+    "vote_count": 1,
+    "origin_country": [
+     "VN"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/2spEHYDcyE9r9mS7AFEscfKVDzO.jpg",
+    "id": 78,
+    "title": "Blade Runner",
+    "original_title": "Blade Runner",
+    "overview": "In the smog-choked dystopian Los Angeles of 2019, blade runner Rick Deckard is called out of retirement to terminate a quartet of replicants who have escaped to Earth seeking their creator for a way to extend their short life spans.",
+    "poster_path": "/63N9uy8nd9j7Eog2axPQ8lbr3Wj.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     18,
+     53
+    ],
+    "popularity": 25.6709,
+    "release_date": "1982-06-25",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.936,
+    "vote_count": 15464
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/VnKWWDt5RrpVndrZE0z19zGq3v.jpg",
+    "id": 239870,
+    "name": "Keep Running Special Seasons",
+    "original_name": "奔跑吧·特别篇",
+    "overview": "",
+    "poster_path": "/2lxERDUVN9CJY6csnaY38QE0Tci.jpg",
+    "media_type": "tv",
+    "original_language": "zh",
+    "genre_ids": [
+     10764
+    ],
+    "popularity": 21.4718,
+    "first_air_date": "2020-12-04",
+    "softcore": false,
+    "vote_average": 9,
+    "vote_count": 2,
+    "origin_country": [
+     "CN"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/vbkpl0ps4s5tMTUnC7SFXNzWmVr.jpg",
+    "id": 230923,
+    "name": "Lovely Runner",
+    "original_name": "선재 업고 튀어",
+    "overview": "Right after Ryu Sun-jae, a top star, ends his life, Im Sol, his top fan, somehow ends up at a time when they were in high school and tries to protect him. A fantasy romance unfolds where people who missed each other in time finally meet.",
+    "poster_path": "/adcdNzLJ8LOjWJjNFrapXGzFco3.jpg",
+    "media_type": "tv",
+    "original_language": "ko",
+    "genre_ids": [
+     18,
+     10765,
+     35,
+     9648
+    ],
+    "popularity": 12.898,
+    "first_air_date": "2024-04-08",
+    "softcore": false,
+    "vote_average": 8.6,
+    "vote_count": 303,
+    "origin_country": [
+     "KR"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/zGCfnZ3bCowMY9So9ZGpsyuOYl3.jpg",
+    "id": 336843,
+    "title": "Maze Runner: The Death Cure",
+    "original_title": "Maze Runner: The Death Cure",
+    "overview": "Thomas leads his group of escaped Gladers on their final and most dangerous mission yet. To save their friends, they must break into the legendary Last City, a WCKD-controlled labyrinth that may turn out to be the deadliest maze of all. Anyone who makes it out alive will get answers to the questions the Gladers have been asking since they first arrived in the maze.",
+    "poster_path": "/s8K0US4tUEoOrQ1LDh0eppuwGDx.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     28,
+     12,
+     53
+    ],
+    "popularity": 15.5745,
+    "release_date": "2018-01-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.076,
+    "vote_count": 8594
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/4mcOCiR06dqQ5eoEJcG3zvonjOa.jpg",
+    "id": 294254,
+    "title": "Maze Runner: The Scorch Trials",
+    "original_title": "Maze Runner: The Scorch Trials",
+    "overview": "Thomas and his fellow Gladers face their greatest challenge yet: searching for clues about the mysterious and powerful organization known as WCKD. Their journey takes them to the Scorch, a desolate landscape filled with unimaginable obstacles. Teaming up with resistance fighters, the Gladers take on WCKD’s vastly superior forces and uncover its shocking plans for them all.",
+    "poster_path": "/mYw7ZyejqSCPFlrT2jHZOESZDU3.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     28,
+     53,
+     12
+    ],
+    "popularity": 15.7347,
+    "release_date": "2015-09-09",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.731,
+    "vote_count": 11271
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/ssQ7IcGmgUJdFLv8cHY3vC3OR4f.jpg",
+    "id": 865,
+    "title": "The Running Man",
+    "original_title": "The Running Man",
+    "overview": "By 2017, the global economy has collapsed and U.S. society has become a totalitarian police state, censoring all cultural activity. The government pacifies the populace by broadcasting a number of game shows in which convicted criminals fight for their lives, including the gladiator-style The Running Man, hosted by the ruthless Damon Killian, where “runners” attempt to evade “stalkers” and certain death for a chance to be pardoned and set free.",
+    "poster_path": "/GTAUOhO4BN0peJVvxGEQydJvUO.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     53,
+     878
+    ],
+    "popularity": 11.2559,
+    "release_date": "1987-11-13",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.543,
+    "vote_count": 2992
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/5oeyV08lHHnCksfxSqWN0Fr5C0e.jpg",
+    "id": 61120,
+    "name": "Running Wild with Bear Grylls",
+    "original_name": "Running Wild with Bear Grylls",
+    "overview": "The famed survivalist takes A-list celebrities on journeys into the wildest locations around the world, forcing the stars to push their bodies and minds to the limit to successfully complete the adventure of a lifetime.",
+    "poster_path": "/Au3cmwMLwmlvqe8a611Z0KYZ0Ho.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10759,
+     10764
+    ],
+    "popularity": 15.6931,
+    "first_air_date": "2014-07-28",
+    "softcore": false,
+    "vote_average": 6.9,
+    "vote_count": 60,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/xY3RLTXgV0IHmyPAE97p3ePWY1R.jpg",
+    "id": 244623,
+    "name": "Running Point",
+    "original_name": "Running Point",
+    "overview": "A reformed party girl must prove herself as a businesswoman when she's unexpectedly put in charge of her family's pro basketball team.",
+    "poster_path": "/66EyhDRHAFqE6OQDasY7Nz2LXTw.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 18.5235,
+    "first_air_date": "2025-02-27",
+    "softcore": false,
+    "vote_average": 7.3,
+    "vote_count": 167,
+    "origin_country": [
+     "US"
+    ]
+   }
+  ],
+  "total_pages": 52,
+  "total_results": 1026
+ }
+}

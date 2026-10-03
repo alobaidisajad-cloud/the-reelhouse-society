@@ -1,0 +1,1042 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=casab",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "id": 3287311,
+    "name": "Eduardo Casab",
+    "original_name": "Eduardo Casab",
+    "media_type": "person",
+    "popularity": 0.4839,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 677401,
+      "title": "The Hard Years",
+      "original_title": "Los años duros",
+      "overview": "Three boys, after participating in the events of 1968 in Mexico, find themselves in the need to get away from the social struggle",
+      "poster_path": "/A1kXHyNajQsvG3c57difVszKfV3.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.9714,
+      "release_date": "1973-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.7,
+      "vote_count": 3
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 512367,
+    "name": "Mickey Casab",
+    "original_name": "Mickey Casab",
+    "media_type": "person",
+    "popularity": 0.2885,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/3RLPmQEzd6B1fOYu28kSGQQdJP8.jpg",
+      "id": 77935,
+      "title": "Fist 2 Fist",
+      "original_title": "Fist 2 Fist",
+      "overview": "Still haunted by his failure to prevent the murder of a young couple years earlier, a mixed martial arts teacher must confront the skeleton in his closet when the boy who was orphaned by the killing shows up at his door.",
+      "poster_path": "/hkDQrbwvcLFFWvoBXsUQXLhSx6.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       12,
+       28,
+       53
+      ],
+      "popularity": 0.8299,
+      "release_date": "2011-11-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 4.8,
+      "vote_count": 4
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 5242004,
+    "name": "Said Casab",
+    "original_name": "Said Casab",
+    "media_type": "person",
+    "popularity": 0.4864,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/vDFCOeT5KSA84AI3ATB4eCHrL6l.jpg",
+      "id": 18011,
+      "name": "Vecinos",
+      "original_name": "Vecinos",
+      "overview": "The everyday life of people in Mexican neighborhoods, where anything can be found. Each episode interacts between these peculiar neighbors, where they encounter real and fictitious problems.",
+      "poster_path": "/aZRmvPsCO5MawSedQ1eeeDo1xia.jpg",
+      "media_type": "tv",
+      "original_language": "es",
+      "genre_ids": [
+       35,
+       10751,
+       10762
+      ],
+      "popularity": 19.8805,
+      "first_air_date": "2005-07-10",
+      "softcore": false,
+      "vote_average": 8.1,
+      "vote_count": 1093,
+      "origin_country": [
+       "MX"
+      ]
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/zkulhYwNWvAcGCwp1JwqmjWFSsu.jpg",
+      "id": 282954,
+      "name": "Riquísimos... Por Cierto",
+      "original_name": "Riquísimos... Por Cierto",
+      "overview": "The López Pérez family receives the news that their uncle Fidel, the cacique of Angangueo, has passed away and left them his fortune. Now they are immensely rich! And as such, they need the best servants. What won't they do now that they are rich?",
+      "poster_path": "/7YK9RxKGPxyHpYqCADxmdvStH9U.jpg",
+      "media_type": "tv",
+      "original_language": "es",
+      "genre_ids": [
+       35
+      ],
+      "popularity": 2.2542,
+      "first_air_date": "2025-02-07",
+      "softcore": false,
+      "vote_average": 7.7,
+      "vote_count": 19,
+      "origin_country": [
+       "MX"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/87wqeMeUeMRLjsE1IWNKJcPlpuC.jpg",
+    "id": 289,
+    "title": "Casablanca",
+    "original_title": "Casablanca",
+    "overview": "In Casablanca, Morocco in December 1941, a cynical American expatriate meets a former lover, with unforeseen complications.",
+    "poster_path": "/lGCEKlJo2CnWydQj7aamY7s1S7Q.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     18,
+     10749
+    ],
+    "popularity": 13.3148,
+    "release_date": "1943-01-15",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.139,
+    "vote_count": 6255
+   },
+   {
+    "adult": false,
+    "id": 216731,
+    "name": "Julian Casablancas",
+    "original_name": "Julian Casablancas",
+    "media_type": "person",
+    "popularity": 0.8121,
+    "gender": 2,
+    "known_for_department": "Sound",
+    "profile_path": "/2b6UlHs1vYiiz2SppFHtStNRUYi.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/2gnd4l61CMHGFKPutWXxwXXiPwQ.jpg",
+      "id": 247420,
+      "title": "In Transit",
+      "original_title": "In Transit",
+      "overview": "The Strokes headlined United Kingdom's Carling Weekend festivals in 2002, and their misadventures were largely chronicled by this short documentary 'In Transit', which was released to members of the now-defunct 'Alone, Together' fan club back in 2004.",
+      "poster_path": "/KjaDKNeLtypBviBnYEMbRZJ4L9.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       99,
+       10402
+      ],
+      "popularity": 1.6061,
+      "release_date": "2004-09-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.5,
+      "vote_count": 4
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/y0VHs6Q5VenxKAPAZXhMWRXUXv6.jpg",
+      "id": 771104,
+      "title": "The Strokes: MTV $2 Bill Concert",
+      "original_title": "The Strokes: MTV $2 Bill Concert",
+      "overview": "The seminal live performance by The Strokes, performing on a brightly lit-stage before an intimate audience at Zoetrope Studios in Los Angeles.",
+      "poster_path": "/7KjpYdR6K89DKGn0L9nryyVVmGa.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       10402,
+       99,
+       10770
+      ],
+      "popularity": 1.2589,
+      "release_date": "2002-02-02",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.5,
+      "vote_count": 4
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/2sMuYhMKYLEVgXryR2j19yFrz6O.jpg",
+      "id": 98196,
+      "title": "The Strokes Live at London University",
+      "original_title": "The Strokes Live at London University",
+      "overview": "The Strokes played an intimate gig in front of just 800 people at the London University uLU on November 29th, 2005.",
+      "poster_path": "/sEjtrrxi5O9p2Dhv9aP8tD2dpCp.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       10402
+      ],
+      "popularity": 1.0819,
+      "release_date": "2005-11-29",
+      "softcore": false,
+      "video": true,
+      "vote_average": 2,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 227071,
+    "name": "Pedro Casablanc",
+    "original_name": "Pedro Casablanc",
+    "media_type": "person",
+    "popularity": 1.4088,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/7oXGl8Nr2w7SaES4tbzjw4RYtF0.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/o1JapnInSBCgedfWnj15ytjGC70.jpg",
+      "id": 519010,
+      "title": "Pain and Glory",
+      "original_title": "Dolor y gloria",
+      "overview": "Salvador Mallo, a filmmaker in the twilight of his career, remembers his life: his mother, his lovers, the actors he worked with. The sixties in a small village in Valencia, the eighties in Madrid, the present, when he feels an immeasurable emptiness, facing his mortality, the incapability of continuing filming, the impossibility of separating creation from his own life. The need of narrating his past can be his salvation.",
+      "poster_path": "/cMlueArJXXwZbeLpb4NhC3pxmBk.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 7.7225,
+      "release_date": "2019-03-22",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.37,
+      "vote_count": 1957
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/60XJOemSR9LQRDgBMRN7qkdLsPH.jpg",
+      "id": 392207,
+      "title": "The Invisible Guardian",
+      "original_title": "El guardián invisible",
+      "overview": "When the naked body of a teenage girl is found on the banks of the River Baztán, it is quickly linked to a similar murder one month before. Soon, rumours are flying in the nearby village of Elizondo. Is this the work of a ritualistic killer or is it the basajaun, the ‘invisible guardian’ of Basque mythology?  Inspector Amaia Salazar leads the investigation, taking her back to the heart of the Basque country where she was born, and where she hoped never to return. Shrouded in mist and surrounded by impenetrable forests, it is a place of unresolved conflicts and a terrible secret from Amaia’s childhood that will come back to haunt her.  Faced with the superstitions of the village, Amaia must fight the demons of her past to confront the reality of a serial killer on the loose. But as she is drawn deeper into the investigation, she feels the presence of something darker lurking in the shadows…",
+      "poster_path": "/uxR7CqLRdQ2QuOPP9ymunPrRBCq.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       53,
+       80,
+       9648
+      ],
+      "popularity": 3.4989,
+      "release_date": "2017-03-03",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.5,
+      "vote_count": 752
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/isazfkX14Unin8m6meZMfm7QDfn.jpg",
+      "id": 613099,
+      "title": "The Legacy of the Bones",
+      "original_title": "Legado en los huesos",
+      "overview": "Inspector Amaia Salazar must return to the Baztan valley in order to solve a series of suicides that seem to follow a similar pattern.",
+      "poster_path": "/ufzXGRCnufpalqpkyrGnlWzO503.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       53,
+       80,
+       9648
+      ],
+      "popularity": 3.8549,
+      "release_date": "2019-12-05",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.6,
+      "vote_count": 477
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/7S0EaMEXJgCdNAcdOl2RI0XZxjr.jpg",
+    "id": 92913,
+    "title": "Casablanca, Nest of Spies",
+    "original_title": "Noches de Casablanca",
+    "overview": "Casablanca 1942. While French Police Chief Maurice Desjardins is busy having careless fun with some loose girls, members of the French Resistance kill a man at the harbor and steal his briefcase full of important documents from the Third Reich. At an apartment building in the distance, Andre Kuhn watches the whole operation through his powerful binoculars. He is posing as a businessman but actually working as a spy for the Germans a fact totally ignored by his live-in girlfriend Teresa Villar, a beautiful Spanish singer who works at El Dorado Night Club. Andre telephones Max von Stauffen, the head of German Intelligence in Casablanca, to inform him of what he has just witnessed. Max tells him to stay put until he arrives in order to get the information personally but, by the time he reaches Andres apartment, he finds him dead with a gun shot on his temple.",
+    "poster_path": "/zv4MnDFWsweuPRf9v2Evs2EuJcg.jpg",
+    "media_type": "movie",
+    "original_language": "es",
+    "genre_ids": [
+     18,
+     10402,
+     80
+    ],
+    "popularity": 1.5601,
+    "release_date": "1963-10-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 4.7,
+    "vote_count": 6
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/1OtFzaNzxFaajr24we1LNAu3zCt.jpg",
+    "id": 330066,
+    "title": "Dirty Game in Casablanca",
+    "original_title": "Juego Sucio en Casablanca",
+    "overview": "Dean, a failed American writer, receives some unexpected news: his wife, who belongs to a wealthy family, has filed for divorce. Stunned, he decides to commit suicide. His initial attempt fails when he has second thought. But during a drunken blackout spent gambling he wins big and promises all the winnings to the man who can kill him...but they must possess a special playing card.",
+    "poster_path": "/jvoUgMdLab9gBcrRUYlasYa9bUa.jpg",
+    "media_type": "movie",
+    "original_language": "es",
+    "genre_ids": [
+     28,
+     53
+    ],
+    "popularity": 1.328,
+    "release_date": "1985-06-17",
+    "softcore": false,
+    "video": false,
+    "vote_average": 3.9,
+    "vote_count": 7
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/4UoSHGSqwXe1HeyzbouZ6Lm40H5.jpg",
+    "id": 424988,
+    "title": "Casablancas: The Man Who Loved Women",
+    "original_title": "Casablancas, l'homme qui aimait les femmes",
+    "overview": "In the last 30 years of the 2nd millennium, John Casablancas created the Elite modeling agency and invented the supermodels. If the names as Naomi, Cindy, Linda, Kate or Claudia are today so famous in the pop culture, it is mostly his doing. He lived a life dreamt by many, surrounded by glamour and beauty. John Casablancas tells his own story.",
+    "poster_path": "/zFOemhiN6kiG378YKPWJVyFjtsn.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     99
+    ],
+    "popularity": 1.8697,
+    "release_date": "2016-06-29",
+    "softcore": false,
+    "video": false,
+    "vote_average": 5.4,
+    "vote_count": 9
+   },
+   {
+    "adult": false,
+    "id": 5618033,
+    "name": "Anthony Casabianca",
+    "original_name": "Anthony Casabianca",
+    "media_type": "person",
+    "popularity": 0.6009,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/xNJUKqKQhMeyZ74erQvETr3AqV0.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/5lTZyuBTNOfawsfPT8Q0cIg6qAF.jpg",
+      "id": 1339713,
+      "title": "Obsession",
+      "original_title": "Obsession",
+      "overview": "After breaking the mysterious \"One Wish Willow\" to win his crush's heart, a hopeless romantic finds himself getting exactly what he asked for but soon discovers that some desires come at a dark, sinister price.",
+      "poster_path": "/bRwnj8WEKBCvmfeUNOukJPwB43K.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       27,
+       53
+      ],
+      "popularity": 155.7965,
+      "release_date": "2026-05-13",
+      "softcore": false,
+      "video": false,
+      "vote_average": 8.185,
+      "vote_count": 5882
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/vtsAyrQRz0H0ZkSwtboppJTqiPU.jpg",
+      "id": 1161677,
+      "title": "Trust in Love",
+      "original_title": "Trust in Love",
+      "overview": "Mickey Ferrera's recording producing career is going down the tubes, his estranged wife wants a divorce and his son is struggling with the reality that he is gay, but Mickey is a warrior, so he's about to get in the trenches and Trust in Love to keep his family together and maybe make one more good record.",
+      "poster_path": "/ytn4U1UMYnICY1MTJtSbHfLxzDa.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.5673,
+      "release_date": "2023-08-07",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6,
+      "vote_count": 2
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/mbWKJHLqOFSt9N2Owcwc80cFDer.jpg",
+      "id": 1528176,
+      "title": "Third Wheel",
+      "original_title": "Third Wheel",
+      "overview": "Third Wheel delves into the complexities of breakups, breakdowns, friendship, and the profound struggles of heartbreak. Exploring the universal journey of learning to be 'alone' and finding oneself, Third Wheel challenges the conventions of romantic comedies and dramas, where the boy always gets the girl and they live happily ever after. In Third Wheel, Ray embarks on a different path, one uncommonly told but all too familiar in real life. By veering away from the typical tropes of the genre, this story sheds light on the underrepresented impact of learning to date yourself. It offers a fresh resolution and a universal theme that resonates with audiences from all walks of life: you cannot truly be comfortable with somebody else until you are comfortable with yourself.",
+      "poster_path": "/su2VtAhcFBicUyLFgImLjXaQX97.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       35
+      ],
+      "popularity": 2.127,
+      "release_date": "2025-09-09",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 76529,
+    "title": "Operation Casablanca",
+    "original_title": "Opération Casablanca",
+    "overview": "Mistaken for a dangerous Islamist, Saadi - a regular guy who happens to be an illegal Arab immigrant - sets out on the most dangerous day of his life. A satirical and thrilling comedy where a wrongly accused suspect gets mixed up in a worldwide terrorist plot.",
+    "poster_path": "/tOocP3pLcr1Nz9wo9KIH8iLtq0.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     28,
+     35
+    ],
+    "popularity": 1.0264,
+    "release_date": "2011-11-09",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.5,
+    "vote_count": 6
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/8Zkn88XkqkPAwSivKfU4gZkqTUd.jpg",
+    "id": 278716,
+    "name": "Los Casablanca",
+    "original_name": "Los Casablanca",
+    "overview": "",
+    "poster_path": "/bvjoHeb1g7Tux7tiychqO9ACBJY.jpg",
+    "media_type": "tv",
+    "original_language": "es",
+    "genre_ids": [
+     18,
+     9648,
+     10751
+    ],
+    "popularity": 4.7088,
+    "first_air_date": "2024-12-03",
+    "softcore": false,
+    "vote_average": 7.8,
+    "vote_count": 9,
+    "origin_country": [
+     "CL"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1817207,
+    "name": "Raphaël de Casabianca",
+    "original_name": "Raphaël de Casabianca",
+    "media_type": "person",
+    "popularity": 0.7342,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/yeAcynRzru6tXFo2b0XxzTS6k8u.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/9i4jSdvksvlrB5NyxNZpoFxnYAq.jpg",
+      "id": 60591,
+      "name": "Rendez-vous in an Unknown Land",
+      "original_name": "Rendez-vous en terre inconnue",
+      "overview": "",
+      "poster_path": "/mCc5O5dEiLWLe41JoVGqJicoRS9.jpg",
+      "media_type": "tv",
+      "original_language": "fr",
+      "genre_ids": [
+       99
+      ],
+      "popularity": 6.5354,
+      "first_air_date": "2004-12-26",
+      "softcore": false,
+      "vote_average": 7,
+      "vote_count": 13,
+      "origin_country": [
+       "FR"
+      ]
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/PQjLD1jtXiStEmWjcuFk8TJwHd.jpg",
+      "id": 3752,
+      "name": "Fort Boyard",
+      "original_name": "Fort Boyard",
+      "overview": "A game show set and filmed on the real Fort Boyard in France. The contestants have to complete in physical and endurance challenges to win prize money.",
+      "poster_path": "/nFQyP89WGXtsDeD7ShiERRZ0kVy.jpg",
+      "media_type": "tv",
+      "original_language": "fr",
+      "genre_ids": [
+       10751,
+       10764,
+       10759
+      ],
+      "popularity": 38.7791,
+      "first_air_date": "1990-07-07",
+      "softcore": false,
+      "vote_average": 7.5,
+      "vote_count": 31,
+      "origin_country": [
+       "FR"
+      ]
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/4oeEu8R3M3uAfCS6yg0ei3KN3UE.jpg",
+      "id": 94411,
+      "name": "Nos terres inconnues",
+      "original_name": "Nos terres inconnues",
+      "overview": "\"Nos Terres Inconnues\" sets out to discover the French countryside, in the heart of unexpected landscapes, and takes a celebrity along to meet its inhabitants...",
+      "poster_path": "/zNpXvKJdViK4o4qV7fBvIH40Knx.jpg",
+      "media_type": "tv",
+      "original_language": "fr",
+      "genre_ids": [
+       99
+      ],
+      "popularity": 1.6178,
+      "first_air_date": "2018-04-10",
+      "softcore": false,
+      "vote_average": 8.5,
+      "vote_count": 2,
+      "origin_country": [
+       "FR"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 57909,
+    "title": "The Circus Casablanca",
+    "original_title": "Cirkus Casablanca",
+    "overview": "Film about a pair of traveling entertainers and con-men and their problems with jobs, money and women. We follow them in a period there it goes downhill with engagements. It's hard for them to realize that entertainers of their kind are about to become extinct.",
+    "poster_path": "/vdKVIqETTFaaXpSa2pRlYkAj1Rf.jpg",
+    "media_type": "movie",
+    "original_language": "da",
+    "genre_ids": [
+     18,
+     35
+    ],
+    "popularity": 1.5558,
+    "release_date": "1981-02-27",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.4,
+    "vote_count": 7
+   },
+   {
+    "adult": false,
+    "id": 1219925,
+    "name": "Marc Casabani",
+    "original_name": "Marc Casabani",
+    "media_type": "person",
+    "popularity": 0.961,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/6snu93fKVN2bYDjNmlRtwZwDICt.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/yUOFocKDW7MCC5isx4FK8A68QFp.jpg",
+      "id": 4607,
+      "name": "Lost",
+      "original_name": "Lost",
+      "overview": "Stripped of everything, the survivors of a horrific plane crash must work together to stay alive. But the island holds many secrets.",
+      "poster_path": "/og6S0aTZU6YUJAbqxeKjCa3kY1E.jpg",
+      "media_type": "tv",
+      "original_language": "en",
+      "genre_ids": [
+       9648,
+       10759,
+       18
+      ],
+      "popularity": 141.1269,
+      "first_air_date": "2004-09-22",
+      "softcore": false,
+      "vote_average": 7.963,
+      "vote_count": 5368,
+      "origin_country": [
+       "US"
+      ]
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/hmKS6mItxewMUUgYMFl3M1fWJfB.jpg",
+      "id": 24113,
+      "title": "Town & Country",
+      "original_title": "Town & Country",
+      "overview": "Porter Stoddard is a well-known New York architect who is at a crossroads... a nexus where twists and turns lead to myriad missteps, some with his wife Ellie, others with longtime friends Mona and her husband Griffin. Deciding which direction to take often leads to unexpected encounters with hilarious consequences.",
+      "poster_path": "/4ckfJA1zqdXG7ttBqGZ2A91YHQs.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       35,
+       10749
+      ],
+      "popularity": 2.5106,
+      "release_date": "2001-04-27",
+      "softcore": false,
+      "video": false,
+      "vote_average": 4.5,
+      "vote_count": 88
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/be6mDIMv7cg8duWkcYVnTB8rphO.jpg",
+      "id": 1973,
+      "name": "24",
+      "original_name": "24",
+      "overview": "Counterterrorism agent Jack Bauer fights the bad guys of the world, a day at a time. With each week's episode unfolding in real-time, \"24\" covers a single day in the life of Bauer each season.",
+      "poster_path": "/iq6yrZ5LEDXf1ArCOYLq8PIUBpV.jpg",
+      "media_type": "tv",
+      "original_language": "en",
+      "genre_ids": [
+       10759,
+       18,
+       80
+      ],
+      "popularity": 162.0192,
+      "first_air_date": "2001-11-06",
+      "softcore": false,
+      "vote_average": 7.78,
+      "vote_count": 1895,
+      "origin_country": [
+       "US"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2576931,
+    "name": "Daniel Casablanca",
+    "original_name": "Daniel Casablanca",
+    "media_type": "person",
+    "popularity": 0.3364,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": "/eX6AWVuZ1DiRbbPuhv4zlqLwRNw.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/qockJIX0NNDiny7q5BoLywOVZxW.jpg",
+      "id": 16916,
+      "title": "A Boyfriend for My Wife",
+      "original_title": "Un novio para mi mujer",
+      "overview": "El Tenso does not know how to face his ill-tempered wife, Tana, to tell her that he wants to separate. Carlos, a friend of Tenso, suggests him to invert the situation and cause Tana to leave him by hiring Cuervo Flores, an irresistible seducer, to try and charm his wife until she falls in love with him.",
+      "poster_path": "/ybMKaNMoBie2ebXf4TIz1Sh70Iq.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       10749,
+       35,
+       18
+      ],
+      "popularity": 1.6818,
+      "release_date": "2008-08-14",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.3,
+      "vote_count": 69
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/oE7aakVOcEnDClBYydzILrThOFU.jpg",
+      "id": 685978,
+      "title": "100% lucha, el amo de los clones",
+      "original_title": "100% lucha, el amo de los clones",
+      "overview": "Damián is the neighbor of Viloni, the most popular wrestler of 100 % Lucha. He has always hated Viloni for his popularity. That's why, taking advantage of his bio-technical knowledge, he creates lots of clones who look exactly like the wrestlers of 100 % Lucha (including Viloni). Viloni will be forced to ally with his enemies on 100 % Lucha to stop the evil doctor.",
+      "poster_path": "/3MfDFtrmqdRGUdW2Kg6zdFyBzkh.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       28,
+       12,
+       35
+      ],
+      "popularity": 1.0975,
+      "release_date": "2009-07-16",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5,
+      "vote_count": 2
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/vvNRQYa407YNV3gMKPqCJHbl4S0.jpg",
+      "id": 146722,
+      "title": "City in Heat",
+      "original_title": "Ciudad en celo",
+      "overview": "A group of friends in their 30's meet at a bar in Buenos Aires everyday. They used to hang here as students, laughing at the world, and now they still dream of changing the world from the cafe's table. Unable discuss politics or football, the only thing they can talk about is women. When one of their friends commits suicide, a female from his past shows up to confront old feelings.",
+      "poster_path": "/2SVfZg3ykGXD7cu6PQsD3kS8shx.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       35,
+       10749
+      ],
+      "popularity": 1.1372,
+      "release_date": "2007-03-22",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.2,
+      "vote_count": 3
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3696479,
+    "name": "Jorge Casabán",
+    "original_name": "Jorge Casabán",
+    "media_type": "person",
+    "popularity": 0.4729,
+    "gender": 0,
+    "known_for_department": "Camera",
+    "profile_path": "/6chYU3fopaaUx7Mcevr4NjxPMJZ.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/zXUxcXnBPHF1cD0IHi4KUpsNvF4.jpg",
+      "id": 1323784,
+      "title": "Bad Influence",
+      "original_title": "Mala influencia",
+      "overview": "An ex-con gets a fresh start when hired to protect a wealthy heiress from a stalker — but their chemistry is hard to resist as they grow closer.",
+      "poster_path": "/3xVWCNDAgr01G1Lkjd7F9sAGOc4.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       53,
+       18,
+       10749
+      ],
+      "popularity": 6.9405,
+      "release_date": "2025-01-24",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.761,
+      "vote_count": 318
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/X7FNy7ISNsqQQqh23q068JDgi7.jpg",
+      "id": 280840,
+      "title": "ma ma",
+      "original_title": "ma ma",
+      "overview": "After finding a lump in one of her breasts, Magda goes to visit her doctor who gives her bad news: she needs a mastectomy, preceded by severe chemo treatments. While she ponders this ill fortune at a soccer game where her son Dani participates, she attracts the attention of talent scout Arturo, who is looking for talented young players to enroll them in the junior leagues.",
+      "poster_path": "/5xEhxzx5wKJWNpHvrIuQuFLlZjS.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 2.2357,
+      "release_date": "2015-09-11",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.2,
+      "vote_count": 164
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/9C10gUV5uR1UZtvGs8uQtb6xi7Z.jpg",
+      "id": 1433680,
+      "title": "The Dinner",
+      "original_title": "La cena",
+      "overview": "Spain, April 15, 1939. With the Civil War concluded, and with the intention of celebrating his victory, General Franco attends a dinner with his generals at the Palace Hotel.",
+      "poster_path": "/u8uNMBYtOltjapW228pZD8ILdNs.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       35,
+       36,
+       18
+      ],
+      "popularity": 2.3903,
+      "release_date": "2025-10-17",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.9,
+      "vote_count": 97
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3738891,
+    "name": "Fernando Casablancas",
+    "original_name": "Fernando Casablancas",
+    "media_type": "person",
+    "popularity": 0.4252,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": "/qbpZraicg8AcFSYcY4zvLnLc42g.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/uplZIzadn8wcbKeBiy1469ThBRV.jpg",
+      "id": 1082543,
+      "title": "National Anthem",
+      "original_title": "National Anthem",
+      "overview": "A 21-year old construction worker in rural New Mexico joins a community of queer ranchers and rodeo performers in search of their own version of the American dream.",
+      "poster_path": "/sUFTNOFBoJzCGu8c9XRJAy7G6xu.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       10749
+      ],
+      "popularity": 3.5232,
+      "release_date": "2024-07-12",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.6,
+      "vote_count": 34
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1034985,
+      "title": "Wetiko",
+      "original_title": "Wetiko",
+      "overview": "In the Maya jungle, a young Maya man’s journey with sacred toads collides with a fight for spirit and land—against outsiders led by a predatory white cult leader.",
+      "poster_path": "/3zkUfnHzz5LraC6rOXybUABK93T.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       12,
+       14
+      ],
+      "popularity": 1.8338,
+      "release_date": "2025-12-31",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1462824,
+    "name": "Daniel Casabe",
+    "original_name": "Daniel Casabe",
+    "media_type": "person",
+    "popularity": 0.3755,
+    "gender": 0,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 338652,
+      "title": "The Exact Shape of The Islands",
+      "original_title": "La forma exacta de las islas",
+      "overview": "For many, the name Malvinas/Falklands evokes an absurd war between England and Argentina in 1982. For Julieta Vitullo, the protagonist of this film, this tragic history becomes deeply personal 25 years later when she suffers a loss associated with her search to uncover that past, unfolding into a life-affirming struggle for renewal and rebirth. This film tells the story of two trips, one made in 2006 and the other in 2010. In the space between one trip and the next, between past and present, between the public and the private, between what can and cannot be told, the movie reflects on the possibilities of conveying extreme life experiences, presenting landscapes and sounds that suggest subtle contours of that shape, 'The Exact Shape of the Islands.'",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       99,
+       18
+      ],
+      "popularity": 0.7235,
+      "release_date": "2012-11-03",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5,
+      "vote_count": 3
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1058520,
+      "title": "Southern Storm",
+      "original_title": "La Sudestada",
+      "overview": "Jorge Villafañez is a rotund, veteran private detective living alone in a high-rise apartment in Buenos Aires. Discreet and meticulous, he has a knack of making people open up in conversations. But when a new assignment puts him on the trail of Elvira, an experimental choreographer, the distance between the observer and the observed begins to collapse as Jorge descends into the rising waters of the Delta del Río de la Plata.",
+      "poster_path": "/tpF75oPTLf49k2Sb4HAB4395wFv.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       18,
+       53
+      ],
+      "popularity": 0.7131,
+      "release_date": "2024-08-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 8,
+      "vote_count": 1
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 716662,
+      "title": "Cracks de nácar",
+      "original_title": "Cracks de nácar",
+      "overview": "This is a film about buttons (the ones in clothing) that play soccer. Soccer with buttons? Yes, but the buttons don’t move on their own; they are moved by Rómulo Berruti and Alfredo Serra, veteran journalists, long-time friends, eminent conversationalists who are fans of soccer-playing buttons",
+      "poster_path": "/yXC8L24kKahBZsq737J5fg0gW9T.jpg",
+      "media_type": "movie",
+      "original_language": "es",
+      "genre_ids": [
+       99
+      ],
+      "popularity": 0.6813,
+      "release_date": "2013-02-07",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3811762,
+    "name": "Maura Casaburi",
+    "original_name": "Maura Casaburi",
+    "media_type": "person",
+    "popularity": 0.2525,
+    "gender": 0,
+    "known_for_department": "Costume & Make-Up",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/jOqGCRHZ2Hea2mPH2IOkMabmdw5.jpg",
+      "id": 881462,
+      "title": "Still Time",
+      "original_title": "Era ora",
+      "overview": "Dante accidentally kisses Alice and they get engaged. After a surprise party for his 40th birthday, he wakes up a year later, not remembering what happened. Not only does he discover that Alice is pregnant... He feels time is passing too quickly and he starts forgetting some of the most important moments of his life.",
+      "poster_path": "/527kMgGu38T8Sc1wwfJxyoUHgrY.jpg",
+      "media_type": "movie",
+      "original_language": "it",
+      "genre_ids": [
+       10749,
+       35,
+       18
+      ],
+      "popularity": 2.0403,
+      "release_date": "2023-03-16",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.7,
+      "vote_count": 371
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/f2HfCDKLpU53MGUO6a5IPlxtlRz.jpg",
+      "id": 215547,
+      "name": "Sono Lillo",
+      "original_name": "Sono Lillo",
+      "overview": "",
+      "poster_path": "/nNUM5KRhw2CJLYE85LD3pgtj7VR.jpg",
+      "media_type": "tv",
+      "original_language": "it",
+      "genre_ids": [
+       35
+      ],
+      "popularity": 2.8722,
+      "first_air_date": "2023-01-05",
+      "softcore": false,
+      "vote_average": 6.3,
+      "vote_count": 21,
+      "origin_country": [
+       "IT"
+      ]
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/2noZlsJYhXFei543JRZnospWzCB.jpg",
+      "id": 514705,
+      "title": "Oh My God!",
+      "original_title": "Oh mio Dio!",
+      "overview": "What would happen today in a society which defines itself Catholic and Christian if Jesus really came back as announced in the Gospels? Who would take him seriously? And what difficulties would Jesus encounter today to be recognized?",
+      "poster_path": "/mfBrCrXZom9WWDoi4z2ahtATwbG.jpg",
+      "media_type": "movie",
+      "original_language": "it",
+      "genre_ids": [
+       35,
+       18
+      ],
+      "popularity": 0.8735,
+      "release_date": "2018-03-29",
+      "softcore": false,
+      "video": false,
+      "vote_average": 3.8,
+      "vote_count": 12
+     }
+    ]
+   }
+  ],
+  "total_pages": 9,
+  "total_results": 162
+ }
+}

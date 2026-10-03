@@ -1,0 +1,875 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=cas",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/icKB3RtuVhlq4drQTcMmFNtNC1Y.jpg",
+    "id": 413346,
+    "title": "Cas",
+    "original_title": "Cas",
+    "overview": "Pepijn and George’s steady, seven-year relationship is shaken up after they allow a young student named Cas to sleep on their couch until he finds a place of his own. Gradually, both men fall head over heels for Cas’ laconic charm and it forces them to reconsider their many long-term plans. Is Cas’ presence endangering their relationship or is he actually a blessing in disguise?",
+    "poster_path": "/sv9tdmq22333rHaqe8KH1tcqPPz.jpg",
+    "media_type": "movie",
+    "original_language": "nl",
+    "genre_ids": [
+     10749
+    ],
+    "popularity": 0.9727,
+    "release_date": "2016-09-25",
+    "softcore": false,
+    "video": false,
+    "vote_average": 4.8,
+    "vote_count": 16
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/7BgMdQyZko3IUcXK699h5mgd2bg.jpg",
+    "id": 76173,
+    "name": "En tout cas",
+    "original_name": "En tout cas",
+    "overview": "",
+    "poster_path": "/qSYVwcLB8OuK39YNSMlOTHgLbhc.jpg",
+    "media_type": "tv",
+    "original_language": "fr",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 3.9862,
+    "first_air_date": "2018-01-08",
+    "softcore": false,
+    "vote_average": 8,
+    "vote_count": 2,
+    "origin_country": [
+     "CA"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/8psvvXOFh2pF4uHK7SPriWsVTsK.jpg",
+    "id": 65531,
+    "title": "My Case",
+    "original_title": "Mon Cas",
+    "overview": "Manoel de Oliveira plays his film in three stages: the first part - a play, the second can be roughly defined as a silent film (with the behind the scenes read excerpts from Beckett works), but in the end the director brilliantly performs the same material of the avant-garde exercise. Surprisingly, a joke, repeated three times, each time everything sounds fresh and develops into an almost verbatim adaptation of the biblical \"Book of Job\" - a spectacular point in a parable about how hard to empathize with other people's misery, when you have your own.",
+    "poster_path": "/eEVBFoff7XRcsN4ulgrXGhav7ds.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     18,
+     14
+    ],
+    "popularity": 1.0593,
+    "release_date": "1986-09-25",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.9,
+    "vote_count": 7
+   },
+   {
+    "adult": false,
+    "id": 59214,
+    "name": "Cas Anvar",
+    "original_name": "Cas Anvar",
+    "media_type": "person",
+    "popularity": 1.668,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/ohEulMvF1Ji2osI3aSBVGb5FFUb.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/mDb4uku4zEElsITXDpbir4fR0HW.jpg",
+      "id": 45612,
+      "title": "Source Code",
+      "original_title": "Source Code",
+      "overview": "When decorated soldier Captain Colter Stevens wakes up in the body of an unknown man, he discovers he's part of a mission to find the bomber of a Chicago commuter train.",
+      "poster_path": "/nTr0lvAzeQmUjgSgDEHTJpnrxTz.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       53,
+       878,
+       9648
+      ],
+      "popularity": 14.6645,
+      "release_date": "2011-03-30",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.312,
+      "vote_count": 9445
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/cGV6R2vzT4TYIabf3JgmrOISQ0y.jpg",
+      "id": 264644,
+      "title": "Room",
+      "original_title": "Room",
+      "overview": "Held captive for 7 years in an enclosed space, a woman and her young son finally gain their freedom, allowing the boy to experience the outside world for the first time.",
+      "poster_path": "/2hHDMeYyZjbGWn0BeNH1cTMxuM7.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       53
+      ],
+      "popularity": 8.0707,
+      "release_date": "2015-10-16",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.986,
+      "vote_count": 9873
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/eVwD4s4dBOK5Jn7CzOLBTo0vXNH.jpg",
+      "id": 63639,
+      "name": "The Expanse",
+      "original_name": "The Expanse",
+      "overview": "A thriller set two hundred years in the future following the case of a missing young woman who brings a hardened detective and a rogue ship's captain together in a race across the solar system to expose the greatest conspiracy in human history.",
+      "poster_path": "/5vQlVWkIMPhZ88OWchJsgwGEK9.jpg",
+      "media_type": "tv",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       9648,
+       10765
+      ],
+      "popularity": 98.1977,
+      "first_air_date": "2015-12-14",
+      "softcore": false,
+      "vote_average": 8.071,
+      "vote_count": 2939,
+      "origin_country": [
+       "US"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 5298197,
+    "name": "Cas",
+    "original_name": "Cas",
+    "media_type": "person",
+    "popularity": 0.2812,
+    "gender": 0,
+    "known_for_department": "Sound",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/ydFtw0hbwozGyW72kw3A0uWCiW3.jpg",
+      "id": 955496,
+      "title": "Fateh",
+      "original_title": "फ़तेह",
+      "overview": "Ex-Special Ops officer Fateh Singh springs back to action when a girl falls prey to a cybercrime syndicate. Racing against time, can he bring down the mafia?",
+      "poster_path": "/cw8DitAELYtWSD1P8yd0hzufVHj.jpg",
+      "media_type": "movie",
+      "original_language": "hi",
+      "genre_ids": [
+       28,
+       80,
+       53
+      ],
+      "popularity": 1.8246,
+      "release_date": "2025-01-10",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6,
+      "vote_count": 19
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 549981,
+    "name": "Katarina Čas",
+    "original_name": "Katarina Čas",
+    "media_type": "person",
+    "popularity": 1.5522,
+    "gender": 1,
+    "known_for_department": "Acting",
+    "profile_path": "/F5sG3kWJWm5eayCdIhu8jzJQym.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/7Nwnmyzrtd0FkcRyPqmdzTPppQa.jpg",
+      "id": 106646,
+      "title": "The Wolf of Wall Street",
+      "original_title": "The Wolf of Wall Street",
+      "overview": "A New York stockbroker refuses to cooperate in a large securities fraud case involving corruption on Wall Street, corporate banking world and mob infiltration. Based on Jordan Belfort's autobiography.",
+      "poster_path": "/kW9LmvYHAaS9iA0tHmZVq8hQYoq.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       80,
+       18,
+       35
+      ],
+      "popularity": 31.2579,
+      "release_date": "2013-12-25",
+      "softcore": false,
+      "video": false,
+      "vote_average": 8,
+      "vote_count": 26626
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/aCSsQrr6QoSFFNlBElLWzR3Z51c.jpg",
+      "id": 67913,
+      "title": "The Guard",
+      "original_title": "The Guard",
+      "overview": "When a small-town Irish cop with a crass personality is partnered with a straight-laced FBI agent to bust an international drug-trafficking ring, they must settle their differences in order to take down a dangerous gang.",
+      "poster_path": "/dtQiStID0le2EMTmJXupPRybARB.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       28,
+       35,
+       53,
+       80
+      ],
+      "popularity": 4.9634,
+      "release_date": "2011-07-07",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.973,
+      "vote_count": 1468
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/8K5S5W0te4FJ0GVRHcPYPETWwLA.jpg",
+      "id": 385332,
+      "title": "Terminal",
+      "original_title": "Terminal",
+      "overview": "In the dark heart of a sprawling, anonymous city, two assassins carry out a sinister mission, a teacher battles a fatal illness, and an enigmatic janitor and a curious waitress lead dangerous double lives.  Murderous consequences unravel in the dead of night, as their lives intertwine at the hands of a mysterious criminal mastermind who is hell-bent on revenge.",
+      "poster_path": "/xi7pA3lL6Wb78p6Y6PgWoHDMjrM.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       80,
+       18,
+       53,
+       28,
+       35,
+       9648
+      ],
+      "popularity": 4.5411,
+      "release_date": "2018-05-10",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.519,
+      "vote_count": 909
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/q01iZ7krNkFI5aMqDA80Jw3t3O.jpg",
+    "id": 230428,
+    "title": "Cas & Dylan",
+    "original_title": "Cas & Dylan",
+    "overview": "A dying Doctor, who plans to check out on his own terms, takes a reluctant detour when he inadvertently winds up on the lam with an 'anything-but-normal' 22-year-old girl.",
+    "poster_path": "/zeMDjkRAmWgYVhLEnJnGttH6UN4.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     35,
+     18
+    ],
+    "popularity": 1.3427,
+    "release_date": "2013-09-17",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.3,
+    "vote_count": 25
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/cwUajzcpxbqHTICCLGUFOSr6OT3.jpg",
+    "id": 243168,
+    "name": "Čas nádejí",
+    "original_name": "Čas nádejí",
+    "overview": "",
+    "poster_path": "/z2GI3BuR5cs5B62orTA9lJTPLBB.jpg",
+    "media_type": "tv",
+    "original_language": "sk",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 2.1933,
+    "first_air_date": "2024-01-07",
+    "softcore": false,
+    "vote_average": 8,
+    "vote_count": 1,
+    "origin_country": [
+     "SK"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1796274,
+    "name": "Cas Harkins",
+    "original_name": "Cas Harkins",
+    "media_type": "person",
+    "popularity": 0.327,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/lh57j971CIzI3FruTbFeWpYHjej.jpg",
+      "id": 12229,
+      "title": "The Acid House",
+      "original_title": "The Acid House",
+      "overview": "A surreal triptych adapted by \"Trainspotting\" author Irvine Welsh from his acclaimed collection of short stories. Combining a vicious sense of humor with hard-talking drama, the film reaches into the hearts and minds of the chemical generation, casting a dark and unholy light into the hidden corners of the human psyche.",
+      "poster_path": "/o0KvKCgxMFccx3SzDI3p2218921.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       35,
+       18
+      ],
+      "popularity": 2.1674,
+      "release_date": "1998-12-31",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.238,
+      "vote_count": 145
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 77288,
+      "title": "Man Dancin'",
+      "original_title": "Man Dancin'",
+      "overview": "Tough comedy drama set in Glasgow. Former enforcer Jimmy exits jail a changed man, but both his criminal boss and a corrupt copper think he's bluffing.",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.0917,
+      "release_date": "2004-02-20",
+      "softcore": false,
+      "video": false,
+      "vote_average": 4.3,
+      "vote_count": 3
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 919154,
+      "title": "Gobble",
+      "original_title": "Gobble",
+      "overview": "As Christmas celebrations get under way, Britain is rocked by a deadly new food scare - \"mad turkey disease\".",
+      "poster_path": "/3NP2m5dxVBm9OfcPBRItGWdA9dq.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       35,
+       10770
+      ],
+      "popularity": 1.1458,
+      "release_date": "1997-02-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 8,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 278819,
+    "name": "Najvyšší čas",
+    "original_name": "Najvyšší čas",
+    "overview": "",
+    "poster_path": "/xV95bMiXaQIadysLbrAXMmV3bYH.jpg",
+    "media_type": "tv",
+    "original_language": "sk",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 2.6241,
+    "first_air_date": "2024-12-04",
+    "softcore": false,
+    "vote_average": 4,
+    "vote_count": 1,
+    "origin_country": [
+     "SK"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1158317,
+    "name": "Cas Enklaar",
+    "original_name": "Cas Enklaar",
+    "media_type": "person",
+    "popularity": 0.6761,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/ocX9Z9g7HSL2OgPefs7LYq1YTmF.jpg",
+      "id": 296887,
+      "title": "A Day at the Beach",
+      "original_title": "Een dagje naar het strand",
+      "overview": "After Bernd (Cas Enklaar) picks up his daughter Walyne (Tara Fallaux) who lives with her mother, he takes her off for a supposed day of fun together. His idea of fun is to get his hands on as much free alcohol as he can, and as a result of his carelessness he and his daughter are constantly separated. Each time they reunite, he finds a new group of people for a few more drinks, and another round starts -- as a consequence, there is no build-up to the climax at the end.",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "nl",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.8694,
+      "release_date": "1984-09-27",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6,
+      "vote_count": 5
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/yCzSA5IBkUbMYIVV6vXIT2bmYIg.jpg",
+      "id": 117799,
+      "title": "AmnesiA",
+      "original_title": "AmnesiA",
+      "overview": "Alex, a 28 year-old photographer, is no longer able to photograph people, for some mysterious reason. Every time he focuses his camera on someone, the same woman appears in his viewfinder - an image he cannot bear. When his brother Aram, whom he has not seen or spoke to for years, unexpectedly phones him and asks him to come to their parental home because their mother is severely ill and may not have long to live, he panics. The thought of a confrontation with the area where he grew up and the renewed encounter with his family makes him feel nervous. Nevertheless, that evening he leaves for AmnesiA: the estate of his parents, the spot where he spent his youth.",
+      "poster_path": "/m1RskOwQD766ucXVZUzwX69jKj9.jpg",
+      "media_type": "movie",
+      "original_language": "nl",
+      "genre_ids": [
+       53,
+       18,
+       35,
+       9648
+      ],
+      "popularity": 1.2043,
+      "release_date": "2001-05-03",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5,
+      "vote_count": 17
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/yGp9gp5HuRG60F9eH5AicRZgcv.jpg",
+      "id": 85115,
+      "title": "Long Live the Queen",
+      "original_title": "Lang Leve de Koningin",
+      "overview": "A fairytale about a young girl who learns to play chess and at the same time finds her father.",
+      "poster_path": "/pvW71qoY6xVN72q38LBCTJIwmyL.jpg",
+      "media_type": "movie",
+      "original_language": "nl",
+      "genre_ids": [
+       12,
+       18,
+       10751,
+       14
+      ],
+      "popularity": 1.4817,
+      "release_date": "1995-11-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.1,
+      "vote_count": 21
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/fyBnAhDmHIw1Wd4nBetk8xjskvV.jpg",
+    "id": 757904,
+    "title": "The Perrot Case",
+    "original_title": "Le cas Perrot",
+    "overview": "'Le cas Perrot' depicts a dreamlike world in a realist manner. It was shot with amateur teenagers in the style of a documentary in order to make fantastical contents seem naturalist. It was hence written and directed adhering to the logic that the brain adopts during sleep.",
+    "poster_path": "/kNu84WusnEiU9X2IjU8hioxl2sK.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     35,
+     18
+    ],
+    "popularity": 1.1392,
+    "release_date": "2019-12-26",
+    "softcore": false,
+    "video": false,
+    "vote_average": 3.3,
+    "vote_count": 3
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 590103,
+    "title": "Cas ID",
+    "original_title": "Cas ID",
+    "overview": "A guy comes out of prison. A car is waiting for him. A reception committee or ambush classic and already seen? But when one is suffering from the case of Indeterminal Deficience, things do not always happen as in the classic scenarios.",
+    "poster_path": null,
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     18,
+     80
+    ],
+    "popularity": 1.9156,
+    "release_date": "2009-01-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "id": 43648,
+    "name": "Cas Jansen",
+    "original_name": "Cas Jansen",
+    "media_type": "person",
+    "popularity": 0.5387,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/xW0uz8Z5LdIXGArsqSSIZ4T78PP.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/9bJDwuhza19HQcYA99FeslLYmUm.jpg",
+      "id": 9761,
+      "title": "Elephants Dream",
+      "original_title": "Elephants Dream",
+      "overview": "Elephants Dream is the story of two strange characters exploring a capricious and seemingly infinite machine. The elder, Proog, acts as a tour-guide and protector, happily showing off the sights and dangers of the machine to his initially curious but increasingly skeptical protege Emo. As their journey unfolds we discover signs that the machine is not all Proog thinks it is, and his guiding takes on a more desperate aspect.  Elephants Dream is a story about communication and fiction, made purposefully open-ended as the world’s first 3D animated “Open movie”. The film itself is released under the Creative Commons license, along with the entirety of the production files used to make it (roughly 7 Gigabytes of data). The software used to make the movie is the free/open source animation suite Blender along with other open source software, thus allowing the movie to be remade, remixed and re-purposed with only a computer and the data on the DVD or download.",
+      "poster_path": "/9zROtU9TkpZQrOuEaMAp68FOWLK.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       16,
+       878
+      ],
+      "popularity": 1.5894,
+      "release_date": "2006-03-24",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.8,
+      "vote_count": 69
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/dlz39SUUy3TQZS77vgqnJG9So3W.jpg",
+      "id": 35840,
+      "title": "The Hell of '63",
+      "original_title": "De hel van '63",
+      "overview": "When extreme weather suddenly hits the Netherlands in 1963, a 120-mile tour skating event taking place on natural ice forces its contestants to contend with life-threatening race conditions.",
+      "poster_path": "/v1p3Idi1lOaJ162A7eZk1cOcTkz.jpg",
+      "media_type": "movie",
+      "original_language": "nl",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.6958,
+      "release_date": "2009-12-16",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6,
+      "vote_count": 51
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/5eyfRHuHEAv66TciacfFD7HOs28.jpg",
+      "id": 49325,
+      "title": "Leak",
+      "original_title": "Lek",
+      "overview": "Based on a book about an infamous real scandal in the Dutch crime scene, the film aims at exposing the horrors caused by corruption on both sides of the law. A rookie policeman is coerced into obtaining secret information from a childhood friend turned gangster. The childhood friend turns informant. But his revelations are hardly the most important \"leaks\" in the story. In fact, the new relationship between old friends goes all wrong, and the young policeman becomes increasingly involved in a deadly web of lies, crimes, treason, and revenge, all seemingly out of control.",
+      "poster_path": "/3iDdIqMhbJpOypH3MfSkoVYiQCs.jpg",
+      "media_type": "movie",
+      "original_language": "nl",
+      "genre_ids": [
+       28,
+       80,
+       53,
+       18
+      ],
+      "popularity": 1.3793,
+      "release_date": "2000-07-15",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.1,
+      "vote_count": 24
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3927811,
+    "name": "Cas Odendaal",
+    "original_name": "Cas Odendaal",
+    "media_type": "person",
+    "popularity": 0.2945,
+    "gender": 0,
+    "known_for_department": "Crew",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1088443,
+      "title": "Mirage Squadron",
+      "original_title": "Mirage Eskader",
+      "overview": "Lt. Gerhard Muller is the son of a pilot who was killed while flying with the South African Air Force in Korea. At the time his best friend and fellow pilot, Chris Fourie, was the only one to return from their mission and since then there have been various rumours about what happened. Now Gerhard is joining a Mirage squadron at Waterkloof Air Force Base, where Fourie will be his immediate superior. In addition his grandfather, Colonel Greeff, is the base commander. Also joining the squadron is Gerhard's best friend, Martin Bekker, who is the only one who knows about Gerhard's recent dizzy spells. It also emerges that there was a relationship between Gerhard's mother and Commander Fourie before she and his father got married.",
+      "poster_path": "/kX736Z2p8PzS0RhxDxGAfmMNgi2.jpg",
+      "media_type": "movie",
+      "original_language": "af",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.5294,
+      "release_date": "1975-08-18",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1180217,
+      "title": "Dans van die Flamink",
+      "original_title": "Dans van die Flamink",
+      "overview": "Four different people must learn to live together: a professor who has to destroy an ammunition shelter, his wife who is going to seek lost love, a writer and a young girl with just six months left to to live.",
+      "poster_path": "/n8tWspu0cyY5H0GRmgh3Kg28AZQ.jpg",
+      "media_type": "movie",
+      "original_language": "af",
+      "genre_ids": [],
+      "popularity": 0.8663,
+      "release_date": "1974-05-06",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/gNMVcyrTfFUMJ1C3xu2ZMqa4l7b.jpg",
+    "id": 241179,
+    "title": "In Case of Bad Luck",
+    "original_title": "En cas de malheur",
+    "overview": "Lucie was supposed to sleep with the jeweler but hadn’t foreseen the alarm. The jeweler noticed the scheme and attacked Lucie’s accomplice Noémie. Lucie defended her, pushed her and the jeweler fell , stunned. Thinking to have killed her, Lucie goes to see a lawyer, who will take her under her wing.",
+    "poster_path": "/rT8aMDBaGAKg5GqvGJukCP0BuuF.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     9648,
+     18,
+     80,
+     10770
+    ],
+    "popularity": 1.8173,
+    "release_date": "2009-05-13",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.4,
+    "vote_count": 5
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/kKBvdG6Pe4ZtVyaNruFzAzmbKtw.jpg",
+    "id": 1052623,
+    "title": "Cas Cis Cus",
+    "original_title": "Cas Cis Cus (Sonata di Tengah Kota)",
+    "overview": "Astri’s mother demands angrily for a porn-video cassette that embarrasses the son-in-law Dedi, and the two grandchildren. Mother also gossips with the neighbours and even protests by not eating. To cap it all, she wants to marry Item, the blind masseur whom she often hires. She is actually seeking attention and therefore wants to remarry. In desperation, she even runs away from home. Her daughter, son-in-law, and grandchildren miss her. In the end, she returns, and her daughter and son-in-law finally agree to her demands. All the acts and behaviour of the mother are comedy moments in the film.",
+    "poster_path": "/7IvwK5MUFVF0LXhjTThwByyA35L.jpg",
+    "media_type": "movie",
+    "original_language": "id",
+    "genre_ids": [],
+    "popularity": 0.6847,
+    "release_date": "1989-01-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "id": 5886196,
+    "name": "Cas Bean",
+    "original_name": "Cas Bean",
+    "media_type": "person",
+    "popularity": 0.5088,
+    "gender": 3,
+    "known_for_department": "Sound",
+    "profile_path": "/tI34wcJHxqTJFh3ZcdoDhRXUJRx.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1600685,
+      "title": "Wallflower",
+      "original_title": "Wallflower",
+      "overview": "A university student suffering from insomnia discovers that knocking himself unconscious is the only way he can sleep at night, leading him down a dark spiral of self-destruction.",
+      "poster_path": "/y0vsVjAZcBqrZm2BT93ROx5uUNv.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       27
+      ],
+      "popularity": 1.8951,
+      "release_date": "2025-12-11",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/pvzt252Xe20uQmwiQ11Y6TDNXxl.jpg",
+      "id": 1703132,
+      "title": "Limp Wing",
+      "original_title": "Limp Wing",
+      "overview": "Sylvie, a young birdwatcher with a disability, undergoes corrective surgery. As the anaesthetic takes hold, she is drawn into a world of feather, bone and blood.",
+      "poster_path": "/8jW9ULs4TRB0ok7xyZg3fYoeLMU.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       14,
+       27
+      ],
+      "popularity": 1.0805,
+      "release_date": "",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1762527,
+      "title": "On The Cutting Room Floor",
+      "original_title": "On The Cutting Room Floor",
+      "overview": "When two filmmakers, Lana and Keith, become entangled in each other's lives, personally and professionally, it becomes apparent that their relationship is less stable than it seemed.",
+      "poster_path": "/aS3zq63KZQbXoQIO2KgREEWmEZv.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       10749,
+       18,
+       35
+      ],
+      "popularity": 0.7389,
+      "release_date": "2026-09-10",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/nebwmOifFLuYsSCPpz0KQ1b8yk9.jpg",
+    "id": 66966,
+    "title": "Love Is My Profession",
+    "original_title": "En cas de malheur",
+    "overview": "Leading lawyer Andre Gobillot takes the case of Yvette, a young criminal. As he works on her defence, an unexpected romance blooms between them, only to be cut short by a tragedy.",
+    "poster_path": "/7msRp4CTwzWUhSpt0Gd5StFokMQ.jpg",
+    "media_type": "movie",
+    "original_language": "fr",
+    "genre_ids": [
+     10749,
+     18,
+     80
+    ],
+    "popularity": 2.765,
+    "release_date": "1958-09-17",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.3,
+    "vote_count": 71
+   },
+   {
+    "adult": false,
+    "id": 1941624,
+    "name": "Cas Donovan",
+    "original_name": "Cas Donovan",
+    "media_type": "person",
+    "popularity": 0.5351,
+    "gender": 0,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/jDePFWhpfkY4GJm41qiRffJ0NGq.jpg",
+      "id": 3558,
+      "title": "Girl, Interrupted",
+      "original_title": "Girl, Interrupted",
+      "overview": "Set in the changing world of the late 1960s, Susanna Kaysen's prescribed \"short rest\" from a psychiatrist she had met only once becomes a strange, unknown journey into Alice's Wonderland, where she struggles with the thin line between normal and crazy. Susanna soon realizes how hard it is to get out once she has been committed, and she ultimately has to choose between the world of people who belong inside or the difficult world of reality outside.",
+      "poster_path": "/dOBdatHIVppvmRFw2z7bf9VKJr9.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 10.6943,
+      "release_date": "1999-12-21",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.556,
+      "vote_count": 4303
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/otmqSaptLwYutON1oZEgBLZeBEQ.jpg",
+      "id": 103731,
+      "title": "Mud",
+      "original_title": "Mud",
+      "overview": "Two teenage boys find a fugitive hiding out on an island in the Mississippi River and help him reunite with his lover and escape an avenging family and their armed posse.",
+      "poster_path": "/o2jT5jQdKh1HAF0fMKuGwBOwOYB.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 5.4608,
+      "release_date": "2013-04-26",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.058,
+      "vote_count": 3160
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/zjvX2vJmm3f25JujVEp5DEu2eKi.jpg",
+      "id": 339419,
+      "title": "Loving",
+      "original_title": "Loving",
+      "overview": "In 1958, in the state of Virginia, the idea of interracial marriage was not only considered to be immoral to many, it was also illegal. When Richard and Mildred fall in love, they are aware of the eyes staring at them and the words said behind their backs. It's when they get married, however, that words and looks become actions, and the two are arrested. The couple decide to take their case all of the way to the Supreme Court in order to fight for their love. Based on a true story.",
+      "poster_path": "/teNPeDIRGWxtvMaJsNa7lw5IgiL.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       10749
+      ],
+      "popularity": 4.4202,
+      "release_date": "2016-11-04",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.69,
+      "vote_count": 982
+     }
+    ]
+   }
+  ],
+  "total_pages": 500,
+  "total_results": 10000
+ }
+}

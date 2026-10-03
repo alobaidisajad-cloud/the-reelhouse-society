@@ -1,0 +1,771 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=runne",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "id": 1823216,
+    "name": "Ossi Runne",
+    "original_name": "Ossi Runne",
+    "media_type": "person",
+    "popularity": 0.3428,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/rjlkdpxSvCdJVMZUWj12N60jWGI.jpg",
+      "id": 432359,
+      "title": "Lauantaileikit",
+      "original_title": "Lauantaileikit",
+      "overview": "A music film whose song, dance and music performances all take place in Helsinki during one summer Saturday.",
+      "poster_path": "/m9ltXBydpupyRG79kGjK1fRzjaY.jpg",
+      "media_type": "movie",
+      "original_language": "fi",
+      "genre_ids": [
+       10402,
+       35
+      ],
+      "popularity": 1.5834,
+      "release_date": "1963-08-23",
+      "softcore": false,
+      "video": false,
+      "vote_average": 3.6,
+      "vote_count": 5
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/m8noP5ckub2JJf9Ofujqhi31e3o.jpg",
+      "id": 61070,
+      "title": "Pekka ja Pätkä lumimiehen jäljillä",
+      "original_title": "Pekka ja Pätkä lumimiehen jäljillä",
+      "overview": "Pete and Runt travel to Lapland to hunt the snowman in the hope of a cash reward, and take Justiina along as a bait.",
+      "poster_path": "/95A4FwBcujUJWa5GuKda8wJ6BpQ.jpg",
+      "media_type": "movie",
+      "original_language": "fi",
+      "genre_ids": [
+       35
+      ],
+      "popularity": 0.9486,
+      "release_date": "1954-07-30",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.1,
+      "vote_count": 14
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/rLcmwRbOX6YBU9el3ptKKvqyzbQ.jpg",
+      "id": 458995,
+      "title": "Toukokuun taika",
+      "original_title": "Toukokuun taika",
+      "overview": "Tuija Suvi, who works as a model, is delivering a dress to the daughter of a commercial counselor, but she has an accident and ends up meeting musician Asko Kari. Asko assumes that Tuija is the daughter of the commercial counselor and ends up inviting her to a restaurant, where both try to pretend to be something they are not. Gradually, however, the couple begins to truly fall in love with each other.",
+      "poster_path": "/bm4BBuk6smJ9w0EINA7iAXCOV4.jpg",
+      "media_type": "movie",
+      "original_language": "fi",
+      "genre_ids": [
+       35,
+       10749
+      ],
+      "popularity": 0.6424,
+      "release_date": "1948-07-09",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.3,
+      "vote_count": 3
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1901159,
+    "name": "Mariha Runne",
+    "original_name": "Mariha Runne",
+    "media_type": "person",
+    "popularity": 0.3149,
+    "gender": 0,
+    "known_for_department": "Editing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/wAMlStClXciJSkBUiB6c3hUY82N.jpg",
+      "id": 371228,
+      "title": "Swan Lake",
+      "original_title": "Der Schwanensee",
+      "overview": "Perhaps the most popular ballet video ever released, this version of Tchaikovsky's beloved work stars one of the most famous classical dance partnerships of all time, Rudolf Nureyev and Margot Fonteyn. Nureyev choreographed this production for the Vienna State Opera Ballet. Two icons of 20th-century dance in magnificent form. Ballet authority John Lanchbery, former music director of the Sadler's Wells and Royal Ballet companies, as well as of American Ballet Theatre and Australian Ballet, conducts the Vienna Symphony Orchestra in Tchaikovsky's enchanting score.",
+      "poster_path": "/hs6IsAFLHl1tcNV3OW0uP4RRwtl.jpg",
+      "media_type": "movie",
+      "original_language": "de",
+      "genre_ids": [
+       18,
+       10402
+      ],
+      "popularity": 1.8425,
+      "release_date": "1966-12-26",
+      "softcore": false,
+      "video": false,
+      "vote_average": 8.2,
+      "vote_count": 3
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1901158,
+    "name": "Gunther Runne",
+    "original_name": "Gunther Runne",
+    "media_type": "person",
+    "popularity": 0.2896,
+    "gender": 0,
+    "known_for_department": "Editing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/wAMlStClXciJSkBUiB6c3hUY82N.jpg",
+      "id": 371228,
+      "title": "Swan Lake",
+      "original_title": "Der Schwanensee",
+      "overview": "Perhaps the most popular ballet video ever released, this version of Tchaikovsky's beloved work stars one of the most famous classical dance partnerships of all time, Rudolf Nureyev and Margot Fonteyn. Nureyev choreographed this production for the Vienna State Opera Ballet. Two icons of 20th-century dance in magnificent form. Ballet authority John Lanchbery, former music director of the Sadler's Wells and Royal Ballet companies, as well as of American Ballet Theatre and Australian Ballet, conducts the Vienna Symphony Orchestra in Tchaikovsky's enchanting score.",
+      "poster_path": "/hs6IsAFLHl1tcNV3OW0uP4RRwtl.jpg",
+      "media_type": "movie",
+      "original_language": "de",
+      "genre_ids": [
+       18,
+       10402
+      ],
+      "popularity": 1.8425,
+      "release_date": "1966-12-26",
+      "softcore": false,
+      "video": false,
+      "vote_average": 8.2,
+      "vote_count": 3
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 6256458,
+    "name": "Rees Runne",
+    "original_name": "Rees Runne",
+    "media_type": "person",
+    "popularity": 0.2872,
+    "gender": 0,
+    "known_for_department": "Art",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/68cioGs7kmBEOlchSgyZwhbIJm5.jpg",
+      "id": 1706207,
+      "title": "\"Student Film\"",
+      "original_title": "\"Student Film\"",
+      "overview": "Weeks after a devastating shooting on their campus, a close-knit film crew have 1 last day to finish their thesis film. Tensions rise, as the characters begin to lose their composure and overcoming the adversity in their art seems harder than ever. Soon, the past begins to slip into every frame.",
+      "poster_path": "/cU0pT1010Ta71dDEdgSTHAxV8pF.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       35
+      ],
+      "popularity": 1.8906,
+      "release_date": "",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1980890,
+    "name": "Gela-Marina Runne",
+    "original_name": "Gela-Marina Runne",
+    "media_type": "person",
+    "popularity": 0.3389,
+    "gender": 0,
+    "known_for_department": "Editing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/36sGdksVobQVWz9lSyo6YAordcL.jpg",
+      "id": 35125,
+      "title": "Taxi to the Toilets",
+      "original_title": "Taxi zum Klo",
+      "overview": "Frank, a dedicated schoolteacher, embraces the sexual freedoms of the city’s underground scene—navigating a double life in public restrooms, cinemas, and cruising spots. When he meets Bernd, a sweet and steady museum worker, he finds himself torn between the comfort of domestic partnership and the allure of anonymous desire.",
+      "poster_path": "/zJHMI2UQ9LSA3OLqwb0oBw4greq.jpg",
+      "media_type": "movie",
+      "original_language": "de",
+      "genre_ids": [
+       10749,
+       18,
+       35
+      ],
+      "popularity": 1.5488,
+      "release_date": "1981-01-09",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.3,
+      "vote_count": 44
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/A4YDOgGLHnhW2Crmen1D5CdtgWe.jpg",
+      "id": 46453,
+      "title": "Non Stop Trouble with Spies",
+      "original_title": "Der Schnüffler",
+      "overview": "The harmless Berlin taxi driver Herbert Boeckmann has a bad day: Three mysterious gentlemen put the corpse of Boris Stravinsky, a Russian economist, into the car. Unsuspecting Herbert brings the \"passenger\" to East Berlin. There Boeckmann falls into the clutches of the KGB, who considers him a top agent of the CIA. As Herbert eventually returns to the western part of the city, the CIA waiting for him to be the taxi driver again suspected of being a top agent of the KGB. To prove his innocence, Herbert must find the real killer of Stravinsky. Herbert is given mysterious vials to which he sniffs in extreme situations, helping them not only to amazing powers and unsuspected abilities. As Super Agent \"Herbie Melbourne\" mixed Herbert on the agent scene. But between the lines he gets in the line of professional killer.",
+      "poster_path": "/cHWnjt8V527JJPvei2QZs1k1HaH.jpg",
+      "media_type": "movie",
+      "original_language": "de",
+      "genre_ids": [
+       35,
+       28
+      ],
+      "popularity": 1.026,
+      "release_date": "1983-02-18",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.7,
+      "vote_count": 8
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/6619hSjWAQHYHacZ99oKzkmArDp.jpg",
+      "id": 506042,
+      "title": "Karajan dirigiert Beethovens fünfte Symphonie",
+      "original_title": "Karajan dirigiert Beethovens fünfte Symphonie",
+      "overview": "",
+      "poster_path": "/eu97bIg9zCfC8Xd2kJv3LpNoVIz.jpg",
+      "media_type": "movie",
+      "original_language": "de",
+      "genre_ids": [],
+      "popularity": 1.1846,
+      "release_date": "1973-06-14",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/2c9zNZJL0ZdagD6JbmU3hH4hovs.jpg",
+    "id": 1377237,
+    "title": "Runner",
+    "original_title": "Runner",
+    "overview": "A former soldier is thrown into a brutal race against time when a critical medical delivery makes him and his unlikely partner the targets of a ruthless cartel. As the mission spirals into a deadly manhunt, every detour, delay, and bullet pushes them closer to failure. With betrayal closing in from every side, they must survive the chase and deliver their cargo to save the life of a little girl.",
+    "poster_path": "/yBKMAIj7clP42UkFejhGDBBoTpb.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     35
+    ],
+    "popularity": 267.0831,
+    "release_date": "2026-09-07",
+    "softcore": false,
+    "video": false,
+    "vote_average": 8.258,
+    "vote_count": 271
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/jzBWExXacS33rMQ2zLBrqIVweyG.jpg",
+    "id": 1386315,
+    "title": "The Runner",
+    "original_title": "The Runner",
+    "overview": "Maia Marten, a brilliant London lawyer, has her life shattered by a single call on her morning run: her son has been taken. To get him back, she must keep running, obey every ruthless command, and trust no one-each second a test of how far a mother will go to save her child.",
+    "poster_path": "/uxCaBoYXsDC4A0SqTm3SISj0OwK.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     53,
+     28
+    ],
+    "popularity": 60.8195,
+    "release_date": "2026-09-03",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.761,
+    "vote_count": 621
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/gNdLJU9TxrpGx4dkZidjys3fyy0.jpg",
+    "id": 335984,
+    "title": "Blade Runner 2049",
+    "original_title": "Blade Runner 2049",
+    "overview": "Thirty years after the events of the first film, a new blade runner, LAPD Officer K, unearths a long-buried secret that has the potential to plunge what's left of society into chaos. K's discovery leads him on a quest to find Rick Deckard, a former LAPD blade runner who has been missing for 30 years.",
+    "poster_path": "/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     18
+    ],
+    "popularity": 73.5055,
+    "release_date": "2017-10-04",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.608,
+    "vote_count": 15767
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/eTlcNXGv32zkVI7ZDHhfeaKHXKQ.jpg",
+    "id": 198663,
+    "title": "The Maze Runner",
+    "original_title": "The Maze Runner",
+    "overview": "A teenager with no memory of his past finds himself among a group of boys living in a walled enclosure surrounded by a massive, ever-changing maze. As he struggles to adapt to their rules and society, he begins to uncover clues that may lead to escape and the truth behind their confinement.",
+    "poster_path": "/ode14q7WtDugFDp78fo9lCsmay9.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     28,
+     9648,
+     878,
+     53
+    ],
+    "popularity": 30.4343,
+    "release_date": "2014-09-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.19,
+    "vote_count": 18514
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/2spEHYDcyE9r9mS7AFEscfKVDzO.jpg",
+    "id": 78,
+    "title": "Blade Runner",
+    "original_title": "Blade Runner",
+    "overview": "In the smog-choked dystopian Los Angeles of 2019, blade runner Rick Deckard is called out of retirement to terminate a quartet of replicants who have escaped to Earth seeking their creator for a way to extend their short life spans.",
+    "poster_path": "/63N9uy8nd9j7Eog2axPQ8lbr3Wj.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     18,
+     53
+    ],
+    "popularity": 25.3908,
+    "release_date": "1982-06-25",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.936,
+    "vote_count": 15464
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/vbkpl0ps4s5tMTUnC7SFXNzWmVr.jpg",
+    "id": 230923,
+    "name": "Lovely Runner",
+    "original_name": "선재 업고 튀어",
+    "overview": "Right after Ryu Sun-jae, a top star, ends his life, Im Sol, his top fan, somehow ends up at a time when they were in high school and tries to protect him. A fantasy romance unfolds where people who missed each other in time finally meet.",
+    "poster_path": "/adcdNzLJ8LOjWJjNFrapXGzFco3.jpg",
+    "media_type": "tv",
+    "original_language": "ko",
+    "genre_ids": [
+     18,
+     10765,
+     35,
+     9648
+    ],
+    "popularity": 13.1215,
+    "first_air_date": "2024-04-08",
+    "softcore": false,
+    "vote_average": 8.6,
+    "vote_count": 303,
+    "origin_country": [
+     "KR"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/zGCfnZ3bCowMY9So9ZGpsyuOYl3.jpg",
+    "id": 336843,
+    "title": "Maze Runner: The Death Cure",
+    "original_title": "Maze Runner: The Death Cure",
+    "overview": "Thomas leads his group of escaped Gladers on their final and most dangerous mission yet. To save their friends, they must break into the legendary Last City, a WCKD-controlled labyrinth that may turn out to be the deadliest maze of all. Anyone who makes it out alive will get answers to the questions the Gladers have been asking since they first arrived in the maze.",
+    "poster_path": "/s8K0US4tUEoOrQ1LDh0eppuwGDx.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     28,
+     12,
+     53
+    ],
+    "popularity": 13.4146,
+    "release_date": "2018-01-10",
+    "softcore": false,
+    "video": false,
+    "vote_average": 7.077,
+    "vote_count": 8595
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/4mcOCiR06dqQ5eoEJcG3zvonjOa.jpg",
+    "id": 294254,
+    "title": "Maze Runner: The Scorch Trials",
+    "original_title": "Maze Runner: The Scorch Trials",
+    "overview": "Thomas and his fellow Gladers face their greatest challenge yet: searching for clues about the mysterious and powerful organization known as WCKD. Their journey takes them to the Scorch, a desolate landscape filled with unimaginable obstacles. Teaming up with resistance fighters, the Gladers take on WCKD’s vastly superior forces and uncover its shocking plans for them all.",
+    "poster_path": "/mYw7ZyejqSCPFlrT2jHZOESZDU3.jpg",
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [
+     878,
+     28,
+     53,
+     12
+    ],
+    "popularity": 16.2901,
+    "release_date": "2015-09-09",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.731,
+    "vote_count": 11271
+   },
+   {
+    "adult": false,
+    "id": 2582985,
+    "name": "John Runnels",
+    "original_name": "John Runnels",
+    "media_type": "person",
+    "popularity": 0.6056,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 69304,
+      "title": "The Miracles of Jesus",
+      "original_title": "The Miracles of Jesus",
+      "overview": "The Miracles of Jesus is an exciting panorama of Jesus’ most touching miracles. Healing the sick and afflicted, raising Jairus’ dead daughter, casting out demons and calming the storm are attributed to the principle of faith.",
+      "poster_path": "/kBb9Sd2F2FLCYYHbFu37bmswb2q.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       16,
+       10751
+      ],
+      "popularity": 1.2491,
+      "release_date": "1989-06-13",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.7,
+      "vote_count": 3
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/rRYzOmPbmKYDV7vzEmznjXVaDP9.jpg",
+      "id": 69305,
+      "title": "The Prodigal Son",
+      "original_title": "The Prodigal Son",
+      "overview": "The Prodigal Son is a parable of a wayward son reunited with his father and family after having squandered all his inheritance through wasteful and idolatrous living. Learn of God’s encompassing love for those who humbly repent.",
+      "poster_path": "/8AjVQZixRB6PEjVtD8of2KwVXiP.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       10751,
+       16
+      ],
+      "popularity": 1.3799,
+      "release_date": "1988-06-19",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.8,
+      "vote_count": 3
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/kcxhtt0MpNboTIE38CF9HlpWwTK.jpg",
+      "id": 69308,
+      "title": "Saul of Tarsus",
+      "original_title": "Saul of Tarsus",
+      "overview": "Saul of Tarsus is one of the most dramatic stories of repentance found in the Bible. Rabbi Gamaliel is unable to convince his friend Saul, the arch-enemy and persecutor of Christians, to mend his ways. Saul is changed forever when the resurrected Lord miraculously appears to him on the Road to Damascus. Saul becomes reborn as Paul, one of the greatest missionaries and apostles ever for Jesus Christ’s gospel.",
+      "poster_path": "/gR2dDbXdqayQM0lqq5iktGtvuCD.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       16,
+       10751
+      ],
+      "popularity": 1.1498,
+      "release_date": "1990-06-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 8.5,
+      "vote_count": 2
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1076701,
+    "name": "Dustin Runnels",
+    "original_name": "Dustin Runnels",
+    "media_type": "person",
+    "popularity": 1.1766,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/mdfUXLjfQEDORcjHrnx1ZUJTZQ8.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/2uw62v6FTXg3yJTOIQVcUQcp0J.jpg",
+      "id": 685571,
+      "title": "Copper Bill",
+      "original_title": "Copper Bill",
+      "overview": "Two thieves attempt to steal 80 million dollars of hidden Texas drug money from the famed ranch belonging to a dead member of the Cowboy Mafia.",
+      "poster_path": "/mSZnvJ0olvAss77b01Vf68or8xr.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       80,
+       28,
+       53
+      ],
+      "popularity": 1.4148,
+      "release_date": "2020-09-30",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.6,
+      "vote_count": 28
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/jxXNeraj19KK7qR1kFIPJEgY6h0.jpg",
+      "id": 264480,
+      "title": "Meet Me There",
+      "original_title": "Meet Me There",
+      "overview": "After several years of sexual dysfunction, Ada and her boyfriend, Calvin travel to her hometown in rural Oklahoma in hopes of piecing together her fragmented childhood memories. They find their answers, but can they find their way back home?",
+      "poster_path": "/2tMTT78Uooim6OR2iKWFG0Utc7N.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       27,
+       53
+      ],
+      "popularity": 1.0614,
+      "release_date": "2014-04-04",
+      "softcore": false,
+      "video": false,
+      "vote_average": 3.9,
+      "vote_count": 28
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/2WxScrOGtxcV44gIiHTiyYM5yAj.jpg",
+      "id": 58962,
+      "title": "WWE WrestleMania XII",
+      "original_title": "WWE WrestleMania XII",
+      "overview": "Shawn Michaels and Bret \"Hit Man\" Hart battle it out in an epic, hour long Iron Man Match with the WWE Championship on the line. The Undertaker faces Diesel. \"Rowdy\" Roddy Piper and Goldust collide in a wild Hollywood Backlot Brawl. The Ultimate Warrior goes one-on-one with Hunter Hearst-Helmsley. Stone Cold Steve Austin and much more!",
+      "poster_path": "/mRNazbYatQzOZGTUuynKqMV9cGf.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       28,
+       18
+      ],
+      "popularity": 1.4036,
+      "release_date": "1996-03-31",
+      "softcore": false,
+      "video": true,
+      "vote_average": 7,
+      "vote_count": 38
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 939535,
+    "name": "Brian Runnels",
+    "original_name": "Brian Runnels",
+    "media_type": "person",
+    "popularity": 0.8103,
+    "gender": 0,
+    "known_for_department": "Production",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/kylqe795oZYdUpa5WLFPYdjzqjw.jpg",
+      "id": 91356,
+      "title": "Comic-Con Episode IV: A Fan's Hope",
+      "original_title": "Comic-Con Episode IV: A Fan's Hope",
+      "overview": "A behind-the-scenes look at San Diego Comic-Con, the world's largest comic book convention, and the fans who attend every year.",
+      "poster_path": "/zcYCcVxJWulOMNrQJZxzMRuBmm7.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       99
+      ],
+      "popularity": 3.9934,
+      "release_date": "2011-09-10",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.9,
+      "vote_count": 66
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/vRyC5WT7ytRflfEFFyRmGeZc0Cf.jpg",
+    "id": 84553,
+    "name": "Blade Runner: Black Lotus",
+    "original_name": "Blade Runner: Black Lotus",
+    "overview": "Los Angeles 2032. A young woman wakes up with no memories, and possessing deadly skills. The only clues to her mystery are a locked data device and a tattoo of a black lotus. Putting together the pieces, she must hunt down the people responsible for her brutal and bloody past to find the truth of her lost identity.",
+    "poster_path": "/aR06SJRDGqRmGQYXAXqeOkRZq7T.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     16,
+     10765,
+     10759
+    ],
+    "popularity": 12.1543,
+    "first_air_date": "2021-11-14",
+    "softcore": false,
+    "vote_average": 7.1,
+    "vote_count": 243,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/iSDQjFsfmI1JUaI4Nzv1jRAb0Gc.jpg",
+    "id": 833898,
+    "title": "The Blade Runner Phenomenon",
+    "original_title": "Das Phänomen Blade Runner",
+    "overview": "Ridley Scott's cult film Blade Runner, based on a novel by Philip K. Dick and released in 1982, is one of the most influential science fiction films ever made. Its depiction of Los Angeles in the year 2019 is oppressively prophetic: climate catastrophe, increasing public surveillance, powerful monopolistic corporations, highly evolved artificial intelligence; a fantastic vision of the future world that has become a frightening reality.",
+    "poster_path": "/2ANJtUxqBlCLpV8CXv3BPLo0FV5.jpg",
+    "media_type": "movie",
+    "original_language": "de",
+    "genre_ids": [
+     99,
+     36,
+     10770
+    ],
+    "popularity": 1.9488,
+    "release_date": "2021-05-27",
+    "softcore": false,
+    "video": false,
+    "vote_average": 6.8,
+    "vote_count": 10
+   },
+   {
+    "adult": false,
+    "id": 1155264,
+    "name": "Virgil Runnels",
+    "original_name": "Virgil Runnels",
+    "media_type": "person",
+    "popularity": 0.9567,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/ot44NVdr2KjiLbrEJqeC37jibzB.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/jXlyxmwM39pNUupSMrZiXXy70ah.jpg",
+      "id": 409122,
+      "title": "Scooby-Doo! and WWE: Curse of the Speed Demon",
+      "original_title": "Scooby-Doo! and WWE: Curse of the Speed Demon",
+      "overview": "When Scooby and Mystery Inc. visit an off-road racing competition, it's not long before strange events start to occur. A mysterious phantom racer, known only as Inferno, is causing chaos and is determined to sabotage the race. It's up to Scooby-Doo, Shaggy and their new driving partner, The Undertaker, to save the race and solve the mystery.",
+      "poster_path": "/wRrvPis7C8YfbOBuuyUoZel7MC4.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       16,
+       10751,
+       35,
+       9648
+      ],
+      "popularity": 3.7468,
+      "release_date": "2016-07-23",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.5,
+      "vote_count": 207
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/dVMZcH0rch4qYAqC0ZwdPHC097S.jpg",
+      "id": 188800,
+      "title": "WWE WrestleMania VI",
+      "original_title": "WWE WrestleMania VI",
+      "overview": "More than 65,000 fans pack the Toronto SkyDome to witness The Ultimate Challenge as The Ultimate Warrior faces Hulk Hogan with both the WWE Championship and WWE Intercontinental Championship on the line. \"The Million Dollar Man\" Ted DiBiase defends the Million Dollar Championship against Jake \"The Snake\" Roberts. Dusty Rhodes and more in action!",
+      "poster_path": "/5YIED4k7IwhhUO5kcCASpdoTJ6V.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       28,
+       18
+      ],
+      "popularity": 1.579,
+      "release_date": "1990-04-01",
+      "softcore": false,
+      "video": true,
+      "vote_average": 8.4,
+      "vote_count": 28
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 699851,
+      "title": "WWE Hall of Fame 2007",
+      "original_title": "WWE Hall of Fame 2007",
+      "overview": "The class of 2007 takes their rightful place in the Hall of Fame, during Wrestlemania 23 weekend. Inductees include Nick Bockwinkel, The Wild Samoans, The Sheik, Mr. Fuji, Jim Ross, Jerry Lawler, Mr. Perfect, and Dusty Rhodes.",
+      "poster_path": "/2cLzhzJPvSnwxMWUN38AEZXxI8y.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [],
+      "popularity": 1.6554,
+      "release_date": "2007-03-31",
+      "softcore": false,
+      "video": true,
+      "vote_average": 8.6,
+      "vote_count": 5
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/uOlIq21Rx0Sl7y39b1znTfQYGb7.jpg",
+    "id": 171802,
+    "name": "Blade Runner 2099",
+    "original_name": "Blade Runner 2099",
+    "overview": "Fifty years after the events of Blade Runner 2049, Los Angeles has been reborn, just not by humanity. Cora, a fugitive in a final bid to stop running, takes on one last identity: a Blade Runner. Forced to partner with Olwen, a Replicant days from dying, she hunts down a runaway hiding a truth that could collapse their fragile city.",
+    "poster_path": "/hr5aLuCdLC5X423c9G1pPkWR6Ud.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10765
+    ],
+    "popularity": 6.6623,
+    "first_air_date": "2026-11-25",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "US"
+    ]
+   }
+  ],
+  "total_pages": 18,
+  "total_results": 357
+ }
+}

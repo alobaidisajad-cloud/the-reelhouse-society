@@ -1,0 +1,559 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=the+ma",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": "/zUlWALIdllnjtHTGl25oBojhCMW.jpg",
+    "id": 93363,
+    "name": "Ma Xiangyang Went to the Countryside",
+    "original_name": "马向阳下乡记",
+    "overview": "The drama depicts the life and learnings of a countryside man.",
+    "poster_path": "/A9NLTJwtIs8XzOfbaRr20FEMGrH.jpg",
+    "media_type": "tv",
+    "original_language": "zh",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 4.4448,
+    "first_air_date": "2014-09-17",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "CN"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/5ZL8GyLmw7QbnTK3SeU5ayeN9SD.jpg",
+    "id": 1309123,
+    "title": "Ma Da: The Drowning Spirit",
+    "original_title": "Ma da",
+    "overview": "In the dark waters of the Mekong River, corpse collector Le confronts MA DA - the vengeful drowning spirit, after it abducts her daughter. Determined to save her child, Mrs. Le embarks on a desperate rescue to prevent her child's ghostly fate beneath the waters.",
+    "poster_path": "/jNYvUjKabyYnXlPkDHUvQwDRog4.jpg",
+    "media_type": "movie",
+    "original_language": "vi",
+    "genre_ids": [
+     27
+    ],
+    "popularity": 2.725,
+    "release_date": "2024-08-16",
+    "softcore": false,
+    "video": true,
+    "vote_average": 6.5,
+    "vote_count": 2
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/738Ldfj0sGo9gduxrbfzswYrNlT.jpg",
+    "id": 1729228,
+    "title": "Ma the Matician",
+    "original_title": "파리의 수학자",
+    "overview": "Musician Pi has lost the story he once wanted to convey through his songs. With the core of his creativity gone, he drifts without direction. Heo-su, who loves mathematics, devotes himself to his research while extolling its beauty. He dreams of Paris, a city where mathematics coexists with history and the arts. Recognizing the extraordinary potential of both individuals, Lee harbors an ambitious vision: to build a multidisciplinary cultural and arts collective around them and orchestrate something on a grand scale.",
+    "poster_path": "/yt1GTvu9AlsvXzk0QATRBroYVZz.jpg",
+    "media_type": "movie",
+    "original_language": "ko",
+    "genre_ids": [
+     18,
+     10402
+    ],
+    "popularity": 1.0104,
+    "release_date": "2026-09-06",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 197250,
+    "name": "The Party Member Sister Ma",
+    "original_name": "党员马大姐",
+    "overview": "Sister Ma decides to join the Chinese Communist Party.",
+    "poster_path": "/tjdAf2nNUEb9PVNIcED44MPI0E9.jpg",
+    "media_type": "tv",
+    "original_language": "zh",
+    "genre_ids": [
+     10766
+    ],
+    "popularity": 1.4875,
+    "first_air_date": "2002-07-16",
+    "softcore": false,
+    "vote_average": 0,
+    "vote_count": 0,
+    "origin_country": [
+     "CN"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/hMzXChDOMxmrTDKzyyHJSGe2jkO.jpg",
+    "id": 136487,
+    "name": "The Best Ma Tash",
+    "original_name": "أحلى ما طاش",
+    "overview": "The program shows the best episodes from the Saudi comedy series 'Tash Ma Tash', which aired on the Saudi television for 18 continuous seasons, as the show's creators Nasser Al Qasabi and Abdullah Al Sadhan discussed a set of social issues that concern the Saudi society in a cynical way.",
+    "poster_path": "/yT2NKjQpCVbbUBMvATC6jmoVeXD.jpg",
+    "media_type": "tv",
+    "original_language": "ar",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 1.7281,
+    "first_air_date": "2020-03-23",
+    "softcore": false,
+    "vote_average": 10,
+    "vote_count": 1,
+    "origin_country": [
+     "SA"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/tmeptl3o7eLzVEWVJE7NfmIuT2f.jpg",
+    "id": 246925,
+    "name": "Ne'ma, The Lawyer",
+    "original_name": "نعمة الافوكاتو",
+    "overview": "Madly in love with her no-good husband, a skilled lawyer goes above and beyond to help him. But when she discovers he’s cheating on her, she plots her revenge.",
+    "poster_path": "/c68sx6jwADFWnjSWdxKcpiH5yLi.jpg",
+    "media_type": "tv",
+    "original_language": "ar",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 2.2221,
+    "first_air_date": "2024-03-11",
+    "softcore": false,
+    "vote_average": 9,
+    "vote_count": 2,
+    "origin_country": [
+     "EG"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/lrKyCG1DSJHvpJsw7YozU3e4ydV.jpg",
+    "id": 7967,
+    "name": "The Rachel Maddow Show",
+    "original_name": "The Rachel Maddow Show",
+    "overview": "The Rachel Maddow Show is a daily news and opinion television program that airs on MSNBC, running in the 9:00 pm ET timeslot. It is hosted by Rachel Maddow, who gained popularity with her frequent appearances as a liberal pundit on various MSNBC programs. It is based on her former radio show of the same name. The show debuted on September 8, 2008.",
+    "poster_path": "/nm4ubPrrnksdaD9EAvqzClfGlFo.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10763,
+     10767
+    ],
+    "popularity": 58.6944,
+    "first_air_date": "2008-09-08",
+    "softcore": false,
+    "vote_average": 5.9,
+    "vote_count": 30,
+    "origin_country": [
+     "US"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1007978,
+    "title": "Ma and the Auto",
+    "original_title": "Ma and the Auto",
+    "overview": "An Edgar A. Guest Poetic Gem featuring vocalist Al Shayne.  This film features the original song Back Seat Drivers by Loesser & Herscher.",
+    "poster_path": null,
+    "media_type": "movie",
+    "original_language": "en",
+    "genre_ids": [],
+    "popularity": 0.7384,
+    "release_date": "1936-04-28",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "id": 3489675,
+    "name": "The Macarena",
+    "original_name": "The Macarena",
+    "media_type": "person",
+    "popularity": 0.3974,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/sZaeP5DQ6Rg8iXp80LL4fxh7rXG.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/Tqw1rqhMr0pOgm0MJTlNVULtMn.jpg",
+      "id": 196630,
+      "name": "Sí lo digo",
+      "original_name": "Sí lo digo",
+      "overview": "",
+      "poster_path": "/l51guY4TupMoFnU0IGFhz0TT8KT.jpg",
+      "media_type": "tv",
+      "original_language": "es",
+      "genre_ids": [
+       10767,
+       10764
+      ],
+      "popularity": 3.3846,
+      "first_air_date": "2022-03-30",
+      "softcore": false,
+      "vote_average": 6,
+      "vote_count": 2,
+      "origin_country": [
+       "ES"
+      ]
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/bHjlnAV7uzCKGUsf02hr0BGRLCX.jpg",
+      "id": 124045,
+      "name": "Drag Race España",
+      "original_name": "Drag Race España",
+      "overview": "On the Spanish version of RuPaul's Drag Race, Supremme de Luxe presides as Spain's most talented queens compete to be crowned Spain's Next Drag Superstar.",
+      "poster_path": "/dbkZ73dWB0bF9o8o9GtatzmkmJE.jpg",
+      "media_type": "tv",
+      "original_language": "es",
+      "genre_ids": [
+       10764
+      ],
+      "popularity": 17.7416,
+      "first_air_date": "2021-05-30",
+      "softcore": false,
+      "vote_average": 7.5,
+      "vote_count": 24,
+      "origin_country": [
+       "ES"
+      ]
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/msydlUsiNwgwTOCJ4DPEiwiiuXK.jpg",
+      "id": 153229,
+      "name": "Gran Hotel de las Reinas",
+      "original_name": "Gran Hotel de las Reinas",
+      "overview": "",
+      "poster_path": "/d5nMWruZe6amiBQpAFgDCYJSxNx.jpg",
+      "media_type": "tv",
+      "original_language": "es",
+      "genre_ids": [
+       10764,
+       35
+      ],
+      "popularity": 1.9321,
+      "first_air_date": "2021-12-26",
+      "softcore": false,
+      "vote_average": 7,
+      "vote_count": 4,
+      "origin_country": [
+       "ES"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4635043,
+    "name": "the Master",
+    "original_name": "the Master",
+    "media_type": "person",
+    "popularity": 0.5107,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1269727,
+      "title": "Hey Master",
+      "original_title": "Hey Master",
+      "overview": "Music video by Rose Glass for track by The Midnight Barbers.",
+      "poster_path": "/jhNrUxvhZqu3DYch2pfllyyOEli.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [],
+      "popularity": 2.2604,
+      "release_date": "2016-08-29",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6,
+      "vote_count": 2
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 5569586,
+    "name": "The Martins",
+    "original_name": "The Martins",
+    "media_type": "person",
+    "popularity": 0.2651,
+    "gender": 0,
+    "known_for_department": "Production",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1214687,
+      "title": "Saving Art",
+      "original_title": "Saving Art",
+      "overview": "Instead of telling a newly diagnosed 5-year-old son that he has Leukaemia; Brian tells Arthur that the chemotherapy will give him superpowers. In a battle to keep them both positive, Brian is haunted by his lie as he struggles to find hope",
+      "poster_path": "/xdDzDoKxYrBp2BGvpDh3rrfepVI.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.8974,
+      "release_date": "2023-07-25",
+      "softcore": false,
+      "video": false,
+      "vote_average": 8.7,
+      "vote_count": 3
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3030379,
+    "name": "The Marquesa",
+    "original_name": "The Marquesa",
+    "media_type": "person",
+    "popularity": 0.3369,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/iA33XDgiyCV5nACC9gKMvNMVQgE.jpg",
+      "id": 811927,
+      "title": "The Marquesa: Portrait of a Dominatrix",
+      "original_title": "The Marquesa: Portrait of a Dominatrix",
+      "overview": "This documentary sets the focus sharply on the often maligned and misunderstood world of sadomasochism. It gives us a glimpse into the life of The Marquesa, a dominatrix who guides us through the S&M community and its rituals and motivations. The Marquesa explores and examines her own relationship to S&M, and to the submissives that make the scenes possible. The video dismantles the myths and fallacies surrounding the practice by a straightforward and frank discussion.",
+      "poster_path": "/4oIBnNg59u7tpUpoSrQJbSWxnLD.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       99
+      ],
+      "popularity": 0.941,
+      "release_date": "1997-08-14",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 5517558,
+    "name": "The Maljons",
+    "original_name": "The Maljons",
+    "media_type": "person",
+    "popularity": 0.2541,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1501394,
+      "title": "Robinson Crusoe",
+      "original_title": "Robinson Crusoe",
+      "overview": "A BBC Christmas Pantomime of Robinson Crusoe starring Ken Dodd. Dodd had been performing this for several years when this was filmed for the special.",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       10770
+      ],
+      "popularity": 1.751,
+      "release_date": "1970-12-25",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4218380,
+    "name": "The Malloys",
+    "original_name": "The Malloys",
+    "media_type": "person",
+    "popularity": 0.2694,
+    "gender": 0,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": []
+   },
+   {
+    "adult": false,
+    "backdrop_path": "/3EGjqKhVHGsvNHvBIbxmqS17Aal.jpg",
+    "id": 224,
+    "name": "Match of the Day",
+    "original_name": "Match of the Day",
+    "overview": "BBC's football highlights and analysis.\n\n\"The longest-running football television programme in the world\" as recognised by Guinness World Records in 2015.",
+    "poster_path": "/tVFCu0jE9m5QHmHM4rzEFGs1kUI.jpg",
+    "media_type": "tv",
+    "original_language": "en",
+    "genre_ids": [
+     10767,
+     10763
+    ],
+    "popularity": 96.2542,
+    "first_air_date": "1964-08-22",
+    "softcore": false,
+    "vote_average": 7.6,
+    "vote_count": 51,
+    "origin_country": [
+     "GB"
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 231825,
+    "name": "Father and Son of the Ma Family",
+    "original_name": "二马",
+    "overview": "Ma Ze Ren and his son Ma Wei arrive in London after the death of his older brother in order to carry on the family's small antique business.",
+    "poster_path": "/3pJbzKLln5ayQYDMtiYuJEWifxZ.jpg",
+    "media_type": "tv",
+    "original_language": "zh",
+    "genre_ids": [
+     18,
+     10751
+    ],
+    "popularity": 2.6692,
+    "first_air_date": "1999-02-03",
+    "softcore": false,
+    "vote_average": 7.5,
+    "vote_count": 2,
+    "origin_country": [
+     "CN"
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4476931,
+    "name": "The Martians",
+    "original_name": "The Martians",
+    "media_type": "person",
+    "popularity": 0.2888,
+    "gender": 0,
+    "known_for_department": "Sound",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1229936,
+      "title": "Cassia Bis",
+      "original_title": "Cassia Bis",
+      "overview": "",
+      "poster_path": "/9pJHObcbD39bIhPOky7msPwHPgb.jpg",
+      "media_type": "movie",
+      "original_language": "it",
+      "genre_ids": [
+       10402
+      ],
+      "popularity": 2.5307,
+      "release_date": "2023-12-04",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2871035,
+    "name": "The Marvels",
+    "original_name": "The Marvels",
+    "media_type": "person",
+    "popularity": 0.4411,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 768789,
+      "title": "Reggae Concert from the Edinburgh Festival",
+      "original_title": "Reggae Concert from the Edinburgh Festival",
+      "overview": "Live performance specially recorded for Whistle Test from the Reggae Concert at the Edinburgh Festival in 1973, featuring The Cimarons, Winston Groovy, Dennis Alcapone, The Marvels, Nicky Thomas and The Pioneers.",
+      "poster_path": "/yPTLY7ynJJRRQUWjALwyJuvEx3r.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       10402
+      ],
+      "popularity": 1.0618,
+      "release_date": "2011-02-12",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3068605,
+    "name": "The Macarena",
+    "original_name": "The Macarena",
+    "media_type": "person",
+    "popularity": 0.25,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": []
+   },
+   {
+    "adult": false,
+    "id": 4611069,
+    "name": "The Masked FIPper",
+    "original_name": "The Masked FIPper",
+    "media_type": "person",
+    "popularity": 0.3402,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1255850,
+      "title": "FIP Bring the Pain",
+      "original_title": "FIP Bring the Pain",
+      "overview": "Full Impact Pro",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [],
+      "popularity": 1.3467,
+      "release_date": "2005-03-26",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   }
+  ],
+  "total_pages": 500,
+  "total_results": 10000
+ }
+}

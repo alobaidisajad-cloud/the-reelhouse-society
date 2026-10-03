@@ -327,6 +327,12 @@ $$;
 REVOKE ALL ON FUNCTION public.get_lounge_unread_counts() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_lounge_unread_counts() TO authenticated, service_role;
 
+-- The room's newest-first index carries each message's author, so a count of
+-- up to 100 per room, for a member in hundreds of rooms, reads the index and
+-- never the table (the room's own pages read it in the same order).
+CREATE INDEX lounge_messages_room_newest ON public.lounge_messages (lounge_id, created_at DESC, id DESC) INCLUDE (user_id);
+DROP INDEX public.lounge_messages_lounge_created_id_idx;
+
 -- ── 5 · Every ordered page has the index it is read in ────────────────────
 -- A member's notices, newest first; and the unread ones, counted from the
 -- index alone (the hidden test reads from_user_id, which rides along).

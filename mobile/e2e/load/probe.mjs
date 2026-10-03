@@ -118,11 +118,36 @@ function time(p) {
  * the plan of every statement the function runs, and those come first.
  */
 function plan(p) {
-  const inner = "LOAD 'auto_explain'; SET auto_explain.log_min_duration = 0; SET auto_explain.log_analyze = on; SET auto_explain.log_buffers = on; SET auto_explain.log_nested_statements = on; SET client_min_messages = log;";
+  const inner = "LOAD 'auto_explain'; SET auto_explain.log_min_duration = 0; SET auto_explain.log_analyze = on; SET auto_explain.log_buffers = on; SET auto_explain.log_nested_statements = on; SET auto_explain.log_format = 'json'; SET client_min_messages = log;";
   const sql = `${inner}\nBEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', '${claims(p.as)}', true);\nEXPLAIN (ANALYZE, BUFFERS) ${p.sql};\nROLLBACK;`;
   const r = spawnSync('psql', [DB, '-X', '-q', '-t', '-A', '-c', sql], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-  const nested = (r.stderr || '').trim();
-  return [nested && `── inside the function (auto_explain) ──\n${nested}`, `── the call ──\n${r.stdout || ''}`].filter(Boolean).join('\n');
+  return [slowestInside(r.stderr || ''), `── the call ──\n${r.stdout || ''}`].filter(Boolean).join('\n');
+}
+
+/**
+ * auto_explain's JSON, one LOG per statement the read ran: the slowest
+ * statement inside a function, as a compact tree (an annotation holds about
+ * 4,000 characters, and a plan in text with its query beside it does not fit).
+ */
+function slowestInside(log) {
+  const plans = [];
+  for (const block of log.split(/^LOG:\s+duration: /m).slice(1)) {
+    const at = block.indexOf('{');
+    try { plans.push({ ms: parseFloat(block), plan: JSON.parse(block.slice(at, block.lastIndexOf('}') + 1)) }); } catch { /* not a plan */ }
+  }
+  const inner = plans.filter((x) => !/^\s*(LOAD|BEGIN|EXPLAIN|SELECT set_config)/i.test(x.plan['Query Text'] ?? ''));
+  if (!inner.length) return '';
+  const worst = inner.reduce((a, b) => (b.ms > a.ms ? b : a));
+  const lines = [];
+  const walk = (n, depth) => {
+    const on = [n['Relation Name'], n['Index Name'] && `using ${n['Index Name']}`].filter(Boolean).join(' ');
+    const bufs = (n['Shared Hit Blocks'] ?? 0) + (n['Shared Read Blocks'] ?? 0);
+    const cond = n['Index Cond'] ?? n['Filter'] ?? n['Hash Cond'] ?? '';
+    lines.push(`${'  '.repeat(depth)}${n['Node Type']}${on ? ` ${on}` : ''} · ${n['Actual Total Time']} ms · rows ${n['Actual Rows']} × ${n['Actual Loops']} · buffers ${bufs}${cond ? ` · ${String(cond).slice(0, 120)}` : ''}`);
+    for (const c of n.Plans ?? []) walk(c, depth + 1);
+  };
+  walk(worst.plan.Plan, 0);
+  return `── the slowest statement inside: ${worst.ms} ms ──\n${lines.join('\n')}`;
 }
 
 const rows = [];

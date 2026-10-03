@@ -1,0 +1,27 @@
+{
+ "path": "/search/keyword?query=casablan",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 348864,
+    "name": "casablanca"
+   },
+   {
+    "id": 286622,
+    "name": "catalan"
+   },
+   {
+    "id": 1623,
+    "name": "casablanca, morocco"
+   },
+   {
+    "id": 314409,
+    "name": "casablanca records"
+   }
+  ],
+  "total_pages": 1,
+  "total_results": 4
+ }
+}

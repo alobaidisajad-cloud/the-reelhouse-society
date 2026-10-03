@@ -1,0 +1,724 @@
+{
+ "path": "/search/multi?include_adult=false&page=1&query=blad",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 725313,
+    "title": "Scattered Pages",
+    "original_title": "Brokiga blad",
+    "overview": "Vera Nilsson is friendly with the poor neighbor boy Håkan, this is not seen kindly by Vera's father Nils.",
+    "poster_path": "/dOz32WzySQDSwmfPyW6XsJi61Na.jpg",
+    "media_type": "movie",
+    "original_language": "sv",
+    "genre_ids": [
+     35
+    ],
+    "popularity": 1.0504,
+    "release_date": "1931-01-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 9,
+    "vote_count": 1
+   },
+   {
+    "adult": false,
+    "id": 110133,
+    "name": "Hans Petter Blad",
+    "original_name": "Hans Petter Blad",
+    "media_type": "person",
+    "popularity": 0.5785,
+    "gender": 0,
+    "known_for_department": "Writing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/aGm9f3JapOcwKqxQ1I1YBOsQgh7.jpg",
+      "id": 33114,
+      "title": "Comrade Pedersen",
+      "original_title": "Gymnaslærer Pedersen",
+      "overview": "A drama focused on Norwegian society in the 1970s, an era politically influenced by Marxism and Leninism.",
+      "poster_path": "/VMwvljc0EAteYL0fEf6STYmGmu.jpg",
+      "media_type": "movie",
+      "original_language": "no",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 2.853,
+      "release_date": "2006-02-24",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.5,
+      "vote_count": 25
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/88UWJUVvZAitpmCpxjBdA9QuurJ.jpg",
+      "id": 62819,
+      "title": "Bunch of Five",
+      "original_title": "Schpaaa",
+      "overview": "Jonas and Emir are members of a criminal gang of 14-15 year-olds in Oslo. Emir has slight brain-damage after being beaten by his father as a 5-year-old, and Jonas' biggest problem is stopping Emir from hitting people on the head. One day, they are offered a job by a gang of drug-dealers: Deliver a packet of heroin to one guy and beat up another. This is the start of a chain of events that sends their lives spiraling out of control.",
+      "poster_path": "/nIa3uVmGysTYsKvKrMENnZ8eqd4.jpg",
+      "media_type": "movie",
+      "original_language": "no",
+      "genre_ids": [
+       80,
+       18
+      ],
+      "popularity": 0.7659,
+      "release_date": "1998-10-16",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.8,
+      "vote_count": 18
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 104757,
+      "name": "Offshore",
+      "original_name": "Offshore",
+      "overview": "Offshore is a Norwegian soap opera. It is set on  the oil platform 'Huldra' in the North Sea. We follow the employees and their, at times, difficult relationships both at work and in the spare time.\n\nIt originally aired on NRK1 from 8 September 1996 to 28 November 1999.",
+      "poster_path": "/giWzLXhMR0ESEgqdQwAhu0ulC5z.jpg",
+      "media_type": "tv",
+      "original_language": "en",
+      "genre_ids": [
+       18,
+       10766
+      ],
+      "popularity": 3.2198,
+      "first_air_date": "1996-09-08",
+      "softcore": false,
+      "vote_average": 6.7,
+      "vote_count": 3,
+      "origin_country": []
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 6268179,
+    "name": "Blad",
+    "original_name": "Blad",
+    "media_type": "person",
+    "popularity": 0.2882,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/jccQakK5TaHYzi7IA0pPDEskl7P.jpg",
+      "id": 292532,
+      "name": "Brazil '70: The Third Star",
+      "original_name": "Brasil 70: A Saga do Tri",
+      "overview": "In 1970, the Brazilian national team took the field with big dreams and an even bigger challenge: to become the first three-time world champions.",
+      "poster_path": "/u6PBGDVs0CZJsq8IpWI5C4u0eyl.jpg",
+      "media_type": "tv",
+      "original_language": "pt",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 8.5711,
+      "first_air_date": "2026-05-29",
+      "softcore": false,
+      "vote_average": 8.318,
+      "vote_count": 22,
+      "origin_country": [
+       "BR"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2266508,
+    "name": "Junior Blad",
+    "original_name": "Junior Blad",
+    "media_type": "person",
+    "popularity": 0.3124,
+    "gender": 2,
+    "known_for_department": "Acting",
+    "profile_path": "/g7HnvZyYGNPEjsnoRrm0rZ5Qe1n.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/tBsms8rJtjb3olWG4D9i4lkmBCU.jpg",
+      "id": 51423,
+      "title": "Beyond",
+      "original_title": "Svinalängorna",
+      "overview": "One morning just before Christmas, Leena receives a phone call from a hospital in her childhood hometown telling her that her mother is dying. This news takes her on a journey to face her mother for the first time in her adult life. Leena has fought all her life to let go of her grief over her lost and dark childhood. She is now forced to deal with her past to be able to move on.",
+      "poster_path": "/5lgzIR9egyu9xNuGVWctxWVFfy8.jpg",
+      "media_type": "movie",
+      "original_language": "sv",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.4468,
+      "release_date": "2010-12-10",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.5,
+      "vote_count": 61
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2266509,
+    "name": "Alpha Blad",
+    "original_name": "Alpha Blad",
+    "media_type": "person",
+    "popularity": 0.3763,
+    "gender": 1,
+    "known_for_department": "Acting",
+    "profile_path": "/aQexoKMJn3JkLXCDUajqLoVhqHk.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/tBsms8rJtjb3olWG4D9i4lkmBCU.jpg",
+      "id": 51423,
+      "title": "Beyond",
+      "original_title": "Svinalängorna",
+      "overview": "One morning just before Christmas, Leena receives a phone call from a hospital in her childhood hometown telling her that her mother is dying. This news takes her on a journey to face her mother for the first time in her adult life. Leena has fought all her life to let go of her grief over her lost and dark childhood. She is now forced to deal with her past to be able to move on.",
+      "poster_path": "/5lgzIR9egyu9xNuGVWctxWVFfy8.jpg",
+      "media_type": "movie",
+      "original_language": "sv",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.4468,
+      "release_date": "2010-12-10",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.5,
+      "vote_count": 61
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 144137,
+    "name": "Tehilla Blad",
+    "original_name": "Tehilla Blad",
+    "media_type": "person",
+    "popularity": 0.5518,
+    "gender": 1,
+    "known_for_department": "Acting",
+    "profile_path": "/jh3JTpmXVYUs4k4o1rz0v60TOTO.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/dPE25PbaeE6fCR2SQb4H4MeBmml.jpg",
+      "id": 15472,
+      "title": "The Girl with the Dragon Tattoo",
+      "original_title": "Män som hatar kvinnor",
+      "overview": "Swedish thriller based on Stieg Larsson's novel about a male journalist and a young female hacker. In the opening of the movie, Mikael Blomkvist, a middle-aged publisher for the magazine Millennium, loses a libel case brought by corrupt Swedish industrialist Hans-Erik Wennerström. Nevertheless, he is hired by Henrik Vanger in order to solve a cold case, the disappearance of Vanger's niece",
+      "poster_path": "/r2pFUXKK20KD9RE3yybpQsNynRE.jpg",
+      "media_type": "movie",
+      "original_language": "sv",
+      "genre_ids": [
+       18,
+       53,
+       80,
+       9648
+      ],
+      "popularity": 8.325,
+      "release_date": "2009-02-27",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.536,
+      "vote_count": 3335
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/nra78PoXu2lQhdgFKJ8y8zL7HGN.jpg",
+      "id": 24253,
+      "title": "The Girl Who Played with Fire",
+      "original_title": "Flickan som lekte med elden",
+      "overview": "Mikael Blomkvist, publisher of Millennium magazine, has made his living exposing the crooked and corrupt practices of establishment Swedish figures. So when a young journalist approaches him with a meticulously researched thesis about sex trafficking in Sweden and those in high office who abuse underage girls, Blomkvist immediately throws himself into the investigation.",
+      "poster_path": "/A8UjhPjINIBgmoH37aqt40u53PQ.jpg",
+      "media_type": "movie",
+      "original_language": "sv",
+      "genre_ids": [
+       18,
+       28,
+       53,
+       80,
+       9648
+      ],
+      "popularity": 5.8427,
+      "release_date": "2009-09-18",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.99,
+      "vote_count": 1862
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/qhohCrCs4sv1M4H9NIRlhgl0lcE.jpg",
+      "id": 33613,
+      "title": "The Girl Who Kicked the Hornet's Nest",
+      "original_title": "Luftslottet som sprängdes",
+      "overview": "After taking a bullet to the head, Salander is under close supervision in a hospital and is set to face trial for attempted murder on her eventual release. With the help of journalist Mikael Blomkvist and his researchers at Millennium magazine, Salander must prove her innocence. In doing this she plays against powerful enemies and her own past.",
+      "poster_path": "/92byRQBuuiLcfKnBi5NOuipSgV8.jpg",
+      "media_type": "movie",
+      "original_language": "sv",
+      "genre_ids": [
+       28,
+       53,
+       80,
+       9648
+      ],
+      "popularity": 4.7938,
+      "release_date": "2009-11-27",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.068,
+      "vote_count": 1532
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3563515,
+    "name": "Maria Blad",
+    "original_name": "Maria Blad",
+    "media_type": "person",
+    "popularity": 0.3102,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/erNNo9u1AgAyfOLW5WJ5LDcASum.jpg",
+      "id": 183784,
+      "title": "Incident by a Bank",
+      "original_title": "Händelse vid bank",
+      "overview": "Incident by a bank is a detailed account of a failed bank robbery: A single take where over 90 people perform a meticulous choreography for the camera. The film recreates an actual event that took place in Stockholm in June 2006.",
+      "poster_path": "/mwnVqABU6wkHRjagmPiKoZB1Rt1.jpg",
+      "media_type": "movie",
+      "original_language": "sv",
+      "genre_ids": [
+       28,
+       35,
+       80,
+       18
+      ],
+      "popularity": 0.8576,
+      "release_date": "2010-01-30",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.6,
+      "vote_count": 77
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 1907916,
+    "name": "Birgitta Blad",
+    "original_name": "Birgitta Blad",
+    "media_type": "person",
+    "popularity": 0.4118,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/d5D79mQ3jKquIW00WadMEa4iOq6.jpg",
+      "id": 407204,
+      "title": "The Giant",
+      "original_title": "Jätten",
+      "overview": "A film about Rikard, age 30. He is autistic and severely disfigured. He lives in a home for disabled people. He was separated from his mother as a three-year-old, and this continues to torment him today. To deal with life's trials, Rikard escapes into a fantasy world in which he's a 50-meter-tall giant.",
+      "poster_path": "/cStiZ56V7Gk7WNYmDcTQXJ2Ayh6.jpg",
+      "media_type": "movie",
+      "original_language": "sv",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.8165,
+      "release_date": "2016-10-14",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.9,
+      "vote_count": 37
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3850433,
+    "name": "Zacharias Blad",
+    "original_name": "Zacharias Blad",
+    "media_type": "person",
+    "popularity": 0.3792,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/trTXjWYOvqOCaOSY7YbOA17O21V.jpg",
+      "id": 209234,
+      "name": "Karlsson on the Roof",
+      "original_name": "Karlsson på taket",
+      "overview": "Karlsson's grandmother is the world's best racing driver and Karlsson is not so bad either. Kaxige Kirre challenges Karlsson in a box car race. Now it is up to Karlsson and Lillebror to build a really fast car so that they can give Kirre what he can stand. Little brother has made a kite at school that he wants to test fly with Bosse. Just this day, it blows a lot so the dragon wears itself out and sticks out into the sky. Shortly afterwards, Karlsson is greeted by a wild creature that frightens him. What kind of scary character is that? When Mrs. Olsson's parrot escapes from her cage, it's good to have a friend who can fly. Especially when the one who finds the bird can get a hundred kroner in hit salary?",
+      "poster_path": "/v0wF3YNcbZpv8pede3pJcp8TMy5.jpg",
+      "media_type": "tv",
+      "original_language": "sv",
+      "genre_ids": [
+       10751,
+       16,
+       10762
+      ],
+      "popularity": 3.1268,
+      "first_air_date": "2002-01-01",
+      "softcore": false,
+      "vote_average": 10,
+      "vote_count": 1,
+      "origin_country": [
+       "DE",
+       "SE"
+      ]
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 982730,
+    "title": "System Error",
+    "original_title": "Błąd systemu",
+    "overview": "A unified society lives in a unified world - everything works like clockwork. Sometimes there are mismatched elements, \"system errors\" that have to be eliminated, thrown into \"waste\".",
+    "poster_path": null,
+    "media_type": "movie",
+    "original_language": "pl",
+    "genre_ids": [
+     16
+    ],
+    "popularity": 0.4549,
+    "release_date": "2020-06-21",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 1123630,
+    "title": "Beb Blad Tower",
+    "original_title": "Tour de Beb Blad",
+    "overview": "On the tower of Beb Blad",
+    "poster_path": null,
+    "media_type": "movie",
+    "original_language": "ar",
+    "genre_ids": [
+     18
+    ],
+    "popularity": 0.4,
+    "release_date": "2008-08-01",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "id": 1268863,
+    "name": "Augusta Blad",
+    "original_name": "Augusta Blad",
+    "media_type": "person",
+    "popularity": 0.61,
+    "gender": 1,
+    "known_for_department": "Acting",
+    "profile_path": "/uWzPRXXWl3KCDisBA3WtuRd84Yu.jpg",
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 292179,
+      "title": "Temptations of a Great City",
+      "original_title": "Ved fængslets port",
+      "overview": "Mrs. Hellertz is distraught about her son Aage, who – in spite of a good pay and generous support from home – manages to spend every penny on debauchery in the night life. He indebts himself deeply and falls into the clutches of a malicious loan shark who is out for Mrs. Hellertz's fortune. To complicate things further, Aage starts a relationship with the loan shark's beautiful daughter. (Stumfilm.dk)",
+      "poster_path": "/kRUNrljVuQlrGQumpac3Dqpgb7Y.jpg",
+      "media_type": "movie",
+      "original_language": "da",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.7,
+      "release_date": "1911-03-06",
+      "softcore": false,
+      "video": false,
+      "vote_average": 5.5,
+      "vote_count": 14
+     },
+     {
+      "adult": false,
+      "backdrop_path": "/5x3aKSwzaj35nD0TjgsU82aggqG.jpg",
+      "id": 191374,
+      "title": "Towards the Light",
+      "original_title": "Mod lyset",
+      "overview": "Countess Ysabel is a young and rich woman with many suitors. An elegant and adventurous baron has managed to win her heart, but she anyway continues to play with other men’s feelings. Nemesis hits her when a young man with a broken heart kills himself, and the baron at the same time reveals a horrible secret. Ysabe'ls world seems to fall apart.",
+      "poster_path": "/jv8fhZ5pQwUno8FsCT6dq3N0SHe.jpg",
+      "media_type": "movie",
+      "original_language": "da",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 1.1851,
+      "release_date": "1919-07-30",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.8,
+      "vote_count": 4
+     },
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 238317,
+      "title": "The Candle and the Moth",
+      "original_title": "Evangeliemandens liv",
+      "overview": "Young hothead Billy, quick to speak and drifting into a life of crime, has many encounters the community's lay preacher, John Redmond. Billy's conscience stirs as Redmond recounts his life's story. Holger-Madsen supplied three different endings for the film's various releases.",
+      "poster_path": "/cXevvB5iFmaijz8s4vxS4PZlsoP.jpg",
+      "media_type": "movie",
+      "original_language": "da",
+      "genre_ids": [
+       18
+      ],
+      "popularity": 0.6895,
+      "release_date": "1915-02-18",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.2,
+      "vote_count": 5
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "backdrop_path": null,
+    "id": 965938,
+    "title": "Błąd w rachunku",
+    "original_title": "Błąd w rachunku",
+    "overview": "The institute of genetics announced that a dangerous virus had been discovered. What was the motive behind this discovery? The film deals with the quest for fame at all costs.",
+    "poster_path": null,
+    "media_type": "movie",
+    "original_language": "pl",
+    "genre_ids": [
+     18,
+     10770
+    ],
+    "popularity": 0.7929,
+    "release_date": "1989-04-06",
+    "softcore": false,
+    "video": false,
+    "vote_average": 0,
+    "vote_count": 0
+   },
+   {
+    "adult": false,
+    "id": 4194375,
+    "name": "Blad Meneghel",
+    "original_name": "Blad Meneghel",
+    "media_type": "person",
+    "popularity": 0.3489,
+    "gender": 0,
+    "known_for_department": "Directing",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/f0nch12reBKn9mpeWQa70KK0QLC.jpg",
+      "id": 362525,
+      "title": "Xuxa Circo",
+      "original_title": "Xuxa Circo",
+      "overview": "Xuxa welcomes her little viewers to the magical world of circus in the fifth volume of her series of educational videos dedicated to kids.",
+      "poster_path": "/nlxLrZkQpXDl6wCgXbscRBH3yI0.jpg",
+      "media_type": "movie",
+      "original_language": "pt",
+      "genre_ids": [
+       10402,
+       10751
+      ],
+      "popularity": 2.1761,
+      "release_date": "2004-08-29",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.1,
+      "vote_count": 8
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 3578625,
+    "name": "Anders Blad",
+    "original_name": "Anders Blad",
+    "media_type": "person",
+    "popularity": 0.2694,
+    "gender": 0,
+    "known_for_department": "Sound",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 984720,
+      "title": "En midsommarnattsdröm",
+      "original_title": "En midsommarnattsdröm",
+      "overview": "Stage production of A Midsummer Night's Dream shot for television",
+      "poster_path": "/8XV2KeaazanCEscd9zOHSULcSVy.jpg",
+      "media_type": "movie",
+      "original_language": "sv",
+      "genre_ids": [
+       18,
+       10770
+      ],
+      "popularity": 1.4394,
+      "release_date": "1990-01-03",
+      "softcore": false,
+      "video": false,
+      "vote_average": 9,
+      "vote_count": 1
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 5044404,
+    "name": "Erik Blad",
+    "original_name": "Erik Blad",
+    "media_type": "person",
+    "popularity": 0.4744,
+    "gender": 0,
+    "known_for_department": "Sound",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 1383755,
+      "title": "Debt Quest",
+      "original_title": "Debt Quest",
+      "overview": "In this 90-minute epic (comprised of community sourced experimental animation from the Hellavision Television Network) - the story follows Clover, a carefree spirit who joins a party go on an adventure as they try to pull themselves from financial despair by fulfilling the Bug King’s Debt Quest.",
+      "poster_path": null,
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       16,
+       35,
+       14,
+       12
+      ],
+      "popularity": 1.7458,
+      "release_date": "2024-10-07",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 2236816,
+    "name": "Mourice Blad",
+    "original_name": "Mourice Blad",
+    "media_type": "person",
+    "popularity": 0.267,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": null,
+      "id": 580581,
+      "title": "The Rise of Kibwetere",
+      "original_title": "The Rise of Kibwetere",
+      "overview": "A journalist goes to a village called Kanungu in Western Uganda. After some time, the natives plot to kill her. She narrates the story of a man called Kibwetere. Kibwetere first lived in Mbarara, where there was a witch lady called Nabakyala Bamwerinde who killed many people. The priest then came to Kanungu and stated a church where he managed to raise a congregation of over 700 people. In 2000, he told them he was taking them to heaven, gathered them in the church, and burnt all of them.",
+      "poster_path": "/ovjqcbXYoik0u8eRo6JAgjp8tLQ.jpg",
+      "media_type": "movie",
+      "original_language": "lg",
+      "genre_ids": [
+       53
+      ],
+      "popularity": 0.4349,
+      "release_date": "2019-03-25",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   },
+   {
+    "adult": false,
+    "id": 4975196,
+    "name": "Parker Blad",
+    "original_name": "Parker Blad",
+    "media_type": "person",
+    "popularity": 0.25,
+    "gender": 0,
+    "known_for_department": "Production",
+    "profile_path": null,
+    "known_for": []
+   },
+   {
+    "adult": false,
+    "id": 4975195,
+    "name": "Parker Blad",
+    "original_name": "Parker Blad",
+    "media_type": "person",
+    "popularity": 0.25,
+    "gender": 0,
+    "profile_path": null,
+    "known_for": []
+   },
+   {
+    "adult": false,
+    "id": 3633805,
+    "name": "Blom Blad",
+    "original_name": "Blom Blad",
+    "media_type": "person",
+    "popularity": 0.25,
+    "gender": 0,
+    "known_for_department": "Acting",
+    "profile_path": null,
+    "known_for": [
+     {
+      "adult": false,
+      "backdrop_path": "/eT2VEWaQ7RSYX8Q1TYDmjlwWOow.jpg",
+      "id": 1003060,
+      "title": "Grande Boys: The Way To Play",
+      "original_title": "Grande Boys: The Way To Play",
+      "overview": "Grande Boys: The Way To Play is an upcoming mockumentary project about the fictional football team Grande Boys FC.",
+      "poster_path": "/AdDVUw5RJ7DLF1Wv4VK2BvgLB67.jpg",
+      "media_type": "movie",
+      "original_language": "en",
+      "genre_ids": [
+       99
+      ],
+      "popularity": 0.4551,
+      "release_date": "2022-12-27",
+      "softcore": false,
+      "video": false,
+      "vote_average": 0,
+      "vote_count": 0
+     }
+    ]
+   }
+  ],
+  "total_pages": 38,
+  "total_results": 757
+ }
+}

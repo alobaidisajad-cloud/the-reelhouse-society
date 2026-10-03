@@ -1,0 +1,91 @@
+{
+ "path": "/search/keyword?query=cas",
+ "status": 200,
+ "body": {
+  "page": 1,
+  "results": [
+   {
+    "id": 308512,
+    "name": "casa"
+   },
+   {
+    "id": 179507,
+    "name": "cash"
+   },
+   {
+    "id": 166310,
+    "name": "cast"
+   },
+   {
+    "id": 290663,
+    "name": "case"
+   },
+   {
+    "id": 156574,
+    "name": "caso"
+   },
+   {
+    "id": 191482,
+    "name": "cad"
+   },
+   {
+    "id": 286354,
+    "name": "cars"
+   },
+   {
+    "id": 255539,
+    "name": "cav"
+   },
+   {
+    "id": 330239,
+    "name": "cos"
+   },
+   {
+    "id": 241306,
+    "name": "cfs"
+   },
+   {
+    "id": 319282,
+    "name": "sas"
+   },
+   {
+    "id": 279181,
+    "name": "can"
+   },
+   {
+    "id": 173406,
+    "name": "cap"
+   },
+   {
+    "id": 317311,
+    "name": "cai"
+   },
+   {
+    "id": 225064,
+    "name": "ias"
+   },
+   {
+    "id": 227078,
+    "name": "mas"
+   },
+   {
+    "id": 249071,
+    "name": "cam"
+   },
+   {
+    "id": 308746,
+    "name": "cae"
+   },
+   {
+    "id": 213822,
+    "name": "nas"
+   },
+   {
+    "id": 310324,
+    "name": "car"
+   }
+  ],
+  "total_pages": 16,
+  "total_results": 313
+ }
+}
