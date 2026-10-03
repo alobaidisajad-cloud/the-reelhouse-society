@@ -293,12 +293,13 @@ function drawBuster(o = {}) {
       <g clip-path="url(#${cl})">
         ${o.mend === false ? '' : patchCloth()}
         <ellipse cx="76" cy="74" rx="38" ry="30" fill="${P.lit}" opacity=".8" filter="url(#blur6)"/>
-        <ellipse cx="100" cy="85" rx="34" ry="6" fill="${P.lit}" opacity=".65" filter="url(#blur3)"/>
-        <ellipse cx="100" cy="99" rx="38" ry="9" fill="${P.wash}" opacity=".18" filter="url(#blur3)"/>
+        <ellipse cx="100" cy="85" rx="36" ry="10" fill="${P.lit}" opacity=".4" filter="url(#blur6)"/>
+        <ellipse cx="100" cy="100" rx="40" ry="13" fill="${P.wash}" opacity=".11" filter="url(#blur6)"/>
         <path d="M 112 40 C 152 60, 166 120, 162 232 L 200 232 L 200 40 Z" fill="${P.wash}" opacity=".3" filter="url(#blur6)"/>
         ${FOLDS.map((p) => brush(p, 10, { fill: P.wash, op: .13 })).join('')}
         <circle cx="70" cy="174" r="8" fill="${P.stain}" opacity=".12" filter="url(#stain)"/>
-        <rect x="20" y="30" width="170" height="210" filter="url(#weave)" opacity=".42"/>
+        <rect x="20" y="30" width="170" height="210" filter="url(#weave)" opacity=".6"/>
+        <rect x="20" y="30" width="170" height="210" filter="url(#fiber)" opacity=".5"/>
         ${o.moon === false ? '' : `<path d="${S.d}" fill="none" stroke="${P.moon}" stroke-width="7" opacity=".38" filter="url(#blur3)" mask="url(#moonMask)"/>`}
         ${o.hat === false ? '' : seat(E.hat)}
       </g>
@@ -398,6 +399,10 @@ export const DEFS = `<defs>
     <filter id="grain" x="0" y="0" width="100%" height="100%">
       <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" result="n"/>
       <feColorMatrix in="n" type="matrix" values="0 0 0 0 .45  0 0 0 0 .4  0 0 0 0 .33  0 0 0 .6 -.14"/>
+    </filter>
+    <filter id="fiber" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="2.6" numOctaves="2" seed="31" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 .3  0 0 0 0 .24  0 0 0 0 .16  0 0 0 .9 -.32"/>
     </filter>
     <filter id="weave" x="0" y="0" width="100%" height="100%">
       <feTurbulence type="fractalNoise" baseFrequency="1.6 0.6" numOctaves="1" seed="8" result="n"/>
