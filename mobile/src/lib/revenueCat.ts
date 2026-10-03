@@ -35,6 +35,9 @@ const RC_ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? '';
 let Purchases: typeof import('react-native-purchases').default | null = null;
 let isConfigured = false;
 
+/** A ReelHouse account id, as the store is told it at sign-in (RevenueCat's own anonymous ids are not). */
+const ACCOUNT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** Configure RevenueCat once, after the session is restored; any failure leaves it off. */
 export async function initRevenueCat(userId?: string): Promise<void> {
   const apiKey = Platform.OS === 'ios' ? RC_IOS_KEY : RC_ANDROID_KEY;
@@ -47,7 +50,10 @@ export async function initRevenueCat(userId?: string): Promise<void> {
 
   try {
     // Loaded here, so a missing native module is a caught failure, not a crash.
-    const RNPurchases = await import('react-native-purchases');
+    // A require, not import(): Metro bundles both alike, and Jest can run this
+    // one, so the paths a configured store takes are executed by the suite.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const RNPurchases = require('react-native-purchases') as typeof import('react-native-purchases');
     Purchases = (RNPurchases.default ?? RNPurchases) as typeof import('react-native-purchases').default;
 
     await Purchases.configure({ apiKey, appUserID: userId ?? null });
@@ -139,9 +145,9 @@ export type RankReconciliation =
  * store could not be reached": acting on those would strip paying members.
  * "Not entitled" and "could not find out" are never the same answer here.
  *
- * The server is the backstop: `relinquish_rank` lowers only the CALLER's rank,
- * through `grant_entitlement`, which refuses to lower a rank another source
- * granted, so a hand-granted rank or a founding seat survives a wrong call.
+ * The server is the backstop: `relinquish_rank` ends only the store's grant of
+ * the CALLER's rank. Each source holds its own grant (`rank_grants`), so a rank
+ * given on the web or by hand, or a founding seat, survives a wrong call.
  */
 export async function reconcileRank(): Promise<RankReconciliation> {
   // Not configured is NOT "not entitled".
@@ -174,7 +180,7 @@ export async function reconcileRank(): Promise<RankReconciliation> {
       recordGateEvent('rank_relinquished');
       return 'relinquished';
     }
-    return 'already-current'; // refused for a reason, which `out_reason` names
+    return 'already-current'; // the store held no grant of theirs to end
   } catch (e) {
     logger.warn(`[revenueCat] reconcileRank: ${String(e)}`);
     return 'unknown';
@@ -420,20 +426,18 @@ export async function showManageSubscriptions(): Promise<boolean> {
  */
 export async function syncEntitlementToSupabase(tier: ReelHouseTier): Promise<void> {
   try {
-    // Whose rank this is, from the session on the phone: `getUser` asks the
-    // network, so a purchase or restore with no signal queued nothing and the
-    // new rank never reached the house. The queue is what carries it later.
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) return;
-
-    // A founding seat is never lowered by a store: grant_entitlement refuses
-    // any provider but 'manual' below auteur for a founding member, whatever
-    // tier this sends (and sync-entitlement reads the store itself anyway).
+    // Whose rank this is: the account the store recorded the purchase against,
+    // which is the record sync-entitlement will read. Asked of the store on the
+    // phone, never the network (with no signal `getUser` failed and nothing was
+    // queued) nor the session (near its expiry it can answer nobody). An
+    // anonymous store id is no member: there is no one to grant it to.
+    if (!isConfigured || !Purchases) return;
+    const account = await Purchases.getAppUserID();
+    if (!ACCOUNT_ID.test(account)) return;
 
     // Queued (a dropped network only delays it); `user_id` keeps it off the
     // WRONG account (see sync_entitlement in types/mutations.ts).
-    enqueueMutation({ type: 'sync_entitlement', payload: { tier, user_id: user.id } });
+    enqueueMutation({ type: 'sync_entitlement', payload: { tier, user_id: account.toLowerCase() } });
     flushOfflineQueue();
   } catch (e) {
     logger.warn('[revenueCat] Entitlement sync enqueue failed', e);

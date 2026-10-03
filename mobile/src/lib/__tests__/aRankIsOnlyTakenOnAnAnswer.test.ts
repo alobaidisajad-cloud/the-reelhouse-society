@@ -55,39 +55,6 @@ describe('a rank is only taken on an answer', () => {
     expect(rpc).not.toHaveBeenCalledWith('relinquish_rank');
   });
 
-  /**
-   * The two paths a test cannot reach without a real store, pinned in source so
-   * that deleting either one fails the build. Both were checked by deleting
-   * them and watching this go red.
-   */
-  it('the unconfigured and unreachable paths both return before the server call', () => {
-
-    const src = require('fs').readFileSync(
-      require('path').join(__dirname, '..', 'revenueCat.ts'), 'utf8',
-    ) as string;
-
-    const fn = src.slice(src.indexOf('export async function reconcileRank'));
-    const body = fn.slice(0, fn.indexOf('\n}'));
-
-    // Not configured is not an answer.
-    expect(body).toMatch(/if \(!isConfigured \|\| !Purchases\) return 'unknown';/);
-    // A throw is not an answer either.
-    //
-    // Anchored to the unique log line and forbidden from crossing a closing
-    // brace. Written as `catch[\s\S]{0,200}return 'unknown';` it matched a
-    // DIFFERENT `return 'unknown'` further down the function, so a mutant that
-    // turned the store-failure branch into a silent lapse survived — the
-    // failure mode this whole test exists to prevent.
-    expect(body).toMatch(/could not reach the store[^}]*return 'unknown';/);
-    // And both of those must come BEFORE anything is asked of the server.
-    const rpcAt = body.indexOf("supabase.rpc('relinquish_rank')");
-    expect(rpcAt).toBeGreaterThan(body.indexOf("if (!isConfigured"));
-    expect(rpcAt).toBeGreaterThan(body.indexOf('catch'));
-    // An active entitlement short-circuits too.
-    expect(body).toMatch(/if \(info\.isActive\) return 'active';/);
-    expect(rpcAt).toBeGreaterThan(body.indexOf('info.isActive'));
-  });
-
   it('the server is the backstop, and the migration says so', () => {
 
     const sql = require('fs').readFileSync(

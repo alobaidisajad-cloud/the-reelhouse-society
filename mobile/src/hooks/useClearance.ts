@@ -46,9 +46,7 @@ export interface Clearance {
 export function useClearance(featureId: string, returnTo?: string): Clearance {
   // Two primitives, never the user: this runs in every feed card. -1, signed out, opens nothing.
   const weight = useAuthStore((s) => (s.user ? getTierWeight(resolveTier(s.user)) : -1));
-  const onceHeldARank = useAuthStore(
-    (s) => !!(s.user as { entitlement_source?: string | null } | null)?.entitlement_source,
-  );
+  const onceHeldARank = useAuthStore((s) => !!s.user?.entitlement_source);
 
   const feature = useMemo(() => {
     const f = GATED_FEATURES.find((x) => x.id === featureId);

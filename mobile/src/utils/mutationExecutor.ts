@@ -11,6 +11,7 @@
  */
 
 import { supabase } from '../lib/supabase';
+import { wallMayHaveChanged } from '../components/lobby/wallRead';
 import { useAuthStore } from '../stores/auth';
 import { InteractionService } from '../services/InteractionService';
 import { VaultService } from '../services/VaultService';
@@ -661,15 +662,15 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
             },
             body: JSON.stringify({ tier }),
         });
-        if (!response.ok) throw new Error(`Edge Function sync-entitlement returned ${response.status}`);
-
-        // The reply matters: seatClaimed=false (the founding seats were full, Auteur given
-        // instead) and applied=false (the entitlement rule refused) must reach the member.
-        try {
-            return await response.json();
-        } catch {
-            return {};
+        if (!response.ok) {
+            // With its status, so the queue tells a moment's failure (the store unreachable,
+            // 502; the house busy, 5xx; 429) from one no retry can mend, and keeps the first.
+            const err: any = new Error(`Edge Function sync-entitlement returned ${response.status}`);
+            err.status = response.status;
+            throw err;
         }
+        // The rank lands in the profile; the screen that bought it watches for it there.
+        return {};
     },
 
     // ── Dossiers ────────────────────────────────────────────────────────────
@@ -989,6 +990,13 @@ export function applyIdMapToPayload(payload: Record<string, unknown>, idMap: Rec
     return mapped;
 }
 
+/** The replays that can change or take down a piece the Lobby hangs. */
+const CHANGES_THE_WALL: ReadonlySet<QueuedMutation['type']> = new Set<QueuedMutation['type']>([
+    'update_log', 'remove_log', 'add_viewing', 'remove_viewing',
+    'update_list', 'delete_list', 'remove_film_from_list',
+    'update_filing', 'end_filing',
+]);
+
 /**
  * Executes a single queued mutation with ID remapping for dependent mutations.
  * Throws UnknownMutationError for types not in the registry (routed to dead-letter).
@@ -1008,5 +1016,8 @@ export async function executeMutation(
     // A 0ms yield keeps a full queue from janking the UI without adding latency per item.
     await new Promise(resolve => setTimeout(resolve, 0));
 
-    return handler(mapped, idMap);
+    const result = await handler(mapped, idMap);
+    // The house has it only now: the wall asked earlier still hung the piece as it was.
+    if (CHANGES_THE_WALL.has(mutation.type)) wallMayHaveChanged();
+    return result;
 }

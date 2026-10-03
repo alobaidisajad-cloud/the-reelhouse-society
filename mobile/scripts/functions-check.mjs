@@ -24,7 +24,7 @@
  * and whitespace ending a file (the dashboard drops a final newline) are ignored.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -95,12 +95,28 @@ const notes = [];
 const live = new Map(listed.map((f) => [f.slug, f]));
 
 for (const slug of live.keys()) {
-  if (!fns.DEPLOYED[slug]) {
+  if (!fns.DEPLOYED[slug] && !fns.NOT_DEPLOYED[slug]) {
     problems.push(`deployed, but not in edge-functions.cjs: ${slug} (named "${live.get(slug).name}") — nobody owns it. Delete it, or give it a home.`);
   }
 }
 
-const scratch = mkdtempSync(join(tmpdir(), 'functions-check-'));
+/**
+ * A function's own folder, and every file of the folder's `_shared` neighbour it
+ * imports — what a deploy bundles — keyed from the functions folder
+ * ("sync-entitlement/index.ts", "_shared/storeRecord.ts").
+ */
+const bundleIn = (functionsDir, slug) => {
+  const out = new Map([...filesIn(join(functionsDir, slug))].map(([k, v]) => [`${slug}/${k}`, v]));
+  for (const text of [...out.values()]) {
+    for (const m of text.matchAll(/from\s+['"]\.\.\/(_shared\/[^'"]+)['"]/g)) {
+      const p = join(functionsDir, m[1]);
+      if (existsSync(p)) out.set(m[1], readFileSync(p, 'utf8').replace(/\r\n/g, '\n').trimEnd());
+    }
+  }
+  return out;
+};
+
+const scratchRoot = mkdtempSync(join(tmpdir(), 'functions-check-'));
 try {
   for (const [slug, want] of Object.entries(fns.DEPLOYED)) {
     const fn = live.get(slug);
@@ -111,9 +127,13 @@ try {
     if (fn.verify_jwt !== want.verifyJwt) {
       problems.push(`verify_jwt is ${fn.verify_jwt}, should be ${want.verifyJwt}: ${slug} — redeploy:\n      ${fns.deployCommand(slug)}`);
     }
+    // Its own folder each, so one function's copy of a shared file never stands in for another's.
+    const scratch = join(scratchRoot, slug);
+    mkdirSync(scratch);
     supabase(['functions', 'download', slug, '--use-api'], scratch);
-    const running = filesIn(join(scratch, 'supabase', 'functions', slug));
-    const repo = filesIn(join(REPO, want.dir, slug));
+    // Every file the deploy holds, its own and any shared one, against the repo's.
+    const running = new Map([...filesIn(join(scratch, 'supabase', 'functions'))].filter(([k]) => k.startsWith(`${slug}/`) || k.startsWith('_shared/')));
+    const repo = bundleIn(join(REPO, want.dir), slug);
     const names = [...new Set([...running.keys(), ...repo.keys()])].sort();
     const texts = names.filter((n) => running.get(n) !== repo.get(n));
     const noted = texts.filter((n) => running.has(n) && repo.has(n) && sameCode(n, running.get(n), repo.get(n)));
@@ -127,7 +147,7 @@ try {
     }
   }
 } finally {
-  rmSync(scratch, { recursive: true, force: true });
+  rmSync(scratchRoot, { recursive: true, force: true });
 }
 
 for (const [slug, { why }] of Object.entries(fns.NOT_DEPLOYED)) {

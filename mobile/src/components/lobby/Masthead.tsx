@@ -3,8 +3,8 @@
  * the Dispatch's own form — the same `issueOf` and `dayLabel`, from the phone's
  * own clock, so the Lobby and the Dispatch never print two dates.
  */
-import React, { memo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { memo, useEffect, useState } from 'react';
+import { AppState, StyleSheet, View } from 'react-native';
 import { colors } from '@/src/theme/theme';
 import { issueOf } from '@/src/components/dispatch/paper/paperMetrics';
 import { dayLabel } from '@/src/components/dispatch/dayLabel';
@@ -22,6 +22,34 @@ export function whisperFor(hour: number): string {
 
 /** `No. 273 · WEDNESDAY, SEPTEMBER 30` — the Dispatch's running head, word for word. */
 export const datelineOf = (d: Date) => `No. ${issueOf(d)} · ${dayLabel(d.toISOString())}`;
+
+/**
+ * The wall's clock: read again at the top of every hour (the hour's line, and
+ * at midnight the date) and whenever the app comes back to the front, each new
+ * reading handed to `onRead`. Its one timer and its listener end with the Lobby.
+ */
+export function useWallClock(onRead: (now: Date) => void): Date {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    function arm(t: Date) {
+      clearTimeout(timer);
+      const toNextHour = ((60 - t.getMinutes()) * 60 - t.getSeconds()) * 1000 - t.getMilliseconds();
+      // a second past the hour, so the reading is in it
+      timer = setTimeout(read, toNextHour + 1000);
+    }
+    function read() {
+      const t = new Date();
+      setNow(t);
+      onRead(t);
+      arm(t);
+    }
+    arm(new Date());
+    const sub = AppState.addEventListener('change', (state) => { if (state === 'active') read(); });
+    return () => { clearTimeout(timer); sub.remove(); };
+  }, [onRead]);
+  return now;
+}
 
 export const Masthead = memo(function Masthead({ wallW, now }: { wallW: number; now: Date }) {
   const dateline = datelineOf(now);

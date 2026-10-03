@@ -59,6 +59,37 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
  */
 const NOT_ARRIVED = `The payment went through, but the rank has not reached the house yet. Tap RESTORE, or write to ${SUPPORT_EMAIL}.`;
 
+type HeldRank = { tier: string | null; role: string | null; is_founding: boolean | null };
+
+/**
+ * Watch the house for a rank the store has just answered for: the member's
+ * profile is read now and then every 2.5 s, five reads in all, until `came`
+ * says it is there; then the session is read again so every gate holds it.
+ * Answers whether it came, and the last profile read (null if none could be).
+ * Stops, unanswered, if another member is signed in meanwhile.
+ */
+async function watchForRank(userId: string, came: (p: HeldRank) => boolean): Promise<{ came: boolean; last: HeldRank | null }> {
+  let last: HeldRank | null = null;
+  for (let i = 0; i < 5; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 2500));
+    if (useAuthStore.getState().user?.id !== userId) break;
+    try {
+      const { data, error } = await supabase.from('profiles').select('tier, role, is_founding').eq('id', userId).single();
+      // A read that failed is not an answer; the next one may be.
+      if (error || !data) continue;
+      last = data as HeldRank;
+      if (came(last)) {
+        await supabase.auth.refreshSession();
+        await useAuthStore.getState().restoreSession?.();
+        return { came: true, last };
+      }
+    } catch {
+      // Thrown, not answered (no network at all): the same — the next read may be.
+    }
+  }
+  return { came: false, last };
+}
+
 /** The house's own legal pages — the same two Settings opens (constants/support). */
 export { TERMS_URL, PRIVACY_URL };
 /** Where "Manage subscription" goes when the store's own sheet cannot open. */
@@ -174,8 +205,10 @@ export default function MembershipScreen() {
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
-        // Defer to background polling loop if a checkout recently occurred
-        if (Date.now() - lastCheckoutRef.current > 10000) {
+        // Not while a purchase or restore is in hand (the store's sheet returning the
+        // app to the front is exactly that moment), nor just after one: the watch
+        // below reads the rank then, and an earlier read would put back the old one.
+        if (!purchaseMutex.current && Date.now() - lastCheckoutRef.current > 15000) {
           useAuthStore.getState().restoreSession?.();
         }
         void readFoundingCount().then((n) => { if (n !== null) setFoundingCount(n); });
@@ -264,24 +297,9 @@ export default function MembershipScreen() {
         reelToast.success(`Welcome to the ${tier === 'auteur' ? 'Auteur' : 'Archivist'} rank. Your seat is ready.`);
         useAuthStore.getState().setLocalTierHint({ tier: entitlement.tier });
 
-        // Global Unlock Polling Architecture
-        (async () => {
-          try {
-            const userId = useAuthStore.getState().user?.id;
-            for (let i = 0; i < 4; i++) {
-              await new Promise(r => setTimeout(r, 2500));
-              if (!userId) break;
-              const { data } = await supabase.from('profiles').select('tier, role, is_founding').eq('id', userId).single();
-              if (data && getTierWeight(resolveTier(data)) >= getTierWeight(entitlement.tier)) {
-                await supabase.auth.refreshSession();
-                await useAuthStore.getState().restoreSession?.();
-                break;
-              }
-            }
-          } catch {
-            // Background polling failed, ignore
-          }
-        })();
+        // The rank, once the house holds it, reaches every gate. Not arriving in
+        // the window is not bad news: the hint stands until the next session read.
+        void watchForRank(user.id, (p) => getTierWeight(resolveTier(p)) >= getTierWeight(entitlement.tier));
       } else if (entitlement) {
         reelToast.info(NOT_ARRIVED);
       }
@@ -331,36 +349,23 @@ export default function MembershipScreen() {
         // a seat, and must be told.
         (async () => {
           try {
-            const userId = useAuthStore.getState().user?.id;
-            let last: { tier: string | null; role: string | null; is_founding: boolean | null } | null = null;
-            for (let i = 0; i < 4; i++) {
-              await new Promise(r => setTimeout(r, 2500));
-              if (!userId) break;
-              const { data } = await supabase.from('profiles').select('tier, role, is_founding').eq('id', userId).single();
-              last = data ?? last;
-              if (data?.is_founding === true) {
-                await supabase.auth.refreshSession();
-                await useAuthStore.getState().restoreSession?.();
-                return;   // seat secured — nothing to explain
-              }
-            }
+            const { came } = await watchForRank(user.id, (p) => p.is_founding === true);
+            if (came) return;   // seat secured — nothing to explain
             // No seat inside the window. "Your seat was taken" needs positive
             // evidence (a slow webhook looks the same), so the cap itself is asked.
-            if (last?.is_founding !== true) {
-              const count = await readFoundingCount();
-              if (count !== null && count >= FOUNDING.seats) {
-                // The seats really are gone. Retire the certificate on screen too.
-                setFoundingCount(count);
-                await supabase.auth.refreshSession();
-                await useAuthStore.getState().restoreSession?.();
-                reelToast.info(`The final Founding seat was claimed just before your purchase. You have the Auteur rank — write to ${SUPPORT_EMAIL} about your seat.`);
-              }
-              // Seats still available -> the webhook is simply slow. Stay quiet: the
-              // optimistic tier hint is already applied and the next session restore
-              // reconciles it. Never invent bad news from a timeout.
+            const count = await readFoundingCount();
+            if (count !== null && count >= FOUNDING.seats) {
+              // The seats really are gone. Retire the certificate on screen too.
+              setFoundingCount(count);
+              await supabase.auth.refreshSession();
+              await useAuthStore.getState().restoreSession?.();
+              reelToast.info(`The final Founding seat was claimed just before your purchase. You have the Auteur rank — write to ${SUPPORT_EMAIL} about your seat.`);
             }
+            // Seats still available -> the house is simply slow. Stay quiet: the
+            // optimistic tier hint is already applied and the next session restore
+            // reconciles it. Never invent bad news from a timeout.
           } catch {
-            // Background polling failed, ignore
+            // A failed count or session read: nothing is said that was not seen.
           }
         })();
       } else if (entitlement) {
@@ -395,13 +400,17 @@ export default function MembershipScreen() {
       }
 
       if (result.isActive) {
-        // A local hint: `tier` is the server's to write.
-        authStore.setLocalTierHint({
-          tier: result.tier,
-          is_founding: result.tier === 'founding' || undefined,
-        });
-        const restored = result.tier === 'founding' ? 'your founding seat' : `the ${result.tier === 'auteur' ? 'Auteur' : 'Archivist'} rank`;
-        reelToast.success(`Restored — ${restored} is yours again.`);
+        // Said once the house holds it, never before: the store's word alone put a
+        // rank on screen that every gate on the server still refused. A founding
+        // purchase is held as the Auteur rank at least (the seat may have gone).
+        const want = getTierWeight(result.tier === 'founding' ? 'auteur' : result.tier);
+        const { came, last } = await watchForRank(user.id, (p) => getTierWeight(resolveTier(p)) >= want);
+        if (came) {
+          const restored = last?.is_founding ? 'your founding seat' : `the ${getTierWeight(resolveTier(last)) >= 2 ? 'Auteur' : 'Archivist'} rank`;
+          reelToast.success(`Restored — ${restored} is yours again.`);
+        } else {
+          reelToast.info(`${STORE.name === 'Google Play' ? 'Google Play' : 'The App Store'} found your membership, but it has not reached the house yet. Tap RESTORE again shortly, or write to ${SUPPORT_EMAIL}.`);
+        }
       } else {
         // The store has nothing active. The server decides whether that lowers
         // the rank (it never lowers one bought on the web or granted by hand), so

@@ -36,8 +36,7 @@ const NOT_WORDS: Record<string, string[]> = {
     'dispatch_posts.kind', 'dispatch_posts.subject_kind', 'dispatch_posts.ended_by', 'interactions.type', 'logs.format',
     'logs.physical_media', 'logs.status', 'lounge_members.status', 'lounge_message_reactions.reaction', 'lounge_messages.type',
     'member_drafts.kind', 'member_drafts.scope', 'mod_actions.action', 'notifications.type', 'physical_archive.formats',
-    'profiles.role', 'profiles.tier', 'profiles.social_visibility', 'profiles.entitlement_source', 'push_tokens.platform',
-    'user_blocks.type',
+    'push_tokens.platform', 'user_blocks.type',
   ],
   'a film\'s title or year, as TMDB gives it': [
     'logs.film_title', 'logs.year', 'list_items.film_title', 'lounge_messages.film_title', 'physical_archive.film_title',
@@ -45,7 +44,7 @@ const NOT_WORDS: Record<string, string[]> = {
   ],
   'a key, a token or a code, compared and never shown': [
     'lounges.invite_code', 'notifications.group_key', 'push_subscriptions.auth', 'push_subscriptions.p256dh',
-    'push_tokens.token', 'profiles.email',
+    'push_tokens.token',
   ],
   'kept for the house, never shown to a member: the evidence is the text as it came': [
     'analytics_events.event_name', 'analytics_events.properties', 'error_logs.component', 'error_logs.error_message',
@@ -56,10 +55,6 @@ const NOT_WORDS: Record<string, string[]> = {
     'dispatch_posts.frozen_totals', 'logs.autopsy', 'lounge_messages.metadata', 'mod_actions.content_snapshot',
   ],
   'a draft, cleaned when it is filed': ['member_drafts.payload'],
-  'given at sign-up only, then guarded (protect_privileged_profile_fields)': [
-    'profiles.badges', 'profiles.ban_reason', 'profiles.suspension_reason', 'profiles.favorite_films', 'profiles.followers',
-    'profiles.following', 'profiles.preferences', 'profiles.public_prefs', 'profiles.taste_seeds',
-  ],
 };
 
 /** Each table's text-like columns and their types. */

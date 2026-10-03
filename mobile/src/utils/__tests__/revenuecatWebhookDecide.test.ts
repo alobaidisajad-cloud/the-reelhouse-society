@@ -1,135 +1,45 @@
 /**
  * revenuecatWebhookDecide.test.ts
  * ───────────────────────────────
- * Every decision the RevenueCat webhook makes, exercised as a pure function.
+ * The store's two doors, exercised here because neither can run here (no Deno,
+ * no RevenueCat): whom a webhook event concerns (decide.ts), and what a
+ * member's record grants (_shared/storeRecord.ts, used by the webhook and by
+ * sync-entitlement alike).
  *
- * This exists because the webhook itself cannot be run here — no Deno, no RevenueCat
- * — so its behaviour would otherwise be reasoned about and never observed. The
- * subtleties in RevenueCat's event semantics are exactly where money is lost:
- * stripping a member who has paid through the period, or leaving a refunded member
- * on a paid rank for a year.
+ * The rank is read from the member's WHOLE record, never from the event: the
+ * cases below that cost money when an event is read on its own — a refund, a
+ * second subscription, a late or retried event, a transfer — are each a
+ * record, and the record answers them.
  */
-import { authorized, decide, tierFromEvent, isAccountId } from '../../../supabase/functions/revenuecat-webhook/decide';
+import { accountsIn, authorized, isAccountId } from '../../../supabase/functions/revenuecat-webhook/decide';
+import { applyStoreRecord, inForce, tierFromRecord } from '../../../supabase/functions/_shared/storeRecord';
 
 const UID = '11111111-1111-4111-8111-111111111111';
-const NOW = 1_800_000_000_000;
-const ev = (o: Record<string, unknown>) => ({ app_user_id: UID, ...o });
+const OTHER = '22222222-2222-4222-8222-222222222222';
+const NOW = Date.parse('2026-10-03T12:00:00Z');
+const AHEAD = '2026-11-03T12:00:00Z';
+const PAST = '2026-09-03T12:00:00Z';
 
-describe('granting events', () => {
-  it.each(['INITIAL_PURCHASE', 'RENEWAL', 'UNCANCELLATION', 'NON_RENEWING_PURCHASE'])(
-    '%s grants the entitlement it carries', (type) => {
-      const a = decide(ev({ type, entitlement_ids: ['auteur'] }), NOW);
-      expect(a).toMatchObject({ kind: 'grant', tier: 'auteur' });
-    });
-
-  it('grants the founding seat from a lifetime purchase', () => {
-    expect(decide(ev({ type: 'NON_RENEWING_PURCHASE', product_id: 'founding_lifetime' }), NOW))
-      .toMatchObject({ kind: 'grant', tier: 'founding' });
+describe('whom an event concerns', () => {
+  it('the member it names, for any event, known or invented later', () => {
+    for (const type of ['INITIAL_PURCHASE', 'RENEWAL', 'CANCELLATION', 'EXPIRATION', 'PRODUCT_CHANGE', 'BILLING_ISSUE', 'SOME_FUTURE_EVENT']) {
+      expect(accountsIn({ type, app_user_id: UID })).toEqual([UID]);
+    }
   });
 
-  it('is case-insensitive about the event name', () => {
-    expect(decide(ev({ type: 'renewal', entitlement_ids: ['archivist'] }), NOW))
-      .toMatchObject({ kind: 'grant', tier: 'archivist' });
+  it('both sides of a transfer, each once', () => {
+    expect(accountsIn({ type: 'TRANSFER', transferred_from: [UID, '$RCAnonymousID:x'], transferred_to: [OTHER, UID] }))
+      .toEqual([UID, OTHER]);
   });
 
-  it('ignores a grant carrying no recognisable tier rather than guessing', () => {
-    expect(decide(ev({ type: 'RENEWAL', entitlement_ids: ['mystery'] }), NOW).kind).toBe('ignore');
-  });
-});
-
-// ══════════════════════════════════════════════════════════════════════════════
-// The two that cost money if read naively
-// ══════════════════════════════════════════════════════════════════════════════
-describe('CANCELLATION is decided by the clock, not the name', () => {
-  it('does NOT end access when the member is still paid up', () => {
-    // The naive reading. Acting here strips a paying member days or weeks early.
-    const a = decide(ev({ type: 'CANCELLATION', expiration_at_ms: NOW + 86_400_000 }), NOW);
-    expect(a.kind).toBe('ignore');
-    expect(a.reason).toMatch(/still paid up/i);
+  it('nobody for the dashboard test, an anonymous id, or no id', () => {
+    expect(accountsIn({ type: 'TEST', app_user_id: UID })).toEqual([]);
+    expect(accountsIn({ type: 'RENEWAL', app_user_id: '$RCAnonymousID:abc123' })).toEqual([]);
+    expect(accountsIn({ type: 'RENEWAL' })).toEqual([]);
+    expect(accountsIn(null)).toEqual([]);
   });
 
-  it('DOES end access on a refund, where expiry is already past', () => {
-    // The opposite mistake: blanket-ignoring CANCELLATION lets a refunded annual
-    // subscriber keep a paid rank for up to a year.
-    expect(decide(ev({ type: 'CANCELLATION', expiration_at_ms: NOW - 1 }), NOW).kind).toBe('end');
-  });
-
-  it('does not end access when there is no timestamp to justify it', () => {
-    expect(decide(ev({ type: 'CANCELLATION' }), NOW).kind).toBe('ignore');
-    expect(decide(ev({ type: 'CANCELLATION', expiration_at_ms: null }), NOW).kind).toBe('ignore');
-    expect(decide(ev({ type: 'CANCELLATION', expiration_at_ms: 0 }), NOW).kind).toBe('ignore');
-  });
-});
-
-describe('EXPIRATION', () => {
-  it('ends access when the expiry has passed', () => {
-    expect(decide(ev({ type: 'EXPIRATION', expiration_at_ms: NOW - 1000 }), NOW).kind).toBe('end');
-  });
-
-  it('ends access when no timestamp is given — the event means it ended', () => {
-    expect(decide(ev({ type: 'EXPIRATION' }), NOW).kind).toBe('end');
-  });
-
-  it('IGNORES an expiry in the future — overtaken by a renewal', () => {
-    // RevenueCat does not guarantee ordering. An EXPIRATION for an old subscription
-    // can arrive after the renewal that replaced it; acting would demote someone who
-    // is currently paying.
-    const a = decide(ev({ type: 'EXPIRATION', expiration_at_ms: NOW + 60_000 }), NOW);
-    expect(a.kind).toBe('ignore');
-    expect(a.reason).toMatch(/stale|future/i);
-  });
-});
-
-describe('PRODUCT_CHANGE must not act early', () => {
-  it('is ignored even when it carries a lower tier', () => {
-    // RevenueCat fires this when a change is SCHEDULED; for a downgrade it does not
-    // take effect until the next renewal. Acting would drop an Auteur to Archivist
-    // while they are still paid up. RENEWAL carries the product that actually applies.
-    const a = decide(ev({ type: 'PRODUCT_CHANGE', entitlement_ids: ['archivist'] }), NOW);
-    expect(a.kind).toBe('ignore');
-  });
-
-  it('is ignored when it carries a higher tier too — the app already synced that', () => {
-    expect(decide(ev({ type: 'PRODUCT_CHANGE', entitlement_ids: ['auteur'] }), NOW).kind).toBe('ignore');
-  });
-});
-
-describe('events that carry no entitlement change', () => {
-  it.each(['BILLING_ISSUE', 'SUBSCRIPTION_PAUSED', 'SUBSCRIBER_ALIAS', 'TRANSFER', 'TEST'])(
-    '%s is acknowledged, never acted on', (type) => {
-      expect(decide(ev({ type, entitlement_ids: ['auteur'] }), NOW).kind).toBe('ignore');
-    });
-
-  it('an event type invented after this was written is acknowledged, not retried forever', () => {
-    const a = decide(ev({ type: 'SOME_FUTURE_EVENT' }), NOW);
-    expect(a.kind).toBe('ignore');
-    expect(a.reason).toMatch(/unhandled/i);
-  });
-
-  it('a malformed event with no type is ignored', () => {
-    expect(decide({}, NOW).kind).toBe('ignore');
-    expect(decide(null, NOW).kind).toBe('ignore');
-  });
-});
-
-describe('identity is required before anything acts on an account', () => {
-  it('ignores an anonymous RevenueCat id', () => {
-    expect(decide({ type: 'RENEWAL', app_user_id: '$RCAnonymousID:abc123', entitlement_ids: ['auteur'] }, NOW).kind)
-      .toBe('ignore');
-  });
-
-  it('ignores a missing id', () => {
-    expect(decide({ type: 'RENEWAL', entitlement_ids: ['auteur'] }, NOW).kind).toBe('ignore');
-  });
-
-  it('will not END anything for an unrecognised id either', () => {
-    // The dangerous direction: an expiry that cannot be attributed must never be
-    // applied to some other account by accident.
-    expect(decide({ type: 'EXPIRATION', app_user_id: 'not-a-uuid', expiration_at_ms: NOW - 1 }, NOW).kind)
-      .toBe('ignore');
-  });
-
-  it('accepts a real account id', () => {
+  it('knows a ReelHouse account id', () => {
     expect(isAccountId(UID)).toBe(true);
     expect(isAccountId('$RCAnonymousID:abc')).toBe(false);
     expect(isAccountId(undefined)).toBe(false);
@@ -137,30 +47,107 @@ describe('identity is required before anything acts on an account', () => {
   });
 });
 
-describe('tier resolution', () => {
-  it('takes the highest entitlement when several are held', () => {
-    expect(tierFromEvent({ entitlement_ids: ['archivist', 'auteur'] })).toBe('auteur');
-    expect(tierFromEvent({ entitlement_ids: ['auteur', 'founding'] })).toBe('founding');
+describe('what a record grants', () => {
+  const ent = (o: Record<string, unknown>) => ({ product_identifier: 'x', ...o });
+
+  it('an entitlement with an end ahead, or none at all (the lifetime seat), is in force', () => {
+    expect(inForce(ent({ expires_date: AHEAD }), NOW)).toBe(true);
+    expect(inForce(ent({ expires_date: null }), NOW)).toBe(true);
+    expect(inForce(ent({ expires_date: PAST }), NOW)).toBe(false);
+    expect(inForce(ent({}), NOW)).toBe(false);
+    expect(inForce(null, NOW)).toBe(false);
   });
 
-  it('falls back to the product id when entitlement ids are unset', () => {
-    // Entitlement ids are dashboard configuration and may simply not be set.
-    expect(tierFromEvent({ product_id: 'auteur_annual' })).toBe('auteur');
-    expect(tierFromEvent({ product_id: 'archivist_monthly' })).toBe('archivist');
+  it('a failed renewal in its billing grace is still in force; after the grace it is not', () => {
+    expect(inForce(ent({ expires_date: PAST, grace_period_expires_date: AHEAD }), NOW)).toBe(true);
+    expect(inForce(ent({ expires_date: PAST, grace_period_expires_date: PAST }), NOW)).toBe(false);
   });
 
-  it('accepts the singular entitlement_id shape', () => {
-    expect(tierFromEvent({ entitlement_id: 'archivist' })).toBe('archivist');
+  it('a refund ends it: the store dates the end to the refund', () => {
+    expect(tierFromRecord({ entitlements: { auteur: ent({ expires_date: PAST }) } }, NOW)).toBe('cinephile');
   });
 
-  it('is case-insensitive', () => {
-    expect(tierFromEvent({ entitlement_ids: ['AUTEUR'] })).toBe('auteur');
-    expect(tierFromEvent({ product_id: 'FOUNDING_LIFETIME' })).toBe('founding');
+  it('the highest held wins, so a lesser subscription ending leaves the greater', () => {
+    expect(tierFromRecord({ entitlements: {
+      archivist: ent({ expires_date: PAST }),
+      auteur: ent({ expires_date: AHEAD }),
+    } }, NOW)).toBe('auteur');
+    expect(tierFromRecord({ entitlements: {
+      archivist: ent({ expires_date: AHEAD }),
+      auteur: ent({ expires_date: PAST }),
+    } }, NOW)).toBe('archivist');
+    expect(tierFromRecord({ entitlements: {
+      auteur: ent({ expires_date: AHEAD }),
+      founding: ent({ expires_date: null }),
+    } }, NOW)).toBe('founding');
   });
 
-  it('returns null rather than guessing', () => {
-    expect(tierFromEvent({})).toBeNull();
-    expect(tierFromEvent({ entitlement_ids: [], product_id: 'gift_card' })).toBeNull();
+  it('reads the rank from the product when the dashboard named the entitlement otherwise, without case', () => {
+    expect(tierFromRecord({ entitlements: { pro: ent({ expires_date: AHEAD, product_identifier: 'Auteur_Annual' }) } }, NOW)).toBe('auteur');
+    expect(tierFromRecord({ entitlements: { AUTEUR: ent({ expires_date: AHEAD }) } }, NOW)).toBe('auteur');
+  });
+
+  it('holds nothing for an empty, unknown or malformed record, rather than guessing', () => {
+    expect(tierFromRecord({ entitlements: {} }, NOW)).toBe('cinephile');
+    expect(tierFromRecord({ entitlements: { gift: ent({ expires_date: AHEAD, product_identifier: 'gift_card' }) } }, NOW)).toBe('cinephile');
+    expect(tierFromRecord(null, NOW)).toBe('cinephile');
+  });
+});
+
+describe('applying a record', () => {
+  const realFetch = global.fetch;
+  afterEach(() => { global.fetch = realFetch; });
+  const answer = (status: number, body?: unknown) => {
+    global.fetch = jest.fn(async () => ({ ok: status >= 200 && status < 300, status, json: async () => body })) as any;
+  };
+  const admin = (replies: Record<string, { data?: unknown; error?: unknown }> = {}) => {
+    const calls: [string, Record<string, unknown>][] = [];
+    return {
+      calls,
+      rpc: (fn: string, args: Record<string, unknown>) => {
+        calls.push([fn, args]);
+        return Promise.resolve({ data: replies[fn]?.data ?? null, error: replies[fn]?.error ?? null });
+      },
+    };
+  };
+
+  it('grants what the record holds, as the store, and answers the rank in force', async () => {
+    answer(200, { subscriber: { entitlements: { auteur: { expires_date: AHEAD } } } });
+    const a = admin({ grant_entitlement: { data: [{ out_tier: 'auteur', out_applied: true }] } });
+    await expect(applyStoreRecord(a, UID, 'k', NOW)).resolves.toEqual({ ok: true, storeTier: 'auteur', tier: 'auteur', seatClaimed: true, changed: true });
+    expect(a.calls).toEqual([['grant_entitlement', { p_user_id: UID, p_tier: 'auteur', p_source: 'revenuecat' }]]);
+  });
+
+  it('claims the founding seat before the rank, and says when the house was full', async () => {
+    answer(200, { subscriber: { entitlements: { founding: { expires_date: null } } } });
+    const a = admin({ claim_founding_seat: { data: false }, grant_entitlement: { data: [{ out_tier: 'auteur', out_applied: true }] } });
+    const r = await applyStoreRecord(a, UID, 'k', NOW);
+    expect(r).toMatchObject({ ok: true, storeTier: 'founding', seatClaimed: false });
+    expect(a.calls.map(([fn]) => fn)).toEqual(['claim_founding_seat', 'grant_entitlement']);
+  });
+
+  it('a member the store has never seen (404) holds nothing, and the store\'s grant ends', async () => {
+    answer(404);
+    const a = admin();
+    await expect(applyStoreRecord(a, UID, 'k', NOW)).resolves.toMatchObject({ ok: true, storeTier: 'cinephile' });
+    expect(a.calls[0][1]).toMatchObject({ p_tier: 'cinephile' });
+  });
+
+  it('a store that could not be read is never "holds nothing": nothing is granted, and the answer is retryable', async () => {
+    for (const fail of [() => answer(500), () => answer(429), () => { global.fetch = jest.fn(async () => { throw new Error('offline'); }) as any; }]) {
+      fail();
+      const a = admin();
+      await expect(applyStoreRecord(a, UID, 'k', NOW)).resolves.toMatchObject({ ok: false, status: 502 });
+      expect(a.calls).toEqual([]);
+    }
+  });
+
+  it('a member who does not exist is 404 (no retry can make one); any other failure is 500', async () => {
+    answer(200, { subscriber: { entitlements: {} } });
+    await expect(applyStoreRecord(admin({ grant_entitlement: { error: { code: 'P0002' } } }), UID, 'k', NOW))
+      .resolves.toMatchObject({ ok: false, status: 404 });
+    await expect(applyStoreRecord(admin({ grant_entitlement: { error: { code: '57014' } } }), UID, 'k', NOW))
+      .resolves.toMatchObject({ ok: false, status: 500 });
   });
 });
 

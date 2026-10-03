@@ -84,7 +84,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/list-modal.tsx | 2026-10-03 | edited: title and description name their caps |
 | app/(modals)/log-modal.tsx | 2026-10-01 | Arrive; the scroll needs no Animated |
 | app/(modals)/login.tsx | 2026-10-03 | edited: email, handle and password name their limits |
-| app/(modals)/membership.tsx | 2026-10-02 | restore asks a visitor to sign in; FOUNDING.seats; one readFoundingCount; no seat offered the store does not sell |
+| app/(modals)/membership.tsx | 2026-10-03 | payments pass: one watchForRank for purchase, seat and restore; restore says "yours again" only once the house holds it; no session read mid-purchase |
 | app/(modals)/notifications-modal.tsx | 2026-10-02 | rows say new/who/what/when; the rest could not be reached; history comments trimmed |
 | app/(modals)/search-modal.tsx | 2026-10-02 | tabs named; partial results said; an emptied box empties at once; nav.dismiss |
 | app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
@@ -189,8 +189,8 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/check-backend-live.mjs | 2026-09-28 | 13 findings; section numbers ran 1-5,9,10,8,6,7,8 and the admin-RPC note sat above the TRUNCATE block — renumbering dropped, each note moved over its own code; '#24' output replaced with what it means |
 | scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added |
 | scripts/coverage-ratchet.js | 2026-09-29 | the header's why-stories reduced to the rule |
-| scripts/edge-functions.cjs | 2026-09-29 | fetch-rss 'read by visitors' was stale (installed builds call it); history dropped |
-| scripts/functions-check.mjs | 2026-09-29 | now tells a comment-only difference (a note) from a code difference (a failure), by the compiler's tokens; a one-letter code change fails it |
+| scripts/edge-functions.cjs | 2026-10-03 | paytabs-handler NOT_DEPLOYED, with why (it granted any rank to a posted "paid" message) |
+| scripts/functions-check.mjs | 2026-10-03 | compares every file a deploy bundles, _shared included, each function in its own folder; a listed exception is reported once |
 | scripts/gates-check.js | 2026-10-03 | read whole: the door sweep reads code through stripComments.js |
 | scripts/lucide-icons.js | 2026-10-03 | read whole: sound |
 | scripts/schema-snapshot.mjs | 2026-09-28 | 5 findings; an orphan note trailed its code; the case for the snapshot kept, the incident counts dropped |
@@ -291,6 +291,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/signedOutHasNoInertControls.test.tsx | — |  |
 | src/components/dispatch/__tests__/spokenAloud.test.tsx | — |  |
 | src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/dispatch/__tests__/theDeskCountsAsTheReaderDoes.test.tsx | 2026-10-03 | new: the desk's minutes are readTime's |
 | src/components/dispatch/__tests__/theDispatchAtItsLimits.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
 | src/components/dispatch/__tests__/theDispatchSaysEssay.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theDoorIsShown.test.tsx | — |  |
@@ -407,6 +408,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-01 | both doors, every pull |
 | src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-09-30 | new |
 | src/components/lobby/__tests__/theWallIsRead.test.ts | 2026-09-30 | new |
+| src/components/lobby/__tests__/theWallKeepsTheDay.test.tsx | 2026-10-03 | new: the clock reads on the hour and on return; a wall behind the day is asked again |
 | src/components/lobby/FeatureRow.tsx | 2026-09-30 | new |
 | src/components/lobby/FilingsBill.tsx | 2026-09-30 | new; the byline moved out of the filing's door |
 | src/components/lobby/KeepOff.tsx | 2026-09-30 | new |
@@ -596,7 +598,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/search/SearchUnreachable.tsx | 2026-10-02 | SearchPartly: above results that came back while a source did not |
 | src/components/SectionErrorBoundary.tsx | 2026-10-01 | retries; comments made true |
 | src/components/ShareToLoungeModal.tsx | 2026-10-01 | only salons it may speak in; subscribes only when open |
-| src/components/society/__tests__/theSocietySellsWhatItSays.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/society/__tests__/theSocietySellsWhatItSays.test.tsx | 2026-10-03 | payments pass: restore waits for the house; the store sheet returning mid-purchase reads nothing |
 | src/components/society/BillingSwitch.tsx | 2026-10-02 | read; sound |
 | src/components/society/FoundingCertificate.tsx | 2026-10-02 | read; sound |
 | src/components/society/GeneralAdmission.tsx | 2026-10-02 | read; sound |
@@ -707,11 +709,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useBanCheck.ts | 2026-10-02 | says what it guards, and that the server guards every write |
 | src/hooks/useCatalogueSearch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useKeyboardLift.ts | 2026-10-01 | written: a sheet over a screen rises with the keyboard |
-| src/hooks/useClearance.ts | 2026-10-01 | one answer for every gate |
+| src/hooks/useClearance.ts | 2026-10-03 | payments pass: the rank history is a field of the member, no cast |
 | src/hooks/useDeviceThrottling.ts | 2026-10-02 | Read whole (launch audit). Answered in an effect, after the preloader had decided on the first render; known synchronously now. A settings override no screen ever wrote removed. |
 | src/hooks/useDispatchArchive.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useDoor.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/hooks/useEditProfile.ts | 2026-10-03 | edited: a link address past its cap is named before the save |
+| src/hooks/useEditProfile.ts | 2026-10-03 | a refusal for the member's standing is not reported as a fault |
 | src/hooks/useFeeds.ts | 2026-10-01 | one cursor rule; the fallback note gone with the fallback |
 | src/hooks/useFilmAnimations.ts | 2026-10-01 | each loop only while seen |
 | src/hooks/useFilmDetail.ts | 2026-10-01 | an unread verdict is null, never silence |
@@ -731,10 +733,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
 | src/hooks/useUpdateUser.ts | 2026-10-02 | read; sound |
 | src/hooks/useVault.ts | 2026-10-01 | reload, for a Vault that could not open |
-| src/lib/__tests__/aRankBoughtOfflineIsKept.test.ts | 2026-10-02 | Written in the launch audit: a rank bought with no signal is queued from the session. |
-| src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | — |  |
-| src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | — |  |
-| src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-01 | written: the unread-error sweep, both shapes |
+| src/lib/__tests__/aRankBoughtOfflineIsKept.test.ts | 2026-10-03 | payments pass: queued for the store's account, with no network and no session |
+| src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | 2026-10-03 | payments pass: a stand-in store drives every answer a configured one gives |
+| src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | 2026-10-03 | payments pass: the source pins went; the paths they guarded now run |
+| src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-03 | membership's watcher reads its error now; two refreshes, not three |
 | src/lib/__tests__/revenueCat.selectPackage.test.ts | — |  |
 | src/lib/__tests__/sentryMeasures.test.ts | — |  |
 | src/lib/__tests__/signingOutSilencesOnlyThisDevice.test.ts | — |  |
@@ -751,7 +753,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/pushPrimer.ts | 2026-10-01 | new: the house asks to send word at a moment that wants it |
 | src/lib/queryClient.ts | 2026-10-02 | read; sound |
 | src/lib/refusalEvents.ts | 2026-10-02 | Written in the launch audit: every refusal's sentence, for whoever listens. |
-| src/lib/revenueCat.ts | 2026-10-02 | Read whole (launch audit). syncEntitlementToSupabase asks auth.getUser (the network) for an id the session holds, so offline it queues nothing: left for the payments pass, as the owner set. |
+| src/lib/revenueCat.ts | 2026-10-03 | payments pass: the SDK is required (Jest runs every store path); a rank is queued for the account the store sold to |
 | src/lib/scrollBridge.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lib/sentry.ts | 2026-10-02 | Read whole (launch audit). The re-export was said to be for an ErrorBoundary wrapper in _layout; its one caller tags the session. |
 | src/lib/supabase.ts | 2026-10-01 | the session kept by authSessionStorage; comments short |
@@ -761,7 +763,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/providers/__tests__/androidTracking.test.ts | — |  |
 | src/providers/__tests__/theMissingSettingsAreNamed.test.ts | 2026-10-02 | Written in the launch audit: the missing-settings message, one line each. |
 | src/providers/androidTracking.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/providers/AppBootstrapper.tsx | 2026-10-02 | the env message breaks its lines; the handle door through nav |
+| src/providers/AppBootstrapper.tsx | 2026-10-03 | payments pass: the boot check is the webhook's backstop; the "no webhook" comment was false |
 | src/providers/FilmDetailProvider.tsx | 2026-10-01 | reviewsFailed and playVideo, said |
 | src/schemas/__tests__/aFeedRowWithANullIsStillDrawn.test.ts | 2026-10-01 | written with the null-status fix |
 | src/schemas/__tests__/schemas.test.ts | — |  |
@@ -769,7 +771,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/schemas/film.schema.ts | 2026-10-01 | the unused DomainLog mirror gone; no invented date or author |
 | src/schemas/profile.schema.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/schemas/settings.ts | 2026-10-02 | read; sound |
-| src/schemas/user.ts | 2026-10-02 | Read whole (launch audit). UserSchema is a type only (never parsed), so its role list cannot refuse a member. Sound. |
+| src/schemas/user.ts | 2026-10-03 | entitlement_source, read for the member alone |
 | src/services/__tests__/aMemberTakesBackOnlyTheirOwnStackCritique.test.ts | 2026-09-30 | written with the stack critique delete |
 | src/services/__tests__/aMissingLogIsAnAnswer.test.tsx | 2026-10-01 | written: a missing log is null; a nameless author is never unknown |
 | src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts | 2026-10-03 | Written in the launch audit: every column a query names, in both clients and the functions, exists in production. |
@@ -828,7 +830,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/aResetThatFailedIsHeard.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): a failed sign-out reset reaches the logger in production. |
 | src/stores/__tests__/aSalonKeepsItsCoverAndItsDoor.test.ts | 2026-10-01 | written: the corridor reads covers; a rank refusal is a door |
 | src/stores/__tests__/aStackIsSavedWhole.test.ts | — |  |
-| src/stores/__tests__/auth.test.ts | — |  |
+| src/stores/__tests__/auth.test.ts | 2026-10-03 | payments pass: the rank history is asked for the member alone, and a failed ask throws nowhere |
 | src/stores/__tests__/blockEnforcement.test.ts | — |  |
 | src/stores/__tests__/blockStore.pbt.test.ts | — |  |
 | src/stores/__tests__/dispatchActs.test.ts | — |  |
@@ -867,9 +869,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts | 2026-10-03 | read whole: the column's ceiling read from the snapshot |
 | src/stores/__tests__/theStoreOpensOnEveryLaunch.test.ts | 2026-10-01 | written with the 16-byte key fix |
 | src/stores/__tests__/theThrottleIsPerRoom.test.ts | — |  |
+| src/stores/__tests__/theWallHearsWhatChanged.test.ts | 2026-10-03 | new: every write that can change a hanging piece asks for the wall again |
 | src/stores/__tests__/vaultStore.test.ts | — |  |
 | src/stores/__tests__/watchlistSlice.test.ts | 2026-10-03 | edited: the header names what the file tests |
-| src/stores/auth.ts | 2026-10-01 | username sign-in says what failed; comments short |
+| src/stores/auth.ts | 2026-10-03 | payments pass: readRankHistory tells the member their own rank source (lapsed, not a stranger) |
 | src/stores/blockStore.ts | 2026-10-02 | sign-out erases the leaving member's saved list |
 | src/stores/createSelectors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/discover.ts | 2026-10-02 | Read whole (launch audit). Its comment said the Darkroom's results survive a restart; the films found are not persisted, only the mood, filters and search. |
@@ -937,7 +940,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts | 2026-10-02 | Written in the launch audit: the handle filter judged by words, one rule in apps and database. |
 | src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-02 | a hidden pressable is hidden whole (no-hide-descendants) |
 | src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts | 2026-10-01 | new |
-| src/utils/__tests__/aMembersWordsAreCleaned.test.ts | 2026-10-03 | Written with 20261003_05: every text column a member can write is cleaned by its table's trigger or named with the reason it is not. |
+| src/utils/__tests__/aMembersWordsAreCleaned.test.ts | 2026-10-03 | the profile excuses went with the INSERT grant that made those columns writable (20261003_07) |
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/appConfig.guard.test.ts | — |  |
@@ -983,7 +986,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
-| src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | edited: the replay's caps per field |
+| src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | payments pass: a failed rank sync carries its status |
 | src/utils/__tests__/networkError.test.ts | — |  |
 | src/utils/__tests__/noControlCharacters.guard.test.ts | 2026-10-03 | read whole: raw bidi, invisible and separator characters refused in source too (Trojan Source) |
 | src/utils/__tests__/noMachinePaths.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -999,7 +1002,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/queueErrorClassification.test.ts | — |  |
 | src/utils/__tests__/recommendations.test.ts | — |  |
 | src/utils/__tests__/requestReview.test.ts | — |  |
-| src/utils/__tests__/revenuecatWebhookDecide.test.ts | — |  |
+| src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-03 | rewritten: whom an event concerns, what a record grants, applying it |
 | src/utils/__tests__/roomFilters.test.ts | 2026-10-01 | written: one answer to is-this-room-narrowed |
 | src/utils/__tests__/sanitisationCallSites.test.ts | 2026-10-03 | edited: the hostile samples written as escapes |
 | src/utils/__tests__/sanitizeInput.test.ts | — |  |
@@ -1047,7 +1050,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/memberDrafts.ts | 2026-10-02 | read; sound (drafts go to storage unencrypted on a keystore failure: a trade-off, listed) |
 | src/utils/memoryManager.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/utils/mutationExecutor.ts | 2026-10-03 | read whole: a queued log keeps its viewing id; a duplicate becomes a server rewatch (log_viewing_add) |
+| src/utils/mutationExecutor.ts | 2026-10-03 | payments pass: a failed rank sync carries its status (kept and retried, not dead-lettered); the reply nobody read is gone |
 | src/utils/networkError.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/noticeRoute.ts | 2026-10-02 | Read whole (launch audit). Follows groupRoute's one argument. |
 | src/utils/offlineQueue.ts | 2026-10-03 | read whole: its kind union matches the executor |
@@ -1080,9 +1083,10 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/diagnostics/apply.cjs | 2026-10-03 | Applies one migration file to production as a single transaction; the database URL is read from .env.local and never printed. |
 | supabase/functions/fetch-rss/index.ts | 2026-09-29 | the header said it serves the Dispatch tab; no current source calls it (kept for installed builds, per backend-contract); audit tags and the relay's history dropped |
 | supabase/functions/notify-push/index.ts | 2026-10-03 | v4: the sender is named whenever there is one; an accepted request has its title; a house notice is The Lounge only about a salon |
-| supabase/functions/revenuecat-webhook/decide.ts | 2026-09-28 | 6 findings; the rules kept, shortened |
-| supabase/functions/revenuecat-webhook/index.ts | 2026-09-28 | the auth note claimed a length check stops timing leaks; the compare is a plain !== (reported); header moved above the imports |
-| supabase/functions/sync-entitlement/index.ts | 2026-09-28 | the header described a flow the code does not have (client sends a tier, which is validated); it trusts only RevenueCat's record. 'cryptographically verified' dropped (it is an HTTPS fetch) |
+| supabase/functions/_shared/storeRecord.ts | 2026-10-03 | new: the one home for "apply what RevenueCat says a member holds", read whole record, grace included |
+| supabase/functions/revenuecat-webhook/decide.ts | 2026-10-03 | rewritten: an event names whom to read again (both sides of a transfer), never what they hold |
+| supabase/functions/revenuecat-webhook/index.ts | 2026-10-03 | rewritten: each named account re-read and granted through storeRecord; 500 to retry, 404 member acknowledged |
+| supabase/functions/sync-entitlement/index.ts | 2026-10-03 | rewritten onto storeRecord; answers the rank in force; a store not read is 502 |
 | test-utils/__tests__/everyCommentIsTrue.test.ts | — |  |
 | test-utils/__tests__/everySourceReaderIsLedgered.test.ts | — |  |
 | test-utils/__tests__/oneCommentStripper.test.ts | 2026-10-03 | written whole: the guard that no file strips comments with its own regex |

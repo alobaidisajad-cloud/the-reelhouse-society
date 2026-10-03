@@ -2,6 +2,7 @@ import * as Crypto from 'expo-crypto';
 import { Image } from 'expo-image';
 import { queryClient } from '../../../../lib/queryClient';
 import { supabase } from '../../../../lib/supabase';
+import { wallMayHaveChanged } from '../../../../components/lobby/wallRead';
 import { standingFor } from '@/src/constants/standing';
 import type { DomainLog } from '../../../../types';
 import { LOG_SELECT_COLUMNS, mapLogRow, mapLogToDbPayload } from '../../../../utils/mappers';
@@ -683,7 +684,9 @@ export const updateLogOp = async (
                     throw error;
                 }
             }
-            
+            // A log's words, rating and spoiler mark are what the Lobby hangs.
+            if (!queuedOffline) wallMayHaveChanged();
+
             // The note, if this edit carried one: undefined is untouched, '' is the
             // member clearing it (never gated). A viewing operation writes its own note.
             if (!opts?.viewingOp && updates.privateNotes !== undefined) {
@@ -850,6 +853,7 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
                 }
                 throw error;
             }
+            wallMayHaveChanged();
             reelToast(`"${logToRemove.title}" removed.`);
         } catch (e: unknown) {
             if (__DEV__) console.warn(`[removeLog] Failed for log ${id}:`, e);

@@ -20,7 +20,6 @@ const DEPLOYED = {
   'tmdb-proxy': { dir: WEB, verifyJwt: false }, // the apps' only road to TMDB; guarded by paths.js
   'sign-in-with-username': { dir: WEB, verifyJwt: false }, // called before there is a session
   'sync-films': { dir: WEB, verifyJwt: true },
-  'paytabs-handler': { dir: WEB, verifyJwt: true },
   'fetch-rss': { dir: MOBILE, verifyJwt: false }, // installed builds call it signed out
   'notify-push': { dir: MOBILE, verifyJwt: false }, // the database calls it; own secret
   'sync-entitlement': { dir: MOBILE, verifyJwt: true },
@@ -29,6 +28,10 @@ const DEPLOYED = {
 
 /** In the repo on purpose, not deployed — and why. */
 const NOT_DEPLOYED = {
+  'paytabs-handler': {
+    dir: WEB,
+    why: 'Web payments do not work yet. Live, it granted any rank, a founding seat included, to whoever posted a "paid" message with its URL token, and asked PayTabs nothing. Redeploy only with the payment verified with PayTabs itself.',
+  },
   'send-email': {
     dir: WEB,
     why: 'Welcome and digest emails, written but never deployed. Nothing calls it; support mail goes through Resend SMTP.',

@@ -17,14 +17,15 @@ import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { HouseLine } from './parts';
 import { WALL_KEY } from './wallRead';
+import { KEEP_OFF } from './words';
 
-export const KEEP_OFF = 'KEEP OFF THE LOBBY';
-
-export const KeepOff = memo(function KeepOff({ kind, id, what }: {
+export const KeepOff = memo(function KeepOff({ kind, id, what, room }: {
   kind: 'log' | 'list' | 'post';
   id: string;
   /** what the piece is called to the admin: log, stack, filing */
   what: string;
+  /** the width of the row it stands in, where it takes a line of its own (planWall's switchRoom) */
+  room: number;
 }) {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
@@ -63,12 +64,13 @@ export const KeepOff = memo(function KeepOff({ kind, id, what }: {
       accessibilityLabel={`Keep this ${what} off the Lobby`}
       accessibilityState={{ disabled: busy, busy }}
     >
-      <HouseLine type="cta" text={KEEP_OFF} room={200} style={s.text} spoken={false} />
+      <HouseLine type="cta" text={KEEP_OFF} room={room} style={s.text} spoken={false} />
     </PressableScale>
   );
 });
 
 const s = StyleSheet.create({
-  door: { marginLeft: 'auto', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
+  // no inset: its words are given the whole row (on a 375pt phone they need nearly all of it)
+  door: { marginLeft: 'auto', minHeight: 44, justifyContent: 'center' },
   text: { color: colors.crimsonInk },
 });

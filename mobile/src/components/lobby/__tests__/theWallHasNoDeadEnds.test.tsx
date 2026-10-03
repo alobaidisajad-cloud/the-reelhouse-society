@@ -27,7 +27,8 @@ import { supabase } from '@/src/lib/supabase';
 import { tmdb } from '@/src/lib/tmdb';
 import { LobbyWall } from '../LobbyWall';
 import { lineLedger } from '../parts';
-import { lineWidth, TYPE } from '../measure';
+import { lineWidth, TYPE, WALL } from '../measure';
+import { KEEP_OFF, SIGNOFF } from '../words';
 import { featureKey, PROGRAMME_KEY, WALL_KEY, type Wall } from '../wallRead';
 import { honourDay, honourLine } from '../LobbyHonour';
 import { datelineOf, whisperFor } from '../Masthead';
@@ -431,6 +432,29 @@ describe('every line fits its room', () => {
     expect(drawn).toBeGreaterThan(500);
     expect([...new Set(misfits)]).toEqual([]);
   }, 60_000);
+
+  it('the lines it once could not see are in it, told the rooms they truly stand in', async () => {
+    // The sign-off was a plain Text, so never in the ledger; an admin's switch told
+    // it had 200pt, where a credit strip on a 375pt phone has 142.5 — and was cut.
+    mockWindow = { width: 375, height: 667, scale: 3, fontScale: 1 };
+    mockUser = { id: 'me', username: 'kane', role: 'admin', tier: null };
+    lineLedger.lines = [];
+    try {
+      await drawWall();
+      const lines = lineLedger.lines;
+      const wallW = 375 - WALL.gutter * 2;
+      expect(lines.filter((l) => l.text === SIGNOFF).map((l) => l.room)).toEqual([wallW]);
+      // the log and the stack stand side by side here: each strip is a half bill, less its insets
+      const strip = (wallW - WALL.gap) / 2 - WALL.halfPad * 2 - WALL.creditInset;
+      const switches = lines.filter((l) => l.text === KEEP_OFF).map((l) => l.room);
+      expect(switches).toHaveLength(5);
+      expect(switches.slice(0, 2)).toEqual([strip, strip]);
+      for (const room of switches) expect(lineWidth(KEEP_OFF, TYPE.cta.face, TYPE.cta.size, 1, TYPE.cta.spacing)).toBeLessThanOrEqual(room + 0.5);
+    } finally {
+      lineLedger.lines = null;
+      screen.unmount();
+    }
+  });
 
   it('the ledger is closed in the app: it records nothing unless a test opens it', () => {
     expect(lineLedger.lines).toBeNull();

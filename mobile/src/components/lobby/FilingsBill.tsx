@@ -28,8 +28,8 @@ import type { WallFiling } from './wallRead';
 import { KeepOff } from './KeepOff';
 
 /** A filing's number: its column, and the gap before its words. */
-const NUM_W = 22;
-const NUM_GAP = 10;
+const NUM_W = WALL.filingNum;
+const NUM_GAP = WALL.filingNumGap;
 /** A kind's row: READ › or FILE › at its end, as wide as this at most, this far from the kind. */
 const DOOR_WORDS = 60;
 const KIND_GAP = 8;
@@ -45,8 +45,11 @@ const inkOf = (kind: string) => KIND_RULE[kind.toLowerCase() as keyof typeof KIN
 const kindLabel = (f: WallFiling) =>
   `✦ ${nameOf(f.kind)}${f.kind.toLowerCase() === 'dossier' ? ` · ${readTimeForWords(f.words)}` : ''}`;
 
-const Filing = memo(function Filing({ filing, place, lead, room, admin }: {
-  filing: WallFiling; place: number; lead: boolean; room: number; admin: boolean;
+const Filing = memo(function Filing({ filing, place, lead, room, switchRoom, admin }: {
+  filing: WallFiling; place: number; lead: boolean; room: number;
+  /** the byline row's width, where an admin's switch takes a line of its own */
+  switchRoom: number;
+  admin: boolean;
 }) {
   const ink = inkOf(filing.kind);
   const opening = excerptFor(filing.text, 220);
@@ -88,7 +91,7 @@ const Filing = memo(function Filing({ filing, place, lead, room, admin }: {
         {/* a full finger tall in its own row; its halo only sideways, and on the left no further than half its inset */}
         <Person author={filing.author} style={s.byPerson} hitSlop={BY_HALO} />
         <Mark author={filing.author} />
-        {admin ? <KeepOff kind="post" id={filing.id} what="filing" /> : null}
+        {admin ? <KeepOff kind="post" id={filing.id} what="filing" room={switchRoom} /> : null}
       </View>
     </View>
   );
@@ -144,12 +147,12 @@ export const FilingsBill = memo(function FilingsBill({ filings, plan, admin }: {
           <HouseLine type="cta" text={FILINGS_BILL.door} room={plan.bannerDoorRoom} style={s.bannerDoorText} spoken={false} />
         </PressableScale>
       </View>
-      {lead ? <Filing filing={lead} place={1} lead room={leadRoom} admin={admin} /> : null}
+      {lead ? <Filing filing={lead} place={1} lead room={leadRoom} switchRoom={plan.switchRoom.lead} admin={admin} /> : null}
       {runners.length ? (
         <View style={[s.runners, !plan.runners && s.runnersStacked]}>
           {runners.map((f, i) => (
             <View key={f.id} style={[plan.runners && s.runnerCell, i > 0 && (plan.runners ? s.runnerCellBeside : s.runnerCellBelow)]}>
-              <Filing filing={f} place={i + 2} lead={false} room={runnerRoom} admin={admin} />
+              <Filing filing={f} place={i + 2} lead={false} room={runnerRoom} switchRoom={plan.switchRoom.runner} admin={admin} />
             </View>
           ))}
         </View>
@@ -193,9 +196,9 @@ const s = StyleSheet.create({
   // 44 tall, the byline's own tap: its name stands 11 under the words and 12 over the rule below
   by: {
     flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: BY_GAP,
-    paddingLeft: WALL.filingPad + 2, paddingRight: WALL.filingPad, paddingTop: 1, paddingBottom: 2,
+    paddingLeft: WALL.filingPad + WALL.bylineInset, paddingRight: WALL.filingPad, paddingTop: 1, paddingBottom: 2,
   },
-  byLead: { paddingLeft: WALL.filingPad + NUM_W + NUM_GAP + 2 },
+  byLead: { paddingLeft: WALL.filingPad + NUM_W + NUM_GAP + WALL.bylineInset },
   byPerson: { minHeight: 44 },
   runners: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.sepiaBorder },
   runnersStacked: { flexDirection: 'column' },

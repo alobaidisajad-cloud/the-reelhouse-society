@@ -703,6 +703,21 @@ describe('Entitlements', () => {
         await expect(runMutation('sync_entitlement', { tier: 'auteur' })).rejects.toThrow('500');
     });
 
+    it('a failure carries its status, so the queue keeps a passing one and tries again', async () => {
+        // Without it every failure looked permanent and was dead-lettered at once: a store
+        // unreachable for a moment (502) lost the member's purchase for good.
+        const { isTransientError } = jest.requireActual('../networkError');
+        for (const status of [502, 503, 429]) {
+            (global.fetch as jest.Mock).mockResolvedValue({ ok: false, status });
+            const err = await runMutation('sync_entitlement', { tier: 'auteur' }).catch((e: unknown) => e);
+            expect(err).toMatchObject({ status });
+            expect(isTransientError(err)).toBe(true);
+        }
+        (global.fetch as jest.Mock).mockResolvedValue({ ok: false, status: 401 });
+        const refused = await runMutation('sync_entitlement', { tier: 'auteur' }).catch((e: unknown) => e);
+        expect(isTransientError(refused)).toBe(false);
+    });
+
     // ⚠️ This used to assert `result).toEqual({})` — "should NOT throw, just return
     // silently". That WAS the bug: reporting success made the queue delete the mutation,
     // so the member's tier never synced at all. The test encoded the defect as intent.
@@ -746,19 +761,10 @@ describe('Entitlements', () => {
         expect(global.fetch).toHaveBeenCalled();
     });
 
-    it("returns the server's reply instead of discarding it", async () => {
-        // finding 100: seatClaimed=false means the 100 founding seats were full and the
-        // member was granted Auteur instead. This used to `return {}`, so someone who
-        // paid for a seat that no longer existed was never told.
-        (global.fetch as jest.Mock).mockResolvedValue({
-            ok: true,
-            json: async () => ({ tier: 'auteur', seatClaimed: false, applied: true }),
-        });
-        const result = await runMutation('sync_entitlement', { tier: 'founding' });
-        expect(result).toMatchObject({ seatClaimed: false });
-    });
-
-    it('still resolves when the reply has no JSON body', async () => {
+    // The reply is not the member's news: the queue reads no answer. A founder whose seat
+    // went meanwhile is told by the membership page, which watches the profile for the
+    // seat and asks the house how many are left (finding 100).
+    it('resolves once the house has it, whatever the reply holds', async () => {
         (global.fetch as jest.Mock).mockResolvedValue({ ok: true });
         await expect(runMutation('sync_entitlement', { tier: 'auteur' })).resolves.toEqual({});
     });

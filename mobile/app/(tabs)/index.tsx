@@ -10,7 +10,6 @@ import { useScrollToTop } from '@react-navigation/native';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
-import { useNotificationStore } from '@/src/stores/notificationStore';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
@@ -63,8 +62,6 @@ export default function LobbyScreen() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const fetchLogs = useFilmStore(s => s.fetchLogs);
   const fetchEndorsements = useFilmStore(s => s.fetchEndorsements);
-  const setupRealtime = useNotificationStore(s => s.setupRealtime);
-  const fetchNotifications = useNotificationStore(s => s.fetchNotifications);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -108,15 +105,14 @@ export default function LobbyScreen() {
   // The bar's own top padding: with no inset it still pads (navMetrics).
   const topPad = navTopPadding(insets.top) + NAV_HEIGHT + 12;
 
+  // The member's own reads. Their notices and the live channel are the
+  // bootstrapper's, for the whole session: this tab never opens or closes them.
   useEffect(() => {
     if (isAuthenticated) {
       fetchLogs();
       fetchEndorsements();
-      fetchNotifications();
-      const cleanup = setupRealtime();
-      return () => { if (cleanup) cleanup(); };
     }
-  }, [isAuthenticated, fetchLogs, fetchEndorsements, fetchNotifications, setupRealtime]);
+  }, [isAuthenticated, fetchLogs, fetchEndorsements]);
 
   const handleRefresh = useCallback(async () => {
     try {

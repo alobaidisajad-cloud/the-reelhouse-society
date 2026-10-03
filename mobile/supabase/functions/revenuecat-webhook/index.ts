@@ -1,15 +1,20 @@
 /**
- * revenuecat-webhook — retire a subscription when it actually ends, without the
- * member having to open the app.
+ * revenuecat-webhook — the store tells the house something changed.
  *
  * DEPLOY WITH --no-verify-jwt: RevenueCat has no Supabase login, and the gateway
  * would answer 401 before this ran. REQUIRES REVENUECAT_WEBHOOK_SECRET, matching the
- * webhook's Authorization header in the RevenueCat dashboard; unset, all is refused.
- * This file is transport only; every decision is decide.ts's, tested with the suite.
+ * webhook's Authorization header in the RevenueCat dashboard (unset, all is
+ * refused), and REVENUECAT_SECRET_KEY, to read the member's record.
+ *
+ * Each account the event names (decide.ts) is read again from RevenueCat and
+ * granted what it holds (../_shared/storeRecord.ts, the same routine the app's
+ * sync-entitlement uses). A failure to read or record is 500, so RevenueCat
+ * retries; reading again is always safe.
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { authorized, decide } from "./decide.ts"
+import { accountsIn, authorized } from "./decide.ts"
+import { applyStoreRecord } from "../_shared/storeRecord.ts"
 
 const WEBHOOK_SECRET = Deno.env.get('REVENUECAT_WEBHOOK_SECRET') ?? ''
 
@@ -37,44 +42,38 @@ serve(async (req) => {
   }
 
   const event = payload?.event ?? {}
-  const action = decide(event)
-
-  if (action.kind === 'ignore') {
-    console.log(`[revenuecat-webhook] ignored: ${action.reason}`)
-    return ok({ ignored: action.reason })
+  const accounts = accountsIn(event)
+  if (!accounts.length) {
+    console.log(`[revenuecat-webhook] ${event?.type ?? 'no type'}: names no ReelHouse account`)
+    return ok({ ignored: 'no account' })
   }
 
-  const tier = action.kind === 'grant' ? action.tier : 'cinephile'
-  const appUserId = String(event.app_user_id)
+  const storeKey = Deno.env.get('REVENUECAT_SECRET_KEY') ?? ''
+  if (!storeKey) {
+    console.error('[revenuecat-webhook] REVENUECAT_SECRET_KEY is not set')
+    return new Response(JSON.stringify({ error: 'The store is not configured' }), { status: 500 })
+  }
 
-  const adminClient = createClient(
+  const admin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
   )
 
-  // p_source MUST be 'revenuecat': grant_entitlement lowers only a tier this provider granted,
-  // and never takes a founding seat below auteur, so a web or hand-granted rank survives.
-  const { data, error } = await adminClient
-    .rpc('grant_entitlement', { p_user_id: appUserId, p_tier: tier, p_source: 'revenuecat' })
-
-  if (error) {
-    // No such profile (P0002): a retry can never succeed, and RevenueCat retries every
-    // non-2xx, so it is acknowledged, loudly.
-    if ((error as any)?.code === 'P0002' || /no profile with id/i.test(String((error as any)?.message ?? ''))) {
-      console.warn(`[revenuecat-webhook] no profile for ${appUserId} — acknowledged, not retried`)
-      return ok({ ignored: 'no_such_profile' })
+  const results: Record<string, unknown>[] = []
+  for (const id of accounts) {
+    const applied = await applyStoreRecord(admin, id, storeKey)
+    if (!applied.ok && applied.status === 404) {
+      // No such member: no retry can make one, so it is acknowledged, loudly.
+      console.warn(`[revenuecat-webhook] ${event.type}: no member ${id} — acknowledged`)
+      results.push({ id, ignored: 'no such member' })
+      continue
     }
-    // A valid event not recorded: 500, so RevenueCat retries.
-    console.error(`[revenuecat-webhook] grant_entitlement failed for ${appUserId}:`, error)
-    return new Response(JSON.stringify({ error: 'Failed to apply entitlement' }), { status: 500 })
+    if (!applied.ok) {
+      console.error(`[revenuecat-webhook] ${event.type}: ${id}: ${applied.error}`)
+      return new Response(JSON.stringify({ error: applied.error }), { status: 500 })
+    }
+    console.log(`[revenuecat-webhook] ${event.type}: ${id} holds ${applied.storeTier}; in force ${applied.tier}${applied.changed ? ' (changed)' : ''}`)
+    results.push({ id, storeTier: applied.storeTier, tier: applied.tier, changed: applied.changed })
   }
-
-  const applied = Array.isArray(data) ? data[0] : data
-  console.log(`[revenuecat-webhook] ${action.reason} for ${appUserId}: ${applied?.out_reason ?? 'applied'}`)
-  return ok({
-    action: action.kind,
-    tier,
-    applied: applied?.out_applied !== false,
-    reason: applied?.out_reason ?? null,
-  })
+  return ok({ type: event.type ?? null, results })
 })

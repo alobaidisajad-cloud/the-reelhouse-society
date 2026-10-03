@@ -75,22 +75,26 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         });
         addBreadcrumb('Sentry user context initialized', 'boot');
 
+        // ── The member's notices, read once a boot (the badge), before anything slow ──
+        // The live channel, below, brings only what is new after this.
+        useNotificationStore.getState().fetchNotifications()
+          .catch(e => logger.warn('[Bootstrapper] Notices read failed:', e));
+
         // ── RevenueCat — IAP Entitlements ──
         try {
           await initRevenueCat(currentUser.id);
           addBreadcrumb('RevenueCat initialized', 'boot');
 
           /**
-           * A rank has to be able to END, and this is the only place the app
-           * ever learns that one has. There is no webhook and no expiry
-           * column, so until this call existed a lapsed subscription left
-           * `profiles.tier` reading `archivist` for ever.
+           * A rank has to be able to END. The store's webhook tells the house
+           * when it does; this is the app's own check, for a webhook that is
+           * late or was never delivered.
            *
            * It is safe to do on every boot: `reconcileRank` acts ONLY when the
            * store positively reports no active entitlement, never when it is
-           * unconfigured or unreachable, and `relinquish_rank` can only lower
-           * the caller's own rank — never raise one, never touch anybody else,
-           * and never take a rank the store did not grant.
+           * unconfigured or unreachable, and `relinquish_rank` can only end
+           * the store's grant of the caller's own rank — never raise one, never
+           * touch anybody else, and never a rank given on the web or by hand.
            *
            * Not awaited into the boot path's critical section on purpose: a
            * slow store must not hold the app closed.

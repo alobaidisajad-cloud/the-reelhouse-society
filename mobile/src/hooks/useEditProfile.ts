@@ -11,6 +11,7 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { queryClient } from '@/src/lib/queryClient';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { captureError } from '@/src/lib/sentry';
+import { isStandingRefusal } from '@/src/utils/standing';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { WALL_KEY } from '@/src/components/lobby/wallRead';
 import { nav } from '@/src/utils/typedRouter';
@@ -307,7 +308,8 @@ export function useEditProfile() {
       return;
     } catch (err: unknown) {
       console.error('Failed to update profile:', err);
-      if (!__DEV__) captureError(err instanceof Error ? err : new Error(String(err)), { context: 'update_profile' });
+      // A refusal for the member's standing is the house's answer, not a fault: the notice says it.
+      if (!__DEV__ && !isStandingRefusal((err as { message?: unknown } | null)?.message)) captureError(err instanceof Error ? err : new Error(String(err)), { context: 'update_profile' });
       setSubmitError(err instanceof Error ? err : new Error('Failed to update profile. Please try again.'));
     } finally {
       setSaving(false);

@@ -15,7 +15,8 @@
  *   · the ledger and the tickets are one list
  */
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { AppState } from 'react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -37,9 +38,10 @@ jest.mock('@/src/lib/revenueCat', () => ({
 }));
 const mockToastError = jest.fn();
 const mockToastInfo = jest.fn();
+const mockToastSuccess = jest.fn();
 jest.mock('@/src/utils/reelToast', () => ({
   __esModule: true,
-  default: { error: (...a: unknown[]) => mockToastError(...a), success: jest.fn(), info: (...a: unknown[]) => mockToastInfo(...a) },
+  default: { error: (...a: unknown[]) => mockToastError(...a), success: (...a: unknown[]) => mockToastSuccess(...a), info: (...a: unknown[]) => mockToastInfo(...a) },
 }));
 let mockPricing: Record<string, unknown> = {};
 jest.mock('@/src/hooks/useMembershipPricing', () => ({ useMembershipPricing: () => mockPricing }));
@@ -51,9 +53,14 @@ jest.mock('expo-web-browser', () => ({
 const mockOpenURL = jest.fn();
 jest.mock('@/src/utils/linking', () => ({ safeOpenURL: (...a: unknown[]) => mockOpenURL(...a) }));
 let mockFounders = 0;
+/** The member's rank as the house holds it: what the watch for a new rank reads. */
+let mockHeld: Record<string, unknown> | null = null;
+const mockReadHeld = jest.fn();
 jest.mock('@/src/lib/supabase', () => ({
   supabase: {
-    from: () => ({ select: () => ({ eq: () => Promise.resolve({ count: mockFounders, error: null }) }) }),
+    from: () => ({ select: () => ({ eq: () => Object.assign(Promise.resolve({ count: mockFounders, error: null }), {
+      single: () => { mockReadHeld(); return Promise.resolve({ data: mockHeld, error: null }); },
+    }) }) }),
     auth: { refreshSession: jest.fn() },
   },
 }));
@@ -106,6 +113,9 @@ beforeEach(() => {
   mockStoreReady = true;
   mockToastError.mockReset();
   mockToastInfo.mockReset();
+  mockToastSuccess.mockReset();
+  mockReadHeld.mockReset();
+  mockHeld = null;
   [mockRestore, mockPurchase, mockShowManage, mockOpenBrowser, mockOpenURL, mockPush, mockRestoreSession, mockTierHint].forEach((m) => m.mockReset());
 });
 
@@ -373,11 +383,57 @@ describe('the four doors at the foot all go somewhere', () => {
     expect(mockTierHint).not.toHaveBeenCalled();
   });
 
-  it('…and a restored rank is put back at once', async () => {
+  it('…and a restored rank is said to be back once the house holds it', async () => {
     mockRestore.mockResolvedValue({ storeReachable: true, isActive: true, tier: 'auteur' });
+    mockHeld = { tier: 'auteur', role: 'auteur', is_founding: false };
     const r = await mount();
     await fireEvent.press(r.getAllByLabelText('Restore purchases')[0]);
-    await waitFor(() => expect(mockTierHint).toHaveBeenCalledWith({ tier: 'auteur', is_founding: undefined }));
+    await waitFor(() => expect(mockToastSuccess).toHaveBeenCalledWith('Restored — the Auteur rank is yours again.'));
+    expect(mockRestoreSession).toHaveBeenCalled();
+    // The store's word alone never puts a rank on screen.
+    expect(mockTierHint).not.toHaveBeenCalled();
+  });
+
+  it('…and one the house has not yet recorded is not claimed', async () => {
+    jest.useFakeTimers();
+    try {
+      mockRestore.mockResolvedValue({ storeReachable: true, isActive: true, tier: 'auteur' });
+      mockHeld = { tier: 'cinephile', role: 'cinephile', is_founding: false };
+      const r = render(<MembershipScreen />);
+      await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+      await fireEvent.press(r.getAllByLabelText('Restore purchases')[0]);
+      await act(async () => { await jest.advanceTimersByTimeAsync(4 * 2500 + 100); });
+      expect(mockReadHeld).toHaveBeenCalledTimes(5);
+      expect(mockToastInfo).toHaveBeenCalledWith(expect.stringMatching(/found your membership, but it has not reached the house yet/));
+      expect(mockToastSuccess).not.toHaveBeenCalled();
+      expect(mockTierHint).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('the store\'s sheet returning the page to the front mid-purchase does not read the old rank back', async () => {
+    let returnToFront: (s: string) => void = () => {};
+    // Put back by hand: a spy's restore leaves the environment's own stand-in answering nothing.
+    const original = AppState.addEventListener;
+    AppState.addEventListener = ((_: string, h: (s: string) => void) => {
+      returnToFront = h; return { remove: jest.fn() };
+    }) as never;
+    try {
+      let pay!: (v: unknown) => void;
+      mockPurchase.mockReturnValue(new Promise((res) => { pay = res; }));
+      const r = await mount();
+      await fireEvent.press(r.getByText('BECOME AN ARCHIVIST'));
+      await waitFor(() => expect(mockPurchase).toHaveBeenCalled());
+      await act(async () => { returnToFront('active'); });
+      expect(mockRestoreSession).not.toHaveBeenCalled();
+      await act(async () => { pay(null); });
+      // Once nothing is in hand, coming back to the front reads the session again.
+      await act(async () => { returnToFront('active'); });
+      expect(mockRestoreSession).toHaveBeenCalledTimes(1);
+    } finally {
+      AppState.addEventListener = original;
+    }
   });
 
   it('Restore is also at the top, where a member looks for it', async () => {

@@ -20,11 +20,8 @@ const ROOT = join(__dirname, '..', '..', '..');
 
 /** Each judged site, by file and shape, with how many there are and why each is right. */
 const JUDGED: Record<string, { n: number; why: string }> = {
-  'app/(modals)/membership.tsx · [from] destructured without error (data)': {
-    n: 2, why: 'polls for the webhook: a failed read is "not yet", and the next poll asks again',
-  },
   'app/(modals)/membership.tsx · [auth] result discarded': {
-    n: 3, why: 'a best-effort refresh; restoreSession follows and reads its own answer',
+    n: 2, why: 'a best-effort refresh; restoreSession follows and reads its own answer',
   },
   'app/reset-password.tsx · [auth] result discarded': {
     n: 1, why: 'a best-effort refresh; restoreSession follows and reads its own answer',

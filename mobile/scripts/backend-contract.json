@@ -126,6 +126,10 @@
       "signature": "log_viewing_remove(p_log_id uuid, p_viewing_id uuid)"
     },
     {
+      "name": "my_entitlement_source",
+      "signature": "my_entitlement_source()"
+    },
+    {
       "name": "record_gate_event",
       "signature": "record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text)"
     },

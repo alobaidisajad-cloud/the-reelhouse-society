@@ -29,6 +29,7 @@ import {
 } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { readMinutes } from '../readTime';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
 import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { PaperKeyWell } from './PaperKeyWell';
@@ -339,7 +340,7 @@ export const DossierDesk = memo(function DossierDesk({
         {/* Words, and the read time it implies — the two facts a writer of a
             long piece actually watches. */}
         <Text style={p.rl} {...scaledTextProps}>
-          {groupDigits(words)} WORDS · {Math.max(1, Math.round(words / 220))} MIN
+          {groupDigits(words)} WORDS · {readMinutes(words)} MIN
         </Text>
       </View>
       <View style={p.kbd}><Text style={p.kbdLabel} {...decorativeTextProps}>KEYBOARD</Text></View>

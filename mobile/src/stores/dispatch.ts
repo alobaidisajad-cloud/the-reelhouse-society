@@ -28,6 +28,7 @@ import { create } from 'zustand';
 
 import { supabase } from '../lib/supabase';
 import { captureError } from '../lib/sentry';
+import { wallMayHaveChanged } from '../components/lobby/wallRead';
 import { logger } from '../utils/logger';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
@@ -563,6 +564,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         .select('id');
       if (error) throw error;
       if (!data || data.length === 0) throw new Error('dispatch.amend: refused');
+      // Its words or its spoiler mark: the Lobby may be hanging it.
+      wallMayHaveChanged();
     } catch (e) {
       if (isNetworkError(e)) {
         enqueueMutation({
@@ -605,6 +608,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     try {
       const { error } = await supabase.rpc('end_filing', { p_post: id, p_by: 'author' });
       if (error) throw error;
+      wallMayHaveChanged();
     } catch (e) {
       if (isNetworkError(e)) {
         enqueueMutation({ type: 'end_filing', payload: { id, user_id: user.id } });

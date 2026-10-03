@@ -26,7 +26,7 @@
 import {
   RYE, RYE_WIDEST, ELITE, ELITE_WIDEST, COURIER_ITALIC, COURIER_ITALIC_WIDEST, SPECTRAL_ITALIC, SPECTRAL_ITALIC_WIDEST,
 } from '@/src/theme/faceAdvances';
-import { FILINGS_BILL, LOG_BILL, RANK_BILL, STACK_BILL, STATES, rankTicket } from './words';
+import { FILINGS_BILL, KEEP_OFF, LOG_BILL, RANK_BILL, STACK_BILL, STATES, rankTicket } from './words';
 
 export type Face = 'rye' | 'elite' | 'courierItalic' | 'spectralItalic';
 
@@ -141,7 +141,11 @@ export const WALL = {
   besideCase: 8,    // between the case and the bill column
   halfPad: 12,      // a half bill's inset
   slabPadX: 9,      // a slab's inset, each side
+  creditInset: 2,   // a credit strip's second line (the mark, an admin's switch) stands in this far
   filingPad: 14,    // a filing's inset
+  filingNum: 22,    // a filing's number column
+  filingNumGap: 10, // between the number and the words
+  bylineInset: 2,   // a filing's byline stands in this far past the inset
   ticketStub: 16,   // a ticket's torn stub
   ticketPad: 10,    // a ticket's inset
   ticketGap: 8,     // between two tickets, beside or above one another
@@ -187,6 +191,7 @@ export const TYPE = {
   refresh: { face: 'courierItalic', size: 11, spacing: 0 },
   darkName: { face: 'rye', size: 20, spacing: 0 },
   darkSub: { face: 'courierItalic', size: 11, spacing: 0 },
+  signoff: { face: 'courierItalic', size: 11, spacing: 0 },
 } as const satisfies Record<string, { face: Face; size: number; spacing: number }>;
 
 export type TypeKey = keyof typeof TYPE;
@@ -242,6 +247,8 @@ export interface WallPlan {
   refreshDoorRoom: number;
   /** the width a half bill sets its words in */
   halfRoom: number;
+  /** an admin's KEEP OFF THE LOBBY, on its own line: on a credit strip, under the lead filing, under a runner */
+  switchRoom: { credit: number; lead: number; runner: number };
 }
 
 export interface WallRoom {
@@ -253,11 +260,13 @@ export interface WallRoom {
   scale: number;
   /** how much a SET line height grows (useLineScale): on Android past the ceiling */
   lineScale: number;
+  /** an admin: the wall also holds their KEEP OFF THE LOBBY switches */
+  admin?: boolean;
 }
 
 const clamp = (lo: number, hi: number, v: number) => Math.max(lo, Math.min(hi, v));
 
-export function planWall({ width: windowW, visible, scale, lineScale }: WallRoom): WallPlan {
+export function planWall({ width: windowW, visible, scale, lineScale, admin = false }: WallRoom): WallPlan {
   const s = Math.min(scale, HOUSE_CEILING);
   const wallW = Math.min(windowW - WALL.gutter * 2, WALL.widest);
 
@@ -290,13 +299,23 @@ export function planWall({ width: windowW, visible, scale, lineScale }: WallRoom
     && [...LOG_BILL.vacant, ...STACK_BILL.vacant].every((t) => fits('vacant', t, halfRoom, s))
     && [LOG_BILL.vacantDoor, STACK_BILL.vacantDoor].every((t) => fits('cta', t, halfRoom - WALL.doorPadX * 2 - 2, s))
     && width('stackFacts', STACK_BILL.films(999), s) + 6 + width('stackFacts', STACK_BILL.seeAll, s) <= halfRoom
-    && fits('cta', LOG_BILL.readOn, halfRoom, s);
+    && fits('cta', LOG_BILL.readOn, halfRoom, s)
+    && (!admin || fits('cta', KEEP_OFF, halfRoom - WALL.creditInset, s));
 
   // The runners: the second and third filings in two columns, where a column
-  // holds its kind's name at the member's size.
+  // holds its kind's name at the member's size — and an admin's switch under it.
+  // A byline row stands inside the bill's border; the second column also inside its rule.
   const runnerRoom = (wallW - 2) / 2 - WALL.filingPad * 2;
+  const runnerByline = (wallW - 2) / 2 - 1 - WALL.filingPad * 2 - WALL.bylineInset;
   const runners = runnerRoom >= 130 * s
-    && ['✦ SEEKING', '✦ BALLOT', '✦ ESSAY · 99 MIN'].every((t) => fits('kind', t, runnerRoom, s));
+    && ['✦ SEEKING', '✦ BALLOT', '✦ ESSAY · 99 MIN'].every((t) => fits('kind', t, runnerRoom, s))
+    && (!admin || fits('cta', KEEP_OFF, runnerByline, s));
+  const fullByline = wallW - 2 - WALL.filingPad * 2 - WALL.bylineInset;
+  const switchRoom = {
+    credit: (pairs ? halfRoom : wallW - WALL.halfPad * 2) - WALL.creditInset,
+    lead: fullByline - WALL.filingNum - WALL.filingNumGap,
+    runner: runners ? runnerByline : fullByline,
+  };
 
   // The tickets, where each holds its rank's name, its two lines and its door.
   const ticketRoom = (wallW - WALL.ticketGap) / 2 - 2 - WALL.ticketStub - WALL.ticketPad * 2;
@@ -333,6 +352,7 @@ export function planWall({ width: windowW, visible, scale, lineScale }: WallRoom
   return {
     wallW, col, sheetW, sheetH, billCount, titleSize, pairs, runners, tickets,
     bannerStacked, bannerWordsRoom, bannerDoorRoom, recruitStacked, refreshStacked, refreshWordsRoom, refreshDoorRoom, halfRoom,
+    switchRoom,
   };
 }
 

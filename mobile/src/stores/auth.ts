@@ -99,6 +99,35 @@ function memberUnchanged(capturedUserId: string | null): boolean {
   return (useAuthStore.getState().user?.id ?? null) === capturedUserId;
 }
 
+/**
+ * Whether this member once held a rank: the source that last granted one. Not
+ * a column anyone may read (it would tell every member how every other pays),
+ * so the house answers it for the member alone. useClearance greets a member
+ * whose rank lapsed as one coming back, not a stranger. A failed read leaves
+ * what was known.
+ */
+async function readRankHistory(userId: string): Promise<void> {
+  let data: unknown;
+  let error: { message: string } | null;
+  try {
+    ({ data, error } = await supabase.rpc('my_entitlement_source'));
+  } catch (e) {
+    logger.warn('[auth] could not ask for the member\'s rank history', e);
+    return;
+  }
+  if (error) {
+    logger.warn('[auth] could not read the member\'s rank history', error.message);
+    return;
+  }
+  if (!memberUnchanged(userId)) return;
+  useAuthStore.setState((s) => {
+    if (!s.user) return {};
+    const user = { ...s.user, entitlement_source: typeof data === 'string' ? data : null };
+    setSensitive(`ironvault_user_cache_${user.id}`, JSON.stringify(user));
+    return { user };
+  });
+}
+
 export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   isAuthenticated: false,
@@ -188,12 +217,15 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             try { pendingProfileEdits = JSON.parse(dirtyProfile); } catch {}
           }
           // The cached following list is kept, never replaced by an empty one.
-          const completeUser = { ...session.user, ...profile, ...pendingProfileEdits, preferences: finalPrefs, following: cachedFollowing } as unknown as User;
+          // The rank history is not in the profile; the one already known stands until readRankHistory answers.
+          const knownHistory = get().user?.id === session.user.id ? get().user?.entitlement_source : undefined;
+          const completeUser = { ...session.user, ...profile, ...pendingProfileEdits, preferences: finalPrefs, following: cachedFollowing, entitlement_source: knownHistory } as unknown as User;
           storage.set('last_user_id', session.user.id);
           setSensitive(`ironvault_user_cache_${session.user.id}`, JSON.stringify(completeUser));
           set({ user: completeUser, isAuthenticated: true, loading: false });
           // Hydrate following from DB in background (authoritative source)
           hydrateFollowing();
+          void readRankHistory(session.user.id);
           return;
         }
         // session valid but profile fetch returned nothing — keep the cached
@@ -265,6 +297,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     // The store's identity, by the documented `logIn()`; never awaited by sign-in.
     void identifyUser(authedUser.id);
+    void readRankHistory(authedUser.id);
 
     // Otherwise the full profile, in the background with retries; if it never
     // comes, the session runs on the auth user alone, and the failure is reported.

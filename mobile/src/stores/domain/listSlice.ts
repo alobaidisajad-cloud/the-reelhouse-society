@@ -4,6 +4,7 @@ import { StateCreator } from 'zustand';
 import { queryClient } from '../../lib/queryClient';
 import { supabase } from '../../lib/supabase';
 import { tmdb } from '../../lib/tmdb';
+import { wallMayHaveChanged } from '../../components/lobby/wallRead';
 import { CustomList } from '../../types';
 import { ListRow, mapListRow } from '../../utils/mappers';
 import { captureError } from '../../lib/sentry';
@@ -285,6 +286,8 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             if (!stillSignedIn(user.id)) return;
             if (error) throw error;
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
+            // Its name, its films, or now private: the Lobby may be hanging it.
+            wallMayHaveChanged();
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.updateList' });
             if (isNetworkError(e)) {
@@ -342,6 +345,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             if (error) {
                 throw error;
             }
+            wallMayHaveChanged();
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.deleteList' });
             if (isNetworkError(e)) {
@@ -446,6 +450,8 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             if (!stillSignedIn(startedAs)) return;
             if (error) throw error;
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
+            // Under four films, a stack no longer hangs.
+            wallMayHaveChanged();
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.removeFilmFromList' });
             if (isNetworkError(e)) {

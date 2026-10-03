@@ -32,8 +32,11 @@ jest.mock('../../lib/supabase', () => ({
     },
     functions: { invoke: (...args: unknown[]) => mockInvoke(...args) },
     from: (...args: unknown[]) => mockFrom(...args),
+    rpc: (...args: unknown[]) => mockRpc(...args),
   },
 }));
+// The member's rank history (my_entitlement_source): none unless a test says otherwise.
+const mockRpc = jest.fn(async (..._args: unknown[]) => ({ data: null as unknown, error: null as unknown }));
 
 jest.mock('../mmkv-storage', () => ({
   storage: { getString: jest.fn(), set: jest.fn(), delete: jest.fn() },
@@ -228,6 +231,31 @@ describe('AuthStore', () => {
       expect(state.isAuthenticated).toBe(true);
       expect(state.user).toBeTruthy();
       expect(state.user?.username).toBe('cinephile1');
+    });
+
+    it('a member whose rank lapsed is known as one, and only by asking for their own', async () => {
+      // The ropes greet a lapsed member as one coming back. The source that last
+      // ranked them is no column anyone may read, so the house is asked for theirs.
+      mockSignIn.mockResolvedValue({ data: { user: { id: 'u1', email: 'test@reel.app' } }, error: null });
+      mockFrom.mockReturnValue({ select: () => ({ eq: () => ({ single: async () => ({ data: { id: 'u1', username: 'a', role: 'cinephile' }, error: null }) }) }) });
+      mockRpc.mockResolvedValueOnce({ data: 'revenuecat', error: null } as never);
+      await useAuthStore.getState().login('test@reel.app', 'password123');
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(mockRpc).toHaveBeenCalledWith('my_entitlement_source');
+      expect(useAuthStore.getState().user?.entitlement_source).toBe('revenuecat');
+    });
+
+    it('a rank history that could not be read leaves what was known, and throws nowhere', async () => {
+      mockSignIn.mockResolvedValue({ data: { user: { id: 'u1', email: 'test@reel.app' } }, error: null });
+      mockFrom.mockReturnValue({ select: () => ({ eq: () => ({ single: async () => ({ data: { id: 'u1', username: 'a', role: 'cinephile' }, error: null }) }) }) });
+      mockRpc.mockResolvedValueOnce({ data: null, error: { message: 'timeout' } } as never);
+      await useAuthStore.getState().login('test@reel.app', 'password123');
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(useAuthStore.getState().user?.entitlement_source).toBeUndefined();
+      mockRpc.mockRejectedValueOnce(new TypeError('Network request failed') as never);
+      await useAuthStore.getState().login('test@reel.app', 'password123');
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(useAuthStore.getState().isAuthenticated).toBe(true);
     });
 
     it('throws on invalid credentials', async () => {

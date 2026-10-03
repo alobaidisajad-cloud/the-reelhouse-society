@@ -88,21 +88,6 @@ $$;
 
 
 --
--- Name: apply_entitlement(uuid, text); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.apply_entitlement(p_user_id uuid, p_tier text) RETURNS TABLE(out_role text, out_tier text)
-    LANGUAGE plpgsql
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  RETURN QUERY SELECT r.out_role, r.out_tier
-    FROM public.grant_entitlement(p_user_id, p_tier, 'legacy') r;
-END;
-$$;
-
-
---
 -- Name: approve_lounge_member(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -110,12 +95,15 @@ CREATE FUNCTION public.approve_lounge_member(p_lounge_id uuid, p_user_id uuid) R
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-DECLARE v_lname text;
+DECLARE v_lname text; v_sanction text;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
   IF auth.uid() IS DISTINCT FROM (SELECT creator_id FROM public.lounges WHERE id = p_lounge_id) THEN
     RAISE EXCEPTION 'Only the host can admit members'; END IF;
-  UPDATE public.lounge_members SET status = 'approved'
+  -- A banned member cannot be pending (request_lounge_membership refuses them),
+  -- so the only sanction met here is a mute.
+  SELECT status INTO v_sanction FROM public.lounge_sanctions WHERE lounge_id = p_lounge_id AND user_id = p_user_id;
+  UPDATE public.lounge_members SET status = COALESCE(v_sanction, 'approved')
    WHERE lounge_id = p_lounge_id AND user_id = p_user_id AND status = 'pending';
   IF FOUND THEN
     SELECT name INTO v_lname FROM public.lounges WHERE id = p_lounge_id;
@@ -1264,15 +1252,21 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  IF (NEW.name, NEW.description, NEW.cover_image, NEW.is_private)
+     IS NOT DISTINCT FROM (OLD.name, OLD.description, OLD.cover_image, OLD.is_private) THEN
+    RETURN NEW;
+  END IF;
+
   SELECT is_banned, suspended_until INTO v_banned, v_until
     FROM public.profiles WHERE id = auth.uid();
 
-  IF COALESCE(v_banned, false)
-     OR (v_until IS NOT NULL AND v_until > now()) THEN
-    NEW.name        := OLD.name;
-    NEW.description := OLD.description;
-    NEW.cover_image := OLD.cover_image;
-    NEW.is_private  := OLD.is_private;
+  IF COALESCE(v_banned, false) THEN
+    RAISE EXCEPTION 'Your account has been silenced by The Society.' USING ERRCODE = '42501';
+  END IF;
+  IF v_until IS NOT NULL AND v_until > now() THEN
+    RAISE EXCEPTION 'Your account is suspended until %.',
+      to_char(v_until AT TIME ZONE 'UTC', 'DD Mon YYYY HH24:MI "UTC"')
+      USING ERRCODE = '42501';
   END IF;
 
   RETURN NEW;
@@ -1359,17 +1353,22 @@ BEGIN
   NEW.suspension_reason := OLD.suspension_reason;
   NEW.warning_count     := OLD.warning_count;
 
+  IF (NEW.username, NEW.display_name, NEW.bio, NEW.avatar_url, NEW.social_links, NEW.persona)
+     IS NOT DISTINCT FROM
+     (OLD.username, OLD.display_name, OLD.bio, OLD.avatar_url, OLD.social_links, OLD.persona) THEN
+    RETURN NEW;
+  END IF;
+
   SELECT is_banned, suspended_until INTO v_banned, v_until
     FROM public.profiles WHERE id = auth.uid();
 
-  IF COALESCE(v_banned, false)
-     OR (v_until IS NOT NULL AND v_until > now()) THEN
-    NEW.username     := OLD.username;
-    NEW.display_name := OLD.display_name;
-    NEW.bio          := OLD.bio;
-    NEW.avatar_url   := OLD.avatar_url;
-    NEW.social_links := OLD.social_links;
-    NEW.persona      := OLD.persona;
+  IF COALESCE(v_banned, false) THEN
+    RAISE EXCEPTION 'Your account has been silenced by The Society.' USING ERRCODE = '42501';
+  END IF;
+  IF v_until IS NOT NULL AND v_until > now() THEN
+    RAISE EXCEPTION 'Your account is suspended until %.',
+      to_char(v_until AT TIME ZONE 'UTC', 'DD Mon YYYY HH24:MI "UTC"')
+      USING ERRCODE = '42501';
   END IF;
 
   RETURN NEW;
@@ -2490,8 +2489,8 @@ CREATE FUNCTION public.grant_entitlement(p_user_id uuid, p_tier text, p_source t
     SET search_path TO 'public', 'pg_temp'
     AS $$
 DECLARE
-  v_db_value text; v_cur_tier text; v_cur_role text;
-  v_cur_found boolean; v_cur_src text; v_cur_w int; v_new_w int;
+  v_grant text; v_before text; v_founding boolean;
+  v_top_tier text; v_top_src text; v_in_force text;
 BEGIN
   IF p_user_id IS NULL THEN
     RAISE EXCEPTION 'grant_entitlement: user id is required' USING ERRCODE = '22023';
@@ -2499,57 +2498,49 @@ BEGIN
   IF p_tier IS NULL OR p_tier NOT IN ('cinephile','archivist','auteur','founding') THEN
     RAISE EXCEPTION 'grant_entitlement: unknown tier %', coalesce(p_tier,'<null>') USING ERRCODE = '22023';
   END IF;
-  IF p_source IS NULL OR p_source NOT IN ('revenuecat','paytabs','manual','legacy') THEN
+  IF p_source IS NULL OR p_source NOT IN ('revenuecat','paytabs','manual') THEN
     RAISE EXCEPTION 'grant_entitlement: unknown source %', coalesce(p_source,'<null>') USING ERRCODE = '22023';
   END IF;
 
-  v_db_value := CASE WHEN p_tier = 'founding' THEN 'auteur' ELSE p_tier END;
-
-  SELECT p.tier, p.role, coalesce(p.is_founding,false), p.entitlement_source
-    INTO v_cur_tier, v_cur_role, v_cur_found, v_cur_src
+  -- One writer at a time per member: the profile row is the lock.
+  SELECT coalesce(p.is_founding, false) INTO v_founding
     FROM public.profiles p WHERE p.id = p_user_id FOR UPDATE;
-
   IF NOT FOUND THEN
     RAISE EXCEPTION 'grant_entitlement: no profile with id %', p_user_id USING ERRCODE = 'P0002';
   END IF;
 
-  v_cur_w := GREATEST(
-    CASE lower(coalesce(v_cur_tier,''))
-      WHEN 'founding' THEN 3 WHEN 'auteur' THEN 2 WHEN 'archivist' THEN 1 ELSE 0 END,
-    CASE WHEN v_cur_found THEN 3 ELSE
-      CASE lower(coalesce(v_cur_role,''))
-        WHEN 'founding' THEN 3 WHEN 'auteur' THEN 2 WHEN 'archivist' THEN 1 ELSE 0 END
-    END);
-  v_new_w := CASE p_tier
-      WHEN 'founding' THEN 3 WHEN 'auteur' THEN 2 WHEN 'archivist' THEN 1 ELSE 0 END;
-
-  IF v_cur_found AND v_new_w < 2 AND p_source <> 'manual' THEN
-    RETURN QUERY SELECT v_cur_role, v_cur_tier, v_cur_src, false,
-      format('refused: %s may not lower a founding seat below auteur', p_source);
-    RETURN;
+  -- This source's grant: the Founding purchase is held as the Auteur rank (the
+  -- seat itself is claim_founding_seat's); 'cinephile' means it grants nothing.
+  v_grant := CASE p_tier WHEN 'founding' THEN 'auteur' WHEN 'cinephile' THEN NULL ELSE p_tier END;
+  SELECT g.tier INTO v_before FROM public.rank_grants g WHERE g.user_id = p_user_id AND g.source = p_source;
+  IF v_grant IS NULL THEN
+    DELETE FROM public.rank_grants WHERE user_id = p_user_id AND source = p_source;
+  ELSE
+    INSERT INTO public.rank_grants (user_id, source, tier) VALUES (p_user_id, p_source, v_grant)
+    ON CONFLICT (user_id, source) DO UPDATE SET tier = EXCLUDED.tier, granted_at = now()
+      WHERE public.rank_grants.tier IS DISTINCT FROM EXCLUDED.tier;
   END IF;
 
-  IF v_new_w < v_cur_w
-     AND p_source <> 'manual'
-     AND v_cur_src IS DISTINCT FROM p_source THEN
-    RETURN QUERY SELECT v_cur_role, v_cur_tier, v_cur_src, false,
-      format('refused: %s may not lower a tier granted by %s',
-             p_source, coalesce(v_cur_src,'an unknown source'));
-    RETURN;
-  END IF;
+  -- The rank in force: the highest grant, the house's own hand first among equals.
+  SELECT g.tier, g.source INTO v_top_tier, v_top_src
+    FROM public.rank_grants g WHERE g.user_id = p_user_id
+   ORDER BY public.tier_weight(g.tier) DESC,
+            CASE g.source WHEN 'manual' THEN 0 WHEN 'revenuecat' THEN 1 ELSE 2 END
+   LIMIT 1;
+  v_in_force := CASE
+    WHEN v_founding AND public.tier_weight(v_top_tier) < 2 THEN 'auteur'
+    ELSE coalesce(v_top_tier, 'cinephile') END;
 
   RETURN QUERY
   UPDATE public.profiles p
-     SET role = CASE WHEN p.role = 'admin' THEN p.role ELSE v_db_value END,
-         tier = v_db_value,
-         entitlement_source = CASE
-           WHEN p_source = 'legacy'  THEN v_cur_src
-           WHEN p_source = 'manual'  THEN p_source
-           WHEN v_new_w  > v_cur_w   THEN p_source
-           ELSE v_cur_src END
+     SET role = CASE WHEN p.role = 'admin' THEN p.role ELSE v_in_force END,
+         tier = v_in_force,
+         -- A rank that has ended keeps the name of the source that held it last:
+         -- that is how the app knows a member as "lapsed", not a stranger.
+         entitlement_source = coalesce(v_top_src, p.entitlement_source, CASE WHEN v_before IS NOT NULL THEN p_source END)
    WHERE p.id = p_user_id
-  RETURNING p.role, p.tier, p.entitlement_source, true,
-            format('applied: %s -> %s by %s', coalesce(v_cur_tier,'none'), v_db_value, p_source);
+  RETURNING p.role, p.tier, p.entitlement_source, v_before IS DISTINCT FROM v_grant,
+            format('%s: %s -> %s; in force %s', p_source, coalesce(v_before, 'none'), coalesce(v_grant, 'none'), v_in_force);
 END;
 $$;
 
@@ -2796,17 +2787,17 @@ CREATE FUNCTION public.join_public_lounge(p_lounge_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-DECLARE v_private boolean; v_status text;
+DECLARE v_private boolean; v_sanction text;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
   SELECT is_private INTO v_private FROM public.lounges WHERE id = p_lounge_id;
   IF v_private IS NULL THEN RAISE EXCEPTION 'Lounge not found'; END IF;
   IF v_private THEN RAISE EXCEPTION 'This lounge is private — request to join'; END IF;
-  SELECT status INTO v_status FROM public.lounge_members WHERE lounge_id = p_lounge_id AND user_id = auth.uid();
-  IF v_status = 'banned' THEN RAISE EXCEPTION 'You cannot join this lounge'; END IF;
+  SELECT status INTO v_sanction FROM public.lounge_sanctions WHERE lounge_id = p_lounge_id AND user_id = auth.uid();
+  IF v_sanction = 'banned' THEN RAISE EXCEPTION 'You cannot join this lounge'; END IF;
   INSERT INTO public.lounge_members (lounge_id, user_id, status)
-  VALUES (p_lounge_id, auth.uid(), 'approved')
-  ON CONFLICT (user_id, lounge_id) DO UPDATE SET status = 'approved'
+  VALUES (p_lounge_id, auth.uid(), COALESCE(v_sanction, 'approved'))
+  ON CONFLICT (user_id, lounge_id) DO UPDATE SET status = EXCLUDED.status
     WHERE public.lounge_members.status <> 'banned';
 END $$;
 
@@ -3376,6 +3367,25 @@ CREATE FUNCTION public.may_file() RETURNS boolean
        AND now() >= p.created_at + interval '2 days'
        AND (SELECT count(DISTINCT film_id) FROM public.logs WHERE user_id = p.id) >= 5);
 $$;
+
+
+--
+-- Name: my_entitlement_source(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.my_entitlement_source() RETURNS text
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT p.entitlement_source FROM public.profiles p WHERE p.id = auth.uid();
+$$;
+
+
+--
+-- Name: FUNCTION my_entitlement_source(); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.my_entitlement_source() IS 'The source that last granted the CALLER a rank (null if none ever has). Their own only.';
 
 
 --
@@ -3964,7 +3974,7 @@ END $$;
 -- Name: FUNCTION relinquish_rank(); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.relinquish_rank() IS 'Lowers the CALLER''S OWN rank to cinephile and nothing else. Safe for authenticated: the worst abuse is self-removal. Called by the client when RevenueCat reports no active entitlement but the profile still claims one.';
+COMMENT ON FUNCTION public.relinquish_rank() IS 'Ends the store''s grant of the CALLER''S OWN rank and nothing else (a rank given on the web or by hand, and a founding seat, stand). Safe for authenticated: the worst abuse is self-removal, which the next store sync restores. Called by the client when the store reports no active entitlement.';
 
 
 --
@@ -4109,12 +4119,16 @@ BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
   SELECT is_private, creator_id, name INTO v_private, v_creator, v_lname FROM public.lounges WHERE id = p_lounge_id;
   IF v_private IS NULL THEN RAISE EXCEPTION 'Lounge not found'; END IF;
+  IF EXISTS (SELECT 1 FROM public.lounge_sanctions
+              WHERE lounge_id = p_lounge_id AND user_id = auth.uid() AND status = 'banned') THEN
+    RAISE EXCEPTION 'You cannot request this lounge';
+  END IF;
   SELECT status INTO v_status FROM public.lounge_members WHERE lounge_id = p_lounge_id AND user_id = auth.uid();
   IF v_status = 'banned' THEN RAISE EXCEPTION 'You cannot request this lounge'; END IF;
-  IF v_status IN ('approved','pending') THEN RETURN; END IF;
+  IF v_status IN ('approved','pending','muted') THEN RETURN; END IF;
   INSERT INTO public.lounge_members (lounge_id, user_id, status) VALUES (p_lounge_id, auth.uid(), 'pending')
   ON CONFLICT (user_id, lounge_id) DO UPDATE SET status = 'pending'
-    WHERE public.lounge_members.status NOT IN ('banned','approved');
+    WHERE public.lounge_members.status NOT IN ('banned','approved','muted');
   SELECT username INTO v_uname FROM public.profiles WHERE id = auth.uid();
   IF v_creator IS NOT NULL AND v_creator <> auth.uid() THEN
     -- the sender is from_username; every reader prints it before the message
@@ -4477,6 +4491,13 @@ BEGIN
   IF p_user_id IS NOT DISTINCT FROM v_creator THEN RAISE EXCEPTION 'The host cannot be changed'; END IF;
   IF p_status NOT IN ('approved','muted','banned') THEN RAISE EXCEPTION 'Invalid status'; END IF;
   UPDATE public.lounge_members SET status = p_status WHERE lounge_id = p_lounge_id AND user_id = p_user_id;
+  -- The record outlasts the seat: a ban or mute stands though the member leave.
+  IF p_status IN ('muted', 'banned') THEN
+    INSERT INTO public.lounge_sanctions (lounge_id, user_id, status) VALUES (p_lounge_id, p_user_id, p_status)
+    ON CONFLICT (lounge_id, user_id) DO UPDATE SET status = EXCLUDED.status, set_at = now();
+  ELSE
+    DELETE FROM public.lounge_sanctions WHERE lounge_id = p_lounge_id AND user_id = p_user_id;
+  END IF;
 END $$;
 
 
@@ -4526,6 +4547,7 @@ DECLARE
   v_reporter_id uuid := auth.uid();
   v_report_id uuid;
   v_recent_count int;
+  v_target uuid;
 BEGIN
   IF v_reporter_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
@@ -4540,13 +4562,28 @@ BEGIN
     RAISE EXCEPTION 'Rate limit exceeded: maximum 10 reports per hour';
   END IF;
 
-  IF p_content_type = 'profile' AND v_reporter_id = p_target_user_id THEN
+  -- The member is read from the item, never taken from the caller.
+  v_target := CASE p_content_type
+    WHEN 'profile'          THEN (SELECT id FROM profiles WHERE id = p_content_id)
+    WHEN 'log'              THEN (SELECT user_id FROM logs WHERE id = p_content_id)
+    WHEN 'list'             THEN (SELECT user_id FROM lists WHERE id = p_content_id)
+    WHEN 'log_comment'      THEN (SELECT user_id FROM log_comments WHERE id = p_content_id)
+    WHEN 'list_comment'     THEN (SELECT user_id FROM list_comments WHERE id = p_content_id)
+    WHEN 'dossier'          THEN (SELECT user_id FROM dispatch_posts WHERE id = p_content_id)
+    WHEN 'dispatch_post'    THEN (SELECT user_id FROM dispatch_posts WHERE id = p_content_id)
+    WHEN 'dossier_comment'  THEN (SELECT user_id FROM dispatch_comments WHERE id = p_content_id)
+    WHEN 'dispatch_comment' THEN (SELECT user_id FROM dispatch_comments WHERE id = p_content_id)
+    WHEN 'lounge_message'   THEN (SELECT user_id FROM lounge_messages WHERE id = p_content_id)
+    WHEN 'lounge'           THEN (SELECT creator_id FROM lounges WHERE id = p_content_id)
+  END;
+
+  IF p_content_type = 'profile' AND v_reporter_id = v_target THEN
     RAISE EXCEPTION 'Cannot report your own profile';
   END IF;
 
   BEGIN
     INSERT INTO reports (reporter_id, content_id, content_type, reason, details, target_user_id, status)
-    VALUES (v_reporter_id, p_content_id, p_content_type, p_reason, p_details, p_target_user_id, 'pending')
+    VALUES (v_reporter_id, p_content_id, p_content_type, p_reason, p_details, v_target, 'pending')
     RETURNING id INTO v_report_id;
   EXCEPTION WHEN unique_violation THEN
     RAISE EXCEPTION 'Already reported' USING ERRCODE = '23505';
@@ -5482,6 +5519,26 @@ CREATE TABLE public.lounge_messages (
 
 
 --
+-- Name: lounge_sanctions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.lounge_sanctions (
+    lounge_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    status text NOT NULL,
+    set_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT lounge_sanctions_status_check CHECK ((status = ANY (ARRAY['muted'::text, 'banned'::text])))
+);
+
+
+--
+-- Name: TABLE lounge_sanctions; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.lounge_sanctions IS 'A host''s ban or mute, kept apart from the member''s seat so leaving cannot lift it. Written only by set_lounge_member_status; read only by the house''s own functions.';
+
+
+--
 -- Name: lounges; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5727,6 +5784,27 @@ CREATE TABLE public.push_tokens (
     CONSTRAINT push_tokens_platform_len CHECK ((char_length(platform) <= 100)),
     CONSTRAINT push_tokens_token_len CHECK ((char_length(token) <= 512))
 );
+
+
+--
+-- Name: rank_grants; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.rank_grants (
+    user_id uuid NOT NULL,
+    source text NOT NULL,
+    tier text NOT NULL,
+    granted_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT rank_grants_source_check CHECK ((source = ANY (ARRAY['revenuecat'::text, 'paytabs'::text, 'manual'::text]))),
+    CONSTRAINT rank_grants_tier_check CHECK ((tier = ANY (ARRAY['archivist'::text, 'auteur'::text])))
+);
+
+
+--
+-- Name: TABLE rank_grants; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.rank_grants IS 'One rank per member per source (store, web, by hand). The rank in force is the highest; written only by grant_entitlement.';
 
 
 --
@@ -6099,6 +6177,14 @@ ALTER TABLE ONLY public.lounge_messages
 
 
 --
+-- Name: lounge_sanctions lounge_sanctions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.lounge_sanctions
+    ADD CONSTRAINT lounge_sanctions_pkey PRIMARY KEY (lounge_id, user_id);
+
+
+--
 -- Name: lounges lounges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6184,6 +6270,14 @@ ALTER TABLE ONLY public.push_tokens
 
 ALTER TABLE ONLY public.push_tokens
     ADD CONSTRAINT push_tokens_token_key UNIQUE (token);
+
+
+--
+-- Name: rank_grants rank_grants_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rank_grants
+    ADD CONSTRAINT rank_grants_pkey PRIMARY KEY (user_id, source);
 
 
 --
@@ -7693,6 +7787,13 @@ COMMENT ON TRIGGER tr_tier_gate_private_lounges ON public.lounges IS 'Founding a
 
 
 --
+-- Name: lounges tr_tier_gate_private_lounges_turned; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER tr_tier_gate_private_lounges_turned BEFORE UPDATE OF is_private ON public.lounges FOR EACH ROW WHEN (((new.is_private IS TRUE) AND (old.is_private IS NOT TRUE))) EXECUTE FUNCTION public.enforce_tier_gate('2', 'A private screening room is an Auteur feature');
+
+
+--
 -- Name: log_private_notes tr_tier_gate_private_notes; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -8133,6 +8234,22 @@ ALTER TABLE ONLY public.lounge_messages
 
 
 --
+-- Name: lounge_sanctions lounge_sanctions_lounge_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.lounge_sanctions
+    ADD CONSTRAINT lounge_sanctions_lounge_id_fkey FOREIGN KEY (lounge_id) REFERENCES public.lounges(id) ON DELETE CASCADE;
+
+
+--
+-- Name: lounge_sanctions lounge_sanctions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.lounge_sanctions
+    ADD CONSTRAINT lounge_sanctions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
 -- Name: lounges lounges_creator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8218,6 +8335,14 @@ ALTER TABLE ONLY public.push_subscriptions
 
 ALTER TABLE ONLY public.push_tokens
     ADD CONSTRAINT push_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: rank_grants rank_grants_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rank_grants
+    ADD CONSTRAINT rank_grants_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
 
 
 --
@@ -8524,13 +8649,6 @@ CREATE POLICY "Users can insert their own interactions" ON public.interactions F
 --
 
 CREATE POLICY "Users can insert their own logs" ON public.logs FOR INSERT WITH CHECK ((auth.uid() = user_id));
-
-
---
--- Name: profiles Users can insert their own profile.; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Users can insert their own profile." ON public.profiles FOR INSERT WITH CHECK ((auth.uid() = id));
 
 
 --
@@ -9206,6 +9324,12 @@ ALTER TABLE public.lounge_message_reactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_messages ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: lounge_sanctions; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.lounge_sanctions ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: lounges; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -9438,6 +9562,12 @@ CREATE POLICY push_tokens_select_own ON public.push_tokens FOR SELECT USING ((us
 
 
 --
+-- Name: rank_grants; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.rank_grants ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: reports; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -9620,14 +9750,6 @@ GRANT ALL ON FUNCTION public.a_request_takes_its_notice() TO service_role;
 REVOKE ALL ON FUNCTION public.accept_follow_request(requester_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.accept_follow_request(requester_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.accept_follow_request(requester_id uuid) TO service_role;
-
-
---
--- Name: FUNCTION apply_entitlement(p_user_id uuid, p_tier text); Type: ACL; Schema: public; Owner: -
---
-
-REVOKE ALL ON FUNCTION public.apply_entitlement(p_user_id uuid, p_tier text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.apply_entitlement(p_user_id uuid, p_tier text) TO service_role;
 
 
 --
@@ -10450,6 +10572,15 @@ GRANT ALL ON FUNCTION public.mark_film_sync_failed(p_film_id integer) TO service
 GRANT ALL ON FUNCTION public.may_file() TO anon;
 GRANT ALL ON FUNCTION public.may_file() TO authenticated;
 GRANT ALL ON FUNCTION public.may_file() TO service_role;
+
+
+--
+-- Name: FUNCTION my_entitlement_source(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.my_entitlement_source() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.my_entitlement_source() TO authenticated;
+GRANT ALL ON FUNCTION public.my_entitlement_source() TO service_role;
 
 
 --
@@ -11323,6 +11454,13 @@ GRANT ALL ON TABLE public.lounge_messages TO service_role;
 
 
 --
+-- Name: TABLE lounge_sanctions; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.lounge_sanctions TO service_role;
+
+
+--
 -- Name: TABLE lounges; Type: ACL; Schema: public; Owner: -
 --
 
@@ -11378,8 +11516,6 @@ GRANT ALL ON TABLE public.physical_archive TO service_role;
 -- Name: TABLE profiles; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT INSERT,DELETE ON TABLE public.profiles TO anon;
-GRANT INSERT,DELETE ON TABLE public.profiles TO authenticated;
 GRANT ALL ON TABLE public.profiles TO service_role;
 
 
@@ -11662,6 +11798,13 @@ GRANT ALL ON TABLE public.push_subscriptions TO service_role;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.push_tokens TO anon;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.push_tokens TO authenticated;
 GRANT ALL ON TABLE public.push_tokens TO service_role;
+
+
+--
+-- Name: TABLE rank_grants; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.rank_grants TO service_role;
 
 
 --

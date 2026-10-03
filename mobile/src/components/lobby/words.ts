@@ -77,6 +77,9 @@ export function rankTicket(rank: PaidRankId): { name: string; lines: readonly [s
   return { name: r.name, lines: r.lobbyLine as readonly [string, string] };
 }
 
+/** An admin's switch, on each piece that hangs. */
+export const KEEP_OFF = 'KEEP OFF THE LOBBY';
+
 export const STATES = {
   refreshFailed: ['Could not refresh —', 'check your connection.'],
   tryAgain: 'TRY AGAIN',

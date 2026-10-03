@@ -3,10 +3,11 @@
  * a visitor sees the front door, and a pull asks the house again.
  * ─────────────────────────────────────────────────────────────────────────────
  *   A MEMBER'S LOBBY is the wall, and opening it starts the member's own reads
- *   (their logs, their certifications, their notices, the live channel) —
- *   stopped again when the tab goes.
+ *   (their logs, their certifications). Their notices and the live channel are
+ *   the session's (AppBootstrapper): the tab never opens or closes them.
  *   A PULL always asks for the wall (the house's own page); a pull that
- *   reaches nothing says so ONCE and keeps the wall it had.
+ *   reaches nothing says so ONCE and keeps the wall it had; a one-sheet the
+ *   catalogue could not finish is asked for again.
  *   A VISITOR gets the front door, and the wall is never asked for: get_lobby
  *   is granted to members only, and asking would be a refusal on every open.
  */
@@ -118,14 +119,16 @@ describe('a member’s Lobby', () => {
     expect(r.queryByText('✦ SEEK ADMISSION ✦')).toBeNull();
   });
 
-  it('starts the member’s own reads when it opens, and stops the live channel when it goes', async () => {
+  it('starts the member’s own reads when it opens — and leaves the notices and the live channel to the session', async () => {
     const { r } = await mount();
     expect(mockFetchLogs).toHaveBeenCalled();
     expect(mockFetchEndorsements).toHaveBeenCalled();
-    expect(mockNotices.fetchNotifications).toHaveBeenCalled();
-    expect(mockNotices.setupRealtime).toHaveBeenCalled();
+    // The channel is one for the whole app: a Lobby that closed it on leaving
+    // (its crash screen unmounts it) closed it for every screen until the next launch.
+    expect(mockNotices.setupRealtime).not.toHaveBeenCalled();
+    expect(mockNotices.fetchNotifications).not.toHaveBeenCalled();
     r.unmount();
-    expect(mockStopLive).toHaveBeenCalled();
+    expect(mockStopLive).not.toHaveBeenCalled();
   });
 
   it('a pull asks for the wall again, even when the one it has is fresh — and says nothing when it is answered', async () => {
@@ -148,6 +151,29 @@ describe('a member’s Lobby', () => {
     expect(r.getByText('No log yet.', { includeHiddenElements: true })).toBeTruthy();
     expect(r.getByText('Could not refresh —')).toBeTruthy();
     expect(mockScrollProps.refreshControl.props.refreshing).toBe(false);
+  });
+
+  it('a one-sheet the catalogue could not finish is asked for again by a pull; a whole one is kept', async () => {
+    const { tmdb } = jest.requireMock('@/src/lib/tmdb');
+    tmdb.trending.mockResolvedValueOnce({ results: [{ id: 935, title: 'Dr. Strangelove', poster_path: '/s.jpg' }] });
+    // the catalogue's detail cannot be reached while the Lobby opens
+    tmdb.detail.mockRejectedValue(new Error('unreachable'));
+    try {
+      const { client } = await mount();
+      expect(client.getQueryData(featureKey(935))).toMatchObject({ partial: true, director: null });
+      // then it can: a pull asks for the rest
+      tmdb.detail.mockResolvedValue({ id: 935, title: 'Dr. Strangelove', runtime: 95, credits: { crew: [{ job: 'Director', name: 'Stanley Kubrick' }] } });
+      const before = tmdb.detail.mock.calls.length;
+      await pull();
+      expect(tmdb.detail.mock.calls.length).toBeGreaterThan(before);
+      expect(client.getQueryData(featureKey(935))).toMatchObject({ partial: false, director: 'Stanley Kubrick', runtime: 95 });
+      // whole now: the next pull leaves it be
+      const whole = tmdb.detail.mock.calls.length;
+      await pull();
+      expect(tmdb.detail.mock.calls.length).toBe(whole);
+    } finally {
+      tmdb.detail.mockResolvedValue(null);
+    }
   });
 
   it('a pull whose own read fails outright says so too, not nothing', async () => {

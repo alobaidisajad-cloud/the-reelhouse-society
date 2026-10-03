@@ -16,6 +16,7 @@
  * member with no signal sees the last wall they saw.
  */
 import { useQuery } from '@tanstack/react-query';
+import { queryClient } from '@/src/lib/queryClient';
 import { supabase } from '@/src/lib/supabase';
 import { tmdb, type TMDBArt, type TMDBMovieDetail } from '@/src/lib/tmdb';
 import type { TMDBFilm } from '@/src/components/home/types';
@@ -27,6 +28,19 @@ export const PROGRAMME_KEY = ['lobby', 'programme'] as const;
 export const featureKey = (filmId: number) => ['lobby', 'feature', filmId] as const;
 /** The reads a pull always asks again: the house's own page. The programme only when out of date. */
 export const LIVE_LOBBY_READS: readonly string[] = [WALL_KEY[1]];
+
+/**
+ * Something this phone just did may change what hangs: a member blocked or
+ * muted (or let back), a piece deleted, edited, withdrawn or made private. The
+ * wall is asked again, and the house hangs the next piece in its place. Called
+ * once the house has the change — online, or when the queue replays it.
+ */
+export function wallMayHaveChanged(): void {
+  void queryClient.invalidateQueries({ queryKey: WALL_KEY });
+}
+
+/** The edition's day: the house chooses one for each UTC day (lobby_choose_edition). */
+export const editionDayOf = (d: Date): string => d.toISOString().slice(0, 10);
 
 export interface WallAuthor {
   id: string;
@@ -179,6 +193,8 @@ export interface FeatureSheet {
   runtime: number | null;
   director: string | null;
   art: SheetArt;
+  /** The catalogue could not be reached for the detail or the art: a sheet to stand on, never one to keep. */
+  partial: boolean;
 }
 
 /** The director(s), as the credits name them; none when the catalogue names none. */
@@ -191,12 +207,15 @@ export function directorOf(detail: TMDBMovieDetail | null | undefined): string |
  * The one-sheet for this week's film: its detail (the same read the film page
  * makes, so a tap opens the page already filled) and its wordless art. The
  * sheet stands on what the programme already knows while these arrive, and on
- * that alone if they cannot be reached.
+ * that alone if they cannot be reached — then it is `partial`, and asked again.
  */
 export async function readFeature(film: TMDBFilm): Promise<FeatureSheet> {
+  let partial = false;
+  // "Not there" answers null and is an answer; only a read that failed is missed.
+  const missed = () => { partial = true; return null; };
   const [detail, art] = await Promise.all([
-    tmdb.detail(film.id).catch(() => null),
-    tmdb.keyArt(film.id).catch(() => null),
+    tmdb.detail(film.id).catch(missed),
+    tmdb.keyArt(film.id).catch(missed),
   ]);
   const release = detail?.release_date || film.release_date || '';
   return {
@@ -206,14 +225,19 @@ export async function readFeature(film: TMDBFilm): Promise<FeatureSheet> {
     runtime: typeof detail?.runtime === 'number' && detail.runtime > 0 ? detail.runtime : null,
     director: directorOf(detail),
     art: pickArt(art, detail?.poster_path ?? film.poster_path),
+    partial,
   };
 }
+
+const SHEET_KEPT = 24 * 60 * 60 * 1000;
 
 export function useFeature(film: TMDBFilm | null) {
   return useQuery({
     queryKey: featureKey(film?.id ?? 0),
     queryFn: () => readFeature(film as TMDBFilm),
     enabled: !!film,
-    staleTime: 24 * 60 * 60 * 1000,
+    // A whole sheet is kept a day; a partial one is never fresh, so a pull, a
+    // return of the connection or the next open asks for the rest.
+    staleTime: (q) => (q.state.data?.partial ? 0 : SHEET_KEPT),
   });
 }

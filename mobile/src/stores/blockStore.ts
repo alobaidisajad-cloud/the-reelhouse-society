@@ -17,6 +17,7 @@
  */
 import TactileEngine from '@/src/utils/TactileEngine';
 import { create } from 'zustand';
+import { wallMayHaveChanged } from '../components/lobby/wallRead';
 import { queryClient } from '../lib/queryClient';
 import { captureError } from '../lib/sentry';
 import { supabase } from '../lib/supabase';
@@ -134,6 +135,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       // Invalidate React Query caches so filtered views refresh
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['universalSearch'] });
+      wallMayHaveChanged();
 
       // Success feedback
       TactileEngine.warn();
@@ -198,6 +200,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       // Invalidate React Query caches
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['universalSearch'] });
+      wallMayHaveChanged();
 
       TactileEngine.success();
       reelToast.info('User unblocked.');
@@ -264,6 +267,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       // Invalidate React Query caches
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['universalSearch'] });
+      wallMayHaveChanged();
 
       TactileEngine.success();
       // Was "hidden from your feeds". Muting hides the same things a block does —
@@ -325,6 +329,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       // Invalidate React Query caches
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['universalSearch'] });
+      wallMayHaveChanged();
 
       TactileEngine.success();
       reelToast.info('User unmuted.');

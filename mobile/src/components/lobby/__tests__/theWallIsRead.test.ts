@@ -95,7 +95,17 @@ describe('the one-sheet', () => {
     jest.mocked(tmdb.detail).mockRejectedValueOnce(new Error('unreachable'));
     jest.mocked(tmdb.keyArt).mockRejectedValueOnce(new Error('unreachable'));
     const sheet = await readFeature({ id: 7, title: 'Resident Evil', release_date: '2026-09-16', poster_path: '/re.jpg' });
-    expect(sheet).toEqual({ id: 7, title: 'Resident Evil', year: '2026', runtime: null, director: null, art: { path: '/re.jpg', titled: true } });
+    // ...and says it stands on less: a partial sheet is asked for again (useFeature)
+    expect(sheet).toEqual({ id: 7, title: 'Resident Evil', year: '2026', runtime: null, director: null, art: { path: '/re.jpg', titled: true }, partial: true });
+  });
+
+  it('a catalogue that answered "not there" answered: that sheet is whole, and kept', async () => {
+    jest.mocked(tmdb.detail).mockResolvedValueOnce(null as never);
+    jest.mocked(tmdb.keyArt).mockResolvedValueOnce(null as never);
+    expect((await readFeature({ id: 7, title: 'Resident Evil', poster_path: '/re.jpg' })).partial).toBe(false);
+    jest.mocked(tmdb.detail).mockResolvedValueOnce(null as never);
+    jest.mocked(tmdb.keyArt).mockRejectedValueOnce(new Error('unreachable'));
+    expect((await readFeature({ id: 7, title: 'Resident Evil', poster_path: '/re.jpg' })).partial).toBe(true);
   });
 
   it('the programme: this week’s film, and four more on the bill', async () => {

@@ -61,6 +61,8 @@ export const UserSchema = z.object({
   role: z.enum(['free', 'cinephile', 'archivist', 'auteur', 'admin']),
   tier: z.string().optional(),
   is_founding: z.boolean().optional(),
+  /** The source that last granted this member a rank, null if none ever has; read by readRankHistory alone. */
+  entitlement_source: z.string().nullable().optional(),
   // Canonical snake_case — matches DB columns. Removed camelCase duplicates
   // (displayName, socialVisibility, isSocialPrivate) to prevent dual-path bugs.
   display_name: z.string().optional(),

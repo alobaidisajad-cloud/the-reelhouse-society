@@ -115,7 +115,7 @@ export const LogBill = memo(function LogBill({ log, plan, scale, admin }: {
           <HouseLine key={line} type="slogan" text={line.toUpperCase()} room={room} style={s.sloganPaper} />
         ))}
       </View>
-      <Credit author={log.author} keepOff={admin ? <KeepOff kind="log" id={log.id} what="log" /> : null} />
+      <Credit author={log.author} keepOff={admin ? <KeepOff kind="log" id={log.id} what="log" room={plan.switchRoom.credit} /> : null} />
     </View>
   );
 });
@@ -176,7 +176,7 @@ export const StackBill = memo(function StackBill({ stack, plan, scale, admin }: 
           <HouseLine key={line} type="slogan" text={line.toUpperCase()} room={room} style={s.sloganInk} />
         ))}
       </View>
-      <Credit author={stack.author} keepOff={admin ? <KeepOff kind="list" id={stack.id} what="stack" /> : null} />
+      <Credit author={stack.author} keepOff={admin ? <KeepOff kind="list" id={stack.id} what="stack" room={plan.switchRoom.credit} /> : null} />
     </View>
   );
 });
@@ -255,7 +255,7 @@ const s = StyleSheet.create({
     backgroundColor: colors.soot,
   },
   creditLine: { flexDirection: 'row', alignItems: 'center', minHeight: 24 },
-  creditLine2: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: CREDIT_GAP, minHeight: 18, paddingLeft: 2 },
+  creditLine2: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: CREDIT_GAP, minHeight: 18, paddingLeft: WALL.creditInset },
   fan: { height: 112, marginTop: 12, alignItems: 'center', justifyContent: 'flex-end' },
   fanPoster: {
     position: 'absolute', bottom: 4, width: FAN_W, height: FAN_W * 1.5,

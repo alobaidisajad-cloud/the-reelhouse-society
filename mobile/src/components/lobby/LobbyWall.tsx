@@ -20,16 +20,15 @@ import React, { memo, useCallback } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
-import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import { rankOf } from '@/src/components/RankBadge';
 import { useAuthStore } from '@/src/stores/auth';
 import { useLineScale, useTextScale } from '@/src/hooks/useTextScale';
 import { navBarHeight, tabBarHeight } from '@/src/components/layout/navMetrics';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors } from '@/src/theme/theme';
 import { EDGE_LIT } from '@/src/theme/light';
-import { Masthead } from './Masthead';
+import { Masthead, useWallClock } from './Masthead';
 import { FeatureRow } from './FeatureRow';
 import { LogBill, StackBill, VacantLogBill, VacantStackBill } from './PairBills';
 import { FilingsBill } from './FilingsBill';
@@ -37,7 +36,7 @@ import { RankBill } from './RankBill';
 import { HouseLine } from './parts';
 import { planWall, WALL, type WallPlan } from './measure';
 import { SIGNOFF, STATES } from './words';
-import { PROGRAMME_KEY, WALL_KEY, useFeature, useLobbyWall, useProgramme } from './wallRead';
+import { PROGRAMME_KEY, WALL_KEY, editionDayOf, useFeature, useLobbyWall, useProgramme, type Wall } from './wallRead';
 
 /** The wall's shapes before anything has arrived: where each bill will hang, laid out as they will be, still. */
 const Skeleton = memo(function Skeleton({ plan }: { plan: WallPlan }) {
@@ -72,17 +71,25 @@ export const LobbyWall = memo(function LobbyWall() {
   const scale = useTextScale();
   const lineScale = useLineScale();
   const visible = height - navBarHeight(insets.top) - tabBarHeight(insets.bottom);
-  const plan = planWall({ width, visible, scale, lineScale });
+  const viewer = useAuthStore((st) => rankOf(st.user));
+  const admin = useAuthStore((st) => st.user?.role === 'admin');
+  const plan = planWall({ width, visible, scale, lineScale, admin });
 
   const queryClient = useQueryClient();
   const wall = useLobbyWall(true);
   const programme = useProgramme(true);
   const feature = useFeature(programme.data?.feature ?? null);
-  const viewer = useAuthStore((st) => rankOf(st.user));
-  const admin = useAuthStore((st) => st.user?.role === 'admin');
 
   const retryWall = useCallback(() => { void queryClient.refetchQueries({ queryKey: WALL_KEY }); }, [queryClient]);
   const retryProgramme = useCallback(() => { void queryClient.refetchQueries({ queryKey: PROGRAMME_KEY }); }, [queryClient]);
+  // A wall behind the day (the house chooses each UTC day's edition a few
+  // minutes into it) is asked again on the hour and on the app's return, until
+  // the day's edition hangs.
+  const askIfBehind = useCallback((t: Date) => {
+    const kept = queryClient.getQueryData<Wall>(WALL_KEY);
+    if (kept && kept.edition !== editionDayOf(t)) void queryClient.refetchQueries({ queryKey: WALL_KEY });
+  }, [queryClient]);
+  const now = useWallClock(askIfBehind);
 
   // unreachable, or answered with no film at all: never a shape that waits forever
   const programmeDark = (programme.isError && !programme.data) || (programme.data !== undefined && !programme.data.feature);
@@ -92,7 +99,7 @@ export const LobbyWall = memo(function LobbyWall() {
 
   return (
     <View style={[s.wall, { width: plan.wallW }]}>
-      <Masthead wallW={plan.wallW} now={new Date()} />
+      <Masthead wallW={plan.wallW} now={now} />
       {keptButStale ? <RefreshFailed plan={plan} onRetry={retryWall} /> : null}
       <FeatureRow
         plan={plan}
@@ -113,7 +120,7 @@ export const LobbyWall = memo(function LobbyWall() {
         </>
       )}
       <RankBill plan={plan} viewer={viewer} />
-      <Text style={s.signoff} numberOfLines={1}>{SIGNOFF}</Text>
+      <HouseLine type="signoff" text={SIGNOFF} room={plan.wallW} style={s.signoff} />
     </View>
   );
 });
@@ -137,5 +144,5 @@ const s = StyleSheet.create({
   refreshLine: { color: colors.bone, lineHeight: 15.5 },
   refreshDoor: { minHeight: 44, justifyContent: 'center', paddingHorizontal: WALL.refreshDoorPad },
   refreshDoorText: { color: colors.sepia },
-  signoff: { fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.fogQuiet, textAlign: 'center', paddingTop: 4 },
+  signoff: { color: colors.fogQuiet, textAlign: 'center', paddingTop: 4 },
 });
