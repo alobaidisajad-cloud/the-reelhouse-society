@@ -27,8 +27,13 @@ export function useScreenReady(name: string, ready: boolean): React.ReactElement
   const startedAt = useRef(Date.now());
   const mounted = useRef(false);
   const wasReady = useRef(ready);
-  if (wasReady.current && !ready) startedAt.current = Date.now();
+  // One component can be two screens (the welcome becomes the Lobby on sign-in):
+  // a new name is a new wait. Its content already in, the Lobby was timed from
+  // when the welcome opened, and reported a minute of typing as a 74 s load.
+  const timedAs = useRef(name);
+  if ((wasReady.current && !ready) || timedAs.current !== name) startedAt.current = Date.now();
   wasReady.current = ready;
+  timedAs.current = name;
   useFocusEffect(useCallback(() => {
     if (mounted.current) startedAt.current = Date.now();
     mounted.current = true;

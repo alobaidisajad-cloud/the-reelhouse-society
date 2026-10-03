@@ -76,6 +76,20 @@ describe('useScreenReady', () => {
     expect(mockTrace.mock.calls.map(([, d]) => d.ms)).toEqual([500, 300]);
   });
 
+  it('times a screen that becomes another from when it became it, not from when the first opened', () => {
+    // The welcome becomes the Lobby on sign-in, with the Lobby's programme already
+    // read: the Lobby is ready at once, and was reported as the minute spent signing in.
+    function Front({ signedIn }: { signedIn: boolean }) {
+      return <>{useScreenReady(signedIn ? 'lobby' : 'welcome', true)}</>;
+    }
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1_000);
+    const r = render(<Front signedIn={false} />);
+    now.mockReturnValue(75_000); // a minute and more at the door
+    r.rerender(<Front signedIn />);
+    now.mockRestore();
+    expect(mockTrace.mock.calls.map(([, d]) => [d.name, d.ms])).toEqual([['welcome', 0], ['lobby', 0]]);
+  });
+
   it('takes no room in the screen it sits in', () => {
     const r = render(<Screen ready />);
     const { holder } = reporter(r);
