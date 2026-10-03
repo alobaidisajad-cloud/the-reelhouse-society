@@ -284,7 +284,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/oneCapNotThree.test.ts | 2026-10-03 | read whole: no box in the app types its own limit |
 | src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/paperTextLogic.test.ts | 2026-10-03 | edited: hidden characters written as escapes |
-| src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-09-29 | 25 fixed; FOUND a \u-eaten regex (Arabic never matched) |
+| src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-10-03 | the sixty-critique page has its own 10 s limit (failed a busy full run at 5 s) |
 | src/components/dispatch/__tests__/roomScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/rulesScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/seriesScreen.test.tsx | — |  |
@@ -433,7 +433,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/__tests__/logStacksChips.test.tsx | — |  |
 | src/components/log/__tests__/logSurfaces.test.ts | — |  |
 | src/components/log/__tests__/logTouchTargets.test.ts | — |  |
-| src/components/log/__tests__/theComposerKeepsItsWord.test.tsx | 2026-10-03 | edited: a score ends / 5; the counter is not one |
+| src/components/log/__tests__/theComposerKeepsItsWord.test.tsx | 2026-10-03 | the five-page type sweep has its own 15 s limit (failed a busy full run at 5 s) |
 | src/components/log/__tests__/theLapsedMemberReadsTheirNote.test.tsx | — |  |
 | src/components/log/__tests__/theNoteSheetOffersOnlyWhatIsReal.test.tsx | — |  |
 | src/components/log/__tests__/theVaultBelongsToItsViewing.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |

@@ -718,7 +718,7 @@ describe('the reader', () => {
     await act(async () => { fireEvent.press(getByLabelText(/more critiques/)); });
     await act(async () => { await Promise.resolve(); });
     expect(useDispatch.getState().critiques.f1).toHaveLength(60);
-  });
+  }, 10000);   // sixty critiques drawn: ~2.5 s alone, past 5 s under a full run
 
   it('blocks the author, then leaves the page', async () => {
     mockUpserts.length = 0;

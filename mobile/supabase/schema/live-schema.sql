@@ -2509,9 +2509,9 @@ BEGIN
     RAISE EXCEPTION 'grant_entitlement: no profile with id %', p_user_id USING ERRCODE = 'P0002';
   END IF;
 
-  -- This source's grant: the Founding purchase is held as the Auteur rank (the
-  -- seat itself is claim_founding_seat's); 'cinephile' means it grants nothing.
-  v_grant := CASE p_tier WHEN 'founding' THEN 'auteur' WHEN 'cinephile' THEN NULL ELSE p_tier END;
+  -- This source's grant; 'cinephile' means it grants nothing. 'founding' says the
+  -- source bought a seat; the seat itself is claim_founding_seat's.
+  v_grant := CASE p_tier WHEN 'cinephile' THEN NULL ELSE p_tier END;
   SELECT g.tier INTO v_before FROM public.rank_grants g WHERE g.user_id = p_user_id AND g.source = p_source;
   IF v_grant IS NULL THEN
     DELETE FROM public.rank_grants WHERE user_id = p_user_id AND source = p_source;
@@ -2521,13 +2521,23 @@ BEGIN
       WHERE public.rank_grants.tier IS DISTINCT FROM EXCLUDED.tier;
   END IF;
 
+  -- The seat this source bought, held by no source any longer, goes back to the hundred.
+  IF v_founding AND v_before = 'founding' AND v_grant IS DISTINCT FROM 'founding'
+     AND NOT EXISTS (SELECT 1 FROM public.rank_grants g WHERE g.user_id = p_user_id AND g.tier = 'founding') THEN
+    UPDATE public.founding_seat_counter SET seats_claimed = GREATEST(seats_claimed - 1, 0) WHERE id = 1;
+    UPDATE public.profiles SET is_founding = false WHERE id = p_user_id;
+    v_founding := false;
+  END IF;
+
   -- The rank in force: the highest grant, the house's own hand first among equals.
+  -- The column holds a founding grant as the Auteur; the seat is is_founding's to show.
   SELECT g.tier, g.source INTO v_top_tier, v_top_src
     FROM public.rank_grants g WHERE g.user_id = p_user_id
    ORDER BY public.tier_weight(g.tier) DESC,
             CASE g.source WHEN 'manual' THEN 0 WHEN 'revenuecat' THEN 1 ELSE 2 END
    LIMIT 1;
   v_in_force := CASE
+    WHEN v_top_tier = 'founding' THEN 'auteur'
     WHEN v_founding AND public.tier_weight(v_top_tier) < 2 THEN 'auteur'
     ELSE coalesce(v_top_tier, 'cinephile') END;
 
@@ -3961,9 +3971,16 @@ BEGIN
     RAISE EXCEPTION 'relinquish_rank: not authenticated' USING ERRCODE = '42501';
   END IF;
 
-  -- 'revenuecat' as the source, not 'manual': a rank granted by hand, or a
-  -- founding seat, is not the store's to take away. grant_entitlement enforces
-  -- that; naming the source here is what lets it.
+  -- A seat is one of a hundred: it ends only on the store's own record, read by
+  -- the house, never on the app's word that the store holds nothing.
+  IF EXISTS (SELECT 1 FROM public.rank_grants
+              WHERE user_id = v_uid AND source = 'revenuecat' AND tier = 'founding') THEN
+    RETURN QUERY SELECT p.tier, false, 'a founding seat ends only on the store''s own record'::text
+      FROM public.profiles p WHERE p.id = v_uid;
+    RETURN;
+  END IF;
+
+  -- 'revenuecat' as the source: only the store's own grant is ended.
   RETURN QUERY
   SELECT g.out_tier, g.out_applied, g.out_reason
   FROM public.grant_entitlement(v_uid, 'cinephile', 'revenuecat') AS g;
@@ -3974,7 +3991,7 @@ END $$;
 -- Name: FUNCTION relinquish_rank(); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.relinquish_rank() IS 'Ends the store''s grant of the CALLER''S OWN rank and nothing else (a rank given on the web or by hand, and a founding seat, stand). Safe for authenticated: the worst abuse is self-removal, which the next store sync restores. Called by the client when the store reports no active entitlement.';
+COMMENT ON FUNCTION public.relinquish_rank() IS 'Ends the store''s grant of the CALLER''S OWN rank and nothing else (a rank given on the web or by hand stands, and a founding seat ends only on the store''s own record, read by the house). Safe for authenticated: the worst abuse is self-removal, which the next store sync restores. Called by the client when the store reports no active entitlement.';
 
 
 --
@@ -5796,7 +5813,7 @@ CREATE TABLE public.rank_grants (
     tier text NOT NULL,
     granted_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT rank_grants_source_check CHECK ((source = ANY (ARRAY['revenuecat'::text, 'paytabs'::text, 'manual'::text]))),
-    CONSTRAINT rank_grants_tier_check CHECK ((tier = ANY (ARRAY['archivist'::text, 'auteur'::text])))
+    CONSTRAINT rank_grants_tier_check CHECK ((tier = ANY (ARRAY['archivist'::text, 'auteur'::text, 'founding'::text])))
 );
 
 
@@ -11121,8 +11138,6 @@ GRANT SELECT ON TABLE public.films TO authenticated;
 -- Name: TABLE founding_seat_counter; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.founding_seat_counter TO anon;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.founding_seat_counter TO authenticated;
 GRANT ALL ON TABLE public.founding_seat_counter TO service_role;
 
 

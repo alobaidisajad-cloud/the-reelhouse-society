@@ -515,7 +515,7 @@ describe('the page speaks in one type scale', () => {
     // carries are among the words counted.
     expect(previews).toBeGreaterThan(0);
     expect(counted).toEqual(expect.arrayContaining(['EDITING', 'ALT', 'RESEAL THE RECORD']));
-  });
+  }, 15000);   // five whole pages and every section opened: ~2.5 s alone, past 5 s under a full run
 });
 
 describe('the docket is a hero, not a thumbnail', () => {
