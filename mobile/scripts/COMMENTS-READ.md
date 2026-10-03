@@ -73,6 +73,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ANDROID_LAUNCH.md | 2026-10-03 | read against the code: shadows and modals done, springify gone, keyboard via KeyboardRoom; the emulator runs every push |
 | app.config.js | 2026-10-03 | read whole: sound |
 | app/__tests__/boot-structure.test.tsx | — |  |
+| app/__tests__/yourFileWaitsForYourHandle.test.tsx | 2026-10-03 | new: the Profile tab never calls you a stranger |
 | app/_layout.tsx | 2026-10-02 | PathTracker moved out, and now tells nav too |
 | app/(admin)/__tests__/tribunal.test.tsx | — |  |
 | app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -93,7 +94,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/dispatch.tsx | 2026-10-02 | Read whole (launch audit). A failed next page ended the paper as though it were the last filing: the foot says the rest could not be reached. The column was measured for a 390pt phone whatever the screen: the real width now. |
 | app/(tabs)/index.tsx | 2026-10-03 | edited: the join plate draws the shared BrassSheen |
 | app/(tabs)/lounge.tsx | 2026-10-03 | edited: the search box names SEARCH_MAX |
-| app/(tabs)/profile.tsx | 2026-10-01 | nav; a named door; the header says what it is |
+| app/(tabs)/profile.tsx | 2026-10-03 | your file waits for your handle: read first, a failed read says so with TRY AGAIN, never "Member Not Found" |
 | app/(tabs)/reels.tsx | 2026-10-03 | edited: the curate plate draws the shared BrassSheen |
 | app/+not-found.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | app/auth-callback.tsx | 2026-10-01 | a link with no code verifies nothing; comments short |
