@@ -503,7 +503,6 @@ if (DB_URL) {
       can_annotate_list: 'RLS policy helper — anon needs it for the policy to evaluate',
       can_annotate_log: 'RLS policy helper',
       can_endorse_content: 'RLS policy helper',
-      get_featured_critique: 'public editorial content, meant for signed-out readers',
       increment_dossier_views: 'live web caller; moves a view counter and nothing else',
       rls_auto_enable: 'event trigger, not callable',
       like_escape: 'pure string helper, no data',

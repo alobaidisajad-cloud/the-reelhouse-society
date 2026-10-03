@@ -45,28 +45,14 @@ const FeaturedReview = memo(function FeaturedReview() {
 
             if (hotLogs && hotLogs.length > 0) {
                 const logIds = hotLogs.map((l: any) => l.id)
-                const [endorseResult, commentResult] = await Promise.all([
-                    supabase
-                        .from('interactions')
-                        .select('target_log_id')
-                        .eq('type', 'endorse_log')
-                        .in('target_log_id', logIds),
-                    supabase
-                        .from('log_comments')
-                        .select('log_id')
-                        .in('log_id', logIds),
-                ])
+                // The kept counts (log_counts): one row a log, not every certification and critique downloaded.
+                const { data: kept, error: keptError } = await supabase
+                    .from('log_counts').select('log_id, certify_count, critique_count').in('log_id', logIds)
                 // Unread engagement would crown the newest critique, not the hottest.
-                if (endorseResult.error) throw endorseResult.error
-                if (commentResult.error) throw commentResult.error
+                if (keptError) throw keptError
 
                 const engagement: Record<string, number> = {}
-                ;(endorseResult.data || []).forEach((e: any) => {
-                    engagement[e.target_log_id] = (engagement[e.target_log_id] || 0) + 1
-                })
-                ;(commentResult.data || []).forEach((c: any) => {
-                    engagement[c.log_id] = (engagement[c.log_id] || 0) + 1
-                })
+                ;(kept || []).forEach((c: any) => { engagement[c.log_id] = (c.certify_count || 0) + (c.critique_count || 0) })
 
                 const sorted = [...hotLogs].sort((a: any, b: any) => {
                     const engA = engagement[a.id] || 0

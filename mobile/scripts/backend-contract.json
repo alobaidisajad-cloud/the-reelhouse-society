@@ -190,7 +190,7 @@
       "signature": "withdraw_lounge_message(p_message_id uuid)"
     }
   ],
-  "_removedNote": "get_featured_critique left this contract on 2026-09-30, when the Lobby wall (get_lobby) replaced the old Lobby's lead story; it MUST STAY DEPLOYED — the web app still calls it. TWO entries left this contract on 2026-09-03, and NEITHER is a signal to undeploy anything. This file describes what the CURRENT mobile source calls; it is not an inventory of what production must keep. (1) fetch-rss — the Global Wire left the Dispatch and NewsService with it. (2) get_dispatch_feed — the Dispatch store now reads dispatch_posts directly. That RPC MUST STAY DEPLOYED: the build in members' hands on TestFlight calls it, and so does the web app, which is a separate tree on the same project. Step one's compatibility layer exists precisely so those keep working.",
+  "_removedNote": "This file describes what the CURRENT mobile source calls; it is not an inventory of what production must keep. fetch-rss left it on 2026-09-03 with the Global Wire. get_dispatch_feed (2026-09-03) and get_featured_critique (2026-09-30) left it when the Dispatch and the Lobby stopped calling them; on 2026-10-03, with no caller left in either app or any function, 20261003_03 dropped both from production, with get_following_feed_cursor and get_filtered_stacks_auth_cursor.",
   "edgeFunctions": [
     "sign-in-with-username",
     "sync-entitlement",

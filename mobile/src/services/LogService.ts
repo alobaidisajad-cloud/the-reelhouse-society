@@ -3,7 +3,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { logger } from '@/src/utils/logger';
 import { PUBLIC_LOG_COLUMNS } from '@/src/utils/mappers';
-import { logCertifySelect, withLogCountFilters } from '@/src/services/logCounts';
+import { logCertifySelect, withLogCountFilters, liftLogCounts } from '@/src/services/logCounts';
 import { resolveTier } from '@/src/utils/tier';
 import { validateWithTelemetry } from '@/src/utils/validateWithTelemetry';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
@@ -141,7 +141,7 @@ export const LogService = {
     let { data, error } = await query;
 
     // 2. Handle Offline Creations (Prevent 404 crashes)
-    let logData: any = data;
+    let logData: any = data ? liftLogCounts(data as unknown as Record<string, unknown>) : data;
     if (error || !logData) {
         const pendingAdd = queue.find((q) => (q.type === 'add_log' || q.type === 'mark_watched') && q.payload.id === logId);
         if (pendingAdd) {

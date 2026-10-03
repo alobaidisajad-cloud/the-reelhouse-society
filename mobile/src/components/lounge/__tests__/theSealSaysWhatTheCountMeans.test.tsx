@@ -48,9 +48,8 @@ describe('the unread seal', () => {
   });
 
   it('stops where the database stops', () => {
-    // The limit lives in SQL (the speed change under measurement, then the
-    // migration that carries it); the card's number must be the same one.
-    const sql = readFileSync(join(__dirname, '..', '..', '..', '..', 'e2e', 'load', 'proposed.sql'), 'utf8');
+    // The limit lives in production's function (the snapshot); the card's number must be the same one.
+    const sql = readFileSync(join(__dirname, '..', '..', '..', '..', 'supabase', 'schema', 'live-schema.sql'), 'utf8').replace(/\r/g, '');
     const fn = sql.slice(sql.indexOf('FUNCTION public.get_lounge_unread_counts'));
     expect(fn.slice(0, fn.indexOf('$$;'))).toContain(`LIMIT ${UNREAD_COUNTED_TO}`);
   });

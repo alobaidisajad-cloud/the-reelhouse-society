@@ -10,7 +10,7 @@ const logStatus = z.string().nullable().optional().transform((s) => s ?? 'watche
  * RESILIENT YEAR PARSER
  * ─────────────────────
  * The `year` column is INT in the database, but RPCs may declare it as TEXT
- * (e.g., get_following_feed_cursor). Postgres auto-casts int→text when the
+ * (e.g., get_following_feed_auth_cursor). Postgres auto-casts int→text when the
  * RETURNS TABLE declares text. This coercer accepts both and normalizes to
  * number | null.
  */
@@ -84,7 +84,7 @@ export type FeedItem = z.infer<typeof FeedItemSchema>;
 
 /**
  * Input-side Zod schema for the following feed RPC response.
- * Accepts both old `get_following_feed` and new `get_following_feed_cursor` shapes.
+ * The shape get_following_feed_auth_cursor returns.
  * Key resilience: year accepts string|number, rating accepts null, autopsy accepts any JSONB.
  */
 export const FollowingFeedRowSchema = z.object({

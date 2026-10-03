@@ -38,9 +38,9 @@ export default function LogDetailPage() {
             if (error) throw error
             if (!data) { setLog(null); return }
 
-            // Need to get endorsement count efficiently
-            const { count, error: countError } = await supabase.from('interactions').select('id', { count: 'exact', head: true })
-                .eq('target_log_id', logId).eq('type', 'endorse_log')
+            // Kept by the database (log_counts), the same for every reader; no row is no marks.
+            const { data: kept, error: countError } = await supabase.from('log_counts').select('certify_count').eq('log_id', logId).maybeSingle()
+            const count = kept?.certify_count ?? 0
             if (countError) console.error('Error counting endorsements:', countError)
 
             const profileData: any = data.profiles

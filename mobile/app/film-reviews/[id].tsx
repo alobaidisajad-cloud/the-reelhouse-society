@@ -26,7 +26,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { ActivityCard } from '@/src/components/feed/ActivityCard';
 import { FeedItemSchema, type FeedItem } from '@/src/schemas/feed.schema';
 import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
-import { logCountsSelect, withLogCountFilters } from '@/src/services/logCounts';
+import { logCountsSelect, withLogCountFilters, liftLogCounts } from '@/src/services/logCounts';
 import { tellMarks } from '@/src/stores/tellMarks';
 import { useAuthStore } from '@/src/stores/auth';
 import { EmptyOffline } from '@/src/components/EmptyStates';
@@ -103,7 +103,7 @@ export default function FilmReviewsScreen() {
         .map((r) => {
           const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
           const parsed = FeedItemSchema.safeParse({
-            ...r,
+            ...liftLogCounts(r as unknown as Record<string, unknown>),
             username: profile?.username,
             avatar_url: profile?.avatar_url ?? null,
             role: profile?.role,
