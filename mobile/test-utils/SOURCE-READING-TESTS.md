@@ -57,6 +57,7 @@ Decisions, as of 2026-09-28:
 | File | The class it enumerates |
 |---|---|
 | `src/components/__tests__/animation-parking.test.ts` | Every endless animation parks when its screen is not focused. |
+| `src/components/__tests__/busterRegister.test.ts` | Every place Buster is drawn, held to the register (one to a screen, never in a row); and every picture of him, by file and by its PNG's own pixel size. His behaviour is tested by mounting him (`Buster.test.tsx`). |
 | `src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts` | Every style that spreads `effects.flat` and still carries elevation (a black shadow on Android before 9); an exact ratchet, lowered as each feature is read. |
 | `src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx` | No sheet unmounts itself at the end of its own fall; useSheetPresence is the one place (its behaviour is tested on the hook). |
 | `src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx` | The film and series sheets are wrapped in the lift; the lift itself is tested on the hook (a keyboard cannot be rendered). |
@@ -184,6 +185,7 @@ Decisions, as of 2026-09-28:
 | File | The call site it holds |
 |---|---|
 | `src/components/dispatch/__tests__/aDraftSurvivesThePhone.test.tsx` | The writing room backs its draft up. |
+| `src/components/profile/__tests__/portraitInitial.test.ts` | Each screen that draws a portrait's letter asks `portraitInitial`, and none works it out alone. |
 | `src/components/dispatch/__tests__/nothingIsLostQuietly.test.tsx` | Every composer keeps its draft, amends included. |
 | `src/components/dispatch/__tests__/thePreviewIsThePage.test.tsx` | The preview draws with the page's own typography. |
 | `src/components/dispatch/__tests__/theRailFitsOneScreen.test.ts` | The rail's tools against the budget that sized them. |

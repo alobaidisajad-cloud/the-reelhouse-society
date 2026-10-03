@@ -8,7 +8,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MessageSquare, MoreHorizontal, Send, Trash2, X } from 'lucide-react-native';
-import { ActivityIndicator, Alert, BackHandler, Platform, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Alert, BackHandler, Platform, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
 import Animated, { FadeInDown, FadeInUp, ReduceMotion, interpolate, useAnimatedKeyboard, useAnimatedStyle, useDerivedValue, useSharedValue } from 'react-native-reanimated';
@@ -45,6 +45,7 @@ import { EDGE_LIT } from '@/src/theme/light';
 import { useLineScale } from '@/src/hooks/useTextScale';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
+import Buster, { BusterEyes } from '@/src/components/Buster';
 import { nav } from '@/src/utils/typedRouter';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 
@@ -731,7 +732,7 @@ export default function StackDetailScreen() {
         <RoomLight room="default" />
         <StackNav topInset={insets.top} onBack={() => nav.back()} />
         <View style={s.loadingCenter}>
-          <ActivityIndicator size="large" color={colors.sepia} />
+          <BusterEyes label="Loading stack" />
         </View>
       </View>
     );
@@ -760,6 +761,7 @@ export default function StackDetailScreen() {
         <RoomLight room="default" />
         <StackNav topInset={insets.top} onBack={() => nav.back()} />
         <View style={s.loadingCenter}>
+          <Buster size={80} mood="suspicious" style={s.classifiedBuster} />
           <Text style={s.title}>CLASSIFIED</Text>
           <Text style={[s.desc, { textAlign: 'center', marginTop: 12 }]}>This stack could not be retrieved.{'\n'}It may be sealed or incinerated.</Text>
         </View>
@@ -1232,6 +1234,7 @@ const s = StyleSheet.create({
   emptySubtitle: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.fog, textAlign: 'center' },
 
   loadingCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  classifiedBuster: { marginBottom: 12 },
   actionLabelActive: { color: colors.crimsonInk },
   actionLabelOpen: { color: colors.sepia },
   sendBtnDisabled: { opacity: 0.3 },

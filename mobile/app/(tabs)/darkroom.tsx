@@ -329,7 +329,7 @@ export default function DarkRoomScreen() {
     return (
       <Animated.View entering={FadeInDown.duration(600)} style={s.emptyWrap}>
         <View style={{ alignItems: 'center' }}>
-          <Buster size={56} mood="crying" />
+          <Buster size={56} mood="suspicious" />
         </View>
         {/* "The Vault" belongs to the private notes — this tray speaks in
             the Darkroom's own chemistry. */}

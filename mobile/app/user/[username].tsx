@@ -27,6 +27,7 @@ import { useProfileController } from '@/src/hooks/useProfileController';
 
 import { Achievements } from '@/src/components/profile/Achievements';
 import { CinemaDNACard } from '@/src/components/profile/CinemaDNACard';
+import { portraitInitial } from '@/src/components/profile/portraitInitial';
 import NitrateCalendarGrid from '@/src/components/profile/NitrateCalendarGrid';
 import { NoirPassport } from '@/src/components/profile/NoirPassport';
 import ProfileArchiveTab from '@/src/components/profile/ProfileArchiveTab';
@@ -81,6 +82,7 @@ import { heroNameSize } from '@/src/components/profile/heroNameSize';
 import { softBreak } from '@/src/utils/softBreak';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
+import Buster, { BusterEyes } from '@/src/components/Buster';
 
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
@@ -281,8 +283,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     : null;
 
   // The portrait initial — no member ever faces a dead black circle.
-  const avatarInitial = (targetUser?.persona || (targetUser as any)?.display_name || targetUser?.username || '?')
-    .charAt(0).toUpperCase();
+  const avatarInitial = portraitInitial(targetUser as Parameters<typeof portraitInitial>[0]);
 
   // Favorites presence — guards the THE TRIPTYCH label so it never
   // floats orphaned over an altarpiece that rendered null for visitors.
@@ -540,6 +541,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     <View style={[s.container, s.centeredFull]}>
       <RoomLight room="member" />
       {readyMark}
+      <BusterEyes style={s.loadingEyes} />
       <View style={s.loadingRow}>
         <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />
         <Text {...scaledTextProps} style={s.loadingText}>RETRIEVING DOSSIER</Text>
@@ -562,7 +564,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     <View style={[s.container, s.centeredPadded]}>
       <RoomLight room="member" />
       {readyMark}
-      <FilmIcon size={48} color={colors.sepia} strokeWidth={1} style={s.notFoundIcon} />
+      <Buster size={80} mood="suspicious" style={s.notFoundBuster} />
       <Text {...scaledTextProps} style={s.notFoundTitle}>Member Not Found</Text>
       {/* eslint-disable-next-line react/no-unescaped-entities */}
       <Text {...scaledTextProps} style={s.notFoundBody}>This member doesn't exist yet, or has been removed.</Text>

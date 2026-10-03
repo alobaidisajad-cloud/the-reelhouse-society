@@ -44,6 +44,8 @@ export const st = StyleSheet.create({
   avatarSection: { alignItems: 'center', marginVertical: 10 },
   avatarWrap: { ...EDGE_LIT, width: 120, height: 120, borderRadius: 60, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   avatarImg: { width: '100%', height: '100%' },
+  // No photograph: the letter their file's plate shows, in its ink, at this plate's size.
+  avatarInitial: { fontFamily: fonts.display, fontSize: 48, color: 'rgba(232,223,208,0.28)' },
   avatarOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   avatarHint: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, marginBottom: 4 },
   avatarSpec: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fogQuiet },

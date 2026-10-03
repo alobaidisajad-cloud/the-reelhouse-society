@@ -1,0 +1,110 @@
+/**
+ * WHERE BUSTER APPEARS — the register, as a test.
+ *
+ * He is the house's resident, not its wallpaper: he comes where the house has
+ * nothing else to show (a room empty, a record lost, a reel jammed, a wait),
+ * one to a screen, and never in a list's rows, a toast, a button or a notice of
+ * sanction. Every place that draws him is named here with the moment it is; a
+ * new one fails until somebody adds it on purpose, and a removed one fails
+ * until its entry goes.
+ *
+ * Also held here: the pictures he is drawn from, one per mood and size at each
+ * screen density, at exactly the pixels that density needs.
+ */
+import { readdirSync, readFileSync } from 'fs';
+import { join } from 'path';
+import { BUSTER_ART } from '../busterArt';
+
+const ROOT = join(__dirname, '..', '..', '..');
+
+type Count = { buster?: number; still?: number; eyes?: number; why: string };
+const REGISTER: Record<string, Count> = {
+  'src/components/EmptyStates.tsx': { buster: 1, why: 'the house could not be reached (EmptyOffline): dimmed' },
+  'app/(tabs)/reels.tsx': { buster: 2, why: 'the Reel empty, and the stacks empty: one list at a time' },
+  'src/components/reels/ReelsCards.tsx': { eyes: 1, why: 'a reel being read (SPOOLING)' },
+  'app/(tabs)/darkroom.tsx': { buster: 1, why: 'the tray developed nothing' },
+  'app/lounge/[id].tsx': { buster: 2, eyes: 1, why: 'a salon not found, a salon nobody has spoken in, a salon being reached' },
+  'app/(tabs)/profile.tsx': { buster: 1, eyes: 1, why: 'signed out at the archive’s door; your handle being read' },
+  'app/user/[username].tsx': { buster: 1, eyes: 1, why: 'a member not found; a file being read' },
+  'src/components/film/FilmDetailLayout.tsx': { buster: 1, why: 'a film not in the archive' },
+  'app/person/[id].tsx': { buster: 1, why: 'a person with no record' },
+  'app/stacks/[id].tsx': { buster: 1, eyes: 1, why: 'a stack classified or gone; a stack being read' },
+  'app/log/[id].tsx': { buster: 1, eyes: 1, why: 'a log not found; a log being read' },
+  'app/+not-found.tsx': { buster: 1, why: 'a link to nowhere' },
+  'app/(modals)/search-modal.tsx': { buster: 1, why: 'a search that found nothing' },
+  'app/dispatch/[id].tsx': { eyes: 1, why: 'a filing being read (its empty pages stay paper: no picture above the words)' },
+  'app/dispatch/series/[id].tsx': { eyes: 1, why: 'a series being read' },
+  'app/year-in-cinema.tsx': { eyes: 1, why: 'a year being developed' },
+  'src/components/RouteErrorBoundary.tsx': { still: 1, why: 'a screen that crashed: moved, and still' },
+  'src/components/ErrorBoundary.tsx': { still: 1, why: 'the app that crashed: moved, still, above the navigator' },
+};
+
+function sources(dir: string, out: string[] = []): string[] {
+  for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+    if (['node_modules', '__tests__'].includes(e.name) || e.name.startsWith('.')) continue;
+    const rel = `${dir}/${e.name}`;
+    if (e.isDirectory()) sources(rel, out);
+    else if (/\.tsx$/.test(e.name)) out.push(rel);
+  }
+  return out;
+}
+
+const census: Record<string, Required<Omit<Count, 'why'>>> = {};
+for (const file of [...sources('app'), ...sources('src')]) {
+  if (file === 'src/components/Buster.tsx') continue;
+  const text = readFileSync(join(ROOT, file), 'utf8');
+  const count = (re: RegExp) => (text.match(re) || []).length;
+  const found = { buster: count(/<Buster[\s/>]/g), still: count(/<BusterStill[\s/>]/g), eyes: count(/<BusterEyes[\s/>]/g) };
+  if (found.buster + found.still + found.eyes > 0) census[file] = found;
+}
+
+describe('where Buster appears', () => {
+  it('finds him at all (the scan has not gone blind)', () => {
+    expect(Object.keys(census).length).toBeGreaterThanOrEqual(15);
+  });
+
+  it('appears only where the register says, as many times as it says', () => {
+    const want = Object.fromEntries(Object.entries(REGISTER).map(([f, { buster = 0, still = 0, eyes = 0 }]) => [f, { buster, still, eyes }]));
+    expect(census).toEqual(want);
+  });
+
+  it('gives every place its reason', () => {
+    for (const [file, { why }] of Object.entries(REGISTER)) expect([file, why.trim().length >= 12]).toEqual([file, true]);
+  });
+});
+
+/** A PNG's own width and height, from its header. */
+function pngSize(path: string): [number, number] {
+  const b = readFileSync(path);
+  return [b.readUInt32BE(16), b.readUInt32BE(20)];
+}
+
+describe('the pictures he is drawn from', () => {
+  const dir = join(ROOT, 'assets', 'buster');
+  const keys = Object.keys(BUSTER_ART) as (keyof typeof BUSTER_ART)[];
+  const name = (key: string, scale: number) => `${key}${scale === 1 ? '' : `@${scale}x`}.png`;
+
+  it('are exactly the ones the app reads: every density of every picture, and nothing else', () => {
+    const expected = keys.flatMap((k) => [1, 2, 3, 4].map((s) => name(k, s))).sort();
+    expect(readdirSync(dir).sort()).toEqual(expected);
+  });
+
+  it('are each exactly the pixels their density needs: no phone ever stretches one', () => {
+    for (const key of keys) {
+      const { width, height } = BUSTER_ART[key];
+      for (const scale of [1, 2, 3, 4]) {
+        expect([key, scale, pngSize(join(dir, name(key, scale)))]).toEqual([key, scale, [width * scale, height * scale]]);
+      }
+    }
+  });
+
+  it('place his brass points inside the picture', () => {
+    for (const key of keys) {
+      for (const e of BUSTER_ART[key].eyes) {
+        expect(e.x).toBeGreaterThan(0.2); expect(e.x).toBeLessThan(0.8);
+        expect(e.y).toBeGreaterThan(0.2); expect(e.y).toBeLessThan(0.6);
+        expect(e.r).toBeGreaterThan(0.005); expect(e.r).toBeLessThan(0.02);
+      }
+    }
+  });
+});

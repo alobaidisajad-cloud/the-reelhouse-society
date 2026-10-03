@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Film, X } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
@@ -18,6 +18,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { BusterEyes } from '@/src/components/Buster';
 import TryAgain from '@/src/components/TryAgain';
 import { nav } from '@/src/utils/typedRouter';
 
@@ -204,7 +205,7 @@ export default function YearInCinemaScreen() {
     return (
       <StateShell topInset={insets.top}>
         <View style={s.stateBox}>
-          <ActivityIndicator color={colors.sepia} />
+          <BusterEyes />
           <Text style={s.stateEyebrow}>THE PROJECTOR WARMS</Text>
           <Text style={s.stateTitle}>Developing your year…</Text>
         </View>

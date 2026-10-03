@@ -19,7 +19,7 @@
  * A photograph at the top of the screen is the one exception, and it has its
  * own answer: `RoomVeil`, below.
  */
-import { memo, useId, useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient as Fade } from 'expo-linear-gradient';
 import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
@@ -31,6 +31,7 @@ import {
 import { lightGeometry, type Room } from '@/src/theme/light';
 import { colors } from '@/src/theme/theme';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { useSvgId } from '@/src/utils/svgId';
 import { BloomLayer, RoomBloom, useBloomOpacity } from './RoomBloom';
 import { useSharedImage } from './useSharedImage';
 
@@ -52,7 +53,7 @@ interface LightProps {
 export const RoomLight = memo(function RoomLight({ room, hem, art }: LightProps) {
   const { width: W, height: H } = useWindowDimensions();
   // Scoped ids: two screens stacked on the navigator each hold a RoomLight.
-  const id = useId().replace(/[^A-Za-z0-9]/g, '');
+  const id = useSvgId('');
   const g = lightGeometry(room, W, H, hem);
   const colour = `rgb(${g.pool.rgb.join(',')})`;
 

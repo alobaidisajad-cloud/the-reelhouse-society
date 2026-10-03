@@ -24,7 +24,6 @@ jest.mock('../user/[username]', () => {
 });
 jest.mock('@/src/components/layout/FrozenTab', () => ({ __esModule: true, default: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock('@/src/components/atmosphere/RoomLight', () => ({ RoomLight: () => null }));
-jest.mock('@/src/components/Buster', () => ({ __esModule: true, default: () => null }));
 
 // eslint-disable-next-line import/first
 import ProfileTab from '../(tabs)/profile';

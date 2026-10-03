@@ -45,6 +45,7 @@ import { FilmPosterCard, FilmographyHeader, GridColumn } from '@/src/components/
 import { sortCanon } from '@/src/components/person/canon';
 import { localCalendarDate } from '@/src/utils/timeAgo';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
+import Buster from '@/src/components/Buster';
 import reelToast from '@/src/utils/reelToast';
 
 const PLACEHOLDER_VEIL: VeilStops = [[0, 0.1], [0.7, 0.6], [1, 1]];
@@ -403,6 +404,7 @@ export default function PersonDetailScreen() {
   if (!person) return (
     <View style={[s.container, s.notFoundContainer]}>
       <RoomLight room="film" />
+      <Buster size={80} mood="suspicious" style={s.notFoundBuster} />
       <Text style={s.notFoundLabel} {...displayTextProps}>RECORDS DEPT — FILE NOT FOUND</Text>
       <Text style={s.notFoundTitle} {...displayTextProps}>No Record On File</Text>
       <Text style={s.notFoundBody} {...scaledTextProps}>

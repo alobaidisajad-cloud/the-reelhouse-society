@@ -81,13 +81,14 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(admin)/tribunal.tsx | 2026-10-03 | edited: the reason is cleaned and held to what the member's notice can carry |
 | app/(modals)/__tests__/list-modal.curate.test.tsx | 2026-10-03 | edited: the stack's boxes name their caps |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
+| app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx | 2026-10-03 | new: your own circle is said to you |
 | app/(modals)/cover-picker.tsx | 2026-10-01 |  |
 | app/(modals)/list-modal.tsx | 2026-10-03 | edited: title and description name their caps |
 | app/(modals)/log-modal.tsx | 2026-10-01 | Arrive; the scroll needs no Animated |
 | app/(modals)/login.tsx | 2026-10-03 | edited: email, handle and password name their limits |
 | app/(modals)/membership.tsx | 2026-10-03 | payments pass: one watchForRank for purchase, seat and restore; restore says "yours again" only once the house holds it; no session read mid-purchase |
 | app/(modals)/notifications-modal.tsx | 2026-10-02 | rows say new/who/what/when; the rest could not be reached; history comments trimmed |
-| app/(modals)/search-modal.tsx | 2026-10-02 | tabs named; partial results said; an emptied box empties at once; nav.dismiss |
+| app/(modals)/search-modal.tsx | 2026-10-03 | edited: no results holds through the next letter |
 | app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
 | app/(tabs)/_layout.tsx | 2026-10-02 | read; sound |
 | app/(tabs)/darkroom.tsx | 2026-10-02 | the next batch that could not be developed is said, and asked again |
@@ -201,6 +202,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-02 | Written in the launch audit: no two modules export a component under one name. |
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
+| src/components/__tests__/Buster.test.tsx | 2026-10-03 | new: the new Buster’s promises, each mutation-checked |
+| src/components/__tests__/busterRegister.test.ts | 2026-10-03 | new: where Buster appears, and his pictures’ pixels |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
 | src/components/__tests__/ActionDeck.test.tsx | 2026-10-01 | rendered: owner, certify, save, stranger |
@@ -235,7 +238,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/auth/PasswordStrengthMeter.tsx | 2026-10-03 | read whole: one answer for a new password; says when it is too long for the lock |
 | src/components/auth/SocietySeal.tsx | 2026-10-01 | true as written |
 | src/components/AutopsyGauge.tsx | 2026-10-01 | true as written |
-| src/components/Buster.tsx | 2026-10-01 | true as written |
+| src/components/Buster.tsx | 2026-10-03 | rewritten whole: the new Buster |
+| src/components/busterArt.ts | 2026-10-03 | new: generated from the drawing |
 | src/components/CinematicOverlays.tsx | 2026-10-01 | the dead film grain gone |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
 | src/components/clearance/Clearance.tsx | 2026-10-01 | show it, locked; a second copy lives in the log (carried forward) |
@@ -339,7 +343,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
 | src/components/dispatch/roomLink.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/SeriesPicker.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/EmptyStates.tsx | 2026-10-01 | the offline state arrives through Arrive |
+| src/components/EmptyStates.tsx | 2026-10-03 | edited: Buster by mood; the breathing icon rests under Reduce Motion |
 | src/components/ErrorBoundary.tsx | 2026-10-02 | Read whole (launch audit). Retries spent left a disabled PLEASE RESTART APP: the button now restarts the app (expo-updates reloadAsync), and says how only when it cannot. |
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/feed/ActionDeck.tsx | 2026-10-01 | owner by id; nav; comments cut to the why |
@@ -525,6 +529,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/memberFile.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/memberFileRooms.test.tsx | — |  |
 | src/components/profile/__tests__/memberFileScreen.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
+| src/components/profile/__tests__/portraitInitial.test.ts | 2026-10-03 | new: one member, one letter |
 | src/components/profile/__tests__/projectorRoom.test.tsx | — |  |
 | src/components/profile/__tests__/railFits.test.ts | — |  |
 | src/components/profile/__tests__/reconcileCount.test.ts | — |  |
@@ -563,6 +568,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/heroNameSize.ts | 2026-10-01 |  |
 | src/components/profile/NitrateCalendarGrid.tsx | 2026-10-01 | today drawn; counts what it draws, "in the past year"; the app date helper; nav |
 | src/components/profile/NoirPassport.tsx | 2026-10-01 | stamps from the whole record only; labels broken between words; said while unread or failed |
+| src/components/profile/portraitInitial.ts | 2026-10-03 | new: the portrait letter, one rule |
 | src/components/profile/ProfileArchiveTab.tsx | 2026-10-01 | nav; IMPORT lands on the import panel; comments say what is true now |
 | src/components/profile/ProfileBackdrop.tsx | 2026-10-02 | comments say what is true now; poster via tmdb.poster |
 | src/components/profile/profileComputed.ts | 2026-10-02 | Read (launch audit): date work is hand-built or ordering-only. Sound. |
@@ -589,7 +595,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | — |  |
 | src/components/reels/MemberRegistry.tsx | 2026-10-01 | nav; comments cut to the why |
-| src/components/reels/ReelsCards.tsx | 2026-10-03 | edited: its ungated sheen copy removed |
+| src/components/reels/ReelsCards.tsx | 2026-10-03 | edited: the loader is his eyes; the flicker is gone |
 | src/components/reels/ReelsFeedList.tsx | 2026-10-01 | stale contrast note gone |
 | src/components/reels/ReelsHeader.tsx | 2026-10-01 | comments cut to the why |
 | src/components/reels/ReelsStackList.tsx | 2026-10-01 | true as written |
@@ -1066,6 +1072,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/softBreak.ts | 2026-10-03 | edited: the zero-width space written as an escape |
 | src/utils/standing.ts | 2026-10-02 | Written in the launch audit: the member's standing, read with the profile and on refusal. |
+| src/utils/svgId.ts | 2026-10-03 | new: the one paint id (the Lobby’s and the room light’s) |
 | src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |

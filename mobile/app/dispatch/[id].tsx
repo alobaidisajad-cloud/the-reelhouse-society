@@ -16,7 +16,7 @@
  * phone's screen and leave the writing in a slot.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Platform, ScrollView, Share, View, useWindowDimensions } from 'react-native';
+import { Alert, Image, Platform, ScrollView, Share, View, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -53,13 +53,13 @@ import * as Sharing from 'expo-sharing';
 import { supabase } from '@/src/lib/supabase';
 import { FILING_FULL_COLUMNS, parseFilingRows, paperTierOf } from '@/src/stores/dispatchTypes';
 import type { CritiqueOrder, Filing } from '@/src/stores/dispatchTypes';
-import { colors } from '@/src/theme/theme';
 import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
 import { timeAgo, timeUntil, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { BusterEyes } from '@/src/components/Buster';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useUnsent } from '@/src/stores/offlineQueueStore';
 import { HOUSE_WEB } from '@/src/constants/support';
@@ -325,7 +325,7 @@ export default function FilingReader() {
       <View style={[p.screen, { justifyContent: 'center', alignItems: 'center' }]}>
         <RoomLight room="dispatch" />
         {readyMark}
-        <ActivityIndicator size="small" color={colors.sepia} />
+        <BusterEyes label="Loading filing" />
       </View>
     );
   }

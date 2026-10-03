@@ -30,9 +30,9 @@ import { DiamondDivider } from '@/src/components/theme/DiamondDivider';
 import AvatarCropSheet from '@/src/components/profile/AvatarCropSheet';
 import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
 import { LinksEditor } from '@/src/features/profile/LinksEditor';
-import Buster from '@/src/components/Buster';
+import { portraitInitial } from '@/src/components/profile/portraitInitial';
 import { Image } from 'expo-image';
-import { scaledTextProps } from '@/src/constants/textScaling';
+import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import reelToast from '@/src/utils/reelToast';
 import { logger } from '@/src/utils/logger';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
@@ -220,7 +220,7 @@ export function EditProfileScreen() {
                 {avatarPreview ? (
                     <Image source={{ uri: avatarPreview }} style={st.avatarImg} contentFit="cover" transition={150} />
                 ) : (
-                    <Buster size={72} mood="smiling" />
+                    <Text {...decorativeTextProps} style={st.avatarInitial}>{portraitInitial(user)}</Text>
                 )}
                 <View style={st.avatarOverlay}>
                     <Camera size={24} color={colors.parchment} />

@@ -320,7 +320,7 @@ export default function ReelScreen() {
     if (feedFailed) return <EmptyOffline onRetry={rereadFeed} />;
     return (
       <Arrive name="reel.empty" style={st.emptyWrap}>
-        <Buster size={48} mood="peeking" />
+        <Buster size={48} mood="unimpressed" />
         <Text style={st.emptyTitle}>
           {feedFilter === 'following' ? 'Your orbit is quiet.' : 'The projection booth is dark.'}
         </Text>
@@ -392,7 +392,7 @@ export default function ReelScreen() {
     if (stacksLost) return <EmptyOffline onRetry={rereadStacks} />;
     return (
       <Arrive name="stacks.empty" style={st.emptyWrap}>
-        <Buster size={48} mood="thinking" />
+        <Buster size={48} mood="suspicious" />
         <Text style={st.emptyTitle}>
           {stackSearch ? 'No stacks match your search.' 
             : stackFilter === 'following' ? 'Your orbit has no collections.'

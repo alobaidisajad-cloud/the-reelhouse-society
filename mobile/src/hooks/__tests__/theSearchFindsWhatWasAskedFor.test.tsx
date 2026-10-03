@@ -145,6 +145,25 @@ describe('the search room', () => {
     expect(r.getByText('@kane')).toBeTruthy();
   });
 
+  it('a search that finds nothing shows Buster, who stays through the next letter while it is searched', async () => {
+    const empty = answer({ users: [] });
+    mockSearchResult.mockReturnValue(empty);
+    const r = await open();
+    await waitFor(() => expect(r.getByText('THE ARCHIVE RETURNS SILENCE')).toBeTruthy());
+    expect(r.getByTestId('buster-suspicious', { includeHiddenElements: true })).toBeTruthy();
+
+    // The next letter is being searched: he stays where he is; only the line changes.
+    await fireEvent.changeText(r.getByLabelText('Search the archives'), 'kanex');
+    expect(r.getByTestId('buster-suspicious', { includeHiddenElements: true })).toBeTruthy();
+    expect(r.queryByText('THE ARCHIVE RETURNS SILENCE')).toBeNull();
+    expect(r.getAllByText('SCANNING ARCHIVES…').length).toBeGreaterThanOrEqual(2);
+
+    // Something is found: he goes, and the results stand in his place.
+    mockSearchResult.mockReturnValue(answer());
+    await waitFor(() => expect(r.getByText('@kane')).toBeTruthy());
+    expect(r.queryByTestId('buster-suspicious', { includeHiddenElements: true })).toBeNull();
+  });
+
   it('an emptied box is empty at once', async () => {
     mockSearchResult.mockReturnValue(answer());
     const r = await open();

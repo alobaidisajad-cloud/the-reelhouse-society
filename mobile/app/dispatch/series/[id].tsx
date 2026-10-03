@@ -26,7 +26,7 @@
  * case is four essays.
  */
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -39,11 +39,11 @@ import { readTimeOf } from '@/src/components/dispatch/readTime';
 import { roomOf } from '@/src/components/dispatch/roomLink';
 import { supabase } from '@/src/lib/supabase';
 import { FILING_FULL_COLUMNS, parseFilingRows, type Filing } from '@/src/stores/dispatchTypes';
-import { colors } from '@/src/theme/theme';
 import { nav } from '@/src/utils/typedRouter';
 import { logger } from '@/src/utils/logger';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { BusterEyes } from '@/src/components/Buster';
 
 /** A series is a handful of essays. Bounded because every read here is. */
 const MOST_PARTS = 24;
@@ -115,7 +115,7 @@ export default function SeriesScreen() {
     return (
       <View style={[p.screen, { justifyContent: 'center', alignItems: 'center' }]}>
         <RoomLight room="dispatch" />
-        <ActivityIndicator size="small" color={colors.sepia} />
+        <BusterEyes label="Loading series" />
       </View>
     );
   }

@@ -141,6 +141,8 @@ export default function SocialModal() {
 
     const { mode, valid } = useMemo(() => resolveMode(params), [params]);
     const { user } = useAuthStore();
+    /** Your own followers or following: said to you, not about "this member". */
+    const isOwnCircle = !!user?.id && user.id === params.userId;
 
     const [loading, setLoading] = useState(true);
     const [profiles, setProfiles] = useState<SocialProfile[]>([]);
@@ -409,8 +411,8 @@ export default function SocialModal() {
                         subtitle={isShareMode
                             ? 'You haven\'t joined any lounges yet. Join a lounge to share content with fellow cinephiles.'
                             : mode === 'followers'
-                                ? 'No one follows this member yet.'
-                                : 'This member hasn\'t followed anyone yet.'
+                                ? (isOwnCircle ? 'No one follows you yet.' : 'No one follows this member yet.')
+                                : (isOwnCircle ? 'You haven\'t followed anyone yet.' : 'This member hasn\'t followed anyone yet.')
                         }
                     />
                 </View>

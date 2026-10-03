@@ -71,8 +71,6 @@ const PIGMENT_VALUES = new Map<string, string>(
  */
 const MARKS: Record<string, string> = {
   'src/components/AutopsyGauge.tsx · headerStar': '✦ beside the heading',
-  'src/components/ErrorBoundary.tsx · glyph': '⊗ / ✦ at 48pt, the page’s emblem',
-  'app/+not-found.tsx · glyph': '⊗ / ✦ at 48pt, the page’s emblem',
   'app/auth-callback.tsx · errorIcon': '✕ at 28pt beside the words that say what failed',
   'app/reset-password.tsx · successIcon': '✕ above SESSION EXPIRED, which carries the meaning',
   'src/components/log/logDetailStyles.ts · filingDot': '· between two filing facts',

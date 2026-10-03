@@ -86,9 +86,10 @@ export const s = StyleSheet.create({
   // ── Early Return States ──
   centeredFull: { justifyContent: 'center' as const, alignItems: 'center' as const },
   centeredPadded: { justifyContent: 'center' as const, alignItems: 'center' as const, padding: 40 },
+  loadingEyes: { marginBottom: 14 },
   loadingRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
   loadingText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia },
-  notFoundIcon: { marginBottom: 16, opacity: 0.4 },
+  notFoundBuster: { marginBottom: 12 },
   notFoundTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 8 },
   notFoundBody: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, fontStyle: 'italic' as const, textAlign: 'center' as const, marginBottom: 24 },
   ghostBtnRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },

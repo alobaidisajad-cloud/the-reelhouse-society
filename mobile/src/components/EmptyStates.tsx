@@ -6,11 +6,11 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, {
-    useSharedValue, useAnimatedStyle,
+    useSharedValue, useAnimatedStyle, useReducedMotion,
     withRepeat, withSequence, withTiming, Easing, cancelAnimation,
 } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
-import Buster, { BusterMood } from '@/src/components/Buster';
+import Buster, { type BusterPicture } from '@/src/components/Buster';
 import TryAgain, { ACTS_GAP, TRY_AGAIN_ABOVE_A_WAY_OUT, WayOut } from '@/src/components/TryAgain';
 import { pickRandom } from '@/src/lore/fragments';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
@@ -22,17 +22,18 @@ interface EmptyStateProps {
     title: string;
     subtitle?: string;
     compact?: boolean;
-    busterMood?: BusterMood;
-    busterMessage?: string;
-    useBuster?: boolean;
+    /** Buster, in this mood, where the icon would be. */
+    buster?: Extract<BusterPicture, { size: 80 }>['mood'];
 }
 
-/** Breathing wrapper — standby projector bulb effect */
+/** Breathing wrapper — standby projector bulb effect. Under Reduce Motion it rests, half lit. */
 function BreathingIcon({ children }: { children: React.ReactNode }) {
-    const opacity = useSharedValue(0.4);
-    const scale = useSharedValue(0.95);
+    const still = useReducedMotion();
+    const opacity = useSharedValue(still ? 0.55 : 0.4);
+    const scale = useSharedValue(still ? 1 : 0.95);
 
     useEffect(() => {
+        if (still) return;
         // Finite repeats (6 iterations ≈ 24s) to allow UI thread idling
         opacity.value = withRepeat(
             withSequence(
@@ -50,8 +51,7 @@ function BreathingIcon({ children }: { children: React.ReactNode }) {
             cancelAnimation(opacity);
             cancelAnimation(scale);
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [still, opacity, scale]);
 
     const style = useAnimatedStyle(() => ({
         opacity: opacity.value,
@@ -61,11 +61,11 @@ function BreathingIcon({ children }: { children: React.ReactNode }) {
     return <Animated.View style={[s.iconWrap, style]}>{children}</Animated.View>;
 }
 
-export function EmptyState({ icon, glyph = '◈', title, subtitle, compact, busterMood, busterMessage, useBuster = false }: EmptyStateProps) {
+export function EmptyState({ icon, glyph = '◈', title, subtitle, compact, buster }: EmptyStateProps) {
     return (
         <Arrive name="empty-state" duration={600} rise={0} style={[s.container, compact && s.compact]}>
-            {useBuster ? (
-                <Buster size={80} mood={busterMood ?? 'neutral'} message={busterMessage} />
+            {buster ? (
+                <Buster size={80} mood={buster} />
             ) : icon ? (
                 <BreathingIcon>{icon}</BreathingIcon>
             ) : (
@@ -104,8 +104,7 @@ export function EmptyOffline({ onRetry, wayOut }: {
     return (
         <View style={s.offline}>
             <EmptyState
-                useBuster
-                busterMood="crying"
+                buster="dimmed"
                 title="Transmission Interrupted"
                 subtitle={lore}
             />
@@ -119,12 +118,14 @@ export function EmptyOffline({ onRetry, wayOut }: {
     );
 }
 
+// offline and container give way when a screen is short, so Buster can give his
+// room to the words (he steps aside); in a scrolling list they never need to.
 const s = StyleSheet.create({
-    offline: { alignItems: 'center' },
+    offline: { alignItems: 'center', flexShrink: 1, minHeight: 0 },
     acts: { alignItems: 'center', gap: ACTS_GAP },
     // 24 at the sides, not 48: inside a page's own margin on a 320pt phone, 48
     // left the title 160pt, and "Transmission" at its largest (23pt) is 166.
-    container: { paddingVertical: 48, paddingHorizontal: 24, alignItems: 'center', justifyContent: 'center' },
+    container: { paddingVertical: 48, paddingHorizontal: 24, alignItems: 'center', justifyContent: 'center', flexShrink: 1, minHeight: 0 },
     compact: { padding: 24 },
     iconWrap: { marginBottom: 16, opacity: 0.7 },
     glyph: { fontSize: 32, marginBottom: 16, opacity: 0.4, color: colors.sepia },

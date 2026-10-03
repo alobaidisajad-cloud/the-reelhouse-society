@@ -14,6 +14,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ArrowLeft } from 'lucide-react-native';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import Buster from '@/src/components/Buster';
 
 export default function NotFoundScreen() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function NotFoundScreen() {
   return (
     <View style={s.container}>
       <RoomLight room="default" />
-      <Text style={s.glyph}>∅</Text>
+      <Buster size={80} mood="suspicious" style={s.buster} />
       <Text style={s.title}>ROUTE NOT IN THE ARCHIVE</Text>
       <Text style={s.body}>
         This path could not be resolved. It may have been withdrawn or the link is malformed.
@@ -51,12 +52,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 32,
   },
-  glyph: {
-    fontSize: 48,
-    color: colors.bloodReel,
-    marginBottom: 16,
-    fontFamily: fonts.display,
-  },
+  buster: { marginBottom: 14 },
   title: {
     fontSize: 14,
     fontFamily: fonts.sub,

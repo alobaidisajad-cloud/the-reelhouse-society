@@ -3,7 +3,7 @@
  * name, and the three marks of a printed bill — its sunburst, its dots, its
  * slanted slab. Every colour is the theme's own.
  */
-import React, { memo, useId } from 'react';
+import React, { memo } from 'react';
 import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 import Svg, { Circle, Defs, Path, Pattern, RadialGradient, Rect, Stop } from 'react-native-svg';
@@ -13,6 +13,7 @@ import { RankBadge, rankOf, rankWord } from '@/src/components/RankBadge';
 import { colors, fonts } from '@/src/theme/theme';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { nav } from '@/src/utils/typedRouter';
+import { useSvgId } from '@/src/utils/svgId';
 import { ceilingOf, TYPE, type Face, type TypeKey } from './measure';
 import type { WallAuthor } from './wallRead';
 
@@ -115,11 +116,6 @@ export const Mark = memo(function Mark({ author }: { author: WallAuthor }) {
 });
 
 // ── THE PRINT ───────────────────────────────────────────────────────────────
-/**
- * An id for one drawing's paint server (a gradient, a pattern). Several bills
- * hang on one wall: a shared id would let the first one's paint fill them all.
- */
-const useSvgId = (name: string) => `${name}${useId().replace(/[^A-Za-z0-9]/g, '')}`;
 
 /**
  * The bill's sunburst: wedges from a point, fading to nothing. Drawn once,

@@ -8,16 +8,6 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { EmptyState, EmptyOffline } from '../EmptyStates';
 
-// Mock Buster component
-jest.mock('../Buster', () => {
-  const { Text } = require('react-native');
-  const BusterMock = ({ mood, message }: { mood: string; message?: string }) => (
-    <Text testID="buster">{`Buster:${mood}${message ? ':' + message : ''}`}</Text>
-  );
-  BusterMock.displayName = 'Buster';
-  return { __esModule: true, default: BusterMock };
-});
-
 // Mock lore picker to return deterministic values
 jest.mock('../../lore/fragments', () => ({
   pickRandom: (arr: string[]) => arr[0],
@@ -55,11 +45,13 @@ describe('EmptyStates', () => {
       expect(texts(<EmptyState title="T" subtitle="Sub text" />) - texts(<EmptyState title="T" />)).toBe(1);
     });
 
-    it('renders Buster when useBuster=true', () => {
-      const { getByTestId } = render(
-        <EmptyState title="T" useBuster busterMood="neutral" />
-      );
-      expect(getByTestId('buster')).toBeTruthy();
+    it('draws Buster, in the mood asked for, where the icon would be', () => {
+      const { getByTestId, queryByTestId } = render(<EmptyState title="T" buster="suspicious" />);
+      expect(getByTestId('buster-suspicious', { includeHiddenElements: true })).toBeTruthy();
+      // Without one, no Buster: the icon or glyph stands there instead.
+      const plain = render(<EmptyState title="T" />);
+      expect(plain.queryByTestId('buster-suspicious', { includeHiddenElements: true })).toBeNull();
+      expect(queryByTestId('buster-suspicious')).toBeNull(); // drawn, never spoken
     });
   });
 
@@ -67,6 +59,11 @@ describe('EmptyStates', () => {
     it('EmptyOffline renders with correct title', () => {
       const { getByText } = render(<EmptyOffline />);
       expect(getByText('Transmission Interrupted')).toBeTruthy();
+    });
+
+    it('EmptyOffline shows Buster dimmed: the house gone dark, not crying', () => {
+      const { getByTestId } = render(<EmptyOffline />);
+      expect(getByTestId('buster-dimmed', { includeHiddenElements: true })).toBeTruthy();
     });
   });
 });

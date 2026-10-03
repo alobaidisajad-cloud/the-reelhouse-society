@@ -39,6 +39,8 @@ const ALLOWED: Record<string, string> = {
   'src/components/profile/ProfileArchiveTab.tsx · importDividerMark': 'the ornament on a divider',
   'app/(tabs)/reels.tsx · searchIcon': 'an icon',
   'src/components/profile/profileStyles.ts · plateInitial': 'the ghost initial standing in for a portrait',
+  'src/features/profile/profile.styles.ts · avatarInitial': 'the same ghost initial, on the portrait you are about to change',
+  'src/components/profile/CinemaDNACard.tsx · avatarInitial': 'the same ghost initial, small, on the Cinema DNA card',
   'src/components/profile/profileStyles.ts · bioMark': '« » around a bio',
   'src/components/profile/profileStyles.ts · bioMarkRuby': '« » around an Auteur’s bio',
   'src/components/profile/profileStyles.ts · latelyIndex': 'index numerals repeating a list position',
@@ -48,7 +50,6 @@ const ALLOWED: Record<string, string> = {
   'src/components/profile/ProjectorRoom.tsx · certCornerBR': 'a certificate corner flourish',
   'src/components/profile/roomStyles.ts · retrieveMark': 'the mark beside RETRIEVING',
   'src/components/profile/WatchlistRoulette.tsx · reelGlyph': 'a reel glyph',
-  'src/components/RouteErrorBoundary.tsx · glyph': 'the error page’s emblem',
   'app/year-in-cinema.tsx · blankGlyph': 'a glyph in an empty cell',
   // ── PICTURES — exported images, never seen on this ground ───────────────
   'src/components/profile/TasteDNAExportCanvas.tsx · societyLabel': 'the Taste DNA export',

@@ -11,7 +11,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts } from '@/src/theme/theme';
 import { LogIn } from 'lucide-react-native';
 import UserProfileScreen from '../user/[username]';
-import Buster from '@/src/components/Buster';
+import Buster, { BusterEyes } from '@/src/components/Buster';
 import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
@@ -26,7 +26,7 @@ export default function ProfileTab() {
       <FrozenTab>
         <View style={s.container}>
           <RoomLight room="member" />
-          <Buster size={80} mood="peeking" message="The archive awaits your identity." />
+          <Buster size={80} mood="unimpressed" message="The archive awaits your identity." />
           <Text style={s.prompt}>Identify yourself to access your dossier</Text>
           <PressableScale testID="profile-sign-in-prompt" style={s.ctaBtn} onPress={() => nav.push('/login')} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="medium"
             accessibilityRole="button" accessibilityLabel="Identify yourself. Sign in.">
@@ -77,14 +77,15 @@ function HandleArriving() {
       <RoomLight room="member" />
       {failed
         ? <EmptyOffline onRetry={ask} />
-        : <Text style={s.retrieving}>RETRIEVING DOSSIER</Text>}
+        : <><BusterEyes style={s.retrievingEyes} /><Text style={s.retrieving}>RETRIEVING DOSSIER</Text></>}
     </View>
   );
 }
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center' },
-  prompt: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, marginBottom: 16 },
+  // Room above as well as below: under Buster's line it read as part of the bubble.
+  prompt: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, marginTop: 20, marginBottom: 16 },
   ctaBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 24, paddingVertical: 10,
@@ -92,6 +93,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(184,137,26,0.1)',
   },
   ctaBtnText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia },
+  retrievingEyes: { marginBottom: 14 },
   retrieving: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia },
 });
 

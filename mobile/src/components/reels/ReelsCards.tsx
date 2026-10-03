@@ -1,7 +1,6 @@
 import React, { memo, useEffect } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import { AnimatedText } from '@/src/components/text/AnimatedText';
 import Animated, {
   SharedValue, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, interpolate, cancelAnimation
 } from 'react-native-reanimated';
@@ -10,7 +9,7 @@ import { Image } from 'expo-image';
 import { useIsFocused } from '@react-navigation/native';
 import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
-import Buster from '@/src/components/Buster';
+import { BusterEyes } from '@/src/components/Buster';
 import { StackData, StackFilm } from './types';
 import { Heart } from 'lucide-react-native';
 import { useMarkCount } from '@/src/stores/markCounts';
@@ -227,32 +226,13 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
 });
 
 // ════════════════════════════════════════════════════════════════
-//  TUNGSTEN SPOOLING (God-Tier Loading sequence)
+//  TUNGSTEN SPOOLING: his eyes in the dark while a reel is read
 // ════════════════════════════════════════════════════════════════
 export const TungstenSpooling = memo(function TungstenSpooling() {
-  const flicker = useSharedValue(0.4);
-  useEffect(() => {
-    flicker.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 50 }),
-        withTiming(0.4, { duration: 100 }),
-        withTiming(0.9, { duration: 30 }),
-        withTiming(0.3, { duration: 250 }),
-        withTiming(0.8, { duration: 80 })
-      ), -1, true
-    );
-    return () => cancelAnimation(flicker);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const style = useAnimatedStyle(() => ({ opacity: flicker.value }));
   return (
     <View style={st.spoolingWrap}>
-      <Animated.View style={[style, st.spoolingIconWrap]}>
-        <Buster size={40} mood="thinking" />
-      </Animated.View>
-      <AnimatedText style={[style, st.spoolingText]}>
-         SPOOLING
-      </AnimatedText>
+      <BusterEyes />
+      <Text style={st.spoolingText}>SPOOLING</Text>
     </View>
   );
 });
@@ -355,15 +335,8 @@ const st = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  spoolingIconWrap: {
-    padding: 30,
-    borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.3)',
-    borderRadius: 100,
-    borderStyle: 'dashed',
-  },
   spoolingText: {
-    marginTop: 24,
+    marginTop: 18,
     fontFamily: fonts.sub,
     fontSize: 10,
     letterSpacing: 6,

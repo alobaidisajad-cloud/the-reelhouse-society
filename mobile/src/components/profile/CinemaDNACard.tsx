@@ -5,13 +5,13 @@ import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import Buster from '@/src/components/Buster';
+import { portraitInitial } from '@/src/components/profile/portraitInitial';
 import { RadarChart } from '@/src/components/profile/RadarChart';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '../PressableScale';
 
 import type { ProfileAnalyticsPayload } from './NoirPassport';
-import { scaledTextProps } from '@/src/constants/textScaling';
+import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { standingFor } from '@/src/constants/standing';
 import { RoomRetrieving, RoomUnreachable } from './RoomParts';
 
@@ -20,6 +20,8 @@ const DNA_FLOOR = 5;
 
 interface DNAUser {
     username?: string;
+    persona?: string | null;
+    display_name?: string | null;
     member_no?: number | null;
     avatar_url?: string | null;
 }
@@ -108,12 +110,12 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
                 <View style={s.grainOverlay} />
 
                 <View style={s.header}>
-                    {/* The member's real portrait on their own file; Buster is the fallback */}
+                    {/* The member's real portrait; without one, the letter their file shows */}
                     <View style={s.avatarWrap}>
                         {user?.avatar_url ? (
                             <Image source={{ uri: user.avatar_url }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                         ) : (
-                            <Buster size={24} mood="smiling" />
+                            <Text {...decorativeTextProps} style={s.avatarInitial}>{portraitInitial(user)}</Text>
                         )}
                     </View>
                     <View style={s.userInfoWrap}>
@@ -217,6 +219,7 @@ const s = StyleSheet.create({
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 10 },
     avatarWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.inkwell, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.sepia, overflow: 'hidden' },
     avatarImg: { width: '100%', height: '100%' },
+    avatarInitial: { fontFamily: fonts.display, fontSize: 16, color: 'rgba(232,223,208,0.28)' },
     username: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.parchment },
     subtext: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.sepia, marginTop: 2 },
     userInfoWrap: { flex: 1, paddingRight: 10 },

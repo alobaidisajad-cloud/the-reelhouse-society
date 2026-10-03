@@ -6,7 +6,7 @@ import Animated, { useSharedValue, useAnimatedScrollHandler, withSequence, withT
 import { arrive, MARK_PULSE, MS } from '@/src/theme/motion';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import { ArrowLeft, Film as FilmIcon, RotateCcw, Check, XCircle } from 'lucide-react-native';
+import { ArrowLeft, RotateCcw, Check, XCircle } from 'lucide-react-native';
 
 import { colors, fonts, SEPIA_HASH, metrics } from '@/src/theme/theme';
 import { tmdb, getYear, formatRuntime } from '@/src/lib/tmdb';
@@ -39,6 +39,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { useFilmDetailContext } from '@/src/providers/FilmDetailProvider';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { EmptyOffline } from '@/src/components/EmptyStates';
+import Buster from '@/src/components/Buster';
 
 /** The backdrop's fade into the room: how much house it lays down, top to hem. */
 const BACKDROP_VEIL: VeilStops = [[0, 0.05], [0.5, 0.4], [0.75, 0.85], [1, 1]];
@@ -348,7 +349,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     return (
       <View style={[s.container, s.notFoundContainer]}>
         <RoomLight room="film" />
-        <FilmIcon size={48} color={colors.bloodReel} strokeWidth={1} />
+        <Buster size={80} mood="suspicious" style={s.notFoundBuster} />
         <Text style={s.notFoundTitle}>Not in the Archive</Text>
         <Text style={s.notFoundBody}>This reel could not be found. It may have been withdrawn from circulation.</Text>
         <PressableScale style={s.backBtn} onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityRole="button" accessibilityLabel={wayOut === 'GO BACK' ? 'Go back' : 'Return to the Lobby'}>
@@ -582,6 +583,7 @@ const s = StyleSheet.create({
   scrollContent: { },
   backdropSpacer: {},
   notFoundContainer: { justifyContent: 'center', alignItems: 'center', padding: 32 },
+  notFoundBuster: { marginBottom: 12 },
   notFoundTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 8 },
   notFoundBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, textAlign: 'center', lineHeight: 22 },
   backdropWrap: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 0 },

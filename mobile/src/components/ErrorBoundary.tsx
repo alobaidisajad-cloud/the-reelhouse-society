@@ -15,6 +15,7 @@ import { captureError } from '../lib/sentry';
 import { colors, fonts } from '../theme/theme';
 import PressableScale from './PressableScale';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { BusterStill } from '@/src/components/Buster';
 
 interface Props {
   children: ReactNode;
@@ -128,7 +129,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         <View style={styles.container}>
           <RoomLight room="default" />
           <View style={styles.content}>
-            <Text style={styles.glyph}>⊗</Text>
+            <View style={styles.buster}><BusterStill mood="moved" size={80} /></View>
             <Text style={styles.title}>PROJECTION FAILURE</Text>
             <Text style={styles.subtitle}>
               Something went wrong in the screening room.
@@ -194,12 +195,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     maxWidth: 320,
   },
-  glyph: {
-    fontSize: 48,
-    color: colors.bloodReel,
-    marginBottom: 16,
-    fontFamily: fonts.display,
-  },
+  buster: { marginBottom: 14 },
   title: {
     fontSize: 18,
     fontFamily: fonts.sub,

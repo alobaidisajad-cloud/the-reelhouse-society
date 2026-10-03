@@ -51,13 +51,13 @@ describe('the net under a screen that crashed', () => {
     expect(mockBack).not.toHaveBeenCalled();
   });
 
-  it('does not read its ornament aloud', () => {
-    const { getByText, queryByText } = render(<RouteErrorBoundary error={fail} retry={jest.fn() as never} />);
+  it('does not read its emblem aloud: Buster, moved, is drawn and kept silent', () => {
+    const { getByTestId, queryByTestId } = render(<RouteErrorBoundary error={fail} retry={jest.fn() as never} />);
     // Not found among what a screen reader is given...
-    expect(queryByText('✦')).toBeNull();
+    expect(queryByTestId('buster-still-moved')).toBeNull();
     // ...though it is drawn.
-    const glyph = getByText('✦', { includeHiddenElements: true });
-    expect(glyph.props.accessibilityElementsHidden).toBe(true);
-    expect(glyph.props.importantForAccessibility).toBe('no-hide-descendants');
+    const emblem = getByTestId('buster-still-moved', { includeHiddenElements: true });
+    expect(emblem.props.accessibilityElementsHidden).toBe(true);
+    expect(emblem.props.importantForAccessibility).toBe('no-hide-descendants');
   });
 });

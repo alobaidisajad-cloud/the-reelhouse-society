@@ -43,6 +43,7 @@ export const s = StyleSheet.create({
 
   // ── Not Found / Error ──
   notFoundContainer: { justifyContent: 'center', alignItems: 'center', padding: 32 },
+  notFoundBuster: { marginBottom: 14 },
   notFoundLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3.2, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
   notFoundTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 8, ...effects.textGlowSepia },
   notFoundBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, textAlign: 'center', lineHeight: 22 },

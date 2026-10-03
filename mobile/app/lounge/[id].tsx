@@ -1,4 +1,4 @@
-import Buster from '@/src/components/Buster';
+import Buster, { BusterEyes } from '@/src/components/Buster';
 import { ActionSheet } from '@/src/components/lounge/ActionSheet';
 import { AtTheDoorPanel } from '@/src/components/lounge/AtTheDoorPanel';
 import { LoungeSettingsPanel } from '@/src/components/lounge/LoungeSettingsPanel';
@@ -549,7 +549,7 @@ export default function LoungeRoomScreen() {
       <View style={s.centered}>
         <RoomLight room="default" />
         {readyMark}
-        <View style={s.crestSmall}><X size={18} color={colors.sepia} strokeWidth={1.5} /></View>
+        <Buster size={80} mood="suspicious" />
         <Text style={s.edgeTitle}>Signal Lost</Text>
         <Text style={s.edgeDesc}>This screening room has been incinerated or never existed.</Text>
         <PressableScale style={s.edgeBtn} onPress={() => nav.back()} haptic="medium" accessibilityRole="button" accessibilityLabel={wayOut}>
@@ -579,7 +579,7 @@ export default function LoungeRoomScreen() {
       <View style={s.centered}>
         <RoomLight room="default" />
         {readyMark}
-        <ActivityIndicator size="small" color={colors.sepia} />
+        <BusterEyes />
         <Text style={s.edgeLoad}>ESTABLISHING CONNECTION</Text>
       </View>
     );
@@ -665,7 +665,7 @@ export default function LoungeRoomScreen() {
           }}
           ListEmptyComponent={
             <View style={s.emptyChat}>
-              <Buster size={48} mood="peeking" />
+              <Buster size={48} mood="seated" />
               <Text style={s.edgeTitle}>The Conversation Begins</Text>
               <Text style={s.edgeDesc}>Be the first to break the silence.</Text>
             </View>
@@ -908,11 +908,6 @@ const s = StyleSheet.create({
   // ── Edge states ──
   centered: { flex: 1, backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 32 },
   edgeLoad: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.fog, includeFontPadding: false },
-  crestSmall: {
-    width: 44, height: 44, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(184,137,26,0.35)', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(184,137,26,0.03)', marginBottom: 8,
-  },
   edgeTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, textAlign: 'center' },
   edgeDesc: { fontFamily: fonts.serif, fontSize: 14, color: colors.fog, textAlign: 'center', lineHeight: 21 },
   edgeBtn: { marginTop: 20, backgroundColor: colors.sepia, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 4 },

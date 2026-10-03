@@ -31,6 +31,7 @@ import { SearchResultRow } from '@/src/components/search/SearchResultRow';
 import { SR, useUniversalSearch } from '@/src/hooks/useUniversalSearch';
 import { colors, fonts } from '@/src/theme/theme';
 import SearchUnreachable, { SearchPartly } from '@/src/components/search/SearchUnreachable';
+import Buster from '@/src/components/Buster';
 
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
@@ -113,6 +114,17 @@ export default function SearchModal() {
       }
     }
   }, [tab, films, actors, directors, users, logs, lists]);
+
+  // No results, and held there while the next letter is searched: otherwise the
+  // answer (and Buster with it) blinks out at every keystroke and back.
+  const reachable = !isError && !tabSourceDown;
+  const settledSilence = searched && !searching && reachable && filtered.length === 0;
+  const [heldSilence, setHeldSilence] = useState(false);
+  useEffect(() => {
+    if (settledSilence) setHeldSilence(true);
+    else if (!searched || !reachable || filtered.length > 0) setHeldSilence(false);
+  }, [settledSilence, searched, reachable, filtered.length]);
+  const silence = settledSilence || (heldSilence && searched && searching && reachable && filtered.length === 0);
 
   const counts = useMemo(() => ({
     all: films.length + actors.length + directors.length + users.length + logs.length + lists.length,
@@ -266,7 +278,7 @@ export default function SearchModal() {
         )}
 
         {/* Searching spinner */}
-        {searching && filtered.length === 0 && (
+        {searching && filtered.length === 0 && !silence && (
           <Animated.View entering={FadeIn} style={st.center}>
             <ActivityIndicator size="small" color={colors.sepia} />
             <Text style={st.centerLabel}>SCANNING ARCHIVES…</Text>
@@ -281,10 +293,11 @@ export default function SearchModal() {
           </Animated.View>
         )}
 
-        {/* No results */}
-        {searched && !searching && !isError && !tabSourceDown && filtered.length === 0 && (
+        {/* No results; through the next letter's search it stays, and only its line changes */}
+        {silence && (
           <Animated.View entering={FadeIn} style={st.center}>
-            <Text style={st.centerLabel}>THE ARCHIVE RETURNS SILENCE</Text>
+            <Buster size={48} mood="suspicious" />
+            <Text style={st.centerLabel}>{searching ? 'SCANNING ARCHIVES…' : 'THE ARCHIVE RETURNS SILENCE'}</Text>
             <Text style={st.emptySub}>Adjust your query or consult a different catalogue.</Text>
           </Animated.View>
         )}

@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, RefreshControl, Share, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Platform, RefreshControl, Share, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { Easing, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,13 +43,14 @@ import { stillQueued } from '@/src/stores/offlineQueueStore';
 import reelToast from '@/src/utils/reelToast';
 import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
 import { timeAgo } from '@/src/utils/timeAgo';
-import { ChevronLeft, Film as FilmIcon, MoreHorizontal, Share2, Sparkles } from 'lucide-react-native';
+import { ChevronLeft, MoreHorizontal, Share2, Sparkles } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { z } from 'zod';
 import { WASH } from '@/src/theme/light';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { nav } from '@/src/utils/typedRouter';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
+import Buster, { BusterEyes } from '@/src/components/Buster';
 import { Arrive } from '@/src/components/Arrive';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { offerWord } from '@/src/lib/pushPrimer';
@@ -604,9 +605,9 @@ export default function LogDetailScreen() {
     return (
       <View style={[s.container, s.centerFull]}>
         <RoomLight room="film" />
-        {/* Labelled because this spinner is the ONLY thing on screen, so a
+        {/* Labelled because the eyes are the ONLY thing on screen, so a
             screen-reader member hears it too. */}
-        <ActivityIndicator color={colors.sepia} accessibilityLabel="Loading record" />
+        <BusterEyes label="Loading record" />
       </View>
     );
   }
@@ -631,7 +632,7 @@ export default function LogDetailScreen() {
     return (
       <View style={[s.container, s.centerFull]}>
         <RoomLight room="film" />
-        <FilmIcon size={40} color={colors.sepia} strokeWidth={1} />
+        <Buster size={80} mood="suspicious" />
         <Text style={s.notFoundText}>Log not found.</Text>
         <PressableScale style={s.backBtnRow} onPress={() => { nav.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="selection" pressedScale={0.92}
           accessibilityRole="button" accessibilityLabel={wayOut}>

@@ -18,7 +18,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, type ErrorBoundaryProps } from 'expo-router';
-import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { BusterStill } from '@/src/components/Buster';
 
 import { colors, fonts, spacing } from '@/src/theme/theme';
 import { captureError } from '@/src/lib/sentry';
@@ -43,7 +43,7 @@ export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
     <View style={[s.container, { paddingTop: insets.top + spacing.xl }]}>
       <RoomLight room="default" />
-      <Text style={s.glyph} {...UNSPOKEN}>✦</Text>
+      <BusterStill mood="moved" size={80} />
       <Text style={s.title} accessibilityRole="header">This reel jammed.</Text>
       <Text style={s.body}>
         Something in this room failed to develop. The rest of the house is fine —
@@ -78,13 +78,6 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 40,
     gap: 14,
-  },
-  glyph: {
-    fontFamily: fonts.display,
-    fontSize: 30,
-    color: colors.sepia,
-    opacity: 0.8,
-    marginBottom: 4,
   },
   title: {
     fontFamily: fonts.display,

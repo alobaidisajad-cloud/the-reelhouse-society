@@ -1,241 +1,321 @@
-import React, { useEffect, memo } from 'react';
-import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { Text } from '@/src/components/text';
+/**
+ * Buster, the house's resident: an old sheet with two holes cut in it and brass
+ * in the dark behind them, Buster Keaton's hat, and one patch where seat F9's
+ * armrest wore through.
+ *
+ * He is drawn once, ahead of time, into a picture for each size and screen
+ * density (`busterArt`); the phone draws only his two brass points, which blink
+ * and now and then glance aside. Everything that moves is a transform or an
+ * opacity, so it runs on the UI thread without redrawing anything; it stops
+ * when his screen is hidden, and under Reduce Motion he is simply still.
+ *
+ * Where he may appear is a register (busterRegister.test.ts): one to a screen,
+ * never in a list's rows.
+ */
+import React, { memo, useCallback, useEffect, useState } from 'react';
+import { View, StyleSheet, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
+import { Image } from 'expo-image';
+import Svg, { Circle, Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withRepeat,
-    withSequence,
-    withTiming,
-    Easing,
-    cancelAnimation,
-    useReducedMotion
+  cancelAnimation, Easing, useAnimatedStyle, useReducedMotion, useSharedValue,
+  withDelay, withRepeat, withSequence, withTiming,
 } from 'react-native-reanimated';
 import { useIsFocused } from '@react-navigation/native';
-import Svg, { Path, Ellipse, Circle, Rect, G } from 'react-native-svg';
+import { Text } from '@/src/components/text';
 import { colors, fonts } from '@/src/theme/theme';
+import { MS, arrive } from '@/src/theme/motion';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { useSvgId } from '@/src/utils/svgId';
+import { BUSTER_ART, type BusterArtKey } from '@/src/components/busterArt';
 
-export type BusterMood = 'neutral' | 'crying' | 'smiling' | 'peeking' | 'thinking' | 'sleeping';
+/** The brass of his eyes, and the bulb's catch of light on it: the drawing's own. */
+const BRASS = '#C4961A';
+const BULB = '#F6E3A0';
 
-interface BusterProps {
-    size?: number;
-    message?: string;
-    mood?: BusterMood;
-    style?: StyleProp<ViewStyle>;
+type ArtOf<K> = K extends `${infer M}-${infer S extends number}` ? { mood: M; size: S } : never;
+/** A mood and a size the house has a picture of: no other pair type-checks. */
+export type BusterPicture = ArtOf<BusterArtKey>;
+export type BusterMood = BusterPicture['mood'];
+
+type Art = (typeof BUSTER_ART)[BusterArtKey];
+const artOf = ({ mood, size }: BusterPicture): Art => BUSTER_ART[`${mood}-${size}` as BusterArtKey];
+
+/** If a picture never says it has loaded, he is shown anyway after this long. */
+const LOAD_GRACE_MS = 600;
+
+/** Whether he may move: his screen is in front and Reduce Motion is off. Both are always asked. */
+function useLive(): boolean {
+  const focused = useIsFocused();
+  const still = useReducedMotion();
+  return focused && !still;
 }
 
-/** Resolve Buster's default mood based on time of day — the ghost lives in the app */
-function clockMood(): BusterMood {
-    const hour = new Date().getHours();
-    if (hour >= 0 && hour < 6) return 'sleeping';      // Midnight–6am: even ghosts rest
-    if (hour >= 6 && hour < 10) return 'peeking';       // Morning: just woke up
-    if (hour >= 10 && hour < 17) return 'neutral';      // Midday: at work
-    if (hour >= 17 && hour < 22) return 'smiling';      // Evening: prime movie hours
-    return 'thinking';                                   // Late night: contemplating cinema
-}
-
-const busterColors = {
-    body: '#E8DFC8',
-    eyes: '#0A0703',
-    mouth: '#0A0703',
-    tear: '#8B6914',
-};
-
-export default memo(function Buster({ size = 120, message, mood, style }: BusterProps) {
-    const activeMood = mood ?? clockMood();
-    const isFocused = useIsFocused();
-    const reducedMotion = useReducedMotion();
-    const floatY = useSharedValue(0);
-
-    // His float parks when his screen is hidden and stops when he goes; under Reduce
-    // Motion he rests rather than vanishes: a still ghost is still a ghost.
-    useEffect(() => {
-        if (!isFocused || reducedMotion) {
-            cancelAnimation(floatY);
-            floatY.value = 0;
-            return;
-        }
-        floatY.value = withRepeat(
-            withSequence(
-                withTiming(-8, { duration: 2500, easing: Easing.inOut(Easing.sin) }),
-                withTiming(0, { duration: 2500, easing: Easing.inOut(Easing.sin) })
-            ),
-            -1,
-            true
-        );
-        return () => cancelAnimation(floatY);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isFocused, reducedMotion]);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ translateY: floatY.value }],
-    }));
-
-
-    const renderMoodFace = () => {
-        switch (activeMood) {
-            case 'crying':
-                return (
-                    <G>
-                        <Ellipse cx="30" cy="62" rx="4" ry="8" fill={busterColors.tear} opacity={0.7} />
-                        <Ellipse cx="70" cy="62" rx="4" ry="8" fill={busterColors.tear} opacity={0.7} />
-                        <Path d="M 34 74 Q 50 64 66 74" stroke={busterColors.mouth} strokeWidth="2.5" fill="none" />
-                        <Rect x="40" y="68" width="3" height="4" fill={busterColors.mouth} rx="0.5" />
-                        <Rect x="47" y="67" width="3" height="5" fill={busterColors.mouth} rx="0.5" />
-                        <Rect x="54" y="68" width="3" height="4" fill={busterColors.mouth} rx="0.5" />
-                    </G>
-                );
-            case 'smiling':
-                return (
-                    <G>
-                        <Path d="M 28 66 Q 50 84 72 66" stroke={busterColors.mouth} strokeWidth="2" fill="none" />
-                        <Rect x="32" y="67" width="3" height="5" fill={busterColors.mouth} rx="0.3" />
-                        <Rect x="37" y="67" width="3" height="7" fill={busterColors.mouth} rx="0.3" />
-                        <Rect x="42" y="68" width="3" height="7" fill={busterColors.mouth} rx="0.3" />
-                        <Rect x="47" y="68" width="3" height="8" fill={busterColors.mouth} rx="0.3" />
-                        <Rect x="52" y="68" width="3" height="7" fill={busterColors.mouth} rx="0.3" />
-                        <Rect x="57" y="67" width="3" height="7" fill={busterColors.mouth} rx="0.3" />
-                        <Rect x="62" y="67" width="3" height="5" fill={busterColors.mouth} rx="0.3" />
-                    </G>
-                );
-            case 'peeking':
-                return (
-                    <G>
-                        <Path d="M 38 68 Q 50 76 62 66" stroke={busterColors.mouth} strokeWidth="2.5" fill="none" />
-                        <Rect x="44" y="68" width="3" height="5" fill={busterColors.mouth} rx="0.5" />
-                        <Rect x="49" y="69" width="3" height="4" fill={busterColors.mouth} rx="0.5" />
-                    </G>
-                );
-            case 'thinking':
-                return (
-                    <G>
-                        {/* Slightly pursed mouth — pondering */}
-                        <Path d="M 42 70 Q 50 74 58 70" stroke={busterColors.mouth} strokeWidth="2" fill="none" />
-                        <Rect x="46" y="70" width="3" height="3" fill={busterColors.mouth} rx="0.5" />
-                    </G>
-                );
-            case 'sleeping':
-                return (
-                    <G>
-                        {/* Peaceful closed-crescent eyes (overrides default eyes) */}
-                        {/* tiny "z z z" */}
-                        <Path d="M 72 30 L 78 30 L 72 38 L 78 38" stroke={busterColors.tear} strokeWidth="1.5" fill="none" opacity={0.6} />
-                        <Path d="M 78 22 L 83 22 L 78 28 L 83 28" stroke={busterColors.tear} strokeWidth="1.2" fill="none" opacity={0.4} />
-                        {/* Serene smile */}
-                        <Path d="M 40 68 Q 50 74 60 68" stroke={busterColors.mouth} strokeWidth="2" fill="none" />
-                    </G>
-                );
-            case 'neutral':
-            default:
-                return (
-                    <G>
-                        <Path d="M 34 68 Q 50 80 66 68" stroke={busterColors.mouth} strokeWidth="2.5" fill="none" />
-                        <Rect x="40" y="68" width="4" height="5" fill={busterColors.mouth} rx="0.5" />
-                        <Rect x="46" y="69" width="4" height="6" fill={busterColors.mouth} rx="0.5" />
-                        <Rect x="52" y="68" width="4" height="5" fill={busterColors.mouth} rx="0.5" />
-                        <Rect x="58" y="67" width="3" height="4" fill={busterColors.mouth} rx="0.5" />
-                    </G>
-                );
-        }
-    };
-
-    // Sleeping mood: crescent eyes instead of open eyes
-    const renderEyes = () => {
-        if (activeMood === 'sleeping') {
-            return (
-                <G>
-                    <Path d="M 32 52 Q 38 46 44 52" stroke={busterColors.eyes} strokeWidth="2.5" fill="none" />
-                    <Path d="M 56 52 Q 62 46 68 52" stroke={busterColors.eyes} strokeWidth="2.5" fill="none" />
-                </G>
-            );
-        }
-        // Thinking mood: eyes look upward
-        const eyeY = activeMood === 'thinking' ? '48' : '52';
-        const eyeRy = activeMood === 'peeking' ? '5' : '7';
-        const pupilY = activeMood === 'thinking' ? '46' : activeMood === 'peeking' ? '51' : '50';
-        return (
-            <G>
-                <Ellipse cx="38" cy={eyeY} rx="6" ry={eyeRy} fill={busterColors.eyes} />
-                <Ellipse cx="62" cy={eyeY} rx="6" ry={eyeRy} fill={busterColors.eyes} />
-                <Circle cx="40" cy={pupilY} r="2" fill="white" />
-                <Circle cx="64" cy={pupilY} r="2" fill="white" />
-            </G>
-        );
-    };
-
-    return (
-        <View style={[s.container, style]}>
-            <Animated.View style={animatedStyle}>
-                <Svg width={size} height={size * 1.4} viewBox="0 0 100 140">
-                    {/* Ghostly body */}
-                    <Path
-                        d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z"
-                        fill={busterColors.body}
-                        opacity={0.92}
-                    />
-                    {/* Glow */}
-                    <Path
-                        d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z"
-                        fill="none"
-                        stroke="rgba(242,232,160,0.15)"
-                        strokeWidth="3"
-                    />
-
-                    {/* Eyes — mood-aware via renderEyes() */}
-                    {renderEyes()}
-
-                    {/* Mood */}
-                    {renderMoodFace()}
-                    
-                    {/* Props */}
-                    {activeMood === 'smiling' && (
-                        <Path d="M 42 16 L 44 8 L 50 14 L 56 8 L 58 16 Z" fill="#8B6914" stroke="#F2E8A0" strokeWidth="0.5" />
-                    )}
-                </Svg>
-            </Animated.View>
-
-            {message && (
-                <Animated.View style={animatedStyle}>
-                    <View style={s.bubble}>
-                        <View style={s.bubbleTail} />
-                        <Text style={s.bubbleText}>{message}</Text>
-                    </View>
-                </Animated.View>
-            )}
-        </View>
-    );
+/** The two brass points, where the measured holes are; the bulb catches the light up and to the right. */
+const Points = memo(function Points({ art }: { art: Art }) {
+  const { width: w, height: h } = art;
+  return (
+    <Svg width={w} height={h} style={StyleSheet.absoluteFill} pointerEvents="none">
+      {art.eyes.map((e, i) => (
+        <React.Fragment key={i}>
+          <Circle cx={e.x * w} cy={e.y * h} r={e.r * w} fill={BRASS} />
+          <Circle cx={(e.x + e.r * 0.24) * w} cy={e.y * h - e.r * 0.24 * w} r={e.r * 0.5 * w} fill={BULB} />
+        </React.Fragment>
+      ))}
+    </Svg>
+  );
 });
 
-const s = StyleSheet.create({
-    container: { alignItems: 'center', justifyContent: 'center' },
-    bubble: {
-        marginTop: 10,
-        backgroundColor: 'rgba(28,23,16,0.8)',
-        borderColor: colors.ash,
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        maxWidth: 240,
-        alignItems: 'center',
-    },
-    bubbleTail: {
-        position: 'absolute',
-        top: -8,
-        width: 0,
-        height: 0,
-        borderLeftWidth: 8,
-        borderRightWidth: 8,
-        borderBottomWidth: 8,
-        borderLeftColor: 'transparent',
-        borderRightColor: 'transparent',
-        borderBottomColor: colors.ash,
-    },
-    bubbleText: {
-        fontFamily: fonts.body,
-        fontSize: 12,
-        color: colors.bone,
-        textAlign: 'center',
-        lineHeight: 18,
+/** The floor under him, soft at the edge; it tightens as he rises. */
+const Shadow = memo(function Shadow({ art }: { art: Art }) {
+  const id = useSvgId('floor');
+  const { width: w, height: h } = art;
+  const rx = w * 0.29, ry = w * 0.04;
+  const cy = Math.min(art.hem * h + ry * 0.6, h - ry);
+  return (
+    <Svg width={w} height={h} style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Defs>
+        <RadialGradient id={id}>
+          <Stop offset="0" stopColor="#000" stopOpacity={0.5} />
+          <Stop offset="0.5" stopColor="#000" stopOpacity={0.4} />
+          <Stop offset="1" stopColor="#000" stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Ellipse cx={art.pivot.x * w} cy={cy} rx={rx} ry={ry} fill={`url(#${id})`} />
+    </Svg>
+  );
+});
+
+/**
+ * Buster, alive: he floats, sways a little, blinks, and glances aside.
+ *
+ * He arrives only once his picture has loaded and his place is laid out whole,
+ * so a screen never shows him half-drawn. Where a screen is too short for him
+ * and its words together (the largest text, a small phone), he gives his place
+ * to the words and is not drawn: `flexShrink` lets the layout take his room, and
+ * a room smaller than he is keeps him out.
+ */
+const Buster = memo(function Buster({ message, style, ...picture }: BusterPicture & {
+  /** A line he says, set under him. */
+  message?: string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const art = artOf(picture as BusterPicture);
+  const { width: w, height: h } = art;
+  const live = useLive();
+  const seated = picture.mood === 'seated';
+  const hasEyes = art.eyes.length > 0;
+
+  const [loaded, setLoaded] = useState(false);
+  const [room, setRoom] = useState<'unknown' | 'whole' | 'short'>('unknown');
+  const onLayout = useCallback((e: LayoutChangeEvent) => {
+    const whole = e.nativeEvent.layout.height >= h - 0.5;
+    setRoom((was) => (was === 'short' ? 'short' : whole ? 'whole' : 'short'));
+  }, [h]);
+  useEffect(() => {
+    if (room !== 'whole') return;
+    const grace = setTimeout(() => setLoaded(true), LOAD_GRACE_MS);
+    return () => clearTimeout(grace);
+  }, [room]);
+
+  const shown = useSharedValue(0);
+  useEffect(() => {
+    if (loaded && room === 'whole') shown.value = withTiming(1, { duration: MS.considered, easing: arrive() });
+  }, [loaded, room, shown]);
+
+  // float 0 → 1 (up), sway 0 → 1 (turned), lid 1 open → 0 shut, glance 0 → 1 (aside)
+  const float = useSharedValue(0);
+  const sway = useSharedValue(0);
+  const lid = useSharedValue(1);
+  const glance = useSharedValue(0);
+  useEffect(() => {
+    const all = [float, sway, lid, glance];
+    if (!live) {
+      all.forEach(cancelAnimation);
+      float.value = 0; sway.value = 0; lid.value = 1; glance.value = 0;
+      return;
     }
+    const breathe = Easing.inOut(Easing.sin);
+    // Seated, he does not float; with his eyes dark (dimmed), there is nothing to blink.
+    if (!seated) {
+      float.value = withRepeat(withTiming(1, { duration: 2500, easing: breathe }), -1, true);
+      sway.value = withRepeat(withTiming(1, { duration: 3500, easing: breathe }), -1, true);
+    }
+    if (hasEyes) {
+      lid.value = withRepeat(withSequence(
+        withDelay(5800, withTiming(0, { duration: 90 })),
+        withDelay(160, withTiming(1, { duration: 140 })),
+      ), -1, false);
+      glance.value = withRepeat(withSequence(
+        withDelay(7400, withTiming(1, { duration: 700, easing: breathe })),
+        withDelay(2300, withTiming(0, { duration: 700, easing: breathe })),
+      ), -1, false);
+    }
+    return () => all.forEach(cancelAnimation);
+  }, [live, seated, hasEyes, float, sway, lid, glance]);
+
+  const rise = w * 0.04;
+  const glanceBy = w * (3.6 / 152);
+  const appear = useAnimatedStyle(() => ({ opacity: shown.value }));
+  const body = useAnimatedStyle(() => ({
+    transform: [{ translateY: -rise * float.value }, { rotate: `${1.8 * sway.value}deg` }],
+  }));
+  const floor = useAnimatedStyle(() => ({
+    opacity: 1 - 0.36 * float.value,
+    transform: [{ scaleX: 1 - 0.14 * float.value }],
+  }));
+  const eyes = useAnimatedStyle(() => ({
+    opacity: lid.value,
+    transform: [{ translateX: glanceBy * glance.value }],
+  }));
+
+  return (
+    <View style={[s.root, style]}>
+      <View
+        testID={`buster-${picture.mood}`}
+        style={[{ width: w, height: room === 'short' ? 0 : h }, s.room]}
+        onLayout={onLayout}
+        {...UNSPOKEN}
+      >
+        {room !== 'short' && (
+          <Animated.View style={[StyleSheet.absoluteFill, appear]}>
+            {!seated && <Animated.View style={[StyleSheet.absoluteFill, floor]}><Shadow art={art} /></Animated.View>}
+            <Animated.View style={[StyleSheet.absoluteFill, { transformOrigin: [art.pivot.x * w, art.pivot.y * h, 0] }, body]}>
+              <Image testID="buster-picture" source={art.picture} style={{ width: w, height: h }} contentFit="fill" onLoad={() => setLoaded(true)} accessible={false} />
+              {hasEyes && (
+                <Animated.View style={[StyleSheet.absoluteFill, eyes]}><Points art={art} /></Animated.View>
+              )}
+            </Animated.View>
+          </Animated.View>
+        )}
+      </View>
+      {message ? (
+        <View style={s.bubble}>
+          <View style={s.bubbleTail} />
+          <Text style={s.bubbleText}>{message}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+});
+
+export default Buster;
+
+/**
+ * Buster held still, for the crash screens: no animation, and nothing that asks
+ * the navigator anything, so it draws wherever the app has fallen, even above
+ * the navigator. The points wait for the picture, so they never show alone.
+ */
+export function BusterStill(picture: BusterPicture) {
+  const art = artOf(picture);
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <View testID={`buster-still-${picture.mood}`} style={{ width: art.width, height: art.height }} {...UNSPOKEN}>
+      <Image testID="buster-picture" source={art.picture} style={{ width: art.width, height: art.height }} contentFit="fill" onLoad={() => setLoaded(true)} accessible={false} />
+      {loaded && art.eyes.length > 0 ? <Points art={art} /> : null}
+    </View>
+  );
+}
+
+/** How long a wait is before his eyes come up: a quicker answer shows nothing new. */
+export const EYES_AFTER_MS = 400;
+
+/** One eye in the dark: a brass point in its own glow. */
+const Eye = memo(function Eye() {
+  const id = useSvgId('glow');
+  return (
+    <Svg width={EYE} height={EYE}>
+      <Defs>
+        <RadialGradient id={id}>
+          <Stop offset="0" stopColor={BRASS} stopOpacity={0.55} />
+          <Stop offset="0.45" stopColor={BRASS} stopOpacity={0.16} />
+          <Stop offset="1" stopColor={BRASS} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Circle cx={EYE / 2} cy={EYE / 2} r={EYE / 2} fill={`url(#${id})`} />
+      <Circle cx={EYE / 2} cy={EYE / 2} r={2.2} fill={BRASS} />
+      <Circle cx={EYE / 2 + 0.55} cy={EYE / 2 - 0.55} r={1.05} fill={BULB} />
+    </Svg>
+  );
+});
+const EYE = 22;
+
+/**
+ * The house waiting: only his eyes, in the dark, slowly brightening and dimming.
+ * They come up after EYES_AFTER_MS, so an answer that comes quickly shows nothing
+ * at all. With `label`, they are the progress a screen reader is told of; without
+ * one, the words beside them say it and the eyes are silent.
+ */
+export function BusterEyes({ label, style }: { label?: string; style?: StyleProp<ViewStyle> }) {
+  const live = useLive();
+  const shown = useSharedValue(0);
+  const left = useSharedValue(1);
+  const right = useSharedValue(1);
+
+  useEffect(() => {
+    shown.value = withDelay(EYES_AFTER_MS, withTiming(1, { duration: MS.considered, easing: arrive() }));
+    return () => cancelAnimation(shown);
+  }, [shown]);
+
+  useEffect(() => {
+    if (!live) {
+      cancelAnimation(left); cancelAnimation(right);
+      left.value = 1; right.value = 1;
+      return;
+    }
+    const pulse = () => withRepeat(withTiming(0.35, { duration: 900, easing: Easing.inOut(Easing.sin) }), -1, true);
+    left.value = pulse();
+    right.value = withDelay(300, pulse());
+    return () => { cancelAnimation(left); cancelAnimation(right); };
+  }, [live, left, right]);
+
+  const appear = useAnimatedStyle(() => ({ opacity: shown.value }));
+  const l = useAnimatedStyle(() => ({ opacity: left.value }));
+  const r = useAnimatedStyle(() => ({ opacity: right.value }));
+  const voice = label
+    ? { accessible: true, accessibilityRole: 'progressbar' as const, accessibilityLabel: label }
+    : UNSPOKEN;
+
+  return (
+    <Animated.View testID="buster-eyes" style={[s.eyes, style, appear]} {...voice}>
+      <Animated.View style={l}><Eye /></Animated.View>
+      <Animated.View style={r}><Eye /></Animated.View>
+    </Animated.View>
+  );
+}
+
+const s = StyleSheet.create({
+  root: { alignItems: 'center', justifyContent: 'center', flexShrink: 1, minHeight: 0 },
+  // Gives way first when a screen is short of room: the words keep theirs.
+  room: { flexShrink: 1, minHeight: 0 },
+  eyes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  bubble: {
+    marginTop: 10,
+    backgroundColor: 'rgba(28,23,16,0.8)',
+    borderColor: colors.ash,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    maxWidth: 240,
+    alignItems: 'center',
+  },
+  bubbleTail: {
+    position: 'absolute',
+    top: -8,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderBottomWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: colors.ash,
+  },
+  bubbleText: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.bone,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
 });
