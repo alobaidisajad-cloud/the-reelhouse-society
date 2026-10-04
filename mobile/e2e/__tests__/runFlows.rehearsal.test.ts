@@ -188,6 +188,8 @@ function always(r: Run) {
   expect(r.stdout).not.toMatch(/^::.*rehearsal-Pw_0123456789x/m);
 }
 
+// One whole run at a time, as a single test file should load the machine: six at once
+// started dozens of shells together and slowed the suite's other files past their 5 s.
 jest.setTimeout(300_000);
 
 it('runs in bash, as stored: LF line endings', () => {
@@ -195,7 +197,7 @@ it('runs in bash, as stored: LF line endings', () => {
   expect(readFileSync(SCRIPT, 'utf8')).not.toContain('\r');
 });
 
-it.concurrent('a hiccup is run again and the run is green, with a warning that says so', async () => {
+it('a hiccup is run again and the run is green, with a warning that says so', async () => {
   const r = await rehearse(['a_flow', 'b_flow'], { stack: ['lost-driver', 'pass'], a_flow: ['never-began', 'pass'] },
     { state: { window_animation_scale: '1.0' } });
   expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
@@ -215,7 +217,7 @@ it.concurrent('a hiccup is run again and the run is green, with a warning that s
   always(r);
 });
 
-it.concurrent('the app’s answers are never run again: a failed step, and a flow that lost its driver once begun', async () => {
+it('the app’s answers are never run again: a failed step, and a flow that lost its driver once begun', async () => {
   const r = await rehearse(['a_flow', 'b_flow'], { a_flow: ['step-failed', 'pass'], b_flow: ['lost-driver', 'pass'] });
   expect(r.status).toBe(1);
   expect([calls(r, 'a_flow'), calls(r, 'b_flow')]).toEqual([1, 1]);
@@ -226,7 +228,7 @@ it.concurrent('the app’s answers are never run again: a failed step, and a flo
   always(r);
 });
 
-it.concurrent('a crash fails a run whose every flow passed — and the flows are not blamed for it', async () => {
+it('a crash fails a run whose every flow passed — and the flows are not blamed for it', async () => {
   const r = await rehearse(['a_flow', 'b_flow'], { b_flow: ['crash-then-pass'] });
   expect(r.status).toBe(1);
   expect(titled(r, 'error', 'The app crashed or froze during the run')).toContain('crash during b_flow: java.lang.IllegalStateException: a rehearsed crash');
@@ -235,7 +237,7 @@ it.concurrent('a crash fails a run whose every flow passed — and the flows are
   always(r);
 });
 
-it.concurrent('at most three attempts a run are run again', async () => {
+it('at most three attempts a run are run again', async () => {
   const flows = ['a_flow', 'b_flow', 'c_flow', 'd_flow'];
   const r = await rehearse(flows, Object.fromEntries(flows.map((f) => [f, ['never-began', 'pass']])));
   expect(r.status).toBe(1);
@@ -244,14 +246,14 @@ it.concurrent('at most three attempts a run are run again', async () => {
   always(r);
 });
 
-it.concurrent('a log copy that stopped cannot vouch for the run', async () => {
+it('a log copy that stopped cannot vouch for the run', async () => {
   const r = await rehearse(['a_flow'], {}, { state: { 'dead-stream': '1' } });
   expect(r.status).toBe(1);
   expect(titled(r, 'error', 'The app crashed or froze during the run')).toContain('the device log copy had stopped before the run ended');
   always(r);
 });
 
-it.concurrent('a probe is run again only from time the flows do not need', async () => {
+it('a probe is run again only from time the flows do not need', async () => {
   // Two flows keep 240s; eight minutes leave the probe about 235s, and running it again needs 240 above theirs.
   const r = await rehearse(['a_flow', 'b_flow'], { stack: ['lost-driver', 'pass'] }, { env: { E2E_FLOWS_MINUTES: '8' } });
   expect(r.status).toBe(1);
