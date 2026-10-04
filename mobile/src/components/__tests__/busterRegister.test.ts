@@ -6,7 +6,9 @@
  * one to a screen, and never in a list's rows, a toast, a button or a notice of
  * sanction. Every place that draws him is named here with the moment it is; a
  * new one fails until somebody adds it on purpose, and a removed one fails
- * until its entry goes.
+ * until its entry goes. Counted however he is drawn: <Buster>, the still one,
+ * his eyes, the house's failed state that carries him (<EmptyOffline>), and an
+ * <EmptyState> given his mood.
  *
  * Also held here: the pictures he is drawn from, one per mood and size at each
  * screen density, at exactly the pixels that density needs.
@@ -17,19 +19,24 @@ import { BUSTER_ART } from '../busterArt';
 
 const ROOT = join(__dirname, '..', '..', '..');
 
-type Count = { buster?: number; still?: number; eyes?: number; why: string };
+type Count = { buster?: number; still?: number; eyes?: number; offline?: number; empty?: number; why: string };
+/** Each screen's states are one at a time: a count is how many states draw him, never how many at once. */
 const REGISTER: Record<string, Count> = {
-  'src/components/EmptyStates.tsx': { buster: 1, why: 'the house could not be reached (EmptyOffline): dimmed' },
-  'app/(tabs)/reels.tsx': { buster: 2, why: 'the Reel empty, and the stacks empty: one list at a time' },
+  'src/components/EmptyStates.tsx': { buster: 1, empty: 1, why: 'an empty state given his mood; the house could not be reached (EmptyOffline): dimmed' },
+  'app/(tabs)/reels.tsx': { buster: 2, offline: 2, why: 'the Reel or the stacks empty, or not reached: one list, one state at a time' },
   'src/components/reels/ReelsCards.tsx': { eyes: 1, why: 'a reel being read (SPOOLING)' },
-  'app/(tabs)/darkroom.tsx': { buster: 1, why: 'the tray developed nothing' },
-  'app/lounge/[id].tsx': { buster: 2, eyes: 1, why: 'a salon not found, a salon nobody has spoken in, a salon being reached' },
-  'app/(tabs)/profile.tsx': { buster: 1, eyes: 1, why: 'signed out at the archive’s door; your handle being read' },
-  'app/user/[username].tsx': { buster: 1, eyes: 1, why: 'a member not found; a file being read' },
-  'src/components/film/FilmDetailLayout.tsx': { buster: 1, why: 'a film not in the archive' },
-  'app/person/[id].tsx': { buster: 1, why: 'a person with no record' },
-  'app/stacks/[id].tsx': { buster: 1, eyes: 1, why: 'a stack classified or gone; a stack being read' },
-  'app/log/[id].tsx': { buster: 1, eyes: 1, why: 'a log not found; a log being read' },
+  'app/(tabs)/darkroom.tsx': { buster: 1, offline: 1, why: 'the tray developed nothing, or could not be reached' },
+  'app/(tabs)/lounge.tsx': { offline: 1, why: 'the salons could not be reached' },
+  'app/lounge/[id].tsx': { buster: 2, eyes: 1, offline: 1, why: 'a salon not found, nobody has spoken in it, being reached, or not reached' },
+  'app/(tabs)/profile.tsx': { buster: 1, eyes: 1, offline: 1, why: 'signed out at the archive’s door; your handle being read, or not read' },
+  'app/user/[username].tsx': { buster: 1, eyes: 1, offline: 1, why: 'a member not found; a file being read, or not reached' },
+  'src/components/film/FilmDetailLayout.tsx': { buster: 1, offline: 1, why: 'a film not in the archive, or not reached' },
+  'app/film-reviews/[id].tsx': { offline: 1, why: 'a film’s critiques could not be reached' },
+  'app/person/[id].tsx': { buster: 1, offline: 1, why: 'a person with no record, or not reached' },
+  'app/stacks/[id].tsx': { buster: 1, eyes: 1, offline: 1, why: 'a stack classified or gone; being read, or not reached' },
+  'app/log/[id].tsx': { buster: 1, eyes: 1, offline: 1, why: 'a log not found; being read, or not reached' },
+  'app/(modals)/notifications-modal.tsx': { offline: 1, why: 'the notices could not be reached' },
+  'src/components/lobby/LobbyWall.tsx': { offline: 1, why: 'the Lobby wall could not be reached' },
   'app/+not-found.tsx': { buster: 1, why: 'a link to nowhere' },
   'app/(modals)/search-modal.tsx': { buster: 1, why: 'a search that found nothing' },
   'app/dispatch/[id].tsx': { eyes: 1, why: 'a filing being read (its empty pages stay paper: no picture above the words)' },
@@ -54,8 +61,13 @@ for (const file of [...sources('app'), ...sources('src')]) {
   if (file === 'src/components/Buster.tsx') continue;
   const text = readFileSync(join(ROOT, file), 'utf8');
   const count = (re: RegExp) => (text.match(re) || []).length;
-  const found = { buster: count(/<Buster[\s/>]/g), still: count(/<BusterStill[\s/>]/g), eyes: count(/<BusterEyes[\s/>]/g) };
-  if (found.buster + found.still + found.eyes > 0) census[file] = found;
+  // An <EmptyState …> is his only when it is given his mood (props up to its close).
+  const empty = (text.match(/<EmptyState\b[^>]*?(?:\/>|>)/g) || []).filter((tag) => /\bbuster=/.test(tag)).length;
+  const found = {
+    buster: count(/<Buster[\s/>]/g), still: count(/<BusterStill[\s/>]/g), eyes: count(/<BusterEyes[\s/>]/g),
+    offline: count(/<EmptyOffline\b/g), empty,
+  };
+  if (Object.values(found).some((n) => n > 0)) census[file] = found;
 }
 
 describe('where Buster appears', () => {
@@ -64,8 +76,18 @@ describe('where Buster appears', () => {
   });
 
   it('appears only where the register says, as many times as it says', () => {
-    const want = Object.fromEntries(Object.entries(REGISTER).map(([f, { buster = 0, still = 0, eyes = 0 }]) => [f, { buster, still, eyes }]));
+    const want = Object.fromEntries(Object.entries(REGISTER).map(([f, { buster = 0, still = 0, eyes = 0, offline = 0, empty = 0 }]) =>
+      [f, { buster, still, eyes, offline, empty }]));
     expect(census).toEqual(want);
+  });
+
+  it('sees him however he is drawn: the failed state that carries him, and an empty state given his mood', () => {
+    // The scan's own rules, against the spellings they must catch and must not.
+    const tags = (src: string) => (src.match(/<EmptyState\b[^>]*?(?:\/>|>)/g) || []).filter((t) => /\bbuster=/.test(t)).length;
+    expect(tags('<EmptyState title="T" buster="suspicious" />')).toBe(1);
+    expect(tags('<EmptyState\n  buster="dimmed"\n  title="Transmission Interrupted"\n/>')).toBe(1);
+    expect(tags('<EmptyState icon={<Users size={28} />} title="The Circle" />')).toBe(0);
+    expect('<EmptyOffline\n  onRetry={x}\n/>'.match(/<EmptyOffline\b/g)).toHaveLength(1);
   });
 
   it('gives every place its reason', () => {

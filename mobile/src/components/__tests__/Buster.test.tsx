@@ -58,10 +58,14 @@ describe('Buster', () => {
     expect(pictures.length).toBeGreaterThanOrEqual(8);
     for (const { key, picture } of pictures) {
       const art = BUSTER_ART[key];
-      const image = ofType(render(<Buster {...picture} />).toJSON(), 'ExpoImage');
+      const view = render(<Buster {...picture} />);
+      const image = ofType(view.toJSON(), 'ExpoImage');
       expect(image).toHaveLength(1);
       expect(image[0].props.source).toBe(art.picture);
-      expect(flat(image[0].props.style)).toMatchObject({ width: art.width, height: art.height });
+      // His room is exactly the picture's size; the picture fills the figure that fills it.
+      expect(flat(view.getByTestId(`buster-${picture.mood}`, { includeHiddenElements: true }).props.style)).toMatchObject({ width: art.width, height: art.height });
+      expect(flat(view.getByTestId('buster-figure', { includeHiddenElements: true }).props.style)).toMatchObject({ height: '100%', aspectRatio: art.width / art.height });
+      expect(flat(image[0].props.style)).toMatchObject({ width: '100%', height: '100%' });
       expect(Number.isInteger(art.height)).toBe(true);
     }
   });
@@ -69,7 +73,7 @@ describe('Buster', () => {
   /** His arriving layer's opacity, as last drawn (a re-render reads the shared value again). */
   const shownIn = (view: ReturnType<typeof render>, n: number) => {
     view.rerender(<Buster mood="unimpressed" size={80} style={{ margin: n }} />);
-    return flat(view.getByTestId('buster-standing', { includeHiddenElements: true }).props.style).opacity;
+    return flat(view.getByTestId('buster-figure', { includeHiddenElements: true }).props.style).opacity;
   };
 
   it('arrives only once his picture has loaded AND his room is laid out, in either order', async () => {
@@ -104,28 +108,43 @@ describe('Buster', () => {
     }
   });
 
-  it('on a screen short of room he stands smaller above the words, steps aside under half his height, and comes back when the room does', async () => {
+  it('on a screen short of room the layout scales him into it, he steps aside under half his height, and comes back when the room does', async () => {
     const view = render(<Buster mood="suspicious" size={80} />);
     const room = view.getByTestId('buster-suspicious', { includeHiddenElements: true });
-    const standing = () => view.queryByTestId('buster-standing', { includeHiddenElements: true });
-    const scale = () => (flat(standing()!.props.style).transform as { scale: number }[])[0].scale;
+    const standing = () => flat(view.getByTestId('buster-standing', { includeHiddenElements: true }).props.style);
+    const figure = () => flat(view.getByTestId('buster-figure', { includeHiddenElements: true }).props.style);
+    const pictures = () => ofType(view.toJSON(), 'ExpoImage');
 
-    await fireEvent(room, 'layout', layout(110));
-    expect(scale()).toBe(1);
+    // Scaled by the layout itself, in the same frame the room shrinks (no round trip
+    // to JavaScript, so he never draws over the words for a frame): the room's whole
+    // height at his own proportions, standing on its floor, centred.
+    expect(figure()).toMatchObject({ height: '100%', aspectRatio: 80 / 110 });
+    expect(standing()).toMatchObject({ position: 'absolute', top: 0, bottom: 0, justifyContent: 'flex-end', alignItems: 'center' });
 
     await fireEvent(room, 'layout', layout(77)); // 70% of his 110: the keyboard up on a small phone
-    expect(scale()).toBe(0.7);
-    expect(ofType(view.toJSON(), 'ExpoImage')).toHaveLength(1);
-    // Scaled from the bottom: he stands on the floor of the room he has, just above the words.
-    expect(flat(standing()!.props.style)).toMatchObject({ position: 'absolute', bottom: 0, height: 110, transformOrigin: ['50%', '100%', 0] });
+    expect(standing().opacity).toBeUndefined();
 
-    await fireEvent(room, 'layout', layout(50)); // under half: he steps aside
-    expect(standing()).toBeNull();
-    expect(ofType(view.toJSON(), 'ExpoImage')).toHaveLength(0);
+    await fireEvent(room, 'layout', layout(50)); // under half: he steps aside...
+    expect(standing().opacity).toBe(0);
+    expect(pictures()).toHaveLength(1); // ...hidden, not taken down: his picture stays decoded
 
     await fireEvent(room, 'layout', layout(110)); // the keyboard goes: so does his absence
-    expect(scale()).toBe(1);
-    expect(ofType(view.toJSON(), 'ExpoImage')).toHaveLength(1);
+    expect(standing().opacity).toBeUndefined();
+    expect(pictures()).toHaveLength(1);
+  });
+
+  it('glances and rises by distances that shrink with him, so his points never leave their holes', async () => {
+    const view = render(<Buster mood="suspicious" size={80} />);
+    const room = view.getByTestId('buster-suspicious', { includeHiddenElements: true });
+    const glanceAt = () => {
+      // The eyes' layer: the one whose animated style carries a translateX.
+      const layer = hosts(view.toJSON()).find((n) => ((flat(n.props.style).transform as Record<string, number>[] | undefined) ?? []).some((t) => 'translateX' in t));
+      return ((flat(layer!.props.style).transform as Record<string, number>[]).find((t) => 'translateX' in t)!).translateX;
+    };
+    await fireEvent(room, 'layout', layout(110));
+    const whole = glanceAt();
+    await fireEvent(room, 'layout', layout(66)); // 60%
+    expect(glanceAt()).toBeCloseTo(whole * 0.6, 5);
   });
 
   it('moves only while his screen is in front and Reduce Motion is off, with no loop he has no use for', () => {

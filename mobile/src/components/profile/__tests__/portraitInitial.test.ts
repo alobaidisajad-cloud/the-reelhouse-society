@@ -21,9 +21,19 @@ describe('portraitInitial', () => {
     expect(portraitInitial({})).toBe('?');
   });
 
-  it('takes a whole first character: a name that opens with an emoji keeps it whole, never half a pair', () => {
-    expect(portraitInitial({ persona: '🎬 Midnight Usher' })).toBe('🎬');
+  it('takes the whole first character a reader sees, however it is built', () => {
+    expect(portraitInitial({ persona: '🎬 Midnight Usher' })).toBe('🎬'); // one code point beyond the 16-bit range
+    expect(portraitInitial({ persona: '🇮🇶 Sajad' })).toBe('🇮🇶'); // a flag: two regional letters
+    expect(portraitInitial({ persona: '👨‍👩‍👧 the family' })).toBe('👨‍👩‍👧'); // people joined by zero-width joiners
+    expect(portraitInitial({ persona: '👍🏽 fan' })).toBe('👍🏽'); // a skin tone rides on the hand
+    expect(portraitInitial({ persona: '1️⃣ first' })).toBe('1️⃣'); // a keycap
+    expect(portraitInitial({ persona: '🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scot' })).toBe('🏴󠁧󠁢󠁳󠁣󠁴󠁿'); // a flag of tags
+    expect(portraitInitial({ display_name: 'élise' })).toBe('É'); // an accent written after its letter
     expect(portraitInitial({ display_name: 'élise' })).toBe('É');
+  });
+
+  it('puts one letter in the circle even where its capital is two', () => {
+    expect(portraitInitial({ persona: 'ßpiel' })).toBe('ß');
   });
 
   it('is the one rule: every screen that draws the letter asks it, and none works it out alone', () => {

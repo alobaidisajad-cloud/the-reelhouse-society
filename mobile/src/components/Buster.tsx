@@ -50,11 +50,14 @@ function useLive(): boolean {
   return focused && !still;
 }
 
-/** The two brass points, where the measured holes are; the bulb catches the light up and to the right. */
+/**
+ * The two brass points, where the measured holes are; the bulb catches the light
+ * up and to the right. Drawn in the picture's own units, so they scale with it.
+ */
 const Points = memo(function Points({ art }: { art: Art }) {
   const { width: w, height: h } = art;
   return (
-    <Svg width={w} height={h} style={StyleSheet.absoluteFill} pointerEvents="none">
+    <Svg width="100%" height="100%" viewBox={`0 0 ${w} ${h}`} style={StyleSheet.absoluteFill} pointerEvents="none">
       {art.eyes.map((e, i) => (
         <React.Fragment key={i}>
           <Circle cx={e.x * w} cy={e.y * h} r={e.r * w} fill={BRASS} />
@@ -72,7 +75,7 @@ const Shadow = memo(function Shadow({ art }: { art: Art }) {
   const rx = w * 0.29, ry = w * 0.04;
   const cy = Math.min(art.hem * h + ry * 0.6, h - ry);
   return (
-    <Svg width={w} height={h} style={StyleSheet.absoluteFill} pointerEvents="none">
+    <Svg width="100%" height="100%" viewBox={`0 0 ${w} ${h}`} style={StyleSheet.absoluteFill} pointerEvents="none">
       <Defs>
         <RadialGradient id={id}>
           <Stop offset="0" stopColor="#000" stopOpacity={0.5} />
@@ -161,8 +164,10 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
     return () => all.forEach(cancelAnimation);
   }, [live, seated, hasEyes, float, sway, lid, glance]);
 
-  const rise = w * 0.04;
-  const glanceBy = w * (3.6 / 152);
+  // His rise and glance in points, at the size he stands (the layout scales the rest).
+  const k = Math.min(1, Math.max(fit ?? 1, MIN_FIT));
+  const rise = w * 0.04 * k;
+  const glanceBy = w * (3.6 / 152) * k;
   const appear = useAnimatedStyle(() => ({ opacity: shown.value }));
   const body = useAnimatedStyle(() => ({
     transform: [{ translateY: -rise * float.value }, { rotate: `${1.8 * sway.value}deg` }],
@@ -184,21 +189,21 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
         onLayout={onLayout}
         {...UNSPOKEN}
       >
-        {(fit === null || stands) && (
-          // His whole height, standing on the bottom of the room he was given, scaled into it.
-          <Animated.View
-            testID="buster-standing"
-            style={[{ position: 'absolute', left: 0, bottom: 0, width: w, height: h, transformOrigin: ['50%', '100%', 0], transform: [{ scale: fit ?? 1 }] }, appear]}
-          >
+        {/* Stepped aside, he is hidden, not taken down: his picture stays decoded,
+            so coming back never shows his points before his sheet. */}
+        <View testID="buster-standing" style={[s.standing, fit !== null && !stands && s.aside]}>
+          {/* The whole room's height at his own proportions: the layout scales him
+              into the room he is given in the same frame, standing on its floor. */}
+          <Animated.View testID="buster-figure" style={[{ height: '100%', aspectRatio: w / h }, appear]}>
             {!seated && <Animated.View style={[StyleSheet.absoluteFill, floor]}><Shadow art={art} /></Animated.View>}
-            <Animated.View style={[StyleSheet.absoluteFill, { transformOrigin: [art.pivot.x * w, art.pivot.y * h, 0] }, body]}>
-              <Image testID="buster-picture" source={art.picture} style={{ width: w, height: h }} contentFit="fill" onLoad={() => setLoaded(true)} accessible={false} />
+            <Animated.View style={[StyleSheet.absoluteFill, { transformOrigin: [`${art.pivot.x * 100}%`, `${art.pivot.y * 100}%`, 0] }, body]}>
+              <Image testID="buster-picture" source={art.picture} style={s.fill} contentFit="fill" onLoad={() => setLoaded(true)} accessible={false} />
               {hasEyes && (
                 <Animated.View style={[StyleSheet.absoluteFill, eyes]}><Points art={art} /></Animated.View>
               )}
             </Animated.View>
           </Animated.View>
-        )}
+        </View>
       </View>
       {message ? (
         <View style={s.bubble}>
@@ -301,6 +306,9 @@ const s = StyleSheet.create({
   root: { alignItems: 'center', justifyContent: 'center', flexShrink: 1, minHeight: 0 },
   // Gives way first when a screen is short of room: the words keep theirs.
   room: { flexShrink: 1, minHeight: 0 },
+  standing: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'flex-end' },
+  aside: { opacity: 0 },
+  fill: { width: '100%', height: '100%' },
   eyes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   bubble: {
     marginTop: 10,
