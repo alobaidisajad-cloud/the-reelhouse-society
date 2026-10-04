@@ -42,7 +42,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/ci-alert.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-10-03 | rebuilt in the tooling audit: production's shape from the snapshot, then e2e/db/security.sql; the copy of production's rules it tested is gone |
-| ../.github/workflows/e2e.yml | 2026-09-29 | history reduced to the rule each step keeps |
+| ../.github/workflows/e2e.yml | 2026-10-04 | the password scrubbed before the logs are kept; the logs kept every run, hidden .maestro records included |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-04 | edited: the character table is checked against Node’s segmenter |
 | ../.github/workflows/load.yml | 2026-10-03 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
@@ -64,12 +64,13 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/login_flow.yaml | 2026-09-29 | true as written |
 | .maestro/lounge_flow.yaml | 2026-09-29 | true as written |
 | .maestro/offline_resilience.yaml | 2026-09-29 | true as written |
-| .maestro/README.md | 2026-09-29 | brought up to date with the one-flow-at-a-time runner and the Initiation |
+| .maestro/README.md | 2026-10-04 | read against the runner: retries only for an attempt that tells nothing about the app, the crash gate, the warm-up, the kept logs; the probes run before the flows |
 | .maestro/lobby_wall_flow.yaml | 2026-09-30 | new: the wall hangs whole, down to its sign-off |
 | .maestro/session_survives_restart.yaml | 2026-10-01 | written with the session kept on the device |
 | .maestro/subflows/open_a_film.yaml | 2026-09-29 | true as written |
 | .maestro/subflows/open_the_stub.yaml | 2026-09-30 | written with the stub's single tap |
 | .maestro/subflows/sign_in.yaml | 2026-09-29 | rewritten this session: passes through the Initiation |
+| .maestro/warmup/first_launch.yaml | 2026-10-04 | written with the first-launch warm-up: runs first, judges nothing, names any stuck animation |
 | ANDROID_LAUNCH.md | 2026-10-03 | read against the code: shadows and modals done, springify gone, keyboard via KeyboardRoom; the emulator runs every push |
 | app.config.js | 2026-10-03 | read whole: sound |
 | app/__tests__/boot-structure.test.tsx | — |  |
@@ -131,23 +132,32 @@ without one). "Read" is the day its comments were last read against its code.
 | ARCHITECTURE.md | 2026-10-03 | read against the code: reads are not all TanStack Query (the Lounge, the Dispatch and notices read in their stores); CACHE_MAX_AGE in limits.ts never existed (now CACHE_KEYS) |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
-| e2e/__tests__/flowScreens.test.ts | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
+| e2e/__tests__/flowScreens.test.ts | 2026-10-04 | QueryController no longer counted; Android 14 names what animated; Maestro's JUnit reason, the no-record flow, the decision line |
+| e2e/__tests__/attempt.test.ts | 2026-10-04 | written with attempt.mjs: each retry rule shown to refuse on its own, in Maestro 2.10.0's record shapes |
+| e2e/__tests__/appCrashes.test.ts | 2026-10-04 | written with app-crashes.mjs: the app's crash, native crash and ANR in threadtime lines; other processes left out; an unproven copy fails |
+| e2e/__tests__/animationWaits.test.ts | 2026-10-04 | written with animation-waits.mjs: each wait on its flow, Android 14's named container |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
+| e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
+| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-04 | written: the real run-flows.sh against a fake phone and a fake Maestro, six whole runs |
 | e2e/__tests__/screenTimes.test.ts | 2026-10-02 | Written in the launch audit: the screen-time reader on threadtime log lines, and every way its gate says no. |
-| e2e/annotate.mjs | 2026-09-29 | true; one line narrowed |
+| e2e/annotate.mjs | 2026-10-04 | the password hidden at the one door out; a summary-only level for past ten notices |
+| e2e/animation-waits.mjs | 2026-10-04 | written: every animation Android held the test on, named, by flow |
+| e2e/app-crashes.mjs | 2026-10-04 | written: the app crashing or freezing at any moment fails the run; the copy must be shown to reach the end |
+| e2e/attempt.mjs | 2026-10-04 | written: the retry rule, from runs 37155828199 and 37165878763, read against Maestro 2.10.0's source |
 | e2e/db/bootstrap.mjs | 2026-09-28 | 7 findings; stale function count and 'how this was found' asides dropped |
 | e2e/db/seal.sh | 2026-10-03 | Written in the tooling audit: the seal e2e.yml and load.yml each carried, in one place for three workflows. |
 | e2e/db/seed.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-writes.mjs | 2026-09-29 | true as written |
-| e2e/flow-screens.mjs | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
+| e2e/flow-screens.mjs | 2026-10-04 | Maestro's JUnit reason, a report for a flow with no step record, the decision line, the named animation; QueryController dropped (logged on every key of fast runs) |
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
 | e2e/load/probe.mjs | 2026-10-03 | read whole: the paper in all four orders, critiques newest first, the following feed for a member of 2,000 follows; nested plans via auto_explain |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
-| e2e/run-flows.sh | 2026-10-03 | every flow begins with the network on: a failed offline flow no longer takes the next one down |
+| e2e/run-flows.sh | 2026-10-04 | rewritten around the retry rule, the warm-up, the phone settled before each Maestro, the crash gate, the animation report; flows failed only when a flow did |
 | e2e/screen-times.mjs | 2026-10-02 | Written in the launch audit: each screen's time to its content, read from the E2E device log; a gate once ceilings are set. |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
+| e2e/scrub.mjs | 2026-10-04 | written: the password out of the kept logs, byte for byte |
 | e2e/supabase/functions/tmdb-proxy/index.ts | 2026-09-29 | history reduced to the rule |
 | e2e/supabase/functions/tmdb-proxy/normalize.mjs | 2026-09-29 | true as written |
 | e2e/tmdb/record.mjs | 2026-09-29 | true as written |

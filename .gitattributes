@@ -15,3 +15,13 @@
 # renormalise all 143 existing migration files and produce a diff touching
 # every one of them.
 mobile/supabase/schema/** -text
+
+# ── Shell scripts keep LF everywhere ────────────────────────────────────────
+#
+# The same core.autocrlf=true checked mobile/e2e/run-flows.sh out with CRLF on
+# Windows, and bash reads the CR as part of every command ("$'\r': command not
+# found"). CI checks out on Linux, so a script could pass there and break here
+# — and the E2E runner's rehearsal (e2e/__tests__/runFlows.rehearsal.test.ts)
+# runs it on both. Every *.sh was already stored with LF, so this rule changes
+# no committed byte; it only stops git from adding the CRs on checkout.
+*.sh text eol=lf

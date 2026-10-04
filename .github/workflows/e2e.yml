@@ -265,20 +265,43 @@ jobs:
             echo "### TMDB requests with no recording" >> "$GITHUB_STEP_SUMMARY"; echo "None." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Keep the logs of a failed run
-        if: failure()
+      # Maestro's records hold each command as it ran, values filled in, so the
+      # seeded member's password can sit in them in the clear. It goes before
+      # anything is kept (e2e/scrub.mjs). Its own step, so a flows step killed
+      # by its time limit is scrubbed too.
+      - name: The member's password, out of the kept logs
+        if: always()
+        run: node mobile/e2e/scrub.mjs "$RUNNER_TEMP/maestro.log" "$RUNNER_TEMP/flow-reports" "$RUNNER_TEMP/flow-screens" "$RUNNER_TEMP/maestro-debug" "$RUNNER_TEMP/first-attempts" "$RUNNER_TEMP/warmup" "$RUNNER_TEMP/flow-hierarchy" "$RUNNER_TEMP/keyboard-room" "$RUNNER_TEMP/keyboard-room.txt" "$RUNNER_TEMP/logcat-stream.txt"
+
+      # Every run, not only a failed one: a run that passed only on a second
+      # attempt keeps its first, and the device's whole log names any animation
+      # Android held the test on (e2e/animation-waits.mjs). Hidden files too —
+      # Maestro writes its records under a `.maestro` folder, which the upload
+      # skips by default, so no run before this one ever kept them.
+      - name: Keep the run's logs
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: e2e-logs
+          include-hidden-files: true
           path: |
             ${{ runner.temp }}/functions.log
             ${{ runner.temp }}/build.log
             ${{ runner.temp }}/maestro.log
             ${{ runner.temp }}/flow-reports
             ${{ runner.temp }}/flow-screens
+            ${{ runner.temp }}/flow-hierarchy
             ${{ runner.temp }}/maestro-debug
+            ${{ runner.temp }}/first-attempts
+            ${{ runner.temp }}/warmup
             ${{ runner.temp }}/keyboard-room
             ${{ runner.temp }}/keyboard-room.txt
             ${{ runner.temp }}/screen.txt
-            ${{ runner.temp }}/logcat.txt
+            ${{ runner.temp }}/logcat-stream.txt
+            ${{ runner.temp }}/flow-times.txt
+            ${{ runner.temp }}/retries.txt
+            ${{ runner.temp }}/phone-fixes.txt
+            ${{ runner.temp }}/app-crashes.txt
+            ${{ runner.temp }}/animation-waits.txt
+            ${{ runner.temp }}/memory.txt
           if-no-files-found: ignore

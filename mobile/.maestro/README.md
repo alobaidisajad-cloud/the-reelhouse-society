@@ -31,8 +31,16 @@ that cannot touch production.
 
 A failed run explains itself on the run page, where anyone can read it: each
 flow's result as an error, and for each failed flow a notice naming the step,
-why it failed, and what was on the screen at that moment. The flows run one at
-a time, each from a clean install, so no flow depends on another.
+why it failed — in Maestro's own words too, from its JUnit report, which is the
+only place it says why when it fails outside a step — and what was on the
+screen at that moment. The flows run one at a time, each from a clean install,
+so no flow depends on another.
+
+Whatever the flows say, **the app crashing or freezing at any moment fails the
+run** (`e2e/app-crashes.mjs`, reading the whole run's device log): a flow can
+pass over a crash. Every run keeps its logs as the `e2e-logs` artifact —
+Maestro's records, the device's whole log, each flow's slice of it — with the
+seeded member's password scrubbed out first (`e2e/scrub.mjs`).
 
 ## The flows
 
@@ -55,9 +63,17 @@ a time, each from a clean install, so no flow depends on another.
 `subflows/` holds the steps the flows share: signing in, and opening a film.
 
 `keyboard/` is the keyboard's room. The flows type with no keyboard on the
-device, so after them `e2e/run-flows.sh` reaches each of these screens, turns
+device, so before them `e2e/run-flows.sh` reaches each of these screens, turns
 a keyboard on for one tap (`*.tap.yaml`), and `e2e/keyboard-room.mjs` measures
-from Android's window list whether the thing a member needs is under it.
+from Android's window list whether the thing a member needs is under it. The
+probes get only the time the flows do not need (two minutes a flow is kept).
+
+`warmup/first_launch.yaml` is the app's first launch on the fresh phone, run
+before everything and judging nothing. Both times typing crawled to ten seconds
+a key, it was the first typing after that first launch: Android held every key
+on a window animation that would not end. `e2e/animation-waits.mjs` names any
+such animation from Android's own log line, in every run, passed or failed, as
+a warning.
 
 ## Kept true
 
@@ -69,12 +85,33 @@ fails CI the same day.
 
 ## When a flow fails only sometimes
 
-No retries. A retry turns "this fails one run in five" into green, and the
-one-in-five is usually a real race a member will also hit. A flow that fails
-without a change behind it is a finding: read its screen notice, and either
-fix the race in the app or make the flow wait for the true signal (an element,
-never a sleep). If it cannot be fixed that day, take it out of the run in its
-own commit, with an issue that names it — never by loosening its checks.
+The app's answer is never retried. A retry turns "this fails one run in five"
+into green, and the one-in-five is usually a real race a member will also hit.
+A flow that fails without a change behind it is a finding: read its screen
+notice, and either fix the race in the app or make the flow wait for the true
+signal (an element, never a sleep). If it cannot be fixed that day, take it out
+of the run in its own commit, with an issue that names it — never by loosening
+its checks.
+
+The one exception is an attempt that tells nothing about the app, because the
+test machinery failed before or beneath it. `e2e/attempt.mjs` holds the rule,
+and runs such an attempt once more:
+
+- **Maestro never began a step** (flows and probes). Its JUnit report says it
+  failed, its step record is empty, and its own log names no step — all three.
+  Run 37165878763: Maestro's driver check passed before its driver on the phone
+  was listening, and its first call died 230 ms in, before the app was touched.
+- **Maestro lost its connection to the phone** (probes only): its own transport
+  death, `DeviceServerDiedException` or `DeviceUnreachableException`. Run
+  37155828199: a stuck window animation held every key ten seconds, and one
+  typing call outran Maestro's fixed 120 s deadline. A FLOW that lost its driver
+  is not run again — it had begun and may have saved something — and its notice
+  says it is no verdict on the app.
+
+Never, whatever Maestro said, after a failed step, a timeout, a crash or freeze
+of the app, a gone emulator, or a second attempt — and at most three in a run. Every
+retry is a warning on the run page ("Run twice"), with the first attempt's
+reason and evidence; its records are kept under `first-attempts/` in the logs.
 
 ## iOS
 

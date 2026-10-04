@@ -5,7 +5,7 @@
  * written here in their real shapes.
  */
 import { spawnSync } from 'child_process';
-import { mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
@@ -36,9 +36,27 @@ const section = (report: string, heading: string) =>
   report.split(`${heading}:\n`)[1].split(/\n(?=traced by|said during|what the driver waited on|drawn but called|on the screen then)/)[0];
 
 function run() {
-  const r = spawnSync(process.execPath, [SCRIPT, join(dir, 'debug'), join(dir, 'out'), join(dir, 'h')], { encoding: 'utf8' });
+  const r = spawnSync(process.execPath, [SCRIPT, join(dir, 'debug'), join(dir, 'out'), join(dir, 'h'), '--junit', join(dir, 'junit')], { encoding: 'utf8' });
+  expect(r.stderr).toBe('');
   expect(r.status).toBe(0);
-  return Object.fromEntries(readdirSync(join(dir, 'out')).map((f) => [f, readFileSync(join(dir, 'out', f), 'utf8')]));
+  const out = join(dir, 'out');
+  return existsSync(out) ? Object.fromEntries(readdirSync(out).map((f) => [f, readFileSync(join(out, f), 'utf8')])) : {};
+}
+
+/** A flow's JUnit report, in the shape Maestro's JUnitTestSuiteReporter writes it. */
+function junit(file: string, name: string, failure?: string) {
+  mkdirSync(join(dir, 'junit'), { recursive: true });
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&apos;');
+  writeFileSync(join(dir, 'junit', `${file}.xml`), [
+    "<?xml version='1.0' encoding='UTF-8'?>",
+    '<testsuites>',
+    `  <testsuite name="Test Suite" device="test" tests="1" failures="${failure ? 1 : 0}" time="0.275">`,
+    `    <testcase id="${name}" name="${name}" classname="${name}" file="mobile/.maestro/${name}.yaml" time="0.23" status="${failure ? 'ERROR' : 'SUCCESS'}">`,
+    ...(failure ? [`      <failure>${esc(failure)}</failure>`] : []),
+    '    </testcase>',
+    '  </testsuite>',
+    '</testsuites>',
+  ].join('\n'));
 }
 
 /** One line as Android prints an AccessibilityNodeInfo that Maestro skipped. */
@@ -179,17 +197,36 @@ describe('what the driver waited on', () => {
 
   it('counts each wait that ran out, first to last, and names the window Android never drew', () => {
     flow('auth_flow', failedAt('recovery-email-input', 'RUNNING'),
-      line('06:56:39', 'W', 'QueryController', 'Could not detect idle state.') +
       line('06:56:40', 'W', 'WindowManager', 'Timed out waiting for animations') +
-      line('06:56:49', 'W', 'QueryController', 'Could not detect idle state.') +
       line('06:56:50', 'W', 'WindowManager', 'Timeout waiting for drawn: undrawn=[Window{1 u0 PopupWindow:9f}]') +
-      line('06:58:31', 'W', 'QueryController', 'Could not detect idle state.') +
       line('06:58:32', 'W', 'WindowManager', 'Timeout waiting for drawn: undrawn=[Window{2 u0 com.reelhouse.society/MainActivity}]'));
     expect(section(run()['auth_flow.txt'], 'what the driver waited on')).toBe(
-      'the app never fell quiet (QueryController): 3 times, 06:56:39 to 06:58:31\n' +
       'windows still animating (WindowManager): 1 time, 06:56:40 to 06:56:40\n' +
       'windows never drawn (WindowManager): 2 times, 06:56:50 to 06:58:32\n' +
       '  last: Timeout waiting for drawn: undrawn=[Window{2 u0 com.reelhouse.society/MainActivity}]');
+  });
+
+  // Android 14's line, as WindowManagerService.waitForAnimationsToComplete writes it.
+  const timedOut = (time: string, container: string, type: string, starting = false) => line(time, 'W', 'WindowManager',
+    `Timed out waiting for animations to complete, animatingContainer=${container} animationType=${type} animateStarting=${starting}`);
+
+  it('names what Android said was animating, each kind counted, most often first', () => {
+    flow('stack', failedAt('x', 'RUNNING'),
+      timedOut('21:55:49', 'Task{4b1 #12 type=standard A=10192:com.reelhouse.society}', 'TRANSITION') +
+      timedOut('21:55:54', 'Task{4b1 #12 type=standard A=10192:com.reelhouse.society}', 'TRANSITION') +
+      timedOut('21:55:59', 'ActivityRecord{9c2 u0 com.reelhouse.society/.MainActivity}', 'STARTING_REVEAL', true));
+    expect(section(run()['stack.txt'], 'what the driver waited on')).toBe(
+      'windows still animating (WindowManager): 3 times, 21:55:49 to 21:55:59\n' +
+      '  animating: Task{4b1 #12 type=standard A=10192:com.reelhouse.society} (TRANSITION) × 2\n' +
+      '  animating: ActivityRecord{9c2 u0 com.reelhouse.society/.MainActivity} (STARTING_REVEAL, a starting window) × 1');
+  });
+
+  it('never reports QueryController’s idle line — it is logged on every key of fast runs too', () => {
+    // Run 37165878763 typed at half a second a key with one of these per key.
+    flow('auth_flow', failedAt('x'),
+      line('01:24:47', 'W', 'QueryController', 'Could not detect idle state.') +
+      line('01:24:48', 'W', 'QueryController', 'Could not detect idle state.'));
+    expect(section(run()['auth_flow.txt'], 'what the driver waited on')).toBe('(no wait ran out)');
   });
 
   it('lists the windows as the flow failed, with what each still called undrawn or animating', () => {
@@ -210,11 +247,10 @@ describe('what the driver waited on', () => {
       '  isAnimating=true');
   });
 
-  it('leaves the windows out when only the app was slow to fall quiet — they crowd out the screen', () => {
+  it('leaves the windows out when no window wait ran out — they crowd out the screen', () => {
     flow('error_recovery', failedAt('darkroom-search-input'), line('12:47:54', 'W', 'QueryController', 'Could not detect idle state.'));
     writeFileSync(join(dir, 'h', 'error_recovery.wm'), '  Window #0 Window{a1 u0 StatusBar}:\n    mDrawState=NO_SURFACE\n');
-    expect(section(run()['error_recovery.txt'], 'what the driver waited on')).toBe(
-      'the app never fell quiet (QueryController): 1 time, 12:47:54 to 12:47:54');
+    expect(section(run()['error_recovery.txt'], 'what the driver waited on')).toBe('(no wait ran out)');
   });
 
   it('tells "nothing ran out" from "the log was not kept"', () => {
@@ -259,5 +295,61 @@ describe('the failed step', () => {
     const report = run()['darkroom_search.txt'];
     expect(report).toContain('#darkroom-search-input "The Godfather"');
     expect(report).not.toContain('key_pos_0_0');
+  });
+});
+
+describe('Maestro’s own word, from its JUnit report', () => {
+  // Run 37165878763's report, as Maestro wrote it (first lines of the stack).
+  const RUN_2 = "maestro.android.DeviceServerDiedException: Device server died during 'deviceInfo' on emulator-5554 " +
+    '(1085ms since last byte, connection age 1726ms): StatusRuntimeException: UNAVAILABLE\n' +
+    '\tat maestro.android.AndroidDeviceConnection.onGrpcDeath(AndroidDeviceConnection.kt:319)';
+
+  it('reports a flow that failed before Maestro recorded a single step — the case that used to report nothing', () => {
+    junit('session_survives_restart', 'session_survives_restart', RUN_2);
+    const out = run();
+    expect(Object.keys(out)).toEqual(['session_survives_restart.txt']);
+    expect(out['session_survives_restart.txt']).toMatch(
+      /^session_survives_restart: failed before Maestro recorded a single step\nwhy: maestro\.android\.DeviceServerDiedException: Device server died during 'deviceInfo'/);
+    // The stack's own lines stay out: the first line is the reason.
+    expect(out['session_survives_restart.txt']).not.toContain('onGrpcDeath');
+  });
+
+  it('adds "Maestro said" where its reason is not the step’s own — a transport death leaves the step RUNNING', () => {
+    flow('stack', failedAt('email-input', 'RUNNING'));
+    junit('keyboard-stack', 'stack', "maestro.android.DeviceServerDiedException: Device server died during 'inputText' (120041ms since last byte)");
+    const report = run()['stack.txt'];
+    expect(report).toContain('why: the step never finished (RUNNING)\n' +
+      "Maestro said: maestro.android.DeviceServerDiedException: Device server died during 'inputText' (120041ms since last byte)\n");
+  });
+
+  it('does not repeat Maestro’s word when it is the step’s own reason', () => {
+    flow('film_log', failedAt('x'));
+    junit('film_log', 'film_log', 'Assertion is false: id: x is visible');
+    expect(run()['film_log.txt']).not.toContain('Maestro said');
+  });
+
+  it('keeps apart two flows that stopped at the same step for different reasons', () => {
+    flow('a_flow', failedAt('x', 'RUNNING'));
+    flow('b_flow', failedAt('x', 'RUNNING'));
+    junit('a_flow', 'a_flow', "maestro.android.DeviceServerDiedException: Device server died during 'inputText'");
+    junit('b_flow', 'b_flow', 'maestro.DeviceUnreachableException: Device emulator-5554 is unreachable during \'tap\'');
+    expect(Object.keys(run()).sort()).toEqual(['a_flow.txt', 'b_flow.txt']);
+  });
+
+  it('reports a flow Maestro failed after its last step, none of which failed', () => {
+    flow('lounge_flow', [{ command: { tapOnElement: { selector: { idRegex: 'a' } } }, metadata: { status: 'COMPLETED' } }]);
+    junit('lounge_flow', 'lounge_flow', 'onFlowComplete hook failed');
+    expect(run()['lounge_flow.txt']).toMatch(/^lounge_flow: failed after its last step \(1 on record, none failed\)\nwhy: onFlowComplete hook failed/);
+  });
+
+  it('says nothing of a flow that passed', () => {
+    junit('boot_verification', 'boot_verification');
+    expect(run()).toEqual({});
+  });
+
+  it('carries the runner’s decision about running it again', () => {
+    flow('auth_flow', failedAt('x'));
+    writeFileSync(join(dir, 'h', 'auth_flow.verdict'), "final\nnot run again: a step failed, which is the app's answer\n  Maestro said: Assertion is false\n");
+    expect(run()['auth_flow.txt']).toContain("why: Assertion is false: id: x is visible\ndecided: not run again: a step failed, which is the app's answer\n");
   });
 });

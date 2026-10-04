@@ -82,6 +82,9 @@ const VOCABULARY = new Set([
   // Names from outside the app that its comments rightly cite: a pattern, and
   // platform code the app reasons about but does not contain.
   'DataLoader', 'setTextDirection',
+  // Maestro's and Android's own code, which the E2E runner's comments cite as the
+  // cause of what it handles (e2e/attempt.mjs, e2e/animation-waits.mjs).
+  'isDriverReachable', 'LogcatReader', 'UiAutomation', 'WindowManagerService',
 ]);
 
 function words(text, into) {
