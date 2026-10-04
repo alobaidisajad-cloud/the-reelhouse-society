@@ -144,6 +144,13 @@ describe('WHERE IT PLAYS', () => {
       expect(words(r)).toContain(arabic);
       expect(words(r)).not.toContain('ل');
     });
+
+    it('nor from Adlam, a right-to-left script beyond the first plane', () => {
+      const adlam = String.fromCodePoint(0x1e900, 0x1e901, 0x1e902, 0x20, 0x1e903, 0x1e904);
+      const r = page(adlam);
+      expect(words(r)).toContain(adlam);
+      expect(words(r)).not.toContain(String.fromCodePoint(0x1e900));
+    });
   });
 
   it('an actor without a photograph is drawn by the whole first letter of their name', () => {

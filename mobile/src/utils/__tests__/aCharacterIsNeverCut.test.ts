@@ -7,7 +7,7 @@
  * Intl.Segmenter, so it took one code point). Each could split a joined emoji
  * or a skin tone; the cap and the excerpt mended only a lone surrogate half.
  */
-import { characterStart, extractDropCap, firstCharacter, initialOf, isCharacterBoundary, truncateReview } from '../text';
+import { characterStart, extractDropCap, firstCharacter, initialOf, isCharacterBoundary, isRTLText, truncateReview } from '../text';
 import { MAX_LENGTHS, sanitizeInput } from '../sanitizeInput';
 
 const s = (...cps: number[]) => String.fromCodePoint(...cps);
@@ -154,6 +154,28 @@ describe('a raised first letter', () => {
   it('still raises the most a mark may be: three dots; and not one more', () => {
     expect(extractDropCap('...and so')).toEqual({ first: '...A', rest: 'nd so' });
     expect(extractDropCap('....and so')).toEqual({ first: '', rest: '....and so' });
+  });
+});
+
+describe('right-to-left words, every script of them, raise no letter', () => {
+  // Their letters join: one lifted out of its word draws in another shape.
+  it.each([
+    ['Hebrew', s(0x05e9, 0x05dc, 0x05d5, 0x05dd)],
+    ['Arabic', s(0x0645, 0x0631, 0x062d, 0x0628, 0x0627)],
+    ["N'Ko", s(0x07d2, 0x07de, 0x07cf)],
+    ['Samaritan', s(0x0800, 0x0801, 0x0802)],
+    ['Mandaic', s(0x0840, 0x0841, 0x0842)],
+    ['Syriac Supplement', s(0x0860, 0x0861, 0x0862)],
+    ['Arabic Extended-B', s(0x0870, 0x0871, 0x0872)],
+    ['Hanifi Rohingya', s(0x10d00, 0x10d01, 0x10d02)],
+    ['Adlam', s(0x1e900, 0x1e901, 0x1e902)],
+  ])('%s reads right to left', (_, word) => {
+    expect(isRTLText(`${word} ${word}`)).toBe(true);
+  });
+
+  it('and words that open left to right stay so', () => {
+    expect(isRTLText('Remarkable.')).toBe(false);
+    expect(isRTLText(`Remarkable, ${s(0x1e900, 0x1e901)}`)).toBe(false);
   });
 });
 

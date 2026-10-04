@@ -242,10 +242,14 @@ export function extractDropCap(text: string): { first: string; rest: string } {
  * the first line with the full stop thrown to the opposite side. `RTL_MARK`
  * below is the fix and `theParagraphKnowsItsDirection` is the guard.
  *
- * Ranges: Hebrew, Arabic (incl. supplement + extended-A), Syriac/Thaana/N'Ko,
- * and the Arabic presentation forms.
+ * Ranges: every block Unicode gives to right-to-left scripts (UAX #9's
+ * defaults): Hebrew to Arabic Extended-A (Syriac, Thaana, N'Ko, Samaritan and
+ * Mandaic between), the Hebrew and Arabic presentation forms, and beyond the
+ * first plane, Phoenician to Old Uyghur and Mende Kikakui to the Arabic
+ * mathematical letters (Adlam, Hanifi Rohingya among them). A letter of these
+ * is never raised as a drop cap: their letters join.
  */
-const RTL_STRONG = /[֐-׿؀-޿ࢠ-ࣿיִ-﷿ﹰ-\uFEFF]/;
+const RTL_STRONG = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF\u{10800}-\u{10FFF}\u{1E800}-\u{1EFFF}]/u;
 const LTR_STRONG = /[A-Za-zÀ-ʯͰ-֏]/;
 
 /**

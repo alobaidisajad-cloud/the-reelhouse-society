@@ -375,7 +375,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/pickCertificate.test.ts | — |  |
 | src/components/film/__tests__/stubFits.test.ts | — |  |
 | src/components/film/__tests__/trayActsFire.test.tsx | — |  |
-| src/components/film/__tests__/whatAFilmPageNames.test.tsx | 2026-10-04 | edited: a critique’s drop cap keeps its quote, and none from Arabic |
+| src/components/film/__tests__/whatAFilmPageNames.test.tsx | 2026-10-04 | edited: no drop cap from Adlam either |
 | src/components/film/__tests__/zz-film.gen.test.tsx | — |  |
 | src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-01 | written: the critiques' failure reaches the page; an unread verdict is unknown |
 | src/components/film/CastCarousel.tsx | 2026-10-04 | edited: an actor without a photograph is drawn by initialOf |
@@ -957,7 +957,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/profile.types.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
-| src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-04 | edited: a mark of four raises no cap |
+| src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-04 | edited: every right-to-left script reads right to left |
 | src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
 | src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts | 2026-10-02 | Written in the launch audit: the handle filter judged by words, one rule in apps and database. |
 | src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-02 | a hidden pressable is hidden whole (no-hide-descendants) |
@@ -1096,7 +1096,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
-| src/utils/text.ts | 2026-10-04 | edited: isCharacterBoundary takes where a flag count may stop; characterEnd walks a text once; a drop cap raises only a short mark |
+| src/utils/text.ts | 2026-10-04 | edited: right-to-left is every block Unicode gives to right-to-left scripts, beyond the first plane too |
 | src/utils/tier.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/tierDoor.ts | 2026-10-01 | the server sentence as a door |
 | src/utils/tierRefusal.ts | 2026-10-01 | by the sentence, not the code |
