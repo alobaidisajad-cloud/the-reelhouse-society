@@ -1,6 +1,9 @@
-// Written by scripts/grapheme-table.js from Unicode 17.0 (ICU 78.2); do not edit.
+// Written by scripts/grapheme-table.js; do not edit.
 // Each code point's grapheme break class, as runs: the distance from the last
 // run's start in base 36, then the class's letter (A = Other, B = CR, ...).
+
+/** The Unicode version the table was read from. */
+export const GRAPHEME_UNICODE = '17.0';
 
 export const GRAPHEME_CLASSES = ["Other","CR","LF","Control","Extend","ZWJ","RI","Prepend","SpacingMark","L","V","T","LV","LVT","ExtPict","Consonant","Linker","ExtendOnly"] as const;
 

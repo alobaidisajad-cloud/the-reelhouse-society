@@ -9,19 +9,26 @@
  * one code point of every class, both ways round; then thousands of seeded
  * random strings built from those classes, every boundary of each compared.
  */
-import { firstCharacter, isCharacterBoundary } from '../text';
-import { GRAPHEME_CLASSES, GRAPHEME_RUNS } from '../graphemeTable';
+import { characterEnd, firstCharacter, isCharacterBoundary } from '../text';
+import { softBreak } from '../softBreak';
+import { GRAPHEME_CLASSES, GRAPHEME_RUNS, GRAPHEME_UNICODE } from '../graphemeTable';
 
 const seg = new Intl.Segmenter('en', { granularity: 'grapheme' });
 const s = (...cps: number[]) => String.fromCodePoint(...cps);
 
 /** Where Unicode puts the boundaries inside `text`, as UTF-16 indexes. */
 const unicodeCuts = (text: string) => [...seg.segment(text)].map((x) => x.index).filter((i) => i > 0);
-/** Where the app puts them. */
+/**
+ * Where the app puts them: asked at every place, and walked character by
+ * character. The two ways must agree, and each with Unicode, or the string is
+ * reported by both.
+ */
 const appCuts = (text: string) => {
-  const out: number[] = [];
-  for (let i = 1; i < text.length; i += 1) if (isCharacterBoundary(text, i)) out.push(i);
-  return out;
+  const asked: number[] = [];
+  for (let i = 1; i < text.length; i += 1) if (isCharacterBoundary(text, i)) asked.push(i);
+  const walked: number[] = [];
+  for (let at = characterEnd(text, 0); at < text.length; at = characterEnd(text, at)) walked.push(at);
+  return asked.join() === walked.join() ? asked : [...asked, -1, ...walked];
 };
 
 /** Every run of the table: its first and last code point, and its class. */
@@ -45,6 +52,12 @@ const ONE_OF_EACH: Record<string, number> = {
 };
 
 describe('the table', () => {
+  it('was read from the Unicode this Node segments by (if not: node scripts/grapheme-table.js)', () => {
+    // Everything below compares the app with this Node's segmenter. A Node
+    // with newer Unicode would fail it there, far from the reason; it fails here.
+    expect(`table ${GRAPHEME_UNICODE}, node ${process.versions.unicode}`).toBe(`table ${process.versions.unicode}, node ${process.versions.unicode}`);
+  });
+
   it('covers every code point, in order, and names only the classes the rule knows', () => {
     expect(RUNS[0].from).toBe(0);
     expect(RUNS.length).toBeGreaterThan(1000);
@@ -119,5 +132,55 @@ describe('the rule is Unicode’s', () => {
   ])('%s', (_, text, first) => {
     expect(firstCharacter(text)).toBe(first);
     expect(firstCharacter(text)).toBe([...seg.segment(text)][0].segment);
+  });
+});
+
+describe('a long word is offered breaks only between characters, in the time it takes to read once', () => {
+  const ZWSP = String.fromCharCode(0x200b);
+  /** Each break softBreak offered, as a place in the text it was given. */
+  const offered = (out: string) => {
+    const at: number[] = [];
+    let n = 0;
+    for (let i = 0; i < out.length; i += 1) if (out[i] === ZWSP) at.push(i - n++);
+    return at;
+  };
+
+  it('never inside a character, on long unbroken words built from every class', () => {
+    let seed = 41;
+    const next = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed; };
+    const pool = [0x61, 0x2d, 0x2f, 0x2e, 0x0301, 0x200d, 0x1f1ee, 0x1f1f6, 0x1f600, 0x0915, 0x094d, 0x0937, 0x0e17, 0x0e33, 0x1100, 0x1161, 0x11a8, 0xfe0f, 0x1f3fd];
+    const wrong: string[] = [];
+    for (let n = 0; n < 400; n += 1) {
+      const text = s(...Array.from({ length: 20 + (next() % 80) }, () => pool[next() % pool.length]));
+      const out = softBreak(text);
+      const cuts = new Set([...unicodeCuts(text), text.length]); // a break offered after the last character cuts nothing
+      expect(out.split(ZWSP).join('')).toBe(text);
+      for (const at of offered(out)) if (!cuts.has(at) && wrong.length < 10) wrong.push(`${[...text].map((c) => c.codePointAt(0)!.toString(16)).join('+')} at ${at}`);
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  it('a dash with an accent on it stays whole', () => {
+    const text = `${'a'.repeat(10)}-${s(0x0301)}${'b'.repeat(20)}`;
+    expect(softBreak(text)).not.toContain(`${ZWSP}${s(0x0301)}`);
+  });
+
+  it('a page of flags costs its length, not its length squared', () => {
+    // Asking at every place counted each run of flags back from the start of it.
+    const flags = (n: number) => s(0x1f1ee, 0x1f1f6).repeat(n);
+    const best = (text: string) => {
+      let fastest = Infinity;
+      for (let i = 0; i < 3; i += 1) {
+        const t0 = performance.now();
+        softBreak(text);
+        fastest = Math.min(fastest, performance.now() - t0);
+      }
+      return fastest;
+    };
+    const small = flags(2500);
+    const large = flags(10000); // four times as long: about four times the time, not sixteen
+    best(small); // first use unpacks the table
+    expect(best(large) / Math.max(best(small), 0.5)).toBeLessThan(9);
+    expect(offered(softBreak(flags(40))).every((at) => at % 4 === 0)).toBe(true); // every break between two flags
   });
 });

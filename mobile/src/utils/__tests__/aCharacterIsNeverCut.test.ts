@@ -141,6 +141,19 @@ describe('a raised first letter', () => {
     expect(extractDropCap('…')).toEqual({ first: '', rest: '…' });
     expect(extractDropCap('')).toEqual({ first: '', rest: '' });
   });
+
+  it.each([
+    ['a long opening', '*** SPOILERS *** The film'],
+    ['a rule of dashes', '----------The film opens'],
+    ['an opening holding a line break', '"\nThe film opens'],
+    ['an opening holding spaces', '- - - - Part one'],
+  ])('raises nothing from %s, wider than the column beside it, and keeps all of it', (_, text) => {
+    expect(extractDropCap(text)).toEqual({ first: '', rest: text });
+  });
+
+  it('still raises the most a mark may be: three dots', () => {
+    expect(extractDropCap('...and so')).toEqual({ first: '...A', rest: 'nd so' });
+  });
 });
 
 describe('a letter for a portrait', () => {

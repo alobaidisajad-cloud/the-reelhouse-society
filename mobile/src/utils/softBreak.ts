@@ -34,7 +34,7 @@
  * It lived in the Dispatch's `paperText` until the film page needed it; that
  * file re-exports it, so the Dispatch reads it where it always did.
  */
-import { isCharacterBoundary } from './text';
+import { characterEnd, isCharacterBoundary } from './text';
 
 /**
  * The longest unbroken run allowed before a wrap point is offered.
@@ -102,8 +102,10 @@ export function softBreak(text: string, run: number = MAX_RUN): string {
   /** The run being built. Held rather than emitted, so a break can be placed
    *  behind a joint that has already gone past. */
   let buf = '';
-  /** Where the next character starts in `text`. */
+  /** Where the next code point starts in `text`. */
   let pos = 0;
+  /** Where the character being read ends: followed forward, only once a run is long enough to need it. */
+  let edge = 0;
 
   for (const ch of text) {
     pos += ch.length;
@@ -120,7 +122,8 @@ export function softBreak(text: string, run: number = MAX_RUN): string {
     // Never cut a character in two: the break waits until the next one starts.
     // An emoji sequence can run a few units past `run` — it is drawn far
     // narrower than its units (a family of four is eleven units, one glyph).
-    if (!isCharacterBoundary(text, pos)) continue;
+    while (edge < pos) edge = characterEnd(text, edge);
+    if (edge !== pos) continue;
 
     /**
      * How many characters stay on the line. The LAST joint wins, so the line
@@ -133,7 +136,8 @@ export function softBreak(text: string, run: number = MAX_RUN): string {
     let cut = -1;
     for (let i = 0; i < buf.length; i++) {
       const at = jointAt(buf, i);
-      if (at >= MIN_SEGMENT) cut = at;
+      // A joint is a place to break only between characters: a dash with an accent on it stays whole.
+      if (at >= MIN_SEGMENT && isCharacterBoundary(buf, at)) cut = at;
     }
     if (cut < MIN_SEGMENT) cut = buf.length; // no usable joint — cut where it always did
 

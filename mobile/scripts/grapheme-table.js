@@ -86,9 +86,13 @@ function build() {
 function render({ runs, data }) {
   const lines = [];
   for (let i = 0; i < data.length; i += 100) lines.push(`  '${data.slice(i, i + 100)}'`);
-  return `// Written by scripts/grapheme-table.js from Unicode ${process.versions.unicode} (ICU ${process.versions.icu}); do not edit.
+  // Only the Unicode version is written: an ICU patch that keeps the data keeps the file.
+  return `// Written by scripts/grapheme-table.js; do not edit.
 // Each code point's grapheme break class, as runs: the distance from the last
 // run's start in base 36, then the class's letter (A = ${CLASSES[0]}, B = ${CLASSES[1]}, ...).
+
+/** The Unicode version the table was read from. */
+export const GRAPHEME_UNICODE = '${process.versions.unicode}';
 
 export const GRAPHEME_CLASSES = ${JSON.stringify(CLASSES)} as const;
 
@@ -101,7 +105,11 @@ ${lines.join(' +\n')};
 const text = render(build());
 if (process.argv.includes('--check')) {
   const now = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8').replace(/\r\n/g, '\n') : '';
-  if (now !== text) { console.error(`${path.relative(process.cwd(), OUT)} is not what this Node would write: run node scripts/grapheme-table.js`); process.exit(1); }
+  if (now !== text) {
+    const was = (now.match(/GRAPHEME_UNICODE = '([^']*)'/) || [])[1] ?? 'none';
+    console.error(`${path.relative(process.cwd(), OUT)} is not what this Node would write (the table says Unicode ${was}; this Node has ${process.versions.unicode}): run node scripts/grapheme-table.js`);
+    process.exit(1);
+  }
   console.log('the grapheme table is current');
 } else {
   fs.writeFileSync(OUT, text);

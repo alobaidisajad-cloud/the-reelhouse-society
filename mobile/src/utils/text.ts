@@ -62,20 +62,30 @@ function before(text: string, i: number): [number, number] {
  * Korean syllable's later parts, or the consonant an Indic virama joins — 👍🏽
  * cut there is a thumb and a swatch, and ज़ without its dot is ज, another letter.
  */
+// What two neighbouring classes say on their own, or which longer rule decides.
+const JOINS = 0, PARTS = 1, CONJUNCT = 2, EMOJI_SEQUENCE = 3, FLAG = 4;
+function pairRule(a: number, b: number): number {
+  if (a === CR && b === LF) return JOINS; // GB3
+  if (a === CR || a === LF || a === CONTROL || b === CR || b === LF || b === CONTROL) return PARTS; // GB4, GB5
+  if (a === L && (b === L || b === V || b === LV || b === LVT)) return JOINS; // GB6
+  if ((a === LV || a === V) && (b === V || b === T)) return JOINS; // GB7
+  if ((a === LVT || a === T) && b === T) return JOINS; // GB8
+  if (extends_(b) || b === ZWJ || b === SPACING_MARK) return JOINS; // GB9, GB9a
+  if (a === PREPEND) return JOINS; // GB9b
+  if (b === CONSONANT && (a === EXTEND || a === LINKER || a === ZWJ)) return CONJUNCT; // GB9c
+  if (a === ZWJ && b === PICTOGRAPH) return EMOJI_SEQUENCE; // GB11
+  if (a === RI && b === RI) return FLAG; // GB12, GB13
+  return PARTS; // GB999
+}
+
 export function isCharacterBoundary(text: string, i: number): boolean {
   if (i <= 0 || i >= text.length) return true;
   if (isLow(text.charCodeAt(i)) && isHigh(text.charCodeAt(i - 1))) return false;
   const [prev, prevAt] = before(text, i);
-  const a = classOf(prev);
-  const b = classOf(text.codePointAt(i) ?? 0);
-  if (a === CR && b === LF) return false; // GB3
-  if (a === CR || a === LF || a === CONTROL || b === CR || b === LF || b === CONTROL) return true; // GB4, GB5
-  if (a === L && (b === L || b === V || b === LV || b === LVT)) return false; // GB6
-  if ((a === LV || a === V) && (b === V || b === T)) return false; // GB7
-  if ((a === LVT || a === T) && b === T) return false; // GB8
-  if (extends_(b) || b === ZWJ || b === SPACING_MARK) return false; // GB9, GB9a
-  if (a === PREPEND) return false; // GB9b
-  if (b === CONSONANT && (a === EXTEND || a === LINKER || a === ZWJ)) { // GB9c: a conjunct
+  const rule = pairRule(classOf(prev), classOf(text.codePointAt(i) ?? 0));
+  if (rule === JOINS) return false;
+  if (rule === PARTS) return true;
+  if (rule === CONJUNCT) { // a consonant, a virama, a consonant
     let linked = false;
     for (let j = i; j > 0;) {
       const [p, start] = before(text, j);
@@ -86,7 +96,7 @@ export function isCharacterBoundary(text: string, i: number): boolean {
     }
     return true;
   }
-  if (a === ZWJ && b === PICTOGRAPH) { // GB11: an emoji sequence
+  if (rule === EMOJI_SEQUENCE) { // a picture, its extenders, a joiner, a picture
     for (let j = prevAt; j > 0;) {
       const [p, start] = before(text, j);
       const k = classOf(p);
@@ -95,17 +105,49 @@ export function isCharacterBoundary(text: string, i: number): boolean {
     }
     return true;
   }
-  if (a === RI && b === RI) { // GB12, GB13: a flag is two halves; in a run, only an even count is a seam
-    let halves = 0;
-    for (let j = i; j > 0;) {
-      const [p, start] = before(text, j);
-      if (classOf(p) !== RI) break;
-      halves += 1;
-      j = start;
-    }
-    return halves % 2 === 0;
+  // A flag is two halves: in a run of them, only an even count is a seam.
+  let halves = 0;
+  for (let j = i; j > 0;) {
+    const [p, start] = before(text, j);
+    if (classOf(p) !== RI) break;
+    halves += 1;
+    j = start;
   }
-  return true; // GB999
+  return halves % 2 === 0;
+}
+
+/**
+ * Where the character that starts at `start` (itself a boundary) ends. It reads
+ * forward and carries what the longer rules need — whether a conjunct is open,
+ * an emoji sequence, how many flag halves — so walking a text character by
+ * character costs its length once. Asking isCharacterBoundary at every place
+ * instead counts a run of flags back from each: a page of flags, squared.
+ */
+export function characterEnd(text: string, start: number): number {
+  if (start >= text.length) return text.length;
+  let cp = text.codePointAt(start) ?? 0;
+  let a = classOf(cp);
+  let i = start + (cp > 0xffff ? 2 : 1);
+  let consonant = a === CONSONANT; // a consonant, then only extenders and joiners so far
+  let linked = false; // ...one of which was a virama
+  let picture = a === PICTOGRAPH; // a picture, then only extenders so far
+  let pictureJoined = false; // ...then a joiner
+  let halves = a === RI ? 1 : 0;
+  while (i < text.length) {
+    cp = text.codePointAt(i) ?? 0;
+    const b = classOf(cp);
+    const rule = pairRule(a, b);
+    const joins = rule === JOINS || (rule === CONJUNCT && consonant && linked)
+      || (rule === EMOJI_SEQUENCE && pictureJoined) || (rule === FLAG && halves % 2 === 1);
+    if (!joins) break;
+    if (b === CONSONANT) { consonant = true; linked = false; } else if (b === LINKER) linked = consonant; else if (b !== EXTEND && b !== ZWJ) { consonant = false; linked = false; }
+    pictureJoined = b === ZWJ && picture;
+    picture = b === PICTOGRAPH || (picture && extends_(b));
+    halves = b === RI ? halves + 1 : 0;
+    a = b;
+    i += cp > 0xffff ? 2 : 1;
+  }
+  return i;
 }
 
 /** The last place at or before `at` where a cut leaves every character whole. */
@@ -118,9 +160,7 @@ export function characterStart(text: string, at: number): number {
 /** The first character of `text` as a reader counts one, whole; '' for empty text. */
 export function firstCharacter(text: string | null | undefined): string {
   const t = text ?? '';
-  let end = Math.min(1, t.length);
-  while (end < t.length && !isCharacterBoundary(t, end)) end += 1;
-  return t.slice(0, end);
+  return t.slice(0, characterEnd(t, 0));
 }
 
 /** Georgian's everyday letters: their capitals are an all-capitals style, never an initial. */
@@ -146,21 +186,26 @@ export function initialOf(name: string | null | undefined): string {
 
 /** What may open a review before its first letter: quotes, brackets, a dash, an ellipsis. */
 const OPENING = /^[\s"'«»‘’“”„‚‹›()[\]{}¿¡*.…–—-]+/;
+/** The most of it that may ride up with the letter: a quote and a bracket, or an ellipsis typed as three dots. */
+const MARK_MOST = 3;
 
 /**
  * A review's raised first letter, and the words after it. The letter is the
- * whole first character, as a capital; whatever the member opened with before
- * it — a quote, a bracket, a dash — rides up with it, so not one mark they
- * typed is lost. Text with no letter at all has no cap: `first` is '' and
- * `rest` is all of it. Callers raise no letter from right-to-left text, where
+ * whole first character, as a capital; a short mark the member opened with
+ * before it — a quote, a bracket, a dash — rides up with it, so not one mark
+ * they typed is lost. An opening that is longer, or holds a space, raises no
+ * cap, and neither does text with no letter: `first` is '' and `rest` is all of it. Callers raise no letter from right-to-left text, where
  * the letters join and one lifted out is a different shape.
  */
 export function extractDropCap(text: string): { first: string; rest: string } {
   const lead = OPENING.exec(text ?? '')?.[0] ?? '';
   const body = (text ?? '').slice(lead.length);
   const letter = firstCharacter(body);
-  if (!letter) return { first: '', rest: text ?? '' };
-  return { first: `${lead.trimStart()}${capitalOf(letter)}`, rest: body.slice(letter.length) };
+  const mark = lead.trimStart();
+  // Only a mark that touches the letter rides up, and only a short one: a row of
+  // dashes or "*** SPOILERS" raised whole is wider than the column beside it.
+  if (!letter || mark.length > MARK_MOST || /\s/.test(mark)) return { first: '', rest: text ?? '' };
+  return { first: `${mark}${capitalOf(letter)}`, rest: body.slice(letter.length) };
 }
 
 /**
