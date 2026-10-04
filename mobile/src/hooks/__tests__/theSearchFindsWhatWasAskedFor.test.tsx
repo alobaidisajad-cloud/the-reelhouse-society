@@ -10,7 +10,8 @@
  */
 import React from 'react';
 import { fireEvent, render, renderHook, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { testQueryClient } from '@/test-utils/testQueryClient';
 
 type Op = [string, ...unknown[]];
 const mockReads: { table: string; ops: Op[] }[] = [];
@@ -56,9 +57,14 @@ jest.mock('@/src/hooks/useUniversalSearch', () => {
 
 const { useUniversalSearch } = jest.requireActual('@/src/hooks/useUniversalSearch');
 const { tmdb: mockTmdb } = jest.requireMock('@/src/lib/tmdb');
+// Loaded with the file, not inside a test: on a cold cache the search screen
+// takes seconds to load, and a test has five.
+const { SearchResultRow } = require('@/src/components/search/SearchResultRow');
+const SearchModal = require('@/app/(modals)/search-modal').default;
 
-function wrapper({ children }: { children: React.ReactNode }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+/** One client for the life of a render: the wrapper is a component, and renders again. */
+function Wrapper({ children }: { children: React.ReactNode }) {
+  const [client] = React.useState(testQueryClient);
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
@@ -69,7 +75,7 @@ beforeEach(() => {
 
 describe('the search asks for what the member typed', () => {
   it('"@kane" asks for the handle without its @, and the exact handle comes first', async () => {
-    const { result } = await renderHook(() => useUniversalSearch('@kane'), { wrapper });
+    const { result } = await renderHook(() => useUniversalSearch('@kane'), { wrapper: Wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     const profileOps = mockReads.filter((r) => r.table === 'profiles').flatMap((r) => r.ops);
     expect(JSON.stringify(profileOps)).not.toContain('@');
@@ -77,7 +83,7 @@ describe('the search asks for what the member typed', () => {
   });
 
   it('a review is quoted as plain words, and not marked as cut when it is whole', async () => {
-    const { result } = await renderHook(() => useUniversalSearch('vertigo'), { wrapper });
+    const { result } = await renderHook(() => useUniversalSearch('vertigo'), { wrapper: Wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data.logs[0].extra).toBe('"Tom & Jerry"');
   });
@@ -85,14 +91,13 @@ describe('the search asks for what the member typed', () => {
 
 describe('a row says what it is', () => {
   it('a half rating is drawn as one, and spoken', async () => {
-    const { SearchResultRow } = require('@/src/components/search/SearchResultRow');
     const r = await render(
       <SearchResultRow
         index={0}
         onPress={() => {}}
         item={{ id: 'log-1', type: 'log', title: 'Vertigo', subtitle: '@KANE', image: null, rating: 3.5, extra: '"Tom & Jerry"', _nav: '/log/1' }}
       />,
-      { wrapper },
+      { wrapper: Wrapper },
     );
     expect(r.queryByText(/◉/, { includeHiddenElements: true })).toBeNull();
     expect(r.getByRole('button', { name: 'Log of Vertigo by @kane, rated 3.5 of 5. "Tom & Jerry"' })).toBeTruthy();
@@ -124,8 +129,7 @@ describe('the search room', () => {
   });
 
   async function open() {
-    const SearchModal = require('@/app/(modals)/search-modal').default;
-    const r = await render(<SearchModal />, { wrapper });
+    const r = await render(<SearchModal />, { wrapper: Wrapper });
     await fireEvent.changeText(r.getByLabelText('Search the archives'), 'kane');
     return r;
   }

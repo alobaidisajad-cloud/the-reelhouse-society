@@ -668,6 +668,8 @@ function noteIfMockGap(args: any[]): void {
     ((globalThis as Record<string, unknown>).__mockGaps as string[]).push(text.trim());
   }
 }
+// React Query logs nothing: test clients hand their errors here (testQueryClient.ts).
+(globalThis as Record<string, unknown>).__noteIfMockGap = noteIfMockGap;
 
 const originalError = console.error;
 console.error = (...args: any[]) => {

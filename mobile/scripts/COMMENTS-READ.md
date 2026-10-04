@@ -90,7 +90,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/notifications-modal.tsx | 2026-10-02 | rows say new/who/what/when; the rest could not be reached; history comments trimmed |
 | app/(modals)/search-modal.tsx | 2026-10-03 | edited: no results holds through the next letter |
 | app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
-| app/(tabs)/_layout.tsx | 2026-10-02 | read; sound |
+| app/(tabs)/_layout.tsx | 2026-10-04 | edited: the log modal after the initiation opens through useLater |
 | app/(tabs)/darkroom.tsx | 2026-10-02 | the next batch that could not be developed is said, and asked again |
 | app/(tabs)/dispatch.tsx | 2026-10-02 | Read whole (launch audit). A failed next page ended the paper as though it were the last filing: the foot says the rest could not be reached. The column was measured for a 390pt phone whatever the screen: the real width now. |
 | app/(tabs)/index.tsx | 2026-10-03 | edited: the join plate draws the shared BrassSheen |
@@ -114,7 +114,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
 | app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-04 | edited: a raised initial is a whole letter, on the card and on the record |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
-| app/log/[id].tsx | 2026-10-01 | a failed read and a missing log said apart; nav; Arrive |
+| app/log/[id].tsx | 2026-10-04 | edited: the critique box focus through useLater |
 | app/lounge.tsx | 2026-10-01 | true as written |
 | app/lounge/[id].tsx | 2026-10-04 | edited: a message’s letter is initialOf, kept from the screen reader |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-04 | edited: a portrait without a photograph carries the whole first letter, unspoken |
@@ -125,7 +125,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-09-29 | 13 fixed + test that runs the real queryFn |
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
-| app/stacks/[id].tsx | 2026-10-02 | Read (launch audit): the critique sheet's paging added (620d4f4b); the heart is the server's answer (learnEndorsements writes the index). Sound otherwise. |
+| app/stacks/[id].tsx | 2026-10-04 | edited: the comment field focus moved out of the state updater into an effect, through useLater |
 | app/user/[username].tsx | 2026-10-02 | Read whole in the launch audit: HIGHEST RATED now the server's six over the whole record (fetchHighestRated). |
 | app/year-in-cinema.tsx | 2026-10-01 | nav; a single reel says so far, not the year is young |
 | ARCHITECTURE.md | 2026-10-03 | read against the code: reads are not all TanStack Query (the Lounge, the Dispatch and notices read in their stores); CACHE_MAX_AGE in limits.ts never existed (now CACHE_KEYS) |
@@ -153,8 +153,8 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/tmdb/record.mjs | 2026-09-29 | true as written |
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
-| jest.config.js | 2026-10-03 | read whole: sound; the app/ size that had drifted (36 files) is no longer a number |
-| jest.setup.ts | 2026-09-29 | 15 findings; each mock's discovery story cut to the rule it keeps |
+| jest.config.js | 2026-10-04 | edited: testEnvironment, the timer-checking one, says what it is |
+| jest.setup.ts | 2026-10-04 | edited: the mock-gap check is handed to the clients tests build (React Query logs nothing) |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
 | mockups/paper/__tests__/zz-badge.gen.test.tsx | 2026-09-29 | described the real badge as it was at one commit (brass ramp); now says A is whatever RankBadge is |
@@ -346,7 +346,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/EmptyStates.tsx | 2026-10-03 | edited: Buster by mood; the breathing icon rests under Reduce Motion |
 | src/components/ErrorBoundary.tsx | 2026-10-02 | Read whole (launch audit). Retries spent left a disabled PLEASE RESTART APP: the button now restarts the app (expo-updates reloadAsync), and says how only when it cannot. |
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/feed/ActionDeck.tsx | 2026-10-01 | owner by id; nav; comments cut to the why |
+| src/components/feed/ActionDeck.tsx | 2026-10-04 | edited: the certify lock lifts through useLater, gone with the item and the card |
 | src/components/feed/ActivityCard.tsx | 2026-10-01 | lies flat unless an Auteur's; comments made true |
 | src/components/feed/AutopsyView.tsx | 2026-10-01 | each score read whole |
 | src/components/feed/PosterFrame.tsx | 2026-10-01 | the poster says its film |
@@ -673,7 +673,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/settings/DataVault.tsx | 2026-10-02 | no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
 | src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
 | src/features/settings/settings.styles.ts | 2026-10-02 | read; sound |
-| src/features/settings/SettingsScreen.tsx | 2026-10-03 | edited: the code box names EMAIL_CODE_DIGITS |
+| src/features/settings/SettingsScreen.tsx | 2026-10-04 | edited: the lock checks race the shared deadline; lockAnswer says a hang is a no |
 | src/features/settings/SettingsSections.tsx | 2026-10-03 | edited: a new password is judged by passwordIsAccepted |
 | src/generated/lucideIcons.js | 2026-10-03 | generated by scripts/lucide-icons.js; its --check guard holds it |
 | src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx | 2026-10-01 | written: a follow that throws is said and rolled back |
@@ -702,6 +702,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useEditProfile.logic.test.ts | — |  |
 | src/hooks/__tests__/useFeeds.test.ts | 2026-10-01 | rewritten: drives the real hooks |
 | src/hooks/__tests__/useInitiation.test.ts | — |  |
+| src/hooks/__tests__/useLater.test.tsx | 2026-10-04 | written whole |
 | src/hooks/__tests__/useLogFlow.payload.test.ts | — |  |
 | src/hooks/__tests__/useLogFlow.telemetry.test.tsx | — |  |
 | src/hooks/__tests__/useLogFlow.validation.test.ts | — |  |
@@ -726,6 +727,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useFilmDetail.ts | 2026-10-01 | an unread verdict is null, never silence |
 | src/hooks/useFollowRequests.ts | 2026-10-02 | failed + moreFailed + retry; the count never below 0; decline-all restores paging |
 | src/hooks/useInitiation.ts | 2026-10-02 | Read whole (launch audit). The breath was the effect's cleanup, so a user replaced inside it lost the welcome after the flag burned; a user without created_at was decided no for good. Both closed. |
+| src/hooks/useLater.ts | 2026-10-04 | written whole: a component's timer, gone with the component |
 | src/hooks/useLogFlow.ts | 2026-10-02 | Read whole (launch audit). A draft's restored private note was untouched (and the restored film reset the touch), so sealing the restored record dropped the note: it travels now. |
 | src/hooks/useMemberRoom.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useMembershipPricing.ts | 2026-10-02 | read; sound |
@@ -758,7 +760,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/nativeOnly/revenuecatWebStub.js | 2026-10-03 | read whole: sound |
 | src/lib/pushNotifications.ts | 2026-10-02 | the foreground handler is set as the module loads; comments say what is true |
 | src/lib/pushPrimer.ts | 2026-10-01 | new: the house asks to send word at a moment that wants it |
-| src/lib/queryClient.ts | 2026-10-02 | read; sound |
+| src/lib/queryClient.ts | 2026-10-04 | edited: the rules live in queryPolicy.ts; the header still true |
+| src/lib/queryPolicy.ts | 2026-10-04 | written whole: the rules moved out of queryClient.ts, word for word, so tests read them too |
 | src/lib/refusalEvents.ts | 2026-10-02 | Written in the launch audit: every refusal's sentence, for whoever listens. |
 | src/lib/revenueCat.ts | 2026-10-03 | payments pass: the SDK is required (Jest runs every store path); a rank is queued for the account the store sold to |
 | src/lib/scrollBridge.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -880,7 +883,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/theWallHearsWhatChanged.test.ts | 2026-10-03 | new: every write that can change a hanging piece asks for the wall again |
 | src/stores/__tests__/vaultStore.test.ts | — |  |
 | src/stores/__tests__/watchlistSlice.test.ts | 2026-10-03 | edited: the header names what the file tests |
-| src/stores/auth.ts | 2026-10-03 | payments pass: readRankHistory tells the member their own rank source (lapsed, not a stranger) |
+| src/stores/auth.ts | 2026-10-04 | edited: the deadline race is raceDeadline (its timer was never cleared) |
 | src/stores/blockStore.ts | 2026-10-02 | sign-out erases the leaving member's saved list |
 | src/stores/createSelectors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/discover.ts | 2026-10-02 | Read whole (launch audit). Its comment said the Darkroom's results survive a restart; the films found are not persisted, only the mood, filters and search. |
@@ -1009,6 +1012,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/prose-handlers.guard.test.ts | — |  |
 | src/utils/__tests__/queryClient.test.ts | — |  |
 | src/utils/__tests__/queueErrorClassification.test.ts | — |  |
+| src/utils/__tests__/raceDeadline.test.ts | 2026-10-04 | written whole |
 | src/utils/__tests__/recommendations.test.ts | — |  |
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-03 | rewritten: whom an event concerns, what a record grants, applying it |
@@ -1066,6 +1070,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/openNoticeFromPush.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/openSociety.ts | 2026-10-02 | Read whole (launch audit). URLSearchParams.set is implemented in RN 0.81's polyfill (checked). Sound. |
 | src/utils/profileCountsCache.ts | 2026-10-02 | read; sound |
+| src/utils/raceDeadline.ts | 2026-10-04 | written whole: the one deadline race; its timer cleared when the race is decided |
 | src/utils/recommendations.ts | 2026-10-01 | the shelf's own name |
 | src/utils/reelToast.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/requestReview.ts | 2026-10-01 | never more than 3 in any 365 days, as it claimed |
@@ -1097,13 +1102,20 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/functions/revenuecat-webhook/decide.ts | 2026-10-03 | rewritten: an event names whom to read again (both sides of a transfer), never what they hold |
 | supabase/functions/revenuecat-webhook/index.ts | 2026-10-03 | rewritten: each named account re-read and granted through storeRecord; 500 to retry, 404 member acknowledged |
 | supabase/functions/sync-entitlement/index.ts | 2026-10-03 | rewritten onto storeRecord; answers the rank in force; a store not read is 502 |
+| test-utils/__tests__/aFileEndsWithNoTimerWaiting.test.ts | 2026-10-04 | written whole: runs jest on the three fixtures |
 | test-utils/__tests__/everyCommentIsTrue.test.ts | — |  |
 | test-utils/__tests__/everySourceReaderIsLedgered.test.ts | — |  |
+| test-utils/__tests__/everyTestClientKeepsTheHouseRules.test.ts | 2026-10-04 | written whole: new QueryClient( in the two builders only |
 | test-utils/__tests__/oneCommentStripper.test.ts | 2026-10-03 | written whole: the guard that no file strips comments with its own regex |
 | test-utils/__tests__/readCode.test.ts | 2026-10-03 | read whole: adds the generic-arrow case TSX misreads |
+| test-utils/__tests__/timerFixtures/leavesATimer.fixture.ts | 2026-10-04 | written whole |
+| test-utils/__tests__/timerFixtures/leavesATimerAfterFakeOnes.fixture.ts | 2026-10-04 | written whole |
+| test-utils/__tests__/timerFixtures/leavesNothing.fixture.ts | 2026-10-04 | written whole |
 | test-utils/contractEnv.ts | 2026-10-03 | read whole: sound; "all 5,000 tests" is every unit test |
-| test-utils/react-native-testing-library.js | 2026-10-03 | read whole: sound (setRenderResult fills screen) |
+| test-utils/react-native-testing-library.js | 2026-10-04 | edited: every render's client is testQueryClient(); the comment says what that keeps |
 | test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
 | test-utils/SOURCE-READING-TESTS.md | 2026-10-03 | read whole: rows for the new source readers |
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
+| test-utils/testQueryClient.ts | 2026-10-04 | written whole: the one client a test builds — the app's rules, no collection timer, errors heard |
+| test-utils/timerCheckingEnvironment.js | 2026-10-04 | written whole: the environment that fails a file ending with a timer still waiting |
 | types/react-test-renderer.d.ts | 2026-09-29 | history reduced to the reason |

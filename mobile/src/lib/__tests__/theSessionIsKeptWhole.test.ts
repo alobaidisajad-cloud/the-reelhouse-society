@@ -95,8 +95,12 @@ describe('the encrypted store says when it has opened', () => {
     });
     return mod!;
   };
-  const settles = async (p: Promise<void>) =>
-    Promise.race([p.then(() => 'settled'), new Promise((r) => setTimeout(() => r('waiting'), 50))]);
+  /** 'settled', or 'waiting' if 50 ms pass first; the wait is cleared either way. */
+  const settles = async (p: Promise<void>) => {
+    let wait: ReturnType<typeof setTimeout> | undefined;
+    const waiting = new Promise((r) => { wait = setTimeout(() => r('waiting'), 50); });
+    return Promise.race([p.then(() => 'settled'), waiting]).finally(() => clearTimeout(wait));
+  };
 
   // Every sign-in waits on this: if it never settled, nobody could sign in.
   it.each(['works', 'fails'] as const)('when the keystore %s, and not before it is asked', async (keystore) => {

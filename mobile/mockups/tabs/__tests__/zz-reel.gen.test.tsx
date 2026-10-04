@@ -5,7 +5,8 @@
  */
 import React, { act } from 'react';
 import { render } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { testQueryClient } from '@/test-utils/testQueryClient';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 import { readFixture, whenRendering, writeScreen } from '@/mockups/paths';
 import { LOCAL_ART } from '../../../src/components/profile/__tests__/zz-art.gen';
@@ -95,7 +96,7 @@ const feed = canon.slice(0, 8).map((f, i) => ({
 }));
 whenRendering('reel generator', () => {
   it('writes the Reel', async () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity, gcTime: Infinity } } });
+    const client = testQueryClient({ queries: { staleTime: Infinity } });
     client.setQueryData(['feed', 'community'], { pages: [feed], pageParams: [undefined] });
     let r!: ReturnType<typeof render>;
     await act(async () => {

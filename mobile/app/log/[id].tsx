@@ -30,6 +30,7 @@ import LogReviewBody from '@/src/components/log/LogReviewBody';
 import NoteSheet from '@/src/components/log/NoteSheet';
 import { useVault } from '@/src/hooks/useVault';
 import { useClearance } from '@/src/hooks/useClearance';
+import { useLater } from '@/src/hooks/useLater';
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
@@ -350,6 +351,8 @@ export default function LogDetailScreen() {
   const [selectedComment, setSelectedComment] = useState<{ id: string; user_id: string; username: string } | null>(null);
   const viewShotRef = useRef<View>(null);
   const critiqueInputRef = useRef<TextInput>(null);
+  /** The compose box's focus, once the scroll to it has landed. */
+  const focusCritique = useLater();
   const scrollViewRef = useRef<any>(null);
   // Absolute Y of the critiques section within the scroll content (padder height + in-card offset).
   const critiquesSectionY = useRef(0);
@@ -826,7 +829,7 @@ export default function LogDetailScreen() {
             onCritiquePress={() => {
                // Scroll to the compose box at the top of the critiques section, then focus it.
                scrollViewRef.current?.scrollTo({ y: Math.max(0, critiquesSectionY.current - 12), animated: true });
-               setTimeout(() => { critiqueInputRef.current?.focus(); }, 300);
+               focusCritique.later(() => { critiqueInputRef.current?.focus(); }, 300);
             }}
             onEditPress={() => { if (log.film_id) openEditor(); }}
             onLoungePress={() => { setShowLoungeShare(true); }}

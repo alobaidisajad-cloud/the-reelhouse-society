@@ -64,6 +64,13 @@ jest.mock('@/src/stores/auth', () => ({
 jest.mock('@/src/lib/supabase', () => ({
   supabase: {
     from: (table: string) => {
+      // The Lobby's record of honours (LobbyHonour): this filing never hung there.
+      if (table === 'lobby_editions') {
+        const honours: Record<string, unknown> = {};
+        for (const k of ['select', 'eq', 'lte', 'order', 'limit']) honours[k] = () => honours;
+        honours.maybeSingle = () => Promise.resolve({ data: null, error: null });
+        return honours;
+      }
       const chain: Record<string, unknown> = {};
       const self = () => chain;
       chain.upsert = (row: Record<string, unknown>) => { mockUpserts.push({ table, row }); return Promise.resolve({ data: null, error: null }); };

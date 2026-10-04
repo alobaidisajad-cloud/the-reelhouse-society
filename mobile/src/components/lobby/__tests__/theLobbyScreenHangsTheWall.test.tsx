@@ -13,7 +13,8 @@
  */
 import React, { act } from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { testQueryClient } from '@/test-utils/testQueryClient';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { PROGRAMME_KEY, WALL_KEY, featureKey } from '../wallRead';
 
@@ -90,7 +91,7 @@ const toast = () => jest.requireMock('@/src/utils/reelToast').default;
 const settle = () => act(async () => { for (let i = 0; i < 6; i++) await new Promise((res) => setTimeout(res, 0)); });
 
 async function mount() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  const client = testQueryClient();
   const r = render(<QueryClientProvider client={client}><LobbyScreen /></QueryClientProvider>);
   await settle();
   return { r, client };

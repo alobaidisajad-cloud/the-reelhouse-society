@@ -10,6 +10,7 @@ const actual = require(actualPath);
 
 const React = require('react');
 const { QueryClient, QueryClientProvider } = require('@tanstack/react-query');
+const { testQueryClient } = require('./testQueryClient');
 const { createRoot } = require('test-renderer');
 const { getQueriesForInstance } = require(
   path.resolve(__dirname, '../node_modules/@testing-library/react-native/dist/within.js')
@@ -35,13 +36,12 @@ function renderSync(element, options = {}) {
   };
 
   // The app's root layout holds every screen inside a query provider; so does
-  // every render here. A test's own provider sits inside this one, and wins; a
-  // test that mocks React Query away has said how its queries answer, and gets
-  // none. gcTime Infinity: no collection timer is left running after the test.
+  // every render here, with the client every test builds (testQueryClient.ts:
+  // the app's rules, no collection timer, errors heard). A test's own provider
+  // sits inside this one, and wins; a test that mocks React Query away has said
+  // how its queries answer, and gets none.
   const real = typeof QueryClient === 'function' && typeof QueryClientProvider === 'function';
-  const client = real
-    ? new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } })
-    : null;
+  const client = real ? testQueryClient() : null;
   const wrap = (el) => {
     const inner = Wrapper ? React.createElement(Wrapper, null, el) : el;
     return client ? React.createElement(QueryClientProvider, { client }, inner) : inner;

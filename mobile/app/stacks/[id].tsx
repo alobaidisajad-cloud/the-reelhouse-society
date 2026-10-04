@@ -43,6 +43,7 @@ import { formatDateMonthYear } from '@/src/utils/timeAgo';
 import { z } from 'zod';
 import { EDGE_LIT } from '@/src/theme/light';
 import { useLineScale } from '@/src/hooks/useTextScale';
+import { useLater } from '@/src/hooks/useLater';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import Buster, { BusterEyes } from '@/src/components/Buster';
@@ -514,12 +515,15 @@ export default function StackDetailScreen() {
 
   const handleToggleComments = useCallback(() => {
     TactileEngine.selection();
-    // Focus only on the way IN: never a keyboard for a sheet that is closing.
-    setShowComments((prev) => {
-      if (!prev) setTimeout(() => commentInputRef.current?.focus(), 120);
-      return !prev;
-    });
+    setShowComments((prev) => !prev);
   }, []);
+  // Focus only on the way IN: never a keyboard for a sheet that is closing.
+  // Closing drops a focus still waiting; the field has gone with the sheet.
+  const focusComment = useLater();
+  useEffect(() => {
+    if (showComments) focusComment.later(() => commentInputRef.current?.focus(), 120);
+    else focusComment.cancel();
+  }, [showComments, focusComment]);
 
   // Android's back closes the critiques: an overlay (not a Modal, so the
   // moderation sheet over it never nests) gets no back button for free.

@@ -11,7 +11,8 @@
  */
 import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { testQueryClient } from '@/test-utils/testQueryClient';
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
@@ -82,7 +83,7 @@ const toast = () => jest.requireMock('@/src/utils/reelToast').default;
 async function mount() {
   let r!: ReturnType<typeof render>;
   // (The Member Registry reads its own members.)
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, enabled: false } } });
+  const client = testQueryClient({ queries: { enabled: false } });
   await act(async () => { r = render(<QueryClientProvider client={client}><ReelScreen /></QueryClientProvider>); });
   return r;
 }

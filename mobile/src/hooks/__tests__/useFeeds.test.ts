@@ -7,7 +7,8 @@
  */
 import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { testQueryClient } from '@/test-utils/testQueryClient';
 import { useCommunityFeed, useFollowingFeed, useStacksFeed } from '../useFeeds';
 import { FEED_PAGE, STACKS_PAGE } from '@/src/services/FeedService';
 
@@ -40,11 +41,12 @@ const logs = (n: number, from = 0) => Array.from({ length: n }, (_, i) => ({
 const stacks = (n: number) => Array.from({ length: n }, (_, i) => ({
   id: `stack-${i}`, curatorId: 'curator', createdAt: `2026-09-01T10:${String(i % 60).padStart(2, '0')}:00Z`,
 }));
-function wrapper({ children }: { children: React.ReactNode }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+/** One client for the life of a render: the wrapper is a component, and renders again. */
+function Wrapper({ children }: { children: React.ReactNode }) {
+  const [client] = React.useState(testQueryClient);
   return React.createElement(QueryClientProvider, { client }, children);
 }
-const renderFeed = <T,>(useFeed: () => T) => renderHook(useFeed, { wrapper });
+const renderFeed = <T,>(useFeed: () => T) => renderHook(useFeed, { wrapper: Wrapper });
 const pageParamOf =(call: unknown[]) => (call[0] as { pageParam?: string }).pageParam;
 
 beforeEach(() => { mockCommunity.mockReset(); mockFollowing.mockReset(); mockStacks.mockReset(); });

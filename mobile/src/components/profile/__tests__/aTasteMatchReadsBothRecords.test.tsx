@@ -9,7 +9,8 @@
  */
 import React, { act } from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { testQueryClient } from '@/test-utils/testQueryClient';
 
 const mockRpc = jest.fn();
 jest.mock('@/src/lib/supabase', () => ({ supabase: { rpc: (...a: unknown[]) => mockRpc(...a) } }));
@@ -30,7 +31,7 @@ const seventies = shape(2000, [0, 0, 100, 900, 1000], { '1970': 1800, '1990': 20
 
 const settle = () => act(async () => { for (let i = 0; i < 6; i++) await new Promise((res) => setTimeout(res, 0)); });
 async function mount() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  const client = testQueryClient();
   const r = render(<QueryClientProvider client={client}><TasteMatch userId="them" theirUsername="vesper" /></QueryClientProvider>);
   await settle();
   return r;
@@ -84,11 +85,13 @@ describe('the card', () => {
   });
 
   it('says when the records could not be compared, and compares them when asked again', async () => {
-    mockRpc.mockResolvedValueOnce({ data: null, error: { message: 'connection lost' } });
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'connection lost' } });
     const r = await mount();
+    // Asked once more, as the app asks every read that fails while online.
+    expect(mockRpc).toHaveBeenCalledTimes(2);
     expect(r.getByText('Your records could not be compared just now.')).toBeTruthy();
     expect(r.queryByText('100%')).toBeNull();
-    mockRpc.mockResolvedValueOnce({ data: { mine: seventies, theirs: seventies }, error: null });
+    mockRpc.mockResolvedValue({ data: { mine: seventies, theirs: seventies }, error: null });
     await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
     await settle();
     expect(r.getByText('100%')).toBeTruthy();

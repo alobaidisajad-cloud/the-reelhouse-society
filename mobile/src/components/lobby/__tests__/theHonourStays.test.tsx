@@ -69,10 +69,13 @@ describe('the honour stays', () => {
     await settle();
     expect(never.toJSON()).toBeNull();
     never.unmount();
+    mockAsked = [];
     mockAnswer = { data: null, error: { message: 'Network request failed' } };
     const failed = render(<LobbyHonour kind="list" id={ID} />);
     await settle();
     expect(failed.toJSON()).toBeNull();
+    // Asked once more (retry: 1), then left without it.
+    expect(mockAsked.filter(([k]) => k === 'from')).toHaveLength(2);
   });
 
   it('a visitor is not asked about: nothing is read, nothing is drawn', async () => {

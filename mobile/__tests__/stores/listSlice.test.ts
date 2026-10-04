@@ -111,12 +111,28 @@ describe('listSlice', () => {
                 then: jest.fn((cb: any) => Promise.resolve(cb(mockResult))),
             }));
 
-            await useFilmStore.getState().fetchLists();
+            jest.useFakeTimers();
+            try {
+                await useFilmStore.getState().fetchLists();
 
-            const state = useFilmStore.getState();
-            expect(state.lists.length).toBe(3);
-            expect(state.lists[0].title).toBe('Stack 0');
-            expect(state.lists[0].films[0].id).toBe(1000);
+                const state = useFilmStore.getState();
+                expect(state.lists.length).toBe(3);
+                expect(state.lists[0].title).toBe('Stack 0');
+                expect(state.lists[0].films[0].id).toBe(1000);
+
+                // The posters are warmed a second later, out of the first paint's way.
+                const { Image } = jest.requireMock('expo-image');
+                expect(Image.prefetch).not.toHaveBeenCalled();
+                await jest.advanceTimersByTimeAsync(1000);
+                const warmed = (Image.prefetch as jest.Mock).mock.calls;
+                expect(warmed).toHaveLength(3);
+                expect(warmed.map((c) => c[1])).toEqual(['disk', 'disk', 'disk']);
+                expect(warmed.map((c) => String(c[0]))).toEqual(
+                    ['poster-0.jpg', 'poster-1.jpg', 'poster-2.jpg'].map((p) => expect.stringContaining(p)),
+                );
+            } finally {
+                jest.useRealTimers();
+            }
         });
 
         it('should handle errors gracefully without corrupting state', async () => {

@@ -49,13 +49,10 @@ import { ToastHost } from '@/src/components/ToastHost';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { EMAIL_CODE_DIGITS } from '@/src/constants/inputLimits';
+import { raceDeadline } from '@/src/utils/raceDeadline';
 
-const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<T> => {
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(fallback), ms);
-    promise.then((res) => { clearTimeout(timer); resolve(res); }).catch(() => { clearTimeout(timer); resolve(fallback); });
-  });
-};
+/** The phone's answer about its lock, or no lock: a check that hangs or fails is a no. */
+const lockAnswer = (asked: Promise<boolean>): Promise<boolean> => raceDeadline(asked, 2000).catch(() => false);
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
@@ -278,8 +275,8 @@ export function SettingsScreen() {
     let biometricCanceled = false;
 
     if (data.biometricLock !== (currentPrefs?.biometric_lock === true)) {
-      const hasHardware = await withTimeout(LocalAuthentication.hasHardwareAsync(), 2000, false);
-      const isEnrolled = await withTimeout(LocalAuthentication.isEnrolledAsync(), 2000, false);
+      const hasHardware = await lockAnswer(LocalAuthentication.hasHardwareAsync());
+      const isEnrolled = await lockAnswer(LocalAuthentication.isEnrolledAsync());
       if (hasHardware && isEnrolled) {
         let result;
         try {
@@ -370,8 +367,8 @@ export function SettingsScreen() {
         { text: 'DELETE', style: 'destructive', onPress: async () => {
           const biometricEnabled = user?.preferences?.biometric_lock === true;
           if (biometricEnabled) {
-            const hasHardware = await withTimeout(LocalAuthentication.hasHardwareAsync(), 2000, false);
-            const isEnrolled = await withTimeout(LocalAuthentication.isEnrolledAsync(), 2000, false);
+            const hasHardware = await lockAnswer(LocalAuthentication.hasHardwareAsync());
+            const isEnrolled = await lockAnswer(LocalAuthentication.isEnrolledAsync());
 
             if (hasHardware && isEnrolled) {
               try {

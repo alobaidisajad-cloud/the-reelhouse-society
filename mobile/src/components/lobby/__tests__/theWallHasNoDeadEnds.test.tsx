@@ -19,7 +19,8 @@ import React, { act } from 'react';
 import { Alert } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import type { TestInstance } from 'test-renderer';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { testQueryClient } from '@/test-utils/testQueryClient';
 import { readdirSync, statSync } from 'fs';
 import { join, relative } from 'path';
 
@@ -128,7 +129,7 @@ const SHEET = { id: 1101383, title: 'The End of Oak Street', year: '2026', runti
 let screen!: ReturnType<typeof render>;
 interface Seed { wall?: Wall | 'pending' | 'fails'; staleWall?: boolean; programme?: 'dark' | 'empty' | 'pending'; sheet?: typeof SHEET | null }
 async function drawWall(seed: Seed = {}) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  const client = testQueryClient();
   const wall = seed.wall ?? FULL;
   jest.mocked(supabase.rpc).mockImplementation(((name: string) => {
     if (name !== 'get_lobby') return Promise.resolve({ data: null, error: null });

@@ -13,6 +13,7 @@ import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, Easing } from 'react-native-reanimated';
 import { useClearance } from '@/src/hooks/useClearance';
+import { useLater } from '@/src/hooks/useLater';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 import { useMarkCount } from '@/src/stores/markCounts';
 
@@ -62,6 +63,8 @@ export const ActionDeck = React.memo(function ActionDeck({
   const heartScale = useSharedValue(1);
   const bookmarkScale = useSharedValue(1);
   const isAnimating = React.useRef(false);
+  /** Lifts the lock after a certify; goes with the item, and with the card. */
+  const unlock = useLater();
 
   const animatedHeartStyle = useAnimatedStyle(() => ({
     transform: [{ scale: heartScale.value }]
@@ -70,13 +73,16 @@ export const ActionDeck = React.memo(function ActionDeck({
     transform: [{ scale: bookmarkScale.value }]
   }));
 
-  // A recycled card starts at rest: no pulse, no lock, no open modal.
+  // A recycled card starts at rest: no pulse, no lock (nor the last item's
+  // unlock still waiting), no open modal.
+  const cancelUnlock = unlock.cancel;
   React.useEffect(() => {
     heartScale.value = 1;
     bookmarkScale.value = 1;
+    cancelUnlock();
     isAnimating.current = false;
     setShowShareModal(false);
-  }, [itemId, heartScale, bookmarkScale]);
+  }, [itemId, heartScale, bookmarkScale, cancelUnlock]);
 
   const handleCertify = useCallback(() => {
     if (!useAuthStore.getState().user) {
@@ -85,7 +91,7 @@ export const ActionDeck = React.memo(function ActionDeck({
     }
     if (isAnimating.current) return;
     isAnimating.current = true;
-    setTimeout(() => { isAnimating.current = false; }, 500);
+    unlock.later(() => { isAnimating.current = false; }, 500);
 
     TactileEngine.mutate();
     toggleEndorse(itemId).catch((e) => {
@@ -96,7 +102,7 @@ export const ActionDeck = React.memo(function ActionDeck({
       withTiming(1.22, { duration: 110, easing: Easing.out(Easing.quad) }),
       withTiming(1, { duration: 150, easing: Easing.bezier(0.33, 0, 0.15, 1) })
     );
-  }, [itemId, toggleEndorse, heartScale]);
+  }, [itemId, toggleEndorse, heartScale, unlock]);
 
   const handleCritique = useCallback(() => {
     if (!useAuthStore.getState().user) {

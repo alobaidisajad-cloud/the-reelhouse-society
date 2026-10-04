@@ -7,7 +7,8 @@
  * code that actually runs at launch.
  */
 import { onlineManager, QueryObserver } from '@tanstack/react-query';
-import { mmkvPersister, queryClient, shouldRetry } from '@/src/lib/queryClient';
+import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
+import { QUERY_POLICY, shouldRetry } from '@/src/lib/queryPolicy';
 import { TmdbUnreachable } from '@/src/lib/tmdbErrors';
 import { storage, setSensitive } from '@/src/stores/mmkv-storage';
 
@@ -53,6 +54,9 @@ const client = (over: Record<string, unknown> = {}) => ({
 }) as never;
 
 beforeEach(() => jest.clearAllMocks());
+// The app's own client keeps a query thirty minutes after its last observer
+// goes: the queries these tests made leave with them.
+afterEach(() => queryClient.clear());
 
 describe('mmkvPersister — cache size ceiling', () => {
   it('persists an ordinary cache', async () => {
@@ -201,6 +205,10 @@ describe('the connection, as React Query hears it', () => {
 });
 
 describe('queryClient — launch defaults', () => {
+  it('is built from the one policy, which the clients tests build read too', () => {
+    expect(queryClient.getDefaultOptions()).toEqual(QUERY_POLICY);
+  });
+
   it('refetches on reconnect, and never reorders a feed on return to the app', () => {
     const d = queryClient.getDefaultOptions().queries;
     expect(d?.refetchOnReconnect).toBe('always');

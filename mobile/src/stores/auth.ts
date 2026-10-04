@@ -18,6 +18,7 @@ import { hydrateFollowing } from './domain/socialSlice';
 import { storage, setSensitive } from './mmkv-storage';
 import { BAD_CREDENTIALS, isAddress, authLink } from '../utils/authSignals';
 import { e2eTrace } from '../utils/e2eTrace';
+import { raceDeadline } from '../utils/raceDeadline';
 export { storage };
 
 export interface AuthState {
@@ -56,14 +57,6 @@ function usernameRefusal(error: unknown): Error {
 // Single-flight guard for logout (see logout() re-entrancy note).
 let _logoutInFlight: Promise<void> | null = null;
 
-// Race a promise against a deadline so a hung network call or SDK lock can
-// never strand the caller. The underlying operation continues in background.
-function _withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    p,
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`timeout after ${ms}ms`)), ms)),
-  ]);
-}
 /**
  * The member's unsynced preferences, or null. `dirty_prefs_<id>` HOLDS them
  * (the profile cache is written only when storage is encrypted, so it cannot
@@ -167,7 +160,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       // signing them in with an unchanged password.
       if (storage.getString('recovery_pending') === 'true') {
         storage.delete('recovery_pending');
-        try { await _withTimeout(supabase.auth.signOut({ scope: 'local' }), 5000); } catch {}
+        try { await raceDeadline(supabase.auth.signOut({ scope: 'local' }), 5000); } catch {}
         set({ user: null, isAuthenticated: false, loading: false });
         return;
       }
@@ -410,7 +403,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     try {
       if (previousUserId) {
         // A surviving token keeps sending their notifications here: a failure is reported.
-        const removed = await _withTimeout(removePushToken(previousUserId), 4000);
+        const removed = await raceDeadline(removePushToken(previousUserId), 4000);
         if (!removed) cleanupErrors.push('push-token');
       }
     } catch { cleanupErrors.push('push-token'); }
@@ -419,7 +412,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     //    ends only this device's session (web/other devices stay signed in).
     //    Timeout-raced so no SDK or network behavior can ever strand logout.
     try {
-      await _withTimeout(supabase.auth.signOut({ scope: 'local' }), 5000);
+      await raceDeadline(supabase.auth.signOut({ scope: 'local' }), 5000);
     } catch { cleanupErrors.push('auth'); }
 
     // 9. The member's caches on disk, on every platform.

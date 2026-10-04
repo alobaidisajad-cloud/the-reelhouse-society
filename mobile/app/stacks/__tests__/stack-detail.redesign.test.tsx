@@ -462,9 +462,24 @@ describe('the critiques overlay', () => {
     }
   });
 
-  it('focuses the field on the way in and not on the way out', () => {
-    const t = SOURCE.slice(SOURCE.indexOf('const handleToggleComments'));
-    expect(t.slice(0, 400)).toMatch(/if \(!prev\) setTimeout/);
+  it('focuses the field on the way in and not on the way out', async () => {
+    // React Native's TextInput mock keeps one focus() for every field.
+    const focus = jest.requireActual('react-native').TextInput.prototype.focus as jest.Mock;
+    const moment = () => act(() => new Promise((res) => setTimeout(res, 150)));
+
+    focus.mockClear();
+    const r = await openIt();
+    await moment();
+    expect(focus).toHaveBeenCalledTimes(1);
+
+    // Opened and closed again inside the moment: no keyboard comes.
+    const action = () => r.getByLabelText('Critiques');
+    await act(async () => { fireEvent.press(action()); });
+    focus.mockClear();
+    await act(async () => { fireEvent.press(action()); });
+    await act(async () => { fireEvent.press(action()); });
+    await moment();
+    expect(focus).not.toHaveBeenCalled();
   });
 
   it('every control in it reaches 48 by geometry', () => {

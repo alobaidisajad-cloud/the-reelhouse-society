@@ -4,6 +4,9 @@ module.exports = {
   // Runs after jest's globals exist, so it can register beforeEach/afterEach —
   // jest.setup.ts cannot. See the header of jest.afterEnv.ts.
   setupFilesAfterEnv: ['./jest.afterEnv.ts'],
+  // React Native's environment, failing any file that ends with a timer still
+  // waiting (see the header of that file).
+  testEnvironment: '<rootDir>/test-utils/timerCheckingEnvironment.js',
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|react-native-mmkv|react-native-reanimated)',
   ],

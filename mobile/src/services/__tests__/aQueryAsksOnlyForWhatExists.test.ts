@@ -589,7 +589,8 @@ describe('every query in the house', () => {
   it('reads the app, the website and the functions', () => {
     expect(files.length).toBeGreaterThan(600);
     expect(files.some((f) => f.includes(join('mobile', 'src', 'stores', 'lounge.ts')))).toBe(true);
-    expect(files.some((f) => f.endsWith(join('src', 'components', 'NotificationBell.tsx')) && !f.includes('mobile'))).toBe(true);
+    // The website's own, named from the repository root (a checkout may sit under a folder called mobile).
+    expect(files.some((f) => where(f) === 'src/components/NotificationBell.tsx')).toBe(true);
   });
 
   it('names only tables and columns that exist', () => {

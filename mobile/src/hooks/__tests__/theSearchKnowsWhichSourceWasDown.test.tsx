@@ -9,7 +9,8 @@
  */
 import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { testQueryClient } from '@/test-utils/testQueryClient';
 import { useUniversalSearch } from '../useUniversalSearch';
 
 jest.mock('@/src/lib/supabase', () => {
@@ -24,8 +25,9 @@ jest.mock('@/src/utils/logger', () => ({ logger: { error: jest.fn(), warn: jest.
 
 const { tmdb: mockTmdb } = jest.requireMock('@/src/lib/tmdb');
 
-function wrapper({ children }: { children: React.ReactNode }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+/** One client for the life of a render: the wrapper is a component, and renders again. */
+function Wrapper({ children }: { children: React.ReactNode }) {
+  const [client] = React.useState(testQueryClient);
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
@@ -33,7 +35,7 @@ afterEach(() => { mockTmdb.search.mockReset().mockResolvedValue({ results: [] })
 
 it('the catalogue down alone is carried with the answer, and the answer is not kept', async () => {
   mockTmdb.search.mockRejectedValue(Object.assign(new Error('offline'), { name: 'TmdbUnreachable' }));
-  const { result } = await renderHook(() => useUniversalSearch('kane'), { wrapper });
+  const { result } = await renderHook(() => useUniversalSearch('kane'), { wrapper: Wrapper });
   await waitFor(() => expect(result.current.isSuccess).toBe(true));
   expect(result.current.data?._down).toEqual({ films: true, users: false, logs: false, lists: false });
   expect(result.current.data?._partial).toBe(true);
@@ -43,7 +45,7 @@ it('the catalogue down alone is carried with the answer, and the answer is not k
 });
 
 it('a search every source answered is clean', async () => {
-  const { result } = await renderHook(() => useUniversalSearch('kane'), { wrapper });
+  const { result } = await renderHook(() => useUniversalSearch('kane'), { wrapper: Wrapper });
   await waitFor(() => expect(result.current.isSuccess).toBe(true));
   expect(result.current.data?._down).toEqual({ films: false, users: false, logs: false, lists: false });
   expect(result.current.data?._partial).toBe(false);

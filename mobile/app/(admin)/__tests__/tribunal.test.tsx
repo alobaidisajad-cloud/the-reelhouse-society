@@ -7,7 +7,8 @@
 
 // ── Mock declarations (hoisted above jest.mock) ──────────────────────────────
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { testQueryClient } from '@/test-utils/testQueryClient';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import TribunalScreen from '../tribunal';
@@ -109,22 +110,8 @@ jest.mock('lucide-react-native', () => {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-// `gcTime` is needed on BOTH halves. A Mutation extends the same Removable base
-// a Query does, so finishing one schedules a real 5-minute setTimeout to sweep
-// it from the cache. Queries had gcTime: 0 and mutations did not, so every test
-// that actually submitted — warn, suspend, dismiss, bulk dismiss, load more —
-// left a live timer behind and the worker had to be killed on the way out.
-function createTestQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: { retry: false, gcTime: 0 },
-      mutations: { retry: false, gcTime: 0 },
-    },
-  });
-}
-
 function renderTribunal() {
-  const queryClient = createTestQueryClient();
+  const queryClient = testQueryClient();
   const utils = render(
     <QueryClientProvider client={queryClient}>
       <TribunalScreen />

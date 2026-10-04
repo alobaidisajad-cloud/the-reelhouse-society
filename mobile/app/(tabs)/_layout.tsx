@@ -18,6 +18,7 @@ import { colors, effects } from '@/src/theme/theme';
 import { TopNavBar } from '@/src/components/layout/TopNavBar';
 import InitiationModal from '@/src/components/InitiationModal';
 import { useInitiation } from '@/src/hooks/useInitiation';
+import { useLater } from '@/src/hooks/useLater';
 import { nav } from '@/src/utils/typedRouter';
 import { EDGE_LIT } from '@/src/theme/light';
 import { tabBarBottomPadding, tabBarHeight } from '@/src/components/layout/navMetrics';
@@ -150,13 +151,15 @@ export default function TabLayout() {
   // "LOG YOUR FIRST FILM" opens the log modal directly — the ceremony ends in
   // the action, not a Done button.
   const initiation = useInitiation();
+  // After the curtain closes; never once the tabs have gone (a sign-out within it).
+  const openLog = useLater();
   const handleInitiationComplete = React.useCallback((action: 'log' | 'quiet') => {
     initiation.dismiss();
     if (action === 'log') {
-      setTimeout(() => nav.push('/log-modal'), 250);
+      openLog.later(() => nav.push('/log-modal'), 250);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initiation.dismiss]);
+  }, [initiation.dismiss, openLog]);
 
   // A member back within the half hour is back on their tab (lastTab.ts) — behind
   // the launch curtain, so the Lobby is never glimpsed first. Only a launch that

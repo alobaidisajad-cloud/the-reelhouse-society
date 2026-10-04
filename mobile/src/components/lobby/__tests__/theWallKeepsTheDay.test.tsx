@@ -11,7 +11,8 @@
 import React, { act } from 'react';
 import { AppState } from 'react-native';
 import { render } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { testQueryClient } from '@/test-utils/testQueryClient';
 
 import { Text } from '@/src/components/text';
 import { supabase } from '@/src/lib/supabase';
@@ -98,7 +99,7 @@ describe('the clock', () => {
 describe('the wall', () => {
   const wallOf = (edition: string): Wall => ({ edition, log: null, stack: null, filings: [] });
   async function hang(edition: string) {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+    const client = testQueryClient();
     jest.mocked(supabase.rpc).mockReset().mockResolvedValue({ data: wallOf(editionDayOf(new Date())), error: null } as never);
     client.setQueryData(WALL_KEY, wallOf(edition));
     const feature = { id: 1, title: 'A Film', poster_path: null };

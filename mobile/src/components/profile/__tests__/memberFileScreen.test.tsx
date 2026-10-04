@@ -86,7 +86,19 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ username: 'tomasreyes' }),
   useFocusEffect: () => {},
 }));
-jest.mock('@/src/lib/supabase', () => ({ supabase: { rpc: jest.fn(() => Promise.resolve({ error: null })), from: jest.fn() } }));
+// get_taste_match answers both records, as the function does (both too short
+// here to compare, so the card says nothing); another call answers nothing.
+jest.mock('@/src/lib/supabase', () => {
+  const none = { logs: 0, ratings: [0, 0, 0, 0, 0], decades: {} };
+  return {
+    supabase: {
+      rpc: jest.fn((fn: string) => Promise.resolve(fn === 'get_taste_match'
+        ? { data: { mine: none, theirs: none }, error: null }
+        : { error: null })),
+      from: jest.fn(),
+    },
+  };
+});
 
 
 const mount = async (over?: Record<string, unknown>, dataOver?: Record<string, unknown>, props?: Record<string, unknown>) => {
