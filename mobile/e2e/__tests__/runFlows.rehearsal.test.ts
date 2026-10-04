@@ -105,6 +105,12 @@ case "$behaviour" in
     echo '[{"command":{"launchAppCommand":{}},"metadata":{"status":"COMPLETED"}},{"command":{"inputTextCommand":{"text":"x"}},"metadata":{"status":"RUNNING"}}]' > "$tests/$name/commands.json"
     junit "maestro.android.DeviceServerDiedException: Device server died during &apos;inputText&apos; on emulator-5554 (120041ms since last byte)"
     echo "[Failed] $name (2m 4s)"; exit 1 ;;
+  gone)
+    step 'Launch app'; step 'Tap on id: profile-tab'
+    touch "$T/state/gone"
+    echo '[{"command":{"launchAppCommand":{}},"metadata":{"status":"COMPLETED"}},{"command":{"tapOnElement":{"selector":{"idRegex":"profile-tab"}}},"metadata":{"status":"RUNNING"}}]' > "$tests/$name/commands.json"
+    junit "maestro.DeviceUnreachableException: Device emulator-5554 is unreachable during &apos;tap&apos;: AdbException"
+    echo "[Failed] $name (31s)"; exit 1 ;;
   step-failed)
     step 'Launch app'; step 'Assert that id: profile-tab is visible'
     echo '[{"command":{"launchAppCommand":{}},"metadata":{"status":"COMPLETED"}},{"command":{"assertConditionCommand":{"condition":{"visible":{"idRegex":"profile-tab"}}}},"metadata":{"status":"FAILED","error":{"message":"Assertion is false: id: profile-tab is visible"}}}]' > "$tests/$name/commands.json"
@@ -261,5 +267,28 @@ it('a probe is run again only from time the flows do not need', async () => {
   expect(titled(r, 'error', 'The keyboard covers what a member needs')).toMatch(/not run again: Maestro lost its connection to the phone \(DeviceServerDiedException\), but -?\d+s are left and running it again needs 240s/);
   // The flows still ran, whole.
   expect([calls(r, 'a_flow'), calls(r, 'b_flow')]).toEqual([1, 1]);
+  always(r);
+});
+
+it('a first launch that does not finish is a warning, and the run goes on to its own verdict', async () => {
+  const r = await rehearse(['a_flow'], { first_launch: ['never-began'] });
+  expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
+  const warm = titled(r, 'warning', 'The first-launch warm-up did not finish');
+  expect(warm).toContain("The app's first launch, before the probes, did not finish (exit 1,");
+  expect(warm).toContain("Maestro said: maestro.android.DeviceServerDiedException: Device server died during 'deviceInfo'");
+  expect(calls(r, 'first_launch')).toBe(1);
+  expect([calls(r, 'stack'), calls(r, 'log'), calls(r, 'a_flow')]).toEqual([1, 1, 1]);
+  always(r);
+});
+
+it('an emulator that goes away is reported as gone: its flow is not run again, and the rest are skipped, not blamed', async () => {
+  const r = await rehearse(['a_flow', 'b_flow'], { a_flow: ['gone', 'pass'] });
+  expect(r.status).toBe(1);
+  expect([calls(r, 'a_flow'), calls(r, 'b_flow')]).toEqual([1, 0]);
+  expect(file(r, 'maestro-summary.txt')).toBe(
+    '[Failed] a_flow (31s)\n[Gone] the emulator went away during a_flow\n[Skipped] b_flow (the emulator was gone)\n');
+  expect(file(r, 'flow-hierarchy', 'a_flow.verdict')).toContain('not run again: the emulator no longer answers');
+  expect(titled(r, 'error', 'The emulator went away during the flows')).toContain('adb no longer sees the emulator');
+  expect(titled(r, 'error', 'The app crashed or froze during the run')).toContain('the device did not answer for its clock');
   always(r);
 });
