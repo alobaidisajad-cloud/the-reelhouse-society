@@ -168,11 +168,13 @@ set_aside() {
 }
 
 # ── THE FIRST LAUNCH ──────────────────────────────────────────────────────────
-# Both times typing crawled to ten seconds a key, it was the first typing after
-# the app's first launch on a fresh phone, and a relaunch cured it (runs
-# 36913850646, 37155828199). The first launch happens here, measured and never
-# judged: animation-waits.mjs names any animation Android held its taps on, and
-# a warm-up that does not finish is a warning (a crash in it still fails the run).
+# The app's first launch on the fresh phone, measured and never judged:
+# animation-waits.mjs names any animation Android held its taps on, and a
+# warm-up that does not finish is a warning (a crash in it still fails the run).
+# It does not prevent the ten-second keys: in run 37201431874 the warm-up had
+# no wait at all, and the next launch — the stack probe's — held every key on
+# MainActivity's splash reveal (animationType starting_reveal) until the probe
+# was run again.
 settle_phone "the warm-up"
 since=$(device_clock)
 printf 'warm-up\t1\t%s\n' "$since" >> "$OUT/flow-times.txt"

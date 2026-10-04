@@ -1,12 +1,11 @@
 appId: com.reelhouse.society
 ---
 # The app's first launch on a fresh phone, before anything is measured
-# (e2e/run-flows.sh runs it first, and it decides nothing). Both times typing
-# crawled to ten seconds a key, it was the first typing after the first launch
-# (runs 36913850646, 37155828199), and a relaunch cured it. So the first launch
-# happens here, and two taps go through Android's input path: if Android holds
-# them on an animation that will not end, e2e/animation-waits.mjs names it from
-# Android's own log line. A stuck animation is shown, never hidden.
+# (e2e/run-flows.sh runs it first, and it decides nothing). Two taps go through
+# Android's input path: if Android holds them on an animation that will not
+# end, e2e/animation-waits.mjs names it from Android's own log line. It does not
+# prevent that hold: in run 37201431874 it saw none, and the next launch held
+# every key on MainActivity's splash reveal (starting_reveal).
 - launchApp:
     clearState: true
 - extendedWaitUntil:

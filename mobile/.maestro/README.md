@@ -69,11 +69,12 @@ from Android's window list whether the thing a member needs is under it. The
 probes get only the time the flows do not need (two minutes a flow is kept).
 
 `warmup/first_launch.yaml` is the app's first launch on the fresh phone, run
-before everything and judging nothing. Both times typing crawled to ten seconds
-a key, it was the first typing after that first launch: Android held every key
-on a window animation that would not end. `e2e/animation-waits.mjs` names any
-such animation from Android's own log line, in every run, passed or failed, as
-a warning.
+before everything and judging nothing. When typing crawls to ten seconds a key,
+Android is holding every injected key on a window animation that will not end;
+`e2e/animation-waits.mjs` names it from Android's own log line, in every run,
+passed or failed, as a warning. Run 37201431874 named it: MainActivity's splash
+reveal (`starting_reveal`), on the stack probe's launch — after a warm-up that
+saw none, so the warm-up measures that hold but does not prevent it.
 
 ## Kept true
 
