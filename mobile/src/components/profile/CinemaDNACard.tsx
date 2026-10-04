@@ -6,6 +6,7 @@ import { X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { portraitInitial } from '@/src/components/profile/portraitInitial';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { RadarChart } from '@/src/components/profile/RadarChart';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '../PressableScale';
@@ -115,7 +116,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
                         {user?.avatar_url ? (
                             <Image source={{ uri: user.avatar_url }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                         ) : (
-                            <Text {...decorativeTextProps} style={s.avatarInitial}>{portraitInitial(user)}</Text>
+                            <Text {...decorativeTextProps} {...UNSPOKEN} style={s.avatarInitial}>{portraitInitial(user)}</Text>
                         )}
                     </View>
                     <View style={s.userInfoWrap}>

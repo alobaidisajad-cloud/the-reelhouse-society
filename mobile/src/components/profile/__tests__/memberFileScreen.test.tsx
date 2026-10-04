@@ -195,9 +195,13 @@ describe('the ident block', () => {
     expect(r.getByText('@TOMASREYES')).toBeTruthy();
   });
 
-  it('shows the initial when there is no portrait, never a dead black frame', async () => {
+  it('shows the initial when there is no portrait, never a dead black frame, and does not read it aloud', async () => {
     const r = await mount();
-    expect(r.getByText('T')).toBeTruthy();
+    // Drawn for the eye; the name beside it is what a screen reader says.
+    const initial = r.getByText('T', { includeHiddenElements: true });
+    expect(initial.props.accessibilityElementsHidden).toBe(true);
+    expect(initial.props.importantForAccessibility).toBe('no-hide-descendants');
+    expect(r.queryByText('T')).toBeNull();
   });
 
   // The stamp is `RankBadge` now — the one component that draws a rank in all

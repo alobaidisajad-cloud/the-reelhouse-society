@@ -21,6 +21,11 @@ describe('portraitInitial', () => {
     expect(portraitInitial({})).toBe('?');
   });
 
+  it('takes a whole first character: a name that opens with an emoji keeps it whole, never half a pair', () => {
+    expect(portraitInitial({ persona: '🎬 Midnight Usher' })).toBe('🎬');
+    expect(portraitInitial({ display_name: 'élise' })).toBe('É');
+  });
+
   it('is the one rule: every screen that draws the letter asks it, and none works it out alone', () => {
     const askers = [
       'app/user/[username].tsx',
@@ -32,5 +37,14 @@ describe('portraitInitial', () => {
       expect([file, text.includes('portraitInitial(')]).toEqual([file, true]);
       expect([file, /\.charAt\(0\)\.toUpperCase\(\)/.test(text)]).toEqual([file, false]);
     }
+  });
+
+  it('is never read aloud: the name beside it says who it is (decorativeTextProps hides nothing; UNSPOKEN does)', () => {
+    const sites: [string, RegExp][] = [
+      ['app/user/[username].tsx', /<Text[^>]*\{\.\.\.UNSPOKEN\}[^>]*style=\{s\.plateInitial\}/],
+      ['src/features/profile/EditProfileScreen.tsx', /<Text[^>]*\{\.\.\.UNSPOKEN\}[^>]*style=\{st\.avatarInitial\}/],
+      ['src/components/profile/CinemaDNACard.tsx', /<Text[^>]*\{\.\.\.UNSPOKEN\}[^>]*style=\{s\.avatarInitial\}/],
+    ];
+    for (const [file, re] of sites) expect([file, re.test(readFileSync(join(ROOT, file), 'utf8'))]).toEqual([file, true]);
   });
 });

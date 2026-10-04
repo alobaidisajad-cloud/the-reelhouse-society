@@ -31,6 +31,7 @@ import AvatarCropSheet from '@/src/components/profile/AvatarCropSheet';
 import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
 import { LinksEditor } from '@/src/features/profile/LinksEditor';
 import { portraitInitial } from '@/src/components/profile/portraitInitial';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { Image } from 'expo-image';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import reelToast from '@/src/utils/reelToast';
@@ -220,7 +221,7 @@ export function EditProfileScreen() {
                 {avatarPreview ? (
                     <Image source={{ uri: avatarPreview }} style={st.avatarImg} contentFit="cover" transition={150} />
                 ) : (
-                    <Text {...decorativeTextProps} style={st.avatarInitial}>{portraitInitial(user)}</Text>
+                    <Text {...decorativeTextProps} {...UNSPOKEN} style={st.avatarInitial}>{portraitInitial(user)}</Text>
                 )}
                 <View style={st.avatarOverlay}>
                     <Camera size={24} color={colors.parchment} />

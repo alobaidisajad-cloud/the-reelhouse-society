@@ -2,8 +2,8 @@
  * Buster: what he promises, held against the component itself.
  *
  *   • every mood and size has its own picture, drawn at exactly that size
- *   • he arrives only once his picture is loaded and his room is laid out whole
- *   • on a screen too short for him and its words, he gives up his room
+ *   • he arrives only once his picture is loaded and his room is laid out
+ *   • short of room he stands smaller, steps aside under half, and comes back
  *   • he moves only while his screen is in front and Reduce Motion is off,
  *     and runs no loop he has no use for
  *   • he is never spoken; what he says (a message) is
@@ -11,8 +11,8 @@
  *   • the eyes come up late, and are the progress a screen reader hears
  */
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
-import { useReducedMotion, withDelay, withRepeat } from 'react-native-reanimated';
+import { act, fireEvent, render } from '@testing-library/react-native';
+import { ReduceMotion, useReducedMotion, withDelay, withRepeat } from 'react-native-reanimated';
 import Buster, { BusterEyes, BusterStill, EYES_AFTER_MS, type BusterPicture } from '../Buster';
 import { BUSTER_ART, type BusterArtKey } from '../busterArt';
 
@@ -66,38 +66,66 @@ describe('Buster', () => {
     }
   });
 
-  it('arrives only when his picture has loaded and his whole room is laid out', async () => {
-    const shown = (json: unknown) => {
-      const image = ofType(json, 'ExpoImage')[0];
-      // The arriving layer is the one whose style carries an opacity, around the picture.
-      const layers = hosts(json).filter((n) => 'opacity' in flat(n.props.style) && hosts(n).includes(image));
-      return flat(layers[0].props.style).opacity;
-    };
-    const view = render(<Buster mood="unimpressed" size={80} />);
-    expect(shown(view.toJSON())).toBe(0);
+  /** His arriving layer's opacity, as last drawn (a re-render reads the shared value again). */
+  const shownIn = (view: ReturnType<typeof render>, n: number) => {
+    view.rerender(<Buster mood="unimpressed" size={80} style={{ margin: n }} />);
+    return flat(view.getByTestId('buster-standing', { includeHiddenElements: true }).props.style).opacity;
+  };
 
-    await fireEvent(view.getByTestId('buster-unimpressed', { includeHiddenElements: true }), 'layout', layout(110));
-    view.rerender(<Buster mood="unimpressed" size={80} style={{}} />);
-    expect(shown(view.toJSON())).toBe(0); // laid out, but the picture has not said it is loaded
+  it('arrives only once his picture has loaded AND his room is laid out, in either order', async () => {
+    // Laid out first, picture later.
+    const a = render(<Buster mood="unimpressed" size={80} />);
+    expect(shownIn(a, 1)).toBe(0);
+    await fireEvent(a.getByTestId('buster-unimpressed', { includeHiddenElements: true }), 'layout', layout(110));
+    expect(shownIn(a, 2)).toBe(0); // laid out, but the picture has not said it is loaded
+    await fireEvent(a.getByTestId('buster-picture', { includeHiddenElements: true }), 'load');
+    expect(shownIn(a, 3)).toBe(1);
 
-    const image = view.getByTestId('buster-picture', { includeHiddenElements: true });
-    await fireEvent(image, 'load');
-    view.rerender(<Buster mood="unimpressed" size={80} style={{ margin: 0 }} />);
-    expect(shown(view.toJSON())).toBe(1);
+    // Picture first, layout later.
+    const b = render(<Buster mood="unimpressed" size={80} />);
+    await fireEvent(b.getByTestId('buster-picture', { includeHiddenElements: true }), 'load');
+    expect(shownIn(b, 1)).toBe(0); // loaded, but not yet given his place
+    await fireEvent(b.getByTestId('buster-unimpressed', { includeHiddenElements: true }), 'layout', layout(110));
+    expect(shownIn(b, 2)).toBe(1);
   });
 
-  it('on a screen too short for him and its words, gives up his room, and does not come back into it mid-visit', async () => {
+  it('if the picture never says it has loaded, he is shown anyway once laid out (never an invisible Buster)', async () => {
+    jest.useFakeTimers();
+    try {
+      const view = render(<Buster mood="unimpressed" size={80} />);
+      await fireEvent(view.getByTestId('buster-unimpressed', { includeHiddenElements: true }), 'layout', layout(110));
+      expect(shownIn(view, 1)).toBe(0);
+      await act(async () => { jest.advanceTimersByTime(599); });
+      expect(shownIn(view, 2)).toBe(0);
+      await act(async () => { jest.advanceTimersByTime(1); });
+      expect(shownIn(view, 3)).toBe(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('on a screen short of room he stands smaller above the words, steps aside under half his height, and comes back when the room does', async () => {
     const view = render(<Buster mood="suspicious" size={80} />);
     const room = view.getByTestId('buster-suspicious', { includeHiddenElements: true });
-    expect(ofType(view.toJSON(), 'ExpoImage')).toHaveLength(1);
+    const standing = () => view.queryByTestId('buster-standing', { includeHiddenElements: true });
+    const scale = () => (flat(standing()!.props.style).transform as { scale: number }[])[0].scale;
 
-    await fireEvent(room, 'layout', layout(70)); // squeezed below his 110
-    expect(ofType(view.toJSON(), 'ExpoImage')).toHaveLength(0);
-    expect(flat(view.getByTestId('buster-suspicious', { includeHiddenElements: true }).props.style).height).toBe(0);
-
-    // The room he gave up is not taken back: no flicker in and out as the layout settles.
     await fireEvent(room, 'layout', layout(110));
+    expect(scale()).toBe(1);
+
+    await fireEvent(room, 'layout', layout(77)); // 70% of his 110: the keyboard up on a small phone
+    expect(scale()).toBe(0.7);
+    expect(ofType(view.toJSON(), 'ExpoImage')).toHaveLength(1);
+    // Scaled from the bottom: he stands on the floor of the room he has, just above the words.
+    expect(flat(standing()!.props.style)).toMatchObject({ position: 'absolute', bottom: 0, height: 110, transformOrigin: ['50%', '100%', 0] });
+
+    await fireEvent(room, 'layout', layout(50)); // under half: he steps aside
+    expect(standing()).toBeNull();
     expect(ofType(view.toJSON(), 'ExpoImage')).toHaveLength(0);
+
+    await fireEvent(room, 'layout', layout(110)); // the keyboard goes: so does his absence
+    expect(scale()).toBe(1);
+    expect(ofType(view.toJSON(), 'ExpoImage')).toHaveLength(1);
   });
 
   it('moves only while his screen is in front and Reduce Motion is off, with no loop he has no use for', () => {
@@ -139,7 +167,10 @@ describe('Buster', () => {
   it('is never spoken; the line he says is', () => {
     const view = render(<Buster mood="unimpressed" size={80} message="The archive awaits your identity." />);
     expect(view.queryByTestId('buster-unimpressed')).toBeNull();
-    expect(view.getByTestId('buster-unimpressed', { includeHiddenElements: true }).props.accessibilityElementsHidden).toBe(true);
+    // Hidden on both: iOS reads the first, Android the second; either alone leaves him spoken on the other.
+    const room = view.getByTestId('buster-unimpressed', { includeHiddenElements: true });
+    expect(room.props.accessibilityElementsHidden).toBe(true);
+    expect(room.props.importantForAccessibility).toBe('no-hide-descendants');
     expect(view.getByText('The archive awaits your identity.')).toBeTruthy();
   });
 });
@@ -166,9 +197,16 @@ describe('BusterStill', () => {
 });
 
 describe('BusterEyes', () => {
-  it('comes up only after a wait, so a quick answer shows nothing new', () => {
-    render(<BusterEyes />);
-    expect((withDelay as jest.Mock).mock.calls.some(([ms]) => ms === EYES_AFTER_MS)).toBe(true);
+  it('comes up only after a wait, so a quick answer shows nothing new, and the wait holds under Reduce Motion too', () => {
+    // Reanimated skips a delay under Reduce Motion unless it is told Never: the
+    // wait is a gate, not a motion, so it must be.
+    for (const still of [false, true]) {
+      (withDelay as jest.Mock).mockClear();
+      (useReducedMotion as jest.Mock).mockReturnValue(still);
+      render(<BusterEyes />);
+      const gate = (withDelay as jest.Mock).mock.calls.find(([ms]) => ms === EYES_AFTER_MS);
+      expect([still, gate?.[2]]).toEqual([still, ReduceMotion.Never]);
+    }
     expect(EYES_AFTER_MS).toBe(400);
   });
 

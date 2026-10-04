@@ -28,6 +28,7 @@ import { useProfileController } from '@/src/hooks/useProfileController';
 import { Achievements } from '@/src/components/profile/Achievements';
 import { CinemaDNACard } from '@/src/components/profile/CinemaDNACard';
 import { portraitInitial } from '@/src/components/profile/portraitInitial';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import NitrateCalendarGrid from '@/src/components/profile/NitrateCalendarGrid';
 import { NoirPassport } from '@/src/components/profile/NoirPassport';
 import ProfileArchiveTab from '@/src/components/profile/ProfileArchiveTab';
@@ -1007,7 +1008,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     />
                   ) : (
                     <View style={s.plateInitialWrap}>
-                      <Text {...decorativeTextProps} style={s.plateInitial}>{avatarInitial}</Text>
+                      <Text {...decorativeTextProps} {...UNSPOKEN} style={s.plateInitial}>{avatarInitial}</Text>
                     </View>
                   )}
                   {/* The grain is inside the frame, over the photograph — it is

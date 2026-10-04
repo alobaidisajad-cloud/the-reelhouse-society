@@ -8,5 +8,7 @@ export function portraitInitial(member: {
   display_name?: string | null;
   username?: string | null;
 } | null | undefined): string {
-  return (member?.persona || member?.display_name || member?.username || '?').charAt(0).toUpperCase();
+  // Its first CHARACTER, whole: charAt(0) takes half of an emoji and draws a broken box.
+  const [first] = Array.from(member?.persona || member?.display_name || member?.username || '?');
+  return first.toUpperCase();
 }

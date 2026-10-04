@@ -17,7 +17,7 @@ import { View, StyleSheet, type LayoutChangeEvent, type StyleProp, type ViewStyl
 import { Image } from 'expo-image';
 import Svg, { Circle, Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 import Animated, {
-  cancelAnimation, Easing, useAnimatedStyle, useReducedMotion, useSharedValue,
+  cancelAnimation, Easing, ReduceMotion, useAnimatedStyle, useReducedMotion, useSharedValue,
   withDelay, withRepeat, withSequence, withTiming,
 } from 'react-native-reanimated';
 import { useIsFocused } from '@react-navigation/native';
@@ -85,14 +85,18 @@ const Shadow = memo(function Shadow({ art }: { art: Art }) {
   );
 });
 
+/** Below this share of his height he steps aside rather than shrink further. */
+const MIN_FIT = 0.5;
+
 /**
  * Buster, alive: he floats, sways a little, blinks, and glances aside.
  *
- * He arrives only once his picture has loaded and his place is laid out whole,
- * so a screen never shows him half-drawn. Where a screen is too short for him
- * and its words together (the largest text, a small phone), he gives his place
- * to the words and is not drawn: `flexShrink` lets the layout take his room, and
- * a room smaller than he is keeps him out.
+ * He arrives only once his picture has loaded and his place is laid out, so a
+ * screen never shows him half-drawn. Where a screen is short of room for him and
+ * its words together (the keyboard up on a small phone, the largest text),
+ * `flexShrink` lets the layout take room from him, and he stands smaller in what
+ * is left, above the words; under half his height he steps aside. Given the room
+ * back, he grows back.
  */
 const Buster = memo(function Buster({ message, style, ...picture }: BusterPicture & {
   /** A line he says, set under him. */
@@ -106,21 +110,25 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
   const hasEyes = art.eyes.length > 0;
 
   const [loaded, setLoaded] = useState(false);
-  const [room, setRoom] = useState<'unknown' | 'whole' | 'short'>('unknown');
+  // The share of his height the layout gave him: null until laid out. Rounded
+  // down to fiftieths, so a keyboard sliding in redraws him a few times, not every frame.
+  const [fit, setFit] = useState<number | null>(null);
   const onLayout = useCallback((e: LayoutChangeEvent) => {
-    const whole = e.nativeEvent.layout.height >= h - 0.5;
-    setRoom((was) => (was === 'short' ? 'short' : whole ? 'whole' : 'short'));
+    const given = e.nativeEvent.layout.height;
+    setFit(given >= h - 0.5 ? 1 : Math.max(0, Math.floor((given / h) * 50) / 50));
   }, [h]);
+  const laidOut = fit !== null;
+  const stands = fit !== null && fit >= MIN_FIT;
   useEffect(() => {
-    if (room !== 'whole') return;
+    if (!laidOut) return;
     const grace = setTimeout(() => setLoaded(true), LOAD_GRACE_MS);
     return () => clearTimeout(grace);
-  }, [room]);
+  }, [laidOut]);
 
   const shown = useSharedValue(0);
   useEffect(() => {
-    if (loaded && room === 'whole') shown.value = withTiming(1, { duration: MS.considered, easing: arrive() });
-  }, [loaded, room, shown]);
+    if (loaded && stands) shown.value = withTiming(1, { duration: MS.considered, easing: arrive() });
+  }, [loaded, stands, shown]);
 
   // float 0 → 1 (up), sway 0 → 1 (turned), lid 1 open → 0 shut, glance 0 → 1 (aside)
   const float = useSharedValue(0);
@@ -172,12 +180,16 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
     <View style={[s.root, style]}>
       <View
         testID={`buster-${picture.mood}`}
-        style={[{ width: w, height: room === 'short' ? 0 : h }, s.room]}
+        style={[{ width: w, height: h }, s.room]}
         onLayout={onLayout}
         {...UNSPOKEN}
       >
-        {room !== 'short' && (
-          <Animated.View style={[StyleSheet.absoluteFill, appear]}>
+        {(fit === null || stands) && (
+          // His whole height, standing on the bottom of the room he was given, scaled into it.
+          <Animated.View
+            testID="buster-standing"
+            style={[{ position: 'absolute', left: 0, bottom: 0, width: w, height: h, transformOrigin: ['50%', '100%', 0], transform: [{ scale: fit ?? 1 }] }, appear]}
+          >
             {!seated && <Animated.View style={[StyleSheet.absoluteFill, floor]}><Shadow art={art} /></Animated.View>}
             <Animated.View style={[StyleSheet.absoluteFill, { transformOrigin: [art.pivot.x * w, art.pivot.y * h, 0] }, body]}>
               <Image testID="buster-picture" source={art.picture} style={{ width: w, height: h }} contentFit="fill" onLoad={() => setLoaded(true)} accessible={false} />
@@ -251,8 +263,10 @@ export function BusterEyes({ label, style }: { label?: string; style?: StyleProp
   const left = useSharedValue(1);
   const right = useSharedValue(1);
 
+  // The wait is a gate, not a motion: Reanimated skips a delay under Reduce Motion
+  // unless told otherwise, and the eyes would flash on every quick answer.
   useEffect(() => {
-    shown.value = withDelay(EYES_AFTER_MS, withTiming(1, { duration: MS.considered, easing: arrive() }));
+    shown.value = withDelay(EYES_AFTER_MS, withTiming(1, { duration: MS.considered, easing: arrive() }), ReduceMotion.Never);
     return () => cancelAnimation(shown);
   }, [shown]);
 
