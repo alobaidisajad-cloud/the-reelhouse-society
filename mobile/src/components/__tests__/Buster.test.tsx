@@ -89,6 +89,24 @@ describe('Buster', () => {
       await loadAll(view);
       const order = hosts(view.toJSON()).map((n) => (n.props.testID === 'buster-picture' ? 'picture' : n.props.testID === 'buster-over' ? 'lids' : n.type === 'RNSVGCircle' ? 'point' : null)).filter(Boolean);
       expect([still, [...new Set(order)]]).toEqual([still, ['picture', 'point', 'lids']]);
+
+      // And where they lie: beside the picture, so they sway and float with his
+      // sheet; never in the points' layer, which blinks and glances; over the
+      // whole figure, not stacked below it.
+      // One reading of the tree: each reading makes new nodes.
+      const tree = hosts(view.toJSON());
+      const parents = new Map<Node, Node>();
+      for (const n of tree) for (const c of n.children ?? []) if (typeof c !== 'string') parents.set(c as Node, n);
+      const picture = tree.find((n) => n.props.testID === 'buster-picture')!;
+      const lids = tree.find((n) => n.props.testID === 'buster-over')!;
+      expect([still, parents.get(lids) !== undefined && parents.get(lids) === parents.get(picture)]).toEqual([still, true]);
+      expect([still, flat(lids.props.style)]).toEqual([still, { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }]);
+      const glancing = tree.filter((n) => ((flat(n.props.style).transform as Record<string, number>[] | undefined) ?? []).some((t) => 'translateX' in t));
+      expect([still, glancing.some((layer) => hosts(layer).includes(lids))]).toEqual([still, false]);
+      if (!still) {
+        const swaying = ((flat(parents.get(picture)!.props.style).transform as Record<string, unknown>[] | undefined) ?? []).some((t) => 'rotate' in t);
+        expect(swaying).toBe(true); // the picture's layer is the one that sways: the lids sway with it
+      }
     }
   });
 
@@ -270,13 +288,34 @@ describe('BusterStill', () => {
     (console.error as jest.Mock).mockRestore();
   });
 
-  it('keeps its brass points back until the picture is there, so they never show alone', async () => {
+  it('shows whole or not at all: sheet, points and lids wait for both his layers', async () => {
     const view = render(<BusterStill mood="moved" size={80} />);
-    expect(ofType(view.toJSON(), 'RNSVGCircle')).toHaveLength(0);
+    const whole = () => flat(view.getByTestId('buster-still-whole', { includeHiddenElements: true }).props.style).opacity;
+    expect([whole(), ofType(view.toJSON(), 'RNSVGCircle').length]).toEqual([0, 0]);
     await fireEvent(view.getByTestId('buster-picture', { includeHiddenElements: true }), 'load');
-    expect(ofType(view.toJSON(), 'RNSVGCircle')).toHaveLength(0); // the lids over them are not in yet
+    expect([whole(), ofType(view.toJSON(), 'RNSVGCircle').length]).toEqual([0, 0]); // a sheet with empty holes and no hat: not yet
     await fireEvent(view.getByTestId('buster-over', { includeHiddenElements: true }), 'load');
-    expect(ofType(view.toJSON(), 'RNSVGCircle')).toHaveLength(BUSTER_ART['moved-80'].eyes.length * 2);
+    expect([whole(), ofType(view.toJSON(), 'RNSVGCircle').length]).toEqual([undefined, BUSTER_ART['moved-80'].eyes.length * 2]);
+
+    // The lids first (the smaller file): a hat with no sheet is not drawn either.
+    const lidsFirst = render(<BusterStill mood="moved" size={80} />);
+    await fireEvent(lidsFirst.getByTestId('buster-over', { includeHiddenElements: true }), 'load');
+    expect(flat(lidsFirst.getByTestId('buster-still-whole', { includeHiddenElements: true }).props.style).opacity).toBe(0);
+  });
+
+  it('is shown anyway once the wait runs out: never an invisible Buster on a crash screen', async () => {
+    jest.useFakeTimers();
+    try {
+      const view = render(<BusterStill mood="moved" size={80} />);
+      const whole = () => flat(view.getByTestId('buster-still-whole', { includeHiddenElements: true }).props.style).opacity;
+      expect(whole()).toBe(0);
+      await act(async () => { jest.advanceTimersByTime(599); });
+      expect(whole()).toBe(0);
+      await act(async () => { jest.advanceTimersByTime(1); });
+      expect(whole()).toBeUndefined();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
 

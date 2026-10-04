@@ -232,18 +232,28 @@ export default Buster;
 /**
  * Buster held still, for the crash screens: no animation, and nothing that asks
  * the navigator anything, so it draws wherever the app has fallen, even above
- * the navigator. The points wait for the picture, so they never show alone.
+ * the navigator. He shows whole or not at all: his sheet, points and lids wait
+ * for both his layers (a sheet with empty holes, or a hat with no sheet, is
+ * never drawn), and are shown anyway once the wait runs out.
  */
 export function BusterStill(picture: BusterPicture) {
   const art = artOf(picture);
   const [pictureIn, setPictureIn] = useState(false);
   const [overIn, setOverIn] = useState(!art.over);
+  const [waited, setWaited] = useState(false);
+  useEffect(() => {
+    const grace = setTimeout(() => setWaited(true), LOAD_GRACE_MS);
+    return () => clearTimeout(grace);
+  }, []);
+  const whole = waited || (pictureIn && overIn);
   const size = { width: art.width, height: art.height };
   return (
     <View testID={`buster-still-${picture.mood}`} style={size} {...UNSPOKEN}>
-      <Image testID="buster-picture" source={art.picture} style={size} contentFit="fill" onLoad={() => setPictureIn(true)} accessible={false} />
-      {pictureIn && overIn && art.eyes.length > 0 ? <Points art={art} /> : null}
-      {art.over && <Image testID="buster-over" source={art.over} style={StyleSheet.absoluteFill} contentFit="fill" onLoad={() => setOverIn(true)} accessible={false} />}
+      <View testID="buster-still-whole" style={[StyleSheet.absoluteFill, !whole && s.aside]}>
+        <Image testID="buster-picture" source={art.picture} style={size} contentFit="fill" onLoad={() => setPictureIn(true)} accessible={false} />
+        {whole && art.eyes.length > 0 ? <Points art={art} /> : null}
+        {art.over && <Image testID="buster-over" source={art.over} style={StyleSheet.absoluteFill} contentFit="fill" onLoad={() => setOverIn(true)} accessible={false} />}
+      </View>
     </View>
   );
 }

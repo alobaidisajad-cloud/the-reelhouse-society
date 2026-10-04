@@ -213,7 +213,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-02 | Written in the launch audit: no two modules export a component under one name. |
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
-| src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: the lids lie over the points; arrival and the still one wait for both layers |
+| src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: the lids lie beside the picture, outside the points’ layer, over the whole figure; the still one shows whole |
 | src/components/__tests__/busterRegister.test.ts | 2026-10-04 | edited: every layer of every picture, at every density |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
@@ -249,7 +249,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/auth/PasswordStrengthMeter.tsx | 2026-10-03 | read whole: one answer for a new password; says when it is too long for the lock |
 | src/components/auth/SocietySeal.tsx | 2026-10-01 | true as written |
 | src/components/AutopsyGauge.tsx | 2026-10-01 | true as written |
-| src/components/Buster.tsx | 2026-10-04 | edited: picture, points, then the lids over them; he arrives with both layers |
+| src/components/Buster.tsx | 2026-10-04 | edited: the still one shows whole or not at all, and anyway once the wait runs out |
 | src/components/busterArt.ts | 2026-10-04 | regenerated: a picture with points carries the layer over them |
 | src/components/CinematicOverlays.tsx | 2026-10-01 | the dead film grain gone |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
