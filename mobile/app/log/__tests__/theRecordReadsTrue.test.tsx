@@ -279,6 +279,29 @@ describe('no drop cap on a joined script', () => {
     expect(english.map(rightToLeft).every((x) => x === false)).toBe(true);
     expect(textsWith(r, ARABIC).map(rightToLeft)).toEqual([true]);
   });
+
+  it('“Read more” sits on the side the review reads from, whatever the pull quote', async () => {
+    /** Where "Read more" sits once the review has filled its eight lines: 'right' or 'left'. */
+    const readMoreSide = async (pull_quote: string, review: string) => {
+      let r!: R;
+      await act(async () => {
+        r = render(<View><ReviewContent item={{ id: 'l1', rating: 4, pull_quote, review, drop_cap: false, role: 'archivist', is_spoiler: false } as never}
+          isPremium isAuteur={false} onPress={() => {}} /></View>);
+      });
+      const laidOut = nodes(r).filter((n) => typeof n.props.onTextLayout === 'function');
+      expect(laidOut).toHaveLength(1);
+      await act(async () => { laidOut[0].props.onTextLayout({ nativeEvent: { lines: Array.from({ length: 8 }, () => ({})) } }); });
+      // The view that holds "Read more" and nothing else (the card around it holds the review too).
+      const wraps = nodes(r).filter((n) => n.type === 'View' && textOf(n) === 'Read more');
+      expect(wraps).toHaveLength(1);
+      const wrap = wraps[0];
+      const side = StyleSheet.flatten(wrap.props.style)?.alignItems === 'flex-end' ? 'right' : 'left';
+      r.unmount();
+      return side;
+    };
+    expect(await readMoreSide('A masterpiece of silence', ARABIC)).toBe('right');
+    expect(await readMoreSide(ARABIC, 'Every corridor is a held breath.')).toBe('left');
+  });
 });
 
 describe('a raised initial is a whole letter, on the card and on the record', () => {

@@ -112,7 +112,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/film/[id].tsx | 2026-10-01 | doors through nav; the critiques' failure carried down; the footage named |
 | app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx | 2026-09-30 | written with the log page's critiques matched to the stack's |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
-| app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-04 | edited: an English pull quote leaves an Arabic review Arabic, and the reverse |
+| app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-04 | edited: Read more sits on the side the review reads from |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | 2026-10-04 | edited: the critique box focus through useLater |
 | app/lounge.tsx | 2026-10-01 | true as written |
@@ -1025,7 +1025,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/searchPattern.test.ts | — |  |
 | src/utils/__tests__/searchWiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
-| src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-04 | edited: softBreak asks each place at most once and never walks from the start; flags stay linear |
+| src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-04 | edited: softBreak asks each place once, only where a run needs a break |
 | src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts | 2026-10-03 | Written with 20261003_05: the corpus holds every character the cleaning acts on, with cleanForStorage's answer. |
 | src/utils/__tests__/theDeadLetterIsNobodyElsesToKeep.test.ts | — |  |
 | src/utils/__tests__/theDraftIsYours.test.ts | — |  |

@@ -10,7 +10,7 @@
  * random strings built from those classes, every boundary of each compared.
  */
 import { characterEnd, firstCharacter, isCharacterBoundary } from '../text';
-import { softBreak } from '../softBreak';
+import { MAX_RUN, softBreak } from '../softBreak';
 import * as textModule from '../text';
 import { GRAPHEME_CLASSES, GRAPHEME_RUNS, GRAPHEME_UNICODE } from '../graphemeTable';
 
@@ -166,7 +166,7 @@ describe('a long word is offered breaks only between characters, in the time it 
     expect(softBreak(text)).not.toContain(`${ZWSP}${s(0x0301)}`);
   });
 
-  it('asks about each place at most once, and never walks the text from its start', () => {
+  it('asks about each place at most once, only where a run needs a break, and never walks the text from its start', () => {
     // Walking every character from the start each time a run grew long made
     // Japanese and Thai, which have no spaces, three to four times slower.
     const asked = jest.spyOn(textModule, 'isCharacterBoundary');
@@ -175,7 +175,12 @@ describe('a long word is offered breaks only between characters, in the time it 
       const japanese = '映画は時間の彫刻であると彼は書いた'.repeat(120);
       softBreak(japanese);
       expect(walked).not.toHaveBeenCalled();
-      expect(asked.mock.calls.length).toBeLessThanOrEqual([...japanese].length);
+      // Asked only where a run is long enough to need a break, and each place once:
+      // a run is emptied at every break, so there is about one question per MAX_RUN characters.
+      const places = asked.mock.calls.filter(([t]) => t === japanese).map(([, i]) => i);
+      expect(places.length).toBeGreaterThan(0);
+      expect(new Set(places).size).toBe(places.length);
+      expect(places.length).toBeLessThanOrEqual(Math.ceil([...japanese].length / MAX_RUN));
     } finally {
       asked.mockRestore();
       walked.mockRestore();
