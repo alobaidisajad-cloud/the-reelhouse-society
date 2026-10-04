@@ -203,7 +203,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-02 | Written in the launch audit: no two modules export a component under one name. |
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
-| src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: suspicious glances the way its points have room |
+| src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: every picture with points glances exactly as far as measured |
 | src/components/__tests__/busterRegister.test.ts | 2026-10-04 | edited: every picture carries its glance; suspicious glances left |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |

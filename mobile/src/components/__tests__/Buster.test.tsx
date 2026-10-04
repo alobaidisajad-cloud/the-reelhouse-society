@@ -151,11 +151,24 @@ describe('Buster', () => {
     // a glance that takes a point out of its hole): suspicious already looks
     // right, and only the left has room.
     expect(BUSTER_ART['suspicious-80'].glance).toBeLessThan(0);
-    expect(Math.sign(glance)).toBe(Math.sign(BUSTER_ART['suspicious-80'].glance));
+    expect(glance).toBeCloseTo(80 * BUSTER_ART['suspicious-80'].glance, 5);
     await fireEvent(room, 'layout', layout(66)); // 60%
     view.rerender(<Buster mood="suspicious" size={80} style={{ margin: 2 }} />);
     expect(moved('translateX')).toBeCloseTo(glance * 0.6, 5);
     expect(moved('translateY')).toBeCloseTo(rise * 0.6, 5);
+  });
+
+  // Every picture with points, at its full glance: exactly the slide measured on
+  // it, no further (twice as far put the points on the cloth on four of them).
+  it.each((Object.keys(BUSTER_ART) as BusterArtKey[]).filter((k) => BUSTER_ART[k].eyes.length > 0))('%s glances exactly as far as its points stay in their holes', async (key) => {
+    const [mood, size] = [key.slice(0, key.lastIndexOf('-')), Number(key.slice(key.lastIndexOf('-') + 1))];
+    const art = BUSTER_ART[key];
+    const view = render(<Buster mood={mood as never} size={size as never} />);
+    await arrived(view, mood, art.height);
+    view.rerender(<Buster mood={mood as never} size={size as never} style={{ margin: 1 }} />);
+    const layer = hosts(view.toJSON()).find((n) => ((flat(n.props.style).transform as Record<string, number>[] | undefined) ?? []).some((t) => 'translateX' in t));
+    const slid = ((flat(layer!.props.style).transform as Record<string, number>[]).find((t) => 'translateX' in t)!).translateX;
+    expect(slid).toBeCloseTo(size * art.glance, 5);
   });
 
   /** Lays him out whole and loads his picture: he has arrived. */
