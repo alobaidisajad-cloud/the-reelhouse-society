@@ -77,6 +77,14 @@ jobs:
         working-directory: ./mobile
         run: npm run -s comments:check -- --kinds NAME,FILE,LINE
 
+      # The phone has no Intl.Segmenter, so the app carries Unicode's rule for
+      # where a character ends over a table of every code point's class. The
+      # table is what this Node's own segmenter says, code point by code point
+      # (about a minute); jest holds the rule over it to the same segmenter.
+      - name: The character table is Unicode's, as Node reads it
+        working-directory: ./mobile
+        run: node scripts/grapheme-table.js --check
+
       # ⚠️ WEAKER THAN IT LOOKS: the root eslint.config.js matches only JS and JSX,
       # none of the web's TypeScript (that needs typescript-eslint, not installed).
       - name: ESLint (Web — JS/JSX only, see comment above)

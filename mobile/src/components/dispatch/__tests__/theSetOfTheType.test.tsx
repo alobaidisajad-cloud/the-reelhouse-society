@@ -120,6 +120,8 @@ describe('the essay opens with a raised initial, not a column beside the text', 
     // क्ष is two consonants joined: half of it is another letter.
     ['a Hindi conjunct', String.fromCodePoint(0x0915, 0x094d, 0x0937), String.fromCodePoint(0x0923)],
     ['a toned hand', String.fromCodePoint(0x1f44f, 0x1f3fd), ' for the cut.'],
+    // The quote the writer opened with rides up with the letter; none of it is lost.
+    ['an opening quote', '“O', 'zu frames a room.”'],
   ])('raises the whole first letter of %s, and loses nothing after it', (_, first, after) => {
     const { toJSON } = render(<EssayOpening text={`${first}${after}`} />);
     const para = toJSON() as any;

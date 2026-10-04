@@ -43,7 +43,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-10-03 | rebuilt in the tooling audit: production's shape from the snapshot, then e2e/db/security.sql; the copy of production's rules it tested is gone |
 | ../.github/workflows/e2e.yml | 2026-09-29 | history reduced to the rule each step keeps |
-| ../.github/workflows/god_tier_ci.yml | 2026-10-01 | a route check added (the script claimed CI ran it); the story of each step reduced to what it guards; flow lint --strict (its warnings went unread) |
+| ../.github/workflows/god_tier_ci.yml | 2026-10-04 | edited: the character table is checked against Node’s segmenter |
 | ../.github/workflows/load.yml | 2026-10-03 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
@@ -112,7 +112,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/film/[id].tsx | 2026-10-01 | doors through nav; the critiques' failure carried down; the footage named |
 | app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx | 2026-09-30 | written with the log page's critiques matched to the stack's |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
-| app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-04 | edited: a raised initial is a whole letter, on the card and on the record |
+| app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-04 | edited: an opening quote rides up with the raised letter |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | 2026-10-04 | edited: the critique box focus through useLater |
 | app/lounge.tsx | 2026-10-01 | true as written |
@@ -194,6 +194,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/edge-functions.cjs | 2026-10-03 | paytabs-handler NOT_DEPLOYED, with why (it granted any rank to a posted "paid" message) |
 | scripts/functions-check.mjs | 2026-10-03 | compares every file a deploy bundles, _shared included, each function in its own folder; a listed exception is reported once |
 | scripts/gates-check.js | 2026-10-03 | read whole: the door sweep reads code through stripComments.js |
+| scripts/grapheme-table.js | 2026-10-04 | new: writes the character table from Node’s segmenter |
 | scripts/lucide-icons.js | 2026-10-03 | read whole: sound |
 | scripts/schema-snapshot.mjs | 2026-09-28 | 5 findings; an orphan note trailed its code; the case for the snapshot kept, the incident counts dropped |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
@@ -203,7 +204,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
 | src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: he stops while aside and moves again on return; rise and glance scale |
-| src/components/__tests__/busterRegister.test.ts | 2026-10-03 | new: where Buster appears, and his pictures’ pixels |
+| src/components/__tests__/busterRegister.test.ts | 2026-10-04 | edited: the census reads the syntax tree and follows a renamed import |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
 | src/components/__tests__/ActionDeck.test.tsx | 2026-10-01 | rendered: owner, certify, save, stranger |
@@ -274,7 +275,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/dayLabel.test.ts | — |  |
 | src/components/dispatch/__tests__/dispatchNoDeadControls.test.ts | — |  |
 | src/components/dispatch/__tests__/duplicateRows.test.tsx | — |  |
-| src/components/dispatch/__tests__/essayBody.test.tsx | — |  |
+| src/components/dispatch/__tests__/essayBody.test.tsx | 2026-10-04 | edited: a right-to-left opening raises no letter |
 | src/components/dispatch/__tests__/everyCardSaysSomething.test.tsx | — |  |
 | src/components/dispatch/__tests__/everyLeadInIsAccountedFor.test.ts | — |  |
 | src/components/dispatch/__tests__/everyRuleIsTrue.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -314,13 +315,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theReaderAtFullLength.test.tsx | — |  |
 | src/components/dispatch/__tests__/theRoomOnScreenDecidesTheGate.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theRoomSaysWhatItHolds.test.tsx | — |  |
-| src/components/dispatch/__tests__/theSetOfTheType.test.tsx | 2026-10-04 | edited: the raised initial is the whole first letter, and nothing after it is lost |
+| src/components/dispatch/__tests__/theSetOfTheType.test.tsx | 2026-10-04 | edited: an opening quote rides up with the raised initial |
 | src/components/dispatch/__tests__/theWritingRoomExplainsItself.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx | — |  |
 | src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/ComposeDesks.tsx | 2026-10-02 | Read (launch audit, the ballot desk). Sound. |
 | src/components/dispatch/dayLabel.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/dispatch/EssayBody.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/EssayBody.tsx | 2026-10-04 | edited: no letter is raised from a right-to-left opening |
 | src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
 | src/components/dispatch/FilingRow.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperBallot.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -328,7 +329,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-04 | edited: initialOf comes from utils/text |
 | src/components/dispatch/paper/PaperDesk.tsx | 2026-09-29 | CLOSES made a working control; handler-less controls disabled; 7 dead styles; histories to rules |
 | src/components/dispatch/paper/PaperDeskDoc.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/dispatch/paper/PaperEssay.tsx | 2026-10-04 | edited: the raised initial is firstCharacter, whole |
+| src/components/dispatch/paper/PaperEssay.tsx | 2026-10-04 | edited: the raised initial is extractDropCap’s |
 | src/components/dispatch/paper/PaperFill.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperFrame.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperKeyWell.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -350,7 +351,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/feed/ActivityCard.tsx | 2026-10-01 | lies flat unless an Auteur's; comments made true |
 | src/components/feed/AutopsyView.tsx | 2026-10-01 | each score read whole |
 | src/components/feed/PosterFrame.tsx | 2026-10-01 | the poster says its film |
-| src/components/feed/ReviewContent.tsx | 2026-10-04 | edited: the drop cap is the whole first character |
+| src/components/feed/ReviewContent.tsx | 2026-10-04 | edited: the drop cap is extractDropCap’s |
 | src/components/feed/UserAttributionRow.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
 | src/components/film/__tests__/castRailFits.test.ts | — |  |
 | src/components/film/__tests__/FilmActionTray.test.tsx | — |  |
@@ -364,7 +365,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/pickCertificate.test.ts | — |  |
 | src/components/film/__tests__/stubFits.test.ts | — |  |
 | src/components/film/__tests__/trayActsFire.test.tsx | — |  |
-| src/components/film/__tests__/whatAFilmPageNames.test.tsx | 2026-10-04 | edited: the monogram and the cast letter are whole |
+| src/components/film/__tests__/whatAFilmPageNames.test.tsx | 2026-10-04 | edited: a critique’s drop cap keeps its quote, and none from Arabic |
 | src/components/film/__tests__/zz-film.gen.test.tsx | — |  |
 | src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-01 | written: the critiques' failure reaches the page; an unread verdict is unknown |
 | src/components/film/CastCarousel.tsx | 2026-10-04 | edited: an actor without a photograph is drawn by initialOf |
@@ -374,7 +375,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/FilmHero.tsx | 2026-10-01 | an unknown verdict claims nothing; histories to the present |
 | src/components/film/FilmHeroSkeleton.tsx | 2026-10-01 | the promise, not its history |
 | src/components/film/FilmMediaCarousel.tsx | 2026-10-01 | hands the whole video on; named |
-| src/components/film/FilmReviews.tsx | 2026-10-01 | a failed read says so; no throw; flat card |
+| src/components/film/FilmReviews.tsx | 2026-10-04 | edited: no drop cap from right-to-left words |
 | src/components/film/FilmScrollHeader.tsx | 2026-10-01 | the fault it fixes, said as what it does |
 | src/components/film/FilmSectionHeader.tsx | 2026-10-01 | true as written |
 | src/components/film/FilmSimilar.tsx | 2026-10-01 | nav; named for a screen reader |
@@ -946,7 +947,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/profile.types.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
-| src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-04 | edited: a character in every script; the drop cap never asks Intl; the portrait letter |
+| src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-04 | edited: a raised first letter keeps what the member opened with |
 | src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
 | src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts | 2026-10-02 | Written in the launch audit: the handle filter judged by words, one rule in apps and database. |
 | src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-02 | a hidden pressable is hidden whole (no-hide-descendants) |
@@ -1024,6 +1025,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/searchPattern.test.ts | — |  |
 | src/utils/__tests__/searchWiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
+| src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-04 | new: the app’s character rule is Unicode’s, every run of the table |
 | src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts | 2026-10-03 | Written with 20261003_05: the corpus holds every character the cleaning acts on, with cleanForStorage's answer. |
 | src/utils/__tests__/theDeadLetterIsNobodyElsesToKeep.test.ts | — |  |
 | src/utils/__tests__/theDraftIsYours.test.ts | — |  |
@@ -1048,6 +1050,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/enter.ts | 2026-10-02 | read; sound |
 | src/utils/filterContentByBlocks.ts | 2026-10-01 | true as written |
 | src/utils/gateTelemetry.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/utils/graphemeTable.ts | 2026-10-04 | new: generated by scripts/grapheme-table.js |
 | src/utils/groupNotifications.ts | 2026-10-02 | history comments trimmed |
 | src/utils/handleGuard.ts | 2026-10-02 | Read whole (launch audit). Still rejects both joiners in a handle (the full class). Sound. |
 | src/utils/handleHistory.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -1083,7 +1086,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
-| src/utils/text.ts | 2026-10-04 | edited: the one character rule knows every script; firstCharacter and initialOf on it; the drop cap never asks Intl |
+| src/utils/text.ts | 2026-10-04 | edited: Unicode’s grapheme rules over the generated table; one drop cap for every review |
 | src/utils/tier.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/tierDoor.ts | 2026-10-01 | the server sentence as a door |
 | src/utils/tierRefusal.ts | 2026-10-01 | by the sentence, not the code |

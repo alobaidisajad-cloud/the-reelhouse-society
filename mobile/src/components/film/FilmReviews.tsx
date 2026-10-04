@@ -28,7 +28,7 @@ import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { UserAttributionRow } from '@/src/components/feed/UserAttributionRow';
 import { stripHtml } from '@/src/utils/html';
-import { extractDropCap } from '@/src/utils/text';
+import { extractDropCap, isRTLText } from '@/src/utils/text';
 import { timeAgo } from '@/src/utils/timeAgo';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
@@ -68,6 +68,9 @@ interface FilmReviewsProps {
 const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityReview }) {
   const strippedReview = stripHtml(review.review ?? '');
   const { first: dropCapFirst, rest: dropCapRest } = extractDropCap(strippedReview);
+  // No drop cap on a joined script: lifting the first letter out of an Arabic
+  // word leaves an isolated form and breaks the word behind it.
+  const dropCap = review.drop_cap && !isRTLText(strippedReview) && !!dropCapFirst;
 
   const isAuteur = isAuteurPlusTier(review.role);
   const isArchivist = isArchivistPlusTier(review.role) && !isAuteur;
@@ -120,7 +123,7 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
             </View>
           )}
           {strippedReview ? (
-            review.drop_cap ? (
+            dropCap ? (
               <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                 <Text style={s.dropCapLetter}>{dropCapFirst}</Text>
                 <Text style={[s.reviewText, { flex: 1, marginTop: 4 }]} numberOfLines={7} ellipsizeMode="tail">

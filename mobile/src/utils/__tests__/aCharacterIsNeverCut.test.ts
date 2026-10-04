@@ -124,6 +124,25 @@ describe('a character, in every script', () => {
   });
 });
 
+describe('a raised first letter', () => {
+  it.each([
+    ['a straight quote', '"Wow," she said.', '"W', 'ow," she said.'],
+    ['a curly quote, as a phone types it', '“Masterpiece”', '“M', 'asterpiece”'],
+    ['a bracket', '(Spoilers) the end', '(S', 'poilers) the end'],
+    ['an ellipsis', '…and then nothing.', '…A', 'nd then nothing.'],
+    ['guillemets', '«Ozu» again', '«O', 'zu» again'],
+    ['a lower-case opening, raised as a capital', 'i loved it', 'I', ' loved it'],
+    ['ß, whose capital is two letters', 'ßlah', 'ß', 'lah'],
+  ])('keeps %s: the mark rides up with the letter, and nothing is lost', (_, text, first, rest) => {
+    expect(extractDropCap(text)).toEqual({ first, rest });
+  });
+
+  it('raises nothing from text with no letter in it, and keeps all of it', () => {
+    expect(extractDropCap('…')).toEqual({ first: '', rest: '…' });
+    expect(extractDropCap('')).toEqual({ first: '', rest: '' });
+  });
+});
+
 describe('a letter for a portrait', () => {
   it('is the first character, capitalised where the script has a capital for it alone', () => {
     expect(initialOf('  kane')).toBe('K');

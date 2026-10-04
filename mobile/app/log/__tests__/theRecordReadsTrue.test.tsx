@@ -273,6 +273,7 @@ describe('a raised initial is a whole letter, on the card and on the record', ()
   it.each([
     ['Hindi', `${ZA}${String.fromCodePoint(0x0930)} is the word.`, ZA],
     ['an emoji', `${CODER} built this.`, CODER],
+    ['an opening quote', '"Wow," she said, and left.', '"W'], // the mark rides up; none of it is lost
   ])('%s: the card lifts all of the first letter, and the words go on from just after it', async (_, review, first) => {
     let card!: R;
     await act(async () => {

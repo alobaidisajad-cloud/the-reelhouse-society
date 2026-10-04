@@ -84,6 +84,14 @@ describe('the essay body', () => {
     expect(capOf(toJSON())).toBe('O');
   });
 
+  it('raises no letter from a right-to-left opening, and sets every word of it', () => {
+    // Arabic letters join: one lifted out of its word is a different shape.
+    const arabic = 'لا شيء في السينما يضاهي تلك اللحظة.';
+    const { toJSON } = render(<EssayBody text={`${arabic}\n\n${SECOND}`} />);
+    expect(capOf(toJSON())).toBeNull();
+    expect(JSON.stringify(toJSON())).toContain(arabic);
+  });
+
   it('sets a first paragraph that carries emphasis as an ordinary one', () => {
     // The cap needs the letter as a string. Breaking the markup to get it would
     // print the asterisks, so the design gives way rather than the guard.

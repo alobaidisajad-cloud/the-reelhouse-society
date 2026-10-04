@@ -17,6 +17,7 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 
 import { WatchProviders, pickRegion } from '../WatchProviders';
 import { CastCarousel } from '../CastCarousel';
+import { FilmReviews } from '../FilmReviews';
 import { regionOf } from '@/src/utils/deviceRegion';
 import { footageLabel, TrailerModal } from '../TrailerModal';
 import { FilmMediaCarousel } from '../FilmMediaCarousel';
@@ -111,6 +112,38 @@ describe('WHERE IT PLAYS', () => {
     const ecran = { US: { flatrate: [{ provider_id: 2, provider_name: 'écran Plus', logo_path: null }] } };
     const r = render(<WatchProviders providers={ecran} />);
     expect(r.getByText('ÉP', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  describe('a critique’s drop cap on the film page', () => {
+    const critique = (review: string) => ({
+      id: 'r1', rating: 4, review, status: 'watched', created_at: '2026-10-01T00:00:00Z',
+      user_id: 'u1', username: 'kane', role: 'archivist', drop_cap: true, is_spoiler: false,
+    });
+    const page = (review: string) => render(<FilmReviews filmId={603} filmTitle="The Matrix" reviews={[critique(review)]} />);
+    /** Each drawn text's own words, without the texts nested in it. */
+    const words = (r: ReturnType<typeof render>) => {
+      const out: string[] = [];
+      const walk = (n: any) => {
+        if (!n || typeof n !== 'object') return;
+        if (Array.isArray(n)) { n.forEach(walk); return; }
+        if (n.type === 'Text') out.push((n.children ?? []).filter((c: unknown) => typeof c === 'string').join(''));
+        (n.children ?? []).forEach(walk);
+      };
+      walk(r.toJSON());
+      return out;
+    };
+
+    it('keeps the quote the member opened with, riding up with the letter', () => {
+      const r = page('"Wow," she said, and left.');
+      expect(words(r)).toEqual(expect.arrayContaining(['"W', 'ow," she said, and left.']));
+    });
+
+    it('raises no letter from Arabic, and sets the critique whole', () => {
+      const arabic = 'لا شيء في السينما يضاهي تلك اللحظة.';
+      const r = page(arabic);
+      expect(words(r)).toContain(arabic);
+      expect(words(r)).not.toContain('ل');
+    });
   });
 
   it('an actor without a photograph is drawn by the whole first letter of their name', () => {

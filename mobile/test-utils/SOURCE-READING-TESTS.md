@@ -57,7 +57,7 @@ Decisions, as of 2026-09-28:
 | File | The class it enumerates |
 |---|---|
 | `src/components/__tests__/animation-parking.test.ts` | Every endless animation parks when its screen is not focused. |
-| `src/components/__tests__/busterRegister.test.ts` | Every place Buster is drawn, held to the register (one to a screen, never in a row); and every picture of him, by file and by its PNG's own pixel size. His behaviour is tested by mounting him (`Buster.test.tsx`). |
+| `src/components/__tests__/busterRegister.test.ts` | Every place Buster is drawn, read from each file's syntax tree (a renamed import followed), held to the register (one to a screen, never in a row); and every picture of him, by file and by its PNG's own pixel size. His behaviour is tested by mounting him (`Buster.test.tsx`). |
 | `src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts` | Every style that spreads `effects.flat` and still carries elevation (a black shadow on Android before 9); an exact ratchet, lowered as each feature is read. |
 | `src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx` | No sheet unmounts itself at the end of its own fall; useSheetPresence is the one place (its behaviour is tested on the hook). |
 | `test-utils/__tests__/everyTestClientKeepsTheHouseRules.test.ts` | Every `new QueryClient(` in the tree: only the app's client and testQueryClient(), both built from queryPolicy.ts. What the test client does is tested by the screens that render with it. |

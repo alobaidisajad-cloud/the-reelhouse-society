@@ -15,6 +15,7 @@
  */
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
+import ts from 'typescript';
 import { BUSTER_ART } from '../busterArt';
 
 const ROOT = join(__dirname, '..', '..', '..');
@@ -56,17 +57,46 @@ function sources(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-const census: Record<string, Required<Omit<Count, 'why'>>> = {};
+type Found = Required<Omit<Count, 'why'>>;
+
+/** The house's names for him, each counted under its own heading. */
+const DRAWS: Record<string, keyof Found> = { Buster: 'buster', BusterStill: 'still', BusterEyes: 'eyes', EmptyOffline: 'offline' };
+
+/**
+ * Every place a file draws him, read from its syntax tree: a tag is a tag
+ * however its props are written (an arrow, a nested tag, a line break), and a
+ * name imported under another name is followed to what it is.
+ */
+function censusOf(file: string, text: string): Found {
+  const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const local: Record<string, string> = { Buster: 'Buster', BusterStill: 'BusterStill', BusterEyes: 'BusterEyes', EmptyOffline: 'EmptyOffline', EmptyState: 'EmptyState' };
+  for (const st of sf.statements) {
+    if (!ts.isImportDeclaration(st) || !ts.isStringLiteral(st.moduleSpecifier)) continue;
+    if (!/\/(Buster|EmptyStates)$/.test(st.moduleSpecifier.text)) continue;
+    const clause = st.importClause;
+    if (clause?.name) local[clause.name.text] = 'Buster'; // the default export is Buster himself
+    if (clause?.namedBindings && ts.isNamedImports(clause.namedBindings)) {
+      for (const el of clause.namedBindings.elements) local[el.name.text] = (el.propertyName ?? el.name).text;
+    }
+  }
+  const found: Found = { buster: 0, still: 0, eyes: 0, offline: 0, empty: 0 };
+  const visit = (node: ts.Node) => {
+    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
+      const name = local[node.tagName.getText(sf)];
+      if (name && DRAWS[name]) found[DRAWS[name]] += 1;
+      // An empty state is his only when it is given his mood.
+      if (name === 'EmptyState' && node.attributes.properties.some((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === 'buster')) found.empty += 1;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return found;
+}
+
+const census: Record<string, Found> = {};
 for (const file of [...sources('app'), ...sources('src')]) {
   if (file === 'src/components/Buster.tsx') continue;
-  const text = readFileSync(join(ROOT, file), 'utf8');
-  const count = (re: RegExp) => (text.match(re) || []).length;
-  // An <EmptyState …> is his only when it is given his mood (props up to its close).
-  const empty = (text.match(/<EmptyState\b[^>]*?(?:\/>|>)/g) || []).filter((tag) => /\bbuster=/.test(tag)).length;
-  const found = {
-    buster: count(/<Buster[\s/>]/g), still: count(/<BusterStill[\s/>]/g), eyes: count(/<BusterEyes[\s/>]/g),
-    offline: count(/<EmptyOffline\b/g), empty,
-  };
+  const found = censusOf(file, readFileSync(join(ROOT, file), 'utf8'));
   if (Object.values(found).some((n) => n > 0)) census[file] = found;
 }
 
@@ -81,13 +111,19 @@ describe('where Buster appears', () => {
     expect(census).toEqual(want);
   });
 
-  it('sees him however he is drawn: the failed state that carries him, and an empty state given his mood', () => {
-    // The scan's own rules, against the spellings they must catch and must not.
-    const tags = (src: string) => (src.match(/<EmptyState\b[^>]*?(?:\/>|>)/g) || []).filter((t) => /\bbuster=/.test(t)).length;
-    expect(tags('<EmptyState title="T" buster="suspicious" />')).toBe(1);
-    expect(tags('<EmptyState\n  buster="dimmed"\n  title="Transmission Interrupted"\n/>')).toBe(1);
-    expect(tags('<EmptyState icon={<Users size={28} />} title="The Circle" />')).toBe(0);
-    expect('<EmptyOffline\n  onRetry={x}\n/>'.match(/<EmptyOffline\b/g)).toHaveLength(1);
+  it('sees him however he is drawn: the failed state that carries him, an empty state given his mood, a name changed on import', () => {
+    // The census's own rules, against the spellings they must catch and must not.
+    const one = (src: string) => censusOf('probe.tsx', src);
+    expect(one('<EmptyState title="T" buster="suspicious" />').empty).toBe(1);
+    expect(one('<EmptyState\n  buster="dimmed"\n  title="Transmission Interrupted"\n/>').empty).toBe(1);
+    expect(one('<EmptyState icon={<Users size={28} />} buster="dimmed" />').empty).toBe(1); // a tag in a prop
+    expect(one('<EmptyState onRetry={() => go()} buster="dimmed" />').empty).toBe(1); // an arrow in a prop
+    expect(one('<EmptyState icon={<Users size={28} />} title="The Circle" />').empty).toBe(0);
+    expect(one('<EmptyOffline\n  onRetry={x}\n/>').offline).toBe(1);
+    expect(one('<View><Buster mood="moved" size={80} /></View>').buster).toBe(1);
+    expect(one("import Ghost, { BusterEyes as Wait } from '@/src/components/Buster';\nconst A = () => <><Ghost mood=\"moved\" size={80} /><Wait /></>;")).toEqual({ buster: 1, still: 0, eyes: 1, offline: 0, empty: 0 });
+    expect(one("import { EmptyOffline as Lost } from '@/src/components/EmptyStates';\nconst A = () => <Lost onRetry={r} />;").offline).toBe(1);
+    expect(one('const BusterLike = 1; <BusterLike />').buster).toBe(0);
   });
 
   it('gives every place its reason', () => {

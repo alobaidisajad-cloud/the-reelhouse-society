@@ -38,6 +38,7 @@ import Markdown from 'react-native-markdown-display';
 import { capMarkdownForRender, onMarkdownLinkPress } from '@/src/utils/markdownSafety';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { isRTLText } from '@/src/utils/text';
 import {
   EssayBreak, EssayOpening, ESSAY_BODY,
 } from './paper/PaperEssay';
@@ -174,8 +175,10 @@ export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
       // React tree. When the first paragraph is plain text the design's own
       // opening is used; when it carries emphasis or a link, the cap is not
       // worth breaking the markup for, so it sets as an ordinary paragraph.
+      // Nor is a letter raised from right-to-left words: their letters join,
+      // and one lifted out is a different shape.
       const plain = plainTextOf(node);
-      if (plain && plain.trim().length > 1) {
+      if (plain && plain.trim().length > 1 && !isRTLText(plain)) {
         return <EssayOpening key={node.key} text={plain} />;
       }
       return (
