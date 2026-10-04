@@ -19,7 +19,7 @@ import { LEAD_STYLE } from './paperPerf';
 import { PaperStrike } from './PaperStrike';
 import { softBreak, counted, NOT_SENT_LINE, WITHHELD_LINE } from './paperText';
 import { DEPARTED_NAME } from '@/src/constants/departed';
-import { isRTLText, RTL_MARK } from '@/src/utils/text';
+import { initialOf, isRTLText, RTL_MARK } from '@/src/utils/text';
 
 export type PaperKind = 'take' | 'seeking' | 'wire' | 'ballot' | 'dossier';
 export type PaperTier = 'free' | 'archivist' | 'auteur';
@@ -46,15 +46,6 @@ export interface PaperAuthor {
   avatar?: string | null;
 }
 
-/**
- * The mark on a member's disc when they have no picture: their initial, a
- * monogram like an essay's raised initial (their house NUMBER belongs to their
- * room and file, not to every post). Empty with no name, as a departed disc is.
- */
-export function initialOf(name: string | null | undefined): string {
-  const first = (name ?? '').trim().slice(0, 1);
-  return first ? first.toUpperCase() : '';
-}
 
 export interface PaperFilm {
   title: string;

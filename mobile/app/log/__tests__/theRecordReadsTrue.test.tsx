@@ -264,6 +264,30 @@ describe('no drop cap on a joined script', () => {
   });
 });
 
+describe('a raised initial is a whole letter, on the card and on the record', () => {
+  // ज़ with its dot is another letter than ज, and 👩‍💻 cut is a woman and a laptop.
+  const ZA = String.fromCodePoint(0x091c, 0x093c);
+  const CODER = String.fromCodePoint(0x1f469, 0x200d, 0x1f4bb);
+  const caps = (r: R) => nodes(r).filter((n) => n.type === 'Text' && n.props.allowFontScaling === false).map(textOf);
+
+  it.each([
+    ['Hindi', `${ZA}${String.fromCodePoint(0x0930)} is the word.`, ZA],
+    ['an emoji', `${CODER} built this.`, CODER],
+  ])('%s: the card lifts all of the first letter, and the words go on from just after it', async (_, review, first) => {
+    let card!: R;
+    await act(async () => {
+      card = render(<View><ReviewContent item={{ id: 'l1', rating: 4, pull_quote: null, review, drop_cap: true, role: 'archivist', is_spoiler: false } as never}
+        isPremium isAuteur={false} onPress={() => {}} /></View>);
+    });
+    expect(caps(card)).toContain(first);
+    expect(words(card)).toContain(review);
+    card.unmount();
+
+    const rec = await page({ review, drop_cap: true });
+    expect(caps(rec)).toContain(first);
+  });
+});
+
 describe('the page draws only what it has', () => {
   it('a rating with no words draws no review section at all', async () => {
     // The section is the box styled `reviewSection` — found by its own style,

@@ -138,9 +138,11 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
   const sway = useSharedValue(0);
   const lid = useSharedValue(1);
   const glance = useSharedValue(0);
+  // He moves only while he can be seen: arrived, and not stepped aside.
+  const moving = live && loaded && stands;
   useEffect(() => {
     const all = [float, sway, lid, glance];
-    if (!live) {
+    if (!moving) {
       all.forEach(cancelAnimation);
       float.value = 0; sway.value = 0; lid.value = 1; glance.value = 0;
       return;
@@ -162,7 +164,7 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
       ), -1, false);
     }
     return () => all.forEach(cancelAnimation);
-  }, [live, seated, hasEyes, float, sway, lid, glance]);
+  }, [moving, seated, hasEyes, float, sway, lid, glance]);
 
   // His rise and glance in points, at the size he stands (the layout scales the rest).
   const k = Math.min(1, Math.max(fit ?? 1, MIN_FIT));

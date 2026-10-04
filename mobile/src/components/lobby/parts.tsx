@@ -14,6 +14,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { nav } from '@/src/utils/typedRouter';
 import { useSvgId } from '@/src/utils/svgId';
+import { initialOf } from '@/src/utils/text';
 import { ceilingOf, TYPE, type Face, type TypeKey } from './measure';
 import type { WallAuthor } from './wallRead';
 
@@ -74,7 +75,7 @@ export const Avatar = memo(function Avatar({ author, size }: { author: WallAutho
   ) : (
     <View style={[s.avatar, box]} {...UNSPOKEN}>
       <Text style={[s.initial, { fontSize: Math.round(size * 0.45) }]} maxFontSizeMultiplier={1}>
-        {author.username.slice(0, 1).toUpperCase()}
+        {initialOf(author.username)}
       </Text>
     </View>
   );

@@ -7,7 +7,7 @@
  * Intl.Segmenter, so it took one code point). Each could split a joined emoji
  * or a skin tone; the cap and the excerpt mended only a lone surrogate half.
  */
-import { characterStart, extractDropCap, isCharacterBoundary, truncateReview } from '../text';
+import { characterStart, extractDropCap, firstCharacter, initialOf, isCharacterBoundary, truncateReview } from '../text';
 import { MAX_LENGTHS, sanitizeInput } from '../sanitizeInput';
 
 const s = (...cps: number[]) => String.fromCodePoint(...cps);
@@ -53,16 +53,92 @@ describe('the cuts', () => {
     expect(out).toBe('字'.repeat(349) + '…');
   });
 
-  it('the drop cap on a phone takes the whole first character', () => {
+  it('the drop cap takes the whole first character, by the phone’s rule even where Intl could split it', () => {
     const intl = globalThis.Intl as { Segmenter?: unknown };
     const segmenter = intl.Segmenter;
-    delete intl.Segmenter;
+    // A splitter that would be wrong: the drop cap must not be asking it.
+    intl.Segmenter = function Wrong() { throw new Error('the drop cap asked Intl, which the phone does not have'); };
     try {
       expect(extractDropCap(`${TECHNOLOGIST} saw it twice`)).toEqual({ first: TECHNOLOGIST, rest: ' saw it twice' });
       expect(extractDropCap(`${IRAQ}${USA} both`)).toEqual({ first: IRAQ, rest: `${USA} both` });
       expect(extractDropCap('Remarkable.')).toEqual({ first: 'R', rest: 'emarkable.' });
+      expect(extractDropCap(`${JA_NUKTA}${s(0x0930)} fine`)).toEqual({ first: JA_NUKTA, rest: `${s(0x0930)} fine` });
     } finally {
       intl.Segmenter = segmenter;
     }
+  });
+});
+
+// Written by code point, so no editor or normaliser can quietly change what is tested.
+const JA_NUKTA = s(0x091c, 0x093c); // ज़: ज with its dot is another letter
+const KSSA = s(0x0915, 0x094d, 0x0937); // क्ष: two consonants joined by a virama
+const KI = s(0x0915, 0x093f); // कि: the vowel sign is drawn before, written after
+const BENGALI_RRA = s(0x09a1, 0x09bc); // ড়
+const TAMIL_KO = s(0x0b95, 0x0bca); // கொ
+const HAN_PARTS = s(0x1112, 0x1161, 0x11ab); // 한 typed as its three parts
+const HAN_WHOLE_TAIL = s(0xd558, 0x11ab); // 하 + a final ㄴ: still one syllable
+const SHALOM = s(0x05e9, 0x05c1, 0x05b8); // שָׁ: a shin with its dot and vowel
+const ARABIC_BI = s(0x0628, 0x0650); // بِ
+const THAI_KI = s(0x0e01, 0x0e34, 0x0e48); // กิ่
+const KANJI_IVS = s(0x845b, 0xe0100); // 葛 in a chosen form
+const CYRILLIC_ACCENT = s(0x0438, 0x0306); // й written as и and its mark
+
+describe('a character, in every script', () => {
+  const whole: [string, string][] = [
+    ['a Hindi letter keeps its dot', JA_NUKTA],
+    ['a conjunct stays joined', KSSA],
+    ['a vowel sign stays on its consonant', KI],
+    ['Bengali keeps its dot', BENGALI_RRA],
+    ['Tamil keeps its two-part vowel', TAMIL_KO],
+    ['Korean typed in parts is one syllable', HAN_PARTS],
+    ['a Korean syllable keeps a final typed apart', HAN_WHOLE_TAIL],
+    ['Hebrew keeps its points', SHALOM],
+    ['Arabic keeps its vowel mark', ARABIC_BI],
+    ['Thai keeps its vowel and tone', THAI_KI],
+    ['a chosen kanji form stays chosen', KANJI_IVS],
+    ['a Cyrillic letter keeps its mark', CYRILLIC_ACCENT],
+    ['a family', s(0x1f468, 0x200d, 0x1f469, 0x200d, 0x1f467)],
+    ['a toned thumb', THUMB_TONED],
+    ['a keycap', s(0x31, 0xfe0f, 0x20e3)],
+    ['a flag of tags', s(0x1f3f4, 0xe0067, 0xe0062, 0xe0073, 0xe0063, 0xe0074, 0xe007f)],
+  ];
+
+  it.each(whole)('%s: the first character is all of it, and no cut falls inside it', (_, ch) => {
+    expect(firstCharacter(`${ch}${s(0x20)}next`)).toBe(ch);
+    for (let i = 1; i < ch.length; i += 1) expect([i, isCharacterBoundary(`${ch}x`, i)]).toEqual([i, false]);
+    expect(isCharacterBoundary(`${ch}x`, ch.length)).toBe(true);
+  });
+
+  it('ends where the next letter starts, in each script', () => {
+    expect(firstCharacter(`${KI}${s(0x0924, 0x093e)}`)).toBe(KI); // कि then ता
+    expect(firstCharacter(s(0x1112, 0x1161, 0x1112, 0x1161))).toBe(s(0x1112, 0x1161)); // 하하 in parts
+    expect(firstCharacter(`${ARABIC_BI}${s(0x0627)}`)).toBe(ARABIC_BI);
+    expect(firstCharacter(`${IRAQ}${USA}`)).toBe(IRAQ);
+    expect(firstCharacter('')).toBe('');
+    expect(firstCharacter(null)).toBe('');
+  });
+
+  it('a share card’s excerpt never strips a vowel sign off its letter', () => {
+    const text = 'क'.repeat(349) + KI + 'क'.repeat(10); // the cut falls between क and its sign
+    expect(truncateReview(text, 350)).toBe('क'.repeat(349) + '…');
+  });
+});
+
+describe('a letter for a portrait', () => {
+  it('is the first character, capitalised where the script has a capital for it alone', () => {
+    expect(initialOf('  kane')).toBe('K');
+    expect(initialOf(`${s(0x65, 0x301)}lise`)).toBe(s(0x45, 0x301)); // é, its accent written after
+    expect(initialOf(s(0x0131, 0x6c))).toBe('I'); // Turkish dotless ı
+    expect(initialOf(s(0x10e1, 0x10d0))).toBe(s(0x10e1)); // Georgian keeps its everyday letter
+    expect(initialOf(s(0xdf, 0x70))).toBe(s(0xdf)); // ß: its capital is two letters
+    expect(initialOf(`${JA_NUKTA}${s(0x0930)}`)).toBe(JA_NUKTA);
+    expect(initialOf(`${TECHNOLOGIST} dev`)).toBe(TECHNOLOGIST);
+  });
+
+  it('is empty when there is no name: a departed member’s disc is blank', () => {
+    expect(initialOf('')).toBe('');
+    expect(initialOf('   ')).toBe('');
+    expect(initialOf(null)).toBe('');
+    expect(initialOf(undefined)).toBe('');
   });
 });

@@ -12,7 +12,7 @@
  */
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { ReduceMotion, useReducedMotion, withDelay, withRepeat } from 'react-native-reanimated';
+import { cancelAnimation, ReduceMotion, useReducedMotion, withDelay, withRepeat } from 'react-native-reanimated';
 import Buster, { BusterEyes, BusterStill, EYES_AFTER_MS, type BusterPicture } from '../Buster';
 import { BUSTER_ART, type BusterArtKey } from '../busterArt';
 
@@ -136,39 +136,67 @@ describe('Buster', () => {
   it('glances and rises by distances that shrink with him, so his points never leave their holes', async () => {
     const view = render(<Buster mood="suspicious" size={80} />);
     const room = view.getByTestId('buster-suspicious', { includeHiddenElements: true });
-    const glanceAt = () => {
-      // The eyes' layer: the one whose animated style carries a translateX.
-      const layer = hosts(view.toJSON()).find((n) => ((flat(n.props.style).transform as Record<string, number>[] | undefined) ?? []).some((t) => 'translateX' in t));
-      return ((flat(layer!.props.style).transform as Record<string, number>[]).find((t) => 'translateX' in t)!).translateX;
+    /** A transform's value on the layer whose animated style carries it (glance: translateX; rise: translateY). */
+    const moved = (key: 'translateX' | 'translateY') => {
+      const layer = hosts(view.toJSON()).find((n) => ((flat(n.props.style).transform as Record<string, number>[] | undefined) ?? []).some((t) => key in t));
+      return ((flat(layer!.props.style).transform as Record<string, number>[]).find((t) => key in t)!)[key];
     };
     await fireEvent(room, 'layout', layout(110));
-    const whole = glanceAt();
+    await fireEvent(view.getByTestId('buster-picture', { includeHiddenElements: true }), 'load');
+    view.rerender(<Buster mood="suspicious" size={80} style={{ margin: 1 }} />);
+    const glance = moved('translateX'), rise = moved('translateY');
+    expect(glance).not.toBe(0);
+    expect(rise).not.toBe(0);
     await fireEvent(room, 'layout', layout(66)); // 60%
-    expect(glanceAt()).toBeCloseTo(whole * 0.6, 5);
+    view.rerender(<Buster mood="suspicious" size={80} style={{ margin: 2 }} />);
+    expect(moved('translateX')).toBeCloseTo(glance * 0.6, 5);
+    expect(moved('translateY')).toBeCloseTo(rise * 0.6, 5);
   });
 
-  it('moves only while his screen is in front and Reduce Motion is off, with no loop he has no use for', () => {
-    // Standing, with brass points: float, sway, blink and glance.
-    render(<Buster mood="unimpressed" size={80} />);
+  /** Lays him out whole and loads his picture: he has arrived. */
+  async function arrived(view: ReturnType<typeof render>, mood: string, height: number) {
+    await fireEvent(view.getByTestId(`buster-${mood}`, { includeHiddenElements: true }), 'layout', layout(height));
+    await fireEvent(view.getByTestId('buster-picture', { includeHiddenElements: true }), 'load');
+  }
+
+  it('moves only once he can be seen, while his screen is in front and Reduce Motion is off, with no loop he has no use for', async () => {
+    // Standing, with brass points: float, sway, blink and glance, but not before he has arrived.
+    const a = render(<Buster mood="unimpressed" size={80} />);
+    expect(withRepeat).not.toHaveBeenCalled();
+    await arrived(a, 'unimpressed', 110);
     expect(withRepeat).toHaveBeenCalledTimes(4);
 
     (withRepeat as jest.Mock).mockClear();
-    render(<Buster mood="seated" size={48} />); // seated: he does not float or sway
+    await arrived(render(<Buster mood="seated" size={48} />), 'seated', 54); // seated: he does not float or sway
     expect(withRepeat).toHaveBeenCalledTimes(2);
 
     (withRepeat as jest.Mock).mockClear();
-    render(<Buster mood="dimmed" size={80} />); // eyes dark: nothing to blink
+    await arrived(render(<Buster mood="dimmed" size={80} />), 'dimmed', 110); // eyes dark: nothing to blink
     expect(withRepeat).toHaveBeenCalledTimes(2);
 
     (withRepeat as jest.Mock).mockClear();
     mockFocused = false;
-    render(<Buster mood="unimpressed" size={80} />);
+    await arrived(render(<Buster mood="unimpressed" size={80} />), 'unimpressed', 110);
     expect(withRepeat).not.toHaveBeenCalled();
 
     mockFocused = true;
     (useReducedMotion as jest.Mock).mockReturnValue(true);
-    render(<Buster mood="unimpressed" size={80} />);
+    await arrived(render(<Buster mood="unimpressed" size={80} />), 'unimpressed', 110);
     expect(withRepeat).not.toHaveBeenCalled();
+  });
+
+  it('stops moving while he has stepped aside, and moves again when he is back', async () => {
+    const view = render(<Buster mood="unimpressed" size={80} />);
+    await arrived(view, 'unimpressed', 110);
+    (withRepeat as jest.Mock).mockClear();
+    (cancelAnimation as jest.Mock).mockClear();
+
+    await fireEvent(view.getByTestId('buster-unimpressed', { includeHiddenElements: true }), 'layout', layout(40)); // aside
+    expect(cancelAnimation).toHaveBeenCalled();
+    expect(withRepeat).not.toHaveBeenCalled();
+
+    await fireEvent(view.getByTestId('buster-unimpressed', { includeHiddenElements: true }), 'layout', layout(110)); // back
+    expect(withRepeat).toHaveBeenCalledTimes(4);
   });
 
   it('draws his brass points where the holes were measured', () => {

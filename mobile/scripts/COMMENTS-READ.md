@@ -78,7 +78,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(admin)/__tests__/tribunal.test.tsx | — |  |
 | app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | app/(admin)/_layout.tsx | 2026-10-02 | read; sound |
-| app/(admin)/tribunal.tsx | 2026-10-03 | edited: the reason is cleaned and held to what the member's notice can carry |
+| app/(admin)/tribunal.tsx | 2026-10-04 | edited: the accused’s letter is initialOf, whole |
 | app/(modals)/__tests__/list-modal.curate.test.tsx | 2026-10-03 | edited: the stack's boxes name their caps |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx | 2026-10-03 | new: your own circle is said to you |
@@ -112,12 +112,12 @@ without one). "Read" is the day its comments were last read against its code.
 | app/film/[id].tsx | 2026-10-01 | doors through nav; the critiques' failure carried down; the footage named |
 | app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx | 2026-09-30 | written with the log page's critiques matched to the stack's |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
-| app/log/__tests__/theRecordReadsTrue.test.tsx | — |  |
+| app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-04 | edited: a raised initial is a whole letter, on the card and on the record |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | 2026-10-01 | a failed read and a missing log said apart; nav; Arrive |
 | app/lounge.tsx | 2026-10-01 | true as written |
-| app/lounge/[id].tsx | 2026-10-02 | Read whole (launch audit). A new room kept the last room's record (name, privacy, host) until its own answer came, and for good if that failed: cleared with the rest. The header said '1 MEMBERS'. |
-| app/person/__tests__/thePersonFileReadsTrue.test.tsx | — |  |
+| app/lounge/[id].tsx | 2026-10-04 | edited: a message’s letter is initialOf, kept from the screen reader |
+| app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-04 | edited: a portrait without a photograph carries the whole first letter, unspoken |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | 2026-10-01 | the not-found way out says where it goes; histories to the present |
 | app/reset-password.tsx | 2026-10-03 | edited: a new password must fit the lock (72 bytes) |
@@ -202,7 +202,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-02 | Written in the launch audit: no two modules export a component under one name. |
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
-| src/components/__tests__/Buster.test.tsx | 2026-10-03 | new: the new Buster’s promises, each mutation-checked |
+| src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: he stops while aside and moves again on return; rise and glance scale |
 | src/components/__tests__/busterRegister.test.ts | 2026-10-03 | new: where Buster appears, and his pictures’ pixels |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
@@ -238,7 +238,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/auth/PasswordStrengthMeter.tsx | 2026-10-03 | read whole: one answer for a new password; says when it is too long for the lock |
 | src/components/auth/SocietySeal.tsx | 2026-10-01 | true as written |
 | src/components/AutopsyGauge.tsx | 2026-10-01 | true as written |
-| src/components/Buster.tsx | 2026-10-03 | rewritten whole: the new Buster |
+| src/components/Buster.tsx | 2026-10-04 | edited: he moves only while he is seen |
 | src/components/busterArt.ts | 2026-10-03 | new: generated from the drawing |
 | src/components/CinematicOverlays.tsx | 2026-10-01 | the dead film grain gone |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
@@ -246,7 +246,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/ControlledInput.tsx | 2026-10-03 | edited: the bio's default limit is the bio's cap |
 | src/components/critique/__tests__/aCritiqueIsWithdrawnOrReported.test.tsx | 2026-10-01 | new |
 | src/components/critique/__tests__/oneCritiqueRow.guard.test.ts | 2026-09-30 | written with the shared critique row |
-| src/components/critique/CritiqueRow.tsx | 2026-10-01 | a nameless author is never linked |
+| src/components/critique/CritiqueRow.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
 | src/components/critique/withdraw.ts | 2026-10-01 | new: the one question before a critique comes off the page |
 | src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx | 2026-09-29 | new |
 | src/components/darkroom/__tests__/theFiltersSayWhatTheyHold.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the filter toggle and CLEAR speak. |
@@ -306,7 +306,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theInvitationHasAnAddress.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theIssueIsTheCalendarDay.test.ts | 2026-10-02 | Written in the launch audit: the issue number counted in calendar days, every hour of two years. |
 | src/components/dispatch/__tests__/theMarginSaysWhatItCounts.test.tsx | 2026-09-29 | new |
-| src/components/dispatch/__tests__/theNumberIsAMembershipFact.test.tsx | — |  |
+| src/components/dispatch/__tests__/theNumberIsAMembershipFact.test.tsx | 2026-10-04 | edited: initialOf comes from utils/text |
 | src/components/dispatch/__tests__/theParagraphKnowsItsDirection.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
 | src/components/dispatch/__tests__/thePreviewIsThePage.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theSeriesSheet.test.tsx | 2026-10-01 | written: the series sheet says what it read |
@@ -314,7 +314,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theReaderAtFullLength.test.tsx | — |  |
 | src/components/dispatch/__tests__/theRoomOnScreenDecidesTheGate.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theRoomSaysWhatItHolds.test.tsx | — |  |
-| src/components/dispatch/__tests__/theSetOfTheType.test.tsx | — |  |
+| src/components/dispatch/__tests__/theSetOfTheType.test.tsx | 2026-10-04 | edited: the raised initial is the whole first letter, and nothing after it is lost |
 | src/components/dispatch/__tests__/theWritingRoomExplainsItself.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx | — |  |
 | src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -324,11 +324,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
 | src/components/dispatch/FilingRow.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperBallot.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/dispatch/paper/PaperComposer.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/paper/PaperComposer.tsx | 2026-10-04 | edited: initialOf comes from utils/text |
+| src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-04 | edited: initialOf comes from utils/text |
 | src/components/dispatch/paper/PaperDesk.tsx | 2026-09-29 | CLOSES made a working control; handler-less controls disabled; 7 dead styles; histories to rules |
 | src/components/dispatch/paper/PaperDeskDoc.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/dispatch/paper/PaperEssay.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/paper/PaperEssay.tsx | 2026-10-04 | edited: the raised initial is firstCharacter, whole |
 | src/components/dispatch/paper/PaperFill.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperFrame.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperKeyWell.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -336,7 +336,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperMore.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/paperMotion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperPerf.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
-| src/components/dispatch/paper/PaperPost.tsx | 2026-09-29 | 17 fixed; 3 FALSE: 'the counts leave' (they sit by the icons), 'there is no kind label' (every kind leads with one), 'rule material set by tier' misread; pending/dimmed never wired (logged) |
+| src/components/dispatch/paper/PaperPost.tsx | 2026-10-04 | edited: its own initialOf gone; the one in utils/text |
 | src/components/dispatch/paper/PaperStrike.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperStyles.ts | 2026-10-02 | Read whole in the launch audit: sound. |
 | src/components/dispatch/paper/paperText.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -350,8 +350,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/feed/ActivityCard.tsx | 2026-10-01 | lies flat unless an Auteur's; comments made true |
 | src/components/feed/AutopsyView.tsx | 2026-10-01 | each score read whole |
 | src/components/feed/PosterFrame.tsx | 2026-10-01 | the poster says its film |
-| src/components/feed/ReviewContent.tsx | 2026-10-01 | comments cut to the why |
-| src/components/feed/UserAttributionRow.tsx | 2026-10-01 | comments cut to the why |
+| src/components/feed/ReviewContent.tsx | 2026-10-04 | edited: the drop cap is the whole first character |
+| src/components/feed/UserAttributionRow.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
 | src/components/film/__tests__/castRailFits.test.ts | — |  |
 | src/components/film/__tests__/FilmActionTray.test.tsx | — |  |
 | src/components/film/__tests__/filmDossier.test.tsx | — |  |
@@ -364,10 +364,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/pickCertificate.test.ts | — |  |
 | src/components/film/__tests__/stubFits.test.ts | — |  |
 | src/components/film/__tests__/trayActsFire.test.tsx | — |  |
-| src/components/film/__tests__/whatAFilmPageNames.test.tsx | 2026-10-01 | written: where it plays, what a video is, what a file sends |
+| src/components/film/__tests__/whatAFilmPageNames.test.tsx | 2026-10-04 | edited: the monogram and the cast letter are whole |
 | src/components/film/__tests__/zz-film.gen.test.tsx | — |  |
 | src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-01 | written: the critiques' failure reaches the page; an unread verdict is unknown |
-| src/components/film/CastCarousel.tsx | 2026-10-01 | named for a screen reader; histories to the present |
+| src/components/film/CastCarousel.tsx | 2026-10-04 | edited: an actor without a photograph is drawn by initialOf |
 | src/components/film/FilmActionTray.tsx | 2026-10-01 | histories to the present |
 | src/components/film/FilmDetailLayout.tsx | 2026-10-01 | histories to the present; the not-found way out named |
 | src/components/film/FilmDossier.tsx | 2026-10-01 | what it holds, not what it absorbed |
@@ -385,7 +385,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/pickCertificate.ts | 2026-10-01 | the member's own region is real now |
 | src/components/film/ShareCardModal.tsx | 2026-10-02 | Read (launch audit). Its text share linked to reelhouse.app/film, another company's domain: HOUSE_WEB. |
 | src/components/film/TrailerModal.tsx | 2026-10-01 | names what it plays |
-| src/components/film/WatchProviders.tsx | 2026-10-01 | named for what it costs, for one named country |
+| src/components/film/WatchProviders.tsx | 2026-10-04 | edited: the monogram takes each initial whole |
 | src/components/HapticTab.tsx | 2026-10-02 | Read whole (launch audit). Its 10pt reach gave each tab's edge to its neighbour and took 10pt of the screen above the bar: removed. |
 | src/components/home/ProjectorBeam.tsx | 2026-10-01 | true as written |
 | src/components/home/types.ts | 2026-10-01 | true as written |
@@ -422,7 +422,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/Masthead.tsx | 2026-09-30 | new |
 | src/components/lobby/measure.ts | 2026-09-30 | new |
 | src/components/lobby/PairBills.tsx | 2026-09-30 | new; "of one height" held only side by side |
-| src/components/lobby/parts.tsx | 2026-09-30 | new |
+| src/components/lobby/parts.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
 | src/components/lobby/RankBill.tsx | 2026-09-30 | new |
 | src/components/lobby/wallRead.ts | 2026-09-30 | new |
 | src/components/lobby/words.ts | 2026-09-30 | new; named a test that did not exist |
@@ -488,7 +488,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/LoungeSettingsPanel.tsx | 2026-10-01 | contrast history dropped |
 | src/components/lounge/LoungeStyles.ts | 2026-10-01 | true as written |
 | src/components/lounge/loungeTabStyles.ts | 2026-10-01 | contrast history to its reasons |
-| src/components/lounge/MemberFaceStack.tsx | 2026-10-01 | the faces are fixed, not the words; no "today's card" |
+| src/components/lounge/MemberFaceStack.tsx | 2026-10-04 | edited: its own initialOf gone; the one in utils/text |
 | src/components/lounge/PublicLoungeCard.tsx | 2026-10-01 | true as written |
 | src/components/lounge/reactions.tsx | 2026-10-01 | true as written |
 | src/components/lounge/roomGate.ts | 2026-10-02 | Read whole (launch audit). A member banned from a PUBLIC room got the preview (TAKE A SEAT), which the house refuses: banned is decided before the preview now. Verified on the server: protect_lounge_member_status refuses any status change but the host's, so neither a muted nor a banned member can seat themselves. |
@@ -506,7 +506,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/person/PersonBio.tsx | 2026-10-01 | READ MORE named and its state said |
 | src/components/person/PersonDefining.tsx | 2026-10-01 | histories to the present |
 | src/components/person/PersonFilmography.tsx | 2026-10-01 | one FILM; histories to the present |
-| src/components/person/PersonHero.tsx | 2026-10-01 | histories to the present |
+| src/components/person/PersonHero.tsx | 2026-10-04 | edited: the portrait letter is initialOf, unspoken |
 | src/components/person/PersonOrnaments.tsx | 2026-10-01 | the rarity mark in the present tense |
 | src/components/person/personStyles.ts | 2026-10-01 | histories to the present |
 | src/components/Preloader.tsx | 2026-10-02 | Read whole (launch audit). A comment about a noise overlay that was never drawn removed. |
@@ -529,7 +529,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/memberFile.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/memberFileRooms.test.tsx | — |  |
 | src/components/profile/__tests__/memberFileScreen.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
-| src/components/profile/__tests__/portraitInitial.test.ts | 2026-10-03 | new: one member, one letter |
+| src/components/profile/__tests__/portraitInitial.test.ts | 2026-10-04 | edited: both member-file screens ask it; scripts tested in aCharacterIsNeverCut |
 | src/components/profile/__tests__/projectorRoom.test.tsx | — |  |
 | src/components/profile/__tests__/railFits.test.ts | — |  |
 | src/components/profile/__tests__/reconcileCount.test.ts | — |  |
@@ -561,14 +561,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
 | src/components/profile/ArchiveLock.tsx | 2026-10-01 | asks the phone's own means; never opens unasked; the room is not drawn behind it |
 | src/components/profile/AvatarCropSheet.tsx | 2026-10-01 | a refused permission offers Settings; a failed photo said plainly; dead imports gone |
-| src/components/profile/CinemaDNACard.tsx | 2026-10-01 | the record only; the house ladder; always opens and closes; no invented serial |
+| src/components/profile/CinemaDNACard.tsx | 2026-10-04 | edited: the letter is the handle’s, as the card names its member |
 | src/components/profile/CinematicInsights.tsx | 2026-10-01 | says retrieving or failed; whose-words; no history comments |
 | src/components/profile/favourites.ts | 2026-10-01 | comments say what is true now |
 | src/components/profile/FollowRequestsPanel.tsx | 2026-10-02 | a failed door is said; the rest could not be reached; decline-all asks first |
 | src/components/profile/heroNameSize.ts | 2026-10-01 |  |
 | src/components/profile/NitrateCalendarGrid.tsx | 2026-10-01 | today drawn; counts what it draws, "in the past year"; the app date helper; nav |
 | src/components/profile/NoirPassport.tsx | 2026-10-01 | stamps from the whole record only; labels broken between words; said while unread or failed |
-| src/components/profile/portraitInitial.ts | 2026-10-03 | new: the portrait letter, one rule |
+| src/components/profile/portraitInitial.ts | 2026-10-04 | rewritten: on initialOf |
 | src/components/profile/ProfileArchiveTab.tsx | 2026-10-01 | nav; IMPORT lands on the import panel; comments say what is true now |
 | src/components/profile/ProfileBackdrop.tsx | 2026-10-02 | comments say what is true now; poster via tmdb.poster |
 | src/components/profile/profileComputed.ts | 2026-10-02 | Read (launch audit): date work is hand-built or ordering-only. Sound. |
@@ -942,10 +942,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/profile.types.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
-| src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): the cap, the excerpt and the drop cap cut between characters. |
+| src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-04 | edited: a character in every script; the drop cap never asks Intl; the portrait letter |
 | src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
 | src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts | 2026-10-02 | Written in the launch audit: the handle filter judged by words, one rule in apps and database. |
 | src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-02 | a hidden pressable is hidden whole (no-hide-descendants) |
+| src/utils/__tests__/aLetterIsTakenWhole.guard.test.ts | 2026-10-04 | new: no first letter is taken by hand |
 | src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts | 2026-10-01 | new |
 | src/utils/__tests__/aMembersWordsAreCleaned.test.ts | 2026-10-03 | the profile excuses went with the INSERT grant that made those columns writable (20261003_07) |
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
@@ -1076,7 +1077,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
-| src/utils/text.ts | 2026-10-03 | edited: the marks in its patterns written as escapes |
+| src/utils/text.ts | 2026-10-04 | edited: the one character rule knows every script; firstCharacter and initialOf on it; the drop cap never asks Intl |
 | src/utils/tier.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/tierDoor.ts | 2026-10-01 | the server sentence as a door |
 | src/utils/tierRefusal.ts | 2026-10-01 | by the sentence, not the code |

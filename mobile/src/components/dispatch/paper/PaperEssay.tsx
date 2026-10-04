@@ -35,6 +35,7 @@ import { scaledTextProps, decorativeTextProps, displayTextProps, deckLabelProps 
 import { p } from './paperStyles';
 import { KIND_RULE, KIND_NAME, UNSPOKEN, DOC_PAD, AVATAR } from './paperMetrics';
 import { softBreak } from './paperText';
+import { firstCharacter } from '@/src/utils/text';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { EDGE_LIT } from '@/src/theme/light';
 
@@ -147,14 +148,15 @@ export const EssayHead = memo(function EssayHead({
  * platforms at every type size.
  */
 export const EssayOpening = memo(function EssayOpening({ text }: { text: string }) {
-  const cap = text.slice(0, 1);
+  // The whole first character: half an emoji, or a Hindi letter without its dot, is another letter.
+  const cap = firstCharacter(text);
   return (
     <Text style={e.body} {...scaledTextProps}>
       {/* Does NOT scale. It is a mark set at the size the design drew it, and
           at the default size it already stands taller than its line; grown
           with the type it would stand taller still, into the line above. */}
       <Text style={e.cap} {...decorativeTextProps}>{cap}</Text>
-      {softBreak(text.slice(1))}
+      {softBreak(text.slice(cap.length))}
     </Text>
   );
 });

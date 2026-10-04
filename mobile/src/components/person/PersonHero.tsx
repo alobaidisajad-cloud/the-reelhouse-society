@@ -20,6 +20,8 @@ import { nav } from '@/src/utils/typedRouter';
 import { s } from '@/src/components/person/personStyles';
 import { displayTextProps } from '@/src/constants/textScaling';
 import { dateParts, formatDate } from '@/src/utils/timeAgo';
+import { initialOf } from '@/src/utils/text';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { FilmStripPerforations } from '@/src/components/person/PersonFilmography';
 import { RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import type { SharedValue } from 'react-native-reanimated';
@@ -227,7 +229,7 @@ export const PersonHero = memo(function PersonHero({
               <Image source={{ uri: photoUri }} style={s.portrait} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} accessibilityLabel={`${person.name} portrait photo`} />
             ) : (
               <View style={[s.portrait, s.portraitPlaceholder]}>
-                <Text style={s.portraitInitial}>{person.name?.charAt(0) || '?'}</Text>
+                <Text style={s.portraitInitial} {...UNSPOKEN}>{initialOf(person.name) || '?'}</Text>
               </View>
             )}
           </View>

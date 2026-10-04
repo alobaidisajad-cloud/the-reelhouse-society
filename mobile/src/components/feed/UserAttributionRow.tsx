@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { initialOf } from '@/src/utils/text';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import { RankBadge, rankOf } from '@/src/components/RankBadge';
 
@@ -41,7 +42,7 @@ export const UserAttributionRow = React.memo(function UserAttributionRow({ usern
             <Image source={{ uri: avatarUrl }} style={s.avatar} cachePolicy="memory-disk" transition={150} />
           ) : (
             <View style={s.avatar}>
-              <Text style={s.avatarText}>{username.charAt(0).toUpperCase()}</Text>
+              <Text style={s.avatarText}>{initialOf(username)}</Text>
             </View>
           )}
           <Text style={s.username} numberOfLines={1} ellipsizeMode="tail">

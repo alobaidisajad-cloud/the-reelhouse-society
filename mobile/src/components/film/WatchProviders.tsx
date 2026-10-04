@@ -16,6 +16,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { tmdb } from '@/src/lib/tmdb';
 import { safeOpenURL } from '@/src/utils/linking';
+import { initialOf } from '@/src/utils/text';
 import { deviceRegion } from '@/src/utils/deviceRegion';
 
 interface Provider {
@@ -51,7 +52,7 @@ export function pickRegion(providers: Record<string, unknown> | null | undefined
 
 /** Up to two initials, for a service TMDB has no logo for. */
 const monogram = (name: string) =>
-  name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?';
+  name.split(/\s+/).filter(Boolean).slice(0, 2).map(initialOf).join('') || '?';
 
 const ProviderLogo = React.memo(function ProviderLogo({ p, providerLink }: { p: Provider, providerLink?: string }) {
   const handlePress = React.useCallback(() => {

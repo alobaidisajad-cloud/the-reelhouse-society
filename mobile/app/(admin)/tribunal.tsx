@@ -37,6 +37,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { formatDate } from '@/src/utils/timeAgo';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { nav } from '@/src/utils/typedRouter';
+import { initialOf } from '@/src/utils/text';
 import { MAX_LENGTHS, sanitizeInput } from '@/src/utils/sanitizeInput';
 
 interface TribunalTarget {
@@ -891,7 +892,7 @@ export default function TribunalScreen() {
                         <View style={s.accusedAvatar}>
                           {accused.avatar_url
                             ? <Image source={{ uri: accused.avatar_url }} style={s.accusedAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
-                            : <Text style={s.accusedAvatarLetter}>{accused.username[0]?.toUpperCase()}</Text>}
+                            : <Text style={s.accusedAvatarLetter}>{initialOf(accused.username)}</Text>}
                         </View>
                         <View style={s.accusedInfo}>
                           <Text style={s.accusedLabel}>THE ACCUSED</Text>

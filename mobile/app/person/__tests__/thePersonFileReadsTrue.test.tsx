@@ -191,6 +191,16 @@ describe('the record card says only what it knows', () => {
     for (const label of ['BORN', 'DIED', 'RECORD', 'NOTED']) expect(words(r)).not.toContain(label);
   });
 
+  it('a portrait without a photograph carries the whole first letter, and keeps it from the screen reader', async () => {
+    let r!: R;
+    // Zafar in Hindi: ज with its dot is ज़, another letter than ज.
+    const name = String.fromCodePoint(0x091c, 0x093c, 0x092b, 0x093c, 0x0930);
+    await act(async () => { r = render(hero({ person: { name, birthday: null, place_of_birth: null, deathday: null } })); });
+    const letter = nodes(r).filter((n) => n.type === 'Text' && wears(n, personStyles.portraitInitial));
+    expect(letter.map(textOf)).toEqual([String.fromCodePoint(0x091c, 0x093c)]);
+    expect([letter[0].props.accessibilityElementsHidden, letter[0].props.importantForAccessibility]).toEqual([true, 'no-hide-descendants']);
+  });
+
   it('and draws one when it has a fact', async () => {
     let r!: R;
     await act(async () => { r = render(hero({ person: { name: 'A Name', birthday: '1958-07-17', place_of_birth: null, deathday: null } })); });

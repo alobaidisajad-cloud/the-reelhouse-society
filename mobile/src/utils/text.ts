@@ -2,16 +2,53 @@
  * text.ts - High-performance text utility engine.
  */
 
+const between = (cp: number, lo: number, hi: number) => cp >= lo && cp <= hi;
+
+/** Devanagari to Malayalam share one layout: these offsets in each block are signs, not letters. */
+const INDIC = (cp: number) => between(cp, 0x0900, 0x0d7f);
+const indicSign = (cp: number) => {
+  const at = cp & 0x7f;
+  return between(at, 0x00, 0x03) || between(at, 0x3a, 0x3c) || between(at, 0x3e, 0x4f)
+    || between(at, 0x51, 0x57) || between(at, 0x62, 0x63);
+};
+const indicVirama = (cp: number) => INDIC(cp) && (cp & 0x7f) === 0x4d;
+const indicConsonant = (cp: number) => INDIC(cp) && (between(cp & 0x7f, 0x15, 0x39) || between(cp & 0x7f, 0x58, 0x5f));
+
+/** A mark written after the letter it sits on. */
+const isMark = (cp: number): boolean =>
+  between(cp, 0x0300, 0x036f) || between(cp, 0x0483, 0x0489) // accents; Cyrillic marks
+  || between(cp, 0x0591, 0x05bd) || cp === 0x05bf || between(cp, 0x05c1, 0x05c2) || between(cp, 0x05c4, 0x05c5) || cp === 0x05c7 // Hebrew points
+  || between(cp, 0x0610, 0x061a) || between(cp, 0x064b, 0x065f) || cp === 0x0670 // Arabic marks
+  || between(cp, 0x06d6, 0x06dc) || between(cp, 0x06df, 0x06e4) || between(cp, 0x06e7, 0x06e8) || between(cp, 0x06ea, 0x06ed)
+  || (INDIC(cp) && indicSign(cp))
+  || between(cp, 0x0d81, 0x0d83) || cp === 0x0dca || between(cp, 0x0dcf, 0x0dd4) || cp === 0x0dd6 // Sinhala signs
+  || between(cp, 0x0dd8, 0x0ddf) || between(cp, 0x0df2, 0x0df3)
+  || cp === 0x0e31 || between(cp, 0x0e34, 0x0e3a) || between(cp, 0x0e47, 0x0e4e) // Thai
+  || cp === 0x0eb1 || between(cp, 0x0eb4, 0x0ebc) || between(cp, 0x0ec8, 0x0ece) // Lao
+  || between(cp, 0x1ab0, 0x1aff) || between(cp, 0x1dc0, 0x1dff) || between(cp, 0x20d0, 0x20ff) // more accents; keycaps
+  || between(cp, 0xfe00, 0xfe0f) || between(cp, 0xfe20, 0xfe2f) // variation selectors; half marks
+  || between(cp, 0x1f3fb, 0x1f3ff) // skin tones
+  || between(cp, 0xe0020, 0xe007f) || between(cp, 0xe0100, 0xe01ef); // a flag's tags; ideographic variation
+
+const hangulLead = (cp: number) => between(cp, 0x1100, 0x115f);
+const hangulVowel = (cp: number) => between(cp, 0x1160, 0x11a7);
+const hangulTail = (cp: number) => between(cp, 0x11a8, 0x11ff);
+const hangulSyllable = (cp: number) => between(cp, 0xac00, 0xd7a3);
+
 /**
  * A code point drawn as part of the character before it: a joiner or what a
- * joiner joins, a variation selector, a skin tone, a combining mark, a keycap,
- * a flag's tag. No cut may fall in front of one — 👍🏽 cut there is a thumb and
- * a swatch, and 🤷‍♀️ a shrug and a sign.
+ * joiner joins, a variation selector, a skin tone, an accent or point or vowel
+ * sign, a keycap, a flag's tag, the consonant after an Indic virama, the parts
+ * of a Korean syllable typed apart. No cut may fall in front of one — 👍🏽 cut
+ * there is a thumb and a swatch, 🤷‍♀️ a shrug and a sign, and ज़ without its dot
+ * is ज, another letter. Hermes has no Intl.Segmenter, so the rules are written out.
  */
 export const joinsThePrevious = (cp: number, prev: number): boolean =>
-  prev === 0x200d || cp === 0x200d || cp === 0x200c
-  || (cp >= 0xfe00 && cp <= 0xfe0f) || (cp >= 0x1f3fb && cp <= 0x1f3ff)
-  || (cp >= 0x0300 && cp <= 0x036f) || cp === 0x20e3 || (cp >= 0xe0020 && cp <= 0xe007f);
+  prev === 0x200d || cp === 0x200d || cp === 0x200c || isMark(cp)
+  || (indicVirama(prev) && indicConsonant(cp))
+  || (hangulLead(prev) && (hangulLead(cp) || hangulVowel(cp)))
+  || ((hangulVowel(prev) || hangulSyllable(prev)) && (hangulVowel(cp) || hangulTail(cp)))
+  || (hangulTail(prev) && hangulTail(cp));
 
 const isHigh = (c: number) => c >= 0xd800 && c <= 0xdbff;
 const isLow = (c: number) => c >= 0xdc00 && c <= 0xdfff;
@@ -51,9 +88,32 @@ export function characterStart(text: string, at: number): number {
   return i;
 }
 
+/** The first character of `text` as a reader counts one, whole; '' for empty text. */
+export function firstCharacter(text: string | null | undefined): string {
+  const t = text ?? '';
+  let end = Math.min(1, t.length);
+  while (end < t.length && !isCharacterBoundary(t, end)) end += 1;
+  return t.slice(0, end);
+}
+
+/** Georgian's everyday letters: their capitals are an all-capitals style, never an initial. */
+const GEORGIAN = (cp: number) => between(cp, 0x10d0, 0x10ff);
+
+/**
+ * A name's letter for a portrait without a photograph, or the raised first
+ * letter of a review: its first character, as a capital where the script has
+ * one that stands for it alone ("ß" is "SS" as a capital, two letters, so it
+ * keeps its one). '' when there is no name: a departed member's disc is empty.
+ */
+export function initialOf(name: string | null | undefined): string {
+  const first = firstCharacter((name ?? '').trim());
+  if (!first || GEORGIAN(first.codePointAt(0) ?? 0)) return first;
+  const upper = first.toUpperCase();
+  return Array.from(upper).length === Array.from(first).length ? upper : first;
+}
+
 /**
  * Extracts the first grapheme (Unicode-aware character) and the remainder of the text.
- * Backed by Intl.Segmenter for O(1) performance with fallback for older JS engines.
  * 
  * @param text The input string to segment.
  * @returns An object containing the first grapheme (`first`) and the remaining text (`rest`).
@@ -68,26 +128,9 @@ export function extractDropCap(text: string): { first: string; rest: string } {
 
     if (!coreText) return { first: '', rest: '' };
 
-    let first = '';
-    let rest = '';
-
-    // Not a date: splitting off the first letter, asked of Intl only where it
-    // exists, with the fallback below where it does not.
-    /* eslint-disable no-restricted-syntax */
-    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-        const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
-        /* eslint-enable no-restricted-syntax */
-        const segments = segmenter.segment(coreText);
-        first = segments[Symbol.iterator]().next().value?.segment ?? coreText.charAt(0);
-        rest = coreText.slice(first.length);
-    } else {
-        // Hermes has no Segmenter: the first CHARACTER, every code point of it —
-        // one code point alone would set the woman of 👩‍💻 as the drop cap.
-        let end = 1;
-        while (end < coreText.length && !isCharacterBoundary(coreText, end)) end += 1;
-        first = coreText.slice(0, end);
-        rest = coreText.slice(first.length);
-    }
+    // The phone's rule, in the tests as on the phone: Hermes has no Intl.Segmenter.
+    const first = firstCharacter(coreText);
+    const rest = coreText.slice(first.length);
 
     return { first, rest };
 }

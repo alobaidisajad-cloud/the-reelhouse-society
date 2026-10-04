@@ -19,6 +19,7 @@ import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { Users, Lock } from 'lucide-react-native';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
+import { initialOf } from '@/src/utils/text';
 
 export interface SalonFace {
   username: string;
@@ -42,9 +43,6 @@ export function buildFaceStackModel(
   return { shown, overflow, overflowLabel };
 }
 
-function initialOf(username: string): string {
-  return (username || '?').trim().charAt(0).toUpperCase() || '?';
-}
 
 export const MemberFaceStack = React.memo(function MemberFaceStack({
   faces,
@@ -84,7 +82,7 @@ export const MemberFaceStack = React.memo(function MemberFaceStack({
                 recyclingKey={f.username}
               />
             ) : (
-              <Text style={s.initial}>{initialOf(f.username)}</Text>
+              <Text style={s.initial}>{initialOf(f.username) || '?'}</Text>
             )}
           </View>
         ))}

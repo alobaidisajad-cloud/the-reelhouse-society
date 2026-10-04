@@ -16,6 +16,7 @@ import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
 
 import { WatchProviders, pickRegion } from '../WatchProviders';
+import { CastCarousel } from '../CastCarousel';
 import { regionOf } from '@/src/utils/deviceRegion';
 import { footageLabel, TrailerModal } from '../TrailerModal';
 import { FilmMediaCarousel } from '../FilmMediaCarousel';
@@ -103,6 +104,20 @@ describe('WHERE IT PLAYS', () => {
     const t = render(<WatchProviders providers={linkless} />);
     expect(t.getByLabelText('Kanopy Plus')).toBeTruthy();
     expect(t.getByText('KP', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('a service without a logo keeps each initial whole: an accent written after its letter stays on it', () => {
+    mockRegion = 'US';
+    const ecran = { US: { flatrate: [{ provider_id: 2, provider_name: 'écran Plus', logo_path: null }] } };
+    const r = render(<WatchProviders providers={ecran} />);
+    expect(r.getByText('ÉP', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('an actor without a photograph is drawn by the whole first letter of their name', () => {
+    // Zafar in Hindi: ज with its dot is ज़, another letter than ज.
+    const name = String.fromCodePoint(0x091c, 0x093c, 0x092b, 0x093c, 0x0930);
+    const r = render(<CastCarousel cast={[{ id: 1, name, character: 'Himself', profile_path: null } as never]} />);
+    expect(r.getByText(String.fromCodePoint(0x091c, 0x093c), { includeHiddenElements: true })).toBeTruthy();
   });
 
   it.each([

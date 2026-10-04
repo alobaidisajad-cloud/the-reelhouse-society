@@ -115,4 +115,16 @@ describe('the essay opens with a raised initial, not a column beside the text', 
     expect(cap.props.allowFontScaling).toBe(false);
     expect(style.fontSize * 0.75).toBeLessThanOrEqual(style.lineHeight);
   });
+
+  it.each([
+    // क्ष is two consonants joined: half of it is another letter.
+    ['a Hindi conjunct', String.fromCodePoint(0x0915, 0x094d, 0x0937), String.fromCodePoint(0x0923)],
+    ['a toned hand', String.fromCodePoint(0x1f44f, 0x1f3fd), ' for the cut.'],
+  ])('raises the whole first letter of %s, and loses nothing after it', (_, first, after) => {
+    const { toJSON } = render(<EssayOpening text={`${first}${after}`} />);
+    const para = toJSON() as any;
+    const cap = (para.children as any[]).find((c) => c && typeof c === 'object');
+    expect(cap.children.join('')).toBe(first);
+    expect((para.children as any[]).map((c) => (typeof c === 'string' ? c : c.children.join(''))).join('')).toBe(`${first}${after}`);
+  });
 });

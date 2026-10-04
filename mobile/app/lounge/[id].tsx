@@ -3,7 +3,8 @@ import { ActionSheet } from '@/src/components/lounge/ActionSheet';
 import { AtTheDoorPanel } from '@/src/components/lounge/AtTheDoorPanel';
 import { LoungeSettingsPanel } from '@/src/components/lounge/LoungeSettingsPanel';
 import { REACTION_META } from '@/src/components/lounge/reactions';
-import { KIND_NAME, nameOf } from '@/src/components/dispatch/paper/paperMetrics';
+import { KIND_NAME, nameOf, UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { initialOf } from '@/src/utils/text';
 import { MasterLogo } from '@/src/components/MasterLogo';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
@@ -254,7 +255,7 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
                   ? <Image source={{ uri: msg.avatar_url }} style={s.authorAvatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                   // A departed member's disc is empty, as on every card: no letter of a mark.
                   : !msg.user_id || isDepartedHandle(msg.username) || !msg.username ? null
-                  : <Text style={s.authorAvatarLetter}>{msg.username[0].toUpperCase()}</Text>}
+                  : <Text style={s.authorAvatarLetter} {...UNSPOKEN}>{initialOf(msg.username)}</Text>}
               </View>
             )}
             <Text style={[s.authorName, isSelf && s.authorNameSelf]} numberOfLines={1}>

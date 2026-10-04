@@ -13,9 +13,9 @@ import { EndMark } from './PaperFrame';
 import { PaperStrike } from './PaperStrike';
 import { softBreak, counted } from './paperText';
 import { DEPARTED_NAME } from '@/src/constants/departed';
-import { isRTLText } from '@/src/utils/text';
+import { initialOf, isRTLText } from '@/src/utils/text';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
-import { Credit, initialOf, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 
 export interface Critique {

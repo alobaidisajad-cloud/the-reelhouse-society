@@ -4,6 +4,7 @@ import { Text } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { tmdb } from '@/src/lib/tmdb';
+import { initialOf } from '@/src/utils/text';
 import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -44,7 +45,7 @@ const CastCard = memo(function CastCard({ item, nameBlock }: { item: CastMember;
                 ) : (
                     <View style={[s.castPhoto, s.castPhotoPlaceholder]}>
                         <Text style={s.castPhotoPlaceholderText}>
-                            {item.name?.charAt(0)?.toUpperCase() ?? '?'}
+                            {initialOf(item.name) || '?'}
                         </Text>
                     </View>
                 )}

@@ -21,7 +21,7 @@
 import { s } from '@/src/components/log/logDetailStyles';
 import PressableScale from '@/src/components/PressableScale';
 import { formatDate } from '@/src/utils/timeAgo';
-import { isRTLText } from '@/src/utils/text';
+import { initialOf, isRTLText } from '@/src/utils/text';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { Image } from 'expo-image';
 import React from 'react';
@@ -101,7 +101,7 @@ export const CritiqueRow = React.memo(function CritiqueRow({
           ) : (
             <View style={s.commentAvatar}>
               {/* A departed member's disc is empty, as on every card: no letter of a mark. */}
-              {departed || !c.username ? null : <Text style={s.commentAvatarText}>{c.username.charAt(0).toUpperCase()}</Text>}
+              {departed || !c.username ? null : <Text style={s.commentAvatarText}>{initialOf(c.username)}</Text>}
             </View>
           )}
           <Text style={s.commUsername} numberOfLines={1}>{linked ? `@${c.username}` : authorName(c.user_id, c.username)}</Text>

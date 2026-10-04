@@ -185,7 +185,7 @@ Decisions, as of 2026-09-28:
 | File | The call site it holds |
 |---|---|
 | `src/components/dispatch/__tests__/aDraftSurvivesThePhone.test.tsx` | The writing room backs its draft up. |
-| `src/components/profile/__tests__/portraitInitial.test.ts` | Each screen that draws a portrait's letter asks `portraitInitial`, and none works it out alone. |
+| `src/components/profile/__tests__/portraitInitial.test.ts` | Both member-file screens ask `portraitInitial`, the DNA card takes its handle's, and each letter is kept from the screen reader (UNSPOKEN is a prop, which a render of three screens and a Lounge room would need far more setup to reach). |
 | `src/components/dispatch/__tests__/nothingIsLostQuietly.test.tsx` | Every composer keeps its draft, amends included. |
 | `src/components/dispatch/__tests__/thePreviewIsThePage.test.tsx` | The preview draws with the page's own typography. |
 | `src/components/dispatch/__tests__/theRailFitsOneScreen.test.ts` | The rail's tools against the budget that sized them. |
@@ -225,6 +225,7 @@ Decisions, as of 2026-09-28:
 | `src/theme/__tests__/nothingOvershoots.guard.test.ts` | Nothing in the app springs or bounces (the law of motion is a property of all source). |
 | `src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts` | Every route file exports the house crash net (Expo Router reads the export, not a render). |
 | `src/utils/__tests__/everyBackHasAWayOut.guard.test.ts` | Every back goes through `nav.back()` or checks `canGoBack()` first (a dead back shows only on a cold-opened screen, which no render reaches). |
+| `src/utils/__tests__/aLetterIsTakenWhole.guard.test.ts` | No file takes a first letter by hand: each comes from `initialOf` / `firstCharacter` (a cut letter shows only for a name in another script, which few renders hold). |
 
 ## Fixtures
 

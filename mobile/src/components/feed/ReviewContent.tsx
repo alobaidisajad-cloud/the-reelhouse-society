@@ -6,7 +6,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
-import { stripHTML, isRTLText } from '@/src/utils/text';
+import { firstCharacter, initialOf, stripHTML, isRTLText } from '@/src/utils/text';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 
 import type { FeedItem } from '@/src/schemas/feed.schema';
@@ -77,6 +77,9 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
 
   if (!item.pull_quote && !cleanReview) return null;
 
+  // The whole first character: half an emoji, or a Hindi letter without its dot, is another letter.
+  const cap = firstCharacter(cleanReview);
+
   return (
     <PressableScale
       onPress={onPress}
@@ -105,8 +108,8 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
         {cleanReview ? (
           item.drop_cap && !rtl ? (
             <Text style={[s.review, s.dropCapReview]} {...scaledTextProps} numberOfLines={PREVIEW_LINES} onTextLayout={onLayout}>
-              <Text style={s.dropCapLetter} allowFontScaling={false}>{cleanReview.charAt(0).toUpperCase()}</Text>
-              <Text style={s.dropCapText}>{cleanReview.slice(1)}</Text>
+              <Text style={s.dropCapLetter} allowFontScaling={false}>{initialOf(cap)}</Text>
+              <Text style={s.dropCapText}>{cleanReview.slice(cap.length)}</Text>
             </Text>
           ) : (
             <Text style={[s.review, rtl && s.rtl]} {...scaledTextProps} numberOfLines={PREVIEW_LINES} onTextLayout={onLayout}>

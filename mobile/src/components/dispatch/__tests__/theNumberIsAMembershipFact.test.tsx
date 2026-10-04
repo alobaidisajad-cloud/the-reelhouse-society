@@ -17,7 +17,8 @@
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { Byline, initialOf, type PaperAuthor } from '../paper/PaperPost';
+import { Byline, type PaperAuthor } from '../paper/PaperPost';
+import { initialOf } from '@/src/utils/text';
 import { DossierShareCard, PaperRoom } from '../paper/PaperMore';
 
 const ANA: PaperAuthor = { name: 'Ana', memberNo: 17, tier: 'auteur', avatar: null };
