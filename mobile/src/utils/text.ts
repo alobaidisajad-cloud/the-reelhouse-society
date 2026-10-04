@@ -78,7 +78,13 @@ function pairRule(a: number, b: number): number {
   return PARTS; // GB999
 }
 
-export function isCharacterBoundary(text: string, i: number): boolean {
+/**
+ * `from`, when given, is a place at or before `i` where the flag count may stop:
+ * a boundary, or the end of a character that is no flag half (a space). A
+ * caller asking at many places in one long word passes the word's start, so a
+ * page of flags is not counted back from every place.
+ */
+export function isCharacterBoundary(text: string, i: number, from = 0): boolean {
   if (i <= 0 || i >= text.length) return true;
   if (isLow(text.charCodeAt(i)) && isHigh(text.charCodeAt(i - 1))) return false;
   const [prev, prevAt] = before(text, i);
@@ -107,7 +113,7 @@ export function isCharacterBoundary(text: string, i: number): boolean {
   }
   // A flag is two halves: in a run of them, only an even count is a seam.
   let halves = 0;
-  for (let j = i; j > 0;) {
+  for (let j = i; j > from;) {
     const [p, start] = before(text, j);
     if (classOf(p) !== RI) break;
     halves += 1;

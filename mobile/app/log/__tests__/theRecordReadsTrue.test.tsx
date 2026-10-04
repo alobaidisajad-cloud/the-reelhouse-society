@@ -262,6 +262,23 @@ describe('no drop cap on a joined script', () => {
     expect(lifted(card)).toEqual([]);
     expect(nodes(card).some((n) => n.type === 'Text' && textOf(n).includes('الانتظار'))).toBe(true);
   });
+
+  it('the card reads the review’s direction from the review: an English pull quote leaves an Arabic review Arabic', async () => {
+    const card = (pull_quote: string, review: string) => render(<View><ReviewContent item={{ id: 'l1', rating: 4, pull_quote, review, drop_cap: true, role: 'archivist', is_spoiler: false } as never}
+      isPremium isAuteur={false} onPress={() => {}} /></View>);
+    let r!: R;
+    await act(async () => { r = card('A masterpiece of silence', ARABIC); });
+    expect(lifted(r)).toEqual([]); // no Arabic letter lifted out of its word
+    expect(textsWith(r, 'الانتظار').map(rightToLeft)).toEqual([true]);
+    expect(textsWith(r, 'A masterpiece of silence').map(rightToLeft)).toEqual([false]);
+    r.unmount();
+    // And the other way round: an Arabic quote does not set the English review hard right.
+    await act(async () => { r = card(ARABIC, 'Every corridor is a held breath.'); });
+    const english = textsWith(r, 'very corridor is a held breath.'); // the paragraph, and the words after its cap
+    expect(english.length).toBeGreaterThan(0);
+    expect(english.map(rightToLeft).every((x) => x === false)).toBe(true);
+    expect(textsWith(r, ARABIC).map(rightToLeft)).toEqual([true]);
+  });
 });
 
 describe('a raised initial is a whole letter, on the card and on the record', () => {

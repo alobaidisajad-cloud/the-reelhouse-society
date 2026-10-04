@@ -11,6 +11,7 @@
  */
 import { characterEnd, firstCharacter, isCharacterBoundary } from '../text';
 import { softBreak } from '../softBreak';
+import * as textModule from '../text';
 import { GRAPHEME_CLASSES, GRAPHEME_RUNS, GRAPHEME_UNICODE } from '../graphemeTable';
 
 const seg = new Intl.Segmenter('en', { granularity: 'grapheme' });
@@ -163,6 +164,22 @@ describe('a long word is offered breaks only between characters, in the time it 
   it('a dash with an accent on it stays whole', () => {
     const text = `${'a'.repeat(10)}-${s(0x0301)}${'b'.repeat(20)}`;
     expect(softBreak(text)).not.toContain(`${ZWSP}${s(0x0301)}`);
+  });
+
+  it('asks about each place at most once, and never walks the text from its start', () => {
+    // Walking every character from the start each time a run grew long made
+    // Japanese and Thai, which have no spaces, three to four times slower.
+    const asked = jest.spyOn(textModule, 'isCharacterBoundary');
+    const walked = jest.spyOn(textModule, 'characterEnd');
+    try {
+      const japanese = '映画は時間の彫刻であると彼は書いた'.repeat(120);
+      softBreak(japanese);
+      expect(walked).not.toHaveBeenCalled();
+      expect(asked.mock.calls.length).toBeLessThanOrEqual([...japanese].length);
+    } finally {
+      asked.mockRestore();
+      walked.mockRestore();
+    }
   });
 
   it('a page of flags costs its length, not its length squared', () => {

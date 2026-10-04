@@ -34,7 +34,7 @@
  * It lived in the Dispatch's `paperText` until the film page needed it; that
  * file re-exports it, so the Dispatch reads it where it always did.
  */
-import { characterEnd, isCharacterBoundary } from './text';
+import { isCharacterBoundary } from './text';
 
 /**
  * The longest unbroken run allowed before a wrap point is offered.
@@ -104,8 +104,6 @@ export function softBreak(text: string, run: number = MAX_RUN): string {
   let buf = '';
   /** Where the next code point starts in `text`. */
   let pos = 0;
-  /** Where the character being read ends: followed forward, only once a run is long enough to need it. */
-  let edge = 0;
 
   for (const ch of text) {
     pos += ch.length;
@@ -122,8 +120,9 @@ export function softBreak(text: string, run: number = MAX_RUN): string {
     // Never cut a character in two: the break waits until the next one starts.
     // An emoji sequence can run a few units past `run` — it is drawn far
     // narrower than its units (a family of four is eleven units, one glyph).
-    while (edge < pos) edge = characterEnd(text, edge);
-    if (edge !== pos) continue;
+    // The run starts after a space or a break, so a flag count may stop there:
+    // one place asked per character, and a page of flags is not counted back from each.
+    if (!isCharacterBoundary(text, pos, pos - buf.length)) continue;
 
     /**
      * How many characters stay on the line. The LAST joint wins, so the line

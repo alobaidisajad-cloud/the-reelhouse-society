@@ -65,7 +65,10 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
   const cleanReview = React.useMemo(() => stripHTML(item.review ?? ''), [item.review]);
 
   // Right-to-left is decided by the text, not the phone: Arabic on an English phone is Arabic.
-  const rtl = React.useMemo(() => isRTLText(item.pull_quote || cleanReview), [item.pull_quote, cleanReview]);
+  // Each by its own words: the pull quote is typed apart from the review, and
+  // an English quote above an Arabic review leaves the review Arabic.
+  const quoteRtl = React.useMemo(() => isRTLText(item.pull_quote), [item.pull_quote]);
+  const rtl = React.useMemo(() => isRTLText(cleanReview), [cleanReview]);
 
   // Did the preview actually clip? onTextLayout reports the lines that were
   // laid out, so this asks the same question the cap answers instead of
@@ -95,7 +98,7 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
         {/* Pull quote — capped at 4 lines so no quote can swallow the card */}
         {item.pull_quote && (
           <View style={s.pullQuoteWrap}>
-            <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isPremium && !isAuteur && s.pullQuotePremium, rtl && s.rtl]} {...displayTextProps} numberOfLines={4}>
+            <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isPremium && !isAuteur && s.pullQuotePremium, quoteRtl && s.rtl]} {...displayTextProps} numberOfLines={4}>
               « {item.pull_quote} »
             </Text>
           </View>

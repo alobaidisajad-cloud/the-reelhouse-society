@@ -112,7 +112,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/film/[id].tsx | 2026-10-01 | doors through nav; the critiques' failure carried down; the footage named |
 | app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx | 2026-09-30 | written with the log page's critiques matched to the stack's |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
-| app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-04 | edited: an opening quote rides up with the raised letter |
+| app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-04 | edited: an English pull quote leaves an Arabic review Arabic, and the reverse |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | 2026-10-04 | edited: the critique box focus through useLater |
 | app/lounge.tsx | 2026-10-01 | true as written |
@@ -351,7 +351,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/feed/ActivityCard.tsx | 2026-10-01 | lies flat unless an Auteur's; comments made true |
 | src/components/feed/AutopsyView.tsx | 2026-10-01 | each score read whole |
 | src/components/feed/PosterFrame.tsx | 2026-10-01 | the poster says its film |
-| src/components/feed/ReviewContent.tsx | 2026-10-04 | edited: the drop cap is extractDropCap’s |
+| src/components/feed/ReviewContent.tsx | 2026-10-04 | edited: the review and the pull quote each take their own direction |
 | src/components/feed/UserAttributionRow.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
 | src/components/film/__tests__/castRailFits.test.ts | — |  |
 | src/components/film/__tests__/FilmActionTray.test.tsx | — |  |
@@ -1025,7 +1025,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/searchPattern.test.ts | — |  |
 | src/utils/__tests__/searchWiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
-| src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-04 | edited: walked and asked agree; softBreak breaks only between characters, in linear time; the table’s Unicode is Node’s |
+| src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-04 | edited: softBreak asks each place at most once and never walks from the start; flags stay linear |
 | src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts | 2026-10-03 | Written with 20261003_05: the corpus holds every character the cleaning acts on, with cleanForStorage's answer. |
 | src/utils/__tests__/theDeadLetterIsNobodyElsesToKeep.test.ts | — |  |
 | src/utils/__tests__/theDraftIsYours.test.ts | — |  |
@@ -1080,13 +1080,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/roomFilters.ts | 2026-10-01 | new |
 | src/utils/sanitizeInput.ts | 2026-10-03 | read whole: U+2028/U+2029 kept as the breaks they are, not stripped |
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/utils/softBreak.ts | 2026-10-04 | edited: follows character edges forward; a joint breaks only between characters |
+| src/utils/softBreak.ts | 2026-10-04 | edited: one place asked per character, the flag count stopping at the run’s start; a joint breaks only between characters |
 | src/utils/standing.ts | 2026-10-02 | Written in the launch audit: the member's standing, read with the profile and on refusal. |
 | src/utils/svgId.ts | 2026-10-03 | new: the one paint id (the Lobby’s and the room light’s) |
 | src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
-| src/utils/text.ts | 2026-10-04 | edited: characterEnd walks a text once; a drop cap raises only a short mark touching its letter |
+| src/utils/text.ts | 2026-10-04 | edited: isCharacterBoundary takes where a flag count may stop; characterEnd walks a text once; a drop cap raises only a short mark |
 | src/utils/tier.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/tierDoor.ts | 2026-10-01 | the server sentence as a door |
 | src/utils/tierRefusal.ts | 2026-10-01 | by the sentence, not the code |
