@@ -52,14 +52,16 @@ export const PublicLoungeCard = React.memo(({ lounge, index: _index, onReport }:
         )}
 
         <View style={s.publicBody}>
-          <View style={s.nameRow}>
-            <Text style={s.publicName} numberOfLines={2}>{lounge.name}</Text>
+          {/* The key sits above the name, never beside it: there it took the name's
+              line, and a long word in a salon's name ran past its edge at larger text. */}
+          <View style={s.nameBlock}>
             {lounge.is_private && (
               <View style={s.publicPrivateBadge}>
                 <KeyRound size={9} color={colors.sepia} strokeWidth={1.5} />
                 <Text style={s.publicPrivateText} numberOfLines={1}>BY REQUEST</Text>
               </View>
             )}
+            <Text style={s.publicName} numberOfLines={2}>{lounge.name}</Text>
           </View>
           <Text style={s.publicDesc} numberOfLines={3}>
             {lounge.description || 'A cinematic gathering place.'}
@@ -111,20 +113,17 @@ const s = StyleSheet.create({
   },
   publicImgContent: { width: '100%', height: '100%' },
   publicBody: { flex: 1 },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
+  nameBlock: {
     marginBottom: 8,
   },
   publicName: {
-    flex: 1,
     fontFamily: fonts.display,
     fontSize: 19,
     color: colors.parchment,
     lineHeight: 24,
   },
   publicPrivateBadge: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
@@ -133,7 +132,7 @@ const s = StyleSheet.create({
     borderRadius: 2,
     borderWidth: 1,
     borderColor: colors.sepiaBorder,
-    marginTop: 3,
+    marginBottom: 6,
   },
   publicPrivateText: {
     fontFamily: fonts.sub,

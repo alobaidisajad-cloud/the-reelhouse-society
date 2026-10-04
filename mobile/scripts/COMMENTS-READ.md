@@ -490,7 +490,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/LoungeStyles.ts | 2026-10-01 | true as written |
 | src/components/lounge/loungeTabStyles.ts | 2026-10-01 | contrast history to its reasons |
 | src/components/lounge/MemberFaceStack.tsx | 2026-10-04 | edited: its own initialOf gone; the one in utils/text |
-| src/components/lounge/PublicLoungeCard.tsx | 2026-10-04 | edited: the door takes no halo (it reached 16pt into the next one) |
+| src/components/lounge/PublicLoungeCard.tsx | 2026-10-04 | edited: the door takes no halo (it reached 16pt into the next one); the key sits above the name, which a long word ran past beside it |
 | src/components/lounge/reactions.tsx | 2026-10-01 | true as written |
 | src/components/lounge/roomGate.ts | 2026-10-02 | Read whole (launch audit). A member banned from a PUBLIC room got the preview (TAKE A SEAT), which the house refuses: banned is decided before the preview now. Verified on the server: protect_lounge_member_status refuses any status change but the host's, so neither a muted nor a banned member can seat themselves. |
 | src/components/MarkFigure.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
