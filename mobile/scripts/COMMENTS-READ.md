@@ -173,7 +173,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tabs/__tests__/zz-dispatch.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/tabs/__tests__/zz-lobby.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/tabs/__tests__/zz-reel.gen.test.tsx | 2026-09-29 | true as written |
-| mockups/tabs/__tests__/zz-rooms.gen.test.tsx | 2026-09-29 | true as written |
+| mockups/tabs/__tests__/zz-rooms.gen.test.tsx | 2026-10-04 | edited: the Lounge drawn from rooms in the store's own shape, two doors side by side |
 | mockups/tabs/__tests__/zz-settings.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/tabs/flashListMock.tsx | 2026-10-01 | rows handed extraData, as FlashList does |
 | mockups/tools/drawn.cjs | 2026-10-03 | read whole: controls counted through stripComments.js |
@@ -489,7 +489,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/LoungeStyles.ts | 2026-10-01 | true as written |
 | src/components/lounge/loungeTabStyles.ts | 2026-10-01 | contrast history to its reasons |
 | src/components/lounge/MemberFaceStack.tsx | 2026-10-04 | edited: its own initialOf gone; the one in utils/text |
-| src/components/lounge/PublicLoungeCard.tsx | 2026-10-01 | true as written |
+| src/components/lounge/PublicLoungeCard.tsx | 2026-10-04 | edited: the door takes no halo (it reached 16pt into the next one) |
 | src/components/lounge/reactions.tsx | 2026-10-01 | true as written |
 | src/components/lounge/roomGate.ts | 2026-10-02 | Read whole (launch audit). A member banned from a PUBLIC room got the preview (TAKE A SEAT), which the house refuses: banned is decided before the preview now. Verified on the server: protect_lounge_member_status refuses any status change but the host's, so neither a muted nor a banned member can seat themselves. |
 | src/components/MarkFigure.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -836,6 +836,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/aRefusedWriteIsNotSuccess.test.ts | — |  |
 | src/stores/__tests__/aResetThatFailedIsHeard.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): a failed sign-out reset reaches the logger in production. |
 | src/stores/__tests__/aSalonKeepsItsCoverAndItsDoor.test.ts | 2026-10-01 | written: the corridor reads covers; a rank refusal is a door |
+| src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts | 2026-10-04 | written whole: a seat taken or given up is drawn as the next read gives it |
 | src/stores/__tests__/aStackIsSavedWhole.test.ts | — |  |
 | src/stores/__tests__/auth.test.ts | 2026-10-03 | payments pass: the rank history is asked for the member alone, and a failed ask throws nowhere |
 | src/stores/__tests__/blockEnforcement.test.ts | — |  |
@@ -904,7 +905,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/watchlistSlice.ts | 2026-10-02 | a film already queued stays, and is said to be |
 | src/stores/films.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/followStore.ts | 2026-10-01 | comments cut to the why |
-| src/stores/lounge.ts | 2026-10-03 | edited: a salon description is cleaned by its own cap |
+| src/stores/lounge.ts | 2026-10-04 | edited: one membership language (mine, membership_status); the pending-leave flag nothing read is gone; seatedIn/leftBehind say what the next read gives |
 | src/stores/markCounts.ts | 2026-10-02 | read; sound |
 | src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
 | src/stores/notificationStore.ts | 2026-10-02 | first page ordered by time then id; moreFailed |

@@ -62,11 +62,11 @@ it('offers only the salons the house lets this member speak in', async () => {
   // The server's rule is "Approved members can send": a pending or muted seat is refused.
   useLoungeStore.setState({
     lounges: [
-      room('Seated', { membership_status: 'approved', unread_count: 0 }),
-      room('Asked', { membership_status: 'pending', unread_count: 0 }),
-      room('Hushed', { membership_status: 'muted', unread_count: 0 }),
-      room('JustFounded', { is_member: true, unread_count: 0 }),
-      room('Passing', {}),
+      room('Seated', { mine: true, membership_status: 'approved', unread_count: 0 }),
+      room('Asked', { mine: true, membership_status: 'pending', unread_count: 0 }),
+      room('Hushed', { mine: true, membership_status: 'muted', unread_count: 0 }),
+      room('JustFounded', { mine: true, membership_status: 'approved', unread_count: 0, pending_count: 0 }),
+      room('Passing', { mine: false }),
     ],
     loungesFailed: false, loading: false, fetchLounges,
   } as never);

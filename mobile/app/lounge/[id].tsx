@@ -360,7 +360,7 @@ export default function LoungeRoomScreen() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [doorOpen, setDoorOpen] = useState(false);
   const [members, setMembers] = useState<LoungeMember[]>([]);
-  const [localLounge, setLocalLounge] = useState<(LoungeRoom & { is_member?: boolean }) | null>(null);
+  const [localLounge, setLocalLounge] = useState<LoungeRoom | null>(null);
   // What the Lounge list knows of this member here, else unknown until the roster
   // is read — never taken for "none" (roomGate.ts, knownStanding).
   const [myStatus, setMyStatus] = useState<RoomStanding>(() => knownStanding(useLoungeStore.getState().lounges, id));

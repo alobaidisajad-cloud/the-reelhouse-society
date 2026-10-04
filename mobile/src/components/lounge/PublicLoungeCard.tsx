@@ -24,8 +24,10 @@ export const PublicLoungeCard = React.memo(({ lounge, index: _index, onReport }:
 
   return (
     <View style={s.cardWrapper}>
+      {/* A door the size of a card needs no halo: one would reach across the gap into the next door. */}
       <PressableScale
         style={s.publicCard}
+        hitSlop={null}
         onPress={() => nav.push(`/lounge/${lounge.id}`)}
         onLongPress={onReport ? () => onReport(lounge) : undefined}
         haptic="light"

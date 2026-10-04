@@ -74,12 +74,12 @@ beforeEach(() => {
   selectResult = { data: [], error: null };
   useLoungeStore.setState({
     lounges: [], currentMessages: [], currentLoungeId: null, sending: false,
-    members: {}, loading: false, typingUsers: {}, _pendingLeaveLoungeIds: new Set(),
+    members: {}, loading: false, typingUsers: {},
   } as never);
 });
 
 describe('deleteLounge', () => {
-  const own = { id: L1, name: 'The Salon', creator_id: U1, is_member: true, member_count: 1, unread_count: 0 };
+  const own = { id: L1, name: 'The Salon', creator_id: U1, mine: true, membership_status: 'approved', member_count: 1, unread_count: 0 };
 
   it('REPORTS FAILURE when the delete touched no row', async () => {
     useLoungeStore.setState({ lounges: [own] } as never);
@@ -102,7 +102,7 @@ describe('deleteLounge', () => {
 });
 
 describe('leaveLounge', () => {
-  const joined = { id: L1, name: 'The Salon', creator_id: 'someone-else', is_member: true, member_count: 4, unread_count: 0 };
+  const joined = { id: L1, name: 'The Salon', creator_id: 'someone-else', mine: true, membership_status: 'approved', member_count: 4, unread_count: 0 };
 
   it('TELLS THE MEMBER when the seat was not actually given up', async () => {
     useLoungeStore.setState({ lounges: [joined] } as never);

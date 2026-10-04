@@ -53,6 +53,7 @@ src/components/log/LogIndexEntry.tsx
 src/components/log/LogSearchEngine.tsx
 src/components/log/NoteSheet.tsx
 src/components/lounge/JoinedLoungeCard.tsx
+src/components/lounge/PublicLoungeCard.tsx
 src/components/moderation/ContentActionSheet.tsx
 src/components/moderation/ReportSheet.tsx
 src/components/person/PersonDefining.tsx

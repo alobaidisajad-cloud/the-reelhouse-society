@@ -17,7 +17,7 @@ import { MasterLogo } from '@/src/components/MasterLogo';
 import { useFocusEffect } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
 import { globalScrollY } from '@/src/lib/scrollBridge';
-import { useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
+import { isMine, useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
 import { useAuthStore } from '@/src/stores/auth';
 import { isArchivistPlusTier } from '@/src/utils/tier';
 import { useClearance } from '@/src/hooks/useClearance';
@@ -170,8 +170,8 @@ export default function LoungeScreen() {
       (l.description && l.description.toLowerCase().includes(q))
     );
     return {
-      myLounges: filtered.filter(l => typeof l.unread_count === 'number'),
-      browsableLounges: filtered.filter(l => typeof l.unread_count !== 'number'),
+      myLounges: filtered.filter(isMine),
+      browsableLounges: filtered.filter(l => !isMine(l)),
     };
   }, [lounges, searchQuery]);
 

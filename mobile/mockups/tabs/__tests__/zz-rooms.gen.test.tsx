@@ -113,16 +113,27 @@ whenRendering('rooms generator', () => {
   });
 
   it('writes the Lounge', async () => {
-    const room = (i: number, over: Record<string, unknown> = {}) => ({
-      id: 'l' + i, name: ['The Nitrate Circle', 'Kurosawa Weekly', 'Midnight Programmers'][i],
-      description: ['Silent era and early sound, every Thursday.', 'One Kurosawa a week, in order.', 'Whatever is on after midnight.'][i],
-      is_private: i === 2, creator_id: 'm' + i, created_at: '2026-06-01T00:00:00Z',
-      member_count: [42, 18, 7][i], unread_count: i === 0 ? 3 : 0,
-      last_message: ['Sunrise holds up.', 'Ikiru next week.', 'Anyone awake?'][i],
-      last_message_at: new Date(Date.now() - (i + 1) * 3600e3).toISOString(),
-      is_member: i < 2, cover_image: null, ...over,
-    });
-    useLoungeStore.setState({ lounges: [room(0), room(1), room(2)], loading: false } as never);
+    // In the store's own shape: two salons the member sits in, and two doors to
+    // browse side by side (one by request), so the doors are measured together.
+    const room = (i: number, over: Record<string, unknown> = {}) => {
+      const mine = i < 2;
+      return {
+        id: 'l' + i, name: ['The Nitrate Circle', 'Kurosawa Weekly', 'Midnight Programmers', 'The Ozu Hour'][i],
+        description: ['Silent era and early sound, every Thursday.', 'One Kurosawa a week, in order.', 'Whatever is on after midnight.', 'Tatami height, one film a month.'][i],
+        is_private: i === 2, creator_id: 'm' + i, created_at: '2026-06-01T00:00:00Z',
+        member_count: [42, 18, 7, 23][i], cover_image: null,
+        mine,
+        ...(mine
+          ? {
+              membership_status: 'approved', unread_count: i === 0 ? 3 : 0,
+              last_message: ['Sunrise holds up.', 'Ikiru next week.'][i],
+              last_message_at: new Date(Date.now() - (i + 1) * 3600e3).toISOString(),
+            }
+          : { pending_count: 0 }),
+        ...over,
+      };
+    };
+    useLoungeStore.setState({ lounges: [room(0), room(1), room(2), room(3)], loading: false } as never);
     let r!: ReturnType<typeof render>;
     await act(async () => { r = render(<LoungeScreen />); await new Promise(res => setTimeout(res, 0)); });
     const html = toHtml(r.toJSON(), { posters, local: LOCAL_ART });

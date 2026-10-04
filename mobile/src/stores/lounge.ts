@@ -31,7 +31,13 @@ export interface LoungeRoom {
   unread_count?: number;
   last_message?: string;
   last_message_at?: string;
-  is_member?: boolean;
+  /**
+   * One of the corridor's "your salons": a room this member belongs to, at any
+   * standing (a request still at the door too), or hosts. Set by every read and
+   * by every seat taken or given up here, in the same shape (isMine, seatedIn,
+   * leftBehind below).
+   */
+  mine?: boolean;
   /** The current user's standing in this lounge (drives the "Awaiting" tag). */
   membership_status?: 'approved' | 'pending' | 'muted' | 'banned';
   /** For lounges you host: how many requests are at the door. */
@@ -138,7 +144,6 @@ export interface LoungeState {
   purgeHiddenMessages: () => void;
   canSendMessage: (loungeId?: string) => boolean;
   syncGlobalAvatar: (userId: string, avatarUrl: string | null) => void;
-  _pendingLeaveLoungeIds: Set<string>;
   _lastMarkReadMap: Record<string, number>;
 }
 
@@ -306,11 +311,46 @@ interface LoungeMessageRow {
 
 /**
  * Whether this member may post in a salon: the server's rule ("Approved members can
- * send"), read from the status it gave, or — for a salon just founded or joined, before
- * that status arrives — from the seat this phone took.
+ * send"), read from the standing it gave — or, for a salon just founded or joined,
+ * the standing this phone set when the house said yes (seatedIn).
  */
-export function canPostIn(room: Pick<LoungeRoom, 'membership_status' | 'is_member'>): boolean {
-  return room.membership_status ? room.membership_status === 'approved' : !!room.is_member;
+export function canPostIn(room: Pick<LoungeRoom, 'membership_status'>): boolean {
+  return room.membership_status === 'approved';
+}
+
+/** Whether a room is among the corridor's "your salons". */
+export const isMine = (room: Pick<LoungeRoom, 'mine'>): boolean => room.mine === true;
+
+/** A room as the next read will give it once the house has seated this member as approved. */
+export function seatedIn(room: LoungeRoom): LoungeRoom {
+  const wasApproved = room.membership_status === 'approved';
+  return {
+    ...room,
+    mine: true,
+    membership_status: 'approved',
+    unread_count: room.unread_count ?? 0,
+    member_count: wasApproved ? room.member_count : (room.member_count ?? 0) + 1,
+  };
+}
+
+/**
+ * A room as the next read will give it once this member has left: no longer
+ * theirs (none of what is read only for one's own rooms — unread count, last
+ * message, faces, door requests), and one fewer in its count only if they
+ * were counted (member_count counts approved members).
+ */
+export function leftBehind(room: LoungeRoom): LoungeRoom {
+  const counted = room.membership_status === 'approved';
+  return {
+    ...room,
+    mine: false,
+    membership_status: undefined,
+    unread_count: undefined,
+    last_message_at: undefined,
+    memberFaces: undefined,
+    pending_count: 0,
+    member_count: counted ? Math.max(0, (room.member_count ?? 1) - 1) : room.member_count,
+  };
 }
 
 export const useLoungeStore = create<LoungeState>()((set, get) => ({
@@ -322,7 +362,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   sending: false,
   presentCount: 0,
   typingUsers: [],
-  _pendingLeaveLoungeIds: new Set(),
   _lastMarkReadMap: {},
 
   fetchLounges: async () => {
@@ -452,6 +491,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         created_at: l.created_at,
         member_count: l.member_count ?? 0,
         cover_image: l.cover_image ?? null,
+        mine: ownedOrJoinedIds.has(l.id),
         unread_count: ownedOrJoinedIds.has(l.id) ? (unreadCounts[l.id] || 0) : undefined,
         last_message_at: lastMessageTimestamps[l.id],
         membership_status: statusMap.get(l.id) as LoungeRoom['membership_status'],
@@ -836,9 +876,12 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         is_private: isPrivate,
         creator_id: user.id,
         created_at: new Date().toISOString(),
+        // create_lounge seats its creator, approved: counted, and theirs.
         member_count: 1,
         unread_count: 0,
-        is_member: true,
+        mine: true,
+        membership_status: 'approved',
+        pending_count: 0,
       };
 
       // null, not a bare return: callers test === null, and tsc would let undefined pass.
@@ -883,9 +926,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (error) throw error;
       if (!memberUnchanged(startedAs)) return false;
       set(s => ({
-        lounges: s.lounges.map(l => l.id === loungeId
-          ? { ...l, is_member: true, member_count: (l.member_count || 0) + 1 }
-          : l),
+        lounges: s.lounges.map(l => (l.id === loungeId ? seatedIn(l) : l)),
       }));
       await get().fetchLounges();
       queryClient.invalidateQueries({ queryKey: ['lounge_membership', loungeId] });
@@ -1130,35 +1171,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         return false;
     }
 
-    set(s => {
-      const newSet = new Set(s._pendingLeaveLoungeIds);
-      newSet.add(loungeId);
-      return { _pendingLeaveLoungeIds: newSet };
-    });
-    const timeoutId = setTimeout(() => {
-      if (get()._pendingLeaveLoungeIds.has(loungeId)) {
-        set(s => {
-          const newSet = new Set(s._pendingLeaveLoungeIds);
-          newSet.delete(loungeId);
-          return { _pendingLeaveLoungeIds: newSet };
-        });
-      }
-    }, 5000);
-
-    set(s => {
-      const target = s.lounges.find(l => l.id === loungeId);
-      if (!target || !target.is_member) return s;
-      if (target.is_private) {
-        return { lounges: s.lounges.filter(l => l.id !== loungeId) };
-      }
-      return { 
-        lounges: s.lounges.map(l => l.id === loungeId ? { 
-          ...l, 
-          is_member: false,
-          member_count: Math.max(0, (l.member_count || 1) - 1)
-        } : l) 
-      };
-    });
+    // At once, as the next read will have it: out of "your salons", into the
+    // rooms to browse (a private one too: it is still there to ask at).
+    set(s => ({ lounges: s.lounges.map(l => (l.id === loungeId && isMine(l) ? leftBehind(l) : l)) }));
 
     // A delete that row security refuses answers 200 with no error, so the rows are asked
     // for back: none means the member is still in the room (checked against production).
@@ -1169,14 +1184,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
     if (error || !removed || removed.length === 0) {
       if (!memberUnchanged(startedAs)) return false;
-      set(s => {
-        const newSet = new Set(s._pendingLeaveLoungeIds);
-        newSet.delete(loungeId);
-        return { _pendingLeaveLoungeIds: newSet };
-      });
-      clearTimeout(timeoutId);
       reelToast.error('Failed to leave — please try again.');
-      await get().fetchLounges();
+      await get().fetchLounges(); // the seat is still theirs: read it back
       return false;
     }
     queryClient.invalidateQueries({ queryKey: ['lounge_membership', loungeId] });
@@ -1421,7 +1430,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {
-    useLoungeStore.setState({ lounges: [], loungesFailed: false, currentMessages: [], currentLoungeId: null, loading: false, sending: false, presentCount: 0, typingUsers: [], _pendingLeaveLoungeIds: new Set(), _lastMarkReadMap: {} });
+    useLoungeStore.setState({ lounges: [], loungesFailed: false, currentMessages: [], currentLoungeId: null, loading: false, sending: false, presentCount: 0, typingUsers: [], _lastMarkReadMap: {} });
     _lastCreateAt = 0;
     _lastTypingBroadcastAt = 0;
     // Every module-level memory, or the next member on this phone inherits it.

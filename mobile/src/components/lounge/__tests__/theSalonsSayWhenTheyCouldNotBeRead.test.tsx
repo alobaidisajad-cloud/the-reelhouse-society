@@ -58,7 +58,7 @@ import { useLoungeStore } from '@/src/stores/lounge';
 
 const ROOM = {
   id: 'l0', name: 'The Nitrate Circle', description: 'Silent era, every Thursday.', is_private: false,
-  creator_id: 'm0', created_at: '2026-06-01T00:00:00Z', member_count: 42, unread_count: 0, is_member: true,
+  creator_id: 'm0', created_at: '2026-06-01T00:00:00Z', member_count: 42, unread_count: 0, mine: true, membership_status: 'approved',
 };
 const toast = () => jest.requireMock('@/src/utils/reelToast').default;
 const fetchLounges = jest.fn(async () => {});
@@ -104,7 +104,7 @@ it('a pull that reaches nothing keeps the salons and says so', async () => {
 
 describe('what the corridor says when it is empty', () => {
   it('a search that matches nothing says so, not that no salon is open', async () => {
-    useLoungeStore.setState({ lounges: [{ ...ROOM, unread_count: undefined, is_member: false }], loungesFailed: false, loading: false, fetchLounges } as never);
+    useLoungeStore.setState({ lounges: [{ ...ROOM, unread_count: undefined, mine: false, membership_status: undefined }], loungesFailed: false, loading: false, fetchLounges } as never);
     const r = await mount();
     await act(async () => { fireEvent.changeText(r.getByLabelText('Search salons'), 'zzzz'); });
     expect(r.getByText('No salon matches that.')).toBeTruthy();
