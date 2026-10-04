@@ -59,7 +59,7 @@ ${DEFS}<g id="all">${inner}</g></svg></body></html>`;
 async function draw(browser, inner, frame, px) {
   const tab = await browser.newPage({ viewport: { width: Math.ceil(px), height: Math.ceil(px * frame.h / frame.w) }, deviceScaleFactor: 1 });
   await tab.setContent(page(inner, frame, px));
-  const { eyes, room } = await tab.evaluate((unit) => {
+  const { eyes, room, stray } = await tab.evaluate((unit) => {
     const art = document.getElementById('art');
     const box = art.getBoundingClientRect();
     const marks = [...art.querySelectorAll('[data-eye]')];
@@ -89,11 +89,56 @@ async function draw(browser, inner, frame, px) {
       for (let s = unit / 50; s <= unit * 8 && inside(dir * s); s += unit / 50) ok = s;
       return ok / box.width;
     };
-    return { eyes, room: marks.length ? { rest: inside(0), right: reach(1), left: reach(-1) } : null };
+    // Everything drawn after the first point is drawn over the points, so it must
+    // be in the layer over them: all but a later eye's own hole, its glow, its mark.
+    const DRAWN = 'path,circle,ellipse,rect,line,polyline,polygon,text,image,use';
+    const unseen = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,filter';
+    const underAPoint = (el) => el.hasAttribute('data-hole') || el.hasAttribute('data-eye')
+      || el.closest('g[clip-path]')?.previousElementSibling?.previousElementSibling?.hasAttribute('data-hole');
+    const stray = !marks.length ? [] : [...art.querySelectorAll(DRAWN)]
+      .filter((el) => marks[0].compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .filter((el) => !el.closest(unseen) && !el.closest('[data-over]') && !underAPoint(el))
+      .map((el) => el.outerHTML.slice(0, 80));
+    return { eyes, stray, room: marks.length ? { rest: inside(0), right: reach(1), left: reach(-1) } : null };
   }, px / frame.w);
-  const png = await tab.screenshot({ omitBackground: true, clip: { x: 0, y: 0, width: px, height: px * frame.h / frame.w } });
+  if (stray.length) throw new Error(`drawn after his points but not over them (wrap it in over()): ${stray.join(' | ')}`);
+  const clip = { x: 0, y: 0, width: px, height: px * frame.h / frame.w };
+  const png = await tab.screenshot({ omitBackground: true, clip });
+  // With points, the picture is two: what lies under them, and what the drawing
+  // paints over them (the lids, the lines, the hat), which the app lays on top.
+  let layers = null;
+  if (eyes.length) {
+    const only = async (css) => {
+      const style = await tab.addStyleTag({ content: css });
+      const shot = await tab.screenshot({ omitBackground: true, clip });
+      await style.evaluate((el) => el.remove());
+      return shot;
+    };
+    const under = await only('[data-over], [data-over] * { visibility: hidden !important }');
+    const over = await only('#all *:not(clipPath):not(clipPath *):not(mask):not(mask *) { visibility: hidden }'
+      + ' [data-over], [data-over] * { visibility: visible !important }');
+    layers = { under, over };
+  }
   await tab.close();
-  return { png, measured: { eyes, room, hem: await hemOf(png) } };
+  return { png, layers, measured: { eyes, room, hem: await hemOf(png) } };
+}
+
+/**
+ * The most any pixel differs, in what it draws (colour times opacity, 0 to
+ * 255), between the drawing and its two layers laid one on the other: the split
+ * must lose nothing. Colour alone is not compared: at the faint edge of a stroke
+ * it swings with rounding while what is drawn there does not.
+ */
+async function splitLoss(png, { under, over }) {
+  const whole = await sharp(png).ensureAlpha().raw().toBuffer();
+  const laid = await sharp(under).composite([{ input: over }]).ensureAlpha().raw().toBuffer();
+  let most = 0;
+  for (let i = 0; i < whole.length; i += 4) {
+    const a = whole[i + 3], b = laid[i + 3];
+    most = Math.max(most, Math.abs(a - b));
+    for (let c = 0; c < 3; c++) most = Math.max(most, Math.abs(whole[i + c] * a - laid[i + c] * b) / 255);
+  }
+  return Math.ceil(most);
 }
 
 /** How far down the sheet ends, from its pixels: the last row a quarter opaque. */
@@ -141,9 +186,14 @@ async function renderApp(browser) {
       const edge = await edges(drawn.png);
       const cut = Object.entries(edge).filter(([side, alpha]) => alpha > 2 && !(mood === 'seated' && side !== 'top'));
       if (cut.length) throw new Error(`${mood}-${size}: the frame cuts the drawing at ${cut.map(([s]) => s).join(', ')}`);
-      await sharp(drawn.png).resize(w, h, { kernel: 'lanczos3' })
+      const save = (png, key) => sharp(png).resize(w, h, { kernel: 'lanczos3' })
         .png({ compressionLevel: 9, adaptiveFiltering: true, effort: 10 })
-        .toFile(path.join(ASSETS, fileFor(`${mood}-${size}`, scale)));
+        .toFile(path.join(ASSETS, fileFor(key, scale)));
+      if (!drawn.layers) { await save(drawn.png, `${mood}-${size}`); continue; }
+      const loss = await splitLoss(drawn.png, drawn.layers);
+      if (loss > SPLIT_LOSS_MOST) throw new Error(`${mood}-${size}: its two layers laid together differ from the drawing by ${loss} of 255`);
+      await save(drawn.layers.under, `${mood}-${size}`);
+      await save(drawn.layers.over, `${mood}-${size}-over`);
     }
     // Where the drawing turns him: his head, at (100, 120).
     const pivot = { x: (100 - frame.x) / frame.w, y: (120 - frame.y) / frame.h };
@@ -151,6 +201,9 @@ async function renderApp(browser) {
   }
   writeData(entries);
 }
+
+/** The most the two layers, laid together, may differ from the drawing: rounding, not a stroke. */
+const SPLIT_LOSS_MOST = 3;
 
 /** How far his points glance, in drawing units, when they have the room. */
 const GLANCE = 3.6;
@@ -172,12 +225,17 @@ function glanceOf(key, room, frame) {
 function writeData(entries) {
   const lines = entries.map(({ key, size, height, measured, pivot, glance }) => {
     const eyes = measured.eyes.map((e) => `{ x: ${round(e.x)}, y: ${round(e.y)}, r: ${round(e.r)} }`).join(', ');
-    return `  '${key}': {\n    picture: require('../../assets/buster/${key}.png'),\n    width: ${size}, height: ${height},\n`
+    const over = measured.eyes.length ? `require('../../assets/buster/${key}-over.png')` : 'null';
+    return `  '${key}': {\n    picture: require('../../assets/buster/${key}.png'),\n    over: ${over},\n    width: ${size}, height: ${height},\n`
       + `    eyes: [${eyes}],\n    glance: ${glance},\n    hem: ${round(measured.hem)},\n    pivot: { x: ${round(pivot.x)}, y: ${round(pivot.y)} },\n  },`;
   });
   fs.writeFileSync(DATA, `/**
  * Every picture of Buster the app ships, and what was measured on each.
  * Written by the renderer beside the drawing (brand/buster); not by hand.
+ *
+ * A picture with brass points comes in two: \`picture\` is what lies under the
+ * points, \`over\` what the drawing paints over them (the lids, the lines, the
+ * hat). The app lays picture, points, over, in that order.
  *
  * Fractions of the picture: \`eyes\` where each brass point sits and how big it
  * is, \`glance\` how far (and, by its sign, which way) the points may slide and

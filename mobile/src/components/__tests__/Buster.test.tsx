@@ -40,6 +40,12 @@ const ofType = (json: unknown, type: string) => hosts(json).filter((n) => n.type
 const flat = (style: unknown): Record<string, unknown> =>
   Array.isArray(style) ? Object.assign({}, ...style.map(flat)) : ((style as Record<string, unknown>) ?? {});
 const layout = (height: number, width = 80) => ({ nativeEvent: { layout: { x: 0, y: 0, width, height } } });
+/** Both his layers say they have loaded: the picture under his points, and the lids over them where he has points. */
+async function loadAll(view: ReturnType<typeof render>) {
+  await fireEvent(view.getByTestId('buster-picture', { includeHiddenElements: true }), 'load');
+  const over = view.queryByTestId('buster-over', { includeHiddenElements: true });
+  if (over) await fireEvent(over, 'load');
+}
 const pictures = (Object.keys(BUSTER_ART) as BusterArtKey[]).map((key) => {
   const [mood, size] = key.split('-');
   return { key, picture: { mood, size: Number(size) } as BusterPicture };
@@ -60,8 +66,8 @@ describe('Buster', () => {
       const art = BUSTER_ART[key];
       const view = render(<Buster {...picture} />);
       const image = ofType(view.toJSON(), 'ExpoImage');
-      expect(image).toHaveLength(1);
-      expect(image[0].props.source).toBe(art.picture);
+      expect(image.map((i) => i.props.source)).toEqual(art.over ? [art.picture, art.over] : [art.picture]);
+      expect(Boolean(art.over)).toBe(art.eyes.length > 0); // every picture with points has its lids apart
       // His room is exactly the picture's size; the picture fills the figure that fills it.
       expect(flat(view.getByTestId(`buster-${picture.mood}`, { includeHiddenElements: true }).props.style)).toMatchObject({ width: art.width, height: art.height });
       expect(flat(view.getByTestId('buster-figure', { includeHiddenElements: true }).props.style)).toMatchObject({ height: '100%', aspectRatio: art.width / art.height });
@@ -76,6 +82,16 @@ describe('Buster', () => {
     return flat(view.getByTestId('buster-figure', { includeHiddenElements: true }).props.style).opacity;
   };
 
+  it('lays his lids over his points, as the drawing paints them: picture, points, lids', async () => {
+    for (const [still, mood] of [[false, 'suspicious'], [true, 'moved']] as const) {
+      const view = render(still ? <BusterStill mood={mood} size={80} /> : <Buster mood={mood} size={80} />);
+      if (!still) await fireEvent(view.getByTestId(`buster-${mood}`, { includeHiddenElements: true }), 'layout', layout(110));
+      await loadAll(view);
+      const order = hosts(view.toJSON()).map((n) => (n.props.testID === 'buster-picture' ? 'picture' : n.props.testID === 'buster-over' ? 'lids' : n.type === 'RNSVGCircle' ? 'point' : null)).filter(Boolean);
+      expect([still, [...new Set(order)]]).toEqual([still, ['picture', 'point', 'lids']]);
+    }
+  });
+
   it('arrives only once his picture has loaded AND his room is laid out, in either order', async () => {
     // Laid out first, picture later.
     const a = render(<Buster mood="unimpressed" size={80} />);
@@ -83,11 +99,13 @@ describe('Buster', () => {
     await fireEvent(a.getByTestId('buster-unimpressed', { includeHiddenElements: true }), 'layout', layout(110));
     expect(shownIn(a, 2)).toBe(0); // laid out, but the picture has not said it is loaded
     await fireEvent(a.getByTestId('buster-picture', { includeHiddenElements: true }), 'load');
-    expect(shownIn(a, 3)).toBe(1);
+    expect(shownIn(a, 3)).toBe(0); // the picture, but not yet the lids over his points
+    await fireEvent(a.getByTestId('buster-over', { includeHiddenElements: true }), 'load');
+    expect(shownIn(a, 4)).toBe(1);
 
     // Picture first, layout later.
     const b = render(<Buster mood="unimpressed" size={80} />);
-    await fireEvent(b.getByTestId('buster-picture', { includeHiddenElements: true }), 'load');
+    await loadAll(b);
     expect(shownIn(b, 1)).toBe(0); // loaded, but not yet given his place
     await fireEvent(b.getByTestId('buster-unimpressed', { includeHiddenElements: true }), 'layout', layout(110));
     expect(shownIn(b, 2)).toBe(1);
@@ -126,11 +144,11 @@ describe('Buster', () => {
 
     await fireEvent(room, 'layout', layout(50)); // under half: he steps aside...
     expect(standing().opacity).toBe(0);
-    expect(pictures()).toHaveLength(1); // ...hidden, not taken down: his picture stays decoded
+    expect(pictures()).toHaveLength(2); // ...hidden, not taken down: both his layers stay decoded
 
     await fireEvent(room, 'layout', layout(110)); // the keyboard goes: so does his absence
     expect(standing().opacity).toBeUndefined();
-    expect(pictures()).toHaveLength(1);
+    expect(pictures()).toHaveLength(2);
   });
 
   it('glances and rises by distances that shrink with him, so his points never leave their holes', async () => {
@@ -142,7 +160,7 @@ describe('Buster', () => {
       return ((flat(layer!.props.style).transform as Record<string, number>[]).find((t) => key in t)!)[key];
     };
     await fireEvent(room, 'layout', layout(110));
-    await fireEvent(view.getByTestId('buster-picture', { includeHiddenElements: true }), 'load');
+    await loadAll(view);
     view.rerender(<Buster mood="suspicious" size={80} style={{ margin: 1 }} />);
     const glance = moved('translateX'), rise = moved('translateY');
     expect(glance).not.toBe(0);
@@ -174,7 +192,7 @@ describe('Buster', () => {
   /** Lays him out whole and loads his picture: he has arrived. */
   async function arrived(view: ReturnType<typeof render>, mood: string, height: number) {
     await fireEvent(view.getByTestId(`buster-${mood}`, { includeHiddenElements: true }), 'layout', layout(height));
-    await fireEvent(view.getByTestId('buster-picture', { includeHiddenElements: true }), 'load');
+    await loadAll(view);
   }
 
   it('moves only once he can be seen, while his screen is in front and Reduce Motion is off, with no loop he has no use for', async () => {
@@ -255,8 +273,9 @@ describe('BusterStill', () => {
   it('keeps its brass points back until the picture is there, so they never show alone', async () => {
     const view = render(<BusterStill mood="moved" size={80} />);
     expect(ofType(view.toJSON(), 'RNSVGCircle')).toHaveLength(0);
-    const image = view.getByTestId('buster-picture', { includeHiddenElements: true });
-    await fireEvent(image, 'load');
+    await fireEvent(view.getByTestId('buster-picture', { includeHiddenElements: true }), 'load');
+    expect(ofType(view.toJSON(), 'RNSVGCircle')).toHaveLength(0); // the lids over them are not in yet
+    await fireEvent(view.getByTestId('buster-over', { includeHiddenElements: true }), 'load');
     expect(ofType(view.toJSON(), 'RNSVGCircle')).toHaveLength(BUSTER_ART['moved-80'].eyes.length * 2);
   });
 });

@@ -142,16 +142,23 @@ describe('the pictures he is drawn from', () => {
   const keys = Object.keys(BUSTER_ART) as (keyof typeof BUSTER_ART)[];
   const name = (key: string, scale: number) => `${key}${scale === 1 ? '' : `@${scale}x`}.png`;
 
-  it('are exactly the ones the app reads: every density of every picture, and nothing else', () => {
-    const expected = keys.flatMap((k) => [1, 2, 3, 4].map((s) => name(k, s))).sort();
+  /** Each picture's layers: the one under the points, and the lids over them where it has points. */
+  const layersOf = (key: (typeof keys)[number]) => (BUSTER_ART[key].over ? [key, `${key}-over`] : [key]);
+
+  it('are exactly the ones the app reads: every density of every layer of every picture, and nothing else', () => {
+    const expected = keys.flatMap((k) => layersOf(k).flatMap((l) => [1, 2, 3, 4].map((s) => name(l, s)))).sort();
     expect(readdirSync(dir).sort()).toEqual(expected);
+    // A picture with points comes with the lids that lie over them; one without, alone.
+    for (const key of keys) expect([key, Boolean(BUSTER_ART[key].over)]).toEqual([key, BUSTER_ART[key].eyes.length > 0]);
   });
 
   it('are each exactly the pixels their density needs: no phone ever stretches one', () => {
     for (const key of keys) {
       const { width, height } = BUSTER_ART[key];
-      for (const scale of [1, 2, 3, 4]) {
-        expect([key, scale, pngSize(join(dir, name(key, scale)))]).toEqual([key, scale, [width * scale, height * scale]]);
+      for (const layer of layersOf(key)) {
+        for (const scale of [1, 2, 3, 4]) {
+          expect([layer, scale, pngSize(join(dir, name(layer, scale)))]).toEqual([layer, scale, [width * scale, height * scale]]);
+        }
       }
     }
   });

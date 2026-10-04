@@ -185,6 +185,14 @@ function hat(o = {}) {
 }
 
 // ── The eyes ────────────────────────────────────────────────────────────────
+/**
+ * What the drawing paints over the brass points: the lid and the lines under
+ * each hole, and everything after the eyes. The app draws the points live, so
+ * the renderer gives these a picture of their own, laid over the points: a low
+ * lid still cuts a point to a half-moon.
+ */
+export const over = (s) => (OPT.points || !s ? s : `<g data-over="">${s}</g>`);
+
 // A glance goes the way the point has room: a point already looking right glances left.
 const DRIFT = (look) => `<animateTransform attributeName="transform" type="translate" values="0 0;0 0;${look > 0 ? -3.6 : 3.6} -.3;${look > 0 ? -3.6 : 3.6} -.3;0 0;0 0" keyTimes="0;.6;.66;.84;.9;1" dur="13s" repeatCount="indefinite"/>`;
 function hole(cx, cy, w, o = {}) {
@@ -216,7 +224,7 @@ function hole(cx, cy, w, o = {}) {
   const lines = o.lines === false ? '' : [[-4.6, 6.2], [0, 8.2], [4.6, 6.2]].map(([dx, len]) =>
     brush([[cx + dx, bottom + 3.2], [cx + dx * 1.04, bottom + 3.2 + len * .33], [cx + dx * 1.12, bottom + 3.2 + len * .66], [cx + dx * 1.26, bottom + 3.2 + len]], 1.75, { tail: true, min: .15 })).join('');
   // The hole is marked where the point's mark is: the renderer measures how far the point may glance inside it.
-  return `<path${OPT.points ? '' : ' data-hole=""'} d="${d}" fill="${P.hole}"/>${inside}${points}${top}${under}${lines}`;
+  return `<path${OPT.points ? '' : ' data-hole=""'} d="${d}" fill="${P.hole}"/>${inside}${points}${over(`${top}${under}${lines}`)}`;
 }
 
 function drip(x, y) {
@@ -310,9 +318,9 @@ function drawBuster(o = {}) {
       ${o.alive ? `<path d="${S.d}" fill="none" stroke="${P.ink}" stroke-width="2.6" stroke-linejoin="round">${draught}</path>` : S.strokes.map((s) => brush(s.p, s.w, { min: .55, pow: .6 })).join('') + threads}
       ${hole(84, 99, 18, { ...lt, ...o.eyes, tilt: lt.tilt ?? .9, blink: o.blink, drift: o.alive })}
       ${hole(117, 101.4, 17, { ...rt, ...o.eyes, tilt: rt.tilt ?? -.4, blink: o.blink, drift: o.alive })}
-      ${E.drip ? drip(84, 105.4) : ''}
+      ${over(`${E.drip ? drip(84, 105.4) : ''}
       ${m === 'startled' ? `${brush([[54, 40], [51, 37], [48, 34], [45, 30]], 2.4)}${brush([[100, 2], [100, -2], [100, -6], [100, -10]], 2.4)}${brush([[146, 40], [149, 37], [152, 34], [155, 30]], 2.4)}` : ''}
-      ${o.hat === false ? '' : hat(E.hat)}
+      ${o.hat === false ? '' : hat(E.hat)}`)}
     </g>
   </g>`;
 }
@@ -338,7 +346,7 @@ export function seated(o = {}) {
   }).join('');
   return buster({ mood: o.mood ?? 'unimpressed' })
     + `<linearGradient id="${face}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.seat}"/><stop offset="1" stop-color="${P.seatGap}"/></linearGradient>`
-    + bake(backing + backs);
+    + over(bake(backing + backs));
 }
 
 /**

@@ -213,8 +213,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-02 | Written in the launch audit: no two modules export a component under one name. |
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
-| src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: every picture with points glances exactly as far as measured |
-| src/components/__tests__/busterRegister.test.ts | 2026-10-04 | edited: every picture carries its glance; suspicious glances left |
+| src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: the lids lie over the points; arrival and the still one wait for both layers |
+| src/components/__tests__/busterRegister.test.ts | 2026-10-04 | edited: every layer of every picture, at every density |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
 | src/components/__tests__/ActionDeck.test.tsx | 2026-10-01 | rendered: owner, certify, save, stranger |
@@ -249,8 +249,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/auth/PasswordStrengthMeter.tsx | 2026-10-03 | read whole: one answer for a new password; says when it is too long for the lock |
 | src/components/auth/SocietySeal.tsx | 2026-10-01 | true as written |
 | src/components/AutopsyGauge.tsx | 2026-10-01 | true as written |
-| src/components/Buster.tsx | 2026-10-04 | edited: his points glance as far, and the way, measured on each picture |
-| src/components/busterArt.ts | 2026-10-04 | regenerated: each picture carries its measured glance |
+| src/components/Buster.tsx | 2026-10-04 | edited: picture, points, then the lids over them; he arrives with both layers |
+| src/components/busterArt.ts | 2026-10-04 | regenerated: a picture with points carries the layer over them |
 | src/components/CinematicOverlays.tsx | 2026-10-01 | the dead film grain gone |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
 | src/components/clearance/Clearance.tsx | 2026-10-01 | show it, locked; a second copy lives in the log (carried forward) |

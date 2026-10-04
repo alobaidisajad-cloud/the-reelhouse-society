@@ -68,7 +68,15 @@ node brand/buster/render.mjs --brand   # this folder's art/
 The app's pictures are drawn four times over and brought down with a Lanczos
 filter to the exact pixels each screen density needs (1x to 4x), so no phone
 ever stretches one. Their brass points are left out and measured, because the
-app draws them live: they blink and glance aside. `mobile/src/components/busterArt.ts`
+app draws them live: they blink and glance aside. So a picture with points comes
+in two layers: `<mood>-<size>.png`, what lies under the points, and
+`<mood>-<size>-over.png`, what the drawing paints over them (the lids and the
+lines under the holes, the hat, the seat backs). The app lays picture, points,
+over, so a low lid still cuts a point to a half-moon. Anything drawn after the
+eyes must go through `over()` in `drawing.mjs`: the run refuses a stroke painted
+after the points that would land under them, refuses layers that do not add up
+to the drawing, and measures how far each way the points may glance and stay in
+their holes. `mobile/src/components/busterArt.ts`
 is written by the same run and should never be edited by hand. In the app, the
 test `busterRegister.test.ts` holds where he may appear and checks every
 picture's pixels.

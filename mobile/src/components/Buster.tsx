@@ -112,7 +112,12 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
   const seated = picture.mood === 'seated';
   const hasEyes = art.eyes.length > 0;
 
-  const [loaded, setLoaded] = useState(false);
+  // Both his layers, the picture under his points and the lids over them: he
+  // arrives with both, so his points never show without their lids.
+  const [pictureIn, setPictureIn] = useState(false);
+  const [overIn, setOverIn] = useState(!art.over);
+  const loaded = pictureIn && overIn;
+  const setLoaded = useCallback(() => { setPictureIn(true); setOverIn(true); }, []);
   // The share of his height the layout gave him: null until laid out. Rounded
   // down to fiftieths, so a keyboard sliding in redraws him a few times, not every frame.
   const [fit, setFit] = useState<number | null>(null);
@@ -124,9 +129,9 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
   const stands = fit !== null && fit >= MIN_FIT;
   useEffect(() => {
     if (!laidOut) return;
-    const grace = setTimeout(() => setLoaded(true), LOAD_GRACE_MS);
+    const grace = setTimeout(setLoaded, LOAD_GRACE_MS);
     return () => clearTimeout(grace);
-  }, [laidOut]);
+  }, [laidOut, setLoaded]);
 
   const shown = useSharedValue(0);
   useEffect(() => {
@@ -200,9 +205,13 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
           <Animated.View testID="buster-figure" style={[{ height: '100%', aspectRatio: w / h }, appear]}>
             {!seated && <Animated.View style={[StyleSheet.absoluteFill, floor]}><Shadow art={art} /></Animated.View>}
             <Animated.View style={[StyleSheet.absoluteFill, { transformOrigin: [`${art.pivot.x * 100}%`, `${art.pivot.y * 100}%`, 0] }, body]}>
-              <Image testID="buster-picture" source={art.picture} style={s.fill} contentFit="fill" onLoad={() => setLoaded(true)} accessible={false} />
+              <Image testID="buster-picture" source={art.picture} style={s.fill} contentFit="fill" onLoad={() => setPictureIn(true)} accessible={false} />
               {hasEyes && (
                 <Animated.View style={[StyleSheet.absoluteFill, eyes]}><Points art={art} /></Animated.View>
+              )}
+              {/* What the drawing paints over his points: a low lid cuts a point to a half-moon. */}
+              {art.over && (
+                <Image testID="buster-over" source={art.over} style={StyleSheet.absoluteFill} contentFit="fill" onLoad={() => setOverIn(true)} accessible={false} />
               )}
             </Animated.View>
           </Animated.View>
@@ -227,11 +236,14 @@ export default Buster;
  */
 export function BusterStill(picture: BusterPicture) {
   const art = artOf(picture);
-  const [loaded, setLoaded] = useState(false);
+  const [pictureIn, setPictureIn] = useState(false);
+  const [overIn, setOverIn] = useState(!art.over);
+  const size = { width: art.width, height: art.height };
   return (
-    <View testID={`buster-still-${picture.mood}`} style={{ width: art.width, height: art.height }} {...UNSPOKEN}>
-      <Image testID="buster-picture" source={art.picture} style={{ width: art.width, height: art.height }} contentFit="fill" onLoad={() => setLoaded(true)} accessible={false} />
-      {loaded && art.eyes.length > 0 ? <Points art={art} /> : null}
+    <View testID={`buster-still-${picture.mood}`} style={size} {...UNSPOKEN}>
+      <Image testID="buster-picture" source={art.picture} style={size} contentFit="fill" onLoad={() => setPictureIn(true)} accessible={false} />
+      {pictureIn && overIn && art.eyes.length > 0 ? <Points art={art} /> : null}
+      {art.over && <Image testID="buster-over" source={art.over} style={StyleSheet.absoluteFill} contentFit="fill" onLoad={() => setOverIn(true)} accessible={false} />}
     </View>
   );
 }
