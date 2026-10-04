@@ -203,8 +203,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-02 | Written in the launch audit: no two modules export a component under one name. |
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
-| src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: he stops while aside and moves again on return; rise and glance scale |
-| src/components/__tests__/busterRegister.test.ts | 2026-10-04 | edited: the census reads the syntax tree and follows a renamed import |
+| src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: suspicious glances the way its points have room |
+| src/components/__tests__/busterRegister.test.ts | 2026-10-04 | edited: every picture carries its glance; suspicious glances left |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
 | src/components/__tests__/ActionDeck.test.tsx | 2026-10-01 | rendered: owner, certify, save, stranger |
@@ -239,8 +239,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/auth/PasswordStrengthMeter.tsx | 2026-10-03 | read whole: one answer for a new password; says when it is too long for the lock |
 | src/components/auth/SocietySeal.tsx | 2026-10-01 | true as written |
 | src/components/AutopsyGauge.tsx | 2026-10-01 | true as written |
-| src/components/Buster.tsx | 2026-10-04 | edited: he moves only while he is seen |
-| src/components/busterArt.ts | 2026-10-03 | new: generated from the drawing |
+| src/components/Buster.tsx | 2026-10-04 | edited: his points glance as far, and the way, measured on each picture |
+| src/components/busterArt.ts | 2026-10-04 | regenerated: each picture carries its measured glance |
 | src/components/CinematicOverlays.tsx | 2026-10-01 | the dead film grain gone |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
 | src/components/clearance/Clearance.tsx | 2026-10-01 | show it, locked; a second copy lives in the log (carried forward) |
@@ -947,7 +947,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/profile.types.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
-| src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-04 | edited: a long or spaced opening raises no cap |
+| src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-04 | edited: a mark of four raises no cap |
 | src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
 | src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts | 2026-10-02 | Written in the launch audit: the handle filter judged by words, one rule in apps and database. |
 | src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-02 | a hidden pressable is hidden whole (no-hide-descendants) |

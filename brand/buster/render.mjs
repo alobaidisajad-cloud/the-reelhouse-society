@@ -59,12 +59,13 @@ ${DEFS}<g id="all">${inner}</g></svg></body></html>`;
 async function draw(browser, inner, frame, px) {
   const tab = await browser.newPage({ viewport: { width: Math.ceil(px), height: Math.ceil(px * frame.h / frame.w) }, deviceScaleFactor: 1 });
   await tab.setContent(page(inner, frame, px));
-  const measured = await tab.evaluate(() => {
+  const { eyes, room } = await tab.evaluate((unit) => {
     const art = document.getElementById('art');
     const box = art.getBoundingClientRect();
+    const marks = [...art.querySelectorAll('[data-eye]')];
     // The centre from the box (true under any turn); the radius from the scale
     // the point is drawn at, since a turned circle's box is wider than it is.
-    return [...art.querySelectorAll('[data-eye]')].map((c) => {
+    const eyes = marks.map((c) => {
       const r = c.getBoundingClientRect(), m = c.getScreenCTM();
       return {
         x: (r.left + r.width / 2 - box.left) / box.width,
@@ -72,10 +73,27 @@ async function draw(browser, inner, frame, px) {
         r: Number(c.getAttribute('r')) * Math.hypot(m.a, m.b) / box.width,
       };
     });
-  });
+    /** Whether every part of each point, slid `dx` px across the screen, is still inside its hole. */
+    const inside = (dx) => marks.every((c, i) => {
+      let hole = c.previousElementSibling;
+      while (hole && !hole.hasAttribute('data-hole')) hole = hole.previousElementSibling;
+      const back = hole.getScreenCTM().inverse();
+      const cx = box.left + eyes[i].x * box.width + dx, cy = box.top + eyes[i].y * box.height, r = eyes[i].r * box.width;
+      const at = [[cx, cy]];
+      for (let k = 0; k < 48; k++) for (const f of [.5, 1]) at.push([cx + r * f * Math.cos(k * Math.PI / 24), cy + r * f * Math.sin(k * Math.PI / 24)]);
+      return at.every(([x, y]) => hole.isPointInFill(new DOMPoint(x, y).matrixTransform(back)));
+    });
+    /** How far the points may slide each way, as a fraction of the picture's width. */
+    const reach = (dir) => {
+      let ok = 0;
+      for (let s = unit / 50; s <= unit * 8 && inside(dir * s); s += unit / 50) ok = s;
+      return ok / box.width;
+    };
+    return { eyes, room: marks.length ? { rest: inside(0), right: reach(1), left: reach(-1) } : null };
+  }, px / frame.w);
   const png = await tab.screenshot({ omitBackground: true, clip: { x: 0, y: 0, width: px, height: px * frame.h / frame.w } });
   await tab.close();
-  return { png, measured: { eyes: measured, hem: await hemOf(png) } };
+  return { png, measured: { eyes, room, hem: await hemOf(png) } };
 }
 
 /** How far down the sheet ends, from its pixels: the last row a quarter opaque. */
@@ -129,23 +147,42 @@ async function renderApp(browser) {
     }
     // Where the drawing turns him: his head, at (100, 120).
     const pivot = { x: (100 - frame.x) / frame.w, y: (120 - frame.y) / frame.h };
-    entries.push({ key: `${mood}-${size}`, size, height, measured, pivot });
+    entries.push({ key: `${mood}-${size}`, size, height, measured, pivot, glance: glanceOf(`${mood}-${size}`, measured.room, frame) });
   }
   writeData(entries);
 }
 
+/** How far his points glance, in drawing units, when they have the room. */
+const GLANCE = 3.6;
+
+/**
+ * Which way and how far the points glance, as a fraction of the picture's
+ * width: right, unless they already look right and only the left has room.
+ * Measured, not assumed: a point slid out of its hole sits on the cloth.
+ */
+function glanceOf(key, room, frame) {
+  if (!room) return 0; // no points, no glance
+  if (!room.rest) throw new Error(`${key}: a brass point sits outside its hole at rest`);
+  const want = GLANCE / frame.w;
+  if (room.right >= want) return round(want);
+  if (room.left >= want) return round(-want);
+  throw new Error(`${key}: the points have room to glance ${round(room.right * frame.w)} right and ${round(room.left * frame.w)} left, not ${GLANCE}`);
+}
+
 function writeData(entries) {
-  const lines = entries.map(({ key, size, height, measured, pivot }) => {
+  const lines = entries.map(({ key, size, height, measured, pivot, glance }) => {
     const eyes = measured.eyes.map((e) => `{ x: ${round(e.x)}, y: ${round(e.y)}, r: ${round(e.r)} }`).join(', ');
     return `  '${key}': {\n    picture: require('../../assets/buster/${key}.png'),\n    width: ${size}, height: ${height},\n`
-      + `    eyes: [${eyes}],\n    hem: ${round(measured.hem)},\n    pivot: { x: ${round(pivot.x)}, y: ${round(pivot.y)} },\n  },`;
+      + `    eyes: [${eyes}],\n    glance: ${glance},\n    hem: ${round(measured.hem)},\n    pivot: { x: ${round(pivot.x)}, y: ${round(pivot.y)} },\n  },`;
   });
   fs.writeFileSync(DATA, `/**
  * Every picture of Buster the app ships, and what was measured on each.
  * Written by the renderer beside the drawing (brand/buster); not by hand.
  *
  * Fractions of the picture: \`eyes\` where each brass point sits and how big it
- * is, \`hem\` how far down the sheet ends, \`pivot\` where his sway turns him.
+ * is, \`glance\` how far (and, by its sign, which way) the points may slide and
+ * stay inside their holes, \`hem\` how far down the sheet ends, \`pivot\` where
+ * his sway turns him.
  */
 export const BUSTER_ART = {
 ${lines.join('\n')}

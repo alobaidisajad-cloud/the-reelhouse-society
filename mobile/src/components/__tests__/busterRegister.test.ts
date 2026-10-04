@@ -156,6 +156,16 @@ describe('the pictures he is drawn from', () => {
     }
   });
 
+  it('carry the glance measured on each: none without points, and the drawing’s 3.6 units the way his points have room', () => {
+    // The renderer slides each point across its hole and refuses a glance that
+    // leaves one on the cloth; the sign is the way it found room.
+    for (const key of keys) {
+      const { eyes, glance } = BUSTER_ART[key] as { eyes: readonly unknown[]; glance: number };
+      expect([key, eyes.length ? Math.abs(glance) : glance]).toEqual([key, eyes.length ? 0.0237 : 0]);
+    }
+    expect(keys.filter((k) => BUSTER_ART[k].glance < 0)).toEqual(['suspicious-48', 'suspicious-56', 'suspicious-80']);
+  });
+
   it('place his brass points inside the picture', () => {
     for (const key of keys) {
       for (const e of BUSTER_ART[key].eyes) {

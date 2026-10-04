@@ -151,8 +151,9 @@ describe('a raised first letter', () => {
     expect(extractDropCap(text)).toEqual({ first: '', rest: text });
   });
 
-  it('still raises the most a mark may be: three dots', () => {
+  it('still raises the most a mark may be: three dots; and not one more', () => {
     expect(extractDropCap('...and so')).toEqual({ first: '...A', rest: 'nd so' });
+    expect(extractDropCap('....and so')).toEqual({ first: '', rest: '....and so' });
   });
 });
 

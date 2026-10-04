@@ -167,9 +167,10 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
   }, [moving, seated, hasEyes, float, sway, lid, glance]);
 
   // His rise and glance in points, at the size he stands (the layout scales the rest).
+  // The glance is measured on each picture: as far, and the way, his points stay inside their holes.
   const k = Math.min(1, Math.max(fit ?? 1, MIN_FIT));
   const rise = w * 0.04 * k;
-  const glanceBy = w * (3.6 / 152) * k;
+  const glanceBy = w * art.glance * k;
   const appear = useAnimatedStyle(() => ({ opacity: shown.value }));
   const body = useAnimatedStyle(() => ({
     transform: [{ translateY: -rise * float.value }, { rotate: `${1.8 * sway.value}deg` }],

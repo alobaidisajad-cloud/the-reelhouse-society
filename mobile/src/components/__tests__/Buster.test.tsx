@@ -147,6 +147,11 @@ describe('Buster', () => {
     const glance = moved('translateX'), rise = moved('translateY');
     expect(glance).not.toBe(0);
     expect(rise).not.toBe(0);
+    // The way he glances is the one measured on the picture (the renderer refuses
+    // a glance that takes a point out of its hole): suspicious already looks
+    // right, and only the left has room.
+    expect(BUSTER_ART['suspicious-80'].glance).toBeLessThan(0);
+    expect(Math.sign(glance)).toBe(Math.sign(BUSTER_ART['suspicious-80'].glance));
     await fireEvent(room, 'layout', layout(66)); // 60%
     view.rerender(<Buster mood="suspicious" size={80} style={{ margin: 2 }} />);
     expect(moved('translateX')).toBeCloseTo(glance * 0.6, 5);

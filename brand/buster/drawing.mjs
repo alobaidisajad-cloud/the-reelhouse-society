@@ -185,7 +185,8 @@ function hat(o = {}) {
 }
 
 // ── The eyes ────────────────────────────────────────────────────────────────
-const DRIFT = `<animateTransform attributeName="transform" type="translate" values="0 0;0 0;3.6 -.3;3.6 -.3;0 0;0 0" keyTimes="0;.6;.66;.84;.9;1" dur="13s" repeatCount="indefinite"/>`;
+// A glance goes the way the point has room: a point already looking right glances left.
+const DRIFT = (look) => `<animateTransform attributeName="transform" type="translate" values="0 0;0 0;${look > 0 ? -3.6 : 3.6} -.3;${look > 0 ? -3.6 : 3.6} -.3;0 0;0 0" keyTimes="0;.6;.66;.84;.9;1" dur="13s" repeatCount="indefinite"/>`;
 function hole(cx, cy, w, o = {}) {
   const open = o.open ?? 1, tilt = o.tilt ?? 0, look = o.look ?? 0, glow = o.glow ?? 1;
   const h = 10 * open;
@@ -199,14 +200,14 @@ function hole(cx, cy, w, o = {}) {
     <clipPath id="${clip}"><path d="${d}"/></clipPath>
     <g clip-path="url(#${clip})">
       <path d="M ${tl[0]} ${bottom - 2.6} C ${cx - w * .2} ${bottom + .2}, ${cx + w * .2} ${bottom + .2}, ${tr[0]} ${bottom - 2.6}" fill="none" stroke="${P.rim}" stroke-width="${1.3 * Math.min(glow, 1.6)}" opacity="${.35 * glow}"/>
-      <g><circle cx="${gx}" cy="${gy}" r="${4.4 * glow}" fill="url(#glint)" opacity="${.85 * Math.min(glow, 1.3)}"/>${o.drift ? DRIFT : ''}</g>
+      <g><circle cx="${gx}" cy="${gy}" r="${4.4 * glow}" fill="url(#glint)" opacity="${.85 * Math.min(glow, 1.3)}"/>${o.drift ? DRIFT(look) : ''}</g>
     </g>`;
   // Left out, the point leaves a mark the renderer measures: where the app draws it.
   const points = o.dark ? '' : !OPT.points ? `<circle data-eye="${gr}" cx="${gx}" cy="${gy}" r="${gr}" fill="none"/>` : `<g>
     <circle cx="${gx}" cy="${gy}" r="${gr}" fill="${P.brass}"/>
     <circle cx="${gx + .3}" cy="${gy - .3}" r="${gr * .5}" fill="${P.bulb}"/>
     ${o.blink ? `<animate attributeName="opacity" values="1;1;0;0;1;1" keyTimes="0;.9;.92;.95;.97;1" dur="6.5s" repeatCount="indefinite"/>` : ''}
-    ${o.drift ? DRIFT : ''}
+    ${o.drift ? DRIFT(look) : ''}
   </g>`;
   const top = o.arch
     ? brush([tl, [cx - w * .2, cy - 10.6], [cx + w * .2, cy - 10.6], tr], 3, { min: .5 })
@@ -214,7 +215,8 @@ function hole(cx, cy, w, o = {}) {
   const under = brush([[tl[0] + 1, tl[1] + 1.2], [cx - w * .26, bottom + .4], [cx + w * .26, bottom + .4], [tr[0] - 1, tr[1] + 1.2]], 1.3, { min: .3, op: .9 });
   const lines = o.lines === false ? '' : [[-4.6, 6.2], [0, 8.2], [4.6, 6.2]].map(([dx, len]) =>
     brush([[cx + dx, bottom + 3.2], [cx + dx * 1.04, bottom + 3.2 + len * .33], [cx + dx * 1.12, bottom + 3.2 + len * .66], [cx + dx * 1.26, bottom + 3.2 + len]], 1.75, { tail: true, min: .15 })).join('');
-  return `<path d="${d}" fill="${P.hole}"/>${inside}${points}${top}${under}${lines}`;
+  // The hole is marked where the point's mark is: the renderer measures how far the point may glance inside it.
+  return `<path${OPT.points ? '' : ' data-hole=""'} d="${d}" fill="${P.hole}"/>${inside}${points}${top}${under}${lines}`;
 }
 
 function drip(x, y) {
