@@ -1,13 +1,14 @@
 name: 🔬 Study — Android cold start
 
-# A one-off study, on its own branch (never main): five builds of the app timed
-# against each other on ONE emulator boot, with a system trace and a CPU profile
-# of each, and the built APK's own answers (the logo's resource id, how expo-image
-# set Glide's log level). Same runner, emulator and options as the Sealed E2E.
-#   A  the app as it is          Z  A's own APK again (the A/A noise check)
-#   B  no start-up prefetch      C  B without the welcome's two full-screen SVGs
-#   D  A with expo-image's Android prefetch download-only for 'disk'
-# Results come out as annotations (readable without signing in) and an artifact.
+# A one-off study, on its own branch (never main). Same runner, emulator and
+# options as the Sealed E2E. Builds (mobile/e2e/study/arm.mjs):
+#   A the app · Z A's own APK again (the A/A noise check) · B no start-up prefetch
+#   C B without the welcome's full-screen SVGs · E B with the light as native
+#   gradients · S B with expo-image built from source (Glide logs off)
+#   P the download-only prefetch patch (expo-image from source, Glide logs on)
+# Proofs first (screenshots B vs E, traces, CPU profiles, P's and S's logs),
+# then timed rounds on one boot. iOS: B vs E screenshots on the simulator.
+# Results come out as annotations (readable without signing in) and artifacts.
 
 on:
   push:
@@ -22,10 +23,10 @@ permissions:
   contents: read
 
 jobs:
-  study:
-    name: 🔬 Cold start, five builds, one boot
+  android:
+    name: 🔬 Android — seven builds, one boot
     runs-on: ubuntu-24.04
-    timeout-minutes: 170
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -66,7 +67,7 @@ jobs:
         working-directory: mobile
         run: npm ci
 
-      - name: Build the five apps
+      - name: Build the seven apps
         working-directory: mobile
         env:
           E2E: '1'
@@ -78,52 +79,54 @@ jobs:
           set -u
           B="$RUNNER_TEMP/build.log"
           mkdir -p "$RUNNER_TEMP/apks"
-          build() {
-            (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain \
+          build() {  # <name> [extra gradle args]
+            local name=$1
+            shift
+            (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain "$@" \
                 "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 \
-              && cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/$1.apk" \
-              && echo "built $1: $(stat -c %s "$RUNNER_TEMP/apks/$1.apk") bytes"
+              && cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/$name.apk" \
+              && echo "built $name: $(stat -c %s "$RUNNER_TEMP/apks/$name.apk") bytes"
           }
-          fail() { echo "::error title=Study build::$1"; grep -n -A 20 'What went wrong' "$B" | head -n 40; tail -n 40 "$B"; exit 1; }
+          fail() { echo "::error title=Study build::$1"; grep -n -A 20 'What went wrong' "$B" | head -n 40; grep -nE '^e: |error:' "$B" | head -n 20; tail -n 30 "$B"; exit 1; }
+          reset() { git checkout -- src package.json; }
           npx expo prebuild --platform android --no-install --clean >> "$B" 2>&1 || fail "prebuild"
           build A || fail "A"
           cp "$RUNNER_TEMP/apks/A.apk" "$RUNNER_TEMP/apks/Z.apk"
           node e2e/study/arm.mjs B && build B || fail "B"
-          git checkout -- src
-          node e2e/study/arm.mjs C && build C || fail "C"
-          git checkout -- src
-          node e2e/study/arm.mjs D && build D || fail "D"
-          git checkout -- src
+          reset; node e2e/study/arm.mjs C && build C || fail "C"
+          reset; node e2e/study/arm.mjs E && build E || fail "E"
+          # From here expo-image is compiled from its source, not Expo's AAR.
+          reset; node e2e/study/arm.mjs B && node e2e/study/arm.mjs SOURCE && build S || fail "S"
+          reset; node e2e/study/arm.mjs P && node e2e/study/arm.mjs SOURCE && build P -PEXPO_ALLOW_GLIDE_LOGS=true || fail "P"
+          reset
           pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
           ls -la "$RUNNER_TEMP/apks"
 
-      # What the built app itself says: the drawable ids, and how expo-image set
-      # Glide's log level (the logs say debug; the source says error by default).
-      - name: The APK's own answers
+      # What the built apps themselves say: the drawable ids, and the log level
+      # each one hands Glide (2 = VERBOSE, 6 = ERROR).
+      - name: The APKs' own answers
         working-directory: mobile
         run: |
           set +e
           F="$RUNNER_TEMP/apk-facts.txt"
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
-          X="$RUNNER_TEMP/dex"; mkdir -p "$X"
-          unzip -q -o "$RUNNER_TEMP/apks/A.apk" 'classes*.dex' -d "$X"
           {
-            echo "2131230858 = 0x$(printf '%x' 2131230858)"
-            "$BT/aapt2" dump resources "$RUNNER_TEMP/apks/A.apk" | grep -E 'resource 0x7f08(00[7-9a-f][0-9a-f]) ' | grep -E 'assets_|reelhouse'
-            echo "── generated expo-image BuildConfig:"
-            find node_modules/expo-image/android/build -name BuildConfig.java -exec grep -h ALLOW_GLIDE_LOGS {} \; | sed 's/^ *//'
-            echo "── EXPO_ALLOW_GLIDE_LOGS in env / gradle properties:"
-            env | grep -i -E 'glide|ORG_GRADLE_PROJECT' || echo "(not in env)"
-            grep -h -i glide android/gradle.properties "$HOME/.gradle/gradle.properties" 2>/dev/null || echo "(not in gradle.properties)"
-            echo "── ExpoImageAppGlideModule.applyOptions, compiled:"
-            for f in "$X"/*.dex; do "$BT/dexdump" -d "$f"; done \
-              | awk '/Class descriptor  : .Lexpo\/modules\/image\/ExpoImageAppGlideModule;/ { p = 1 } p && /applyOptions/ { q = 1 } q { print } q && /^ *registers/ { n++ } p && /source_file_idx/ { exit }' \
-              | grep -E 'const|invoke|ALLOW|sget' | head -n 14
-            echo "── GeneratedAppGlideModuleImpl in the APK:"
-            for f in "$X"/*.dex; do "$BT/dexdump" "$f" | grep -m 2 'GeneratedAppGlideModule'; done
+            echo "2131230858 = 0x$(printf '%x' 2131230858) = $("$BT/aapt2" dump resources "$RUNNER_TEMP/apks/A.apk" | grep 'resource 0x7f08008a ' | sed 's/^ *//')"
+            for apk in A S P; do
+              X="$RUNNER_TEMP/dex-$apk"; mkdir -p "$X"
+              unzip -q -o "$RUNNER_TEMP/apks/$apk.apk" 'classes*.dex' -d "$X"
+              level=$(for f in "$X"/*.dex; do "$BT/dexdump" -d "$f"; done \
+                | awk '/Class descriptor  : .Lexpo\/modules\/image\/ExpoImageAppGlideModule;/ { p = 1 } p && /applyOptions/ { q = 1 } q && /setLogLevel/ { print prev; exit } { prev = $0 }' \
+                | grep -oE '#int [0-9]+')
+              echo "$apk: Glide log level handed over = ${level:-not found} (2 VERBOSE, 6 ERROR)"
+            done
+            echo "expo-image prebuilt AAR's BuildConfig.ALLOW_GLIDE_LOGS:"
+            unzip -p node_modules/expo-image/local-maven-repo/BareExpo/expo.modules.image/*/expo.modules.image-*.aar classes.jar > "$RUNNER_TEMP/expo-image-classes.jar"
+            unzip -p "$RUNNER_TEMP/expo-image-classes.jar" expo/modules/image/BuildConfig.class > "$RUNNER_TEMP/BuildConfig.class"
+            javap -constants -cp "$RUNNER_TEMP" -c "$RUNNER_TEMP/BuildConfig.class" 2>/dev/null | grep ALLOW || echo "(javap could not read it)"
           } > "$F" 2>&1
           cat "$F"
-          node e2e/annotate.mjs "Study: the APK's own answers" "$F" notice
+          node e2e/annotate.mjs "Study: the APKs' own answers" "$F" notice
 
       - name: The functions, warmed
         run: |
@@ -141,8 +144,8 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Five builds, timed and traced, on one emulator boot
-        timeout-minutes: 110
+      - name: Proofs, then timed rounds, on one emulator boot
+        timeout-minutes: 170
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34
@@ -155,22 +158,32 @@ jobs:
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: bash mobile/e2e/study/ab.sh
 
-      - name: The numbers
+      - name: The proofs
         if: always()
+        working-directory: mobile
         run: |
           S="$RUNNER_TEMP/study"
-          node mobile/e2e/study/analyze.mjs "$S" > "$S/summary.txt" 2>&1
-          cat "$S/device.txt" "$S/summary.txt"
-          [ -f "$S/errors.txt" ] && cat "$S/errors.txt"
-          # One annotation per section, in pieces of 38 lines (an annotation keeps 40).
+          node e2e/study/proofs.mjs "$S" > "$S/proofs.txt" 2>&1
+          cat "$S/device.txt" "$S/proofs.txt"
+          node e2e/annotate.mjs "Study: device" "$S/device.txt" notice
+          node e2e/annotate.mjs "Study: proofs" "$S/proofs.txt" notice
+          [ -s "$S/anomalies.txt" ] && node e2e/annotate.mjs "Study: starts that took long, and failures" "$S/anomalies.txt" notice
+          true
+
+      - name: The numbers
+        if: always()
+        working-directory: mobile
+        run: |
+          S="$RUNNER_TEMP/study"
+          node e2e/study/analyze.mjs "$S" > "$S/summary.txt" 2>&1
+          cat "$S/summary.txt"
           awk -v d="$S" '/^## /{ n++ } { print > (d "/part-" n ".txt") }' "$S/summary.txt"
-          node mobile/e2e/annotate.mjs "Study: device" "$S/device.txt" notice
-          for p in 1 2 3 4; do
+          for p in 1 2; do
             [ -s "$S/part-$p.txt" ] || continue
             title=$(head -n 1 "$S/part-$p.txt" | sed 's/^## //' | cut -c1-50)
             split -l 38 -d "$S/part-$p.txt" "$S/piece-$p-"
             for piece in "$S"/piece-$p-*; do
-              node mobile/e2e/annotate.mjs "Study: $title (${piece##*-})" "$piece" notice
+              node e2e/annotate.mjs "Study: $title (${piece##*-})" "$piece" notice
             done
           done
 
@@ -180,16 +193,17 @@ jobs:
           S="$RUNNER_TEMP/study"
           cd "$S"
           curl -sSL -o tp https://get.perfetto.dev/trace_processor && chmod +x tp
-          for arm in A B C D; do
+          for arm in A C E; do
             t="traces/$arm.pftrace"
-            if [ ! -s "$t" ]; then echo "no trace for $arm: $(tail -n 3 "traces/$arm.perfetto.txt" 2>/dev/null)" > "traces/$arm.sql.txt"; continue; fi
-            for q in "$GITHUB_WORKSPACE"/mobile/e2e/study/sql/*.pfsql; do
-              echo "── $(basename "$q" .pfsql)"
-              ./tp --query-file "$q" "$t" 2>&1 | grep -v -E '^\s*$|Loading trace|Trace loaded|^\[' | head -n 32
-            done > "traces/$arm.sql.txt"
+            if [ ! -s "$t" ]; then
+              { echo "no trace for $arm:"; tail -n 6 "traces/$arm.perfetto.txt" 2>/dev/null; } > "traces/$arm.sql.txt"
+            else
+              for q in "$GITHUB_WORKSPACE"/mobile/e2e/study/sql/*.pfsql; do
+                echo "── $(basename "$q" .pfsql)"
+                ./tp --query-file "$q" "$t" 2>&1 | grep -v -E '^\s*$|Loading trace|Trace loaded|^\[' | head -n 32
+              done > "traces/$arm.sql.txt"
+            fi
             cat "traces/$arm.sql.txt"
-          done
-          for arm in A B C D; do
             awk '/^── 8-/{ exit } { print }' "traces/$arm.sql.txt" > "traces/$arm.sql-short.txt"
             node "$GITHUB_WORKSPACE/mobile/e2e/annotate.mjs" "Study: trace $arm" "traces/$arm.sql-short.txt" notice
           done
@@ -198,22 +212,123 @@ jobs:
         if: always()
         run: |
           S="$RUNNER_TEMP/study/traces"
-          for arm in A C; do
+          for arm in A C E; do
             awk '/^── 8-/{ p = 1 } p { print }' "$S/$arm.sql.txt" > "$S/$arm.deep.txt" 2>/dev/null
             node mobile/e2e/annotate.mjs "Study: main thread's long stretches, $arm" "$S/$arm.deep.txt" notice
           done
-          for arm in A B C D; do
+          for arm in A C; do
             cat "$S/$arm.perf-record.txt" "$S/$arm.perf-app.txt" 2>/dev/null | grep -v -E '^\s*$' > "$S/$arm.perf-short.txt"
             node mobile/e2e/annotate.mjs "Study: CPU profile of the app, $arm" "$S/$arm.perf-short.txt" notice
           done
+          true
 
       - name: Keep the study
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: study-cold-start
+          name: study-cold-start-android
           path: |
             ${{ runner.temp }}/study
             ${{ runner.temp }}/apk-facts.txt
             ${{ runner.temp }}/build.log
+          if-no-files-found: ignore
+
+  ios:
+    name: 🔬 iOS — the light, SVG against native gradients
+    runs-on: macos-15
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install the app's packages
+        working-directory: mobile
+        run: npm ci
+
+      - name: Xcode and the simulators
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available | grep -E 'iPhone' | head -n 12
+
+      # Both builds have the welcome's endless loops stilled (arm STILL), so only
+      # the light can differ between them. No backend: the welcome's look needs none.
+      - name: Build B and E for the simulator
+        working-directory: mobile
+        env:
+          E2E: '1'
+          EXPO_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: e2e-study-placeholder
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          set -u
+          L="$RUNNER_TEMP/ios-build.log"
+          mkdir -p "$RUNNER_TEMP/ios"
+          fail() { echo "::error title=Study iOS build::$1"; grep -nE 'error:|\*\* BUILD FAILED' "$L" | head -n 30; tail -n 40 "$L"; exit 1; }
+          node e2e/study/arm.mjs B && node e2e/study/arm.mjs STILL || fail "arm B"
+          npx expo prebuild --platform ios --clean >> "$L" 2>&1 || fail "prebuild / pod install"
+          WS=$(ls -d ios/*.xcworkspace | head -n 1)
+          SCHEME=$(basename "$WS" .xcworkspace)
+          echo "workspace $WS, scheme $SCHEME"
+          build() {
+            xcodebuild -workspace "$WS" -scheme "$SCHEME" -configuration Release -sdk iphonesimulator \
+              -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/build \
+              CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES ARCHS=arm64 >> "$L" 2>&1 \
+              && rm -rf "$RUNNER_TEMP/ios/$1.app" \
+              && cp -R "$(ls -d ios/build/Build/Products/Release-iphonesimulator/*.app | head -n 1)" "$RUNNER_TEMP/ios/$1.app" \
+              && echo "built $1"
+          }
+          build B || fail "B"
+          git checkout -- src
+          node e2e/study/arm.mjs E && node e2e/study/arm.mjs STILL && build E || fail "E"
+          git checkout -- src
+
+      - name: Screenshots on the simulator
+        run: |
+          set -u
+          S="$RUNNER_TEMP/study"
+          mkdir -p "$S/shots-ios"
+          DEV=$(xcrun simctl list devices available | grep -E 'iPhone 16 Pro \(' | head -n 1 | grep -oE '[0-9A-F-]{36}')
+          [ -n "$DEV" ] || DEV=$(xcrun simctl list devices available | grep -E 'iPhone' | head -n 1 | grep -oE '[0-9A-F-]{36}')
+          echo "device $DEV"
+          xcrun simctl boot "$DEV"
+          xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl status_bar "$DEV" override --time 9:41 --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularBars 4
+          sleep 20
+          shot() {
+            xcrun simctl install "$DEV" "$RUNNER_TEMP/ios/$2.app"
+            xcrun simctl launch "$DEV" com.reelhouse.society
+            sleep 25
+            xcrun simctl io "$DEV" screenshot "$S/shots-ios/$1.png"
+            xcrun simctl terminate "$DEV" com.reelhouse.society || true
+            xcrun simctl uninstall "$DEV" com.reelhouse.society
+          }
+          shot B1 B
+          shot E1 E
+          shot B2 B
+          shot E2 E
+          ls -la "$S/shots-ios"
+
+      - name: The iOS proof
+        if: always()
+        working-directory: mobile
+        run: |
+          S="$RUNNER_TEMP/study"
+          node e2e/study/proofs.mjs "$S" shots-ios > "$S/proofs-ios.txt" 2>&1
+          cat "$S/proofs-ios.txt"
+          node e2e/annotate.mjs "Study: iOS proof" "$S/proofs-ios.txt" notice
+
+      - name: Keep the iOS study
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: study-cold-start-ios
+          path: |
+            ${{ runner.temp }}/study
+            ${{ runner.temp }}/ios-build.log
           if-no-files-found: ignore

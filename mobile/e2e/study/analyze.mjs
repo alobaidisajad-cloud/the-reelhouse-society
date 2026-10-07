@@ -59,11 +59,16 @@ function fromLog(text, pid) {
 
 function fromThreads(text, pid) {
   const cpu = { main: 0, render: 0, js: 0, glide: 0, gc: 0, okhttp: 0, total: 0 };
+  // Each line is a thread's /proc/<pid>/task/<tid>/stat: "tid (name) state ...";
+  // after the state, utime and stime are the 11th and 12th fields (clock ticks).
   for (const line of text.split('\n')) {
-    const [tid, name, ticks] = line.trim().split('|');
-    if (!ticks) continue;
-    const [u, s] = ticks.trim().split(/\s+/).map(Number);
-    if (!Number.isFinite(u)) continue;
+    const m = /^(\d+) \((.*)\) \S+ (.*)$/.exec(line.trim());
+    if (!m) continue;
+    const [, tid, name, restText] = m;
+    const rest = restText.split(' ');
+    const u = +rest[10];
+    const s = +rest[11];
+    if (!Number.isFinite(u) || !Number.isFinite(s)) continue;
     const ms = (u + s) * 10;
     cpu.total += ms;
     if (tid === pid) cpu.main += ms;
@@ -91,18 +96,20 @@ function fromGfx(text) {
 }
 
 const launches = read(join(dir, 'launches.tsv')).trim().split('\n').filter(Boolean).map((l) => {
-  const [arm, mode, n, pid, load] = l.split('\t');
+  const [arm, mode, n, pid, load, startSecs, measureSecs] = l.split('\t');
   const f = join(dir, 'runs', `${arm}-${mode}-${n}`);
   const am = read(`${f}.am`);
   const total = /TotalTime: (\d+)/.exec(am);
-  const rec = { arm, mode, n, pid, load: parseFloat(load), totalTime: total ? +total[1] : undefined, ...fromLog(read(`${f}.log`), pid) };
-  const cpu = fromThreads(read(`${f}.threads`), pid);
+  const rec = { arm, mode, n, pid, load: parseFloat(load), startSecs: +startSecs, measureSecs: +measureSecs, totalTime: total ? +total[1] : undefined, ...fromLog(read(`${f}.log`), pid) };
+  const snap = read(`${f}.snap`);
+  const part = (from, to) => { const a = snap.indexOf(from); if (a < 0) return ''; const b = to ? snap.indexOf(to, a) : -1; return snap.slice(a, b < 0 ? undefined : b); };
+  const cpu = fromThreads(part('PID', 'MEM'), pid);
   if (cpu) for (const [k, v] of Object.entries(cpu)) rec[`cpu_${k}`] = v;
-  const mem = fromMem(read(`${f}.mem`));
+  const mem = fromMem(part('MEM', 'GFX'));
   rec.pss = mem.pssMb != null ? mem.pssMb / 1024 : undefined;
   rec.native = mem.nativeMb != null ? mem.nativeMb / 1024 : undefined;
   rec.graphics = mem.graphicsMb != null ? mem.graphicsMb / 1024 : undefined;
-  const gfx = fromGfx(read(`${f}.gfx`));
+  const gfx = fromGfx(part('GFX'));
   rec.frames = gfx.frames; rec.janky = gfx.janky; rec.frameP90 = gfx.p90;
   return rec;
 }).filter((r) => r.mode !== 'discard');
@@ -160,11 +167,13 @@ const METRICS = [
   ['janky', 'janky frames'],
   ['frameP90', 'frame time p90 (ms)'],
   ['load', 'device load at launch (1-min)'],
+  ['startSecs', 'seconds the start took (host clock)'],
+  ['measureSecs', 'seconds the measuring took'],
 ];
-const ARMS = ['A', 'Z', 'B', 'C', 'D'];
+const ARMS = ['A', 'Z', 'B', 'C', 'E', 'S', 'P'];
 const fmt = (x) => (x == null || !Number.isFinite(x) ? '—' : Math.abs(x) >= 100 ? String(Math.round(x)) : x.toFixed(1));
 
-for (const mode of ['fresh', 'returning']) {
+for (const mode of ['fresh']) {
   const counts = ARMS.map((a) => `${a}=${launches.filter((r) => r.arm === a && r.mode === mode).length}`).join(' ');
   console.log(`\n## ${mode} starts (${counts}) — median / p90`);
   console.log(['measure'.padEnd(40), ...ARMS.map((a) => a.padStart(13))].join(''));
@@ -173,7 +182,7 @@ for (const mode of ['fresh', 'returning']) {
     console.log([label.padEnd(40), ...cells].join(''));
   }
   console.log(`\n## ${mode}: differences in medians (p from a permutation test; * = p < 0.01)`);
-  for (const [x, y, what] of [['A', 'Z', 'Z−A: the same APK twice (noise alone)'], ['A', 'B', 'B−A: the fix'], ['B', 'C', 'C−B: the two full-screen SVGs removed'], ['A', 'D', 'D−A: download-only prefetch']]) {
+  for (const [x, y, what] of [['A', 'Z', 'Z−A: the same APK twice (noise alone)'], ['A', 'B', 'B−A: the fix'], ['B', 'C', 'C−B: the two full-screen SVGs removed'], ['B', 'E', 'E−B: the light as native gradients'], ['B', 'S', 'S−B: expo-image from source (Glide logs off)'], ['A', 'P', 'P−A: download-only prefetch']]) {
     const lines = [];
     for (const [key, label] of METRICS) {
       if (key === 'load') continue;
