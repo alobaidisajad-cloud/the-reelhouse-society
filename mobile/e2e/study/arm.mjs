@@ -98,6 +98,26 @@ const nativeGradients = () => {
         } as any}
       />
 `);
+  // The seal's halo: a circle of radius half the box, as SVG's r="50%" on a square.
+  block('src/components/auth/AuthChrome.tsx',
+    '    <Svg width={size} height={size} pointerEvents="none">',
+    '    </Svg>\n',
+    `    <View
+      pointerEvents="none"
+      style={{
+        width: size, height: size,
+        experimental_backgroundImage: [
+          { type: 'radial-gradient', shape: 'circle', size: { x: size / 2, y: size / 2 },
+            position: { top: '50%', left: '50%' },
+            colorStops: [
+              { color: \`rgba(240,232,176,\${intensity})\`, positions: ['0%'] },
+              { color: \`rgba(184,137,26,\${intensity * 0.32})\`, positions: ['42%'] },
+              { color: 'rgba(184,137,26,0)', positions: ['100%'] },
+            ] },
+        ],
+      } as any}
+    />
+`);
   block('src/components/CinematicOverlays.tsx',
     '      <Svg width="100%" height="100%">',
     '      </Svg>\n',
