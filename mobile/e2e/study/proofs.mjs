@@ -112,6 +112,25 @@ const levels = (img) => {
   return seen.size;
 };
 out.push('', `  distinct levels down the middle (5%–60% of the height): B1 ${levels(b1)} · E1 ${levels(e1)} · N1 ${levels(n1)}`);
+// One light at a time (the L* shots): SVG against native, each against N.
+const LAYERS = [['LP', 'the pool'], ['LF', 'the floor'], ['LC', 'the corners'], ['LV', 'the vignette'], ['LH', 'the halo']];
+for (const [k, label] of LAYERS) {
+  const s = png(`${k}s1`);
+  const nat = png(`${k}n1`);
+  if (!s && !nat) continue;
+  const lines = [`## ${label} alone (${SHOTS}): SVG vs native — ${compare(s, nat)}`];
+  for (const [name, img] of [['SVG − N', s], ['native − N', nat]]) {
+    const g = grid(n1, img);
+    lines.push(`  ${name}:`, g ? fmtGrid(g) : '    (missing)');
+  }
+  writeFileSync(join(dir, SHOTS, `layer-${k}.txt`), lines.join('\n'));
+  out.push('', lines[0]);
+}
+// What React Native parsed for each native gradient, as the app logged it.
+for (const f of ['E1', 'LPn1', 'LFn1', 'LCn1', 'LVn1', 'LHn1']) {
+  const hit = read(join(dir, SHOTS, `${f}.log`)).split('\n').filter((l) => l.includes('[study] bg'));
+  if (hit.length) out.push('', `  parsed in ${f}: ${hit[hit.length - 1].replace(/^.*\[study\] bg /, '').slice(0, 900)}`);
+}
 const elog = read(join(dir, SHOTS, 'E1.log')).split('\n').filter((l) => /background|gradient/i.test(l) && /reelhouse|ReactNative|unknown/i.test(l));
 out.push(`  E's log lines about backgrounds or gradients: ${elog.length}`);
 for (const l of elog.slice(0, 4)) out.push(`    ${l.slice(0, 160)}`);

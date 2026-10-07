@@ -85,8 +85,8 @@ note_if_long() {  # <label> <am file> <log file>
 # Screenshots: the welcome with the light drawn as SVG (B) and as native
 # gradients (E), twice each, 12 s after the start (everything has arrived and,
 # with animations off, holds still). B against B is the noise floor.
-for shot in B1 E1 N1 B2 E2; do
-  arm=${shot:0:1}
+for shot in B1 E1 N1 B2 E2 LPs1 LPn1 LFs1 LFn1 LCs1 LCn1 LVs1 LVn1 LHs1 LHn1; do
+  arm=${shot%1}; arm=${arm%2}
   install "$arm" || continue
   fresh_start "$OUT/shots/$shot.am"
   sleep 12
