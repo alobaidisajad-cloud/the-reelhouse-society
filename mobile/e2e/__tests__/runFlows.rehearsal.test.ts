@@ -10,9 +10,11 @@
  *     Maestro writes to, so crashes and screen times reach the script as on CI.
  *   - `maestro` is a script that plays each flow's part from a scenario file
  *     (one behaviour per attempt: pass, never-began, lost-driver, step-failed,
- *     crash-then-pass) and writes Maestro 2.10.0's own records: the JUnit report,
+ *     gone, crash-then-pass, takeover-then-pass) and writes Maestro 2.10.0's own
+ *     records: the JUnit report,
  *     commands.json under .maestro/tests/<time>/<flow>/, and its log. Every
- *     Maestro it plays leaves a session file behind, as a killed one would.
+ *     Maestro it plays leaves a session file behind, as a killed one would; every
+ *     launch it plays logs ActivityManager's "Start proc" line, as Android does.
  *
  * Runs in bash: /bin/bash on CI, Git Bash on Windows (whose `timeout`, `awk` and
  * `tail -f` it uses). A missing bash fails here rather than skipping: a rehearsal
@@ -84,6 +86,7 @@ junit() {
 }
 step() { echo "00:00:01.000 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: $1 RUNNING" >> "$log"; }
 pass() {
+  say 523 I ActivityManager "Start proc 16631:com.reelhouse.society/u0a192 for next-top-activity {com.reelhouse.society/com.reelhouse.society.MainActivity}"
   step 'Launch app "com.reelhouse.society" with clear state'
   echo '[{"command":{"launchAppCommand":{}},"metadata":{"status":"COMPLETED"}}]' > "$tests/$name/commands.json"
   for s in __SCREENS__; do say 16631 W ReactNativeJS "[e2e] screen.ready {\\"name\\":\\"$s\\",\\"ms\\":100}"; done
@@ -91,6 +94,9 @@ pass() {
 }
 case "$behaviour" in
   pass) pass ;;
+  takeover-then-pass)
+    say 16631 D SplashScreenView "Building from parcel drawable: android.graphics.drawable.BitmapDrawable@82bf60a"
+    pass ;;
   crash-then-pass)
     say 16631 E AndroidRuntime "FATAL EXCEPTION: main"
     say 16631 E AndroidRuntime "Process: com.reelhouse.society, PID: 16631"
@@ -145,7 +151,7 @@ afterAll(() => { for (const d of made) rmSync(d, { recursive: true, force: true 
 function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { env?: Record<string, string>; state?: Record<string, string> } = {}): Promise<Run> {
   const T = posix(mkdtempSync(join(tmpdir(), 'rehearsal-')));
   made.push(T);
-  for (const d of ['bin', 'home', 'out', 'state', 'scenario', 'fixtures', 'flows/keyboard', 'flows/warmup']) mkdirSync(join(T, d), { recursive: true });
+  for (const d of ['bin', 'home', 'out', 'state', 'scenario', 'fixtures', 'flows/keyboard']) mkdirSync(join(T, d), { recursive: true });
   writeFileSync(join(T, 'bin', 'adb'), ADB.replace(/__T__/g, T), { mode: 0o755 });
   writeFileSync(join(T, 'bin', 'maestro'), MAESTRO.replace(/__T__/g, T).replace('__SCREENS__', SCREENS.join(' ')), { mode: 0o755 });
   writeFileSync(join(T, 'fixtures', 'windows.txt'), WINDOWS);
@@ -156,7 +162,6 @@ function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { e
   writeFileSync(join(T, 'device.log'), `${local}.000  525  545 I ActivityManager: the device boots\n`);
   for (const f of [...flows, 'config']) writeFileSync(join(T, 'flows', `${f}.yaml`), 'appId: com.reelhouse.society\n---\n');
   for (const f of ['stack', 'stack.tap', 'log', 'log.tap']) writeFileSync(join(T, 'flows', 'keyboard', `${f}.yaml`), 'appId: com.reelhouse.society\n---\n');
-  writeFileSync(join(T, 'flows', 'warmup', 'first_launch.yaml'), 'appId: com.reelhouse.society\n---\n');
   for (const [name, steps] of Object.entries(scenario)) writeFileSync(join(T, 'scenario', name), `${steps.join('\n')}\n`);
   for (const [k, v] of Object.entries(opts.state ?? {})) writeFileSync(join(T, 'state', k), v);
   const env = {
@@ -217,7 +222,7 @@ it('a hiccup is run again and the run is green, with a warning that says so', as
   expect(existsSync(join(r.out, 'first-attempts', 'keyboard-stack', 'keyboard-stack.xml'))).toBe(true);
   expect(file(r, 'flow-reports', 'a_flow.xml')).toContain('status="SUCCESS"');
   // The animation scale the emulator had lost is put back, and said so.
-  expect(titled(r, 'warning', "The phone's animations were not off")).toContain("before the warm-up: window_animation_scale was '1.0'; set to 0");
+  expect(titled(r, 'warning', "The phone's animations were not off")).toContain("before the stack probe: window_animation_scale was '1.0'; set to 0");
   expect(readFileSync(join(r.T, 'state', 'window_animation_scale'), 'utf8').trim()).toBe('0');
   expect(file(r, 'keyboard-room.txt')).toMatch(/^stack: "FILE THE STACK" clear/m);
   always(r);
@@ -270,14 +275,11 @@ it('a probe is run again only from time the flows do not need', async () => {
   always(r);
 });
 
-it('a first launch that does not finish is a warning, and the run goes on to its own verdict', async () => {
-  const r = await rehearse(['a_flow'], { first_launch: ['never-began'] });
-  expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
-  const warm = titled(r, 'warning', 'The first-launch warm-up did not finish');
-  expect(warm).toContain("The app's first launch, before the probes, did not finish (exit 1,");
-  expect(warm).toContain("Maestro said: maestro.android.DeviceServerDiedException: Device server died during 'deviceInfo'");
-  expect(calls(r, 'first_launch')).toBe(1);
-  expect([calls(r, 'stack'), calls(r, 'log'), calls(r, 'a_flow')]).toEqual([1, 1, 1]);
+it('a launch that takes Android\'s splash over fails the run, though every flow passed', async () => {
+  const r = await rehearse(['a_flow'], { a_flow: ['takeover-then-pass'] });
+  expect(r.status).toBe(1);
+  expect(titled(r, 'error', "The app took Android's splash over")).toContain("took Android's splash over on 1 of 1 launch.");
+  expect(titled(r, 'error', 'E2E flows failed')).toBe('');
   always(r);
 });
 

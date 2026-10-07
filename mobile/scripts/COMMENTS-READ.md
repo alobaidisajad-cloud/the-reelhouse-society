@@ -42,7 +42,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/ci-alert.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-10-03 | rebuilt in the tooling audit: production's shape from the snapshot, then e2e/db/security.sql; the copy of production's rules it tested is gone |
-| ../.github/workflows/e2e.yml | 2026-10-04 | the password scrubbed before the logs are kept; the logs kept every run, hidden .maestro records included |
+| ../.github/workflows/e2e.yml | 2026-10-04 | the build proves MainActivity clears the splash listener after super.onCreate; warm-up paths gone; logs kept every run, scrubbed first |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-04 | edited: the character table is checked against Node’s segmenter |
 | ../.github/workflows/load.yml | 2026-10-03 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
@@ -64,14 +64,13 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/login_flow.yaml | 2026-09-29 | true as written |
 | .maestro/lounge_flow.yaml | 2026-09-29 | true as written |
 | .maestro/offline_resilience.yaml | 2026-09-29 | true as written |
-| .maestro/README.md | 2026-10-04 | read against the runner: retries only for an attempt that tells nothing about the app, the crash gate, the warm-up, the kept logs; the probes run before the flows |
+| .maestro/README.md | 2026-10-04 | read against the runner: the splash takeover named, fixed and gated; the warm-up gone; retries, crash gate, kept logs |
 | .maestro/lobby_wall_flow.yaml | 2026-09-30 | new: the wall hangs whole, down to its sign-off |
 | .maestro/session_survives_restart.yaml | 2026-10-01 | written with the session kept on the device |
 | .maestro/subflows/open_a_film.yaml | 2026-09-29 | true as written |
 | .maestro/subflows/open_the_stub.yaml | 2026-09-30 | written with the stub's single tap |
 | .maestro/subflows/sign_in.yaml | 2026-09-29 | rewritten this session: passes through the Initiation |
-| .maestro/warmup/first_launch.yaml | 2026-10-04 | written with the first-launch warm-up: runs first, judges nothing, names any stuck animation |
-| ANDROID_LAUNCH.md | 2026-10-03 | read against the code: shadows and modals done, springify gone, keyboard via KeyboardRoom; the emulator runs every push |
+| ANDROID_LAUNCH.md | 2026-10-04 | the splash leaving as Android's own added to the device checks, with the system exit's real timings |
 | app.config.js | 2026-10-03 | read whole: sound |
 | app/__tests__/boot-structure.test.tsx | — |  |
 | app/__tests__/yourFileWaitsForYourHandle.test.tsx | 2026-10-03 | new: the Profile tab never calls you a stranger |
@@ -139,9 +138,10 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
 | e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-04 | written: the real run-flows.sh against a fake phone and a fake Maestro, six whole runs |
+| e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/screenTimes.test.ts | 2026-10-02 | Written in the launch audit: the screen-time reader on threadtime log lines, and every way its gate says no. |
 | e2e/annotate.mjs | 2026-10-04 | the password hidden at the one door out; a summary-only level for past ten notices |
-| e2e/animation-waits.mjs | 2026-10-04 | written: every animation Android held the test on, named, by flow |
+| e2e/animation-waits.mjs | 2026-10-04 | the probes come first now; true as written |
 | e2e/app-crashes.mjs | 2026-10-04 | written: the app crashing or freezing at any moment fails the run; the copy must be shown to reach the end |
 | e2e/attempt.mjs | 2026-10-04 | written: the retry rule, from runs 37155828199 and 37165878763, read against Maestro 2.10.0's source |
 | e2e/db/bootstrap.mjs | 2026-09-28 | 7 findings; stale function count and 'how this was found' asides dropped |
@@ -154,9 +154,12 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
 | e2e/load/probe.mjs | 2026-10-03 | read whole: the paper in all four orders, critiques newest first, the following feed for a member of 2,000 follows; nested plans via auto_explain |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
-| e2e/run-flows.sh | 2026-10-04 | rewritten around the retry rule, the warm-up, the phone settled before each Maestro, the crash gate, the animation report; flows failed only when a flow did |
+| plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |
+| plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it |
+| e2e/run-flows.sh | 2026-10-04 | the warm-up removed (it prevented nothing); the splash check after the crash check; earlier: the retry rule, crash gate, phone settled per Maestro |
 | e2e/screen-times.mjs | 2026-10-02 | Written in the launch audit: each screen's time to its content, read from the E2E device log; a gate once ceilings are set. |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
+| e2e/splash-handoff.mjs | 2026-10-04 | written: no launch takes the splash over, scoped to the app's own processes; no launch, no pass |
 | e2e/scrub.mjs | 2026-10-04 | written: the password out of the kept logs, byte for byte |
 | e2e/supabase/functions/tmdb-proxy/index.ts | 2026-09-29 | history reduced to the rule |
 | e2e/supabase/functions/tmdb-proxy/normalize.mjs | 2026-09-29 | true as written |

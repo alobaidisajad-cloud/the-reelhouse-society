@@ -49,6 +49,7 @@
           }
         }
       ],
+      "./plugins/withSplashWithoutHandoff",
       "expo-font",
       [
         "@sentry/react-native",

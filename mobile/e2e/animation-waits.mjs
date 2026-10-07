@@ -11,7 +11,7 @@
  * typing from half a second a key into ten (run 37155828199), until a single
  * typing call outruns Maestro's 120 s deadline. That line NAMES what was
  * animating, so the whole run's log is read for it — failed flows and passed
- * ones, the warm-up first — and each wait is put on the flow that was running.
+ * ones, the keyboard probes first — and each wait is put on the flow that was running.
  *
  * Prints the report; exits 1 when Android waited at all (run-flows.sh raises a
  * warning: slow is not failed, but a stuck animation is never left unseen),

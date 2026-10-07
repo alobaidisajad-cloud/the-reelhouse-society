@@ -42,6 +42,13 @@ measures. Verify each on the first Android build:
   keyboard; `KeyboardRoom` at the root restores it, and the composers measure
   the keyboard with `useAnimatedKeyboard`. Verify on the device: the log form,
   the lounge composer, the Dispatch composer, the search and stack sheets.
+- **The splash leaves as Android's own** — the app no longer takes the splash
+  over (`plugins/withSplashWithoutHandoff.js`; a late takeover left the main
+  window animating, E2E run 37201431874). On Android 12+ it now leaves with the
+  system's exit: the icon fades in 133 ms while the app slides up into view in
+  266 ms, instead of expo-splash-screen's 400 ms fade. Verify on the device, from
+  a cold start (swipe the app away first): the splash goes cleanly into the
+  Preloader, with no flash, no blank frame and no jump of the status bar.
 
 ## 3 · Verified fine already (no action)
 

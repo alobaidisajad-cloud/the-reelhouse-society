@@ -22,7 +22,7 @@ const END = line('01:29:58', 525, 'D', 'ConnectivityService', 'the device is sti
 
 function check(log: string, extra: string[] = [], deviceNow = '10-04 01:30:00') {
   writeFileSync(join(dir, 'stream.txt'), QUIET + log + END);
-  writeFileSync(join(dir, 'times.txt'), 'warm-up\t1\t10-04 01:00:00.000\nlogin_flow\t1\t10-04 01:10:00.000\nlogin_flow\t2\t10-04 01:12:00.000\nlounge_flow\t1\t10-04 01:20:00.000\n');
+  writeFileSync(join(dir, 'times.txt'), 'stack probe\t1\t10-04 01:00:00.000\nlogin_flow\t1\t10-04 01:10:00.000\nlogin_flow\t2\t10-04 01:12:00.000\nlounge_flow\t1\t10-04 01:20:00.000\n');
   const r = spawnSync(process.execPath, [SCRIPT, join(dir, 'stream.txt'), '--flow-times', join(dir, 'times.txt'),
     '--maestro', join(dir, 'debug'), '--stream-alive', 'yes', '--device-now', deviceNow, ...extra], { encoding: 'utf8' });
   return { status: r.status, out: r.stdout.trim(), stderr: r.stderr };

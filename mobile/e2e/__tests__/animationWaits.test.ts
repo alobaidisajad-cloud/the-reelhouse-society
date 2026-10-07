@@ -21,7 +21,7 @@ const TASK = 'Task{4b1 #12 type=standard A=10192:com.reelhouse.society}';
 
 function read(log: string) {
   writeFileSync(join(dir, 'stream.txt'), log);
-  writeFileSync(join(dir, 'times.txt'), 'warm-up\t1\t10-03 21:54:30.000\nstack probe\t1\t10-03 21:55:12.000\nstack probe\t2\t10-03 21:59:00.000\n');
+  writeFileSync(join(dir, 'times.txt'), 'auth_flow\t1\t10-03 21:54:30.000\nstack probe\t1\t10-03 21:55:12.000\nstack probe\t2\t10-03 21:59:00.000\n');
   const r = spawnSync(process.execPath, [SCRIPT, join(dir, 'stream.txt'), '--flow-times', join(dir, 'times.txt')], { encoding: 'utf8' });
   return { status: r.status, out: r.stdout.trim() };
 }
@@ -39,7 +39,7 @@ it('puts each wait on the flow that was running, counts the seconds lost, and na
   expect(r.status).toBe(1);
   expect(r.out).toBe([
     "Android held the test's every key and tap on an animation that would not end (5 s each wait):",
-    'warm-up: 1 wait, about 5s lost, 21:54:40 to 21:54:40',
+    'auth_flow: 1 wait, about 5s lost, 21:54:40 to 21:54:40',
     `  animating: ${TASK} (TRANSITION) × 1`,
     'stack probe: 3 waits, about 15s lost, 21:55:49 to 21:55:59',
     `  animating: ${TASK} (TRANSITION) × 2`,

@@ -83,8 +83,10 @@ const VOCABULARY = new Set([
   // platform code the app reasons about but does not contain.
   'DataLoader', 'setTextDirection',
   // Maestro's and Android's own code, which the E2E runner's comments cite as the
-  // cause of what it handles (e2e/attempt.mjs, e2e/animation-waits.mjs).
+  // cause of what it handles (e2e/attempt.mjs, e2e/animation-waits.mjs), and the
+  // splash handover the app no longer takes (plugins/withSplashWithoutHandoff.js).
   'isDriverReachable', 'LogcatReader', 'UiAutomation', 'WindowManagerService',
+  'isHandleSplashScreenExit', 'starting_reveal',
 ]);
 
 function words(text, into) {

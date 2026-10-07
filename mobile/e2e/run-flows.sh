@@ -13,7 +13,8 @@
 #   - nothing else is: not a failed step, not a timeout, not a crash, not a flow
 #     that had begun; at most three a run, and every one is a warning, "Run twice".
 # And whatever the flows said, the app crashing or freezing at any moment of the
-# run fails it (e2e/app-crashes.mjs): a flow can pass over a crash.
+# run fails it (e2e/app-crashes.mjs): a flow can pass over a crash. So does the
+# app taking Android's splash over on any launch (e2e/splash-handoff.mjs).
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 # Maestro sends usage analytics unless told not to; nothing leaves the sealed world.
@@ -96,14 +97,14 @@ MINUTES=${E2E_FLOWS_MINUTES:-42}
 DEADLINE=$(( $(date +%s) + MINUTES * 60 ))
 FLOW_LIST="$(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort)"
 FLOW_COUNT=$(echo "$FLOW_LIST" | grep -c .)
-# The flows' own time, kept from the warm-up and the probes (and their second
+# The flows' own time, kept from the probes (and their second
 # attempts): two minutes a flow, measured at about one and a half (runs
 # 37155828199, 37165878763: 14 flows in about 20 minutes of Maestro's own time).
 # Counted from the flows, so a new flow raises it by itself.
 PER_FLOW=${E2E_SECONDS_PER_FLOW:-120}
 RESERVE=$(( FLOW_COUNT * PER_FLOW ))
 RETRIES_MAX=3
-mkdir -p "$OUT/flow-reports" "$OUT/flow-hierarchy" "$OUT/first-attempts" "$OUT/warmup"
+mkdir -p "$OUT/flow-reports" "$OUT/flow-hierarchy" "$OUT/first-attempts"
 : > "$OUT/maestro.log"
 : > "$OUT/flow-times.txt"
 : > "$OUT/retries.txt"
@@ -166,30 +167,6 @@ set_aside() {
   for f in "$@"; do [ -e "$f" ] && mv "$f" "$dest/"; done
   return 0
 }
-
-# ── THE FIRST LAUNCH ──────────────────────────────────────────────────────────
-# The app's first launch on the fresh phone, measured and never judged:
-# animation-waits.mjs names any animation Android held its taps on, and a
-# warm-up that does not finish is a warning (a crash in it still fails the run).
-# It does not prevent the ten-second keys: in run 37201431874 the warm-up had
-# no wait at all, and the next launch — the stack probe's — held every key on
-# MainActivity's splash reveal (animationType starting_reveal) until the probe
-# was run again.
-settle_phone "the warm-up"
-since=$(device_clock)
-printf 'warm-up\t1\t%s\n' "$since" >> "$OUT/flow-times.txt"
-began=$(date +%s)
-timeout --signal=INT --kill-after=30 180s "$MAESTRO" test "$FLOWS/warmup/first_launch.yaml" \
-    --format junit --output "$OUT/warmup/report.xml" \
-    --debug-output "$OUT/warmup/maestro-debug" > "$OUT/warmup/maestro.out" 2>&1
-wrc=$?
-if [ $wrc -ne 0 ]; then
-  cut_log "$since" "$OUT/warmup/device.log"
-  { echo "The app's first launch, before the probes, did not finish (exit ${wrc}, $(( $(date +%s) - began ))s). It decides nothing; the probes and flows run as ever."
-    node mobile/e2e/attempt.mjs --kind flow --exit "$wrc" --junit "$OUT/warmup/report.xml" --debug "$OUT/warmup/maestro-debug" \
-      --log "$OUT/warmup/device.log" --left 0 --need 1 --retries 0 --max 0 --device "$(device_state)" | tail -n +3; } > "$OUT/warmup.txt"
-  node mobile/e2e/annotate.mjs "The first-launch warm-up did not finish" "$OUT/warmup.txt" warning
-fi
 
 # ── THE KEYBOARD'S ROOM ───────────────────────────────────────────────────────
 # The flows type with no keyboard on the device, so none of them can see
@@ -417,12 +394,22 @@ device_now=""
 [ $alive -eq 1 ] && device_now="$(timeout 20 adb shell "date +'%m-%d %H:%M:%S'" 2>/dev/null | tr -d '\r')"
 sleep 2   # the copy is a moment behind the device
 if node mobile/e2e/app-crashes.mjs "$OUT/logcat-stream.txt" --flow-times "$OUT/flow-times.txt" \
-    --maestro "$OUT/maestro-debug" --maestro "$OUT/first-attempts" --maestro "$OUT/warmup" \
+    --maestro "$OUT/maestro-debug" --maestro "$OUT/first-attempts" \
     --stream-alive "$stream_alive" --device-now "$device_now" > "$OUT/app-crashes.txt"; then
   node mobile/e2e/annotate.mjs "No crash or freeze" "$OUT/app-crashes.txt" summary
 else
   rc=1
   node mobile/e2e/annotate.mjs "The app crashed or froze during the run" "$OUT/app-crashes.txt"
+fi
+# The app never takes Android's splash over (plugins/withSplashWithoutHandoff.js):
+# proven on every launch of the run, from the same log (splash-handoff.mjs). A
+# takeover gives the app 2 s, and a late one left run 37201431874's main window
+# animating, every key held 10 s, until a relaunch.
+if node mobile/e2e/splash-handoff.mjs "$OUT/logcat-stream.txt" --flow-times "$OUT/flow-times.txt" > "$OUT/splash-handoff.txt"; then
+  node mobile/e2e/annotate.mjs "Android removed its own splash" "$OUT/splash-handoff.txt" summary
+else
+  rc=1
+  node mobile/e2e/annotate.mjs "The app took Android's splash over" "$OUT/splash-handoff.txt"
 fi
 # Every animation Android held the test's keys and taps on, named, in passed
 # flows too: slow is not failed, but a stuck animation is never left unseen.

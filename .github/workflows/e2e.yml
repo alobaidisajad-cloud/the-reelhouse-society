@@ -105,6 +105,9 @@ jobs:
       # A release build, as a store build is made — only its backend differs:
       # the runner, seen from the emulator as 10.0.2.2. app.config.js allows
       # plain http and turns updates off for E2E=1, and the manifest is checked.
+      # So is MainActivity: the splash listener is cleared on the line after
+      # super.onCreate(null) (plugins/withSplashWithoutHandoff.js), or the app
+      # takes Android's splash over and a late handover leaves it animating.
       # Gradle gets 6 GB and 2 GB of Metaspace: the template's 512 MB Metaspace
       # ran out in a library's release lint (the runner has 16 GB).
       - name: Build the E2E app (release APK)
@@ -120,6 +123,8 @@ jobs:
           {
             npx expo prebuild --platform android --no-install --clean \
             && grep -q 'android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml \
+            && grep -A 2 -F 'super.onCreate(null)' android/app/src/main/java/com/reelhouse/society/MainActivity.kt \
+                 | grep -q -F 'splashScreen.clearOnExitAnimationListener()' \
             && (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain \
                   "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError")
           } > "$RUNNER_TEMP/build.log" 2>&1
@@ -132,6 +137,9 @@ jobs:
               grep -n -A 20 'What went wrong' "$RUNNER_TEMP/build.log" | head -n 30
               grep -nE '^e: |[^a-z]error: |FAILED|Error: |usesCleartextTraffic' "$RUNNER_TEMP/build.log" | grep -v '^[0-9]*:w: ' | head -n 25
               grep -q 'android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml 2>/dev/null || echo "(the manifest does not allow plain http, or prebuild did not finish)"
+              grep -A 2 -F 'super.onCreate(null)' android/app/src/main/java/com/reelhouse/society/MainActivity.kt 2>/dev/null \
+                | grep -q -F 'splashScreen.clearOnExitAnimationListener()' \
+                || echo "(MainActivity does not clear the splash listener after super.onCreate(null): plugins/withSplashWithoutHandoff.js did not apply, or prebuild did not finish)"
             } > "$RUNNER_TEMP/build-errors.txt"
             node e2e/annotate.mjs "E2E app build failed" "$RUNNER_TEMP/build-errors.txt"
           fi
@@ -271,7 +279,7 @@ jobs:
       # by its time limit is scrubbed too.
       - name: The member's password, out of the kept logs
         if: always()
-        run: node mobile/e2e/scrub.mjs "$RUNNER_TEMP/maestro.log" "$RUNNER_TEMP/flow-reports" "$RUNNER_TEMP/flow-screens" "$RUNNER_TEMP/maestro-debug" "$RUNNER_TEMP/first-attempts" "$RUNNER_TEMP/warmup" "$RUNNER_TEMP/flow-hierarchy" "$RUNNER_TEMP/keyboard-room" "$RUNNER_TEMP/keyboard-room.txt" "$RUNNER_TEMP/logcat-stream.txt"
+        run: node mobile/e2e/scrub.mjs "$RUNNER_TEMP/maestro.log" "$RUNNER_TEMP/flow-reports" "$RUNNER_TEMP/flow-screens" "$RUNNER_TEMP/maestro-debug" "$RUNNER_TEMP/first-attempts" "$RUNNER_TEMP/flow-hierarchy" "$RUNNER_TEMP/keyboard-room" "$RUNNER_TEMP/keyboard-room.txt" "$RUNNER_TEMP/logcat-stream.txt"
 
       # Every run, not only a failed one: a run that passed only on a second
       # attempt keeps its first, and the device's whole log names any animation
@@ -293,7 +301,6 @@ jobs:
             ${{ runner.temp }}/flow-hierarchy
             ${{ runner.temp }}/maestro-debug
             ${{ runner.temp }}/first-attempts
-            ${{ runner.temp }}/warmup
             ${{ runner.temp }}/keyboard-room
             ${{ runner.temp }}/keyboard-room.txt
             ${{ runner.temp }}/screen.txt
@@ -302,6 +309,7 @@ jobs:
             ${{ runner.temp }}/retries.txt
             ${{ runner.temp }}/phone-fixes.txt
             ${{ runner.temp }}/app-crashes.txt
+            ${{ runner.temp }}/splash-handoff.txt
             ${{ runner.temp }}/animation-waits.txt
             ${{ runner.temp }}/memory.txt
           if-no-files-found: ignore

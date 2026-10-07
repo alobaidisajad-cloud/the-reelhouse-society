@@ -38,9 +38,10 @@ so no flow depends on another.
 
 Whatever the flows say, **the app crashing or freezing at any moment fails the
 run** (`e2e/app-crashes.mjs`, reading the whole run's device log): a flow can
-pass over a crash. Every run keeps its logs as the `e2e-logs` artifact —
-Maestro's records, the device's whole log, each flow's slice of it — with the
-seeded member's password scrubbed out first (`e2e/scrub.mjs`).
+pass over a crash. So does the app taking Android's splash over on any launch
+(`e2e/splash-handoff.mjs`, below). Every run keeps its logs as the `e2e-logs`
+artifact — Maestro's records, the device's whole log, each flow's slice of it —
+with the seeded member's password scrubbed out first (`e2e/scrub.mjs`).
 
 ## The flows
 
@@ -68,13 +69,14 @@ a keyboard on for one tap (`*.tap.yaml`), and `e2e/keyboard-room.mjs` measures
 from Android's window list whether the thing a member needs is under it. The
 probes get only the time the flows do not need (two minutes a flow is kept).
 
-`warmup/first_launch.yaml` is the app's first launch on the fresh phone, run
-before everything and judging nothing. When typing crawls to ten seconds a key,
-Android is holding every injected key on a window animation that will not end;
-`e2e/animation-waits.mjs` names it from Android's own log line, in every run,
-passed or failed, as a warning. Run 37201431874 named it: MainActivity's splash
-reveal (`starting_reveal`), on the stack probe's launch — after a warm-up that
-saw none, so the warm-up measures that hold but does not prevent it.
+When typing crawls to ten seconds a key, Android is holding every injected key
+on a window animation that will not end; `e2e/animation-waits.mjs` names it from
+Android's own log line, in every run, passed or failed, as a warning. Run
+37201431874 named it: MainActivity's splash reveal (`starting_reveal`). The app
+was taking Android's splash over, and a handover its busy first frame answered
+after Android's 2 s left the main window animating until a relaunch. So the app
+no longer takes it over (`plugins/withSplashWithoutHandoff.js`), and **any
+takeover on any launch fails the run** (`e2e/splash-handoff.mjs`).
 
 ## Kept true
 
