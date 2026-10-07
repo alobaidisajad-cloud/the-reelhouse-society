@@ -76,75 +76,59 @@ const noFullScreenSvg = () => {
     'export const RoomLight = memo(function RoomLight({ room, hem, art }: LightProps) {\n  if (globalThis) return null;\n');
 };
 
-// The same three layers, top first as CSS lists them (SVG paints them bottom
-// first: pool, floor, corners), each stop's alpha in its colour as SVG folds it.
-// Each native arm also logs what React Native parsed, so the numbers it draws
-// with are on the record ("[study] bg").
+// The native light, as CSS strings — the form the app will ship (and the form
+// zz-render.lib draws). Layers top first as CSS lists them; SVG paints them
+// bottom first: pool, floor, corners. The pool's centre hangs ABOVE the screen
+// (cy < 0), and React Native's Android side drops a negative position
+// (LengthPercentage.setFromDynamic: value >= 0, else null → the default centre),
+// so it is given from the bottom edge: `at left X bottom (H − cy)`, positive.
+// Each native arm logs what React Native parsed ("[study] bg").
 const LOG_PARSED = (what, expr) =>
-  `(() => { const v = ${expr}; console.warn('[study] bg ${what} ' + JSON.stringify({ ratio: require('react-native').PixelRatio.get(), parsed: require('react-native/Libraries/StyleSheet/processBackgroundImage').default(v) })); return v; })()`;
+  "(() => { const v = " + expr + "; console.warn('[study] bg " + what + " ' + JSON.stringify({ ratio: require('react-native').PixelRatio.get(), css: v, parsed: require('react-native/Libraries/StyleSheet/processBackgroundImage').default(v) })); return v; })()";
 const ROOM_LAYERS = {
-  corners: `{ type: 'radial-gradient', shape: 'ellipse', size: { x: g.corners.rx, y: g.corners.ry },
-              position: { top: g.corners.cy, left: g.corners.cx },
-              colorStops: g.corners.stops.map(([at, a]) => ({ color: \`rgba(0,0,0,\${a})\`, positions: [\`\${at * 100}%\`] })) }`,
-  floor: `{ type: 'linear-gradient', direction: 'to bottom',
-              colorStops: g.floor.stops.map(([at, a]) => ({ color: \`rgba(0,0,0,\${a})\`, positions: [\`\${at * 100}%\`] })) }`,
-  pool: `{ type: 'radial-gradient', shape: 'ellipse', size: { x: g.pool.rx, y: g.pool.ry },
-              position: { top: g.pool.cy, left: g.pool.cx },
-              colorStops: g.pool.stops.map(([at, a]) => ({ color: \`rgba(\${g.pool.rgb.join(',')},\${a})\`, positions: [\`\${at * 100}%\`] })) }`,
+  corners: '`radial-gradient(ellipse ${g.corners.rx}px ${g.corners.ry}px at ${g.corners.cx}px ${g.corners.cy}px, ${g.corners.stops.map(([at, a]) => `rgba(0,0,0,${a}) ${at * 100}%`).join(", ")})`',
+  floor: '`linear-gradient(to bottom, ${g.floor.stops.map(([at, a]) => `rgba(0,0,0,${a}) ${at * 100}%`).join(", ")})`',
+  pool: '`radial-gradient(ellipse ${g.pool.rx}px ${g.pool.ry}px at left ${g.pool.cx}px bottom ${H - g.pool.cy}px, ${g.pool.stops.map(([at, a]) => `rgba(${g.pool.rgb.join(",")},${a}) ${at * 100}%`).join(", ")})`',
 };
 const nativeRoom = (layers = ['corners', 'floor', 'pool']) => () => block('src/components/atmosphere/RoomLight.tsx',
   '      <Svg width={W} height={H} style={StyleSheet.absoluteFill}>',
   '      </Svg>\n',
-  `      <View
-        style={{
-          position: 'absolute', top: 0, left: 0, width: W, height: H,
-          experimental_backgroundImage: ${LOG_PARSED(`room ${layers.join('+')} W=' + W + ' H=' + H + '`, `[
-            ${layers.map((l) => ROOM_LAYERS[l]).join(',\n            ')},
-          ]`)},
-        } as any}
-      />
-`);
-// The SVG room light with only some of its three rects drawn.
+  '      <View\n' +
+  '        style={{\n' +
+  "          position: 'absolute', top: 0, left: 0, width: W, height: H,\n" +
+  '          experimental_backgroundImage: ' +
+  LOG_PARSED("room " + layers.join('+') + " W=' + W + ' H=' + H + '", '[' + layers.map((l) => ROOM_LAYERS[l]).join(', ') + '].join(", ")') + ',\n' +
+  '        } as any}\n' +
+  '      />\n');
+// The SVG room light with only one of its three rects drawn.
 const svgRoomOnly = (keep) => () => {
   for (const layer of ['pool', 'floor', 'corners']) {
     if (layer === keep) continue;
     edit('src/components/atmosphere/RoomLight.tsx',
-      `        <Rect x={0} y={0} width={W} height={H} fill={\`url(#${layer}\${id})\`} />\n`, '');
+      '        <Rect x={0} y={0} width={W} height={H} fill={`url(#' + layer + '${id})`} />\n', '');
   }
 };
 // The seal's halo: a circle of radius half the box, as SVG's r="50%" on a square.
 const nativeHalo = () => block('src/components/auth/AuthChrome.tsx',
   '    <Svg width={size} height={size} pointerEvents="none">',
   '    </Svg>\n',
-  `    <View
-      pointerEvents="none"
-      style={{
-        width: size, height: size,
-        experimental_backgroundImage: ${LOG_PARSED(`halo size=' + size + '`, `[
-          { type: 'radial-gradient', shape: 'circle', size: { x: size / 2, y: size / 2 },
-            position: { top: '50%', left: '50%' },
-            colorStops: [
-              { color: \`rgba(240,232,176,\${intensity})\`, positions: ['0%'] },
-              { color: \`rgba(184,137,26,\${intensity * 0.32})\`, positions: ['42%'] },
-              { color: 'rgba(184,137,26,0)', positions: ['100%'] },
-            ] },
-        ]`)},
-      } as any}
-    />
-`);
+  '    <View\n' +
+  '      pointerEvents="none"\n' +
+  '      style={{\n' +
+  '        width: size, height: size,\n' +
+  '        experimental_backgroundImage: ' +
+  LOG_PARSED("halo size=' + size + '", '`radial-gradient(circle ${size / 2}px at 50% 50%, rgba(240,232,176,${intensity}) 0%, rgba(184,137,26,${intensity * 0.32}) 42%, rgba(184,137,26,0) 100%)`') + ',\n' +
+  '      } as any}\n' +
+  '    />\n');
 const nativeVignette = () => block('src/components/CinematicOverlays.tsx',
   '      <Svg width="100%" height="100%">',
   '      </Svg>\n',
-  `      <View
-        style={[StyleSheet.absoluteFill, {
-          experimental_backgroundImage: ${LOG_PARSED('vignette', `[
-            { type: 'radial-gradient', shape: 'ellipse', size: { x: '72%', y: '58%' },
-              position: { top: '50%', left: '50%' },
-              colorStops: [{ color: 'rgba(0,0,0,0)', positions: ['55%'] }, { color: 'rgba(0,0,0,0.34)', positions: ['100%'] }] },
-          ]`)},
-        }] as any}
-      />
-`);
+  '      <View\n' +
+  '        style={[StyleSheet.absoluteFill, {\n' +
+  '          experimental_backgroundImage: ' +
+  LOG_PARSED('vignette', "'radial-gradient(ellipse 72% 58% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.34) 100%)'") + ',\n' +
+  '        }] as any}\n' +
+  '      />\n');
 const nativeGradients = () => { nativeRoom()(); nativeHalo(); nativeVignette(); };
 const noRoom = () => edit('src/components/atmosphere/RoomLight.tsx',
   'export const RoomLight = memo(function RoomLight({ room, hem, art }: LightProps) {\n',
