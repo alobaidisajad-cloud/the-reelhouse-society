@@ -1,0 +1,219 @@
+name: 🔬 Study — Android cold start
+
+# A one-off study, on its own branch (never main): five builds of the app timed
+# against each other on ONE emulator boot, with a system trace and a CPU profile
+# of each, and the built APK's own answers (the logo's resource id, how expo-image
+# set Glide's log level). Same runner, emulator and options as the Sealed E2E.
+#   A  the app as it is          Z  A's own APK again (the A/A noise check)
+#   B  no start-up prefetch      C  B without the welcome's two full-screen SVGs
+#   D  A with expo-image's Android prefetch download-only for 'disk'
+# Results come out as annotations (readable without signing in) and an artifact.
+
+on:
+  push:
+    branches: [study/cold-start]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  study:
+    name: 🔬 Cold start, five builds, one boot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 170
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+
+      # The welcome asks tmdb-proxy for the week's trending films: the recorded
+      # stand-in answers, as in the Sealed E2E. Nothing else on a signed-out
+      # start needs the database.
+      - name: Start the local stack
+        run: |
+          cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          (cd mobile/e2e && supabase start -x studio,imgproxy,logflare,vector,supavisor,postgres-meta) > "$RUNNER_TEMP/start.log" 2>&1 \
+            || { tail -n 30 "$RUNNER_TEMP/start.log"; exit 1; }
+
+      - name: Keys for the local stack
+        working-directory: mobile/e2e
+        run: |
+          keys=$(supabase status -o env | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' | sed 's/"//g')
+          for k in API_URL ANON_KEY; do grep -qE "^$k=.+" <<< "$keys" || { echo "::error::no $k"; exit 1; }; done
+          echo "$keys" >> "$GITHUB_ENV"
+
+      - name: Install the app's packages
+        working-directory: mobile
+        run: npm ci
+
+      - name: Build the five apps
+        working-directory: mobile
+        env:
+          E2E: '1'
+          EXPO_PUBLIC_SUPABASE_URL: http://10.0.2.2:54321
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          set -u
+          B="$RUNNER_TEMP/build.log"
+          mkdir -p "$RUNNER_TEMP/apks"
+          build() {
+            (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain \
+                "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 \
+              && cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/$1.apk" \
+              && echo "built $1: $(stat -c %s "$RUNNER_TEMP/apks/$1.apk") bytes"
+          }
+          fail() { echo "::error title=Study build::$1"; grep -n -A 20 'What went wrong' "$B" | head -n 40; tail -n 40 "$B"; exit 1; }
+          npx expo prebuild --platform android --no-install --clean >> "$B" 2>&1 || fail "prebuild"
+          build A || fail "A"
+          cp "$RUNNER_TEMP/apks/A.apk" "$RUNNER_TEMP/apks/Z.apk"
+          node e2e/study/arm.mjs B && build B || fail "B"
+          git checkout -- src
+          node e2e/study/arm.mjs C && build C || fail "C"
+          git checkout -- src
+          node e2e/study/arm.mjs D && build D || fail "D"
+          git checkout -- src
+          pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
+          ls -la "$RUNNER_TEMP/apks"
+
+      # What the built app itself says: the drawable ids, and how expo-image set
+      # Glide's log level (the logs say debug; the source says error by default).
+      - name: The APK's own answers
+        working-directory: mobile
+        run: |
+          set +e
+          F="$RUNNER_TEMP/apk-facts.txt"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          X="$RUNNER_TEMP/dex"; mkdir -p "$X"
+          unzip -q -o "$RUNNER_TEMP/apks/A.apk" 'classes*.dex' -d "$X"
+          {
+            echo "2131230858 = 0x$(printf '%x' 2131230858)"
+            "$BT/aapt2" dump resources "$RUNNER_TEMP/apks/A.apk" | grep -E 'resource 0x7f08(00[7-9a-f][0-9a-f]) ' | grep -E 'assets_|reelhouse'
+            echo "── generated expo-image BuildConfig:"
+            find node_modules/expo-image/android/build -name BuildConfig.java -exec grep -h ALLOW_GLIDE_LOGS {} \; | sed 's/^ *//'
+            echo "── EXPO_ALLOW_GLIDE_LOGS in env / gradle properties:"
+            env | grep -i -E 'glide|ORG_GRADLE_PROJECT' || echo "(not in env)"
+            grep -h -i glide android/gradle.properties "$HOME/.gradle/gradle.properties" 2>/dev/null || echo "(not in gradle.properties)"
+            echo "── ExpoImageAppGlideModule.applyOptions, compiled:"
+            for f in "$X"/*.dex; do "$BT/dexdump" -d "$f"; done \
+              | awk '/Class descriptor  : .Lexpo\/modules\/image\/ExpoImageAppGlideModule;/ { p = 1 } p && /applyOptions/ { q = 1 } q { print } q && /^ *registers/ { n++ } p && /source_file_idx/ { exit }' \
+              | grep -E 'const|invoke|ALLOW|sget' | head -n 14
+            echo "── GeneratedAppGlideModuleImpl in the APK:"
+            for f in "$X"/*.dex; do "$BT/dexdump" "$f" | grep -m 2 'GeneratedAppGlideModule'; done
+          } > "$F" 2>&1
+          cat "$F"
+          node e2e/annotate.mjs "Study: the APK's own answers" "$F" notice
+
+      - name: The functions, warmed
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' \
+              -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" -d '{"path":"/trending/movie/week"}' "$API_URL/functions/v1/tmdb-proxy")
+            [ "$code" = "200" ] && { echo "tmdb-proxy 200"; exit 0; }
+            sleep 2
+          done
+          echo "::error::tmdb-proxy never answered"; exit 1
+
+      - name: Let the emulator use the runner's KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Five builds, timed and traced, on one emulator boot
+        timeout-minutes: 110
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 4096M
+          heap-size: 576M
+          disable-animations: true
+          emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          script: bash mobile/e2e/study/ab.sh
+
+      - name: The numbers
+        if: always()
+        run: |
+          S="$RUNNER_TEMP/study"
+          node mobile/e2e/study/analyze.mjs "$S" > "$S/summary.txt" 2>&1
+          cat "$S/device.txt" "$S/summary.txt"
+          [ -f "$S/errors.txt" ] && cat "$S/errors.txt"
+          # One annotation per section, in pieces of 38 lines (an annotation keeps 40).
+          awk -v d="$S" '/^## /{ n++ } { print > (d "/part-" n ".txt") }' "$S/summary.txt"
+          node mobile/e2e/annotate.mjs "Study: device" "$S/device.txt" notice
+          for p in 1 2 3 4; do
+            [ -s "$S/part-$p.txt" ] || continue
+            title=$(head -n 1 "$S/part-$p.txt" | sed 's/^## //' | cut -c1-50)
+            split -l 38 -d "$S/part-$p.txt" "$S/piece-$p-"
+            for piece in "$S"/piece-$p-*; do
+              node mobile/e2e/annotate.mjs "Study: $title (${piece##*-})" "$piece" notice
+            done
+          done
+
+      - name: The traces
+        if: always()
+        run: |
+          S="$RUNNER_TEMP/study"
+          cd "$S"
+          curl -sSL -o tp https://get.perfetto.dev/trace_processor && chmod +x tp
+          for arm in A B C D; do
+            t="traces/$arm.pftrace"
+            if [ ! -s "$t" ]; then echo "no trace for $arm: $(tail -n 3 "traces/$arm.perfetto.txt" 2>/dev/null)" > "traces/$arm.sql.txt"; continue; fi
+            for q in "$GITHUB_WORKSPACE"/mobile/e2e/study/sql/*.pfsql; do
+              echo "── $(basename "$q" .pfsql)"
+              ./tp --query-file "$q" "$t" 2>&1 | grep -v -E '^\s*$|Loading trace|Trace loaded|^\[' | head -n 32
+            done > "traces/$arm.sql.txt"
+            cat "traces/$arm.sql.txt"
+          done
+          for arm in A B C D; do
+            awk '/^── 8-/{ exit } { print }' "traces/$arm.sql.txt" > "traces/$arm.sql-short.txt"
+            node "$GITHUB_WORKSPACE/mobile/e2e/annotate.mjs" "Study: trace $arm" "traces/$arm.sql-short.txt" notice
+          done
+
+      - name: The long stretches and the CPU profiles
+        if: always()
+        run: |
+          S="$RUNNER_TEMP/study/traces"
+          for arm in A C; do
+            awk '/^── 8-/{ p = 1 } p { print }' "$S/$arm.sql.txt" > "$S/$arm.deep.txt" 2>/dev/null
+            node mobile/e2e/annotate.mjs "Study: main thread's long stretches, $arm" "$S/$arm.deep.txt" notice
+          done
+          for arm in A B C D; do
+            cat "$S/$arm.perf-record.txt" "$S/$arm.perf-app.txt" 2>/dev/null | grep -v -E '^\s*$' > "$S/$arm.perf-short.txt"
+            node mobile/e2e/annotate.mjs "Study: CPU profile of the app, $arm" "$S/$arm.perf-short.txt" notice
+          done
+
+      - name: Keep the study
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: study-cold-start
+          path: |
+            ${{ runner.temp }}/study
+            ${{ runner.temp }}/apk-facts.txt
+            ${{ runner.temp }}/build.log
+          if-no-files-found: ignore

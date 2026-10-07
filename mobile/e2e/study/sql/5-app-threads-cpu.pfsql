@@ -1,0 +1,8 @@
+-- CPU each of the app's threads used in the first 9 s.
+WITH app AS (SELECT upid, pid FROM process WHERE name = 'com.reelhouse.society' ORDER BY upid DESC LIMIT 1),
+main AS (SELECT utid FROM thread JOIN app USING (upid) WHERE thread.tid = app.pid),
+t0 AS (SELECT MIN(ts) AS ts FROM thread_state WHERE utid = (SELECT utid FROM main))
+SELECT t.name AS thread, ROUND(SUM(ts.dur) / 1e6) AS running_ms
+FROM thread_state ts JOIN thread t USING (utid)
+WHERE t.upid = (SELECT upid FROM app) AND ts.state = 'Running' AND ts.ts < (SELECT ts FROM t0) + 9000000000
+GROUP BY t.name ORDER BY running_ms DESC LIMIT 20;

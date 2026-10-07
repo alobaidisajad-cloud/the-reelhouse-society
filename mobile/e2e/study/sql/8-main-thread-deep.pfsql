@@ -1,0 +1,8 @@
+-- Every main-thread section over 16 ms, any depth, in time order: what each long stretch was.
+WITH app AS (SELECT upid, pid FROM process WHERE name = 'com.reelhouse.society' ORDER BY upid DESC LIMIT 1),
+main AS (SELECT utid FROM thread JOIN app USING (upid) WHERE thread.tid = app.pid),
+t0 AS (SELECT MIN(ts) AS ts FROM thread_state WHERE utid = (SELECT utid FROM main))
+SELECT ROUND((s.ts - (SELECT ts FROM t0)) / 1e6) AS at_ms, s.depth, ROUND(s.dur / 1e6, 1) AS ms, SUBSTR(s.name, 1, 70) AS section
+FROM slice s JOIN thread_track tt ON s.track_id = tt.id
+WHERE tt.utid = (SELECT utid FROM main) AND s.dur > 16000000 AND s.ts < (SELECT ts FROM t0) + 9000000000
+ORDER BY s.ts LIMIT 80;
