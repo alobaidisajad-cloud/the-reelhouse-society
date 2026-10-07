@@ -2,7 +2,7 @@
 /**
  * arm.mjs — turns the checked-out app into one arm of the cold-start study.
  *
- *   node e2e/study/arm.mjs <B|C|E|P|SOURCE|STILL>     (run from mobile/)
+ *   node e2e/study/arm.mjs <B|C|E|N|P|SOURCE|STILL>     (run from mobile/)
  *
  * A is the app as it is. Each other arm is a list of exact edits; an edit whose
  * text is not found exactly once stops the build, so no arm can quietly be the
@@ -214,7 +214,14 @@ const still = () => {
   edit('src/components/auth/SocietySeal.tsx', '    if (isFocused) {', '    if (isFocused && !globalThis) {');
 };
 
+// N: no light at all — the room, the vignette AND the seal's halo — the ground
+// the screenshots measure the light against.
+const noHalo = () => edit('src/components/auth/AuthChrome.tsx',
+  '    <Svg width={size} height={size} pointerEvents="none">',
+  '    globalThis ? null : <Svg width={size} height={size} pointerEvents="none">');
+
 const ARMS = {
+  N: [noStartupPrefetch, noFullScreenSvg, noHalo],
   STILL: [still],
   B: [noStartupPrefetch],
   C: [noStartupPrefetch, noFullScreenSvg],
@@ -224,7 +231,7 @@ const ARMS = {
 };
 const arm = process.argv[2];
 if (!ARMS[arm]) {
-  console.error('usage: node e2e/study/arm.mjs <B|C|E|P|SOURCE|STILL>');
+  console.error('usage: node e2e/study/arm.mjs <B|C|E|N|P|SOURCE|STILL>');
   process.exit(2);
 }
 for (const step of ARMS[arm]) step();

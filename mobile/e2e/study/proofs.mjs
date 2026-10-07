@@ -75,6 +75,43 @@ out.push(`  B1 vs B2 (noise):  ${compare(b1, b2)}`);
 out.push(`  E1 vs E2 (noise):  ${compare(e1, e2)}`);
 out.push(`  B1 vs E1:          ${compare(b1, e1, 'B1-E1-x32.png')}`);
 out.push(`  B2 vs E2:          ${compare(b2, e2)}`);
+// Where the light is, and whether B and E draw the same of it: each shot
+// against N (no light at all), as a signed mean (luma, 0–255) per region of a
+// 6×12 grid, top row first. B−N and E−N must both be clearly non-zero where the
+// lamp, the floor and the corners fall, and match each other there.
+const n1 = png('N1');
+const luma = (img, i) => 0.2126 * img.data[i] + 0.7152 * img.data[i + 1] + 0.0722 * img.data[i + 2];
+function grid(a, b) {
+  if (!a || !b || a.width !== b.width || a.height !== b.height) return null;
+  const cols = 6, rows = 12, rows_ = [];
+  for (let r = 0; r < rows; r++) {
+    const cells = [];
+    for (let c = 0; c < cols; c++) {
+      let sum = 0, n = 0;
+      const y0 = Math.floor((r * a.height) / rows), y1 = Math.floor(((r + 1) * a.height) / rows);
+      const x0 = Math.floor((c * a.width) / cols), x1 = Math.floor(((c + 1) * a.width) / cols);
+      for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { const i = (y * a.width + x) * 4; sum += luma(b, i) - luma(a, i); n++; }
+      cells.push(sum / n);
+    }
+    rows_.push(cells);
+  }
+  return rows_;
+}
+const fmtGrid = (g) => g.map((row) => '    ' + row.map((v) => (v >= 0 ? '+' : '') + v.toFixed(2)).map((s) => s.padStart(7)).join('')).join('\n');
+for (const [name, a, b] of [['B1 − N1 (the SVG light)', n1, b1], ['E1 − N1 (the native light)', n1, e1], ['E1 − B1 (native minus SVG)', b1, e1]]) {
+  const g = grid(a, b);
+  out.push('', `  ${name}, signed mean luma per region:`);
+  out.push(g ? fmtGrid(g) : '    (a shot is missing)');
+}
+// Banding: distinct luma levels down the middle column, where the pool falls.
+const levels = (img) => {
+  if (!img) return '—';
+  const seen = new Set();
+  const x = Math.floor(img.width / 2);
+  for (let y = Math.floor(img.height * 0.05); y < Math.floor(img.height * 0.6); y++) seen.add(Math.round(luma(img, (y * img.width + x) * 4)));
+  return seen.size;
+};
+out.push('', `  distinct levels down the middle (5%–60% of the height): B1 ${levels(b1)} · E1 ${levels(e1)} · N1 ${levels(n1)}`);
 const elog = read(join(dir, SHOTS, 'E1.log')).split('\n').filter((l) => /background|gradient/i.test(l) && /reelhouse|ReactNative|unknown/i.test(l));
 out.push(`  E's log lines about backgrounds or gradients: ${elog.length}`);
 for (const l of elog.slice(0, 4)) out.push(`    ${l.slice(0, 160)}`);

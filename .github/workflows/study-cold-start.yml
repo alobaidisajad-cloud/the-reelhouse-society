@@ -22,6 +22,10 @@ concurrency:
 permissions:
   contents: read
 
+# shots: only the screenshots (B, E and N, the ground with no light); all: everything.
+env:
+  STUDY: shots
+
 jobs:
   android:
     name: 🔬 Android — seven builds, one boot
@@ -90,6 +94,14 @@ jobs:
           fail() { echo "::error title=Study build::$1"; grep -n -A 20 'What went wrong' "$B" | head -n 40; grep -nE '^e: |error:' "$B" | head -n 20; tail -n 30 "$B"; exit 1; }
           reset() { git checkout -- src package.json; }
           npx expo prebuild --platform android --no-install --clean >> "$B" 2>&1 || fail "prebuild"
+          if [ "$STUDY" = shots ]; then
+            node e2e/study/arm.mjs B && build B || fail "B"
+            reset; node e2e/study/arm.mjs E && build E || fail "E"
+            reset; node e2e/study/arm.mjs N && build N || fail "N"
+            reset
+            ls -la "$RUNNER_TEMP/apks"
+            exit 0
+          fi
           build A || fail "A"
           cp "$RUNNER_TEMP/apks/A.apk" "$RUNNER_TEMP/apks/Z.apk"
           node e2e/study/arm.mjs B && build B || fail "B"
@@ -287,6 +299,8 @@ jobs:
           git checkout -- src
           node e2e/study/arm.mjs E && node e2e/study/arm.mjs STILL && build E || fail "E"
           git checkout -- src
+          node e2e/study/arm.mjs N && node e2e/study/arm.mjs STILL && build N || fail "N"
+          git checkout -- src
 
       - name: Screenshots on the simulator
         run: |
@@ -310,6 +324,7 @@ jobs:
           }
           shot B1 B
           shot E1 E
+          shot N1 N
           shot B2 B
           shot E2 E
           ls -la "$S/shots-ios"

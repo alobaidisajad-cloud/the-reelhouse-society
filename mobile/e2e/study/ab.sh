@@ -58,6 +58,11 @@ install() {
 fresh_start() {  # force-stop, clear data, empty the log, start; the am output to $1
   adb shell am force-stop "$PKG"
   adb shell pm clear "$PKG" > /dev/null
+  # The old task is removed after the process dies; a start before that is
+  # killed with it ("Destroy timeout of remove-task" then "failed to attach").
+  local i
+  for i in $(seq 1 20); do [ -z "$(adb shell pidof "$PKG" | tr -d '\r')" ] && break; sleep 0.5; done
+  sleep 3
   adb logcat -c
   timeout 90 adb shell am start-activity -W -n "$PKG/.MainActivity" > "$1" 2>&1
 }
@@ -80,7 +85,7 @@ note_if_long() {  # <label> <am file> <log file>
 # Screenshots: the welcome with the light drawn as SVG (B) and as native
 # gradients (E), twice each, 12 s after the start (everything has arrived and,
 # with animations off, holds still). B against B is the noise floor.
-for shot in B1 E1 B2 E2; do
+for shot in B1 E1 N1 B2 E2; do
   arm=${shot:0:1}
   install "$arm" || continue
   fresh_start "$OUT/shots/$shot.am"
@@ -88,6 +93,8 @@ for shot in B1 E1 B2 E2; do
   adb exec-out screencap -p > "$OUT/shots/$shot.png"
   adb logcat -d -v threadtime > "$OUT/shots/$shot.log"
 done
+
+if [ "${STUDY:-all}" = shots ]; then echo "shots only: done" >> "$OUT/device.txt"; exit 0; fi
 
 # P: the download-only prefetch on a device — its Glide log says File, not a decode.
 if install P; then
