@@ -29,6 +29,8 @@ env:
 jobs:
   android:
     name: 🔬 Android — seven builds, one boot
+    # Android parity is proven (run 6); this run is iOS only.
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     steps:
@@ -195,16 +197,6 @@ jobs:
           done
           true
 
-      - name: Thumbnails (x4 brighter, base64 PNG)
-        if: always()
-        working-directory: mobile
-        run: |
-          for s in B1 E1 N1; do
-            p="$RUNNER_TEMP/study/shots/$s.png"
-            [ -s "$p" ] && echo "::notice title=thumb android $s::$(node e2e/study/thumb.mjs "$p" 72)"
-          done
-          true
-
       - name: The numbers
         if: always()
         working-directory: mobile
@@ -310,10 +302,19 @@ jobs:
           WS=$(ls -d ios/*.xcworkspace | head -n 1)
           SCHEME=$(basename "$WS" .xcworkspace)
           echo "workspace $WS, scheme $SCHEME"
+          # Signed as Xcode signs a simulator build ("Sign to Run Locally"), so the
+          # app has its entitlements (the keychain); unsigned only if that fails.
           build() {
-            xcodebuild -workspace "$WS" -scheme "$SCHEME" -configuration Release -sdk iphonesimulator \
-              -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/build \
-              CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES ARCHS=arm64 >> "$L" 2>&1 \
+            if xcodebuild -workspace "$WS" -scheme "$SCHEME" -configuration Release -sdk iphonesimulator \
+                -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/build \
+                ONLY_ACTIVE_ARCH=YES ARCHS=arm64 >> "$L" 2>&1; then
+              echo "$1: signed to run locally" >> "$RUNNER_TEMP/ios/signing.txt"
+            else
+              echo "$1: signing failed, built unsigned" >> "$RUNNER_TEMP/ios/signing.txt"
+              xcodebuild -workspace "$WS" -scheme "$SCHEME" -configuration Release -sdk iphonesimulator \
+                -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/build \
+                CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES ARCHS=arm64 >> "$L" 2>&1 || return 1
+            fi \
               && rm -rf "$RUNNER_TEMP/ios/$1.app" \
               && cp -R "$(ls -d ios/build/Build/Products/Release-iphonesimulator/*.app | head -n 1)" "$RUNNER_TEMP/ios/$1.app" \
               && echo "built $1"
@@ -340,8 +341,17 @@ jobs:
           shot() {
             xcrun simctl install "$DEV" "$RUNNER_TEMP/ios/$2.app"
             xcrun simctl launch "$DEV" com.reelhouse.society > "$S/shots-ios/$1.launch.txt" 2>&1
-            sleep 25
-            { echo "── $1: running after 25 s?"; xcrun simctl spawn "$DEV" launchctl list | grep -i reelhouse || echo "NOT RUNNING"; } >> "$S/shots-ios/diag.txt"
+            sleep 5
+            a5=$(xcrun simctl spawn "$DEV" launchctl list | grep -ci reelhouse || true)
+            sleep 20
+            a25=$(xcrun simctl spawn "$DEV" launchctl list | grep -ci reelhouse || true)
+            echo "$1: alive at 5 s: $a5 · at 25 s: $a25 · $(cat "$S/shots-ios/$1.launch.txt" | tr '\n' ' ')" >> "$S/shots-ios/alive.txt"
+            if [ "$a25" = "0" ]; then
+              { echo "── $1 ended:"; node "$GITHUB_WORKSPACE/mobile/e2e/study/ios-crash.mjs"
+                xcrun simctl spawn "$DEV" log show --last 1m --style compact \
+                  --predicate 'processImagePath CONTAINS[c] "reelhouse"' 2>&1 \
+                  | grep -i -E 'exception|fatal|terminat|abort|crash|error|javascript' | tail -n 12; } >> "$S/shots-ios/ended.txt"
+            fi
             xcrun simctl io "$DEV" screenshot "$S/shots-ios/$1.png"
             xcrun simctl terminate "$DEV" com.reelhouse.society || true
             xcrun simctl uninstall "$DEV" com.reelhouse.society
@@ -367,11 +377,9 @@ jobs:
         if: always()
         working-directory: mobile
         run: |
-          node e2e/annotate.mjs "Study: iOS launch diagnostics" "$RUNNER_TEMP/study/shots-ios/diag.txt" notice
-          for s in B1 E1 N1; do
-            p="$RUNNER_TEMP/study/shots-ios/$s.png"
-            [ -s "$p" ] && echo "::notice title=thumb ios $s::$(node e2e/study/thumb.mjs "$p" 72)"
-          done
+          cat "$RUNNER_TEMP/ios/signing.txt" "$RUNNER_TEMP/study/shots-ios/alive.txt" > "$RUNNER_TEMP/study/shots-ios/alive-all.txt" 2>/dev/null
+          node e2e/annotate.mjs "Study: iOS signing and alive" "$RUNNER_TEMP/study/shots-ios/alive-all.txt" notice
+          [ -s "$RUNNER_TEMP/study/shots-ios/ended.txt" ] && node e2e/annotate.mjs "Study: iOS — why the app ended" "$RUNNER_TEMP/study/shots-ios/ended.txt" notice
           S="$RUNNER_TEMP/study"
           node e2e/study/proofs.mjs "$S" shots-ios > "$S/proofs-ios.txt" 2>&1
           cat "$S/proofs-ios.txt"
