@@ -12,8 +12,8 @@
  *     the review, the pull quote, a critique, a past viewing — and a joined
  *     script never has its first letter lifted out as a drop cap;
  *   · a rating with no words draws no empty review section;
- *   · the share card exists only while a share is in flight, and is gone after
- *     a failed one too;
+ *   · the share card exists only while a share is in flight, is captured only
+ *     once it says it is whole, and is gone after a failed one too;
  *   · a visitor can save the film, as they can from its card;
  *   · a share that failed says so;
  *   · a record that could not be read is never "Log not found", and a way out
@@ -86,11 +86,17 @@ jest.mock('@/src/utils/offlineQueue', () => ({
 jest.mock('@/src/components/ShareToLoungeModal', () => () => null);
 jest.mock('@/src/components/moderation/ReportSheet', () => () => null);
 jest.mock('@/src/components/moderation/ContentActionSheet', () => ({ ContentActionSheet: () => null }));
-// The card, drawn as a marker: what is under test is WHEN it exists.
+// The card, drawn as a marker: what is under test is WHEN it exists, and that
+// nothing is captured before it says every picture on it is drawn — which the
+// test says for it, through the onReady it was given.
+let mockCardReady: (() => void) | undefined;
 jest.mock('@/src/components/film/LogShareCard', () => {
   const { View: V } = require('react-native');
-  return () => <V testID="share-card" />;
+  return ({ onReady }: { onReady?: () => void }) => { mockCardReady = onReady; return <V testID="share-card" />; };
 });
+// A test renderer has no native view to draw to a picture, so every capture fails.
+const mockCaptureRef = jest.fn((..._: unknown[]) => Promise.reject(new Error('no native view')));
+jest.mock('react-native-view-shot', () => ({ captureRef: (...a: unknown[]) => mockCaptureRef(...a) }));
 jest.mock('@/src/services/LogService', () => ({
   LogService: { getLogDetails: jest.fn(), getLogComments: jest.fn(), addLogComment: jest.fn(), deleteLogComment: jest.fn() },
 }));
@@ -354,28 +360,41 @@ describe('the share card exists only while a share is in flight', () => {
     expect(card(r)).toBeNull();
   });
 
-  it('mounted for the share, and gone when the share ends — however it ends', async () => {
-    // The two frames the page waits for, before it draws the card to a picture,
-    // are held here: that is the share in flight.
-    const frames: FrameRequestCallback[] = [];
-    const raf = jest.spyOn(global, 'requestAnimationFrame').mockImplementation((cb) => { frames.push(cb); return frames.length; });
+  beforeEach(() => { mockCardReady = undefined; mockCaptureRef.mockClear(); });
+
+  it('mounted for the share, captured only once it is whole, and gone when the share ends — however it ends', async () => {
+    const r = await page();
+    await act(async () => { fireEvent.press(r.getByText('SHARE')); });
+    // In flight: the card is up, and its pictures are not all drawn yet.
+    expect(card(r)).not.toBeNull();
+    await act(async () => { await new Promise((res) => setTimeout(res, 50)); });
+    expect(mockCaptureRef).not.toHaveBeenCalled();
+    expect(card(r)).not.toBeNull();
+    // Whole: captured. The capture FAILS here — the case the card was once left
+    // behind in. Success and failure leave by the same `finally`.
+    await act(async () => { mockCardReady!(); await new Promise((res) => setTimeout(res, 50)); });
+    expect(mockCaptureRef).toHaveBeenCalledTimes(1);
+    expect(card(r)).toBeNull();
+    expect(r.getByText('SHARE')).toBeTruthy();      // and the control is ready again
+    expect(mockToastError).toHaveBeenCalledWith('The log could not be shared. Try again.');
+  });
+
+  it('a card that is never whole fails the share after 20 s, says so, and is gone', async () => {
+    const r = await page();
+    jest.useFakeTimers({ doNotFake: ['Date', 'performance', 'nextTick', 'setImmediate', 'queueMicrotask'] });
     try {
-      const r = await page();
       await act(async () => { fireEvent.press(r.getByText('SHARE')); });
+      await act(async () => { jest.advanceTimersByTime(19_000); });
       expect(card(r)).not.toBeNull();
-      // Let them run. A test renderer gives the card no native view to draw, so
-      // this share FAILS — the case the card was once left behind in. Success
-      // and failure leave by the same `finally`; it has to be gone either way.
-      await act(async () => {
-        for (let i = 0; i < 4 && frames.length; i++) { frames.shift()!(0); await new Promise((res) => setTimeout(res, 0)); }
-        await new Promise((res) => setTimeout(res, 0));
-      });
-      expect(card(r)).toBeNull();
-      expect(r.getByText('SHARE')).toBeTruthy();      // and the control is ready again
-      expect(mockToastError).toHaveBeenCalledWith('The log could not be shared. Try again.');
+      expect(mockToastError).not.toHaveBeenCalled();
+      await act(async () => { jest.advanceTimersByTime(1_000); });
     } finally {
-      raf.mockRestore();
+      jest.useRealTimers();
     }
+    await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+    expect(mockCaptureRef).not.toHaveBeenCalled();
+    expect(card(r)).toBeNull();
+    expect(mockToastError).toHaveBeenCalledWith('The log could not be shared. Try again.');
   });
 });
 

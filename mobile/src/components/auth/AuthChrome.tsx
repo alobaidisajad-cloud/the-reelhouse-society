@@ -6,22 +6,31 @@
  * they all speak — candlelight halos, typewriter eyebrows with ✦ film
  * ornaments, registration brackets, the founding-year mark.
  *
- * Everything here is decorative, cheap (static SVG / plain Views, zero
+ * Everything here is decorative, cheap (native gradients / plain Views, zero
  * per-frame JS), and pointerEvents-safe.
  */
 import React, { memo } from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import type { LucideIcon } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
-import { WASH } from '@/src/theme/light';
+import { rgbaOf, WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
 // ── Candlelight halo — a soft radial glow, the projector's warmth ──
-// Static SVG (rendered once, never re-painted). Used behind the seal
-// and behind the unframed icons on the confirmation/recovery surfaces.
+// A native background (no bitmap; see roomLightImage in src/theme/light.ts):
+// a circle as wide as the square, candlelight at its heart, brass at 42%,
+// nothing at its rim. Used behind the seal and behind the unframed icons on
+// the confirmation/recovery surfaces. Written as an ellipse of two equal
+// radii: React Native 0.81 reads `circle <r> at …` wrongly (the `at` is
+// swallowed and the position taken for the size).
+export function candlelightImage(size: number, intensity: number): string {
+  const r = +(size / 2).toFixed(2);
+  return `radial-gradient(ellipse ${r}px ${r}px at 50% 50%, ${rgbaOf(colors.flicker, intensity)} 0%, ` +
+    `${rgbaOf(colors.sepia, intensity * 0.32)} 42%, ${rgbaOf(colors.sepia, 0)} 100%)`;
+}
+
 export const CandlelightHalo = memo(function CandlelightHalo({
   size,
   intensity = 0.5,
@@ -29,18 +38,7 @@ export const CandlelightHalo = memo(function CandlelightHalo({
   size: number;
   intensity?: number;
 }) {
-  return (
-    <Svg width={size} height={size} pointerEvents="none">
-      <Defs>
-        <RadialGradient id="candleHalo" cx="50%" cy="50%" r="50%">
-          <Stop offset="0%" stopColor={colors.flicker} stopOpacity={intensity} />
-          <Stop offset="42%" stopColor={colors.sepia} stopOpacity={intensity * 0.32} />
-          <Stop offset="100%" stopColor={colors.sepia} stopOpacity={0} />
-        </RadialGradient>
-      </Defs>
-      <Rect x={0} y={0} width={size} height={size} fill="url(#candleHalo)" />
-    </Svg>
-  );
+  return <View style={{ width: size, height: size, experimental_backgroundImage: candlelightImage(size, intensity) }} pointerEvents="none" />;
 });
 
 // ── Film-strip perforations — the frame edges of the admission reel ──

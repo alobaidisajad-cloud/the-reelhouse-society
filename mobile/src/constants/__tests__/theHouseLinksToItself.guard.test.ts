@@ -12,7 +12,9 @@ import { join, relative, sep } from 'path';
 import { MOBILE, readCode } from '@/test-utils/readCode';
 import { HOUSE_WEB } from '@/src/constants/support';
 
-const ELSEWHERE = /reelhouse\.app\b/;
+// In any case: the share card printed it as REELHOUSE.APP, and a check that
+// read only lower case passed it.
+const ELSEWHERE = /reelhouse\.app\b/i;
 
 /** Files the last sweep read: a sweep that read none would find nothing, and pass. */
 let scanned = 0;

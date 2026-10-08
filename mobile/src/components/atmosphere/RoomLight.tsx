@@ -22,16 +22,14 @@
 import { memo, useMemo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient as Fade } from 'expo-linear-gradient';
-import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 import {
   Canvas, Group, LinearGradient as SkLinear, Mask, RadialGradient as SkRadial, Rect as SkRect, vec,
 } from '@shopify/react-native-skia';
 
-import { lightGeometry, type Room } from '@/src/theme/light';
+import { lightGeometry, roomLightImage, type Room } from '@/src/theme/light';
 import { colors } from '@/src/theme/theme';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
-import { useSvgId } from '@/src/utils/svgId';
 import { BloomLayer, RoomBloom, useBloomOpacity } from './RoomBloom';
 import { useSharedImage } from './useSharedImage';
 
@@ -52,35 +50,12 @@ interface LightProps {
 
 export const RoomLight = memo(function RoomLight({ room, hem, art }: LightProps) {
   const { width: W, height: H } = useWindowDimensions();
-  // Scoped ids: two screens stacked on the navigator each hold a RoomLight.
-  const id = useSvgId('');
   const g = lightGeometry(room, W, H, hem);
-  const colour = `rgb(${g.pool.rgb.join(',')})`;
-
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none" {...UNSPOKEN} testID="room-light">
-      <Svg width={W} height={H} style={StyleSheet.absoluteFill}>
-        <Defs>
-          <RadialGradient id={`pool${id}`} gradientUnits="userSpaceOnUse" cx={g.pool.cx} cy={g.pool.cy} rx={g.pool.rx} ry={g.pool.ry}>
-            {g.pool.stops.map(([at, a]) => (
-              <Stop key={at} offset={at} stopColor={colour} stopOpacity={a} />
-            ))}
-          </RadialGradient>
-          <LinearGradient id={`floor${id}`} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={g.floor.height}>
-            {g.floor.stops.map(([at, a]) => (
-              <Stop key={at} offset={at} stopColor="#000" stopOpacity={a} />
-            ))}
-          </LinearGradient>
-          <RadialGradient id={`corners${id}`} gradientUnits="userSpaceOnUse" cx={g.corners.cx} cy={g.corners.cy} rx={g.corners.rx} ry={g.corners.ry}>
-            {g.corners.stops.map(([at, a]) => (
-              <Stop key={at} offset={at} stopColor="#000" stopOpacity={a} />
-            ))}
-          </RadialGradient>
-        </Defs>
-        <Rect x={0} y={0} width={W} height={H} fill={`url(#pool${id})`} />
-        <Rect x={0} y={0} width={W} height={H} fill={`url(#floor${id})`} />
-        <Rect x={0} y={0} width={W} height={H} fill={`url(#corners${id})`} />
-      </Svg>
+      {/* The pool, the floor and the corners: one view, one native background,
+          no bitmap (see roomLightImage), in the same box the light always had. */}
+      <View style={{ position: 'absolute', top: 0, left: 0, width: W, height: H, experimental_backgroundImage: roomLightImage(g, H) }} />
       {art ? <RoomBloom uri={art} width={g.bloom.width} height={g.bloom.height} left={g.bloom.left} /> : null}
     </View>
   );

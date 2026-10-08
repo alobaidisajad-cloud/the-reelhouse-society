@@ -212,12 +212,24 @@ describe('THE NITRATE FILE', () => {
 
   const FILM = { id: 1, title: 'The Odyssey', poster_path: null };
   const open = (onClose = jest.fn()) => ({ onClose, r: render(<ShareCardModal visible onClose={onClose} film={FILM} log={null} username="morpho" memberNo={12} />) });
+  // The file is shared only once every picture on it is drawn (aFileIsSharedWhole.test.tsx).
+  const drawn = async (r: ReturnType<typeof render>) => {
+    const go = (j: unknown): void => {
+      if (!j || typeof j !== 'object') return;
+      if (Array.isArray(j)) { j.forEach(go); return; }
+      const n = j as { type: string; props: { onDisplay?: () => void }; children?: unknown[] };
+      if (n.type === 'ExpoImage') n.props.onDisplay?.();
+      (n.children ?? []).forEach(go);
+    };
+    await act(async () => { go(r.toJSON()); });
+  };
 
   beforeEach(() => { mockCapture.mockReset(); mockShareAsync.mockReset(); mockToastError.mockReset(); });
 
   it('a share that failed keeps the file open, and says so', async () => {
     mockCapture.mockRejectedValue(new Error('capture failed'));
     const { r, onClose } = open();
+    await drawn(r);
     await act(async () => { fireEvent.press(r.getByText('SHARE TO SOCIALS')); });
     expect(mockToastError).toHaveBeenCalledWith('The file could not be shared. Try again.');
     expect(onClose).not.toHaveBeenCalled();
@@ -227,6 +239,7 @@ describe('THE NITRATE FILE', () => {
     mockCapture.mockResolvedValue('file:///card.png');
     mockShareAsync.mockResolvedValue(undefined);
     const { r, onClose } = open();
+    await drawn(r);
     await act(async () => { fireEvent.press(r.getByText('SHARE TO SOCIALS')); });
     expect(mockShareAsync).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();

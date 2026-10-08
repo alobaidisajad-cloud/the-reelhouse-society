@@ -22,7 +22,8 @@ export interface ShareCardData {
     memberNo?: number | null;
 }
 
-export default function LogShareCard({ data }: { data: ShareCardData }) {
+/** `onReady`: every picture on the file is drawn (see NitrateFileCard). */
+export default function LogShareCard({ data, onReady }: { data: ShareCardData; onReady?: () => void }) {
     const posterUrl = data.posterPath ? tmdb.poster(data.posterPath, 'w500') : (data.posterUri || null);
     return (
         <NitrateFileCard
@@ -37,6 +38,7 @@ export default function LogShareCard({ data }: { data: ShareCardData }) {
                 username: data.username,
                 memberNo: data.memberNo,
             }}
+            onReady={onReady}
         />
     );
 }

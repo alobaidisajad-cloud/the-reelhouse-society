@@ -78,27 +78,12 @@ const useFilmStoreBase = create<FilmState>()(
                         useFilmStore.setState({ _endorsedIndex: endorseIdx, _listEndorsedIndex: listEndorseIdx });
                     }
 
-                    try {
-                         
-                        const { ImagePrefetcher } = require('../utils/imagePrefetcher');
-                        if (state.watchlist && state.watchlist.length > 0) {
-                            ImagePrefetcher.preloadFilmBatch(state.watchlist.slice(0, 10));
-                        }
-                        if (state.physicalArchive && state.physicalArchive.length > 0) {
-                            ImagePrefetcher.preloadFilmBatch(state.physicalArchive.slice(0, 10));
-                        }
-                    } catch { /* prefetch is best-effort */ }
-                    try {
-                         
-                        const { tmdb } = require('../lib/tmdb');
-                        tmdb.trending('week').then((res: any) => {
-                            try {
-                                 
-                                const { ImagePrefetcher } = require('../utils/imagePrefetcher');
-                                ImagePrefetcher.preloadFilmBatch((res?.results ?? []).slice(0, 15));
-                            } catch { /* prefetch is best-effort */ }
-                        }).catch((err: unknown) => { if (__DEV__) console.warn('[Hydration] trending prefetch error:', err); });
-                    } catch { /* tmdb prefetch is best-effort */ }
+                    // Nothing is fetched or drawn ahead from here. This runs before the
+                    // first frame, and no screen shows these films' posters at the size
+                    // a fetch here could guess; on Android each prefetched poster is
+                    // decoded whole into memory, and fifteen of them cost a fresh start
+                    // a half-second native-memory collection (study run 37628665206).
+                    // The Lobby reads its own programme as it opens.
                 }
             }
         }

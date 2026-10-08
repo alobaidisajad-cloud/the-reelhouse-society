@@ -115,12 +115,6 @@ jest.mock('../../src/utils/offlineQueue', () => ({
 jest.mock('../../src/utils/networkError', () => ({
     isNetworkError: jest.fn(() => false),
 }));
-jest.mock('../../src/utils/imagePrefetcher', () => ({
-    ImagePrefetcher: { preloadFilmBatch: jest.fn() },
-}));
-jest.mock('../../src/lib/tmdb', () => ({
-    tmdb: { trending: jest.fn().mockResolvedValue({ results: [] }) },
-}));
 jest.mock('../../src/utils/logger', () => ({
     logger: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn(), alert: jest.fn() },
 }));

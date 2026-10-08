@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { StateCreator } from 'zustand';
 import { captureError } from '../../lib/sentry';
 import { supabase } from '../../lib/supabase';
@@ -97,15 +96,9 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
             _fetchingWatchlist: false,
             _watchlistCursor: nextCursor,
         });
-
-        // Background image prefetching: only prefetch new entries
-        const newEntries = loadMore ? newItems : nextWatchlist;
-        const posterUrls = newEntries
-            .filter(w => w.poster_path)
-            .map(w => `https://image.tmdb.org/t/p/w500${w.poster_path}`);
-        if (posterUrls.length > 0) {
-            Image.prefetch(posterUrls, 'disk').catch(() => {});
-        }
+        // No posters are fetched ahead here. The Watchlist tab fetches the ones
+        // it is about to draw, at the size it draws them; every place allowed to
+        // fetch ahead is listed in src/utils/__tests__/imagePrefetchSites.guard.test.ts.
         return true;
     },
 

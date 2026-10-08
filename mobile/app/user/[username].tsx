@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import AnimatedRN, { Easing, Extrapolation, FadeIn, cancelAnimation, interpolate, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
-import Svg, { Defs, Ellipse, RadialGradient as SvgRadialGradient, Stop } from 'react-native-svg';
 
 import { useFilmStore } from '@/src/stores/films';
 import { useShallow } from 'zustand/react/shallow';
@@ -22,6 +21,7 @@ import { ReelRating, SectionDivider } from '@/src/components/Decorative';
 import { CinematicInsights } from '@/src/components/profile/CinematicInsights';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors } from '@/src/theme/theme';
+import { spotlightImage } from '@/src/theme/light';
 
 import { useProfileController } from '@/src/hooks/useProfileController';
 
@@ -109,19 +109,7 @@ const TAB_TITLES: Record<string, string> = {
 
 // ── The projector's pool of light — a true radial, tier-tinted, painted once ──
 function SpotlightPool({ tint, opacity }: { tint: string; opacity: number }) {
-  return (
-    <View style={spotStyles.wrap} pointerEvents="none">
-      <Svg width="100%" height="100%">
-        <Defs>
-          <SvgRadialGradient id="plateSpot" cx="50%" cy="22%" rx="58%" ry="62%">
-            <Stop offset="0%" stopColor={tint} stopOpacity={String(opacity)} />
-            <Stop offset="100%" stopColor={tint} stopOpacity="0" />
-          </SvgRadialGradient>
-        </Defs>
-        <Ellipse cx="50%" cy="28%" rx="62%" ry="58%" fill="url(#plateSpot)" />
-      </Svg>
-    </View>
-  );
+  return <View style={[spotStyles.wrap, { experimental_backgroundImage: spotlightImage(tint, opacity) }]} pointerEvents="none" />;
 }
 const spotStyles = StyleSheet.create({
   wrap: { position: 'absolute', top: -30, left: 0, right: 0, height: 340, zIndex: 1 },

@@ -46,8 +46,6 @@ jest.mock('@/src/utils/reelToast', () => {
 });
 jest.mock('@/src/utils/offlineQueue', () => ({ enqueueMutation: jest.fn(), getOfflineQueue: jest.fn(() => []) }));
 jest.mock('@/src/utils/networkError', () => ({ isNetworkError: jest.fn(() => false) }));
-jest.mock('@/src/utils/imagePrefetcher', () => ({ ImagePrefetcher: { preloadFilmBatch: jest.fn() } }));
-jest.mock('@/src/lib/tmdb', () => ({ tmdb: { trending: jest.fn().mockResolvedValue({ results: [] }) } }));
 jest.mock('@/src/utils/logger', () => ({ logger: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn(), alert: jest.fn() } }));
 jest.mock('@/src/lib/sentry', () => ({ addBreadcrumb: jest.fn(), captureError: jest.fn(), Sentry: { captureException: jest.fn() } }));
 jest.mock('@/src/lib/queryClient', () => ({ queryClient: { invalidateQueries: jest.fn(), setQueryData: jest.fn(), getQueryData: jest.fn() } }));

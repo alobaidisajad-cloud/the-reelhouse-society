@@ -99,8 +99,6 @@ jest.mock('@/src/utils/offlineQueue', () => ({
     enqueueMutation: jest.fn(), getOfflineQueue: jest.fn(() => []), flushOfflineQueue: jest.fn(),
 }));
 jest.mock('@/src/lib/sentry', () => ({ addBreadcrumb: jest.fn(), captureError: jest.fn(), Sentry: { captureException: jest.fn() } }));
-jest.mock('@/src/utils/imagePrefetcher', () => ({ ImagePrefetcher: { preloadFilmBatch: jest.fn() } }));
-jest.mock('@/src/lib/tmdb', () => ({ tmdb: { trending: jest.fn().mockResolvedValue({ results: [] }) } }));
 jest.mock('@/src/services/InteractionService', () => ({
     InteractionService: {
         addEndorsement: jest.fn(() => Promise.reject(mockEndorseError)),

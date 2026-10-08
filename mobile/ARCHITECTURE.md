@@ -89,8 +89,9 @@ src/
 |---------|---------------|
 | Virtualized Lists | 100% FlashList (except DraggableFlatList) |
 | Image Caching | expo-image with memory-disk caching |
+| Gradients | Native `experimental_backgroundImage`, never a gradient-only SVG (an SVG is a bitmap the size of its view): `src/theme/__tests__/aGradientIsNeverABitmap.guard.test.ts` |
 | Animation | Reanimated 4 worklets (native thread) |
-| Prefetching | onPressIn poster prefetch + staggered batch |
+| Prefetching | Only where a screen is about to draw the picture, at the size it draws it (profile tabs, the Stacks); never at start-up. The list is `src/utils/__tests__/imagePrefetchSites.guard.test.ts` |
 | Loading States | FilmHeroSkeleton, RoomRetrieving |
 | New Architecture | Fabric + TurboModules (RN 0.81) |
 | Sentry Performance | Route-aware TTID/TTFD + app start + frame tracking |

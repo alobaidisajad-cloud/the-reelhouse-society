@@ -112,9 +112,9 @@ without one). "Read" is the day its comments were last read against its code.
 | app/film/[id].tsx | 2026-10-01 | doors through nav; the critiques' failure carried down; the footage named |
 | app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx | 2026-09-30 | written with the log page's critiques matched to the stack's |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
-| app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-04 | edited: Read more sits on the side the review reads from |
+| app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-08 | the share captured only once the card is whole; the 20 s limit |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
-| app/log/[id].tsx | 2026-10-04 | edited: the critique box focus through useLater |
+| app/log/[id].tsx | 2026-10-08 | the share waits for the card to say it is whole, 20 s at most |
 | app/lounge.tsx | 2026-10-01 | true as written |
 | app/lounge/[id].tsx | 2026-10-04 | edited: a message’s letter is initialOf, kept from the screen reader |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-04 | edited: a portrait without a photograph carries the whole first letter, unspoken |
@@ -126,7 +126,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
 | app/stacks/[id].tsx | 2026-10-04 | edited: the comment field focus moved out of the state updater into an effect, through useLater |
-| app/user/[username].tsx | 2026-10-02 | Read whole in the launch audit: HIGHEST RATED now the server's six over the whole record (fetchHighestRated). |
+| app/user/[username].tsx | 2026-10-08 | the plate's spotlight a native gradient (spotlightImage) |
 | app/year-in-cinema.tsx | 2026-10-01 | nav; a single reel says so far, not the year is young |
 | ARCHITECTURE.md | 2026-10-03 | read against the code: reads are not all TanStack Query (the Lounge, the Dispatch and notices read in their stores); CACHE_MAX_AGE in limits.ts never existed (now CACHE_KEYS) |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
@@ -135,6 +135,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/attempt.test.ts | 2026-10-04 | written with attempt.mjs: each retry rule shown to refuse on its own, in Maestro 2.10.0's record shapes |
 | e2e/__tests__/appCrashes.test.ts | 2026-10-04 | written with app-crashes.mjs: the app's crash, native crash and ANR in threadtime lines; other processes left out; an unproven copy fails |
 | e2e/__tests__/animationWaits.test.ts | 2026-10-04 | written with animation-waits.mjs: each wait on its flow, Android 14's named container |
+| e2e/__tests__/glideLogLevel.test.ts | 2026-10-08 | written with glide-log-level.mjs, on dexdump lines in the shape of runs 37628665206 and 37674283540 |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
 | e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-04 | written: the real run-flows.sh against a fake phone and a fake Maestro, six whole runs |
@@ -151,6 +152,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-writes.mjs | 2026-09-29 | true as written |
 | e2e/flow-screens.mjs | 2026-10-04 | Maestro's JUnit reason, a report for a flow with no step record, the decision line, the named animation; QueryController dropped (logged on every key of fast runs) |
+| e2e/glide-log-level.mjs | 2026-10-08 | written: the APK hands Glide level 6 (ERROR), once, as a constant |
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
 | e2e/load/probe.mjs | 2026-10-03 | read whole: the paper in all four orders, critiques newest first, the following feed for a member of 2,000 follows; nested plans via auto_explain |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
@@ -244,9 +246,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/theToastIsDrawnOnTop.test.ts | — |  |
 | src/components/atmosphere/__tests__/useSharedImage.test.tsx | — |  |
 | src/components/atmosphere/RoomBloom.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/atmosphere/RoomLight.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/components/atmosphere/RoomLight.tsx | 2026-10-08 | the room drawn as one native background (roomLightImage); no SVG |
 | src/components/atmosphere/useSharedImage.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/auth/AuthChrome.tsx | 2026-10-01 | true as written |
+| src/components/auth/AuthChrome.tsx | 2026-10-08 | the candlelight halo a native gradient; written as an ellipse (RN misreads circle <r> at) |
 | src/components/auth/EmailConfirmationScreen.tsx | 2026-10-01 | true as written |
 | src/components/auth/PasswordRecoveryModal.tsx | 2026-10-03 | edited: the email box names EMAIL_MAX |
 | src/components/auth/PasswordStrengthMeter.tsx | 2026-10-03 | read whole: one answer for a new password; says when it is too long for the lock |
@@ -254,7 +256,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/AutopsyGauge.tsx | 2026-10-01 | true as written |
 | src/components/Buster.tsx | 2026-10-04 | edited: the still one shows whole or not at all, and anyway once the wait runs out |
 | src/components/busterArt.ts | 2026-10-04 | regenerated: a picture with points carries the layer over them |
-| src/components/CinematicOverlays.tsx | 2026-10-01 | the dead film grain gone |
+| src/components/CinematicOverlays.tsx | 2026-10-08 | the vignette a native gradient, not a full-screen SVG bitmap |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
 | src/components/clearance/Clearance.tsx | 2026-10-01 | show it, locked; a second copy lives in the log (carried forward) |
 | src/components/ControlledInput.tsx | 2026-10-03 | edited: the bio's default limit is the bio's cap |
@@ -366,6 +368,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/feed/PosterFrame.tsx | 2026-10-01 | the poster says its film |
 | src/components/feed/ReviewContent.tsx | 2026-10-04 | edited: the review and the pull quote each take their own direction |
 | src/components/feed/UserAttributionRow.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
+| src/components/film/__tests__/aFileIsSharedWhole.test.tsx | 2026-10-08 | written: nothing is captured before every picture on the file is drawn |
 | src/components/film/__tests__/castRailFits.test.ts | — |  |
 | src/components/film/__tests__/FilmActionTray.test.tsx | — |  |
 | src/components/film/__tests__/filmDossier.test.tsx | — |  |
@@ -378,7 +381,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/pickCertificate.test.ts | — |  |
 | src/components/film/__tests__/stubFits.test.ts | — |  |
 | src/components/film/__tests__/trayActsFire.test.tsx | — |  |
-| src/components/film/__tests__/whatAFilmPageNames.test.tsx | 2026-10-04 | edited: no drop cap from Adlam either |
+| src/components/film/__tests__/whatAFilmPageNames.test.tsx | 2026-10-08 | the file is drawn before it is shared |
 | src/components/film/__tests__/zz-film.gen.test.tsx | — |  |
 | src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-01 | written: the critiques' failure reaches the page; an unread verdict is unknown |
 | src/components/film/CastCarousel.tsx | 2026-10-04 | edited: an actor without a photograph is drawn by initialOf |
@@ -394,10 +397,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/FilmSimilar.tsx | 2026-10-01 | nav; named for a screen reader |
 | src/components/film/FilmStub.tsx | 2026-10-01 | histories to the present; rated of 5 |
 | src/components/film/filmStubMetrics.ts | 2026-10-01 | true as written, one history line |
-| src/components/film/LogShareCard.tsx | 2026-10-01 | the unused modal mode gone; the card alone |
-| src/components/film/NitrateFileCard.tsx | 2026-10-01 | every word frozen, as its header promised |
+| src/components/film/LogShareCard.tsx | 2026-10-08 | passes the card's onReady through |
+| src/components/film/NitrateFileCard.tsx | 2026-10-08 | says when every picture is drawn (onReady); a failed poster turns to the no-poster face; the house's domain, not REELHOUSE.APP |
 | src/components/film/pickCertificate.ts | 2026-10-01 | the member's own region is real now |
-| src/components/film/ShareCardModal.tsx | 2026-10-02 | Read (launch audit). Its text share linked to reelhouse.app/film, another company's domain: HOUSE_WEB. |
+| src/components/film/ShareCardModal.tsx | 2026-10-08 | shares only once the card is whole; the probe image and the 2 s fallback gone |
 | src/components/film/TrailerModal.tsx | 2026-10-01 | names what it plays |
 | src/components/film/WatchProviders.tsx | 2026-10-04 | edited: the monogram takes each initial whole |
 | src/components/HapticTab.tsx | 2026-10-02 | Read whole (launch audit). Its 10pt reach gave each tab's edge to its neighbour and took 10pt of the screen above the bar: removed. |
@@ -652,7 +655,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/__tests__/deepLinks.test.ts | — |  |
 | src/constants/__tests__/standing.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/constants/__tests__/taste.test.ts | — |  |
-| src/constants/__tests__/theHouseLinksToItself.guard.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): no link goes to reelhouse.app, another company's domain. |
+| src/constants/__tests__/theHouseLinksToItself.guard.test.ts | 2026-10-08 | reads the other company's domain in any case |
 | src/constants/__tests__/theRanksAreWellFormed.test.ts | — |  |
 | src/constants/__tests__/theVaultIsThePrivateNotes.test.ts | — |  |
 | src/constants/cacheKeys.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -787,7 +790,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/providers/__tests__/androidTracking.test.ts | — |  |
 | src/providers/__tests__/theMissingSettingsAreNamed.test.ts | 2026-10-02 | Written in the launch audit: the missing-settings message, one line each. |
 | src/providers/androidTracking.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/providers/AppBootstrapper.tsx | 2026-10-03 | payments pass: the boot check is the webhook's backstop; the "no webhook" comment was false |
+| src/providers/AppBootstrapper.tsx | 2026-10-08 | the follow-list retry that could never fire gone |
 | src/providers/FilmDetailProvider.tsx | 2026-10-01 | reviewsFailed and playVideo, said |
 | src/schemas/__tests__/aFeedRowWithANullIsStillDrawn.test.ts | 2026-10-01 | written with the null-status fix |
 | src/schemas/__tests__/schemas.test.ts | — |  |
@@ -855,7 +858,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/aSalonKeepsItsCoverAndItsDoor.test.ts | 2026-10-01 | written: the corridor reads covers; a rank refusal is a door |
 | src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts | 2026-10-04 | written whole: a seat taken or given up is drawn as the next read gives it |
 | src/stores/__tests__/aStackIsSavedWhole.test.ts | — |  |
-| src/stores/__tests__/auth.test.ts | 2026-10-03 | payments pass: the rank history is asked for the member alone, and a failed ask throws nowhere |
+| src/stores/__tests__/auth.test.ts | 2026-10-08 | its socialSlice stand-in names only what the module exports |
 | src/stores/__tests__/blockEnforcement.test.ts | — |  |
 | src/stores/__tests__/blockStore.pbt.test.ts | — |  |
 | src/stores/__tests__/dispatchActs.test.ts | — |  |
@@ -885,6 +888,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/telemetryGating.test.ts | — |  |
 | src/stores/__tests__/theBoardSaysWhenItCouldNotBeRead.test.tsx | — |  |
 | src/stores/__tests__/theCursorCarriesATiebreaker.test.ts | — |  |
+| src/stores/__tests__/theFollowListIsReadOnce.test.ts | 2026-10-08 | written: one read per member; a read that outlived its member writes nothing |
 | src/stores/__tests__/theHouseSaysWhy.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/stores/__tests__/theLiveWireKnowsTheRoom.test.ts | — |  |
 | src/stores/__tests__/theLogSaysWhatHappened.test.ts | — |  |
@@ -917,10 +921,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/interactionSlice.ts | 2026-10-03 | read whole: a certification made before the answer is kept (index and list) |
 | src/stores/domain/listSlice.ts | 2026-10-02 | a film leaves a stack in one write |
 | src/stores/domain/logSlice.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-03 | read whole: cleanLogWords on add and update |
-| src/stores/domain/socialSlice.ts | 2026-10-02 | Read (launch audit). Cursor values are timestamps and uuids (no commas), safe unquoted. Sound. |
-| src/stores/domain/watchlistSlice.ts | 2026-10-02 | a film already queued stays, and is said to be |
-| src/stores/films.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-08 | no posters fetched ahead |
+| src/stores/domain/socialSlice.ts | 2026-10-08 | one follow-list read per member, written only while theirs; clearSocialCaches registered for sign-out |
+| src/stores/domain/watchlistSlice.ts | 2026-10-08 | no posters fetched ahead |
+| src/stores/films.ts | 2026-10-08 | nothing fetched ahead on restore |
 | src/stores/followStore.ts | 2026-10-01 | comments cut to the why |
 | src/stores/lounge.ts | 2026-10-04 | edited: one membership language (mine, membership_status); the pending-leave flag nothing read is gone; seatedIn/leftBehind say what the next read gives |
 | src/stores/markCounts.ts | 2026-10-02 | read; sound |
@@ -934,12 +938,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/tellMarks.ts | 2026-10-01 | true as written |
 | src/stores/vaultStore.ts | 2026-10-03 | edited: the note is cleaned by its own cap on the live save |
 | src/test-support/swallowedTypeError.ts | 2026-10-03 | read whole: sound |
+| src/theme/__tests__/aGradientIsNeverABitmap.guard.test.ts | 2026-10-08 | written: no gradient-only SVG but the three it names |
 | src/theme/__tests__/aPhotographIsNotLit.test.ts | — |  |
 | src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts | 2026-10-01 | written: the flat-but-elevated ratchet |
 | src/theme/__tests__/everyStyleIsRead.guard.test.ts | 2026-10-02 | Written in the launch audit: every style a sheet defines is drawn by the app. |
 | src/theme/__tests__/lightFloor.test.ts | — |  |
 | src/theme/__tests__/nothingOvershoots.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/theme/__tests__/theGroundLadder.test.ts | — |  |
+| src/theme/__tests__/theLightIsReadable.test.ts | 2026-10-08 | written: every light gradient read back through React Native's own parser |
 | src/theme/__tests__/theRoomIsLit.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/theme/__tests__/theTypeFloor.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -949,7 +955,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/authStyles.ts | 2026-10-01 | comments short and true |
 | src/theme/brass.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/faceAdvances.ts | 2026-10-03 | edited: the soft hyphen's key written as an escape |
-| src/theme/light.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/theme/light.ts | 2026-10-08 | roomLightImage, spotlightImage, rgbaOf: the light as native gradients |
 | src/theme/motion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/stamp.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/theme.ts | 2026-10-02 | Read whole (launch audit). Dead tokens removed: typography, physics (springBouncy broke the no-bounce law), three metrics, three effects; type.caption 8.5 and type.badge 7.5 sat under the 10pt floor unused. theTypeFloor now reads the live scale. |
@@ -1002,6 +1008,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/handleNotice.reader.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.test.ts | — |  |
 | src/utils/__tests__/html.test.ts | — |  |
+| src/utils/__tests__/imagePrefetchSites.guard.test.ts | 2026-10-08 | written: the four places that fetch ahead, at the size their screens draw; none on restore |
 | src/utils/__tests__/inputTrustBoundary.test.ts | 2026-10-03 | edited: a pasted separator stays a break; hidden test characters written as escapes |
 | src/utils/__tests__/keysetCursor.test.ts | — |  |
 | src/utils/__tests__/logger.test.ts | — |  |
@@ -1070,7 +1077,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/handleNotice.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/housePages.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/html.ts | 2026-10-01 | ticket numbers out of the header |
-| src/utils/imagePrefetcher.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/keysetCursor.ts | 2026-10-02 | quotes escaped with a backslash, as PostgREST reads them (measured 2026-10-02) |
 | src/utils/lastTab.ts | 2026-10-01 | new: back within the half hour, back on the tab |
 | src/utils/linking.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |

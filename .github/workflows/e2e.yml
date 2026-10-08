@@ -148,6 +148,26 @@ jobs:
           pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
           exit $rc
 
+      # Expo SDK 54's ready-made expo-image was built with Glide's logging on, so
+      # every image the app loaded was logged; package.json has it compiled from
+      # source instead (expo.autolinking.android.buildFromSource). The APK itself
+      # must say so: the level its Glide module hands Glide is ERROR.
+      - name: The built app logs Glide's errors only
+        working-directory: mobile
+        run: |
+          set +e
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          X="$RUNNER_TEMP/dex"; rm -rf "$X"; mkdir -p "$X"
+          unzip -q -o android/app/build/outputs/apk/release/app-release.apk 'classes*.dex' -d "$X"
+          for f in "$X"/*.dex; do
+            "$BT/dexdump" -d "$f" 2>/dev/null | grep -F -A 40 '] expo.modules.image.ExpoImageAppGlideModule.applyOptions:'
+          done > "$RUNNER_TEMP/glide-dex.txt"
+          node e2e/glide-log-level.mjs "$RUNNER_TEMP/glide-dex.txt" > "$RUNNER_TEMP/glide-log-level.txt"
+          rc=$?
+          cat "$RUNNER_TEMP/glide-log-level.txt"
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "The app logs every image Glide loads" "$RUNNER_TEMP/glide-log-level.txt"
+          exit $rc
+
       # Maestro at one release, checked against the digest recorded when it was pinned.
       - name: Install Maestro 2.10.0
         run: |

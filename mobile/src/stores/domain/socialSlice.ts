@@ -11,6 +11,8 @@ import { captureError } from '../../lib/sentry';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../auth';
 import { useSocialStore } from '../followStore';
+import { stillSignedIn } from './helpers/sessionGuard';
+import { registerStoreReset } from '../resetAllStores';
 
 import TactileEngine from '../../utils/TactileEngine';
 import reelToast from '../../utils/reelToast';
@@ -350,12 +352,37 @@ const HydrateRowSchema = z.object({
   ]).nullable(),
 });
 
-export async function hydrateFollowing(): Promise<void> {
+/**
+ * The read of each member's follow list in flight, if one is: who it is for,
+ * and which read it is.
+ *
+ * A cold start asks twice — the bootstrapper as the remembered member is
+ * restored, and sign-in as the session is confirmed — and each read is every
+ * page of the list. The second joins the first. Keyed by member, so a read for
+ * one member is never handed to another; and a read commits only while it is
+ * still that member's current read and that member is still signed in, so a
+ * read that outlived a sign-out, or a switch to another account, lands nowhere.
+ */
+const _hydrating = new Map<string, { token: object; read: Promise<void> }>();
+
+export function hydrateFollowing(): Promise<void> {
   const userId = useAuthStore.getState().user?.id;
   if (!userId) {
     logger.warn('[socialSlice.hydrateFollowing] No userId — skipping');
-    return;
+    return Promise.resolve();
   }
+  const running = _hydrating.get(userId);
+  if (running) return running.read;
+  const token = {};
+  const current = () => _hydrating.get(userId)?.token === token && stillSignedIn(userId);
+  const read = readFollowing(userId, current).finally(() => {
+    if (_hydrating.get(userId)?.token === token) _hydrating.delete(userId);
+  });
+  _hydrating.set(userId, { token, read });
+  return read;
+}
+
+async function readFollowing(userId: string, current: () => boolean): Promise<void> {
   try {
     const allUsernames: string[] = [];
     const allRequested: string[] = [];
@@ -426,6 +453,8 @@ export async function hydrateFollowing(): Promise<void> {
       pageCount++;
     }
 
+    // Read for a member who has since gone, or by a read since replaced: not theirs to write.
+    if (!current()) return;
     commitHydratedGraph(userId, allUsernames, allRequested);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -435,10 +464,15 @@ export async function hydrateFollowing(): Promise<void> {
 }
 
 /**
- * Clear all social graph caches — called during logout.
+ * Every cache this module keeps, cleared on every sign-out. (It was once only
+ * exported, and nothing called it.)
  */
-export function clearSocialCaches(): void {
+function clearSocialCaches(): void {
   _socialThrottles.clear();
   _usernameProfileCache.clear();
   _inflightOps.clear();
+  // A read in flight now lands nowhere; the next member's sign-in starts its own.
+  _hydrating.clear();
 }
+registerStoreReset(() => { clearSocialCaches(); });
+export { clearSocialCaches };

@@ -100,6 +100,7 @@ Decisions, as of 2026-09-28:
 | `src/theme/__tests__/aPhotographIsNotLit.test.ts` | No edge light is laid on an image. |
 | `src/theme/__tests__/theGroundLadder.test.ts` | Every ground is on the ladder. |
 | `src/theme/__tests__/theRoomIsLit.test.ts` | Every screen painted in the house colour carries the room's light. |
+| `src/theme/__tests__/aGradientIsNeverABitmap.guard.test.ts` | No drawing that is only a gradient is an SVG (a bitmap the size of its view), and no radial gradient is written in the single-size form React Native misreads: what an SVG holds is spelling no render shows. |
 | `src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts` | Every box that holds text grows with it, and no text is grown twice. |
 | `src/theme/__tests__/theTypeFloor.test.ts` | Every word a member reads is at least 10pt. |
 | `src/theme/__tests__/theVeilMeetsTheLight.test.ts` | Every hero veil ends solid, on the room's own tone. |
@@ -137,6 +138,7 @@ Decisions, as of 2026-09-28:
 | `src/services/__tests__/tmdbProxyAllowsEveryPath.test.ts` | The edge function's allowed paths against every path the clients use. |
 | `src/services/__tests__/theVaultHasOneDoor.guard.test.ts` | No file but VaultService queries log_private_notes. |
 | `src/constants/__tests__/theHouseLinksToItself.guard.test.ts` | No code sends a link to reelhouse.app, another company's domain. |
+| `src/utils/__tests__/imagePrefetchSites.guard.test.ts` | Every place that fetches a picture ahead is a listed one, at the size its screen draws: which calls exist, and with which size, is in the source. |
 | `src/components/profile/__tests__/theProfileRedrawsForItsOwn.guard.test.ts` | The member page subscribes to its eight film-store fields, never the whole store. |
 | `src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts` | The salon name's four limits, the column's among them. |
 | `src/components/theme/__tests__/oneBrassSheen.test.tsx` | Both brass plates import the one BrassSheen, and no screen keeps a copy. Behaviour: the same file renders it in front, behind a tab and under Reduce Motion. |

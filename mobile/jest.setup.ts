@@ -492,13 +492,6 @@ jest.mock('react-native-reanimated', () => {
 // Mock react-native-url-polyfill (imported by supabase.ts)
 jest.mock('react-native-url-polyfill/auto', () => ({}));
 
-// Mock imagePrefetcher and tmdb (used by films store onRehydrateStorage)
-jest.mock('./src/utils/imagePrefetcher', () => ({
-  ImagePrefetcher: {
-    preloadFilmBatch: jest.fn(),
-    prefetchImage: jest.fn(),
-  },
-}));
 // The URL builders are pure, so implemented for real; tmdbMockCoverage.test.ts
 // fails if the set the app calls outgrows this mock.
 jest.mock('./src/lib/tmdb', () => {

@@ -135,18 +135,11 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         }
 
         // ── Background Hydration ──
-        try {
-          Promise.resolve(hydrateFollowing()).catch(e => {
-            logger.warn('[Bootstrapper] Background hydration rejected:', e);
-            const t2 = setTimeout(() => {
-              Promise.resolve(hydrateFollowing()).catch(() => {});
-            }, 3000);
-            timeouts.current.push(t2);
-          });
-          addBreadcrumb('Background hydration started', 'boot');
-        } catch (e) {
-          logger.warn('[Bootstrapper] Background hydration threw sync error:', e);
-        }
+        // Never rejects: a read that failed says so itself and keeps the list as
+        // it was. Sign-in asks again as the session is confirmed, and joins this
+        // read if it is still running (hydrateFollowing).
+        void hydrateFollowing();
+        addBreadcrumb('Background hydration started', 'boot');
 
         // ── Boot complete ──
         Sentry.setTag('boot_complete', 'true');

@@ -7,7 +7,6 @@
 import React, { useRef, useState, memo, useEffect } from 'react';
 import { View, StyleSheet, Modal, Share, Pressable, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -61,22 +60,16 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
   // The preview shrinks to fit ANY phone; the capture always exports full-size.
   const previewScale = Math.min(1, (winW - 72) / NITRATE_CARD_WIDTH, (winH - 240) / NITRATE_CARD_HEIGHT);
   const [sharing, setSharing] = useState(false);
-  const [posterLoaded, setPosterLoaded] = useState(false);
-  const [posterError, setPosterError] = useState(false);
-  const [forceReady, setForceReady] = useState(false);
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    if (visible) {
-      setForceReady(false);
-      setPosterLoaded(false);
-      setPosterError(false);
-      timer = setTimeout(() => setForceReady(true), 2000);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [visible]);
+  /**
+   * The poster the file was last drawn with, every picture on it shown ('' for
+   * a file with no poster); null until then. The file is shared only once the
+   * card says so (NitrateFileCard's onReady) for the poster it carries now —
+   * never on a timer: a file shared before its poster arrived went out with a
+   * hole in it. A poster that fails turns the card to its no-poster face,
+   * which is ready at once, so the button never waits on a dead link.
+   */
+  const [readyFor, setReadyFor] = useState<string | null>(null);
+  useEffect(() => { if (!visible) setReadyFor(null); }, [visible]);
 
   /**
    * It closes once the file has gone (or the member dismissed the share sheet,
@@ -119,8 +112,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
   const posterToUse = log?.altPoster || film.poster_path;
   const posterUrl = posterToUse ? tmdb.poster(posterToUse, 'w500') : null;
 
-  const isPosterReady = !posterUrl || posterLoaded || posterError;
-  const canShare = !sharing && (forceReady || isPosterReady);
+  const canShare = !sharing && readyFor === (posterUrl ?? '');
 
   return (
     <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -138,15 +130,6 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
           </View>
 
           <View style={[s.cardWrapper, { width: NITRATE_CARD_WIDTH * previewScale, height: NITRATE_CARD_HEIGHT * previewScale }]}>
-            {/* Silent pre-loader: the capture waits until the poster is developed. */}
-            {posterUrl && (
-              <Image
-                source={{ uri: posterUrl }}
-                style={s.posterProbe}
-                onLoad={() => setPosterLoaded(true)}
-                onError={() => setPosterError(true)}
-              />
-            )}
             <View style={{ transform: [{ scale: previewScale }] }}>
               <ViewShot
                 ref={viewShotRef}
@@ -165,6 +148,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
                     username,
                     memberNo,
                   }}
+                  onReady={() => setReadyFor(posterUrl ?? '')}
                 />
               </ViewShot>
             </View>
@@ -224,12 +208,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
-  },
-  posterProbe: {
-    position: 'absolute',
-    width: 1,
-    height: 1,
-    opacity: 0,
   },
   cardContainer: {
     width: NITRATE_CARD_WIDTH,

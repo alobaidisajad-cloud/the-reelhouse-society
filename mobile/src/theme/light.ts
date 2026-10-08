@@ -148,10 +148,11 @@ export const WASH = { opacity: 0.35 } as const;
 
 /**
  * THE LIGHT, LAID OUT — every number the room's light is drawn with, for one
- * screen. It is drawn in three places: the room itself (SVG), the copy a
- * photograph's veil carries (Skia, because it must hold still while the page
- * scrolls), and the design renderer's proofs. All three read it from here, so
- * they cannot disagree about where the lamp hangs or how bright it burns.
+ * screen. It is drawn in three places: the room itself (`roomLightImage`,
+ * below), the copy a photograph's veil carries (Skia, because it must hold
+ * still while the page scrolls), and the design renderer's proofs. All three
+ * read it from here, so they cannot disagree about where the lamp hangs or how
+ * bright it burns.
  *
  * `hem`: where a photograph hanging at the top of the screen ends, if one does.
  */
@@ -181,6 +182,67 @@ export function lightGeometry(room: Room, W: number, H: number, hem?: number): L
     // 20% oversize, centred, so the blur never shows an edge at the sides.
     bloom: { width: bw, height: BLOOM.height * H, left: -(bw - W) / 2 },
   };
+}
+
+/**
+ * THE ROOM'S LIGHT AS A BACKGROUND — the pool, the floor and the corners as
+ * one `experimental_backgroundImage`, the first layer on top: the corners over
+ * the floor over the pool, the order they were always painted in.
+ *
+ * Native gradients, never an SVG: react-native-svg paints each drawing into a
+ * bitmap the size of its view, on the main thread, and a full-screen one is
+ * about 10 MB on a phone — under every screen, and kept for every screen the
+ * stack holds (study run 37628665206: the room's light and the Lobby's
+ * vignette together, 20 MB). A background gradient is a shader the GPU fills;
+ * nothing is stored.
+ *
+ * Same shapes: each ellipse is a circle of its rx squashed to its ry about its
+ * centre, and each stop sits at the same fraction of the radius, on Android,
+ * on iOS, in the proofs, and in the SVG this replaced. Pixels for the radii and
+ * centres, so the light does not depend on the size of the box it is laid in.
+ * React Native drops a gradient it cannot read and draws nothing, so
+ * `theLightIsReadable.test.ts` reads every layer back through React Native's own
+ * parser.
+ *
+ * No number is ever negative. Android reads a negative position as none at all
+ * (LengthPercentage keeps only values ≥ 0) and hangs the ellipse in the middle
+ * of the box — and the pool hangs ABOVE the screen when no photograph is there.
+ * So a centre above the top edge is given from the bottom edge instead: the
+ * same point, as a positive distance. `H` is the height of the box the light
+ * is laid in (the screen).
+ */
+export function roomLightImage(g: LightGeometry, H: number): string {
+  const n = (v: number) => +v.toFixed(2);
+  const rgba = (rgb: readonly number[], a: number) => `rgba(${rgb.join(',')},${a})`;
+  const at = (cx: number, cy: number) => (cy >= 0 ? `at ${n(cx)}px ${n(cy)}px` : `at left ${n(cx)}px bottom ${n(H - cy)}px`);
+  const radial = (e: { cx: number; cy: number; rx: number; ry: number }, rgb: readonly number[], stops: readonly (readonly [number, number])[]) =>
+    `radial-gradient(ellipse ${n(e.rx)}px ${n(e.ry)}px ${at(e.cx, e.cy)}, ` +
+    `${stops.map(([s, a]) => `${rgba(rgb, a)} ${n(s * 100)}%`).join(', ')})`;
+  const floor = `linear-gradient(180deg, ${g.floor.stops.map(([at, a]) => `${rgba([0, 0, 0], a)} ${n(at * g.floor.height)}px`).join(', ')})`;
+  return [radial(g.corners, [0, 0, 0], g.corners.stops), floor, radial(g.pool, g.pool.rgb, g.pool.stops)].join(', ');
+}
+
+/**
+ * THE SPOTLIGHT ON A MEMBER'S PLATE — a pool of the rank's colour behind the
+ * name, fading out from its centre, as a native background (no bitmap; see
+ * `roomLightImage`). Its numbers are the SVG's it replaced, worked out: that
+ * gradient was measured against the bounding box of the ellipse it filled
+ * (124% of the plate wide, 116% tall, from 12% left of it and 30% above it), so
+ * its centre sat 4.48% ABOVE the plate and both radii came to 71.92% — and
+ * inside the plate the ellipse cut nothing off, so the gradient alone is the
+ * same picture. Above the plate is given from its bottom edge, 104.48%: Android
+ * reads a negative position as none (see `roomLightImage`).
+ *
+ * `tint` is a six-digit hex colour.
+ */
+export function spotlightImage(tint: string, opacity: number): string {
+  return `radial-gradient(ellipse 71.92% 71.92% at left 50% bottom 104.48%, ${rgbaOf(tint, opacity)} 0%, ${rgbaOf(tint, 0)} 100%)`;
+}
+
+/** A six-digit hex colour at an alpha, as CSS `rgba()`. */
+export function rgbaOf(hex: string, alpha: number): string {
+  const v = parseInt(hex.slice(1), 16);
+  return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${+alpha.toFixed(4)})`;
 }
 
 /**

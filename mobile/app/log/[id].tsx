@@ -59,6 +59,9 @@ import { offerWord } from '@/src/lib/pushPrimer';
 /** The backdrop's fade into the room: how much house it lays down, top to hem. */
 const BACKDROP_VEIL: VeilStops = [[0, 0], [1 / 3, 0.4], [2 / 3, 0.95], [1, 1]];
 
+/** How long a share waits for its card's pictures before it fails and says so. */
+const SHARE_CARD_WAIT_MS = 20_000;
+
 interface LogDetail {
   id: string;
   film_id: number;
@@ -350,6 +353,9 @@ export default function LogDetailScreen() {
   const [commentReportSheetVisible, setCommentReportSheetVisible] = useState(false);
   const [selectedComment, setSelectedComment] = useState<{ id: string; user_id: string; username: string } | null>(null);
   const viewShotRef = useRef<View>(null);
+  // The share card says when every picture on it is drawn; handleShare waits for that.
+  const shareCardDrawn = useRef<(() => void) | null>(null);
+  const shareCardWait = useLater();
   const critiqueInputRef = useRef<TextInput>(null);
   /** The compose box's focus, once the scroll to it has landed. */
   const focusCritique = useLater();
@@ -561,13 +567,23 @@ export default function LogDetailScreen() {
        * rendering of the log, poster included, and a member who never shares
        * should never pay for it.
        *
-       * Safe to mount late because `isReadyToShare` already gates on the VISIBLE
-       * poster having loaded, so the same URI is in expo-image's memory cache
-       * before this card asks for it. Two frames: one for React to commit the
-       * mount, one for layout and paint.
+       * It is captured only once it says every picture on it is drawn. The page
+       * having shown the poster is not enough: the card draws it again, in two
+       * views of its own, and on Android each loads from disk — a capture two
+       * frames after mounting could take the card with a hole where the poster
+       * goes. A poster that fails turns the card to its no-poster face, which
+       * is ready at once; one that has not answered in 20 s fails the share,
+       * and says so.
        */
+      const drawn = new Promise<void>((resolve, reject) => {
+        shareCardDrawn.current = resolve;
+        shareCardWait.later(() => reject(new Error('SHARE_CARD_NOT_DRAWN')), SHARE_CARD_WAIT_MS);
+      });
       setShareCardMounted(true);
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      await drawn;
+      shareCardWait.cancel();
+      // One frame more, for the last picture's draw to reach the view.
+      await new Promise(resolve => requestAnimationFrame(resolve));
 
       if (!viewShotRef.current) throw new Error('SHARE_CARD_NOT_MOUNTED');
 
@@ -596,6 +612,8 @@ export default function LogDetailScreen() {
        reelToast.error('The log could not be shared. Try again.');
     } finally {
        setSharing(false);
+       shareCardWait.cancel();
+       shareCardDrawn.current = null;
        // Always unmount, including after a failed capture — a share card left
        // behind is the very cost this change exists to remove.
        setShareCardMounted(false);
@@ -743,7 +761,7 @@ export default function LogDetailScreen() {
                username: profile?.username ?? '',
                status: log.status as "watched" | "rewatched" | "abandoned" | undefined,
                memberNo: profile?.member_no,
-            }} />
+            }} onReady={() => shareCardDrawn.current?.()} />
          </View>
       </View>
       )}

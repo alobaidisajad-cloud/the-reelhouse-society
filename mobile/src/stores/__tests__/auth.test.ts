@@ -110,7 +110,6 @@ jest.mock('../domain/socialSlice', () => ({
   followUser: jest.fn(),
   unfollowUser: jest.fn(),
   hydrateFollowing: jest.fn(),
-  clearSocialCaches: jest.fn(),
 }));
 
 jest.mock('../notificationStore', () => ({

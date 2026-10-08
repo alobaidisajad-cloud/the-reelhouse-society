@@ -1,5 +1,4 @@
 import * as Crypto from 'expo-crypto';
-import { Image } from 'expo-image';
 import { queryClient } from '../../../../lib/queryClient';
 import { supabase } from '../../../../lib/supabase';
 import { wallMayHaveChanged } from '../../../../components/lobby/wallRead';
@@ -197,15 +196,9 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
             logsHasMore: hasMore,
             _fetchingLogs: false,
         });
-
-        // Background Image Prefetching (Cache Warming) — only prefetch NEW entries
-        const newEntries = loadMore ? newLogs : deduplicatedLogs;
-        const posterUrls = newEntries
-            .filter(l => l.poster)
-            .map(l => `https://image.tmdb.org/t/p/w500${l.poster}`);
-        if (posterUrls.length > 0) {
-            Image.prefetch(posterUrls, 'disk').catch(() => {});
-        }
+        // No posters are fetched ahead here. The Lobby reads the logs as it opens,
+        // and the screens that draw them fetch their own; every place allowed to
+        // fetch ahead is listed in src/utils/__tests__/imagePrefetchSites.guard.test.ts.
         return true;
     }
 

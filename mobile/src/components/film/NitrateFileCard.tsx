@@ -17,7 +17,7 @@
  *   · title shrinks to fit 2 lines; rating row renders only when > 0;
  *     MEMBER Nº renders only when the real serial reached this client.
  */
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
@@ -29,6 +29,7 @@ import { ReelRating } from '@/src/components/Decorative';
 import { stripHtml } from '@/src/utils/html';
 import { truncateReview } from '@/src/utils/text';
 import { EDGE_LIT } from '@/src/theme/light';
+import { HOUSE_WEB } from '@/src/constants/support';
 
 export const NITRATE_CARD_WIDTH = 360;
 export const NITRATE_CARD_HEIGHT = 640;
@@ -52,7 +53,30 @@ export interface NitrateFileData {
 // Sprocket holes down the left edge — the strip this frame was cut from.
 const PERF_HOLES = Array.from({ length: 14 }, (_, i) => i);
 
-export function NitrateFileCard({ data }: { data: NitrateFileData }) {
+/** Where a stranger finds the house, when the file carries no member's serial. */
+const HOUSE_HOST = HOUSE_WEB.replace(/^https?:\/\/(www\.)?/, '').toUpperCase();
+
+/**
+ * `onReady` is called once every picture on the file has been drawn, and
+ * again if the file changes: the poster (twice — sharp in its frame, blurred
+ * behind the slab) and the seal. A share captures the file only then: a
+ * capture taken sooner is a file with a hole where the poster goes. A poster
+ * that fails to load is not waited for: the file turns to its no-poster face,
+ * which has no picture to wait on.
+ */
+export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onReady?: () => void }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const posterUrl = data.posterUrl && data.posterUrl !== failedUrl ? data.posterUrl : null;
+  // What each picture last drew: the poster's address, or true for the seal.
+  const [drawn, setDrawn] = useState<{ ambient?: string; poster?: string; seal?: true }>({});
+  const ready = !!drawn.seal && (!posterUrl || (drawn.ambient === posterUrl && drawn.poster === posterUrl));
+  const readyRef = useRef(onReady);
+  readyRef.current = onReady;
+  useEffect(() => { if (ready) readyRef.current?.(); }, [ready, posterUrl]);
+  const drew = (part: 'ambient' | 'poster') => () => setDrawn((d) => ({ ...d, [part]: posterUrl ?? undefined }));
+  const failed = () => setFailedUrl(posterUrl);
+  const sealDrawn = () => setDrawn((d) => ({ ...d, seal: true }));
+
   const rating = data.rating ?? 0;
   const pullQuote = data.pullQuote?.trim() || null;
   const review = data.review ? truncateReview(stripHtml(data.review), 260) : null;
@@ -67,13 +91,13 @@ export function NitrateFileCard({ data }: { data: NitrateFileData }) {
 
   const memberNoDisplay = data.memberNo
     ? `MEMBER Nº ${String(data.memberNo).padStart(4, '0')}`
-    : 'REELHOUSE.APP';
+    : HOUSE_HOST;
 
   return (
     <View style={s.canvas}>
       {/* Ambient nitrate glow behind the slab */}
-      {data.posterUrl ? (
-        <Image source={{ uri: data.posterUrl }} style={s.ambient} contentFit="cover" blurRadius={40} />
+      {posterUrl ? (
+        <Image source={{ uri: posterUrl }} style={s.ambient} contentFit="cover" blurRadius={40} onDisplay={drew('ambient')} onError={failed} />
       ) : (
         <LinearGradient
           colors={['rgba(184,137,26,0.08)', 'rgba(6,5,4,0)']}
@@ -101,7 +125,7 @@ export function NitrateFileCard({ data }: { data: NitrateFileData }) {
 
         {/* The lockup — the eye above the name */}
         <View style={s.lockup}>
-          <Image source={require('@/assets/images/reelhouse-logo.png')} style={s.lockupSeal} />
+          <Image source={require('@/assets/images/reelhouse-logo.png')} style={s.lockupSeal} onDisplay={sealDrawn} onError={sealDrawn} />
           <Text {...decorativeTextProps} style={s.lockupWordmark}>✦ THE REELHOUSE SOCIETY ✦</Text>
         </View>
 
@@ -109,8 +133,8 @@ export function NitrateFileCard({ data }: { data: NitrateFileData }) {
         <View style={s.posterZone}>
           <View style={s.posterFrame}>
             <View style={s.posterClip}>
-            {data.posterUrl ? (
-              <Image source={{ uri: data.posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+            {posterUrl ? (
+              <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" onDisplay={drew('poster')} onError={failed} />
             ) : (
               <LinearGradient colors={['#15120e', '#0D0B09']} style={s.posterFallback}>
                 <View style={s.posterFallbackRule} />
