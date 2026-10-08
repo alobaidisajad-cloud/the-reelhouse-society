@@ -126,6 +126,19 @@ for (const [k, label] of LAYERS) {
   writeFileSync(join(dir, SHOTS, `layer-${k}.txt`), lines.join('\n'));
   out.push('', lines[0]);
 }
+// Other lamps (run 10): `${k}1` drawn as SVG, `${k}n1` as native gradients.
+for (const [k, label] of [['RD', 'the Dispatch lamp (off-centre)'], ['RH', 'a lamp hung from a hero (hem 300)']]) {
+  const s = png(`${k}1`);
+  const nat = png(`${k}n1`);
+  if (!s && !nat) continue;
+  const lines = [`## ${label} (${SHOTS}): SVG vs native — ${compare(s, nat)}`];
+  for (const [name, img] of [['SVG − N', s], ['native − N', nat]]) {
+    const g = grid(n1, img);
+    lines.push(`  ${name}:`, g ? fmtGrid(g) : '    (missing)');
+  }
+  writeFileSync(join(dir, SHOTS, `layer-${k}.txt`), lines.join('\n'));
+  out.push('', lines[0]);
+}
 // What React Native parsed for each native gradient, as the app logged it.
 for (const f of ['E1', 'LPn1', 'LFn1', 'LCn1', 'LVn1', 'LHn1']) {
   const hit = read(join(dir, SHOTS, `${f}.log`)).split('\n').filter((l) => l.includes('[study] bg'));

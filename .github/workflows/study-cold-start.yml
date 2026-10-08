@@ -24,13 +24,11 @@ permissions:
 
 # shots: only the screenshots (B, E and N, the ground with no light); all: everything.
 env:
-  STUDY: shots
+  STUDY: run10
 
 jobs:
   android:
     name: 🔬 Android — seven builds, one boot
-    # Android parity is proven (run 6); this run is iOS only.
-    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     steps:
@@ -96,6 +94,15 @@ jobs:
           fail() { echo "::error title=Study build::$1"; grep -n -A 20 'What went wrong' "$B" | head -n 40; grep -nE '^e: |error:' "$B" | head -n 20; tail -n 30 "$B"; exit 1; }
           reset() { git checkout -- src package.json; }
           npx expo prebuild --platform android --no-install --clean >> "$B" 2>&1 || fail "prebuild"
+          if [ "$STUDY" = run10 ]; then
+            build A || fail "A"
+            for L in MF N RD RDn RH RHn; do
+              reset; node e2e/study/arm.mjs $L && build $L || fail "$L"
+            done
+            reset
+            ls -la "$RUNNER_TEMP/apks"
+            exit 0
+          fi
           if [ "$STUDY" = shots ]; then
             node e2e/study/arm.mjs B && build B || fail "B"
             reset; node e2e/study/arm.mjs E && build E || fail "E"
@@ -173,7 +180,7 @@ jobs:
           heap-size: 576M
           disable-animations: true
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
-          script: bash mobile/e2e/study/ab.sh
+          script: if [ "$STUDY" = run10 ]; then bash mobile/e2e/study/run10.sh; else bash mobile/e2e/study/ab.sh; fi
 
       - name: The proofs
         if: always()
@@ -184,6 +191,7 @@ jobs:
           cat "$S/device.txt" "$S/proofs.txt"
           node e2e/annotate.mjs "Study: device" "$S/device.txt" notice
           node e2e/annotate.mjs "Study: proofs" "$S/proofs.txt" notice
+          [ -s "$S/motion/result.txt" ] && node e2e/annotate.mjs "Study: animations ON — the app as it is, and with the fix" "$S/motion/result.txt" notice
           [ -s "$S/anomalies.txt" ] && node e2e/annotate.mjs "Study: starts that took long, and failures" "$S/anomalies.txt" notice
           true
 
@@ -191,7 +199,7 @@ jobs:
         if: always()
         working-directory: mobile
         run: |
-          for k in LP LF LC LV LH; do
+          for k in LP LF LC LV LH RD RH; do
             f="$RUNNER_TEMP/study/shots/layer-$k.txt"
             [ -s "$f" ] && node e2e/annotate.mjs "Study: layer $k" "$f" notice
           done
@@ -262,6 +270,8 @@ jobs:
 
   ios:
     name: 🔬 iOS — the light, SVG against native gradients
+    # iOS is proven (run 9); this run is Android only.
+    if: ${{ false }}
     runs-on: macos-15
     timeout-minutes: 150
     steps:

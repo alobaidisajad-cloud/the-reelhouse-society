@@ -230,8 +230,19 @@ const motionFix = () => edit('src/hooks/useArrival.ts',
   'withTiming(1, { duration, easing, reduceMotion: ReduceMotion.System })',
   'withTiming(1, easing ? { duration, easing, reduceMotion: ReduceMotion.System } : { duration, reduceMotion: ReduceMotion.System })');
 
+// Other lamps on the welcome: the Dispatch's (hung off-centre, at 34% across)
+// and the Lobby's hung from a hero's hem (its centre a positive number).
+const WELCOME_LIGHT = '        <RoomLight room="lobby" />';
+const lampDispatch = () => edit('app/(tabs)/index.tsx', WELCOME_LIGHT, '        <RoomLight room="dispatch" />');
+const lampUnderHero = () => edit('app/(tabs)/index.tsx', WELCOME_LIGHT, '        <RoomLight room="lobby" hem={300} />');
+
 const ARMS = {
   MOTIONFIX: [motionFix],
+  MF: [motionFix],
+  RD: [noStartupPrefetch, lampDispatch],
+  RDn: [noStartupPrefetch, lampDispatch, nativeRoom()],
+  RH: [noStartupPrefetch, lampUnderHero],
+  RHn: [noStartupPrefetch, lampUnderHero, nativeRoom()],
   N: [noStartupPrefetch, noFullScreenSvg, noHalo],
   STILL: [still],
   B: [noStartupPrefetch],
