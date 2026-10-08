@@ -169,7 +169,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-04 | edited: testEnvironment, the timer-checking one, says what it is |
-| jest.setup.ts | 2026-10-04 | edited: the mock-gap check is handed to the clients tests build (React Query logs nothing) |
+| jest.setup.ts | 2026-10-08 | edited: the Reanimated fake refuses a config key with no value, and its easings are functions |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
 | mockups/paper/__tests__/zz-badge.gen.test.tsx | 2026-09-29 | described the real badge as it was at one commit (brass ramp); now says A is whatever RankBadge is |
@@ -701,7 +701,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
 | src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-01 | written with useSheetPresence |
 | src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-01 | written with useKeyboardLift |
-| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-01 | the ratchet is exact |
+| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-08 | an arrival with no easing hands Reanimated none |
 | src/hooks/__tests__/aSlowPhoneIsKnownAtOnce.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a throttled phone is known on the first render. |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
 | src/hooks/__tests__/theArchiveDoesNotRepeatItself.test.tsx | — |  |
@@ -728,7 +728,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useProfileData.reducer.test.ts | — |  |
 | src/hooks/__tests__/useScreenReady.test.tsx | — |  |
 | src/hooks/useAmbientGlow.ts | 2026-10-01 |  |
-| src/hooks/useArrival.ts | 2026-10-01 | written: an arrival that cannot stay invisible |
+| src/hooks/useArrival.ts | 2026-10-08 | edited: the easing key only when one was given |
 | src/hooks/useAuthFlow.ts | 2026-10-03 | edited: joining refuses a password too long for the lock, first |
 | src/hooks/useAuthThrottle.ts | 2026-10-01 | a lifted lock keeps the rule |
 | src/hooks/useBanCheck.ts | 2026-10-02 | says what it guards, and that the server guards every write |
