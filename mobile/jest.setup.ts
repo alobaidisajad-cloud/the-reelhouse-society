@@ -390,6 +390,17 @@ jest.mock('react-native-reanimated', () => {
     React.createElement(Component, { ...props, ref })
   );
 
+  // As strict as the real one: Reanimated copies every key of a config over its defaults, so a
+  // key with no value replaces the default with nothing. An undefined easing crashed the first
+  // frame of every launch with animations on, and a fake that ignored the config let it through.
+  const strictConfig = (name: string, config: any) => {
+    if (!config || typeof config !== 'object') return;
+    const empty = Object.keys(config).filter((key) => config[key] === undefined);
+    if (empty.length) {
+      throw new Error(`${name} was given ${empty.join(', ')} with no value: Reanimated would replace its default with nothing`);
+    }
+  };
+
   return {
     __esModule: true,
     default: {
@@ -410,21 +421,18 @@ jest.mock('react-native-reanimated', () => {
     useAnimatedStyle: jest.fn((fn: any) => fn()),
     useDerivedValue: jest.fn((fn: any) => ({ value: fn() })),
     useAnimatedScrollHandler: jest.fn(() => jest.fn()),
-    withTiming: jest.fn((v: any) => v),
-    withSpring: jest.fn((v: any) => v),
+    withTiming: jest.fn((v: any, config?: any) => { strictConfig('withTiming', config); return v; }),
+    withSpring: jest.fn((v: any, config?: any) => { strictConfig('withSpring', config); return v; }),
     withSequence: jest.fn((...args: any[]) => args[0]),
     withRepeat: jest.fn((v: any) => v),
     withDelay: jest.fn((_d: any, v: any) => v),
-    Easing: {
-      inOut: jest.fn(() => jest.fn()),
-      in: jest.fn(() => jest.fn()),
-      out: jest.fn(() => jest.fn()),
-      quad: 'quad',
-      cubic: 'cubic',
-      ease: 'ease',
-      linear: 'linear',
-      bezier: jest.fn(),
-    },
+    // As the real one: every easing is a function of time, and every maker (in, out, inOut,
+    // bezier, back, elastic, poly, steps) returns one; a maker returning nothing gives no easing.
+    Easing: new Proxy({}, {
+      get: (_target, key) => (['in', 'out', 'inOut', 'bezier', 'back', 'elastic', 'poly', 'steps'].includes(String(key))
+        ? jest.fn(() => (t: number) => t)
+        : (t: number) => t),
+    }),
     // Every entering/exiting builder, GENERATED from Reanimated's closed naming scheme
     // (a hand list always misses one), each modifier chainable as the real ones are.
     // An extra name costs nothing; tsc catches a wrong import.

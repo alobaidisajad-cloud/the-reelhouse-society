@@ -36,6 +36,14 @@ describe('an arrival', () => {
     expect(e2eTrace).toHaveBeenCalledWith('arrival.rescued', { name: 'held', at: 0 });
   });
 
+  it('with no easing hands Reanimated none, so its own default stands', () => {
+    (withTiming as jest.Mock).mockClear();
+    render(<Held redraw={0} />);
+    const config = (withTiming as jest.Mock).mock.calls[0][1];
+    expect(config).toEqual(expect.objectContaining({ duration: 300 }));
+    expect(Object.keys(config)).not.toContain('easing');
+  });
+
   it('that lands is left alone', () => {
     (e2eTrace as jest.Mock).mockClear();
     const r = render(<Held redraw={0} />);
