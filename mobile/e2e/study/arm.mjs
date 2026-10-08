@@ -224,7 +224,14 @@ const noHalo = () => edit('src/components/auth/AuthChrome.tsx',
   '    <Svg width={size} height={size} pointerEvents="none">',
   '    globalThis ? null : <Svg width={size} height={size} pointerEvents="none">');
 
+// The launch crash (run 8): withTiming copies every key of its config, so
+// `easing: undefined` replaces the default and the first frame calls undefined.
+const motionFix = () => edit('src/hooks/useArrival.ts',
+  'withTiming(1, { duration, easing, reduceMotion: ReduceMotion.System })',
+  'withTiming(1, easing ? { duration, easing, reduceMotion: ReduceMotion.System } : { duration, reduceMotion: ReduceMotion.System })');
+
 const ARMS = {
+  MOTIONFIX: [motionFix],
   N: [noStartupPrefetch, noFullScreenSvg, noHalo],
   STILL: [still],
   B: [noStartupPrefetch],

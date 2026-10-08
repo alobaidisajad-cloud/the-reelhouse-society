@@ -297,7 +297,7 @@ jobs:
           L="$RUNNER_TEMP/ios-build.log"
           mkdir -p "$RUNNER_TEMP/ios"
           fail() { echo "::error title=Study iOS build::$1"; grep -nE 'error:|\*\* BUILD FAILED' "$L" | head -n 30; tail -n 40 "$L"; exit 1; }
-          node e2e/study/arm.mjs B && node e2e/study/arm.mjs STILL || fail "arm B"
+          node e2e/study/arm.mjs B && node e2e/study/arm.mjs STILL && node e2e/study/arm.mjs MOTIONFIX || fail "arm B"
           npx expo prebuild --platform ios --clean >> "$L" 2>&1 || fail "prebuild / pod install"
           WS=$(ls -d ios/*.xcworkspace | head -n 1)
           SCHEME=$(basename "$WS" .xcworkspace)
@@ -321,9 +321,9 @@ jobs:
           }
           build B || fail "B"
           git checkout -- src
-          node e2e/study/arm.mjs E && node e2e/study/arm.mjs STILL && build E || fail "E"
+          node e2e/study/arm.mjs E && node e2e/study/arm.mjs STILL && node e2e/study/arm.mjs MOTIONFIX && build E || fail "E"
           git checkout -- src
-          node e2e/study/arm.mjs N && node e2e/study/arm.mjs STILL && build N || fail "N"
+          node e2e/study/arm.mjs N && node e2e/study/arm.mjs STILL && node e2e/study/arm.mjs MOTIONFIX && build N || fail "N"
           git checkout -- src
 
       - name: Screenshots on the simulator
