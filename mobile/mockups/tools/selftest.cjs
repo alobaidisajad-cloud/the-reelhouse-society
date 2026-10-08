@@ -51,6 +51,17 @@ const docked = (after, bar = "#111") => box('flex:1 1 0%;min-height:0',
   `<div style="position:absolute;left:0;right:0;bottom:0;height:40px;display:flex;flex-direction:column;justify-content:center;background:${bar}">` +
     T('font-size:14px;line-height:18px', 'LEFT 4,000', 1.35) +
   `</div>`);
+/**
+ * The same scroller with a layer laid over the whole screen, holding no words
+ * and painted with `image` — a vignette, or a sheet painted with a gradient.
+ */
+const overlaid = (image) => box('flex:1 1 0%;min-height:0',
+  `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0">` +
+    `<div style="position:relative;display:flex;flex-direction:column">` +
+      `<div style="height:810px;flex-shrink:0"></div>` +
+      T('font-size:14px;line-height:18px', 'THE LINE UNDER THE LAYER', 1.35) +
+    `</div></div>` +
+  `<div style="position:absolute;left:0;right:0;top:0;bottom:0;background-image:${image}"></div>`);
 /** Two 40pt controls side by side, 10pt apart, each with the given halo toward the other. */
 const pair = (a, b) => box('flex-direction:row;padding:40px;gap:10px',
   `<div data-press="0,${a},0,0" aria-label="Earlier" style="width:40px;height:40px;flex-shrink:0"></div>` +
@@ -139,6 +150,10 @@ const CASES = {
   // the same through a see-through bar: the words are drawn over each other
   scrollsheer: [docked(0, 'rgba(0,0,0,0.4)'), ALL('CLASH')],
   scrollsheerclear: [docked(200, 'rgba(0,0,0,0.4)'), {}],
+  // a shade over the whole screen (the Lobby's vignette: nowhere past 0.34) hides nothing…
+  scrollshade: [overlaid('radial-gradient(ellipse 72% 58% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.34) 100%)'), {}],
+  // …but a layer painted with a SOLID gradient covers the words under it
+  scrollpainted: [overlaid('linear-gradient(180deg, rgb(17,17,17) 0%, rgb(17,17,17) 100%)'), ALL('UNDER')],
   // past the fold of a scroller in a clipping sheet: scrolled to, not cut…
   scrollfold: [box('height:120px;overflow:hidden', `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0;overflow:hidden">` +
     `<div style="height:200px;flex-shrink:0"></div>` + T('font-size:14px;line-height:18px', 'THE LAST ACT', 1.35) + `</div>`), {}],

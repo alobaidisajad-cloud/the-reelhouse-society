@@ -272,13 +272,18 @@ async function audit(page) {
     // CLASH: lines of two different texts overlapping, neither inside the other.
     // Only where both texts can actually be SEEN: a sheet laid over the page
     // (an open tray) covers the words under it, and covered words cannot clash.
+    // A picture hides what is under it; a gradient only where it is solid. One
+    // that is nowhere more than 90% opaque — the Lobby's vignette, a room's
+    // light — is shade laid over the words, not a cover over them.
+    const hidingImage = (img) => img !== 'none' && (/url\(/.test(img)
+      || [...img.matchAll(/rgba?\(([^)]*)\)/g)].some((m) => { const p = m[1].split(/[\s,/]+/).filter(Boolean).map(parseFloat); return p.length < 4 || p[3] > 0.9; }));
     const shows = (e, x, y) => {
       for (const t of document.elementsFromPoint(x, y)) {
         if (t === e || e.contains(t) || t.contains(e)) return true;
         const cs = getComputedStyle(t);
         const bg = cs.backgroundColor.match(/[\d.]+/g);
         if (bg && (bg[3] === undefined || +bg[3] > 0.9) && +cs.opacity > 0.9) return false;
-        if (cs.backgroundImage !== 'none' && t.tagName !== 'SPAN') return false;
+        if (hidingImage(cs.backgroundImage) && t.tagName !== 'SPAN') return false;
         if (t.tagName === 'IMG') return false;
       }
       return false;
@@ -328,7 +333,7 @@ async function audit(page) {
         if (t === e || e.contains(t) || t.contains(e)) return null;
         const cs = getComputedStyle(t);
         const bg = cs.backgroundColor.match(/[\d.]+/g);
-        if ((bg && (bg[3] === undefined || +bg[3] > 0.9) && +cs.opacity > 0.9) || (cs.backgroundImage !== 'none' && t.tagName !== 'SPAN') || t.tagName === 'IMG') return t;
+        if ((bg && (bg[3] === undefined || +bg[3] > 0.9) && +cs.opacity > 0.9) || (hidingImage(cs.backgroundImage) && t.tagName !== 'SPAN') || t.tagName === 'IMG') return t;
       }
       return null;
     };
