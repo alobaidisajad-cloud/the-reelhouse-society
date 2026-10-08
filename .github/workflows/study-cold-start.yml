@@ -340,17 +340,21 @@ jobs:
           sleep 20
           shot() {
             xcrun simctl install "$DEV" "$RUNNER_TEMP/ios/$2.app"
-            xcrun simctl launch "$DEV" com.reelhouse.society > "$S/shots-ios/$1.launch.txt" 2>&1
+            # --console-pty: the app's own stdout/stderr, where an abort prints its reason.
+            ( xcrun simctl launch --console-pty "$DEV" com.reelhouse.society > "$S/shots-ios/$1.console.txt" 2>&1 & )
             sleep 5
+            head -c 300 "$S/shots-ios/$1.console.txt" > "$S/shots-ios/$1.launch.txt"
             a5=$(xcrun simctl spawn "$DEV" launchctl list | grep -ci reelhouse || true)
             sleep 20
             a25=$(xcrun simctl spawn "$DEV" launchctl list | grep -ci reelhouse || true)
             echo "$1: alive at 5 s: $a5 · at 25 s: $a25 · $(cat "$S/shots-ios/$1.launch.txt" | tr '\n' ' ')" >> "$S/shots-ios/alive.txt"
             if [ "$a25" = "0" ]; then
-              { echo "── $1 ended:"; node "$GITHUB_WORKSPACE/mobile/e2e/study/ios-crash.mjs"
-                xcrun simctl spawn "$DEV" log show --last 1m --style compact \
-                  --predicate 'processImagePath CONTAINS[c] "reelhouse"' 2>&1 \
-                  | grep -i -E 'exception|fatal|terminat|abort|crash|error|javascript' | tail -n 12; } >> "$S/shots-ios/ended.txt"
+              { echo "── $1 ended — the app's own output:"
+                grep -v '^[[:space:]]*$' "$S/shots-ios/$1.console.txt" | tail -n 25
+                echo "── its log (JS and errors):"
+                xcrun simctl spawn "$DEV" log show --last 2m --style compact \
+                  --predicate 'processImagePath CONTAINS[c] "reelhouse" AND (category == "javascript" OR messageType == error OR messageType == fault OR eventMessage CONTAINS[c] "exception" OR eventMessage CONTAINS[c] "error")' 2>&1 \
+                  | tail -n 25; } >> "$S/shots-ios/ended-$1.txt"
             fi
             xcrun simctl io "$DEV" screenshot "$S/shots-ios/$1.png"
             xcrun simctl terminate "$DEV" com.reelhouse.society || true
@@ -379,7 +383,10 @@ jobs:
         run: |
           cat "$RUNNER_TEMP/ios/signing.txt" "$RUNNER_TEMP/study/shots-ios/alive.txt" > "$RUNNER_TEMP/study/shots-ios/alive-all.txt" 2>/dev/null
           node e2e/annotate.mjs "Study: iOS signing and alive" "$RUNNER_TEMP/study/shots-ios/alive-all.txt" notice
-          [ -s "$RUNNER_TEMP/study/shots-ios/ended.txt" ] && node e2e/annotate.mjs "Study: iOS — why the app ended" "$RUNNER_TEMP/study/shots-ios/ended.txt" notice
+          for s in B1 E1 N1; do
+            f="$RUNNER_TEMP/study/shots-ios/ended-$s.txt"
+            [ -s "$f" ] && node e2e/annotate.mjs "Study: iOS — why the app ended ($s)" "$f" notice
+          done
           S="$RUNNER_TEMP/study"
           node e2e/study/proofs.mjs "$S" shots-ios > "$S/proofs-ios.txt" 2>&1
           cat "$S/proofs-ios.txt"
