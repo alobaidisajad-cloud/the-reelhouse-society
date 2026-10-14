@@ -32,9 +32,9 @@ export function useArrival({ duration, delay = 0, rise = ARRIVAL_RISE, easing, n
   useEffect(() => {
     // An easing key only when one was given: Reanimated copies every key over its defaults,
     // so an undefined one replaces the default easing with nothing and crashes the first frame.
-    const timing: WithTimingConfig = { duration, reduceMotion: ReduceMotion.System };
-    if (easing) timing.easing = easing;
-    shown.value = withDelay(delay, withTiming(1, timing));
+    shown.value = withDelay(delay, withTiming(1, easing
+      ? { duration, easing, reduceMotion: ReduceMotion.System }
+      : { duration, reduceMotion: ReduceMotion.System }));
     const rescue = setTimeout(() => {
       if (shown.value >= 1) return;
       e2eTrace('arrival.rescued', { name, at: shown.value });
