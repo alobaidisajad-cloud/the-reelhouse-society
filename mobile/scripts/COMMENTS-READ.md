@@ -169,7 +169,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-04 | edited: testEnvironment, the timer-checking one, says what it is |
-| jest.setup.ts | 2026-10-08 | edited: the Reanimated fake refuses a config key with no value, and its easings are functions |
+| jest.setup.ts | 2026-10-14 | edited: AbortSignal has no timeout or any, as on Hermes |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
 | mockups/paper/__tests__/zz-badge.gen.test.tsx | 2026-09-29 | described the real badge as it was at one commit (brass ramp); now says A is whatever RankBadge is |
@@ -1060,7 +1060,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/validateWithTelemetry.test.ts | — |  |
 | src/utils/__tests__/withAbortSignal.test.ts | — |  |
 | src/utils/__tests__/withRetry.test.ts | — |  |
-| src/utils/__tests__/withTimeout.test.ts | — |  |
+| src/utils/__tests__/withTimeout.test.ts | 2026-10-14 | runs where AbortSignal has no timeout; its timer is cleared |
 | src/utils/AppError.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/csv.ts | 2026-10-02 | read; sound |
 | src/utils/deviceRegion.ts | 2026-10-01 | new |
@@ -1116,7 +1116,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/validateWithTelemetry.ts | 2026-10-01 | docs cut to what the types do not say |
 | src/utils/withAbortSignal.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/withRetry.ts | 2026-10-02 | read; sound |
-| src/utils/withTimeout.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/utils/withTimeout.ts | 2026-10-14 | edited: its own timer, since Hermes has no AbortSignal.timeout |
 | supabase/diagnostics/apply.cjs | 2026-10-03 | Applies one migration file to production as a single transaction; the database URL is read from .env.local and never printed. |
 | supabase/functions/fetch-rss/index.ts | 2026-09-29 | the header said it serves the Dispatch tab; no current source calls it (kept for installed builds, per backend-contract); audit tags and the relay's history dropped |
 | supabase/functions/notify-push/index.ts | 2026-10-03 | v4: the sender is named whenever there is one; an accepted request has its title; a house notice is The Lounge only about a salon |

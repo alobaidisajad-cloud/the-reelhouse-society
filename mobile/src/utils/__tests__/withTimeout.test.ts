@@ -51,13 +51,30 @@ describe('withTimeout', () => {
   });
 
   it('uses default 15s timeout when ms not specified', async () => {
-    const clock = jest.spyOn(AbortSignal, 'timeout');
+    const clock = jest.spyOn(global, 'setTimeout');
     try {
       const result = await withTimeout(async () => 42);
       expect(result).toBe(42);
-      expect(clock).toHaveBeenCalledWith(15_000);
+      expect(clock).toHaveBeenCalledWith(expect.any(Function), 15_000);
     } finally {
       clock.mockRestore();
+    }
+  });
+
+  it('runs where AbortSignal has no timeout, as on the phone', async () => {
+    // jest's setup removes AbortSignal.timeout, as Hermes lacks it; the old line threw here.
+    expect(typeof (AbortSignal as unknown as { timeout?: unknown }).timeout).toBe('undefined');
+    await expect(withTimeout(async () => 'read', 5000, 'dispatch')).resolves.toBe('read');
+  });
+
+  it('clears its timer once the request settles, so nothing is left waiting', async () => {
+    const cleared = jest.spyOn(global, 'clearTimeout');
+    try {
+      await withTimeout(async () => 'done', 5000);
+      await expect(withTimeout(async () => { throw new Error('no'); }, 5000)).rejects.toThrow('no');
+      expect(cleared).toHaveBeenCalledTimes(2);
+    } finally {
+      cleared.mockRestore();
     }
   });
 

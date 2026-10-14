@@ -29,16 +29,22 @@ export function withTimeout<T>(
   ms = 15_000,
   label?: string,
 ): Promise<T> {
-  const signal = AbortSignal.timeout(ms);
+  // The timer is our own: Hermes has no AbortSignal.timeout, and calling it threw
+  // "undefined is not a function" on the phone before any request was made.
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, ms);
 
-  return fn(signal).catch((err: unknown) => {
+  return fn(controller.signal).catch((err: unknown) => {
     const error = err instanceof Error ? err : new Error(String(err));
 
-    // AbortSignal.timeout() throws a TimeoutError (DOMException) in spec-compliant
-    // engines; Hermes uses AbortError. UTIL-2: an AbortError is only OUR timeout if
-    // our timeout `signal` actually fired — otherwise it's an EXTERNAL abort (e.g.
-    // component unmount) and must propagate unchanged, not be mislabeled "timed out".
-    if (error.name === 'TimeoutError' || (error.name === 'AbortError' && signal.aborted)) {
+    // UTIL-2: an AbortError is only OUR timeout if our timer fired; otherwise it is
+    // an EXTERNAL abort (e.g. component unmount) and propagates unchanged, never
+    // mislabeled "timed out". A TimeoutError from the request itself is a timeout.
+    if (error.name === 'TimeoutError' || (error.name === 'AbortError' && timedOut)) {
       logger.warn(`[withTimeout] ${label ?? 'request'} timed out after ${ms}ms`);
       throw new AppError(
         'TIMEOUT',
@@ -49,5 +55,5 @@ export function withTimeout<T>(
 
     // Re-throw non-timeout errors unchanged
     throw err;
-  });
+  }).finally(() => clearTimeout(timer));
 }

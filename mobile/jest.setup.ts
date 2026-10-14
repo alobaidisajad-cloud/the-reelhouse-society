@@ -7,6 +7,13 @@
 // off PRODUCTION. The one test that needs credentials reads them itself
 // (loungeEmbeds.contract.test.ts).
 
+// As the phone: Hermes has no AbortSignal.timeout or AbortSignal.any, so the tests'
+// engine has none either. A call to one threw "undefined is not a function" on the
+// iPhone and the Dispatch never loaded, while every test passed.
+for (const missingOnHermes of ['timeout', 'any']) {
+  Object.defineProperty(AbortSignal, missingOnHermes, { value: undefined, configurable: true, writable: true });
+}
+
 // AccessibilityInfo, WITH a `default`: React Native's own index reads this module's
 // default, so without one `AccessibilityInfo` from 'react-native' is undefined.
 const mockAccessibilityInfo = {
