@@ -1,8 +1,9 @@
 /**
  * II · THE FEATURED LOG (printed on paper) and III · THE FEATURED STACK (printed
- * on brass) — side by side and of one height where each holds its words at the
- * member's text size; one above the other, each its own height, where it does
- * not (planWall).
+ * on brass) — side by side and of one height on every phone, at every text
+ * size. Each half sets its words to its own width (planWall's `pair`): a phrase
+ * too wide for a line breaks between its words, the stack's count stands over
+ * SEE ALL, and a film's name too wide beside its poster goes under it.
  * ─────────────────────────────────────────────────────────────────────────────
  * The member's name, portrait and rank mark stand on a CREDIT STRIP at each
  * bill's foot, on the card's own dark ground: the rank mark (RankBadge) is made
@@ -13,12 +14,12 @@
  * No counts: the Lobby names the honoured; the log's own page counts them.
  */
 import React, { memo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
-import { ReelRating } from '@/src/components/Decorative';
+import { ReelRating, reelsWidth } from '@/src/components/Decorative';
 import { colors, fonts } from '@/src/theme/theme';
 import { EDGE_LIT } from '@/src/theme/light';
 import { tmdb } from '@/src/lib/tmdb';
@@ -26,7 +27,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { Halftone, HouseLine, Mark, Person, QuoteMark, Rays, Slab, typeStyle } from './parts';
-import { balancedWidth, quoteSize, WALL, wholeSize, type WallPlan } from './measure';
+import { balancedWidth, filmLine, nameLines, quoteSize, WALL, wholeName, type WallPlan } from './measure';
 import { LOG_BILL, STACK_BILL } from './words';
 import type { WallLog, WallStack } from './wallRead';
 import { KeepOff } from './KeepOff';
@@ -50,22 +51,63 @@ const Credit = memo(function Credit({ author, keepOff }: { author: WallLog['auth
   );
 });
 
+/**
+ * Words set in lines planWall broke them into, heard as the phrases they were
+ * written as: one stop for a screen reader, never a stop per line.
+ */
+const Lines = memo(function Lines({ lines, said, type, room, style, box }: {
+  lines: readonly string[];
+  /** the words as written, for a screen reader */
+  said: readonly string[];
+  type: 'slogan' | 'vacant';
+  room: number;
+  style: StyleProp<TextStyle>;
+  box: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={box} accessible accessibilityLabel={said.join(' ')}>
+      {lines.map((line, i) => <HouseLine key={i} type={type} text={line} room={room} style={style} spoken={false} />)}
+    </View>
+  );
+});
+
+const Slogan = ({ lines, said, room, style }: {
+  lines: readonly string[]; said: readonly string[]; room: number; style: StyleProp<TextStyle>;
+}) => <Lines lines={lines} said={said} type="slogan" room={room} style={style} box={s.slogan} />;
+
+/** A rating's reels, beside or under the film's poster. */
+const REEL = 13;
+
 // ── THE FEATURED LOG ────────────────────────────────────────────────────────
 export const LogBill = memo(function LogBill({ log, plan, scale, admin }: {
   log: WallLog; plan: WallPlan; scale: number; admin: boolean;
 }) {
+  const { pair } = plan;
+  const room = pair.room;
   const rtl = isRTLText(log.words);
   const size = quoteSize(log.words.length);
-  const room = plan.pairs ? plan.halfRoom : plan.wallW - WALL.halfPad * 2;
   // a short quote's lines come out even (React Native has no text-wrap: balance);
   // Arabic is set at the full width — its letters are not in the measured faces
   const quoteW = rtl ? room : balancedWidth(log.words, 'spectralItalic', size, scale, room);
-  const film = wholeSize(LOG_BILL.on(log.film.title), 'elite', 10, 10, 2, room - 50, scale, 1.2);
+  const rating = typeof log.rating === 'number' && log.rating > 0 ? log.rating : 0;
+  const film = filmLine(log.film.title, room, scale, rating ? reelsWidth(REEL) : 0);
+  const filmName = (
+    <Text numberOfLines={film.lines} maxFontSizeMultiplier={film.cap}
+      style={[typeStyle('filmLine'), s.filmLine, { fontSize: film.size }, !film.beside && s.filmUnder, rtl && s.alignRight]}>
+      {LOG_BILL.on(log.film.title)}
+    </Text>
+  );
+  // beside the poster, under its name; else under the poster and the name, across the half
+  const reels = rating ? (
+    <View style={[s.reels, film.reelsBeside ? film.beside && s.reelsUnder : s.reelsBelow, rtl && s.reelsRtl]}>
+      <ReelRating rating={rating} size={REEL} />
+    </View>
+  ) : null;
   return (
-    <View style={[s.half, plan.pairs && s.beside, s.paper]}>
+    <View style={[s.half, s.paper]}>
       <Halftone opacity={0.08} />
       <Rays color={colors.crimson} strength={0.10} cx={room * 0.35} cy={140} radius={210} />
-      <Slab lines={LOG_BILL.slab} ground={colors.crimson} ink={colors.silverScreen} room={room - WALL.slabPadX * 2} />
+      <Slab lines={LOG_BILL.slab} ground={colors.crimson} ink={colors.silverScreen} room={pair.slabRoom} />
       <PressableScale
         style={s.words}
         // the film's row stands 4 below: half of that, and no more
@@ -78,7 +120,7 @@ export const LogBill = memo(function LogBill({ log, plan, scale, admin }: {
       >
         <QuoteMark size={52} color={colors.crimson} close={rtl} style={[s.quoteMark, rtl && s.quoteMarkRtl]} />
         <Text
-          numberOfLines={6}
+          numberOfLines={pair.quoteLines}
           style={[s.quote, { fontSize: size, lineHeight: Math.round(size * 1.32) }, rtl ? s.rtl : { maxWidth: quoteW }]}
         >
           {rtl ? RTL_MARK : null}{log.words}
@@ -88,56 +130,59 @@ export const LogBill = memo(function LogBill({ log, plan, scale, admin }: {
         </View>
       </PressableScale>
       <PressableScale
-        style={[s.filmRow, rtl && s.filmRowRtl]}
+        style={s.film}
         onPress={() => nav.push(`/film/${log.film.id}`)}
         haptic="selection"
         accessibilityRole="link"
         accessibilityLabel={`${log.film.title}${log.rating ? `, rated ${log.rating} of 5` : ''}. Open the film.`}
       >
-        <View style={s.thumb}>
-          {log.film.poster_path ? (
-            <Image source={{ uri: tmdb.poster(log.film.poster_path, 'w92') ?? undefined }} style={StyleSheet.absoluteFill}
-              contentFit="cover" cachePolicy="memory-disk" accessible={false} />
-          ) : null}
+        <View style={[s.filmRow, rtl && s.filmRowRtl]}>
+          <View style={s.thumb}>
+            {log.film.poster_path ? (
+              <Image source={{ uri: tmdb.poster(log.film.poster_path, 'w92') ?? undefined }} style={StyleSheet.absoluteFill}
+                contentFit="cover" cachePolicy="memory-disk" accessible={false} />
+            ) : null}
+          </View>
+          <View style={s.filmMeta}>
+            {film.beside ? filmName : null}
+            {film.reelsBeside ? reels : null}
+          </View>
         </View>
-        <View style={s.filmMeta}>
-          <Text numberOfLines={2} maxFontSizeMultiplier={1.35}
-            style={[typeStyle('filmLine'), s.filmLine, { fontSize: film.size }, rtl && s.alignRight]}>
-            {LOG_BILL.on(log.film.title)}
-          </Text>
-          {typeof log.rating === 'number' && log.rating > 0 ? (
-            <View style={[s.reels, rtl && s.reelsRtl]}><ReelRating rating={log.rating} size={13} /></View>
-          ) : null}
-        </View>
+        {film.beside ? null : filmName}
+        {film.reelsBeside ? null : reels}
       </PressableScale>
-      <View style={s.slogan}>
-        {LOG_BILL.slogan.map((line) => (
-          <HouseLine key={line} type="slogan" text={line.toUpperCase()} room={room} style={s.sloganPaper} />
-        ))}
-      </View>
-      <Credit author={log.author} keepOff={admin ? <KeepOff kind="log" id={log.id} what="log" room={plan.switchRoom.credit} /> : null} />
+      <Slogan lines={pair.log.slogan} said={LOG_BILL.slogan} room={room} style={s.sloganPaper} />
+      <Credit author={log.author} keepOff={admin ? <KeepOff kind="log" id={log.id} what="log" room={plan.switchRoom.credit} lines={pair.keepOff} /> : null} />
     </View>
   );
 });
 
 // ── THE FEATURED STACK ──────────────────────────────────────────────────────
-const FAN = [{ turn: -12, shift: -30, z: 1 }, { turn: 0, shift: 0, z: 2 }, { turn: 12, shift: 30, z: 1 }] as const;
 const FAN_W = 58;
+const FAN_TURN = 12;
+const FAN = [{ turn: -FAN_TURN, side: -1, z: 1 }, { turn: 0, side: 0, z: 2 }, { turn: FAN_TURN, side: 1, z: 1 }] as const;
+/** A turned poster's width: its own width turned, and what its height brings in. */
+const TURNED_W = FAN_W * Math.cos((FAN_TURN * Math.PI) / 180) + FAN_W * 1.5 * Math.sin((FAN_TURN * Math.PI) / 180);
+/** The outer posters' shift from the middle: 30 at most, fanEdge clear of each edge. */
+const fanShift = (halfW: number) => Math.min(30, (halfW - WALL.fanEdge * 2 - TURNED_W) / 2);
 
 export const StackBill = memo(function StackBill({ stack, plan, scale, admin }: {
   stack: WallStack; plan: WallPlan; scale: number; admin: boolean;
 }) {
-  const room = plan.pairs ? plan.halfRoom : plan.wallW - WALL.halfPad * 2;
-  const name = wholeSize(stack.title, 'rye', 18, 14, 4, room, scale);
+  const { pair } = plan;
+  const room = pair.room;
+  const lines = nameLines(room);
+  const name = wholeName(stack.title, 'rye', 18, 14, lines, room, scale);
+  const shift = fanShift(pair.width);
   // the fan: the stack's first three films, the first in the middle
   const order = [stack.posters[1], stack.posters[0], stack.posters[2]];
   const open = () => nav.push(`/stacks/${stack.id}`);
   return (
-    <View style={[s.half, plan.pairs && s.beside, s.brassStock]}>
+    <View style={[s.half, s.brassStock]}>
       <LinearGradient colors={[colors.marqueeGold, colors.sepia]} locations={[0, 0.7]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={StyleSheet.absoluteFill} />
       <Halftone opacity={0.10} />
       <Rays color={colors.ink} strength={0.07} cx={room / 2 + WALL.halfPad} cy={130} radius={210} />
-      <Slab lines={STACK_BILL.slab} ground={colors.ink} ink={colors.marqueeGold} room={room - WALL.slabPadX * 2} />
+      <Slab lines={STACK_BILL.slab} ground={colors.ink} ink={colors.marqueeGold} room={pair.slabRoom} />
       <PressableScale
         style={s.fan}
         onPress={open}
@@ -149,7 +194,7 @@ export const StackBill = memo(function StackBill({ stack, plan, scale, admin }: 
         {FAN.map((f, i) => {
           const p = order[i];
           return (
-            <View key={i} style={[s.fanPoster, { zIndex: f.z, transform: [{ translateX: f.shift }, { rotate: `${f.turn}deg` }] }]}>
+            <View key={i} style={[s.fanPoster, { zIndex: f.z, transform: [{ translateX: f.side * shift }, { rotate: `${f.turn}deg` }] }]}>
               {p?.poster_path ? (
                 <Image source={{ uri: tmdb.poster(p.poster_path, 'w185') ?? undefined }} style={StyleSheet.absoluteFill}
                   contentFit="cover" cachePolicy="memory-disk" accessible={false} />
@@ -162,67 +207,63 @@ export const StackBill = memo(function StackBill({ stack, plan, scale, admin }: 
       </PressableScale>
       <PressableScale style={s.stackWords} onPress={open} haptic="selection" accessibilityRole="link"
         accessibilityLabel={`${stack.title}. See all ${stack.films} films.`}>
-        <Text numberOfLines={4} maxFontSizeMultiplier={1.35}
+        <Text numberOfLines={lines} maxFontSizeMultiplier={name.cap}
           style={[s.stackName, { fontSize: name.size, lineHeight: Math.round(name.size * 1.12) }]}>
           {stack.title}
         </Text>
-        <View style={s.facts}>
+        <View style={[s.facts, pair.factsStacked && s.factsStacked]}>
           <Text numberOfLines={1} style={[typeStyle('stackFacts'), s.factText]} {...UNSPOKEN}>{STACK_BILL.films(stack.films)}</Text>
-          <HouseLine type="stackFacts" text={STACK_BILL.seeAll} room={room / 2} style={s.factText} spoken={false} />
+          <HouseLine type="stackFacts" text={STACK_BILL.seeAll} room={pair.seeAllRoom}
+            style={[s.factText, pair.factsStacked && s.seeAllUnder]} spoken={false} />
         </View>
       </PressableScale>
-      <View style={s.slogan}>
-        {STACK_BILL.slogan.map((line) => (
-          <HouseLine key={line} type="slogan" text={line.toUpperCase()} room={room} style={s.sloganInk} />
-        ))}
-      </View>
-      <Credit author={stack.author} keepOff={admin ? <KeepOff kind="list" id={stack.id} what="stack" room={plan.switchRoom.credit} /> : null} />
+      <Slogan lines={pair.stack.slogan} said={STACK_BILL.slogan} room={room} style={s.sloganInk} />
+      <Credit author={stack.author} keepOff={admin ? <KeepOff kind="list" id={stack.id} what="stack" room={plan.switchRoom.credit} lines={pair.keepOff} /> : null} />
     </View>
   );
 });
 
 // ── NOTHING YET TO FEATURE ──────────────────────────────────────────────────
+/** A vacant bill's door: its words in the lines planWall set them in, centred on one another. */
+const Door = ({ lines, room, style }: { lines: readonly string[]; room: number; style: StyleProp<TextStyle> }) => (
+  <>{lines.map((line, i) => <HouseLine key={i} type="cta" text={line} room={room} style={style} spoken={false} />)}</>
+);
+
 export const VacantLogBill = memo(function VacantLogBill({ plan }: { plan: WallPlan }) {
-  const room = plan.pairs ? plan.halfRoom : plan.wallW - WALL.halfPad * 2;
+  const { pair } = plan;
   return (
-    <View style={[s.half, plan.pairs && s.beside, s.paper, s.vacant]}>
+    <View style={[s.half, s.paper, s.vacant]}>
       <Halftone opacity={0.08} />
-      <Rays color={colors.crimson} strength={0.10} cx={room * 0.35} cy={140} radius={210} />
-      <Slab lines={LOG_BILL.slab} ground={colors.crimson} ink={colors.silverScreen} room={room - WALL.slabPadX * 2} />
-      <View style={s.say}>
-        {LOG_BILL.vacant.map((line) => <HouseLine key={line} type="vacant" text={line} room={room} style={s.sayPaper} />)}
-      </View>
+      <Rays color={colors.crimson} strength={0.10} cx={pair.room * 0.35} cy={140} radius={210} />
+      <Slab lines={LOG_BILL.slab} ground={colors.crimson} ink={colors.silverScreen} room={pair.slabRoom} />
+      <Lines lines={pair.log.vacant} said={LOG_BILL.vacant} type="vacant" room={pair.room} style={s.sayPaper} box={s.say} />
       <PressableScale style={[s.door, s.doorPaper]} onPress={() => nav.push('/log-modal')} haptic="selection"
         accessibilityRole="button" accessibilityLabel="Log a film">
-        <HouseLine type="cta" text={LOG_BILL.vacantDoor} room={room - 24} style={s.doorPaperText} spoken={false} />
+        <Door lines={pair.log.door} room={pair.doorRoom} style={s.doorPaperText} />
       </PressableScale>
     </View>
   );
 });
 
 export const VacantStackBill = memo(function VacantStackBill({ plan }: { plan: WallPlan }) {
-  const room = plan.pairs ? plan.halfRoom : plan.wallW - WALL.halfPad * 2;
+  const { pair } = plan;
   return (
-    <View style={[s.half, plan.pairs && s.beside, s.brassStock, s.vacant]}>
+    <View style={[s.half, s.brassStock, s.vacant]}>
       <LinearGradient colors={[colors.marqueeGold, colors.sepia]} locations={[0, 0.7]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={StyleSheet.absoluteFill} />
       <Halftone opacity={0.10} />
-      <Slab lines={STACK_BILL.slab} ground={colors.ink} ink={colors.marqueeGold} room={room - WALL.slabPadX * 2} />
-      <View style={s.say}>
-        {STACK_BILL.vacant.map((line) => <HouseLine key={line} type="vacant" text={line} room={room} style={s.sayInk} />)}
-      </View>
+      <Slab lines={STACK_BILL.slab} ground={colors.ink} ink={colors.marqueeGold} room={pair.slabRoom} />
+      <Lines lines={pair.stack.vacant} said={STACK_BILL.vacant} type="vacant" room={pair.room} style={s.sayInk} box={s.say} />
       <PressableScale style={[s.door, s.doorInk]} onPress={() => nav.push('/list-modal')} haptic="selection"
         accessibilityRole="button" accessibilityLabel="Start a stack">
-        <HouseLine type="cta" text={STACK_BILL.vacantDoor} room={room - 24} style={s.doorInkText} spoken={false} />
+        <Door lines={pair.stack.door} room={pair.doorRoom} style={s.doorInkText} />
       </PressableScale>
     </View>
   );
 });
 
 const s = StyleSheet.create({
-  half: { paddingHorizontal: WALL.halfPad, paddingTop: WALL.halfPad, overflow: 'hidden' },
-  // side by side, the two share the row; stacked, each is as tall as its words (a flex: 1 in a column sized by
-  // its content splits the height instead, and clips the taller bill)
-  beside: { flex: 1, minWidth: 0 },
+  // the two share the row, half each (flex: 1 in a row: an equal share, never its words' width)
+  half: { flex: 1, minWidth: 0, paddingHorizontal: WALL.halfPad, paddingTop: WALL.halfPad, overflow: 'hidden' },
   paper: { backgroundColor: colors.parchment },
   brassStock: { backgroundColor: colors.sepia },
   vacant: { paddingBottom: WALL.halfPad },
@@ -236,15 +277,21 @@ const s = StyleSheet.create({
   readOn: { flexDirection: 'row', justifyContent: 'flex-end', minHeight: 44, alignItems: 'center' },
   readOnRtl: { justifyContent: 'flex-start' },
   readOnText: { color: colors.bloodReel },
-  filmRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4, minHeight: 60 },
+  // 60 tall at least, so PressableScale adds no halo that would reach the quote's door above
+  film: { marginTop: 4, minHeight: 60 },
+  filmRow: { flexDirection: 'row', alignItems: 'center', gap: WALL.filmGap, minHeight: 60 },
   filmRowRtl: { flexDirection: 'row-reverse' },
   thumb: {
-    width: 40, height: 60, borderWidth: 2, borderColor: colors.silverScreen, backgroundColor: colors.inkwell,
+    width: WALL.filmThumb, height: 60, borderWidth: 2, borderColor: colors.silverScreen, backgroundColor: colors.inkwell,
     transform: [{ rotate: '4deg' }], overflow: 'hidden',
   },
   filmMeta: { flex: 1, minWidth: 0 },
   filmLine: { color: colors.bloodReel },
-  reels: { flexDirection: 'row', marginTop: 4 },
+  // under the poster and its reels, across the half
+  filmUnder: { marginTop: 8 },
+  reels: { flexDirection: 'row' },
+  reelsUnder: { marginTop: 4 },
+  reelsBelow: { marginTop: 8 },
   reelsRtl: { justifyContent: 'flex-end' },
   slogan: { marginTop: 'auto', paddingTop: 10 },
   sloganPaper: { color: colors.bloodReel, lineHeight: 15 },
@@ -265,12 +312,19 @@ const s = StyleSheet.create({
   void: { color: colors.sepia, fontSize: 14 },
   stackWords: { marginTop: 8 },
   stackName: { fontFamily: fonts.display, color: colors.ink },
-  facts: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 6, marginTop: 4, minHeight: 20 },
+  facts: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: WALL.factsGap, marginTop: 4, minHeight: 20 },
+  // the count over SEE ALL, which stands at the right as the log's READ does
+  factsStacked: { flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start', gap: 2 },
+  seeAllUnder: { alignSelf: 'flex-end' },
   factText: { color: colors.ink },
   say: { marginTop: 16 },
   sayPaper: { color: colors.ink, lineHeight: 21 },
   sayInk: { color: colors.ink, lineHeight: 21 },
-  door: { marginTop: 'auto', alignSelf: 'flex-start', minHeight: 44, borderWidth: 1, paddingHorizontal: 12, justifyContent: 'center', maxWidth: '100%' },
+  // two lines, where its words need them, centred on one another
+  door: {
+    marginTop: 'auto', alignSelf: 'flex-start', minHeight: 44, borderWidth: 1, paddingHorizontal: WALL.halfDoorPad,
+    paddingVertical: 4, justifyContent: 'center', alignItems: 'center', maxWidth: '100%',
+  },
   doorPaper: { borderColor: colors.bloodReel },
   doorPaperText: { color: colors.bloodReel },
   doorInk: { borderColor: colors.ink },

@@ -41,9 +41,9 @@ import { PROGRAMME_KEY, WALL_KEY, editionDayOf, useFeature, useLobbyWall, usePro
 const Skeleton = memo(function Skeleton({ plan }: { plan: WallPlan }) {
   return (
     <View style={s.skeleton} accessible accessibilityLabel="The Lobby is being hung">
-      <View style={[s.pair, !plan.pairs && s.pairStacked]}>
-        <View style={[s.skel, s.skelHalf, plan.pairs && s.skelBeside]} />
-        <View style={[s.skel, s.skelHalf, plan.pairs && s.skelBeside]} />
+      <View style={s.pair}>
+        <View style={[s.skel, s.skelHalf]} />
+        <View style={[s.skel, s.skelHalf]} />
       </View>
       <View style={[s.skel, s.skelFilings]} />
     </View>
@@ -111,7 +111,7 @@ export const LobbyWall = memo(function LobbyWall() {
       ) : (
         <>
           {/* The wall was read, full or vacant: never its shapes or its failure. */}
-          <View style={[s.pair, !plan.pairs && s.pairStacked]} testID="lobby-wall-hung">
+          <View style={s.pair} testID="lobby-wall-hung">
             {w.log ? <LogBill log={w.log} plan={plan} scale={scale} admin={admin} /> : <VacantLogBill plan={plan} />}
             {w.stack ? <StackBill stack={w.stack} plan={plan} scale={scale} admin={admin} /> : <VacantStackBill plan={plan} />}
           </View>
@@ -127,11 +127,9 @@ export const LobbyWall = memo(function LobbyWall() {
 const s = StyleSheet.create({
   wall: { alignSelf: 'center', gap: WALL.gap },
   pair: { flexDirection: 'row', gap: WALL.gap, alignItems: 'stretch' },
-  pairStacked: { flexDirection: 'column' },
   skeleton: { gap: WALL.gap },
   skel: { backgroundColor: colors.inkwell, borderWidth: 1, borderColor: colors.sepiaBorder },
-  skelHalf: { minHeight: 320 },
-  skelBeside: { flex: 1 },
+  skelHalf: { flex: 1, minHeight: 320 },
   skelFilings: { height: 360 },
   refresh: {
     ...EDGE_LIT,

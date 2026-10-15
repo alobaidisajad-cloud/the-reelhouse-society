@@ -314,7 +314,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/DarkroomHeader.tsx | 2026-10-15 | the filter panel is held through its exit |
 | src/components/darkroom/DarkroomHero.tsx | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
 | src/components/darkroom/DarkroomMoodBar.tsx | 2026-10-02 | keys; selected as a state; meaning spoken |
-| src/components/Decorative.tsx | 2026-10-01 | the dead marquee and styles gone |
+| src/components/Decorative.tsx | 2026-10-15 | reelsWidth: a rating's drawn width, for the Lobby's arithmetic |
 | src/components/dispatch/__tests__/aBallotsClosingTimes.test.ts | 2026-09-29 | new |
 | src/components/dispatch/__tests__/aControlsNameCanBeRead.test.ts | — |  |
 | src/components/dispatch/__tests__/aDeskControlNeverAnswersWithNothing.test.tsx | 2026-09-29 | new |
@@ -477,17 +477,17 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-10-15 | edited: lobby-wall-hung only on a wall the house read, vacant too |
 | src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-09-30 | new |
 | src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-01 | both doors, every pull |
-| src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-09-30 | new |
+| src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-10-15 | the pair side by side on every phone and text size; setLines, wholeName, filmLine |
 | src/components/lobby/__tests__/theWallIsRead.test.ts | 2026-09-30 | new |
 | src/components/lobby/__tests__/theWallKeepsTheDay.test.tsx | 2026-10-03 | new: the clock reads on the hour and on return; a wall behind the day is asked again |
 | src/components/lobby/FeatureRow.tsx | 2026-10-15 | the one-sheet title's shadow has room inside the box a phone cuts it at |
 | src/components/lobby/FilingsBill.tsx | 2026-09-30 | new; the byline moved out of the filing's door |
-| src/components/lobby/KeepOff.tsx | 2026-09-30 | new |
+| src/components/lobby/KeepOff.tsx | 2026-10-15 | draws its words in the lines planWall sets (two on a narrow credit strip) |
 | src/components/lobby/LobbyHonour.tsx | 2026-09-30 | new |
-| src/components/lobby/LobbyWall.tsx | 2026-10-15 | edited: the read wall carries lobby-wall-hung; its room from useTabBarHeight |
+| src/components/lobby/LobbyWall.tsx | 2026-10-15 | the log and the stack always side by side; lobby-wall-hung on a read wall |
 | src/components/lobby/Masthead.tsx | 2026-10-15 | the Lobby's name: its glow has room inside the box a phone cuts it at |
-| src/components/lobby/measure.ts | 2026-09-30 | new |
-| src/components/lobby/PairBills.tsx | 2026-09-30 | new; "of one height" held only side by side |
+| src/components/lobby/measure.ts | 2026-10-15 | the pair never stacks: planWall's pair, setLines, wholeName, filmLine |
+| src/components/lobby/PairBills.tsx | 2026-10-15 | each half set to its width: broken phrases, facts and film under, fan drawn in |
 | src/components/lobby/parts.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
 | src/components/lobby/RankBill.tsx | 2026-10-15 | edited: the banner draws the house's logo, its rays in brass |
 | src/components/lobby/wallRead.ts | 2026-09-30 | new |

@@ -30,6 +30,11 @@ export const SectionDivider = memo(function SectionDivider({ label }: { label?: 
   );
 })
 
+/** Between two reels of a rating. */
+const REEL_GAP = 6;
+/** A rating's drawn width: five reels of `size` and the four gaps between. */
+export const reelsWidth = (size: number) => 5 * size + 4 * REEL_GAP;
+
 export const ReelRating = memo(function ReelRating({ rating, size = 16, onChange }: { rating: number; size?: number; onChange?: (rating: number) => void }) {
   // To a screen reader, a rating you can set is ONE adjustable control, named, its value
   // spoken, moved half a reel per swipe; the ten halves below are for fingers only.
@@ -126,7 +131,7 @@ const s = StyleSheet.create({
   },
 
   // Reel Rating
-  reelRow: { flexDirection: 'row', gap: 6 },
+  reelRow: { flexDirection: 'row', gap: REEL_GAP },
   reelImage: { resizeMode: 'contain', opacity: 0.8 },
   reelFull: { opacity: 1 },
   reelTouchWrap: { position: 'relative' },

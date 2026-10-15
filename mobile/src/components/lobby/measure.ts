@@ -9,14 +9,15 @@
  *   A LINE OF THE HOUSE'S OWN WORDS IS ONE LINE. It grows with the member's text
  *   size until its room is full and no further (`ceilingFor` → the line's
  *   maxFontSizeMultiplier). Where even its normal size would not fit, the layout
- *   gives way instead: two bills stand one above the other, a banner's door
- *   drops under its words (`planWall`). Nothing wraps, is cut, or shrinks below
- *   the size it was set at.
+ *   gives way instead: a phrase in a half bill breaks between its words into
+ *   lines of its own (`setLines`), a banner's door drops under its words
+ *   (`planWall`). Nothing wraps, is cut, or shrinks below the size it was set at.
  *
  *   A NAME THAT MUST BE WHOLE STEPS DOWN BEFORE IT IS CUT. A film's name on its
  *   one-sheet, a stack's name on its bill: the size steps down, half a point at a
  *   time, to a floor; only a name longer than its lines can hold at the floor
- *   ends in … (`wholeSize`).
+ *   ends in … (`wholeSize`). On a half bill no word of it is broken mid-letter:
+ *   it grows only as far as its longest word fits its line (`wholeName`).
  *
  * Widths come from the app's own font files (faceAdvances.ts), letter by
  * letter. Letter spacing is added as written: it does not grow with the text
@@ -26,6 +27,7 @@
 import {
   RYE, RYE_WIDEST, ELITE, ELITE_WIDEST, COURIER_ITALIC, COURIER_ITALIC_WIDEST, SPECTRAL_ITALIC, SPECTRAL_ITALIC_WIDEST,
 } from '@/src/theme/faceAdvances';
+import { TYPE_FLOOR } from '@/src/constants/textScaling';
 import { FILINGS_BILL, KEEP_OFF, LOG_BILL, RANK_BILL, STACK_BILL, STATES, rankTicket } from './words';
 
 export type Face = 'rye' | 'elite' | 'courierItalic' | 'spectralItalic';
@@ -113,6 +115,31 @@ export function wholeSize(
 }
 
 /**
+ * `wholeSize` for a name on a half bill, where a line is narrow enough that one
+ * long word could be wider than it. At each size the name grows only as far as
+ * its longest word fits a line (`cap`, its maxFontSizeMultiplier), so no word is
+ * ever broken mid-letter; the size steps down until the name fits `maxLines`.
+ * A word too wide for a line even at the floor takes the size below it, as far
+ * as the type floor, to the first size it fits at.
+ */
+export function wholeName(
+  text: string, face: Face, size: number, floor: number, maxLines: number, width: number, scale: number, spacing = 0,
+): { size: number; whole: boolean; cap: number } {
+  const s = Math.min(scale, HOUSE_CEILING);
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const wordsFit = (at: number) => words.every((w) => lineWidth(w, face, at, 1, spacing) <= width + 0.5);
+  const capAt = (at: number) => Math.max(1, Math.min(s, ...words.map((w) => ceilingFor(w, face, at, spacing, width))));
+  let lowest = floor;
+  while (lowest - 0.5 >= TYPE_FLOOR - 1e-9 && !wordsFit(lowest)) lowest -= 0.5;
+  for (let at = size; at >= lowest - 1e-9; at -= 0.5) {
+    if (!wordsFit(at)) continue;
+    const cap = capAt(at);
+    if (linesAt(text, face, at, cap, spacing, width) <= maxLines) return { size: at, whole: true, cap };
+  }
+  return { size: lowest, whole: false, cap: capAt(lowest) };
+}
+
+/**
  * The narrowest width at which `text` still takes the lines it takes at `width`:
  * the box a short quote is set in, so its lines come out even and its last is
  * never one word alone (React Native has no text-wrap: balance).
@@ -140,6 +167,11 @@ export const WALL = {
   rim: 3,           // the brass case round the one-sheet
   besideCase: 8,    // between the case and the bill column
   halfPad: 12,      // a half bill's inset
+  halfDoorPad: 12,  // a vacant half's door: its inset, each side, inside its 1pt border
+  fanEdge: 10,      // the stack's fan stands at least this far in from its half's edges
+  filmThumb: 40,    // the log's film: its poster's width
+  filmGap: 10,      // between the poster and the film's name
+  factsGap: 6,      // between the stack's count and SEE ALL, on one line
   slabPadX: 9,      // a slab's inset, each side
   creditInset: 2,   // a credit strip's second line (the mark, an admin's switch) stands in this far
   filingPad: 14,    // a filing's inset
@@ -205,6 +237,45 @@ const width = (key: TypeKey, text: string, scale: number) =>
 export const ceilingOf = (key: TypeKey, text: string, room: number) =>
   ceilingFor(text, TYPE[key].face, TYPE[key].size, TYPE[key].spacing, room);
 
+/** Every way to set `words` in `count` lines, in order. */
+function* splitsOf(words: readonly string[], count: number): Generator<string[]> {
+  if (count === 1) { yield [words.join(' ')]; return; }
+  for (let i = 1; i <= words.length - count + 1; i++) {
+    for (const rest of splitsOf(words.slice(i), count - 1)) yield [words.slice(0, i).join(' '), ...rest];
+  }
+}
+
+/**
+ * A phrase of the house's words, set in as few lines as hold it at the member's
+ * text size: broken only between words, and as evenly as it can be (its widest
+ * line as narrow as it can be). A › stays with the word before it. A word wider
+ * than the room takes a line of its own, and grows only as far as its room.
+ * A phrase that fits is one line, as written.
+ */
+export function setLines(text: string, key: TypeKey, room: number, scale: number): string[] {
+  const words: string[] = [];
+  for (const w of text.split(' ').filter(Boolean)) {
+    if (w === '›' && words.length) words[words.length - 1] += ' ›';
+    else words.push(w);
+  }
+  const holds = (line: string) => fits(key, line, room, scale) || !line.includes(' ');
+  for (let count = 1; count <= words.length; count++) {
+    let best: string[] | null = null;
+    let widest = Infinity;
+    for (const lines of splitsOf(words, count)) {
+      if (!lines.every(holds)) continue;
+      const w = Math.max(...lines.map((l) => width(key, l, scale)));
+      if (w < widest) { best = lines; widest = w; }
+    }
+    if (best) return best;
+  }
+  return [text];
+}
+
+/** Each line of a block set by `setLines`, in order. */
+export const setBlock = (lines: readonly string[], key: TypeKey, room: number, scale: number) =>
+  lines.flatMap((line) => setLines(line, key, room, scale));
+
 /** The height the masthead takes: its four lines' set heights, and the gaps between. */
 export const MAST_LINES = { kick: 14, name: 44, dateline: 14, whisper: 16 } as const;
 export const MAST_GAPS = { afterKick: 4, afterName: 8, afterDateline: 6, foot: 6 } as const;
@@ -225,8 +296,8 @@ export interface WallPlan {
   billCount: number;
   /** the one-sheet's title, at the size it is whole */
   titleSize: (title: string) => { size: number; whole: boolean };
-  /** the Featured Log and the Featured Stack side by side */
-  pairs: boolean;
+  /** the Featured Log and the Featured Stack: side by side on every phone, each set to its half */
+  pair: PairPlan;
   /** the second and third filings side by side */
   runners: boolean;
   /** the two rank tickets side by side */
@@ -245,10 +316,37 @@ export interface WallPlan {
   refreshWordsRoom: number;
   /** TRY AGAIN's words */
   refreshDoorRoom: number;
-  /** the width a half bill sets its words in */
-  halfRoom: number;
   /** an admin's KEEP OFF THE LOBBY, on its own line: on a credit strip, under the lead filing, under a runner */
   switchRoom: { credit: number; lead: number; runner: number };
+}
+
+/** A half bill's own words, each phrase in the lines `setLines` sets it in at the member's size. */
+export interface HalfWords {
+  slogan: string[];
+  vacant: string[];
+  /** the vacant bill's door */
+  door: string[];
+}
+
+export interface PairPlan {
+  /** a half's width: the wall, less the gap between the two, halved */
+  width: number;
+  /** the width a half sets its words in */
+  room: number;
+  /** a slab's words, inside its own inset */
+  slabRoom: number;
+  /** a vacant half's door: its words' width */
+  doorRoom: number;
+  log: HalfWords;
+  stack: HalfWords;
+  /** the stack's count and SEE ALL: one above the other where they cannot share a line */
+  factsStacked: boolean;
+  /** SEE ALL's room: beside the widest count, or the whole line */
+  seeAllRoom: number;
+  /** the most lines a quote is set in before it ends in … */
+  quoteLines: number;
+  /** an admin's KEEP OFF THE LOBBY on a half's credit strip, in its lines */
+  keepOff: string[];
 }
 
 export interface WallRoom {
@@ -287,20 +385,34 @@ export function planWall({ width: windowW, visible, scale, lineScale, admin = fa
     return wholeSize(title, 'rye', start, 16, 5, titleRoom, s);
   };
 
-  // A PAIR of bills stands side by side only where each half holds its words
-  // at the member's size — the slab's name, the slogan, the doors — and is
-  // wide enough for the quote and the fan to breathe (160 at the base size).
+  // THE PAIR stands side by side on every phone, at every text size. Each half
+  // sets its own words to its width at the member's size: a phrase too wide for
+  // a line breaks between its words (the slogan, a vacant door, an admin's
+  // switch); the stack's count and SEE ALL stand one above the other; a quote
+  // is given more lines in a narrower half, so its excerpt holds as many words.
   const half = (wallW - WALL.gap) / 2;
   const halfRoom = half - WALL.halfPad * 2;
-  const slabRoom = halfRoom - WALL.slabPadX * 2;
-  const pairs = half >= 160 * s
-    && [...LOG_BILL.slab, ...STACK_BILL.slab].every((t) => fits('slab', t, slabRoom, s))
-    && [...LOG_BILL.slogan, ...STACK_BILL.slogan].every((t) => fits('slogan', t.toUpperCase(), halfRoom, s))
-    && [...LOG_BILL.vacant, ...STACK_BILL.vacant].every((t) => fits('vacant', t, halfRoom, s))
-    && [LOG_BILL.vacantDoor, STACK_BILL.vacantDoor].every((t) => fits('cta', t, halfRoom - WALL.doorPadX * 2 - 2, s))
-    && width('stackFacts', STACK_BILL.films(999), s) + 6 + width('stackFacts', STACK_BILL.seeAll, s) <= halfRoom
-    && fits('cta', LOG_BILL.readOn, halfRoom, s)
-    && (!admin || fits('cta', KEEP_OFF, halfRoom - WALL.creditInset, s));
+  const doorRoom = halfRoom - WALL.halfDoorPad * 2 - 2;
+  const halfWords = (bill: typeof LOG_BILL | typeof STACK_BILL): HalfWords => ({
+    slogan: setBlock(bill.slogan.map((t) => t.toUpperCase()), 'slogan', halfRoom, s),
+    vacant: setBlock(bill.vacant, 'vacant', halfRoom, s),
+    door: setLines(bill.vacantDoor, 'cta', doorRoom, s),
+  });
+  const filmsW = width('stackFacts', STACK_BILL.films(999), s);
+  const factsStacked = filmsW + WALL.factsGap + width('stackFacts', STACK_BILL.seeAll, s) > halfRoom;
+  const pair: PairPlan = {
+    width: half,
+    room: halfRoom,
+    slabRoom: halfRoom - WALL.slabPadX * 2,
+    doorRoom,
+    log: halfWords(LOG_BILL),
+    stack: halfWords(STACK_BILL),
+    factsStacked,
+    seeAllRoom: factsStacked ? halfRoom : halfRoom - WALL.factsGap - filmsW,
+    // six lines in a half of 150 or more, as many more as keep the excerpt's words
+    quoteLines: Math.max(6, Math.ceil((6 * 150) / halfRoom)),
+    keepOff: setLines(KEEP_OFF, 'cta', halfRoom - WALL.creditInset, s),
+  };
 
   // The runners: the second and third filings in two columns, where a column
   // holds its kind's name at the member's size — and an admin's switch under it.
@@ -312,7 +424,7 @@ export function planWall({ width: windowW, visible, scale, lineScale, admin = fa
     && (!admin || fits('cta', KEEP_OFF, runnerByline, s));
   const fullByline = wallW - 2 - WALL.filingPad * 2 - WALL.bylineInset;
   const switchRoom = {
-    credit: (pairs ? halfRoom : wallW - WALL.halfPad * 2) - WALL.creditInset,
+    credit: halfRoom - WALL.creditInset,
     lead: fullByline - WALL.filingNum - WALL.filingNumGap,
     runner: runners ? runnerByline : fullByline,
   };
@@ -350,11 +462,30 @@ export function planWall({ width: windowW, visible, scale, lineScale, admin = fa
   const refreshDoorRoom = (refreshStacked ? refreshRoom : refreshDoorW) - WALL.refreshDoorPad * 2;
 
   return {
-    wallW, col, sheetW, sheetH, billCount, titleSize, pairs, runners, tickets,
-    bannerStacked, bannerWordsRoom, bannerDoorRoom, recruitStacked, refreshStacked, refreshWordsRoom, refreshDoorRoom, halfRoom,
+    wallW, col, sheetW, sheetH, billCount, titleSize, pair, runners, tickets,
+    bannerStacked, bannerWordsRoom, bannerDoorRoom, recruitStacked, refreshStacked, refreshWordsRoom, refreshDoorRoom,
     switchRoom,
   };
 }
+
+/**
+ * The film under a featured log. Its name stands beside its poster where it is
+ * whole there in two lines at the member's size, else under it, across the
+ * half, in up to three. Its reels stand beside the poster where they fit there,
+ * else under the poster and the name.
+ */
+export function filmLine(title: string, room: number, scale: number, reelsW: number) {
+  const t = TYPE.filmLine;
+  const text = LOG_BILL.on(title);
+  const meta = room - WALL.filmThumb - WALL.filmGap;
+  const reelsBeside = reelsW <= meta;
+  const there = wholeName(text, t.face, t.size, t.size, 2, meta, scale, t.spacing);
+  if (there.whole && there.cap >= Math.min(scale, HOUSE_CEILING)) return { ...there, beside: true, reelsBeside, lines: 2 };
+  return { ...wholeName(text, t.face, t.size, t.size, 3, room, scale, t.spacing), beside: false, reelsBeside, lines: 3 };
+}
+
+/** A name on a half: four lines in a half of 150 or more, as many more as keep its words. */
+export const nameLines = (room: number) => Math.max(4, Math.ceil((4 * 150) / room));
 
 /** A critique's quote is set larger the shorter it is. */
 export const quoteSize = (length: number) => (length <= 40 ? 19 : length <= 90 ? 16.5 : 15);
