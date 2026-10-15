@@ -148,6 +148,26 @@ describe('the clients in members\' hands', () => {
   });
 });
 
+describe('a rehearsal on production', () => {
+  const { plan: rehearsePlan } = require('../../../supabase/diagnostics/rehearse.cjs') as {
+    plan: (args: string[]) => { refuse?: string; psqlArgs?: string[]; pgoptions?: string };
+  };
+
+  it('runs one rehearsal file, under the time limits, with the pending train when asked', () => {
+    const p = rehearsePlan(['train_0_rehearsal.sql', '--with-train']);
+    expect(p.pgoptions).toBe('-c lock_timeout=2s -c statement_timeout=30s');
+    expect(p.psqlArgs?.slice(0, 8)).toEqual(['-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-v', 'with_train=1']);
+    expect(p.psqlArgs?.[p.psqlArgs.length - 1]).toMatch(/[\\/]diagnostics[\\/]train_0_rehearsal\.sql$/);
+    expect(rehearsePlan(['the_vault_rehearsal.sql']).psqlArgs).not.toContain('with_train=1');
+  });
+
+  it('says NO to anything that is not one rehearsal: a migration, two files, an unknown flag', () => {
+    expect(rehearsePlan(['20261015_01_a_salon_channel_follows_the_salon.sql']).refuse).toMatch(/is not a rehearsal/);
+    expect(rehearsePlan(['a_rehearsal.sql', 'b_rehearsal.sql']).refuse).toMatch(/^usage/);
+    expect(rehearsePlan(['a_rehearsal.sql', '--commit']).refuse).toMatch(/^usage/);
+  });
+});
+
 describe('the copy taken before a change', () => {
   const { plan: dumpPlan } = require('../../../scripts/dump-production.cjs') as {
     plan: (kind: string, tables: string[], stamp: string) => { refuse?: string; name?: string; args?: string[] };

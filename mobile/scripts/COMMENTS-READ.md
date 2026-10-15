@@ -1150,6 +1150,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/withRetry.ts | 2026-10-02 | read; sound |
 | src/utils/withTimeout.ts | 2026-10-14 | edited: its own timer, since Hermes has no AbortSignal.timeout |
 | supabase/diagnostics/apply.cjs | 2026-10-15 | rewritten: lints first, runs under the time limits, --no-transaction for a CONCURRENTLY file alone; the address from the private settings file |
+| supabase/diagnostics/rehearse.cjs | 2026-10-15 | new |
 | supabase/functions/fetch-rss/index.ts | 2026-09-29 | the header said it serves the Dispatch tab; no current source calls it (kept for installed builds, per backend-contract); audit tags and the relay's history dropped |
 | supabase/functions/notify-push/index.ts | 2026-10-03 | v4: the sender is named whenever there is one; an accepted request has its title; a house notice is The Lounge only about a salon |
 | supabase/functions/_shared/storeRecord.ts | 2026-10-03 | new: the one home for "apply what RevenueCat says a member holds", read whole record, grace included |
