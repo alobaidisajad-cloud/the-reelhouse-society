@@ -149,7 +149,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/prefetchDownloadOnly.test.ts | 2026-10-15 | new: written with prefetch-download-only.mjs, on dexdump lines in the glide check's shape |
 | e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: one shard runs only its flows, the probes and the launch where the map puts them, an unmapped flow in the last; no shard, the whole run |
 | e2e/__tests__/runtimeDump.test.ts | 2026-10-15 | new: the runtime's parts joined per launch, held to the copy, and every way it says no |
-| e2e/__tests__/screenTimes.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| e2e/__tests__/screenTimes.test.ts | 2026-10-16 | edited: its files come from the shared file list (test-utils/universe.js); edited: the ceilings file is what ceilingsFrom derives from the history |
 | e2e/__tests__/shardVerdict.test.ts | 2026-10-15 | new: says no to a ceiling no shard reported, a missing or unfinished shard, a flow run twice or never; the verdict job fails with a failed shard |
 | e2e/__tests__/shards.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | e2e/__tests__/seed.rehearsal.test.ts | 2026-10-15 | new: the real seed against a fake Supabase that keeps the filing's door |
@@ -184,7 +184,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/prefetch-download-only.mjs | 2026-10-15 | new: the APK's prefetch on CachePolicy.DISK calls downloadOnly; not run for a shipped client |
 | e2e/run-flows.sh | 2026-10-15 | edited: E2E_SHARD runs one shard's flows, the probes and the launch only where the map puts them, and lists them; none, the whole run |
 | e2e/runtime-dump.mjs | 2026-10-15 | new: the phone's runtime from the device log, held to the committed copy |
-| e2e/screen-times.mjs | 2026-10-15 | edited: --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs |
+| e2e/screen-times.mjs | 2026-10-16 | edited: --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs; edited: two ceilings a screen, derived by ceilingsFrom from e2e/screen-history.json |
 | e2e/shard-verdict.mjs | 2026-10-15 | new: every shard finished, every flow ran once, every ceiling's screen reported somewhere |
 | e2e/shards.mjs | 2026-10-15 | new: one shard's plan from e2e/shards.json; an unmapped flow runs in the last, said |
 | e2e/start-stack.sh | 2026-10-15 | edited: the stack's ports reserved from the machine's own connections, and waited for |

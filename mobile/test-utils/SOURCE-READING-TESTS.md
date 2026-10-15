@@ -203,7 +203,7 @@ Decisions, as of 2026-09-28:
 | `e2e/__tests__/keyboardRoom.test.ts` | The flow runner, the keyboard flows and the app's code, for the ids a probe taps. |
 | `e2e/__tests__/prefetchDownloadOnly.test.ts` | The E2E workflow (.github/workflows/e2e.yml). |
 | `e2e/__tests__/runFlows.rehearsal.test.ts` | The flow runner, its screen ceilings and the state its own run wrote. |
-| `e2e/__tests__/screenTimes.test.ts` | The record its own run wrote, and the flows the runner runs. |
+| `e2e/__tests__/screenTimes.test.ts` | The record its own run wrote, the flows the runner runs, and the screen-time history its ceilings are derived from. |
 | `e2e/__tests__/shardVerdict.test.ts` | The E2E workflow (.github/workflows/e2e.yml). |
 | `e2e/__tests__/shards.test.ts` | The shard map and the E2E workflow. |
 | `e2e/__tests__/startStack.test.ts` | The stack's start script, its workflows and the sealed world's config.toml. |

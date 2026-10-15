@@ -19,11 +19,13 @@
  * running is read from run-flows.sh's --flow-times file) is a failed read the
  * point, and not counted.
  *
- * With a ceilings file ({ "<screen>": <ms> }), it is also a gate. It fails when:
- *   - a screen opened at least MEDIAN_OPENS times has a median above its ceiling:
- *     its typical opening got slower (one slow opening on a shared emulator is
- *     the machine: the same code's slowest Darkroom ran 634 to 2242 ms in a day);
- *   - any one opening is above HANG times its ceiling: a hang, however rare;
+ * With a ceilings file ({ "<screen>": { "median": <ms>, "once": <ms> } }, which
+ * ceilingsFrom derives from e2e/screen-history.json), it is also a gate. It fails when:
+ *   - a screen opened at least MEDIAN_OPENS times has a median above its median
+ *     ceiling: its typical opening got slower (one slow opening on a shared
+ *     emulator is the machine: the same code's slowest Darkroom ran 634 to 2242 ms
+ *     in a day);
+ *   - any one opening is above its once ceiling: a stall, however rare;
  *   - a screen reported and has no ceiling (a new screen gets one as it lands);
  *   - with --complete (every flow ran to its end), a ceiling's screen never
  *     reported: it was renamed, or no flow reaches it any more, so the list
@@ -36,8 +38,8 @@
  * --complete was given.
  *
  * The emulator draws in software and is slower than any phone a member holds.
- * The ceilings are set from its own measured runs, to catch a screen that got
- * slower, not to describe a phone.
+ * The ceilings are derived from its own measured runs, to catch a screen that
+ * got slower, not to describe a phone.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -46,10 +48,36 @@ import { flowAt, readFlowTimes, stamp } from './app-crashes.mjs';
 /** The flows that cut the network on purpose: exactly those (screenTimes.test.ts). */
 export const PLANTS_FAILURES = ['offline_resilience'];
 
-/** A screen opened this often is judged by its median; fewer, by the hang cap alone. */
+/** A screen opened this often is judged by its median; fewer, by its one-opening ceiling alone. */
 export const MEDIAN_OPENS = 3;
-/** Any one opening past this many times its ceiling is a hang. */
-export const HANG = 2;
+
+/**
+ * Each screen's two ceilings, from the recorded history (e2e/screen-history.json:
+ * every shard's table, as its run printed it). Set from two runs, one ceiling
+ * and twice it for a single opening fitted no screen: the Dispatch opens once a
+ * run and its ceiling sat at its typical time, so one run in five read as a hang;
+ * the Lobby opens eight times, the first cold, and its slowest is three times its
+ * median. So, per screen, rounded up to 50 ms:
+ *   - median: half again the slowest typical opening any run had;
+ *   - once: twice the opening that nine runs in ten stayed under, so a stall
+ *     past it is the app's, not the shared machine's.
+ */
+export function ceilingsFrom(history) {
+  const up = (ms) => Math.ceil(ms / 50) * 50;
+  const nearestRank = (xs, p) => xs.slice().sort((a, b) => a - b)[Math.ceil(p * xs.length) - 1];
+  const by = new Map();
+  for (const s of history.samples) {
+    if (!by.has(s.screen)) by.set(s.screen, []);
+    by.get(s.screen).push(s);
+  }
+  return Object.fromEntries([...by.keys()].sort().map((screen) => {
+    const ss = by.get(screen);
+    return [screen, {
+      median: up(1.5 * Math.max(...ss.map((s) => s.median))),
+      once: up(2 * nearestRank(ss.map((s) => s.slowest), 0.9)),
+    }];
+  }));
+}
 
 /** Every screen line in the log: its kind, its screen, its time, and the flow it ran in. */
 export function readScreens(log, flowTimes) {
@@ -96,7 +124,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const ceilings = ceilingsFile ? JSON.parse(readFileSync(ceilingsFile, 'utf8')) : null;
   const problems = [];
   const pad = (s, n) => String(s).padStart(n);
-  const rows = [`${'screen'.padEnd(12)} ${pad('opened', 6)} ${pad('median', 9)} ${pad('slowest', 9)} ${pad('ceiling', 9)}`];
+  const rows = [`${'screen'.padEnd(12)} ${pad('opened', 6)} ${pad('median', 9)} ${pad('slowest', 9)} ${pad('ceilings', 15)}`];
 
   for (const s of screens.filter(counts)) {
     problems.push(`${s.name} could not read during ${s.flow}: it said so, and was never loaded`);
@@ -106,15 +134,15 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     const median = ms[Math.floor((ms.length - 1) / 2)];
     const slowest = ms[ms.length - 1];
     const ceiling = ceilings ? ceilings[name] : undefined;
-    rows.push(`${name.padEnd(12)} ${pad(ms.length, 6)} ${pad(`${median} ms`, 9)} ${pad(`${slowest} ms`, 9)} ${pad(ceiling === undefined ? '—' : `${ceiling} ms`, 9)}`);
+    rows.push(`${name.padEnd(12)} ${pad(ms.length, 6)} ${pad(`${median} ms`, 9)} ${pad(`${slowest} ms`, 9)} ${pad(ceiling === undefined ? '—' : `${ceiling.median} / ${ceiling.once}`, 15)}`);
     if (!ceilings) continue;
     if (ceiling === undefined) problems.push(`${name} has no ceiling: add it to the ceilings file`);
     else {
-      if (ms.length >= MEDIAN_OPENS && median > ceiling) {
-        problems.push(`${name}'s typical opening took ${median} ms (median of ${ms.length}), over its ceiling of ${ceiling} ms`);
+      if (ms.length >= MEDIAN_OPENS && median > ceiling.median) {
+        problems.push(`${name}'s typical opening took ${median} ms (median of ${ms.length}), over its ceiling of ${ceiling.median} ms`);
       }
-      if (slowest > ceiling * HANG) {
-        problems.push(`${name} took ${slowest} ms once, over ${HANG} times its ceiling (${ceiling * HANG} ms): a hang`);
+      if (slowest > ceiling.once) {
+        problems.push(`${name} took ${slowest} ms once, over its one-opening ceiling of ${ceiling.once} ms: a stall`);
       }
     }
   }
