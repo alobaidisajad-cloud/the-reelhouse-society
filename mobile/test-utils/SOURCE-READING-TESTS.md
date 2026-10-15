@@ -146,10 +146,11 @@ Decisions, as of 2026-09-28:
 | `src/stores/__tests__/aReactionIsOneOfFive.test.ts` | The app's five reactions against the CHECK in the schema snapshot. |
 | `test-utils/__tests__/everyCommentIsTrue.test.ts` | The reading ledger (scripts/COMMENTS-READ.md) against the files comment-truth checks. |
 | `src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts` | Every column of a filing, emptied or kept when it ends, against the schema snapshot. |
-| `src/utils/__tests__/appConfig.guard.test.ts` | The build configs: only the E2E build differs. |
+| `src/utils/__tests__/appConfig.guard.test.ts` | The build configs: only the E2E build differs; EAS uploads the commit alone, numbered as committed. |
 | `src/utils/__tests__/ciAlert.behaviour.test.ts` | The CI alert's script, run out of its workflow. |
 | `src/utils/__tests__/ciWorkflows.guard.test.ts` | Every workflow: actions pinned, permissions scoped. |
 | `src/utils/__tests__/dispatchFieldCaps.test.ts` | The Dispatch's field caps against the migrations' CHECKs. |
+| `src/utils/__tests__/easUpload.guard.test.ts` | Every .gitignore rule against the root .easignore, which EAS reads in their place. |
 | `src/utils/__tests__/maestroFlows.guard.test.ts` | Every Maestro flow names only what the app has. |
 | `src/utils/__tests__/notificationColumns.guard.test.ts` | A notification column's four gates, the SELECT among them. |
 | `src/utils/__tests__/schemaSnapshot.guard.test.ts` | The committed snapshot of production holds what it must. |

@@ -120,8 +120,9 @@ it('every text a flow looks for matches, as Maestro matches, a text in the app',
 });
 
 it('every scroll brings its target to the middle of the screen, never under the tab bar', () => {
-  // A scroll that stops as soon as its target shows can leave it under the docked tab bar, and the next tap lands on
-  // a tab: browse_vault opened the Reel instead of the Watchlist on a slow run.
+  // A scroll that stops as soon as its target shows can leave it under the
+  // docked tab bar, and the next tap lands on a tab: browse_vault opened the
+  // Reel instead of the Watchlist on a slow run.
   const scrolls = FLOWS.flatMap((f) => f.scrolls.map((arg) => ({ flow: f.flow, arg })));
   expect(scrolls.length).toBeGreaterThanOrEqual(3);
   expect(scrolls.filter((s) => s.arg.centerElement !== true).map((s) => s.flow)).toEqual([]);

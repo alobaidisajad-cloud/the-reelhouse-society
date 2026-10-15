@@ -44,6 +44,20 @@ it('no real build carries the trace switch', () => {
   expect(appJson.extra?.e2e).toBeUndefined();
 });
 
+it('EAS uploads the commit alone, numbered as committed', () => {
+  // requireCommit: EAS uploads a clone of what is committed, so no ignored or
+  // untracked file travels, and a dirty tree is refused. No autoIncrement: with
+  // the number kept in app.json, EAS would write a new one during the build,
+  // after every check had passed without it.
+  const eas = JSON.parse(readFileSync(join(MOBILE, 'eas.json'), 'utf8'));
+  expect(eas.cli).toEqual(expect.objectContaining({ appVersionSource: 'local', requireCommit: true }));
+  const bumping = Object.entries(eas.build as Record<string, Record<string, unknown>>)
+    .filter(([, p]) => 'autoIncrement' in p || ['ios', 'android'].some((os) => 'autoIncrement' in ((p[os] as object) ?? {})));
+  expect(bumping.map(([name]) => name)).toEqual([]);
+  expect(appJson.ios.buildNumber).toMatch(/^[1-9][0-9]*$/);
+  expect(Number.isInteger(appJson.android.versionCode) && appJson.android.versionCode > 0).toBe(true);
+});
+
 it('no real build profile sets E2E, or points at a local backend', () => {
   const eas = readFileSync(join(MOBILE, 'eas.json'), 'utf8');
   expect(eas).not.toMatch(/"E2E"/);
