@@ -1452,6 +1452,7 @@ registerStoreReset(() => {
         try { supabase.removeChannel(_activeChannel); } catch { /* already gone */ }
     }
     _activeChannel = null;
+    _seatedInActive = false;
     // Purge profile cache to prevent cross-session PII leakage
     _profileCache.clear();
 });

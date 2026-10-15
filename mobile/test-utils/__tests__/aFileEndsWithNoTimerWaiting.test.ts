@@ -13,10 +13,14 @@ import { MOBILE } from '../readCode';
 
 type FileResult = { name: string; status: 'passed' | 'failed'; message: string };
 
+// Worktrees in this checkout hold copies of the fixtures; the hooks' own pattern leaves them out.
+const { ignored } = require('../../scripts/hooks/pre-push.cjs') as { ignored: (mobile: string) => string[] };
+
 function runFixtures(): FileResult[] {
   const run = spawnSync(
     process.execPath,
-    [require.resolve('jest/bin/jest'), '--ci', '--json', '--coverage=false', '--testMatch', '**/timerFixtures/*.fixture.ts', '--', 'timerFixtures'],
+    [require.resolve('jest/bin/jest'), '--ci', '--json', '--coverage=false', '--testMatch', '**/timerFixtures/*.fixture.ts',
+      '--testPathIgnorePatterns', ...ignored(MOBILE), '--', 'timerFixtures'],
     { cwd: MOBILE, encoding: 'utf8', timeout: 150_000 },
   );
   const json = run.stdout.slice(run.stdout.indexOf('{'));

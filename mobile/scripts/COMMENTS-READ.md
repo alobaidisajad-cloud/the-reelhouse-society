@@ -1166,7 +1166,7 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/functions/revenuecat-webhook/decide.ts | 2026-10-03 | rewritten: an event names whom to read again (both sides of a transfer), never what they hold |
 | supabase/functions/revenuecat-webhook/index.ts | 2026-10-03 | rewritten: each named account re-read and granted through storeRecord; 500 to retry, 404 member acknowledged |
 | supabase/functions/sync-entitlement/index.ts | 2026-10-03 | rewritten onto storeRecord; answers the rank in force; a store not read is 502 |
-| test-utils/__tests__/aFileEndsWithNoTimerWaiting.test.ts | 2026-10-04 | written whole: runs jest on the three fixtures |
+| test-utils/__tests__/aFileEndsWithNoTimerWaiting.test.ts | 2026-10-15 | edited: the worktrees inside this checkout are left out of its own jest run |
 | test-utils/__tests__/everyCommentIsTrue.test.ts | — |  |
 | test-utils/__tests__/everySourceReaderIsLedgered.test.ts | 2026-10-15 | edited: a test that builds a TypeScript program reads source too |
 | test-utils/__tests__/everyTestClientKeepsTheHouseRules.test.ts | 2026-10-04 | written whole: new QueryClient( in the two builders only |
