@@ -77,6 +77,15 @@ jobs:
           SNAPSHOT_SAME_MAJOR: '1'
         run: node mobile/scripts/schema-snapshot.mjs --check
 
+      # Every pending migration (not in mobile/supabase/APPLIED.txt) is applied,
+      # undone and applied again, and the schema must match each way; the run
+      # first proves it catches an undo that leaves something behind. The rules
+      # below are then asked of production as it will be.
+      - name: The undo is proven able to fail
+        run: node mobile/e2e/db/up-down-up.mjs --self-test
+      - name: Every pending migration, up, down and up again
+        run: node mobile/e2e/db/up-down-up.mjs
+
       # As supabase_admin: the house is laid down with triggers off, and each case
       # is asked as anon or authenticated.
       - name: Production's row rules, asked as visitors and members

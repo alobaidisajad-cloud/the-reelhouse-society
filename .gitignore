@@ -60,6 +60,11 @@ perfect-clean.js
 !**/migrations/*.sql
 # The load test's house (load.yml).
 !mobile/e2e/load/*.sql
+# Each pending migration's undo (mobile/supabase/migrations-down/README.md).
+!mobile/supabase/migrations-down/*.sql
+# The sealed database's own SQL (db-integration.yml): its checks and the undo self-test.
+!mobile/e2e/db/*.sql
+!mobile/e2e/db/fixtures/**/*.sql
 
 # Scraped / cached production files
 live.js

@@ -78,6 +78,36 @@ describe('apply.cjs', () => {
   });
 });
 
+describe('every change has a tested undo', () => {
+  const ROOT = join(MOBILE, '..');
+  const listed = readFileSync(join(MOBILE, 'supabase/APPLIED.txt'), 'utf8').split(/\r?\n/).filter((l) => l && !l.startsWith('#'));
+  const withCode = (p: string) => readFileSync(p, 'utf8').split('\n').some((l) => l.trim() && !l.trim().startsWith('--'));
+  const files = ['supabase/migrations', 'mobile/supabase/migrations'].flatMap((d) =>
+    readdirSync(join(ROOT, d)).filter((f) => f.endsWith('.sql') && withCode(join(ROOT, d, f))));
+
+  it('the applied list names only migrations that exist, once each', () => {
+    expect(listed.length).toBeGreaterThan(200);
+    expect(listed.filter((n) => !files.includes(n))).toEqual([]);
+    expect(listed.filter((n, i) => listed.indexOf(n) !== i)).toEqual([]);
+  });
+
+  it('a pending migration has its undo, under its own name', () => {
+    const pending = files.filter((f) => !listed.includes(f));
+    const undos = readdirSync(join(MOBILE, 'supabase/migrations-down')).filter((f) => f.endsWith('.sql'));
+    expect(pending.filter((f) => !undos.includes(f))).toEqual([]);
+    expect(undos.filter((f) => !pending.includes(f))).toEqual([]);
+  });
+
+  it('CI proves the undo can fail, then runs every pending one up, down and up', () => {
+    const ci = readFileSync(join(ROOT, '.github/workflows/db-integration.yml'), 'utf8');
+    const selfTest = ci.indexOf('node mobile/e2e/db/up-down-up.mjs --self-test');
+    const run = ci.indexOf('run: node mobile/e2e/db/up-down-up.mjs\n');
+    expect(selfTest).toBeGreaterThan(ci.indexOf('schema-snapshot.mjs --check'));
+    expect(run).toBeGreaterThan(selfTest);
+    expect(ci.indexOf('-f mobile/e2e/db/security.sql')).toBeGreaterThan(run);
+  });
+});
+
 describe('the database address', () => {
   it('may live outside the repo and OneDrive, and nowhere else', () => {
     expect(refusal(join(homedir(), 'reelhouse-private'))).toBeNull();
