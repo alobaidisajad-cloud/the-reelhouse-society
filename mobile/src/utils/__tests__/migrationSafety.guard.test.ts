@@ -216,6 +216,78 @@ describe('a rehearsal on production', () => {
   });
 });
 
+describe('the train: every pending migration in one command', () => {
+  type Car = { name: string; path: string; sql: string };
+  type Rehearsal = { name: string; path: string; includes: string[] };
+  type Step = { kind: string; what: string; car?: Car & { rehearsal: Rehearsal }; before?: Car[] };
+  const train = require('../../../supabase/diagnostics/train.cjs') as {
+    pendingIn: () => Car[];
+    rehearsalsIn: () => Rehearsal[];
+    plan: (p: Car[], r: Rehearsal[]) => { refuse?: string; steps?: Step[] };
+    priorSql: (before: Car[]) => string | null;
+    psqlArgs: (step: Step, prior: string | null) => string[] | null;
+    run: (steps: Step[], exec: (s: Step) => { ok: boolean; out: string }) => { done: Step[]; failed: { step: Step; out: string } | null; left: Step[] };
+    verdict: (r: ReturnType<typeof train.run>) => string[];
+  };
+  const SQL = "SET LOCAL lock_timeout = '2s';\nSET LOCAL statement_timeout = '30s';\nCREATE TABLE public.x (id int);\n";
+  const car = (name: string, sql = SQL): Car => ({ name, path: `/m/${name}`, sql });
+  const reh = (name: string, ...includes: string[]): Rehearsal => ({ name, path: `/d/${name}`, includes });
+  const A = car('20990101_01_a.sql');
+  const B = car('20990101_02_b.sql');
+  const both = train.plan([A, B], [reh('a_rehearsal.sql', A.name), reh('b_rehearsal.sql', B.name)]);
+
+  it('checks the tree, production and a copy first, rehearses every car before applying any, then applies and probes each', () => {
+    expect(both.steps?.map((s) => s.what)).toEqual([
+      'the checkout is what CI ran', 'production matches the committed snapshot', 'a full copy of production, read back',
+      `rehearse ${A.name}`, `rehearse ${B.name}`,
+      `apply ${A.name}`, `probe ${A.name} on production as it now is`,
+      `apply ${B.name}`, `probe ${B.name} on production as it now is`,
+    ]);
+  });
+
+  it('rehearses each car with the ones before it applied first, in the same rolled-back transaction', () => {
+    const [ra, rb] = (both.steps ?? []).filter((s) => s.kind === 'rehearse');
+    expect([ra.before?.map((c) => c.name), rb.before?.map((c) => c.name)]).toEqual([[], [A.name]]);
+    expect(train.priorSql([])).toBeNull();
+    expect(train.priorSql([A])).toBe(`BEGIN;\n\\ir /m/${A.name}\n`);
+    expect(train.psqlArgs(rb, '/tmp/prior')).toEqual(['-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-v', 'with_train=1',
+      '-f', '/tmp/prior', '-f', '/d/b_rehearsal.sql']);
+    const apply = (both.steps ?? []).find((s) => s.kind === 'apply') as Step;
+    expect(train.psqlArgs(apply, null)).toEqual(['-X', '-1', '-v', 'ON_ERROR_STOP=1', '-f', `/m/${A.name}`]);
+    const probe = (both.steps ?? []).find((s) => s.kind === 'probe') as Step;
+    expect(train.psqlArgs(probe, null)).not.toContain('with_train=1');
+  });
+
+  it('says NO to a car with no rehearsal, or two, to a CONCURRENTLY file, to one the lint refuses, and to an empty train', () => {
+    expect(train.plan([A], []).refuse).toMatch(/needs exactly one rehearsal that includes it, found 0/);
+    expect(train.plan([A], [reh('x_rehearsal.sql', A.name), reh('y_rehearsal.sql', A.name)]).refuse).toMatch(/found 2/);
+    const conc = car('20990101_03_c.sql', "SET lock_timeout = '2s';\nSET statement_timeout = '30min';\nCREATE INDEX CONCURRENTLY i ON public.x (id);\n");
+    expect(train.plan([conc], [reh('c_rehearsal.sql', conc.name)]).refuse).toMatch(/CONCURRENTLY file is applied alone/);
+    expect(train.plan([car('20990101_04_d.sql', 'BEGIN;\nCREATE TABLE public.y (id int);\nCOMMIT;\n')],
+      [reh('d_rehearsal.sql', '20990101_04_d.sql')]).refuse).toMatch(/the migration lint refuses it/);
+    expect(train.plan([], []).refuse).toMatch(/nothing is pending/);
+  });
+
+  it('stops at the first step that fails, and says what was applied and what was not', () => {
+    const steps = both.steps ?? [];
+    const atRehearsal = train.run(steps, (s) => ({ ok: s.what !== `rehearse ${B.name}`, out: 'REHEARSAL FAILED: 1 of 3 cases missed' }));
+    expect(atRehearsal.done.some((s) => s.kind === 'apply')).toBe(false);
+    expect(train.verdict(atRehearsal).slice(0, 3)).toEqual([
+      `TRAIN STOPPED at: rehearse ${B.name}`, 'Nothing was applied to production.', `Not applied: ${A.name}, ${B.name}`,
+    ]);
+    const atSecondApply = train.run(steps, (s) => ({ ok: s.what !== `apply ${B.name}`, out: 'ERROR: lock timeout' }));
+    expect(train.verdict(atSecondApply).slice(0, 3)).toEqual([
+      `TRAIN STOPPED at: apply ${B.name}`, `Applied before it stopped: ${A.name}`, `Not applied: ${B.name} (the failed one was undone whole)`,
+    ]);
+    expect(train.verdict(train.run(steps, () => ({ ok: true, out: '' })))[0]).toBe(`TRAIN DONE: 2 applied (${A.name}, ${B.name}), each probed.`);
+  });
+
+  it('can run on the repo as it is: every pending migration has its one rehearsal and passes the lint', () => {
+    const p = train.plan(train.pendingIn(), train.rehearsalsIn());
+    expect(p.refuse ?? '').toMatch(/^(nothing is pending.*)?$/);
+  });
+});
+
 describe('a read-only check on production', () => {
   const { plan: checkPlan } = require('../../../supabase/diagnostics/read-only.cjs') as {
     plan: (args: string[]) => { refuse?: string; psqlArgs?: string[]; pgoptions?: string };
