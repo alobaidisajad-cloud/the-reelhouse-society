@@ -28,7 +28,7 @@ const routes = files.filter((f) => f.startsWith('app/') && !/(^|\/)(_layout|\+[\
 
 /** A target's path, as segments: a literal, or null where a template's ${...} stands. */
 const HOLE = '\u0000';
-const segmentsOf = (path: string) => path.split(/[?#]/)[0].split('/').filter(Boolean)
+const segmentsOf = (path: string) => (path.split(/[?#]/)[0] ?? '').split('/').filter(Boolean)
   .filter((s) => !/^\(.*\)$/.test(s)).map((s) => (s.includes(HOLE) ? null : s));
 
 export const isRoute = (path: string) => {
@@ -120,17 +120,17 @@ it('the helpers that work a target out answer with screens app/ has', () => {
   const { TABS } = require('@/src/utils/lastTab') as typeof import('@/src/utils/lastTab');
   const id = '11111111-1111-4111-8111-111111111111';
   const made = [
-    ...['log', 'list', 'post'].map((k) => noticeRoute({ group_key: `lobby:${k}:${id}`, film_id: null, from_username: null })),
+    ...['log', 'list', 'post'].map((k) => noticeRoute({ group_key: `lobby:${k}:${id}` })),
     ...(['log', 'list', 'post', 'dossier'] as const).map((kind) => groupRoute({ kind, id })),
-    noticeRoute({ group_key: null, film_id: 603, from_username: null }),
-    noticeRoute({ group_key: null, film_id: null, from_username: 'kane' }),
+    noticeRoute({ film_id: 603 }),
+    noticeRoute({ from_username: 'kane' }),
     roomOf('kane'), roomOf('a name with spaces'),
     ...TABS.filter((t) => t !== 'index').map((t) => `/${t}`),
     '/reset-password', '/(tabs)', '/log-modal', '/list-modal', '/dispatch/compose',
   ];
   // The search's results, each kind's _nav as its hook writes it.
   const search = [...readFileSync(join(MOBILE, 'src/hooks/useUniversalSearch.ts'), 'utf8').matchAll(/_nav: `([^`]+)`/g)]
-    .map((m) => m[1].replace(/\$\{[^}]+\}/g, HOLE));
+    .map((m) => (m[1] ?? '').replace(/\$\{[^}]+\}/g, HOLE));
   expect(search.length).toBeGreaterThanOrEqual(3);
   expect([...made, ...search].filter((p) => !p || !isRoute(p))).toEqual([]);
   expect(made.length).toBeGreaterThan(15);

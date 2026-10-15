@@ -212,11 +212,16 @@ function edgeCounts(files = edgeFiles(), cwd = ROOT) {
   return out;
 }
 
-/** Each finder run once, for the checks asked. */
+/**
+ * Each finder run once, for the checks asked. tsc's own process comes first and
+ * has ended before the typed lint loads the whole program into this one, which
+ * keeps it: run the other way, both programs were held at once, and a laptop ran
+ * out of memory where a runner did not.
+ */
 async function measure(checks) {
   const out = {};
-  if (checks.some((c) => c.endsWith('-promise'))) Object.assign(out, await promiseCounts());
   if (checks.includes('unchecked-index')) Object.assign(out, indexCounts());
+  if (checks.some((c) => c.endsWith('-promise'))) Object.assign(out, await promiseCounts());
   if (checks.some((c) => EDGE_CHECKS.includes(c))) Object.assign(out, edgeCounts());
   return Object.fromEntries(checks.map((c) => [c, out[c]]));
 }

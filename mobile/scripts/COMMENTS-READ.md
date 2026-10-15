@@ -245,7 +245,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/dump-production.cjs | 2026-10-15 | new |
 | scripts/eas-build-preflight.cjs | 2026-10-15 | edited: no build while the app names what production lacks |
 | scripts/edge-functions.cjs | 2026-10-03 | paytabs-handler NOT_DEPLOYED, with why (it granted any rank to a posted "paid" message) |
-| scripts/frozen-counts.cjs | 2026-10-15 | new |
+| scripts/frozen-counts.cjs | 2026-10-15 | new; edited: tsc first, so the typed lint never holds its program beside it |
 | scripts/functions-check.mjs | 2026-10-03 | compares every file a deploy bundles, _shared included, each function in its own folder; a listed exception is reported once |
 | scripts/gates-check.js | 2026-10-15 | edited: the address comes from the private settings file |
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
