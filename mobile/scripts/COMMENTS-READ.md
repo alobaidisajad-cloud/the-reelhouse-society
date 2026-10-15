@@ -44,7 +44,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; Realtime started for the salon channels' rules; each package install let fail once and tried once more, 5 minutes each; Supabase's advisers on production as it will be, held to their allowlist, names and counts only; first proven able to fail |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
 | ../.github/workflows/e2e.yml | 2026-10-15 | edited: the app built once, its anon key beside it; the flows on three machines, each its own sealed world holding its stack's key to the app's; a verdict reads all three, and fails with any shard; the APK's prefetch read for downloadOnly, and a shipped client's named as not run; each package install let fail once and tried once more, 5 minutes each; a verdict reads all three; grouped by commit, so no push drops another commit's waiting run |
-| ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash; each package install let fail once and tried once more, 5 minutes each; the Maestro lint installs its linter in its own step; the bundle job keeps its export and reads it with release-guard.cjs; a release-build job makes the release manifest, the Info.plist and the embedded config without E2E, and reads them; a job that fails when a known-vulnerable package reaches the phone and the allowlist does not hold it; the frozen counts held file by file and their finders proved on planted cases; no baseline raised since the base |
+| ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash; each package install let fail once and tried once more, 5 minutes each; the Maestro lint installs its linter in its own step; the bundle job keeps its export and reads it with release-guard.cjs; a release-build job makes the release manifest, the Info.plist and the embedded config without E2E, and reads them; a job that fails when a known-vulnerable package reaches the phone and the allowlist does not hold it; the frozen counts held file by file and their finders proved on planted cases; no baseline raised since the base; every file under app/ checked to be a screen (check:routes) |
 | ../.github/workflows/ios-launch.yml | 2026-10-15 | new |
 | ../.github/workflows/load.yml | 2026-10-15 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans; each package install let fail once and tried once more, 5 minutes each |
 | ../.github/workflows/nightly.yml | 2026-10-15 | new: known-vulnerable packages each night: the phone's and the functions' fail unless allowlisted; dev, build and website listed |
@@ -228,7 +228,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/harness.cjs | 2026-09-28 | 5 findings; the header's middle sentence was garbled by an insertion; open() said 1.35 was the most a word grows (uncapped grows to 3.1) |
 | mockups/tools/layout.cjs | 2026-10-15 | edited: a one-line text is measured by its box less its padding: a title's glow room holds no letters |
 | mockups/tools/contrast.cjs | 2026-09-30 | new: every word against the pixels under it |
-| mockups/tools/quote-ink.cjs | 2026-09-30 | new: the quote marks' outline, read from the font file |
+| mockups/tools/quote-ink.cjs | 2026-10-15 | new: the quote marks' outline, read from the font file; exports its marks; theQuoteMarkIsTheFontsOwn holds the Lobby's copy to them |
 | mockups/tools/selftest.cjs | 2026-10-15 | edited: glow room over a line is clean; two one-line texts meeting still clash |
 | mockups/tools/shoot.cjs | 2026-09-29 | true as written |
 | mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
@@ -490,6 +490,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/PathTracker.tsx | 2026-10-02 | tells openSociety and nav the screen on every navigation |
 | src/components/layout/SectionCards.tsx | 2026-10-01 | a section title is a heading |
 | src/components/layout/TopNavBar.tsx | 2026-10-15 | measures itself into navMetrics |
+| src/components/lobby/__tests__/theQuoteMarkIsTheFontsOwn.test.ts | 2026-10-15 | new |
 | src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-10-15 | edited: lobby-wall-hung only on a wall the house read, vacant too |
 | src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-09-30 | new |
 | src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-01 | both doors, every pull |
@@ -504,7 +505,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/Masthead.tsx | 2026-10-15 | the Lobby's name: its glow has room inside the box a phone cuts it at |
 | src/components/lobby/measure.ts | 2026-10-15 | the pair never stacks: planWall's pair, setLines, wholeName, filmLine |
 | src/components/lobby/PairBills.tsx | 2026-10-15 | each half set to its width: broken phrases, facts and film under, fan drawn in |
-| src/components/lobby/parts.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
+| src/components/lobby/parts.tsx | 2026-10-15 | edited: the letter is initialOf, whole; QUOTE_MARKS exported for its test |
 | src/components/lobby/RankBill.tsx | 2026-10-15 | edited: the banner draws the house's logo, its rays in brass |
 | src/components/lobby/wallRead.ts | 2026-09-30 | new |
 | src/components/lobby/words.ts | 2026-09-30 | new; named a test that did not exist |
@@ -1062,6 +1063,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/e2eRuntime.test.ts | 2026-10-15 | new: the runtime written once a launch by the E2E build alone, in lines the run can join |
+| src/utils/__tests__/everyCheckRuns.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts | 2026-10-15 | written: every enqueue call site's type has its kind in the map |
 | src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |
 | src/utils/__tests__/fixtures/imageCache.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |

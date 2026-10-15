@@ -184,7 +184,7 @@ export const Slab = memo(function Slab({ lines, ground, ink, room }: {
  * Spectral Italic's own “ and ”, read from the font file by
  * mockups/tools/quote-ink.cjs: the outline in ems, its ink's top-left at 0,0.
  */
-const QUOTE_MARKS = {
+export const QUOTE_MARKS = {
   open: 'M0.219 0L0.106 0.247L0 0.247L0.002 0.234L0.198 0L0.219 0ZM0.399 0L0.286 0.247L0.18 0.247L0.182 0.234L0.378 0L0.399 0Z',
   close: 'M0 0.247L0.113 0L0.219 0L0.217 0.013L0.021 0.247L0 0.247ZM0.18 0.247L0.293 0L0.399 0L0.397 0.013L0.201 0.247L0.18 0.247Z',
   w: 0.399,

@@ -78,6 +78,12 @@ jobs:
         working-directory: ./mobile
         run: npx eslint . --max-warnings=0
 
+      # Every file under app/ is a route Expo Router will open: one with no
+      # default-exported component is a screen that throws.
+      - name: Every file under app/ is a screen
+        working-directory: ./mobile
+        run: npm run check:routes
+
       # A promise nobody waits for (typed lint), an index read used as if it is always
       # there (tsc with noUncheckedIndexedAccess), and the edge functions' type errors
       # and lint (Deno, both trees): each an exact count in every file, held by

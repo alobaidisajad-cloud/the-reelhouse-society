@@ -6,6 +6,8 @@
  * ink, so it never reaches over the words it opens, and it does not wait on a
  * font being registered with the drawing layer.
  *   node mockups/tools/quote-ink.cjs
+ * parts.tsx holds a copy; theQuoteMarkIsTheFontsOwn.test.ts holds the copy to
+ * this, so a new font file cannot leave the Lobby drawing the old one's marks.
  *
  * TrueType read by hand (cmap format 4, loca, glyf — simple and composite
  * glyphs); a quadratic outline maps onto SVG's Q directly.
@@ -125,4 +127,5 @@ function markOf(ch) {
 }
 
 const marks = { open: markOf('“'), close: markOf('”') };
-console.log(JSON.stringify(marks, null, 2));
+if (require.main === module) console.log(JSON.stringify(marks, null, 2));
+module.exports = { marks };

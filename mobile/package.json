@@ -14,7 +14,6 @@
     "test:e2e": "bash e2e/run-flows.sh",
     "test": "jest",
     "docs:generate": "typedoc",
-    "docs:check": "typedoc --emit none --logLevel Warn",
     "docs:deps": "madge --image docs/dependency-graph.svg --ts-config tsconfig.json src/",
     "test:tz": "node scripts/test-timezones.js",
     "schema:snapshot": "node scripts/schema-snapshot.mjs",
