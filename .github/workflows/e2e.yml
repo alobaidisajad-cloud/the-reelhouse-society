@@ -526,3 +526,12 @@ jobs:
             node mobile/e2e/annotate.mjs "The shards, read together" "$RUNNER_TEMP/shard-verdict.txt"
           fi
           exit $rc
+
+      # The verdict is the whole run's: a shard that failed on its own device fails it too.
+      - name: Every shard passed on its own device
+        if: always()
+        run: |
+          if [ "${{ needs.flows.result }}" != "success" ]; then
+            echo "::error title=E2E::a shard failed on its own device (${{ needs.flows.result }}): its job says why"
+            exit 1
+          fi

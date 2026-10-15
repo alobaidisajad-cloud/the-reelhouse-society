@@ -7,7 +7,7 @@
  * screen-times.mjs write them.
  */
 import { spawnSync } from 'child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
@@ -94,4 +94,13 @@ it('says no to a flow no shard ran, one two shards ran, and one not among the fl
 it('refuses to judge without what it needs', () => {
   const r = spawnSync(process.execPath, [SCRIPT, dir, '--shards', '3', '--name', 'no-placeholder'], { encoding: 'utf8' });
   expect(r.status).toBe(2);
+});
+
+it('is the whole run’s verdict: a shard that failed on its own device fails it too', () => {
+  const workflow = readFileSync(join(__dirname, '..', '..', '..', '.github', 'workflows', 'e2e.yml'), 'utf8').replace(/\r\n/g, '\n');
+  const verdict = workflow.slice(workflow.indexOf('\n  verdict:\n'));
+  expect(verdict).toContain('needs: [build, flows]');
+  // The job's last step, run whatever came before it.
+  const last = verdict.slice(verdict.lastIndexOf('\n      - name: '));
+  expect(last).toMatch(/if: always\(\)\n\s+run: \|\n\s+if \[ "\$\{\{ needs\.flows\.result \}\}" != "success" \]; then\n[^\n]*\n\s+exit 1/);
 });
