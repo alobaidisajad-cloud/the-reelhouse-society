@@ -362,7 +362,7 @@ async function main(argv) {
 
   if (argv.includes('--base')) {
     const base = arg('--base');
-    const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1e8 });
+    const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1e8, stdio: ['ignore', 'pipe', 'pipe'] });
     let then;
     try { then = JSON.parse(git('show', `${base}:${BASELINE_IN_GIT}`)); } catch {
       console.log(`No frozen counts at ${base.slice(0, 8)}: every count here is being frozen.`);
