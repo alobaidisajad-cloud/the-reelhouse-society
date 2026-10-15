@@ -12,7 +12,9 @@ module.exports = {
   ],
   // `.claude/worktrees` holds whole copies of the repo, each with its own tests:
   // anchored at this checkout, so one that is itself such a copy runs its own.
-  testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/', '<rootDir>/\\.claude/'],
+  // Outside UTC, the tests of code that runs only in UTC are left out (scripts/test-timezones.js).
+  testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/', '<rootDir>/\\.claude/',
+    ...(process.env.JEST_OUTSIDE_UTC === '1' ? require('./scripts/test-timezones').ONLY_IN_UTC.map((p) => `<rootDir>/${p}`) : [])],
   /**
    * ── WHY THIS IS HERE ────────────────────────────────────────────────────
    * "A worker process has failed to exit gracefully" was chased for a long time

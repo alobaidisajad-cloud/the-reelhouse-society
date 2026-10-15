@@ -29,6 +29,20 @@ const ZONES = [
 /** The record one zone's CI run writes (`jest --json --outputFile`), named for its zone. */
 const recordOf = (tz) => `jest-${tz.replace(/\//g, '-')}.json`;
 
+/**
+ * The tests of code that runs only on CI's machines and the owner's: the E2E
+ * harness and the repo's scripts (paths under mobile/). CI's runners are UTC, so
+ * these run in UTC alone, and the other zones leave them out (JEST_OUTSIDE_UTC=1,
+ * read by jest.config.js). Every other test is the app's, whose code runs on
+ * members' phones in any zone. Run in all six, the flow runner's rehearsal alone
+ * took 35 minutes of one part (god_tier_ci run 38819483084).
+ */
+const ONLY_IN_UTC = ['e2e/', 'scripts/'];
+/** Whether a run in this zone runs this test file (a path under mobile/, with /). */
+const runsIn = (tz, file) => tz === 'UTC' || !ONLY_IN_UTC.some((p) => file.startsWith(p));
+/** The zone whose record this is, or null for a record no zone writes. */
+const zoneOfRecord = (record) => ZONES.find((tz) => recordOf(tz) === record) ?? null;
+
 function main() {
   const passthrough = process.argv.slice(2);
   const failures = [];
@@ -41,7 +55,7 @@ function main() {
     const res = spawnSync(
       process.execPath,
       [jestBin, '--silent', ...passthrough],
-      { stdio: 'inherit', env: { ...process.env, TZ: tz } },
+      { stdio: 'inherit', env: { ...process.env, TZ: tz, JEST_OUTSIDE_UTC: tz === 'UTC' ? '' : '1' } },
     );
     if (res.status !== 0) failures.push(tz);
   }
@@ -56,4 +70,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { ZONES, recordOf };
+module.exports = { ZONES, recordOf, ONLY_IN_UTC, runsIn, zoneOfRecord };

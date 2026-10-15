@@ -290,8 +290,9 @@ jobs:
         working-directory: ./mobile
         run: bash scripts/surface-jest-failure.sh jest-output.txt "Jest failed in UTC (part ${{ matrix.part }} of 4)"
 
-      # The same files from every other zone of scripts/test-timezones.js, read
-      # from it, each process started in its zone. Every zone runs even when one
+      # The app's files from every other zone of scripts/test-timezones.js, read
+      # from it, each process started in its zone (JEST_OUTSIDE_UTC leaves out the
+      # tests of the tooling, which runs in UTC alone). Every zone runs even when one
       # fails, the UTC run among them, and each that fails is its own annotation,
       # named by its zone.
       - name: Jest in every other time zone
@@ -310,7 +311,7 @@ jobs:
             record=${zone#* }
             log=${record%.json}-output.txt
             echo "──────── TZ=$tz"
-            TZ="$tz" npx jest --ci --silent --maxWorkers=2 --shard=${{ matrix.part }}/${{ strategy.job-total }} \
+            TZ="$tz" JEST_OUTSIDE_UTC=1 npx jest --ci --silent --maxWorkers=2 --shard=${{ matrix.part }}/${{ strategy.job-total }} \
               --json --outputFile="$record" > "$log" 2>&1
             rc=$?
             tail -n 8 "$log"

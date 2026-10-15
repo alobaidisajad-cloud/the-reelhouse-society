@@ -48,8 +48,12 @@ function readPart(folder, { runs, sites, root }) {
   };
 }
 
-/** The verdict on N parts' records: lines to print, and each problem in words. */
-function judge(parts, { runs, tests, required = null }) {
+/**
+ * The verdict on N parts' records: lines to print, and each problem in words.
+ * `runsIn(run, file)`, when given, says which listed files a run is meant to run
+ * (a zone outside UTC leaves the tooling's tests out: scripts/test-timezones.js).
+ */
+function judge(parts, { runs, tests, required = null, runsIn = () => true }) {
   const total = parts.length;
   const problems = [];
   const lines = [];
@@ -69,13 +73,14 @@ function judge(parts, { runs, tests, required = null }) {
     parts.forEach((p, i) => { for (const f of p.runs[run] ?? []) where.set(f, [...(where.get(f) ?? []), i + 1]); });
     // A part with no record is named above; its files are not named one by one.
     const everyRecord = parts.every((p) => p.runs[run]);
-    for (const f of tests) {
+    for (const f of tests.filter((t) => runsIn(run, t))) {
       const at = where.get(f) ?? [];
       if (at.length > 1) problems.push(`${f} ran in parts ${at.join(', ')} of ${run}: a file runs in one`);
       if (at.length === 0 && everyRecord) problems.push(`${f} ran in no part of ${run}`);
     }
     for (const [f, at] of where) {
       if (!listed.has(f)) problems.push(`${f} ran in part ${at.join(', ')} of ${run}, but jest does not list it: the parts ran another tree`);
+      else if (!runsIn(run, f)) problems.push(`${f} ran in part ${at.join(', ')} of ${run}, which leaves it out`);
     }
   }
 
@@ -122,7 +127,10 @@ if (require.main === module) {
   const tests = listed.map((f) => under(root, String(f))).sort();
   const parts = Array.from({ length: total }, (_, i) => readPart(path.join(dir, template.replace('{i}', String(i + 1))), { runs, sites, root }));
   const required = requireFile ? fs.readFileSync(requireFile, 'utf8') : null;
-  const { lines, problems } = judge(parts, { runs, tests, required });
+  // A zone's record runs that zone's files; a record no zone writes, all of them.
+  const zones = require('./test-timezones');
+  const runsIn = (run, f) => { const tz = zones.zoneOfRecord(run); return tz === null || zones.runsIn(tz, f); };
+  const { lines, problems } = judge(parts, { runs, tests, required, runsIn });
   console.log(`jest lists ${tests.length} test files`);
   console.log(lines.join('\n'));
   for (const p of problems) console.log(`✗ ${p}`);

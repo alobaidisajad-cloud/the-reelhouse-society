@@ -132,3 +132,13 @@ it('refuses to judge with no list of test files, or an empty one: a run of nothi
     '--tests', join(root, 'tests.json'), '--runs', 'utc.json', '--require', 'require.txt'], { cwd: root, encoding: 'utf8' });
   expect(half.status).toBe(2);
 });
+
+it("holds each zone's record to that zone's files: the tooling's tests run in UTC alone (scripts/test-timezones.js)", () => {
+  writeFileSync(join(root, 'tests.json'), JSON.stringify([...FILES, 'e2e/__tests__/x.test.ts'].map((f) => join(root, f))));
+  const runs = 'jest-UTC.json,jest-Asia-Tokyo.json';
+  const app = ['src/a.test.ts', 'src/b.test.ts', 'app/c.test.tsx', 'app/d.test.tsx'];
+  const zoned = (tokyo: string[]) => verdict([{ runs: { 'jest-UTC.json': [...app, 'e2e/__tests__/x.test.ts'], 'jest-Asia-Tokyo.json': tokyo } }], [], runs);
+  expect(zoned(app).problems).toEqual([]);
+  expect(zoned([...app, 'e2e/__tests__/x.test.ts']).problems).toEqual(['✗ e2e/__tests__/x.test.ts ran in part 1 of jest-Asia-Tokyo.json, which leaves it out']);
+  expect(zoned(app.slice(1)).problems).toEqual(['✗ src/a.test.ts ran in no part of jest-Asia-Tokyo.json']);
+});
