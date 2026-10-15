@@ -58,11 +58,11 @@ describe('every table, function and bucket a client names exists in production',
 
   it('lets the app, never the website, name what a pending migration makes', () => {
     const pending = [{ name: '20990101_01_x.sql', made: namesMadeIn(
-      'CREATE TABLE public.salon_typing_sent (id uuid);\nCREATE OR REPLACE FUNCTION public.send_salon_typing(p uuid)',
+      'CREATE TABLE public.rh_not_yet_kept (id uuid);\nCREATE OR REPLACE FUNCTION public.rh_not_yet_made(p uuid)',
     ) }];
-    const app: Call = { kind: 'rpc', name: 'send_salon_typing', at: 'mobile/src/stores/lounge.ts:1' };
-    const site: Call = { kind: 'rpc', name: 'send_salon_typing', at: 'src/store.js:1' };
-    const table: Call = { kind: 'table', name: 'salon_typing_sent', at: 'mobile/src/x.ts:1' };
+    const app: Call = { kind: 'rpc', name: 'rh_not_yet_made', at: 'mobile/src/stores/lounge.ts:1' };
+    const site: Call = { kind: 'rpc', name: 'rh_not_yet_made', at: 'src/store.js:1' };
+    const table: Call = { kind: 'table', name: 'rh_not_yet_kept', at: 'mobile/src/x.ts:1' };
     expect([missing(app, pending), missing(site, pending), missing(table, pending)]).toEqual([false, true, false]);
     expect(missing(app, [])).toBe(true);
     expect(pendingMaker(app, pending)).toBe('20990101_01_x.sql');

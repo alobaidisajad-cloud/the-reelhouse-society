@@ -4348,6 +4348,43 @@ END;
 $$;
 
 
+--
+-- Name: salon_channel_readable(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.salon_channel_readable(p_topic text) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+  SELECT CASE
+    WHEN p_topic ~ '^lounge-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN EXISTS (
+      SELECT 1 FROM public.lounges l
+       WHERE l.id = substr(p_topic, 8)::uuid
+         AND (l.is_private = false OR EXISTS (
+           SELECT 1 FROM public.lounge_members m
+            WHERE m.lounge_id = l.id AND m.user_id = auth.uid() AND m.status = 'approved')))
+    ELSE false
+  END
+$_$;
+
+
+--
+-- Name: salon_channel_seated(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.salon_channel_seated(p_topic text) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+  SELECT CASE
+    WHEN p_topic ~ '^lounge-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN EXISTS (
+      SELECT 1 FROM public.lounge_members m
+       WHERE m.lounge_id = substr(p_topic, 8)::uuid AND m.user_id = auth.uid() AND m.status = 'approved')
+    ELSE false
+  END
+$_$;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -4421,6 +4458,41 @@ BEGIN
   END IF;
 
   RETURN v_row;
+END;
+$$;
+
+
+--
+-- Name: send_salon_typing(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.send_salon_typing(p_lounge_id uuid) RETURNS boolean
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_handle text;
+BEGIN
+  IF v_uid IS NULL OR NOT EXISTS (
+    SELECT 1 FROM public.lounge_members m
+     WHERE m.lounge_id = p_lounge_id AND m.user_id = v_uid AND m.status = 'approved'
+  ) THEN
+    RETURN false;
+  END IF;
+
+  INSERT INTO public.salon_typing_sent AS t (lounge_id, user_id, sent_at)
+  VALUES (p_lounge_id, v_uid, clock_timestamp())
+  ON CONFLICT (lounge_id, user_id) DO UPDATE SET sent_at = EXCLUDED.sent_at
+   WHERE t.sent_at <= EXCLUDED.sent_at - interval '2 seconds';
+  IF NOT FOUND THEN
+    RETURN false;
+  END IF;
+
+  SELECT p.username INTO v_handle FROM public.profiles p WHERE p.id = v_uid;
+  PERFORM realtime.send(jsonb_build_object('user_id', v_uid, 'username', v_handle), 'typing',
+                        'lounge-' || p_lounge_id::text, true);
+  RETURN true;
 END;
 $$;
 
@@ -5857,6 +5929,17 @@ CREATE TABLE public.reports (
 
 
 --
+-- Name: salon_typing_sent; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.salon_typing_sent (
+    lounge_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    sent_at timestamp with time zone NOT NULL
+);
+
+
+--
 -- Name: user_blocks; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6303,6 +6386,14 @@ ALTER TABLE ONLY public.rank_grants
 
 ALTER TABLE ONLY public.reports
     ADD CONSTRAINT reports_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: salon_typing_sent salon_typing_sent_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.salon_typing_sent
+    ADD CONSTRAINT salon_typing_sent_pkey PRIMARY KEY (lounge_id, user_id);
 
 
 --
@@ -8379,6 +8470,22 @@ ALTER TABLE ONLY public.reports
 
 
 --
+-- Name: salon_typing_sent salon_typing_sent_lounge_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.salon_typing_sent
+    ADD CONSTRAINT salon_typing_sent_lounge_id_fkey FOREIGN KEY (lounge_id) REFERENCES public.lounges(id) ON DELETE CASCADE;
+
+
+--
+-- Name: salon_typing_sent salon_typing_sent_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.salon_typing_sent
+    ADD CONSTRAINT salon_typing_sent_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_blocks user_blocks_blocked_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9591,6 +9698,12 @@ ALTER TABLE public.rank_grants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: salon_typing_sent; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.salon_typing_sent ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: dispatch_saves saves_own; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -9782,6 +9895,7 @@ GRANT ALL ON FUNCTION public.approve_lounge_member(p_lounge_id uuid, p_user_id u
 -- Name: FUNCTION assign_list_item_position(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.assign_list_item_position() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.assign_list_item_position() TO anon;
 GRANT ALL ON FUNCTION public.assign_list_item_position() TO authenticated;
 GRANT ALL ON FUNCTION public.assign_list_item_position() TO service_role;
@@ -9809,6 +9923,7 @@ GRANT ALL ON FUNCTION public.bulk_dismiss_reports(p_report_ids uuid[], p_admin_i
 -- Name: FUNCTION can_annotate_list(p_actor uuid, p_list_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) TO service_role;
@@ -9818,6 +9933,7 @@ GRANT ALL ON FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) TO 
 -- Name: FUNCTION can_annotate_log(p_actor uuid, p_log_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.can_annotate_log(p_actor uuid, p_log_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.can_annotate_log(p_actor uuid, p_log_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.can_annotate_log(p_actor uuid, p_log_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.can_annotate_log(p_actor uuid, p_log_id uuid) TO service_role;
@@ -9827,6 +9943,7 @@ GRANT ALL ON FUNCTION public.can_annotate_log(p_actor uuid, p_log_id uuid) TO se
 -- Name: FUNCTION can_endorse_content(p_actor uuid, p_type text, p_log_id uuid, p_list_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_log_id uuid, p_list_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_log_id uuid, p_list_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_log_id uuid, p_list_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_log_id uuid, p_list_id uuid) TO service_role;
@@ -9836,6 +9953,7 @@ GRANT ALL ON FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_lo
 -- Name: FUNCTION can_view_user_data(target_uid uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.can_view_user_data(target_uid uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.can_view_user_data(target_uid uuid) TO anon;
 GRANT ALL ON FUNCTION public.can_view_user_data(target_uid uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.can_view_user_data(target_uid uuid) TO service_role;
@@ -9845,6 +9963,7 @@ GRANT ALL ON FUNCTION public.can_view_user_data(target_uid uuid) TO service_role
 -- Name: FUNCTION check_interaction_rate_limit(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.check_interaction_rate_limit() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.check_interaction_rate_limit() TO anon;
 GRANT ALL ON FUNCTION public.check_interaction_rate_limit() TO authenticated;
 GRANT ALL ON FUNCTION public.check_interaction_rate_limit() TO service_role;
@@ -9886,6 +10005,7 @@ GRANT ALL ON FUNCTION public.clean_member_words() TO service_role;
 -- Name: FUNCTION create_lounge(p_name text, p_description text, p_is_private boolean); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean) TO anon;
 GRANT ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean) TO service_role;
@@ -9922,6 +10042,7 @@ GRANT ALL ON FUNCTION public.decline_lounge_member(p_lounge_id uuid, p_user_id u
 -- Name: FUNCTION delete_list_cascade(p_list_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.delete_list_cascade(p_list_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.delete_list_cascade(p_list_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.delete_list_cascade(p_list_id uuid) TO service_role;
 
@@ -9946,6 +10067,7 @@ GRANT ALL ON FUNCTION public.derive_username_column() TO service_role;
 -- Name: FUNCTION dispatch_comments_pin_columns(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dispatch_comments_pin_columns() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dispatch_comments_pin_columns() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_comments_pin_columns() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_comments_pin_columns() TO service_role;
@@ -9955,6 +10077,7 @@ GRANT ALL ON FUNCTION public.dispatch_comments_pin_columns() TO service_role;
 -- Name: FUNCTION dispatch_count_cert(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dispatch_count_cert() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dispatch_count_cert() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_count_cert() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_count_cert() TO service_role;
@@ -9964,6 +10087,7 @@ GRANT ALL ON FUNCTION public.dispatch_count_cert() TO service_role;
 -- Name: FUNCTION dispatch_count_comment(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dispatch_count_comment() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dispatch_count_comment() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_count_comment() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_count_comment() TO service_role;
@@ -9973,6 +10097,7 @@ GRANT ALL ON FUNCTION public.dispatch_count_comment() TO service_role;
 -- Name: FUNCTION dispatch_door(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dispatch_door() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dispatch_door() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_door() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_door() TO service_role;
@@ -9998,6 +10123,7 @@ GRANT ALL ON FUNCTION public.dispatch_names(p_kind text, p_title text) TO servic
 -- Name: FUNCTION dispatch_no_hard_delete(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dispatch_no_hard_delete() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dispatch_no_hard_delete() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_no_hard_delete() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_no_hard_delete() TO service_role;
@@ -10015,6 +10141,7 @@ GRANT ALL ON FUNCTION public.dispatch_notify(p_to uuid, p_from uuid, p_type text
 -- Name: FUNCTION dispatch_notify_answer(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dispatch_notify_answer() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dispatch_notify_answer() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_notify_answer() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_notify_answer() TO service_role;
@@ -10024,6 +10151,7 @@ GRANT ALL ON FUNCTION public.dispatch_notify_answer() TO service_role;
 -- Name: FUNCTION dispatch_notify_ballot_closed(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dispatch_notify_ballot_closed() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dispatch_notify_ballot_closed() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_notify_ballot_closed() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_notify_ballot_closed() TO service_role;
@@ -10033,6 +10161,7 @@ GRANT ALL ON FUNCTION public.dispatch_notify_ballot_closed() TO service_role;
 -- Name: FUNCTION dispatch_notify_certify(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dispatch_notify_certify() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dispatch_notify_certify() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_notify_certify() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_notify_certify() TO service_role;
@@ -10042,6 +10171,7 @@ GRANT ALL ON FUNCTION public.dispatch_notify_certify() TO service_role;
 -- Name: FUNCTION dispatch_notify_critique(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dispatch_notify_critique() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dispatch_notify_critique() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_notify_critique() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_notify_critique() TO service_role;
@@ -10051,6 +10181,7 @@ GRANT ALL ON FUNCTION public.dispatch_notify_critique() TO service_role;
 -- Name: FUNCTION dispatch_posts_pin_columns(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dispatch_posts_pin_columns() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dispatch_posts_pin_columns() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_posts_pin_columns() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_posts_pin_columns() TO service_role;
@@ -10060,6 +10191,7 @@ GRANT ALL ON FUNCTION public.dispatch_posts_pin_columns() TO service_role;
 -- Name: FUNCTION dispatch_room_totals(p_user_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dispatch_room_totals(p_user_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dispatch_room_totals(p_user_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.dispatch_room_totals(p_user_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_room_totals(p_user_id uuid) TO service_role;
@@ -10069,6 +10201,7 @@ GRANT ALL ON FUNCTION public.dispatch_room_totals(p_user_id uuid) TO service_rol
 -- Name: FUNCTION dispatch_scrub_departed(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dispatch_scrub_departed() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dispatch_scrub_departed() TO anon;
 GRANT ALL ON FUNCTION public.dispatch_scrub_departed() TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_scrub_departed() TO service_role;
@@ -10078,6 +10211,7 @@ GRANT ALL ON FUNCTION public.dispatch_scrub_departed() TO service_role;
 -- Name: FUNCTION divert_private_notes(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.divert_private_notes() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.divert_private_notes() TO anon;
 GRANT ALL ON FUNCTION public.divert_private_notes() TO authenticated;
 GRANT ALL ON FUNCTION public.divert_private_notes() TO service_role;
@@ -10087,6 +10221,7 @@ GRANT ALL ON FUNCTION public.divert_private_notes() TO service_role;
 -- Name: FUNCTION dossier_certifications_write(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dossier_certifications_write() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dossier_certifications_write() TO anon;
 GRANT ALL ON FUNCTION public.dossier_certifications_write() TO authenticated;
 GRANT ALL ON FUNCTION public.dossier_certifications_write() TO service_role;
@@ -10096,6 +10231,7 @@ GRANT ALL ON FUNCTION public.dossier_certifications_write() TO service_role;
 -- Name: FUNCTION dossier_comments_write(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dossier_comments_write() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dossier_comments_write() TO anon;
 GRANT ALL ON FUNCTION public.dossier_comments_write() TO authenticated;
 GRANT ALL ON FUNCTION public.dossier_comments_write() TO service_role;
@@ -10105,6 +10241,7 @@ GRANT ALL ON FUNCTION public.dossier_comments_write() TO service_role;
 -- Name: FUNCTION dossiers_write(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.dossiers_write() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.dossiers_write() TO anon;
 GRANT ALL ON FUNCTION public.dossiers_write() TO authenticated;
 GRANT ALL ON FUNCTION public.dossiers_write() TO service_role;
@@ -10123,6 +10260,7 @@ GRANT ALL ON FUNCTION public.end_filing(p_post uuid, p_by text) TO service_role;
 -- Name: FUNCTION enforce_log_insert_ceiling(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.enforce_log_insert_ceiling() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.enforce_log_insert_ceiling() TO anon;
 GRANT ALL ON FUNCTION public.enforce_log_insert_ceiling() TO authenticated;
 GRANT ALL ON FUNCTION public.enforce_log_insert_ceiling() TO service_role;
@@ -10132,6 +10270,7 @@ GRANT ALL ON FUNCTION public.enforce_log_insert_ceiling() TO service_role;
 -- Name: FUNCTION enforce_log_tier_fields(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.enforce_log_tier_fields() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.enforce_log_tier_fields() TO anon;
 GRANT ALL ON FUNCTION public.enforce_log_tier_fields() TO authenticated;
 GRANT ALL ON FUNCTION public.enforce_log_tier_fields() TO service_role;
@@ -10141,6 +10280,7 @@ GRANT ALL ON FUNCTION public.enforce_log_tier_fields() TO service_role;
 -- Name: FUNCTION enforce_lounge_identity_freeze(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.enforce_lounge_identity_freeze() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.enforce_lounge_identity_freeze() TO anon;
 GRANT ALL ON FUNCTION public.enforce_lounge_identity_freeze() TO authenticated;
 GRANT ALL ON FUNCTION public.enforce_lounge_identity_freeze() TO service_role;
@@ -10150,6 +10290,7 @@ GRANT ALL ON FUNCTION public.enforce_lounge_identity_freeze() TO service_role;
 -- Name: FUNCTION enforce_not_restricted(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.enforce_not_restricted() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.enforce_not_restricted() TO anon;
 GRANT ALL ON FUNCTION public.enforce_not_restricted() TO authenticated;
 GRANT ALL ON FUNCTION public.enforce_not_restricted() TO service_role;
@@ -10159,6 +10300,7 @@ GRANT ALL ON FUNCTION public.enforce_not_restricted() TO service_role;
 -- Name: FUNCTION enforce_privacy_on_follow(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.enforce_privacy_on_follow() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.enforce_privacy_on_follow() TO anon;
 GRANT ALL ON FUNCTION public.enforce_privacy_on_follow() TO authenticated;
 GRANT ALL ON FUNCTION public.enforce_privacy_on_follow() TO service_role;
@@ -10168,6 +10310,7 @@ GRANT ALL ON FUNCTION public.enforce_privacy_on_follow() TO service_role;
 -- Name: FUNCTION enforce_profile_identity_freeze(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.enforce_profile_identity_freeze() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.enforce_profile_identity_freeze() TO anon;
 GRANT ALL ON FUNCTION public.enforce_profile_identity_freeze() TO authenticated;
 GRANT ALL ON FUNCTION public.enforce_profile_identity_freeze() TO service_role;
@@ -10177,6 +10320,7 @@ GRANT ALL ON FUNCTION public.enforce_profile_identity_freeze() TO service_role;
 -- Name: FUNCTION enforce_tier_gate(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.enforce_tier_gate() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.enforce_tier_gate() TO anon;
 GRANT ALL ON FUNCTION public.enforce_tier_gate() TO authenticated;
 GRANT ALL ON FUNCTION public.enforce_tier_gate() TO service_role;
@@ -10186,6 +10330,7 @@ GRANT ALL ON FUNCTION public.enforce_tier_gate() TO service_role;
 -- Name: FUNCTION enforce_username_policy(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.enforce_username_policy() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.enforce_username_policy() TO anon;
 GRANT ALL ON FUNCTION public.enforce_username_policy() TO authenticated;
 GRANT ALL ON FUNCTION public.enforce_username_policy() TO service_role;
@@ -10203,6 +10348,7 @@ GRANT ALL ON FUNCTION public.freeze_closed_ballots() TO service_role;
 -- Name: FUNCTION get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO service_role;
@@ -10230,6 +10376,7 @@ GRANT ALL ON FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text, p
 -- Name: FUNCTION get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO service_role;
@@ -10266,6 +10413,7 @@ GRANT ALL ON FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[],
 -- Name: FUNCTION get_priority_reports(p_limit integer, p_cursor_count bigint, p_cursor_created timestamp with time zone, p_cursor_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.get_priority_reports(p_limit integer, p_cursor_count bigint, p_cursor_created timestamp with time zone, p_cursor_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_priority_reports(p_limit integer, p_cursor_count bigint, p_cursor_created timestamp with time zone, p_cursor_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_priority_reports(p_limit integer, p_cursor_count bigint, p_cursor_created timestamp with time zone, p_cursor_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_priority_reports(p_limit integer, p_cursor_count bigint, p_cursor_created timestamp with time zone, p_cursor_id uuid) TO service_role;
@@ -10275,6 +10423,7 @@ GRANT ALL ON FUNCTION public.get_priority_reports(p_limit integer, p_cursor_coun
 -- Name: FUNCTION get_profile_counts(p_user_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.get_profile_counts(p_user_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_profile_counts(p_user_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_profile_counts(p_user_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_profile_counts(p_user_id uuid) TO service_role;
@@ -10284,6 +10433,7 @@ GRANT ALL ON FUNCTION public.get_profile_counts(p_user_id uuid) TO service_role;
 -- Name: FUNCTION get_profile_metrics(uid uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.get_profile_metrics(uid uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_profile_metrics(uid uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_profile_metrics(uid uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_profile_metrics(uid uuid) TO service_role;
@@ -10293,6 +10443,7 @@ GRANT ALL ON FUNCTION public.get_profile_metrics(uid uuid) TO service_role;
 -- Name: FUNCTION get_public_profile_analytics(p_user_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.get_public_profile_analytics(p_user_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_public_profile_analytics(p_user_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_public_profile_analytics(p_user_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_public_profile_analytics(p_user_id uuid) TO service_role;
@@ -10311,6 +10462,7 @@ GRANT ALL ON FUNCTION public.get_report_evidence(p_report_id uuid) TO service_ro
 -- Name: FUNCTION get_salon_member_faces(p_lounge_ids uuid[]); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) TO anon;
 GRANT ALL ON FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) TO authenticated;
 GRANT ALL ON FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) TO service_role;
@@ -10372,6 +10524,7 @@ GRANT ALL ON FUNCTION public.grant_entitlement(p_user_id uuid, p_tier text, p_so
 -- Name: FUNCTION handle_follow_count_change(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.handle_follow_count_change() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.handle_follow_count_change() TO anon;
 GRANT ALL ON FUNCTION public.handle_follow_count_change() TO authenticated;
 GRANT ALL ON FUNCTION public.handle_follow_count_change() TO service_role;
@@ -10381,6 +10534,7 @@ GRANT ALL ON FUNCTION public.handle_follow_count_change() TO service_role;
 -- Name: FUNCTION handle_is_unwelcome(p_handle text); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.handle_is_unwelcome(p_handle text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.handle_is_unwelcome(p_handle text) TO anon;
 GRANT ALL ON FUNCTION public.handle_is_unwelcome(p_handle text) TO authenticated;
 GRANT ALL ON FUNCTION public.handle_is_unwelcome(p_handle text) TO service_role;
@@ -10390,6 +10544,7 @@ GRANT ALL ON FUNCTION public.handle_is_unwelcome(p_handle text) TO service_role;
 -- Name: FUNCTION handle_new_user(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.handle_new_user() TO anon;
 GRANT ALL ON FUNCTION public.handle_new_user() TO authenticated;
 GRANT ALL ON FUNCTION public.handle_new_user() TO service_role;
@@ -10399,6 +10554,7 @@ GRANT ALL ON FUNCTION public.handle_new_user() TO service_role;
 -- Name: FUNCTION handle_privacy_switch(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.handle_privacy_switch() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.handle_privacy_switch() TO anon;
 GRANT ALL ON FUNCTION public.handle_privacy_switch() TO authenticated;
 GRANT ALL ON FUNCTION public.handle_privacy_switch() TO service_role;
@@ -10408,6 +10564,7 @@ GRANT ALL ON FUNCTION public.handle_privacy_switch() TO service_role;
 -- Name: FUNCTION handle_user_deletion(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.handle_user_deletion() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.handle_user_deletion() TO anon;
 GRANT ALL ON FUNCTION public.handle_user_deletion() TO authenticated;
 GRANT ALL ON FUNCTION public.handle_user_deletion() TO service_role;
@@ -10436,6 +10593,7 @@ GRANT ALL ON FUNCTION public.hidden_authors() TO service_role;
 -- Name: FUNCTION increment_dossier_views(dossier_uuid uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.increment_dossier_views(dossier_uuid uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.increment_dossier_views(dossier_uuid uuid) TO anon;
 GRANT ALL ON FUNCTION public.increment_dossier_views(dossier_uuid uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.increment_dossier_views(dossier_uuid uuid) TO service_role;
@@ -10445,6 +10603,7 @@ GRANT ALL ON FUNCTION public.increment_dossier_views(dossier_uuid uuid) TO servi
 -- Name: FUNCTION is_hidden_by(viewer_id uuid, author_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.is_hidden_by(viewer_id uuid, author_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.is_hidden_by(viewer_id uuid, author_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.is_hidden_by(viewer_id uuid, author_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.is_hidden_by(viewer_id uuid, author_id uuid) TO service_role;
@@ -10454,6 +10613,7 @@ GRANT ALL ON FUNCTION public.is_hidden_by(viewer_id uuid, author_id uuid) TO ser
 -- Name: FUNCTION is_lounge_member_or_host(_lounge_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.is_lounge_member_or_host(_lounge_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.is_lounge_member_or_host(_lounge_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.is_lounge_member_or_host(_lounge_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.is_lounge_member_or_host(_lounge_id uuid) TO service_role;
@@ -10463,6 +10623,7 @@ GRANT ALL ON FUNCTION public.is_lounge_member_or_host(_lounge_id uuid) TO servic
 -- Name: FUNCTION is_user_not_banned(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.is_user_not_banned() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.is_user_not_banned() TO anon;
 GRANT ALL ON FUNCTION public.is_user_not_banned() TO authenticated;
 GRANT ALL ON FUNCTION public.is_user_not_banned() TO service_role;
@@ -10472,6 +10633,7 @@ GRANT ALL ON FUNCTION public.is_user_not_banned() TO service_role;
 -- Name: FUNCTION join_public_lounge(p_lounge_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.join_public_lounge(p_lounge_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.join_public_lounge(p_lounge_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.join_public_lounge(p_lounge_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.join_public_lounge(p_lounge_id uuid) TO service_role;
@@ -10586,6 +10748,7 @@ GRANT ALL ON FUNCTION public.mark_film_sync_failed(p_film_id integer) TO service
 -- Name: FUNCTION may_file(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.may_file() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.may_file() TO anon;
 GRANT ALL ON FUNCTION public.may_file() TO authenticated;
 GRANT ALL ON FUNCTION public.may_file() TO service_role;
@@ -10613,6 +10776,7 @@ GRANT ALL ON FUNCTION public.normalize_viewing_history(p_history jsonb, p_depth 
 -- Name: FUNCTION note_film(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.note_film() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.note_film() TO anon;
 GRANT ALL ON FUNCTION public.note_film() TO authenticated;
 GRANT ALL ON FUNCTION public.note_film() TO service_role;
@@ -10630,6 +10794,7 @@ GRANT ALL ON FUNCTION public.note_film_verdict() TO service_role;
 -- Name: FUNCTION notify_on_dossier_certify(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.notify_on_dossier_certify() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.notify_on_dossier_certify() TO anon;
 GRANT ALL ON FUNCTION public.notify_on_dossier_certify() TO authenticated;
 GRANT ALL ON FUNCTION public.notify_on_dossier_certify() TO service_role;
@@ -10639,6 +10804,7 @@ GRANT ALL ON FUNCTION public.notify_on_dossier_certify() TO service_role;
 -- Name: FUNCTION notify_on_dossier_comment(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.notify_on_dossier_comment() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.notify_on_dossier_comment() TO anon;
 GRANT ALL ON FUNCTION public.notify_on_dossier_comment() TO authenticated;
 GRANT ALL ON FUNCTION public.notify_on_dossier_comment() TO service_role;
@@ -10648,6 +10814,7 @@ GRANT ALL ON FUNCTION public.notify_on_dossier_comment() TO service_role;
 -- Name: FUNCTION notify_on_interaction(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.notify_on_interaction() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.notify_on_interaction() TO anon;
 GRANT ALL ON FUNCTION public.notify_on_interaction() TO authenticated;
 GRANT ALL ON FUNCTION public.notify_on_interaction() TO service_role;
@@ -10657,6 +10824,7 @@ GRANT ALL ON FUNCTION public.notify_on_interaction() TO service_role;
 -- Name: FUNCTION notify_on_list_comment(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.notify_on_list_comment() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.notify_on_list_comment() TO anon;
 GRANT ALL ON FUNCTION public.notify_on_list_comment() TO authenticated;
 GRANT ALL ON FUNCTION public.notify_on_list_comment() TO service_role;
@@ -10666,6 +10834,7 @@ GRANT ALL ON FUNCTION public.notify_on_list_comment() TO service_role;
 -- Name: FUNCTION notify_on_log_comment(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.notify_on_log_comment() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.notify_on_log_comment() TO anon;
 GRANT ALL ON FUNCTION public.notify_on_log_comment() TO authenticated;
 GRANT ALL ON FUNCTION public.notify_on_log_comment() TO service_role;
@@ -10675,6 +10844,7 @@ GRANT ALL ON FUNCTION public.notify_on_log_comment() TO service_role;
 -- Name: FUNCTION profile_tier_weight(p_tier text, p_role text, p_is_founding boolean); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.profile_tier_weight(p_tier text, p_role text, p_is_founding boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.profile_tier_weight(p_tier text, p_role text, p_is_founding boolean) TO anon;
 GRANT ALL ON FUNCTION public.profile_tier_weight(p_tier text, p_role text, p_is_founding boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.profile_tier_weight(p_tier text, p_role text, p_is_founding boolean) TO service_role;
@@ -10684,6 +10854,7 @@ GRANT ALL ON FUNCTION public.profile_tier_weight(p_tier text, p_role text, p_is_
 -- Name: FUNCTION protect_lounge_member_status(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.protect_lounge_member_status() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.protect_lounge_member_status() TO anon;
 GRANT ALL ON FUNCTION public.protect_lounge_member_status() TO authenticated;
 GRANT ALL ON FUNCTION public.protect_lounge_member_status() TO service_role;
@@ -10693,6 +10864,7 @@ GRANT ALL ON FUNCTION public.protect_lounge_member_status() TO service_role;
 -- Name: FUNCTION protect_privileged_profile_fields(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.protect_privileged_profile_fields() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.protect_privileged_profile_fields() TO anon;
 GRANT ALL ON FUNCTION public.protect_privileged_profile_fields() TO authenticated;
 GRANT ALL ON FUNCTION public.protect_privileged_profile_fields() TO service_role;
@@ -10702,6 +10874,7 @@ GRANT ALL ON FUNCTION public.protect_privileged_profile_fields() TO service_role
 -- Name: FUNCTION protect_video_review_metrics(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.protect_video_review_metrics() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.protect_video_review_metrics() TO anon;
 GRANT ALL ON FUNCTION public.protect_video_review_metrics() TO authenticated;
 GRANT ALL ON FUNCTION public.protect_video_review_metrics() TO service_role;
@@ -10711,6 +10884,7 @@ GRANT ALL ON FUNCTION public.protect_video_review_metrics() TO service_role;
 -- Name: FUNCTION public_prefs(p jsonb); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.public_prefs(p jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.public_prefs(p jsonb) TO anon;
 GRANT ALL ON FUNCTION public.public_prefs(p jsonb) TO authenticated;
 GRANT ALL ON FUNCTION public.public_prefs(p jsonb) TO service_role;
@@ -10739,6 +10913,7 @@ GRANT ALL ON FUNCTION public.record_gate_event(p_event text, p_feature_id text, 
 -- Name: FUNCTION recount_lounge_members(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.recount_lounge_members() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.recount_lounge_members() TO anon;
 GRANT ALL ON FUNCTION public.recount_lounge_members() TO authenticated;
 GRANT ALL ON FUNCTION public.recount_lounge_members() TO service_role;
@@ -10756,6 +10931,7 @@ GRANT ALL ON FUNCTION public.refresh_film_verdict(p_film_id integer) TO service_
 -- Name: FUNCTION register_push_token(p_token text, p_platform text); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.register_push_token(p_token text, p_platform text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.register_push_token(p_token text, p_platform text) TO anon;
 GRANT ALL ON FUNCTION public.register_push_token(p_token text, p_platform text) TO authenticated;
 GRANT ALL ON FUNCTION public.register_push_token(p_token text, p_platform text) TO service_role;
@@ -10784,6 +10960,7 @@ GRANT ALL ON FUNCTION public.remove_lounge_member(p_lounge_id uuid, p_user_id uu
 -- Name: FUNCTION replace_list_items(p_list_id uuid, p_items jsonb); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.replace_list_items(p_list_id uuid, p_items jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.replace_list_items(p_list_id uuid, p_items jsonb) TO anon;
 GRANT ALL ON FUNCTION public.replace_list_items(p_list_id uuid, p_items jsonb) TO authenticated;
 GRANT ALL ON FUNCTION public.replace_list_items(p_list_id uuid, p_items jsonb) TO service_role;
@@ -10802,6 +10979,7 @@ GRANT ALL ON FUNCTION public.request_account_deletion() TO service_role;
 -- Name: FUNCTION request_lounge_membership(p_lounge_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.request_lounge_membership(p_lounge_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.request_lounge_membership(p_lounge_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.request_lounge_membership(p_lounge_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.request_lounge_membership(p_lounge_id uuid) TO service_role;
@@ -10820,9 +10998,30 @@ GRANT ALL ON FUNCTION public.resolve_moderation_report_v2(p_report_id uuid, p_ac
 -- Name: FUNCTION rls_auto_enable(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.rls_auto_enable() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.rls_auto_enable() TO anon;
 GRANT ALL ON FUNCTION public.rls_auto_enable() TO authenticated;
 GRANT ALL ON FUNCTION public.rls_auto_enable() TO service_role;
+
+
+--
+-- Name: FUNCTION salon_channel_readable(p_topic text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.salon_channel_readable(p_topic text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.salon_channel_readable(p_topic text) TO anon;
+GRANT ALL ON FUNCTION public.salon_channel_readable(p_topic text) TO authenticated;
+GRANT ALL ON FUNCTION public.salon_channel_readable(p_topic text) TO service_role;
+
+
+--
+-- Name: FUNCTION salon_channel_seated(p_topic text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.salon_channel_seated(p_topic text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.salon_channel_seated(p_topic text) TO anon;
+GRANT ALL ON FUNCTION public.salon_channel_seated(p_topic text) TO authenticated;
+GRANT ALL ON FUNCTION public.salon_channel_seated(p_topic text) TO service_role;
 
 
 --
@@ -10841,6 +11040,16 @@ GRANT ALL ON TABLE public.lists TO service_role;
 REVOKE ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean) TO service_role;
+
+
+--
+-- Name: FUNCTION send_salon_typing(p_lounge_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.send_salon_typing(p_lounge_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.send_salon_typing(p_lounge_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.send_salon_typing(p_lounge_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.send_salon_typing(p_lounge_id uuid) TO service_role;
 
 
 --
@@ -10874,6 +11083,7 @@ GRANT ALL ON FUNCTION public.set_lounge_member_status(p_lounge_id uuid, p_user_i
 -- Name: FUNCTION set_updated_at(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.set_updated_at() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.set_updated_at() TO anon;
 GRANT ALL ON FUNCTION public.set_updated_at() TO authenticated;
 GRANT ALL ON FUNCTION public.set_updated_at() TO service_role;
@@ -10883,6 +11093,7 @@ GRANT ALL ON FUNCTION public.set_updated_at() TO service_role;
 -- Name: FUNCTION sever_follows_on_block(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.sever_follows_on_block() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.sever_follows_on_block() TO anon;
 GRANT ALL ON FUNCTION public.sever_follows_on_block() TO authenticated;
 GRANT ALL ON FUNCTION public.sever_follows_on_block() TO service_role;
@@ -10917,6 +11128,7 @@ GRANT ALL ON FUNCTION public.taste_shape(p_user_id uuid) TO service_role;
 -- Name: FUNCTION tg_notify_push(); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.tg_notify_push() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.tg_notify_push() TO anon;
 GRANT ALL ON FUNCTION public.tg_notify_push() TO authenticated;
 GRANT ALL ON FUNCTION public.tg_notify_push() TO service_role;
@@ -10926,6 +11138,7 @@ GRANT ALL ON FUNCTION public.tg_notify_push() TO service_role;
 -- Name: FUNCTION tier_weight(t text); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.tier_weight(t text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.tier_weight(t text) TO anon;
 GRANT ALL ON FUNCTION public.tier_weight(t text) TO authenticated;
 GRANT ALL ON FUNCTION public.tier_weight(t text) TO service_role;
@@ -10944,6 +11157,7 @@ GRANT ALL ON FUNCTION public.toggle_dossier_certify(dossier_uuid uuid) TO servic
 -- Name: FUNCTION update_my_preferences(p_preferences jsonb); Type: ACL; Schema: public; Owner: -
 --
 
+REVOKE ALL ON FUNCTION public.update_my_preferences(p_preferences jsonb) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.update_my_preferences(p_preferences jsonb) TO anon;
 GRANT ALL ON FUNCTION public.update_my_preferences(p_preferences jsonb) TO authenticated;
 GRANT ALL ON FUNCTION public.update_my_preferences(p_preferences jsonb) TO service_role;
@@ -11829,6 +12043,13 @@ GRANT ALL ON TABLE public.rank_grants TO service_role;
 GRANT SELECT ON TABLE public.reports TO anon;
 GRANT SELECT ON TABLE public.reports TO authenticated;
 GRANT ALL ON TABLE public.reports TO service_role;
+
+
+--
+-- Name: TABLE salon_typing_sent; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.salon_typing_sent TO service_role;
 
 
 --

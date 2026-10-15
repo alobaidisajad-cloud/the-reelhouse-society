@@ -21,13 +21,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types, avif_autodetection) VALUES ('avatars', 'avatars', 't', 2097152, '{image/jpeg,image/png,image/webp,image/gif}'::text[], 'f');
 
 -- ── row-level security on tables outside public
+CREATE POLICY "a salon's readers receive its channel" ON realtime.messages AS PERMISSIVE FOR SELECT TO authenticated USING (public.salon_channel_readable(realtime.topic()));
+CREATE POLICY "a seated member shares their presence" ON realtime.messages AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK (((extension = 'presence'::text) AND public.salon_channel_seated(realtime.topic())));
+CREATE POLICY "members receive the notices channel" ON realtime.messages AS PERMISSIVE FOR SELECT TO authenticated USING ((realtime.topic() = 'global_notifications'::text));
 CREATE POLICY avatars_delete_own ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated USING (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text)));
 CREATE POLICY avatars_read_own ON storage.objects AS PERMISSIVE FOR SELECT TO authenticated USING (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text)));
 CREATE POLICY avatars_replace_own ON storage.objects AS PERMISSIVE FOR UPDATE TO authenticated USING (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))) WITH CHECK (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text) AND (name ~* '\.(png|jpe?g|webp|gif)$'::text)));
 CREATE POLICY avatars_upload_own ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text) AND (name ~* '\.(png|jpe?g|webp|gif)$'::text)));
 
 -- ── default privileges that name no schema
--- (none)
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 
 -- ── scheduled jobs
 SELECT cron.schedule_in_database('freeze-closed-ballots', '*/5 * * * *', 'SELECT public.freeze_closed_ballots();', 'postgres', 'postgres', 't');

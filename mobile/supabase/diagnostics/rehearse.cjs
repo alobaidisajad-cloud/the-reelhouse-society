@@ -31,8 +31,9 @@ if (require.main === module) {
   const url = readPrivate('SUPABASE_DB_URL');
   if (!url) { console.error(`REFUSED: no SUPABASE_DB_URL in ${privateFile()}`); process.exit(1); }
   const r = spawnSync('psql', [url, ...p.psqlArgs], { encoding: 'utf8', env: { ...process.env, PGOPTIONS: p.pgoptions } });
-  process.stdout.write((r.stdout || '').replace(/\r/g, ''));
+  // The cases (psql's notices) first, then the verdict, so the verdict is the last line seen.
   process.stderr.write((r.stderr || '').split(url).join('***'));
+  process.stdout.write((r.stdout || '').replace(/\r/g, ''));
   console.log(`\nexit ${r.status}`);
   process.exit(r.status ?? 1);
 }

@@ -154,10 +154,10 @@ describe('a rehearsal on production', () => {
   };
 
   it('runs one rehearsal file, under the time limits, with the pending train when asked', () => {
-    const p = rehearsePlan(['train_0_rehearsal.sql', '--with-train']);
+    const p = rehearsePlan(['a_new_function_is_closed_until_granted_rehearsal.sql', '--with-train']);
     expect(p.pgoptions).toBe('-c lock_timeout=2s -c statement_timeout=30s');
     expect(p.psqlArgs?.slice(0, 8)).toEqual(['-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-v', 'with_train=1']);
-    expect(p.psqlArgs?.[p.psqlArgs.length - 1]).toMatch(/[\\/]diagnostics[\\/]train_0_rehearsal\.sql$/);
+    expect(p.psqlArgs?.[p.psqlArgs.length - 1]).toMatch(/[\\/]diagnostics[\\/]a_new_function_is_closed_until_granted_rehearsal\.sql$/);
     expect(rehearsePlan(['the_vault_rehearsal.sql']).psqlArgs).not.toContain('with_train=1');
   });
 

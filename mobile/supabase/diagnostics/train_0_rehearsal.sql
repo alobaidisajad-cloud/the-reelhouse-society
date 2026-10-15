@@ -1,11 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- train_0_rehearsal.sql — 20261015_01 and 20261015_02. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   psql "$SUPABASE_DB_URL" -X -q -t -A -v with_train=1 -f mobile/supabase/diagnostics/train_0_rehearsal.sql
+--   node mobile/supabase/diagnostics/rehearse.cjs train_0_rehearsal.sql
 --
--- With with_train set, the train's two files are applied first, inside this
--- transaction (production, before the apply); without it they must already be
--- applied (db-integration.yml, after up-down-up). Then:
+-- Both files are applied on production; this shows they still hold there, and
+-- on every sealed copy (db-integration.yml):
 --   - no function in public can be run by a role with no grant, nor can one
 --     made now, while members keep the functions they call;
 --   - a salon's channel is read by whoever may read its messages, and a seated
@@ -18,10 +17,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261015_01_a_salon_channel_follows_the_salon.sql
-\ir ../../../supabase/migrations/20261015_02_no_function_is_open_to_everyone.sql
-\endif
 
 -- ── no function open to everyone ──────────────────────────────────────────────
 CREATE ROLE rh_nobody NOLOGIN;
