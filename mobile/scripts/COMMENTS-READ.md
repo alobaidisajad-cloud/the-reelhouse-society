@@ -251,6 +251,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
 | src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: the lids lie beside the picture, outside the points’ layer, over the whole figure; the still one shows whole |
 | src/components/__tests__/busterRegister.test.ts | 2026-10-04 | edited: every layer of every picture, at every density |
+| src/components/__tests__/theHouseSignsWithItsLogo.test.tsx | 2026-10-15 | true as written |
 | src/components/__tests__/theInitiationLeavesAfterItsFade.test.tsx | 2026-10-15 | new: a beat and the door leave after their fade |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
@@ -477,7 +478,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/measure.ts | 2026-09-30 | new |
 | src/components/lobby/PairBills.tsx | 2026-09-30 | new; "of one height" held only side by side |
 | src/components/lobby/parts.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
-| src/components/lobby/RankBill.tsx | 2026-09-30 | new |
+| src/components/lobby/RankBill.tsx | 2026-10-15 | edited: the banner draws the house's logo, its rays in brass |
 | src/components/lobby/wallRead.ts | 2026-09-30 | new |
 | src/components/lobby/words.ts | 2026-09-30 | new; named a test that did not exist |
 | src/components/log/__tests__/editorialDesk.test.tsx | — |  |
@@ -539,7 +540,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/CreateLoungeSheet.tsx | 2026-10-03 | edited: name and description name their caps, boxes and counters |
 | src/components/lounge/EmptyMyLounges.tsx | 2026-10-01 | contrast history to its reason |
 | src/components/lounge/JoinedLoungeCard.tsx | 2026-10-03 | read whole: says "more than 99" where the server stops counting |
-| src/components/lounge/LoungeGate.tsx | 2026-10-15 | centres between the bars |
+| src/components/lounge/LoungeGate.tsx | 2026-10-15 | edited: the gate's crest is the house's logo |
 | src/components/lounge/LoungeSettingsPanel.tsx | 2026-10-15 | the sheet slides away through Presence |
 | src/components/lounge/LoungeStyles.ts | 2026-10-01 | true as written |
 | src/components/lounge/loungeTabStyles.ts | 2026-10-01 | contrast history to its reasons |

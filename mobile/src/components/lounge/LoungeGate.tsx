@@ -3,7 +3,8 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
 import { Arrive } from '@/src/components/Arrive';
-import { Eye, Sparkles } from 'lucide-react-native';
+import { Sparkles } from 'lucide-react-native';
+import { MasterLogo } from '@/src/components/MasterLogo';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 
@@ -24,7 +25,7 @@ export function LoungeGate({ mark }: { mark?: React.ReactNode } = {}) {
           <View style={s.gateCrestWrap}>
             <CrestGlow />
             <View style={s.gateCrest}>
-              <Eye size={28} color={colors.sepia} strokeWidth={1} />
+              <MasterLogo size={28} />
             </View>
           </View>
 

@@ -75,6 +75,7 @@ Decisions, as of 2026-09-28:
 | `src/components/critique/__tests__/oneCritiqueRow.guard.test.ts` | Every screen that draws a member's critique (its spoken name, its DELETE) draws it through the one `CritiqueRow`. |
 | `src/components/__tests__/authRouting.test.ts` | Every route to `/login` says which form it opens. |
 | `src/components/__tests__/oneRankMark.test.ts` | The rank mark is drawn in one place; no surface draws its own. |
+| `src/components/__tests__/theHouseSignsWithItsLogo.test.tsx` | Which files import a stand-in eye (ReelEyeIcon, lucide's Eye): an import is the spelling of the rule. What the banner draws is rendered, in the same file. |
 | `src/components/__tests__/aTabDrawsItsIconOnce.test.tsx` | No file sets `tabBarIcon`, and every tab the bar shows names its own button: a spelling that brings back React Navigation's double icon. What a tab draws is rendered, in the same file. |
 | `src/components/__tests__/overlayElevation.test.ts` | Every overlay out-ranks what it covers in Android's elevation order (a browser paints in DOM order, so no drawing shows it). |
 | `src/components/__tests__/aLabelIsSpoken.test.ts` | Every View that carries an accessibility label or role is `accessible`, or a container whose children are. |

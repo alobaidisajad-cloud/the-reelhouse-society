@@ -12,7 +12,7 @@ import Svg, { Line } from 'react-native-svg';
 import { useRouter, type Href } from 'expo-router';
 import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
-import { ReelEyeIcon } from '@/src/components/ReelEyeIcon';
+import { MasterLogo } from '@/src/components/MasterLogo';
 import { colors } from '@/src/theme/theme';
 import { openSociety } from '@/src/utils/openSociety';
 import type { Rank } from '@/src/components/RankBadge';
@@ -82,8 +82,8 @@ export const RankBill = memo(function RankBill({ plan, viewer }: { plan: WallPla
     return (
       <View style={[s.recruit, plan.recruitStacked && s.recruitStacked]}>
         <Halftone opacity={0.08} />
-        <Rays color={colors.crimson} strength={0.12} cx={WALL.recruitPad + WALL.recruitEye / 2} cy={50} radius={130} />
-        <ReelEyeIcon size={WALL.recruitEye} color={colors.crimson} />
+        <Rays color={colors.sepia} strength={0.12} cx={WALL.recruitPad + WALL.recruitEye / 2} cy={50} radius={130} />
+        <MasterLogo size={WALL.recruitEye} />
         <View style={[s.recruitWords, plan.recruitStacked && s.recruitWordsStacked]} accessible accessibilityRole="header"
           accessibilityLabel={`${lines.join(' ')}. ${sub.join(' ')}`}>
           {lines.map((l) => <HouseLine key={l} type="recruitName" text={l} room={room} style={[s.recruitName, plan.recruitStacked && s.center]} spoken={false} />)}
