@@ -441,7 +441,11 @@ export default function LoungeRoomScreen() {
 
   const activeLounge = localLounge || lounges.find(l => l.id === id);
   const messagesLoading = useLoungeStore(s => s.loading);
-  const readyMark = useScreenReady('room', notFound || loadFailed || (!!activeLounge && (currentMessages.length > 0 || !messagesLoading)));
+  // Failed: the room could not be asked for, and nothing of it is held to show.
+  const roomLost = !notFound && loadFailed && !lounges.some((l) => l.id === id);
+  const readyMark = useScreenReady('room',
+    roomLost ? 'failed'
+      : notFound || loadFailed || (!!activeLounge && (currentMessages.length > 0 || !messagesLoading)) ? 'ready' : 'reading');
   const isCreator = activeLounge?.creator_id === user?.id;
   const isApproved = myStatus === 'approved' || isCreator;
   const isMuted = myStatus === 'muted';

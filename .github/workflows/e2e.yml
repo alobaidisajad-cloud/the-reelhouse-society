@@ -348,5 +348,8 @@ jobs:
             ${{ runner.temp }}/app-crashes.txt
             ${{ runner.temp }}/splash-handoff.txt
             ${{ runner.temp }}/animation-waits.txt
+            ${{ runner.temp }}/phone-runtime.json
+            ${{ runner.temp }}/runtime-dump.txt
+            ${{ runner.temp }}/screen-times.txt
             ${{ runner.temp }}/memory.txt
           if-no-files-found: ignore

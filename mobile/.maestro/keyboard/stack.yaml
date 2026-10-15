@@ -7,8 +7,17 @@ appId: com.reelhouse.society
 - runFlow: ../subflows/sign_in.yaml
 - tapOn:
     id: "reels-tab"
-# The Reel opens on its logs; the stacks and the form's door are one over.
+# The Reel opens on its logs (the seed's among them: e2e/db/seed.mjs); the
+# stacks, the seed's own, and the form's door are one over.
+- extendedWaitUntil:
+    visible:
+      id: "reel-log"
+    timeout: 20000
 - tapOn: "Stacks tab"
+- extendedWaitUntil:
+    visible:
+      id: "reel-stack"
+    timeout: 15000
 - extendedWaitUntil:
     visible:
       id: "reel-curate-stack"

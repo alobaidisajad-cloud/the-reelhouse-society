@@ -1,14 +1,16 @@
 /**
  * screenTimes.test.ts — the E2E run's screen times are read from the device
- * log as the workflow writes it, and the ceilings can say no.
+ * log as the workflow writes it, and the ceilings can say no; so can a screen
+ * whose read failed.
  *
  * screen-times.mjs is run as run-flows.sh runs it, on log lines in logcat's
  * threadtime shape, the way useScreenReady's e2eTrace writes them.
  */
 import { spawnSync } from 'child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { pathToFileURL } from 'url';
 
 const SCRIPT = join(__dirname, '..', 'screen-times.mjs');
 let dir: string;
@@ -77,5 +79,46 @@ describe('screen-times.mjs', () => {
   it('a gate with nothing to read fails, rather than passing on an empty log', () => {
     expect(run('', { lobby: 3000 }).code).toBe(1);
     expect(run('').code).toBe(0);
+  });
+});
+
+describe('a screen whose read failed', () => {
+  const failed = (name: string, at: string) =>
+    `10-02 ${at}  4321  4377 W ReactNativeJS: [e2e] screen.failed {"name":"${name}","ms":300}`;
+  // run-flows.sh's flow-times: each flow, its attempt, and the device clock as it began.
+  const FLOWS = ['error_recovery\t1\t10-02 18:00:00.000', 'offline_resilience\t1\t10-02 18:05:00.000', 'session\t1\t10-02 18:10:00.000'];
+  const withFlows = (log: string, ...extra: string[]) => {
+    writeFileSync(join(dir, 'flow-times.txt'), FLOWS.join('\n'));
+    return run(log, undefined, '--flow-times', join(dir, 'flow-times.txt'), ...extra);
+  };
+
+  it('fails the run, without ceilings too, naming the screen and the flow — the Dispatch of build 41', () => {
+    const { code, out } = withFlows([LOG, failed('dispatch', '18:01:30.000')].join('\n'));
+    expect(code).toBe(1);
+    expect(out).toContain('✗ dispatch could not read during error_recovery');
+    // Its time is no screen time: a failure is not a load.
+    expect(out).not.toMatch(/^dispatch\s/m);
+  });
+
+  it('is the point in a flow that takes the network away, and is said, not failed', () => {
+    const { code, out } = withFlows([LOG, failed('film', '18:06:00.000')].join('\n'));
+    expect(code).toBe(0);
+    expect(out).toContain('(1 failed read in flows that take the network away on purpose: offline_resilience)');
+  });
+
+  it('before any flow (the launch with animations on) it fails too', () => {
+    expect(withFlows(failed('welcome', '17:59:00.000')).out).toContain('✗ welcome could not read during before the first flow');
+  });
+
+  it('the flows that take the network away are exactly the list it spares', () => {
+    const r = spawnSync(process.execPath, ['--input-type=module', '-e',
+      `import(${JSON.stringify(pathToFileURL(SCRIPT).href)}).then((m) => console.log(JSON.stringify(m.PLANTS_FAILURES)))`], { encoding: 'utf8' });
+    const spared = JSON.parse(r.stdout);
+    const flowDir = join(__dirname, '..', '..', '.maestro');
+    const cutting = readdirSync(flowDir).filter((f) => f.endsWith('.yaml'))
+      .filter((f) => /^\s*-\s*toggleAirplaneMode\b/m.test(readFileSync(join(flowDir, f), 'utf8')))
+      .map((f) => f.replace(/\.yaml$/, ''));
+    expect(cutting.length).toBeGreaterThan(0);
+    expect(spared).toEqual(cutting);
   });
 });

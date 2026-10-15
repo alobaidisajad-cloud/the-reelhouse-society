@@ -20,6 +20,9 @@ jest.mock('expo-router', () => ({
   useFocusEffect: () => {},
 }));
 jest.mock('@react-navigation/native', () => ({ useScrollToTop: jest.fn(), useIsFocused: () => true }));
+/** What the screen tells the E2E run (silent in a member's build). */
+const mockTrace = jest.fn();
+jest.mock('@/src/utils/e2eTrace', () => ({ E2E_BUILD: false, e2eTrace: (...a: unknown[]) => mockTrace(...a) }));
 jest.mock('@shopify/flash-list', () => require('@/mockups/tabs/flashListMock').makeFlashListMock());
 jest.mock('@/src/stores/auth', () => {
   const s = { isAuthenticated: true, user: { id: 'me', username: 'kane', role: 'archivist', tier: 'archivist', preferences: {} } };
@@ -93,9 +96,14 @@ beforeEach(() => {
   toast().error.mockClear();
 });
 
+const screenSaid = () => mockTrace.mock.calls.filter(([e]) => String(e).startsWith('screen.')).map(([e, d]) => `${e} ${d.name}`);
+
 it('a feed it could not read is not "the projection booth is dark"', async () => {
   mockFeeds.community = failed();
+  mockTrace.mockClear();
   const r = await mount();
+  // And the E2E is told the reel failed: never that it was ready.
+  expect(screenSaid()).toEqual(['screen.failed reel']);
   expect(r.queryByText('The projection booth is dark.')).toBeNull();
   expect(r.getAllByText('Transmission Interrupted').length).toBeGreaterThan(0);
   await act(async () => { fireEvent.press(r.getAllByLabelText('Try again')[0]); });
@@ -115,7 +123,9 @@ it('stacks it could not read are not "the archive awaits its first curator"', as
 });
 
 it('feeds that ARRIVED empty say so, as they always did', async () => {
+  mockTrace.mockClear();
   const r = await mount();
+  expect(screenSaid()).toEqual(['screen.ready reel']);
   expect(r.getByText('The projection booth is dark.')).toBeTruthy();
   expect(r.getByText('The archive awaits its first curator.', { includeHiddenElements: true })).toBeTruthy();
   expect(r.queryByText('Transmission Interrupted')).toBeNull();

@@ -5,6 +5,11 @@ appId: com.reelhouse.society
 # finds the same film on every run. FILM defaults to The Godfather.
 - tapOn:
     id: "darkroom-tab"
+# The tray's own films: only a Darkroom that read them shows one.
+- extendedWaitUntil:
+    visible:
+      id: "film-card"
+    timeout: 20000
 - tapOn:
     id: "darkroom-search-input"
 - inputText: ${FILM || 'The Godfather'}

@@ -504,17 +504,36 @@ not_judged=$(grep -c . "$OUT/not-judged.txt")
 [ "$not_judged" -gt 0 ] && node mobile/e2e/annotate.mjs "Not judged — ${not_judged} ended by ${E2E_OLD_CLIENT}'s own crash" "$OUT/not-judged.txt" warning
 
 # How long each screen took to show what it was opened for (useScreenReady),
-# read from the device's log. With a ceilings file it is a gate; --complete
-# only when every flow ran, so a cut-short run never blames a screen it skipped.
+# read from the device's log, and any screen whose read failed: that fails the
+# run outside the flows that take the network away on purpose (flow-times says
+# which flow wrote it). With a ceilings file it is a gate on times too;
+# --complete only when every flow ran, so a cut-short run never blames a screen
+# it skipped.
 slow=0
-times_args=()
+times_args=(--flow-times "$OUT/flow-times.txt")
 [ -f mobile/e2e/screen-ceilings.json ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
 [ $flows_failed -eq 0 ] && [ $gone -eq 0 ] && [ "$not_judged" -eq 0 ] && times_args+=(--complete)
-if node mobile/e2e/screen-times.mjs "$OUT/logcat-stream.txt" ${times_args[@]+"${times_args[@]}"} > "$OUT/screen-times.txt"; then
+if node mobile/e2e/screen-times.mjs "$OUT/logcat-stream.txt" "${times_args[@]}" > "$OUT/screen-times.txt"; then
   note "How long each screen took" "$OUT/screen-times.txt"
 else
   slow=1
-  node mobile/e2e/annotate.mjs "A screen is slower than its ceiling" "$OUT/screen-times.txt"
+  node mobile/e2e/annotate.mjs "A screen could not read or is slower than its ceiling" "$OUT/screen-times.txt"
+fi
+# The phone's own runtime (src/utils/e2eRuntime.ts), written by every launch:
+# it must be whole and the committed copy, which runtimeDump.contract.test.ts
+# holds against Node and the list of what the phone lacks. The first whole one
+# is kept with the run's logs, the file to commit when the runtime changes.
+RUNTIME_COPY=${E2E_RUNTIME_COPY:-mobile/e2e/runtime/phone-runtime.json}
+if [ -n "${E2E_OLD_CLIENT:-}" ]; then
+  # A shipped client is older than the dump and writes none: there is nothing of its to judge.
+  echo "Not judged: $E2E_OLD_CLIENT writes no runtime (it is older than src/utils/e2eRuntime.ts)." > "$OUT/runtime-dump.txt"
+  node mobile/e2e/annotate.mjs "The phone's runtime, not judged" "$OUT/runtime-dump.txt" summary
+elif node mobile/e2e/runtime-dump.mjs "$OUT/logcat-stream.txt" --copy "$RUNTIME_COPY" \
+    --write "$OUT/phone-runtime.json" > "$OUT/runtime-dump.txt"; then
+  node mobile/e2e/annotate.mjs "The phone's runtime is the committed copy" "$OUT/runtime-dump.txt" summary
+else
+  rc=1
+  node mobile/e2e/annotate.mjs "The phone's runtime is not the committed copy" "$OUT/runtime-dump.txt"
 fi
 if [ $rc -ne 0 ]; then
   # "Flows failed" only when one did: run 37155828199 raised it over fourteen

@@ -47,7 +47,7 @@ export function ReelsStackList({
   extraData,
 }: ReelsStackListProps) {
   const renderStackItem = useCallback(({ item }: { item: StackData }) => (
-    <View style={st.stackGridCell}>
+    <View style={st.stackGridCell} testID="reel-stack">
       <StackCard
         stack={item}
         onPress={() => { TactileEngine.selection(); nav.push(`/stacks/${item.id}`); }}

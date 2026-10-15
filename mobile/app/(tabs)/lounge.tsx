@@ -60,7 +60,8 @@ export default function LoungeScreen() {
   const { lounges, fetchLounges, loading, loungesFailed } = useLoungeStore();
   // Nothing to show because nothing could be read: said, not "found no salon".
   const salonsLost = loungesFailed && lounges.length === 0;
-  const readyMark = useScreenReady('lounges', !(loading && lounges.length === 0));
+  const readyMark = useScreenReady('lounges',
+    loading && lounges.length === 0 ? 'reading' : salonsLost ? 'failed' : 'ready');
   const insets = useSafeAreaInsets();
   // The header starts below the top bar, which is drawn over this tab too.
   const topPad = useTabContentTop();

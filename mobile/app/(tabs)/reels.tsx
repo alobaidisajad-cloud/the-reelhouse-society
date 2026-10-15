@@ -176,7 +176,9 @@ export default function ReelScreen() {
 
   const communityFeed = useMemo(() => communityData?.pages.flat() || [], [communityData]);
   const followingFeed = useMemo(() => followingData?.pages.flat() || [], [followingData]);
-  const readyMark = useScreenReady('reel', !communityLoading);
+  // The reel opens on the house's logs: their read is the screen's.
+  const readyMark = useScreenReady('reel', communityLoading ? 'reading'
+    : communityFailed && communityData === undefined ? 'failed' : 'ready');
   const filteredStacks = useMemo(() => {
     if (stackFilter === 'following' && followingCount === 0) return [];
     return stacksData?.pages.flat() || [];

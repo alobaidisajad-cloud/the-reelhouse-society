@@ -10,6 +10,13 @@ appId: com.reelhouse.society
 - tapOn:
     id: "home-tab"
 - assertVisible: "The Lobby"
+# The wall the house read, full or vacant: never its shapes, never its failure.
+- scrollUntilVisible:
+    element:
+      id: "lobby-wall-hung"
+    direction: DOWN
+    timeout: 60000
+    centerElement: true
 - scrollUntilVisible:
     element: "The projection booth never closes."
     direction: DOWN

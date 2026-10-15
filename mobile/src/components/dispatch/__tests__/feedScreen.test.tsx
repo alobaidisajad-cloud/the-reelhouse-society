@@ -104,6 +104,9 @@ jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
+/** What the screen tells the E2E run (silent in a member's build). */
+const mockTrace = jest.fn();
+jest.mock('@/src/utils/e2eTrace', () => ({ E2E_BUILD: false, e2eTrace: (...a: unknown[]) => mockTrace(...a) }));
 jest.mock('@/src/utils/reelToast', () => {
   const t = Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn(), info: jest.fn() });
   return { __esModule: true, default: t };
@@ -524,6 +527,29 @@ describe('a page not read yet, and a page that could not be read', () => {
     expect(mockPageAsks).toBe(2);
     expect(queryByText('The paper could not be reached.')).toBeNull();
     expect(queryByText('Nothing has been filed yet.')).toBeTruthy();
+  });
+
+  it('a page that could not be read tells the E2E it failed, and shows no filing for a flow to find', async () => {
+    // Build 41: every read failed, the screen said "ready" anyway, and the sealed
+    // run, which asked only for the tab, stayed green on every run.
+    mockTrace.mockClear();
+    mockPageFails = true;
+    put({ pageState: 'unread' });
+    const failed = render(<FeedScreen />);
+    await flush();
+    expect(failed.queryByText('The paper could not be reached.')).toBeTruthy();
+    expect(mockTrace.mock.calls.filter(([e]) => String(e).startsWith('screen.')).map(([e, d]) => [e, d.name]))
+      .toEqual([['screen.failed', 'dispatch']]);
+    expect(failed.queryByTestId('dispatch-filing')).toBeNull();
+    failed.unmount();
+
+    // Read: the first filing carries what the flow asks for, and the screen is ready.
+    mockTrace.mockClear();
+    put({ filings: [filing()] });
+    const read = await mount();
+    expect(read.getAllByTestId('dispatch-filing')).toHaveLength(1);
+    expect(mockTrace.mock.calls.filter(([e]) => String(e).startsWith('screen.')).map(([e, d]) => [e, d.name]))
+      .toEqual([['screen.ready', 'dispatch']]);
   });
 
   it('does not read again a page that already holds filings', async () => {

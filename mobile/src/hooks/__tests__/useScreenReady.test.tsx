@@ -5,13 +5,15 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { render } from '@testing-library/react-native';
-import { useScreenReady } from '../useScreenReady';
+import { useScreenReady, type ScreenRead } from '../useScreenReady';
 
 const mockTrace = jest.fn();
 jest.mock('@/src/utils/e2eTrace', () => ({ e2eTrace: (...a: unknown[]) => mockTrace(...a) }));
+const mockRuntime = jest.fn();
+jest.mock('@/src/utils/e2eRuntime', () => ({ traceRuntimeOnce: () => mockRuntime() }));
 
-function Screen({ ready }: { ready: boolean }) {
-  const mark = useScreenReady('lobby', ready);
+function Screen({ ready, read }: { ready?: boolean; read?: ScreenRead }) {
+  const mark = useScreenReady('lobby', read ?? (ready ? 'ready' : 'reading'));
   // Two different trees, as a screen with an early return has: the mark goes in both.
   return ready ? <View>{mark}</View> : <>{mark}</>;
 }
@@ -34,7 +36,7 @@ function reporter(r: ReturnType<typeof render>): { node: Node; holder: Node } {
 }
 const handed = (r: ReturnType<typeof render>) => reporter(r).node.props.ready;
 
-beforeEach(() => mockTrace.mockClear());
+beforeEach(() => { mockTrace.mockClear(); mockRuntime.mockClear(); });
 
 describe('useScreenReady', () => {
   it('hands Sentry "not yet" while the content is loading, and writes nothing', () => {
@@ -80,7 +82,7 @@ describe('useScreenReady', () => {
     // The welcome becomes the Lobby on sign-in, with the Lobby's programme already
     // read: the Lobby is ready at once, and was reported as the minute spent signing in.
     function Front({ signedIn }: { signedIn: boolean }) {
-      return <>{useScreenReady(signedIn ? 'lobby' : 'welcome', true)}</>;
+      return <>{useScreenReady(signedIn ? 'lobby' : 'welcome', 'ready')}</>;
     }
     const now = jest.spyOn(Date, 'now').mockReturnValue(1_000);
     const r = render(<Front signedIn={false} />);
@@ -88,6 +90,30 @@ describe('useScreenReady', () => {
     r.rerender(<Front signedIn />);
     now.mockRestore();
     expect(mockTrace.mock.calls.map(([, d]) => [d.name, d.ms])).toEqual([['welcome', 0], ['lobby', 0]]);
+  });
+
+  it('a read that failed writes screen.failed, never screen.ready, and Sentry is told it settled', () => {
+    // The Dispatch on build 41: every read failed, the page said so, and the E2E
+    // took the mark for a loaded screen on every run.
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1_000);
+    const r = render(<Screen read="reading" />);
+    now.mockReturnValue(1_400);
+    r.rerender(<Screen read="failed" />);
+    expect(handed(r)).toBe(true);
+    expect(mockTrace.mock.calls).toEqual([['screen.failed', { name: 'lobby', ms: 400 }]]);
+    // Asked again, and reached: the same screen is then ready, from when it asked.
+    now.mockReturnValue(5_000);
+    r.rerender(<Screen read="reading" />);
+    now.mockReturnValue(5_250);
+    r.rerender(<Screen read="ready" />);
+    now.mockRestore();
+    expect(mockTrace.mock.calls.map(([e, d]) => [e, d.ms])).toEqual([['screen.failed', 400], ['screen.ready', 250]]);
+  });
+
+  it('the first screen writes the phone\'s runtime, once a mount', () => {
+    const r = render(<Screen read="reading" />);
+    r.rerender(<Screen read="ready" />);
+    expect(mockRuntime).toHaveBeenCalledTimes(1);
   });
 
   it('takes no room in the screen it sits in', () => {

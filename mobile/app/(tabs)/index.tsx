@@ -28,7 +28,7 @@ import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { LobbyWall } from '@/src/components/lobby/LobbyWall';
-import { LIVE_LOBBY_READS, useFeature, useProgramme } from '@/src/components/lobby/wallRead';
+import { LIVE_LOBBY_READS, useFeature, useLobbyWall, useProgramme } from '@/src/components/lobby/wallRead';
 import reelToast from '@/src/utils/reelToast';
 import { nav } from '@/src/utils/typedRouter';
 import { Arrive } from '@/src/components/Arrive';
@@ -71,7 +71,12 @@ export default function LobbyScreen() {
   const queryClient = useQueryClient();
   const programme = useProgramme(true);
   useFeature(programme.data?.feature ?? null);
-  const readyMark = useScreenReady(isAuthenticated ? 'lobby' : 'welcome', !isAuthenticated || !programme.isPending);
+  // The wall is the Lobby's own read (LobbyWall asks for it; this is the same query).
+  // Failed: the programme or the wall reached nothing, and nothing was kept to show.
+  const wall = useLobbyWall(isAuthenticated);
+  const lobbyFailed = (programme.isError && programme.data === undefined) || (wall.isError && wall.data === undefined);
+  const readyMark = useScreenReady(isAuthenticated ? 'lobby' : 'welcome',
+    !isAuthenticated ? 'ready' : programme.isPending ? 'reading' : lobbyFailed ? 'failed' : 'ready');
 
   // Scroll tracking: the top bar's blur and tint follow the page.
   const scrollY = useSharedValue(0);
@@ -207,6 +212,7 @@ export default function LobbyScreen() {
             <View style={s.welcomeCtaContainer}>
               {/* The SIGN-UP door: it names its form, or '/login' opens sign-in. */}
               <PressableScale
+                testID="welcome-seek-admission"
                 style={s.ctaPrimaryNoir}
                 // the second door stands CTA_GAP below: each reaches half of it, no more
                 hitSlop={{ top: CTA_GAP / 2, bottom: CTA_GAP / 2 }}

@@ -126,6 +126,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/prose-handlers.guard.test.ts` | Every handler that writes prose passes it through the sanitiser. |
 | `src/utils/__tests__/searchFieldsDoNotAutocorrect.guard.test.ts` | Every search field turns autocorrect off (the keyboard's composing is not drawn in jest). |
 | `src/utils/__tests__/searchWiring.guard.test.ts` | Every search call site uses the escaper, unquoted. |
+| `src/utils/__tests__/runtimeLacks.guard.test.ts` | Every line of app/ and src/, read with TypeScript's parser for an API the phone's runtime lacks (src/utils/runtimeLacks.json): jest sees only the lines a test runs. Also jest.setup.ts, which must take that same list away and no other. |
 
 ## Contract
 
@@ -169,6 +170,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/theFrontDeskAnswers.test.ts` | The support address, held in one place and printed from it. |
 | `src/utils/__tests__/theTappedNoticeOpensIt.test.ts` | The push payload the edge function sends, against what the app reads. |
 | `src/utils/__tests__/theRecordingsTravel.test.ts` | The sealed E2E world's TMDB recordings: every one its index names exists, and no `.gitignore` pattern hides it. |
+| `src/utils/__tests__/runtimeDump.contract.test.ts` | The phone's own runtime, as the sealed E2E build wrote it (the committed copy), against Node and the list of what the phone lacks; until a run writes it, the register's pending note. No jest engine is the phone's. |
 | `test-utils/__tests__/readCode.test.ts` | The comment stripper itself. |
 | `test-utils/__tests__/oneCommentStripper.test.ts` | No file takes comments out with a regex of its own; the parser is the only stripper. |
 

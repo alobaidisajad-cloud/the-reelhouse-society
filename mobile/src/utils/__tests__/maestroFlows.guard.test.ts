@@ -147,6 +147,103 @@ it('every flow drives this app, and none holds an account', () => {
   expect(FLOWS.filter((f) => /@[a-z0-9-]+\.[a-z]{2,}|password123/i.test(f.text)).map((f) => f.flow)).toEqual([]);
 });
 
+// ── A tab is asked for what only its loaded content carries ──────────────────
+// Build 41's Dispatch failed every read, and every run stayed green: its flow
+// asked for `dispatch-tab`, which a tab that could not read shows too. So after
+// a tab is tapped, before anything else, one of its loaded testIDs is looked
+// for, as a guest or (from the sign-in's submit) a member. Each is set only in
+// a tree a read drew (feedScreen.test.tsx, theWallHasNoDeadEnds.test.tsx).
+const LOADED: Record<string, { guest: string[]; member: string[] }> = {
+  'dispatch-tab': { guest: ['dispatch-filing'], member: ['dispatch-filing'] },
+  'reels-tab': { guest: ['reel-log'], member: ['reel-log'] },
+  'home-tab': { guest: ['welcome-seek-admission'], member: ['lobby-wall-hung'] },
+  'darkroom-tab': { guest: ['film-card'], member: ['film-card'] },
+  'profile-tab': { guest: ['profile-sign-in-prompt'], member: ['collection-card-watchlist'] },
+};
+
+type Step = { cmd: string; arg: unknown; inRepeat: boolean };
+
+/** A flow's steps in the order Maestro runs them, its subflows' steps in place. */
+const stepsOf = (file: string, inRepeat = false): Step[] => {
+  const [, steps] = parseAllDocuments(readFileSync(file, 'utf8')).map((d) => d.toJS());
+  const out: Step[] = [];
+  const add = (step: unknown, rep: boolean): void => {
+    if (!step || typeof step !== 'object') { if (typeof step === 'string') out.push({ cmd: step, arg: null, inRepeat: rep }); return; }
+    for (const [cmd, arg] of Object.entries(step as Record<string, unknown>)) {
+      if (cmd === 'runFlow') {
+        const sub = typeof arg === 'string' ? arg : (arg as { file: string }).file;
+        out.push(...stepsOf(join(file, '..', sub), rep));
+      } else if (cmd === 'repeat') {
+        ((arg as { commands?: unknown[] }).commands ?? []).forEach((c) => add(c, true));
+      } else out.push({ cmd, arg, inRepeat: rep });
+    }
+  };
+  (Array.isArray(steps) ? steps : []).forEach((s) => add(s, inRepeat));
+  return out;
+};
+
+/** The id a step looks for: an assertion, a wait, a scroll to it, or a tap on it. */
+const lookedFor = (s: Step): string | null => {
+  const idOf = (v: unknown) => (v && typeof v === 'object' && 'id' in v ? String((v as { id: unknown }).id) : null);
+  if (s.cmd === 'assertVisible' || s.cmd === 'tapOn') return idOf(s.arg);
+  if (s.cmd === 'extendedWaitUntil') return idOf((s.arg as { visible?: unknown })?.visible);
+  if (s.cmd === 'scrollUntilVisible') return idOf((s.arg as { element?: unknown })?.element);
+  return null;
+};
+/** Steps that only look, and change nothing on the screen. */
+const LOOKS = ['assertVisible', 'assertNotVisible', 'extendedWaitUntil', 'waitForAnimationToEnd'];
+
+/** Each tab a flow opens and leaves unproved, as `flow: tab (why)`. */
+const unprovenTabs = (flow: string, steps: Step[]): string[] => {
+  const faults: string[] = [];
+  let who: 'guest' | 'member' = 'guest';
+  const proven = new Set<string>();
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
+    if (s.cmd === 'launchApp' && (s.arg as { clearState?: boolean } | null)?.clearState) { who = 'guest'; proven.clear(); }
+    if (s.cmd === 'tapOn' && lookedFor(s) === 'sign-in-submit') { who = 'member'; proven.clear(); }
+    const tab = s.cmd === 'tapOn' ? lookedFor(s) : null;
+    if (!tab || !LOADED[tab]) continue;
+    const wanted = LOADED[tab][who];
+    // A stress test switches before content arrives, on purpose: the same tab's
+    // content must already have been shown in this flow, as this person.
+    if (s.inRepeat) { if (!proven.has(tab)) faults.push(`${flow}: ${tab} (tapped in a repeat, never shown loaded)`); continue; }
+    let j = i + 1;
+    while (j < steps.length && LOOKS.includes(steps[j].cmd) && !wanted.includes(lookedFor(steps[j]) ?? '')) j++;
+    if (j < steps.length && wanted.includes(lookedFor(steps[j]) ?? '')) proven.add(tab);
+    else faults.push(`${flow}: ${tab} (as a ${who}, wants one of ${wanted.join(', ')})`);
+  }
+  return faults;
+};
+
+const ROOT_FLOWS = FILES.filter((f) => !relative(FLOW_DIR, f).split('\\').join('/').startsWith('subflows/'));
+
+it('every flow that opens a tab looks for what only its loaded content carries, before anything else', () => {
+  // The tab bar's own five, so a new tab cannot be opened unasked.
+  const tabs = [...readFileSync(join(MOBILE, 'app', '(tabs)', '_layout.tsx'), 'utf8').matchAll(/tabBarButtonTestID:\s*'([^']+)'/g)].map((m) => m[1]);
+  expect(Object.keys(LOADED).sort()).toEqual(tabs.sort());
+  for (const ids of Object.values(LOADED)) for (const id of [...ids.guest, ...ids.member]) expect(`${id}: ${idExists(id)}`).toBe(`${id}: true`);
+  const faults = ROOT_FLOWS.flatMap((f) => unprovenTabs(relative(FLOW_DIR, f).split('\\').join('/'), stepsOf(f)));
+  expect(faults).toEqual([]);
+  // It read the flows: the five tabs are each opened somewhere.
+  const opened = new Set(ROOT_FLOWS.flatMap((f) => stepsOf(f)).filter((s) => s.cmd === 'tapOn').map(lookedFor));
+  expect(Object.keys(LOADED).filter((t) => !opened.has(t))).toEqual([]);
+});
+
+it('the tab check says NO — to the tab bar as proof, to a tap before the content, to a repeat never shown', () => {
+  const tap = (id: string): Step => ({ cmd: 'tapOn', arg: { id }, inRepeat: false });
+  const see = (id: string): Step => ({ cmd: 'assertVisible', arg: { id }, inRepeat: false });
+  // The build 41 flow: the Dispatch "proved" by its own tab button.
+  expect(unprovenTabs('x', [tap('dispatch-tab'), see('dispatch-tab')])).toEqual(['x: dispatch-tab (as a guest, wants one of dispatch-filing)']);
+  // Looked for, but only after the search was already typed into.
+  expect(unprovenTabs('x', [tap('darkroom-tab'), tap('darkroom-search-input'), see('film-card')])).toHaveLength(1);
+  // A member's Lobby is not the welcome.
+  expect(unprovenTabs('x', [tap('sign-in-submit'), tap('home-tab'), see('welcome-seek-admission')])).toHaveLength(1);
+  expect(unprovenTabs('x', [{ ...tap('home-tab'), inRepeat: true }])).toEqual(['x: home-tab (tapped in a repeat, never shown loaded)']);
+  // And yes, to a tab whose content is looked for, other looks between.
+  expect(unprovenTabs('x', [tap('home-tab'), { cmd: 'assertVisible', arg: 'The Lobby', inRepeat: false }, see('welcome-seek-admission')])).toEqual([]);
+});
+
 it('the detector says NO — to a dropped id, a dropped text, and a pattern that only half-matches', () => {
   expect(idExists('log-film-button')).toBe(false);
   expect(idExists('collection-card-watchlist')).toBe(true);

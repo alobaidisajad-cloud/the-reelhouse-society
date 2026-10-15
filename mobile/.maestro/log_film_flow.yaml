@@ -7,6 +7,11 @@ appId: com.reelhouse.society
 - runFlow: subflows/sign_in.yaml
 - tapOn:
     id: "darkroom-tab"
+# The tray's own films: only a Darkroom that read them shows one.
+- extendedWaitUntil:
+    visible:
+      id: "film-card"
+    timeout: 20000
 - tapOn:
     id: "darkroom-search-input"
 - inputText: "Blade Runner"

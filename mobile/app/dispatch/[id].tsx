@@ -96,7 +96,9 @@ export default function FilingReader() {
   /** The last read failed: a filing not held here may still exist. */
   const [unreachable, setUnreachable] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const readyMark = useScreenReady('reader', !loading);
+  // Failed: no copy of the filing is held, and the last read did not reach the house.
+  const held = filings.some((f) => f.id === id) || !!opened[id] || !!filing;
+  const readyMark = useScreenReady('reader', loading ? 'reading' : !held && unreachable ? 'failed' : 'ready');
   const [order, setOrder] = useState<CritiqueOrder>(FIRST_ORDER);
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState('');

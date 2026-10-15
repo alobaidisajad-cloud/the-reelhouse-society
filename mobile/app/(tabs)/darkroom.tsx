@@ -106,7 +106,6 @@ export default function DarkRoomScreen() {
 
   // The skeleton pulses only while it is drawn and the tab is in view.
   const showSkeleton = loading || (cacheKey !== lastFetchedKey && network.isConnected !== false);
-  const readyMark = useScreenReady('darkroom', !showSkeleton);
 
   useEffect(() => {
     if (!isFocused || !showSkeleton) {
@@ -133,6 +132,9 @@ export default function DarkRoomScreen() {
     }
     return [];
   }, [accumulatedFilms, page, cacheKey]);
+  // Failed: nothing to show, and the tray says the catalogue could not be reached.
+  const readyMark = useScreenReady('darkroom', showSkeleton ? 'reading'
+    : displayData.length === 0 && (network.isConnected === false || unreachable) ? 'failed' : 'ready');
 
   // A new search or filter is a new grid: what its last batch could not reach is not this one's.
   useEffect(() => { setMoreFailed(false); }, [cacheKey]);

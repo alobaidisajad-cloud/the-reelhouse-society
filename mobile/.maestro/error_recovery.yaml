@@ -12,8 +12,9 @@ appId: com.reelhouse.society
       id: "home-tab"
     timeout: 10000
 
-# Navigate through the tabs — Profile's sign-in prompt is the one stable,
-# time-independent content anchor available without authenticating.
+# Each tab once, and what only its loaded content carries: a tab that could
+# not read says so, and never shows these. The Dispatch's is the seed's filing
+# (e2e/db/seed.mjs), which a guest may read.
 - tapOn:
     id: "profile-tab"
 - assertVisible:
@@ -21,14 +22,20 @@ appId: com.reelhouse.society
 
 - tapOn:
     id: "home-tab"
+- assertVisible:
+    id: "welcome-seek-admission"
 - tapOn:
     id: "darkroom-tab"
-- assertVisible:
-    id: "darkroom-search-input"
+- extendedWaitUntil:
+    visible:
+      id: "film-card"
+    timeout: 20000
 - tapOn:
     id: "dispatch-tab"
-- assertVisible:
-    id: "dispatch-tab"
+- extendedWaitUntil:
+    visible:
+      id: "dispatch-filing"
+    timeout: 20000
 
 # Rapid tab switching stress test (15 cycles)
 - repeat:

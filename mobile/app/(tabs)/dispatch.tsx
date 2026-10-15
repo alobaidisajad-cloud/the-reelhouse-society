@@ -103,7 +103,9 @@ export default function DispatchScreen() {
   // (A page holding filings has been read, whatever the flag says.)
   const unread = pageState === 'unread' && filings.length === 0;
   const reading = loading || unread;
-  const readyMark = useScreenReady('dispatch', !reading);
+  // Failed: the first page reached nothing, and "could not be reached" is the page.
+  const readyMark = useScreenReady('dispatch',
+    reading ? 'reading' : pageState === 'failed' && filings.length === 0 ? 'failed' : 'ready');
   const loadingMore = useDispatch((s) => s.loadingMore);
   const moreFailed = useDispatch((s) => s.moreFailed);
   const newCount = useDispatch((s) => s.newCount);
@@ -219,18 +221,21 @@ export default function DispatchScreen() {
   const renderItem = useCallback(({ item }: { item: Row }) => {
     if (item.type === 'day') return <DayDivider label={item.label} />;
     const f = item.filing;
+    // `dispatch-filing`: a filing the paper read, which only a loaded page carries.
     return (
-      <FilingRow
-        f={f}
-        // The margin prints what the page is ordered by: the hour, or the count.
-        order={sort === 'LATEST' ? hourLabel(f.createdAt) : (formatCount(f.certifyCount) ?? '—')}
-        orderIs={sort === 'LATEST' ? 'hour' : 'count'}
-        width={width}
-        certified={certifiedIds.has(f.id)}
-        saved={savedIds.has(f.id)}
-        pending={unsent.has(f.id)}
-        member={member}
-      />
+      <View testID="dispatch-filing">
+        <FilingRow
+          f={f}
+          // The margin prints what the page is ordered by: the hour, or the count.
+          order={sort === 'LATEST' ? hourLabel(f.createdAt) : (formatCount(f.certifyCount) ?? '—')}
+          orderIs={sort === 'LATEST' ? 'hour' : 'count'}
+          width={width}
+          certified={certifiedIds.has(f.id)}
+          saved={savedIds.has(f.id)}
+          pending={unsent.has(f.id)}
+          member={member}
+        />
+      </View>
     );
   }, [sort, width, certifiedIds, savedIds, unsent, member]);
 

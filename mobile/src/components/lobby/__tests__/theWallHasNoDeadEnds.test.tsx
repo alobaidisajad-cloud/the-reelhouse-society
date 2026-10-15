@@ -222,6 +222,8 @@ describe('every door leads somewhere that exists', () => {
     expect(went.filter((p) => p === null || !answered(p))).toEqual([]);
     expect(printed('THREE COLUMNS VACANT')).toBe(true);
     expect(printed('Nothing has been filed yet.')).toBe(true);
+    // Vacant is still read: the E2E's mark for a wall the house answered.
+    expect(screen.getByTestId('lobby-wall-hung')).toBeTruthy();
   });
 
   it('one filing: the rest of the columns stand vacant, and say the page has room', async () => {
@@ -310,12 +312,15 @@ describe('every state has its own shape', () => {
     await drawWall({ wall: 'pending' });
     expect(screen.getByLabelText('The Lobby is being hung')).toBeTruthy();
     expect(screen.queryByText('No log yet.')).toBeNull();
+    // What the E2E asks for is the wall the house read: not its shapes.
+    expect(screen.queryByTestId('lobby-wall-hung')).toBeNull();
   });
 
   it('a wall never seen that cannot be reached: the house says so, and asks again', async () => {
     await drawWall({ wall: 'fails' });
     expect(screen.queryByLabelText('The Lobby is being hung')).toBeNull();
     expect(screen.queryByText('No log yet.')).toBeNull();
+    expect(screen.queryByTestId('lobby-wall-hung')).toBeNull();
     const retry = screen.getAllByLabelText(/try again/i);
     expect(retry.length).toBeGreaterThan(0);
   });
@@ -329,6 +334,7 @@ describe('every state has its own shape', () => {
   it('a fresh wall says nothing about refreshing', async () => {
     await drawWall();
     expect(screen.queryByText('Could not refresh —')).toBeNull();
+    expect(screen.getByTestId('lobby-wall-hung')).toBeTruthy();
   });
 
   it('the programme unreachable, or with no film at all: the case says so — never a shape that waits for ever', async () => {

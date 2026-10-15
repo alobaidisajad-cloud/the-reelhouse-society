@@ -59,9 +59,28 @@ with the seeded member's password scrubbed out first (`e2e/scrub.mjs`).
 | `lobby_wall_flow.yaml` | the Lobby's wall hangs for a member, whole, down to its sign-off |
 | `lounge_flow.yaml` | the Lounge's two doors: the visitor's gate, and the member's rope at ESTABLISH |
 | `offline_resilience.yaml` | a log made offline is queued, and sent on reconnect |
-| `error_recovery.yaml` | rapid tab switching never trips the error screen |
+| `error_recovery.yaml` | each tab opens with its content read; rapid tab switching never trips the error screen |
 
 `subflows/` holds the steps the flows share: signing in, and opening a film.
+
+A tab is proved by what only its **loaded** content carries, never by its own
+tab button, which a tab that could not read shows as well: the Dispatch's first
+filing (`dispatch-filing`), the Reel's log (`reel-log`), the Lobby's read wall
+(`lobby-wall-hung`, or the welcome's `welcome-seek-admission`), the Darkroom's
+films (`film-card`), the member file (`collection-card-watchlist`, or the
+sign-in prompt). After a flow taps a tab it looks for one before it does
+anything else (`maestroFlows.guard.test.ts`). The seed makes that content: the
+member is made able to file as a real member becomes able (the account dated
+two days back, five films logged), then files a take and makes a stack, each
+read back, so a door that refuses fails the seed by name.
+
+Every screen also says whether its read failed (`useScreenReady`): a
+`screen.failed` line anywhere in the run fails it (`e2e/screen-times.mjs`),
+except in the flow that takes the network away on purpose (`offline_resilience`).
+And the first screen of every launch writes the phone's own JavaScript runtime;
+the run fails unless it is the committed copy (`e2e/runtime-dump.mjs`), which
+`runtimeDump.contract.test.ts` holds against Node and the list of what the
+phone lacks.
 
 `keyboard/` is the keyboard's room. The flows type with no keyboard on the
 device, so before them `e2e/run-flows.sh` reaches each of these screens, turns

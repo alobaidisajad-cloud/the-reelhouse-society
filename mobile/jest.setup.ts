@@ -1,18 +1,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // jest.setup.ts — Global mocks for ReelHouse mobile test suite
 // ─────────────────────────────────────────────────────────────────────────────
+import { removeWhatThePhoneLacks } from './test-utils/asOnThePhone';
+import runtime from './src/utils/runtimeLacks.json';
 
 // The app's Supabase URL and key are deliberately NOT set here: `src/lib/supabase.ts`
 // falls back to a dummy host, which is what keeps a test that builds a real client
 // off PRODUCTION. The one test that needs credentials reads them itself
 // (loungeEmbeds.contract.test.ts).
 
-// As the phone: Hermes has no AbortSignal.timeout or AbortSignal.any, so the tests'
-// engine has none either. A call to one threw "undefined is not a function" on the
-// iPhone and the Dispatch never loaded, while every test passed.
-for (const missingOnHermes of ['timeout', 'any']) {
-  Object.defineProperty(AbortSignal, missingOnHermes, { value: undefined, configurable: true, writable: true });
-}
+// As the phone: what its runtime lacks is gone here too, from the one list (asOnThePhone).
+removeWhatThePhoneLacks(runtime.lacks);
 
 // AccessibilityInfo, WITH a `default`: React Native's own index reads this module's
 // default, so without one `AccessibilityInfo` from 'react-native' is undefined.

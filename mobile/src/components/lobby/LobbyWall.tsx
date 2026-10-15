@@ -112,7 +112,8 @@ export const LobbyWall = memo(function LobbyWall() {
         wall.isError ? <EmptyOffline onRetry={retryWall} /> : <Skeleton plan={plan} />
       ) : (
         <>
-          <View style={[s.pair, !plan.pairs && s.pairStacked]}>
+          {/* The wall was read, full or vacant: never its shapes or its failure. */}
+          <View style={[s.pair, !plan.pairs && s.pairStacked]} testID="lobby-wall-hung">
             {w.log ? <LogBill log={w.log} plan={plan} scale={scale} admin={admin} /> : <VacantLogBill plan={plan} />}
             {w.stack ? <StackBill stack={w.stack} plan={plan} scale={scale} admin={admin} /> : <VacantStackBill plan={plan} />}
           </View>

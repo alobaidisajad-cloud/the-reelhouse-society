@@ -1,0 +1,25 @@
+{
+  "about": "What the phone's JavaScript lacks that Node and jest have. jest.setup.ts removes each entry; runtimeLacks.guard.test.ts fails on any use of one in app/ or src/; runtimeDump.contract.test.ts holds this list to the phone's own dump (e2e/runtime/phone-runtime.json). An api is Name.member (a static), Name.prototype.member, or globalThis.Name.",
+  "reads": [
+    "globalThis",
+    "AbortSignal", "AbortSignal.prototype",
+    "AbortController", "AbortController.prototype",
+    "URL", "URL.prototype",
+    "URLSearchParams", "URLSearchParams.prototype",
+    "Promise", "Promise.prototype",
+    "Array", "Array.prototype",
+    "Object",
+    "String", "String.prototype",
+    "Intl"
+  ],
+  "lacks": [
+    {
+      "api": "AbortSignal.timeout",
+      "read": "Sentry, build 41: withTimeout.ts threw 'undefined is not a function' on every Dispatch read (fixed in 11b420f1). React Native 0.81's AbortSignal is abort-controller 3.0.0 (node_modules/abort-controller/dist/abort-controller.js, installed by Libraries/Core/setUpXHR.js), which defines no static timeout."
+    },
+    {
+      "api": "AbortSignal.any",
+      "read": "React Native 0.81's AbortSignal is abort-controller 3.0.0 (node_modules/abort-controller/dist/abort-controller.js, installed by Libraries/Core/setUpXHR.js), which defines no static any."
+    }
+  ]
+}

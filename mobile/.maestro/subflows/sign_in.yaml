@@ -27,9 +27,9 @@ appId: com.reelhouse.society
     text: ${E2E_MEMBER_EMAIL}
 - tapOn:
     id: "sign-in-submit"
-# The seeded member is new on every run, so signing in opens THE INITIATION, as
-# it does for every member in their first 48 hours; they enter quietly. Then the
-# Lobby, with its tabs.
+# The seeded member's account is new on every run (only its profile is dated
+# back, so it may file), so signing in opens THE INITIATION, as it does in a
+# member's first 48 hours; they enter quietly. Then the Lobby, with its tabs.
 - extendedWaitUntil:
     visible:
       id: "initiation-enter-quietly"

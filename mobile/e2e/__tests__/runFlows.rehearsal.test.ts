@@ -10,9 +10,9 @@
  *     Maestro writes to, so crashes and screen times reach the script as on CI.
  *   - `maestro` is a script that plays each flow's part from a scenario file
  *     (one behaviour per attempt: pass, never-began, lost-driver, step-failed,
- *     gone, crash-then-pass, takeover-then-pass, own-crash) and writes Maestro 2.10.0's own
- *     records: the JUnit report,
- *     commands.json under .maestro/tests/<time>/<flow>/, and its log. Every
+ *     gone, crash-then-pass, takeover-then-pass, own-crash, failed-read-then-pass)
+ *     and writes the phone's runtime and Maestro 2.10.0's own records: the JUnit
+ *     report, commands.json under .maestro/tests/<time>/<flow>/, and its log. Every
  *     Maestro it plays leaves a session file behind, as a killed one would; every
  *     launch it plays logs ActivityManager's "Start proc" line, as Android does.
  *
@@ -63,6 +63,8 @@ case "$1" in
         if [ -f "$T/state/motion-crash" ]; then
           echo "$now  16631  16631 W unknown:BridgelessReact: ReactHost{0}.handleHostException(message = \\"undefined is not a function\\")" >> "$T/device.log"
         else
+          rt=$(cat "$T/state/runtime-name" 2>/dev/null || echo AbortController)
+          echo "$now  16631  16651 W ReactNativeJS: [e2e] runtime {\\"of\\":\\"globalThis\\",\\"part\\":1,\\"parts\\":1,\\"names\\":[\\"$rt\\"]}" >> "$T/device.log"
           echo "$now  16631  16651 W ReactNativeJS: [e2e] screen.ready {\\"name\\":\\"welcome\\",\\"ms\\":100}" >> "$T/device.log"
         fi ;;
     esac ;;
@@ -98,11 +100,16 @@ pass() {
   say 523 I ActivityManager "Start proc 16631:com.reelhouse.society/u0a192 for next-top-activity {com.reelhouse.society/com.reelhouse.society.MainActivity}"
   step 'Launch app "com.reelhouse.society" with clear state'
   echo '[{"command":{"launchAppCommand":{}},"metadata":{"status":"COMPLETED"}}]' > "$tests/$name/commands.json"
+  rt=$(cat "$T/state/runtime-name" 2>/dev/null || echo AbortController)
+  say 16631 W ReactNativeJS "[e2e] runtime {\\"of\\":\\"globalThis\\",\\"part\\":1,\\"parts\\":1,\\"names\\":[\\"$rt\\"]}"
   for s in __SCREENS__; do say 16631 W ReactNativeJS "[e2e] screen.ready {\\"name\\":\\"$s\\",\\"ms\\":100}"; done
   junit; echo "[Passed] $name (1s)"; exit 0
 }
 case "$behaviour" in
   pass) pass ;;
+  failed-read-then-pass)
+    say 16631 W ReactNativeJS "[e2e] screen.failed {\\"name\\":\\"dispatch\\",\\"ms\\":100}"
+    pass ;;
   takeover-then-pass)
     say 16631 D SplashScreenView "Building from parcel drawable: android.graphics.drawable.BitmapDrawable@82bf60a"
     pass ;;
@@ -184,12 +191,15 @@ function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { e
   for (const f of ['stack', 'stack.tap', 'log', 'log.tap']) writeFileSync(join(T, 'flows', 'keyboard', `${f}.yaml`), 'appId: com.reelhouse.society\n---\n');
   for (const [name, steps] of Object.entries(scenario)) writeFileSync(join(T, 'scenario', name), `${steps.join('\n')}\n`);
   for (const [k, v] of Object.entries(opts.state ?? {})) writeFileSync(join(T, 'state', k), v);
+  // The committed copy of the phone's runtime, as the fake launches write it.
+  writeFileSync(join(T, 'fixtures', 'phone-runtime.json'), JSON.stringify({ globalThis: ['AbortController'] }));
   const env = {
     ...process.env,
     PATH: `${join(T, 'bin')}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`,
     HOME: T + '/home', RUNNER_TEMP: T + '/out', E2E_FLOWS: T + '/flows', MAESTRO_BIN: T + '/bin/maestro',
     E2E_MEMBER_EMAIL: 'e2e_member@e2e.test', E2E_MEMBER_PASSWORD: 'rehearsal-Pw_0123456789x', E2E_MEMBER_USERNAME: 'e2e_member',
     GITHUB_STEP_SUMMARY: T + '/summary.md', E2E_MOTION_SECONDS: '1',
+    E2E_RUNTIME_COPY: T + '/fixtures/phone-runtime.json',
     ...opts.env,
   };
   return new Promise((resolve, reject) => {
@@ -281,6 +291,8 @@ describe('a shipped client\'s own crash (E2E_OLD_CLIENT, from the real old-clien
       "\\[Not judged\\] b_flow \\(TestFlight build 41's own crash, twice: class RN-react-destroyed-on-mount\\)\\n$"));
     expect(file(r, 'maestro.log')).toContain('Maestro: failed, not counted: b_flow (1m 38s)');
     expect(titled(r, 'warning', "Not judged — 1 ended by TestFlight build 41's own crash")).toContain('[Not judged] b_flow');
+    // Build 41 is older than the runtime dump: its run never asks for one.
+    expect(file(r, 'runtime-dump.txt')).toMatch(/^Not judged: TestFlight build 41 writes no runtime/);
     const gate = titled(r, 'warning', "No crash or freeze but TestFlight build 41's own");
     expect(gate).toContain(`${OWN}: during a_flow:`);
     expect(gate).toContain(`${OWN}: during b_flow (attempt 2):`);
@@ -364,6 +376,29 @@ it('a launch with animations on that lives and draws passes, and says so', async
   const r = await rehearse(['a_flow'], { a_flow: ['pass'] });
   expect(r.status).toBe(0);
   expect(file(r, 'motion', 'result.txt')).toBe('A launch with animations on: alive at 1 s (pid 16631), no crash, the first screen ready.\n');
+  // The phone's runtime is the copy, and kept with the logs.
+  expect(file(r, 'runtime-dump.txt')).toMatch(/^The phone's runtime, written by 1 launch, is the committed copy/);
+  expect(JSON.parse(file(r, 'phone-runtime.json'))).toEqual({ globalThis: ['AbortController'] });
+  always(r);
+});
+
+it('a screen whose read failed fails a run whose every flow passed — but not in the flow that cuts the network', async () => {
+  const r = await rehearse(['a_flow', 'offline_resilience'], { a_flow: ['failed-read-then-pass'], offline_resilience: ['failed-read-then-pass'] });
+  expect(r.status).toBe(1);
+  const said = titled(r, 'error', 'A screen could not read or is slower than its ceiling');
+  expect(said).toContain('dispatch could not read during a_flow');
+  expect(said).not.toContain('during offline_resilience');
+  expect(titled(r, 'error', 'E2E flows failed')).toBe('');
+  always(r);
+});
+
+it('a phone runtime that is not the committed copy fails the run, naming what changed', async () => {
+  const r = await rehearse(['a_flow'], { a_flow: ['pass'] }, { state: { 'runtime-name': 'AbortSignal' } });
+  expect(r.status).toBe(1);
+  const said = titled(r, 'error', "The phone's runtime is not the committed copy");
+  expect(said).toContain('globalThis: the phone has AbortSignal, the copy does not');
+  expect(said).toContain('globalThis: the copy has AbortController, the phone does not');
+  expect(titled(r, 'error', 'E2E flows failed')).toBe('');
   always(r);
 });
 

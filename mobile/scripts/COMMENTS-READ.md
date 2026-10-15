@@ -55,23 +55,23 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/browse_vault.yaml | 2026-09-29 | true as written |
 | .maestro/config.yaml | 2026-09-29 | true as written |
 | .maestro/darkroom_search.yaml | 2026-09-29 | true as written |
-| .maestro/error_recovery.yaml | 2026-10-01 | header narrowed to what it proves; wrapped to 80 |
+| .maestro/error_recovery.yaml | 2026-10-15 | edited: each tab asked for what only its loaded content carries; the Dispatch's is the seed's filing |
 | .maestro/film_log.yaml | 2026-09-29 | true as written |
 | .maestro/flow_critical_path.yaml | 2026-09-29 | true as written |
 | .maestro/keyboard/log.tap.yaml | 2026-10-01 | written with the keyboard probe |
-| .maestro/keyboard/log.yaml | 2026-10-01 | written with the keyboard probe |
+| .maestro/keyboard/log.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/keyboard/stack.tap.yaml | 2026-10-01 | written with the keyboard probe: the stack form, reachable by a new member |
-| .maestro/keyboard/stack.yaml | 2026-10-01 | written with the keyboard probe: the stack form, reachable by a new member |
-| .maestro/log_film_flow.yaml | 2026-09-29 | true as written |
+| .maestro/keyboard/stack.yaml | 2026-10-15 | edited: the Reel's log and the seed's stack waited for |
+| .maestro/log_film_flow.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/login_flow.yaml | 2026-09-29 | true as written |
 | .maestro/lounge_flow.yaml | 2026-09-29 | true as written |
 | .maestro/offline_resilience.yaml | 2026-09-29 | true as written |
-| .maestro/README.md | 2026-10-04 | read against the runner: the splash takeover named, fixed and gated; the warm-up gone; retries, crash gate, kept logs |
-| .maestro/lobby_wall_flow.yaml | 2026-09-30 | new: the wall hangs whole, down to its sign-off |
+| .maestro/README.md | 2026-10-15 | edited: a tab's loaded content, a failed read and the phone's runtime are each a gate |
+| .maestro/lobby_wall_flow.yaml | 2026-10-15 | edited: the wall the house read is scrolled to before the sign-off |
 | .maestro/session_survives_restart.yaml | 2026-10-01 | written with the session kept on the device |
-| .maestro/subflows/open_a_film.yaml | 2026-09-29 | true as written |
+| .maestro/subflows/open_a_film.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/subflows/open_the_stub.yaml | 2026-09-30 | written with the stub's single tap |
-| .maestro/subflows/sign_in.yaml | 2026-09-29 | rewritten this session: passes through the Initiation |
+| .maestro/subflows/sign_in.yaml | 2026-10-15 | edited: the account is new, only its profile dated back |
 | ANDROID_LAUNCH.md | 2026-10-04 | the splash leaving as Android's own added to the device checks, with the system exit's real timings |
 | app.config.js | 2026-10-03 | read whole: sound |
 | app/__tests__/boot-structure.test.tsx | — |  |
@@ -93,15 +93,15 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/search-modal.tsx | 2026-10-15 | header top from useModalTop |
 | app/(modals)/social-modal.tsx | 2026-10-15 | handle's top from useModalTop |
 | app/(tabs)/_layout.tsx | 2026-10-15 | edited: each tab's own button draws its icon; no tabBarIcon; the icon's animated views stay native |
-| app/(tabs)/darkroom.tsx | 2026-10-15 | list top from useTabContentTop |
-| app/(tabs)/dispatch.tsx | 2026-10-15 | index top from useTabContentTop |
-| app/(tabs)/index.tsx | 2026-10-15 | wall and welcome start at useTabContentTop |
-| app/(tabs)/lounge.tsx | 2026-10-15 | header top from useTabContentTop |
+| app/(tabs)/darkroom.tsx | 2026-10-15 | edited: the screen says its read failed when the tray could not reach the catalogue |
+| app/(tabs)/dispatch.tsx | 2026-10-15 | edited: the screen says its read failed; each filing carries dispatch-filing |
+| app/(tabs)/index.tsx | 2026-10-15 | edited: the Lobby's read is the programme and the wall, failed when neither kept anything; the welcome's door has an id |
+| app/(tabs)/lounge.tsx | 2026-10-15 | edited: the screen says its read failed when no salon could be read |
 | app/(tabs)/profile.tsx | 2026-10-15 | centred states centre between the bars (useTabRoomPadding) |
-| app/(tabs)/reels.tsx | 2026-10-15 | feed top from useTabContentTop |
+| app/(tabs)/reels.tsx | 2026-10-15 | edited: the screen says its read failed when the house's logs could not be read |
 | app/+not-found.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | app/auth-callback.tsx | 2026-10-01 | a link with no code verifies nothing; comments short |
-| app/dispatch/[id].tsx | 2026-10-02 | Read whole (launch audit). An open ballot said 'CLOSES MOMENTS AGO' (timeAgo clamps the future): timeUntil now. Measured at the real width (the share card keeps a fixed 390 measure on purpose). Its share link went to another company's domain (fixed in f01e7408). |
+| app/dispatch/[id].tsx | 2026-10-15 | edited: the reader says its read failed when no copy of the filing is held |
 | app/dispatch/archive.tsx | 2026-10-02 | Read (launch audit). Column at the real width. Its paging re-asks on every scroll event, so a failed page is asked again: sound. |
 | app/dispatch/compose.tsx | 2026-10-15 | header and door from useModalTop |
 | app/dispatch/room/[username].tsx | 2026-10-02 | Read (launch audit). A failed later page ended the room silently (its list asks once per length): the foot says so. Column at the real width. |
@@ -111,14 +111,14 @@ without one). "Read" is the day its comments were last read against its code.
 | app/edit-profile.tsx | 2026-10-01 |  |
 | app/film-reviews/__tests__/theArchiveSaysWhenItCouldNotRead.test.tsx | — |  |
 | app/film-reviews/[id].tsx | 2026-10-15 | header top from usePushedHeaderTop |
-| app/film/[id].tsx | 2026-10-01 | doors through nav; the critiques' failure carried down; the footage named |
+| app/film/[id].tsx | 2026-10-15 | edited: the film page says its read failed |
 | app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx | 2026-09-30 | written with the log page's critiques matched to the stack's |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
 | app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-08 | the share captured only once the card is whole; the 20 s limit |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | 2026-10-15 | header and badge from usePushedHeaderTop |
 | app/lounge.tsx | 2026-10-01 | true as written |
-| app/lounge/[id].tsx | 2026-10-15 | header top from usePushedHeaderTop |
+| app/lounge/[id].tsx | 2026-10-15 | edited: the room says its read failed when nothing of it is held |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-04 | edited: a portrait without a photograph carries the whole first letter, unspoken |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | 2026-10-15 | back, veil and scrollbar from usePushedHeaderTop |
@@ -128,7 +128,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
 | app/stacks/[id].tsx | 2026-10-15 | chrome, hero and critiques from usePushedHeaderTop |
-| app/user/[username].tsx | 2026-10-15 | tab or pushed top from navMetrics |
+| app/user/[username].tsx | 2026-10-15 | edited: the member file says its read failed |
 | app/year-in-cinema.tsx | 2026-10-15 | close from useOverlayTop; slides from safeAreaHeight |
 | ARCHITECTURE.md | 2026-10-03 | read against the code: reads are not all TanStack Query (the Lounge, the Dispatch and notices read in their stores); CACHE_MAX_AGE in limits.ts never existed (now CACHE_KEYS) |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
@@ -141,11 +141,13 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/iosLaunch.test.ts | 2026-10-15 | the iPhone launch verdict shown saying no to each way a launch fails |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
-| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: a shipped client's own crash run again once, twice not judged and listed, green; any other failure or crash red; this app's run red |
+| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: launches write the phone's runtime; a failed read and a changed runtime each fail the run |
+| e2e/__tests__/runtimeDump.test.ts | 2026-10-15 | new: the runtime's parts joined per launch, held to the copy, and every way it says no |
+| e2e/__tests__/screenTimes.test.ts | 2026-10-15 | edited: a failed read fails the run, but in the flows that cut the network; that list is held to the flows |
+| e2e/__tests__/seed.rehearsal.test.ts | 2026-10-15 | new: the real seed against a fake Supabase that keeps the filing's door |
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | true as written |
 | e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | written with the own-crash list: one row, one or two, or none checked |
-| e2e/__tests__/screenTimes.test.ts | 2026-10-02 | Written in the launch audit: the screen-time reader on threadtime log lines, and every way its gate says no. |
 | e2e/annotate.mjs | 2026-10-04 | the password hidden at the one door out; a summary-only level for past ten notices |
 | e2e/animation-waits.mjs | 2026-10-04 | the probes come first now; true as written |
 | e2e/app-crashes.mjs | 2026-10-15 | edited: --own sets a shipped client's own crashes and their aftermath apart, failing nothing; each soft report keeps its lines |
@@ -154,7 +156,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/old-clients.mjs | 2026-10-15 | new |
 | e2e/db/rehearsals.mjs | 2026-10-15 | new: seeds the made-up house, runs every *_rehearsal.sql as postgres, fails naming each that missed; --self-test proves the verdict can fail |
 | e2e/db/seal.sh | 2026-10-03 | Written in the tooling audit: the seal e2e.yml and load.yml each carried, in one place for three workflows. |
-| e2e/db/seed.mjs | 2026-09-29 | true as written |
+| e2e/db/seed.mjs | 2026-10-15 | edited: the member is made able to file, and files, logs and stacks as themself, each read back |
 | e2e/db/up-down-up.mjs | 2026-10-15 | new |
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
@@ -166,13 +168,14 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
 | e2e/load/probe.mjs | 2026-10-03 | read whole: the paper in all four orders, critiques newest first, the following feed for a member of 2,000 follows; nested plans via auto_explain |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
-| e2e/start-stack.sh | 2026-10-15 | true as written |
-| plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |
-| plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it |
 | e2e/old-client-tree.mjs | 2026-10-15 | new |
 | e2e/old-clients.cjs | 2026-10-15 | edited: own crashes held whole; ownCrashFaults against the register and git; --own-crashes for run-flows.sh |
-| e2e/run-flows.sh | 2026-10-15 | edited: a shipped client's own crashes go to the crash gate and attempt.mjs; a not-judged flow is listed, never failed |
-| e2e/screen-times.mjs | 2026-10-02 | Written in the launch audit: each screen's time to its content, read from the E2E device log; a gate once ceilings are set. |
+| e2e/run-flows.sh | 2026-10-15 | edited: screen times read per flow, a failed read fails the run; the phone's runtime held to the copy |
+| e2e/runtime-dump.mjs | 2026-10-15 | new: the phone's runtime from the device log, held to the committed copy |
+| e2e/screen-times.mjs | 2026-10-15 | edited: a screen.failed fails the run outside the flows that take the network away |
+| e2e/start-stack.sh | 2026-10-15 | true as written |
+| plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it |
+| plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/splash-handoff.mjs | 2026-10-04 | written: no launch takes the splash over, scoped to the app's own processes; no launch, no pass |
 | e2e/scrub.mjs | 2026-10-04 | written: the password out of the kept logs, byte for byte |
@@ -182,7 +185,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-04 | edited: testEnvironment, the timer-checking one, says what it is |
-| jest.setup.ts | 2026-10-15 | edited: the safe-area stand-in carries its two contexts, as React Navigation's tab bar reads them |
+| jest.setup.ts | 2026-10-15 | edited: what the phone lacks is taken away from the one list |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
 | mockups/paper/__tests__/zz-badge.gen.test.tsx | 2026-09-29 | described the real badge as it was at one commit (brass ramp); now says A is whatever RankBadge is |
@@ -326,7 +329,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/everyTextHasACeiling.test.ts | — |  |
 | src/components/dispatch/__tests__/excerpt.test.ts | — |  |
 | src/components/dispatch/__tests__/feedRowIsRecyclable.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/dispatch/__tests__/feedScreen.test.tsx | — |  |
+| src/components/dispatch/__tests__/feedScreen.test.tsx | 2026-10-15 | edited: a failed page tells the E2E so, and shows no filing for a flow to find |
 | src/components/dispatch/__tests__/motionLaws.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/noIntlInTheDispatch.test.ts | — |  |
 | src/components/dispatch/__tests__/nothingIsLostQuietly.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -459,7 +462,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/PathTracker.tsx | 2026-10-02 | tells openSociety and nav the screen on every navigation |
 | src/components/layout/SectionCards.tsx | 2026-10-01 | a section title is a heading |
 | src/components/layout/TopNavBar.tsx | 2026-10-15 | measures itself into navMetrics |
-| src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-09-30 | new: doors, names, states, counts, every line's room |
+| src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-10-15 | edited: lobby-wall-hung only on a wall the house read, vacant too |
 | src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-09-30 | new |
 | src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-01 | both doors, every pull |
 | src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-09-30 | new |
@@ -469,7 +472,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/FilingsBill.tsx | 2026-09-30 | new; the byline moved out of the filing's door |
 | src/components/lobby/KeepOff.tsx | 2026-09-30 | new |
 | src/components/lobby/LobbyHonour.tsx | 2026-09-30 | new |
-| src/components/lobby/LobbyWall.tsx | 2026-10-15 | visible room from the bar's measured height |
+| src/components/lobby/LobbyWall.tsx | 2026-10-15 | edited: the read wall carries lobby-wall-hung |
 | src/components/lobby/Masthead.tsx | 2026-09-30 | new |
 | src/components/lobby/measure.ts | 2026-09-30 | new |
 | src/components/lobby/PairBills.tsx | 2026-09-30 | new; "of one height" held only side by side |
@@ -650,12 +653,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/ReelEyeIcon.tsx | 2026-10-02 | Read (launch audit): artwork. Left alone. |
 | src/components/reels/__tests__/MemberRegistry.select.test.ts | 2026-10-01 | no comments |
 | src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | — |  |
+| src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | 2026-10-15 | edited: the E2E is told a failed reel failed, and an empty one was read |
 | src/components/reels/MemberRegistry.tsx | 2026-10-01 | nav; comments cut to the why |
 | src/components/reels/ReelsCards.tsx | 2026-10-03 | edited: the loader is his eyes; the flicker is gone |
-| src/components/reels/ReelsFeedList.tsx | 2026-10-01 | stale contrast note gone |
+| src/components/reels/ReelsFeedList.tsx | 2026-10-15 | edited: each log row carries reel-log |
 | src/components/reels/ReelsHeader.tsx | 2026-10-01 | comments cut to the why |
-| src/components/reels/ReelsStackList.tsx | 2026-10-01 | true as written |
+| src/components/reels/ReelsStackList.tsx | 2026-10-15 | edited: each stack cell carries reel-stack |
 | src/components/reels/types.ts | 2026-10-01 | true as written |
 | src/components/RouteErrorBoundary.tsx | 2026-10-15 | top from useOverlayTop |
 | src/components/search/SearchResultRow.tsx | 2026-10-02 | ReelRating draws halves; resultLabel says what the row is |
@@ -767,7 +770,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useOfflineAware.test.ts | — |  |
 | src/hooks/__tests__/useProfileController.logic.test.ts | — |  |
 | src/hooks/__tests__/useProfileData.reducer.test.ts | — |  |
-| src/hooks/__tests__/useScreenReady.test.tsx | — |  |
+| src/hooks/__tests__/useScreenReady.test.tsx | 2026-10-15 | edited: a failed read writes screen.failed; the first screen writes the runtime |
 | src/hooks/useAmbientGlow.ts | 2026-10-01 |  |
 | src/hooks/useArrival.ts | 2026-10-08 | edited: the easing key only when one was given |
 | src/hooks/useAuthFlow.ts | 2026-10-03 | edited: joining refuses a password too long for the lock, first |
@@ -794,7 +797,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useOfflineAware.ts | 2026-10-01 | one subscription, no clock |
 | src/hooks/useProfileController.ts | 2026-10-01 | one isNarrowed for refresh and filters; a follow that throws is said; dead ref gone; no ticket history |
 | src/hooks/useProfileData.ts | 2026-10-01 | each read cancelled only by what makes it stale; failures wiped with the member; comments say what is true now |
-| src/hooks/useScreenReady.tsx | 2026-10-01 | true as written |
+| src/hooks/useScreenReady.tsx | 2026-10-15 | edited: takes the read state; a failed read is screen.failed |
 | src/hooks/useSheetPresence.ts | 2026-10-01 | written: five sheets' rise and fall, once |
 | src/hooks/useTextScale.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
@@ -1023,6 +1026,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/e2eRuntime.test.ts | 2026-10-15 | new: the runtime written once a launch by the E2E build alone, in lines the run can join |
 | src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts | 2026-10-15 | written: every enqueue call site's type has its kind in the map |
 | src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |
 | src/utils/__tests__/appConfig.guard.test.ts | 2026-10-15 | EAS uploads the commit alone, numbered as committed |
@@ -1068,7 +1072,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/logger.test.ts | — |  |
 | src/utils/__tests__/logScreenPolish.guard.test.ts | — |  |
 | src/utils/__tests__/lucideIconsAreBundled.guard.test.ts | — |  |
-| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-15 | edited: a scroll to something tapped centres it with 60 s; a page's last line is named; no flow line over 80 |
+| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-15 | edited: a tab a flow opens is looked for by what only its loaded content carries |
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
@@ -1095,6 +1099,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-03 | rewritten: whom an event concerns, what a record grants, applying it |
 | src/utils/__tests__/roomFilters.test.ts | 2026-10-01 | written: one answer to is-this-room-narrowed |
+| src/utils/__tests__/runtimeDump.contract.test.ts | 2026-10-15 | new: the list of what the phone lacks, held to the phone's runtime and Node |
+| src/utils/__tests__/runtimeLacks.guard.test.ts | 2026-10-15 | new: no line uses an API the phone lacks; jest takes away exactly the list |
 | src/utils/__tests__/sanitisationCallSites.test.ts | 2026-10-03 | edited: the hostile samples written as escapes |
 | src/utils/__tests__/sanitizeInput.test.ts | — |  |
 | src/utils/__tests__/schemaSnapshot.guard.test.ts | — |  |
@@ -1118,11 +1124,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/websiteFreeze.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/withAbortSignal.test.ts | — |  |
 | src/utils/__tests__/withRetry.test.ts | — |  |
-| src/utils/__tests__/withTimeout.test.ts | 2026-10-14 | runs where AbortSignal has no timeout; its timer is cleared |
+| src/utils/__tests__/withTimeout.test.ts | 2026-10-15 | edited: the timeout case names withTimeout's own timer |
 | src/utils/AppError.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/csv.ts | 2026-10-02 | read; sound |
 | src/utils/deviceRegion.ts | 2026-10-01 | new |
 | src/utils/draftSync.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/utils/e2eRuntime.ts | 2026-10-15 | new: the phone's runtime written once a launch, in parts, by the E2E build |
 | src/utils/e2eTrace.ts | 2026-10-02 | Read whole in the launch audit: sound. |
 | src/utils/endorsementGroupKey.ts | 2026-10-02 | Read whole (launch audit). A certified-log group opened the FILM, on the belief that no log page existed (app/log/[id] does), and went nowhere without a film id: it opens the log. |
 | src/utils/enter.ts | 2026-10-02 | read; sound |
@@ -1197,9 +1204,11 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/__tests__/timerFixtures/leavesATimer.fixture.ts | 2026-10-04 | written whole |
 | test-utils/__tests__/timerFixtures/leavesATimerAfterFakeOnes.fixture.ts | 2026-10-04 | written whole |
 | test-utils/__tests__/timerFixtures/leavesNothing.fixture.ts | 2026-10-04 | written whole |
+| test-utils/asOnThePhone.ts | 2026-10-15 | new: takes away in jest what the phone lacks |
 | test-utils/contractEnv.ts | 2026-10-03 | read whole: sound; "all 5,000 tests" is every unit test |
 | test-utils/react-native-testing-library.js | 2026-10-04 | edited: every render's client is testQueryClient(); the comment says what that keeps |
 | test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
+| test-utils/runtimeLacks.ts | 2026-10-15 | new: the finder of APIs the phone lacks, and the comparison with Node |
 | test-utils/SOURCE-READING-TESTS.md | 2026-10-03 | read whole: rows for the new source readers |
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
 | test-utils/testQueryClient.ts | 2026-10-04 | written whole: the one client a test builds — the app's rules, no collection timer, errors heard |

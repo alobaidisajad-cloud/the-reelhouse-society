@@ -79,8 +79,8 @@ describe('withTimeout', () => {
   });
 
   it('throws AppError TIMEOUT when OUR timeout fires (AbortError + signal aborted)', async () => {
-    // UTIL-2: a real timeout — the internal AbortSignal.timeout fires, so
-    // signal.aborted is true and the AbortError is correctly mapped to TIMEOUT.
+    // UTIL-2: a real timeout — withTimeout's own timer fires and aborts the signal,
+    // so the AbortError is ours and is mapped to TIMEOUT.
     await expect(
       withTimeout(
         (signal) => new Promise((_resolve, reject) => {

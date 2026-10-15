@@ -45,8 +45,11 @@ export function ReelsFeedList({
   isFetchingNextPage,
   extraData,
 }: ReelsFeedListProps) {
+  // `reel-log`: a log the reel read, which only a loaded reel carries (the E2E asks for it).
   const renderLogItem = useCallback(({ item, index }: { item: FeedItem; index: number }) => (
-    <ActivityCard item={item} index={index} />
+    <View testID="reel-log">
+      <ActivityCard item={item} index={index} />
+    </View>
   ), []);
 
   const viewabilityConfig = useRef({

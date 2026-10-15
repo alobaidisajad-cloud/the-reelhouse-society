@@ -175,7 +175,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const { nav: doors, data } = ctrl;
   const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, analyticsShape, taste } = data;
   const { username, isSelf, repairingHandle, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists } = ctrl;
-  const readyMark = useScreenReady('member', !loading && !repairingHandle);
+  // Failed: the file could not be read, and nothing of it is held.
+  const readyMark = useScreenReady('member', loading || repairingHandle ? 'reading'
+    : !targetUser && data.error ? 'failed' : 'ready');
   // Your own Archive, wherever this page shows it, behind one lock (Settings).
   const archiveLock = useArchiveLock(isSelf);
   const { archiveSieve, archiveSearch, listsSearch, physicalSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, setArchiveSieve, setArchiveSearch, setListsSearch, setPhysicalSearch, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setWatchlistDecade, setPhysicalFilter, setPhysicalSort, setListsSort } = ctrl;
