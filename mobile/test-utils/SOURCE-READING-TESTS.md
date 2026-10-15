@@ -286,6 +286,8 @@ each is judged into its kind above in Phase 4 (found by P0.42, fix in Phase 4).
 | `__tests__/schemaLengthCaps.test.ts` | The text ceilings in the migrations and the snapshot, against both clients' limits. |
 | `__tests__/searchPathHardening.test.ts` | Every migration in both trees: each SECURITY DEFINER function pins pg_temp. |
 | `__tests__/tmdbMockCoverage.test.ts` | Every TMDB method the app calls, against the mock. |
+| `e2e/__tests__/advisers.test.ts` | The advisers' allowlist and the sealed world's config.toml. |
+| `e2e/__tests__/advisories.test.ts` | The reports its own runs of advisories.mjs wrote, and the advisories' allowlist. |
 | `e2e/__tests__/anonKey.test.ts` | The E2E workflow and the sealed world's config.toml. |
 | `e2e/__tests__/appCrashes.test.ts` | Recorded device logs, as fixtures for the crash gate. |
 | `e2e/__tests__/attempt.test.ts` | A recorded device log, as a fixture for the attempt judge. |
@@ -301,4 +303,5 @@ each is judged into its kind above in Phase 4 (found by P0.42, fix in Phase 4).
 | `e2e/__tests__/shardVerdict.test.ts` | The E2E workflow (.github/workflows/e2e.yml). |
 | `e2e/__tests__/shards.test.ts` | The shard map and the E2E workflow. |
 | `e2e/__tests__/startStack.test.ts` | The stack's start script, its workflows and the sealed world's config.toml. |
+| `plugins/__tests__/withoutDevLauncherScanner.test.ts` | The installed expo-dev-launcher's manifest, for the entry the plugin removes, and app.json's plugins. |
 | `plugins/__tests__/withSplashWithoutHandoff.test.ts` | The generated MainActivity fixture, app.json's plugins and the app's code, for who imports the splash screen. |

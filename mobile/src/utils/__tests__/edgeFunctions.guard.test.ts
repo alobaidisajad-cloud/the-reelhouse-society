@@ -23,7 +23,7 @@ const REPO = join(__dirname, '..', '..', '..', '..');
 /** The function folders in one tree, from every edge function file test-utils/universe.js names. */
 const folders = (dir: string) =>
   [...new Set(universe('functions').map(repoRel).filter((r) => r.startsWith(`${dir}/`))
-    .map((r) => r.slice(dir.length + 1).split('/')[0]))]
+    .map((r) => r.slice(dir.length + 1).replace(/\/.*$/, '')))]
     .filter((n) => !n.startsWith('_') && !n.startsWith('.'));
 
 const listed = { ...fns.DEPLOYED, ...fns.NOT_DEPLOYED };
@@ -34,7 +34,7 @@ it('no function is in both folders', () => {
 });
 
 it('every function folder is listed, with the folder it is really in', () => {
-  const onDisk = [...folders(fns.WEB).map((n) => [n, fns.WEB]), ...folders(fns.MOBILE).map((n) => [n, fns.MOBILE])];
+  const onDisk = [...folders(fns.WEB).map((n) => [n, fns.WEB] as const), ...folders(fns.MOBILE).map((n) => [n, fns.MOBILE] as const)];
   expect(onDisk.length).toBeGreaterThan(5);
   expect(onDisk.filter(([n, dir]) => listed[n]?.dir !== dir)).toEqual([]);
 });

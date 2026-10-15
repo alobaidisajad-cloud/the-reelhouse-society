@@ -129,7 +129,7 @@ const cancels = (wf: Workflow & { concurrency?: string | { group?: string; 'canc
 const INSTALLS = /(^|[\s;&|(])(sudo\s+)?(apt-get|apt|brew)\s+install\b|\bnpm\s+(ci|install)\b|\bpip3?\s+install\b|\bplaywright\s+install\b|\bsdkmanager\b[^\n]*\s--install\b/m;
 
 /** The action's name, without the commit it is pinned to. */
-const actionOf = (uses: string) => uses.split('@')[0];
+const actionOf = (uses: string) => uses.replace(/@.*$/, '');
 /**
  * Every action a scheduled workflow uses, judged: true when it downloads what
  * it installs while the run runs, so it is an install like any other; or why
