@@ -99,7 +99,8 @@ describe('every change has a tested undo', () => {
   });
 
   it('CI proves the undo can fail, then runs every pending one up, down and up', () => {
-    const ci = readFileSync(join(ROOT, '.github/workflows/db-integration.yml'), 'utf8');
+    // A Windows checkout holds the file with CRLF; the steps are read line by line as LF.
+    const ci = readFileSync(join(ROOT, '.github/workflows/db-integration.yml'), 'utf8').replace(/\r\n/g, '\n');
     const selfTest = ci.indexOf('node mobile/e2e/db/up-down-up.mjs --self-test');
     const run = ci.indexOf('run: node mobile/e2e/db/up-down-up.mjs\n');
     expect(selfTest).toBeGreaterThan(ci.indexOf('schema-snapshot.mjs --check'));
@@ -139,8 +140,9 @@ describe('the clients in members\' hands', () => {
   });
 
   it('are checked in CI after every pending migration is applied, before the security checks', () => {
-    const ci = readFileSync(join(MOBILE, '..', '.github/workflows/db-integration.yml'), 'utf8');
+    const ci = readFileSync(join(MOBILE, '..', '.github/workflows/db-integration.yml'), 'utf8').replace(/\r\n/g, '\n');
     const at = ci.indexOf('run: node mobile/e2e/db/old-clients.mjs');
+    expect(ci.indexOf('run: node mobile/e2e/db/up-down-up.mjs\n')).toBeGreaterThan(-1);
     expect(at).toBeGreaterThan(ci.indexOf('run: node mobile/e2e/db/up-down-up.mjs\n'));
     expect(ci.indexOf('-f mobile/e2e/db/security.sql')).toBeGreaterThan(at);
   });

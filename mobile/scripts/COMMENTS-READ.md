@@ -1041,7 +1041,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
-| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-15 | edited: the workflow is read as LF, so a Windows checkout's CRLF finds its steps |
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
 | src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | payments pass: a failed rank sync carries its status |
 | src/utils/__tests__/networkError.test.ts | — |  |
