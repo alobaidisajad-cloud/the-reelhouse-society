@@ -16,7 +16,7 @@
         {
           "path": "mobile/src/hooks/useArrival.ts",
           "from": "ef697e383a23a01df4423c042de27ff0fa96043d",
-          "why": "for the Android emulator: Sealed E2E was red there with build 41's form of the launch-crash fix and green with this one's (P0.15a); build 41 itself shipped to iPhones"
+          "why": "for the Android emulator: Sealed E2E was red on the commits with build 41 form of this file (React destroyed by a Fabric mount error; the link to this file is not yet pinned, P0.15a) and green on every run with this form; build 41 itself shipped to iPhones"
         },
         {
           "path": "mobile/.maestro/subflows/sign_in.yaml",
