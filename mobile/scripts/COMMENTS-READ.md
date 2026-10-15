@@ -144,6 +144,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/glideLogLevel.test.ts | 2026-10-08 | written with glide-log-level.mjs, on dexdump lines in the shape of runs 37628665206 and 37674283540 |
 | e2e/__tests__/iosLaunch.test.ts | 2026-10-15 | the iPhone launch verdict shown saying no to each way a launch fails |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
+| e2e/__tests__/oldClients.test.ts | 2026-10-15 | new |
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
 | e2e/__tests__/prefetchDownloadOnly.test.ts | 2026-10-15 | new: written with prefetch-download-only.mjs, on dexdump lines in the glide check's shape |
 | e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: one shard runs only its flows, the probes and the launch where the map puts them, an unmapped flow in the last; no shard, the whole run |
@@ -163,7 +164,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/attempt.mjs | 2026-10-15 | edited: a shipped client's own crash is run again once within the limits, else not judged (exit 3) |
 | e2e/db/advisers.mjs | 2026-10-15 | new: supabase db advisors on the sealed copy with the API's schemas set, judged against the allowlist, names and counts only; --self-test plants a table without row security |
 | e2e/db/bootstrap.mjs | 2026-10-15 | edited: a default naming no schema is changed by its own role, supabase_admin's in 4c |
-| e2e/db/old-clients.mjs | 2026-10-15 | new |
+| e2e/db/old-clients.mjs | 2026-10-15 | new; edited: only its schema tests can say a client breaks; one not set up is unchecked, by step; its install tried twice |
 | e2e/db/rehearsals.mjs | 2026-10-15 | new: seeds the made-up house, runs every *_rehearsal.sql as postgres, fails naming each that missed; --self-test proves the verdict can fail |
 | e2e/db/seal.sh | 2026-10-03 | Written in the tooling audit: the seal e2e.yml and load.yml each carried, in one place for three workflows. |
 | e2e/db/seed.mjs | 2026-10-15 | edited: the member is made able to file, and files, logs and stacks as themself, each read back |
