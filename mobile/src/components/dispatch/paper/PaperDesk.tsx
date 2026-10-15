@@ -231,7 +231,7 @@ export const BallotDesk = memo(function BallotDesk({
                     <>
                       <View style={d.slotArt}>
                         {o.posterPath ? (
-                          <Image source={{ uri: o.posterPath }} style={p.plateArt} contentFit="cover" />
+                          <Image source={{ uri: o.posterPath }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
                         ) : null}
                       </View>
                       <View style={{ flex: 1, minWidth: 0 }}>
@@ -409,7 +409,7 @@ export const FilmFinder = memo(function FilmFinder({
             accessibilityLabel={`${f.title}${f.year ? `, ${f.year}` : ''}`}>
             <View style={d.resultArt}>
               {f.posterPath ? (
-                <Image source={{ uri: f.posterPath }} style={p.plateArt} contentFit="cover" />
+                <Image source={{ uri: f.posterPath }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
               ) : null}
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>

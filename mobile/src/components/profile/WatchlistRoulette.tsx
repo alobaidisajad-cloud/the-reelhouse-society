@@ -240,6 +240,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                                         <Image
                                             source={{ uri: posterUri(flickerItem)! }}
                                             style={s.poster}
+                                            cachePolicy="memory-disk"
                                             blurRadius={3}
                                         />
                                     ) : (

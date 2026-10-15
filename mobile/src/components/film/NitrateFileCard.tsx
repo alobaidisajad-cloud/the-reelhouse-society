@@ -97,7 +97,7 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
     <View style={s.canvas}>
       {/* Ambient nitrate glow behind the slab */}
       {posterUrl ? (
-        <Image source={{ uri: posterUrl }} style={s.ambient} contentFit="cover" blurRadius={40} onDisplay={drew('ambient')} onError={failed} />
+        <Image source={{ uri: posterUrl }} style={s.ambient} contentFit="cover" cachePolicy="memory-disk" blurRadius={40} onDisplay={drew('ambient')} onError={failed} />
       ) : (
         <LinearGradient
           colors={['rgba(184,137,26,0.08)', 'rgba(6,5,4,0)']}
@@ -125,7 +125,7 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
 
         {/* The lockup — the eye above the name */}
         <View style={s.lockup}>
-          <Image source={require('@/assets/images/reelhouse-logo.png')} style={s.lockupSeal} onDisplay={sealDrawn} onError={sealDrawn} />
+          <Image source={require('@/assets/images/reelhouse-logo.png')} style={s.lockupSeal} cachePolicy="memory-disk" onDisplay={sealDrawn} onError={sealDrawn} />
           <Text {...decorativeTextProps} style={s.lockupWordmark}>✦ THE REELHOUSE SOCIETY ✦</Text>
         </View>
 
@@ -134,7 +134,7 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
           <View style={s.posterFrame}>
             <View style={s.posterClip}>
             {posterUrl ? (
-              <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" onDisplay={drew('poster')} onError={failed} />
+              <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" cachePolicy="memory-disk" onDisplay={drew('poster')} onError={failed} />
             ) : (
               <LinearGradient colors={['#15120e', '#0D0B09']} style={s.posterFallback}>
                 <View style={s.posterFallbackRule} />

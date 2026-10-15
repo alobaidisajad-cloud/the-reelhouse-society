@@ -325,7 +325,7 @@ export const PaperArchive = memo(function PaperArchive({
         <View style={m.found}>
           <View style={m.foundPlate}>
             {film.posterPath ? (
-              <Image source={{ uri: film.posterPath }} style={p.plateArt} contentFit="cover" />
+              <Image source={{ uri: film.posterPath }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
             ) : null}
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
@@ -363,7 +363,7 @@ export const ArchiveFilm = memo(function ArchiveFilm({
     >
       <View style={m.archivePlate}>
         {film.posterPath ? (
-          <Image source={{ uri: film.posterPath }} style={p.plateArt} contentFit="cover" />
+          <Image source={{ uri: film.posterPath }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
         ) : null}
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
@@ -586,7 +586,7 @@ export const DossierShareCard = memo(function DossierShareCard({
       {/* The inner rule: a second border set in, which makes it read as printed. */}
       <View style={m.shareInner} pointerEvents="none" />
 
-      {logo ? <Image source={{ uri: logo }} style={m.shareLogo} contentFit="contain" /> : null}
+      {logo ? <Image source={{ uri: logo }} style={m.shareLogo} contentFit="contain" cachePolicy="memory-disk" /> : null}
 
       {/* The nameplate rule is the house's brass ramp, as on every rule that matters. */}
       <LinearGradient colors={BRASS} locations={BRASS_STOPS}
@@ -631,7 +631,7 @@ export const DossierShareCard = memo(function DossierShareCard({
       <View style={m.shareFoot}>
         <View style={m.shareByWrap}>
           {author?.avatar ? (
-            <Image source={{ uri: author.avatar }} style={m.shareAvatar} contentFit="cover" />
+            <Image source={{ uri: author.avatar }} style={m.shareAvatar} contentFit="cover" cachePolicy="memory-disk" />
           ) : null}
           <Text style={m.shareBy} numberOfLines={1} {...decorativeTextProps}>
             {author ? author.name.toUpperCase() : DEPARTED_NAME.toUpperCase()}
@@ -757,7 +757,7 @@ export const LoungeCard = memo(function LoungeCard({
         {/* The WRITER, with a face (the lounge already names who shared it). */}
         <View style={m.loungeByRow}>
           {author?.avatar ? (
-            <Image source={{ uri: author.avatar }} style={m.loungeAvatar} contentFit="cover" />
+            <Image source={{ uri: author.avatar }} style={m.loungeAvatar} contentFit="cover" cachePolicy="memory-disk" />
           ) : (
             <View style={[m.loungeAvatar, m.loungeAvatarNone]} />
           )}

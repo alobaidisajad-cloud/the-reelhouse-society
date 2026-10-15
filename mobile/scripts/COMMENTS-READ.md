@@ -130,7 +130,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/[id].tsx | 2026-10-15 | chrome, hero and critiques from usePushedHeaderTop; foot from navMetrics; the critique field off the edge |
 | app/user/[username].tsx | 2026-10-15 | edited: the read; centred states in a CentredRoom; foot a tab's or a pushed page's |
 | app/year-in-cinema.tsx | 2026-10-15 | close from useOverlayTop; slides from safeAreaHeight; footer on the edge (FOOTER_GAP) |
-| ARCHITECTURE.md | 2026-10-03 | read against the code: reads are not all TanStack Query (the Lounge, the Dispatch and notices read in their stores); CACHE_MAX_AGE in limits.ts never existed (now CACHE_KEYS) |
+| ARCHITECTURE.md | 2026-10-15 | edited: Image Caching is true now that every picture states memory-disk, and names the guard that holds it |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
 | e2e/__tests__/flowScreens.test.ts | 2026-10-04 | QueryController no longer counted; Android 14 names what animated; Maestro's JUnit reason, the no-record flow, the decision line |
@@ -390,7 +390,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/paperMetrics.ts | 2026-10-02 | Read in the launch audit: issueOf counts calendar days (summer-time bug). |
 | src/components/dispatch/paper/PaperMore.tsx | 2026-10-15 | PaperBack starts at a pushed or modal top |
 | src/components/dispatch/paper/paperMotion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/dispatch/paper/paperPerf.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
+| src/components/dispatch/paper/paperPerf.ts | 2026-10-15 | edited: memory-disk on every image, held by its guard; no image sets a priority, so the backdrop rule is gone |
 | src/components/dispatch/paper/PaperPost.tsx | 2026-10-04 | edited: its own initialOf gone; the one in utils/text |
 | src/components/dispatch/paper/PaperStrike.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperStyles.ts | 2026-10-15 | the masthead title's glow has room inside the box a phone cuts it at |
@@ -980,7 +980,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/helpers/promiseMutex.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/domain/helpers/sessionGuard.ts | 2026-10-01 | true as written |
 | src/stores/domain/interactionSlice.ts | 2026-10-03 | read whole: a certification made before the answer is kept (index and list) |
-| src/stores/domain/listSlice.ts | 2026-10-02 | a film leaves a stack in one write |
+| src/stores/domain/listSlice.ts | 2026-10-15 | edited: the Stacks prefetch fetches to disk, and each view decodes its own; no cache is warmed |
 | src/stores/domain/logSlice.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-15 | edited: the overlay note says where another member's writes go |
 | src/stores/domain/socialSlice.ts | 2026-10-08 | one follow-list read per member, written only while theirs; clearSocialCaches registered for sign-out |
@@ -1043,6 +1043,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/e2eRuntime.test.ts | 2026-10-15 | new: the runtime written once a launch by the E2E build alone, in lines the run can join |
 | src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts | 2026-10-15 | written: every enqueue call site's type has its kind in the map |
 | src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |
+| src/utils/__tests__/fixtures/imageCache.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
 | src/utils/__tests__/appConfig.guard.test.ts | 2026-10-15 | EAS uploads the commit alone, numbered as committed |
 | src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
 | src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-10-15 | edited: a member is signed in |
@@ -1080,6 +1081,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/handleNotice.test.ts | — |  |
 | src/utils/__tests__/hooks.guard.test.ts | 2026-10-15 | edited: the push's jest leaves out nested worktrees, never the checkout's own tests |
 | src/utils/__tests__/html.test.ts | — |  |
+| src/utils/__tests__/everyPictureStatesItsCache.guard.test.ts | 2026-10-15 | new: every expo-image picture states its cache; another policy is listed with its reason |
 | src/utils/__tests__/imagePrefetchSites.guard.test.ts | 2026-10-08 | written: the four places that fetch ahead, at the size their screens draw; none on restore |
 | src/utils/__tests__/inputTrustBoundary.test.ts | 2026-10-03 | edited: a pasted separator stays a break; hidden test characters written as escapes |
 | src/utils/__tests__/keysetCursor.test.ts | — |  |
@@ -1224,7 +1226,7 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/react-native-testing-library.js | 2026-10-04 | edited: every render's client is testQueryClient(); the comment says what that keeps |
 | test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
 | test-utils/runtimeLacks.ts | 2026-10-15 | edited: a declare global is a type; the bundler's own global is never read as lacked |
-| test-utils/SOURCE-READING-TESTS.md | 2026-10-03 | read whole: rows for the new source readers |
+| test-utils/SOURCE-READING-TESTS.md | 2026-10-15 | edited: a row for the picture cache sweep |
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
 | test-utils/testQueryClient.ts | 2026-10-04 | written whole: the one client a test builds — the app's rules, no collection timer, errors heard |
 | test-utils/timerCheckingEnvironment.js | 2026-10-04 | written whole: the environment that fails a file ending with a timer still waiting |

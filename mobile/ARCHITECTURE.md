@@ -88,7 +88,7 @@ src/
 | Feature | Implementation |
 |---------|---------------|
 | Virtualized Lists | 100% FlashList (except DraggableFlatList) |
-| Image Caching | expo-image with memory-disk caching |
+| Image Caching | expo-image, every picture `cachePolicy="memory-disk"` (its default, `'disk'`, decodes again on every visit): `src/utils/__tests__/everyPictureStatesItsCache.guard.test.ts` |
 | Gradients | Native `experimental_backgroundImage`, never a gradient-only SVG (an SVG is a bitmap the size of its view): `src/theme/__tests__/aGradientIsNeverABitmap.guard.test.ts` |
 | Animation | Reanimated 4 worklets (native thread) |
 | Prefetching | Only where a screen is about to draw the picture, at the size it draws it (profile tabs, the Stacks); never at start-up. The list is `src/utils/__tests__/imagePrefetchSites.guard.test.ts` |

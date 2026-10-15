@@ -115,6 +115,7 @@ export function SocietySeal({ size = 92 }: { size?: number }) {
           source={LOGO}
           style={{ width: size, height: size }}
           contentFit="contain"
+          cachePolicy="memory-disk"
           transition={0}
           accessibilityLabel="The ReelHouse Society seal"
         />
@@ -124,6 +125,7 @@ export function SocietySeal({ size = 92 }: { size?: number }) {
             source={LOGO}
             style={{ width: size, height: size, tintColor: colors.flicker }}
             contentFit="contain"
+            cachePolicy="memory-disk"
             transition={0}
           />
         </Animated.View>

@@ -221,7 +221,7 @@ export function EditProfileScreen() {
                 accessibilityLabel="Change profile picture"
               >
                 {avatarPreview ? (
-                    <Image source={{ uri: avatarPreview }} style={st.avatarImg} contentFit="cover" transition={150} />
+                    <Image source={{ uri: avatarPreview }} style={st.avatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
                 ) : (
                     <Text {...decorativeTextProps} {...UNSPOKEN} style={st.avatarInitial}>{portraitInitial(user)}</Text>
                 )}

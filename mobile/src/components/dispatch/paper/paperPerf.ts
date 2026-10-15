@@ -63,8 +63,8 @@ export const LEAD_STYLE: Record<string, { color: string }> = Object.freeze(
  *     is the most visible artefact a recycling list produces.
  *   · `transition={0}` in list rows. A fade on every recycle reads as the list
  *     stuttering, not as polish. Fades belong on a detail screen, once.
- *   · `cachePolicy="memory-disk"`, and `priority="low"` for backdrops so an
- *     atmospheric image never delays an avatar somebody is looking at.
+ *   · `cachePolicy="memory-disk"` on every image: a row scrolled back to is drawn
+ *     from memory while the cache holds it (`everyPictureStatesItsCache.guard.test.ts`).
  *   · TMDB SIZED PATHS, never `/original`. A backdrop is drawn 315pt wide at
  *     0.13 opacity; `w780` is already generous and `original` can be 3MB of
  *     decode for a texture nobody can make out. Posters at `w185`, avatars at

@@ -178,7 +178,7 @@ export const PaperBallot = memo(function PaperBallot({
           <View style={p.plateGlow}>
             <View style={p.wonPoster}>
               {options[top].posterPath ? (
-                <Image source={{ uri: options[top].posterPath }} style={p.plateArt} contentFit="cover" />
+                <Image source={{ uri: options[top].posterPath }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
               ) : null}
             </View>
           </View>
@@ -283,7 +283,7 @@ export const PaperBallot = memo(function PaperBallot({
               )}
               <View style={[p.optionPoster, closed && { width: 22, height: 33 }]}>
                 {o.posterPath ? (
-                  <Image source={{ uri: o.posterPath }} style={[p.plateArt, p.artHeld]} contentFit="cover" />
+                  <Image source={{ uri: o.posterPath }} style={[p.plateArt, p.artHeld]} contentFit="cover" cachePolicy="memory-disk" />
                 ) : null}
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>

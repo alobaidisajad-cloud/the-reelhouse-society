@@ -141,7 +141,7 @@ export const PaperComposer = memo(function PaperComposer({
             <View style={p.byline}>
               <View style={p.avatar}>
                 {me.avatar ? (
-                  <Image source={{ uri: me.avatar }} style={p.plateArt} contentFit="cover" />
+                  <Image source={{ uri: me.avatar }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
                 ) : (
                   <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(me.name)}</Text>
                 )}

@@ -106,7 +106,7 @@ export const SocietyPoster = memo(function SocietyPoster({
           <Text style={s.ruleText} {...deckLabelProps}>ADMISSION FREE</Text>
         </View>
 
-        <Image source={LOGO} style={[s.mark, compact && s.markCompact, { width: mark, height: mark }]} contentFit="contain" transition={0} />
+        <Image source={LOGO} style={[s.mark, compact && s.markCompact, { width: mark, height: mark }]} contentFit="contain" cachePolicy="memory-disk" transition={0} />
 
         <Text style={[s.the, compact && s.theCompact]} {...displayTextProps} maxFontSizeMultiplier={1.1} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
           The Society

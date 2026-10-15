@@ -168,7 +168,7 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
     <View style={[p.comment, c.mine && p.commentMine]}>
       <View style={p.avatar}>
         {c.author && c.author.avatar ? (
-          <Image source={{ uri: c.author.avatar }} style={p.plateArt} contentFit="cover" />
+          <Image source={{ uri: c.author.avatar }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
         ) : c.author ? (
           <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(c.author.name)}</Text>
         ) : null}
@@ -365,7 +365,7 @@ export const CritiqueComposer = memo(function CritiqueComposer({
     <View style={[p.dockCompose, { paddingBottom: bottomInset }]}>
       <View style={p.avatar}>
         {me.avatar ? (
-          <Image source={{ uri: me.avatar }} style={p.plateArt} contentFit="cover" />
+          <Image source={{ uri: me.avatar }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
         ) : <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(me.name)}</Text>}
       </View>
       <TextInput

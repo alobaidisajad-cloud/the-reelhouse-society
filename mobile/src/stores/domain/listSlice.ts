@@ -161,7 +161,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             _fetchingLists: false,
         });
 
-        // Background image prefetching to warm the native image cache.
+        // The Stacks tab's first posters, fetched ahead to disk; each view decodes its own.
         const posterUrls = new Set<string>();
         newLists.forEach(list => {
             // Cap at 4 items matching ProfileListsTab grid to prevent JS bridge starvation
