@@ -9,6 +9,9 @@
  *
  * Usage:  npm run test:tz            (whole suite, every zone)
  *         npm run test:tz -- <path>  (one file, every zone)
+ *
+ * ZONES is the one list: CI (god_tier_ci.yml) reads it from here and runs each
+ * part of the suite in every zone; ciWorkflows.guard holds the workflow to it.
  */
 const { spawnSync } = require('child_process');
 
@@ -23,25 +26,34 @@ const ZONES = [
   'Pacific/Kiritimati',    // UTC+14
 ];
 
-const passthrough = process.argv.slice(2);
-const failures = [];
+/** The record one zone's CI run writes (`jest --json --outputFile`), named for its zone. */
+const recordOf = (tz) => `jest-${tz.replace(/\//g, '-')}.json`;
 
-// Jest's own entry on THIS node: `npx jest` needs a shell on Windows (and its quoting).
-const jestBin = require.resolve('jest/bin/jest');
+function main() {
+  const passthrough = process.argv.slice(2);
+  const failures = [];
 
-for (const tz of ZONES) {
-  process.stdout.write(`\n──────── TZ=${tz} ────────\n`);
-  const res = spawnSync(
-    process.execPath,
-    [jestBin, '--silent', ...passthrough],
-    { stdio: 'inherit', env: { ...process.env, TZ: tz } },
-  );
-  if (res.status !== 0) failures.push(tz);
+  // Jest's own entry on THIS node: `npx jest` needs a shell on Windows (and its quoting).
+  const jestBin = require.resolve('jest/bin/jest');
+
+  for (const tz of ZONES) {
+    process.stdout.write(`\n──────── TZ=${tz} ────────\n`);
+    const res = spawnSync(
+      process.execPath,
+      [jestBin, '--silent', ...passthrough],
+      { stdio: 'inherit', env: { ...process.env, TZ: tz } },
+    );
+    if (res.status !== 0) failures.push(tz);
+  }
+
+  if (failures.length > 0) {
+    console.error(`\n✗ Suite failed in: ${failures.join(', ')}`);
+    console.error('  A date that is only correct in some timezones is not correct.');
+    process.exit(1);
+  }
+  console.log(`\n✓ Suite passed in all ${ZONES.length} timezones.`);
 }
 
-if (failures.length > 0) {
-  console.error(`\n✗ Suite failed in: ${failures.join(', ')}`);
-  console.error('  A date that is only correct in some timezones is not correct.');
-  process.exit(1);
-}
-console.log(`\n✓ Suite passed in all ${ZONES.length} timezones.`);
+if (require.main === module) main();
+
+module.exports = { ZONES, recordOf };

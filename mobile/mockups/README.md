@@ -164,6 +164,9 @@ node mockups/tools/layout.cjs --src mockups/out/captured --passes ios@1 --kinds 
   typed out by hand (`stackedRowHitSlop.test.ts`) became this list; a test that
   stops drawing a control is a failure, not a check that quietly stopped.
   Regenerate it from `--sites` (strip the `:line`) when a file is added on purpose.
+  CI splits this run across three machines by test file: each measures its own
+  screens and writes its `--sites`, and `scripts/jest-shards.cjs --require` keeps
+  the list over all three together, since no one part draws every screen.
 - **SMALL** (only when asked: `--kinds SMALL`) reports a control whose own box is
   under 48 on either side — a halo is invisible to both platforms' accessibility
   layers. `--allow mockups/touch-small-exceptions.txt` names the exceptions, each

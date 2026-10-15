@@ -104,6 +104,25 @@ jobs:
         working-directory: mobile
         run: npm ci
 
+      # The NDK, build tools, platform and CMake the build needs
+      # (scripts/android-packages.cjs), installed where a failed download is
+      # tried once more; Gradle below may not download one itself.
+      - name: The Android packages the build needs
+        id: android-packages
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: mobile
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+      - name: The Android packages the build needs, once more
+        if: steps.android-packages.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: mobile
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+
       # A release build, as a store build is made — only its backend differs:
       # the runner, seen from the emulator as 10.0.2.2. app.config.js allows
       # plain http and turns updates off for E2E=1, and the manifest is checked.
@@ -127,7 +146,7 @@ jobs:
             && grep -q 'android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml \
             && grep -A 2 -F 'super.onCreate(null)' android/app/src/main/java/com/reelhouse/society/MainActivity.kt \
                  | grep -q -F 'splashScreen.clearOnExitAnimationListener()' \
-            && (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain \
+            && (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
                   "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError")
           } > "$RUNNER_TEMP/build.log" 2>&1
           rc=$?

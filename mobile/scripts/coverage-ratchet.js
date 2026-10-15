@@ -6,7 +6,8 @@
  * any improvement raises the baseline itself.
  *
  * Usage: node scripts/coverage-ratchet.js
- * Run AFTER: npx jest --ci --coverage
+ * Run AFTER: npx jest --ci --coverage, or (CI, the suite run in parts)
+ * scripts/merge-coverage.cjs, which writes the same summary for all parts together.
  *
  * PER DIRECTORY the thresholds name, plus the total: an average over thousands
  * of lines hides one directory losing twenty points. The jest floors are the

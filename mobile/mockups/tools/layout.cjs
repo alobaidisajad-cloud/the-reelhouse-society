@@ -54,6 +54,7 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium, open, shrinkToFit, fitMinOf, screens, MOBILE, WIDTH } = require('./harness.cjs');
+const { lostFiles } = require('./required.cjs');
 
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : d; };
@@ -552,11 +553,9 @@ async function audit(page) {
   // Each site is `file:line` — the JSX that made the control. The promise
   // (--require) is kept per FILE, so an edit above a control does not break it.
   const measured = [...new Set(Object.values(report).flatMap((r) => r.measured))].sort();
-  const measuredFiles = [...new Set(measured.map((m) => m.replace(/:\d+$/, '')))];
   if (SITES_OUT) fs.writeFileSync(SITES_OUT, measured.join('\n') + '\n');
   if (REQUIRE) {
-    const lost = fs.readFileSync(REQUIRE, 'utf8').split('\n').map((l) => l.trim())
-      .filter((l) => l && !l.startsWith('#') && !measuredFiles.includes(l));
+    const lost = lostFiles(fs.readFileSync(REQUIRE, 'utf8'), measured);
     for (const f of lost) console.log(`LOST  ${f} — no control of it was measured beside a neighbour`);
     faults += lost.length;
   }

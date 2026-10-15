@@ -15,6 +15,8 @@
  *    repository is public, and a finding's detail could describe a weakness.
  * 6. Known-vulnerable packages: every push judges the packages the phone holds;
  *    the nightly judges those, the website's and the edge functions' imports.
+ * 7. Jest and the captures run in parts, each read together by a job that reads
+ *    as many parts as run; jest runs in every zone scripts/test-timezones.js lists.
  *
  * Parsed as YAML, not matched as text: the rules are about the structure.
  */
@@ -108,6 +110,30 @@ it('every workflow but the alert can be started by hand', () => {
   const byHand = (wf: Workflow) => triggers(wf).includes('workflow_dispatch');
   expect(workflows.filter((w) => w.file !== 'ci-alert.yml' && !byHand(w.wf)).map((w) => w.file)).toEqual([]);
   expect(byHand(parse('name: x\non:\n  push:\n    branches: [main]\njobs: {}\n') as Workflow)).toBe(false);
+});
+
+type CommandStep = { name?: string; run?: string; if?: string; env?: unknown; 'working-directory'?: string };
+/**
+ * The commands a job runs twice, as `job › name`: the same command, in the same
+ * folder, with the same env. npm's --silent is the same run. A retry of a step
+ * that failed is that step's second try, not a second check.
+ */
+const twice = (wf: Workflow) => Object.entries(wf.jobs).flatMap(([job, j]) => {
+  const seen = new Set<string>();
+  return ((j.steps ?? []) as CommandStep[]).filter((s) => s.run && !/^steps\.[\w-]+\.outcome == 'failure'$/.test(s.if ?? '')).flatMap((s) => {
+    const key = JSON.stringify([s['working-directory'] ?? '', s.env ?? null, s.run!.replace(/\bnpm run (?:-s|--silent) /g, 'npm run ').trim()]);
+    if (seen.has(key)) return [`${job} › ${s.name ?? s.run}`];
+    seen.add(key);
+    return [];
+  });
+});
+
+it('no job runs one command twice: a check run twice reads as two', () => {
+  expect(workflows.flatMap((w) => twice(w.wf).map((t) => `${w.file} › ${t}`))).toEqual([]);
+  const wf = (steps: string) => parse(`name: x\non: push\njobs:\n  j:\n    steps:\n${steps}`) as Workflow;
+  expect(twice(wf('      - name: a\n        run: npm run check:routes\n      - name: b\n        run: npm run -s check:routes\n'))).toEqual(['j › b']);
+  expect(twice(wf("      - id: p\n        run: npm ci\n      - name: again\n        if: steps.p.outcome == 'failure'\n        run: npm ci\n"))).toEqual([]);
+  expect(twice(wf('      - name: a\n        run: npx jest\n      - name: b\n        env:\n          TZ: Asia/Tokyo\n        run: npx jest\n'))).toEqual([]);
 });
 
 /** Whether a workflow runs the E2E flows: by the runner script, or by calling e2e.yml. */
@@ -242,6 +268,38 @@ it('the emulator finds every package it would download already installed, by a s
   }
 });
 
+/**
+ * Each Gradle run that downloads nothing itself, as `job › step` faults: it
+ * passes android.builder.sdkDownload=false, after a step of its job that
+ * installs scripts/android-packages.cjs's list (that step is an install, so the
+ * rule above gives it its retry).
+ */
+const gradleFaults = (wf: Workflow) => Object.entries(wf.jobs).flatMap(([job, j]) => {
+  const steps = (j.steps ?? []) as RunStep[];
+  return steps.flatMap((s, i) => {
+    if (!s.run || !/\bgradlew\b/.test(s.run)) return [];
+    const at = `${job} › ${s.name ?? s.run}`;
+    const faults: string[] = [];
+    if (!/-Pandroid\.builder\.sdkDownload=false\b/.test(s.run)) faults.push(`${at}: Gradle may download a package itself`);
+    if (!steps.slice(0, i).some((p) => !p.if && p.run && /\bsdkmanager\b[^\n]*--install \$\(node scripts\/android-packages\.cjs\)/.test(p.run))) {
+      faults.push(`${at}: no step before it installs the packages it needs`);
+    }
+    return faults;
+  });
+});
+
+it('every Gradle run finds its Android packages installed by a step tried once more, and downloads none itself', () => {
+  const builds = workflows.filter((w) => /\bgradlew\b/.test(w.text));
+  expect(builds.map((w) => w.file).sort()).toEqual(expect.arrayContaining(['e2e.yml', 'god_tier_ci.yml']));
+  expect(builds.flatMap((w) => gradleFaults(w.wf).map((f) => `${w.file} › ${f}`))).toEqual([]);
+  const wf = (steps: string) => parse(`name: x\non: push\njobs:\n  j:\n    steps:\n${steps}`) as Workflow;
+  const install = '      - name: Packages\n        run: sdkmanager --install $(node scripts/android-packages.cjs)\n';
+  const build = (flags: string) => `      - name: Build\n        run: cd android && ./gradlew assembleRelease ${flags}\n`;
+  expect(gradleFaults(wf(build('-Pandroid.builder.sdkDownload=false')))).toEqual(['j › Build: no step before it installs the packages it needs']);
+  expect(gradleFaults(wf(install + build('')))).toEqual(['j › Build: Gradle may download a package itself']);
+  expect(gradleFaults(wf(install + build('-Pandroid.builder.sdkDownload=false')))).toEqual([]);
+});
+
 it('no workflow that runs the E2E flows is cancelled by a later push: each commit\'s run is read', () => {
   const flows = workflows.filter(runsFlows);
   expect(flows.map((w) => w.file).sort()).toEqual(expect.arrayContaining(['e2e-old-clients.yml', 'e2e.yml']));
@@ -264,6 +322,65 @@ it("Supabase's advisers run on every push to main, proven able to fail, and prin
   expect(advisers.every((s) => s.on.includes('push'))).toBe(true);
   expect(advisers.filter((s) => /--details|--from|--allowlist/.test(s.run)).map((s) => s.run)).toEqual([]);
   expect(advisers.map((s) => /--self-test/.test(s.run))).toEqual([true, false]);
+});
+
+type PartJob = Omit<Job, 'steps'> & { strategy?: { matrix?: { part?: unknown[] } }; env?: Record<string, unknown>; needs?: string; steps?: (Step & { name?: string; env?: Record<string, unknown> })[] };
+/** The jobs run in parts, each with the job that reads its parts together. */
+const SPLIT = [{ parts: 'native-unit-tests', together: 'jest-together' }, { parts: 'captures', together: 'captures-together' }];
+/** Each way god_tier_ci.yml's split runs fall out of step, with each other or the zones, in words. */
+function splitFaults(wf: Workflow, zones: { ZONES: string[]; recordOf: (tz: string) => string }): string[] {
+  const faults: string[] = [];
+  const jobs = wf.jobs as Record<string, PartJob>;
+  for (const { parts, together } of SPLIT) {
+    const p = jobs[parts];
+    const t = jobs[together];
+    const count = p?.strategy?.matrix?.part?.length ?? 0;
+    if (!p || !t) { faults.push(`${parts} or ${together} is missing`); continue; }
+    if (count < 2) faults.push(`${parts} is not split in parts`);
+    if (Number(t.env?.PARTS) !== count) faults.push(`${together} reads ${String(t.env?.PARTS)} parts, but ${parts} runs ${count}`);
+    if (t.needs !== parts) faults.push(`${together} does not wait for ${parts}`);
+    const jests = (p.steps ?? []).map((s) => s.run ?? '').filter((r) => /npx jest/.test(r));
+    if (!jests.length || jests.some((r) => !r.includes('--shard=${{ matrix.part }}/${{ strategy.job-total }}'))) {
+      faults.push(`a jest run in ${parts} is not its part of the matrix`);
+    }
+  }
+  const steps = jobs['native-unit-tests']?.steps ?? [];
+  const covered = steps.find((s) => /--coverage\b/.test(s.run ?? ''));
+  const tz = String(covered?.env?.TZ ?? '');
+  if (!zones.ZONES.includes(tz)) faults.push(`the coverage run's zone (${tz || 'none'}) is not one of test-timezones.js's`);
+  if (!covered?.run?.includes(`--outputFile=${zones.recordOf(tz)}`)) faults.push(`the coverage run does not write ${zones.recordOf(tz)}`);
+  const others = steps.find((s) => /test-timezones\.js'\)/.test(s.run ?? '') && /TZ="\$tz" npx jest/.test(s.run ?? ''));
+  if (!others?.run?.includes(`t.ZONES.filter((z) => z !== '${tz}')`)) faults.push(`no step runs every zone of test-timezones.js but the coverage run's (${tz})`);
+  const read = (jobs['jest-together']?.steps ?? []).some((s) => (s.run ?? '').includes('t.ZONES.map(t.recordOf)'));
+  if (!read) faults.push('jest-together does not read a record for every zone of test-timezones.js');
+  return faults;
+}
+
+it('runs jest and the captures in parts, each read together by a job that reads as many parts, and jest in every zone of test-timezones.js', () => {
+  const zones = require('../../../scripts/test-timezones.js') as { ZONES: string[]; recordOf: (tz: string) => string };
+  expect(zones.ZONES).toEqual(expect.arrayContaining(['UTC', 'Pacific/Midway', 'Pacific/Kiritimati']));
+  expect(zones.ZONES).toHaveLength(6);
+  const god = workflows.find((w) => w.file === 'god_tier_ci.yml')!;
+  expect(splitFaults(god.wf, zones)).toEqual([]);
+
+  // Each rule says no to the fault it is for.
+  // A Windows checkout ends its lines with \r\n.
+  const text = god.text.split('\r\n').join('\n');
+  const planted = (from: string, to: string) => {
+    expect([from, text.split(from).length]).toEqual([from, 2]);
+    return parse(text.split(from).join(to)) as Workflow;
+  };
+  expect(splitFaults(planted('      PARTS: 4\n', '      PARTS: 3\n'), zones)).toEqual(['jest-together reads 3 parts, but native-unit-tests runs 4']);
+  expect(splitFaults(planted('        part: [1, 2, 3]\n', '        part: [1, 2]\n'), zones)).toEqual(['captures-together reads 3 parts, but captures runs 2']);
+  expect(splitFaults(planted("z !== 'UTC'", "z !== 'Asia/Tokyo'"), zones)).toEqual(["no step runs every zone of test-timezones.js but the coverage run's (UTC)"]);
+  expect(splitFaults(planted('          TZ: UTC\n', '          TZ: Europe/Paris\n'), zones)).toEqual([
+    "the coverage run's zone (Europe/Paris) is not one of test-timezones.js's",
+    'the coverage run does not write jest-Europe-Paris.json',
+    "no step runs every zone of test-timezones.js but the coverage run's (Europe/Paris)",
+  ]);
+  expect(splitFaults(planted('npx jest --ci --maxWorkers=2 --shard=${{ matrix.part }}/${{ strategy.job-total }} \\\n            --json --outputFile=capture-run.json',
+    'npx jest --ci --maxWorkers=2 \\\n            --json --outputFile=capture-run.json'), zones)).toEqual(['a jest run in captures is not its part of the matrix']);
+  expect(splitFaults(planted('t.ZONES.map(t.recordOf)', "['jest-UTC.json']"), zones)).toEqual(['jest-together does not read a record for every zone of test-timezones.js']);
 });
 
 it('known-vulnerable packages: every push judges the phone, and the nightly judges the website and the functions too', () => {

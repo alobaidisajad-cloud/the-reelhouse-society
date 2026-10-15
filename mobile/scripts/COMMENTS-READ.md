@@ -43,8 +43,8 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; Realtime started for the salon channels' rules; each package install let fail once and tried once more, 5 minutes each; Supabase's advisers on production as it will be, held to their allowlist, names and counts only; first proven able to fail |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
-| ../.github/workflows/e2e.yml | 2026-10-15 | edited: the app built once, its anon key beside it; the flows on three machines, each its own sealed world holding its stack's key to the app's; a verdict reads all three, and fails with any shard; the APK's prefetch read for downloadOnly, and a shipped client's named as not run; each package install let fail once and tried once more, 5 minutes each; a verdict reads all three; grouped by commit, so no push drops another commit's waiting run |
-| ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash; each package install let fail once and tried once more, 5 minutes each; the Maestro lint installs its linter in its own step; the bundle job keeps its export and reads it with release-guard.cjs; a release-build job makes the release manifest, the Info.plist and the embedded config without E2E, and reads them; a job that fails when a known-vulnerable package reaches the phone and the allowlist does not hold it; the frozen counts held file by file and their finders proved on planted cases; no baseline raised since the base; every file under app/ checked to be a screen (check:routes) |
+| ../.github/workflows/e2e.yml | 2026-10-16 | edited: the app built once, its anon key beside it; the flows on three machines, each its own sealed world holding its stack's key to the app's; a verdict reads all three, and fails with any shard; the APK's prefetch read for downloadOnly, and a shipped client's named as not run; each package install let fail once and tried once more, 5 minutes each; a verdict reads all three; grouped by commit, so no push drops another commit's waiting run; the Supabase CLI and the emulator's packages each installed in a step tried once more alone; the Android packages the build needs installed first, tried once more, and Gradle downloads none |
+| ../.github/workflows/god_tier_ci.yml | 2026-10-16 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash; each package install let fail once and tried once more, 5 minutes each; the Maestro lint installs its linter in its own step; the bundle job keeps its export and reads it with release-guard.cjs; a release-build job makes the release manifest, the Info.plist and the embedded config without E2E, and reads them; a job that fails when a known-vulnerable package reaches the phone and the allowlist does not hold it; the frozen counts held file by file and their finders proved on planted cases; no baseline raised since the base; jest in four parts, each in all six time zones of test-timezones.js, read together by jest-together (every file once in every zone, the floors on the merged coverage, the ratchet); the captures in three parts, read together by captures-together (--require over every part); the schedule nightly; every file under app/ checked to be a screen (check:routes); the release build's Android packages installed first, tried once more, and Gradle downloads none; check:routes run once |
 | ../.github/workflows/ios-launch.yml | 2026-10-15 | new |
 | ../.github/workflows/load.yml | 2026-10-15 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans; each package install let fail once and tried once more, 5 minutes each |
 | ../.github/workflows/nightly.yml | 2026-10-15 | new: known-vulnerable packages each night: the phone's and the functions' fail unless allowlisted; dev, build and website listed |
@@ -200,7 +200,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/tmdb/record.mjs | 2026-09-29 | true as written |
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
-| jest.config.js | 2026-10-15 | edited: testEnvironment, the timer-checking one, says what it is; the repo copies under this checkout's .claude are not its tree, a copy runs its own |
+| jest.config.js | 2026-10-16 | edited: testEnvironment, the timer-checking one, says what it is; the repo copies under this checkout's .claude are not its tree, a copy runs its own; in CI the floors are off in each part and judged once on the parts together, by jest's own reporter |
 | jest.setup.ts | 2026-10-15 | edited: expo-image's getCachePathAsync answers null, as native does for a picture not on disk |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
@@ -215,7 +215,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/paper/__tests__/zz-rank.gen.test.tsx | 2026-09-29 | a design record: its present-tense claims about the app were true only when drawn; now said as such |
 | mockups/paper/__tests__/zz-room.gen.test.tsx | 2026-09-29 | 1 finding |
 | mockups/paths.ts | 2026-09-29 | 6 findings; LARGE's JSDoc carried the layout rule, split to LAYOUTS |
-| mockups/README.md | 2026-09-29 | true as written; checked its claim that the app's Text gives 1.35 (it does, and the harness note I wrote otherwise is corrected) |
+| mockups/README.md | 2026-10-15 | edited: CI splits the capture run in three, and keeps --require over the three together |
 | mockups/srcMark.ts | 2026-09-29 | an example path that names no file reworded |
 | mockups/tabs/__tests__/zz-dispatch.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/tabs/__tests__/zz-lobby.gen.test.tsx | 2026-09-29 | true as written |
@@ -226,22 +226,27 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/drawn.cjs | 2026-10-03 | read whole: controls counted through stripComments.js |
 | mockups/tools/face-advances.cjs | 2026-10-03 | edited: writes a hidden key as its escape |
 | mockups/tools/harness.cjs | 2026-09-28 | 5 findings; the header's middle sentence was garbled by an insertion; open() said 1.35 was the most a word grows (uncapped grows to 3.1) |
-| mockups/tools/layout.cjs | 2026-10-15 | edited: a one-line text is measured by its box less its padding: a title's glow room holds no letters |
+| mockups/tools/layout.cjs | 2026-10-16 | edited: a one-line text is measured by its box less its padding: a title's glow room holds no letters; the --require promise kept by required.cjs, which the split capture run's verdict shares |
 | mockups/tools/contrast.cjs | 2026-09-30 | new: every word against the pixels under it |
 | mockups/tools/quote-ink.cjs | 2026-10-15 | new: the quote marks' outline, read from the font file; exports its marks; theQuoteMarkIsTheFontsOwn holds the Lobby's copy to them |
+| mockups/tools/required.cjs | 2026-10-15 | new: the --require promise, one definition for layout.cjs and jest-shards.cjs |
 | mockups/tools/selftest.cjs | 2026-10-15 | edited: glow room over a line is clean; two one-line texts meeting still clash |
 | mockups/tools/shoot.cjs | 2026-09-29 | true as written |
 | mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
 | register/classes.yaml | 2026-10-15 | edited: RN-react-destroyed-on-mount; the three classes held by the frozen counts |
 | scripts/__tests__/commit.test.ts | 2026-10-15 | new |
+| scripts/__tests__/androidPackages.test.ts | 2026-10-16 | new |
+| scripts/__tests__/jestShards.test.ts | 2026-10-15 | new |
+| scripts/__tests__/mergeCoverage.test.ts | 2026-10-15 | new: read against jest's CoverageReporter, which it runs whole and in parts |
 | scripts/add-only.cjs | 2026-10-15 | new; a migration by its kind (test-utils/universe.js); SQL no rule names is refused |
+| scripts/android-packages.cjs | 2026-10-16 | new: read against React Native's libs.versions.toml, Expo's root project plugin and the Reanimated and Worklets build files |
 | scripts/bundle-size.js | 2026-10-15 | edited: --keep leaves the export for release-guard.cjs; read whole: sound |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route); its files come from the shared file list (test-utils/universe.js) |
 | scripts/check-backend-live.mjs | 2026-10-15 | edited: the address is read from, and saved to, the private settings file outside the repo and OneDrive; its files come from the shared file list (test-utils/universe.js) |
 | scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added; its files come from the shared file list (test-utils/universe.js) |
 | scripts/commit.cjs | 2026-10-15 | new: a commit of exactly the paths named; nothing staged before rides along |
-| scripts/coverage-ratchet.js | 2026-09-29 | the header's why-stories reduced to the rule |
+| scripts/coverage-ratchet.js | 2026-10-15 | edited: in CI it reads the summary merge-coverage.cjs writes for the parts together |
 | scripts/dump-production.cjs | 2026-10-15 | new |
 | scripts/eas-build-preflight.cjs | 2026-10-15 | edited: no build while the app names what production lacks |
 | scripts/edge-functions.cjs | 2026-10-03 | paytabs-handler NOT_DEPLOYED, with why (it granted any rank to a posted "paid" message) |
@@ -253,8 +258,10 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/hooks/pre-commit.cjs | 2026-10-15 | new |
 | scripts/hooks/pre-push.cjs | 2026-10-15 | edited: jest leaves out only the worktrees inside this checkout, so a worktree runs its own tests; workers sized to the free memory; no frozen count raised in its baseline, and every count the changes can move measured whole |
 | scripts/hooks-ran.cjs | 2026-10-15 | new |
+| scripts/jest-shards.cjs | 2026-10-15 | new: read against jest --json's record and --listTests, and layout.cjs's --sites |
 | scripts/install-hooks.cjs | 2026-10-15 | new |
 | scripts/lucide-icons.js | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| scripts/merge-coverage.cjs | 2026-10-15 | new: read against @jest/reporters 29.7's CoverageReporter (onTestResult, onRunComplete, _checkThreshold) and jest-config's readConfig |
 | scripts/migration-lint.cjs | 2026-10-15 | edited: reads a file by its kind (test-utils/universe.js); the archive is not read; SQL no rule names is refused |
 | scripts/private-settings.cjs | 2026-10-15 | new |
 | scripts/register.cjs | 2026-10-15 | new |
@@ -263,7 +270,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
 | scripts/secrets-planted.cjs | 2026-10-15 | new |
 | scripts/surface-jest-failure.sh | 2026-10-03 | read whole: sound |
-| scripts/test-timezones.js | 2026-09-29 | the batch story reduced to the fact it guards |
+| scripts/test-timezones.js | 2026-10-15 | edited: ZONES and each zone's record name exported, the one list CI reads |
 | scripts/website-freeze.cjs | 2026-10-15 | new |
 | src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
@@ -1076,7 +1083,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/boundedCounts.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
 | src/utils/__tests__/ciAlert.behaviour.test.ts | — |  |
-| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-15 | edited: every workflow watched and started by hand; no E2E run cancelled by a later push; a scheduled install has its limit and one retry of that step alone; the advisers run on every push in their count-only mode; the push judges the phone's packages, the nightly the website's and the functions' too; an E2E group shared across commits counts as cancelling; its files come from the shared file list (test-utils/universe.js); every action a scheduled workflow uses is judged, one that downloads is an install, and the emulator's packages are installed before it |
+| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-16 | edited: every workflow watched and started by hand; no E2E run cancelled by a later push; a scheduled install has its limit and one retry of that step alone; the advisers run on every push in their count-only mode; the push judges the phone's packages, the nightly the website's and the functions' too; an E2E group shared across commits counts as cancelling; its files come from the shared file list (test-utils/universe.js); every action a scheduled workflow uses is judged, one that downloads is an install, and the emulator's packages are installed before it; jest and the captures run in parts that their read-together jobs count alike, and jest in every zone of test-timezones.js; no job runs one command twice; every Gradle run finds its Android packages installed and downloads none |
 | src/utils/__tests__/csv.test.ts | — |  |
 | src/utils/__tests__/dispatchExecutors.test.ts | — |  |
 | src/utils/__tests__/dispatchFieldCaps.test.ts | 2026-09-28 | Claimed to reconcile every live ceiling but read three old migrations, so subject_backdrop_ceiling had no cap. Reads the live snapshot now, and fails on any ceiling without an app cap or a stated reason. |

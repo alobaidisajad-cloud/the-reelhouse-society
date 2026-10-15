@@ -171,7 +171,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/appConfig.guard.test.ts` | The build configs: only the E2E build differs; EAS uploads the commit alone, numbered as committed. |
 | `src/utils/__tests__/releaseGuard.guard.test.ts` | The workflow steps that run the release guard (never on the E2E app), the Maestro flow that opens the sitemap cold, the trace's one switch and the written exception's file: workflows, flows and which code can turn E2E on are files no render reaches. The rules themselves run on built inputs. |
 | `src/utils/__tests__/ciAlert.behaviour.test.ts` | The CI alert's script, run out of its workflow. |
-| `src/utils/__tests__/ciWorkflows.guard.test.ts` | Every workflow: actions pinned, permissions scoped; the advisers run in their count-only mode, and known-vulnerable packages are judged where the item says. |
+| `src/utils/__tests__/ciWorkflows.guard.test.ts` | Every workflow: actions pinned, permissions scoped; the advisers run in their count-only mode, and known-vulnerable packages are judged where the item says; jest and the captures run in parts their read-together jobs count alike, jest in every zone of `scripts/test-timezones.js`. |
 | `src/utils/__tests__/dispatchFieldCaps.test.ts` | The Dispatch's field caps against the migrations' CHECKs. |
 | `src/utils/__tests__/easUpload.guard.test.ts` | Every .gitignore rule against the root .easignore, which EAS reads in their place. |
 | `src/utils/__tests__/maestroFlows.guard.test.ts` | Every Maestro flow names only what the app has. |
@@ -263,6 +263,7 @@ Decisions, as of 2026-09-28:
 | File | What it reads |
 |---|---|
 | `mockups/paper/__tests__/zz-paper.gen.test.tsx` | Poster art and fixture JSON for its drawings. |
+| `scripts/__tests__/mergeCoverage.test.ts` | The coverage summaries jest and merge-coverage.cjs write for a small project it makes in a temporary folder: their numbers are the thing compared. |
 | `src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts` | The handle filter's word lists in the database migration and the live schema, and the website's copy of the rule: one rule in three places, which no render reaches. Behaviour: the same file's cases, and `a_handle_is_judged_by_its_words_rehearsal.sql` on production. |
 | `src/utils/__tests__/aMembersWordsAreCleaned.test.ts` | Every text column a member can write, read from the snapshot's grants, is cleaned by its table's trigger or named with its reason: a column added later is a place the cleaning does not reach until someone remembers it. Behaviour: `a_members_words_are_cleaned_rehearsal.sql` on production. |
 | `src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts` | The corpus file holds every case with cleanForStorage's own answer; the database is held to the same answers by the sealed E2E (verify-cleaning.mjs). |

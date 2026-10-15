@@ -111,6 +111,12 @@ module.exports = {
   // same directories and raises its own baseline automatically, so it is the
   // thing that catches a slide between re-basings. These are the hard floor
   // underneath it; re-derive them with the same "1 under measured" rule.
+  //
+  // ── IN CI, JUDGED ON THE PARTS TOGETHER ─────────────────────────────────
+  // CI runs the suite in four parts with these floors off (a part covers only
+  // some of the code) and judges them once, on all four parts' coverage, with
+  // jest's own reporter (scripts/merge-coverage.cjs), so a floor means there
+  // what it means in a whole run.
   coverageThreshold: {
     global: { branches: 25, functions: 25, lines: 41, statements: 41 },
     // The Dispatch's own components, held where they actually are. This is the

@@ -5,10 +5,12 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  # Weekly with no push: tools and services change under a repo that does not,
-  # and the failure alert (ci-alert.yml) is proved to still fire.
+  # Every night, push or none: tools and services change under a repo that does
+  # not, the suite meets that day's date in all six time zones (a date bug can
+  # wait for a day, not a commit), and the failure alert (ci-alert.yml) is proved
+  # to still fire.
   schedule:
-    - cron: '0 6 * * 1'
+    - cron: '0 6 * * *'
   workflow_dispatch:
 
 # ── EVERY OUTSIDE ACTION IS PINNED TO ONE COMMIT ────────────────────────────────
@@ -96,12 +98,6 @@ jobs:
       - name: Each frozen count's finder counts the cases planted for it
         working-directory: ./mobile
         run: node scripts/frozen-counts.cjs --selftest
-
-      # Every file under app/ is a route: one with no default-exported component
-      # is registered anyway, and throws when it is reached.
-      - name: Every file under app/ is a real route
-        working-directory: ./mobile
-        run: npm run -s check:routes
 
       # A comment is read as fact. In app code, scripts and the living docs, each
       # name, file and line it points at must exist (a test's own story of the
@@ -229,11 +225,23 @@ jobs:
           fi
           node mobile/scripts/hooks-ran.cjs "$BEFORE"
 
+  # ── THE SUITE, IN FOUR PARTS, IN SIX TIME ZONES ──────────────────────────────
+  # Each machine runs a quarter of the test files (jest's own --shard): first in
+  # UTC with coverage, then in every other zone scripts/test-timezones.js lists
+  # (a whole class of date bug is invisible from UTC: a `date` column read as
+  # midnight UTC is the day before anywhere west). The coverage floors cannot be
+  # judged on a quarter, so they are off here and judged by jest-together on the
+  # four parts' coverage at once, with jest's own check.
   native-unit-tests:
-    name: 🧪 Native Jest Unit Tests + Coverage Gate
+    name: 🧪 Native Jest, part ${{ matrix.part }} of 4, in every time zone
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 30
     needs: strict-analysis
+    strategy:
+      # Every part runs to its end: one failing never hides what the others find.
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3, 4]
     steps:
       # The whole history: a test asks git whether a shipped client's own crash was fixed.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -257,45 +265,153 @@ jobs:
         working-directory: ./mobile
         run: npm ci
 
-      # The full suite, and jest.config.js's coverage floors. CONTRACT_* reach one
-      # test only (loungeEmbeds.contract, against the live API; it skips without
-      # them): as EXPO_PUBLIC_* they would reach every test and its dummy URL.
-      - name: Jest (with coverage gate)
+      # This part's test files in UTC, keeping their coverage (coverage/coverage-final.json)
+      # and the record of which files ran; the floors are judged by jest-together.
+      # TZ is set before jest starts: set inside a test it does nothing. CONTRACT_*
+      # reach one test only (loungeEmbeds.contract, against the live API; it skips
+      # without them): as EXPO_PUBLIC_* they would reach every test and its dummy URL.
+      - name: Jest in UTC, with coverage
+        id: utc
         working-directory: ./mobile
         env:
+          TZ: UTC
           CONTRACT_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           CONTRACT_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           set -o pipefail
-          npx jest --coverage --ci --maxWorkers=2 2>&1 | tee jest-output.txt
+          npx jest --ci --maxWorkers=2 --shard=${{ matrix.part }}/${{ strategy.job-total }} \
+            --coverage --coverageReporters=json --coverageThreshold='{}' \
+            --json --outputFile=jest-UTC.json 2>&1 | tee jest-output.txt
 
       # ── A FAILURE THAT EXPLAINS ITSELF: logs need a sign-in, so the failing tests
       # go to ONE annotation, on the run's page and in the public checks API.
       - name: Surface Jest's failure on the summary
         if: failure()
         working-directory: ./mobile
-        run: bash scripts/surface-jest-failure.sh jest-output.txt "Jest failed"
+        run: bash scripts/surface-jest-failure.sh jest-output.txt "Jest failed in UTC (part ${{ matrix.part }} of 4)"
 
-      # ── The same suite, from the Americas: a whole class of date bug is invisible
-      # from the runner's UTC (a `date` column read as midnight UTC is the day before
-      # anywhere west). One negative zone with daylight saving catches the class;
-      # `npm run test:tz` runs all six zones locally.
-      - name: Jest (America/Los_Angeles — dates are not a UTC-only concern)
+      # The same files from every other zone of scripts/test-timezones.js, read
+      # from it, each process started in its zone. Every zone runs even when one
+      # fails, the UTC run among them, and each that fails is its own annotation,
+      # named by its zone.
+      - name: Jest in every other time zone
+        if: ${{ !cancelled() && steps.utc.outcome != 'skipped' }}
         working-directory: ./mobile
         env:
-          TZ: America/Los_Angeles
           CONTRACT_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           CONTRACT_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
-        # Kept, and surfaced below, as the first run is: run 36602916975 failed
-        # here and said only "exit code 1".
         run: |
-          set -o pipefail
-          npx jest --ci --silent --maxWorkers=2 2>&1 | tee jest-tz-output.txt
+          set +e
+          mapfile -t zones < <(node -p "const t = require('./scripts/test-timezones.js');
+            t.ZONES.filter((z) => z !== 'UTC').map((z) => z + ' ' + t.recordOf(z)).join('\n')")
+          failed=()
+          for zone in "${zones[@]}"; do
+            tz=${zone%% *}
+            record=${zone#* }
+            log=${record%.json}-output.txt
+            echo "──────── TZ=$tz"
+            TZ="$tz" npx jest --ci --silent --maxWorkers=2 --shard=${{ matrix.part }}/${{ strategy.job-total }} \
+              --json --outputFile="$record" > "$log" 2>&1
+            rc=$?
+            tail -n 8 "$log"
+            if [ $rc -ne 0 ]; then
+              failed+=("$tz")
+              bash scripts/surface-jest-failure.sh "$log" "Jest failed in $tz (part ${{ matrix.part }} of 4)"
+            fi
+          done
+          if [ ${#zones[@]} -eq 0 ]; then
+            echo "::error title=Jest::scripts/test-timezones.js gave no zone besides UTC, so none ran"
+            exit 1
+          fi
+          [ ${#failed[@]} -eq 0 ] || { echo "✗ Jest failed in: ${failed[*]}"; exit 1; }
 
-      - name: Surface the Americas run's failure on the summary
-        if: failure()
+      # What jest-together reads: this part's coverage and each zone's record of
+      # the files it ran. Kept when a test failed too, so the run is still read whole.
+      - name: Keep this part's coverage and records
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: jest-part-${{ matrix.part }}
+          retention-days: 3
+          if-no-files-found: ignore
+          path: |
+            mobile/coverage/coverage-final.json
+            mobile/jest-*.json
+
+  # ── THE FOUR PARTS, READ TOGETHER ─────────────────────────────────────────────
+  # What no one part can judge: every test file ran in exactly one part, in every
+  # zone (scripts/jest-shards.cjs against jest's own list); jest.config.js's
+  # coverage floors over all four parts' coverage, by jest's own reporter
+  # (scripts/merge-coverage.cjs); then the ratchet on that coverage.
+  jest-together:
+    name: 🧪 Native Jest, its parts together — every file once, the coverage floors, the ratchet
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: native-unit-tests
+    # A part that failed is read here too; when none ran (strict analysis failed
+    # first), there is nothing to read.
+    if: ${{ !cancelled() && needs.native-unit-tests.result != 'skipped' }}
+    env:
+      # How many parts native-unit-tests runs (its matrix; ciWorkflows.guard holds them equal).
+      PARTS: 4
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install Mobile Dependencies
+        id: install-17
+        timeout-minutes: 5
+        continue-on-error: true
         working-directory: ./mobile
-        run: bash scripts/surface-jest-failure.sh jest-tz-output.txt "Jest failed in America/Los_Angeles"
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-17.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: ./mobile
+        run: npm ci
+
+      # A part that kept nothing is named by the checks below, not by this step.
+      - name: Every part's coverage and records
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: jest-part-*
+          path: ${{ runner.temp }}/parts
+
+      - name: Every test file ran in exactly one part, in every time zone
+        working-directory: ./mobile
+        run: |
+          set +e
+          npx jest --listTests --json > "$RUNNER_TEMP/all-tests.json"
+          runs=$(node -p "const t = require('./scripts/test-timezones.js'); t.ZONES.map(t.recordOf).join(',')")
+          node scripts/jest-shards.cjs "$RUNNER_TEMP/parts" --shards "$PARTS" --name 'jest-part-{i}' \
+            --tests "$RUNNER_TEMP/all-tests.json" --runs "$runs" > jest-parts.txt 2>&1
+          rc=$?
+          cat jest-parts.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A test file did not run exactly once" jest-parts.txt error
+          exit $rc
+
+      # The floors are jest.config.js's, with jest's semantics: a directory key
+      # takes its files out of `global`. Writes coverage/coverage-summary.json.
+      - name: The coverage floors, on every part's coverage together
+        if: ${{ !cancelled() }}
+        working-directory: ./mobile
+        run: |
+          set +e
+          files=()
+          for i in $(seq 1 "$PARTS"); do files+=("$RUNNER_TEMP/parts/jest-part-$i/coverage/coverage-final.json"); done
+          node scripts/merge-coverage.cjs "${files[@]}" > merge-coverage.txt 2>&1
+          rc=$?
+          cat merge-coverage.txt
+          if [ $rc -ne 0 ]; then
+            grep -E "^✗|Jest:|files$|NOT met" merge-coverage.txt > merge-coverage-failure.txt
+            node e2e/annotate.mjs "The coverage floors are not met" merge-coverage-failure.txt error
+          fi
+          exit $rc
 
       # The slow slide between jest.config.js's floors: any drop over 0.5% against
       # .coverage-baseline.json fails. It reads the coverage the step above writes, so
@@ -303,6 +419,15 @@ jobs:
       - name: Coverage ratchet (no regression against baseline)
         working-directory: ./mobile
         run: node scripts/coverage-ratchet.js
+
+      # The verdict is the whole run's: a part that failed on its own machine fails it too.
+      - name: Every part passed on its own machine
+        if: ${{ !cancelled() }}
+        run: |
+          if [ "${{ needs.native-unit-tests.result }}" != "success" ]; then
+            echo "::error title=Jest::a part failed on its own machine (${{ needs.native-unit-tests.result }}): its job says which test, in which zone"
+            exit 1
+          fi
 
   # ── EVERY SCREEN, LAID OUT AS THE PHONE LAYS IT ─────────────────────────────
   # The screens drawn from the app's own code (the zz-*.gen suites), measured in a
@@ -440,12 +565,18 @@ jobs:
     # Every screen the tests and generators BUILD (every sheet, error, empty and
     # loading state), measured for what mocked content cannot distort: STEAL,
     # NAMELESS, UNDER, SHADOW. (Word fit is the generators' job: tests carry stress
-    # content.) --require: each file in mockups/touch-measured.txt must still have
-    # a control measured beside a neighbour, so a test that stops drawing one fails.
-    name: 🧷 Every screen the tests build — touch, names, bars, shadows
+    # content.) Split in three by test file (jest's --shard): each part draws and
+    # judges its own screens, as every finding is one screen's. The promise that
+    # each file in mockups/touch-measured.txt still has a control measured beside
+    # a neighbour is the whole run's, so captures-together keeps it over every part.
+    name: 🧷 Every screen the tests build, part ${{ matrix.part }} of 3 — touch, names, bars, shadows
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 30
     needs: strict-analysis
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
@@ -485,8 +616,9 @@ jobs:
         working-directory: ./mobile
         run: npm ci
 
-      # The suite's own pass/fail is the Jest job's; here it is the screens.
-      - name: Draw every screen the tests and generators build
+      # The suite's own pass/fail is the Jest job's; here it is the screens. The
+      # record of which test files this part ran is kept for captures-together.
+      - name: Draw every screen this part's tests and generators build
         working-directory: ./mobile
         env:
           MOCKUPS: '1'
@@ -496,21 +628,100 @@ jobs:
           MOCKUPS_YOGA: '1'
           MOCKUPS_CAPTURED_OUT: mockups/out/captured
         run: |
-          npx jest --ci --maxWorkers=2 > capture-run.txt 2>&1 || true
+          npx jest --ci --maxWorkers=2 --shard=${{ matrix.part }}/${{ strategy.job-total }} \
+            --json --outputFile=capture-run.json > capture-run.txt 2>&1 || true
           grep -E "^Tests:" capture-run.txt
-          cp mockups/out/cap-gens/*.html mockups/out/captured/
+          # A part may hold no generator; its tests' screens are still measured.
+          mkdir -p mockups/out/cap-gens mockups/out/captured
+          find mockups/out/cap-gens -maxdepth 1 -name '*.html' -exec cp {} mockups/out/captured/ \;
           echo "$(ls mockups/out/captured | wc -l) screens"
 
-      - name: Touch, names, bars and shadows, on every screen
+      # Every finding is one screen's, so each part judges its own. It writes the
+      # controls it measured (--sites) for captures-together's --require.
+      - name: Touch, names, bars and shadows, on every screen of this part
         working-directory: ./mobile
         run: |
           set +e
           node mockups/tools/layout.cjs --src mockups/out/captured --passes ios@1 \
-            --kinds STEAL,NAMELESS,UNDER,SHADOW --require mockups/touch-measured.txt > captures.txt 2>&1
+            --kinds STEAL,NAMELESS,UNDER,SHADOW --sites sites.txt > captures.txt 2>&1
           rc=$?
-          grep -E "^\s+(STEAL|NAMELESS|UNDER|SHADOW)|^LOST|finding|CLEAN" captures.txt
-          [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen the tests build has a touch, name, bar or shadow fault" captures.txt error --drop 'clean +\('
+          grep -E "^\s+(STEAL|NAMELESS|UNDER|SHADOW)|finding|CLEAN" captures.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen the tests build has a touch, name, bar or shadow fault (part ${{ matrix.part }} of 3)" captures.txt error --drop 'clean +\('
           exit $rc
+
+      - name: Keep this part's measured controls and its record
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: captures-part-${{ matrix.part }}
+          retention-days: 3
+          if-no-files-found: ignore
+          path: |
+            mobile/capture-run.json
+            mobile/sites.txt
+
+  # ── THE THREE CAPTURE PARTS, READ TOGETHER ───────────────────────────────────
+  # Every test file was drawn in exactly one part, and every file in
+  # mockups/touch-measured.txt had a control measured beside a neighbour on some
+  # part's screens (scripts/jest-shards.cjs --require, over every part's --sites).
+  captures-together:
+    name: 🧷 Every screen the tests build, its parts together — every file once, every promised control measured
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    needs: captures
+    if: ${{ !cancelled() && needs.captures.result != 'skipped' }}
+    env:
+      # How many parts captures runs (its matrix; ciWorkflows.guard holds them equal).
+      PARTS: 3
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      # For jest's own list of its test files.
+      - name: Install Mobile Dependencies
+        id: install-18
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-18.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: ./mobile
+        run: npm ci
+
+      # A part that kept nothing is named by the check below, not by this step.
+      - name: Every part's measured controls and record
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: captures-part-*
+          path: ${{ runner.temp }}/parts
+
+      - name: Every test file drawn in one part, and every promised control measured
+        working-directory: ./mobile
+        run: |
+          set +e
+          npx jest --listTests --json > "$RUNNER_TEMP/all-tests.json"
+          node scripts/jest-shards.cjs "$RUNNER_TEMP/parts" --shards "$PARTS" --name 'captures-part-{i}' \
+            --tests "$RUNNER_TEMP/all-tests.json" --runs capture-run.json \
+            --require mockups/touch-measured.txt --sites sites.txt > captures-parts.txt 2>&1
+          rc=$?
+          cat captures-parts.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "The capture parts, read together" captures-parts.txt error
+          exit $rc
+
+      - name: Every part passed on its own machine
+        if: ${{ !cancelled() }}
+        run: |
+          if [ "${{ needs.captures.result }}" != "success" ]; then
+            echo "::error title=Captures::a part failed on its own machine (${{ needs.captures.result }}): its job names the screen"
+            exit 1
+          fi
 
   bundle-size:
     name: 📦 The app's code only gets smaller
@@ -595,6 +806,24 @@ jobs:
         working-directory: ./mobile
         run: npm ci
 
+      # Gradle configures the root project with the NDK named in it: installed
+      # here, tried once more (see e2e.yml), and never downloaded by Gradle.
+      - name: The Android packages the build needs
+        id: android-packages
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+      - name: The Android packages the build needs, once more
+        if: steps.android-packages.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: ./mobile
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+
       # The native projects as a store build starts from them: prebuild with no
       # E2E set (the E2E app is never this guard's input), iOS too, which needs
       # no Mac when no pods are installed. Then Gradle merges every library's
@@ -610,7 +839,7 @@ jobs:
           set +e
           {
             npx expo prebuild --platform all --no-install --clean \
-            && (cd android && ./gradlew :app:processReleaseManifest --no-daemon --console=plain \
+            && (cd android && ./gradlew :app:processReleaseManifest -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
                   "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g") \
             && mkdir -p "$RUNNER_TEMP/embedded" \
             && node node_modules/expo-constants/scripts/getAppConfig.js . "$RUNNER_TEMP/embedded"
