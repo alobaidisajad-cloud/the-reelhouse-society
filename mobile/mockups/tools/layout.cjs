@@ -114,9 +114,17 @@ function pageHelpers() {
     // Sideways, the glyphs' own extent; down, the text's LINE boxes — a tall
     // face (a drop cap in Rye) has a font box taller than the line it is set
     // in, and that is how the design sets it, not a cut.
+    // A text that truncates is one line: its box, less its padding (a title's
+    // glow room, LogVerdict's 20pt, holds no letters).
+    const lineBox = (e) => {
+      const b = e.getBoundingClientRect();
+      const cs = getComputedStyle(e);
+      const [t, r, d, l] = [cs.paddingTop, cs.paddingRight, cs.paddingBottom, cs.paddingLeft].map(parseFloat);
+      return new DOMRect(b.left + l, b.top + t, Math.max(0, b.width - l - r), Math.max(0, b.height - t - d));
+    };
     const rectOf = (e) => {
       const box = e.getBoundingClientRect();
-      if (truncates(e)) return box;
+      if (truncates(e)) return lineBox(e);
       const r = document.createRange(); r.selectNodeContents(e);
       const g = r.getBoundingClientRect();
       const block = getComputedStyle(e).display !== 'inline';
@@ -126,7 +134,7 @@ function pageHelpers() {
     // off-screen on purpose (a picture to share), not a word on this screen.
     const parked = (q) => q.right < phone.left - 1000 || q.left > phone.right + 1000 || q.bottom < phone.top - 1000;
     const linesOf = (e) => {
-      if (truncates(e)) return [e.getBoundingClientRect()];
+      if (truncates(e)) return [lineBox(e)];
       const r = document.createRange(); r.selectNodeContents(e);
       return [...r.getClientRects()].filter((q) => q.width > 0.5 && q.height > 0.5);
     };

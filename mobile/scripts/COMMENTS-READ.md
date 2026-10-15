@@ -210,10 +210,10 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/drawn.cjs | 2026-10-03 | read whole: controls counted through stripComments.js |
 | mockups/tools/face-advances.cjs | 2026-10-03 | edited: writes a hidden key as its escape |
 | mockups/tools/harness.cjs | 2026-09-28 | 5 findings; the header's middle sentence was garbled by an insertion; open() said 1.35 was the most a word grows (uncapped grows to 3.1) |
-| mockups/tools/layout.cjs | 2026-10-08 | a gradient hides words only where it is solid: one nowhere past 0.9 opaque (a vignette) is shade, not a cover |
+| mockups/tools/layout.cjs | 2026-10-15 | edited: a one-line text is measured by its box less its padding: a title's glow room holds no letters |
 | mockups/tools/contrast.cjs | 2026-09-30 | new: every word against the pixels under it |
 | mockups/tools/quote-ink.cjs | 2026-09-30 | new: the quote marks' outline, read from the font file |
-| mockups/tools/selftest.cjs | 2026-10-08 | scrollshade and scrollpainted: a see-through gradient over words hides nothing, a solid one covers them |
+| mockups/tools/selftest.cjs | 2026-10-15 | edited: glow room over a line is clean; two one-line texts meeting still clash |
 | mockups/tools/shoot.cjs | 2026-09-29 | true as written |
 | mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |

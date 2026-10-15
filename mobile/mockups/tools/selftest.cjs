@@ -160,6 +160,14 @@ const CASES = {
   // …but a line clipped by a box INSIDE the scroller is cut
   scrollcut: [box('height:300px', `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0">` +
     `<div style="height:20px;overflow:hidden;flex-shrink:0">` + T('font-size:14px;line-height:18px;padding-top:10px;display:block', 'HALF A LINE', 1.35) + `</div></div>`), ALL('CUT')],
+  // a one-line title with glow room (padding, cancelled by a margin) over a line
+  // whose letters it does not reach: the room is no line, so no clash…
+  glowroom: [box('width:300px;padding-top:40px',
+    T('font-size:20px;line-height:24px;padding:20px;margin:-20px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis', 'MASTERPIECE', 1.2) +
+    T('font-size:10px;line-height:13px;margin-top:4px;display:block', '5 / 5', 1.2)), {}],
+  // …but two one-line texts whose letters meet still clash
+  clashtrunc: [box('position:relative;height:40px', T('position:absolute;top:0;left:20px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis', 'FIRST WORDS') +
+    T('position:absolute;top:2px;left:30px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis', 'SECOND WORDS')), ALL('CLASH')],
   // two texts drawn over each other
   clash: [box('position:relative;height:40px', T('position:absolute;top:0;left:20px;font-size:14px', 'FIRST WORDS') + T('position:absolute;top:2px;left:30px;font-size:14px', 'SECOND WORDS')),
     ALL('CLASH')],
