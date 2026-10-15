@@ -39,6 +39,8 @@ BEGIN
   RETURN jsonb_populate_record(NEW, kept);
 END $$;
 
+-- add-only (1): no shipped client uses it: a trigger's function, new here; TestFlight build 41 and the website
+-- never call it.
 REVOKE ALL ON FUNCTION public.a_row_keeps_what_it_is() FROM PUBLIC;
 
 -- Each table, and the columns its rows keep.
@@ -77,6 +79,9 @@ BEGIN
   IF missing IS NOT NULL THEN RAISE EXCEPTION 'no such column to keep: %', missing; END IF;
 END $$;
 
+-- add-only (1): no shipped client uses it: no edit TestFlight build 41 or the website sends changes a kept
+-- column (their edits are a log's or list's own fields, a seat's last_read_at, a notice's is_read, a salon's
+-- name, description and privacy; their re-sent messages and follows repeat what is already there).
 DO $$
 DECLARE k record;
 BEGIN
