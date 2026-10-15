@@ -68,9 +68,11 @@ const asksIn = (file: string) => {
   const docs = parseAllDocuments(readFileSync(file, 'utf8')).map((d) => d.toJS());
   const [config, steps] = docs;
   const asks: Ask[] = [];
+  const scrolls: Record<string, unknown>[] = [];
   const visit = (step: unknown): void => {
     if (!step || typeof step !== 'object') return;
     for (const [cmd, arg] of Object.entries(step as Record<string, unknown>)) {
+      if (cmd === 'scrollUntilVisible') scrolls.push(arg && typeof arg === 'object' ? arg as Record<string, unknown> : {});
       if (['tapOn', 'assertVisible', 'assertNotVisible', 'scrollUntilVisible'].includes(cmd)) {
         const target = cmd === 'scrollUntilVisible' && arg && typeof arg === 'object' ? (arg as { element: unknown }).element : arg;
         ids(target).forEach((value) => asks.push({ kind: 'id', value, flow }));
@@ -87,7 +89,7 @@ const asksIn = (file: string) => {
     }
   };
   (Array.isArray(steps) ? steps : []).forEach(visit);
-  return { flow, config: config as { appId?: string }, asks, text: readFileSync(file, 'utf8') };
+  return { flow, config: config as { appId?: string }, asks, scrolls, text: readFileSync(file, 'utf8') };
 };
 const FLOWS = FILES.map(asksIn);
 
@@ -115,6 +117,14 @@ it('every text a flow looks for matches, as Maestro matches, a text in the app',
   const missing = FLOWS.flatMap((f) => f.asks)
     .filter((a) => a.kind === 'text' && !a.value.includes('${') && !textExists(a.value));
   expect(missing.map((a) => `${a.flow}: "${a.value}"`)).toEqual([]);
+});
+
+it('every scroll brings its target to the middle of the screen, never under the tab bar', () => {
+  // A scroll that stops as soon as its target shows can leave it under the docked tab bar, and the next tap lands on
+  // a tab: browse_vault opened the Reel instead of the Watchlist on a slow run.
+  const scrolls = FLOWS.flatMap((f) => f.scrolls.map((arg) => ({ flow: f.flow, arg })));
+  expect(scrolls.length).toBeGreaterThanOrEqual(3);
+  expect(scrolls.filter((s) => s.arg.centerElement !== true).map((s) => s.flow)).toEqual([]);
 });
 
 it('every flow drives this app, and none holds an account', () => {

@@ -1014,7 +1014,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/logger.test.ts | — |  |
 | src/utils/__tests__/logScreenPolish.guard.test.ts | — |  |
 | src/utils/__tests__/lucideIconsAreBundled.guard.test.ts | — |  |
-| src/utils/__tests__/maestroFlows.guard.test.ts | — |  |
+| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-15 | every scroll brings its target to the middle |
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
