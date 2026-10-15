@@ -2,7 +2,7 @@
  * imagePrefetchSites.guard.test.ts — a picture is fetched ahead only where a
  * screen is about to draw it, at the size it draws it; and never at start-up.
  *
- * On Android, expo-image's prefetch does not just download: it decodes each
+ * On Android, expo-image's own prefetch does not just download: it decodes each
  * picture whole into memory, under a key no view ever asks for (a view's key
  * carries its own size). The disk copy is shared; the decode is waste. The app
  * once fetched up to ~85 posters ahead as a member's cold start began — 50 log
@@ -12,7 +12,10 @@
  *
  * So: every place that fetches ahead is listed here, with the size it fetches
  * and the screen that draws that picture at that size; a new place fails until
- * it is added with both. And the store a cold start restores fetches nothing.
+ * it is added with both. Each goes through prefetchPictures, the one caller of
+ * expo-image's prefetch, which only downloads (prefetchPictures.test.ts); a
+ * direct call anywhere else fails. And the store a cold start restores fetches
+ * nothing.
  */
 import { readdirSync, readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
@@ -41,14 +44,24 @@ walk(join(MOBILE, 'app'));
 walk(join(MOBILE, 'src'));
 const rel = (p: string) => relative(MOBILE, p).split(sep).join('/');
 
+/** The one file that calls expo-image's prefetch itself. */
+const HELPER = 'src/utils/prefetchPictures.ts';
+
 describe('the places that fetch a picture ahead', () => {
-  const found = Object.fromEntries(files
-    .map((f) => [rel(f), (readFileSync(f, 'utf8').match(/\bprefetch\s*\(/g) ?? []).length] as const)
+  const count = (pattern: RegExp) => Object.fromEntries(files
+    .filter((f) => rel(f) !== HELPER)
+    .map((f) => [rel(f), (readFileSync(f, 'utf8').match(pattern) ?? []).length] as const)
     .filter(([, n]) => n > 0));
 
   it('are the listed ones, each as many times as listed — a new one is added here with its size and its screen', () => {
+    const found = count(/\bprefetchPictures\s*\(/g);
     expect(Object.keys(found).length).toBeGreaterThan(0);
     expect(found).toEqual(Object.fromEntries(Object.entries(SITES).map(([f, s]) => [f, s.calls])));
+  });
+
+  it('go through prefetchPictures: no other file calls expo-image\'s prefetch itself', () => {
+    expect(count(/\bprefetch\s*\(/g)).toEqual({});
+    expect(read(HELPER).match(/\bImage\.prefetch\s*\(/g)).toHaveLength(1);
   });
 
   it('each fetches the size its screen draws, and that screen draws it', () => {

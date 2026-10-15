@@ -7,6 +7,7 @@ import { Disc, Film as FilmIcon, Search } from 'lucide-react-native';
 import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
 import { nav } from '@/src/utils/typedRouter';
+import { prefetchPictures } from '@/src/utils/prefetchPictures';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import type { ProfileVaultItem, FormatCount, ShelfSort } from '../../types';
 import PressableScale from '../PressableScale';
@@ -278,7 +279,7 @@ export default React.memo(function ProfilePhysicalTab({
       .filter((url): url is string => !!url);
 
     if (urlsToPrefetch.length > 0) {
-      Image.prefetch(urlsToPrefetch);
+      void prefetchPictures(urlsToPrefetch);
     }
   }, [physicalFiltered]);
 

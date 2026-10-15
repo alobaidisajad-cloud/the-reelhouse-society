@@ -27,3 +27,12 @@ mobile/supabase/schema/** -text
 *.sh text eol=lf
 # The git hooks have no extension, and sh reads them: the same rule.
 mobile/githooks/* text eol=lf
+
+# ── Package patches keep LF everywhere ──────────────────────────────────────
+#
+# patch-package applies mobile/patches/*.patch on every install, to files that
+# are LF. Checked out with CRLF, patch-package 8.0.1 still applies a patch (it
+# compares lines without their trailing spaces), but every line it adds then
+# ends in CR: the patched file is no longer the one the patch was made from, as
+# tried on expo-image's patch, where 39 lines came out CRLF.
+mobile/patches/*.patch text eol=lf

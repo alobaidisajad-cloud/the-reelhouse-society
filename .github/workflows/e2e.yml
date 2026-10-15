@@ -159,6 +159,31 @@ jobs:
           [ $rc -eq 0 ] || node e2e/annotate.mjs "The app logs every image Glide loads" "$RUNNER_TEMP/glide-log-level.txt"
           exit $rc
 
+      # expo-image's prefetch decodes each picture whole, under a key no view
+      # uses; the patch under mobile/patches has a 'disk' prefetch only download
+      # (Glide's downloadOnly). The APK itself must say so. A shipped client has
+      # no patch: the script says "Not run: old client", on the run's summary.
+      - name: The built app's prefetch downloads without decoding
+        working-directory: mobile
+        run: |
+          set +e
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          X="$RUNNER_TEMP/dex-prefetch"; rm -rf "$X"; mkdir -p "$X"
+          unzip -q -o android/app/build/outputs/apk/release/app-release.apk 'classes*.dex' -d "$X"
+          for f in "$X"/*.dex; do
+            "$BT/dexdump" -d "$f" 2>/dev/null \
+              | awk 'index($0, "|[") { keep = index($0, "] expo.modules.image.ExpoImageModule") > 0 } keep'
+          done > "$RUNNER_TEMP/prefetch-dex.txt"
+          node e2e/prefetch-download-only.mjs "$RUNNER_TEMP/prefetch-dex.txt" > "$RUNNER_TEMP/prefetch-download-only.txt"
+          rc=$?
+          cat "$RUNNER_TEMP/prefetch-download-only.txt"
+          if [ $rc -ne 0 ]; then
+            node e2e/annotate.mjs "The app's prefetch decodes every picture" "$RUNNER_TEMP/prefetch-download-only.txt"
+          elif [ -n "$E2E_OLD_CLIENT" ]; then
+            node e2e/annotate.mjs "The prefetch check, not run: old client" "$RUNNER_TEMP/prefetch-download-only.txt" summary
+          fi
+          exit $rc
+
       # The key the app carries, beside it, for each shard to hold its stack to.
       - name: The anon key the app was built with
         env:
@@ -186,6 +211,7 @@ jobs:
             ${{ runner.temp }}/build.log
             ${{ runner.temp }}/build-errors.txt
             ${{ runner.temp }}/glide-log-level.txt
+            ${{ runner.temp }}/prefetch-download-only.txt
           if-no-files-found: ignore
 
   flows:

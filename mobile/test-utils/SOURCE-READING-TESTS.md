@@ -154,6 +154,7 @@ Decisions, as of 2026-09-28:
 | `src/services/__tests__/theVaultHasOneDoor.guard.test.ts` | No file but VaultService queries log_private_notes. |
 | `src/constants/__tests__/theHouseLinksToItself.guard.test.ts` | No code sends a link to reelhouse.app, another company's domain. |
 | `src/utils/__tests__/imagePrefetchSites.guard.test.ts` | Every place that fetches a picture ahead is a listed one, at the size its screen draws: which calls exist, and with which size, is in the source. |
+| `src/utils/__tests__/expoImagePatch.guard.test.ts` | The installed expo-image holds the patch, and package.json, node_modules and the patch's file name name one version; the patch, the install script and the EAS upload rules are files, and no render reaches native code. |
 | `src/components/profile/__tests__/theProfileRedrawsForItsOwn.guard.test.ts` | The member page subscribes to its eight film-store fields, never the whole store. |
 | `src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts` | The salon name's four limits, the column's among them. |
 | `src/components/theme/__tests__/oneBrassSheen.test.tsx` | Both brass plates import the one BrassSheen, and no screen keeps a copy. Behaviour: the same file renders it in front, behind a tab and under Reduce Motion. |

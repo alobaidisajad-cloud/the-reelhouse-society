@@ -304,13 +304,14 @@ jest.mock('expo-haptics', () => ({
 // Mock expo-image — native module
 // ─────────────────────────────────────────────────────────────────────────────
 jest.mock('expo-image', () => {
-  // `Image` is BOTH a component and the carrier of the static `prefetch`; a host
+  // `Image` is BOTH a component and the carrier of the statics `prefetch` and
+  // `getCachePathAsync` (null, as native answers for a picture not on disk); a host
   // element (not RN's Image), so expo-image's own props are recorded, not warned on.
   const React = require('react');
-  const Image: React.FC<Record<string, unknown>> & { prefetch: jest.Mock } =
+  const Image: React.FC<Record<string, unknown>> & { prefetch: jest.Mock; getCachePathAsync: jest.Mock } =
     Object.assign(
       (props: Record<string, unknown>) => React.createElement('ExpoImage', props),
-      { prefetch: jest.fn().mockResolvedValue(true) },
+      { prefetch: jest.fn().mockResolvedValue(true), getCachePathAsync: jest.fn().mockResolvedValue(null) },
     );
   return {
     Image,

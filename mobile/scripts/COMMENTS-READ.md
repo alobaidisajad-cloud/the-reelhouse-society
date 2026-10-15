@@ -33,7 +33,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/store.test.ts | — |  |
 | __tests__/stores/archiveSlice.test.ts | 2026-10-03 | edited: a shelf filing sends no note or condition; the server's formats win |
 | __tests__/stores/filmStore.test.ts | — |  |
-| __tests__/stores/listSlice.test.ts | — |  |
+| __tests__/stores/listSlice.test.ts | 2026-10-15 | edited: a stack's posters fetched ahead in one call, to disk |
 | __tests__/stores/socialSlice.test.ts | — |  |
 | __tests__/tmdbMockCoverage.test.ts | — |  |
 | __tests__/utils/mappers.test.ts | — |  |
@@ -43,7 +43,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; Realtime started for the salon channels' rules |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
-| ../.github/workflows/e2e.yml | 2026-10-15 | edited: the app built once, its anon key beside it; the flows on three machines, each its own sealed world holding its stack's key to the app's; a verdict reads all three |
+| ../.github/workflows/e2e.yml | 2026-10-15 | edited: the app built once, its anon key beside it; the flows on three machines, each its own sealed world holding its stack's key to the app's; a verdict reads all three; the APK's prefetch read for downloadOnly, and a shipped client's named as not run |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash |
 | ../.github/workflows/ios-launch.yml | 2026-10-15 | new |
 | ../.github/workflows/load.yml | 2026-10-03 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans |
@@ -142,6 +142,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/iosLaunch.test.ts | 2026-10-15 | the iPhone launch verdict shown saying no to each way a launch fails |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
+| e2e/__tests__/prefetchDownloadOnly.test.ts | 2026-10-15 | new: written with prefetch-download-only.mjs, on dexdump lines in the glide check's shape |
 | e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: one shard runs only its flows, the probes and the launch where the map puts them, an unmapped flow in the last; no shard, the whole run |
 | e2e/__tests__/runtimeDump.test.ts | 2026-10-15 | new: the runtime's parts joined per launch, held to the copy, and every way it says no |
 | e2e/__tests__/screenTimes.test.ts | 2026-10-15 | edited: one shard records its screens and leaves the never-reported rule to the verdict |
@@ -174,6 +175,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
 | e2e/old-client-tree.mjs | 2026-10-15 | new |
 | e2e/old-clients.cjs | 2026-10-15 | edited: own crashes held whole; ownCrashFaults against the register and git; --own-crashes for run-flows.sh |
+| e2e/prefetch-download-only.mjs | 2026-10-15 | new: the APK's prefetch on CachePolicy.DISK calls downloadOnly; not run for a shipped client |
 | e2e/run-flows.sh | 2026-10-15 | edited: E2E_SHARD runs one shard's flows, the probes and the launch only where the map puts them, and lists them; none, the whole run |
 | e2e/runtime-dump.mjs | 2026-10-15 | new: the phone's runtime from the device log, held to the committed copy |
 | e2e/screen-times.mjs | 2026-10-15 | edited: --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs |
@@ -191,7 +193,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-15 | edited: testEnvironment, the timer-checking one, says what it is; the repo copies under .claude are not this tree |
-| jest.setup.ts | 2026-10-15 | edited: what the phone lacks is taken away from the one list |
+| jest.setup.ts | 2026-10-15 | edited: expo-image's getCachePathAsync answers null, as native does for a picture not on disk |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
 | mockups/paper/__tests__/zz-badge.gen.test.tsx | 2026-09-29 | described the real badge as it was at one commit (brass ramp); now says A is whatever RankBadge is |
@@ -984,7 +986,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/helpers/promiseMutex.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/domain/helpers/sessionGuard.ts | 2026-10-01 | true as written |
 | src/stores/domain/interactionSlice.ts | 2026-10-03 | read whole: a certification made before the answer is kept (index and list) |
-| src/stores/domain/listSlice.ts | 2026-10-15 | edited: the Stacks prefetch fetches to disk, and each view decodes its own; no cache is warmed |
+| src/stores/domain/listSlice.ts | 2026-10-15 | edited: a stack's posters fetched ahead through prefetchPictures; the comment says disk cache, not warming |
 | src/stores/domain/logSlice.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-15 | edited: the overlay note says where another member's writes go |
 | src/stores/domain/socialSlice.ts | 2026-10-08 | one follow-list read per member, written only while theirs; clearSocialCaches registered for sign-out |
@@ -1063,6 +1065,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/dispatchOfflineParity.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/dossierPublishing.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/easUpload.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/expoImagePatch.guard.test.ts | 2026-10-15 | new: the patch comes off the installed copy, one version three ways, LF, in the EAS upload |
 | src/utils/__tests__/e2eTrace.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/edgeFunctions.guard.test.ts | — |  |
 | src/utils/__tests__/endorsementGrouping.test.ts | — |  |
@@ -1086,7 +1089,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/hooks.guard.test.ts | 2026-10-15 | edited: the push's jest leaves out nested worktrees, never the checkout's own tests |
 | src/utils/__tests__/html.test.ts | — |  |
 | src/utils/__tests__/everyPictureStatesItsCache.guard.test.ts | 2026-10-15 | new: every expo-image picture states its cache; another policy is listed with its reason |
-| src/utils/__tests__/imagePrefetchSites.guard.test.ts | 2026-10-08 | written: the four places that fetch ahead, at the size their screens draw; none on restore |
+| src/utils/__tests__/imagePrefetchSites.guard.test.ts | 2026-10-15 | edited: the four places go through prefetchPictures; a direct prefetch anywhere else fails |
 | src/utils/__tests__/inputTrustBoundary.test.ts | 2026-10-03 | edited: a pasted separator stays a break; hidden test characters written as escapes |
 | src/utils/__tests__/keysetCursor.test.ts | — |  |
 | src/utils/__tests__/logger.test.ts | — |  |
@@ -1110,6 +1113,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/profileCountsCache.test.ts | — |  |
 | src/utils/__tests__/profileCountsCache.wiring.guard.test.ts | — |  |
 | src/utils/__tests__/profileMappers.test.ts | — |  |
+| src/utils/__tests__/prefetchPictures.test.ts | 2026-10-15 | new: Android to disk only; iOS skips what is on disk |
 | src/utils/__tests__/prose-handlers.guard.test.ts | — |  |
 | src/utils/__tests__/queryClient.test.ts | — |  |
 | src/utils/__tests__/queueErrorClassification.test.ts | — |  |
@@ -1177,6 +1181,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/offlineQueue.ts | 2026-10-15 | edited: each write stamped with its member and sent under their session alone; the clear keeps another's |
 | src/utils/openNoticeFromPush.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/openSociety.ts | 2026-10-02 | Read whole (launch audit). URLSearchParams.set is implemented in RN 0.81's polyfill (checked). Sound. |
+| src/utils/prefetchPictures.ts | 2026-10-15 | new: the one caller of expo-image's prefetch |
 | src/utils/profileCountsCache.ts | 2026-10-02 | read; sound |
 | src/utils/queueOwnership.ts | 2026-10-15 | written: the typed kind map, the owner-keyed hold and release, the older build's stamp |
 | src/utils/raceDeadline.ts | 2026-10-04 | written whole: the one deadline race; its timer cleared when the race is decided |

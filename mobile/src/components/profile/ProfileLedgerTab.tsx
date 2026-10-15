@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { PenTool, Search, TrendingUp, TrendingDown, Minus, Stethoscope } from 'lucide-react-native';
 import { nav } from '@/src/utils/typedRouter';
+import { prefetchPictures } from '@/src/utils/prefetchPictures';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts, type, SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
@@ -410,7 +411,7 @@ export default function ProfileLedgerTab({
       })
       .filter((url): url is string => !!url);
 
-    if (urlsToPrefetch.length > 0) Image.prefetch(urlsToPrefetch);
+    if (urlsToPrefetch.length > 0) void prefetchPictures(urlsToPrefetch);
   }, [ledgerFiltered]);
 
   const renderItem = useCallback(({ item }: { item: LedgerItem }) => {

@@ -1,5 +1,4 @@
 import * as Crypto from 'expo-crypto';
-import { Image } from 'expo-image';
 import { StateCreator } from 'zustand';
 import { queryClient } from '../../lib/queryClient';
 import { supabase } from '../../lib/supabase';
@@ -9,6 +8,7 @@ import { CustomList } from '../../types';
 import { ListRow, mapListRow } from '../../utils/mappers';
 import { captureError } from '../../lib/sentry';
 import { isNetworkError } from '../../utils/networkError';
+import { prefetchPictures } from '../../utils/prefetchPictures';
 import { enqueueMutation } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
 import { sanitizeInput } from '../../utils/sanitizeInput';
@@ -161,7 +161,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             _fetchingLists: false,
         });
 
-        // The Stacks tab's first posters, fetched ahead to disk; each view decodes its own.
+        // The posters each stack shows first, fetched ahead to the disk cache; each view decodes its own.
         const posterUrls = new Set<string>();
         newLists.forEach(list => {
             // Cap at 4 items matching ProfileListsTab grid to prevent JS bridge starvation
@@ -177,7 +177,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             setTimeout(async () => {
                 for (let i = 0; i < urls.length; i += 5) {
                     const chunk = urls.slice(i, i + 5);
-                    await Promise.all(chunk.map(url => Image.prefetch(url, 'disk').catch(() => {})));
+                    await prefetchPictures(chunk);
                 }
             }, 1000);
         }

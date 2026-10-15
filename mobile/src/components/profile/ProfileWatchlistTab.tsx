@@ -1,10 +1,10 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { View, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Bookmark, Search, Disc3, Sparkles } from 'lucide-react-native';
 import { nav } from '@/src/utils/typedRouter';
+import { prefetchPictures } from '@/src/utils/prefetchPictures';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts } from '../../theme/theme';
 import PressableScale from '../PressableScale';
@@ -171,7 +171,7 @@ export default function ProfileWatchlistTab({
       .map(item => tmdb.poster(item.poster_path, 'w185'))
       .filter((url): url is string => !!url);
 
-    if (urlsToPrefetch.length > 0) Image.prefetch(urlsToPrefetch);
+    if (urlsToPrefetch.length > 0) void prefetchPictures(urlsToPrefetch);
   }, [watchlistFiltered]);
 
   const renderItem = useCallback(({ item }: { item: WatchlistRowItem }) => {

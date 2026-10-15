@@ -120,16 +120,15 @@ describe('listSlice', () => {
                 expect(state.lists[0].title).toBe('Stack 0');
                 expect(state.lists[0].films[0].id).toBe(1000);
 
-                // The posters are warmed a second later, out of the first paint's way.
+                // The posters are fetched ahead a second later, out of the first paint's way,
+                // to the disk cache (prefetchPictures).
                 const { Image } = jest.requireMock('expo-image');
                 expect(Image.prefetch).not.toHaveBeenCalled();
                 await jest.advanceTimersByTimeAsync(1000);
-                const warmed = (Image.prefetch as jest.Mock).mock.calls;
-                expect(warmed).toHaveLength(3);
-                expect(warmed.map((c) => c[1])).toEqual(['disk', 'disk', 'disk']);
-                expect(warmed.map((c) => String(c[0]))).toEqual(
+                expect((Image.prefetch as jest.Mock).mock.calls).toEqual([[
                     ['poster-0.jpg', 'poster-1.jpg', 'poster-2.jpg'].map((p) => expect.stringContaining(p)),
-                );
+                    'disk',
+                ]]);
             } finally {
                 jest.useRealTimers();
             }
