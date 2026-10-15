@@ -16,6 +16,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { colors } from '@/src/theme/theme';
 import { Arrive } from '@/src/components/Arrive';
 import { ChevronLeft, X } from 'lucide-react-native';
+import { e2eTrace } from '@/src/utils/e2eTrace';
 
 export default function LogModalScreen() {
 
@@ -31,6 +32,8 @@ export default function LogModalScreen() {
     // scrolls the focused field into view.
     const scrollEnd = useAboveDockedBar(SEAL_BAR_HEIGHT);
     const handleTop = useModalTop();
+    // Each step the form shows, for the sealed E2E: a flow that lands on the wrong one says when.
+    React.useEffect(() => { e2eTrace('log.step', { step, film: film?.id ?? null }); }, [step, film?.id]);
 
     // ── Not authenticated ──
     if (!isAuthenticated) {
@@ -63,7 +66,7 @@ export default function LogModalScreen() {
                     <View style={st.headerLeft}>
                         {isEditing && <View style={st.editBadge}><Text style={st.editBadgeText}>EDITING</Text></View>}
                         {step === 1 && !isEditing && (
-                            <PressableScale onPress={() => { setStep(0); }} hitSlop={null} haptic="selection" style={st.backBtn} accessibilityRole="button" accessibilityLabel="Back to search">
+                            <PressableScale onPress={() => { e2eTrace('log.back'); setStep(0); }} hitSlop={null} haptic="selection" style={st.backBtn} accessibilityRole="button" accessibilityLabel="Back to search">
                                 <ChevronLeft size={20} color={colors.fog} strokeWidth={2.5} />
                             </PressableScale>
                         )}
