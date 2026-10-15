@@ -61,7 +61,7 @@ jobs:
       - name: Start the local database
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
-          cd mobile/e2e && supabase start -x studio,imgproxy,logflare,vector,supavisor,postgres-meta,gotrue,realtime,storage-api,edge-runtime,kong,mailpit,postgrest
+          bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta,gotrue,realtime,storage-api,edge-runtime,kong,mailpit,postgrest "The load test's database"
 
       # As e2e.yml: production's addresses rejected for every container, its name
       # pointed nowhere; bootstrap then proves the database cannot reach it.

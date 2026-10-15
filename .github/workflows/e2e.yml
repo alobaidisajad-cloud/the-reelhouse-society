@@ -91,15 +91,7 @@ jobs:
       - name: Start the local stack
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
-          set +e
-          (cd mobile/e2e && supabase start -x studio,imgproxy,logflare,vector,supavisor,postgres-meta) > "$RUNNER_TEMP/start.log" 2>&1
-          rc=$?
-          cat "$RUNNER_TEMP/start.log"
-          if [ $rc -ne 0 ]; then
-            tail -n 30 "$RUNNER_TEMP/start.log" > "$RUNNER_TEMP/start-tail.txt"
-            node mobile/e2e/annotate.mjs "E2E local stack would not start" "$RUNNER_TEMP/start-tail.txt"
-          fi
-          exit $rc
+          bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta "E2E local stack"
 
       # All three, or the run stops here by name: an empty key would build the app
       # anyway and fail later, blaming the functions.

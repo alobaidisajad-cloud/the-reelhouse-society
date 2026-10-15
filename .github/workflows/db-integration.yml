@@ -63,7 +63,7 @@ jobs:
       - name: Start the local database
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
-          cd mobile/e2e && supabase start -x studio,imgproxy,logflare,vector,supavisor,postgres-meta,gotrue,storage-api,edge-runtime,kong,mailpit,postgrest
+          bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta,gotrue,storage-api,edge-runtime,kong,mailpit,postgrest "The DB check's database"
 
       # The snapshot's push sender names production; bootstrap proves it cannot reach it.
       - name: Seal it — production's host goes nowhere
