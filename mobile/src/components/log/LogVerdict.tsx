@@ -58,7 +58,7 @@ export default React.memo(function LogVerdict({ status, rating }: Props) {
     return (
         <View style={s.slot}>
             {word ? (
-                <Animated.View style={litStyle}>
+                <Animated.View style={[s.lit, litStyle]}>
                     <Text
                         style={[s.word, abandoned && s.wordAbandoned]}
                         {...displayTextProps}
@@ -90,6 +90,8 @@ const s = StyleSheet.create({
     // Fixed: the three states must occupy the same box or the reels move as you
     // touch them.
     slot: { minHeight: 98, alignItems: 'center', justifyContent: 'center', paddingTop: 18, paddingBottom: 4 },
+    // Full width: a box sized to a word whose margins pass it, Yoga and the browser read apart.
+    lit: { alignSelf: 'stretch' },
     // 28pt in the house display face. Every possible word was measured at the
     // 1.2 cap on a 360dp screen — the longest, "Masterpiece" and "Unwatchable"
     // at 11 characters, needs 267pt of 320. Shrink-to-fit is the backstop.
