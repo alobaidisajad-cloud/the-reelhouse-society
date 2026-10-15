@@ -1080,7 +1080,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/logger.test.ts | — |  |
 | src/utils/__tests__/logScreenPolish.guard.test.ts | — |  |
 | src/utils/__tests__/lucideIconsAreBundled.guard.test.ts | — |  |
-| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-15 | edited: a tab a flow opens is looked for by what only its loaded content carries |
+| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-15 | edited: every tap on a field follows a centred scroll to it, or the field is fixed at the top, each with its reason |
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |

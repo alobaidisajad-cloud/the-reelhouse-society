@@ -1,5 +1,12 @@
 appId: com.reelhouse.society
 ---
+# The field's middle starts under the docked seal: brought to the middle first.
+- scrollUntilVisible:
+    element:
+      id: "review-input"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
 - tapOn:
     id: "review-input"
 - waitForAnimationToEnd:

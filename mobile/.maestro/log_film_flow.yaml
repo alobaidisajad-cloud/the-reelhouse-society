@@ -34,6 +34,13 @@ appId: com.reelhouse.society
     visible:
       id: "review-input"
     timeout: 15000
+# The field's middle starts under the docked seal: brought to the middle first.
+- scrollUntilVisible:
+    element:
+      id: "review-input"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
 - tapOn:
     id: "review-input"
 - inputText: "E2E results path: more human than human."

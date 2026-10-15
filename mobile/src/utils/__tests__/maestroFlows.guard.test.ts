@@ -136,6 +136,40 @@ it('every scroll to something tapped brings it to the middle, with time to get t
     .toEqual(END_OF_PAGE.map(() => ['lobby_wall_flow.yaml', false]));
 });
 
+/** Fields fixed where the screen starts, never under a bar: a tap needs no scroll to reach them. */
+const FIXED_FIELDS: Record<string, string> = {
+  'darkroom-search-input': "the Darkroom's own header",
+  'email-input': 'the top of the sign-in sheet',
+  'password-input': 'under the email, at the top of the sign-in sheet',
+  'recovery-email-input': 'the top of the recovery sheet',
+};
+
+/** Each tap on a field (an id ending -input), with the step before it. */
+const fieldTaps = (text: string) => {
+  const steps = parseAllDocuments(text).map((d) => d.toJSON()).find(Array.isArray) as Record<string, unknown>[] ?? [];
+  return steps.flatMap((s, i) => {
+    const tap = s?.tapOn as { id?: string } | undefined;
+    return tap && typeof tap === 'object' && /-input$/.test(tap.id ?? '') ? [{ id: tap.id as string, before: steps[i - 1] }] : [];
+  });
+};
+const centredOn = (step: unknown, id: string) => {
+  const s = (step as { scrollUntilVisible?: { element?: { id?: string }; centerElement?: boolean } })?.scrollUntilVisible;
+  return s?.element?.id === id && s.centerElement === true;
+};
+
+it('every tap on a field comes after a centred scroll to it, or the field is fixed at the top', () => {
+  // The review field's middle started under the log form's docked seal: the tap
+  // landed on the seal, the field never took the keys, and the typed space
+  // pressed Back to search (log.back, Sealed E2E 38722108889).
+  const taps = FLOWS.flatMap((f) => fieldTaps(f.text).map((t) => ({ ...t, flow: f.flow })));
+  expect(taps.some((t) => t.id === 'review-input')).toBe(true);
+  expect(taps.filter((t) => !FIXED_FIELDS[t.id] && !centredOn(t.before, t.id)).map((t) => `${t.flow}: ${t.id}`)).toEqual([]);
+  // Every listed field is still tapped somewhere, and says NO without its scroll.
+  expect(Object.keys(FIXED_FIELDS).filter((id) => !taps.some((t) => t.id === id))).toEqual([]);
+  const bare = '- tapOn:\n    id: "review-input"\n- inputText: "x"\n';
+  expect(fieldTaps(`appId: x\n---\n${bare}`).filter((t) => !centredOn(t.before, t.id))).toHaveLength(1);
+});
+
 it('no flow line is over 80 characters, as the flow lint in CI requires (yamllint, relaxed)', () => {
   const long = FLOWS.flatMap((f) => f.text.split(/\r?\n/).map((l, i) => ({ at: `${f.flow}:${i + 1}`, n: [...l].length })))
     .filter((l) => l.n > 80);
