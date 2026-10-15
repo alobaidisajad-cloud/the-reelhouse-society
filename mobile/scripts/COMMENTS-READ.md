@@ -291,7 +291,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/atmosphere/useSharedImage.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/auth/AuthChrome.tsx | 2026-10-08 | the candlelight halo a native gradient; written as an ellipse (RN misreads circle <r> at) |
 | src/components/auth/EmailConfirmationScreen.tsx | 2026-10-15 | close from useModalTop |
-| src/components/auth/PasswordRecoveryModal.tsx | 2026-10-03 | edited: the email box names EMAIL_MAX |
+| src/components/auth/PasswordRecoveryModal.tsx | 2026-10-15 | edited: the card in a CentredCard, its scroll above the keyboard |
 | src/components/auth/PasswordStrengthMeter.tsx | 2026-10-03 | read whole: one answer for a new password; says when it is too long for the lock |
 | src/components/auth/SocietySeal.tsx | 2026-10-01 | true as written |
 | src/components/AutopsyGauge.tsx | 2026-10-01 | true as written |
@@ -441,15 +441,16 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/LogShareCard.tsx | 2026-10-08 | passes the card's onReady through |
 | src/components/film/NitrateFileCard.tsx | 2026-10-08 | says when every picture is drawn (onReady); a failed poster turns to the no-poster face; the house's domain, not REELHOUSE.APP |
 | src/components/film/pickCertificate.ts | 2026-10-01 | the member's own region is real now |
-| src/components/film/ShareCardModal.tsx | 2026-10-08 | shares only once the card is whole; the probe image and the 2 s fallback gone |
+| src/components/film/ShareCardModal.tsx | 2026-10-15 | edited: the card in a CentredCard; its ground closes it |
 | src/components/film/TrailerModal.tsx | 2026-10-15 | close from useOverlayTop |
 | src/components/film/WatchProviders.tsx | 2026-10-04 | edited: the monogram takes each initial whole |
 | src/components/HapticTab.tsx | 2026-10-15 | edited: given an icon, the button draws it once, chosen by aria-selected; why tabBarIcon is not used |
 | src/components/home/ProjectorBeam.tsx | 2026-10-01 | true as written |
 | src/components/home/types.ts | 2026-10-01 | true as written |
 | src/components/home/VelvetRopeCTA.tsx | 2026-10-03 | read whole: its sheen moved to theme/BrassSheen |
-| src/components/InitiationModal.tsx | 2026-10-15 | beats cross-fade and the door closes through Presence |
+| src/components/InitiationModal.tsx | 2026-10-15 | beats cross-fade and the door closes through Presence; the card in a CentredCard |
 | src/components/KeyboardRoom.tsx | 2026-10-01 | written: the keyboard's room on Android |
+| src/components/layout/__tests__/aCentredCardScrollsAtTheLargestText.test.tsx | 2026-10-15 | new: every centred card in a Modal scrolls in one room at x3.1; every Modal named with its kind |
 | src/components/layout/__tests__/aCentredPageScrollsAtTheLargestText.test.tsx | 2026-10-15 | new: every centred page scrolls in one room at x3.1 |
 | src/components/layout/__tests__/aSectionIsAHeading.test.tsx | 2026-10-01 | written: a section title is a heading |
 | src/components/layout/__tests__/aSwipeBackIsHeard.test.tsx | 2026-10-02 | nav's history hears the swipe back |
@@ -466,13 +467,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/__tests__/navMetrics.test.tsx | 2026-10-15 | new: helper values; the measure's redraws |
 | src/components/layout/__tests__/theThumbStaysInItsTrack.test.ts | 2026-10-01 | runs the real maths |
 | src/components/layout/__tests__/TopNavBar.test.tsx | — |  |
+| src/components/layout/CentredCard.tsx | 2026-10-15 | new: a card centred in a Modal, the same room above and below, scrolled when taller |
 | src/components/layout/CentredRoom.tsx | 2026-10-15 | new: a centred page between its edges, scrolled when taller |
 | src/components/layout/CinematicFlashList.tsx | 2026-10-15 | edited: each scroll traced (useScrollTraceOf) |
 | src/components/layout/CinematicScrollbar.tsx | 2026-10-01 | the thumb maths in one place |
 | src/components/layout/CinematicScrollView.tsx | 2026-10-15 | edited: each scroll traced (useScrollTraceOf) |
 | src/components/layout/ConciergeButton.tsx | 2026-10-02 | door through nav; the hint names all three doors |
 | src/components/layout/FrozenTab.tsx | 2026-10-01 | says it passes through; freezing carried to performance |
-| src/components/layout/navMetrics.ts | 2026-10-15 | every page's top and foot: the bar's measure and the helpers |
+| src/components/layout/navMetrics.ts | 2026-10-15 | every page's top and foot: the bar's measure and the helpers; a centred card's room and its keyboard clearance |
 | src/components/layout/PathTracker.tsx | 2026-10-02 | tells openSociety and nav the screen on every navigation |
 | src/components/layout/SectionCards.tsx | 2026-10-01 | a section title is a heading |
 | src/components/layout/TopNavBar.tsx | 2026-10-15 | measures itself into navMetrics |
@@ -662,7 +664,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/TasteDNAExportCanvas.tsx | 2026-10-02 | unspoken; words fixed-size (it is a picture); history comments trimmed |
 | src/components/profile/TasteMatch.tsx | 2026-10-15 | the percentage's glow has room inside the box a phone cuts it at |
 | src/components/profile/tasteMatchRead.ts | 2026-10-03 | Written with the Taste Match client: the read of both members' whole-record shapes, and the comparison the card shows. |
-| src/components/profile/WatchlistRoulette.tsx | 2026-10-01 | a mid-spin close stops the spin; opens filmId; nav |
+| src/components/profile/WatchlistRoulette.tsx | 2026-10-15 | a mid-spin close stops the spin; opens filmId; nav; the card in a CentredCard, its ground behind it |
 | src/components/RankBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/ReelEyeIcon.tsx | 2026-10-02 | Read (launch audit): artwork. Left alone. |
 | src/components/reels/__tests__/MemberRegistry.select.test.ts | 2026-10-01 | no comments |
@@ -742,13 +744,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/EditProfileScreen.tsx | 2026-10-15 | nav top from usePushedHeaderTop; foot from useContentBottom |
 | src/features/profile/LinksEditor.tsx | 2026-10-03 | edited: the link title and address name their caps |
 | src/features/profile/profile.styles.ts | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
-| src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-15 | edited: the storage mock lists its keys |
+| src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-15 | edited: the storage mock lists its keys; the code window makes its room in a CentredCard |
 | src/features/settings/__tests__/anExportIsWhole.test.ts | 2026-10-01 | written: an export holds every row once |
 | src/features/settings/__tests__/theSignOutNamesWhatItErases.test.tsx | 2026-10-15 | written: the sign-out confirm counts unsent changes, drafts and failed words; online, the queue goes first |
 | src/features/settings/DataVault.tsx | 2026-10-02 | no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
 | src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
 | src/features/settings/settings.styles.ts | 2026-10-02 | read; sound |
-| src/features/settings/SettingsScreen.tsx | 2026-10-15 | nav top from usePushedHeaderTop; foot from useContentBottom |
+| src/features/settings/SettingsScreen.tsx | 2026-10-15 | nav top from usePushedHeaderTop; foot from useContentBottom; the code window in a CentredCard |
 | src/features/settings/SettingsSections.tsx | 2026-10-03 | edited: a new password is judged by passwordIsAccepted |
 | src/generated/lucideIcons.js | 2026-10-03 | generated by scripts/lucide-icons.js; its --check guard holds it |
 | src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx | 2026-10-01 | written: a follow that throws is said and rolled back |
@@ -808,7 +810,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useLogFlow.ts | 2026-10-02 | Read whole (launch audit). A draft's restored private note was untouched (and the restored film reset the touch), so sealing the restored record dropped the note: it travels now. |
 | src/hooks/useMemberRoom.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useMembershipPricing.ts | 2026-10-02 | read; sound |
-| src/hooks/useModalKeyboardPadding.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/hooks/useModalKeyboardPadding.ts | 2026-10-15 | edited: the eased height is its own hook, for a centred card's scroll |
 | src/hooks/useNotableMembers.ts | 2026-10-01 | true as written |
 | src/hooks/useOfflineAware.ts | 2026-10-01 | one subscription, no clock |
 | src/hooks/useProfileController.ts | 2026-10-01 | one isNarrowed for refresh and filters; a follow that throws is said; dead ref gone; no ticket history |

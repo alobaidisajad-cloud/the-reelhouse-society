@@ -12,7 +12,7 @@
  * timing only, never a spring (the house no-bounce law).
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Pressable, Modal } from 'react-native';
+import { View, StyleSheet, Modal } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate } from 'react-native-reanimated';
@@ -23,6 +23,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '../PressableScale';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { ToastHost } from '@/src/components/ToastHost';
+import { CentredCard } from '@/src/components/layout/CentredCard';
 import { EDGE_LIT } from '@/src/theme/light';
 
 interface RouletteFilm {
@@ -212,83 +213,84 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                     hides what it holds from VoiceOver, so a card inside it could
                     not be read. A finger closes on the ground; a screen reader has
                     the named ✕ and the escape gesture. */}
-                <Pressable style={StyleSheet.absoluteFill} onPress={close} accessible={false} importantForAccessibility="no-hide-descendants" />
-                <View style={s.card}>
+                <CentredCard onGround={close} style={s.room}>
+                    <View style={s.card}>
 
-                    {/* IDLE — Summon */}
-                    {!picking && !result && (
-                        <Animated.View entering={FadeIn.duration(400)} style={s.centerContent}>
-                            <Text {...decorativeTextProps} style={s.reelGlyph}>{'◉ ◉ ◉'}</Text>
-                            {/* eslint-disable-next-line react/no-unescaped-entities */}
-                            <Text {...scaledTextProps} style={s.title}>The Oracle's Choice</Text>
-                            {/* eslint-disable-next-line react/no-unescaped-entities */}
-                            <Text {...scaledTextProps} style={s.subtitle}>Can't decide? Let the Archive choose tonight's obsession.</Text>
-                            <PressableScale style={s.spinBtn} onPress={spin} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium" accessibilityRole="button" accessibilityLabel="Consult the oracle — pick a film from your watchlist">
-                                <Text {...scaledTextProps} style={s.spinBtnText}>{'✦ CONSULT THE ORACLE'}</Text>
-                            </PressableScale>
-                        </Animated.View>
-                    )}
+                        {/* IDLE — Summon */}
+                        {!picking && !result && (
+                            <Animated.View entering={FadeIn.duration(400)} style={s.centerContent}>
+                                <Text {...decorativeTextProps} style={s.reelGlyph}>{'◉ ◉ ◉'}</Text>
+                                {/* eslint-disable-next-line react/no-unescaped-entities */}
+                                <Text {...scaledTextProps} style={s.title}>The Oracle's Choice</Text>
+                                {/* eslint-disable-next-line react/no-unescaped-entities */}
+                                <Text {...scaledTextProps} style={s.subtitle}>Can't decide? Let the Archive choose tonight's obsession.</Text>
+                                <PressableScale style={s.spinBtn} onPress={spin} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium" accessibilityRole="button" accessibilityLabel="Consult the oracle — pick a film from your watchlist">
+                                    <Text {...scaledTextProps} style={s.spinBtnText}>{'✦ CONSULT THE ORACLE'}</Text>
+                                </PressableScale>
+                            </Animated.View>
+                        )}
 
-                    {/* PICKING — the film gate */}
-                    {picking && (
-                        <View style={s.centerContent}>
-                            <Text {...scaledTextProps} style={s.scanningText}>SCANNING THE ARCHIVES</Text>
-                            <View style={s.gate}>
-                                <Perforations />
-                                <View style={s.gateWindow}>
-                                    {flickerItem && posterUri(flickerItem) ? (
-                                        <Image
-                                            source={{ uri: posterUri(flickerItem)! }}
-                                            style={s.poster}
-                                            cachePolicy="memory-disk"
-                                            blurRadius={3}
-                                        />
-                                    ) : (
-                                        <View style={s.posterBlank} />
-                                    )}
+                        {/* PICKING — the film gate */}
+                        {picking && (
+                            <View style={s.centerContent}>
+                                <Text {...scaledTextProps} style={s.scanningText}>SCANNING THE ARCHIVES</Text>
+                                <View style={s.gate}>
+                                    <Perforations />
+                                    <View style={s.gateWindow}>
+                                        {flickerItem && posterUri(flickerItem) ? (
+                                            <Image
+                                                source={{ uri: posterUri(flickerItem)! }}
+                                                style={s.poster}
+                                                cachePolicy="memory-disk"
+                                                blurRadius={3}
+                                            />
+                                        ) : (
+                                            <View style={s.posterBlank} />
+                                        )}
+                                    </View>
+                                    <Perforations />
                                 </View>
-                                <Perforations />
+                                <Text {...scaledTextProps} style={s.gateFooter}>the reel spins…</Text>
                             </View>
-                            <Text {...scaledTextProps} style={s.gateFooter}>the reel spins…</Text>
-                        </View>
-                    )}
+                        )}
 
-                    {/* RESULT — the verdict */}
-                    {!picking && result && (
-                        <Animated.View entering={FadeIn.duration(400)} style={s.centerContent}>
-                            <Text {...scaledTextProps} style={s.oracleSpoken}>THE ORACLE HAS SPOKEN</Text>
-                            <View style={s.gate}>
-                                <Perforations />
-                                <Animated.View style={[s.gateWindow, s.resultPosterWrap, plateStyle]}>
-                                    {posterUri(result) ? (
-                                        <Image source={{ uri: posterUri(result)! }} style={s.poster} cachePolicy="memory-disk" transition={150} />
-                                    ) : (
-                                        <View style={[s.posterBlank, s.posterBlankResult]}>
-                                            <Text {...scaledTextProps} style={s.posterBlankTitle} numberOfLines={3}>{result.title ?? result.name}</Text>
-                                        </View>
-                                    )}
-                                </Animated.View>
-                                <Perforations />
-                            </View>
-                            <Text {...scaledTextProps} style={s.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{result.title ?? result.name}</Text>
-                            {/* eslint-disable-next-line react/no-unescaped-entities */}
-                            <Text {...scaledTextProps} style={s.resultReason}>"{reason}"</Text>
-                            <View style={s.verdictActions}>
-                                <PressableScale style={s.seeFilmBtn} onPress={handleSelect} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="medium" accessibilityRole="button" accessibilityLabel={`See ${result.title ?? result.name}`}>
-                                    <Text {...scaledTextProps} style={s.seeFilmText}>{'SEE THE FILM →'}</Text>
-                                </PressableScale>
-                                <PressableScale style={s.rerollBtn} onPress={spin} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic accessibilityRole="button" accessibilityLabel="Re-roll the Oracle">
-                                    <Text {...scaledTextProps} style={s.rerollText}>{'↻ RE-ROLL'}</Text>
-                                </PressableScale>
-                            </View>
-                        </Animated.View>
-                    )}
+                        {/* RESULT — the verdict */}
+                        {!picking && result && (
+                            <Animated.View entering={FadeIn.duration(400)} style={s.centerContent}>
+                                <Text {...scaledTextProps} style={s.oracleSpoken}>THE ORACLE HAS SPOKEN</Text>
+                                <View style={s.gate}>
+                                    <Perforations />
+                                    <Animated.View style={[s.gateWindow, s.resultPosterWrap, plateStyle]}>
+                                        {posterUri(result) ? (
+                                            <Image source={{ uri: posterUri(result)! }} style={s.poster} cachePolicy="memory-disk" transition={150} />
+                                        ) : (
+                                            <View style={[s.posterBlank, s.posterBlankResult]}>
+                                                <Text {...scaledTextProps} style={s.posterBlankTitle} numberOfLines={3}>{result.title ?? result.name}</Text>
+                                            </View>
+                                        )}
+                                    </Animated.View>
+                                    <Perforations />
+                                </View>
+                                <Text {...scaledTextProps} style={s.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{result.title ?? result.name}</Text>
+                                {/* eslint-disable-next-line react/no-unescaped-entities */}
+                                <Text {...scaledTextProps} style={s.resultReason}>"{reason}"</Text>
+                                <View style={s.verdictActions}>
+                                    <PressableScale style={s.seeFilmBtn} onPress={handleSelect} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="medium" accessibilityRole="button" accessibilityLabel={`See ${result.title ?? result.name}`}>
+                                        <Text {...scaledTextProps} style={s.seeFilmText}>{'SEE THE FILM →'}</Text>
+                                    </PressableScale>
+                                    <PressableScale style={s.rerollBtn} onPress={spin} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic accessibilityRole="button" accessibilityLabel="Re-roll the Oracle">
+                                        <Text {...scaledTextProps} style={s.rerollText}>{'↻ RE-ROLL'}</Text>
+                                    </PressableScale>
+                                </View>
+                            </Animated.View>
+                        )}
 
-                    {/* Close button */}
-                    <PressableScale style={s.closeBtn} onPress={close} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close the oracle">
-                        <Text {...scaledTextProps} style={s.closeBtnText}>{'✕'}</Text>
-                    </PressableScale>
-                </View>
+                        {/* Close button */}
+                        <PressableScale style={s.closeBtn} onPress={close} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close the oracle">
+                            <Text {...scaledTextProps} style={s.closeBtnText}>{'✕'}</Text>
+                        </PressableScale>
+                    </View>
+                </CentredCard>
             </View>
             <ToastHost />
         </Modal>
@@ -296,10 +298,8 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
 }
 
 const s = StyleSheet.create({
-    overlay: {
-        flex: 1, backgroundColor: 'rgba(0,0,0,0.85)',
-        justifyContent: 'center', alignItems: 'center', padding: 24,
-    },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' },
+    room: { alignItems: 'center', paddingHorizontal: 24 },
     card: { ...EDGE_LIT,
         width: '100%', maxWidth: 400, padding: 32,
         backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',

@@ -4,8 +4,10 @@
  * React Native <Modal>s live in their own window: Android's
  * softwareKeyboardLayoutMode ("resize") never resizes them (RN sets
  * FLAG_LAYOUT_NO_LIMITS with statusBarTranslucent), and iOS never
- * moves them either. So every input-bearing Modal pads itself, on
- * BOTH platforms, by the exact reported keyboard height.
+ * moves them either. So every input-bearing Modal makes its own room,
+ * on BOTH platforms, from the exact reported keyboard height: a sheet
+ * is padded by it (useModalKeyboardPadding), and a centred card's
+ * scroll ends above it (useModalKeyboardHeight, in CentredCard).
  *
  * Built on RN's own Keyboard events — they fire process-wide
  * regardless of which window is focused, unlike Reanimated's
@@ -21,7 +23,8 @@ import { useEffect } from 'react';
 import { Keyboard, Platform, type KeyboardEvent } from 'react-native';
 import { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 
-export function useModalKeyboardPadding(basePadding: number = 0) {
+/** The keyboard's height, as React Native reports it, eased as it moves; 0 while it is down. */
+export function useModalKeyboardHeight() {
   const height = useSharedValue(0);
 
   useEffect(() => {
@@ -49,5 +52,10 @@ export function useModalKeyboardPadding(basePadding: number = 0) {
     return () => { showSub.remove(); hideSub.remove(); };
   }, [height]);
 
+  return height;
+}
+
+export function useModalKeyboardPadding(basePadding: number = 0) {
+  const height = useModalKeyboardHeight();
   return useAnimatedStyle(() => ({ paddingBottom: basePadding + height.value }));
 }

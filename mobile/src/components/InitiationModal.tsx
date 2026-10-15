@@ -26,6 +26,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { ToastHost } from '@/src/components/ToastHost';
+import { CentredCard } from '@/src/components/layout/CentredCard';
 
 const CURVE = Easing.bezier(0.33, 0, 0.15, 1);
 
@@ -137,66 +138,68 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
         <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
         <View style={s.dim} />
 
-        <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(420).easing(CURVE)} style={s.card}>
-          {/* Certificate corner brackets — the Register's language. */}
-          <View style={[s.bracket, s.bracketTL]} />
-          <View style={[s.bracket, s.bracketTR]} />
-          <View style={[s.bracket, s.bracketBL]} />
-          <View style={[s.bracket, s.bracketBR]} />
+        <CentredCard style={s.room}>
+          <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(420).easing(CURVE)} style={s.card}>
+            {/* Certificate corner brackets — the Register's language. */}
+            <View style={[s.bracket, s.bracketTL]} />
+            <View style={[s.bracket, s.bracketTR]} />
+            <View style={[s.bracket, s.bracketBL]} />
+            <View style={[s.bracket, s.bracketBR]} />
 
-          {/* Beat markers — four diamonds, brass for the lit one. */}
-          <View style={s.markers}>
-            {BEATS.map((b, i) => (
-              <View key={b.numeral} style={[s.marker, i === beat && s.markerActive, i < beat && s.markerDone]} />
-            ))}
-          </View>
+            {/* Beat markers — four diamonds, brass for the lit one. */}
+            <View style={s.markers}>
+              {BEATS.map((b, i) => (
+                <View key={b.numeral} style={[s.marker, i === beat && s.markerActive, i < beat && s.markerDone]} />
+              ))}
+            </View>
 
-          <Presence>
-          <PresenceView
-            key={beat}
-            name="initiation.beat"
-            enter={reduceMotion ? undefined : { kind: 'FadeIn', duration: 320, easing: CURVE }}
-            exit={reduceMotion ? undefined : { kind: 'FadeOut', duration: 180, easing: CURVE }}
-            style={s.beatContent}
-          >
-            <Text style={s.eyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{current.eyebrow}</Text>
-            <Text style={s.title}>{current.title}</Text>
+            <Presence>
+            <PresenceView
+              key={beat}
+              name="initiation.beat"
+              enter={reduceMotion ? undefined : { kind: 'FadeIn', duration: 320, easing: CURVE }}
+              exit={reduceMotion ? undefined : { kind: 'FadeOut', duration: 180, easing: CURVE }}
+              style={s.beatContent}
+            >
+              <Text style={s.eyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{current.eyebrow}</Text>
+              <Text style={s.title}>{current.title}</Text>
 
-            {beat === 0 && (
-              <MemberStamp username={username} memberNo={memberNo} reduceMotion={reduceMotion} />
-            )}
+              {beat === 0 && (
+                <MemberStamp username={username} memberNo={memberNo} reduceMotion={reduceMotion} />
+              )}
 
-            {current.body ? <Text style={s.body}>{current.body}</Text> : null}
+              {current.body ? <Text style={s.body}>{current.body}</Text> : null}
 
-            {isFinal && (
-              <PressableScale
-                style={s.firstLogBtn}
-                onPress={handleFirstLog}
-                haptic="medium"
-                pressedScale={0.97}
-                accessibilityRole="button"
-                accessibilityLabel="Log your first film"
-              >
-                <Text style={s.firstLogText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦&nbsp; LOG YOUR FIRST FILM</Text>
+              {isFinal && (
+                <PressableScale
+                  style={s.firstLogBtn}
+                  onPress={handleFirstLog}
+                  haptic="medium"
+                  pressedScale={0.97}
+                  accessibilityRole="button"
+                  accessibilityLabel="Log your first film"
+                >
+                  <Text style={s.firstLogText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦&nbsp; LOG YOUR FIRST FILM</Text>
+                </PressableScale>
+              )}
+            </PresenceView>
+            </Presence>
+
+            <View style={s.footer}>
+              {!isFinal ? (
+                <PressableScale style={s.nextBtn} onPress={handleNext} haptic="selection" pressedScale={0.97} accessibilityRole="button" accessibilityLabel="Next">
+                  <Text style={s.nextText}>NEXT&nbsp; →</Text>
+                </PressableScale>
+              ) : <View style={s.footerSpacer} />}
+
+              <PressableScale onPress={handleQuiet} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Skip and enter the lobby" testID="initiation-enter-quietly">
+                <Text style={s.quietText}>ENTER QUIETLY</Text>
               </PressableScale>
-            )}
-          </PresenceView>
-          </Presence>
+            </View>
 
-          <View style={s.footer}>
-            {!isFinal ? (
-              <PressableScale style={s.nextBtn} onPress={handleNext} haptic="selection" pressedScale={0.97} accessibilityRole="button" accessibilityLabel="Next">
-                <Text style={s.nextText}>NEXT&nbsp; →</Text>
-              </PressableScale>
-            ) : <View style={s.footerSpacer} />}
-
-            <PressableScale onPress={handleQuiet} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Skip and enter the lobby" testID="initiation-enter-quietly">
-              <Text style={s.quietText}>ENTER QUIETLY</Text>
-            </PressableScale>
-          </View>
-
-          <Text style={s.societyTag}>THE REELHOUSE SOCIETY · EST. 1924</Text>
-        </Animated.View>
+            <Text style={s.societyTag}>THE REELHOUSE SOCIETY · EST. 1924</Text>
+          </Animated.View>
+        </CentredCard>
         <ToastHost />
       </PresenceView>
     </Modal>
@@ -206,7 +209,8 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
 }
 
 const s = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  overlay: { flex: 1 },
+  room: { alignItems: 'center', paddingHorizontal: 24 },
   dim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6,5,4,0.55)' },
   card: {
     width: '100%', maxWidth: 380, backgroundColor: colors.ink,

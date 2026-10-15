@@ -58,7 +58,8 @@ export const st = StyleSheet.create({
   edition: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fogQuiet, marginTop: 14, includeFontPadding: false },
 
   // Modal Styles
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' },
+  modalRoom: { alignItems: 'center', paddingHorizontal: 24 },
   modalContent: { ...EDGE_LIT, backgroundColor: colors.soot, borderWidth: 1, borderColor: '#30261A', borderRadius: 6, width: '100%', padding: 24 },
   modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
   modalTitle: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.crimsonInk },

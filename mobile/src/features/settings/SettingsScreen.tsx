@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Alert, Modal, KeyboardAvoidingView, type LayoutChangeEvent } from 'react-native';
+import { View, StyleSheet, Alert, Modal, type LayoutChangeEvent } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
 import { BlurView } from 'expo-blur';
@@ -46,6 +46,7 @@ import { openHousePage, writeToFrontDesk, copySupportAddress } from '@/src/utils
 import { SUPPORT_EMAIL, SUPPORT_URL, TERMS_URL, PRIVACY_URL } from '@/src/constants/support';
 import { st } from '@/src/features/settings/settings.styles';
 import { ToastHost } from '@/src/components/ToastHost';
+import { CentredCard } from '@/src/components/layout/CentredCard';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { EMAIL_CODE_DIGITS } from '@/src/constants/inputLimits';
@@ -611,58 +612,60 @@ export function SettingsScreen() {
 
       <Modal statusBarTranslucent visible={otpModalVisible} animationType="fade" transparent onRequestClose={closeOtp}>
         <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-        {/* 'padding' on BOTH platforms, and correctly so: RN Modal windows never
-            resize for the keyboard, so automaticallyAdjustKeyboardInsets cannot
-            reach inside one. This is the opposite case to the screen above. */}
-        <KeyboardAvoidingView behavior="padding" style={st.modalOverlay} onAccessibilityEscape={closeOtp}>
-          <View style={st.modalContent}>
-            <View style={st.modalHeader}>
-              <KeyRound color={colors.bloodReel} size={16} />
-              <Text style={st.modalTitle} {...scaledTextProps}>SECURITY VERIFICATION</Text>
-            </View>
-            <Text style={st.modalDesc} {...scaledTextProps}>
-              {otpAction === 'deleteAccount' && 'Enter the 6-digit cipher sent to your email to authorize account deletion.'}
-              {otpAction === 'toggleBiometric' && 'Enter the 6-digit cipher sent to your email to authorize this security change.'}
-            </Text>
-            {!!otpError && <Text style={st.modalFail} {...scaledTextProps}>{otpError}</Text>}
-            <TextInput
-              style={st.otpInput}
-              value={otpCode}
-              onChangeText={(t) => { setOtpCode(t); if (otpError) setOtpError(null); }}
-              keyboardType="number-pad"
-              maxLength={EMAIL_CODE_DIGITS}
-              placeholder="000000"
-              placeholderTextColor={colors.fog}
-              selectionColor={colors.selection}
-              editable={!otpVerifying}
-              autoFocus
-              accessibilityLabel="Six digit security code"
-              {...scaledTextProps}
-            />
-            <PressableScale
-              style={st.modalResend}
-              onPress={() => { sendOtp(); }}
-              disabled={otpSending || otpVerifying || resendIn > 0}
-              hitSlop={null}
-              haptic="selection"
-              accessibilityRole="button"
-              accessibilityState={{ disabled: otpSending || otpVerifying || resendIn > 0 }}
-              accessibilityLabel={resendIn > 0 ? `Send a new code. Available in ${resendIn} seconds.` : 'Send a new code'}
-            >
-              <Text style={[st.modalResendText, (otpSending || resendIn > 0) && st.modalResendTextDim]} {...scaledTextProps}>
-                {otpSending ? 'SENDING…' : resendIn > 0 ? `SEND A NEW CODE IN ${resendIn}s` : 'SEND A NEW CODE'}
+        {/* RN Modal windows never resize for the keyboard, so the screen's
+            automaticallyAdjustKeyboardInsets cannot reach inside one: the card's
+            own scroll ends above the keys (CentredCard), on both platforms. */}
+        <View style={st.modalOverlay} onAccessibilityEscape={closeOtp}>
+          <CentredCard style={st.modalRoom}>
+            <View style={st.modalContent}>
+              <View style={st.modalHeader}>
+                <KeyRound color={colors.bloodReel} size={16} />
+                <Text style={st.modalTitle} {...scaledTextProps}>SECURITY VERIFICATION</Text>
+              </View>
+              <Text style={st.modalDesc} {...scaledTextProps}>
+                {otpAction === 'deleteAccount' && 'Enter the 6-digit cipher sent to your email to authorize account deletion.'}
+                {otpAction === 'toggleBiometric' && 'Enter the 6-digit cipher sent to your email to authorize this security change.'}
               </Text>
-            </PressableScale>
-            <View style={st.modalActions}>
-              <PressableScale style={st.modalBtnCancel} disabled={otpVerifying} hitSlop={null} accessibilityRole="button" accessibilityLabel="Cancel" onPress={() => { setOtpModalVisible(false); setOtpCode(''); setOtpError(null); }}>
-                <Text style={st.modalBtnCancelText} {...scaledTextProps}>CANCEL</Text>
+              {!!otpError && <Text style={st.modalFail} {...scaledTextProps}>{otpError}</Text>}
+              <TextInput
+                style={st.otpInput}
+                value={otpCode}
+                onChangeText={(t) => { setOtpCode(t); if (otpError) setOtpError(null); }}
+                keyboardType="number-pad"
+                maxLength={EMAIL_CODE_DIGITS}
+                placeholder="000000"
+                placeholderTextColor={colors.fog}
+                selectionColor={colors.selection}
+                editable={!otpVerifying}
+                autoFocus
+                accessibilityLabel="Six digit security code"
+                {...scaledTextProps}
+              />
+              <PressableScale
+                style={st.modalResend}
+                onPress={() => { sendOtp(); }}
+                disabled={otpSending || otpVerifying || resendIn > 0}
+                hitSlop={null}
+                haptic="selection"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: otpSending || otpVerifying || resendIn > 0 }}
+                accessibilityLabel={resendIn > 0 ? `Send a new code. Available in ${resendIn} seconds.` : 'Send a new code'}
+              >
+                <Text style={[st.modalResendText, (otpSending || resendIn > 0) && st.modalResendTextDim]} {...scaledTextProps}>
+                  {otpSending ? 'SENDING…' : resendIn > 0 ? `SEND A NEW CODE IN ${resendIn}s` : 'SEND A NEW CODE'}
+                </Text>
               </PressableScale>
-              <PressableScale style={[st.modalBtnConfirm, (!otpCode || otpCode.length < 6) && st.disabledBtn]} hitSlop={null} onPress={handleOtpVerify} disabled={otpVerifying || !otpCode || otpCode.length < 6} accessibilityRole="button" accessibilityLabel="Verify code">
-                <Text style={st.modalBtnConfirmText} {...scaledTextProps}>{otpVerifying ? 'VERIFYING…' : 'VERIFY'}</Text>
-              </PressableScale>
+              <View style={st.modalActions}>
+                <PressableScale style={st.modalBtnCancel} disabled={otpVerifying} hitSlop={null} accessibilityRole="button" accessibilityLabel="Cancel" onPress={() => { setOtpModalVisible(false); setOtpCode(''); setOtpError(null); }}>
+                  <Text style={st.modalBtnCancelText} {...scaledTextProps}>CANCEL</Text>
+                </PressableScale>
+                <PressableScale style={[st.modalBtnConfirm, (!otpCode || otpCode.length < 6) && st.disabledBtn]} hitSlop={null} onPress={handleOtpVerify} disabled={otpVerifying || !otpCode || otpCode.length < 6} accessibilityRole="button" accessibilityLabel="Verify code">
+                  <Text style={st.modalBtnConfirmText} {...scaledTextProps}>{otpVerifying ? 'VERIFYING…' : 'VERIFY'}</Text>
+                </PressableScale>
+              </View>
             </View>
-          </View>
-        </KeyboardAvoidingView>
+          </CentredCard>
+        </View>
         <ToastHost />
       </Modal>
 

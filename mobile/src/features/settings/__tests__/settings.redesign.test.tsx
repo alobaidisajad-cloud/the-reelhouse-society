@@ -752,11 +752,11 @@ describe('the keyboard does not cover what you are typing', () => {
     expect(beforeModal).not.toMatch(/<KeyboardAvoidingView/);
   });
 
-  it('but the modal keeps its padding, which is correct there', () => {
-    // RN Modal windows never resize for the keyboard, so
-    // automaticallyAdjustKeyboardInsets cannot reach inside one.
-    const modal = SCREEN.slice(SCREEN.indexOf('<Modal'));
-    expect(modal).toMatch(/<KeyboardAvoidingView behavior="padding"/);
+  it('but the modal makes its own room, which is correct there', () => {
+    // RN Modal windows never resize for the keyboard, so automaticallyAdjustKeyboardInsets
+    // cannot reach inside one: the code card's own scroll ends above the keys.
+    const modal = CODE_SCREEN.slice(CODE_SCREEN.indexOf('<Modal'));
+    expect(modal).toMatch(/<CentredCard\b/);
   });
 });
 

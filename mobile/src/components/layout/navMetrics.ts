@@ -22,6 +22,7 @@
  *   a docked bar       useAboveDockedBar(h)   the scroll above it; the bar sits on the edge
  *   a bottom sheet     useSheetBottom()       the edge + SHEET_BOTTOM_GAP
  *   an overlay         useOverlayBottom()     above the tab bar, where a tab's scroll ends
+ *   a centred card     CentredCard            useOverlayRoomPadding(), the same above and below
  *
  * No other file adds to the safe-area inset by hand (noPageAddsToTheInset.guard.test.ts).
  * The status bar's edge has a 20pt floor: on a zero-inset device the bar is
@@ -272,4 +273,27 @@ export function useAboveDockedBar(barHeight: number) {
 /** Where a plate drawn over every screen stands: above the tab bar, where a tab's scroll ends. */
 export function useOverlayBottom() {
   return useTabContentBottom();
+}
+
+// ── a card centred in a <Modal> ───────────────────────────────────────────────
+
+/** A <Modal>'s centred card has this room above and below: the overlay's top, or the foot if more.
+ *  So a card that fits stands mid-window, where it stood; a taller one scrolls clear of both. */
+export const overlayRoomEdge = (insets: { top: number; bottom: number }) =>
+  Math.max(overlayTop(insets.top), bottomEdge(insets.bottom) + OVERLAY_GAP);
+
+/** 69 above and below at a 59pt inset. It goes on a scroll's content (CentredCard). */
+export function useOverlayRoomPadding() {
+  const edge = overlayRoomEdge(useSafeAreaInsets());
+  return { paddingTop: edge, paddingBottom: edge };
+}
+
+/** The keyboard a card's room already clears: its foot less OVERLAY_GAP, and on Android less the
+ *  navigation bar RN's height leaves out (KeyboardRoom). The rest lifts the card's scroll. */
+export const overlayRoomKeyboardClearance = (insets: { top: number; bottom: number }, os: string = Platform.OS) =>
+  overlayRoomEdge(insets) - OVERLAY_GAP - (os === 'android' ? insets.bottom : 0);
+
+/** 59 at iOS's 59pt and 34pt insets. */
+export function useOverlayRoomKeyboardClearance() {
+  return overlayRoomKeyboardClearance(useSafeAreaInsets());
 }

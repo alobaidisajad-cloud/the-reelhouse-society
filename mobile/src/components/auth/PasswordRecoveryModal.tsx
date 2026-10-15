@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { View, Pressable, StyleSheet, ActivityIndicator, Modal } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Modal } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { KeyRound, X } from 'lucide-react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
-import Animated from 'react-native-reanimated';
-import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
+import { CentredCard } from '@/src/components/layout/CentredCard';
 import { SocietyEyebrow, HaloIcon, RegistrationBrackets } from './AuthChrome';
 import { ToastHost } from '@/src/components/ToastHost';
 import { e2eTrace } from '@/src/utils/e2eTrace';
@@ -40,8 +39,6 @@ interface Props {
 
 export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmail, forgotLoading, onClose, onEmailChange, onSubmit, onBackToSignIn }: Props) {
   const w = WORDS[purpose];
-  // A Modal never resizes for the keyboard: padded by its height, on both platforms.
-  const animatedOverlayStyle = useModalKeyboardPadding(24);
   // Ledger line warms to brass while the field is active
   const [emailFocused, setEmailFocused] = useState(false);
 
@@ -53,112 +50,109 @@ export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmai
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Animated.View style={[s.modalOverlay, animatedOverlayStyle]} onAccessibilityEscape={onClose}>
-        {/* The ground closes it for a finger; a screen reader has "Close recovery". */}
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={onClose}
-          accessible={false}
-          importantForAccessibility="no-hide-descendants"
-        />
-        <View style={s.modalContent}>
-          {/* Archival registration marks in the card corners */}
-          <RegistrationBrackets />
+      <View style={s.modalOverlay} onAccessibilityEscape={onClose}>
+        {/* The ground closes it for a finger; a screen reader has "Close recovery".
+            The card's scroll ends above the keyboard, as a Modal never resizes for it. */}
+        <CentredCard onGround={onClose} style={s.room}>
+          <View style={s.modalContent}>
+            {/* Archival registration marks in the card corners */}
+            <RegistrationBrackets />
 
-          {/* Close */}
-          <PressableScale
-            style={s.modalCloseBtn}
-            onPress={onClose}
-            hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
-            haptic="light"
-            accessibilityLabel={w.close}
-          >
-            <X size={16} color={colors.bone} strokeWidth={2} />
-          </PressableScale>
+            {/* Close */}
+            <PressableScale
+              style={s.modalCloseBtn}
+              onPress={onClose}
+              hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
+              haptic="light"
+              accessibilityLabel={w.close}
+            >
+              <X size={16} color={colors.bone} strokeWidth={2} />
+            </PressableScale>
 
-          {/* Header — the lost key, unframed in candlelight */}
-          <View style={s.modalHeader}>
-            <HaloIcon icon={KeyRound} iconSize={24} haloSize={104} style={s.iconWrap} />
-            <SocietyEyebrow label={w.eyebrow} style={s.eyebrowWrap} />
-            <Text style={s.modalTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-              {forgotSent ? 'Check Your Inbox' : w.title}
-            </Text>
-          </View>
+            {/* Header — the lost key, unframed in candlelight */}
+            <View style={s.modalHeader}>
+              <HaloIcon icon={KeyRound} iconSize={24} haloSize={104} style={s.iconWrap} />
+              <SocietyEyebrow label={w.eyebrow} style={s.eyebrowWrap} />
+              <Text style={s.modalTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                {forgotSent ? 'Check Your Inbox' : w.title}
+              </Text>
+            </View>
 
-          {forgotSent ? (
-            <View>
-              <Text style={s.modalBodyText}>
-                {w.sent}{' '}
-                <Text style={s.forgotEmailHighlight}>
-                  {forgotEmail}
+            {forgotSent ? (
+              <View>
+                <Text style={s.modalBodyText}>
+                  {w.sent}{' '}
+                  <Text style={s.forgotEmailHighlight}>
+                    {forgotEmail}
+                  </Text>
+                  .
                 </Text>
-                .
-              </Text>
-              <Text style={s.modalSubText}>
-                {/* eslint-disable-next-line react/no-unescaped-entities */}
-                Check your spam folder if it doesn't arrive within 2 minutes.
-              </Text>
-              <PressableScale
-                style={s.modalSubmitBtn}
-                onPress={onBackToSignIn}
-                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                pressedScale={0.97}
-              >
-                <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦  BACK TO SIGN IN</Text>
-              </PressableScale>
-            </View>
-          ) : (
-            <View style={s.forgotFormBody}>
-              <Text style={s.modalBodyText}>{w.ask}</Text>
-              <View style={s.fieldGroup}>
-                <Text style={[s.inputLabel, emailFocused && s.inputLabelFocused]}>EMAIL ADDRESS</Text>
-                <TextInput
-                  testID="recovery-email-input"
-                  style={[s.input, emailFocused && s.inputFocused]}
-                  placeholder="your@email.com"
-                  placeholderTextColor={colors.fog}
-                  value={forgotEmail}
-                  onChangeText={(val) => {
-                    // E2E only: how many characters reached the field, and when (never the text).
-                    e2eTrace('auth.recovery.typed', { length: val.length });
-                    onEmailChange(val);
-                  }}
-                  onFocus={() => setEmailFocused(true)}
-                  onBlur={() => setEmailFocused(false)}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  selectionColor={colors.sepia}
-                  returnKeyType="go"
-                  onSubmitEditing={onSubmit}
-                  autoCorrect={false}
-                  maxLength={EMAIL_MAX}
-                  keyboardAppearance="dark"
-                  accessibilityLabel="Recovery email address"
-                  textContentType="emailAddress"
-                  autoComplete="email"
-                />
+                <Text style={s.modalSubText}>
+                  {/* eslint-disable-next-line react/no-unescaped-entities */}
+                  Check your spam folder if it doesn't arrive within 2 minutes.
+                </Text>
+                <PressableScale
+                  style={s.modalSubmitBtn}
+                  onPress={onBackToSignIn}
+                  hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                  pressedScale={0.97}
+                >
+                  <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦  BACK TO SIGN IN</Text>
+                </PressableScale>
               </View>
-              <PressableScale
-                testID="recovery-submit-button"
-                style={[s.modalSubmitBtn, forgotLoading && s.submitDisabled]}
-                onPress={onSubmit}
-                disabled={forgotLoading}
-                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                pressedScale={0.97}
-              >
-                {forgotLoading ? (
-                  <View style={s.submitLoading}>
-                    <ActivityIndicator size="small" color={colors.ink} />
-                    <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SENDING...</Text>
-                  </View>
-                ) : (
-                  <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{w.send}</Text>
-                )}
-              </PressableScale>
-            </View>
-          )}
-        </View>
-      </Animated.View>
+            ) : (
+              <View style={s.forgotFormBody}>
+                <Text style={s.modalBodyText}>{w.ask}</Text>
+                <View style={s.fieldGroup}>
+                  <Text style={[s.inputLabel, emailFocused && s.inputLabelFocused]}>EMAIL ADDRESS</Text>
+                  <TextInput
+                    testID="recovery-email-input"
+                    style={[s.input, emailFocused && s.inputFocused]}
+                    placeholder="your@email.com"
+                    placeholderTextColor={colors.fog}
+                    value={forgotEmail}
+                    onChangeText={(val) => {
+                      // E2E only: how many characters reached the field, and when (never the text).
+                      e2eTrace('auth.recovery.typed', { length: val.length });
+                      onEmailChange(val);
+                    }}
+                    onFocus={() => setEmailFocused(true)}
+                    onBlur={() => setEmailFocused(false)}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    selectionColor={colors.sepia}
+                    returnKeyType="go"
+                    onSubmitEditing={onSubmit}
+                    autoCorrect={false}
+                    maxLength={EMAIL_MAX}
+                    keyboardAppearance="dark"
+                    accessibilityLabel="Recovery email address"
+                    textContentType="emailAddress"
+                    autoComplete="email"
+                  />
+                </View>
+                <PressableScale
+                  testID="recovery-submit-button"
+                  style={[s.modalSubmitBtn, forgotLoading && s.submitDisabled]}
+                  onPress={onSubmit}
+                  disabled={forgotLoading}
+                  hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                  pressedScale={0.97}
+                >
+                  {forgotLoading ? (
+                    <View style={s.submitLoading}>
+                      <ActivityIndicator size="small" color={colors.ink} />
+                      <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SENDING...</Text>
+                    </View>
+                  ) : (
+                    <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{w.send}</Text>
+                  )}
+                </PressableScale>
+              </View>
+            )}
+          </View>
+        </CentredCard>
+      </View>
       <ToastHost />
     </Modal>
   );
@@ -168,8 +162,9 @@ const s = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: colors.inkwell,
-    justifyContent: 'center',
-    padding: 24,
+  },
+  room: {
+    paddingHorizontal: 24,
   },
   modalContent: {
     backgroundColor: colors.ink,

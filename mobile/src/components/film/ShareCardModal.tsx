@@ -5,7 +5,7 @@
  * card template itself lives in NitrateFileCard (shared with the log page).
  */
 import React, { useRef, useState, memo, useEffect } from 'react';
-import { View, StyleSheet, Modal, Share, Pressable, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Modal, Share, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -24,6 +24,7 @@ import {
   NITRATE_EXPORT_HEIGHT,
 } from '@/src/components/film/NitrateFileCard';
 import { ToastHost } from '@/src/components/ToastHost';
+import { CentredCard } from '@/src/components/layout/CentredCard';
 import reelToast from '@/src/utils/reelToast';
 
 interface ShareFilm {
@@ -118,49 +119,49 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
     <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={s.overlay} onAccessibilityEscape={onClose}>
         {/* The ground closes it for a finger; a screen reader has the named ✕. */}
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} importantForAccessibility="no-hide-descendants" />
-
-        <View style={s.modalContent}>
-          <View style={s.header}>
-            <Text style={s.title}>✦ THE NITRATE FILE</Text>
-            <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="light" pressedScale={0.96}
-              accessibilityRole="button" accessibilityLabel="Close">
-              <Text style={s.closeText}>✕</Text>
+        <CentredCard onGround={onClose} style={s.room}>
+          <View style={s.modalContent}>
+            <View style={s.header}>
+              <Text style={s.title}>✦ THE NITRATE FILE</Text>
+              <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="light" pressedScale={0.96}
+                accessibilityRole="button" accessibilityLabel="Close">
+                <Text style={s.closeText}>✕</Text>
+              </PressableScale>
+            </View>
+  
+            <View style={[s.cardWrapper, { width: NITRATE_CARD_WIDTH * previewScale, height: NITRATE_CARD_HEIGHT * previewScale }]}>
+              <View style={{ transform: [{ scale: previewScale }] }}>
+                <ViewShot
+                  ref={viewShotRef}
+                  options={{ format: 'png', quality: 1, width: NITRATE_EXPORT_WIDTH, height: NITRATE_EXPORT_HEIGHT }}
+                  style={s.cardContainer}
+                >
+                  <NitrateFileCard
+                    data={{
+                      title: film.title,
+                      year: film.release_date?.slice(0, 4) || '',
+                      posterUrl,
+                      rating: log?.rating ?? 0,
+                      review: log?.review,
+                      pullQuote: log?.pullQuote,
+                      status: log?.status ?? null,
+                      username,
+                      memberNo,
+                    }}
+                    onReady={() => setReadyFor(posterUrl ?? '')}
+                  />
+                </ViewShot>
+              </View>
+            </View>
+  
+            <PressableScale style={s.shareButton} onPress={handleShare} disabled={!canShare} haptic="medium" pressedScale={0.98}
+              accessibilityRole="button" accessibilityState={{ disabled: !canShare, busy: sharing }}>
+              <Text style={s.shareButtonText}>
+                {sharing ? 'TRANSMITTING...' : (!canShare ? 'DEVELOPING...' : 'SHARE TO SOCIALS')}
+              </Text>
             </PressableScale>
           </View>
-
-          <View style={[s.cardWrapper, { width: NITRATE_CARD_WIDTH * previewScale, height: NITRATE_CARD_HEIGHT * previewScale }]}>
-            <View style={{ transform: [{ scale: previewScale }] }}>
-              <ViewShot
-                ref={viewShotRef}
-                options={{ format: 'png', quality: 1, width: NITRATE_EXPORT_WIDTH, height: NITRATE_EXPORT_HEIGHT }}
-                style={s.cardContainer}
-              >
-                <NitrateFileCard
-                  data={{
-                    title: film.title,
-                    year: film.release_date?.slice(0, 4) || '',
-                    posterUrl,
-                    rating: log?.rating ?? 0,
-                    review: log?.review,
-                    pullQuote: log?.pullQuote,
-                    status: log?.status ?? null,
-                    username,
-                    memberNo,
-                  }}
-                  onReady={() => setReadyFor(posterUrl ?? '')}
-                />
-              </ViewShot>
-            </View>
-          </View>
-
-          <PressableScale style={s.shareButton} onPress={handleShare} disabled={!canShare} haptic="medium" pressedScale={0.98}
-            accessibilityRole="button" accessibilityState={{ disabled: !canShare, busy: sharing }}>
-            <Text style={s.shareButtonText}>
-              {sharing ? 'TRANSMITTING...' : (!canShare ? 'DEVELOPING...' : 'SHARE TO SOCIALS')}
-            </Text>
-          </PressableScale>
-        </View>
+        </CentredCard>
       </View>
       <ToastHost />
     </Modal>
@@ -171,8 +172,9 @@ const s = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(5, 3, 1, 0.9)',
-    justifyContent: 'center',
-    padding: 20,
+  },
+  room: {
+    paddingHorizontal: 20,
   },
   modalContent: {
     backgroundColor: colors.ink,
