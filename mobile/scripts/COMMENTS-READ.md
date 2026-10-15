@@ -208,6 +208,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/check-backend-live.mjs | 2026-10-15 | edited: the address is read from, and saved to, the private settings file outside the repo and OneDrive |
 | scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added |
 | scripts/coverage-ratchet.js | 2026-09-29 | the header's why-stories reduced to the rule |
+| scripts/dump-production.cjs | 2026-10-15 | new |
 | scripts/eas-build-preflight.cjs | 2026-10-15 | new |
 | scripts/edge-functions.cjs | 2026-10-03 | paytabs-handler NOT_DEPLOYED, with why (it granted any rank to a posted "paid" message) |
 | scripts/functions-check.mjs | 2026-10-03 | compares every file a deploy bundles, _shared included, each function in its own folder; a listed exception is reported once |

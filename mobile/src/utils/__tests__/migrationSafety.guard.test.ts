@@ -108,6 +108,26 @@ describe('every change has a tested undo', () => {
   });
 });
 
+describe('the copy taken before a change', () => {
+  const { plan: dumpPlan } = require('../../../scripts/dump-production.cjs') as {
+    plan: (kind: string, tables: string[], stamp: string) => { refuse?: string; name?: string; args?: string[] };
+  };
+
+  it('takes the whole database, or the named tables\' rows', () => {
+    expect(dumpPlan('full', [], 'T')).toEqual({ name: 'T-full.dump', args: ['--format=custom'] });
+    expect(dumpPlan('data', ['public.push_subscriptions', 'public.profiles'], 'T')).toEqual({
+      name: 'T-data-push_subscriptions+profiles.dump',
+      args: ['--format=custom', '--data-only', '--table', 'public.push_subscriptions', '--table', 'public.profiles'],
+    });
+  });
+
+  it('says NO to anything else, a table name that is more than a name included', () => {
+    for (const [kind, tables] of [['full', ['public.x']], ['data', []], ['data', ['x']], ['data', ['public.x; DROP']], ['schema', []]] as const) {
+      expect(dumpPlan(kind, [...tables], 'T').refuse).toMatch(/^usage/);
+    }
+  });
+});
+
 describe('the database address', () => {
   it('may live outside the repo and OneDrive, and nowhere else', () => {
     expect(refusal(join(homedir(), 'reelhouse-private'))).toBeNull();
