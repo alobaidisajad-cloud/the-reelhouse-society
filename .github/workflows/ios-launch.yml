@@ -88,14 +88,16 @@ jobs:
             stream=$!
             sleep 2
             start=$(date +%s)
-            ( xcrun simctl launch --console-pty "$DEV" com.reelhouse.society > "$S/console-$1.txt" 2>&1 & )
-            # simctl writes "<bundle id>: <pid>" as it starts the app; that process is
-            # then read each second with the host's own ps (a simulator's app is a
-            # host process), cheap enough to keep the clock true on a busy runner.
+            # Without a console, simctl answers "<bundle id>: <pid>" as soon as it has
+            # started the app (with --console-pty it says so only when the app ends);
+            # the app's own output goes to a file. The process is then read each
+            # second with the host's ps (a simulator's app is a host process).
+            xcrun simctl launch --stdout="$S/console-$1.txt" --stderr="$S/console-$1.txt" \
+              "$DEV" com.reelhouse.society > "$S/launched-$1.txt" 2>&1 || true
             pid=""; seen=""
             while [ $(( $(date +%s) - start )) -le 90 ]; do
               now=$(( $(date +%s) - start ))
-              [ -n "$pid" ] || pid=$(sed -n 's/^com\.reelhouse\.society: \([0-9][0-9]*\).*/\1/p' "$S/console-$1.txt" | head -n 1)
+              [ -n "$pid" ] || pid=$(sed -n 's/^com\.reelhouse\.society: \([0-9][0-9]*\).*/\1/p' "$S/launched-$1.txt" | head -n 1)
               if [ -n "$pid" ] && ps -p "$pid" > /dev/null 2>&1; then
                 echo "$now $pid" >> "$S/samples-$1.txt"; [ -n "$seen" ] || seen=$now
               else

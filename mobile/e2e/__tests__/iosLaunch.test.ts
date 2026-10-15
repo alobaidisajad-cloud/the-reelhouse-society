@@ -71,6 +71,9 @@ describe('the iPhone launch workflow', () => {
     expect(wf).toContain("sed -n 's/^com\\.reelhouse\\.society: \\([0-9][0-9]*\\).*/\\1/p'");
     expect(wf).toContain('ps -p "$pid"');
     expect(wf).not.toContain('launchctl list');
+    // With --console-pty, simctl names the pid only when the app ends (run 38712344721).
+    expect(wf.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n')).not.toContain('--console-pty');
+    expect(wf).toMatch(/simctl launch --stdout=[^\n]*\n[^\n]*> "\$S\/launched-\$1\.txt" 2>&1 \|\| true/);
     expect(wf).toMatch(/node e2e\/ios-launch\.cjs "\$S\/samples-\$1\.txt" "\$S\/stream-\$1\.txt" "\$start"/);
   });
 
