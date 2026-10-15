@@ -78,6 +78,19 @@ jobs:
         working-directory: ./mobile
         run: npx eslint . --max-warnings=0
 
+      # A promise nobody waits for (typed lint), an index read used as if it is always
+      # there (tsc with noUncheckedIndexedAccess), and the edge functions' type errors
+      # and lint (Deno, both trees): each an exact count in every file, held by
+      # mobile/register/frozen-counts.json, that may only fall. One that fell is
+      # lowered in the same commit: `node scripts/frozen-counts.cjs --lower`.
+      - name: Every frozen count holds, file by file
+        working-directory: ./mobile
+        run: node scripts/frozen-counts.cjs
+
+      - name: Each frozen count's finder counts the cases planted for it
+        working-directory: ./mobile
+        run: node scripts/frozen-counts.cjs --selftest
+
       # Every file under app/ is a route: one with no default-exported component
       # is registered anyway, and throws when it is reached.
       - name: Every file under app/ is a real route
@@ -191,6 +204,16 @@ jobs:
             BEFORE=HEAD~1
           fi
           node mobile/scripts/website-freeze.cjs "$BEFORE"
+      # The strict-analysis job holds each count to its baseline; this holds the
+      # baseline itself, so no commit raises a count by writing a bigger number.
+      - name: No frozen count was raised
+        env:
+          BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            BEFORE=HEAD~1
+          fi
+          node mobile/scripts/frozen-counts.cjs --base "$BEFORE"
       - name: Every commit was made with the hooks
         env:
           BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}

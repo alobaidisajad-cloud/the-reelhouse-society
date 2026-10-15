@@ -3,7 +3,9 @@
  * Before a push: what CI would refuse is refused here, before it reaches main
  * (Vercel publishes main within seconds, and a push cancels a running E2E).
  * For the commits being pushed:
- *   - the website freeze, the add-only check and the migration lint;
+ *   - the website freeze, the add-only check, the migration lint, and no frozen
+ *     count raised in its baseline;
+ *   - every frozen count the changes can move, measured whole (scripts/frozen-counts.cjs);
  *   - the app's types, lint on the changed files, and the tests related to them
  *     with the repo's own guards (the comment ledger, the source-reading
  *     ledger, the workflows, the hooks).
@@ -17,6 +19,8 @@ const { join, sep } = require('path');
 const ROOT = join(__dirname, '..', '..', '..');
 const MOBILE = join(ROOT, 'mobile');
 const ZERO = /^0+$/;
+const { checksTouchedBy } = require('../frozen-counts.cjs');
+
 const GUARDS = ['everyCommentIsTrue', 'everySourceReaderIsLedgered', 'ciWorkflows.guard', 'hooks.guard'];
 
 /**
@@ -63,6 +67,14 @@ if (require.main === module) {
       const f = run(`${script} from ${base.slice(0, 8)}`, 'node', [join(MOBILE, 'scripts', script), base], ROOT);
       if (f) faults.push(f);
     }
+    const f = run(`frozen counts' baseline from ${base.slice(0, 8)}`, 'node', [join(MOBILE, 'scripts', 'frozen-counts.cjs'), '--base', base], ROOT);
+    if (f) faults.push(f);
+  }
+  const touched = [...new Set(bases.flatMap((b) => git('diff', '--name-only', `${b}...HEAD`).split('\n')))].filter(Boolean);
+  const frozen = checksTouchedBy(touched);
+  if (frozen.length) {
+    const f = run(`frozen counts: ${frozen.join(', ')}`, 'node', [join(MOBILE, 'scripts', 'frozen-counts.cjs'), '--only', frozen.join(',')], MOBILE);
+    if (f) faults.push(f);
   }
   const changed = [...new Set(bases.flatMap((b) => git('diff', '--name-only', '--diff-filter=ACMR', `${b}...HEAD`).split('\n')))]
     .filter((p) => p.startsWith('mobile/')).map((p) => p.slice('mobile/'.length));

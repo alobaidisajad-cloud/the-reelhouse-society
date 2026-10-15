@@ -128,3 +128,33 @@ classes:
     status: OPEN
     count: 1
     open_in_production: true
+
+  # The three below are held at their totals in register/frozen-counts.json, file by file, by
+  # scripts/frozen-counts.cjs; `--lower` writes their counts here when one falls.
+  - id: CODE-promise-not-awaited
+    title: A promise nobody waits for, so its failure goes unheard and what follows may run first
+    seriousness: behaviour
+    area: code
+    status: OPEN
+    count: 591
+    source: { kind: reviewer, ref: "P0.65 (DB-42, COD-11)" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
+
+  - id: CODE-index-read-unchecked
+    title: A value read by index or key used as if it is always there
+    seriousness: behaviour
+    area: code
+    status: OPEN
+    count: 1518
+    source: { kind: reviewer, ref: P0.65 }
+    methods:
+      - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
+
+  - id: EDGE-function-static-fault
+    title: An edge function's type error or lint finding, where no gate read the functions
+    seriousness: code
+    area: server
+    status: OPEN
+    count: 4
+    source: { kind: reviewer, ref: "P0.47 (GU7.8)" }

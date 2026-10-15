@@ -44,7 +44,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; Realtime started for the salon channels' rules; each package install let fail once and tried once more, 5 minutes each; Supabase's advisers on production as it will be, held to their allowlist, names and counts only; first proven able to fail |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
 | ../.github/workflows/e2e.yml | 2026-10-15 | edited: the app built once, its anon key beside it; the flows on three machines, each its own sealed world holding its stack's key to the app's; a verdict reads all three, and fails with any shard; the APK's prefetch read for downloadOnly, and a shipped client's named as not run; each package install let fail once and tried once more, 5 minutes each; a verdict reads all three |
-| ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash; each package install let fail once and tried once more, 5 minutes each; the Maestro lint installs its linter in its own step; the bundle job keeps its export and reads it with release-guard.cjs; a release-build job makes the release manifest, the Info.plist and the embedded config without E2E, and reads them; a job that fails when a known-vulnerable package reaches the phone and the allowlist does not hold it |
+| ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash; each package install let fail once and tried once more, 5 minutes each; the Maestro lint installs its linter in its own step; the bundle job keeps its export and reads it with release-guard.cjs; a release-build job makes the release manifest, the Info.plist and the embedded config without E2E, and reads them; a job that fails when a known-vulnerable package reaches the phone and the allowlist does not hold it; the frozen counts held file by file and their finders proved on planted cases; no baseline raised since the base |
 | ../.github/workflows/ios-launch.yml | 2026-10-15 | new |
 | ../.github/workflows/load.yml | 2026-10-15 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans; each package install let fail once and tried once more, 5 minutes each |
 | ../.github/workflows/nightly.yml | 2026-10-15 | new: known-vulnerable packages each night: the phone's and the functions' fail unless allowlisted; dev, build and website listed |
@@ -232,7 +232,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/shoot.cjs | 2026-09-29 | true as written |
 | mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
-| register/classes.yaml | 2026-10-15 | edited: RN-react-destroyed-on-mount |
+| register/classes.yaml | 2026-10-15 | edited: RN-react-destroyed-on-mount; the three classes held by the frozen counts |
 | scripts/__tests__/commit.test.ts | 2026-10-15 | new |
 | scripts/add-only.cjs | 2026-10-15 | new |
 | scripts/bundle-size.js | 2026-10-15 | edited: --keep leaves the export for release-guard.cjs |
@@ -244,12 +244,13 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/dump-production.cjs | 2026-10-15 | new |
 | scripts/eas-build-preflight.cjs | 2026-10-15 | edited: no build while the app names what production lacks |
 | scripts/edge-functions.cjs | 2026-10-03 | paytabs-handler NOT_DEPLOYED, with why (it granted any rank to a posted "paid" message) |
+| scripts/frozen-counts.cjs | 2026-10-15 | new |
 | scripts/functions-check.mjs | 2026-10-03 | compares every file a deploy bundles, _shared included, each function in its own folder; a listed exception is reported once |
 | scripts/gates-check.js | 2026-10-15 | edited: the address comes from the private settings file |
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
 | scripts/hooks/commit-msg.cjs | 2026-10-15 | new |
 | scripts/hooks/pre-commit.cjs | 2026-10-15 | new |
-| scripts/hooks/pre-push.cjs | 2026-10-15 | edited: jest leaves out only the worktrees inside this checkout, so a worktree runs its own tests; workers sized to the free memory |
+| scripts/hooks/pre-push.cjs | 2026-10-15 | edited: jest leaves out only the worktrees inside this checkout, so a worktree runs its own tests; workers sized to the free memory; no frozen count raised in its baseline, and every count the changes can move measured whole |
 | scripts/hooks-ran.cjs | 2026-10-15 | new |
 | scripts/install-hooks.cjs | 2026-10-15 | new |
 | scripts/lucide-icons.js | 2026-10-03 | read whole: sound |
@@ -1092,6 +1093,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyPullSaysWhatItReached.guard.test.ts | — |  |
 | src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts | — |  |
 | src/utils/__tests__/feedInvalidation.guard.test.ts | — |  |
+| src/utils/__tests__/frozenCounts.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/filterContentByBlocks.pbt.test.ts | — |  |
 | src/utils/__tests__/handleGuard.test.ts | 2026-10-03 | edited: the vectors written as escapes |
 | src/utils/__tests__/handleGuard.wiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
