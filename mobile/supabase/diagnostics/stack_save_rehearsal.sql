@@ -1,24 +1,25 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- stack_save_rehearsal.sql — is a stack saved whole, or not at all?
 -- ════════════════════════════════════════════════════════════════════════════
--- Runs against LIVE rules as two real members, inside one transaction that
--- ROLLS BACK. Nothing is kept: the stack is made up (a fixed id), and every
--- write here is undone with it.
+--   psql "$SUPABASE_DB_URL" -X -q -t -A -f mobile/supabase/diagnostics/stack_save_rehearsal.sql
 --
---   psql "$SUPABASE_DB_URL" -X -q -t -A -v with_fix=1 -f mobile/supabase/diagnostics/stack_save_rehearsal.sql
---
--- `with_fix=1` applies 20260930_01 first, inside the same transaction; without
--- it save_stack does not exist and the rehearsal stops at the first call — the
--- NO it can say. Read each NOTICE as  case | expected | got.
+-- Runs against LIVE rules as two members in good standing, inside one
+-- transaction that ROLLS BACK. Nothing is kept: the stack is made up (a fixed,
+-- made-up id), and every write here is undone with it. Production runs it by
+-- hand; db-integration.yml runs it on the sealed copy (e2e/db/rehearsals.mjs).
+-- Read each NOTICE as  case|expected|got ; the last line is the verdict, and
+-- any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
 BEGIN;
-\if :{?with_fix}
-\ir ../../../supabase/migrations/20260930_01_a_stack_is_saved_whole.sql
-\endif
+\ir rehearsal_kit.sql
 
 CREATE TEMP TABLE rehearsal_members ON COMMIT DROP AS
-  SELECT id, row_number() OVER (ORDER BY created_at) AS n FROM auth.users ORDER BY created_at LIMIT 2;
+  SELECT u.id, row_number() OVER (ORDER BY u.created_at) AS n
+    FROM auth.users u JOIN public.profiles p ON p.id = u.id
+   WHERE NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
+   ORDER BY u.created_at LIMIT 2;
+SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rehearsal_members), 2) AS done \gset rh_
 GRANT SELECT ON rehearsal_members TO authenticated;
 
 SET LOCAL ROLE authenticated;
@@ -37,25 +38,25 @@ BEGIN
 
   PERFORM public.save_stack(s, 'Silents', 'Before sound.', false, true, films3, true);
   SELECT count(*) INTO n FROM public.list_items WHERE list_id = s;
-  RAISE NOTICE '%|%|%', 'made with its three films', 3, n;
+  PERFORM pg_temp.rh_case('made with its three films', '3', n::text);
 
   -- The answer was lost; the offline queue sends it again.
   PERFORM public.save_stack(s, 'Silents', 'Before sound.', false, true, films3, true);
   SELECT count(*) INTO n FROM public.lists WHERE id = s;
-  RAISE NOTICE '%|%|%', 'a replayed create is one stack, not a failure', 1, n;
+  PERFORM pg_temp.rh_case('a replayed create is one stack, not a failure', '1', n::text);
 
   -- Reordered, one removed, one added.
   PERFORM public.save_stack(s, p_films => '[{"film_id":33,"film_title":"Metropolis","rank_position":0},{"film_id":11,"film_title":"Sunrise","rank_position":1},{"film_id":44,"film_title":"Nosferatu","rank_position":2}]');
   SELECT string_agg(film_id::text, ',' ORDER BY rank_position) INTO got FROM public.list_items WHERE list_id = s;
-  RAISE NOTICE '%|%|%', 'exactly the films saved, in their order', '33,11,44', got;
+  PERFORM pg_temp.rh_case('exactly the films saved, in their order', '33,11,44', got);
 
   PERFORM public.save_stack(s, p_title => 'Silent Masters');
   SELECT title || '/' || (SELECT count(*) FROM public.list_items WHERE list_id = s) INTO got FROM public.lists WHERE id = s;
-  RAISE NOTICE '%|%|%', 'a rename leaves the films alone', 'Silent Masters/3', got;
+  PERFORM pg_temp.rh_case('a rename leaves the films alone', 'Silent Masters/3', got);
 
   PERFORM public.save_stack(s, p_films => '[]');
   SELECT count(*) INTO n FROM public.list_items WHERE list_id = s;
-  RAISE NOTICE '%|%|%', 'emptied when emptied', 0, n;
+  PERFORM pg_temp.rh_case('emptied when emptied', '0', n::text);
 
   -- Another member cannot save it.
   PERFORM set_config('request.jwt.claims', format(as_member, b), true);
@@ -64,7 +65,7 @@ BEGIN
     PERFORM public.save_stack(s, p_title => 'Taken');
   EXCEPTION WHEN SQLSTATE 'P0002' THEN got := 'refused';
   END;
-  RAISE NOTICE '%|%|%', 'another member''s save is refused', 'refused', got;
+  PERFORM pg_temp.rh_case('another member''s save is refused', 'refused', got);
 
   -- All or nothing: a film the ceilings refuse refuses the whole create.
   PERFORM set_config('request.jwt.claims', format(as_member, a), true);
@@ -76,7 +77,7 @@ BEGIN
   EXCEPTION WHEN check_violation THEN got := 'refused';
   END;
   SELECT count(*) INTO n FROM public.lists WHERE id = t;
-  RAISE NOTICE '%|%|%', 'a refused film leaves no stack behind', 'refused/0', got || '/' || n;
+  PERFORM pg_temp.rh_case('a refused film leaves no stack behind', 'refused/0', got || '/' || n);
 END $$;
 
 -- A visitor cannot call it at all.
@@ -88,6 +89,9 @@ BEGIN
     PERFORM public.save_stack('5ac0c0de-0000-4000-8000-00000000cafe');
   EXCEPTION WHEN insufficient_privilege THEN got := 'refused';
   END;
-  RAISE NOTICE '%|%|%', 'a visitor may not call it', 'refused', got;
+  PERFORM pg_temp.rh_case('a visitor may not call it', 'refused', got);
 END $$;
+RESET ROLE;
+
+SELECT pg_temp.rh_verdict();
 ROLLBACK;

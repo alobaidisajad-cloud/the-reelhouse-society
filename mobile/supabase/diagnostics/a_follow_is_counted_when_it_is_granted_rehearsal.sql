@@ -1,25 +1,27 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_follow_is_counted_when_it_is_granted_rehearsal.sql — 20261003_01. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   psql "$SUPABASE_DB_URL" -X -q -t -A -v with_fix=1 -f mobile/supabase/diagnostics/a_follow_is_counted_when_it_is_granted_rehearsal.sql
+--   psql "$SUPABASE_DB_URL" -X -q -t -A -f mobile/supabase/diagnostics/a_follow_is_counted_when_it_is_granted_rehearsal.sql
 --
 -- A host with four would-be followers: one is let in, one turned away, one
 -- withdraws, and one never asked. A visitor and the one who never asked both
--- try to "accept" a request that does not exist. Without with_fix the counts
--- move for nothing, the visitor is let through, the requester hears nothing
--- and the host's notices outlive their requests: the rehearsal says no.
--- Read each NOTICE as  case | expected | got.
+-- try to "accept" a request that does not exist. The counts move only for the
+-- one let in, the visitor is refused, the requester hears they were let in,
+-- and no notice outlives its request. Production runs it by hand;
+-- db-integration.yml runs it on the sealed copy (e2e/db/rehearsals.mjs).
+-- Read each NOTICE as  case|expected|got ; the last line is the verdict, and
+-- any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
 BEGIN;
+\ir rehearsal_kit.sql
 
-\if :{?with_fix}
-\ir ../../../supabase/migrations/20261003_01_a_follow_is_counted_when_it_is_granted.sql
-\endif
-
--- Five members: the host, and four others with nothing between them and the host.
+-- Five members in good standing: the host, and four others with nothing between them and the host.
 CREATE TEMP TABLE fc_cast ON COMMIT DROP AS
-SELECT id, row_number() OVER (ORDER BY created_at) AS n FROM public.profiles ORDER BY created_at LIMIT 5;
+SELECT id, row_number() OVER (ORDER BY created_at) AS n FROM public.profiles
+ WHERE NOT coalesce(is_banned, false) AND (suspended_until IS NULL OR suspended_until <= now())
+ ORDER BY created_at LIMIT 5;
+SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM fc_cast), 5) AS done \gset rh_
 SELECT set_config('rehearsal.host',     (SELECT id::text FROM fc_cast WHERE n = 1), true) AS done \gset rh_
 SELECT set_config('rehearsal.admitted', (SELECT id::text FROM fc_cast WHERE n = 2), true) AS done \gset rh_
 SELECT set_config('rehearsal.declined', (SELECT id::text FROM fc_cast WHERE n = 3), true) AS done \gset rh_
@@ -68,33 +70,28 @@ RESET ROLE;
 DELETE FROM public.interactions WHERE user_id = current_setting('rehearsal.withdrew')::uuid AND target_user_id = current_setting('rehearsal.host')::uuid;
 
 DO $$
-DECLARE failed integer := 0; c record;
+DECLARE
   moved_followers integer := (SELECT coalesce(p.followers_count, 0) - b.followers FROM public.profiles p JOIN fc_before b USING (id) WHERE id = current_setting('rehearsal.host')::uuid);
   moved_following integer := (SELECT coalesce(p.following_count, 0) - b.following FROM public.profiles p JOIN fc_before b USING (id) WHERE id = current_setting('rehearsal.admitted')::uuid);
   host_moved_following integer := (SELECT coalesce(p.following_count, 0) - b.following FROM public.profiles p JOIN fc_before b USING (id) WHERE id = current_setting('rehearsal.host')::uuid);
   stranger_moved integer := (SELECT coalesce(p.followers_count, 0) - b.followers FROM public.profiles p JOIN fc_before b USING (id) WHERE id = current_setting('rehearsal.stranger')::uuid);
 BEGIN
-  FOR c IN SELECT * FROM (VALUES
-    ('a visitor cannot accept a request', 'refused', (SELECT got FROM fc_out WHERE k = 'visitor')),
-    ('the host gains one follower: the one let in', '1', moved_followers::text),
-    ('the one let in follows one more', '1', moved_following::text),
-    ('nothing moves for a request that does not exist', '0', (host_moved_following + stranger_moved)::text),
-    ('the one let in follows the host', 'follow',
-       (SELECT type FROM public.interactions WHERE user_id = current_setting('rehearsal.admitted')::uuid AND target_user_id = current_setting('rehearsal.host')::uuid)),
-    ('and hears that they were let in', '1',
-       (SELECT count(*)::text FROM public.notifications WHERE user_id = current_setting('rehearsal.admitted')::uuid
-          AND type = 'follow_accept' AND from_user_id = current_setting('rehearsal.host')::uuid)),
-    ('the host keeps no notice of a request that has ended', '0',
-       (SELECT count(*)::text FROM public.notifications WHERE user_id = current_setting('rehearsal.host')::uuid AND type = 'follow_request'
-          AND from_user_id IN (current_setting('rehearsal.admitted')::uuid, current_setting('rehearsal.declined')::uuid, current_setting('rehearsal.withdrew')::uuid))),
-    ('no request notice in the house outlives its request', '0',
-       (SELECT count(*)::text FROM public.notifications n WHERE n.type = 'follow_request' AND NOT EXISTS (
-          SELECT 1 FROM public.interactions i WHERE i.user_id = n.from_user_id AND i.target_user_id = n.user_id AND i.type = 'follow_request')))
-  ) AS t(label, expected, got) LOOP
-    RAISE NOTICE '% | % | %', c.label, c.expected, c.got;
-    IF c.got IS DISTINCT FROM c.expected THEN failed := failed + 1; END IF;
-  END LOOP;
-  RAISE NOTICE 'FAILED: %', failed;
+  PERFORM pg_temp.rh_case('a visitor cannot accept a request', 'refused', (SELECT got FROM fc_out WHERE k = 'visitor'));
+  PERFORM pg_temp.rh_case('the host gains one follower: the one let in', '1', moved_followers::text);
+  PERFORM pg_temp.rh_case('the one let in follows one more', '1', moved_following::text);
+  PERFORM pg_temp.rh_case('nothing moves for a request that does not exist', '0', (host_moved_following + stranger_moved)::text);
+  PERFORM pg_temp.rh_case('the one let in follows the host', 'follow',
+    (SELECT type FROM public.interactions WHERE user_id = current_setting('rehearsal.admitted')::uuid AND target_user_id = current_setting('rehearsal.host')::uuid));
+  PERFORM pg_temp.rh_case('and hears that they were let in', '1',
+    (SELECT count(*)::text FROM public.notifications WHERE user_id = current_setting('rehearsal.admitted')::uuid
+       AND type = 'follow_accept' AND from_user_id = current_setting('rehearsal.host')::uuid));
+  PERFORM pg_temp.rh_case('the host keeps no notice of a request that has ended', '0',
+    (SELECT count(*)::text FROM public.notifications WHERE user_id = current_setting('rehearsal.host')::uuid AND type = 'follow_request'
+       AND from_user_id IN (current_setting('rehearsal.admitted')::uuid, current_setting('rehearsal.declined')::uuid, current_setting('rehearsal.withdrew')::uuid)));
+  PERFORM pg_temp.rh_case('no request notice in the house outlives its request', '0',
+    (SELECT count(*)::text FROM public.notifications n WHERE n.type = 'follow_request' AND NOT EXISTS (
+       SELECT 1 FROM public.interactions i WHERE i.user_id = n.from_user_id AND i.target_user_id = n.user_id AND i.type = 'follow_request')));
 END $$;
 
+SELECT pg_temp.rh_verdict();
 ROLLBACK;

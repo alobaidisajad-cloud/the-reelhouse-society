@@ -1,29 +1,30 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- withdrawn_filing_rehearsal.sql — is a withdrawn filing over?
 -- ════════════════════════════════════════════════════════════════════════════
--- Runs against LIVE rules as two real members, inside one transaction that
--- ROLLS BACK. Nothing is kept: every filing here is made up (fixed ids), and
--- every write, vote, certification and notice is undone with it.
+--   psql "$SUPABASE_DB_URL" -X -q -t -A -f mobile/supabase/diagnostics/withdrawn_filing_rehearsal.sql
 --
---   psql "$SUPABASE_DB_URL" -X -q -t -A -v with_fix=1 -f mobile/supabase/diagnostics/withdrawn_filing_rehearsal.sql
---
--- `with_fix=1` applies 20260930_02 first, inside the same transaction. Without
--- it, the cases below say NO: the cover and the link survive a withdrawal, a
--- withdrawn ballot takes a vote, a withdrawn filing takes a certification, a
--- withdrawn ballot is frozen (and its voters told), and there is no single
--- erase to refuse. Read each NOTICE as  case | expected | got.
+-- Runs against LIVE rules as two members in good standing, inside one
+-- transaction that ROLLS BACK. Nothing is kept: every filing here is made up
+-- (fixed, made-up ids), and every write, vote, certification and notice is
+-- undone with it. A withdrawn filing keeps no cover and no link, takes no vote
+-- and no certification, is never frozen, and only the house may erase one.
+-- Production runs it by hand; db-integration.yml runs it on the sealed copy
+-- (e2e/db/rehearsals.mjs). Read each NOTICE as  case|expected|got ; the last
+-- line is the verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
 BEGIN;
-\if :{?with_fix}
-\ir ../../../supabase/migrations/20260930_02_a_withdrawn_filing_is_over.sql
-\endif
+\ir rehearsal_kit.sql
 
 -- Filed before anyone is anyone: auth.uid() is null here, so no tier gate asks.
-SELECT set_config('request.jwt.claims', '', true);
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
 CREATE TEMP TABLE rehearsal_members ON COMMIT DROP AS
-  SELECT id, row_number() OVER (ORDER BY created_at) AS n FROM auth.users ORDER BY created_at LIMIT 2;
+  SELECT u.id, row_number() OVER (ORDER BY u.created_at) AS n
+    FROM auth.users u JOIN public.profiles p ON p.id = u.id
+   WHERE NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
+   ORDER BY u.created_at LIMIT 2;
+SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rehearsal_members), 2) AS done \gset rh_
 GRANT SELECT ON rehearsal_members TO authenticated;
 
 -- Fixtures, all by member 1. The every-field wire and take are what the erase
@@ -78,14 +79,14 @@ BEGIN
     FROM public.dispatch_posts p, jsonb_each(to_jsonb(p)) e
    WHERE p.id = '0f11e0de-0000-4000-8000-000000000001'
      AND e.key = ANY (erased) AND e.value NOT IN ('null'::jsonb, '""'::jsonb);
-  RAISE NOTICE '%|%|%', 'withdrawn by its author: nothing of its words is left', '', got;
+  PERFORM pg_temp.rh_case('withdrawn by its author: nothing of its words is left', '', got);
 
   SELECT coalesce(string_agg(e.key, ',' ORDER BY e.key), '') || '/' || max(p.ended_by) INTO got
     FROM public.dispatch_posts p
     LEFT JOIN LATERAL jsonb_each(to_jsonb(p)) e
       ON e.key = ANY (erased) AND e.value NOT IN ('null'::jsonb, '""'::jsonb)
    WHERE p.id = '0f11e0de-0000-4000-8000-000000000002';
-  RAISE NOTICE '%|%|%', 'removed by the house: the same erase', '/house', got;
+  PERFORM pg_temp.rh_case('removed by the house: the same erase', '/house', got);
 
   -- ── member 2 tries to act on what was withdrawn ─────────────────────────
   PERFORM set_config('request.jwt.claims', format(as_member, b), true);
@@ -96,7 +97,7 @@ BEGIN
     VALUES ('0f11e0de-0000-4000-8000-000000000003', b, 0);
   EXCEPTION WHEN insufficient_privilege THEN got := 'refused';
   END;
-  RAISE NOTICE '%|%|%', 'a vote on a withdrawn ballot', 'refused', got;
+  PERFORM pg_temp.rh_case('a vote on a withdrawn ballot', 'refused', got);
 
   got := 'counted';
   BEGIN
@@ -104,7 +105,7 @@ BEGIN
     VALUES (b, '0f11e0de-0000-4000-8000-000000000001');
   EXCEPTION WHEN insufficient_privilege THEN got := 'refused';
   END;
-  RAISE NOTICE '%|%|%', 'certifying a withdrawn filing', 'refused', got;
+  PERFORM pg_temp.rh_case('certifying a withdrawn filing', 'refused', got);
 
   -- ── and what is still open stays open (the doors can say YES) ────────────
   got := 'counted';
@@ -113,7 +114,7 @@ BEGIN
     VALUES (b, '0f11e0de-0000-4000-8000-0000000000c1');
   EXCEPTION WHEN insufficient_privilege THEN got := 'refused';
   END;
-  RAISE NOTICE '%|%|%', 'a critique under the tombstone may still be certified', 'counted', got;
+  PERFORM pg_temp.rh_case('a critique under the tombstone may still be certified', 'counted', got);
 
   got := 'counted';
   BEGIN
@@ -121,7 +122,7 @@ BEGIN
     VALUES (b, '0f11e0de-0000-4000-8000-000000000005');
   EXCEPTION WHEN insufficient_privilege THEN got := 'refused';
   END;
-  RAISE NOTICE '%|%|%', 'a standing filing may be certified', 'counted', got;
+  PERFORM pg_temp.rh_case('a standing filing may be certified', 'counted', got);
 
   got := 'counted';
   BEGIN
@@ -129,7 +130,7 @@ BEGIN
     VALUES ('0f11e0de-0000-4000-8000-000000000006', b, 1);
   EXCEPTION WHEN insufficient_privilege THEN got := 'refused';
   END;
-  RAISE NOTICE '%|%|%', 'a vote on an open ballot', 'counted', got;
+  PERFORM pg_temp.rh_case('a vote on an open ballot', 'counted', got);
 
   -- ── the erase is the house's alone ──────────────────────────────────────
   got := 'called';
@@ -139,7 +140,7 @@ BEGIN
     WHEN insufficient_privilege THEN got := 'refused';
     WHEN undefined_function     THEN got := 'no single erase';
   END;
-  RAISE NOTICE '%|%|%', 'a member may not call the erase', 'refused', got;
+  PERFORM pg_temp.rh_case('a member may not call the erase', 'refused', got);
 END $$;
 
 -- ── the freeze: a withdrawn ballot does not close ─────────────────────────
@@ -151,16 +152,18 @@ BEGIN
 
   SELECT CASE WHEN frozen_totals IS NULL THEN 'not frozen' ELSE 'frozen' END INTO got
     FROM public.dispatch_posts WHERE id = '0f11e0de-0000-4000-8000-000000000004';
-  RAISE NOTICE '%|%|%', 'a withdrawn ballot past its date', 'not frozen', got;
+  PERFORM pg_temp.rh_case('a withdrawn ballot past its date', 'not frozen', got);
 
   SELECT CASE WHEN frozen_totals IS NULL THEN 'not frozen' ELSE 'frozen' END INTO got
     FROM public.dispatch_posts WHERE id = '0f11e0de-0000-4000-8000-000000000007';
-  RAISE NOTICE '%|%|%', 'a standing ballot past its date', 'frozen', got;
+  PERFORM pg_temp.rh_case('a standing ballot past its date', 'frozen', got);
 
-  -- Every filing ended before today, emptied too (the live rows, not fixtures).
-  SELECT count(*)::text INTO got FROM public.dispatch_posts
-   WHERE ended_at IS NOT NULL AND id::text NOT LIKE '0f11e0de-%'
-     AND (subject_backdrop IS NOT NULL OR source_url IS NOT NULL);
-  RAISE NOTICE '%|%|%', 'filings ended before today keep no cover or link', '0', got;
+  -- Every ended filing in the house, those ended here among them, is emptied.
+  PERFORM pg_temp.rh_case('no ended filing keeps a cover or a link (of '
+      || (SELECT count(*) FROM public.dispatch_posts WHERE ended_at IS NOT NULL) || ')', '0',
+    (SELECT count(*)::text FROM public.dispatch_posts
+      WHERE ended_at IS NOT NULL AND (subject_backdrop IS NOT NULL OR source_url IS NOT NULL)));
 END $$;
+
+SELECT pg_temp.rh_verdict();
 ROLLBACK;

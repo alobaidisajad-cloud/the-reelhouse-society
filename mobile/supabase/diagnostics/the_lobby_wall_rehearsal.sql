@@ -1,36 +1,37 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- the_lobby_wall_rehearsal.sql — does the Lobby choose, show and keep what it says?
 -- ════════════════════════════════════════════════════════════════════════════
--- Runs against LIVE rules as real members, inside one transaction that ROLLS
--- BACK. Nothing is kept: every log, stack, filing, mark, block and notice here
--- is made up (fixed ids) and undone with it, and today's edition is chosen
--- again from the fixtures, then thrown away.
+--   psql "$SUPABASE_DB_URL" -X -q -t -A -f mobile/supabase/diagnostics/the_lobby_wall_rehearsal.sql
 --
---   psql "$SUPABASE_DB_URL" -X -q -t -A -v with_fix=1 -f mobile/supabase/diagnostics/the_lobby_wall_rehearsal.sql
---
--- `with_fix=1` applies 20261001_01 (the order of honour) first, inside the same
--- transaction; 20260930_03 (the tables, the switch, the job) is already live.
--- Without it, the cases ask the order production runs now.
--- Read each NOTICE as  case | expected | got.
+-- Runs against LIVE rules as members picked by query, inside one transaction
+-- that ROLLS BACK. Nothing is kept: every log, stack, filing, mark, block and
+-- notice here is made up (fixed, made-up ids) and undone with it, and today's
+-- edition is chosen again from the fixtures, then thrown away. Production runs
+-- it by hand; db-integration.yml runs it on the sealed copy
+-- (e2e/db/rehearsals.mjs). Read each NOTICE as  case|expected|got ; the last
+-- line is the verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
 BEGIN;
-\if :{?with_fix}
-\ir ../../../supabase/migrations/20261001_01_the_lobby_turns_daily.sql
-\endif
+\ir rehearsal_kit.sql
 
 -- Made before anyone is anyone: auth.uid() is null, so no member's gate asks.
-SELECT set_config('request.jwt.claims', '', true);
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
--- The cast: the house's one admin, and five members who are not.
+-- The cast: five members who are not admins, banned or private, and the
+-- house's admin (another member is made one if the house has none).
 CREATE TEMP TABLE lobby_cast ON COMMIT DROP AS
-  SELECT id, 'admin'::text AS part FROM public.profiles WHERE role = 'admin' LIMIT 1;
-INSERT INTO lobby_cast
-  SELECT id, (ARRAY['author', 'reader', 'critic', 'banned', 'private'])[row_number() OVER (ORDER BY created_at)]
+  SELECT id, (ARRAY['author', 'reader', 'critic', 'banned', 'private'])[row_number() OVER (ORDER BY created_at)] AS part
     FROM (SELECT u.id, u.created_at FROM auth.users u JOIN public.profiles p ON p.id = u.id
            WHERE coalesce(p.role, '') <> 'admin' AND NOT coalesce(p.is_banned, false)
              AND NOT coalesce(p.is_social_private, false)
            ORDER BY u.created_at LIMIT 5) m;
+SELECT pg_temp.rh_need('members who are not admins, banned or private', (SELECT count(*) FROM lobby_cast), 5) AS done \gset rh_
+INSERT INTO lobby_cast
+  SELECT pg_temp.rh_found('a member to act as the admin', coalesce(
+    (SELECT id FROM public.profiles WHERE role = 'admin' ORDER BY created_at LIMIT 1),
+    (SELECT id FROM public.profiles WHERE id NOT IN (SELECT id FROM lobby_cast) ORDER BY created_at LIMIT 1))), 'admin';
+UPDATE public.profiles SET role = 'admin' WHERE id = (SELECT id FROM lobby_cast WHERE part = 'admin') AND role IS DISTINCT FROM 'admin';
 GRANT SELECT ON lobby_cast TO authenticated;
 
 -- The edition's moment: today, 00:00 UTC. Everything below was made before it.
@@ -202,7 +203,7 @@ BEGIN
     got := CASE WHEN got::int > 0 THEN 'chosen' ELSE 'nothing' END;
   EXCEPTION WHEN undefined_function OR undefined_table THEN got := 'missing';
   END;
-  RAISE NOTICE '%|%|%', 'the day''s edition is chosen', 'chosen', got;
+  PERFORM pg_temp.rh_case('the day''s edition is chosen', 'chosen', got);
 END $$;
 
 -- Where each fixture log landed (0 = not chosen).
@@ -243,100 +244,100 @@ DECLARE
   got text;
 BEGIN
   IF FUNCTION_missing THEN
-    RAISE NOTICE '%|%|%', 'the order of honour', 'as ruled', 'missing';
+    PERFORM pg_temp.rh_case('the order of honour', 'as ruled', 'missing');
     RETURN;
   END IF;
   EXECUTE pl INTO a USING 'L6'; EXECUTE pl INTO b USING 'L1';
-  RAISE NOTICE '%|%|%', 'certified AND critiqued (3) above certified twice (2)', 'true', (a > 0 AND a < b)::text;
-  RAISE NOTICE '%|%|%', 'a member critiquing three times counts once (L6 is 3, not 5): it stays above L1', 'true', (a < b)::text;
+  PERFORM pg_temp.rh_case('certified AND critiqued (3) above certified twice (2)', 'true', (a > 0 AND a < b)::text);
+  PERFORM pg_temp.rh_case('a member critiquing three times counts once (L6 is 3, not 5): it stays above L1', 'true', (a < b)::text);
   EXECUTE pl INTO a USING 'L11'; EXECUTE pl INTO b USING 'L12';
-  RAISE NOTICE '%|%|%', 'only the last day counts: L12 (one today, one this week) ties L11 (one today), and the newer wins', 'true', (a > 0 AND a < b)::text;
+  PERFORM pg_temp.rh_case('only the last day counts: L12 (one today, one this week) ties L11 (one today), and the newer wins', 'true', (a > 0 AND a < b)::text);
   EXECUTE pl INTO a USING 'L11'; EXECUTE pl INTO b USING 'L10';
   -- (0 = not among the twelve: the house's own newer logs may fill them)
-  RAISE NOTICE '%|%|%', 'a log marked twice three days ago is below one marked once today', 'true', (a > 0 AND (b = 0 OR a < b))::text;
+  PERFORM pg_temp.rh_case('a log marked twice three days ago is below one marked once today', 'true', (a > 0 AND (b = 0 OR a < b))::text);
   EXECUTE pl INTO a USING 'L11'; EXECUTE pl INTO b USING 'L8';
-  RAISE NOTICE '%|%|%', 'a tie on the day goes to the newest', 'true', (a > 0 AND a < b)::text;
+  PERFORM pg_temp.rh_case('a tie on the day goes to the newest', 'true', (a > 0 AND a < b)::text);
   EXECUTE pl INTO a USING 'L5'; EXECUTE pl INTO b USING 'L8';
-  RAISE NOTICE '%|%|%', 'self-certification counts for nothing (L5 below L8, marked once)', 'true', (b > 0 AND (a = 0 OR a > b))::text;
+  PERFORM pg_temp.rh_case('self-certification counts for nothing (L5 below L8, marked once)', 'true', (b > 0 AND (a = 0 OR a > b))::text);
   EXECUTE pl INTO a USING 'L7';
-  RAISE NOTICE '%|%|%', 'a banned member''s mark counts for nothing (L7 below L8)', 'true', (b > 0 AND (a = 0 OR a > b))::text;
+  PERFORM pg_temp.rh_case('a banned member''s mark counts for nothing (L7 below L8)', 'true', (b > 0 AND (a = 0 OR a > b))::text);
   EXECUTE pl INTO a USING 'L14'; EXECUTE pl INTO b USING 'L4';
-  RAISE NOTICE '%|%|%', 'on a quiet tie a member honoured this week gives way to one who was not (L14 above the newer L4)', 'true', (a > 0 AND (b = 0 OR a < b))::text;
+  PERFORM pg_temp.rh_case('on a quiet tie a member honoured this week gives way to one who was not (L14 above the newer L4)', 'true', (a > 0 AND (b = 0 OR a < b))::text);
   EXECUTE pl INTO a USING 'L9'; EXECUTE pl INTO b USING 'L14';
-  RAISE NOTICE '%|%|%', 'a log that has had its day gives way to every one that has not (L9, marked today, below unmarked L14)', 'true', (b > 0 AND (a = 0 OR a > b))::text;
+  PERFORM pg_temp.rh_case('a log that has had its day gives way to every one that has not (L9, marked today, below unmarked L14)', 'true', (b > 0 AND (a = 0 OR a > b))::text);
   SELECT count(*)::text INTO got FROM public.lobby_editions
    WHERE edition = (SELECT today FROM lobby_clock) AND slot = 'log' AND place < coalesce(nullif(a, 0), 13)
      AND target_id NOT IN (SELECT target_id FROM public.lobby_editions WHERE edition < (SELECT today FROM lobby_clock));
-  RAISE NOTICE '%|%|%', 'every log above L9 is one that has not had its day', (coalesce(nullif(a, 0), 13) - 1)::text, got;
+  PERFORM pg_temp.rh_case('every log above L9 is one that has not had its day', (coalesce(nullif(a, 0), 13) - 1)::text, got);
   EXECUTE pl INTO a USING 'L15';
-  RAISE NOTICE '%|%|%', 'a quiet day never hangs a throwaway review (seven characters, unmarked)', '0', a::text;
+  PERFORM pg_temp.rh_case('a quiet day never hangs a throwaway review (seven characters, unmarked)', '0', a::text);
   EXECUTE pl INTO a USING 'L17';
-  RAISE NOTICE '%|%|%', 'a short review another member certified has earned its place', 'true', (a > 0)::text;
+  PERFORM pg_temp.rh_case('a short review another member certified has earned its place', 'true', (a > 0)::text);
   EXECUTE pl INTO a USING 'L16';
-  RAISE NOTICE '%|%|%', 'a log awaiting a moderator''s word on a report never hangs', '0', a::text;
+  PERFORM pg_temp.rh_case('a log awaiting a moderator''s word on a report never hangs', '0', a::text);
   EXECUTE pl INTO a USING 'P6';
-  RAISE NOTICE '%|%|%', 'nor a throwaway filing ("Ok.", unmarked)', '0', a::text;
+  PERFORM pg_temp.rh_case('nor a throwaway filing ("Ok.", unmarked)', '0', a::text);
   EXECUTE pl INTO a USING 'S5';
-  RAISE NOTICE '%|%|%', 'a stack awaiting a moderator''s word never hangs', '0', a::text;
+  PERFORM pg_temp.rh_case('a stack awaiting a moderator''s word never hangs', '0', a::text);
   EXECUTE pl INTO a USING 'P7';
-  RAISE NOTICE '%|%|%', 'a filing awaiting a moderator''s word never hangs', '0', a::text;
+  PERFORM pg_temp.rh_case('a filing awaiting a moderator''s word never hangs', '0', a::text);
   EXECUTE pl INTO a USING 'L18';
-  RAISE NOTICE '%|%|%', 'once a moderator dismisses the report, the log may hang again', 'true', (a > 0)::text;
+  PERFORM pg_temp.rh_case('once a moderator dismisses the report, the log may hang again', 'true', (a > 0)::text);
   EXECUTE pl INTO a USING 'L2';
-  RAISE NOTICE '%|%|%', 'a log marked a spoiler never hangs', '0', a::text;
+  PERFORM pg_temp.rh_case('a log marked a spoiler never hangs', '0', a::text);
   EXECUTE pl INTO a USING 'L3';
-  RAISE NOTICE '%|%|%', 'a log with no words never hangs', '0', a::text;
+  PERFORM pg_temp.rh_case('a log with no words never hangs', '0', a::text);
   EXECUTE pl INTO a USING 'L13';
-  RAISE NOTICE '%|%|%', 'a private member''s log never hangs', '0', a::text;
+  PERFORM pg_temp.rh_case('a private member''s log never hangs', '0', a::text);
   EXECUTE pl INTO a USING 'L6';
-  RAISE NOTICE '%|%|%', 'the most honoured log takes the first place', '1', a::text;
+  PERFORM pg_temp.rh_case('the most honoured log takes the first place', '1', a::text);
   EXECUTE pl INTO a USING 'S4'; EXECUTE pl INTO b USING 'S1';
-  RAISE NOTICE '%|%|%', 'one member, one bill: the first log is the author''s, so the first stack is another member''s', 'true', (a = 1 AND b <> 1)::text;
+  PERFORM pg_temp.rh_case('one member, one bill: the first log is the author''s, so the first stack is another member''s', 'true', (a = 1 AND b <> 1)::text);
   EXECUTE pl INTO a USING 'S2';
-  RAISE NOTICE '%|%|%', 'a stack of three films never hangs', '0', a::text;
+  PERFORM pg_temp.rh_case('a stack of three films never hangs', '0', a::text);
   EXECUTE pl INTO a USING 'S3';
-  RAISE NOTICE '%|%|%', 'a private stack never hangs', '0', a::text;
+  PERFORM pg_temp.rh_case('a private stack never hangs', '0', a::text);
   EXECUTE pl INTO a USING 'P1';
-  RAISE NOTICE '%|%|%', 'the open filing certified and critiqued takes the first place', '1', a::text;
+  PERFORM pg_temp.rh_case('the open filing certified and critiqued takes the first place', '1', a::text);
   EXECUTE pl INTO a USING 'P5'; EXECUTE pl INTO b USING 'P4';
-  RAISE NOTICE '%|%|%', 'three filings, three writers: the reader''s unmarked take before the author''s second', 'true', (a = 2 AND (b = 0 OR b > a))::text;
+  PERFORM pg_temp.rh_case('three filings, three writers: the reader''s unmarked take before the author''s second', 'true', (a = 2 AND (b = 0 OR b > a))::text);
   SELECT count(*)::text INTO got FROM public.lobby_editions e
    WHERE e.edition = (SELECT today FROM lobby_clock) AND e.slot = 'post' AND e.place <= 3
      AND e.author_id IN (SELECT author_id FROM public.lobby_editions f
                           WHERE f.edition = e.edition AND f.slot = 'post' AND f.place < e.place);
-  RAISE NOTICE '%|%|%', 'no writer holds two of the three columns while another writer waits', '0', got;
+  PERFORM pg_temp.rh_case('no writer holds two of the three columns while another writer waits', '0', got);
   EXECUTE pl INTO a USING 'P2';
-  RAISE NOTICE '%|%|%', 'a filing behind a spoiler label never hangs', '0', a::text;
+  PERFORM pg_temp.rh_case('a filing behind a spoiler label never hangs', '0', a::text);
   EXECUTE pl INTO a USING 'P3';
-  RAISE NOTICE '%|%|%', 'an ended filing never hangs', '0', a::text;
+  PERFORM pg_temp.rh_case('an ended filing never hangs', '0', a::text);
 
   SELECT count(*)::text INTO got FROM public.lobby_editions WHERE edition = (SELECT today FROM lobby_clock) AND place > 12;
-  RAISE NOTICE '%|%|%', 'no slot holds more than twelve', '0', got;
+  PERFORM pg_temp.rh_case('no slot holds more than twelve', '0', got);
 
   -- the notices: the first log, the first stack, the first three filings — and nothing buzzed
   SELECT string_agg(group_key, ',' ORDER BY group_key) INTO got FROM public.notifications
    WHERE type = 'featured' AND user_id = (SELECT id FROM lobby_cast WHERE part = 'author');
-  RAISE NOTICE '%|%|%', 'the author is told of the log and the filing that hang — not the stack that gave way, nor the second filing',
-    'lobby:log:10bb1e00-0000-4000-8000-000000000006,lobby:post:10bb1e00-0000-4000-8000-0000000000b1', got;
+  PERFORM pg_temp.rh_case('the author is told of the log and the filing that hang — not the stack that gave way, nor the second filing',
+    'lobby:log:10bb1e00-0000-4000-8000-000000000006,lobby:post:10bb1e00-0000-4000-8000-0000000000b1', got);
   SELECT count(*)::text INTO got FROM public.notifications n
    WHERE n.type = 'featured'
      AND n.group_key NOT IN (SELECT 'lobby:' || e.slot || ':' || e.target_id FROM public.lobby_editions e
                               WHERE e.edition = (SELECT today FROM lobby_clock)
                                 AND e.place <= CASE e.slot WHEN 'post' THEN 3 ELSE 1 END);
-  RAISE NOTICE '%|%|%', 'nobody is told of a piece the wall does not show', '0', got;
+  PERFORM pg_temp.rh_case('nobody is told of a piece the wall does not show', '0', got);
   SELECT string_agg(group_key, ',' ORDER BY group_key) INTO got FROM public.notifications
    WHERE type = 'featured' AND user_id = (SELECT id FROM lobby_cast WHERE part = 'reader');
-  RAISE NOTICE '%|%|%', 'the reader is told of their stack and their filing',
-    'lobby:list:10bb1e00-0000-4000-8000-0000000000a4,lobby:post:10bb1e00-0000-4000-8000-0000000000b5', got;
+  PERFORM pg_temp.rh_case('the reader is told of their stack and their filing',
+    'lobby:list:10bb1e00-0000-4000-8000-0000000000a4,lobby:post:10bb1e00-0000-4000-8000-0000000000b5', got);
   SELECT (count(*) - (SELECT before FROM lobby_pushes))::text INTO got FROM net.http_request_queue;
-  RAISE NOTICE '%|%|%', 'a notice of honour is never pushed', '0', got;
+  PERFORM pg_temp.rh_case('a notice of honour is never pushed', '0', got);
 
   -- chosen once: asking again changes nothing
   got := public.lobby_choose_edition((SELECT today FROM lobby_clock))::text;
-  RAISE NOTICE '%|%|%', 'an edition is chosen once (asking again chooses 0)', '0', got;
+  PERFORM pg_temp.rh_case('an edition is chosen once (asking again chooses 0)', '0', got);
   SELECT count(*)::text INTO got FROM public.notifications
    WHERE type = 'featured' AND user_id = (SELECT id FROM lobby_cast WHERE part = 'author');
-  RAISE NOTICE '%|%|%', 'and tells no one twice', '2', got;
+  PERFORM pg_temp.rh_case('and tells no one twice', '2', got);
 END $$;
 
 -- The push still buzzes for everything else: a critique's notice is queued.
@@ -346,7 +347,7 @@ BEGIN
   INSERT INTO public.notifications (user_id, type, message)
   VALUES ((SELECT id FROM lobby_cast WHERE part = 'author'), 'comment', 'critiqued your log.');
   SELECT (count(*) - before)::text INTO got FROM net.http_request_queue;
-  RAISE NOTICE '%|%|%', 'every other notice is still pushed', '1', got;
+  PERFORM pg_temp.rh_case('every other notice is still pushed', '1', got);
 END $$;
 
 -- A reader who blocks the author, for the wall's own rules below.
@@ -361,26 +362,26 @@ DECLARE
   wall jsonb; got text;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'get_lobby') THEN
-    RAISE NOTICE '%|%|%', 'the wall', 'read', 'missing';
+    PERFORM pg_temp.rh_case('the wall', 'read', 'missing');
     RETURN;
   END IF;
 
   PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'reader')), true);
   wall := public.get_lobby();
-  RAISE NOTICE '%|%|%', 'the reader sees the first log', '10bb1e00-0000-4000-8000-000000000006', wall #>> '{log,id}';
-  RAISE NOTICE '%|%|%', 'the reader sees the first stack — another member''s than the log''s', '10bb1e00-0000-4000-8000-0000000000a4', wall #>> '{stack,id}';
-  RAISE NOTICE '%|%|%', 'and filings from different writers before any writer twice', '0',
-    (SELECT (count(*) - count(DISTINCT f #>> '{author,id}'))::text FROM jsonb_array_elements(wall -> 'filings') f);
-  RAISE NOTICE '%|%|%', 'the reader''s wall opens with the first filing, then another writer''s', '10bb1e00-0000-4000-8000-0000000000b1,10bb1e00-0000-4000-8000-0000000000b5',
-    (SELECT string_agg(f ->> 'id', ',' ORDER BY i) FROM jsonb_array_elements(wall -> 'filings') WITH ORDINALITY AS x(f, i) WHERE i <= 2);
-  RAISE NOTICE '%|%|%', 'the stack carries its film count and up to three posters', '4/3', (wall #>> '{stack,films}') || '/' || jsonb_array_length(wall #> '{stack,posters}');
-  RAISE NOTICE '%|%|%', 'the reader sees the first filing', '10bb1e00-0000-4000-8000-0000000000b1', wall #>> '{filings,0,id}';
+  PERFORM pg_temp.rh_case('the reader sees the first log', '10bb1e00-0000-4000-8000-000000000006', wall #>> '{log,id}');
+  PERFORM pg_temp.rh_case('the reader sees the first stack — another member''s than the log''s', '10bb1e00-0000-4000-8000-0000000000a4', wall #>> '{stack,id}');
+  PERFORM pg_temp.rh_case('and filings from different writers before any writer twice', '0',
+    (SELECT (count(*) - count(DISTINCT f #>> '{author,id}'))::text FROM jsonb_array_elements(wall -> 'filings') f));
+  PERFORM pg_temp.rh_case('the reader''s wall opens with the first filing, then another writer''s', '10bb1e00-0000-4000-8000-0000000000b1,10bb1e00-0000-4000-8000-0000000000b5',
+    (SELECT string_agg(f ->> 'id', ',' ORDER BY i) FROM jsonb_array_elements(wall -> 'filings') WITH ORDINALITY AS x(f, i) WHERE i <= 2));
+  PERFORM pg_temp.rh_case('the stack carries its film count and up to three posters', '4/3', (wall #>> '{stack,films}') || '/' || jsonb_array_length(wall #> '{stack,posters}'));
+  PERFORM pg_temp.rh_case('the reader sees the first filing', '10bb1e00-0000-4000-8000-0000000000b1', wall #>> '{filings,0,id}');
   -- no FIELD anywhere in the wall counts regard (the words members wrote may say anything)
   SELECT coalesce(string_agg(DISTINCT k, ','), 'none') INTO got
     FROM jsonb_array_elements_text(jsonb_path_query_array(wall, '$.** ? (@.type() == "object").keyvalue().key')) k
    WHERE k ~* '(score|certif|critique|count|regard)';
-  RAISE NOTICE '%|%|%', 'the wall carries no counts', 'none', got;
-  RAISE NOTICE '%|%|%', 'the edition is today''s', (SELECT today FROM lobby_clock)::text, wall ->> 'edition';
+  PERFORM pg_temp.rh_case('the wall carries no counts', 'none', got);
+  PERFORM pg_temp.rh_case('the edition is today''s', (SELECT today FROM lobby_clock)::text, wall ->> 'edition');
 
   -- the critic blocked the author: none of the author's pieces reaches them
   PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'critic')), true);
@@ -390,67 +391,78 @@ BEGIN
     NULLIF(wall #>> '{stack,author,id}' = (SELECT id FROM lobby_cast WHERE part = 'author')::text, false)::text,
     NULLIF(EXISTS (SELECT 1 FROM jsonb_array_elements(wall -> 'filings') f
                     WHERE f #>> '{author,id}' = (SELECT id FROM lobby_cast WHERE part = 'author')::text), false)::text);
-  RAISE NOTICE '%|%|%', 'a member who blocked the author sees none of their pieces', '', got;
+  PERFORM pg_temp.rh_case('a member who blocked the author sees none of their pieces', '', got);
 
   -- what a member may not do
   got := 'read';
   BEGIN PERFORM score FROM public.lobby_editions LIMIT 1;
   EXCEPTION WHEN insufficient_privilege THEN got := 'refused'; END;
-  RAISE NOTICE '%|%|%', 'a member reads the score', 'refused', got;
+  PERFORM pg_temp.rh_case('a member reads the score', 'refused', got);
   got := 'read';
   BEGIN PERFORM 1 FROM public.lobby_withheld LIMIT 1;
   EXCEPTION WHEN insufficient_privilege THEN got := 'refused'; END;
-  RAISE NOTICE '%|%|%', 'a member reads what is kept off', 'refused', got;
+  PERFORM pg_temp.rh_case('a member reads what is kept off', 'refused', got);
   got := 'chose';
   BEGIN PERFORM public.lobby_choose_edition((SELECT today FROM lobby_clock) + 1);
   EXCEPTION WHEN insufficient_privilege THEN got := 'refused'; END;
-  RAISE NOTICE '%|%|%', 'a member chooses an edition', 'refused', got;
+  PERFORM pg_temp.rh_case('a member chooses an edition', 'refused', got);
   got := 'kept off';
   BEGIN PERFORM public.set_lobby_withheld('log', '10bb1e00-0000-4000-8000-000000000006', true);
   EXCEPTION WHEN insufficient_privilege THEN got := 'refused'; END;
-  RAISE NOTICE '%|%|%', 'a member who is not an admin keeps a piece off', 'refused', got;
+  PERFORM pg_temp.rh_case('a member who is not an admin keeps a piece off', 'refused', got);
 END $$;
 
 -- ── WHEN A PIECE GOES, THE NEXT TAKES ITS PLACE ─────────────────────────────
+-- Each change is undone by ZZ001 before the next; its case is recorded after,
+-- so the undo does not take the record with it.
 DO $$
 DECLARE
   as_member CONSTANT text := '{"sub":"%s","role":"authenticated"}';
   wall jsonb; got text;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'get_lobby') THEN RETURN; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'get_lobby') THEN
+    PERFORM pg_temp.rh_case('when a piece goes, the next takes its place', 'read', 'missing');
+    RETURN;
+  END IF;
 
   -- the admin keeps the first log off: it leaves the wall at once, its notice with it
+  got := 'not reached';
   BEGIN
     PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'admin')), true);
     PERFORM public.set_lobby_withheld('log', '10bb1e00-0000-4000-8000-000000000006', true);
     PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'reader')), true);
     wall := public.get_lobby();
-    RAISE NOTICE '%|%|%', 'kept off by an admin: the next log takes the wall', '10bb1e00-0000-4000-8000-000000000001', wall #>> '{log,id}';
+    got := wall #>> '{log,id}';
     RAISE EXCEPTION USING ERRCODE = 'ZZ001';
   EXCEPTION WHEN SQLSTATE 'ZZ001' THEN NULL;
   END;
+  PERFORM pg_temp.rh_case('kept off by an admin: the next log takes the wall', '10bb1e00-0000-4000-8000-000000000001', got);
 
   -- the author deletes the first log: the next takes the wall
+  got := 'not reached';
   BEGIN
     PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'author')), true);
     DELETE FROM public.logs WHERE id = '10bb1e00-0000-4000-8000-000000000006';
     PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'reader')), true);
     wall := public.get_lobby();
-    RAISE NOTICE '%|%|%', 'deleted by its author: the next log takes the wall', '10bb1e00-0000-4000-8000-000000000001', wall #>> '{log,id}';
+    got := wall #>> '{log,id}';
     RAISE EXCEPTION USING ERRCODE = 'ZZ001';
   EXCEPTION WHEN SQLSTATE 'ZZ001' THEN NULL;
   END;
+  PERFORM pg_temp.rh_case('deleted by its author: the next log takes the wall', '10bb1e00-0000-4000-8000-000000000001', got);
 
   -- the author marks it a spoiler after it was chosen: it no longer hangs
+  got := 'not reached';
   BEGIN
     PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'author')), true);
     UPDATE public.logs SET is_spoiler = true WHERE id = '10bb1e00-0000-4000-8000-000000000006';
     PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'reader')), true);
     wall := public.get_lobby();
-    RAISE NOTICE '%|%|%', 'marked a spoiler since: the next log takes the wall', '10bb1e00-0000-4000-8000-000000000001', wall #>> '{log,id}';
+    got := wall #>> '{log,id}';
     RAISE EXCEPTION USING ERRCODE = 'ZZ001';
   EXCEPTION WHEN SQLSTATE 'ZZ001' THEN NULL;
   END;
+  PERFORM pg_temp.rh_case('marked a spoiler since: the next log takes the wall', '10bb1e00-0000-4000-8000-000000000001', got);
 END $$;
 
 RESET ROLE;
@@ -464,11 +476,12 @@ DECLARE
   wall jsonb; got text;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'get_lobby') THEN
-    RAISE NOTICE '%|%|%', 'what may no longer hang', 'gone', 'missing';
+    PERFORM pg_temp.rh_case('what may no longer hang', 'gone', 'missing');
     RETURN;
   END IF;
 
   -- the house withholds the first filing after it was chosen
+  got := 'not reached';
   BEGIN
     PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'admin')), true);
     UPDATE public.dispatch_posts SET withheld_at = now() WHERE id = '10bb1e00-0000-4000-8000-0000000000b1';
@@ -477,12 +490,13 @@ BEGIN
     wall := public.get_lobby();
     got := CASE WHEN EXISTS (SELECT 1 FROM jsonb_array_elements(wall -> 'filings') f
                               WHERE f ->> 'id' = '10bb1e00-0000-4000-8000-0000000000b1') THEN 'hangs' ELSE 'gone' END;
-    RAISE NOTICE '%|%|%', 'withheld since it was chosen: gone even from its author''s wall', 'gone', got;
     RAISE EXCEPTION USING ERRCODE = 'ZZ001';
   EXCEPTION WHEN SQLSTATE 'ZZ001' THEN NULL;
   END;
+  PERFORM pg_temp.rh_case('withheld since it was chosen: gone even from its author''s wall', 'gone', got);
 
   -- its author draws the first filing back to a draft
+  got := 'not reached';
   BEGIN
     PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'admin')), true);
     UPDATE public.dispatch_posts SET is_published = false WHERE id = '10bb1e00-0000-4000-8000-0000000000b1';
@@ -491,22 +505,23 @@ BEGIN
     wall := public.get_lobby();
     got := CASE WHEN EXISTS (SELECT 1 FROM jsonb_array_elements(wall -> 'filings') f
                               WHERE f ->> 'id' = '10bb1e00-0000-4000-8000-0000000000b1') THEN 'hangs' ELSE 'gone' END;
-    RAISE NOTICE '%|%|%', 'a draft again since it was chosen: gone even from its author''s wall', 'gone', got;
     RAISE EXCEPTION USING ERRCODE = 'ZZ001';
   EXCEPTION WHEN SQLSTATE 'ZZ001' THEN NULL;
   END;
+  PERFORM pg_temp.rh_case('a draft again since it was chosen: gone even from its author''s wall', 'gone', got);
 
   -- its author cuts the first stack below four films
+  got := 'not reached';
   BEGIN
     DELETE FROM public.list_items WHERE list_id = '10bb1e00-0000-4000-8000-0000000000a4' AND rank_position = 4;
     EXECUTE 'SET LOCAL ROLE authenticated';
     PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'reader')), true);
     wall := public.get_lobby();
     got := CASE WHEN wall #>> '{stack,id}' = '10bb1e00-0000-4000-8000-0000000000a4' THEN 'hangs' ELSE 'gone' END;
-    RAISE NOTICE '%|%|%', 'cut below four films since: the next stack takes the wall', 'gone', got;
     RAISE EXCEPTION USING ERRCODE = 'ZZ001';
   EXCEPTION WHEN SQLSTATE 'ZZ001' THEN NULL;
   END;
+  PERFORM pg_temp.rh_case('cut below four films since: the next stack takes the wall', 'gone', got);
 END $$;
 
 -- ── THE ADMIN'S SWITCH, WHOLE ───────────────────────────────────────────────
@@ -516,35 +531,38 @@ DECLARE
   got text;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'set_lobby_withheld') THEN
-    RAISE NOTICE '%|%|%', 'the admin''s switch', 'works', 'missing';
+    PERFORM pg_temp.rh_case('the admin''s switch', 'works', 'missing');
     RETURN;
   END IF;
   PERFORM set_config('request.jwt.claims', format(as_member, (SELECT id FROM lobby_cast WHERE part = 'admin')), true);
   PERFORM public.set_lobby_withheld('post', '10bb1e00-0000-4000-8000-0000000000b1', true);
   SELECT count(*)::text INTO got FROM public.lobby_editions WHERE target_id = '10bb1e00-0000-4000-8000-0000000000b1';
-  RAISE NOTICE '%|%|%', 'kept off: gone from every edition', '0', got;
+  PERFORM pg_temp.rh_case('kept off: gone from every edition', '0', got);
   SELECT count(*)::text INTO got FROM public.notifications WHERE group_key = 'lobby:post:10bb1e00-0000-4000-8000-0000000000b1';
-  RAISE NOTICE '%|%|%', 'kept off: its notice is taken back', '0', got;
+  PERFORM pg_temp.rh_case('kept off: its notice is taken back', '0', got);
   PERFORM public.lobby_choose_edition((SELECT today FROM lobby_clock) + 1);
   SELECT count(*)::text INTO got FROM public.lobby_editions
    WHERE edition = (SELECT today FROM lobby_clock) + 1 AND target_id = '10bb1e00-0000-4000-8000-0000000000b1';
-  RAISE NOTICE '%|%|%', 'kept off: never chosen again', '0', got;
+  PERFORM pg_temp.rh_case('kept off: never chosen again', '0', got);
   SELECT (count(*) - count(DISTINCT group_key))::text INTO got FROM public.notifications WHERE type = 'featured';
-  RAISE NOTICE '%|%|%', 'the next day tells no piece twice', '0', got;
+  PERFORM pg_temp.rh_case('the next day tells no piece twice', '0', got);
   SELECT CASE WHEN (SELECT target_id FROM public.lobby_editions WHERE edition = (SELECT today FROM lobby_clock) + 1 AND slot = 'log' AND place = 1)
                 IN (SELECT target_id FROM public.lobby_editions WHERE edition <= (SELECT today FROM lobby_clock) AND slot = 'log' AND place = 1)
               THEN 'again' ELSE 'new' END INTO got;
-  RAISE NOTICE '%|%|%', 'the next day''s first log is one that has not had its day', 'new', got;
+  PERFORM pg_temp.rh_case('the next day''s first log is one that has not had its day', 'new', got);
   PERFORM public.set_lobby_withheld('post', '10bb1e00-0000-4000-8000-0000000000b1', false);
   SELECT count(*)::text INTO got FROM public.lobby_withheld WHERE target_id = '10bb1e00-0000-4000-8000-0000000000b1';
-  RAISE NOTICE '%|%|%', 'let back: it may be chosen again', '0', got;
+  PERFORM pg_temp.rh_case('let back: it may be chosen again', '0', got);
 END $$;
 
 -- ── THE JOB AND THE DOORS ───────────────────────────────────────────────────
-SELECT format('%s|%s|%s', 'the job runs every hour at five past', '5 * * * *',
-              coalesce((SELECT schedule FROM cron.job WHERE jobname = 'lobby-edition'), 'missing'));
-SELECT format('%s|%s|%s', 'a visitor reads the wall', 'false',
-              coalesce((SELECT has_function_privilege('anon', 'public.get_lobby()', 'EXECUTE')::text
-                          WHERE EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'get_lobby')), 'missing'));
+DO $$ BEGIN
+  PERFORM pg_temp.rh_case('the job runs every hour at five past', '5 * * * *',
+    coalesce((SELECT schedule FROM cron.job WHERE jobname = 'lobby-edition'), 'missing'));
+  PERFORM pg_temp.rh_case('a visitor reads the wall', 'false',
+    coalesce((SELECT has_function_privilege('anon', 'public.get_lobby()', 'EXECUTE')::text
+               WHERE EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'get_lobby')), 'missing'));
+END $$;
 
+SELECT pg_temp.rh_verdict();
 ROLLBACK;
