@@ -50,7 +50,8 @@ it('says no to a config that sets the secret, a key, or signing keys under [auth
 });
 
 it('is read from the CLI release e2e.yml installs', () => {
-  const workflow = readFileSync(join(E2E, '..', '..', '.github', 'workflows', 'e2e.yml'), 'utf8');
+  // Line ends as git hands them on this checkout: a Windows one holds CRLF.
+  const workflow = readFileSync(join(E2E, '..', '..', '.github', 'workflows', 'e2e.yml'), 'utf8').replace(/\r\n/g, '\n');
   const installed = [...workflow.matchAll(/supabase\/setup-cli@\S+[^\n]*\n\s*with:\n\s*version: (\S+)/g)].map((m) => m[1]);
   expect(installed.length).toBeGreaterThan(0);
   expect(new Set(installed)).toEqual(new Set([ask('k.CLI_VERSION')]));
