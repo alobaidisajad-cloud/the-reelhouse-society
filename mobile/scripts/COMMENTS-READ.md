@@ -91,7 +91,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/notifications-modal.tsx | 2026-10-02 | rows say new/who/what/when; the rest could not be reached; history comments trimmed |
 | app/(modals)/search-modal.tsx | 2026-10-03 | edited: no results holds through the next letter |
 | app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
-| app/(tabs)/_layout.tsx | 2026-10-04 | edited: the log modal after the initiation opens through useLater |
+| app/(tabs)/_layout.tsx | 2026-10-15 | edited: the tab icon's two timings take literal configs |
 | app/(tabs)/darkroom.tsx | 2026-10-02 | the next batch that could not be developed is said, and asked again |
 | app/(tabs)/dispatch.tsx | 2026-10-02 | Read whole (launch audit). A failed next page ended the paper as though it were the last filing: the foot says the rest could not be reached. The column was measured for a 390pt phone whatever the screen: the real width now. |
 | app/(tabs)/index.tsx | 2026-10-03 | edited: the join plate draws the shared BrassSheen |
@@ -174,7 +174,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-04 | edited: testEnvironment, the timer-checking one, says what it is |
-| jest.setup.ts | 2026-10-14 | edited: AbortSignal has no timeout or any, as on Hermes |
+| jest.setup.ts | 2026-10-15 | edited: the fake withDecay refuses an empty key, as withTiming and withSpring do |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
 | mockups/paper/__tests__/zz-badge.gen.test.tsx | 2026-09-29 | described the real badge as it was at one commit (brass ramp); now says A is whatever RankBadge is |
@@ -993,6 +993,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aMembersWordsAreCleaned.test.ts | 2026-10-03 | the profile excuses went with the INSERT grant that made those columns writable (20261003_07) |
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
+| src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |
 | src/utils/__tests__/appConfig.guard.test.ts | 2026-10-15 | EAS uploads the commit alone, numbered as committed |
 | src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
 | src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-10-02 | Written in the launch audit: a suspended member's queued writes wait for the end. |
@@ -1149,7 +1151,7 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/functions/sync-entitlement/index.ts | 2026-10-03 | rewritten onto storeRecord; answers the rank in force; a store not read is 502 |
 | test-utils/__tests__/aFileEndsWithNoTimerWaiting.test.ts | 2026-10-04 | written whole: runs jest on the three fixtures |
 | test-utils/__tests__/everyCommentIsTrue.test.ts | — |  |
-| test-utils/__tests__/everySourceReaderIsLedgered.test.ts | — |  |
+| test-utils/__tests__/everySourceReaderIsLedgered.test.ts | 2026-10-15 | edited: a test that builds a TypeScript program reads source too |
 | test-utils/__tests__/everyTestClientKeepsTheHouseRules.test.ts | 2026-10-04 | written whole: new QueryClient( in the two builders only |
 | test-utils/__tests__/oneCommentStripper.test.ts | 2026-10-03 | written whole: the guard that no file strips comments with its own regex |
 | test-utils/__tests__/readCode.test.ts | 2026-10-03 | read whole: adds the generic-arrow case TSX misreads |

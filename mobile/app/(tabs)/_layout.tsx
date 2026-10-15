@@ -35,10 +35,9 @@ function useTabIconMotion(focused: boolean) {
   const dotScale = useSharedValue(focused ? 1 : 0);
 
   React.useEffect(() => {
-    const curve = { duration: MS.quick, easing: arrive() };
-    scale.value = withTiming(focused ? 1.15 : 1, curve);
+    scale.value = withTiming(focused ? 1.15 : 1, { duration: MS.quick, easing: arrive() });
     iconOpacity.value = withTiming(focused ? 1 : 0.35, { duration: MS.base });
-    dotScale.value = withTiming(focused ? 1 : 0, curve);
+    dotScale.value = withTiming(focused ? 1 : 0, { duration: MS.quick, easing: arrive() });
   }, [focused, scale, iconOpacity, dotScale]);
 
   const iconStyle = useAnimatedStyle(() => ({

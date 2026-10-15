@@ -496,7 +496,7 @@ jest.mock('react-native-reanimated', () => {
     KeyboardState: { UNKNOWN: 0, OPENING: 1, OPEN: 2, CLOSING: 3, CLOSED: 4 },
     useAnimatedProps: jest.fn((fn: any) => fn()),
     useAnimatedReaction: jest.fn(),
-    withDecay: jest.fn((_c: any, cb?: any) => { if (cb) cb(true); return 0; }),
+    withDecay: jest.fn((config: any, cb?: any) => { strictConfig('withDecay', config); if (cb) cb(true); return 0; }),
   };
 });
 

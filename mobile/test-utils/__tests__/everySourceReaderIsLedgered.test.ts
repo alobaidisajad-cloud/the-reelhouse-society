@@ -6,7 +6,8 @@
  * the exact failure this project has named three times — so this reads the
  * test tree and fails, naming the file, when:
  *
- *   · a test reads a file (`readFileSync`, `readCode(`) and is not listed;
+ *   · a test reads a file (`readFileSync`, `readCode(`, or a whole TypeScript
+ *     program, `createProgram(`) and is not listed;
  *   · a listed file no longer exists, or no longer reads anything — its row
  *     is then a reason for something that is not happening.
  */
@@ -16,7 +17,7 @@ import { MOBILE } from '../readCode';
 
 const ROOTS = ['app', 'src', 'mockups', 'test-utils', 'scripts'];
 const SKIP = new Set(['node_modules', 'out', '.git', 'android', 'ios', '.expo']);
-const READS = /readFileSync|readCode\(/;
+const READS = /readFileSync|readCode\(|createProgram\(/;
 const SELF = 'test-utils/__tests__/everySourceReaderIsLedgered.test.ts';
 
 function testFiles(): string[] {
