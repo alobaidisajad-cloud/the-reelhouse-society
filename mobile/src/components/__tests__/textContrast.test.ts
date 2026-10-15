@@ -25,6 +25,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 
@@ -75,18 +76,10 @@ for (const m of fs
     PALETTE[m[1]] = m[2];
 }
 
+/** A surface's files: the one file it names, or every .tsx under the folder it names. */
 function filesUnder(target: string): string[] {
-    const full = path.join(ROOT, target);
-    if (!fs.existsSync(full)) return [];
-    if (fs.statSync(full).isFile()) return [full];
-    const out: string[] = [];
-    for (const e of fs.readdirSync(full, { withFileTypes: true })) {
-        if (e.isDirectory()) {
-            if (e.name === '__tests__') continue;
-            out.push(...filesUnder(path.join(target, e.name)));
-        } else if (e.name.endsWith('.tsx')) out.push(path.join(full, e.name));
-    }
-    return out;
+    return universe('appCode', { ext: ['.tsx'] })
+        .filter((f) => rel(f) === target || rel(f).startsWith(`${target}/`));
 }
 
 /** Brace-balanced so a nested object (shadowOffset) cannot truncate a block. */

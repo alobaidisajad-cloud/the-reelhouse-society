@@ -9,21 +9,10 @@
  * each must be in the map. A call site whose type cannot be read fails too, so
  * a new one is looked at rather than passed.
  */
-import { readdirSync } from 'fs';
-import { join, relative } from 'path';
+import { relative } from 'path';
 import { readCode, MOBILE } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 import { QUEUED_WRITE_KIND, WORDS_NOUN } from '../queueOwnership';
-
-function walk(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.isDirectory()) {
-      if (['node_modules', '__tests__', '.expo', 'android', 'ios'].includes(e.name)) continue;
-      walk(full, out);
-    } else if (/\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name)) out.push(full);
-  }
-  return out;
-}
 
 /** The text between a call's parentheses, from the `(` at `open`. */
 function argumentsAt(src: string, open: number): string {
@@ -50,7 +39,7 @@ function typesIn(args: string): string[] {
 }
 
 const sites: { where: string; types: string[] }[] = [];
-for (const file of [...walk(join(MOBILE, 'src')), ...walk(join(MOBILE, 'app'))]) {
+for (const file of universe('appCode')) {
   const src = readCode(file);
   const where = relative(MOBILE, file).replace(/\\/g, '/');
   if (where === 'src/utils/offlineQueue.ts') continue; // the definition

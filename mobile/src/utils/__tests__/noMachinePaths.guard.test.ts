@@ -12,14 +12,12 @@
  * every source, test, script and tool the project runs and fails on any
  * absolute path into a user's home, a temp folder, or a drive letter.
  */
-import { readdirSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
-const ROOTS = ['app', 'src', 'mockups', 'scripts', 'test-utils', '.claude'];
 const FILES = /\.(tsx?|jsx?|cjs|mjs)$/;
-const SKIP_DIRS = new Set(['node_modules', 'out', '.git']);
 
 /** Absolute paths that can only exist on one machine. Built from parts, so
  *  this file does not match itself. */
@@ -29,18 +27,10 @@ const MACHINE = new RegExp([
   'AppData[\\\\/]+Local[\\\\/]+Temp',        // a Windows temp folder
 ].join('|'));
 
-function files(dir: string, out: string[] = []): string[] {
-  for (const name of readdirSync(dir)) {
-    if (SKIP_DIRS.has(name)) continue;
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) files(full, out);
-    else if (FILES.test(name)) out.push(full);
-  }
-  return out;
-}
-
 describe('no code names a place on one computer', () => {
-  const all = ROOTS.flatMap((r) => files(join(MOBILE, r)));
+  // Every code file in mobile/ and the edge functions, the tests and the scripts included.
+  const all = universe(['appCode', 'appTests', 'tests', 'testSupport', 'scripts', 'config', 'mockups', 'functions', 'standIns'])
+    .filter((f) => FILES.test(f));
 
   it('reads the project at all', () => {
     expect(all.length).toBeGreaterThan(500);

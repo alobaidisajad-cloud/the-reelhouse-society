@@ -34,6 +34,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const ts = require('typescript');
+const fileUniverse = require('../test-utils/universe');
 
 const MOBILE = path.join(__dirname, '..');
 const REPO = path.join(MOBILE, '..');
@@ -137,11 +138,8 @@ function universe(files) {
   const known = new Set(VOCABULARY);
   for (const f of files.code) words(stripComments(read(f), f), known);
   for (const f of files.hash) words(read(f), known);
-  const sql = [
-    ...walk(path.join(MOBILE, 'supabase'), (n) => n.endsWith('.sql')),
-    ...walk(path.join(REPO, 'supabase'), (n) => n.endsWith('.sql')),
-  ];
-  for (const f of sql) words(fs.readFileSync(f, 'utf8'), known);
+  // Every SQL file in both supabase/ trees, as test-utils/universe.js names them.
+  for (const f of fileUniverse.files('supabaseSql')) words(fs.readFileSync(f, 'utf8'), known);
   for (const f of ['package.json', 'app.json', 'eas.json', 'tsconfig.json', 'app.config.js', '.maestro/config.yaml']) {
     if (fs.existsSync(path.join(MOBILE, f))) words(read(f), known);
   }

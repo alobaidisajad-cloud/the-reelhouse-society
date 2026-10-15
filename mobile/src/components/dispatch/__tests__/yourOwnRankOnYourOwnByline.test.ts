@@ -18,20 +18,15 @@
  * the Dispatch that hands a `tier` to a composer to go through it — so the
  * fourth hand-built byline cannot quietly disagree with the other three.
  */
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const ROOT = path.resolve(__dirname, '../../../..');
 
 const dispatchFiles = (): string[] =>
-  execFileSync('git', ['ls-files', 'app/dispatch', 'src/components/dispatch'], {
-    cwd: ROOT,
-    encoding: 'utf8',
-  })
-    .split('\n')
-    .filter((f) => /\.tsx?$/.test(f) && !/__tests__|\.test\./.test(f));
+  universe('appCode', { ext: ['.ts', '.tsx'], under: ['app/dispatch', 'src/components/dispatch'] }).map(rel);
 
 describe('a member wears their own rank', () => {
   it('no Dispatch screen writes a LITERAL tier for the signed-in member', () => {

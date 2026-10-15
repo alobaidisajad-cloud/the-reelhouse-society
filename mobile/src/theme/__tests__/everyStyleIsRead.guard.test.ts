@@ -13,27 +13,17 @@
  * sheet, in any file of the app (under whatever name it was imported). Mockups
  * and tests do not count: a style only they draw lives only in a drawing.
  */
-import { readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { relative } from 'path';
 import ts from 'typescript';
 import { readCode, MOBILE } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 /** Sheets read by a computed key, which a sweep cannot follow — each says how. */
 const COMPUTED: Record<string, string> = {
   'src/components/profile/NoirPassport.tsx · s': 's[corner] draws the four corner brackets by name',
 };
 
-const files: string[] = [];
-const walk = (dir: string) => {
-  for (const name of readdirSync(dir)) {
-    if (name === '__tests__' || name === 'node_modules' || name.startsWith('.')) continue;
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) walk(p);
-    else if (/\.tsx?$/.test(name) && !/\.d\.ts$/.test(name)) files.push(p);
-  }
-};
-walk(join(MOBILE, 'src'));
-walk(join(MOBILE, 'app'));
+const files = universe('appCode').filter((f) => !f.endsWith('.d.ts'));
 const code = new Map(files.map((f) => [f, readCode(f)]));
 const rel = (f: string) => relative(MOBILE, f).replace(/\\/g, '/');
 

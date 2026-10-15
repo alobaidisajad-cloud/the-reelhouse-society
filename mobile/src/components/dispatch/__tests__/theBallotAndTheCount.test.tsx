@@ -21,6 +21,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { PaperBallot, shares } from '@/src/components/dispatch/paper/PaperBallot';
@@ -148,7 +149,6 @@ describe('nothing in the feature glues a count to a plural again', () => {
    * against a word ending in S has no way to say "one", and this is the shape
    * every one of the ten had.
    */
-  const fs = require('fs') as typeof import('fs');
   const path = require('path') as typeof import('path');
   const DIR = path.join(__dirname, '..', 'paper');
   /** English words ending in S that are not plural nouns. */
@@ -159,10 +159,11 @@ describe('nothing in the feature glues a count to a plural again', () => {
 
   it('finds none, in any component of the paper', () => {
     const offenders: string[] = [];
-    const files = fs.readdirSync(DIR).filter((n) => /\.tsx?$/.test(n));
+    const files = universe('appCode', { under: ['src/components/dispatch/paper'] }).filter((n) => /\.tsx?$/.test(n));
     expect(files.length).toBeGreaterThan(10); // the paper's components were found
-    for (const f of files) {
-      const code = readCode(path.join(DIR, f));
+    for (const full of files) {
+      const f = path.relative(DIR, full);
+      const code = readCode(full);
       // `${anything} WORDS` or `${anything} words` — a count against a plural.
       for (const m of code.matchAll(/\$\{[^{}]*\}\s+([A-Za-z]+[sS])\b/g)) {
         // `counted(...)` is the sanctioned form and produces the whole phrase,

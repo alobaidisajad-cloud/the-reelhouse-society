@@ -11,9 +11,10 @@
  *   3. no button does nothing: a phone with no mail app is offered the address
  *      and the help page instead.
  */
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative } from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const mockOpenURL = jest.fn();
 const mockAlert = jest.fn();
@@ -214,17 +215,7 @@ describe('the address is said once', () => {
   const ROOT = join(__dirname, '..', '..', '..');
   const HOME = 'src/constants/support.ts';
 
-  function sources(dir: string, out: string[] = []): string[] {
-    for (const name of readdirSync(dir)) {
-      if (name === 'node_modules' || name === '__tests__' || name.startsWith('.')) continue;
-      const path = join(dir, name);
-      if (statSync(path).isDirectory()) sources(path, out);
-      else if (/\.(ts|tsx|js|jsx|json)$/.test(name)) out.push(path);
-    }
-    return out;
-  }
-
-  const files = [...sources(join(ROOT, 'src')), ...sources(join(ROOT, 'app'))];
+  const files = universe(['appCode', 'appData']);
 
   it('walks the whole app, not a list of files I remembered', () => {
     expect(files.length).toBeGreaterThan(300);

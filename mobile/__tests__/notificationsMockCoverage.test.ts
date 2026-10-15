@@ -8,25 +8,16 @@
  * by a test. This re-derives the set from source every run (as
  * tmdbMockCoverage does for the catalogue).
  */
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
+import { files } from '../test-utils/universe';
 
 const ROOT = join(__dirname, '..');
-
-function walk(dir: string, acc: string[] = []): string[] {
-  for (const entry of readdirSync(dir)) {
-    if (entry === '__tests__' || entry === 'node_modules') continue;
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) walk(full, acc);
-    else if (/\.tsx?$/.test(entry) && !/\.test\.|\.d\.ts$/.test(entry)) acc.push(full);
-  }
-  return acc;
-}
 
 /** Members reached through a namespace import of expo-notifications, by the name each file gave it. */
 function membersUsed(): Map<string, string[]> {
   const found = new Map<string, string[]>();
-  for (const file of walk(join(ROOT, 'src')).concat(walk(join(ROOT, 'app')))) {
+  for (const file of files('appCode').filter((f) => !f.endsWith('.d.ts'))) {
     const src = readFileSync(file, 'utf8');
     // A namespace import, or `Notifications` for the one file that imports it lazily.
     if (!src.includes("'expo-notifications'")) continue;

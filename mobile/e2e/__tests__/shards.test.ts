@@ -6,9 +6,10 @@
  * no to each way a map goes wrong.
  */
 import { spawnSync } from 'child_process';
-import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
+import { basename, join } from 'path';
 import { pathToFileURL } from 'url';
+import { files as universe } from '../../test-utils/universe';
 
 // yaml's Node build, by file: this Jest resolves packages as a phone does.
 const { parse } = require(require.resolve('yaml/package.json').replace(/package\.json$/, 'dist/index.js')) as typeof import('yaml');
@@ -16,7 +17,6 @@ const { parse } = require(require.resolve('yaml/package.json').replace(/package\
 const E2E = join(__dirname, '..');
 const SCRIPT = join(E2E, 'shards.mjs');
 const MAP_FILE = join(E2E, 'shards.json');
-const FLOWS = join(E2E, '..', '.maestro');
 
 type Shard = { flows: string[]; keyboardProbes?: boolean; launchWithAnimations?: boolean };
 type ShardMap = { shards: Shard[] };
@@ -38,7 +38,7 @@ function ask<T>(fn: keyof Shards, ...args: unknown[]): T {
 }
 
 const map = JSON.parse(readFileSync(MAP_FILE, 'utf8')) as ShardMap;
-const flows = readdirSync(FLOWS).filter((f) => f.endsWith('.yaml') && f !== 'config.yaml').map((f) => f.replace(/\.yaml$/, ''));
+const flows = universe('runFlows').map((f) => basename(f).replace(/\.yaml$/, ''));
 
 describe('the committed map', () => {
   it('puts every flow in mobile/.maestro in exactly one shard, and names no other', () => {

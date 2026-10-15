@@ -23,31 +23,19 @@
  *   THE DISPATCH SAYS ESSAY     enumerated, so a new screen cannot reintroduce
  *                               the old word without this failing.
  */
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 import { KIND_NAME, nameOf } from '../paper/paperMetrics';
 import { SECTIONS } from '../../../stores/dispatch';
 
 const MOBILE = join(__dirname, '..', '..', '..', '..');
 
-const walk = (dir: string, out: string[] = []): string[] => {
-  for (const name of readdirSync(dir)) {
-    if (name === '__tests__' || name === 'node_modules') continue;
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) walk(full, out);
-    else if (/\.tsx?$/.test(name)) out.push(full);
-  }
-  return out;
-};
-
-const DISPATCH_SURFACE = [
-  ...walk(join(MOBILE, 'src', 'components', 'dispatch')),
-  ...walk(join(MOBILE, 'app', 'dispatch')),
-  join(MOBILE, 'app', '(tabs)', 'dispatch.tsx'),
-  join(MOBILE, 'app', 'lounge', '[id].tsx'),
-];
+const DISPATCH_SURFACE = universe('appCode', {
+  under: ['src/components/dispatch', 'app/dispatch', 'app/(tabs)/dispatch.tsx', 'app/lounge/[id].tsx'],
+});
 
 const rel = (f: string) => f.slice(MOBILE.length + 1).replace(/\\/g, '/');
 

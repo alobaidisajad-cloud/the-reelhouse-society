@@ -12,20 +12,11 @@
  * So: no element that draws a picture wears a style that spreads EDGE_LIT.
  * Its empty frame may.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { dirname, join, relative, resolve } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
-function files(dir: string): string[] {
-  const out: string[] = [];
-  for (const name of readdirSync(dir)) {
-    if (name === 'node_modules' || name === '__tests__') continue;
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) out.push(...files(p));
-    else if (/\.tsx?$/.test(name) && !/\.test\./.test(name)) out.push(p);
-  }
-  return out;
-}
 const read = (p: string) => readFileSync(p, 'utf8');
 
 /** The index of the `}` that closes the `{` at `open`. */
@@ -60,7 +51,7 @@ function resolveImport(from: string, spec: string): string | null {
   return null;
 }
 
-const ALL = [...files(join(ROOT, 'app')), ...files(join(ROOT, 'src'))];
+const ALL = universe('appCode');
 
 /** In one file: how many picture elements carry a style, and each one that wears a lit style. */
 function picturesIn(src: string, objs: Record<string, Set<string>>): { pictures: number; hits: string[] } {

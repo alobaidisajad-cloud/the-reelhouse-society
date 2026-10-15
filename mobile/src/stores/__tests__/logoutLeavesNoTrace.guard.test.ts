@@ -11,6 +11,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 import { useFilmStore } from '../films';
 import { resetAllStores } from '../resetAllStores';
 import { logSliceInitialState } from '../domain/logSlice';
@@ -226,19 +227,7 @@ describe('#64 · every per-member cache on disk is erased', () => {
     // even had a purpose-built eraser that 24 writers never called.
     //
     // Swept from source so the NEXT cache cannot be forgotten either.
-    const ROOT = path.join(__dirname, '..', '..', '..');
-    const walk = (dir: string, out: string[] = []): string[] => {
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) {
-          if (['node_modules', '__tests__', '.expo', 'android', 'ios'].includes(e.name)) continue;
-          walk(full, out);
-        } else if (/\.tsx?$/.test(e.name)) out.push(full);
-      }
-      return out;
-    };
-
-    const files = [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))];
+    const files = universe('appCode');
     const all = files.map((f) => fs.readFileSync(f, 'utf8')).join('\n');
 
     // A per-member key is a template literal carrying an interpolation.
@@ -274,16 +263,6 @@ describe('#64 · every per-member cache on disk is erased', () => {
      * the module owes the erase.
      */
     const ROOT = path.join(__dirname, '..', '..', '..');
-    const walk = (dir: string, out: string[] = []): string[] => {
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) {
-          if (['node_modules', '__tests__', '.expo', 'android', 'ios'].includes(e.name)) continue;
-          walk(full, out);
-        } else if (/\.tsx?$/.test(e.name)) out.push(full);
-      }
-      return out;
-    };
 
     /**
      * Keys that outlive a logout ON PURPOSE. Named, with the reason, so the
@@ -298,7 +277,7 @@ describe('#64 · every per-member cache on disk is erased', () => {
     const orphans: string[] = [];
     let builders = 0;
 
-    for (const file of [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))]) {
+    for (const file of universe('appCode')) {
       const src = fs.readFileSync(file, 'utf8');
       // `const somethingKey = (…) => `…${…}`;`
       for (const m of src.matchAll(/(?:export\s+)?const\s+(\w*[Kk]ey)\s*=\s*\([^)]*\)\s*(?::[^=]+)?=>\s*`[^`]*\$\{/g)) {

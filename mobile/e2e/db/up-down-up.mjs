@@ -18,19 +18,18 @@
  *                                                  in a scratch database
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import universe from '../../test-utils/universe.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MOBILE = join(HERE, '..', '..');
-const ROOT = join(MOBILE, '..');
 const SERVER = `postgresql://postgres:postgres@${process.env.E2E_DB_HOST ?? '127.0.0.1'}:${process.env.E2E_DB_PORT ?? '54322'}`;
 const LIMITS = '-c lock_timeout=2s -c statement_timeout=30s';
 
 /** Every migration file with code in it, both trees, by name. */
-export const migrations = () => ['supabase/migrations', 'mobile/supabase/migrations'].flatMap((dir) =>
-  readdirSync(join(ROOT, dir)).filter((f) => f.endsWith('.sql')).map((f) => ({ name: f, path: join(ROOT, dir, f) })))
+export const migrations = () => universe.files('migrations').map((path) => ({ name: basename(path), path }))
   .filter((m) => readFileSync(m.path, 'utf8').split('\n').some((l) => l.trim() && !l.trim().startsWith('--')))
   .sort((a, b) => a.name.localeCompare(b.name));
 

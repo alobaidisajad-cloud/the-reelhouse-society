@@ -8,16 +8,17 @@
  * restart were never read back. Every persisted store skips hydration and is
  * rehydrated by the root layout, after the key.
  */
-import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
+import { join, relative } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const STORES = join(ROOT, 'src', 'stores');
 const LAYOUT = readFileSync(join(ROOT, 'app', '_layout.tsx'), 'utf8');
 
-const persisted = readdirSync(STORES)
-  .filter((f) => f.endsWith('.ts'))
-  .map((f) => ({ f, src: readFileSync(join(STORES, f), 'utf8') }))
+/** Every persisted store, wherever it lives, named from src/stores. */
+const persisted = universe('appCode', { ext: ['.ts', '.tsx'] })
+  .map((f) => ({ f: relative(STORES, f).split('\\').join('/'), src: readFileSync(f, 'utf8') }))
   .filter(({ src }) => /\bpersist\(/.test(src));
 
 it('finds the persisted stores (a scan that finds none proves nothing)', () => {

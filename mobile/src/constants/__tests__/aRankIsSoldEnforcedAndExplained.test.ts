@@ -29,9 +29,10 @@
  * plane; a claim nobody ever checks against the real thing is how the repo and
  * the deployed database drifted apart in the first place.
  */
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 import {
   GATED_FEATURES,
@@ -58,15 +59,8 @@ const VIEWER = /\buser\b|\bme\b|useAuthStore|s\.user/i;
 /** …and the ones that mean somebody else, which win when both match. */
 const OTHER = /targetUser|item\.|review\.|act\.|author\.|profile\?\.|stack\.|entry\.|log\.|userRole|\brole\b|input|\btier\b/;
 
-const collect = (dir: string, out: string[] = []): string[] => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.isDirectory()) {
-      if (!['node_modules', '__tests__', '.expo'].includes(e.name)) collect(full, out);
-    } else if (/\.tsx?$/.test(e.name)) out.push(full);
-  }
-  return out;
-};
+/** Every file of the app. */
+const appFiles = (): string[] => universe('appCode');
 
 const rel = (file: string) => file.slice(ROOT.length + 1).replace(/\\/g, '/');
 /** A file as code, comments blanked; each file is parsed once, as the scans below re-read the app. */
@@ -86,7 +80,7 @@ const code = (file: string): string => {
  */
 const clearanceCalls = (): Map<string, string[]> => {
   const out = new Map<string, string[]>();
-  for (const file of [...collect(join(ROOT, 'src')), ...collect(join(ROOT, 'app'))]) {
+  for (const file of appFiles()) {
     const r = rel(file);
     if (r === 'src/hooks/useClearance.ts') continue;
     const ids = [...code(file).matchAll(/useClearance\('([^']+)'/g)].map((m) => m[1]);
@@ -96,7 +90,7 @@ const clearanceCalls = (): Map<string, string[]> => {
 };
 
 const viewerGateFiles = (): string[] => {
-  const files = [...collect(join(ROOT, 'src')), ...collect(join(ROOT, 'app'))];
+  const files = appFiles();
   // Ropes count as gates. Counting only bare tier checks meant every rope moved
   // onto useClearance made this scan see LESS — the tripwire below fell from 10
   // to 8 on the day two gates were done properly.
@@ -248,7 +242,7 @@ describe('a rank is sold, enforced, and explained', () => {
     const calls = clearanceCalls();
     const roped = new Set([...calls.values()].flat());
     const doorFiles = new Set(
-      [...collect(join(ROOT, 'src')), ...collect(join(ROOT, 'app'))]
+      appFiles()
         .map(rel)
         .filter((f) => f !== 'src/utils/tierDoor.ts')
         .filter((f) => /showTierDoor\(/.test(code(join(ROOT, f)))),

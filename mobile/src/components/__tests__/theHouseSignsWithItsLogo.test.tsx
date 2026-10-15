@@ -9,9 +9,10 @@
  * own Eye is his, and is never read as lucide's).
  */
 import React from 'react';
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative } from 'path';
 import * as ts from 'typescript';
+import { files as universe } from '@/test-utils/universe';
 import { render } from '@testing-library/react-native';
 import { RankBill } from '../lobby/RankBill';
 import { planWall } from '../lobby/measure';
@@ -58,15 +59,7 @@ export function standInEyes(file: string, source: string): string[] {
 }
 
 describe('no stand-in eye where the house signs', () => {
-  const walk = (dir: string, out: string[] = []): string[] => {
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, e.name);
-      if (e.isDirectory()) { if (!['node_modules', '__tests__'].includes(e.name)) walk(full, out); }
-      else if (/\.tsx?$/.test(e.name)) out.push(full);
-    }
-    return out;
-  };
-  const files = [...walk(join(MOBILE, 'app')), ...walk(join(MOBILE, 'src'))].map((f) => relative(MOBILE, f).split('\\').join('/'));
+  const files = universe('appCode').map((f) => relative(MOBILE, f).split('\\').join('/'));
   const found = files.flatMap((f) => standInEyes(f, readFileSync(join(MOBILE, f), 'utf8')).map((what) => `${f}: ${what}`));
 
   it('imports one only where the list keeps it, and every kept place still does', () => {

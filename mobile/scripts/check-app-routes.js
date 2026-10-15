@@ -9,6 +9,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const universe = require('../test-utils/universe');
 
 const APP_DIR = path.resolve(__dirname, '..', 'app');
 const CODE_EXT = new Set(['.ts', '.tsx', '.js', '.jsx']);
@@ -32,25 +33,14 @@ function hasDefaultExport(src) {
   );
 }
 
-function walk(dir, out) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      walk(full, out);
-    } else if (CODE_EXT.has(path.extname(entry.name))) {
-      out.push(full);
-    }
-  }
-}
-
 function main() {
   if (!fs.existsSync(APP_DIR)) {
     console.error(`[check-app-routes] app/ not found at ${APP_DIR}`);
     process.exit(1);
   }
 
-  const files = [];
-  walk(APP_DIR, files);
+  // The route files, as test-utils/universe.js names them.
+  const files = universe.files('routes').filter((f) => CODE_EXT.has(path.extname(f)));
 
   const offenders = [];
   for (const file of files) {

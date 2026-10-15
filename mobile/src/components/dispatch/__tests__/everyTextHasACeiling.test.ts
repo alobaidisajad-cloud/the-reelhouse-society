@@ -31,8 +31,9 @@
  *     awareness instead. Comments are blanked first, newlines kept, so a
  *     docstring naming a prop is not mistaken for that prop being used.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 
@@ -48,15 +49,6 @@ const CAPPING_PROPS = [
   'maxFontSizeMultiplier',
 ];
 
-const collect = (dir: string, out: string[] = []): string[] => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.isDirectory()) {
-      if (e.name !== '__tests__') collect(full, out);
-    } else if (e.name.endsWith('.tsx')) out.push(full);
-  }
-  return out;
-};
 
 /** Blank comment bodies, KEEPING newlines so reported lines stay true. */
 const blankComments = (s: string): string => {
@@ -116,11 +108,10 @@ const readTag = (src: string, from: number) => {
 };
 
 describe('every Text on the Dispatch surface has a ceiling', () => {
-  const files = [
-    ...collect(join(ROOT, 'src', 'components', 'dispatch')),
-    ...collect(join(ROOT, 'app', 'dispatch')),
-    join(ROOT, 'app', '(tabs)', 'dispatch.tsx'),
-  ];
+  const files = universe('appCode', {
+    ext: ['.tsx'],
+    under: ['src/components/dispatch', 'app/dispatch', 'app/(tabs)/dispatch.tsx'],
+  });
 
   const bare: string[] = [];
   let seen = 0;

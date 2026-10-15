@@ -9,6 +9,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 
@@ -123,12 +124,9 @@ describe('#49 · member content never reaches disk unencrypted', () => {
       'src/stores/discover.ts': 'browsing filters and film search results — public catalogue data',
       'src/stores/settings.ts': 'display and sound preferences — no writing, no identity',
     };
-    const fsMod = require('fs');
-    const pathMod = require('path');
-    const dir = pathMod.join(__dirname, '..');
-    const persisted = fsMod.readdirSync(dir)
-      .filter((f: string) => /\.ts$/.test(f))
-      .map((f: string) => `src/stores/${f}`)
+    // Every store the app persists, wherever it lives: not only src/stores.
+    const persisted = universe('appCode', { ext: ['.ts', '.tsx'] })
+      .map(rel)
       .filter((f: string) => /\bpersist\(/.test(readCode(f)));
     // The detector must find something, or it would pass on an empty set.
     expect(persisted.length).toBeGreaterThanOrEqual(5);
@@ -152,19 +150,8 @@ describe('#49 · member content never reaches disk unencrypted', () => {
     // sites. Six more lived in src/hooks and app/ — two of them reached the key
     // through CACHE_KEYS.USER(), so even a literal grep for the key would have
     // missed them. Enumerated over the whole tree, matching BOTH spellings.
-    const walk = (dir: string, out: string[] = []): string[] => {
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) {
-          if (['node_modules', '__tests__', '.expo', 'android', 'ios'].includes(e.name)) continue;
-          walk(full, out);
-        } else if (/\.tsx?$/.test(e.name)) out.push(full);
-      }
-      return out;
-    };
-
     const offenders: string[] = [];
-    for (const file of [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))]) {
+    for (const file of universe('appCode')) {
       const src = readCode(file);
       if (/storage\.set\(\s*`ironvault_user_cache_/.test(src) ||
           /storage\.set\(\s*CACHE_KEYS\.USER\(/.test(src)) {

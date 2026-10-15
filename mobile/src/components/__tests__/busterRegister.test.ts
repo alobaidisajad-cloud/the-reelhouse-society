@@ -17,6 +17,7 @@ import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import ts from 'typescript';
 import { BUSTER_ART } from '../busterArt';
+import { files, rel } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
 
@@ -46,16 +47,6 @@ const REGISTER: Record<string, Count> = {
   'src/components/RouteErrorBoundary.tsx': { still: 1, why: 'a screen that crashed: moved, and still' },
   'src/components/ErrorBoundary.tsx': { still: 1, why: 'the app that crashed: moved, still, above the navigator' },
 };
-
-function sources(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
-    if (['node_modules', '__tests__'].includes(e.name) || e.name.startsWith('.')) continue;
-    const rel = `${dir}/${e.name}`;
-    if (e.isDirectory()) sources(rel, out);
-    else if (/\.tsx$/.test(e.name)) out.push(rel);
-  }
-  return out;
-}
 
 type Found = Required<Omit<Count, 'why'>>;
 
@@ -94,7 +85,7 @@ function censusOf(file: string, text: string): Found {
 }
 
 const census: Record<string, Found> = {};
-for (const file of [...sources('app'), ...sources('src')]) {
+for (const file of files('appCode', { ext: ['.tsx'] }).map(rel)) {
   if (file === 'src/components/Buster.tsx') continue;
   const found = censusOf(file, readFileSync(join(ROOT, file), 'utf8'));
   if (Object.values(found).some((n) => n > 0)) census[file] = found;

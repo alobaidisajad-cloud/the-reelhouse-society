@@ -18,8 +18,9 @@
  *
  * A quiet WORD wears a quieter solid ink instead: fogQuiet, fog, bone, sepia.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { stripComments } from '@/test-utils/readCode';
+import { files as universe, rel } from '@/test-utils/universe';
 import { join } from 'path';
 import { colors } from '../theme';
 
@@ -64,14 +65,9 @@ const ALLOWED: Record<string, string> = {
 
 const TYPE = /\b(fontFamily|fontSize|letterSpacing|lineHeight|fontStyle|textTransform|textDecorationLine)\s*:/;
 
-function walk(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
-    if (['node_modules', '__tests__', '__mocks__', 'mockups'].includes(e.name)) continue;
-    const rel = `${dir}/${e.name}`;
-    if (e.isDirectory()) walk(rel, out);
-    else if (/\.tsx?$/.test(e.name) && !/\.test\./.test(e.name)) out.push(rel);
-  }
-  return out;
+/** The app's files under one of its folders, as paths from mobile/. */
+function walk(dir: string): string[] {
+  return universe('appCode', { under: [dir] }).map(rel);
 }
 
 /** The alpha a colour expression is drawn at: a token's own, or a literal's. */

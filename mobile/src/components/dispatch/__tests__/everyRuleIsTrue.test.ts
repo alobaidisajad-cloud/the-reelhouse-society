@@ -19,9 +19,10 @@
  * Two clauses are deliberately unpinned: conduct, and an intention the veil
  * cannot read. They are named below so their absence is a decision.
  */
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 import { CLAUSES } from '../paper/PaperMore';
 
 const SCHEMA = readFileSync(
@@ -164,19 +165,7 @@ describe('every clause that can be checked is', () => {
  * and a promise about how soon the house will act.
  */
 describe('no surface repeats a claim the house cannot keep', () => {
-  const APP = [join(__dirname, '..', '..', '..'), join(__dirname, '..', '..', '..', '..', 'app')];
-
-  const collect = (dir: string, out: string[] = []): string[] => {
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
-      if (['node_modules', '__tests__', 'mockups', 'android', 'ios', '.expo'].includes(e.name)) continue;
-      const full = join(dir, e.name);
-      if (e.isDirectory()) collect(full, out);
-      else if (/\.tsx?$/.test(e.name) && !/\.d\.ts$/.test(e.name)) out.push(full);
-    }
-    return out;
-  };
-
-  const FILES = APP.flatMap((d) => collect(d));
+  const FILES = universe('appCode').filter((f) => !f.endsWith('.d.ts'));
 
   it('reads the app at all, so an empty sweep cannot pass for a clean one', () => {
     expect(FILES.length).toBeGreaterThan(200);

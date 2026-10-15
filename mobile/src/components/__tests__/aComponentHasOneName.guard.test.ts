@@ -12,21 +12,11 @@
  * Why source: which module exports a name is a fact about the code, not
  * something a render shows.
  */
-import { readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { relative } from 'path';
 import { readCode, MOBILE } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
-const files: string[] = [];
-const walk = (dir: string) => {
-  for (const name of readdirSync(dir)) {
-    if (name === '__tests__' || name === 'node_modules' || name.startsWith('.')) continue;
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) walk(p);
-    else if (/\.tsx?$/.test(name) && !/\.d\.ts$/.test(name)) files.push(p);
-  }
-};
-walk(join(MOBILE, 'src'));
-walk(join(MOBILE, 'app'));
+const files = universe('appCode').filter((f) => !f.endsWith('.d.ts'));
 
 /** A component's name: Capital then lower case (constants are written ALL CAPS, and may repeat). */
 const EXPORTED = /export\s+(?:default\s+)?(?:const|function|class)\s+([A-Z][a-z][A-Za-z0-9]*)/g;

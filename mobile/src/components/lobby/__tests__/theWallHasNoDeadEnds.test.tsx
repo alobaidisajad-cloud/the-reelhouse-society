@@ -21,8 +21,8 @@ import { fireEvent, render } from '@testing-library/react-native';
 import type { TestInstance } from 'test-renderer';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { testQueryClient } from '@/test-utils/testQueryClient';
-import { readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { basename, join, relative } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 import { supabase } from '@/src/lib/supabase';
 import { tmdb } from '@/src/lib/tmdb';
@@ -72,15 +72,12 @@ jest.mock('@/src/lib/tmdb', () => ({
 
 // ── the route files: a path is a door only if one of them answers it ────────
 const APP = join(__dirname, '..', '..', '..', '..', 'app');
-const ROUTES: string[][] = (function walk(dir: string): string[][] {
-  return readdirSync(dir).flatMap((name) => {
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) return name === '__tests__' ? [] : walk(full);
-    if (!name.endsWith('.tsx') || name.startsWith('_') || name.startsWith('+')) return [];
-    return [relative(APP, full).replace(/\.tsx$/, '').split(/[\\/]/)
-      .filter((seg) => !/^\(.*\)$/.test(seg) && seg !== 'index')];
-  });
-})(APP);
+const ROUTES: string[][] = universe('routes').flatMap((full) => {
+  const name = basename(full);
+  if (name.endsWith('.d.ts') || name.startsWith('_') || name.startsWith('+')) return [];
+  return [relative(APP, full).replace(/\.[jt]sx?$/, '').split(/[\\/]/)
+    .filter((seg) => !/^\(.*\)$/.test(seg) && seg !== 'index')];
+});
 function answered(path: string): boolean {
   const segs = path.replace(/^society:/, '').split('?')[0].split('/').filter(Boolean);
   return ROUTES.some((r) => r.length === segs.length && r.every((seg, i) => seg === segs[i] || (/^\[.+\]$/.test(seg) && segs[i].length > 0)));

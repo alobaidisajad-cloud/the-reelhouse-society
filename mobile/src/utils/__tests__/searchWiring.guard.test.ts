@@ -10,27 +10,13 @@
  * search goes through the one funnel in the one safe form — including any search
  * added after this was written.
  */
-import * as fs from 'fs';
 import * as path from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const SRC = path.join(__dirname, '..', '..');
-const APP = path.join(__dirname, '..', '..', '..', 'app');
 
-function walk(dir: string, out: string[] = []): string[] {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name === '__tests__' || entry.name === 'node_modules') continue;
-      walk(full, out);
-    } else if (/\.(ts|tsx)$/.test(entry.name)) {
-      out.push(full);
-    }
-  }
-  return out;
-}
-
-const FILES = [...walk(SRC), ...walk(APP)].map(f => ({
+const FILES = universe('appCode').map(f => ({
   path: path.relative(path.join(SRC, '..'), f).replace(/\\/g, '/'),
   code: readCode(f),
 }));

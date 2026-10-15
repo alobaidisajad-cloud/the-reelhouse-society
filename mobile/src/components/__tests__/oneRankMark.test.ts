@@ -16,12 +16,12 @@
  * PROGRESSION — see the note in that file for why it must not use the mark, and
  * why that is a difference of meaning rather than an inconsistency.
  */
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
-const SCAN = ['src', 'app'];
 
 /**
  * Files permitted to contain the rank words, each for a stated reason.
@@ -47,18 +47,8 @@ const SANCTIONED: Record<string, string> = {
 /** The two glyph+word marks. Prose that merely says "Auteur" is not a badge. */
 const DRAWN_MARK = /★\s*AUTEUR|✦\s*ARCHIVIST/;
 
-function walk(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
-    if (/node_modules|\.git/.test(e.name)) continue;
-    const rel = `${dir}/${e.name}`;
-    if (e.isDirectory()) { walk(rel, out); continue; }
-    if (/\.tsx?$/.test(e.name) && !/__tests__/.test(rel)) out.push(rel);
-  }
-  return out;
-}
-
 describe('one rank mark, drawn in one place', () => {
-  const files = SCAN.flatMap((d) => walk(d));
+  const files = universe('appCode').map(rel);
 
   it('finds the files it is meant to be checking', () => {
     // Vacuous-guard insurance. A broken directory walk would make every case

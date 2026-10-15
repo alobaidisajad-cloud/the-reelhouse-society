@@ -26,8 +26,9 @@
  * The em box stands for the glyphs: a lineHeight's leading is not counted as
  * room, because a display face's ascent fills most of it.
  */
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
+import { files as universe } from '@/test-utils/universe';
 import ts from 'typescript';
 import { readCode, MOBILE } from '@/test-utils/readCode';
 import { effects } from '@/src/theme/theme';
@@ -168,15 +169,7 @@ const KEPT: Record<string, string> = {
 // Why Android's left and right are not checked; its last test holds it true.
 const ANDROID_ACROSS = 'TextView cuts a span shadow at its content edge; padding cannot widen that';
 
-const files: string[] = [];
-const walk = (dir: string) => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const p = join(dir, e.name);
-    if (e.isDirectory()) { if (!['node_modules', '__tests__'].includes(e.name)) walk(p); } else if (/\.tsx?$/.test(e.name) && !/\.d\.ts$/.test(e.name)) files.push(p);
-  }
-};
-walk(join(MOBILE, 'app'));
-walk(join(MOBILE, 'src'));
+const files = universe('appCode').filter((f) => !f.endsWith('.d.ts'));
 const rel = (p: string) => relative(MOBILE, p).split(sep).join('/');
 const glows = files.flatMap((f) => glowsIn(readCode(f), rel(f)));
 const wide = glows.filter((g) => !(g.r < WIDE));

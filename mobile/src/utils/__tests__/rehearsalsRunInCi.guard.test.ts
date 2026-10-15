@@ -15,8 +15,11 @@
  *     code over the new).
  * The rules are checked on planted text first, so each is seen to say no.
  */
-import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { spawnSync } from 'child_process';
+import { readFileSync } from 'fs';
+import { join, relative, sep } from 'path';
+import { pathToFileURL } from 'url';
+import { files as universe } from '@/test-utils/universe';
 
 const { parse } = require(require.resolve('yaml/package.json').replace(/package\.json$/, 'dist/index.js')) as typeof import('yaml');
 const { statements } = require('../../../scripts/add-only.cjs') as {
@@ -62,7 +65,7 @@ const faultsOf = (sql: string, applied: Set<string>) => {
 };
 
 const applied = new Set(read(join(MOBILE, 'supabase', 'APPLIED.txt')).split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#')));
-const rehearsals = readdirSync(DIAGNOSTICS).filter((f) => f.endsWith('_rehearsal.sql')).sort();
+const rehearsals = universe('rehearsals').map((f) => relative(DIAGNOSTICS, f).split(sep).join('/'));
 const GOOD = `-- a rehearsal\n${OPENING.join('\n')}\n\nSELECT pg_temp.rh_case('one', '1', '1');\nSAVEPOINT c;\nROLLBACK TO SAVEPOINT c;\n\n${ENDING.join('\n')}\n`;
 
 describe('the rules say no', () => {
@@ -144,9 +147,14 @@ describe('CI', () => {
     expect(at(/-f mobile\/e2e\/db\/security\.sql/)).toBeGreaterThan(run);
   });
 
-  it('finds the rehearsals by listing the folder, so a new one runs without being named', () => {
+  it('runs the rehearsals the shared file list names, so a new one runs without being named', () => {
     const runner = read(join(MOBILE, 'e2e', 'db', 'rehearsals.mjs'));
-    expect(runner).toMatch(/readdirSync\(DIAGNOSTICS\)\.filter\(\(f\) => f\.endsWith\('_rehearsal\.sql'\)\)/);
+    const url = pathToFileURL(join(MOBILE, 'e2e', 'db', 'rehearsals.mjs')).href;
+    // The runner's own list, as node loads it: imported, it runs nothing.
+    const r = spawnSync(process.execPath, ['--input-type=module', '-e',
+      `const m = await import(${JSON.stringify(url)}); console.log(JSON.stringify(m.rehearsals()));`],
+    { encoding: 'utf8', env: { ...process.env, E2E_DB_HOST: '127.0.0.1' } });
+    expect(JSON.parse(r.stdout.trim().split('\n').pop() ?? '[]')).toEqual(rehearsals);
     expect(rehearsals.filter((f) => runner.includes(f))).toEqual([]);
   });
 });

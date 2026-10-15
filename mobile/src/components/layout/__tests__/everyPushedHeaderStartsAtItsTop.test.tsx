@@ -10,8 +10,8 @@
  * named as having no header.
  */
 import React, { act } from 'react';
-import { readdirSync } from 'fs';
-import { join, relative, sep } from 'path';
+import { relative, sep } from 'path';
+import { files as universe } from '@/test-utils/universe';
 import { render } from '@testing-library/react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { testQueryClient } from '@/test-utils/testQueryClient';
@@ -220,14 +220,7 @@ describe.each(STATES.map((r) => [r.name, r] as const))('%s', (_name, route) => {
 });
 
 it('measures every pushed route in app/, or names why it has no header', () => {
-  const walk = (dir: string, out: string[] = []): string[] => {
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, e.name);
-      if (e.isDirectory()) { if (e.name !== '__tests__') walk(full, out); } else if (e.name.endsWith('.tsx')) out.push(full);
-    }
-    return out;
-  };
-  const routes = walk(join(MOBILE, 'app'))
+  const routes = universe('routes')
     .map((f) => relative(MOBILE, f).split(sep).join('/'))
     // Layouts draw no page; the tabs and the modal routes have tests of their own.
     .filter((f) => !f.endsWith('/_layout.tsx') && !f.startsWith('app/(tabs)/') && !f.startsWith('app/(modals)/'))

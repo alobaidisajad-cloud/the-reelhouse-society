@@ -25,8 +25,12 @@
 import fs from 'fs';
 import path from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
-const read = (p: string) => fs.readFileSync(path.join(__dirname, '..', '..', '..', '..', p), 'utf8');
+/** The paper's own files, where the feed row is drawn. */
+const PAPER = universe('appCode', { under: ['src/components/dispatch/paper'] }).filter((f) => /\.tsx?$/.test(f));
+
+const read =(p: string) => fs.readFileSync(path.join(__dirname, '..', '..', '..', '..', p), 'utf8');
 
 const FEED = read('app/(tabs)/dispatch.tsx');
 /**
@@ -124,20 +128,10 @@ describe('paperPerf is wired, all of it', () => {
    *     stops THIS test's own words from counting as usage, which is what made
    *     the vacuity check below fire the first time it ran.
    */
-  const corpus = (() => {
-    const out: string[] = [];
-    const walk = (dir: string) => {
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) { if (e.name !== '__tests__') walk(full); continue; }
-        if (!/\.tsx?$/.test(e.name) || e.name === 'paperPerf.ts') continue;
-        out.push(fs.readFileSync(full, 'utf8'));
-      }
-    };
-    walk(path.join(__dirname, '..', '..', '..'));
-    walk(path.join(__dirname, '..', '..', '..', '..', 'app'));
-    return out.join('\n');
-  })();
+  const corpus = universe('appCode')
+    .filter((f) => path.basename(f) !== 'paperPerf.ts')
+    .map((f) => fs.readFileSync(f, 'utf8'))
+    .join('\n');
 
   it('found the exports and a corpus to look in', () => {
     expect(names.length).toBeGreaterThan(1);
@@ -171,25 +165,19 @@ describe('paperPerf is wired, all of it', () => {
      * name to a list.
      */
     const called = new Set<string>();
-    const walk = (dir: string) => {
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) { if (e.name !== '__tests__') walk(full); continue; }
-        if (!/\.tsx?$/.test(e.name)) continue;
-        const src = fs.readFileSync(full, 'utf8');
-        for (const m of src.matchAll(/\.rpc\(\s*['"]([a-z0-9_]+)['"]/g)) called.add(m[1]);
-      }
-    };
-    walk(path.join(__dirname, '..', '..', '..'));
-    walk(path.join(__dirname, '..', '..', '..', '..', 'app'));
+    for (const full of universe('appCode')) {
+      const src = fs.readFileSync(full, 'utf8');
+      for (const m of src.matchAll(/\.rpc\(\s*['"]([a-z0-9_]+)['"]/g)) called.add(m[1]);
+    }
 
     // The probe must be able to say no: the app does call at least one.
     expect(called.size).toBeGreaterThan(0);
 
     /** Verb-shaped snake_case in backticks — how this file names a function. */
     const phantom: string[] = [];
-    for (const f of fs.readdirSync(DIR).filter((n) => /\.tsx?$/.test(n))) {
-      const src = fs.readFileSync(path.join(DIR, f), 'utf8');
+    for (const full of PAPER) {
+      const f = path.basename(full);
+      const src = fs.readFileSync(full, 'utf8');
       for (const m of src.matchAll(/`((?:get|set|end|add|is|has|make|fetch|grant|revoke)_[a-z0-9_]+)`/g)) {
         if (!called.has(m[1])) phantom.push(`${f}: \`${m[1]}\``);
       }
@@ -254,8 +242,9 @@ describe('paperPerf is wired, all of it', () => {
     // `{ color: KIND_RULE[kind] }` written inline is a fresh object per render.
     // The frozen constants are one per kind for the life of the process.
     const offenders: string[] = [];
-    for (const f of fs.readdirSync(DIR).filter((n) => /\.tsx$/.test(n))) {
-      const code = readCode(path.join(DIR, f));
+    for (const full of PAPER.filter((n) => n.endsWith('.tsx'))) {
+      const f = path.basename(full);
+      const code = readCode(full);
       for (const m of code.matchAll(/\{\s*color:\s*KIND_RULE[.[][\w.\]]*\s*\}/g)) {
         // The one legitimate form: a lookup with a fallback for a kind that is
         // not one of the five, which a frozen record cannot express.

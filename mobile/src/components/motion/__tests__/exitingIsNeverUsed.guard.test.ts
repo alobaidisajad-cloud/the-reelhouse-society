@@ -7,22 +7,11 @@
  * leaves through Presence instead (src/components/motion/Presence.tsx), which removes it by
  * state once its exit has played. Read with TypeScript's parser: a JSX attribute, not a word.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import ts from 'typescript';
 import { MOBILE } from '@/test-utils/readCode';
-
-const SKIP = new Set(['__tests__', 'node_modules']);
-
-function codeFiles(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (SKIP.has(e.name)) continue;
-    const full = join(dir, e.name);
-    if (e.isDirectory()) codeFiles(full, out);
-    else if (/\.tsx?$/.test(e.name) && !/\.test\.|\.d\.ts$/.test(e.name)) out.push(full);
-  }
-  return out;
-}
+import { files as universe } from '@/test-utils/universe';
 
 /**
  * Every JSX `exiting` attribute in the files, as `file:line`; how many attributes were read;
@@ -55,7 +44,7 @@ function exitingIn(files: string[]) {
 }
 
 it('reads every JSX attribute in app/ and src/, and none is `exiting`', () => {
-  const files = [...codeFiles(join(MOBILE, 'app')), ...codeFiles(join(MOBILE, 'src'))];
+  const files = universe('appCode').filter((f) => !f.endsWith('.d.ts'));
   const { found, attributes, presenceExits } = exitingIn(files);
   // A walker that read nothing would pass the check below while proving nothing.
   expect(files.length).toBeGreaterThanOrEqual(440);

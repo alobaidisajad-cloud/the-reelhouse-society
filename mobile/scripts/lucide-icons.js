@@ -17,6 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
+const universe = require('../test-utils/universe');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'src', 'generated', 'lucideIcons.js');
@@ -39,31 +40,24 @@ function packageNames() {
 /** The value names the app's source imports from lucide-react-native. */
 function usedNames() {
   const used = new Set();
-  const walk = (dir) => {
-    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (e.name === 'node_modules' || e.name === '__tests__' || e.name === 'generated' || e.name.startsWith('.')) continue;
-      const p = path.join(dir, e.name);
-      if (e.isDirectory()) { walk(p); continue; }
-      if (!/\.(tsx?|jsx?)$/.test(e.name) || /\.test\./.test(e.name)) continue;
-      const src = fs.readFileSync(p, 'utf8');
-      if (!src.includes('lucide-react-native')) continue;
-      const sf = ts.createSourceFile(p, src, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX);
-      for (const st of sf.statements) {
-        if (!ts.isImportDeclaration(st) || st.moduleSpecifier.text !== 'lucide-react-native') continue;
-        const clause = st.importClause;
-        if (!clause || clause.isTypeOnly) continue;
-        if (clause.name || (clause.namedBindings && !ts.isNamedImports(clause.namedBindings))) {
-          throw new Error(`${path.relative(ROOT, p)}: only named icon imports can be bundled one by one`);
-        }
-        for (const el of clause.namedBindings ? clause.namedBindings.elements : []) {
-          if (el.isTypeOnly) continue;
-          used.add((el.propertyName || el.name).text);
-        }
+  // The app's code (test-utils/universe.js), less the list this writes.
+  for (const p of universe.files('appCode').filter((f) => f !== OUT)) {
+    const src = fs.readFileSync(p, 'utf8');
+    if (!src.includes('lucide-react-native')) continue;
+    const sf = ts.createSourceFile(p, src, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX);
+    for (const st of sf.statements) {
+      if (!ts.isImportDeclaration(st) || st.moduleSpecifier.text !== 'lucide-react-native') continue;
+      const clause = st.importClause;
+      if (!clause || clause.isTypeOnly) continue;
+      if (clause.name || (clause.namedBindings && !ts.isNamedImports(clause.namedBindings))) {
+        throw new Error(`${path.relative(ROOT, p)}: only named icon imports can be bundled one by one`);
+      }
+      for (const el of clause.namedBindings ? clause.namedBindings.elements : []) {
+        if (el.isTypeOnly) continue;
+        used.add((el.propertyName || el.name).text);
       }
     }
-  };
-  walk(path.join(ROOT, 'app'));
-  walk(path.join(ROOT, 'src'));
+  }
   return used;
 }
 

@@ -12,8 +12,9 @@
  * number hanging to the icon's right, the word alone underneath. These render
  * each bar for real and ask the same questions of all of them.
  */
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative } from 'path';
+import { files as universe } from '@/test-utils/universe';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { render } from '@testing-library/react-native';
@@ -316,17 +317,7 @@ describe('the class is closed', () => {
    * this the day it is written.
    */
   const ROOT = join(__dirname, '..', '..', '..');
-  const files: string[] = [];
-  const walk = (dir: string) => {
-    for (const name of readdirSync(dir)) {
-      if (name === 'node_modules' || name === '__tests__' || name.startsWith('.')) continue;
-      const p = join(dir, name);
-      if (statSync(p).isDirectory()) walk(p);
-      else if (/\.tsx$/.test(name)) files.push(p);
-    }
-  };
-  walk(join(ROOT, 'app'));
-  walk(join(ROOT, 'src'));
+  const files = universe('appCode');
 
   const bars = files
     .map((f) => ({ f: relative(ROOT, f).replace(/\\/g, '/'), src: readFileSync(f, 'utf8') }))

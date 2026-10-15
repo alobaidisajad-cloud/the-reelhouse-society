@@ -13,32 +13,14 @@
  * confirm the function actually exists and is deployed on the live DB
  * (run: node scripts/check-backend-live.mjs).
  */
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
+import { files as universe } from '../test-utils/universe';
 
 const ROOT = join(__dirname, '..');
 
-function walk(dir: string, acc: string[] = []): string[] {
-  let entries: string[] = [];
-  try {
-    entries = readdirSync(dir);
-  } catch {
-    return acc;
-  }
-  for (const entry of entries) {
-    if (entry === '__tests__' || entry === 'node_modules') continue;
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) {
-      walk(full, acc);
-    } else if (/\.(ts|tsx)$/.test(entry) && !/\.test\.|\.d\.ts$/.test(entry)) {
-      acc.push(full);
-    }
-  }
-  return acc;
-}
-
 function extractDependencies(): { rpcs: string[]; edgeFunctions: string[] } {
-  const files = [join(ROOT, 'src'), join(ROOT, 'app')].flatMap((d) => walk(d));
+  const files = universe('appCode').filter((f) => !f.endsWith('.d.ts'));
   const rpcs = new Set<string>();
   const edges = new Set<string>();
   for (const file of files) {

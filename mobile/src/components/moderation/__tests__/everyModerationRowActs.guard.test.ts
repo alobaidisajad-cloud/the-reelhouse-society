@@ -10,23 +10,13 @@
  * blockUser, each onMute muteUser, each onUnblock unblockUser and each onUnmute
  * unmuteUser. A render test sees one screen; this sees every one.
  */
-import { readdirSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 
 const ACTS: Record<string, string> = { onBlock: 'blockUser', onMute: 'muteUser', onUnblock: 'unblockUser', onUnmute: 'unmuteUser' };
-
-function sources(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (['node_modules', '__tests__'].includes(e.name) || e.name.startsWith('.')) continue;
-    const p = join(dir, e.name);
-    if (e.isDirectory()) sources(p, out);
-    else if (/\.tsx$/.test(e.name)) out.push(p);
-  }
-  return out;
-}
 
 /** The text of a `prop={…}` value, its braces balanced. */
 function propBody(element: string, prop: string): string | null {
@@ -55,7 +45,8 @@ function sheetsIn(code: string): string[] {
 }
 
 describe('every BLOCK and MUTE row does what it says', () => {
-  const files = [...sources(join(ROOT, 'app')), ...sources(join(ROOT, 'src'))];
+  /** Every file that can draw the sheet: JSX lives in .tsx. */
+  const files = universe('appCode', { ext: ['.tsx'] });
   const found: { at: string; element: string }[] = [];
   for (const f of files) {
     const code = readCode(f);

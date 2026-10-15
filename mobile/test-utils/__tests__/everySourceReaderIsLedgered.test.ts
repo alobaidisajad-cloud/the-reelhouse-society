@@ -11,27 +11,17 @@
  *   · a listed file no longer exists, or no longer reads anything — its row
  *     is then a reason for something that is not happening.
  */
-import { readdirSync, readFileSync, existsSync } from 'fs';
-import { join, relative, sep } from 'path';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { MOBILE } from '../readCode';
+import { files, rel } from '../universe';
 
-const ROOTS = ['app', 'src', 'mockups', 'test-utils', 'scripts'];
-const SKIP = new Set(['node_modules', 'out', '.git', 'android', 'ios', '.expo']);
 const READS = /readFileSync|readCode\(|createProgram\(/;
 const SELF = 'test-utils/__tests__/everySourceReaderIsLedgered.test.ts';
 
+/** Every jest test in mobile/, wherever it lives (test-utils/universe.js names them). */
 function testFiles(): string[] {
-  const out: string[] = [];
-  const walk = (dir: string) => {
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
-      if (SKIP.has(e.name)) continue;
-      const full = join(dir, e.name);
-      if (e.isDirectory()) walk(full);
-      else if (/\.test\.tsx?$/.test(e.name)) out.push(relative(MOBILE, full).split(sep).join('/'));
-    }
-  };
-  for (const r of ROOTS) if (existsSync(join(MOBILE, r))) walk(join(MOBILE, r));
-  return out;
+  return files('tests').filter((f) => /\.test\.tsx?$/.test(f)).map(rel);
 }
 
 const ledger = readFileSync(join(MOBILE, 'test-utils/SOURCE-READING-TESTS.md'), 'utf8');

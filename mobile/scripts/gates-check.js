@@ -18,6 +18,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { stripComments } = require('../test-utils/stripComments');
+const universe = require('../test-utils/universe');
 
 const MOBILE = path.join(__dirname, '..');
 
@@ -224,18 +225,8 @@ for (const k of knownSentences) {
  * AND SOMEBODY HAS TO READ THEM: a perfect sentence table passes only if a door
  * in the app calls it, walked here from the source rather than trusted from a list.
  */
-const walk = (dir, out = []) => {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, e.name);
-    if (e.isDirectory()) {
-      if (['node_modules', '__tests__', '.expo'].includes(e.name)) continue;
-      walk(p, out);
-    } else if (/\.tsx?$/.test(e.name) && !/\.test\./.test(e.name)) out.push(p);
-  }
-  return out;
-};
 const code = (f) => stripComments(fs.readFileSync(f, 'utf8'), f);
-const doorCallers = [...walk(path.join(MOBILE, 'src')), ...walk(path.join(MOBILE, 'app'))]
+const doorCallers = universe.files('appCode')
   .filter((f) => !f.replace(/\\/g, '/').endsWith('src/utils/tierDoor.ts'))
   .filter((f) => /showTierDoor\(/.test(code(f)));
 const doorReads = /asTierRefusal\(/.test(code(path.join(MOBILE, 'src/utils/tierDoor.ts')));

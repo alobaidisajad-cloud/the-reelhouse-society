@@ -3,8 +3,9 @@
  * ────────────────────────────────────────────────────────
  * Companion to the font lock in theme.ts: raw hex colors belong in the
  * theme's Shade Ledger, not scattered through components. This test scans
- * src/ and app/ for hex literals; each file's count may never EXCEED the
- * committed baseline (scripts/color-lock-baseline.json). So:
+ * the app's code (appCode, test-utils/universe.js) for hex literals; each
+ * file's count may never EXCEED the committed baseline
+ * (scripts/color-lock-baseline.json). So:
  *   • writing a NEW raw hex anywhere → the suite fails (drift caught in CI)
  *   • migrating a hex to a token → lower the baseline (ratchet tightens)
  * Regenerate the baseline ONLY after deliberate cleanups:
@@ -13,11 +14,11 @@
  * the logo, Buster, icon SVGs, the Darkroom mood table, format badges,
  * and the share-card canvas keep their own pigments.
  */
-import { readdirSync, readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { files, rel } from '../test-utils/universe';
 
 const ROOT = join(__dirname, '..');
-const SCAN_DIRS = ['src', 'app'];
 const BASELINE_PATH = join(ROOT, 'scripts', 'color-lock-baseline.json');
 
 /** Artwork / design-data — exempt by design, not by neglect. */
@@ -36,26 +37,13 @@ const EXEMPT = [
 const HEX_RE = /#[0-9A-Fa-f]{3,8}\b/g;
 const ALLOWED = new Set(['#000', '#000000']);
 
-function walk(dir: string, out: string[] = []): string[] {
-  for (const entry of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name === '__tests__') continue;
-    const rel = `${dir}/${entry.name}`;
-    if (entry.isDirectory()) walk(rel, out);
-    else if (/\.(ts|tsx)$/.test(entry.name) && !/\.test\./.test(entry.name)) out.push(rel);
-  }
-  return out;
-}
-
 function census(): Record<string, number> {
   const counts: Record<string, number> = {};
-  for (const dir of SCAN_DIRS) {
-    for (const file of walk(dir)) {
-      const posix = file.replace(/\\/g, '/');
-      if (EXEMPT.includes(posix)) continue;
-      const text = readFileSync(join(ROOT, file), 'utf8');
-      const real = (text.match(HEX_RE) || []).filter(h => !ALLOWED.has(h.toLowerCase()));
-      if (real.length > 0) counts[posix] = real.length;
-    }
+  for (const file of files('appCode').map(rel)) {
+    if (EXEMPT.includes(file)) continue;
+    const text = readFileSync(join(ROOT, file), 'utf8');
+    const real = (text.match(HEX_RE) || []).filter(h => !ALLOWED.has(h.toLowerCase()));
+    if (real.length > 0) counts[file] = real.length;
   }
   return counts;
 }
@@ -71,6 +59,8 @@ describe('color lock (raw-hex ratchet)', () => {
 
     expect(existsSync(BASELINE_PATH)).toBe(true);
     const baseline: Record<string, number> = JSON.parse(readFileSync(BASELINE_PATH, 'utf8'));
+    // A census of nothing would pass: the app's own art is always counted.
+    expect(Object.keys(current).length).toBeGreaterThan(10);
 
     const violations: string[] = [];
     for (const [file, count] of Object.entries(current)) {

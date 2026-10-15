@@ -10,9 +10,10 @@
  * named "unknown", and a reply to them saved "unknown" into the database.
  */
 import React from 'react';
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { render } from '@testing-library/react-native';
+import { files as universe } from '@/test-utils/universe';
 import { CritiqueRow, type Critique } from '@/src/components/critique/CritiqueRow';
 import { authorName, quotedName, DEPARTED_HANDLE, DEPARTED_NAME, UNNAMED } from '../departed';
 import { spokenDispatch } from '@/app/lounge/[id]';
@@ -71,13 +72,7 @@ describe('the Lounge', () => {
 });
 
 it('the database’s mark is written in one place only', () => {
-  const files: string[] = [];
-  const walk = (d: string) => readdirSync(d).forEach((e) => {
-    const p = join(d, e);
-    if (statSync(p).isDirectory()) { if (e !== '__tests__' && e !== 'node_modules') walk(p); } else if (/\.tsx?$/.test(e)) files.push(p);
-  });
-  walk(join(MOBILE, 'src'));
-  walk(join(MOBILE, 'app'));
+  const files = universe('appCode');
   expect(files.length).toBeGreaterThan(300);
   const copies = files.filter((f) => !f.endsWith('departed.ts') && /['"`]\[deleted\]['"`]|A MEMBER, DEPARTED/.test(readFileSync(f, 'utf8')));
   expect(copies).toEqual([]);

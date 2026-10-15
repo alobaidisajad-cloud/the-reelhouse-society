@@ -7,26 +7,18 @@
  * read back as the house's sentence). The export reads the table whole through
  * its own paged reader, never a query on it; the registry only names it.
  */
-import { readdirSync, statSync } from 'fs';
-import { join, relative, sep } from 'path';
+import { relative, sep } from 'path';
 import { MOBILE, readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const DOOR = 'src/services/VaultService.ts';
 const QUERY = /\.from\(\s*['"`]log_private_notes['"`]/;
 
 function querying(): string[] {
   const found: string[] = [];
-  const walk = (dir: string) => {
-    for (const name of readdirSync(dir)) {
-      const p = join(dir, name);
-      if (statSync(p).isDirectory()) { if (name !== '__tests__' && name !== 'node_modules') walk(p); continue; }
-      if (!/\.tsx?$/.test(name) || /\.test\./.test(name)) continue;
-      const rel = relative(MOBILE, p).split(sep).join('/');
-      if (QUERY.test(readCode(p))) found.push(rel);
-    }
-  };
-  walk(join(MOBILE, 'app'));
-  walk(join(MOBILE, 'src'));
+  for (const p of universe('appCode')) {
+    if (QUERY.test(readCode(p))) found.push(relative(MOBILE, p).split(sep).join('/'));
+  }
   return found.sort();
 }
 

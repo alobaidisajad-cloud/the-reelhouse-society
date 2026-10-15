@@ -26,18 +26,16 @@
  * `const` holding a Map or a Set, whatever it is called, in every store that
  * registers a reset.
  */
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const ROOT = path.resolve(__dirname, '../../..');
 
 /** Files that register a logout reset — the ones this rule applies to. */
 const storesWithResets = (): string[] =>
-  execFileSync('git', ['ls-files', 'src'], { cwd: ROOT, encoding: 'utf8' })
-    .split('\n')
-    .filter((f) => /\.ts$/.test(f) && !/__tests__|\.test\./.test(f))
+  universe('appCode').map(rel)
     .filter((f) => fs.readFileSync(path.join(ROOT, f), 'utf8').includes('registerStoreReset('));
 
 /** The source of a balanced call expression starting at `at`. */
@@ -148,9 +146,7 @@ describe('logout clears what a store keeps outside itself', () => {
     // Matched on `create<`, not on an exported name: films.ts declares
     // `const useFilmStoreBase = create<FilmState>()` and a matcher keyed on
     // `export const use...` walks straight past it.
-    const stores = execFileSync('git', ['ls-files', 'src'], { cwd: ROOT, encoding: 'utf8' })
-      .split('\n')
-      .filter((f) => /\.tsx?$/.test(f) && !/__tests__|\.test\./.test(f))
+    const stores = universe('appCode').map(rel)
       .filter((f) => /(?:^|\n)\s*(?:export\s+)?const\s+\w+\s*=\s*create</.test(
         fs.readFileSync(path.join(ROOT, f), 'utf8'),
       ));

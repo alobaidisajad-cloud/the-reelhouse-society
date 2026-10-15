@@ -7,8 +7,9 @@
  * the app may re-arm the takeover: SplashScreen.setOptions re-registers
  * expo-splash-screen's exit listener, and with it Android's 2 s handover.
  */
-import { readdirSync, readFileSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, resolve } from 'path';
+import { files as universe } from '../../test-utils/universe';
 
 const plugin = require('../withSplashWithoutHandoff');
 const { addSplashWithoutHandoff, MARK } = plugin;
@@ -88,14 +89,7 @@ it('is in every build: app.json lists it, after expo-splash-screen, and the path
 });
 
 describe('nothing in the app re-arms the takeover', () => {
-  const walk = (dir: string, out: string[] = []): string[] => {
-    for (const e of readdirSync(dir)) {
-      const p = join(dir, e);
-      if (statSync(p).isDirectory()) { if (!['node_modules', '__tests__'].includes(e)) walk(p, out); } else if (/\.tsx?$/.test(e)) out.push(p);
-    }
-    return out;
-  };
-  const importers = [...walk(join(MOBILE, 'app')), ...walk(join(MOBILE, 'src'))]
+  const importers = universe('appCode')
     .map((f) => ({ f, text: readFileSync(f, 'utf8') }))
     .filter(({ text }) => /from ['"]expo-splash-screen['"]/.test(text));
 

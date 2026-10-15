@@ -10,9 +10,10 @@
  * aBuildNamesOnlyWhatProductionHas.release-test.ts, which the build's
  * pre-flight runs: no build carries a name production does not have.
  */
-import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
+import { basename, join } from 'path';
 import { stripComments } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 export const MOBILE = join(__dirname, '..', '..', '..');
 export const REPO = join(MOBILE, '..');
@@ -34,24 +35,11 @@ const APPLIED = new Set(readFileSync(join(MOBILE, 'supabase', 'APPLIED.txt'), 'u
   .split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#')));
 
 /** Each migration production has not had yet, by name. */
-export const PENDING = ['supabase/migrations', 'mobile/supabase/migrations'].flatMap((dir) =>
-  readdirSync(join(REPO, dir)).filter((f) => f.endsWith('.sql') && !APPLIED.has(f))
-    .map((f) => ({ name: f, made: namesMadeIn(readFileSync(join(REPO, dir, f), 'utf8')) })));
+export const PENDING = universe('migrations').filter((f) => !APPLIED.has(basename(f)))
+  .map((f) => ({ name: basename(f), made: namesMadeIn(readFileSync(f, 'utf8')) }));
 
-const walk = (dir: string, out: string[] = []): string[] => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.isDirectory()) {
-      if (!['node_modules', '__tests__', 'test', 'dist'].includes(e.name)) walk(full, out);
-    } else if (/\.(ts|tsx|js|jsx)$/.test(e.name) && !/\.test\./.test(e.name)) out.push(full);
-  }
-  return out;
-};
-
-export const FILES = [
-  ...walk(join(MOBILE, 'app')), ...walk(join(MOBILE, 'src')),
-  ...walk(join(REPO, 'src')), ...walk(join(REPO, 'api')),
-];
+/** Both clients: the app, and the website with its server routes. */
+export const FILES = universe(['appCode', 'website']);
 
 export type Call = { kind: 'table' | 'rpc' | 'bucket'; name: string; at: string };
 

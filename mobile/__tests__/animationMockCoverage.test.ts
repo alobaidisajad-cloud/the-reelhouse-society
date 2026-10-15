@@ -19,26 +19,11 @@
  * either works or fails here — never silently in the place that would have
  * caught a real bug.
  */
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
+import { files } from '../test-utils/universe';
 
 const ROOT = join(__dirname, '..');
-
-function walk(dir: string, acc: string[] = []): string[] {
-  let entries: string[] = [];
-  try {
-    entries = readdirSync(dir);
-  } catch {
-    return acc;
-  }
-  for (const entry of entries) {
-    if (entry === '__tests__' || entry === 'node_modules') continue;
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) walk(full, acc);
-    else if (/\.tsx?$/.test(entry) && !/\.test\.|\.d\.ts$/.test(entry)) acc.push(full);
-  }
-  return acc;
-}
 
 /**
  * Every builder named in an `entering` / `exiting` / `layout` prop.
@@ -49,7 +34,7 @@ function walk(dir: string, acc: string[] = []): string[] {
  */
 function buildersUsed(): Map<string, string[]> {
   const used = new Map<string, string[]>();
-  for (const file of walk(join(ROOT, 'src')).concat(walk(join(ROOT, 'app')))) {
+  for (const file of files('appCode').filter((f) => !f.endsWith('.d.ts'))) {
     const src = readFileSync(file, 'utf8');
     const re = /\b(?:entering|exiting|layout)\s*=\s*\{\s*([A-Z]\w+)/g;
     let m: RegExpExecArray | null;

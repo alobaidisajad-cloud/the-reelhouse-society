@@ -18,13 +18,13 @@
  * the call's own `.top`, or a name taken out of it (`{ top }`). Passing the top
  * whole to a helper built on navMetrics is not a sum, and is allowed.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import ts from 'typescript';
 import { MOBILE } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const HOME = 'src/components/layout/navMetrics.ts';
-const SKIP = new Set(['__tests__', 'node_modules']);
 type Side = 'top' | 'bottom';
 /** A property or prop that places something from that edge. */
 const PLACING: Record<Side, RegExp> = {
@@ -45,15 +45,6 @@ const NOT_A_FOOT: Record<string, string> = {
   'src/components/KeyboardRoom.tsx': 'the keyboard’s height, not a page’s foot',
 };
 
-function codeFiles(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (SKIP.has(e.name)) continue;
-    const full = join(dir, e.name);
-    if (e.isDirectory()) codeFiles(full, out);
-    else if (/\.tsx?$/.test(e.name) && !/\.test\.|\.d\.ts$/.test(e.name)) out.push(full);
-  }
-  return out;
-}
 
 const isInsetsCall = (n: ts.Node | undefined): boolean =>
   !!n && ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'useSafeAreaInsets';
@@ -150,7 +141,7 @@ function handMadeEdges(fileName: string, text: string, side: Side) {
   return { found, reads };
 }
 
-const appFiles = () => [...codeFiles(join(MOBILE, 'app')), ...codeFiles(join(MOBILE, 'src'))]
+const appFiles = () => universe('appCode').filter((f) => !f.endsWith('.d.ts'))
   .map((f) => relative(MOBILE, f).split(sep).join('/'))
   .filter((f) => f !== HOME);
 

@@ -18,16 +18,14 @@
  * prefix sweep. The exemptions are listed with their reasons, and an exemption
  * that stops being written is itself a failure, so the list cannot rot.
  */
-import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const ROOT = path.resolve(__dirname, '../../..');
 
 const sources = (): { f: string; src: string }[] =>
-  execFileSync('git', ['ls-files', 'src', 'app'], { cwd: ROOT, encoding: 'utf8' })
-    .split('\n')
-    .filter((f) => /\.tsx?$/.test(f) && !/__tests__|\.test\.|\.d\.ts$/.test(f))
+  universe('appCode').filter((f) => !f.endsWith('.d.ts')).map(rel)
     .map((f) => ({ f, src: readCode(path.join(ROOT, f)) }));
 
 /**

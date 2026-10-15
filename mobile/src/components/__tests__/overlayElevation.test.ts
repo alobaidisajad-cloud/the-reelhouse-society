@@ -18,12 +18,11 @@
  * covers is a sibling relationship this scan cannot see, so it does not try to
  * guess the right NUMBER — it only insists the author thought about it.
  */
-import fs from 'fs';
 import path from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
-const SCAN = ['src/components', 'src/theme', 'app'];
 
 /** Style names that describe a covering layer rather than content. */
 const OVERLAY = /(Fade|Scrim|Overlay|Veil)$/;
@@ -46,6 +45,8 @@ const EXEMPT: Record<string, string> = {
     joinedNameOverlay: 'sits among images and gradients inside the salon card — no elevated sibling',
     videoPlayOverlay: 'nothing in FilmMediaCarousel declares an elevation',
     topFade: 'nothing in ProfileBackdrop declares an elevation',
+    // In src/features/, which this sweep reads with the whole app.
+    avatarOverlay: 'found by P0.42, fix in Phase 4: the edit-profile avatar scrim, not yet read against its siblings',
     // VERIFIED in the Person pass, 2026-08-15. The two elevated styles in
     // personStyles.ts (portraitGlow, auteurHuntMastery) live in entirely
     // different subtrees. defOverlay's only siblings inside defPosterWrap are
@@ -78,20 +79,6 @@ const EXEMPT: Record<string, string> = {
     heroTopFade: 'verified: a backdrop layer beneath the hero — no elevated siblings, ordered by zIndex 3 vs 4',
 };
 
-function walk(dir: string, out: string[] = []): string[] {
-    if (!fs.existsSync(dir)) return out;
-    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) {
-            if (e.name === 'node_modules' || e.name === '__tests__') continue;
-            walk(full, out);
-        } else if (e.name.endsWith('.tsx') || e.name.endsWith('.ts')) {
-            out.push(full);
-        }
-    }
-    return out;
-}
-
 /** Brace-balanced so a nested object cannot truncate a block. */
 function styleBlocks(src: string): { name: string; body: string }[] {
     const blocks: { name: string; body: string }[] = [];
@@ -110,7 +97,7 @@ function styleBlocks(src: string): { name: string; body: string }[] {
     return blocks;
 }
 
-const files = SCAN.flatMap((d) => walk(path.join(ROOT, d)));
+const files = universe('appCode');
 
 describe('absolute overlays declare an elevation', () => {
     const overlays: { file: string; name: string; body: string }[] = [];

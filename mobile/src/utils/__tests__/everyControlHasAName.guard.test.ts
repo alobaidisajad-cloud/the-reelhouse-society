@@ -18,22 +18,16 @@
  * A control lifted out of the accessibility tree (accessible={false}, or
  * importantForAccessibility "no…") is exempt: something else speaks for it.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative } from 'path';
+import { files } from '@/test-utils/universe';
 
 const ts = require('typescript');
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const rel = (f: string) => relative(MOBILE, f).replace(/\\/g, '/');
-const walk = (dir: string, out: string[] = []): string[] => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.isDirectory()) { if (e.name !== '__tests__' && e.name !== 'node_modules') walk(full, out); }
-    else if (e.name.endsWith('.tsx')) out.push(full);
-  }
-  return out;
-};
-const FILES = [...walk(join(MOBILE, 'app')), ...walk(join(MOBILE, 'src'))];
+/** Every file that can draw a control: JSX lives in .tsx. */
+const FILES = files('appCode', { ext: ['.tsx'] });
 
 const TOUCHABLES = new Set(['PressableScale', 'Pressable', 'TouchableOpacity', 'TouchableHighlight', 'AnimatedPressable', 'Switch']);
 /** Controls that take their props by spread, and where their name is proved. */

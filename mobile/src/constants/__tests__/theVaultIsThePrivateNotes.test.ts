@@ -23,21 +23,14 @@
  * Parsed with the project's own compiler — comments are not strings, so they
  * are left out by construction rather than by a regex that guesses.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 const ts = require('typescript');
 
 const MOBILE = join(__dirname, '..', '..', '..');
 
-const walk = (dir: string, out: string[] = []): string[] => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.isDirectory()) { if (e.name !== '__tests__' && e.name !== 'node_modules') walk(full, out); }
-    else if (/\.tsx?$/.test(e.name) && !/\.test\./.test(e.name)) out.push(full);
-  }
-  return out;
-};
 
 const rel = (f: string) => relative(MOBILE, f).replace(/\\/g, '/');
 
@@ -119,10 +112,8 @@ const WEB_PRIVATE_NOTES: Said[] = [
 PRIVATE_NOTES.push(...WEB_PRIVATE_NOTES);
 
 const key = (s: Said) => `${s.file}  ${JSON.stringify(s.text)}`;
-const ALL = sayings([
-  ...walk(join(MOBILE, 'app')), ...walk(join(MOBILE, 'src')),
-  ...walk(join(MOBILE, '..', 'src')),
-]);
+/** Both apps' words: this one's, and the website's, which members read too. */
+const ALL = sayings(universe(['appCode', 'website'], { ext: ['.ts', '.tsx'] }).filter((f) => !f.endsWith('.d.ts')));
 
 describe('"The Vault" is the private notes, and nothing else', () => {
   it('no text in the app calls anything else a vault', () => {

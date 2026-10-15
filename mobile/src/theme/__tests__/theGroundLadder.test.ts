@@ -22,9 +22,10 @@
  * theme with a comment saying what job it does, and `LADDER` here grows by
  * one. Adding a name to `ART` is for pigment that is not a surface at all.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { colors } from '../theme';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const SCAN = ['src', 'app'];
@@ -112,14 +113,9 @@ function lightness(c: Rgba): number {
 const same = (a: Rgba, b: Rgba) => a.r === b.r && a.g === b.g && a.b === b.b;
 
 // ── the source ────────────────────────────────────────────────────────────
-function walk(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
-    if (['node_modules', '__tests__', '__mocks__', 'mockups'].includes(e.name)) continue;
-    const rel = `${dir}/${e.name}`;
-    if (e.isDirectory()) walk(rel, out);
-    else if (/\.tsx?$/.test(e.name) && !/\.test\./.test(e.name)) out.push(rel);
-  }
-  return out;
+/** The app's files under one of its folders, as paths from mobile/. */
+function walk(dir: string): string[] {
+  return universe('appCode', { under: [dir] }).map(rel);
 }
 
 /**

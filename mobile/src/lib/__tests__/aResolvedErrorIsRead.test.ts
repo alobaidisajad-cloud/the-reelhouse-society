@@ -12,9 +12,10 @@
  * makes it right; a new one fails until it is read, and a listed one that no
  * longer exists fails too, so the list is always the whole truth.
  */
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import ts from 'typescript';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
 
@@ -184,16 +185,6 @@ export function unreadErrors(rel: string, text: string): string[] {
   return found;
 }
 
-function appFiles(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (['node_modules', '__tests__', 'generated'].includes(e.name) || e.name.startsWith('.')) continue;
-    const p = join(dir, e.name);
-    if (e.isDirectory()) appFiles(p, out);
-    else if (/\.tsx?$/.test(e.name) && !/\.test\./.test(e.name) && !e.name.endsWith('.d.ts')) out.push(p);
-  }
-  return out;
-}
-
 // ── the tests ───────────────────────────────────────────────────────────────
 
 describe('a resolved error is read', () => {
@@ -225,7 +216,7 @@ describe('a resolved error is read', () => {
 
   it('in every app file, or the site is judged with its reason', () => {
     const counts = new Map<string, number>();
-    const files = [...appFiles(join(ROOT, 'app')), ...appFiles(join(ROOT, 'src'))];
+    const files = universe('appCode').filter((f) => !f.endsWith('.d.ts'));
     expect(files.length).toBeGreaterThan(300);
     for (const f of files) {
       const text = readFileSync(f, 'utf8');

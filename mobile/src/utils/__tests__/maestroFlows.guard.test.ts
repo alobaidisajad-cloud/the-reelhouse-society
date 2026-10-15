@@ -14,9 +14,10 @@
  *   · it drives this app (the Android package in app.json), and it holds no
  *     account: sign-in values come from the run as ${E2E_…}
  */
-import { readdirSync, readFileSync } from 'fs';
-import { join, relative } from 'path';
+import { readFileSync } from 'fs';
+import { basename, join, relative } from 'path';
 import ts from 'typescript';
+import { files as universe } from '@/test-utils/universe';
 
 const { parseAllDocuments } = require(require.resolve('yaml/package.json').replace(/package\.json$/, 'dist/index.js')) as typeof import('yaml');
 
@@ -24,15 +25,7 @@ const MOBILE = join(__dirname, '..', '..', '..');
 const FLOW_DIR = join(MOBILE, '.maestro');
 const APP_ID = JSON.parse(readFileSync(join(MOBILE, 'app.json'), 'utf8')).expo.android.package as string;
 
-const walk = (dir: string, keep: (f: string) => boolean, out: string[] = []): string[] => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const p = join(dir, e.name);
-    if (e.isDirectory()) { if (!['node_modules', '__tests__'].includes(e.name)) walk(p, keep, out); } else if (keep(e.name)) out.push(p);
-  }
-  return out;
-};
-
-const APP_FILES = [...walk(join(MOBILE, 'app'), (f) => /\.tsx?$/.test(f)), ...walk(join(MOBILE, 'src'), (f) => /\.tsx?$/.test(f))];
+const APP_FILES = universe('appCode');
 const SOURCE = APP_FILES.map((f) => readFileSync(f, 'utf8')).join('\n');
 
 /** Every testID the app sets: literal ones, and the fixed start of templated ones. */
@@ -58,7 +51,7 @@ for (const file of APP_FILES) {
 
 /** What a flow file asks for. */
 type Ask = { kind: 'id' | 'text'; value: string; flow: string };
-const FILES = walk(FLOW_DIR, (f) => f.endsWith('.yaml') && f !== 'config.yaml');
+const FILES = universe('flows').filter((f) => basename(f) !== 'config.yaml');
 const ids = (v: unknown): string[] => (v && typeof v === 'object' && 'id' in v ? [String((v as { id: unknown }).id)] : []);
 const texts = (v: unknown): string[] =>
   typeof v === 'string' ? [v] : v && typeof v === 'object' && 'text' in v ? [String((v as { text: unknown }).text)] : [];

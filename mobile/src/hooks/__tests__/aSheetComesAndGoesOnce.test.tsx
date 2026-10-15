@@ -83,22 +83,15 @@ describe('a sheet', () => {
 
 describe('no sheet unmounts itself by hand', () => {
   it('the one place a fall ends a sheet is useSheetPresence', () => {
-    const { readdirSync, statSync } = jest.requireActual('fs') as typeof import('fs');
-    const { join, relative } = jest.requireActual('path') as typeof import('path');
+    const { relative } = jest.requireActual('path') as typeof import('path');
     const { readCode, MOBILE } = jest.requireActual('@/test-utils/readCode');
+    const { files } = jest.requireActual('@/test-utils/universe') as typeof import('@/test-utils/universe');
     const found: string[] = [];
     let read = 0;
-    const walk = (dir: string) => {
-      for (const name of readdirSync(dir)) {
-        const p = join(dir, name);
-        if (statSync(p).isDirectory()) { if (name !== '__tests__' && name !== 'node_modules') walk(p); continue; }
-        if (!/\.tsx?$/.test(name)) continue;
-        read += 1;
-        if (/runOnJS\(\s*setIsRendered\s*\)/.test(readCode(p))) found.push(relative(MOBILE, p));
-      }
-    };
-    walk(join(MOBILE, 'src'));
-    walk(join(MOBILE, 'app'));
+    for (const p of files('appCode')) {
+      read += 1;
+      if (/runOnJS\(\s*setIsRendered\s*\)/.test(readCode(p))) found.push(relative(MOBILE, p));
+    }
     expect(read).toBeGreaterThan(300);
     expect(found).toEqual([]);
   });

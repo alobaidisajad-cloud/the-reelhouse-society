@@ -16,10 +16,10 @@
  * no room may build its own search box.
  */
 import React from 'react';
-import { readdirSync } from 'fs';
-import { join } from 'path';
+import { basename, join, relative } from 'path';
 import { render } from '@testing-library/react-native';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 import { RoomSearch } from '../RoomParts';
 
@@ -33,7 +33,9 @@ const HERE = join(__dirname, '..');
 const code = (f: string) => readCode(join(HERE, f));
 
 /** Enumerated from the filesystem, so a seventh room is covered on arrival. */
-const ROOMS = readdirSync(HERE).filter((f) => /^Profile\w+Tab\.tsx$/.test(f));
+const ROOMS = universe('appCode', { under: ['src/components/profile'] })
+  .filter((f) => /^Profile\w+Tab\.tsx$/.test(basename(f)))
+  .map((f) => relative(HERE, f));
 
 describe('no room builds its own search box', () => {
   it('found the rooms to check', () => {

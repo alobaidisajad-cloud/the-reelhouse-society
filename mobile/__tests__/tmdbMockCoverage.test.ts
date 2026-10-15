@@ -12,26 +12,11 @@
  * TMDB method now fails HERE, with a message naming the file, instead of
  * somewhere that looked like a product bug.
  */
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
+import { files } from '../test-utils/universe';
 
 const ROOT = join(__dirname, '..');
-
-function walk(dir: string, acc: string[] = []): string[] {
-  let entries: string[] = [];
-  try {
-    entries = readdirSync(dir);
-  } catch {
-    return acc;
-  }
-  for (const entry of entries) {
-    if (entry === '__tests__' || entry === 'node_modules') continue;
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) walk(full, acc);
-    else if (/\.tsx?$/.test(entry) && !/\.test\.|\.d\.ts$/.test(entry)) acc.push(full);
-  }
-  return acc;
-}
 
 /**
  * Members reached through the `tmdb` object, as a CALL.
@@ -43,7 +28,7 @@ function walk(dir: string, acc: string[] = []): string[] {
  */
 function methodsCalled(): Map<string, string[]> {
   const found = new Map<string, string[]>();
-  for (const file of walk(join(ROOT, 'src')).concat(walk(join(ROOT, 'app')))) {
+  for (const file of files('appCode').filter((f) => !f.endsWith('.d.ts'))) {
     const src = readFileSync(file, 'utf8');
     const re = /(?<!image\.)\btmdb\.([a-zA-Z]\w*)\s*\(/g;
     let m: RegExpExecArray | null;

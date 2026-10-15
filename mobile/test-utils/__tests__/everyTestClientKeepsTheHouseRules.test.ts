@@ -9,26 +9,15 @@
  * built its own. So the whole tree is read, and `new QueryClient(` may stand
  * in those two files only.
  */
-import { readdirSync } from 'fs';
-import { join, relative, sep } from 'path';
-import { MOBILE, readCode } from '../readCode';
+import { readCode } from '../readCode';
+import { files as universe, rel } from '../universe';
 
-const ROOTS = ['app', 'src', 'mockups', 'test-utils', 'scripts', '__tests__'];
-const SKIP = new Set(['node_modules', 'out', '.git', 'android', 'ios', '.expo']);
 const BUILDERS = ['src/lib/queryClient.ts', 'test-utils/testQueryClient.ts'];
 
+/** Every code file in mobile/: the app, its tests, what they share, the scripts and the mockups. */
 function codeFiles(): string[] {
-  const out: string[] = [];
-  const walk = (dir: string) => {
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
-      if (SKIP.has(e.name)) continue;
-      const full = join(dir, e.name);
-      if (e.isDirectory()) walk(full);
-      else if (/\.(?:[cm]?js|jsx|ts|tsx)$/.test(e.name)) out.push(relative(MOBILE, full).split(sep).join('/'));
-    }
-  };
-  for (const r of ROOTS) walk(join(MOBILE, r));
-  return out;
+  return universe(['appCode', 'tests', 'testSupport', 'scripts', 'config', 'mockups'])
+    .filter((f) => /\.(?:[cm]?js|jsx|ts|tsx)$/.test(f)).map(rel);
 }
 
 describe('every React Query client keeps the house rules', () => {

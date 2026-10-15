@@ -20,10 +20,12 @@
  * coverage while 13 columns were uncapped. File-level and live-level are two
  * different guards and both are needed.
  */
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
+import { basename } from 'path';
+import { files as universe, repoRel } from '../test-utils/universe';
 
-const MIGRATIONS = join(__dirname, '..', 'supabase', 'migrations');
+/** Every migration in both trees, as test-utils/universe.js names them. */
+const MIGRATIONS = universe('migrations');
 
 /** Batch 29 is where this rule starts. Migrations before it are history. */
 const RULE_STARTS_AT = '20260810_05';
@@ -37,14 +39,12 @@ function stripComments(sql: string): string {
 }
 
 function migrationsUnderRule(): string[] {
-  return readdirSync(MIGRATIONS)
-    .filter((f) => f.endsWith('.sql'))
+  return MIGRATIONS
     // Date-prefixed only. Plain string comparison against the cutoff would let
     // every undated file through ("society_report_system.sql" > "20260810_05"),
     // which is how the first run of this test failed.
-    .filter((f) => /^\d{8}_\d{2}/.test(f))
-    .filter((f) => f >= RULE_STARTS_AT)
-    .sort();
+    .filter((f) => /^\d{8}_\d{2}/.test(basename(f)))
+    .filter((f) => basename(f) >= RULE_STARTS_AT);
 }
 
 /**
@@ -73,12 +73,18 @@ describe('search_path hardening (batch 29)', () => {
     expect(files.length).toBeGreaterThan(0);
   });
 
+  it('reads both migration trees, the root one the CLI applies included', () => {
+    const trees = new Set(files.map((f) => repoRel(f).split('/').slice(0, -1).join('/')));
+    expect([...trees].sort()).toEqual(['mobile/supabase/migrations', 'supabase/migrations']);
+  });
+
   it('every function defined from batch 29 onward demotes pg_temp', () => {
     // Violations are collected rather than asserted one by one: Jest's expect
     // takes no message argument, so the array contents ARE the failure message.
     const violations: string[] = [];
-    for (const file of files) {
-      const sql = stripComments(readFileSync(join(MIGRATIONS, file), 'utf8'));
+    for (const path of files) {
+      const file = repoRel(path);
+      const sql = stripComments(readFileSync(path, 'utf8'));
       for (const { name, header } of functionHeaders(sql)) {
         const pin = /SET\s+search_path\s*(?:=|TO)\s*([^\n]*)/i.exec(header);
         if (!pin) {
@@ -102,8 +108,9 @@ describe('search_path hardening (batch 29)', () => {
     // read a sealed member's reviews over plain HTTP. If it ever returns it must
     // consult can_view_user_data.
     const violations: string[] = [];
-    for (const file of readdirSync(MIGRATIONS).filter((f) => f.endsWith('.sql'))) {
-      const sql = stripComments(readFileSync(join(MIGRATIONS, file), 'utf8'));
+    for (const path of MIGRATIONS) {
+      const file = repoRel(path);
+      const sql = stripComments(readFileSync(path, 'utf8'));
       if (!/CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+public\.get_following_feed\b/i.test(sql)) continue;
       if (!/can_view_user_data/i.test(sql)) {
         violations.push(

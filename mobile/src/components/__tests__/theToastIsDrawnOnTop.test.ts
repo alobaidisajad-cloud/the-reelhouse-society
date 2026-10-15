@@ -21,24 +21,16 @@
  *                          does), nothing mounts the old overlay, and no other
  *                          modal library slips past the <Modal> check
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative } from 'path';
+import { files } from '@/test-utils/universe';
 
 const ts = require('typescript');
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const rel = (f: string) => relative(MOBILE, f).replace(/\\/g, '/');
 
-const walk = (dir: string, out: string[] = []): string[] => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.isDirectory()) { if (e.name !== '__tests__' && e.name !== 'node_modules') walk(full, out); }
-    else if (/\.tsx?$/.test(e.name) && !/\.test\./.test(e.name)) out.push(full);
-  }
-  return out;
-};
-
-const FILES = [...walk(join(MOBILE, 'app')), ...walk(join(MOBILE, 'src'))];
+const FILES = files('appCode');
 
 const parse = (name: string, src: string) =>
   ts.createSourceFile(name, src, ts.ScriptTarget.Latest, true, name.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);

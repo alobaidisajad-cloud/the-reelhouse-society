@@ -19,9 +19,10 @@
  *
  * A screen may be exempt only by being named below with what it really is.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { dirname, join, relative, resolve } from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
 
@@ -41,16 +42,6 @@ const NOT_A_ROOM_ROUTE: Record<string, string> = {
 
 const LIT = /^<(RoomLight|AuthBackdrop)\b/;
 
-function files(dir: string): string[] {
-  const out: string[] = [];
-  for (const name of readdirSync(dir)) {
-    if (name === 'node_modules' || name === '__tests__') continue;
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) out.push(...files(p));
-    else if (/\.tsx?$/.test(name) && !/\.test\./.test(name) && !/\.d\.ts$/.test(name)) out.push(p);
-  }
-  return out;
-}
 const rel = (p: string) => relative(ROOT, p).split('\\').join('/');
 const read = (p: string) => readFileSync(p, 'utf8');
 /**
@@ -137,8 +128,8 @@ function houseRoots(file: string): Root[] {
   return out;
 }
 
-const ALL = [...files(join(ROOT, 'app')), ...files(join(ROOT, 'src'))];
-const ROUTES = files(join(ROOT, 'app')).filter((f) => !/[\\/]_layout\.tsx$/.test(f) && /\.tsx$/.test(f));
+const ALL = universe('appCode').filter((f) => !f.endsWith('.d.ts'));
+const ROUTES = universe('routes').filter((f) => !/[\\/]_layout\.tsx$/.test(f) && /\.tsx$/.test(f));
 
 describe('the room is lit', () => {
   const roots = ALL.flatMap(houseRoots);

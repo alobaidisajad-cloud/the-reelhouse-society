@@ -34,9 +34,9 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
-const SCAN_DIRS = ['src', 'app'];
 
 /**
  * Components with an infinite loop that does NOT park yet, each with the reason
@@ -65,31 +65,21 @@ const KNOWN_UNPARKED: Record<string, string> = {
     'src/features/settings/SettingsScreen.tsx': 'pending Settings polish',
 };
 
-function walk(dir: string, out: string[] = []): string[] {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-            if (entry.name === 'node_modules' || entry.name === '__tests__') continue;
-            walk(full, out);
-        } else if (entry.name.endsWith('.tsx')) {
-            out.push(full);
-        }
-    }
-    return out;
-}
-
 /** `withRepeat(x, -1, ...)` — the `-1` is what makes it run forever. */
 function hasInfiniteRepeat(src: string): boolean {
     if (!src.includes('withRepeat')) return false;
     return /(^|,)\s*-1\s*[,)]/m.test(src);
 }
 
-/** Any of the four sanctioned ways to stop a loop when nobody is watching. */
+/**
+ * Any of the four sanctioned ways to stop a loop when nobody is watching; a
+ * hook takes the focus as `isFocused` from the screen that owns it.
+ */
 function hasPauseMechanism(src: string): boolean {
-    return /useIsFocused|useFocusEffect|AppState|isActive|paused|isVisible/.test(src);
+    return /useIsFocused|useFocusEffect|AppState|isActive|paused|isVisible|\bisFocused\b/.test(src);
 }
 
-const files = SCAN_DIRS.flatMap((d) => walk(path.join(ROOT, d)));
+const files = universe('appCode');
 const rel = (f: string) => path.relative(ROOT, f).split(path.sep).join('/');
 const looping = files.filter((f) => hasInfiniteRepeat(fs.readFileSync(f, 'utf8')));
 

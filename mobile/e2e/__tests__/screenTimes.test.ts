@@ -7,10 +7,11 @@
  * threadtime shape, the way useScreenReady's e2eTrace writes them.
  */
 import { spawnSync } from 'child_process';
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { basename, join } from 'path';
 import { pathToFileURL } from 'url';
+import { files as universe } from '../../test-utils/universe';
 
 const SCRIPT = join(__dirname, '..', 'screen-times.mjs');
 let dir: string;
@@ -139,10 +140,9 @@ describe('a screen whose read failed', () => {
     const r = spawnSync(process.execPath, ['--input-type=module', '-e',
       `import(${JSON.stringify(pathToFileURL(SCRIPT).href)}).then((m) => console.log(JSON.stringify(m.PLANTS_FAILURES)))`], { encoding: 'utf8' });
     const spared = JSON.parse(r.stdout);
-    const flowDir = join(__dirname, '..', '..', '.maestro');
-    const cutting = readdirSync(flowDir).filter((f) => f.endsWith('.yaml'))
-      .filter((f) => /^\s*-\s*toggleAirplaneMode\b/m.test(readFileSync(join(flowDir, f), 'utf8')))
-      .map((f) => f.replace(/\.yaml$/, ''));
+    const cutting = universe('runFlows')
+      .filter((f) => /^\s*-\s*toggleAirplaneMode\b/m.test(readFileSync(f, 'utf8')))
+      .map((f) => basename(f).replace(/\.yaml$/, ''));
     expect(cutting.length).toBeGreaterThan(0);
     expect(spared).toEqual(cutting);
   });

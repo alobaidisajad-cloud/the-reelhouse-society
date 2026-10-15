@@ -7,9 +7,9 @@
  * keepTransaction thins the others once their route is known. Each name in
  * MAIN_ROUTES must be a route the app has, so a renamed screen fails here.
  */
-import { readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { basename, join, relative } from 'path';
 import { MOBILE } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 type SentryModule = typeof import('@/src/lib/sentry');
 
@@ -71,17 +71,9 @@ it('is what Sentry is started with: the sampler, no flat rate, and the thinning 
 
 /** Every route the router names, from app/'s files: folders and file, groups and the extension left out. */
 function routes(): string[] {
-  const out: string[] = [];
-  const walk = (dir: string) => {
-    for (const f of readdirSync(dir)) {
-      const p = join(dir, f);
-      if (statSync(p).isDirectory()) { if (f !== '__tests__') walk(p); continue; }
-      if (!f.endsWith('.tsx') || f.startsWith('_') || f.startsWith('+')) continue;
-      out.push(relative(join(MOBILE, 'app'), p).replace(/\.tsx$/, '').split(/[\\/]/).filter((s) => !s.startsWith('(')).join('/'));
-    }
-  };
-  walk(join(MOBILE, 'app'));
-  return out;
+  return universe('routes')
+    .filter((p) => !p.endsWith('.d.ts') && !basename(p).startsWith('_') && !basename(p).startsWith('+'))
+    .map((p) => relative(join(MOBILE, 'app'), p).replace(/\.[jt]sx?$/, '').split(/[\\/]/).filter((s) => !s.startsWith('(')).join('/'));
 }
 
 it('names only routes the app has', () => {

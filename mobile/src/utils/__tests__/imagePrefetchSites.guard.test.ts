@@ -17,8 +17,9 @@
  * direct call anywhere else fails. And the store a cold start restores fetches
  * nothing.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const read = (f: string) => readFileSync(join(MOBILE, f), 'utf8');
@@ -33,15 +34,7 @@ const SITES: Record<string, { size: string; drawnBy: string; calls: number }> = 
   'src/stores/domain/listSlice.ts': { size: 'w185', drawnBy: 'src/components/profile/ProfileListsTab.tsx', calls: 1 },
 };
 
-const files: string[] = [];
-const walk = (dir: string) => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const p = join(dir, e.name);
-    if (e.isDirectory()) { if (!['node_modules', '__tests__'].includes(e.name)) walk(p); } else if (/\.tsx?$/.test(e.name)) files.push(p);
-  }
-};
-walk(join(MOBILE, 'app'));
-walk(join(MOBILE, 'src'));
+const files = universe('appCode');
 const rel = (p: string) => relative(MOBILE, p).split(sep).join('/');
 
 /** The one file that calls expo-image's prefetch itself. */

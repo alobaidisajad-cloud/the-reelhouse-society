@@ -9,28 +9,18 @@
  * database (a_report_is_counted_once_rehearsal.sql). This holds the clients to
  * it, the app and the web alike, since they share the database.
  */
-import { readdirSync, readFileSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative } from 'path';
 import { MOBILE, stripComments } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(MOBILE, '..');
 const MIGRATION = readFileSync(join(ROOT, 'supabase', 'migrations', '20261001_03_a_report_is_counted_once.sql'), 'utf8');
 const SNAPSHOT = readFileSync(join(MOBILE, 'supabase', 'schema', 'live-schema.sql'), 'utf8');
 
-function sources(dir: string, out: string[] = []): string[] {
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) {
-      if (!['node_modules', '__tests__', 'dist', 'build'].includes(name)) sources(p, out);
-    } else if (/\.(ts|tsx|js|jsx)$/.test(name) && !/\.(test|spec)\./.test(name)) out.push(p);
-  }
-  return out;
-}
-
 describe('a report is filed through one door', () => {
-  const files = [
-    ...sources(join(MOBILE, 'src')), ...sources(join(MOBILE, 'app')), ...sources(join(ROOT, 'src')),
-  ];
+  /** Both clients: the app, and the website with its server routes. */
+  const files = universe(['appCode', 'website']);
 
   it('no client writes the reports table itself', () => {
     expect(files.length).toBeGreaterThan(500);

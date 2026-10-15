@@ -12,9 +12,10 @@
  *     `.env` file or writes it anywhere.
  */
 import { spawnSync } from 'child_process';
-import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { homedir } from 'os';
-import { join } from 'path';
+import { basename, join } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const { lint } = require('../../../scripts/migration-lint.cjs') as {
@@ -83,8 +84,7 @@ describe('every change has a tested undo', () => {
   const ROOT = join(MOBILE, '..');
   const listed = readFileSync(join(MOBILE, 'supabase/APPLIED.txt'), 'utf8').split(/\r?\n/).filter((l) => l && !l.startsWith('#'));
   const withCode = (p: string) => readFileSync(p, 'utf8').split('\n').some((l) => l.trim() && !l.trim().startsWith('--'));
-  const files = ['supabase/migrations', 'mobile/supabase/migrations'].flatMap((d) =>
-    readdirSync(join(ROOT, d)).filter((f) => f.endsWith('.sql') && withCode(join(ROOT, d, f))));
+  const files = universe('migrations').filter(withCode).map((f) => basename(f));
 
   it('the applied list names only migrations that exist, once each', () => {
     expect(listed.length).toBeGreaterThan(200);
@@ -94,7 +94,7 @@ describe('every change has a tested undo', () => {
 
   it('a pending migration has its undo, under its own name', () => {
     const pending = files.filter((f) => !listed.includes(f));
-    const undos = readdirSync(join(MOBILE, 'supabase/migrations-down')).filter((f) => f.endsWith('.sql'));
+    const undos = universe('undo').map((f) => basename(f));
     expect(pending.filter((f) => !undos.includes(f))).toEqual([]);
     expect(undos.filter((f) => !pending.includes(f))).toEqual([]);
   });
@@ -354,14 +354,7 @@ describe('the database address', () => {
   });
 
   it('is read through private-settings.cjs alone, and written by it alone', () => {
-    const files: string[] = [];
-    const walk = (dir: string) => {
-      for (const name of readdirSync(dir)) {
-        const p = join(dir, name);
-        if (statSync(p).isDirectory()) { if (!['node_modules', '__tests__', 'fixtures'].includes(name)) walk(p); } else if (/\.(c|m)?js$|\.ts$|\.sh$/.test(name)) files.push(p);
-      }
-    };
-    ['scripts', 'supabase/diagnostics', 'e2e'].forEach((d) => walk(join(MOBILE, d)));
+    const files = universe(['scripts', 'standIns']).filter((p) => /\.(c|m)?js$|\.ts$|\.sh$/.test(p));
     expect(files.length).toBeGreaterThan(40);
     const code = (p: string) => readFileSync(p, 'utf8').split(/\r?\n/).filter((l) => !/^\s*(\/\/|\*|\/\*|#)/.test(l)).join('\n');
     const readers = files.filter((p) => !p.endsWith('private-settings.cjs') && /SUPABASE_DB_URL/.test(code(p)));

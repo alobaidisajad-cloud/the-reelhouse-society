@@ -11,22 +11,12 @@
  * label asks to search, find or name something. Read from the compiled JSX, so
  * a prop spelled any other way than `autoCorrect={false}` does not count.
  */
-import { readdirSync, readFileSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative } from 'path';
 import ts from 'typescript';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
-
-function tsx(dir: string): string[] {
-  const out: string[] = [];
-  for (const name of readdirSync(dir)) {
-    if (name === 'node_modules' || name === '__tests__' || name.startsWith('.')) continue;
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) out.push(...tsx(p));
-    else if (name.endsWith('.tsx')) out.push(p);
-  }
-  return out;
-}
 
 const ASKS = /\b(search|find|name a film)/i;
 
@@ -53,7 +43,8 @@ function fields(file: string): Field[] {
 }
 
 describe('a search field never autocorrects', () => {
-  const all = ['src', 'app'].flatMap((d) => tsx(join(ROOT, d))).flatMap(fields);
+  // Every file that can draw a field: JSX lives in .tsx.
+  const all = universe('appCode', { ext: ['.tsx'] }).flatMap(fields);
   const searches = all.filter((f) => f.search);
 
   it('finds the search fields (a scan of none proves nothing)', () => {

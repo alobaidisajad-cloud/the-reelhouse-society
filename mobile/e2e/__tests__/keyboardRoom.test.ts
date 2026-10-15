@@ -7,19 +7,16 @@
  * without a keyboard on screen has measured nothing.
  */
 import { spawnSync } from 'child_process';
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { files as universe } from '../../test-utils/universe';
 
 const SCRIPT = join(__dirname, '..', 'keyboard-room.mjs');
 
-/** Every .ts/.tsx file under `dir`, tests aside, as one text. */
-function sourceUnder(dir: string): string {
-  return readdirSync(dir).map((f) => {
-    const p = join(dir, f);
-    if (statSync(p).isDirectory()) return f === '__tests__' ? '' : sourceUnder(p);
-    return /\.tsx?$/.test(f) ? readFileSync(p, 'utf8') : '';
-  }).join('\n');
+/** The app's code, tests aside, as one text. */
+function appSource(): string {
+  return universe('appCode').map((p) => readFileSync(p, 'utf8')).join('\n');
 }
 let dir: string;
 
@@ -142,12 +139,12 @@ describe('what the runner measures exists', () => {
   });
 
   it('and every id it taps or measures is one the app sets', () => {
-    const root = join(__dirname, '..', '..');
-    const flows = readdirSync(join(root, '.maestro', 'keyboard')).map((f) => readFileSync(join(root, '.maestro', 'keyboard', f), 'utf8'));
+    const flows = universe('flows', { under: ['.maestro/keyboard'] }).map((f) => readFileSync(f, 'utf8'));
     const ids = new Set(flows.flatMap((y) => [...y.matchAll(/id: "([\w-]+)"/g)].map((m) => m[1])));
     for (const p of probes) if (p.target.startsWith('#')) ids.add(p.target.slice(1));
     expect(ids.size).toBeGreaterThan(5);
-    const code = sourceUnder(join(root, 'app')) + sourceUnder(join(root, 'src'));
+    const root = join(__dirname, '..', '..');
+    const code = appSource();
     // An id is set whole ("review-input") or built (`film-act-${act.key}` and a key 'log').
     const builds = [...code.matchAll(/`([\w-]+)\$\{/g)].map((m) => m[1]);
     const said = (s: string) => code.includes(`"${s}"`) || code.includes(`'${s}'`);

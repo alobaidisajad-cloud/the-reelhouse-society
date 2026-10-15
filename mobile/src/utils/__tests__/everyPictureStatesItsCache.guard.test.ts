@@ -9,10 +9,11 @@
  * Read with TypeScript's parser, so a picture under another name, through a namespace
  * or with a spread is still found, and a word in a comment is not.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import ts from 'typescript';
 import { MOBILE } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 /** A file whose pictures keep another policy: which, how many, and why. Empty today. */
 const OTHER_POLICY: Record<string, { policy: string; sites: number; why: string }> = {};
@@ -25,17 +26,6 @@ const NOT_STATED = '(not stated)';
 const AFTER_A_SPREAD = '(a spread the guard cannot read comes last)';
 const NOT_WRITTEN = '(not a written value)';
 
-const SKIP = new Set(['__tests__', 'node_modules']);
-
-function codeFiles(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (SKIP.has(e.name)) continue;
-    const full = join(dir, e.name);
-    if (e.isDirectory()) codeFiles(full, out);
-    else if (/\.tsx?$/.test(e.name) && !/\.test\.|\.d\.ts$/.test(e.name)) out.push(full);
-  }
-  return out;
-}
 
 /** The words of a literal string, or null for anything decided at run time. */
 function written(e: ts.Expression | undefined): string | null {
@@ -135,7 +125,7 @@ function unlisted(pictures: { file: string; site: string; policy: string }[], li
 }
 
 describe('every expo-image picture in app/ and src/', () => {
-  const files = [...codeFiles(join(MOBILE, 'app')), ...codeFiles(join(MOBILE, 'src'))];
+  const files = universe('appCode').filter((f) => !f.endsWith('.d.ts'));
   const { pictures, escapes } = picturesIn(files);
 
   it('was found: a walk that read nothing would pass every check below', () => {

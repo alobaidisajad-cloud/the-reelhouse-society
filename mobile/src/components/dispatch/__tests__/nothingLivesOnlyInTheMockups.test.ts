@@ -22,23 +22,14 @@
  * the app does not mount is not a record, it is a proposal — and one that will
  * be mistaken for a record the moment nobody remembers the difference.
  */
-import { readdirSync } from 'fs';
 import { join } from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 
-const SKIP = new Set(['node_modules', '.git', 'android', 'ios', 'coverage', '.expo', 'out', 'chunks', 'stripped']);
-
-const collect = (dir: string, out: string[] = []): string[] => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (SKIP.has(e.name)) continue;
-    const full = join(dir, e.name);
-    if (e.isDirectory()) collect(full, out);
-    else if (/\.(ts|tsx)$/.test(e.name)) out.push(full);
-  }
-  return out;
-};
+/** The Dispatch's own source files. */
+const dispatchSources = () => universe('appCode', { ext: ['.ts', '.tsx'], under: ['src/components/dispatch'] });
 
 /**
  * Comments name symbols without using them; a docstring is not a call site.
@@ -159,14 +150,10 @@ const DESIGNED_NOT_WIRED = new Set([
 ]);
 
 describe('the design record draws the app, not a second copy of it', () => {
-  const dispatchDir = join(ROOT, 'src', 'components', 'dispatch');
-  const files = collect(dispatchDir).filter((f) => !f.includes('__tests__'));
+  const files = dispatchSources();
 
-  /** What the app itself ships: src and app, minus tests and mockups. */
-  const appSources = [
-    ...collect(join(ROOT, 'src')),
-    ...collect(join(ROOT, 'app')),
-  ].filter((f) => !f.includes('__tests__') && !f.includes('mockups'));
+  /** What the app itself ships: its code, without tests or mockups. */
+  const appSources = universe('appCode', { ext: ['.ts', '.tsx'] });
 
   it('reads the surface at all, so an empty search cannot pass for a clean one', () => {
     expect(files.length).toBeGreaterThanOrEqual(17);
@@ -228,7 +215,7 @@ describe('the design record draws the app, not a second copy of it', () => {
     // name on it becomes live, so the list is trimmed on the same commit that
     // wires the component up rather than months later.
     const stale: string[] = [];
-    const dispatchFiles = collect(dispatchDir).filter((f) => !f.includes('__tests__'));
+    const dispatchFiles = dispatchSources();
 
     for (const entry of DESIGNED_NOT_WIRED) {
       const [rel, name] = entry.split('  ::  ');

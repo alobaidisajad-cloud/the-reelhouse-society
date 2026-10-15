@@ -11,21 +11,11 @@
  * A sweep, not a render: it reads every toast in the app, including screens no
  * test mounts offline.
  */
-import { readdirSync, statSync } from 'fs';
-import { join, relative, sep } from 'path';
+import { relative, sep } from 'path';
 import { MOBILE, readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
-const files: string[] = [];
-const walk = (dir: string) => {
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    if (name === 'node_modules' || name === '__tests__' || name.startsWith('.')) continue;
-    if (statSync(full).isDirectory()) walk(full);
-    else if (/\.(ts|tsx)$/.test(name) && !/\.test\./.test(name)) files.push(full);
-  }
-};
-walk(join(MOBILE, 'src'));
-walk(join(MOBILE, 'app'));
+const files = universe('appCode');
 
 /**
  * Every SENTENCE in the code that says a write was kept for later: any string shaped like

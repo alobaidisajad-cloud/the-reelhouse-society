@@ -17,9 +17,9 @@
  * A write narrowed by `.eq(` must either ask for its rows back, or appear below
  * with the reason it does not need to. Nothing is exempt by being unnoticed.
  */
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const ROOT = path.resolve(__dirname, '../../..');
 
@@ -121,9 +121,7 @@ const EXEMPT: Record<string, string> = {
 };
 
 const narrowedWritesWithoutSelect = (): { file: string; line: number }[] => {
-  const files = execFileSync('git', ['ls-files', 'src', 'app'], { cwd: ROOT, encoding: 'utf8' })
-    .split('\n')
-    .filter((f) => /\.tsx?$/.test(f) && !/__tests__|\.test\./.test(f));
+  const files = universe('appCode').map(rel);
 
   const out: { file: string; line: number }[] = [];
   for (const f of files) {

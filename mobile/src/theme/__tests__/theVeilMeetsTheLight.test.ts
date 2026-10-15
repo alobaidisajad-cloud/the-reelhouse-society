@@ -13,22 +13,13 @@
  * in a step of 13 to 20 across two pixels; the Lobby's, 18 to 23; the member
  * file's plate, 13 to 23. After: continuous to within one level.
  */
-import { readdirSync, readFileSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative } from 'path';
 import { BLOOM, CORNERS, LAMPS, POOL, lightGeometry } from '../light';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
-function files(dir: string): string[] {
-  const out: string[] = [];
-  for (const name of readdirSync(dir)) {
-    if (name === 'node_modules') continue;
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) out.push(...files(p));
-    else if (/\.tsx?$/.test(name) && !/\.test\./.test(name)) out.push(p);
-  }
-  return out;
-}
-const ALL = [...files(join(ROOT, 'app')), ...files(join(ROOT, 'src'))];
+const ALL = universe('appCode');
 
 /** Every `const X: VeilStops = [...]` in the app, parsed. */
 const VEILS = ALL.flatMap((f) => {

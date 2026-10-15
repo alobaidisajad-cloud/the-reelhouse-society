@@ -25,9 +25,10 @@
  * everyNameAClientCallsExists holds the names — tables, functions, buckets;
  * this holds what each query asks of its table.
  */
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative } from 'path';
 import { readCode, stripComments } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const REPO = join(MOBILE, '..');
@@ -500,26 +501,10 @@ export function readCalls(src: string, where: string, functions: Map<string, Par
   return found;
 }
 
-function sourcesUnder(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(dir)) {
-    const p = join(dir, e);
-    if (statSync(p).isDirectory()) {
-      if (!['__tests__', 'test', 'node_modules', 'test-support'].includes(e)) sourcesUnder(p, out);
-    } else if (/\.(ts|tsx|js|jsx|mjs)$/.test(e) && !/\.(test|spec)\./.test(e)) out.push(p);
-  }
-  return out;
-}
-
 const tables = readSchema(SCHEMA);
 const functions = readFunctions(SCHEMA);
-const files = [
-  ...sourcesUnder(join(MOBILE, 'src')),
-  ...sourcesUnder(join(MOBILE, 'app')),
-  ...sourcesUnder(join(MOBILE, 'supabase', 'functions')),
-  ...sourcesUnder(join(REPO, 'src')),
-  ...sourcesUnder(join(REPO, 'api')),
-  ...sourcesUnder(join(REPO, 'supabase', 'functions')),
-];
+/** Every caller of the server: the app, the edge functions in both trees, and the website. */
+const files = universe(['appCode', 'functions', 'website']);
 
 describe('the schema snapshot is read whole', () => {
   it('knows the tables and the views, with their columns', () => {

@@ -8,8 +8,9 @@
  * it accepts. Then it reads every migration in both trees, so a syntax it
  * cannot follow fails here, not on the day a train needs it.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
+import { files as universe, repoRel } from '@/test-utils/universe';
 
 const { breaksIn, existingIn, functionFaults, reasonFault, statements } = require('../../../scripts/add-only.cjs') as {
   breaksIn: (sql: string, existing: ReturnType<typeof existingIn>) => { statement: string; kinds: string[]; reason: string }[];
@@ -121,15 +122,14 @@ it('reads every migration in both trees, and finds breaks in them — it can say
   expect(existing.functions.size).toBeGreaterThan(100);
   let read = 0;
   let found = 0;
-  for (const dir of ['supabase/migrations', 'mobile/supabase/migrations']) {
-    for (const f of readdirSync(join(ROOT, dir)).filter((n) => n.endsWith('.sql'))) {
-      const sql = readFileSync(join(ROOT, dir, f), 'utf8');
-      // A file of comments alone (one says "NOT LIVE") has nothing to read.
-      const hasCode = sql.split('\n').some((l) => l.trim() && !l.trim().startsWith('--'));
-      expect([f, statements(sql).length > 0]).toEqual([f, hasCode]);
-      found += breaksIn(sql, existing).length;
-      read++;
-    }
+  for (const path of universe('migrations')) {
+    const f = repoRel(path);
+    const sql = readFileSync(path, 'utf8');
+    // A file of comments alone (one says "NOT LIVE") has nothing to read.
+    const hasCode = sql.split('\n').some((l) => l.trim() && !l.trim().startsWith('--'));
+    expect([f, statements(sql).length > 0]).toEqual([f, hasCode]);
+    found += breaksIn(sql, existing).length;
+    read++;
   }
   expect(read).toBeGreaterThan(150);
   expect(found).toBeGreaterThan(50);

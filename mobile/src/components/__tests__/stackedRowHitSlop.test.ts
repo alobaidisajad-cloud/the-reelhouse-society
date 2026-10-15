@@ -12,9 +12,10 @@
  * render draws beside its neighbour, each saying why; MEASURED_NOW keeps the
  * moved rules' files in mockups/touch-measured.txt.
  */
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
 
@@ -239,18 +240,8 @@ const SWEEP_EXTRA = ['app/user/[username].tsx'];
  * a chip's vertical slop against its row's horizontal gap.
  */
 describe('the sweep: no repeated control may inherit the default halo', () => {
-  const files: string[] = [];
-  for (const dir of SWEEP_DIRS) {
-    const walk = (d: string) => {
-      for (const e of readdirSync(join(ROOT, d), { withFileTypes: true })) {
-        if (e.name === '__tests__') continue;
-        const rel = `${d}/${e.name}`;
-        if (e.isDirectory()) walk(rel);
-        else if (rel.endsWith('.tsx')) files.push(rel);
-      }
-    };
-    walk(dir);
-  }
+  const files = universe('appCode', { ext: ['.tsx'] }).map(rel)
+    .filter((f) => SWEEP_DIRS.some((d) => f.startsWith(`${d}/`)));
   files.push(...SWEEP_EXTRA);
 
   /**

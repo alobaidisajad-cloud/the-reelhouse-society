@@ -3,9 +3,8 @@
  * mount-time `entering` animations that stalled in the E2E only ever grow fewer.
  */
 import React from 'react';
-import { readdirSync, statSync } from 'fs';
-import { join } from 'path';
-import { MOBILE, readCode } from '@/test-utils/readCode';
+import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 import Animated, { withTiming } from 'react-native-reanimated';
 import { render } from '@testing-library/react-native';
 import { useArrival, ARRIVAL_GRACE_MS } from '../useArrival';
@@ -60,15 +59,7 @@ describe('mount-time entering animations', () => {
   const MOST = 91;
   it(`are exactly ${MOST}, and only fewer from here`, () => {
     let count = 0;
-    const walk = (dir: string) => {
-      for (const name of readdirSync(dir)) {
-        const p = join(dir, name);
-        if (statSync(p).isDirectory()) { if (name !== '__tests__' && name !== 'node_modules') walk(p); continue; }
-        if (/\.tsx$/.test(name)) count += (readCode(p).match(/\bentering=\{/g) ?? []).length;
-      }
-    };
-    walk(join(MOBILE, 'src'));
-    walk(join(MOBILE, 'app'));
+    for (const p of universe('appCode', { ext: ['.tsx'] })) count += (readCode(p).match(/\bentering=\{/g) ?? []).length;
     expect(count).toBe(MOST);
   });
 });

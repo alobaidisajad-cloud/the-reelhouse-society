@@ -22,9 +22,9 @@
  *                                                  case or finds nothing must fail
  */
 import { spawnSync } from 'node:child_process';
-import { readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import universe from '../../test-utils/universe.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MOBILE = join(HERE, '..', '..');
@@ -40,8 +40,8 @@ if (!/^(127\.0\.0\.1|localhost)$/.test(HOST)) {
   process.exit(2);
 }
 
-/** Every rehearsal in the folder, by name. */
-export const rehearsals = () => readdirSync(DIAGNOSTICS).filter((f) => f.endsWith('_rehearsal.sql')).sort();
+/** Every rehearsal test-utils/universe.js names, by its path from the diagnostics folder. */
+export const rehearsals = () => universe.files('rehearsals').map((f) => relative(DIAGNOSTICS, f).split(sep).join('/'));
 
 /** One file in its own psql, from mobile/; its exit status and everything it printed. */
 const psql = (url, file) => {

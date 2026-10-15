@@ -31,15 +31,16 @@ import { PaperFill } from '@/src/components/dispatch/paper/PaperFill';
 import { PaperStrike } from '@/src/components/dispatch/paper/PaperStrike';
 import { MS, EASE, STRIKE_SCALE, STAGGER_MS, PILL_Y } from '@/src/components/dispatch/paper/paperMotion';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const DIR = path.join(__dirname, '..', 'paper');
 
 /** Every paper component, comments stripped — a rule must not fail on its own explanation. */
-const sources = fs.readdirSync(DIR)
+const sources = universe('appCode', { under: ['src/components/dispatch/paper'] })
   .filter((f) => /\.tsx?$/.test(f))
   .map((f) => ({
-    name: f,
-    code: readCode(path.join(DIR, f)),
+    name: path.basename(f),
+    code: readCode(f),
   }));
 
 describe('the motion design is actually wired', () => {

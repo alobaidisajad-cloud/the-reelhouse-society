@@ -15,9 +15,9 @@
  * The sanitiser against each column's ceiling is dispatchFieldCaps', parsed from
  * the snapshot of production; this holds the box.
  */
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const ROOT = path.resolve(__dirname, '../../../..');
 
@@ -28,9 +28,8 @@ describe('the box may not be stricter than the column', () => {
   // would have been cut on its first edit. A box names its cap (MAX_LENGTHS,
   // held to its column by everyCapAnswersToItsColumn) or a named limit of its own.
   it('no input in the app hardcodes a LITERAL maxLength', () => {
-    const files = execFileSync('git', ['ls-files', 'app', 'src'], {
-      cwd: ROOT, encoding: 'utf8',
-    }).split('\n').filter((f) => /\.tsx$/.test(f) && !/__tests__/.test(f));
+    // Every file that can draw an input: JSX lives in .tsx.
+    const files = universe('appCode', { ext: ['.tsx'] }).map(rel);
 
     expect(files.length).toBeGreaterThan(200); // the app's screens were found
     expect(files).toContain('src/components/log/LogForm.tsx');

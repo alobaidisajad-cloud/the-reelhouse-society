@@ -7,27 +7,17 @@
  * The root layout is the one exception: its boundary replaces the providers
  * the house's net is drawn with (safe area, fonts), so it keeps expo-router's.
  */
-import * as fs from 'fs';
 import * as path from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const APP = path.join(__dirname, '..', '..', '..', 'app');
 const EXPORT = /export\s*\{\s*RouteErrorBoundary\s+as\s+ErrorBoundary\s*\}\s*from\s*'@\/src\/components\/RouteErrorBoundary'/;
 
-function routes(dir: string, out: string[] = []): string[] {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (e.name === '__tests__') continue;
-    const p = path.join(dir, e.name);
-    if (e.isDirectory()) routes(p, out);
-    else if (e.name.endsWith('.tsx')) out.push(path.relative(APP, p).split(path.sep).join('/'));
-  }
-  return out;
-}
-
 const ROOT = '_layout.tsx';
 
 describe('every route has its own crash net', () => {
-  const all = routes(APP);
+  const all = universe('routes').filter((p) => !p.endsWith('.d.ts')).map((p) => path.relative(APP, p).split(path.sep).join('/'));
 
   it('finds the routes it is about', () => {
     expect(all).toEqual(expect.arrayContaining(['film/[id].tsx', '(tabs)/index.tsx', '(modals)/log-modal.tsx', ROOT]));

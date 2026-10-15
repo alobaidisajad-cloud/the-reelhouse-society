@@ -18,8 +18,9 @@
  *
  * Parsed as YAML, not matched as text: the rules are about the structure.
  */
-import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
+import { join, relative } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 // The Node build, by file: this project's Jest resolves packages the way a
 // phone would (the `browser` condition), and yaml's browser build is ESM.
@@ -33,7 +34,7 @@ const LOCAL_CALL = /^\.\/\.github\/workflows\/[\w-]+\.ya?ml$/;
 const calls = (job: Job) => typeof job.uses === 'string' && LOCAL_CALL.test(job.uses);
 type Workflow = { name: string; on: Record<string, unknown> | string | string[]; jobs: Record<string, Job> };
 
-const files = readdirSync(DIR).filter((f) => /\.ya?ml$/.test(f));
+const files = universe('workflows').map((f) => relative(DIR, f));
 const workflows = files.map((f) => {
   const text = readFileSync(join(DIR, f), 'utf8');
   return { file: f, text, wf: parse(text) as Workflow };

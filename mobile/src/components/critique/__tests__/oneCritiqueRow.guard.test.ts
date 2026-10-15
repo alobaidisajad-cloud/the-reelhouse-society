@@ -10,20 +10,16 @@
  * does it through CritiqueRow, and nowhere else. (The Dispatch's paper sets its
  * critiques in its own type, and says "this critique", not these.)
  */
-import { execFileSync } from 'node:child_process';
-import path from 'node:path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe, rel } from '@/test-utils/universe';
 
-const ROOT = path.resolve(__dirname, '../../../..');
 const HOME = 'src/components/critique/CritiqueRow.tsx';
 
 /** What only a critique row says: its WITHDRAW's spoken name, and its REPORT's. */
 const MARKS = ["'Withdraw your critique'", '"Withdraw your critique"', 'Report this critique by @${'];
 
 // Files not yet committed too: a new copy is caught before it is.
-const sources = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', 'src', 'app'], { cwd: ROOT, encoding: 'utf8' })
-  .split('\n')
-  .filter((f) => /\.tsx?$/.test(f) && !/__tests__|\.test\./.test(f));
+const sources = universe('appCode').filter((f) => !f.endsWith('.d.ts')).map(rel);
 
 // As code: a comment that only mentions the row is not a row.
 const drawing = (f: string) => {

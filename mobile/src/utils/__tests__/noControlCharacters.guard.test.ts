@@ -11,39 +11,26 @@
  * Source code has no business holding any C0 control character except tab,
  * newline and carriage return. Any other one is damage.
  */
-import { readdirSync, readFileSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
-const SCAN = ['app', 'src', 'scripts', 'supabase', 'mockups', '__tests__', 'test-utils', 'e2e'];
-const OUT = join(ROOT, 'mockups', 'out');
 // TMDB's answers, recorded verbatim (for the E2E world and the mockups): data, whose own characters are kept.
-const RECORDINGS = [
-  join(ROOT, 'e2e', 'supabase', 'functions', 'tmdb-proxy', 'fixtures'),
-  join(ROOT, 'mockups', 'fixtures'),
-];
+// The E2E world's recordings are in no universe; the mockups' are left out here.
+const RECORDINGS = join(ROOT, 'mockups', 'fixtures');
 
-function files(dir: string): string[] {
-  const out: string[] = [];
-  let names: string[] = [];
-  try { names = readdirSync(dir); } catch { return out; }
-  for (const name of names) {
-    if (name === 'node_modules' || name.startsWith('.')) continue;
-    const p = join(dir, name);
-    // mockups/out is drawn output (git-ignored), rewritten while a drawing run is live —
-    // not source, and a file listed here can be gone by the time it is read.
-    if (p === OUT || RECORDINGS.includes(p)) continue;
-    if (statSync(p).isDirectory()) out.push(...files(p));
-    else if (/\.(tsx?|jsx?|cjs|mjs|sql|json|md)$/.test(name)) out.push(p);
-  }
-  return out;
-}
+/** Every text file a person writes; mockups/out, drawn output, is in no universe. */
+const files = () => universe([
+  'appCode', 'appTests', 'tests', 'testSupport', 'scripts', 'config', 'mockups',
+  'supabaseSql', 'functions', 'standIns', 'flows', 'workflows', 'docs',
+]).filter((p) => /\.(tsx?|jsx?|cjs|mjs|sql|json|md|ya?ml|sh)$/.test(p) && !p.startsWith(RECORDINGS));
 
 // Every C0 control except TAB (9), LF (10) and CR (13), and DEL (127).
 const DAMAGE = new Set([...Array(32).keys()].filter((c) => c !== 9 && c !== 10 && c !== 13).concat(127));
 
 describe('no source file carries a raw control character', () => {
-  const all = SCAN.flatMap((d) => files(join(ROOT, d)));
+  const all = files();
 
   it('scans the tree (a scan of nothing proves nothing)', () => {
     expect(all.length).toBeGreaterThan(500);

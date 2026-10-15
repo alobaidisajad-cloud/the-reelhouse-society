@@ -23,9 +23,10 @@
  * An exemption that no longer matches anything small FAILS: an entry for a
  * label that has since grown is a door left open for the next one to shrink.
  */
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { stripComments } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const FLOOR = 10;
@@ -81,19 +82,10 @@ const BADGE = new Set([
 ]);
 
 function sources(): { file: string; src: string }[] {
-  const out: { file: string; src: string }[] = [];
-  const walk = (dir: string) => {
-    for (const d of readdirSync(dir, { withFileTypes: true })) {
-      const p = join(dir, d.name);
-      if (d.isDirectory()) { if (!['node_modules', '__tests__', '__mocks__'].includes(d.name)) walk(p); }
-      else if (/\.tsx?$/.test(d.name) && !/\.test\./.test(d.name)) {
-        out.push({ file: relative(ROOT, p).split(sep).join('/'), src: readFileSync(p, 'utf8').replace(/\r\n/g, '\n') });
-      }
-    }
-  };
-  walk(join(ROOT, 'app'));
-  walk(join(ROOT, 'src'));
-  return out;
+  return universe('appCode').map((p) => ({
+    file: relative(ROOT, p).split(sep).join('/'),
+    src: readFileSync(p, 'utf8').replace(/\r\n/g, '\n'),
+  }));
 }
 
 /** The name of the style object enclosing index i: `name: {` or `(inline)`. */

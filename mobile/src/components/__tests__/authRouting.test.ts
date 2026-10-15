@@ -22,26 +22,15 @@
 import fs from 'fs';
 import path from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
-const SCAN = ['app', 'src'];
 
 /** Copy that offers to create an account, rather than to sign in. */
 const PROMISES_MEMBERSHIP = /SEEK ADMISSION|REQUEST MEMBERSHIP|REQUEST ADMISSION|JOIN THE SOCIETY/i;
 
 /** Copy that correctly means "sign in" — these must NOT carry action:signup. */
 const PROMISES_SIGN_IN = /IDENTIFY YOURSELF|ALREADY A MEMBER/i;
-
-function walk(dir: string, out: string[] = []): string[] {
-    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) {
-            if (e.name === 'node_modules' || e.name === '__tests__') continue;
-            walk(full, out);
-        } else if (e.name.endsWith('.tsx')) out.push(full);
-    }
-    return out;
-}
 
 /**
  * Every tappable, with the copy inside it.
@@ -66,7 +55,8 @@ function tappables(src: string): { block: string }[] {
     return out;
 }
 
-const files = SCAN.flatMap((d) => walk(path.join(ROOT, d)));
+/** Every file that can hold a tappable: JSX lives in .tsx. */
+const files = universe('appCode', { ext: ['.tsx'] });
 
 describe('a gate opens the form its label promises', () => {
     it('finds tappables at all (guards against the scan silently breaking)', () => {

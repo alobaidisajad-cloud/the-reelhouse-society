@@ -7,8 +7,9 @@
  * functions:check` compares the list with what is deployed; this keeps the
  * list honest about the folders.
  */
-import { existsSync, readdirSync } from 'fs';
+import { existsSync } from 'fs';
 import { join } from 'path';
+import { files as universe, repoRel } from '@/test-utils/universe';
 
 const fns = require('../../../scripts/edge-functions.cjs') as {
   WEB: string;
@@ -19,10 +20,11 @@ const fns = require('../../../scripts/edge-functions.cjs') as {
 };
 
 const REPO = join(__dirname, '..', '..', '..', '..');
+/** The function folders in one tree, from every edge function file test-utils/universe.js names. */
 const folders = (dir: string) =>
-  readdirSync(join(REPO, dir), { withFileTypes: true })
-    .filter((e) => e.isDirectory() && !e.name.startsWith('_') && !e.name.startsWith('.'))
-    .map((e) => e.name);
+  [...new Set(universe('functions').map(repoRel).filter((r) => r.startsWith(`${dir}/`))
+    .map((r) => r.slice(dir.length + 1).split('/')[0]))]
+    .filter((n) => !n.startsWith('_') && !n.startsWith('.'));
 
 const listed = { ...fns.DEPLOYED, ...fns.NOT_DEPLOYED };
 

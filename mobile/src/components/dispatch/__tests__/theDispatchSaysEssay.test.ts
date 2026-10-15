@@ -16,21 +16,16 @@
  * `compose.tsx` told a member "This dossier is 200 characters over the limit",
  * because a toast is prose and the sweep was looking at labels.
  */
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { stripComments } from '@/test-utils/readCode';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const ROOT = path.resolve(__dirname, '../../../..');
 
 /** Every source file that IS the Dispatch, tests excluded. */
 const dispatchFiles = (): string[] =>
-  execFileSync('git', ['ls-files', 'app/dispatch', 'src/components/dispatch'], {
-    cwd: ROOT,
-    encoding: 'utf8',
-  })
-    .split('\n')
-    .filter((f) => /\.(ts|tsx)$/.test(f) && !/__tests__|\.test\./.test(f));
+  universe('appCode', { ext: ['.ts', '.tsx'], under: ['app/dispatch', 'src/components/dispatch'] }).map(rel);
 
 /**
  * Quoted runs that read like PROSE — containing whitespace or ending a

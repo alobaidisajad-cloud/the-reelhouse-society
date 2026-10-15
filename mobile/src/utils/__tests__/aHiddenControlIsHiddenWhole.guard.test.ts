@@ -8,20 +8,11 @@
  * house form is "no-hide-descendants" (the Concierge's backdrop): the backdrop
  * closes the sheet for a finger, and a screen reader has the sheet's named Close.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
-
-const files = (dir: string, out: string[] = []): string[] => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.isDirectory()) {
-      if (!['node_modules', '__tests__', '.expo'].includes(e.name)) files(full, out);
-    } else if (e.name.endsWith('.tsx')) out.push(full);
-  }
-  return out;
-};
 
 /** Every opening tag of a pressable, read to its closing `>` at brace depth 0. */
 export function pressableTags(src: string): string[] {
@@ -53,7 +44,8 @@ it('reads a tag whole, arrow functions and all', () => {
 
 it('no pressable in the app is hidden by halves', () => {
   const found: string[] = [];
-  const all = [...files(join(ROOT, 'src')), ...files(join(ROOT, 'app'))];
+  // Every file that can draw a pressable: JSX lives in .tsx.
+  const all = universe('appCode', { ext: ['.tsx'] });
   expect(all.length).toBeGreaterThan(200); // the app was read, so none found means none
   for (const f of all) {
     const src = readFileSync(f, 'utf8');

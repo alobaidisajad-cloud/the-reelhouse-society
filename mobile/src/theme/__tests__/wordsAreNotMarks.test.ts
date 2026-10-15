@@ -30,9 +30,10 @@
  * lands (the index entry, the strength meter, lounge settings, the clearance
  * gates); the rendered-screen contrast sweep is the standing backstop.
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { colors } from '../theme';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const SCAN = ['src', 'app'];
@@ -90,14 +91,9 @@ const MARKS: Record<string, string> = {
   'app/(modals)/list-modal.tsx · animatedIconProps': 'the search icon’s ember',
 };
 
-function walk(dir: string, out: string[] = []): string[] {
-  for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
-    if (['node_modules', '__tests__', '__mocks__', 'mockups'].includes(e.name)) continue;
-    const rel = `${dir}/${e.name}`;
-    if (e.isDirectory()) walk(rel, out);
-    else if (/\.tsx?$/.test(e.name) && !/\.test\./.test(e.name)) out.push(rel);
-  }
-  return out;
+/** The app's files under one of its folders, as paths from mobile/. */
+function walk(dir: string): string[] {
+  return universe('appCode', { under: [dir] }).map(rel);
 }
 
 /** What a `color:` at (line, col) belongs to — see MARKS for the naming. */

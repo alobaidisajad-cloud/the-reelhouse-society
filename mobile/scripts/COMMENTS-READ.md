@@ -11,9 +11,9 @@ without one). "Read" is the day its comments were last read against its code.
 
 | File | Read | What changed |
 |---|---|---|
-| __tests__/animationMockCoverage.test.ts | — |  |
-| __tests__/backendContract.test.ts | — |  |
-| __tests__/colorLock.test.ts | — |  |
+| __tests__/animationMockCoverage.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| __tests__/backendContract.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| __tests__/colorLock.test.ts | 2026-10-15 | edited: the app universe (test-utils/universe.js), its .js files included |
 | __tests__/components/feed/ActivityCard.test.tsx | 2026-10-01 | the poster says its film; the card lies flat |
 | __tests__/deletionIntegrity.test.ts | — |  |
 | __tests__/integration/errorBoundaryRecovery.test.tsx | — |  |
@@ -27,15 +27,15 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/InteractionService.test.ts | 2026-10-03 | rewritten whole: only the two kinds that exist |
 | __tests__/interpolateMock.test.ts | — |  |
 | __tests__/moderationActs.test.ts | — |  |
-| __tests__/notificationsMockCoverage.test.ts | — |  |
-| __tests__/schemaLengthCaps.test.ts | 2026-10-03 | edited: the salon box names its cap; a typed number is refused |
-| __tests__/searchPathHardening.test.ts | — |  |
+| __tests__/notificationsMockCoverage.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| __tests__/schemaLengthCaps.test.ts | 2026-10-15 | edited: reads both migration trees; a CHECK under any name that bounds the length counts |
+| __tests__/searchPathHardening.test.ts | 2026-10-15 | edited: reads both migration trees, the root one the CLI applies included |
 | __tests__/store.test.ts | — |  |
 | __tests__/stores/archiveSlice.test.ts | 2026-10-03 | edited: a shelf filing sends no note or condition; the server's formats win |
 | __tests__/stores/filmStore.test.ts | — |  |
 | __tests__/stores/listSlice.test.ts | 2026-10-15 | edited: a stack's posters fetched ahead in one call, to disk |
 | __tests__/stores/socialSlice.test.ts | — |  |
-| __tests__/tmdbMockCoverage.test.ts | — |  |
+| __tests__/tmdbMockCoverage.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | __tests__/utils/mappers.test.ts | — |  |
 | __tests__/utils/mutationExecutor.test.ts | 2026-10-03 | edited: the duplicate merge is a server rewatch under the device viewing id; the insert keeps it |
 | __tests__/utils/offlineQueue.test.ts | 2026-10-15 | edited: a member is signed in; the clear names who leaves |
@@ -143,15 +143,15 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/anonKey.test.ts | 2026-10-15 | new: the key made without a stack is the CLI's published one (by its sha256), from claims that never change; a config that sets the secret says no |
 | e2e/__tests__/glideLogLevel.test.ts | 2026-10-08 | written with glide-log-level.mjs, on dexdump lines in the shape of runs 37628665206 and 37674283540 |
 | e2e/__tests__/iosLaunch.test.ts | 2026-10-15 | the iPhone launch verdict shown saying no to each way a launch fails |
-| e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
+| e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe; its files come from the shared file list (test-utils/universe.js) |
 | e2e/__tests__/oldClients.test.ts | 2026-10-15 | new |
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
 | e2e/__tests__/prefetchDownloadOnly.test.ts | 2026-10-15 | new: written with prefetch-download-only.mjs, on dexdump lines in the glide check's shape |
 | e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: one shard runs only its flows, the probes and the launch where the map puts them, an unmapped flow in the last; no shard, the whole run |
 | e2e/__tests__/runtimeDump.test.ts | 2026-10-15 | new: the runtime's parts joined per launch, held to the copy, and every way it says no |
-| e2e/__tests__/screenTimes.test.ts | 2026-10-15 | edited: one shard records its screens and leaves the never-reported rule to the verdict |
+| e2e/__tests__/screenTimes.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | e2e/__tests__/shardVerdict.test.ts | 2026-10-15 | new: says no to a ceiling no shard reported, a missing or unfinished shard, a flow run twice or never; the verdict job fails with a failed shard |
-| e2e/__tests__/shards.test.ts | 2026-10-15 | new: every flow in one shard, e2e.yml's count the map's; says no to a missing flow, one in two shards, an unknown name |
+| e2e/__tests__/shards.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | e2e/__tests__/seed.rehearsal.test.ts | 2026-10-15 | new: the real seed against a fake Supabase that keeps the filing's door |
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | edited: the ports reserved and waited for, against a fake kernel |
@@ -165,10 +165,10 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/advisers.mjs | 2026-10-15 | new: supabase db advisors on the sealed copy with the API's schemas set, judged against the allowlist, names and counts only; --self-test plants a table without row security |
 | e2e/db/bootstrap.mjs | 2026-10-15 | edited: a default naming no schema is changed by its own role, supabase_admin's in 4c |
 | e2e/db/old-clients.mjs | 2026-10-15 | new; edited: only its schema tests can say a client breaks; one not set up is unchecked, by step; its install tried twice |
-| e2e/db/rehearsals.mjs | 2026-10-15 | new: seeds the made-up house, runs every *_rehearsal.sql as postgres, fails naming each that missed; --self-test proves the verdict can fail |
+| e2e/db/rehearsals.mjs | 2026-10-15 | new: seeds the made-up house, runs every *_rehearsal.sql as postgres, fails naming each that missed; --self-test proves the verdict can fail; the rehearsals from the shared file list (test-utils/universe.js) |
 | e2e/db/seal.sh | 2026-10-03 | Written in the tooling audit: the seal e2e.yml and load.yml each carried, in one place for three workflows. |
 | e2e/db/seed.mjs | 2026-10-15 | edited: the member is made able to file, and files, logs and stacks as themself, each read back |
-| e2e/db/up-down-up.mjs | 2026-10-15 | new |
+| e2e/db/up-down-up.mjs | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-writes.mjs | 2026-10-15 | edited: on one shard, only the flows run-flows.sh listed |
@@ -189,7 +189,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/shards.mjs | 2026-10-15 | new: one shard's plan from e2e/shards.json; an unmapped flow runs in the last, said |
 | e2e/start-stack.sh | 2026-10-15 | edited: the stack's ports reserved from the machine's own connections, and waited for |
 | plugins/__tests__/withoutDevLauncherScanner.test.ts | 2026-10-15 | new: through withAndroidManifest, read back as XML; the entry read from the installed expo-dev-launcher's manifest |
-| plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it |
+| plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it; its files come from the shared file list (test-utils/universe.js) |
 | plugins/withoutDevLauncherScanner.js | 2026-10-15 | new: read against expo-dev-launcher 6.0's main and debug manifests and ML Kit's install-time model download |
 | plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
@@ -235,11 +235,11 @@ without one). "Read" is the day its comments were last read against its code.
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
 | register/classes.yaml | 2026-10-15 | edited: RN-react-destroyed-on-mount; the three classes held by the frozen counts |
 | scripts/__tests__/commit.test.ts | 2026-10-15 | new |
-| scripts/add-only.cjs | 2026-10-15 | new |
-| scripts/bundle-size.js | 2026-10-15 | edited: --keep leaves the export for release-guard.cjs |
-| scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route) |
-| scripts/check-backend-live.mjs | 2026-10-15 | edited: the address is read from, and saved to, the private settings file outside the repo and OneDrive |
-| scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added |
+| scripts/add-only.cjs | 2026-10-15 | new; a migration by its kind (test-utils/universe.js); SQL no rule names is refused |
+| scripts/bundle-size.js | 2026-10-15 | edited: --keep leaves the export for release-guard.cjs; read whole: sound |
+| scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route); its files come from the shared file list (test-utils/universe.js) |
+| scripts/check-backend-live.mjs | 2026-10-15 | edited: the address is read from, and saved to, the private settings file outside the repo and OneDrive; its files come from the shared file list (test-utils/universe.js) |
+| scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added; its files come from the shared file list (test-utils/universe.js) |
 | scripts/commit.cjs | 2026-10-15 | new: a commit of exactly the paths named; nothing staged before rides along |
 | scripts/coverage-ratchet.js | 2026-09-29 | the header's why-stories reduced to the rule |
 | scripts/dump-production.cjs | 2026-10-15 | new |
@@ -247,15 +247,15 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/edge-functions.cjs | 2026-10-03 | paytabs-handler NOT_DEPLOYED, with why (it granted any rank to a posted "paid" message) |
 | scripts/frozen-counts.cjs | 2026-10-15 | new; edited: tsc first, so the typed lint never holds its program beside it |
 | scripts/functions-check.mjs | 2026-10-03 | compares every file a deploy bundles, _shared included, each function in its own folder; a listed exception is reported once |
-| scripts/gates-check.js | 2026-10-15 | edited: the address comes from the private settings file |
+| scripts/gates-check.js | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
 | scripts/hooks/commit-msg.cjs | 2026-10-15 | new |
 | scripts/hooks/pre-commit.cjs | 2026-10-15 | new |
 | scripts/hooks/pre-push.cjs | 2026-10-15 | edited: jest leaves out only the worktrees inside this checkout, so a worktree runs its own tests; workers sized to the free memory; no frozen count raised in its baseline, and every count the changes can move measured whole |
 | scripts/hooks-ran.cjs | 2026-10-15 | new |
 | scripts/install-hooks.cjs | 2026-10-15 | new |
-| scripts/lucide-icons.js | 2026-10-03 | read whole: sound |
-| scripts/migration-lint.cjs | 2026-10-15 | new |
+| scripts/lucide-icons.js | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| scripts/migration-lint.cjs | 2026-10-15 | edited: reads a file by its kind (test-utils/universe.js); the archive is not read; SQL no rule names is refused |
 | scripts/private-settings.cjs | 2026-10-15 | new |
 | scripts/register.cjs | 2026-10-15 | new |
 | scripts/release-guard.cjs | 2026-10-15 | new: read against expo-dev-client's scheme plugins, expo-router's sitemap switch, expo-constants' getAppConfig, the Expo template's Info.plist and a production export's strings |
@@ -265,38 +265,38 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/surface-jest-failure.sh | 2026-10-03 | read whole: sound |
 | scripts/test-timezones.js | 2026-09-29 | the batch story reduced to the fact it guards |
 | scripts/website-freeze.cjs | 2026-10-15 | new |
-| src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-02 | Written in the launch audit: no two modules export a component under one name. |
+| src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
-| src/components/__tests__/aTabDrawsItsIconOnce.test.tsx | 2026-10-15 | true as written |
+| src/components/__tests__/aTabDrawsItsIconOnce.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
 | src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: the lids lie beside the picture, outside the points’ layer, over the whole figure; the still one shows whole |
-| src/components/__tests__/busterRegister.test.ts | 2026-10-04 | edited: every layer of every picture, at every density |
-| src/components/__tests__/theHouseSignsWithItsLogo.test.tsx | 2026-10-15 | true as written |
+| src/components/__tests__/busterRegister.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/components/__tests__/theHouseSignsWithItsLogo.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/theInitiationLeavesAfterItsFade.test.tsx | 2026-10-15 | new: a beat and the door leave after their fade |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
 | src/components/__tests__/ActionDeck.test.tsx | 2026-10-01 | rendered: owner, certify, save, stranger |
-| src/components/__tests__/animation-parking.test.ts | — |  |
+| src/components/__tests__/animation-parking.test.ts | 2026-10-15 | edited: the whole app, its hooks included; a focus flag handed to a hook parks a loop |
 | src/components/__tests__/aRatingCanBeGivenWithoutSight.test.tsx | — |  |
 | src/components/__tests__/aScreenThatFailsLetsYouLeave.test.tsx | — |  |
-| src/components/__tests__/authRouting.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/__tests__/authRouting.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/ControlledInput.test.tsx | 2026-10-03 | edited: the counter reads the bio's cap |
 | src/components/__tests__/EmptyStates.test.tsx | — |  |
 | src/components/__tests__/ErrorBoundary.test.tsx | — |  |
 | src/components/__tests__/OfflineBanner.test.tsx | 2026-10-15 | the frame in the safe-area mock; the banner leaves after its rise |
-| src/components/__tests__/oneRankMark.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/__tests__/overlayElevation.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/__tests__/oneRankMark.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/components/__tests__/overlayElevation.test.ts | 2026-10-15 | edited: the whole app, src/features and src/hooks included |
 | src/components/__tests__/PressableScale.hitSlop.test.tsx | — |  |
 | src/components/__tests__/SectionErrorBoundary.test.tsx | — |  |
 | src/components/__tests__/SpoilerVeil.test.tsx | 2026-10-01 | records every frame |
-| src/components/__tests__/stackedRowHitSlop.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/__tests__/textContrast.test.ts | — |  |
-| src/components/__tests__/theCountHangsBesideItsMark.test.tsx | — |  |
+| src/components/__tests__/stackedRowHitSlop.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/components/__tests__/textContrast.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/components/__tests__/theCountHangsBesideItsMark.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/theDoorCanBeReadAndPressed.test.tsx | — |  |
 | src/components/__tests__/theRankBadgeIsReadable.test.ts | — |  |
 | src/components/__tests__/theShareSheetSaysWhenTheSalonsAreAway.test.tsx | 2026-10-01 | salons, selection, closed cost, crash copy |
 | src/components/__tests__/theToastHasOneHome.test.tsx | — |  |
-| src/components/__tests__/theToastIsDrawnOnTop.test.ts | — |  |
+| src/components/__tests__/theToastIsDrawnOnTop.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/atmosphere/__tests__/useSharedImage.test.tsx | — |  |
 | src/components/atmosphere/RoomBloom.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/atmosphere/RoomLight.tsx | 2026-10-08 | the room drawn as one native background (roomLightImage); no SVG |
@@ -314,7 +314,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/clearance/Clearance.tsx | 2026-10-01 | show it, locked; a second copy lives in the log (carried forward) |
 | src/components/ControlledInput.tsx | 2026-10-03 | edited: the bio's default limit is the bio's cap |
 | src/components/critique/__tests__/aCritiqueIsWithdrawnOrReported.test.tsx | 2026-10-01 | new |
-| src/components/critique/__tests__/oneCritiqueRow.guard.test.ts | 2026-09-30 | written with the shared critique row |
+| src/components/critique/__tests__/oneCritiqueRow.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/critique/CritiqueRow.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
 | src/components/critique/withdraw.ts | 2026-10-01 | new: the one question before a critique comes off the page |
 | src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx | 2026-09-29 | new |
@@ -330,7 +330,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/DarkroomMoodBar.tsx | 2026-10-02 | keys; selected as a state; meaning spoken |
 | src/components/Decorative.tsx | 2026-10-15 | reelsWidth: a rating's drawn width, for the Lobby's arithmetic |
 | src/components/dispatch/__tests__/aBallotsClosingTimes.test.ts | 2026-09-29 | new |
-| src/components/dispatch/__tests__/aControlsNameCanBeRead.test.ts | — |  |
+| src/components/dispatch/__tests__/aControlsNameCanBeRead.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/aDeskControlNeverAnswersWithNothing.test.tsx | 2026-09-29 | new |
 | src/components/dispatch/__tests__/aDossierHasACover.test.tsx | — |  |
 | src/components/dispatch/__tests__/aDraftSurvivesThePhone.test.tsx | — |  |
@@ -341,22 +341,22 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/ballotDesk.test.tsx | — |  |
 | src/components/dispatch/__tests__/composeScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/dayLabel.test.ts | — |  |
-| src/components/dispatch/__tests__/dispatchNoDeadControls.test.ts | — |  |
+| src/components/dispatch/__tests__/dispatchNoDeadControls.test.ts | 2026-10-15 | edited: every Dispatch component and screen, from the shared file list |
 | src/components/dispatch/__tests__/duplicateRows.test.tsx | — |  |
 | src/components/dispatch/__tests__/essayBody.test.tsx | 2026-10-04 | edited: a right-to-left opening raises no letter |
 | src/components/dispatch/__tests__/everyCardSaysSomething.test.tsx | — |  |
 | src/components/dispatch/__tests__/everyLeadInIsAccountedFor.test.ts | — |  |
-| src/components/dispatch/__tests__/everyRuleIsTrue.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/dispatch/__tests__/everyTextHasACeiling.test.ts | — |  |
+| src/components/dispatch/__tests__/everyRuleIsTrue.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/components/dispatch/__tests__/everyTextHasACeiling.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/excerpt.test.ts | — |  |
-| src/components/dispatch/__tests__/feedRowIsRecyclable.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/dispatch/__tests__/feedRowIsRecyclable.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/feedScreen.test.tsx | 2026-10-15 | edited: a failed page tells the E2E so, and shows no filing for a flow to find |
-| src/components/dispatch/__tests__/motionLaws.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/dispatch/__tests__/motionLaws.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/noIntlInTheDispatch.test.ts | — |  |
 | src/components/dispatch/__tests__/nothingIsLostQuietly.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/dispatch/__tests__/nothingLivesOnlyInTheMockups.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/dispatch/__tests__/oneCapNotThree.test.ts | 2026-10-03 | read whole: no box in the app types its own limit |
-| src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/dispatch/__tests__/nothingLivesOnlyInTheMockups.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/components/dispatch/__tests__/oneCapNotThree.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/paperTextLogic.test.ts | 2026-10-03 | edited: hidden characters written as escapes |
 | src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-10-03 | the sixty-critique page has its own 10 s limit (failed a busy full run at 5 s) |
 | src/components/dispatch/__tests__/roomScreen.test.tsx | — |  |
@@ -364,10 +364,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/seriesScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/signedOutHasNoInertControls.test.tsx | — |  |
 | src/components/dispatch/__tests__/spokenAloud.test.tsx | — |  |
-| src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/theDeskCountsAsTheReaderDoes.test.tsx | 2026-10-03 | new: the desk's minutes are readTime's |
 | src/components/dispatch/__tests__/theDispatchAtItsLimits.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
-| src/components/dispatch/__tests__/theDispatchSaysEssay.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/dispatch/__tests__/theDispatchSaysEssay.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/theDoorIsShown.test.tsx | — |  |
 | src/components/dispatch/__tests__/theDraftIsTheWholePiece.test.tsx | — |  |
 | src/components/dispatch/__tests__/theEssayAtLargeType.test.tsx | — |  |
@@ -386,7 +386,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theSetOfTheType.test.tsx | 2026-10-04 | edited: an opening quote rides up with the raised initial |
 | src/components/dispatch/__tests__/theWritingRoomExplainsItself.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx | — |  |
-| src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/ComposeDesks.tsx | 2026-10-15 | the pickers stand on the edge (useBottomEdge) |
 | src/components/dispatch/dayLabel.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/EssayBody.tsx | 2026-10-04 | edited: no letter is raised from a right-to-left opening |
@@ -430,7 +430,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/filmStubMetrics.test.ts | 2026-10-15 | edited: the dock stands on bottomEdge |
 | src/components/film/__tests__/filmVerdict.test.tsx | — |  |
 | src/components/film/__tests__/footageRailFits.test.ts | — |  |
-| src/components/film/__tests__/oneBrass.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/film/__tests__/oneBrass.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/film/__tests__/pickCertificate.test.ts | — |  |
 | src/components/film/__tests__/stubFits.test.ts | — |  |
 | src/components/film/__tests__/trayActsFire.test.tsx | — |  |
@@ -462,15 +462,15 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/home/VelvetRopeCTA.tsx | 2026-10-03 | read whole: its sheen moved to theme/BrassSheen |
 | src/components/InitiationModal.tsx | 2026-10-15 | beats cross-fade and the door closes through Presence; the card in a CentredCard |
 | src/components/KeyboardRoom.tsx | 2026-10-01 | written: the keyboard's room on Android |
-| src/components/layout/__tests__/aCentredCardScrollsAtTheLargestText.test.tsx | 2026-10-15 | new: every centred card in a Modal scrolls in one room at x3.1; every Modal named with its kind; each list read through one() or firstOf(), which say what they found |
+| src/components/layout/__tests__/aCentredCardScrollsAtTheLargestText.test.tsx | 2026-10-15 | new: every centred card in a Modal scrolls in one room at x3.1; every Modal named with its kind; each list read through one() or firstOf(), which say what they found; its files come from the shared file list (test-utils/universe.js) |
 | src/components/layout/__tests__/aCentredPageScrollsAtTheLargestText.test.tsx | 2026-10-15 | new: every centred page scrolls in one room at x3.1 |
 | src/components/layout/__tests__/aSectionIsAHeading.test.tsx | 2026-10-01 | written: a section title is a heading |
 | src/components/layout/__tests__/aSwipeBackIsHeard.test.tsx | 2026-10-02 | nav's history hears the swipe back |
 | src/components/layout/__tests__/ConciergeButton.test.tsx | — |  |
-| src/components/layout/__tests__/everyListChoosesItsAnchor.guard.test.ts | 2026-09-29 | new |
+| src/components/layout/__tests__/everyListChoosesItsAnchor.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/layout/__tests__/everyModalAndOverlayStartsAtItsTop.test.tsx | 2026-10-15 | new: modals and overlays at three insets, both platforms |
 | src/components/layout/__tests__/everyModalSheetAndOverlayEndsAboveItsFoot.test.tsx | 2026-10-15 | new: every modal, sheet and overlay foot, at 0, 21 and 34 |
-| src/components/layout/__tests__/everyPushedHeaderStartsAtItsTop.test.tsx | 2026-10-15 | new: every pushed route at three insets |
+| src/components/layout/__tests__/everyPushedHeaderStartsAtItsTop.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/layout/__tests__/everyPushedScreenEndsAboveItsFoot.test.tsx | 2026-10-15 | new: every pushed route's foot, at 0, 21 and 34 |
 | src/components/layout/__tests__/everyTabEndsAboveTheTabBar.test.tsx | 2026-10-15 | new: every tab ends above the tab bar, at 0, 21 and 34 |
 | src/components/layout/__tests__/everyTabStartsBelowTheBar.test.tsx | 2026-10-15 | new: every tab under the bar, built and measured; each sets the bar’s tint as it arrives |
@@ -491,7 +491,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/SectionCards.tsx | 2026-10-01 | a section title is a heading |
 | src/components/layout/TopNavBar.tsx | 2026-10-15 | measures itself into navMetrics |
 | src/components/lobby/__tests__/theQuoteMarkIsTheFontsOwn.test.ts | 2026-10-15 | new |
-| src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-10-15 | edited: lobby-wall-hung only on a wall the house read, vacant too |
+| src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-10-15 | edited: lobby-wall-hung only on a wall the house read, vacant too; its files come from the shared file list (test-utils/universe.js) |
 | src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-09-30 | new |
 | src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-01 | both doors, every pull |
 | src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-10-15 | the pair side by side on every phone and text size; setLines, wholeName, filmLine |
@@ -579,12 +579,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/MarkFigure.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/MasterLogo.tsx | 2026-10-02 | Read (launch audit): artwork. Left alone. |
 | src/components/moderation/__tests__/ContentActionSheet.mute.test.tsx | — |  |
-| src/components/moderation/__tests__/everyModerationRowActs.guard.test.ts | 2026-10-03 | Written in the test-reading pass: every BLOCK, MUTE, UNBLOCK and UNMUTE handler given to the moderation sheet performs its act (the Dispatch reader's BLOCK blocked no one). |
+| src/components/moderation/__tests__/everyModerationRowActs.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/moderation/__tests__/ReportSheet.test.tsx | — |  |
-| src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/moderation/ContentActionSheet.tsx | 2026-10-15 | foot from useSheetBottom |
 | src/components/moderation/ReportSheet.tsx | 2026-10-15 | foot from useSheetBottom |
-| src/components/motion/__tests__/exitingIsNeverUsed.guard.test.ts | 2026-10-15 | new: no JSX `exiting` in app/ or src/, proven on a fixture |
+| src/components/motion/__tests__/exitingIsNeverUsed.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/motion/__tests__/fixtures/exiting.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
 | src/components/motion/__tests__/Presence.test.tsx | 2026-10-15 | new: kept through its exit, removed after; reduced motion at once; frame, order, nesting |
 | src/components/motion/Presence.tsx | 2026-10-15 | new: a view plays its exit and is removed by state; Reanimated `exiting` is never used |
@@ -614,7 +614,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/heroNameSize.test.ts | — |  |
 | src/components/profile/__tests__/hideStatsRemoved.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/holdingsFit.test.ts | — |  |
-| src/components/profile/__tests__/memberFile.test.tsx | 2026-10-15 | edited: the hero's top is the tab's or the pushed header's (navMetrics) |
+| src/components/profile/__tests__/memberFile.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/profile/__tests__/memberFileRooms.test.tsx | — |  |
 | src/components/profile/__tests__/memberFileScreen.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
 | src/components/profile/__tests__/portraitInitial.test.ts | 2026-10-04 | edited: both member-file screens ask it; scripts tested in aCharacterIsNeverCut |
@@ -625,7 +625,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/roomInset.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/roomRail.test.tsx | — |  |
 | src/components/profile/__tests__/rooms.test.tsx | 2026-10-03 | read whole: the repeat count is read past a nested call |
-| src/components/profile/__tests__/roomSearch.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/profile/__tests__/roomSearch.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/profile/__tests__/roomSearchWiring.test.tsx | — |  |
 | src/components/profile/__tests__/roomsRender.test.tsx | — |  |
 | src/components/profile/__tests__/taste.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -694,7 +694,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/search/SearchUnreachable.tsx | 2026-10-02 | SearchPartly: above results that came back while a source did not |
 | src/components/SectionErrorBoundary.tsx | 2026-10-01 | retries; comments made true |
 | src/components/ShareToLoungeModal.tsx | 2026-10-15 | the sheet's foot clears the home indicator (useSheetBottom) |
-| src/components/society/__tests__/theSocietySellsWhatItSays.test.tsx | 2026-10-15 | edited: the window's foot and the page's reserve read navMetrics |
+| src/components/society/__tests__/theSocietySellsWhatItSays.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/society/BillingSwitch.tsx | 2026-10-02 | read; sound |
 | src/components/society/FoundingCertificate.tsx | 2026-10-02 | read; sound |
 | src/components/society/GeneralAdmission.tsx | 2026-10-02 | read; sound |
@@ -718,18 +718,18 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/ToastHost.tsx | 2026-10-15 | pill from useOverlayTop; screens say if a sheet |
 | src/components/Toggle.tsx | 2026-10-01 | comments say what is true now |
 | src/components/TryAgain.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/__tests__/aLabelIsSpoken.test.ts | 2026-10-01 | written: a label on a View is spoken |
+| src/components/__tests__/aLabelIsSpoken.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/theKeyboardHasRoom.test.tsx | 2026-10-01 | written with the keyboard's room |
 | src/components/reels/__tests__/theReelSaysWhatEachControlIs.test.tsx | 2026-10-01 | written with the Reel's controls |
 | src/components/ui/NotificationBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/constants/__tests__/aMemberWhoLeftIsNamedOneWay.test.tsx | 2026-10-02 | Written in the launch audit: a departed member named one way in the paper, a critique and the Lounge; the mark written in one place. |
-| src/constants/__tests__/aRankIsSoldEnforcedAndExplained.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/constants/__tests__/aMemberWhoLeftIsNamedOneWay.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/constants/__tests__/aRankIsSoldEnforcedAndExplained.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/constants/__tests__/deepLinks.test.ts | — |  |
 | src/constants/__tests__/standing.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/constants/__tests__/taste.test.ts | — |  |
-| src/constants/__tests__/theHouseLinksToItself.guard.test.ts | 2026-10-08 | reads the other company's domain in any case |
+| src/constants/__tests__/theHouseLinksToItself.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/constants/__tests__/theRanksAreWellFormed.test.ts | — |  |
-| src/constants/__tests__/theVaultIsThePrivateNotes.test.ts | — |  |
+| src/constants/__tests__/theVaultIsThePrivateNotes.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/constants/cacheKeys.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/constants/deepLinks.ts | 2026-10-01 | true as written |
 | src/constants/departed.ts | 2026-10-02 | Written in the launch audit: how the house names a member who has left, and one whose name it could not read: one phrase, no made-up handle. |
@@ -773,9 +773,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aRestoredNoteIsSent.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a draft's restored private note is sealed with the record. |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
 | src/hooks/__tests__/aScrollIsOneTransaction.test.tsx | 2026-10-15 | new |
-| src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-01 | written with useSheetPresence |
+| src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-01 | written with useKeyboardLift |
-| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-15 | the count lowered: nine entrances moved into PresenceView |
+| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/hooks/__tests__/aSlowPhoneIsKnownAtOnce.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a throttled phone is known on the first render. |
 | src/hooks/__tests__/everyMainScreenTracesItsScroll.guard.test.ts | 2026-10-15 | new |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
@@ -838,9 +838,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/aRankBoughtOfflineIsKept.test.ts | 2026-10-03 | payments pass: queued for the store's account, with no network and no session |
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | 2026-10-03 | payments pass: a stand-in store drives every answer a configured one gives |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | 2026-10-03 | payments pass: the source pins went; the paths they guarded now run |
-| src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-03 | membership's watcher reads its error now; two refreshes, not three |
+| src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/lib/__tests__/revenueCat.selectPackage.test.ts | — |  |
-| src/lib/__tests__/sentryMeasures.test.ts | — |  |
+| src/lib/__tests__/sentryMeasures.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/lib/__tests__/signingOutSilencesOnlyThisDevice.test.ts | — |  |
 | src/lib/__tests__/theCounterNamesNobody.test.ts | — |  |
 | src/lib/__tests__/theHouseAsksToSendWordWhenItMeansSomething.test.ts | 2026-10-01 | new |
@@ -848,7 +848,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/theSessionIsKeptWhole.test.ts | 2026-10-01 | written with the session store |
 | src/lib/__tests__/theTokenMustNotSurviveLogout.test.ts | — |  |
 | src/lib/__tests__/tmdb.test.ts | — |  |
-| src/lib/__tests__/whatSentryKeeps.test.ts | 2026-10-15 | new |
+| src/lib/__tests__/whatSentryKeeps.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/lib/authSessionStorage.ts | 2026-10-15 | edited: the first session read stamps an older build's ownerless writes |
 | src/lib/gateMetricsSink.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lib/nativeOnly/revenuecatWebStub.js | 2026-10-03 | read whole: sound |
@@ -879,13 +879,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/aBuildNamesOnlyWhatProductionHas.release-test.ts | 2026-10-15 | true as written |
 | src/services/__tests__/aMemberTakesBackOnlyTheirOwnStackCritique.test.ts | 2026-09-30 | written with the stack critique delete |
 | src/services/__tests__/aMissingLogIsAnAnswer.test.tsx | 2026-10-01 | written: a missing log is null; a nameless author is never unknown |
-| src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts | 2026-10-03 | Written in the launch audit: every column a query names, in both clients and the functions, exists in production. |
-| src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts | 2026-10-01 | written with 20261001_03 |
+| src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/services/__tests__/aShelfEntryIsOnlyAddedTo.test.ts | 2026-10-03 | written whole: the shelf as a table that holds its rows; old replay payloads take nothing away |
 | src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/aYearIsReadToTheLast.test.ts | 2026-10-01 | written: a year is read to the last row |
 | src/services/__tests__/certifyCountAuthority.test.ts | 2026-10-03 | read whole: the migration loses its SQL (--) comments, not JS ones |
-| src/services/__tests__/clientNames.ts | 2026-10-15 | true as written |
+| src/services/__tests__/clientNames.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/services/__tests__/everyNameAClientCallsExists.test.ts | 2026-10-15 | edited: the app may name what a pending migration makes; the website never |
 | src/services/__tests__/FeedService.test.ts | 2026-10-01 | cursor note made true |
 | src/services/__tests__/getFilmVerdict.test.ts | 2026-10-03 | read whole: sound |
@@ -902,7 +902,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/theRegistryRetriesAFailedRead.test.ts | 2026-09-29 | failed read throws; false RLS claim fixed |
 | src/services/__tests__/theStackKnowsYourMark.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx | 2026-10-03 | read whole: sound |
-| src/services/__tests__/theVaultHasOneDoor.guard.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): only VaultService queries log_private_notes. |
+| src/services/__tests__/theVaultHasOneDoor.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/services/__tests__/tmdbProxyAllowsEveryPath.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/VaultService.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/yearInCinema.test.ts | 2026-10-03 | read whole: sound |
@@ -949,14 +949,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/dispatchReads.test.ts | — |  |
 | src/stores/__tests__/dispatchRefusals.test.ts | — |  |
 | src/stores/__tests__/dispatchWrites.test.ts | — |  |
-| src/stores/__tests__/encryptionAtRest.guard.test.ts | 2026-10-15 | edited: the queue's writer is queueOwnership |
-| src/stores/__tests__/everyPersistedStoreWaitsForTheKey.guard.test.ts | 2026-10-02 | every persisted store is read after the key |
+| src/stores/__tests__/encryptionAtRest.guard.test.ts | 2026-10-15 | edited: every persisted store wherever it lives, from the shared file list |
+| src/stores/__tests__/everyPersistedStoreWaitsForTheKey.guard.test.ts | 2026-10-15 | edited: every persisted store wherever it lives, from the shared file list |
 | src/stores/__tests__/films.test.ts | — |  |
 | src/stores/__tests__/followGraph.wiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/stores/__tests__/interactionSlice.test.ts | 2026-10-03 | read whole: a certification made before the answer survives |
 | src/stores/__tests__/logoutBeatsTheRollback.test.ts | — |  |
-| src/stores/__tests__/logoutClearsEveryModuleCache.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/stores/__tests__/logoutLeavesNoTrace.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/stores/__tests__/logoutClearsEveryModuleCache.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/stores/__tests__/logoutLeavesNoTrace.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/stores/__tests__/logSlice.test.ts | — |  |
 | src/stores/__tests__/lounge.test.ts | — |  |
 | src/stores/__tests__/loungeActs.test.ts | 2026-10-01 | a stale line count dropped |
@@ -966,7 +966,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/reportStore.pbt.test.ts | — |  |
 | src/stores/__tests__/socialSlice.hydrationReconcile.test.ts | — |  |
 | src/stores/__tests__/socialSlice.unfollow.test.ts | — |  |
-| src/stores/__tests__/staleWriteGuard.test.ts | 2026-10-15 | edited: the walker sees held stores, getState setters and the persist helpers; a write is checked after its own last await; no swept file reads as empty |
+| src/stores/__tests__/staleWriteGuard.test.ts | 2026-10-15 | edited: a store that registers a reset, wherever it lives, read as code |
 | src/stores/__tests__/telemetryGating.test.ts | — |  |
 | src/stores/__tests__/theBoardSaysWhenItCouldNotBeRead.test.tsx | — |  |
 | src/stores/__tests__/theCursorCarriesATiebreaker.test.ts | — |  |
@@ -1022,21 +1022,21 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/vaultStore.ts | 2026-10-03 | edited: the note is cleaned by its own cap on the live save |
 | src/test-support/swallowedTypeError.ts | 2026-10-03 | read whole: sound |
 | src/theme/__tests__/aGlowFadesInsideItsBox.guard.test.ts | 2026-10-15 | written: no radial glow keeps strength on an edge of its box that can show; the welcome seal no longer kept |
-| src/theme/__tests__/aGradientIsNeverABitmap.guard.test.ts | 2026-10-08 | written: no gradient-only SVG but the three it names |
-| src/theme/__tests__/aPhotographIsNotLit.test.ts | — |  |
-| src/theme/__tests__/aTextGlowHasRoom.guard.test.ts | 2026-10-15 | edited: the member's name kept at its sides, with why |
-| src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts | 2026-10-01 | written: the flat-but-elevated ratchet |
-| src/theme/__tests__/everyStyleIsRead.guard.test.ts | 2026-10-02 | Written in the launch audit: every style a sheet defines is drawn by the app. |
+| src/theme/__tests__/aGradientIsNeverABitmap.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/aPhotographIsNotLit.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/aTextGlowHasRoom.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/everyStyleIsRead.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/lightFloor.test.ts | — |  |
-| src/theme/__tests__/nothingOvershoots.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/theme/__tests__/theGroundLadder.test.ts | — |  |
+| src/theme/__tests__/nothingOvershoots.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/theGroundLadder.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/theLightIsReadable.test.ts | 2026-10-08 | written: every light gradient read back through React Native's own parser |
-| src/theme/__tests__/theRoomIsLit.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/theme/__tests__/theTypeFloor.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/theme/__tests__/theVeilMeetsTheLight.test.ts | — |  |
-| src/theme/__tests__/wordsAreNotMarks.test.ts | 2026-10-01 | true as written |
-| src/theme/__tests__/wordsAreSolid.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/theme/__tests__/theRoomIsLit.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/theTypeFloor.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/theVeilMeetsTheLight.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/wordsAreNotMarks.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/wordsAreSolid.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/authStyles.ts | 2026-10-01 | comments short and true |
 | src/theme/brass.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/faceAdvances.ts | 2026-10-03 | edited: the soft hyphen's key written as an escape |
@@ -1052,20 +1052,20 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
 | src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-04 | edited: every right-to-left script reads right to left |
-| src/utils/__tests__/addOnly.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/addOnly.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
 | src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts | 2026-10-02 | Written in the launch audit: the handle filter judged by words, one rule in apps and database. |
-| src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-02 | a hidden pressable is hidden whole (no-hide-descendants) |
-| src/utils/__tests__/aLetterIsTakenWhole.guard.test.ts | 2026-10-04 | new: no first letter is taken by hand |
+| src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/aLetterIsTakenWhole.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts | 2026-10-01 | new |
 | src/utils/__tests__/aMembersWordsAreCleaned.test.ts | 2026-10-03 | the profile excuses went with the INSERT grant that made those columns writable (20261003_07) |
-| src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | — |  |
+| src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/e2eRuntime.test.ts | 2026-10-15 | new: the runtime written once a launch by the E2E build alone, in lines the run can join |
 | src/utils/__tests__/everyCheckRuns.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/everyDoorLeadsToARoute.guard.test.ts | 2026-10-15 | new |
-| src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts | 2026-10-15 | written: every enqueue call site's type has its kind in the map |
+| src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts | 2026-10-15 | written: every enqueue call site's type has its kind in the map; its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |
 | src/utils/__tests__/fixtures/imageCache.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
 | src/utils/__tests__/appConfig.guard.test.ts | 2026-10-15 | edited: the dev client's scheme off, the sitemap off, the scanner removed, iOS https only; every profile but development is app.json |
@@ -1075,7 +1075,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/boundedCounts.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
 | src/utils/__tests__/ciAlert.behaviour.test.ts | — |  |
-| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-15 | edited: every workflow watched and started by hand; no E2E run cancelled by a later push; a scheduled install has its limit and one retry of that step alone; the advisers run on every push in their count-only mode; the push judges the phone's packages, the nightly the website's and the functions' too; an E2E group shared across commits counts as cancelling |
+| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-15 | edited: every workflow watched and started by hand; no E2E run cancelled by a later push; a scheduled install has its limit and one retry of that step alone; the advisers run on every push in their count-only mode; the push judges the phone's packages, the nightly the website's and the functions' too; an E2E group shared across commits counts as cancelling; its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/csv.test.ts | — |  |
 | src/utils/__tests__/dispatchExecutors.test.ts | — |  |
 | src/utils/__tests__/dispatchFieldCaps.test.ts | 2026-09-28 | Claimed to reconcile every live ceiling but read three old migrations, so subject_backdrop_ceiling had no cap. Reads the live snapshot now, and fails on any ceiling without an app cap or a stated reason. |
@@ -1085,17 +1085,17 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/easUpload.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/expoImagePatch.guard.test.ts | 2026-10-15 | new: the patch comes off the installed copy, one version three ways, LF, in the EAS upload |
 | src/utils/__tests__/e2eTrace.test.ts | 2026-09-29 | new |
-| src/utils/__tests__/edgeFunctions.guard.test.ts | — |  |
+| src/utils/__tests__/edgeFunctions.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/endorsementGrouping.test.ts | — |  |
-| src/utils/__tests__/everyBackHasAWayOut.guard.test.ts | — |  |
+| src/utils/__tests__/everyBackHasAWayOut.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyCapAnswersToItsColumn.test.ts | 2026-10-03 | read whole: every new cap answers to its column or says why it is smaller |
-| src/utils/__tests__/everyChannelIsPrivate.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/everyChannelIsPrivate.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyClassIsAccountedFor.test.ts | 2026-10-15 | new |
-| src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-09-29 | new |
-| src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | — |  |
-| src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/utils/__tests__/everyPullSaysWhatItReached.guard.test.ts | — |  |
-| src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts | — |  |
+| src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | 2026-10-15 | edited: everything a person edits, from the shared file list: flows, workflows and both supabase/ trees included |
+| src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/everyPullSaysWhatItReached.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/feedInvalidation.guard.test.ts | — |  |
 | src/utils/__tests__/frozenCounts.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/filterContentByBlocks.pbt.test.ts | — |  |
@@ -1107,26 +1107,26 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/handleNotice.test.ts | — |  |
 | src/utils/__tests__/hooks.guard.test.ts | 2026-10-15 | edited: the push's jest and jest.config leave out nested worktrees, never the checkout's own tests; workers fit the memory |
 | src/utils/__tests__/html.test.ts | — |  |
-| src/utils/__tests__/everyPictureStatesItsCache.guard.test.ts | 2026-10-15 | new: every expo-image picture states its cache; another policy is listed with its reason |
-| src/utils/__tests__/imagePrefetchSites.guard.test.ts | 2026-10-15 | edited: the four places go through prefetchPictures; a direct prefetch anywhere else fails |
+| src/utils/__tests__/everyPictureStatesItsCache.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/imagePrefetchSites.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/inputTrustBoundary.test.ts | 2026-10-03 | edited: a pasted separator stays a break; hidden test characters written as escapes |
 | src/utils/__tests__/keysetCursor.test.ts | — |  |
 | src/utils/__tests__/logger.test.ts | — |  |
-| src/utils/__tests__/logScreenPolish.guard.test.ts | — |  |
+| src/utils/__tests__/logScreenPolish.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/lucideIconsAreBundled.guard.test.ts | — |  |
-| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-15 | edited: every tap on a field follows a centred scroll to it, or the field is fixed at the top, each with its reason |
+| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
-| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-15 | edited: the read-only check and the build waiting for its migrations; build 41 run as shipped; own crashes name a register class and a commit git has, each rule shown refusing |
+| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
 | src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | payments pass: a failed rank sync carries its status |
 | src/utils/__tests__/networkError.test.ts | — |  |
-| src/utils/__tests__/noControlCharacters.guard.test.ts | 2026-10-03 | read whole: raw bidi, invisible and separator characters refused in source too (Trojan Source) |
-| src/utils/__tests__/noMachinePaths.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/utils/__tests__/noPageAddsToTheInset.guard.test.ts | 2026-10-15 | no sum on the inset's top or bottom outside navMetrics |
+| src/utils/__tests__/noControlCharacters.guard.test.ts | 2026-10-15 | edited: every text file a person writes, from the shared file list |
+| src/utils/__tests__/noMachinePaths.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/noPageAddsToTheInset.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/notificationColumns.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/utils/__tests__/offlineIsSaidOneWay.guard.test.ts | — |  |
+| src/utils/__tests__/offlineIsSaidOneWay.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/offlineQueue.integration.test.ts | 2026-10-15 | edited: writes carry their owner; another member's is kept for them, never sent |
 | src/utils/__tests__/offlineQueue.test.ts | 2026-10-15 | edited: a queued write carries its member |
 | src/utils/__tests__/profileCountsCache.test.ts | — |  |
@@ -1138,7 +1138,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/queueErrorClassification.test.ts | — |  |
 | src/utils/__tests__/raceDeadline.test.ts | 2026-10-04 | written whole |
 | src/utils/__tests__/recommendations.test.ts | — |  |
-| src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-15 | new; the runner runs the rehearsals the shared file list names, asked of the runner itself |
 | src/utils/__tests__/releaseGuard.guard.test.ts | 2026-10-15 | new: each rule says no in each format; the input is never the E2E app; the sitemap flow |
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-03 | rewritten: whom an event concerns, what a record grants, applying it |
@@ -1148,15 +1148,15 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/sanitisationCallSites.test.ts | 2026-10-15 | edited: the report is sent by the member signed in, as the sheet sends it |
 | src/utils/__tests__/sanitizeInput.test.ts | — |  |
 | src/utils/__tests__/schemaSnapshot.guard.test.ts | — |  |
-| src/utils/__tests__/searchFieldsDoNotAutocorrect.guard.test.ts | 2026-09-29 | new guard |
+| src/utils/__tests__/searchFieldsDoNotAutocorrect.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/searchPattern.test.ts | — |  |
-| src/utils/__tests__/searchWiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/utils/__tests__/searchWiring.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
 | src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-04 | edited: softBreak asks each place once, only where a run needs a break |
 | src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts | 2026-10-03 | Written with 20261003_05: the corpus holds every character the cleaning acts on, with cleanForStorage's answer. |
 | src/utils/__tests__/theDeadLetterIsNobodyElsesToKeep.test.ts | 2026-10-15 | edited: another member's held and failed writes stay at this one's sign-out |
 | src/utils/__tests__/theDraftIsYours.test.ts | — |  |
-| src/utils/__tests__/theFrontDeskAnswers.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/utils/__tests__/theFrontDeskAnswers.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/theFunnelHasOneSeam.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/theRecordingsTravel.test.ts | — |  |
 | src/utils/__tests__/theSocietyOpensOverYou.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -1215,7 +1215,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/standing.ts | 2026-10-02 | Written in the launch audit: the member's standing, read with the profile and on refusal. |
 | src/utils/svgId.ts | 2026-10-03 | new: the one paint id (the Lobby’s and the room light’s) |
 | src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
+| src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/secretsScan.guard.test.ts | 2026-10-15 | new |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
 | src/utils/text.ts | 2026-10-04 | edited: right-to-left is every block Unicode gives to right-to-left scripts, beyond the first plane too |
@@ -1233,7 +1233,7 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/diagnostics/apply.cjs | 2026-10-15 | rewritten: lints first, runs under the time limits, --no-transaction for a CONCURRENTLY file alone; the address from the private settings file |
 | supabase/diagnostics/read-only.cjs | 2026-10-15 | true as written |
 | supabase/diagnostics/rehearse.cjs | 2026-10-15 | new |
-| supabase/diagnostics/train.cjs | 2026-10-15 | true as written |
+| supabase/diagnostics/train.cjs | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | supabase/functions/fetch-rss/index.ts | 2026-09-29 | the header said it serves the Dispatch tab; no current source calls it (kept for installed builds, per backend-contract); audit tags and the relay's history dropped |
 | supabase/functions/notify-push/index.ts | 2026-10-03 | v4: the sender is named whenever there is one; an accepted request has its title; a house notice is The Lounge only about a salon |
 | supabase/functions/_shared/storeRecord.ts | 2026-10-03 | new: the one home for "apply what RevenueCat says a member holds", read whole record, grace included |
@@ -1241,11 +1241,14 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/functions/revenuecat-webhook/index.ts | 2026-10-03 | rewritten: each named account re-read and granted through storeRecord; 500 to retry, 404 member acknowledged |
 | supabase/functions/sync-entitlement/index.ts | 2026-10-03 | rewritten onto storeRecord; answers the rank in force; a store not read is 502 |
 | test-utils/__tests__/aFileEndsWithNoTimerWaiting.test.ts | 2026-10-15 | edited: the worktrees inside this checkout are left out of its own jest run |
+| test-utils/__tests__/aSweepAsksTheUniverse.test.ts | 2026-10-15 | new: no test or script lists a folder itself, unless named with why |
 | test-utils/__tests__/everyCommentIsTrue.test.ts | — |  |
-| test-utils/__tests__/everySourceReaderIsLedgered.test.ts | 2026-10-15 | edited: a test that builds a TypeScript program reads source too |
-| test-utils/__tests__/everyTestClientKeepsTheHouseRules.test.ts | 2026-10-04 | written whole: new QueryClient( in the two builders only |
-| test-utils/__tests__/oneCommentStripper.test.ts | 2026-10-03 | written whole: the guard that no file strips comments with its own regex |
+| test-utils/__tests__/everySourceReaderIsLedgered.test.ts | 2026-10-15 | edited: every test in mobile/, from the shared file list |
+| test-utils/__tests__/everyTestClientKeepsTheHouseRules.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| test-utils/__tests__/oneCommentStripper.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | test-utils/__tests__/readCode.test.ts | 2026-10-03 | read whole: adds the generic-arrow case TSX misreads |
+| test-utils/__tests__/theUniverseNamesEveryFile.test.ts | 2026-10-15 | new: every file is in a universe or named as unread; every supabase/ file has a kind; the routes are what expo-router loads |
+| test-utils/__tests__/theUniverseSeesANewFolder.test.ts | 2026-10-15 | new: a file planted in a new folder is seen by each universe; the migration checks refuse SQL no rule names |
 | test-utils/__tests__/timerFixtures/leavesATimer.fixture.ts | 2026-10-04 | written whole |
 | test-utils/__tests__/timerFixtures/leavesATimerAfterFakeOnes.fixture.ts | 2026-10-04 | written whole |
 | test-utils/__tests__/timerFixtures/leavesNothing.fixture.ts | 2026-10-04 | written whole |
@@ -1254,10 +1257,11 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/contractEnv.ts | 2026-10-03 | read whole: sound; "all 5,000 tests" is every unit test |
 | test-utils/react-native-testing-library.js | 2026-10-04 | edited: every render's client is testQueryClient(); the comment says what that keeps |
 | test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
-| test-utils/runtimeLacks.ts | 2026-10-15 | edited: a declare global is a type; the bundler's own global is never read as lacked |
-| test-utils/SOURCE-READING-TESTS.md | 2026-10-15 | edited: a row for the picture cache sweep |
+| test-utils/runtimeLacks.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| test-utils/SOURCE-READING-TESTS.md | 2026-10-15 | edited: every test in mobile/ is ledgered; the readers in __tests__/, e2e/ and plugins/, listed |
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
 | test-utils/testQueryClient.ts | 2026-10-04 | written whole: the one client a test builds — the app's rules, no collection timer, errors heard |
 | test-utils/timerCheckingEnvironment.js | 2026-10-04 | written whole: the environment that fails a file ending with a timer still waiting |
 | test-utils/topEdge.ts | 2026-10-15 | new: where a drawn page puts its top |
+| test-utils/universe.js | 2026-10-15 | new: the one list of the files each sweep reads, the route closure, and what each supabase/ file is |
 | types/react-test-renderer.d.ts | 2026-09-29 | history reduced to the reason |

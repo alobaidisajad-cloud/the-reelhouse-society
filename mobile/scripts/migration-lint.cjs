@@ -15,6 +15,8 @@
  *     (SET LOCAL does nothing outside a transaction). apply.cjs runs it only
  *     with --no-transaction.
  * An undo file (supabase/migrations-down/) holds no transaction control either.
+ * The root tree's migrations/archive/ is not a migration (test-utils/universe.js),
+ * and is not read.
  *
  *   node mobile/scripts/migration-lint.cjs <base>     (lints what the push adds or changes)
  */
@@ -22,6 +24,7 @@ const { execFileSync } = require('child_process');
 const { readFileSync } = require('fs');
 const { join } = require('path');
 const { statements } = require('./add-only.cjs');
+const universe = require('../test-utils/universe');
 
 const ROOT = join(__dirname, '..', '..');
 const CONTROL = /^(?:BEGIN|COMMIT|ROLLBACK|SAVEPOINT|RELEASE|START TRANSACTION|END|ABORT|PREPARE TRANSACTION)\b/;
@@ -57,17 +60,35 @@ const lint = (sql, { undo = false } = {}) => {
   return { kind: 'transaction', faults };
 };
 
-const MIGRATIONS = /^(?:mobile\/)?supabase\/migrations\/.*\.sql$/;
-const UNDO = /^mobile\/supabase\/migrations-down\/.*\.sql$/;
+/**
+ * Of the paths a push adds or changes (from the repo root), the ones the lint
+ * reads, by what test-utils/universe.js says each is: a migration, or an undo
+ * file. A SQL file in a supabase/ tree that no rule names is refused, so a new
+ * folder cannot hide one; the archive is not a migration, by that written rule.
+ */
+const lintable = (paths, kindOf = universe.kindOf) => {
+  const read = [];
+  const unnamed = [];
+  for (const p of paths.filter((x) => /^(?:mobile\/)?supabase\/.*\.sql$/.test(x))) {
+    const kind = kindOf(p);
+    if (kind === 'migration' || kind === 'undo') read.push({ path: p, undo: kind === 'undo' });
+    else if (kind === 'unknown') unnamed.push(p);
+  }
+  return { read, unnamed };
+};
 
 if (require.main === module) {
   const base = process.argv[2];
   if (!base) { console.error('usage: node mobile/scripts/migration-lint.cjs <base commit>'); process.exit(2); }
   const changed = execFileSync('git', ['diff', '--name-only', '--diff-filter=AM', `${base}...HEAD`], { cwd: ROOT, encoding: 'utf8' })
-    .split('\n').filter((p) => MIGRATIONS.test(p) || UNDO.test(p));
-  const faults = changed.flatMap((p) => lint(readFileSync(join(ROOT, p), 'utf8'), { undo: UNDO.test(p) }).faults.map((f) => `${p}: ${f}`));
+    .split('\n').filter(Boolean);
+  const { read, unnamed } = lintable(changed);
+  const faults = [
+    ...unnamed.map((p) => `${p}: a SQL file no rule in test-utils/universe.js names — say what it is there`),
+    ...read.flatMap(({ path, undo }) => lint(readFileSync(join(ROOT, path), 'utf8'), { undo }).faults.map((f) => `${path}: ${f}`)),
+  ];
   if (faults.length) { console.error(`Migrations that cannot be applied safely:\n  ${faults.join('\n  ')}`); process.exit(1); }
-  console.log(`Every migration and undo file since the base passes the lint (${changed.length} read).`);
+  console.log(`Every migration and undo file since the base passes the lint (${read.length} read).`);
 }
 
-module.exports = { lint };
+module.exports = { lint, lintable };

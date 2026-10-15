@@ -14,9 +14,10 @@
  * `colors.sepia` as a border, a rule, a glyph tint or an icon colour is fine
  * and common — the rule is about FILLS, which is what reads as a plate.
  */
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
+import { join, relative } from 'path';
 import { readCode, stripComments } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const FILM = join(__dirname, '..');
 const BRASS_FILE = join(__dirname, '..', '..', '..', 'theme', 'brass.ts');
@@ -77,8 +78,8 @@ function flatPlates(src: string): string[] {
 }
 
 describe('no brass plate is painted flat', () => {
-  const files = readdirSync(FILM)
-    .filter((f) => /\.tsx$/.test(f))
+  const files = universe('appCode', { ext: ['.tsx'], under: ['src/components/film'] })
+    .map((f) => relative(FILM, f).split('\\').join('/'))
     .filter((f) => !NOT_THIS_PAGES_CHROME.includes(f));
 
   it.each(files)('%s uses the ramp for any brass plate', (file) => {

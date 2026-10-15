@@ -37,33 +37,21 @@
  * they are skipped rather than guessed at. The test proves both directions
  * before it trusts a clean sweep — a probe that cannot say NO is furniture.
  */
-import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
+import { files as universe, type UniverseName } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const REPO = join(MOBILE, '..');
 
 /** Everything a person edits. Mockups included: a mangled sheet measures wrong. */
-const ROOTS = [
-  join(MOBILE, 'src'),
-  join(MOBILE, 'app'),
-  join(MOBILE, 'mockups'),
-  join(MOBILE, 'scripts'),
-  join(REPO, 'supabase', 'migrations'),
+const EDITED: UniverseName[] = [
+  'appCode', 'appTests', 'tests', 'testSupport', 'scripts', 'config', 'mockups',
+  'supabaseSql', 'functions', 'standIns', 'flows', 'workflows',
 ];
-const SKIP = new Set(['node_modules', '.expo', 'android', 'ios', 'out', 'coverage', '.git']);
-const WANTED = /\.(tsx?|sql|mjs|cjs|js)$/;
+const WANTED = /\.(tsx?|sql|mjs|cjs|js|ya?ml|sh)$/;
 
-function walk(dir: string, out: string[] = []): string[] {
-  if (!existsSync(dir)) return out;
-  for (const name of readdirSync(dir)) {
-    if (SKIP.has(name)) continue;
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) walk(full, out);
-    else if (WANTED.test(name)) out.push(full);
-  }
-  return out;
-}
+const everyEditedFile = () => universe(EDITED).filter((f) => WANTED.test(f));
 
 /**
  * ── THE CODEPAGE, WRITTEN OUT ───────────────────────────────────────────────
@@ -248,7 +236,7 @@ const scan = (() => {
   const mangled: string[] = [];
   const bommed: string[] = [];
   let read = 0;
-  for (const file of ROOTS.flatMap((r) => walk(r))) {
+  for (const file of everyEditedFile()) {
     if (file === THIS_FILE) continue;
     read++;
     const buf = readFileSync(file);

@@ -25,11 +25,12 @@
  * and a SKIPPED CHECK COUNTS AS A FAILURE. An unrun check is not a pass; this
  * script once printed "Verified present in production: nothing." and exited 0.
  */
-import { readFileSync, readdirSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import privateSettings from './private-settings.cjs';
+import universe from '../test-utils/universe.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const contract = JSON.parse(readFileSync(join(__dirname, 'backend-contract.json'), 'utf8'));
@@ -122,7 +123,6 @@ let ranCallCheck = false;
 let checkedCalls = 0;
 
 // ── Reading the app's own RPC calls ───────────────────────────────────────
-const APP_ROOTS = [join(__dirname, '..', 'src'), join(__dirname, '..', 'app')];
 const UNPARSED = '<unparsed>';
 
 /**
@@ -201,19 +201,8 @@ function topKeys(obj) {
 }
 
 /** Every `supabase.rpc('name', {...})` the app makes. Tests are not the app. */
-function collectRpcCalls(roots) {
-  const files = [];
-  const walk = (dir) => {
-    if (!existsSync(dir)) return;
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
-      if (['node_modules', '.expo', 'android', 'ios', '__tests__'].includes(e.name)) continue;
-      const f = join(dir, e.name);
-      if (e.isDirectory()) walk(f);
-      else if (/\.tsx?$/.test(e.name)) files.push(f);
-    }
-  };
-  roots.forEach(walk);
-
+function collectRpcCalls() {
+  const files = universe.files('appCode');
   const calls = [];
   for (const file of files) {
     const src = blankComments(readFileSync(file, 'utf8'));
@@ -345,7 +334,7 @@ if (DB_URL) {
       ]);
     }
 
-    for (const call of collectRpcCalls(APP_ROOTS)) {
+    for (const call of collectRpcCalls()) {
       const overloads = liveArgs.get(call.name);
       if (!overloads) { callMismatches.push(`${call.at}\n      ${call.name} — NOT IN THE DATABASE`); continue; }
       if (call.args && call.args.includes(UNPARSED)) {

@@ -16,8 +16,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator, type BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { HapticTab } from '../HapticTab';
 import { MOBILE, readCode } from '@/test-utils/readCode';
-import { readdirSync } from 'fs';
 import { join, relative } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 const Tab = createBottomTabNavigator();
 const Page = () => <Text>page</Text>;
@@ -57,15 +57,7 @@ describe('a tab draws its icon once', () => {
 });
 
 describe('no screen sets tabBarIcon', () => {
-  const walk = (dir: string, out: string[] = []): string[] => {
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, e.name);
-      if (e.isDirectory()) { if (!['node_modules', '__tests__'].includes(e.name)) walk(full, out); }
-      else if (/\.(ts|tsx)$/.test(e.name)) out.push(full);
-    }
-    return out;
-  };
-  const files = [...walk(join(MOBILE, 'app')), ...walk(join(MOBILE, 'src'))];
+  const files = universe('appCode');
   const setsIt = (code: string) => /\btabBarIcon\s*:/.test(code);
 
   it('in any file of the app (comments aside)', () => {

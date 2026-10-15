@@ -17,9 +17,9 @@
  * updateLogOp, a new deferred pop anywhere in the app — none is exercised by a
  * test written today, so each is enumerated from the code.
  */
-import * as fs from 'fs';
 import * as path from 'path';
 import { readCode, MOBILE } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const logOps = readCode('src/stores/domain/logSlice/helpers/logOperations.ts');
 
@@ -106,16 +106,6 @@ describe('#91 · the CLASS, swept app-wide — a deferred pop is always guarded'
     // "A deferred back() that fires on a screen the member has left" pops
     // whatever they navigated to instead. useLogFlow is tested by behaviour;
     // this sweeps every other file, so a new screen cannot reopen it.
-    const walk = (dir: string, out: string[] = []): string[] => {
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) {
-          if (['node_modules', '__tests__', '.expo', 'android', 'ios'].includes(e.name)) continue;
-          walk(full, out);
-        } else if (/\.tsx?$/.test(e.name)) out.push(full);
-      }
-      return out;
-    };
     // Read by BALANCING PARENS, not by shape: five call sites use the
     // brace-less `() => nav.back()`, which a shape-matching regex cannot see.
     const bodyAt = (src: string, open: number): string => {
@@ -131,7 +121,9 @@ describe('#91 · the CLASS, swept app-wide — a deferred pop is always guarded'
     const POP = /\b(nav|router)\.(back|dismiss|dismissAll|dismissTo|popToTop)\(/;
     const GUARDED = /isMounted\.current|mountedRef\.current/;
     const offenders: string[] = [];
-    for (const file of [...walk(path.join(MOBILE, 'src')), ...walk(path.join(MOBILE, 'app'))]) {
+    const files = universe('appCode');
+    expect(files.length).toBeGreaterThan(300); // the app was read, so none found means none
+    for (const file of files) {
       const rel = path.relative(MOBILE, file).split(path.sep).join('/');
       // _layout lives as long as the app. auth-callback must fire even if it
       // unmounts: a guard would strand an armed password recovery, and the

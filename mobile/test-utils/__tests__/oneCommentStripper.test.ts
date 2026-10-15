@@ -12,12 +12,11 @@
  * SQL and YAML have their own comment syntax (`--`, `#`), which these shapes
  * do not match, so a test reading a migration is not caught by mistake.
  */
-import { readdirSync, readFileSync, existsSync } from 'fs';
-import { join, relative, sep } from 'path';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { MOBILE } from '../readCode';
+import { files as universe, rel } from '../universe';
 
-const ROOTS = ['app', 'src', 'mockups', 'test-utils', 'scripts', 'e2e'];
-const SKIP = new Set(['node_modules', 'out', '.git', 'android', 'ios', '.expo']);
 const SELF = 'test-utils/__tests__/oneCommentStripper.test.ts';
 
 /**
@@ -35,18 +34,10 @@ const SHAPES = [
 
 const strippersIn = (text: string) => SHAPES.filter((s) => text.includes(s));
 
+/** Every code file in mobile/ and the edge functions: test-utils/universe.js names them. */
 function sourceFiles(): string[] {
-  const out: string[] = [];
-  const walk = (dir: string) => {
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
-      if (SKIP.has(e.name)) continue;
-      const full = join(dir, e.name);
-      if (e.isDirectory()) walk(full);
-      else if (/\.(ts|tsx|js|jsx|cjs|mjs)$/.test(e.name)) out.push(relative(MOBILE, full).split(sep).join('/'));
-    }
-  };
-  for (const r of ROOTS) if (existsSync(join(MOBILE, r))) walk(join(MOBILE, r));
-  return out;
+  return universe(['appCode', 'tests', 'testSupport', 'scripts', 'config', 'mockups', 'functions', 'standIns'])
+    .filter((f) => /\.(ts|tsx|js|jsx|cjs|mjs)$/.test(f)).map(rel);
 }
 
 describe('one comment stripper, and it is the parser', () => {

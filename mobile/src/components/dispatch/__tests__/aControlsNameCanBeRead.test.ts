@@ -30,9 +30,10 @@
  * that cannot reflow gets smaller rather than breaking the row.
  */
 import React from 'react';
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { render } from '@testing-library/react-native';
+import { files } from '@/test-utils/universe';
 import { DossierShareCard } from '../paper/PaperMore';
 
 // The project's own compiler, so the scan parses JSX rather than guessing at it
@@ -41,18 +42,7 @@ import { DossierShareCard } from '../paper/PaperMore';
 const ts = require('typescript');
 
 const DISPATCH = join(__dirname, '..');
-const APP = join(__dirname, '..', '..', '..', '..', 'app', 'dispatch');
-
-const collect = (dir: string, out: string[] = []): string[] => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.isDirectory()) { if (e.name !== '__tests__') collect(full, out); }
-    else if (e.name.endsWith('.tsx')) out.push(full);
-  }
-  return out;
-};
-
-const FILES = [...collect(DISPATCH), ...collect(APP)];
+const FILES = files('appCode', { ext: ['.tsx'], under: ['src/components/dispatch', 'app/dispatch'] });
 
 const PRESSABLE = /^(PressableScale|Pressable|TouchableOpacity|TouchableHighlight|TouchableWithoutFeedback)$/;
 /** A picture made out of a character: no letter and no digit in it. */

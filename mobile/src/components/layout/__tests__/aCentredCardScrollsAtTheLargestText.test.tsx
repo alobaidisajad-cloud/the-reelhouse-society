@@ -25,9 +25,9 @@
 import React, { act } from 'react';
 import { StyleSheet } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { readdirSync } from 'fs';
 import { join, relative } from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 import { overlayRoomEdge, overlayRoomKeyboardClearance } from '@/src/components/layout/navMetrics';
 import { ShareCardModal } from '@/src/components/film/ShareCardModal';
 import { WatchlistRoulette } from '@/src/components/profile/WatchlistRoulette';
@@ -295,14 +295,6 @@ const MODALS: Record<string, Kind[]> = {
 
 const MOBILE = join(__dirname, '..', '..', '..', '..');
 const rel = (f: string) => relative(MOBILE, f).replace(/\\/g, '/');
-const files = (dir: string, out: string[] = []): string[] => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.isDirectory()) { if (e.name !== '__tests__' && e.name !== 'node_modules') files(full, out); }
-    else if (/\.tsx?$/.test(e.name) && !/\.test\./.test(e.name)) out.push(full);
-  }
-  return out;
-};
 
 /** Every React Native <Modal> in a file, under any name, and whether it draws a CentredCard. */
 export function modalsIn(name: string, src: string): { line: number; card: boolean }[] {
@@ -333,7 +325,7 @@ export function modalsIn(name: string, src: string): { line: number; card: boole
   return found;
 }
 
-const FOUND = [...files(join(MOBILE, 'app')), ...files(join(MOBILE, 'src'))]
+const FOUND = universe('appCode')
   .flatMap((f) => modalsIn(rel(f), readCode(f)).map((m) => ({ file: rel(f), ...m })));
 
 describe('every <Modal> is named, with its kind', () => {

@@ -28,6 +28,7 @@
 const { execFileSync } = require('child_process');
 const { readFileSync } = require('fs');
 const { join } = require('path');
+const universe = require('../test-utils/universe');
 
 const ROOT = join(__dirname, '..', '..');
 const SNAPSHOT = join(ROOT, 'mobile', 'supabase', 'schema', 'live-schema.sql');
@@ -156,7 +157,10 @@ const reasonFault = (comments) => {
   return null;
 };
 
-const MIGRATIONS = /^(?:mobile\/)?supabase\/migrations\/.*\.sql$/;
+// By kind (test-utils/universe.js): never an undo file or the archive.
+const isMigration = (path) => universe.kindOf(path) === 'migration';
+// SQL in a supabase/ tree that no rule names is refused, never passed over.
+const unnamedSql = (path) => /^(?:mobile\/)?supabase\/.*\.sql$/.test(path) && universe.kindOf(path) === 'unknown';
 const FUNCTIONS = /^(?:mobile\/)?supabase\/functions\/([^/]+)\//;
 
 const check = (base) => {
@@ -164,8 +168,9 @@ const check = (base) => {
   const changed = git('diff', '--name-status', '--no-renames', `${base}...HEAD`).split('\n').filter(Boolean)
     .map((l) => { const [status, path] = l.split('\t'); return { status, path }; });
   const existing = existingIn(readFileSync(SNAPSHOT, 'utf8'));
-  const faults = [];
-  for (const { status, path } of changed.filter((c) => c.status !== 'D' && MIGRATIONS.test(c.path))) {
+  const faults = changed.filter((c) => c.status !== 'D' && unnamedSql(c.path))
+    .map((c) => `${c.path}: a SQL file no rule in test-utils/universe.js names — say what it is there`);
+  for (const { status, path } of changed.filter((c) => c.status !== 'D' && isMigration(c.path))) {
     for (const b of breaksIn(readFileSync(join(ROOT, path), 'utf8'), existing)) {
       const fault = reasonFault(b.reason);
       if (fault) faults.push(`${path} (${status}): ${b.kinds.join(', ')} — ${fault}\n    ${b.statement}`);
@@ -202,4 +207,4 @@ if (require.main === module) {
   console.log('Every migration and function change since the base is add-only, or says why it is safe.');
 }
 
-module.exports = { breaksIn, existingIn, functionFaults, reasonFault, statements };
+module.exports = { breaksIn, existingIn, functionFaults, isMigration, reasonFault, statements, unnamedSql };

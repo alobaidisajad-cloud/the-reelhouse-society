@@ -6,9 +6,9 @@
  * `as any` to type. These are counted EXACTLY: a feature's audit moves its calls
  * to `nav` and lowers the count here, and no new raw call can be added unseen.
  */
-import { readdirSync, statSync } from 'fs';
-import { join, relative, sep } from 'path';
+import { relative, sep } from 'path';
 import { MOBILE, readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const RAW = /\brouter\.(push|replace|navigate)\b/;
 /** The one file that may drive the router: nav itself. */
@@ -17,19 +17,12 @@ const MOST = 23;
 
 function rawCalls(): Map<string, number> {
   const found = new Map<string, number>();
-  const walk = (dir: string) => {
-    for (const name of readdirSync(dir)) {
-      const p = join(dir, name);
-      if (statSync(p).isDirectory()) { if (name !== '__tests__' && name !== 'node_modules') walk(p); continue; }
-      if (!/\.tsx?$/.test(name) || /\.test\./.test(name)) continue;
-      const rel = relative(MOBILE, p).split(sep).join('/');
-      if (rel === HOME) continue;
-      const n = (readCode(p).match(new RegExp(RAW.source, 'g')) ?? []).length;
-      if (n) found.set(rel, n);
-    }
-  };
-  walk(join(MOBILE, 'app'));
-  walk(join(MOBILE, 'src'));
+  for (const p of universe('appCode')) {
+    const rel = relative(MOBILE, p).split(sep).join('/');
+    if (rel === HOME) continue;
+    const n = (readCode(p).match(new RegExp(RAW.source, 'g')) ?? []).length;
+    if (n) found.set(rel, n);
+  }
   return found;
 }
 

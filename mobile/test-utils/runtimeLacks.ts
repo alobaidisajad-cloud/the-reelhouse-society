@@ -13,10 +13,11 @@
  *                           to check types, only where the value IS of that kind
  *   globalThis.Name         a global, read as a free name or through globalThis
  */
-import { readdirSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { dirname, join, relative, sep } from 'path';
 import ts from 'typescript';
 import { MOBILE } from './readCode';
+import { files as universe } from './universe';
 
 export type Shape = 'static' | 'prototype' | 'global';
 export interface Api { api: string; owner: string; member: string; shape: Shape }
@@ -37,22 +38,13 @@ export function parseApi(api: string): Api {
   throw new Error(`${api}: not Name.member, Name.prototype.member or globalThis.Name`);
 }
 
-/** The app's own code: app/ and src/, never a test, a mock or a test helper. */
+/**
+ * The app's own code (appCode in universe.js), never a test, a mock or a test
+ * helper: its TypeScript, which the program below can type.
+ */
 export function appSources(): Source[] {
-  const out: Source[] = [];
-  const walk = (dir: string) => {
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, e.name);
-      if (e.isDirectory()) {
-        if (!['__tests__', '__mocks__', 'node_modules'].includes(e.name)) walk(full);
-      } else if (/\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name)) {
-        out.push({ file: relative(MOBILE, full).split(sep).join('/'), text: readFileSync(full, 'utf8') });
-      }
-    }
-  };
-  walk(join(MOBILE, 'app'));
-  walk(join(MOBILE, 'src'));
-  return out;
+  return universe('appCode', { ext: ['.ts', '.tsx'] })
+    .map((full) => ({ file: relative(MOBILE, full).split(sep).join('/'), text: readFileSync(full, 'utf8') }));
 }
 
 const GLOBAL_OBJECTS = new Set(['globalThis', 'global', 'window', 'self']);

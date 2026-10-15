@@ -8,9 +8,10 @@
  * nothing. Each site is cleared feature by feature (some use elevation for
  * stacking and need reading first), so this ratchet only goes down.
  */
-import { readdirSync, readFileSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { readFileSync } from 'fs';
+import { relative } from 'path';
 import { MOBILE, stripComments } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 /** In one file's code: the line of each flat style object that keeps elevation. */
 function flatButElevatedIn(code: string): number[] {
@@ -35,17 +36,10 @@ function flatButElevatedIn(code: string): number[] {
 /** Every style object in the app that spreads `effects.flat` and still carries elevation. */
 function flatButElevated(): string[] {
   const out: string[] = [];
-  const walk = (dir: string) => {
-    for (const name of readdirSync(dir)) {
-      const p = join(dir, name);
-      if (statSync(p).isDirectory()) { if (name !== '__tests__' && name !== 'node_modules') walk(p); continue; }
-      if (!/\.tsx?$/.test(name)) continue;
-      const code = stripComments(readFileSync(p, 'utf8'), p);
-      for (const line of flatButElevatedIn(code)) out.push(`${relative(MOBILE, p)}:${line}`);
-    }
-  };
-  walk(join(MOBILE, 'src'));
-  walk(join(MOBILE, 'app'));
+  for (const p of universe('appCode')) {
+    const code = stripComments(readFileSync(p, 'utf8'), p);
+    for (const line of flatButElevatedIn(code)) out.push(`${relative(MOBILE, p)}:${line}`);
+  }
   return out;
 }
 

@@ -7,9 +7,9 @@
  * every other component already took the reactive hook, and that inconsistency
  * is what marked it an oversight rather than a decision.
  */
-import * as fs from 'fs';
 import * as path from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = path.join(__dirname, '..', '..', '..', '..');
 const sheet = readCode('src/components/moderation/ReportSheet.tsx');
@@ -59,19 +59,8 @@ describe('#121 · the class, swept — no file freezes the window at load', () =
   it('no module-scope Dimensions.get survives anywhere', () => {
     // Enumerated, not spot-checked: this was a one-of-one, and the point of the
     // fix is that it stays that way.
-    const walk = (dir: string, out: string[] = []): string[] => {
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) {
-          if (['node_modules', '__tests__', '.expo', 'android', 'ios'].includes(e.name)) continue;
-          walk(full, out);
-        } else if (/\.tsx?$/.test(e.name)) out.push(full);
-      }
-      return out;
-    };
-
     const offenders: string[] = [];
-    const all = [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'app'))];
+    const all = universe('appCode');
     expect(all.length).toBeGreaterThan(300); // the app was read, so none found means none
     for (const file of all) {
       const src = readCode(file);

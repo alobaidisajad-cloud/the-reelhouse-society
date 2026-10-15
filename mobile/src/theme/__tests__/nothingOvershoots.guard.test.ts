@@ -6,25 +6,16 @@
  * It was held for the Dispatch alone (motionLaws.test.tsx), and meanwhile the
  * app's press, its tab bar, its top bar and six sheets all sprang.
  */
-import * as fs from 'fs';
 import * as path from 'path';
 import { readCode, stripComments } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const OVERSHOOT = /\bwithSpring\b|\.springify\(|\bwithDecay\b|Easing\.(bounce|elastic|back)\b|Animated\.spring\b|\bBounce(In|Out)\w*\b/;
 
-function sources(dir: string, out: string[] = []): string[] {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (['node_modules', '__tests__', 'generated'].includes(e.name) || e.name.startsWith('.')) continue;
-    const p = path.join(dir, e.name);
-    if (e.isDirectory()) sources(p, out);
-    else if (/\.tsx?$/.test(e.name) && !/\.test\./.test(e.name)) out.push(p);
-  }
-  return out;
-}
-
 describe('nothing in the app overshoots', () => {
-  const files = [...sources(path.join(ROOT, 'app')), ...sources(path.join(ROOT, 'src'))];
+  // The generated icon list names lucide's icons, not motion.
+  const files = universe('appCode').filter((f) => !/[\\/]generated[\\/]/.test(f));
 
   it('reads the whole app', () => {
     expect(files.length).toBeGreaterThan(300);

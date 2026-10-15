@@ -14,33 +14,33 @@
 // rehearsal (a *_rehearsal.sql here that includes it under with_train). The address comes from
 // the private settings file and is never printed; the whole run is kept in <private>/trains/.
 const { spawnSync } = require('child_process');
-const { appendFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } = require('fs');
+const { appendFileSync, mkdirSync, readFileSync, writeFileSync } = require('fs');
 const { tmpdir } = require('os');
-const { join } = require('path');
+const { basename, join, relative, sep } = require('path');
 
 const MOBILE = join(__dirname, '..', '..');
 const ROOT = join(MOBILE, '..');
 const { lint } = require(join(MOBILE, 'scripts', 'migration-lint.cjs'));
+const universe = require(join(MOBILE, 'test-utils', 'universe.js'));
 const { privateDir, privateFile, readPrivate } = require(join(MOBILE, 'scripts', 'private-settings.cjs'));
 
 const LIMITS = '-c lock_timeout=2s -c statement_timeout=30s';
-const TREES = ['supabase/migrations', 'mobile/supabase/migrations'];
-
 /** The migrations production has not had, in name order, each with its path and SQL. */
 const pendingIn = (root = ROOT) => {
   const applied = new Set(readFileSync(join(root, 'mobile', 'supabase', 'APPLIED.txt'), 'utf8')
     .split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#')));
-  return TREES.flatMap((dir) => readdirSync(join(root, dir)).filter((f) => f.endsWith('.sql') && !applied.has(f))
-    .map((name) => ({ name, path: join(root, dir, name), sql: readFileSync(join(root, dir, name), 'utf8') })))
+  // Both trees, as test-utils/universe.js names the migrations in them.
+  return universe.at(root).files('migrations').filter((path) => !applied.has(basename(path)))
+    .map((path) => ({ name: basename(path), path, sql: readFileSync(path, 'utf8') }))
     // A file of comments alone changes nothing (as e2e/db/up-down-up.mjs counts them).
     .filter((m) => m.sql.split('\n').some((l) => l.trim() && !l.trim().startsWith('--')))
     .sort((a, b) => a.name.localeCompare(b.name));
 };
 
-/** Each rehearsal here, with the migrations it includes under with_train. */
-const rehearsalsIn = (dir = __dirname) => readdirSync(dir).filter((f) => /_rehearsal\.sql$/.test(f))
-  .map((name) => ({ name, path: join(dir, name),
-    includes: [...readFileSync(join(dir, name), 'utf8').matchAll(/^\\ir\s+\S*\/([^/\s]+\.sql)\s*$/gm)].map((m) => m[1]) }));
+/** Each rehearsal (test-utils/universe.js), with the migrations it includes under with_train. */
+const rehearsalsIn = () => universe.files('rehearsals')
+  .map((path) => ({ name: relative(__dirname, path).split(sep).join('/'), path,
+    includes: [...readFileSync(path, 'utf8').matchAll(/^\\ir\s+\S*\/([^/\s]+\.sql)\s*$/gm)].map((m) => m[1]) }));
 
 /** The steps of the train, or why it cannot run. */
 const plan = (pending, rehearsals) => {

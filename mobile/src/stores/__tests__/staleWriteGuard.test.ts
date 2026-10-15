@@ -11,9 +11,9 @@
  * the slices, finds every operation that writes after awaiting, and demands a
  * guard. A new operation of that shape fails this the day it is written.
  */
-import * as fs from 'fs';
 import * as path from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 
@@ -251,19 +251,15 @@ describe('a write that lands after logout must not repopulate the store', () => 
     // The film store was where #64 was filed, and sweeping only its slices left
     // the identical defect in four other stores. This pins the LIST itself, so
     // adding a store with a reset handler and forgetting to sweep it fails here.
+    // Wherever it lives: a store outside src/stores can register a reset too.
+    // Read as code: a comment that names the call is not one.
     const resetting = new Set<string>();
-    const walk = (dir: string) => {
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, e.name);
-        if (e.isDirectory()) { if (e.name !== '__tests__') walk(full); continue; }
-        if (!/\.ts$/.test(e.name)) continue;
-        const src = fs.readFileSync(full, 'utf8');
-        if (/registerStoreReset\(/.test(src) && !/export function registerStoreReset/.test(src)) {
-          resetting.add(path.relative(ROOT, full).replace(/\\/g, '/'));
-        }
+    for (const full of universe('appCode')) {
+      const src = readCode(full);
+      if (/registerStoreReset\(/.test(src) && !/export function registerStoreReset/.test(src)) {
+        resetting.add(path.relative(ROOT, full).replace(/\\/g, '/'));
       }
-    };
-    walk(path.join(ROOT, 'src', 'stores'));
+    }
 
     // A store with a reset must either be swept, or hold no unchecked write
     // after an await. Anything else is an unswept store.

@@ -8,20 +8,13 @@
  * will be (the snapshot, and the migrations still pending), or a private join
  * of it would be refused for everyone.
  */
-import { readdirSync, readFileSync, statSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
+import { basename, join } from 'path';
 import ts from 'typescript';
+import { files as universe } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
-const ROOT = join(MOBILE, '..');
 
-const appFiles = (dir: string, out: string[] = []): string[] => {
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) { if (!['__tests__', 'node_modules'].includes(name)) appFiles(p, out); } else if (/\.tsx?$/.test(name)) out.push(p);
-  }
-  return out;
-};
 
 /** Each `supabase.channel(topic, options)`: where, its topic as written, and whether private. */
 const channelsIn = (file: string, text: string) => {
@@ -44,7 +37,7 @@ const channelsIn = (file: string, text: string) => {
   return found;
 };
 
-const CHANNELS = [...appFiles(join(MOBILE, 'app')), ...appFiles(join(MOBILE, 'src'))]
+const CHANNELS = universe('appCode')
   .flatMap((f) => channelsIn(f, readFileSync(f, 'utf8')));
 
 it('every channel the app joins is private', () => {
@@ -54,8 +47,7 @@ it('every channel the app joins is private', () => {
 
 it('every topic it joins has its rule on realtime.messages, in production as it will be', () => {
   const applied = new Set(readFileSync(join(MOBILE, 'supabase/APPLIED.txt'), 'utf8').split(/\r?\n/).filter((l) => l && !l.startsWith('#')));
-  const pending = ['supabase/migrations', 'mobile/supabase/migrations'].flatMap((d) =>
-    readdirSync(join(ROOT, d)).filter((f) => f.endsWith('.sql') && !applied.has(f)).map((f) => readFileSync(join(ROOT, d, f), 'utf8')));
+  const pending = universe('migrations').filter((f) => !applied.has(basename(f))).map((f) => readFileSync(f, 'utf8'));
   const willBe = [readFileSync(join(MOBILE, 'supabase/schema/live-outside-public.sql'), 'utf8'), ...pending].join('\n');
   const rules = [...willBe.matchAll(/CREATE POLICY [^\n]*?ON realtime\.messages[\s\S]*?;/g)].map((m) => m[0]);
   // The two topics the app joins, as the code writes them.

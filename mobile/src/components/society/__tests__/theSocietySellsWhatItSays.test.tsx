@@ -24,6 +24,7 @@ import { PRIVILEGES, RANK_ORDER, privilegesOf } from '@/src/constants/membership
 import { ticketPrice, savePercent, foundingPitch, SEATS_LINE } from '../societyPricing';
 import { LEDGER_COLUMN_ORDER } from '../PrivilegeLedger';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 // ── the world the page is rendered in ───────────────────────────────────────
 const mockRestore = jest.fn();
@@ -588,15 +589,7 @@ describe('every other sentence about a rank reads from the same list', () => {
   });
 
   it('no shipped file of the app promises a gold badge', () => {
-    const walk = (dir: string, out: string[] = []): string[] => {
-      for (const e of require('fs').readdirSync(dir, { withFileTypes: true })) {
-        const p = join(dir, e.name);
-        if (e.isDirectory()) { if (!['node_modules', '__tests__'].includes(e.name)) walk(p, out); }
-        else if (/\.(ts|tsx)$/.test(e.name)) out.push(p);
-      }
-      return out;
-    };
-    const files = [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'src'))];
+    const files = universe('appCode');
     expect(files.length).toBeGreaterThan(300);
     expect(files.filter((f) => /gold (Dispatch )?badge|Gold Foil/i.test(readCode(f)))).toEqual([]);
   });

@@ -17,9 +17,10 @@
  * app still lets people type. So both clients are re-derived here and the
  * ceiling is required to clear the HIGHER of the two.
  */
-import { existsSync, readFileSync, readdirSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { MAX_LENGTHS } from '../src/utils/sanitizeInput';
+import { files } from '../test-utils/universe';
 
 const MIGRATION = join(
   __dirname,
@@ -347,12 +348,12 @@ describe('EVERY text column in the schema is accounted for', () => {
      * That is the same failure this file was written to prevent, one level up: a
      * guard that defines the class too narrowly reports safety over the gap.
      *
-     * So the migrations are read as a second source. Any `ADD COLUMN` of a text
-     * or jsonb type must have a ceiling declared somewhere in the same tree.
+     * So the migrations are read as a second source, in both trees. Any
+     * `ADD COLUMN` of a text or jsonb type must have a ceiling declared in one.
      */
-    const dir = join(__dirname, '..', 'supabase', 'migrations');
-    const files = readdirSync(dir).filter((f) => f.endsWith('.sql'));
-    const all = files.map((f) => readFileSync(join(dir, f), 'utf8')).join('\n');
+    const migrations = files('migrations');
+    expect(migrations.length).toBeGreaterThan(200); // both trees were read
+    const all = migrations.map((f) => readFileSync(f, 'utf8')).join('\n');
     const allExec = all.replace(/--[^\n]*/g, '');
 
     const added: string[] = [];
@@ -364,7 +365,7 @@ describe('EVERY text column in the schema is accounted for', () => {
 
     const uncapped = added.filter((c) => {
       const [tbl, col] = c.split('.');
-      // Three ways a column can be accounted for. An enum whitelist is the
+      // Four ways a column can be accounted for. An enum whitelist is the
       // strongest of them — a fixed set of values bounds length implicitly — and
       // omitting it here reported `lounge_members.status` and
       // `profiles.entitlement_source` as gaps when both are restricted to four
@@ -375,7 +376,9 @@ describe('EVERY text column in the schema is accounted for', () => {
       // stores it as `status = ANY (ARRAY[...])`. Matching only the stored form
       // reported two whitelisted columns as gaps, because the source says IN.
       const hasEnumWhitelist = new RegExp(`${col}\\s*(=\\s*ANY|IN\\s*\\()`).test(allExec);
-      return !hasNamedCeiling && !inCeilingsTable && !hasEnumWhitelist;
+      // A CHECK under any name that bounds the column's length.
+      const hasLengthCheck = new RegExp(`char_length\\(\\s*${col}\\s*\\)\\s*<=\\s*\\d+`).test(allExec);
+      return !hasNamedCeiling && !inCeilingsTable && !hasEnumWhitelist && !hasLengthCheck;
     });
 
     expect(`columns added by migration with no ceiling: ${uncapped.join(', ') || 'none'}`).toBe(

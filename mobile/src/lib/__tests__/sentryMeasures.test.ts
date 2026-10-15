@@ -4,6 +4,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as SentrySDK from '@sentry/react-native';
+import { files as universe } from '@/test-utils/universe';
 
 const SDK = SentrySDK as unknown as {
   init: jest.Mock; appLoaded: jest.Mock; expoRouterIntegration: jest.Mock;
@@ -64,20 +65,11 @@ describe('what Sentry is never sent', () => {
     const root = path.join(__dirname, '..', '..', '..');
     const offenders: string[] = [];
     let scanned = 0;
-    const walk = (dir: string) => {
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        if (e.name === 'node_modules' || e.name === '__tests__' || e.name.startsWith('.')) continue;
-        const p = path.join(dir, e.name);
-        if (e.isDirectory()) walk(p);
-        else if (/\.(tsx?|jsx?)$/.test(e.name)) {
-          const src = fs.readFileSync(p, 'utf8');
-          scanned++;
-          if (/Sentry\.wrap\(|TouchEventBoundary/.test(src)) offenders.push(path.relative(root, p));
-        }
-      }
-    };
-    walk(path.join(root, 'app'));
-    walk(path.join(root, 'src'));
+    for (const p of universe('appCode')) {
+      const src = fs.readFileSync(p, 'utf8');
+      scanned++;
+      if (/Sentry\.wrap\(|TouchEventBoundary/.test(src)) offenders.push(path.relative(root, p));
+    }
     expect(scanned).toBeGreaterThan(300); // the app was read, so none found means none
     expect(offenders).toEqual([]);
   });

@@ -10,10 +10,11 @@
  * are the accessible things: made `accessible`, a radiogroup would swallow its
  * own options into one element.
  */
-import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, relative, sep } from 'path';
+import { readFileSync } from 'fs';
+import { relative, sep } from 'path';
 import ts from 'typescript';
 import { MOBILE } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 /** Roles that name a group of accessible children, never one element. */
 const CONTAINER_ROLES = new Set(['radiogroup', 'tablist', 'alert', 'list', 'toolbar', 'menu', 'menubar']);
@@ -41,14 +42,6 @@ export function silentLabels(rel: string, text: string): string[] {
   return found;
 }
 
-function screens(dir: string, out: string[] = []): string[] {
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) { if (name !== '__tests__' && name !== 'node_modules') screens(p, out); continue; }
-    if (name.endsWith('.tsx') && !/\.test\./.test(name)) out.push(p);
-  }
-  return out;
-}
 
 describe('a label on a View is spoken', () => {
   it('the scan finds a silent label, and passes over a spoken one and a container', () => {
@@ -62,7 +55,7 @@ describe('a label on a View is spoken', () => {
   });
 
   it('on every screen: each labelled View is accessible, or a container', () => {
-    const files = [...screens(join(MOBILE, 'app')), ...screens(join(MOBILE, 'src'))];
+    const files = universe('appCode', { ext: ['.tsx'] });
     expect(files.length).toBeGreaterThan(200);
     const silent = files.flatMap((f) => silentLabels(relative(MOBILE, f).split(sep).join('/'), readFileSync(f, 'utf8')));
     expect(silent).toEqual([]);

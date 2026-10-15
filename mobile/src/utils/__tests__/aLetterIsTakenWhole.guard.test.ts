@@ -11,22 +11,13 @@
  * Read from source, comments stripped. What is left over takes a first letter
  * of the app's own English words, or the first ITEM of a list; each says why.
  */
-import * as fs from 'fs';
 import * as path from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 
-function walk(dir: string, out: string[] = []): string[] {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (e.name === 'node_modules' || e.name === '__tests__') continue;
-    const f = path.join(dir, e.name);
-    if (e.isDirectory()) walk(f, out);
-    else if (/\.(ts|tsx)$/.test(e.name)) out.push(f);
-  }
-  return out;
-}
-const FILES = [...walk(path.join(ROOT, 'app')), ...walk(path.join(ROOT, 'src'))]
+const FILES = universe('appCode')
   .map((f) => ({ rel: path.relative(ROOT, f).replace(/\\/g, '/'), src: readCode(f) }));
 
 /** Every way the app has ever taken a first letter by hand. */

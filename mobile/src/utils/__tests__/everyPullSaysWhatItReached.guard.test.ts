@@ -9,9 +9,9 @@
  * that draws a RefreshControl either says the shared sentence (REFRESH_FAILED)
  * itself, or is named here with the one that says it for it.
  */
-import { readdirSync, statSync } from 'fs';
-import { join, relative, sep } from 'path';
+import { relative, sep } from 'path';
 import { MOBILE, readCode } from '@/test-utils/readCode';
+import { files as universe } from '@/test-utils/universe';
 
 /** Pulls handed down from a screen that says it: the file → the one that does. */
 const SAID_BY: Record<string, string> = {
@@ -20,17 +20,8 @@ const SAID_BY: Record<string, string> = {
   'src/components/reels/ReelsStackList.tsx': 'app/(tabs)/reels.tsx',
 };
 
-const files: string[] = [];
-const walk = (dir: string) => {
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    if (name === 'node_modules' || name === '__tests__' || name.startsWith('.')) continue;
-    if (statSync(full).isDirectory()) walk(full);
-    else if (name.endsWith('.tsx') && !/\.test\./.test(name)) files.push(relative(MOBILE, full).split(sep).join('/'));
-  }
-};
-walk(join(MOBILE, 'src'));
-walk(join(MOBILE, 'app'));
+/** Every file that can draw a pull: JSX lives in .tsx. */
+const files = universe('appCode', { ext: ['.tsx'] }).map((f) => relative(MOBILE, f).split(sep).join('/'));
 
 const says = (f: string) => /\bREFRESH_FAILED\b/.test(readCode(f));
 const pulls = files.filter((f) => /<RefreshControl\b/.test(readCode(f)));

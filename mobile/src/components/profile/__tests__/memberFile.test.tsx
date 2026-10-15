@@ -24,9 +24,10 @@
 import React, { act } from 'react';
 import { StyleSheet } from 'react-native';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { readCode, stripComments } from '@/test-utils/readCode';
+import { files as universe, rel } from '@/test-utils/universe';
 
 // One import, at the top. `jest.mock` factories are hoisted above every import
 // by babel-plugin-jest-hoist, so the component picks up the mocks below even
@@ -130,21 +131,10 @@ describe('nothing on the member file is anonymous to a screen reader', () => {
    * ROOMS behind the profile still had no name at all. A list of files someone
    * remembered to add is not a sweep; walking the directory is.
    */
-  const A11Y_FILES: string[] = (function collect() {
-    const found: string[] = [];
-    const walk = (dir: string) => {
-      for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
-        if (e.name === '__tests__') continue;
-        const rel = `${dir}/${e.name}`;
-        if (e.isDirectory()) walk(rel);
-        else if (rel.endsWith('.tsx')) found.push(rel);
-      }
-    };
-    walk('src/components/profile');
-    walk('src/features/profile');
-    found.push('app/user/[username].tsx');
-    return found;
-  })();
+  const A11Y_FILES: string[] = universe('appCode', {
+    ext: ['.tsx'],
+    under: ['src/components/profile', 'src/features/profile', 'app/user/[username].tsx'],
+  }).map(rel);
 
   /** Brace-tracked: a lazy match to `>` ends the tag early on `() =>`. */
   function scanTags(src: string, name: string) {
