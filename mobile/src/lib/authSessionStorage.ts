@@ -12,6 +12,7 @@ import * as SecureStore from 'expo-secure-store';
 import { storage, storageReady, isStorageEncrypted } from '@/src/stores/mmkv-storage';
 import { logger } from '@/src/utils/logger';
 import { e2eTrace } from '@/src/utils/e2eTrace';
+import { stampOwnerlessWrites } from '@/src/utils/queueOwnership';
 
 async function readSecure(key: string): Promise<string | null> {
   try {
@@ -26,28 +27,52 @@ async function forgetSecure(key: string): Promise<void> {
   try { await SecureStore.deleteItemAsync(key); } catch { /* nothing there to keep */ }
 }
 
+/** The member a stored session belongs to, or null. */
+function memberOf(stored: string | null): string | null {
+  if (!stored) return null;
+  try {
+    const parsed = JSON.parse(stored) as { user?: { id?: unknown }; currentSession?: { user?: { id?: unknown } } };
+    const id = parsed?.user?.id ?? parsed?.currentSession?.user?.id;
+    return typeof id === 'string' && id ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+// Traced for the E2E by kind, store and size alone: never a token.
+async function readItem(key: string): Promise<string | null> {
+  await storageReady();
+  const kind = key.endsWith('-code-verifier') ? 'verifier' : 'session';
+  if (!isStorageEncrypted()) {
+    const secured = await readSecure(key);
+    e2eTrace('auth.storage.read', { kind, from: secured === null ? 'none' : 'secure', encrypted: false });
+    return secured;
+  }
+  const kept = storage.getString(key);
+  if (kept !== undefined) {
+    e2eTrace('auth.storage.read', { kind, from: 'mmkv', encrypted: true });
+    return kept;
+  }
+  const earlier = await readSecure(key);
+  if (earlier !== null) {
+    storage.set(key, earlier);
+    await forgetSecure(key);
+  }
+  e2eTrace('auth.storage.read', { kind, from: earlier === null ? 'none' : 'moved', encrypted: true });
+  return earlier;
+}
+
 export const authSessionStorage = {
-  // Traced for the E2E by kind, store and size alone: never a token.
   async getItem(key: string): Promise<string | null> {
-    await storageReady();
-    const kind = key.endsWith('-code-verifier') ? 'verifier' : 'session';
-    if (!isStorageEncrypted()) {
-      const secured = await readSecure(key);
-      e2eTrace('auth.storage.read', { kind, from: secured === null ? 'none' : 'secure', encrypted: false });
-      return secured;
+    const value = await readItem(key);
+    // The client reads the stored session before it may refresh (and so end)
+    // it: an older build's ownerless writes take that session's member first.
+    if (!key.endsWith('-code-verifier')) {
+      try { stampOwnerlessWrites(memberOf(value)); } catch (e) {
+        logger.warn('[auth.storage] could not stamp the queue with its member', e);
+      }
     }
-    const kept = storage.getString(key);
-    if (kept !== undefined) {
-      e2eTrace('auth.storage.read', { kind, from: 'mmkv', encrypted: true });
-      return kept;
-    }
-    const earlier = await readSecure(key);
-    if (earlier !== null) {
-      storage.set(key, earlier);
-      await forgetSecure(key);
-    }
-    e2eTrace('auth.storage.read', { kind, from: earlier === null ? 'none' : 'moved', encrypted: true });
-    return earlier;
+    return value;
   },
 
   async setItem(key: string, value: string): Promise<void> {

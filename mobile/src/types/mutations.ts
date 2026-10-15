@@ -86,21 +86,7 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
   // install still validates and flushes instead of dead-lettering.
   delete_lounge_message: z.object({ message_id: z.string() }).passthrough(),
 
-  // ── Entitlement ──
-  // ⚠️ user_id is REQUIRED, and this is a security boundary, not bookkeeping.
-  //
-  // The queue partitions pending work by `payload.user_id` and dead-letters anything
-  // belonging to a previous account (flushOfflineQueue's ownership split). Mutations WITHOUT a
-  // user_id are treated as "session-scoped and therefore safe" — true for
-  // increment_dossier_views, false for this one. sync-entitlement derives the account
-  // from the JWT, so a tier queued by one member and flushed after someone else signs
-  // in on that device is applied FAITHFULLY to the wrong account.
-  //
-  // An entry queued by an older build has no user_id, fails this schema, and is
-  // dead-lettered instead of executed (flushOfflineQueue's schema check). That is the safe
-  // direction — the member simply taps Restore Purchases again.
-  //
-  // No .passthrough() — sync_entitlement has no extra fields by design.
+  // ── Entitlement ── ⚠️ user_id REQUIRED: its handler refuses one not the session's.
   sync_entitlement: z.object({ tier: z.string(), user_id: z.string().uuid() }),
 
   // ── Moderation ──
@@ -130,13 +116,6 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
   // — so a type with no schema is executed with NO validation at all, quietly.
   // Every Dispatch type therefore has an entry, and
   // dispatchMutationRegistry.test.ts fails the build if one is ever missing.
-  //
-  // `user_id` is required wherever the row is owned, for the reason spelled out
-  // above sync_entitlement: the queue partitions pending work by payload.user_id
-  // and treats a payload WITHOUT one as session-scoped and safe to run for
-  // whoever is signed in when the network returns. A filing is not session-
-  // scoped. The two that legitimately omit it are the toggles, which derive the
-  // member from auth.uid() inside the RPC and so have nothing to spoof.
 
   // kind is validated as an enum because it decides which CHECK constraints the
   // row must satisfy, and a corrupted kind is the difference between a 2000-

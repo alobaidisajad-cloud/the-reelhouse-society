@@ -20,7 +20,7 @@
  * The fault was never one key. It was that erasing them was a LIST somebody had
  * to remember to add to, and four keys in a row were forgotten.
  *
- * So every draft now shares one prefix and logout erases the prefix. A draft
+ * So every draft shares one prefix and the member's own sign-out erases it. A draft
  * kind invented next year is carried out with the rest of them without anybody
  * remembering anything, which is the only version of this that stays true.
  *
@@ -182,7 +182,24 @@ export function clearDraft(
 }
 
 /**
- * Everything one member has left unfinished. Called on logout.
+ * How many drafts this phone holds for one member, of every kind: the same
+ * prefix the sweep below erases, so a kind added later is counted too. Null
+ * when the keys could not be read: not known, which is not none.
+ */
+export function countDrafts(userId: string | null | undefined): number | null {
+  if (!userId) return 0;
+  try {
+    const mine = `${DRAFT_PREFIX}${userId}_`;
+    return storage.getAllKeys().filter((key) => key.startsWith(mine)).length;
+  } catch (e) {
+    logger.warn(`[drafts] could not count: ${String(e)}`);
+    return null;
+  }
+}
+
+/**
+ * Everything one member has left unfinished. Called at the member's own
+ * sign-out, never when a session ends elsewhere: then the drafts wait for them.
  *
  * A SWEEP of the member's prefix, not a list of kinds — the whole reason four
  * keys went unerased for as long as they existed is that erasing them was a list

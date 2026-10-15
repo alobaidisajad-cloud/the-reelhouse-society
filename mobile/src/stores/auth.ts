@@ -4,14 +4,17 @@ import { queryClient } from '../lib/queryClient';
 import { identifyUser, logoutRevenueCat } from '../lib/revenueCat';
 import { rememberRequestedHandle, clearRequestedHandle } from '../utils/handleNotice';
 import { clearHandleHistory } from '../utils/handleHistory';
-import { clearAllDrafts } from '../utils/memberDrafts';
+import { clearAllDrafts, countDrafts } from '../utils/memberDrafts';
+import { keptAfterSignOutElsewhere, keptFromBefore } from '../utils/keptOnThisPhone';
 import { captureError, setSentryUser } from '../lib/sentry';
 import type { User as AuthUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { PROFILE_SELECT_COLUMNS, ProfileService } from '../services/ProfileWriteService';
 import { User } from '../types';
 import { logger } from '../utils/logger';
-import { clearOfflineQueue } from '../utils/offlineQueue';
+import {
+  clearOfflineQueue, flushOfflineQueue, holdQueue, releaseHeldWrites, type QueuedMutation,
+} from '../utils/offlineQueue';
 import reelToast from '../utils/reelToast';
 import { isRetryable, withRetry } from '../utils/withRetry';
 import { hydrateFollowing } from './domain/socialSlice';
@@ -27,7 +30,8 @@ export interface AuthState {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, username: string, persona?: string) => Promise<{ needsConfirmation: boolean }>;
-  logout: () => Promise<void>;
+  /** `endedElsewhere`: not by their hand; their unsent writes and drafts are kept for them. */
+  logout: (opts?: { endedElsewhere?: boolean }) => Promise<void>;
   updateUser: (updates: Partial<User>) => Promise<void>;
   setLocalTierHint: (updates: { tier?: string; is_founding?: boolean }) => void;
   setPreference: (key: string, value: unknown) => Promise<void>;
@@ -121,6 +125,35 @@ async function readRankHistory(userId: string): Promise<void> {
   });
 }
 
+/**
+ * The member's session ended elsewhere: their unsent writes go aside under a
+ * key of their own (a toggle is not kept), their drafts stay, and they are told.
+ */
+function keepForTheirReturn(memberId: string | null): void {
+  let held = { kept: 0, lapsed: 0 };
+  try {
+    held = holdQueue();
+  } catch (e) {
+    logger.warn('[auth] could not set the queue aside for its member', e);
+  }
+  reelToast(keptAfterSignOutElsewhere({ ...held, drafts: countDrafts(memberId) }));
+}
+
+/** At a member's sign-in here: what was kept for them returns to the queue, and they are told. */
+function welcomeBack(memberId: string): void {
+  let released: QueuedMutation[] = [];
+  try {
+    released = releaseHeldWrites(memberId);
+  } catch (e) {
+    logger.warn('[auth] could not return the writes kept for the member', e);
+    return;
+  }
+  const words = keptFromBefore(released);
+  if (!words) return;
+  reelToast(words);
+  void flushOfflineQueue();
+}
+
 export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   isAuthenticated: false,
@@ -182,6 +215,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       const { data: { session } } = await supabase.auth.getSession();
       e2eTrace('auth.restore', { session: !!session?.user, cached: lastUserId !== undefined });
       if (session?.user) {
+        welcomeBack(session.user.id);
         // Unsynced preferences first, MERGED server-side (another device may
         // have set other keys meanwhile).
         const pendingPrefs = readPendingPrefs(session.user.id);
@@ -232,6 +266,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         set({ user: null, isAuthenticated: false, loading: false });
         // Only if someone was here: a signed-out visitor keeps their warm feed.
         if (hadStaleSession) {
+          // Not by their own hand: what they had not yet sent waits for them.
+          keepForTheirReturn(staleUserId);
           try {
             const { resetAllStores } = await import('./resetAllStores');
             await resetAllStores(staleUserId);
@@ -242,7 +278,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             queryClient.clear();
           } catch { /* best effort — the auth flag is already cleared */ }
         }
-        // The offline queue stays: each write carries its user_id (unlike logout).
         return;
       }
     } catch (err: unknown) {
@@ -287,6 +322,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     storage.set('last_user_id', authedUser.id);
     setSensitive(`ironvault_user_cache_${authedUser.id}`, JSON.stringify(completeUser));
     set({ user: completeUser, isAuthenticated: true, loading: false });
+    welcomeBack(authedUser.id);
 
     // The store's identity, by the documented `logIn()`; never awaited by sign-in.
     void identifyUser(authedUser.id);
@@ -359,10 +395,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     return { needsConfirmation: true };
   },
 
-  logout: async () => {
+  logout: async (opts) => {
     // Re-entrancy guard: signOut() emits SIGNED_OUT, whose (deferred) handler
     // calls logout() again if state still looks authenticated. One pass only.
     if (_logoutInFlight) return _logoutInFlight;
+    const endedElsewhere = opts?.endedElsewhere === true;
     _logoutInFlight = (async () => {
     // 0. Capture user ID before we clear state (needed for push token removal)
     const previousUserId = get().user?.id ?? null;
@@ -370,6 +407,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     // 1. Signed out on screen FIRST: never held up by the network or an SDK.
     set({ user: null, isAuthenticated: false });
+    // Not by their own hand: what they had not yet sent waits for them.
+    if (endedElsewhere) keepForTheirReturn(previousUserId);
 
     // 2. Clean up Realtime WebSocket immediately to stop background heartbeat
     try {
@@ -420,11 +459,15 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     storage.delete('last_user_id');
     storage.delete('ironvault_user_cache'); // clean up legacy
     storage.delete('recovery_pending');
-    clearAllDrafts(previousUserId); // their unfinished writing
+    // Their unfinished writing and unsent writes, at their own sign-out only
+    // (its confirm named them first); keyed to them, never shown to another.
+    if (!endedElsewhere) {
+      clearAllDrafts(previousUserId);
+      clearOfflineQueue(previousUserId);
+    }
     // Their old handles and the one they asked for: never left on another's phone.
     clearHandleHistory();
     clearRequestedHandle();
-    clearOfflineQueue();
     storage.delete('REELHOUSE_QUERY_CACHE');
     storage.delete('nitrate_memory_feed');
 

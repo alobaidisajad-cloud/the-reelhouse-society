@@ -21,6 +21,9 @@
 import { clearOfflineQueue, enqueueMutation } from '../offlineQueue';
 import { storage } from '@/src/stores/mmkv-storage';
 
+// The member signed in, who is the one signing out here.
+jest.mock('@/src/stores/auth', () => ({ useAuthStore: { getState: () => ({ user: { id: 'u1' } }) } }));
+
 const QUEUE_KEY = 'reelhouse-offline-mutations';
 const DEAD = `${QUEUE_KEY}_dead_letter`;
 
@@ -39,7 +42,7 @@ describe('logout leaves no queue behind', () => {
 
     expect(storage.getString(DEAD)).toBeTruthy();
 
-    clearOfflineQueue();
+    clearOfflineQueue('u1');
 
     expect(storage.getString(DEAD)).toBeUndefined();
   });
@@ -50,7 +53,7 @@ describe('logout leaves no queue behind', () => {
     const invented = `${QUEUE_KEY}_some_future_shelf`;
     storage.set(invented, JSON.stringify([{ payload: { body: 'private words' } }]));
 
-    clearOfflineQueue();
+    clearOfflineQueue('u1');
 
     expect(storage.getString(invented)).toBeUndefined();
   });
@@ -61,17 +64,35 @@ describe('logout leaves no queue behind', () => {
     storage.set('reelhouse_dispatch_draft_u1_dossier', 'an unfinished essay');
     storage.set('last_user_id', 'u1');
 
-    clearOfflineQueue();
+    clearOfflineQueue('u1');
 
     expect(storage.getString('reelhouse_dispatch_draft_u1_dossier')).toBe('an unfinished essay');
     expect(storage.getString('last_user_id')).toBe('u1');
+  });
+
+  it('keeps what is provably another member\'s, and erases what was kept for the one leaving', () => {
+    // u2's session ended elsewhere: their writes wait for them, and their failed
+    // critique is theirs too. u1 signing out on this phone takes neither.
+    storage.set(`${QUEUE_KEY}_held_u2`, JSON.stringify([{ id: 'h2', type: 'add_critique', owner: 'u2', payload: {} }]));
+    storage.set(`${QUEUE_KEY}_held_u1`, JSON.stringify([{ id: 'h1', type: 'add_critique', owner: 'u1', payload: {} }]));
+    storage.set(DEAD, JSON.stringify([
+      { id: 'd1', type: 'add_critique', owner: 'u1', timestamp: Date.now(), payload: {} },
+      { id: 'd2', type: 'add_critique', owner: 'u2', timestamp: Date.now(), payload: {} },
+      { id: 'd3', type: 'add_critique', timestamp: Date.now(), payload: {} },
+    ]));
+
+    clearOfflineQueue('u1');
+
+    expect(JSON.parse(storage.getString(`${QUEUE_KEY}_held_u2`)!)).toHaveLength(1);
+    expect(storage.getString(`${QUEUE_KEY}_held_u1`)).toBeUndefined();
+    expect(JSON.parse(storage.getString(DEAD)!).map((m: { id: string }) => m.id)).toEqual(['d2']);
   });
 
   it('still empties the live queue and zeroes the pending count', () => {
     enqueueMutation({ type: 'add_critique', payload: { body: 'x' } } as never);
     expect(JSON.parse(storage.getString(QUEUE_KEY) ?? '[]')).toHaveLength(1);
 
-    clearOfflineQueue();
+    clearOfflineQueue('u1');
 
     expect(JSON.parse(storage.getString(QUEUE_KEY) ?? '[]')).toHaveLength(0);
   });

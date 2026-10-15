@@ -37,6 +37,8 @@ jest.mock('../reelToast', () => {
   return { __esModule: true, default: toast };
 });
 jest.mock('../logger', () => ({ logger: { debug: jest.fn(), warn: jest.fn(), error: jest.fn(), info: jest.fn() } }));
+// The member signed in, who queues these writes and whose session sends them.
+jest.mock('../../stores/auth', () => ({ useAuthStore: { getState: () => ({ user: { id: 'u1' } }) } }));
 
 const DEAD = 'reelhouse-offline-mutations_dead_letter';
 const write = () => enqueueMutation({ type: 'watchlist_add', payload: { user_id: 'u1', film_id: 42, title: 'Stalker' } } as never);

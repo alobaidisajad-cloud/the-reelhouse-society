@@ -39,7 +39,7 @@ jest.mock('../../lib/supabase', () => ({
 const mockRpc = jest.fn(async (..._args: unknown[]) => ({ data: null as unknown, error: null as unknown }));
 
 jest.mock('../mmkv-storage', () => ({
-  storage: { getString: jest.fn(), set: jest.fn(), delete: jest.fn() },
+  storage: { getString: jest.fn(), set: jest.fn(), delete: jest.fn(), getAllKeys: jest.fn(() => []) },
   // The profile cache is member content (it carries their email), so it writes
   // through setSensitive now. These suites stand in for the encrypted case.
   setSensitive: jest.fn(),
@@ -97,6 +97,9 @@ jest.mock('../../utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(),
   flushOfflineQueue: jest.fn(),
   clearOfflineQueue: jest.fn(),
+  holdQueue: jest.fn(() => ({ kept: 0, lapsed: 0 })),
+  releaseHeldWrites: jest.fn(() => []),
+  unsentFor: jest.fn(() => ({ unsent: 0, failedWords: 0 })),
 }));
 
 jest.mock('expo-secure-store', () => ({

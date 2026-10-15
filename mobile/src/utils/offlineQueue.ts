@@ -8,6 +8,7 @@
  *   • a server that fails for a moment (5xx, 429, 408) is retried, five sends at most
  *   • a duplicate counts as delivered; a broken statement or an unknown refusal
  *     goes to the dead letter (7 days, 50 at most)
+ *   • each write is sent only under its own member's session (queueOwnership.ts)
  */
 import * as Crypto from 'expo-crypto';
 import { supabase } from '../lib/supabase';
@@ -21,6 +22,10 @@ import reelToast from './reelToast';
 import { queryClient } from '../lib/queryClient';
 import { settleDelivered } from '../stores/markCounts';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
+import {
+    DEAD_LETTER_KEY, QUEUE_KEY, changesMadeOffline, heldKey, heldOwnerOf, keepForOwners, kindOf,
+    readList, readQueue, writeQueue,
+} from './queueOwnership';
 
 export interface QueuedMutation {
     id: string;
@@ -48,6 +53,8 @@ export interface QueuedMutation {
         | 'add_viewing' | 'remove_viewing' | 'set_viewing_note' | 'remove_viewing_note';
     payload: Record<string, unknown>;
     timestamp: number;
+    /** The member signed in when it was queued; it is sent under their session alone. */
+    owner?: string;
     /** Moments the server failed it so far; beside the payload, never sent or validated. */
     _retryCount?: number;
 }
@@ -79,35 +86,66 @@ export function classifyQueueError(code: string, message: string, status: number
   return 'other';
 }
 
-const QUEUE_KEY = 'reelhouse-offline-mutations';
+export { QUEUED_WRITE_KIND, changesMadeOffline, holdQueue, kindOf, releaseHeldWrites } from './queueOwnership';
+export type { QueuedWriteKind } from './queueOwnership';
+
 const MAX_QUEUE_SIZE = 100;
 // Sends a write gets when the server fails it for a moment, before the dead letter.
 const MAX_TRANSIENT_RETRIES = 5;
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+const DEAD_LETTER_DAYS = 7;
+const DEAD_LETTER_MAX = 50;
 
-// Whose writes these are is decided at send time, from the LIVE session: a write
-// carrying another member's user_id is dead-lettered, never sent (the ownership
-// split in flushOfflineQueue). Logout also empties the queue.
-
-// The screens' copy of the queue (stores/offlineQueueStore): what it held at
-// launch, then every write writeQueue makes — set there and nowhere else, so it
-// cannot disagree with MMKV.
+// The screens' copy of the queue at launch; writeQueue keeps it after (queueOwnership.ts).
 useOfflineQueueStore.setState({ queued: readQueue() });
+
+/** The member signed in now, read when a write is queued. */
+function signedInMember(): string | null {
+    try {
+        // Required here, not imported: the auth store imports this file.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { useAuthStore } = require('../stores/auth') as typeof import('../stores/auth');
+        return useAuthStore.getState().user?.id ?? null;
+    } catch {
+        return null;
+    }
+}
+
+/** Failed writes, kept a week for diagnosis, each still naming its member. */
+function addToDeadLetter(failed: readonly QueuedMutation[]): void {
+    if (failed.length === 0) return;
+    const weekAgo = Date.now() - DEAD_LETTER_DAYS * 24 * 60 * 60 * 1000;
+    const kept = readList(DEAD_LETTER_KEY).filter((m) => m.timestamp > weekAgo);
+    try {
+        storage.set(DEAD_LETTER_KEY, JSON.stringify([...kept, ...failed].slice(-DEAD_LETTER_MAX)));
+    } catch { /* the dead letter is for diagnosis: losing it changes nothing sent */ }
+}
 
 /** Get current queue length (synchronous) */
 export function getQueueLength(): number {
     return readQueue().length;
 }
 
-/** Empty the queue and its dead letter, at logout. */
-export function clearOfflineQueue(): void {
-    // Every key under the queue's prefix, not a list of them. The dead letter
-    // keeps failed writes WITH their words (a critique, a lounge message), and
-    // must not stay on the phone for the next member; a queue key added later
-    // is erased without anyone remembering to add it here.
+/**
+ * At the member's own sign-out: everything under the queue's prefix that is
+ * theirs or no one's, the dead letter's failed writes with their words among
+ * it. Swept, not listed, so a queue key added later goes too. What is provably
+ * another member's (writes kept for them, their failed ones) stays for them.
+ */
+export function clearOfflineQueue(memberId: string | null): void {
     try {
         for (const key of storage.getAllKeys()) {
-            if (key.startsWith(QUEUE_KEY)) storage.delete(key);
+            if (!key.startsWith(QUEUE_KEY)) continue;
+            const heldFor = heldOwnerOf(key);
+            if (heldFor && heldFor !== memberId) continue;
+            if (key === DEAD_LETTER_KEY) {
+                const others = readList(key).filter((m) => m.owner && m.owner !== memberId);
+                if (others.length > 0) {
+                    storage.set(key, JSON.stringify(others));
+                    continue;
+                }
+            }
+            storage.delete(key);
         }
     } catch (e) {
         logger.warn(`[OfflineSync] could not clear the queue on logout: ${String(e)}`);
@@ -115,39 +153,40 @@ export function clearOfflineQueue(): void {
     writeQueue([]);
 }
 
+/**
+ * What this phone holds for one member that signing out would erase: writes
+ * not yet sent (queued, or kept for them), and failed writes holding their words.
+ */
+export function unsentFor(memberId: string): { unsent: number; failedWords: number } {
+    const unsent = readQueue().filter((m) => m.owner === memberId).length
+        + readList(heldKey(memberId)).length;
+    const failedWords = readList(DEAD_LETTER_KEY)
+        .filter((m) => m.owner === memberId && kindOf(m) === 'words').length;
+    return { unsent, failedWords };
+}
+
 /** Read queue from MMKV (synchronous C++) */
 export function getOfflineQueue(): QueuedMutation[] {
     return readQueue();
 }
 
-function readQueue(): QueuedMutation[] {
-    try {
-        const stored = storage.getString(QUEUE_KEY);
-        if (stored) return JSON.parse(stored);
-    } catch (e) {
-        if (__DEV__) console.error('[OfflineSync] Failed to read queue:', e);
+/**
+ * Queue a write to be sent later, as the member signed in now. Synchronous:
+ * MMKV. With nobody signed in there is no one to send it as, so it is not queued.
+ */
+export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp' | 'owner'>) {
+    const owner = signedInMember();
+    if (!owner) {
+        logger.warn(`[OfflineSync] ${mutation.type} not queued: nobody is signed in.`);
+        return;
     }
-    return [];
-}
-
-/** Write queue to MMKV (synchronous C++) */
-function writeQueue(queue: QueuedMutation[]) {
-    try {
-        storage.set(QUEUE_KEY, JSON.stringify(queue));
-        useOfflineQueueStore.setState({ queued: queue });
-    } catch (e) {
-        if (__DEV__) console.error('[OfflineSync] Failed to write queue:', e);
-    }
-}
-
-/** Queue a write to be sent later. Synchronous: MMKV. */
-export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp'>) {
     let queue = readQueue();
 
     const newMutation: QueuedMutation = {
         ...mutation,
         id: Crypto.randomUUID(),
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        owner,
     };
 
     // Full: the oldest goes, and the member is told.
@@ -166,10 +205,6 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
     logger.debug(`[OfflineSync] Queued ${mutation.type} for background sync.`);
 }
 
-/** "A change made offline", "3 changes made offline" — never "3 offline action(s)". */
-export const changesMadeOffline = (n: number) =>
-    n === 1 ? 'A change made offline' : `${n} changes made offline`;
-
 let isFlushing = false;
 
 export async function flushOfflineQueue() {
@@ -182,32 +217,25 @@ export async function flushOfflineQueue() {
     // Nothing queued: no session read (SecureStore) at all.
     if (readQueue().length === 0) return;
 
-    // No session, nothing is sent: after a crash or a force-quit the queue may
-    // belong to whoever was signed in before.
+    // No session, nothing is sent: the writes wait for their own member's.
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user?.id) {
         logger.debug('[OfflineSync] No active session — aborting flush.');
-        // Dead-lettered now: the 24-hour pruning below is never reached without
-        // a session, so they would otherwise be retried on every return forever.
-        const orphanQueue = readQueue();
-        if (orphanQueue.length > 0) {
-            logger.debug(`[OfflineSync] Dead-lettering ${orphanQueue.length} orphaned mutation(s) — no session to execute them.`);
-            try {
-                const existing = storage.getString(QUEUE_KEY + '_dead_letter');
-                let prev: QueuedMutation[] = existing ? JSON.parse(existing) : [];
-                const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-                prev = prev.filter(m => m.timestamp > sevenDaysAgo);
-                const tagged = orphanQueue.map(m => ({
-                    ...m,
-                    payload: { ...m.payload, _failReason: 'no_session_orphan', _failedAt: new Date().toISOString() }
-                }));
-                storage.set(QUEUE_KEY + '_dead_letter', JSON.stringify([...prev, ...tagged].slice(-50)));
-            } catch { /* dead-letter write failure — non-critical */ }
-            writeQueue([]);
-        }
         return;
     }
     const authenticatedUserId = session.user.id;
+
+    // Only the signed-in member's writes are sent. Another member's (a session
+    // that changed before the queue was handed over) are kept for that member.
+    {
+        const live = readQueue();
+        const others = live.filter((m) => m.owner !== authenticatedUserId);
+        if (others.length > 0) {
+            logger.warn(`[OfflineSync] ${others.length} write(s) of another member kept for them, unsent.`);
+            keepForOwners(others);
+            writeQueue(live.filter((m) => m.owner === authenticatedUserId));
+        }
+    }
 
     // A banned member's queue is not sent. useBanCheck reads the profile the phone
     // holds, which is stale for a member banned while offline; this asks the server.
@@ -226,17 +254,13 @@ export async function flushOfflineQueue() {
         }
         if (banProfile?.is_banned) {
             logger.warn('[OfflineSync] User is banned — purging write queue to dead-letter.');
-            const bannedMutations = readQueue().map(m => ({
+            // Theirs alone: a write queued while this check waited is kept for its own member.
+            const live = readQueue();
+            addToDeadLetter(live.filter((m) => m.owner === authenticatedUserId).map(m => ({
                 ...m,
                 payload: { ...m.payload, _failReason: 'user_banned_at_flush', _failedAt: new Date().toISOString() }
-            }));
-            try {
-                const existing = storage.getString(QUEUE_KEY + '_dead_letter');
-                let prev: QueuedMutation[] = existing ? JSON.parse(existing) : [];
-                const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-                prev = prev.filter(m => m.timestamp > sevenDaysAgo);
-                storage.set(QUEUE_KEY + '_dead_letter', JSON.stringify([...prev, ...bannedMutations].slice(-50)));
-            } catch { /* dead-letter write failure — non-critical */ }
+            })));
+            keepForOwners(live.filter((m) => m.owner !== authenticatedUserId));
             writeQueue([]);
             return;
         }
@@ -264,40 +288,8 @@ export async function flushOfflineQueue() {
         settleDelivered(m);
     };
 
-    // Only the signed-in member's writes are sent; another member's (a crash
-    // mid-switch) are dead-lettered.
-    const ownedMutations: QueuedMutation[] = [];
-    const orphanedMutations: QueuedMutation[] = [];
-    for (const m of queue) {
-        const payloadUserId = m.payload.user_id as string | undefined;
-        // Mutations without user_id in payload (e.g., increment_dossier_views) are safe to execute
-        // as they use session-scoped RPCs. Mutations WITH user_id must match current session.
-        if (!payloadUserId || payloadUserId === authenticatedUserId) {
-            ownedMutations.push(m);
-        } else {
-            orphanedMutations.push(m);
-        }
-    }
-
-    if (orphanedMutations.length > 0) {
-        logger.warn(`[OfflineSync] Discarding ${orphanedMutations.length} orphaned mutation(s) from user ${orphanedMutations[0]?.payload.user_id} (current: ${authenticatedUserId}).`);
-        for (const m of orphanedMutations) processedIds.add(m.id);
-        // Route to dead-letter for post-mortem — never execute cross-user mutations
-        try {
-            const existing = storage.getString(QUEUE_KEY + '_dead_letter');
-            let prev: QueuedMutation[] = existing ? JSON.parse(existing) : [];
-            const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-            prev = prev.filter(m => m.timestamp > sevenDaysAgo);
-            const tagged = orphanedMutations.map(m => ({
-                ...m,
-                payload: { ...m.payload, _failReason: 'cross_user_orphan', _failedAt: new Date().toISOString() }
-            }));
-            const combined = [...prev, ...tagged].slice(-50);
-            storage.set(QUEUE_KEY + '_dead_letter', JSON.stringify(combined));
-        } catch { /* storage write failure — non-critical */ }
-    }
-
-    queue = ownedMutations;
+    // Read again after the ban check waited: another member's write stays, unsent.
+    queue = queue.filter((m) => m.owner === authenticatedUserId);
 
     // Prune stale mutations (>24h old)
     const now = Date.now();
@@ -407,16 +399,8 @@ export async function flushOfflineQueue() {
         reelToast(`Archive updated with offline actions.`);
     }
 
-    // The dead letter: the last 50 failures of the past 7 days, for diagnosis.
     if (deadLetterQueue.length > 0) {
-        try {
-            const existing = storage.getString(QUEUE_KEY + '_dead_letter');
-            let prev: QueuedMutation[] = existing ? JSON.parse(existing) : [];
-            const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-            prev = prev.filter(m => m.timestamp > sevenDaysAgo);
-            const combined = [...prev, ...deadLetterQueue].slice(-50);
-            storage.set(QUEUE_KEY + '_dead_letter', JSON.stringify(combined));
-        } catch { /* storage write failure — nothing we can do */ }
+        addToDeadLetter(deadLetterQueue);
         reelToast.error(`${changesMadeOffline(deadLetterQueue.length)} could not be sent.`);
     }
 

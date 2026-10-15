@@ -77,10 +77,11 @@ type QueuedWrite = { type: string; payload: Record<string, unknown> };
  * applied on top of it, and a queued log the house does not have yet is ready to
  * stand ahead of a fresh page.
  *
- * Only the member's OWN writes. A crash or a force-quit before sign-out can leave
- * another member's writes in the queue (flushOfflineQueue dead-letters them
- * unsent), and their logs must never be drawn in this member's archive. A queued
- * change names no member, only its log, so it can only ever meet this member's rows.
+ * Only the member's OWN writes. Each sign-in and each send moves another member's
+ * writes out of the queue and keeps them for that member (queueOwnership.ts);
+ * this filter holds as well, so their logs are never drawn in this member's
+ * archive. A queued change names no member, only its log, so it can only ever
+ * meet this member's rows.
  */
 export function overlayQueuedLogs(
     memberId: string,

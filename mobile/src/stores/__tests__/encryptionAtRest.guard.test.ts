@@ -250,6 +250,10 @@ describe('#49 · member content never reaches disk unencrypted', () => {
     const auth = readCode('src/stores/auth.ts');
     expect(auth).toMatch(/storage\.set\(`dirty_profile_/);
     expect(auth).toMatch(/storage\.set\(`dirty_prefs_/);
-    expect(readCode('src/utils/offlineQueue.ts')).toMatch(/storage\.set\(QUEUE_KEY/);
+    // The queue's one writer, and the writes kept for a member who is not signed in.
+    const queue = readCode('src/utils/queueOwnership.ts');
+    expect(queue).toMatch(/storage\.set\(QUEUE_KEY/);
+    expect(queue).toMatch(/storage\.set\(heldKey\(owner\)/);
+    expect(queue).not.toMatch(/setSensitive/);
   });
 });

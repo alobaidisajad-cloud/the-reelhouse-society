@@ -61,7 +61,9 @@ jest.mock('@/src/stores/settings', () => {
   (useSettingsStore as unknown as { getState: () => unknown }).getState = () => ({ tactileAudioEnabled: true });
   return { useSettingsStore };
 });
-jest.mock('@/src/stores/mmkv-storage', () => ({ storage: { clearAll: () => mockClearAll(), set: jest.fn(), getString: jest.fn(), delete: jest.fn() } }));
+jest.mock('@/src/stores/mmkv-storage', () => ({
+  storage: { clearAll: () => mockClearAll(), set: jest.fn(), getString: jest.fn(), delete: jest.fn(), getAllKeys: () => [] },
+}));
 jest.mock('@/src/services/AuthService', () => ({ AuthService: { requestAccountDeletion: () => mockRequestDeletion(), updatePassword: jest.fn() } }));
 jest.mock('@/src/hooks/useUpdateUser', () => ({ useUpdateUser: () => ({ mutateAsync: jest.fn(() => Promise.resolve()), isPending: false }) }));
 jest.mock('@/src/services/ModerationService', () => ({ ModerationService: { getPendingCount: jest.fn(() => Promise.resolve(3)) } }));

@@ -117,6 +117,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/everyControlHasAName.guard.test.ts` | Every control a screen reader can name, and every sheet it can leave (a render sees one screen). |
 | `src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts` | No file is double-encoded by a shell round-trip. |
 | `src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts` | Every per-member storage key has an eraser. |
+| `src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts` | Every `enqueueMutation` call site in the app, and the kind each type it queues has in the typed map. |
 | `src/utils/__tests__/noControlCharacters.guard.test.ts` | No source file carries a raw control character. |
 | `src/utils/__tests__/noMachinePaths.guard.test.ts` | No code names a place on one computer. |
 | `src/utils/__tests__/prose-handlers.guard.test.ts` | Every handler that writes prose passes it through the sanitiser. |

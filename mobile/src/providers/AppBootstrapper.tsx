@@ -13,6 +13,7 @@ import { initRevenueCat, reconcileRank } from '../lib/revenueCat';
 import { addBreadcrumb, Sentry, setSentryUser } from '../lib/sentry';
 import { supabase } from '../lib/supabase';
 import { storage, useAuthStore } from '../stores/auth';
+import { answerAuthEvent } from '../stores/authEvents';
 import { hydrateFollowing } from '../stores/domain/socialSlice';
 import { useNotificationStore } from '../stores/notificationStore';
 import MemoryManager from '../utils/memoryManager';
@@ -249,23 +250,7 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         const hasSessionUser = !!session?.user;
         setTimeout(() => {
           authEventChain = authEventChain
-            .then(async () => {
-              if (event === 'SIGNED_OUT') {
-                // Session ended remotely or via token expiration
-                if (useAuthStore.getState().isAuthenticated) {
-                  await useAuthStore.getState().logout();
-                }
-              } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY') {
-                // A recovery link mints a full session before the user has set a
-                // new password — don't hydrate the app as signed-in until the
-                // reset screen clears the pending flag (or the abandon path
-                // destroys the session).
-                const recoveryPending = storage.getString('recovery_pending') === 'true';
-                if (hasSessionUser && !recoveryPending && !useAuthStore.getState().isAuthenticated) {
-                  await useAuthStore.getState().restoreSession();
-                }
-              }
-            })
+            .then(() => answerAuthEvent(event, hasSessionUser))
             .catch((e) => logger.warn('[AppBootstrapper] Auth event handler failed:', e));
         }, 0);
       }

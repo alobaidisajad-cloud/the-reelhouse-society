@@ -35,13 +35,16 @@ jest.mock('@/src/stores/mmkv-storage', () => {
       set: jest.fn((k: string, v: string) => store.set(k, v)),
       getString: jest.fn((k: string) => store.get(k)),
       delete: jest.fn((k: string) => store.delete(k)),
+      getAllKeys: jest.fn(() => [...store.keys()]),
     },
   };
 });
+// The member signed in, whose writes these are.
+jest.mock('@/src/stores/auth', () => ({ useAuthStore: { getState: () => ({ user: { id: 'u1' } }) } }));
 
 const mutation = (type: string) => ({ type, payload: { n: type } } as never);
 
-beforeEach(() => clearOfflineQueue());
+beforeEach(() => clearOfflineQueue('u1'));
 
 describe('offlineQueue — holding a write until the network returns', () => {
   it('starts empty', () => {
@@ -56,13 +59,15 @@ describe('offlineQueue — holding a write until the network returns', () => {
     expect(q.payload).toEqual({ n: 'add_log' });
   });
 
-  it('stamps an id and a timestamp the caller does not supply', () => {
+  it('stamps an id, a timestamp and its member, none of which the caller supplies', () => {
     // The flush loop dedupes on id and ages entries out by timestamp, so a
-    // mutation without either would be flushed repeatedly or never expire.
+    // mutation without either would be flushed repeatedly or never expire; it
+    // is sent under its member's session alone.
     enqueueMutation(mutation('add_log'));
     const [q] = getOfflineQueue();
     expect(q.id).toBeTruthy();
     expect(typeof q.timestamp).toBe('number');
+    expect(q.owner).toBe('u1');
   });
 
   it('PRESERVES ORDER — causal consistency depends on it', () => {
@@ -87,7 +92,7 @@ describe('offlineQueue — holding a write until the network returns', () => {
 
   it('clearOfflineQueue empties it', () => {
     enqueueMutation(mutation('a'));
-    clearOfflineQueue();
+    clearOfflineQueue('u1');
     expect(getQueueLength()).toBe(0);
   });
 

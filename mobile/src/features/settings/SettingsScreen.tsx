@@ -50,6 +50,9 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { EMAIL_CODE_DIGITS } from '@/src/constants/inputLimits';
 import { raceDeadline } from '@/src/utils/raceDeadline';
+import NetInfo from '@react-native-community/netinfo';
+import { flushOfflineQueue, getQueueLength } from '@/src/utils/offlineQueue';
+import { erasedBySigningOut, keptFor } from '@/src/utils/keptOnThisPhone';
 
 /** The phone's answer about its lock, or no lock: a check that hangs or fails is a no. */
 const lockAnswer = (asked: Promise<boolean>): Promise<boolean> => raceDeadline(asked, 2000).catch(() => false);
@@ -59,6 +62,9 @@ const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
 
 /** The phone's own lock was put away (by the member, the system or the app): not a failure. */
 const LOCK_PUT_AWAY = new Set(['user_cancel', 'system_cancel', 'app_cancel']);
+
+/** How long the sign-out waits for the queue to go out before it names what is left. */
+const SEND_BEFORE_LEAVING_MS = 8000;
 
 /** Supabase's own floor for repeat OTP sends. Asking sooner only earns an error. */
 const OTP_RESEND_SECONDS = 60;
@@ -342,8 +348,16 @@ export function SettingsScreen() {
   });
 
   const handleSignOut = async () => {
-    Alert.alert('Depart the Society', 'Your membership will remain. You may return at any time.', [
-      { text: 'CANCEL', style: 'cancel' },
+    // Online, what is queued is sent before the session ends; what is left is named.
+    if (getQueueLength() > 0) {
+      const net = await NetInfo.fetch().catch(() => null);
+      if (net?.isConnected && net.isInternetReachable !== false) {
+        await raceDeadline(flushOfflineQueue(), SEND_BEFORE_LEAVING_MS).catch(() => {});
+      }
+    }
+    const erased = user ? erasedBySigningOut(keptFor(user.id)) : null;
+    Alert.alert('Depart the Society', erased ?? 'Your membership will remain. You may return at any time.', [
+      { text: erased ? 'STAY SIGNED IN' : 'CANCEL', style: 'cancel' },
       { text: 'SIGN OUT', style: 'destructive', onPress: () => {
         // Leaving gives nothing away, so no lock stands at the door out: offline,
         // or with Face ID failing, a member can always sign out.

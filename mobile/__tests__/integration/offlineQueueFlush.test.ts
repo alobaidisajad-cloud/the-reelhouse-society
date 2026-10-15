@@ -173,7 +173,7 @@ describe('Offline Queue Flush Integration', () => {
     // nothing. __resetIdCounter() on the next line is what actually does it.
     supabaseMock.__resetExecutionLog();
     supabaseMock.__resetIdCounter();
-    clearOfflineQueue();
+    clearOfflineQueue('test-user-id');
   });
 
   it('enqueue 3 mutations → flush → all execute in FIFO order', async () => {
