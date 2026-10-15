@@ -141,7 +141,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/iosLaunch.test.ts | 2026-10-15 | the iPhone launch verdict shown saying no to each way a launch fails |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
-| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: launches write the phone's runtime; a failed read and a changed runtime each fail the run |
+| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: the fake phone keeps time to the millisecond, as a phone does |
 | e2e/__tests__/runtimeDump.test.ts | 2026-10-15 | new: the runtime's parts joined per launch, held to the copy, and every way it says no |
 | e2e/__tests__/screenTimes.test.ts | 2026-10-15 | edited: a failed read fails the run, but in the flows that cut the network; that list is held to the flows |
 | e2e/__tests__/seed.rehearsal.test.ts | 2026-10-15 | new: the real seed against a fake Supabase that keeps the filing's door |
@@ -170,7 +170,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
 | e2e/old-client-tree.mjs | 2026-10-15 | new |
 | e2e/old-clients.cjs | 2026-10-15 | edited: own crashes held whole; ownCrashFaults against the register and git; --own-crashes for run-flows.sh |
-| e2e/run-flows.sh | 2026-10-15 | edited: screen times read per flow, a failed read fails the run; the phone's runtime held to the copy |
+| e2e/run-flows.sh | 2026-10-15 | edited: the device's clock to the millisecond, so a flow's start no longer takes the last lines of the flow before |
 | e2e/runtime-dump.mjs | 2026-10-15 | new: the phone's runtime from the device log, held to the committed copy |
 | e2e/screen-times.mjs | 2026-10-15 | edited: a screen.failed fails the run outside the flows that take the network away |
 | e2e/start-stack.sh | 2026-10-15 | true as written |
@@ -521,7 +521,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogReviewBody.tsx | 2026-10-01 | a Vault that could not open says so |
 | src/components/log/LogSealBar.tsx | 2026-10-15 | the bar on the edge (DOCKED_BAR_GAP); it slides away by its whole height |
 | src/components/log/LogSearchEngine.tsx | 2026-10-15 | foot from useContentBottom |
-| src/components/log/LogVerdict.tsx | 2026-10-15 | the verdict word's glow has room inside the box a phone cuts it at |
+| src/components/log/LogVerdict.tsx | 2026-10-15 | edited: the word's lit box spans the slot, so Yoga and the browser measure it alike |
 | src/components/log/NoteSheet.tsx | 2026-10-15 | foot from useSheetBottom |
 | src/components/log/VaultNote.tsx | 2026-10-01 | true as written |
 | src/components/lounge/__tests__/aKeystrokeRedrawsNoMessage.test.tsx | 2026-10-03 | read whole: openRoom proves rows were drawn before counting redraws |

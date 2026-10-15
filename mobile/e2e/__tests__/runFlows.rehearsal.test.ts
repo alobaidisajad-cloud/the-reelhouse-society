@@ -52,13 +52,13 @@ case "$1" in
       "settings get global "*_scale) cat "$T/state/\${cmd##* }" 2>/dev/null || echo 0.0 ;;
       "settings put global "*_scale" "*) set -- $cmd; echo "$5" > "$T/state/$4" ;;
       "settings get secure autofill_service") echo null ;;
-      date*) case "$cmd" in *S.000*) date +'%m-%d %H:%M:%S.000' ;; *) date +'%m-%d %H:%M:%S' ;; esac ;;
+      date*) case "$cmd" in *S.%3N*) date +'%m-%d %H:%M:%S.%3N' ;; *S.000*) date +'%m-%d %H:%M:%S.000' ;; *) date +'%m-%d %H:%M:%S' ;; esac ;;
       "dumpsys input_method") echo "mInputShown=true" ;;
       "dumpsys window windows") cat "$T/fixtures/windows.txt" ;;
       "pidof com.reelhouse.society") echo 16631 ;;
       # A launch, as Android logs it: the process, then the first screen ready, or React destroyed.
       "am start-activity"*)
-        now=$(date +'%m-%d %H:%M:%S.000')
+        now=$(date +'%m-%d %H:%M:%S.%3N')
         echo "$now  523  543 I ActivityManager: Start proc 16631:com.reelhouse.society/u0a192 for next-top-activity" >> "$T/device.log"
         if [ -f "$T/state/motion-crash" ]; then
           echo "$now  16631  16631 W unknown:BridgelessReact: ReactHost{0}.handleHostException(message = \\"undefined is not a function\\")" >> "$T/device.log"
@@ -79,7 +79,7 @@ echo "$*" >> "$T/state/calls"
 # the script must clear it before the next, or that one never starts its driver.
 [ -e "$HOME/.maestro/sessions" ] && echo "$*" >> "$T/state/stale-sessions"
 mkdir -p "$HOME/.maestro"; echo "MAESTRO_SESSION=1" > "$HOME/.maestro/sessions"
-say() { echo "$(date +'%m-%d %H:%M:%S.000')  $1  $(( $1 + 20 )) $2 $3: $4" >> "$T/device.log"; }
+say() { echo "$(date +'%m-%d %H:%M:%S.%3N')  $1  $(( $1 + 20 )) $2 $3: $4" >> "$T/device.log"; }
 if [ "$1" = hierarchy ]; then echo '{"attributes":{},"children":[]}'; exit 0; fi
 flow="$2"; name=$(basename "$flow" .yaml); out=""; dbg=""
 while [ $# -gt 0 ]; do case "$1" in --output) out="$2"; shift ;; --debug-output) dbg="$2"; shift ;; esac; shift; done

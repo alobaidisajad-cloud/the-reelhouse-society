@@ -167,7 +167,16 @@ settle_phone() {
 }
 # The device's clock, as its log lines begin. (Quoted twice: adb hands the
 # device's shell one line, which splits it again.)
-device_clock() { timeout 20 adb shell "date +'%m-%d %H:%M:%S.000'" 2>/dev/null | tr -d '\r'; }
+device_clock() {
+  # To the millisecond: a flow's start rounded down to its second took the last
+  # lines of the flow before it. A date that cannot say milliseconds gives the second.
+  local t
+  t=$(timeout 20 adb shell "date +'%m-%d %H:%M:%S.%3N'" 2>/dev/null | tr -d '\r')
+  case "$t" in
+    [0-9][0-9]-[0-9][0-9]\ [0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]) echo "$t" ;;
+    *) timeout 20 adb shell "date +'%m-%d %H:%M:%S.000'" 2>/dev/null | tr -d '\r' ;;
+  esac
+}
 # The device's log for one attempt alone, from its start. Its lines begin
 # "MM-DD HH:MM:SS.mmm", which compare as text within the run.
 cut_log() {
