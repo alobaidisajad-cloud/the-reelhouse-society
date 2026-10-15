@@ -33,6 +33,7 @@ import type { User } from '@/src/types';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { nav } from '@/src/utils/typedRouter';
+import { e2eTraceAt } from '@/src/utils/e2eTrace';
 
 /**
  * The review takes what the column takes: a box stricter than the record
@@ -327,7 +328,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         FROM THE DESK OF @{deskName}
                     </Text>
                 </View>
-                <TextInput testID="review-input" style={[st.reviewInput, isRTLText(review) && st.rtlText]} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={setReview} multiline maxLength={MAX_LENGTHS.review} textAlignVertical="top" {...scaledTextProps} selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
+                <TextInput testID="review-input" onLayout={e2eTraceAt('log.review')} style={[st.reviewInput, isRTLText(review) && st.rtlText]} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={setReview} multiline maxLength={MAX_LENGTHS.review} textAlignVertical="top" {...scaledTextProps} selectionColor={'rgba(220,166,58,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
                 <View style={st.reviewFooter}>
                     <PressableScale style={st.spoilerRow} onPress={() => { setIsSpoiler(!isSpoiler); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isSpoiler }} accessibilityLabel="Contains spoilers">
                         <View style={[st.cbox, isSpoiler && st.cboxOn]}>{isSpoiler && <Check size={10} color={colors.ink} />}</View>

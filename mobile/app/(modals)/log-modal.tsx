@@ -16,7 +16,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { colors } from '@/src/theme/theme';
 import { Arrive } from '@/src/components/Arrive';
 import { ChevronLeft, X } from 'lucide-react-native';
-import { e2eTrace } from '@/src/utils/e2eTrace';
+import { e2eTrace, e2eTraceAt } from '@/src/utils/e2eTrace';
 
 export default function LogModalScreen() {
 
@@ -62,7 +62,7 @@ export default function LogModalScreen() {
                 <View style={[st.dragHandleWrap, { paddingTop: handleTop }]}><View style={st.dragHandle} /></View>
 
                 {/* Header */}
-                <View style={[st.header, step === 1 && st.headerOnFilm]}>
+                <View style={[st.header, step === 1 && st.headerOnFilm]} onLayout={e2eTraceAt('log.header')}>
                     <View style={st.headerLeft}>
                         {isEditing && <View style={st.editBadge}><Text style={st.editBadgeText}>EDITING</Text></View>}
                         {step === 1 && !isEditing && (

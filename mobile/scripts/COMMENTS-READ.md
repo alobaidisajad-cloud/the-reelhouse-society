@@ -86,7 +86,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx | 2026-10-03 | new: your own circle is said to you |
 | app/(modals)/cover-picker.tsx | 2026-10-15 | top from useModalTop |
 | app/(modals)/list-modal.tsx | 2026-10-15 | handle's top from useModalTop; the bar on the edge, the list above it (useAboveDockedBar) |
-| app/(modals)/log-modal.tsx | 2026-10-15 | edited: each step and each Back to search said in the E2E log |
+| app/(modals)/log-modal.tsx | 2026-10-15 | edited: each step and each Back to search said in the E2E log; the header says where it sits |
 | app/(modals)/login.tsx | 2026-10-15 | header top from useModalTop; the page stops at the edge (useBottomEdge) |
 | app/(modals)/membership.tsx | 2026-10-15 | nav top from useModalTop; ends above the window and its fade, or at useContentBottom |
 | app/(modals)/notifications-modal.tsx | 2026-10-15 | handle's top from useModalTop; foot from useContentBottom |
@@ -512,7 +512,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogClearanceGate.tsx | 2026-10-01 | the rope said as what it is |
 | src/components/log/LogComments.tsx | 2026-10-01 | true as written |
 | src/components/log/logDetailStyles.ts | 2026-10-15 | the record's foot is set where it is drawn |
-| src/components/log/LogForm.tsx | 2026-10-03 | edited: review, note and companion name their caps; the review counter reads the cap |
+| src/components/log/LogForm.tsx | 2026-10-15 | edited: the review field says where it sits, in the E2E log |
 | src/components/log/LogFormBody.tsx | 2026-10-01 | true as written |
 | src/components/log/LogHero.tsx | 2026-10-01 | the filing mark in the present tense |
 | src/components/log/LogIndexEntry.tsx | 2026-10-01 | a held-but-unshown entry said as holding something |
@@ -1138,7 +1138,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/deviceRegion.ts | 2026-10-01 | new |
 | src/utils/draftSync.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/e2eRuntime.ts | 2026-10-15 | new: the phone's runtime written once a launch, in parts, by the E2E build |
-| src/utils/e2eTrace.ts | 2026-10-02 | Read whole in the launch audit: sound. |
+| src/utils/e2eTrace.ts | 2026-10-15 | edited: e2eTraceAt, where a view sits on screen, in the E2E build alone |
 | src/utils/endorsementGroupKey.ts | 2026-10-02 | Read whole (launch audit). A certified-log group opened the FILM, on the belief that no log page existed (app/log/[id] does), and went nowhere without a film id: it opens the log. |
 | src/utils/enter.ts | 2026-10-02 | read; sound |
 | src/utils/filterContentByBlocks.ts | 2026-10-01 | true as written |
