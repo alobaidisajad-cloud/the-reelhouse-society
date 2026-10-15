@@ -94,7 +94,9 @@ DO $$ BEGIN
 END $$;
 RESET ROLE;
 
--- The same salon, private.
+-- The same salon, private: made so by the owner, not by the member last played, whom the
+-- tier gate would judge.
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 UPDATE public.lounges SET is_private = true WHERE id = current_setting('rehearsal.salon')::uuid;
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.rh_as('rehearsal.outsider', current_setting('rehearsal.topic')) AS done \gset rh_

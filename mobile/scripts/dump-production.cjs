@@ -5,7 +5,8 @@
  *   node mobile/scripts/dump-production.cjs full
  *       the whole database, schema and data: the latest backup until a Supabase
  *       plan with backups is chosen. Older full copies are deleted once this
- *       one is read back whole.
+ *       one is read back whole. The scheduled jobs' run history is a log, not
+ *       the house's data: its table is copied, its rows are not.
  *   node mobile/scripts/dump-production.cjs data public.push_subscriptions [...]
  *       the named tables' rows, before a change that touches them. Deleted by
  *       hand once the change has soaked.
@@ -23,7 +24,9 @@ const TABLE = /^[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*$/;
 
 /** pg_dump's arguments for a kind of copy, or why not. */
 const plan = (kind, tables, stamp) => {
-  if (kind === 'full' && !tables.length) return { name: `${stamp}-full.dump`, args: ['--format=custom'] };
+  if (kind === 'full' && !tables.length) {
+    return { name: `${stamp}-full.dump`, args: ['--format=custom', '--exclude-table-data=cron.job_run_details'] };
+  }
   if (kind === 'data' && tables.length && tables.every((t) => TABLE.test(t))) {
     return { name: `${stamp}-data-${tables.map((t) => t.split('.')[1]).join('+')}.dump`,
       args: ['--format=custom', '--data-only', ...tables.flatMap((t) => ['--table', t])] };

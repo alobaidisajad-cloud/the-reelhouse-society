@@ -209,7 +209,7 @@ describe('the copy taken before a change', () => {
   };
 
   it('takes the whole database, or the named tables\' rows', () => {
-    expect(dumpPlan('full', [], 'T')).toEqual({ name: 'T-full.dump', args: ['--format=custom'] });
+    expect(dumpPlan('full', [], 'T')).toEqual({ name: 'T-full.dump', args: ['--format=custom', '--exclude-table-data=cron.job_run_details'] });
     expect(dumpPlan('data', ['public.push_subscriptions', 'public.profiles'], 'T')).toEqual({
       name: 'T-data-push_subscriptions+profiles.dump',
       args: ['--format=custom', '--data-only', '--table', 'public.push_subscriptions', '--table', 'public.profiles'],
