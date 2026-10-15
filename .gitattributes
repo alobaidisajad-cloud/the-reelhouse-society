@@ -44,3 +44,16 @@ mobile/patches/*.patch text eol=lf
 # file, and the splash plugin's test failed on every Windows checkout while CI
 # passed (its CRLF case builds its own CRLF copy).
 mobile/plugins/__tests__/fixtures/** text eol=lf
+
+# ── What the train applies is what CI rehearsed, byte for byte ──────────────
+#
+# The owner's train runs psql on these files from a Windows checkout. Checked
+# out with CRLF, every function a migration made kept CRLF in its body in
+# production (96 bodies by 2026-10-16), while CI rehearsed the same files with
+# LF. A line end inside quoted text would make the two differ in what they do
+# (theLineEndsChangeNoFunction.guard.test.ts holds that none does yet). Kept LF
+# everywhere, the train sends CI's bytes.
+supabase/migrations/*.sql text eol=lf
+mobile/supabase/migrations/*.sql text eol=lf
+mobile/supabase/migrations-down/*.sql text eol=lf
+mobile/supabase/diagnostics/*.sql text eol=lf

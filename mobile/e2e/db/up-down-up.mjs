@@ -65,10 +65,17 @@ const jobs = (url) => (psqlRows(url, "SELECT to_regclass('cron.job') IS NOT NULL
     "SELECT jobname || ' | ' || schedule || ' | ' || command || ' | ' || active FROM cron.job ORDER BY jobname").split('\n')]
   : []);
 
-/** pg_dump's schema less comments, settings and its restrict key, then the jobs: two compare. */
+/**
+ * pg_dump's schema less comments, settings and its restrict key, then the jobs: two compare.
+ * A line's own end is taken off: a function applied from a Windows checkout keeps CRLF in its
+ * body, and an undo restores it with LF (and pg_dump on Windows ends each line it prints with a
+ * CR of its own). No line end inside quoted text changes what a function does
+ * (theLineEndsChangeNoFunction.guard.test.ts holds that of production's).
+ */
 const dump = (url) => [
   ...grantsInOrder(execFileSync('pg_dump', [url, '--schema-only', '--no-comments'], { encoding: 'utf8', maxBuffer: 1e9 })
-    .split('\n').filter((l) => l.trim() && !l.startsWith('--') && !/^SET |^SELECT pg_catalog\.set_config|^\\(un)?restrict /.test(l))),
+    .split('\n').map((l) => l.replace(/\r+$/, ''))
+    .filter((l) => l.trim() && !l.startsWith('--') && !/^SET |^SELECT pg_catalog\.set_config|^\\(un)?restrict /.test(l))),
   ...jobs(url),
 ].join('\n');
 
@@ -131,12 +138,14 @@ const selfTest = () => {
     ['an undo that forgets a function', inScratch('up_down_up_bad', 'up.sql', 'down-forgets-a-function.sql'), 'the undo does not restore'],
     ['an undo giving a grant back, in another order', inScratch('up_down_up_order', 'grants-up.sql', 'grants-down.sql', 'grants-before.sql'), null],
     ['an undo that forgets a grant', inScratch('up_down_up_grant', 'grants-up.sql', 'grants-down-forgets.sql', 'grants-before.sql'), 'the undo does not restore'],
+    ['an undo restoring, with LF, a body applied with CRLF', inScratch('up_down_up_crlf', 'line-ends-up.sql', 'line-ends-down.sql', 'line-ends-before.sql'), null],
+    ['an undo restoring another body', inScratch('up_down_up_crlf_bad', 'line-ends-up.sql', 'line-ends-down-wrong.sql', 'line-ends-before.sql'), 'the undo does not restore'],
   ];
   for (const [what, got, want] of cases) {
     const ok = want === null ? got === null : typeof got === 'string' && got.startsWith(want);
     if (!ok) { console.error(`✗ self-test: ${what}: expected ${want === null ? 'a pass' : `"${want}…"`}, got ${got ?? 'a pass'}`); process.exit(1); }
   }
-  console.log('✓ self-test: a correct undo passes, also one giving grants back in another order; a forgotten function or grant is caught.');
+  console.log('✓ self-test: a correct undo passes, also one giving grants back in another order or a body back with other line ends; a forgotten function, grant or body is caught.');
 };
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {

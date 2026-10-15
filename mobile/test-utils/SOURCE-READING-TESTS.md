@@ -179,6 +179,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/rehearsalsRunInCi.guard.test.ts` | Every production rehearsal (SQL a person runs on production), its kit, the seed and the CI step that runs them: each opens and ends the one way, holds no transaction control or real member's id, and CI runs them all. What each case asks is run by e2e/db/rehearsals.mjs in db-integration.yml. |
 | `src/utils/__tests__/secretsScan.guard.test.ts` | The secrets scan's rules, its baseline and the job that runs them: the files ARE the rule. |
 | `src/utils/__tests__/schemaSnapshot.guard.test.ts` | The committed snapshot of production holds what it must. |
+| `src/utils/__tests__/theLineEndsChangeNoFunction.guard.test.ts` | Production's function bodies in the snapshot, for a carriage return inside quoted text, and every file the train applies or rehearses, for its line ends: the bytes are the rule. |
 | `src/utils/__tests__/theFrontDeskAnswers.test.ts` | The support address, held in one place and printed from it. |
 | `src/utils/__tests__/theTappedNoticeOpensIt.test.ts` | The push payload the edge function sends, against what the app reads. |
 | `src/utils/__tests__/theRecordingsTravel.test.ts` | The sealed E2E world's TMDB recordings: every one its index names exists, and no `.gitignore` pattern hides it. |

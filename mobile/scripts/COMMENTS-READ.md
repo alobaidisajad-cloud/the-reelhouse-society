@@ -168,7 +168,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/rehearsals.mjs | 2026-10-15 | new: seeds the made-up house, runs every *_rehearsal.sql as postgres, fails naming each that missed; --self-test proves the verdict can fail; the rehearsals from the shared file list (test-utils/universe.js) |
 | e2e/db/seal.sh | 2026-10-03 | Written in the tooling audit: the seal e2e.yml and load.yml each carried, in one place for three workflows. |
 | e2e/db/seed.mjs | 2026-10-15 | edited: the member is made able to file, and files, logs and stacks as themself, each read back |
-| e2e/db/up-down-up.mjs | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| e2e/db/up-down-up.mjs | 2026-10-16 | edited: its files come from the shared file list (test-utils/universe.js); a line's own end is taken off before two schemas compare, and the self-test shows a body given back with other line ends passes and a changed one is caught |
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-writes.mjs | 2026-10-15 | edited: on one shard, only the flows run-flows.sh listed |
@@ -1162,6 +1162,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
 | src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-04 | edited: softBreak asks each place once, only where a run needs a break |
 | src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts | 2026-10-03 | Written with 20261003_05: the corpus holds every character the cleaning acts on, with cleanForStorage's answer. |
+| src/utils/__tests__/theLineEndsChangeNoFunction.guard.test.ts | 2026-10-16 | new: read against the snapshot's 144 bodies (96 with CRLF, one JSON literal holding it) and up-down-up.mjs's comparison |
 | src/utils/__tests__/theDeadLetterIsNobodyElsesToKeep.test.ts | 2026-10-15 | edited: another member's held and failed writes stay at this one's sign-out |
 | src/utils/__tests__/theDraftIsYours.test.ts | — |  |
 | src/utils/__tests__/theFrontDeskAnswers.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
