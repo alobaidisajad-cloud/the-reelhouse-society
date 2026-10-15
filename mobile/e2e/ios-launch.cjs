@@ -12,9 +12,13 @@
  *   - the same process is running 5 s and 25 s after it appeared;
  *   - its first screen said it was ready (in the JS log);
  *   - no crash report for it was written since the launch.
- * Exit 0: it passed. Exit 1: the app failed, never retried. Exit 2: the
- * simulator never started it, or not early enough to watch for 25 s; the only
- * failure the workflow may try once more.
+ * Exit 0: it passed. Exit 1: the app failed: it died, came back as another
+ * process or left a crash report; never tried again. Exit 2: the simulator
+ * never started it, or too late to watch for 25 s. Exit 3: it stayed up with
+ * no crash report but its first screen was not ready within 25 s, which a
+ * fresh simulator's first launch can take (run 38698154462: its JavaScript
+ * began 31 s after its process). Exits 2 and 3 get once more; a second 3 is
+ * the app's failure.
  */
 const { existsSync, readFileSync, readdirSync, statSync } = require('fs');
 const { homedir } = require('os');
@@ -37,7 +41,7 @@ const verdict = ({ samples, ready, reports }) => {
       return { code: 1, line: `the app's process ${first.pid} was not running ${w} s after it started (${at.pid === '-' ? 'none' : `process ${at.pid}`})` };
     }
   }
-  if (!ready) return { code: 1, line: `the app ran ${WATCH[1]} s but its first screen never said it was ready` };
+  if (!ready) return { code: 3, line: `the app ran ${WATCH[1]} s but its first screen never said it was ready` };
   return { code: 0, line: `alive at ${WATCH.join(' s and ')} s (process ${first.pid}, started at ${first.t} s); first screen ready; no crash report` };
 };
 

@@ -36,8 +36,9 @@ describe('the verdict on one iPhone launch', () => {
     expect(verdict({ samples: run(2, '4242', 12, '5151'), ready: true, reports: [] }).line).toMatch(/not running 25 s .*process 5151/);
   });
 
-  it('fails the app when it stays up but never draws its first screen', () => {
-    expect(verdict({ samples: run(2), ready: false, reports: [] }).code).toBe(1);
+  it('gives a launch that stays up but draws late its own exit, the one tried once more', () => {
+    expect(verdict({ samples: run(2), ready: false, reports: [] }).code).toBe(3);
+    expect(verdict({ samples: run(2, '4242', 12), ready: false, reports: [] }).code).toBe(1);
   });
 
   it('fails the app on any crash report since the launch, even one it survived', () => {
@@ -70,7 +71,8 @@ describe('the iPhone launch workflow', () => {
   });
 
   it('tries once more only when the verdict blames the simulator', () => {
-    expect(wf).toMatch(/if \[ "\$rc" = "2" \]; then/);
+    expect(wf).toMatch(/if \[ "\$rc" = "2" \] \|\| \[ "\$rc" = "3" \]; then/);
+    expect(wf.match(/^\s+launch 2$/gm)).toHaveLength(1);
     expect(wf).not.toMatch(/grep -ci reelhouse/);
   });
 });

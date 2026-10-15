@@ -101,11 +101,12 @@ jobs:
             echo "attempt $1: $v" >> "$S/result.txt"
             last=$1
           }
-          # The app failing is never tried again. Only a simulator that never
-          # started it (exit 2) gets once more, recorded as the harness.
+          # The app failing is never tried again. A simulator that never started
+          # it (exit 2), or a first launch that stayed up but drew late (exit 3),
+          # gets once more; the second launch's verdict is final.
           launch 1
-          if [ "$rc" = "2" ]; then
-            echo "attempt 1: the simulator, not the app; once more as the harness's own retry" >> "$S/result.txt"
+          if [ "$rc" = "2" ] || [ "$rc" = "3" ]; then
+            echo "attempt 1: exit $rc, once more as the harness's own retry" >> "$S/result.txt"
             launch 2
           fi
           cat "$S/result.txt"
