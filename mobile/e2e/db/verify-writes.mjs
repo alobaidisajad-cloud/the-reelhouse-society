@@ -5,7 +5,9 @@
  * A flow that ends on "the form closed" has proved the screen moved, not that
  * anything was kept. After the flows, this reads the local database for the
  * row each flow must have written, as the seeded member, with the exact words
- * it typed. Only the flows that ran are checked (E2E_FLOWS: a folder, or one file).
+ * it typed. Only the flows that ran are checked: on one shard of e2e.yml's
+ * flows, those in run-flows.sh's $RUNNER_TEMP/flows-run.txt; otherwise every
+ * flow in E2E_FLOWS (a folder, or one file).
  *
  * A run of a shipped client lists, in $RUNNER_TEMP/own-crash-flows.txt, each
  * flow its own crash ended (run-flows.sh): a flow run again after one may have
@@ -32,6 +34,16 @@ export function readOwnCrashFlows(file) {
   return new Map(readFileSync(file, 'utf8').split(/\r?\n/).filter(Boolean).map((l) => l.split('\t')));
 }
 
+/** The flow files that ran: the shard's list when there is one, else E2E_FLOWS. */
+export function flowsRan(flows, runList) {
+  if (runList && existsSync(runList)) {
+    return readFileSync(runList, 'utf8').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((n) => `${n}.yaml`);
+  }
+  return flows.endsWith('.yaml')
+    ? [basename(flows)]
+    : readdirSync(flows).filter((f) => f.endsWith('.yaml') && f !== 'config.yaml');
+}
+
 /**
  * The rows a flow's write check accepts: exactly one; one or two when its first
  * attempt was ended by the client's own crash; none checked (null) when the
@@ -47,9 +59,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const USER = process.env.E2E_MEMBER_USERNAME;
   if (!USER) { console.error('E2E_MEMBER_USERNAME is needed.'); process.exit(2); }
 
-  const ran = FLOWS.endsWith('.yaml')
-    ? [basename(FLOWS)]
-    : readdirSync(FLOWS).filter((f) => f.endsWith('.yaml') && f !== 'config.yaml');
+  const ran = flowsRan(FLOWS, process.env.RUNNER_TEMP && join(process.env.RUNNER_TEMP, 'flows-run.txt'));
   const marks = readOwnCrashFlows(process.env.RUNNER_TEMP && join(process.env.RUNNER_TEMP, 'own-crash-flows.txt'));
 
   let bad = 0;

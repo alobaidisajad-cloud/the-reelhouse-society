@@ -43,7 +43,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; Realtime started for the salon channels' rules |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
-| ../.github/workflows/e2e.yml | 2026-10-15 | edited: a run keeps its not-judged list and the own-crash flows' list |
+| ../.github/workflows/e2e.yml | 2026-10-15 | edited: the app built once, its anon key beside it; the flows on three machines, each its own sealed world holding its stack's key to the app's; a verdict reads all three |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash |
 | ../.github/workflows/ios-launch.yml | 2026-10-15 | new |
 | ../.github/workflows/load.yml | 2026-10-03 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans |
@@ -66,7 +66,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/login_flow.yaml | 2026-09-29 | true as written |
 | .maestro/lounge_flow.yaml | 2026-09-29 | true as written |
 | .maestro/offline_resilience.yaml | 2026-09-29 | true as written |
-| .maestro/README.md | 2026-10-15 | edited: a tab's loaded content, a failed read and the phone's runtime are each a gate |
+| .maestro/README.md | 2026-10-15 | edited: the flows on three machines from one built app, the shard map, the verdict, one logs artifact a machine |
 | .maestro/lobby_wall_flow.yaml | 2026-10-15 | edited: the wall the house read is scrolled to before the sign-off |
 | .maestro/session_survives_restart.yaml | 2026-10-01 | written with the session kept on the device |
 | .maestro/subflows/open_a_film.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
@@ -137,17 +137,21 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/attempt.test.ts | 2026-10-15 | edited: a shipped client's own crash is run again once, then not judged; with no --own, or beside another crash, final as ever |
 | e2e/__tests__/appCrashes.test.ts | 2026-10-15 | edited: build 41's own crash and its aftermath reported apart and passed (cut from 38679641286); another crash, a late or foreign aftermath, no --own: fail |
 | e2e/__tests__/animationWaits.test.ts | 2026-10-04 | written with animation-waits.mjs: each wait on its flow, Android 14's named container |
+| e2e/__tests__/anonKey.test.ts | 2026-10-15 | new: the key made without a stack is the CLI's published one (by its sha256), from claims that never change; a config that sets the secret says no |
 | e2e/__tests__/glideLogLevel.test.ts | 2026-10-08 | written with glide-log-level.mjs, on dexdump lines in the shape of runs 37628665206 and 37674283540 |
 | e2e/__tests__/iosLaunch.test.ts | 2026-10-15 | the iPhone launch verdict shown saying no to each way a launch fails |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
-| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: the fake phone keeps time to the millisecond, as a phone does |
+| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: one shard runs only its flows, the probes and the launch where the map puts them, an unmapped flow in the last; no shard, the whole run |
 | e2e/__tests__/runtimeDump.test.ts | 2026-10-15 | new: the runtime's parts joined per launch, held to the copy, and every way it says no |
-| e2e/__tests__/screenTimes.test.ts | 2026-10-15 | edited: the median, the hang cap and the few-opened screen each shown saying no |
+| e2e/__tests__/screenTimes.test.ts | 2026-10-15 | edited: one shard records its screens and leaves the never-reported rule to the verdict |
+| e2e/__tests__/shardVerdict.test.ts | 2026-10-15 | new: says no to a ceiling no shard reported, a missing or unfinished shard, a flow run twice or never |
+| e2e/__tests__/shards.test.ts | 2026-10-15 | new: every flow in one shard, e2e.yml's count the map's; says no to a missing flow, one in two shards, an unknown name |
 | e2e/__tests__/seed.rehearsal.test.ts | 2026-10-15 | new: the real seed against a fake Supabase that keeps the filing's door |
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | true as written |
-| e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | written with the own-crash list: one row, one or two, or none checked |
+| e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | edited: one shard's list of flows is what is checked, every flow without one |
+| e2e/anon-key.mjs | 2026-10-15 | new: the local stack's anon key as the Supabase CLI makes it, read against its apikeys.go |
 | e2e/annotate.mjs | 2026-10-04 | the password hidden at the one door out; a summary-only level for past ten notices |
 | e2e/animation-waits.mjs | 2026-10-04 | the probes come first now; true as written |
 | e2e/app-crashes.mjs | 2026-10-15 | edited: --own sets a shipped client's own crashes and their aftermath apart, failing nothing; each soft report keeps its lines |
@@ -160,7 +164,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/up-down-up.mjs | 2026-10-15 | new |
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
-| e2e/db/verify-writes.mjs | 2026-10-15 | edited: a flow run again after the client's own crash may have two rows; a flow not judged is not checked |
+| e2e/db/verify-writes.mjs | 2026-10-15 | edited: on one shard, only the flows run-flows.sh listed |
 | e2e/flow-screens.mjs | 2026-10-04 | Maestro's JUnit reason, a report for a flow with no step record, the decision line, the named animation; QueryController dropped (logged on every key of fast runs) |
 | e2e/glide-log-level.mjs | 2026-10-08 | written: the APK hands Glide level 6 (ERROR), once, as a constant |
 | e2e/ios-crash.mjs | 2026-10-15 | new |
@@ -170,9 +174,11 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
 | e2e/old-client-tree.mjs | 2026-10-15 | new |
 | e2e/old-clients.cjs | 2026-10-15 | edited: own crashes held whole; ownCrashFaults against the register and git; --own-crashes for run-flows.sh |
-| e2e/run-flows.sh | 2026-10-15 | edited: the device's clock to the millisecond, so a flow's start no longer takes the last lines of the flow before |
+| e2e/run-flows.sh | 2026-10-15 | edited: E2E_SHARD runs one shard's flows, the probes and the launch only where the map puts them, and lists them; none, the whole run |
 | e2e/runtime-dump.mjs | 2026-10-15 | new: the phone's runtime from the device log, held to the committed copy |
-| e2e/screen-times.mjs | 2026-10-15 | edited: a screen opened 3 times or more is judged by its median; any one opening by twice its ceiling, a hang |
+| e2e/screen-times.mjs | 2026-10-15 | edited: --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs |
+| e2e/shard-verdict.mjs | 2026-10-15 | new: every shard finished, every flow ran once, every ceiling's screen reported somewhere |
+| e2e/shards.mjs | 2026-10-15 | new: one shard's plan from e2e/shards.json; an unmapped flow runs in the last, said |
 | e2e/start-stack.sh | 2026-10-15 | true as written |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it |
 | plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |

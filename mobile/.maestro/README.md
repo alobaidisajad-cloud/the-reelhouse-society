@@ -7,6 +7,14 @@ They run on every push to `main`, and weekly, in **🎬 Sealed E2E**
 (`.github/workflows/e2e.yml`): a world built from nothing on GitHub's runner,
 that cannot touch production.
 
+The app is built once, and the flows run on three machines at once, each in a
+sealed world of its own: `e2e/shards.json` says which flows each runs, and
+which one runs the keyboard probes and the launch with animations on
+(`shards.test.ts` holds every flow to exactly one). A flow the map does not
+name runs on the last machine, and says so. Then `e2e/shard-verdict.mjs` reads
+all three machines' logs for what no one of them can judge: that each finished,
+that every flow ran once, and that every screen with a ceiling reported.
+
 - **The backend** is a local Supabase on the runner, running production's exact
   images, with production's exact shape laid over it from the committed
   snapshot (`supabase/schema/*.sql`, by `e2e/db/bootstrap.mjs`). It is then
@@ -39,7 +47,7 @@ so no flow depends on another.
 Whatever the flows say, **the app crashing or freezing at any moment fails the
 run** (`e2e/app-crashes.mjs`, reading the whole run's device log): a flow can
 pass over a crash. So does the app taking Android's splash over on any launch
-(`e2e/splash-handoff.mjs`, below). Every run keeps its logs as the `e2e-logs`
+(`e2e/splash-handoff.mjs`, below). Every machine keeps its logs as an `e2e-logs-<n>`
 artifact — Maestro's records, the device's whole log, each flow's slice of it —
 with the seeded member's password scrubbed out first (`e2e/scrub.mjs`).
 

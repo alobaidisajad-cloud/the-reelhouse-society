@@ -18,6 +18,9 @@
 # A run of a shipped client (E2E_OLD_CLIENT) is told the crashes that build
 # carries, fixed since in the app (old-clients.json): they fail nothing, a flow
 # one ends is run once more, and a flow it ends twice is listed as not judged.
+# With E2E_SHARD ("i/N"), it is one of e2e.yml's N machines: it runs only its
+# part of e2e/shards.json (e2e/shards.mjs), and e2e/shard-verdict.mjs reads all
+# N for what no one machine can judge. With none, it runs everything.
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 # Maestro sends usage analytics unless told not to; nothing leaves the sealed world.
@@ -113,6 +116,25 @@ trap 'kill $sampler $streamer 2>/dev/null' EXIT
 MINUTES=${E2E_FLOWS_MINUTES:-55}
 DEADLINE=$(( $(date +%s) + MINUTES * 60 ))
 FLOW_LIST="$(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort)"
+# One shard: its flows in this order, the probes and the launch with animations
+# on only where the map puts them, and its list of flows, which verify-writes.mjs
+# and shard-verdict.mjs read.
+PROBES=yes
+LAUNCH=yes
+rm -f "$OUT/flows-run.txt" "$OUT/screen-record.json" "$OUT/shard-notices.txt"
+if [ -n "${E2E_SHARD:-}" ]; then
+  # shellcheck disable=SC2086
+  if ! node mobile/e2e/shards.mjs "${E2E_SHARD_MAP:-mobile/e2e/shards.json}" "$E2E_SHARD" $FLOW_LIST \
+      > "$OUT/shard-plan.txt" 2>&1; then
+    node mobile/e2e/annotate.mjs "No shard ${E2E_SHARD} to run" "$OUT/shard-plan.txt"
+    exit 1
+  fi
+  FLOW_LIST="$(sed -n 's/^flow //p' "$OUT/shard-plan.txt")"
+  grep -qx 'probes yes' "$OUT/shard-plan.txt" || PROBES=no
+  grep -qx 'launch yes' "$OUT/shard-plan.txt" || LAUNCH=no
+  sed -n 's/^notice //p' "$OUT/shard-plan.txt" > "$OUT/shard-notices.txt"
+  for f in $FLOW_LIST; do basename "$f" .yaml; done > "$OUT/flows-run.txt"
+fi
 FLOW_COUNT=$(echo "$FLOW_LIST" | grep -c .)
 # The flows' own time, kept from the probes (and their second
 # attempts): two minutes a flow, measured at about one and a half (runs
@@ -140,6 +162,7 @@ note() {
     node mobile/e2e/annotate.mjs "$1" "$2" summary
   fi
 }
+[ -s "$OUT/shard-notices.txt" ] && note "Shard ${E2E_SHARD}: flows out of e2e/shards.json" "$OUT/shard-notices.txt"
 
 # Before every Maestro run:
 #  - no session left by an earlier Maestro. Maestro reuses a session whose
@@ -196,41 +219,45 @@ set_aside() {
 
 # ── ONE LAUNCH WITH ANIMATIONS ON ─────────────────────────────────────────────
 # Every flow runs with Android's animations off, and an animation config with an
-# empty key crashed only the launches with them on. So once, before the flows:
-# all three scales at 1, a cold launch from cleared data, and after 15 s the app
-# must be alive, the crash gate must find nothing in this launch's log, and the
+# empty key crashed only the launches with them on. So once, before the flows
+# (on the shard e2e/shards.json names): all three scales at 1, a cold launch
+# from cleared data, and after 15 s the app must be alive, the crash gate must find nothing in this launch's log, and the
 # first screen must have said it is ready (a launch that never drew is no pass).
 # A launch right after `pm clear` races the old task's removal, so the old pid
 # is waited out, and 3 s more.
 mkdir -p "$OUT/motion"
-for s in window_animation_scale transition_animation_scale animator_duration_scale; do
-  timeout 20 adb shell settings put global "$s" 1 > /dev/null 2>&1
-done
-timeout 20 adb shell am force-stop "$PKG" > /dev/null 2>&1
-timeout 20 adb shell pm clear "$PKG" > /dev/null 2>&1
-for _ in $(seq 1 20); do [ -z "$(timeout 20 adb shell pidof "$PKG" | tr -d '\r')" ] && break; sleep 0.5; done
-sleep 3
-timeout 20 adb logcat -c
-timeout 90 adb shell am start-activity -W -n "$PKG/.MainActivity" > "$OUT/motion/am.txt" 2>&1
-sleep "$MOTION_SECONDS"
-motion_pid="$(timeout 20 adb shell pidof "$PKG" | tr -d '\r')"
-timeout 60 adb logcat -d -v threadtime > "$OUT/motion/launch.log" 2>/dev/null
-node mobile/e2e/app-crashes.mjs "$OUT/motion/launch.log" --stream-alive yes --device-now "$(device_clock)" \
-  ${own[@]+"${own[@]}"} > "$OUT/motion/gate.txt" 2>&1
-motion_gate=$?
-motion_fault=""
-[ -n "$motion_pid" ] || motion_fault="the app was not running ${MOTION_SECONDS} s after its launch"
-[ $motion_gate -eq 0 ] || motion_fault="${motion_fault:+$motion_fault; }the crash gate: $(head -n 3 "$OUT/motion/gate.txt" | tr '\n' ' ')"
-grep -q '\[e2e\] screen.ready' "$OUT/motion/launch.log" || motion_fault="${motion_fault:+$motion_fault; }no screen said it was ready"
-for s in window_animation_scale transition_animation_scale animator_duration_scale; do
-  timeout 20 adb shell settings put global "$s" 0 > /dev/null 2>&1
-done
-if [ -n "$motion_fault" ]; then
-  echo "A launch with animations on failed: $motion_fault" > "$OUT/motion/result.txt"
-  node mobile/e2e/annotate.mjs "A launch with animations on failed" "$OUT/motion/result.txt"
-  rc=1
+if [ "$LAUNCH" = yes ]; then
+  for s in window_animation_scale transition_animation_scale animator_duration_scale; do
+    timeout 20 adb shell settings put global "$s" 1 > /dev/null 2>&1
+  done
+  timeout 20 adb shell am force-stop "$PKG" > /dev/null 2>&1
+  timeout 20 adb shell pm clear "$PKG" > /dev/null 2>&1
+  for _ in $(seq 1 20); do [ -z "$(timeout 20 adb shell pidof "$PKG" | tr -d '\r')" ] && break; sleep 0.5; done
+  sleep 3
+  timeout 20 adb logcat -c
+  timeout 90 adb shell am start-activity -W -n "$PKG/.MainActivity" > "$OUT/motion/am.txt" 2>&1
+  sleep "$MOTION_SECONDS"
+  motion_pid="$(timeout 20 adb shell pidof "$PKG" | tr -d '\r')"
+  timeout 60 adb logcat -d -v threadtime > "$OUT/motion/launch.log" 2>/dev/null
+  node mobile/e2e/app-crashes.mjs "$OUT/motion/launch.log" --stream-alive yes --device-now "$(device_clock)" \
+    ${own[@]+"${own[@]}"} > "$OUT/motion/gate.txt" 2>&1
+  motion_gate=$?
+  motion_fault=""
+  [ -n "$motion_pid" ] || motion_fault="the app was not running ${MOTION_SECONDS} s after its launch"
+  [ $motion_gate -eq 0 ] || motion_fault="${motion_fault:+$motion_fault; }the crash gate: $(head -n 3 "$OUT/motion/gate.txt" | tr '\n' ' ')"
+  grep -q '\[e2e\] screen.ready' "$OUT/motion/launch.log" || motion_fault="${motion_fault:+$motion_fault; }no screen said it was ready"
+  for s in window_animation_scale transition_animation_scale animator_duration_scale; do
+    timeout 20 adb shell settings put global "$s" 0 > /dev/null 2>&1
+  done
+  if [ -n "$motion_fault" ]; then
+    echo "A launch with animations on failed: $motion_fault" > "$OUT/motion/result.txt"
+    node mobile/e2e/annotate.mjs "A launch with animations on failed" "$OUT/motion/result.txt"
+    rc=1
+  else
+    echo "A launch with animations on: alive at ${MOTION_SECONDS} s (pid $motion_pid), no crash, the first screen ready." > "$OUT/motion/result.txt"
+  fi
 else
-  echo "A launch with animations on: alive at ${MOTION_SECONDS} s (pid $motion_pid), no crash, the first screen ready." > "$OUT/motion/result.txt"
+  echo "The launch with animations on runs in another shard (e2e/shards.json)." > "$OUT/motion/result.txt"
 fi
 
 # ── THE KEYBOARD'S ROOM ───────────────────────────────────────────────────────
@@ -240,7 +267,10 @@ fi
 # says where the keyboard's top edge is. keyboard-room.mjs compares it with the
 # thing the member needs, and fails when it is under the keyboard — or when no
 # keyboard showed, since then nothing was measured. They run before the flows,
-# with what the flows' own time leaves (RESERVE), so they can never starve them.
+# with what the flows' own time leaves (RESERVE), so they can never starve them;
+# on one shard, the one e2e/shards.json names.
+probes=('stack|"FILE THE STACK"' 'log|#review-input')
+[ "$PROBES" = yes ] || probes=()
 keys_on() {
   for pkg in $(echo "$imes_all" | sed 's#/.*##' | sort -u); do timeout 20 adb shell pm enable "$pkg" > /dev/null 2>&1; done
   for ime in $imes_all; do timeout 20 adb shell ime enable "$ime" > /dev/null 2>&1; done
@@ -253,8 +283,9 @@ keys_off() {
 }
 mkdir -p "$OUT/keyboard-room"
 : > "$OUT/keyboard-room.txt"
+[ ${#probes[@]} -eq 0 ] && echo "The keyboard's probes run in another shard (e2e/shards.json)." > "$OUT/keyboard-room.txt"
 room_rc=0
-for probe in 'stack|"FILE THE STACK"' 'log|#review-input'; do
+for probe in ${probes[@]+"${probes[@]}"}; do
   name=${probe%%|*}; target=${probe#*|}
   attempt=1; probe_before=""
   while :; do
@@ -517,11 +548,12 @@ not_judged=$(grep -c . "$OUT/not-judged.txt")
 # run outside the flows that take the network away on purpose (flow-times says
 # which flow wrote it). With a ceilings file it is a gate on times too;
 # --complete only when every flow ran, so a cut-short run never blames a screen
-# it skipped.
+# it skipped. A shard leaves a ceiling no flow of its reached to shard-verdict.mjs.
 slow=0
 times_args=(--flow-times "$OUT/flow-times.txt")
 [ -f mobile/e2e/screen-ceilings.json ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
 [ $flows_failed -eq 0 ] && [ $gone -eq 0 ] && [ "$not_judged" -eq 0 ] && times_args+=(--complete)
+[ -n "${E2E_SHARD:-}" ] && times_args+=(--record "$OUT/screen-record.json")
 if node mobile/e2e/screen-times.mjs "$OUT/logcat-stream.txt" "${times_args[@]}" > "$OUT/screen-times.txt"; then
   note "How long each screen took" "$OUT/screen-times.txt"
 else

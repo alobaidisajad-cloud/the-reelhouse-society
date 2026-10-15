@@ -1,0 +1,16 @@
+{
+  "why": "Each shard is one machine of e2e.yml's flows job, balanced by the flow times of run 38756692560 (about 8 minutes each). Read by e2e/shards.mjs; shards.test.ts holds it to the flows.",
+  "shards": [
+    {
+      "keyboardProbes": true,
+      "launchWithAnimations": true,
+      "flows": ["auth_deep_link", "offline_resilience"]
+    },
+    {
+      "flows": ["boot_verification", "flow_critical_path", "log_film_flow", "lounge_flow", "session_survives_restart"]
+    },
+    {
+      "flows": ["auth_flow", "browse_vault", "darkroom_search", "error_recovery", "film_log", "lobby_wall_flow", "login_flow"]
+    }
+  ]
+}

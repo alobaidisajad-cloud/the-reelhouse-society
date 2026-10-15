@@ -4,7 +4,7 @@
  * and whether any screen could not read it at all.
  *
  *   node e2e/screen-times.mjs <device log> [--ceilings <json>] [--complete]
- *        [--flow-times <file>]
+ *        [--flow-times <file>] [--record <file>]
  *
  * In the sealed E2E build, useScreenReady writes `[e2e] screen.ready
  * {"name":…,"ms":…}` to the device log: the time from a screen's first render
@@ -30,11 +30,16 @@
  *     cannot rot into ceilings that measure nothing.
  * Without one, it reports the times.
  *
+ * With --record (one shard of e2e.yml's flows), the never-reported rule is
+ * left to shard-verdict.mjs, which reads every shard: a screen one shard never
+ * opens is another's. The record says which screens reported, and whether
+ * --complete was given.
+ *
  * The emulator draws in software and is slower than any phone a member holds.
  * The ceilings are set from its own measured runs, to catch a screen that got
  * slower, not to describe a phone.
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { flowAt, readFlowTimes, stamp } from './app-crashes.mjs';
 
@@ -71,10 +76,12 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   };
   const ceilingsFile = flag('--ceilings');
   const flowTimes = readFlowTimes(flag('--flow-times'));
+  const record = flag('--record');
   const complete = args.includes('--complete');
   const file = args.find((a) => !a.startsWith('--'));
   if (!file) {
-    console.error('usage: node e2e/screen-times.mjs <device log> [--ceilings <json>] [--complete] [--flow-times <file>]');
+    console.error('usage: node e2e/screen-times.mjs <device log> [--ceilings <json>] [--complete]'
+      + ' [--flow-times <file>] [--record <file>]');
     process.exit(2);
   }
 
@@ -111,7 +118,8 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
       }
     }
   }
-  if (ceilings && complete) {
+  if (record) writeFileSync(record, `${JSON.stringify({ complete, reported: [...times.keys()].sort() })}\n`);
+  if (ceilings && complete && !record) {
     for (const name of Object.keys(ceilings).sort()) {
       if (!times.has(name)) problems.push(`${name} has a ceiling but never reported: renamed, or no flow reaches it`);
     }

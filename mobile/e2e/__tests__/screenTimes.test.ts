@@ -88,6 +88,19 @@ describe('screen-times.mjs', () => {
     expect(out).toContain('✗ reader has a ceiling but never reported');
   });
 
+  it('one shard leaves that rule to the verdict, and records what reported and whether it ran whole', () => {
+    const ceilings = { lobby: 3000, film: 1500, reader: 2000 };
+    const record = join(dir, 'screen-record.json');
+    expect(run(LOG, ceilings, '--complete', '--record', record).code).toBe(0);
+    expect(JSON.parse(readFileSync(record, 'utf8'))).toEqual({ complete: true, reported: ['film', 'lobby'] });
+    expect(run(LOG, ceilings, '--record', record).code).toBe(0);
+    expect(JSON.parse(readFileSync(record, 'utf8'))).toEqual({ complete: false, reported: ['film', 'lobby'] });
+    // Every other rule still judges the shard's own screens.
+    const { code, out } = run(LOG, { lobby: 800, film: 1500 }, '--complete', '--record', record);
+    expect(code).toBe(1);
+    expect(out).toContain("lobby's typical opening took 900 ms");
+  });
+
   it('a gate with nothing to read fails, rather than passing on an empty log', () => {
     expect(run('', { lobby: 3000 }).code).toBe(1);
     expect(run('').code).toBe(0);

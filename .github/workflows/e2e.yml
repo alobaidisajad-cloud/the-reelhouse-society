@@ -37,21 +37,27 @@ concurrency:
 permissions:
   contents: read
 
-# One job, in this order, for two reasons: the emulator reaches the backend at
-# 10.0.2.2 (the runner), so both must be on the same machine; and the app is
-# built BEFORE the seal, because the build downloads packages and the seal
-# firewalls addresses that production shares with other Cloudflare sites.
+env:
+  # Which flows run, for run-flows.sh, verify-writes.mjs and the verdict alike:
+  # every flow in the folder (subflows/ holds only the steps they share).
+  E2E_FLOWS: mobile/.maestro
+  # The shipped client this run is of, or empty for the app it is run on.
+  E2E_OLD_CLIENT: ${{ inputs.client }}
+  # Its name on the run's artifacts, so two clients called in one run never share one.
+  E2E_TAG: ${{ inputs.client && format(' - {0}', inputs.client) || '' }}
+
+# Three jobs. The app is built once (build), and its flows run on three
+# machines at once (flows), each its part of mobile/e2e/shards.json: a machine
+# runs a whole sealed world of its own, since the emulator reaches the backend
+# at 10.0.2.2, its own runner. The app is built away from any seal, because the
+# build downloads packages and the seal firewalls addresses that production
+# shares with other Cloudflare sites. Then the verdict reads every shard's logs
+# for what no one machine can judge (e2e/shard-verdict.mjs).
 jobs:
-  app:
-    name: 🎬 The app, end to end, in a sealed world
+  build:
+    name: 🎬 The app, built once for every shard
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
-    env:
-      # Which flows run, for run-flows.sh and verify-writes.mjs alike: every flow
-      # in the folder (subflows/ holds only the steps they share).
-      E2E_FLOWS: mobile/.maestro
-      # The shipped client this run is of, or empty for the app it is run on.
-      E2E_OLD_CLIENT: ${{ inputs.client }}
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -75,37 +81,14 @@ jobs:
           # The lock file changes whenever a native dependency does.
           cache-dependency-path: mobile/package-lock.json
 
-      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
-        with:
-          version: 2.118.0
-
-      # The snapshot was taken with pg_dump 18; the fidelity check must read the
-      # copy with the same major, or every line of formatting looks like drift.
-      - name: Postgres 18 client tools
+      # The Supabase CLI makes the key from its config alone, the same on every
+      # run (e2e/anon-key.mjs), so no stack is started here. Each shard checks
+      # its own stack's key against the one written beside the app.
+      - name: The local stack's anon key
+        id: anon
         run: |
-          sudo apt-get install -y -q postgresql-common
-          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-          sudo apt-get install -y -q postgresql-client-18
-          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
-
-      # sign-in-with-username is production's own function, copied in BEFORE the
-      # stack starts: config.toml names it, and the CLI checks what it names.
-      - name: Start the local stack
-        run: |
-          cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
-          bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta "E2E local stack"
-
-      # All three, or the run stops here by name: an empty key would build the app
-      # anyway and fail later, blaming the functions.
-      - name: Keys for the local stack
-        working-directory: mobile/e2e
-        run: |
-          set -o pipefail
-          keys=$(supabase status -o env | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' | sed 's/"//g') || keys=''
-          for k in API_URL ANON_KEY SERVICE_ROLE_KEY; do
-            grep -qE "^$k=.+" <<< "$keys" || { echo "::error title=E2E keys::supabase status gave no $k — the local stack is not up"; exit 1; }
-          done
-          echo "$keys" >> "$GITHUB_ENV"
+          key=$(node mobile/e2e/anon-key.mjs) || { echo "$key"; exit 1; }
+          echo "key=$key" >> "$GITHUB_OUTPUT"
 
       - name: Install the app's packages
         working-directory: mobile
@@ -124,7 +107,7 @@ jobs:
         env:
           E2E: '1'
           EXPO_PUBLIC_SUPABASE_URL: http://10.0.2.2:54321
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.anon.outputs.key }}
           SENTRY_DISABLE_AUTO_UPLOAD: 'true'
           EXPO_NO_TELEMETRY: '1'
         run: |
@@ -152,8 +135,7 @@ jobs:
             } > "$RUNNER_TEMP/build-errors.txt"
             node e2e/annotate.mjs "E2E app build failed" "$RUNNER_TEMP/build-errors.txt"
           fi
-          # The Kotlin compiler's daemon outlives a --no-daemon build, holding
-          # gigabytes the emulator will need.
+          # The Kotlin compiler's daemon outlives a --no-daemon build; it ends with it.
           pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
           exit $rc
 
@@ -176,6 +158,115 @@ jobs:
           cat "$RUNNER_TEMP/glide-log-level.txt"
           [ $rc -eq 0 ] || node e2e/annotate.mjs "The app logs every image Glide loads" "$RUNNER_TEMP/glide-log-level.txt"
           exit $rc
+
+      # The key the app carries, beside it, for each shard to hold its stack to.
+      - name: The anon key the app was built with
+        env:
+          KEY: ${{ steps.anon.outputs.key }}
+        run: printf '%s\n' "$KEY" > mobile/android/app/build/outputs/apk/release/anon-key.txt
+
+      # Stored as it is: an APK is a zip already.
+      - name: Hand the app to the shards
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-app${{ env.E2E_TAG }}
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error
+          path: |
+            mobile/android/app/build/outputs/apk/release/app-release.apk
+            mobile/android/app/build/outputs/apk/release/anon-key.txt
+
+      - name: Keep the build's logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-build-logs${{ env.E2E_TAG }}
+          path: |
+            ${{ runner.temp }}/build.log
+            ${{ runner.temp }}/build-errors.txt
+            ${{ runner.temp }}/glide-log-level.txt
+          if-no-files-found: ignore
+
+  flows:
+    name: 🎬 The flows, shard ${{ matrix.shard }} of 3, in a sealed world
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      # Every shard runs to its end: one failing never hides what the others find.
+      fail-fast: false
+      matrix:
+        # The shards of mobile/e2e/shards.json (shards.test.ts holds the count).
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      # Its flows (mobile/.maestro); the harness stays this checkout's.
+      - name: The shipped client's app, over this harness
+        if: ${{ inputs.client }}
+        run: node mobile/e2e/old-client-tree.mjs "$E2E_OLD_CLIENT"
+
+      # Where run-flows.sh installs it from, as if built here; before the seal.
+      - name: The app, as the build made it
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: e2e-app${{ env.E2E_TAG }}
+          path: mobile/android/app/build/outputs/apk/release
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+
+      # The JDK the emulator's SDK tools run on, as on the machine that built the app.
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+
+      # The snapshot was taken with pg_dump 18; the fidelity check must read the
+      # copy with the same major, or every line of formatting looks like drift.
+      - name: Postgres 18 client tools
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+
+      # sign-in-with-username is production's own function, copied in BEFORE the
+      # stack starts: config.toml names it, and the CLI checks what it names.
+      - name: Start the local stack
+        run: |
+          cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta "E2E local stack"
+
+      # All three, or the run stops here by name: an empty key fails later,
+      # blaming the functions.
+      - name: Keys for the local stack
+        working-directory: mobile/e2e
+        run: |
+          set -o pipefail
+          keys=$(supabase status -o env | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' | sed 's/"//g') || keys=''
+          for k in API_URL ANON_KEY SERVICE_ROLE_KEY; do
+            grep -qE "^$k=.+" <<< "$keys" || { echo "::error title=E2E keys::supabase status gave no $k — the local stack is not up"; exit 1; }
+          done
+          echo "$keys" >> "$GITHUB_ENV"
+
+      # The app was built before this stack existed, with the key e2e/anon-key.mjs
+      # gave; a stack with another key refuses every call the app makes.
+      - name: The app carries this stack's anon key
+        run: |
+          built=$(cat mobile/android/app/build/outputs/apk/release/anon-key.txt)
+          if [ "$built" != "$ANON_KEY" ]; then
+            h() { printf '%s' "$1" | sha256sum | cut -c1-12; }
+            echo "::error title=E2E anon key::the app was built with the key sha256 $(h "$built")…, this stack's is $(h "$ANON_KEY")…: e2e/anon-key.mjs no longer makes the key the Supabase CLI does"
+            exit 1
+          fi
+          echo "the app's anon key is this stack's"
 
       # Maestro at one release, checked against the digest recorded when it was pinned.
       - name: Install Maestro 2.10.0
@@ -266,8 +357,13 @@ jobs:
 
       - name: The flows, on an Android emulator
         # A backstop under the job's limit, so the steps after it still run. The
-        # flows' own budget (run-flows.sh, 55 minutes) is inside this one.
-        timeout-minutes: 63
+        # shard's flows have their own budget inside it (E2E_FLOWS_MINUTES): a
+        # shard is measured at about 8 minutes, and the slowest runner seen ran
+        # every step twice as slow.
+        timeout-minutes: 28
+        env:
+          E2E_SHARD: ${{ matrix.shard }}/3
+          E2E_FLOWS_MINUTES: '20'
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34
@@ -291,6 +387,7 @@ jobs:
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: bash mobile/e2e/run-flows.sh
 
+      # Only the flows this shard ran (run-flows.sh's flows-run.txt).
       - name: What the flows did, found in the database
         run: node mobile/e2e/db/verify-writes.mjs
 
@@ -320,16 +417,16 @@ jobs:
       # attempt keeps its first, and the device's whole log names any animation
       # Android held the test on (e2e/animation-waits.mjs). Hidden files too —
       # Maestro writes its records under a `.maestro` folder, which the upload
-      # skips by default, so no run before this one ever kept them.
+      # skips by default, so no run before this one ever kept them. The verdict
+      # reads the shard's list of flows and its record of screens from here.
       - name: Keep the run's logs
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: e2e-logs
+          name: e2e-logs-${{ matrix.shard }}${{ env.E2E_TAG }}
           include-hidden-files: true
           path: |
             ${{ runner.temp }}/functions.log
-            ${{ runner.temp }}/build.log
             ${{ runner.temp }}/maestro.log
             ${{ runner.temp }}/flow-reports
             ${{ runner.temp }}/flow-screens
@@ -352,4 +449,54 @@ jobs:
             ${{ runner.temp }}/runtime-dump.txt
             ${{ runner.temp }}/screen-times.txt
             ${{ runner.temp }}/memory.txt
+            ${{ runner.temp }}/shard-plan.txt
+            ${{ runner.temp }}/flows-run.txt
+            ${{ runner.temp }}/screen-record.json
           if-no-files-found: ignore
+
+  verdict:
+    name: 🎬 The shards, read together
+    needs: [build, flows]
+    # A shard that failed or never ran is the point: it is named here.
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: The app was built
+        if: needs.build.result != 'success'
+        run: |
+          echo "::error title=E2E::the app was not built (${{ needs.build.result }}), so no shard ran"
+          exit 1
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      # Its flows are the ones every shard must have run between them.
+      - name: The shipped client's app, over this harness
+        if: ${{ inputs.client }}
+        run: node mobile/e2e/old-client-tree.mjs "$E2E_OLD_CLIENT"
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+
+      # A shard that kept none is named by the verdict, not by this step.
+      - name: Every shard's kept logs
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: e2e-logs-*${{ env.E2E_TAG }}
+          path: ${{ runner.temp }}/shards
+
+      - name: What no one shard can judge
+        run: |
+          set +e
+          node mobile/e2e/shard-verdict.mjs "$RUNNER_TEMP/shards" --shards 3 --name "e2e-logs-{i}${E2E_TAG}" \
+            --ceilings mobile/e2e/screen-ceilings.json --flows "$E2E_FLOWS" > "$RUNNER_TEMP/shard-verdict.txt" 2>&1
+          rc=$?
+          cat "$RUNNER_TEMP/shard-verdict.txt"
+          if [ $rc -eq 0 ]; then
+            node mobile/e2e/annotate.mjs "The shards, read together" "$RUNNER_TEMP/shard-verdict.txt" summary
+          else
+            node mobile/e2e/annotate.mjs "The shards, read together" "$RUNNER_TEMP/shard-verdict.txt"
+          fi
+          exit $rc

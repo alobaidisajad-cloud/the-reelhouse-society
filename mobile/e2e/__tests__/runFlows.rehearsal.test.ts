@@ -16,6 +16,9 @@
  *     Maestro it plays leaves a session file behind, as a killed one would; every
  *     launch it plays logs ActivityManager's "Start proc" line, as Android does.
  *
+ * A run with E2E_SHARD is one machine's part, by a map of the scenario's own
+ * flows (E2E_SHARD_MAP); every other run has none, and is the whole run.
+ *
  * Runs in bash: /bin/bash on CI, Git Bash on Windows (whose `timeout`, `awk` and
  * `tail -f` it uses). A missing bash fails here rather than skipping: a rehearsal
  * that does not run proves nothing.
@@ -175,7 +178,7 @@ const made: string[] = [];
 afterAll(() => { for (const d of made) rmSync(d, { recursive: true, force: true }); });
 
 /** One whole run: `flows` are the top-level flows; `scenario` each flow's behaviour, one per attempt. */
-function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { env?: Record<string, string>; state?: Record<string, string> } = {}): Promise<Run> {
+function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { env?: Record<string, string>; state?: Record<string, string>; map?: object } = {}): Promise<Run> {
   const T = posix(mkdtempSync(join(tmpdir(), 'rehearsal-')));
   made.push(T);
   for (const d of ['bin', 'home', 'out', 'state', 'scenario', 'fixtures', 'flows/keyboard']) mkdirSync(join(T, d), { recursive: true });
@@ -193,6 +196,8 @@ function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { e
   for (const [k, v] of Object.entries(opts.state ?? {})) writeFileSync(join(T, 'state', k), v);
   // The committed copy of the phone's runtime, as the fake launches write it.
   writeFileSync(join(T, 'fixtures', 'phone-runtime.json'), JSON.stringify({ globalThis: ['AbortController'] }));
+  // A shard map of the scenario's own flows, where a run is one shard of them.
+  if (opts.map) writeFileSync(join(T, 'fixtures', 'shards.json'), JSON.stringify(opts.map));
   const env = {
     ...process.env,
     PATH: `${join(T, 'bin')}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`,
@@ -200,6 +205,9 @@ function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { e
     E2E_MEMBER_EMAIL: 'e2e_member@e2e.test', E2E_MEMBER_PASSWORD: 'rehearsal-Pw_0123456789x', E2E_MEMBER_USERNAME: 'e2e_member',
     GITHUB_STEP_SUMMARY: T + '/summary.md', E2E_MOTION_SECONDS: '1',
     E2E_RUNTIME_COPY: T + '/fixtures/phone-runtime.json',
+    // No shard unless a scenario names one: then the run is the whole run.
+    E2E_SHARD: '',
+    ...(opts.map ? { E2E_SHARD_MAP: T + '/fixtures/shards.json' } : {}),
     ...opts.env,
   };
   return new Promise((resolve, reject) => {
@@ -376,10 +384,57 @@ it('a launch with animations on that lives and draws passes, and says so', async
   const r = await rehearse(['a_flow'], { a_flow: ['pass'] });
   expect(r.status).toBe(0);
   expect(file(r, 'motion', 'result.txt')).toBe('A launch with animations on: alive at 1 s (pid 16631), no crash, the first screen ready.\n');
+  // With no shard, the whole run: the probes too, and no shard's records.
+  expect([calls(r, 'stack'), calls(r, 'log'), calls(r, 'a_flow')]).toEqual([1, 1, 1]);
+  expect(['flows-run.txt', 'screen-record.json', 'shard-plan.txt'].filter((f) => existsSync(join(r.out, f)))).toEqual([]);
   // The phone's runtime is the copy, and kept with the logs.
   expect(file(r, 'runtime-dump.txt')).toMatch(/^The phone's runtime, written by 1 launch, is the committed copy/);
   expect(JSON.parse(file(r, 'phone-runtime.json'))).toEqual({ globalThis: ['AbortController'] });
   always(r);
+});
+
+describe('one shard of the flows (E2E_SHARD, with a map of the scenario\'s flows)', () => {
+  const FLOWS = ['a_flow', 'b_flow', 'c_flow', 'd_flow', 'new_flow'];
+  const MAP = { shards: [
+    { keyboardProbes: true, launchWithAnimations: true, flows: ['a_flow'] },
+    { flows: ['c_flow', 'b_flow'] },
+    { flows: ['d_flow'] },
+  ] };
+  const ran = (r: Run) => FLOWS.filter((f) => calls(r, f) > 0);
+
+  it('runs only its own flows, in order, with no probe and no launch with animations on, and lists them', async () => {
+    const r = await rehearse(FLOWS, {}, { map: MAP, env: { E2E_SHARD: '2/3' } });
+    expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
+    expect([ran(r), calls(r, 'stack'), calls(r, 'log')]).toEqual([['b_flow', 'c_flow'], 0, 0]);
+    expect(file(r, 'maestro-summary.txt')).toBe('[Passed] b_flow (1s)\n[Passed] c_flow (1s)\n');
+    expect(existsSync(join(r.out, 'motion', 'am.txt'))).toBe(false);
+    expect(file(r, 'motion', 'result.txt')).toBe('The launch with animations on runs in another shard (e2e/shards.json).\n');
+    expect(file(r, 'keyboard-room.txt')).toBe("The keyboard's probes run in another shard (e2e/shards.json).\n");
+    expect(file(r, 'flows-run.txt')).toBe('b_flow\nc_flow\n');
+    // Its screens, for the verdict: every flow ran to its end.
+    expect(JSON.parse(file(r, 'screen-record.json'))).toEqual({ complete: true, reported: [...SCREENS].sort() });
+    always(r);
+  });
+
+  it('runs the probes and the launch with animations on where the map puts them', async () => {
+    const r = await rehearse(FLOWS, {}, { map: MAP, env: { E2E_SHARD: '1/3' } });
+    expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
+    expect([ran(r), calls(r, 'stack'), calls(r, 'log')]).toEqual([['a_flow'], 1, 1]);
+    expect(file(r, 'motion', 'result.txt')).toBe('A launch with animations on: alive at 1 s (pid 16631), no crash, the first screen ready.\n');
+    expect(file(r, 'keyboard-room.txt')).toMatch(/^stack: "FILE THE STACK" clear/m);
+    expect(file(r, 'flows-run.txt')).toBe('a_flow\n');
+    always(r);
+  });
+
+  it('runs a flow the map does not name in the last shard, and says so', async () => {
+    const r = await rehearse(FLOWS, {}, { map: MAP, env: { E2E_SHARD: '3/3' } });
+    expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
+    expect([ran(r), calls(r, 'stack')]).toEqual([['d_flow', 'new_flow'], 0]);
+    expect(titled(r, 'notice', 'Shard 3/3  flows out of e2e/shards.json'))
+      .toContain('new_flow is in no shard of the map, so it runs here, in the last');
+    expect(file(r, 'flows-run.txt')).toBe('d_flow\nnew_flow\n');
+    always(r);
+  });
 });
 
 it('a screen whose read failed fails a run whose every flow passed — but not in the flow that cuts the network', async () => {
