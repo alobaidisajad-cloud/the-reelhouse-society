@@ -42,10 +42,36 @@ export const undoOf = (name) => join(MOBILE, 'supabase', 'migrations-down', name
 const apply = (url, file) => execFileSync('psql', [url, '-X', '-q', '-1', '-v', 'ON_ERROR_STOP=1', '-f', file],
   { encoding: 'utf8', env: { ...process.env, PGOPTIONS: LIMITS }, stdio: ['ignore', 'pipe', 'pipe'] });
 
-/** pg_dump's schema, less its comments, settings and per-run restrict key, so two compare. */
-const dump = (url) => execFileSync('pg_dump', [url, '--schema-only', '--no-comments'], { encoding: 'utf8', maxBuffer: 1e9 })
-  .split('\n').filter((l) => l.trim() && !l.startsWith('--') && !/^SET |^SELECT pg_catalog\.set_config|^\\(un)?restrict /.test(l))
-  .join('\n');
+/**
+ * Each run of GRANT and REVOKE lines, sorted. pg_dump writes an object's grants in the order they
+ * were given, which means nothing: a grant taken away and given back again lands last.
+ */
+export const grantsInOrder = (lines) => {
+  const out = [];
+  let run = [];
+  const flush = () => { out.push(...run.sort()); run = []; };
+  for (const l of lines) {
+    if (/^(GRANT|REVOKE) /.test(l)) run.push(l);
+    else { flush(); out.push(l); }
+  }
+  flush();
+  return out;
+};
+
+const psqlRows = (url, sql) => execFileSync('psql', [url, '-X', '-q', '-t', '-A', '-c', sql], { encoding: 'utf8' }).trim();
+
+/** The scheduled jobs, where the database has pg_cron (pg_dump leaves them out). */
+const jobs = (url) => (psqlRows(url, "SELECT to_regclass('cron.job') IS NOT NULL") === 't'
+  ? ['scheduled jobs:', ...psqlRows(url,
+    "SELECT jobname || ' | ' || schedule || ' | ' || command || ' | ' || active FROM cron.job ORDER BY jobname").split('\n')]
+  : []);
+
+/** pg_dump's schema less comments, settings and its restrict key, then the jobs: two compare. */
+const dump = (url) => [
+  ...grantsInOrder(execFileSync('pg_dump', [url, '--schema-only', '--no-comments'], { encoding: 'utf8', maxBuffer: 1e9 })
+    .split('\n').filter((l) => l.trim() && !l.startsWith('--') && !/^SET |^SELECT pg_catalog\.set_config|^\\(un)?restrict /.test(l))),
+  ...jobs(url),
+].join('\n');
 
 const firstDifference = (a, b) => {
   const x = a.split('\n');
@@ -87,24 +113,31 @@ const run = () => {
   console.log(`✓ ${pending.length} pending migration(s), each undone and redone to the same schema.`);
 };
 
-/** A round trip in a scratch database of its own, dropped after. */
-const inScratch = (name, down) => {
+/** A round trip in a scratch database of its own, from `before` if given, dropped after. */
+const inScratch = (name, up, down, before) => {
   const fixtures = join(HERE, 'fixtures', 'up-down-up');
   const admin = ['psql', [`${SERVER}/postgres`, '-X', '-q']];
   execFileSync(admin[0], [...admin[1], '-c', `DROP DATABASE IF EXISTS ${name}`, '-c', `CREATE DATABASE ${name}`]);
   try {
-    return roundTrip(`${SERVER}/${name}`, join(fixtures, 'up.sql'), join(fixtures, down));
+    if (before) apply(`${SERVER}/${name}`, join(fixtures, before));
+    return roundTrip(`${SERVER}/${name}`, join(fixtures, up), join(fixtures, down));
   } finally {
     execFileSync(admin[0], [...admin[1], '-c', `DROP DATABASE ${name}`]);
   }
 };
 
 const selfTest = () => {
-  const good = inScratch('up_down_up_good', 'down.sql');
-  const bad = inScratch('up_down_up_bad', 'down-forgets-a-function.sql');
-  if (good !== null) { console.error(`✗ self-test: a correct undo was refused: ${good}`); process.exit(1); }
-  if (!bad || !bad.startsWith('the undo does not restore the schema')) { console.error(`✗ self-test: a bad undo passed (${bad})`); process.exit(1); }
-  console.log('✓ self-test: a correct undo passes, and one that forgets a function is caught.');
+  const cases = [
+    ['a correct undo', inScratch('up_down_up_good', 'up.sql', 'down.sql'), null],
+    ['an undo that forgets a function', inScratch('up_down_up_bad', 'up.sql', 'down-forgets-a-function.sql'), 'the undo does not restore'],
+    ['an undo giving a grant back, in another order', inScratch('up_down_up_order', 'grants-up.sql', 'grants-down.sql', 'grants-before.sql'), null],
+    ['an undo that forgets a grant', inScratch('up_down_up_grant', 'grants-up.sql', 'grants-down-forgets.sql', 'grants-before.sql'), 'the undo does not restore'],
+  ];
+  for (const [what, got, want] of cases) {
+    const ok = want === null ? got === null : typeof got === 'string' && got.startsWith(want);
+    if (!ok) { console.error(`✗ self-test: ${what}: expected ${want === null ? 'a pass' : `"${want}…"`}, got ${got ?? 'a pass'}`); process.exit(1); }
+  }
+  console.log('✓ self-test: a correct undo passes, also one giving grants back in another order; a forgotten function or grant is caught.');
 };
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
