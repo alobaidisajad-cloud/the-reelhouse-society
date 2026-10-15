@@ -120,7 +120,8 @@ export interface LoungeState {
   /** True once the member is out; false when the house refused or could not be reached (said). */
   leaveLounge: (loungeId: string) => Promise<boolean>;
   deleteLounge: (loungeId: string) => Promise<boolean>;
-  subscribeToLounge: (loungeId: string, opts?: { onMembership?: () => void }) => () => void;
+  /** Joins a salon's channel privately; `seated` alone shares presence and sends typing. */
+  subscribeToLounge: (loungeId: string, opts?: { onMembership?: () => void; seated?: boolean }) => () => void;
   markRead: (loungeId: string) => Promise<void>;
 
   // ── Membership roster + host controls (Editorial Salon overhaul) ──
@@ -175,6 +176,8 @@ const TYPING_TTL = 4000;      // a typist goes quiet after 4s of silence
 const _typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 /** The active salon channel — lets broadcastTyping ride the same socket. */
 let _activeChannel: RealtimeChannel | null = null;
+/** Whether the member holds a seat in the active salon: only a seated member types. */
+let _seatedInActive = false;
 
 function clearTypingState(set: (partial: Partial<LoungeState>) => void) {
   for (const t of _typingTimers.values()) clearTimeout(t);
@@ -1218,12 +1221,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     return true;
   },
 
-  subscribeToLounge: (loungeId: string, opts?: { onMembership?: () => void }) => {
+  subscribeToLounge: (loungeId: string, opts?: { onMembership?: () => void; seated?: boolean }) => {
     const me = useAuthStore.getState().user;
+    const seated = !!opts?.seated;
     const channel = supabase
       .channel(`lounge-${loungeId}`, {
-        // THE HOUSE PULSE shares the transcript's socket; own typing echoes are muted.
-        config: { presence: { key: me?.id ?? 'anon' }, broadcast: { self: false } },
+        // Private: the salon's rules decide who receives it (realtime.messages); own echoes muted.
+        config: { private: true, presence: { key: me?.id ?? 'anon' }, broadcast: { self: false } },
       })
       .on(
         'postgres_changes',
@@ -1378,16 +1382,21 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         set(s => s.typingUsers.includes(username) ? s : { typingUsers: [...s.typingUsers, username] });
       })
       .subscribe((status) => {
-        // Announce presence only once the channel is live.
-        if (status === 'SUBSCRIBED' && me) {
+        // Presence once the channel is live, from a seated member only: a reader
+        // without a seat is in the room unseen.
+        if (status === 'SUBSCRIBED' && me && seated) {
           channel.track({ username: me.username });
         }
       });
 
     _activeChannel = channel;
+    _seatedInActive = seated;
     return () => {
       supabase.removeChannel(channel);
-      if (_activeChannel === channel) _activeChannel = null;
+      if (_activeChannel === channel) {
+        _activeChannel = null;
+        _seatedInActive = false;
+      }
       clearTypingState(set);
     };
   },
@@ -1396,12 +1405,12 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const now = Date.now();
     if (now - _lastTypingBroadcastAt < TYPING_THROTTLE) return;
     const me = useAuthStore.getState().user;
-    if (!me || !_activeChannel || get().currentLoungeId !== loungeId) return;
+    if (!me || !_activeChannel || !_seatedInActive || get().currentLoungeId !== loungeId) return;
     _lastTypingBroadcastAt = now;
-    void _activeChannel.send({
-      type: 'broadcast',
-      event: 'typing',
-      payload: { user_id: me.id, username: me.username },
+    // Through the house, never the channel: it checks the seat and stamps the
+    // sender's own id and handle, so no member can type as another.
+    void supabase.rpc('send_salon_typing', { p_lounge_id: loungeId }).then(({ error }) => {
+      if (error) logger.warn('[LoungeStore.broadcastTyping] typing not sent:', error.message);
     });
   },
 

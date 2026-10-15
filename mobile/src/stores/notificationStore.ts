@@ -119,6 +119,8 @@ export interface NotificationState {
     _hasMore: boolean;
     _cursor: string | null;
     unreadCount: () => number;
+    /** How many notices arrived live this session: a room waiting on its door listens for it (never persisted). */
+    noticesHeard: number;
     setupRealtime: () => void | (() => void);
 }
 
@@ -133,6 +135,7 @@ export const useNotificationStore = create<NotificationState>()(
     _fetching: false,
     _fetchingMore: false,
     _unreadCount: 0,
+    noticesHeard: 0,
 
     _hasMore: true,
     _cursor: null,
@@ -465,8 +468,10 @@ export const useNotificationStore = create<NotificationState>()(
         // One subscription, however often this is called (StrictMode calls twice).
         if (_realtimeCleanup) return _realtimeCleanup;
 
+        // Private: realtime.messages admits a signed-in member; each row still
+        // reaches only its own member, by the notifications table's rules.
         const channel = supabase
-            .channel('global_notifications')
+            .channel('global_notifications', { config: { private: true } })
             .on(
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
@@ -486,7 +491,7 @@ export const useNotificationStore = create<NotificationState>()(
                         return;
                     }
 
-                    set((state) => applyIncomingNotification(state, newNotif));
+                    set((state) => ({ ...applyIncomingNotification(state, newNotif), noticesHeard: state.noticesHeard + 1 }));
                 }
             )
             .subscribe();

@@ -118,7 +118,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | 2026-10-08 | the share waits for the card to say it is whole, 20 s at most |
 | app/lounge.tsx | 2026-10-01 | true as written |
-| app/lounge/[id].tsx | 2026-10-04 | edited: a message’s letter is initialOf, kept from the screen reader |
+| app/lounge/[id].tsx | 2026-10-15 | edited: the channel joined as the salon's rules allow and joined again as the seat changes; a waiting member asks again on each notice |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-04 | edited: a portrait without a photograph carries the whole first letter, unspoken |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | 2026-10-01 | the not-found way out says where it goes; histories to the present |
@@ -503,6 +503,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/VaultNote.tsx | 2026-10-01 | true as written |
 | src/components/lounge/__tests__/aKeystrokeRedrawsNoMessage.test.tsx | 2026-10-03 | read whole: openRoom proves rows were drawn before counting redraws |
 | src/components/lounge/__tests__/aMessageCanBeHeardAndActedOn.test.ts | 2026-09-29 | new |
+| src/components/lounge/__tests__/aSeatLostLeavesTheChannel.test.tsx | 2026-10-15 | new |
 | src/components/lounge/__tests__/MemberFaceStack.model.test.ts | 2026-10-03 | read whole: sound |
 | src/components/lounge/__tests__/roomGate.test.ts | 2026-09-29 | new |
 | src/components/lounge/__tests__/aRefusedLeaveStaysInTheRoom.test.tsx | 2026-10-01 | written: the salon panel leaves only on success |
@@ -875,6 +876,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/aReactionIsOneOfFive.test.ts | 2026-10-03 | read whole: the five against the CHECK in the snapshot |
 | src/stores/__tests__/aRefusedWriteIsNotSuccess.test.ts | — |  |
 | src/stores/__tests__/aResetThatFailedIsHeard.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): a failed sign-out reset reaches the logger in production. |
+| src/stores/__tests__/aSalonChannelFollowsTheSalon.test.ts | 2026-10-15 | new |
 | src/stores/__tests__/aSalonKeepsItsCoverAndItsDoor.test.ts | 2026-10-01 | written: the corridor reads covers; a rank refusal is a door |
 | src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts | 2026-10-04 | written whole: a seat taken or given up is drawn as the next read gives it |
 | src/stores/__tests__/aStackIsSavedWhole.test.ts | — |  |
@@ -946,10 +948,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/watchlistSlice.ts | 2026-10-08 | no posters fetched ahead |
 | src/stores/films.ts | 2026-10-08 | nothing fetched ahead on restore |
 | src/stores/followStore.ts | 2026-10-01 | comments cut to the why |
-| src/stores/lounge.ts | 2026-10-04 | edited: one membership language (mine, membership_status); the pending-leave flag nothing read is gone; seatedIn/leftBehind say what the next read gives |
+| src/stores/lounge.ts | 2026-10-15 | edited: the salon channel joined privately, presence from a seat alone, typing through send_salon_typing |
 | src/stores/markCounts.ts | 2026-10-02 | read; sound |
 | src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
-| src/stores/notificationStore.ts | 2026-10-02 | first page ordered by time then id; moreFailed |
+| src/stores/notificationStore.ts | 2026-10-15 | edited: the notices channel joined privately; the notices heard live are counted |
 | src/stores/offlineQueueStore.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/reportStore.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/stores/resetAllStores.ts | 2026-10-02 | Read whole (launch audit). Failures were counted only in development: reported through logger.warn now. |
@@ -1018,6 +1020,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/endorsementGrouping.test.ts | — |  |
 | src/utils/__tests__/everyBackHasAWayOut.guard.test.ts | — |  |
 | src/utils/__tests__/everyCapAnswersToItsColumn.test.ts | 2026-10-03 | read whole: every new cap answers to its column or says why it is smaller |
+| src/utils/__tests__/everyChannelIsPrivate.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | — |  |
 | src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |

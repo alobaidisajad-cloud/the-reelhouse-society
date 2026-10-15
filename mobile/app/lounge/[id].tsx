@@ -13,6 +13,7 @@ import { supabase } from '@/src/lib/supabase';
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
+import { useNotificationStore } from '@/src/stores/notificationStore';
 import { LoungeMessage, LoungeRoom, ReactionSummary, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 import { LoungeMember, LoungeMemberStatus } from '@/src/types/social.types';
@@ -497,15 +498,35 @@ export default function LoungeRoomScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // ── Subscribe + initial fetch (realtime: messages, reactions, membership) ──
+  // ── Initial fetch ──
   useEffect(() => {
     if (!id) return;
     fetchMessages(id);
     markRead(id);
-    const unsub = subscribeToLounge(id, { onMembership: () => { refreshMembership(); } });
-    return () => { unsub(); markRead(id); };
+    return () => { markRead(id); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // ── The live channel (messages, reactions, seats, presence, typing) ──
+  // Joined only when the salon's own rules let this member receive it (an open
+  // salon, or a seat in a private one), with presence and typing from a seat
+  // alone; joined again whenever either changes, without leaving the room. A
+  // seat lost in a private salon leaves the channel at once.
+  const listening = !!activeLounge && (!activeLounge.is_private || myStatus === 'approved');
+  const seatedHere = myStatus === 'approved';
+  useEffect(() => {
+    if (!id || !listening) return;
+    return subscribeToLounge(id, { seated: seatedHere, onMembership: () => { refreshMembership(); } });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, listening, seatedHere]);
+
+  // A member waiting at a private door has no channel to hear the door open on;
+  // their admission arrives as a notice, so each new notice asks again.
+  const noticesHeard = useNotificationStore((s) => s.noticesHeard);
+  useEffect(() => {
+    if (myStatus === 'pending') refreshMembership();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noticesHeard]);
 
   const handleSend = useCallback(() => {
     if (!input.trim() || sending || !id) return;
