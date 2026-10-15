@@ -1,0 +1,43 @@
+{
+  "about": "The clients already in members' hands, which a database change must not break (WORKLIST P0.4). Each one with a commit is checked against production as it will be, on every push, by mobile/e2e/db/old-clients.mjs. Read from EAS (eas build:list) on 2026-10-15.",
+  "clients": [
+    {
+      "name": "TestFlight build 41",
+      "platform": "ios",
+      "commit": "ae569c0f33724ef3eec96762523d3cd98e008bbc",
+      "buildNumber": "41",
+      "uploaded": "2026-10-10",
+      "channel": "production",
+      "update": null,
+      "expires": "about 2027-01-08 (90 days after upload; the exact date is read in App Store Connect)",
+      "checked": true,
+      "note": "Its tree also holds the website's code as main serves it: no website file has changed since this commit."
+    },
+    {
+      "name": "the website",
+      "platform": "web",
+      "commit": null,
+      "checked": false,
+      "note": "Checked through build 41's tree until the user reads the commit Vercel's production deployment serves (P0.5); then recorded here."
+    },
+    {
+      "name": "internal iOS build 34",
+      "platform": "ios",
+      "commit": "4c44b9b04d3433e1a65687a80eab6e513abe99b5",
+      "buildNumber": "34",
+      "uploaded": "2026-07-01",
+      "channel": "production",
+      "checked": false,
+      "note": "An ad-hoc build. If it is still on any phone, it is deleted, or recorded here as checked (P0.2); asked of the user."
+    },
+    {
+      "name": "TestFlight build 38",
+      "platform": "ios",
+      "commit": "f9029e930e067eb25a1e6a4116aa66e82c1196da",
+      "buildNumber": "38",
+      "uploaded": "2026-07-17",
+      "checked": false,
+      "note": "Lapses about 2026-10-15, 90 days after upload; build 41 replaced it on TestFlight."
+    }
+  ]
+}

@@ -108,6 +108,28 @@ describe('every change has a tested undo', () => {
   });
 });
 
+describe('the clients in members\' hands', () => {
+  const record = JSON.parse(readFileSync(join(MOBILE, 'e2e/old-clients.json'), 'utf8')) as {
+    clients: { name: string; commit: string | null; checked: boolean; note?: string }[];
+  };
+
+  it('are recorded, the TestFlight build checked at its own full commit, every unchecked one saying why', () => {
+    const build41 = record.clients.find((c) => c.name === 'TestFlight build 41');
+    expect(build41).toEqual(expect.objectContaining({ commit: 'ae569c0f33724ef3eec96762523d3cd98e008bbc', checked: true }));
+    for (const c of record.clients) {
+      if (c.checked) expect([c.name, /^[0-9a-f]{40}$/.test(c.commit ?? '')]).toEqual([c.name, true]);
+      else expect([c.name, (c.note ?? '').length > 20]).toEqual([c.name, true]);
+    }
+  });
+
+  it('are checked in CI after every pending migration is applied, before the security checks', () => {
+    const ci = readFileSync(join(MOBILE, '..', '.github/workflows/db-integration.yml'), 'utf8');
+    const at = ci.indexOf('run: node mobile/e2e/db/old-clients.mjs');
+    expect(at).toBeGreaterThan(ci.indexOf('run: node mobile/e2e/db/up-down-up.mjs\n'));
+    expect(ci.indexOf('-f mobile/e2e/db/security.sql')).toBeGreaterThan(at);
+  });
+});
+
 describe('the copy taken before a change', () => {
   const { plan: dumpPlan } = require('../../../scripts/dump-production.cjs') as {
     plan: (kind: string, tables: string[], stamp: string) => { refuse?: string; name?: string; args?: string[] };

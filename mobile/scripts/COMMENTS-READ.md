@@ -146,6 +146,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/app-crashes.mjs | 2026-10-04 | written: the app crashing or freezing at any moment fails the run; the copy must be shown to reach the end |
 | e2e/attempt.mjs | 2026-10-04 | written: the retry rule, from runs 37155828199 and 37165878763, read against Maestro 2.10.0's source |
 | e2e/db/bootstrap.mjs | 2026-09-28 | 7 findings; stale function count and 'how this was found' asides dropped |
+| e2e/db/old-clients.mjs | 2026-10-15 | new |
 | e2e/db/seal.sh | 2026-10-03 | Written in the tooling audit: the seal e2e.yml and load.yml each carried, in one place for three workflows. |
 | e2e/db/seed.mjs | 2026-09-29 | true as written |
 | e2e/db/up-down-up.mjs | 2026-10-15 | new |

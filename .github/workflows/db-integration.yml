@@ -30,7 +30,7 @@ permissions:
 jobs:
   db-security:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - name: Fire drill — fail on purpose
         if: ${{ inputs.fire_drill }}
@@ -85,6 +85,14 @@ jobs:
         run: node mobile/e2e/db/up-down-up.mjs --self-test
       - name: Every pending migration, up, down and up again
         run: node mobile/e2e/db/up-down-up.mjs
+
+      # The builds already in members' hands (mobile/e2e/old-clients.json), each
+      # checked out at its own commit and held by its own tests to the schema
+      # just made: a change that breaks a shipped build fails here, not on a phone.
+      - name: The clients in members' hands, against production as it will be
+        env:
+          SNAPSHOT_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: node mobile/e2e/db/old-clients.mjs
 
       # As supabase_admin: the house is laid down with triggers off, and each case
       # is asked as anon or authenticated.
