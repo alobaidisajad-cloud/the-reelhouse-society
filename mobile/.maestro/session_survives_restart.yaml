@@ -20,8 +20,9 @@ appId: com.reelhouse.society
     element:
       id: "collection-card-watchlist"
     direction: DOWN
-    # To the middle, never left under the tab bar where a tap lands on a tab; each
-    # centring swipe takes seconds on a slow runner, so the time allows several.
+    # To the middle, never left under the tab bar where a tap lands on a
+    # tab; each centring swipe takes seconds on a slow runner, so the time
+    # allows several.
     timeout: 60000
     centerElement: true
 - assertNotVisible:

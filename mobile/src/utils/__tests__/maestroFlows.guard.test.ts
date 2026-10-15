@@ -136,6 +136,12 @@ it('every scroll to something tapped brings it to the middle, with time to get t
     .toEqual(END_OF_PAGE.map(() => ['lobby_wall_flow.yaml', false]));
 });
 
+it('no flow line is over 80 characters, as the flow lint in CI requires (yamllint, relaxed)', () => {
+  const long = FLOWS.flatMap((f) => f.text.split(/\r?\n/).map((l, i) => ({ at: `${f.flow}:${i + 1}`, n: [...l].length })))
+    .filter((l) => l.n > 80);
+  expect(long.map((l) => `${l.at} (${l.n})`)).toEqual([]);
+});
+
 it('every flow drives this app, and none holds an account', () => {
   expect(FLOWS.filter((f) => f.config?.appId !== APP_ID).map((f) => f.flow)).toEqual([]);
   expect(FLOWS.filter((f) => /@[a-z0-9-]+\.[a-z]{2,}|password123/i.test(f.text)).map((f) => f.flow)).toEqual([]);

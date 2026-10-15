@@ -14,5 +14,6 @@ appId: com.reelhouse.society
     element: "The projection booth never closes."
     direction: DOWN
     timeout: 20000
-    # The page's last line, only reached, never tapped: it cannot come to the middle.
+    # The page's last line, only reached, never tapped: it cannot come to
+    # the middle.
 - assertNotVisible: "PROJECTION FAILURE"

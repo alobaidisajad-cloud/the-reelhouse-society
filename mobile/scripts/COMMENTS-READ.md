@@ -1042,7 +1042,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/logger.test.ts | — |  |
 | src/utils/__tests__/logScreenPolish.guard.test.ts | — |  |
 | src/utils/__tests__/lucideIconsAreBundled.guard.test.ts | — |  |
-| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-15 | edited: a scroll to something tapped centres it with 60 s; a page's last line is named and not centred |
+| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-15 | edited: a scroll to something tapped centres it with 60 s; a page's last line is named; no flow line over 80 |
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
