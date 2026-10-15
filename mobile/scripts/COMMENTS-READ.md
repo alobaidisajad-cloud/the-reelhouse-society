@@ -1027,7 +1027,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/boundedCounts.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
 | src/utils/__tests__/ciAlert.behaviour.test.ts | — |  |
-| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-15 | a call to this repo's own workflow is let off only for what its callee carries; the shipped clients' runs |
+| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-15 | edited: every workflow watched and started by hand; no E2E run cancelled by a later push |
 | src/utils/__tests__/csv.test.ts | — |  |
 | src/utils/__tests__/dispatchExecutors.test.ts | — |  |
 | src/utils/__tests__/dispatchFieldCaps.test.ts | 2026-09-28 | Claimed to reconcile every live ceiling but read three old migrations, so subject_backdrop_ceiling had no cap. Reads the live snapshot now, and fails on any ceiling without an app cap or a stated reason. |

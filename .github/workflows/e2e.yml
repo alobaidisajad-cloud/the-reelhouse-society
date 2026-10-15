@@ -28,9 +28,11 @@ on:
         type: string
         required: true
 
+# A run is never cancelled by a later push: each commit's run finishes and is
+# read. One runs at a time; a later push waits, and only its latest waits.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
