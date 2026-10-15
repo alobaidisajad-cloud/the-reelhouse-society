@@ -34,12 +34,17 @@ jobs:
           cache: 'npm'
           cache-dependency-path: mobile/package-lock.json
 
-      # An install that fails is tried once more, this step only; one that fails
-      # twice, or outlasts the limit, fails the run.
       - name: Install Mobile Dependencies
-        working-directory: ./mobile
+        id: install-1
         timeout-minutes: 5
-        run: npm ci || { echo "::warning title=npm ci::the install failed once and is tried again"; npm ci; }
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-1.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: ./mobile
+        run: npm ci
 
       - name: The packages the phone bundles hold
         working-directory: ./mobile
