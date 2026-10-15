@@ -25,11 +25,13 @@ updates:
           - patch
 
   # ── Web (Vite beta) ──
+  # Paused (0) while the website is frozen for the audit: an update to it is a
+  # website change, and needs the user's approval (mobile/scripts/website-freeze.cjs).
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     groups:
       minor-and-patch:
         update-types:

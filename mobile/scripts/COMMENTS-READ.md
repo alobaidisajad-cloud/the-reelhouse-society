@@ -218,6 +218,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/secrets-planted.cjs | 2026-10-15 | new |
 | scripts/surface-jest-failure.sh | 2026-10-03 | read whole: sound |
 | scripts/test-timezones.js | 2026-09-29 | the batch story reduced to the fact it guards |
+| scripts/website-freeze.cjs | 2026-10-15 | new |
 | src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-02 | Written in the launch audit: no two modules export a component under one name. |
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
@@ -1063,6 +1064,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/tier.warning.test.ts | — |  |
 | src/utils/__tests__/validateUsername.test.ts | — |  |
 | src/utils/__tests__/validateWithTelemetry.test.ts | — |  |
+| src/utils/__tests__/websiteFreeze.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/withAbortSignal.test.ts | — |  |
 | src/utils/__tests__/withRetry.test.ts | — |  |
 | src/utils/__tests__/withTimeout.test.ts | 2026-10-14 | runs where AbortSignal has no timeout; its timer is cleared |
