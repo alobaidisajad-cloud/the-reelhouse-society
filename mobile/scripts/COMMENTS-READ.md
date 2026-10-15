@@ -138,6 +138,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/appCrashes.test.ts | 2026-10-15 | edited: the soft crash caught from cut logs (study arm A, Sealed E2E 38262703073), the fixed launch and another process passed |
 | e2e/__tests__/animationWaits.test.ts | 2026-10-04 | written with animation-waits.mjs: each wait on its flow, Android 14's named container |
 | e2e/__tests__/glideLogLevel.test.ts | 2026-10-08 | written with glide-log-level.mjs, on dexdump lines in the shape of runs 37628665206 and 37674283540 |
+| e2e/__tests__/iosLaunch.test.ts | 2026-10-15 | the iPhone launch verdict shown saying no to each way a launch fails |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
 | e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: the fake phone answers a launch; a launch with animations on that destroys React fails the run; a lost scale is planted mid-run |
@@ -159,6 +160,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/flow-screens.mjs | 2026-10-04 | Maestro's JUnit reason, a report for a flow with no step record, the decision line, the named animation; QueryController dropped (logged on every key of fast runs) |
 | e2e/glide-log-level.mjs | 2026-10-08 | written: the APK hands Glide level 6 (ERROR), once, as a constant |
 | e2e/ios-crash.mjs | 2026-10-15 | new |
+| e2e/ios-launch.cjs | 2026-10-15 | true as written |
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
 | e2e/load/probe.mjs | 2026-10-03 | read whole: the paper in all four orders, critiques newest first, the following feed for a member of 2,000 follows; nested plans via auto_explain |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
@@ -217,7 +219,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added |
 | scripts/coverage-ratchet.js | 2026-09-29 | the header's why-stories reduced to the rule |
 | scripts/dump-production.cjs | 2026-10-15 | new |
-| scripts/eas-build-preflight.cjs | 2026-10-15 | new |
+| scripts/eas-build-preflight.cjs | 2026-10-15 | edited: no build while the app names what production lacks |
 | scripts/edge-functions.cjs | 2026-10-03 | paytabs-handler NOT_DEPLOYED, with why (it granted any rank to a posted "paid" message) |
 | scripts/functions-check.mjs | 2026-10-03 | compares every file a deploy bundles, _shared included, each function in its own folder; a listed exception is reported once |
 | scripts/gates-check.js | 2026-10-15 | edited: the address comes from the private settings file |
@@ -829,6 +831,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/schemas/profile.schema.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/schemas/settings.ts | 2026-10-02 | read; sound |
 | src/schemas/user.ts | 2026-10-03 | entitlement_source, read for the member alone |
+| src/services/__tests__/aBuildNamesOnlyWhatProductionHas.release-test.ts | 2026-10-15 | true as written |
 | src/services/__tests__/aMemberTakesBackOnlyTheirOwnStackCritique.test.ts | 2026-09-30 | written with the stack critique delete |
 | src/services/__tests__/aMissingLogIsAnAnswer.test.tsx | 2026-10-01 | written: a missing log is null; a nameless author is never unknown |
 | src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts | 2026-10-03 | Written in the launch audit: every column a query names, in both clients and the functions, exists in production. |
@@ -837,7 +840,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/aYearIsReadToTheLast.test.ts | 2026-10-01 | written: a year is read to the last row |
 | src/services/__tests__/certifyCountAuthority.test.ts | 2026-10-03 | read whole: the migration loses its SQL (--) comments, not JS ones |
-| src/services/__tests__/everyNameAClientCallsExists.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/services/__tests__/clientNames.ts | 2026-10-15 | true as written |
+| src/services/__tests__/everyNameAClientCallsExists.test.ts | 2026-10-15 | edited: the app may name what a pending migration makes; the website never |
 | src/services/__tests__/FeedService.test.ts | 2026-10-01 | cursor note made true |
 | src/services/__tests__/getFilmVerdict.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/loungeEmbeds.contract.test.ts | 2026-10-03 | read whole: sound (the FK names; columns are the query guard's) |
@@ -1059,7 +1063,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
-| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-15 | edited: the workflow is read as LF, so a Windows checkout's CRLF finds its steps |
+| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-15 | edited: the read-only check and the build waiting for its migrations |
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
 | src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | payments pass: a failed rank sync carries its status |
 | src/utils/__tests__/networkError.test.ts | — |  |
@@ -1165,6 +1169,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/withRetry.ts | 2026-10-02 | read; sound |
 | src/utils/withTimeout.ts | 2026-10-14 | edited: its own timer, since Hermes has no AbortSignal.timeout |
 | supabase/diagnostics/apply.cjs | 2026-10-15 | rewritten: lints first, runs under the time limits, --no-transaction for a CONCURRENTLY file alone; the address from the private settings file |
+| supabase/diagnostics/read-only.cjs | 2026-10-15 | true as written |
 | supabase/diagnostics/rehearse.cjs | 2026-10-15 | new |
 | supabase/functions/fetch-rss/index.ts | 2026-09-29 | the header said it serves the Dispatch tab; no current source calls it (kept for installed builds, per backend-contract); audit tags and the relay's history dropped |
 | supabase/functions/notify-push/index.ts | 2026-10-03 | v4: the sender is named whenever there is one; an accepted request has its title; a house notice is The Lounge only about a salon |
