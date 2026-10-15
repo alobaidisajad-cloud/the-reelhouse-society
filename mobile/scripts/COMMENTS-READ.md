@@ -73,7 +73,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/subflows/open_the_stub.yaml | 2026-09-30 | written with the stub's single tap |
 | .maestro/subflows/sign_in.yaml | 2026-10-15 | edited: the account is new, only its profile dated back |
 | ANDROID_LAUNCH.md | 2026-10-04 | the splash leaving as Android's own added to the device checks, with the system exit's real timings |
-| app.config.js | 2026-10-03 | read whole: sound |
+| app.config.js | 2026-10-15 | edited: the development profile gets back the dev client's scheme and iOS local networking; every other build is app.json |
 | app/__tests__/boot-structure.test.tsx | — |  |
 | app/__tests__/yourFileWaitsForYourHandle.test.tsx | 2026-10-03 | new: the Profile tab never calls you a stranger |
 | app/_layout.tsx | 2026-10-02 | PathTracker moved out, and now tells nav too |
@@ -1056,7 +1056,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts | 2026-10-15 | written: every enqueue call site's type has its kind in the map |
 | src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |
 | src/utils/__tests__/fixtures/imageCache.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
-| src/utils/__tests__/appConfig.guard.test.ts | 2026-10-15 | edited: the dev client's scheme off, the sitemap off, the scanner removed, iOS https only |
+| src/utils/__tests__/appConfig.guard.test.ts | 2026-10-15 | edited: the dev client's scheme off, the sitemap off, the scanner removed, iOS https only; every profile but development is app.json |
 | src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
 | src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-10-15 | edited: a member is signed in |
 | src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | — |  |

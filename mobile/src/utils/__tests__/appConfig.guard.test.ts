@@ -40,6 +40,37 @@ it('with E2E=1, only updates, the cleartext plugin and the trace switch change',
   expect(extra).toEqual({ ...x0, e2e: true });
 });
 
+const withProfile = <T,>(value: string | undefined, fn: () => T): T => {
+  const before = process.env.EAS_BUILD_PROFILE;
+  if (value === undefined) delete process.env.EAS_BUILD_PROFILE;
+  else process.env.EAS_BUILD_PROFILE = value;
+  try { return fn(); } finally {
+    if (before === undefined) delete process.env.EAS_BUILD_PROFILE;
+    else process.env.EAS_BUILD_PROFILE = before;
+  }
+};
+const profiles = Object.keys(JSON.parse(readFileSync(join(MOBILE, 'eas.json'), 'utf8')).build);
+
+it('every build profile but development is app.json exactly', () => {
+  const others = profiles.filter((p) => p !== 'development');
+  expect(others).toEqual(expect.arrayContaining(['production', 'internal', 'preview']));
+  for (const profile of [...others, undefined]) {
+    expect([profile, withProfile(profile, () => withE2E(undefined, () => appConfig({ config: structuredClone(appJson) })))])
+      .toEqual([profile, appJson]);
+  }
+});
+
+it('the development build gets back only the dev client\'s scheme and iOS\'s local-network allowance', () => {
+  expect(profiles).toContain('development');
+  const config = withProfile('development', () => withE2E(undefined, () => appConfig({ config: structuredClone(appJson) })));
+  const { plugins, ios, ...rest } = config as { plugins: unknown[]; ios: { infoPlist: Record<string, unknown> } };
+  const { plugins: p0, ios: i0, ...rest0 } = appJson;
+  expect(rest).toEqual(rest0);
+  expect(plugins).toEqual(p0.map((p: unknown) => (Array.isArray(p) && p[0] === 'expo-dev-client' ? 'expo-dev-client' : p)));
+  expect(plugins).not.toEqual(p0);
+  expect(ios).toEqual({ ...i0, infoPlist: { ...i0.infoPlist, NSAppTransportSecurity: { NSAllowsArbitraryLoads: false, NSAllowsLocalNetworking: true } } });
+});
+
 it('no real build carries the trace switch', () => {
   expect(appJson.extra?.e2e).toBeUndefined();
 });

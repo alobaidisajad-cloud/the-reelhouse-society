@@ -555,6 +555,14 @@ jobs:
           cache-dependency-path: mobile/package-lock.json
 
       - name: Install Mobile Dependencies
+        id: install-15
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-15.outcome == 'failure'
+        timeout-minutes: 5
         working-directory: ./mobile
         run: npm ci
 
