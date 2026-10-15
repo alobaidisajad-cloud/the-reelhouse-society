@@ -149,7 +149,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/shards.test.ts | 2026-10-15 | new: every flow in one shard, e2e.yml's count the map's; says no to a missing flow, one in two shards, an unknown name |
 | e2e/__tests__/seed.rehearsal.test.ts | 2026-10-15 | new: the real seed against a fake Supabase that keeps the filing's door |
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
-| e2e/__tests__/startStack.test.ts | 2026-10-15 | true as written |
+| e2e/__tests__/startStack.test.ts | 2026-10-15 | edited: the ports reserved and waited for, against a fake kernel |
 | e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | edited: one shard's list of flows is what is checked, every flow without one |
 | e2e/anon-key.mjs | 2026-10-15 | new: the local stack's anon key as the Supabase CLI makes it, read against its apikeys.go |
 | e2e/annotate.mjs | 2026-10-04 | the password hidden at the one door out; a summary-only level for past ten notices |
@@ -179,7 +179,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/screen-times.mjs | 2026-10-15 | edited: --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs |
 | e2e/shard-verdict.mjs | 2026-10-15 | new: every shard finished, every flow ran once, every ceiling's screen reported somewhere |
 | e2e/shards.mjs | 2026-10-15 | new: one shard's plan from e2e/shards.json; an unmapped flow runs in the last, said |
-| e2e/start-stack.sh | 2026-10-15 | true as written |
+| e2e/start-stack.sh | 2026-10-15 | edited: the stack's ports reserved from the machine's own connections, and waited for |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it |
 | plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
