@@ -29,9 +29,11 @@ on:
         required: true
 
 # A run is never cancelled by a later push: each commit's run finishes and is
-# read. One runs at a time; a later push waits, and only its latest waits.
+# read. Its group is its own commit, because GitHub keeps one waiting run per
+# group and drops an older one waiting: grouped by branch, three quick pushes
+# left the middle commit with no run at all.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.sha }}
   cancel-in-progress: false
 
 permissions:

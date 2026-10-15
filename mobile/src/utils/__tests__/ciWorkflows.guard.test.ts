@@ -112,8 +112,17 @@ it('every workflow but the alert can be started by hand', () => {
 /** Whether a workflow runs the E2E flows: by the runner script, or by calling e2e.yml. */
 const runsFlows = (w: { text: string }) => /run-flows\.sh|uses:\s*\.\/\.github\/workflows\/e2e\.ya?ml/.test(w.text);
 /** Whether a later push cancels its run in progress. */
-const cancels = (wf: Workflow & { concurrency?: { 'cancel-in-progress'?: unknown } }) =>
-  wf.concurrency?.['cancel-in-progress'] === true;
+/**
+ * Whether a later push can end a run before it is read: by cancelling it, or
+ * by sharing its group with other commits, where GitHub keeps one waiting run
+ * and drops an older one that waits.
+ */
+const cancels = (wf: Workflow & { concurrency?: string | { group?: string; 'cancel-in-progress'?: unknown } }) => {
+  const c = wf.concurrency;
+  if (c === undefined) return false;
+  const group = typeof c === 'string' ? c : c.group ?? '';
+  return (typeof c === 'object' && c['cancel-in-progress'] === true) || !/\$\{\{\s*github\.sha\s*\}\}/.test(group);
+};
 
 /** A step that installs packages: the kind that hung for 25 minutes in a nightly (2026-10-12). */
 const INSTALLS = /(^|[\s;&|(])(sudo\s+)?(apt-get|apt|brew)\s+install\b|\bnpm\s+(ci|install)\b|\bpip3?\s+install\b|\bplaywright\s+install\b/m;
@@ -181,6 +190,10 @@ it('no workflow that runs the E2E flows is cancelled by a later push: each commi
   expect(flows.filter((w) => cancels(w.wf)).map((w) => w.file)).toEqual([]);
   const planted = 'name: x\non: push\nconcurrency:\n  group: g\n  cancel-in-progress: true\njobs: {}\n';
   expect([runsFlows({ text: 'run: bash mobile/e2e/run-flows.sh' }), cancels(parse(planted) as Workflow)]).toEqual([true, true]);
+  // Not cancelled, but one group per branch: the older waiting run is dropped.
+  const byBranch = 'name: x\non: push\nconcurrency:\n  group: ${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: false\njobs: {}\n';
+  const byCommit = byBranch.replace('github.ref', 'github.sha');
+  expect([cancels(parse(byBranch) as Workflow), cancels(parse(byCommit) as Workflow)]).toEqual([true, false]);
 });
 
 /** Every step that runs a command, with its workflow and its triggers. */
