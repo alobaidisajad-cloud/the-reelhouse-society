@@ -137,6 +137,10 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/runtimeLacks.guard.test.ts` | Every line of app/ and src/, read with TypeScript's parser for an API the phone's runtime lacks (src/utils/runtimeLacks.json): jest sees only the lines a test runs. Also jest.setup.ts, which must take that same list away and no other. |
 | `test-utils/__tests__/aSweepAsksTheUniverse.test.ts` | Every test and script, read as code: none lists a folder itself, unless named with why. Which call a file makes is in its source. |
 | `test-utils/__tests__/theUniverseNamesEveryFile.test.ts` | expo-router's own route pattern, read from the installed package, against the route files: which files the router loads is in its source. |
+| `__tests__/animationMockCoverage.test.ts` | Every animation builder the app names in a prop, against the reanimated mock. |
+| `__tests__/colorLock.test.ts` | Every raw hex colour in the app, counted against the committed baseline. |
+| `__tests__/notificationsMockCoverage.test.ts` | Every expo-notifications member the app calls, against the mock in jest.setup.ts. |
+| `__tests__/tmdbMockCoverage.test.ts` | Every TMDB method the app calls, against the mock. |
 
 ## Contract
 
@@ -186,6 +190,25 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/runtimeDump.contract.test.ts` | The phone's own runtime, as the sealed E2E build wrote it (the committed copy), against Node and the list of what the phone lacks; until a run writes it, the register's pending note. No jest engine is the phone's. |
 | `test-utils/__tests__/readCode.test.ts` | The comment stripper itself. |
 | `test-utils/__tests__/oneCommentStripper.test.ts` | No file takes comments out with a regex of its own; the parser is the only stripper. |
+| `__tests__/backendContract.test.ts` | Every RPC and edge function the app calls, against the backend contract file. |
+| `__tests__/deletionIntegrity.test.ts` | The deletion migration it holds to its rules. |
+| `__tests__/moderationActs.test.ts` | The moderation migration and both clients' tribunal screens. |
+| `__tests__/schemaLengthCaps.test.ts` | The text ceilings in the migrations and the snapshot, against both clients' limits. |
+| `__tests__/searchPathHardening.test.ts` | Every migration in both trees: each SECURITY DEFINER function pins pg_temp. |
+| `e2e/__tests__/advisers.test.ts` | The advisers' allowlist and the sealed world's config.toml. |
+| `e2e/__tests__/advisories.test.ts` | The reports its own runs of advisories.mjs wrote, and the advisories' allowlist. |
+| `e2e/__tests__/anonKey.test.ts` | The E2E workflow and the sealed world's config.toml. |
+| `e2e/__tests__/glideLogLevel.test.ts` | The E2E workflow and package.json. |
+| `e2e/__tests__/iosLaunch.test.ts` | The iPhone launch workflow. |
+| `e2e/__tests__/keyboardRoom.test.ts` | The flow runner, the keyboard flows and the app's code, for the ids a probe taps. |
+| `e2e/__tests__/prefetchDownloadOnly.test.ts` | The E2E workflow (.github/workflows/e2e.yml). |
+| `e2e/__tests__/runFlows.rehearsal.test.ts` | The flow runner, its screen ceilings and the state its own run wrote. |
+| `e2e/__tests__/screenTimes.test.ts` | The record its own run wrote, and the flows the runner runs. |
+| `e2e/__tests__/shardVerdict.test.ts` | The E2E workflow (.github/workflows/e2e.yml). |
+| `e2e/__tests__/shards.test.ts` | The shard map and the E2E workflow. |
+| `e2e/__tests__/startStack.test.ts` | The stack's start script, its workflows and the sealed world's config.toml. |
+| `plugins/__tests__/withoutDevLauncherScanner.test.ts` | The installed expo-dev-launcher's manifest, for the entry the plugin removes, and app.json's plugins. |
+| `plugins/__tests__/withSplashWithoutHandoff.test.ts` | The generated MainActivity fixture, app.json's plugins and the app's code, for who imports the splash screen. |
 
 ## Mounted
 
@@ -271,39 +294,8 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/websiteFreeze.guard.test.ts` | The website freeze's CI step and Dependabot's paused website entry. |
 | `src/theme/__tests__/everyStyleIsRead.guard.test.ts` | Every key of every StyleSheet is read somewhere in the app: a style nobody draws renders nothing, so no render can find it. |
 | `src/components/__tests__/aComponentHasOneName.guard.test.ts` | Which module exports a component name: a fact about the code that no render shows. |
-
-## Found by P0.42
-
-The readers in `__tests__/`, `e2e/` and `plugins/`. Each says what it reads;
-each is judged into its kind above in Phase 4 (found by P0.42, fix in Phase 4).
-
-| File | What it reads |
-|---|---|
-| `__tests__/animationMockCoverage.test.ts` | Every animation builder the app names in a prop, against the reanimated mock. |
-| `__tests__/backendContract.test.ts` | Every RPC and edge function the app calls, against the backend contract file. |
-| `__tests__/colorLock.test.ts` | Every raw hex colour in the app, counted against the committed baseline. |
-| `__tests__/deletionIntegrity.test.ts` | The deletion migration it holds to its rules. |
-| `__tests__/moderationActs.test.ts` | The moderation migration and both clients' tribunal screens. |
-| `__tests__/notificationsMockCoverage.test.ts` | Every expo-notifications member the app calls, against the mock in jest.setup.ts. |
-| `__tests__/schemaLengthCaps.test.ts` | The text ceilings in the migrations and the snapshot, against both clients' limits. |
-| `__tests__/searchPathHardening.test.ts` | Every migration in both trees: each SECURITY DEFINER function pins pg_temp. |
-| `__tests__/tmdbMockCoverage.test.ts` | Every TMDB method the app calls, against the mock. |
-| `e2e/__tests__/advisers.test.ts` | The advisers' allowlist and the sealed world's config.toml. |
-| `e2e/__tests__/advisories.test.ts` | The reports its own runs of advisories.mjs wrote, and the advisories' allowlist. |
-| `e2e/__tests__/anonKey.test.ts` | The E2E workflow and the sealed world's config.toml. |
 | `e2e/__tests__/appCrashes.test.ts` | Recorded device logs, as fixtures for the crash gate. |
 | `e2e/__tests__/attempt.test.ts` | A recorded device log, as a fixture for the attempt judge. |
 | `e2e/__tests__/flowScreens.test.ts` | The files its own run of flow-screens.mjs wrote. |
-| `e2e/__tests__/glideLogLevel.test.ts` | The E2E workflow and package.json. |
-| `e2e/__tests__/iosLaunch.test.ts` | The iPhone launch workflow. |
-| `e2e/__tests__/keyboardRoom.test.ts` | The flow runner, the keyboard flows and the app's code, for the ids a probe taps. |
 | `e2e/__tests__/passwordNeverLeaves.test.ts` | The artifacts its own run of the scrubber wrote. |
-| `e2e/__tests__/prefetchDownloadOnly.test.ts` | The E2E workflow (.github/workflows/e2e.yml). |
-| `e2e/__tests__/runFlows.rehearsal.test.ts` | The flow runner, its screen ceilings and the state its own run wrote. |
 | `e2e/__tests__/runtimeDump.test.ts` | The runtime file its own run wrote. |
-| `e2e/__tests__/screenTimes.test.ts` | The record its own run wrote, and the flows the runner runs. |
-| `e2e/__tests__/shardVerdict.test.ts` | The E2E workflow (.github/workflows/e2e.yml). |
-| `e2e/__tests__/shards.test.ts` | The shard map and the E2E workflow. |
-| `e2e/__tests__/startStack.test.ts` | The stack's start script, its workflows and the sealed world's config.toml. |
-| `plugins/__tests__/withoutDevLauncherScanner.test.ts` | The installed expo-dev-launcher's manifest, for the entry the plugin removes, and app.json's plugins. |
-| `plugins/__tests__/withSplashWithoutHandoff.test.ts` | The generated MainActivity fixture, app.json's plugins and the app's code, for who imports the splash screen. |
