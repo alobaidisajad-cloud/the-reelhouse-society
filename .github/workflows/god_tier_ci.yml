@@ -816,6 +816,7 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+          node scripts/android-packages.cjs --installed
       - name: The Android packages the build needs, once more
         if: steps.android-packages.outcome == 'failure'
         timeout-minutes: 5
@@ -823,6 +824,7 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+          node scripts/android-packages.cjs --installed
 
       # The native projects as a store build starts from them: prebuild with no
       # E2E set (the E2E app is never this guard's input), iOS too, which needs

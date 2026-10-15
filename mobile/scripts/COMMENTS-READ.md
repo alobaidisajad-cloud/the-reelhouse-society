@@ -236,11 +236,11 @@ without one). "Read" is the day its comments were last read against its code.
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
 | register/classes.yaml | 2026-10-15 | edited: RN-react-destroyed-on-mount; the three classes held by the frozen counts |
 | scripts/__tests__/commit.test.ts | 2026-10-15 | new |
-| scripts/__tests__/androidPackages.test.ts | 2026-10-16 | new |
+| scripts/__tests__/androidPackages.test.ts | 2026-10-16 | new: a package counts as installed only with its package.xml |
 | scripts/__tests__/jestShards.test.ts | 2026-10-15 | new |
 | scripts/__tests__/mergeCoverage.test.ts | 2026-10-15 | new: read against jest's CoverageReporter, which it runs whole and in parts |
 | scripts/add-only.cjs | 2026-10-15 | new; a migration by its kind (test-utils/universe.js); SQL no rule names is refused |
-| scripts/android-packages.cjs | 2026-10-16 | new: read against React Native's libs.versions.toml, Expo's root project plugin and the Reanimated and Worklets build files |
+| scripts/android-packages.cjs | 2026-10-16 | new: read against React Native's libs.versions.toml, Expo's root project plugin and the Reanimated and Worklets build files; --installed asks the disk for each package's package.xml, as sdkmanager does |
 | scripts/bundle-size.js | 2026-10-15 | edited: --keep leaves the export for release-guard.cjs; read whole: sound |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route); its files come from the shared file list (test-utils/universe.js) |
 | scripts/check-backend-live.mjs | 2026-10-15 | edited: the address is read from, and saved to, the private settings file outside the repo and OneDrive; its files come from the shared file list (test-utils/universe.js) |
@@ -1083,7 +1083,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/boundedCounts.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
 | src/utils/__tests__/ciAlert.behaviour.test.ts | — |  |
-| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-16 | edited: every workflow watched and started by hand; no E2E run cancelled by a later push; a scheduled install has its limit and one retry of that step alone; the advisers run on every push in their count-only mode; the push judges the phone's packages, the nightly the website's and the functions' too; an E2E group shared across commits counts as cancelling; its files come from the shared file list (test-utils/universe.js); every action a scheduled workflow uses is judged, one that downloads is an install, and the emulator's packages are installed before it; jest and the captures run in parts that their read-together jobs count alike, and jest in every zone of test-timezones.js; no job runs one command twice; every Gradle run finds its Android packages installed and downloads none |
+| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-16 | edited: every workflow watched and started by hand; no E2E run cancelled by a later push; a scheduled install has its limit and one retry of that step alone; the advisers run on every push in their count-only mode; the push judges the phone's packages, the nightly the website's and the functions' too; an E2E group shared across commits counts as cancelling; its files come from the shared file list (test-utils/universe.js); every action a scheduled workflow uses is judged, one that downloads is an install, and the emulator's packages are installed before it; jest and the captures run in parts that their read-together jobs count alike, and jest in every zone of test-timezones.js; no job runs one command twice; every Gradle run finds its Android packages installed and downloads none; every Android install asks the disk; a TMDB miss fails the E2E run |
 | src/utils/__tests__/csv.test.ts | — |  |
 | src/utils/__tests__/dispatchExecutors.test.ts | — |  |
 | src/utils/__tests__/dispatchFieldCaps.test.ts | 2026-09-28 | Claimed to reconcile every live ceiling but read three old migrations, so subject_backdrop_ceiling had no cap. Reads the live snapshot now, and fails on any ceiling without an app cap or a stated reason. |

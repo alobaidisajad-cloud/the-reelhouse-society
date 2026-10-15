@@ -300,6 +300,16 @@ it('every Gradle run finds its Android packages installed by a step tried once m
   expect(gradleFaults(wf(install + build('-Pandroid.builder.sdkDownload=false')))).toEqual([]);
 });
 
+it('every Android install asks the disk, not sdkmanager\'s exit code, whether its packages arrived', () => {
+  // sdkmanager reports a broken download as a warning (Sealed E2E runs 38796451028, 38804362075).
+  const asksTheDisk = (run: string) => /android-packages\.cjs --installed\b/.test(run);
+  const installs = workflows.flatMap((w) => Object.values(w.wf.jobs).flatMap((j) => (j.steps ?? []) as RunStep[])
+    .filter((s) => s.run && /\bsdkmanager\b[^\n]*\s--install\b/.test(s.run)).map((s) => ({ file: w.file, s })));
+  expect(installs.length).toBeGreaterThanOrEqual(6);
+  expect(installs.filter(({ s }) => !asksTheDisk(s.run!)).map(({ file, s }) => `${file} › ${s.name}`)).toEqual([]);
+  expect(asksTheDisk('sdkmanager --install ndk\n')).toBe(false);
+});
+
 it('a TMDB request the E2E world has no recording for fails the run, by name', () => {
   const e2e = workflows.find((w) => w.file === 'e2e.yml')!;
   const step = Object.values(e2e.wf.jobs).flatMap((j) => (j.steps ?? []) as RunStep[]).find((s) => s.name === 'TMDB requests with no recording');

@@ -115,6 +115,7 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+          node scripts/android-packages.cjs --installed
       - name: The Android packages the build needs, once more
         if: steps.android-packages.outcome == 'failure'
         timeout-minutes: 5
@@ -122,6 +123,7 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+          node scripts/android-packages.cjs --installed
 
       # A release build, as a store build is made — only its backend differs:
       # the runner, seen from the emulator as 10.0.2.2. app.config.js allows
@@ -444,12 +446,14 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64' --channel=0 > /dev/null
+          node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64'
       - name: The emulator and its system image, once more
         if: steps.android-sdk.outcome == 'failure'
         timeout-minutes: 5
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64' --channel=0 > /dev/null
+          node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64'
 
       - name: The flows, on an Android emulator
         # A backstop under the job's limit, so the steps after it still run. The

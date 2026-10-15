@@ -6,7 +6,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 
-const { packages } = require('../android-packages.cjs') as { packages: (root?: string) => string[] };
+const { packages, missing } = require('../android-packages.cjs') as {
+  packages: (root?: string) => string[];
+  missing: (pkgs: string[], sdk: string) => string[];
+};
 
 /** A mobile/ folder holding only the files the script reads. */
 function root(files: Record<string, string>) {
@@ -39,6 +42,17 @@ it('reads each version from the catalog and the libraries, and every CMake versi
   try {
     expect(packages(dir)).toEqual(['ndk;27.1.12297006', 'build-tools;36.0.0', 'platforms;android-36', 'cmake;3.22.1', 'cmake;3.31.6']);
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+it('finds a package installed only when sdkmanager wrote its package.xml: a download that broke leaves none', () => {
+  const sdk = root({
+    'ndk/27.1.12297006/package.xml': '<x/>',
+    'system-images/android-34/google_apis/x86_64/source.properties': 'half-written',
+  });
+  try {
+    expect(missing(['ndk;27.1.12297006', 'system-images;android-34;google_apis;x86_64', 'platform-tools'], sdk))
+      .toEqual(['system-images;android-34;google_apis;x86_64', 'platform-tools']);
+  } finally { rmSync(sdk, { recursive: true, force: true }); }
 });
 
 it('says no when the catalog names no NDK, or no library names a CMake version', () => {
