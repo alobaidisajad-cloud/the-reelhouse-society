@@ -22,37 +22,19 @@
  * EXPO_PUBLIC_ values — they ship inside the app bundle and are public by
  * design. `SUPABASE_DB_URL` is never read: no unit test should hold one.
  *
- * CI hands the values in as CONTRACT_SUPABASE_* — names only contract tests
- * read. It used to set EXPO_PUBLIC_* on the whole Jest step, which gave every
- * test a live URL: exactly the trade described above. `src/lib` branch coverage
- * then measured 0.8% lower on CI than anywhere else, and the ratchet failed.
+ * The address is handed in as CONTRACT_SUPABASE_* — names only contract tests
+ * read — and from nowhere else. An earlier CI set EXPO_PUBLIC_* on the whole
+ * Jest step, which gave every test a live URL: exactly the trade described
+ * above (`src/lib` branch coverage measured 0.8% lower there, and the ratchet
+ * failed). And a fallback to the app's own .env made every local run, the push
+ * hook's among them, ask production. Production is asked once a night
+ * (nightly.yml); a push asks production's sealed shape (db-integration.yml),
+ * and scripts/contracts-ran.cjs fails either run if a contract skipped.
  *
- * With no `.env` present, `canRun` is false and a contract suite skips.
- * Making the check possible is not the same as making it mandatory.
+ * With no CONTRACT_SUPABASE_* set, `canRun` is false and a contract suite skips.
  */
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
-
-function fromEnvFile(key: string): string | undefined {
-  for (const file of ['.env.local', '.env']) {
-    const path = join(__dirname, '..', file);
-    if (!existsSync(path)) continue;
-    try {
-      for (const line of readFileSync(path, 'utf8').split('\n')) {
-        if (line.trimStart().startsWith('#')) continue;
-        const eq = line.indexOf('=');
-        if (eq < 1 || line.slice(0, eq).trim() !== key) continue;
-        return line.slice(eq + 1).trim().replace(/^["']|["']$/g, '');
-      }
-    } catch {
-      /* unreadable — fall through and let the suite skip itself */
-    }
-  }
-  return undefined;
-}
-
-export const SUPABASE_URL = process.env.CONTRACT_SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL ?? fromEnvFile('EXPO_PUBLIC_SUPABASE_URL');
-export const ANON_KEY = process.env.CONTRACT_SUPABASE_ANON_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? fromEnvFile('EXPO_PUBLIC_SUPABASE_ANON_KEY');
+export const SUPABASE_URL = process.env.CONTRACT_SUPABASE_URL;
+export const ANON_KEY = process.env.CONTRACT_SUPABASE_ANON_KEY;
 export const canRun = !!SUPABASE_URL && !!ANON_KEY;
 
 /** Headers for a request made as a signed-out visitor. */

@@ -68,3 +68,44 @@ jobs:
           node e2e/annotate.mjs "Known-vulnerable packages" advisories.txt summary
           [ $rc -eq 0 ] || node e2e/annotate.mjs "A known-vulnerable package is not on the allowlist" advisories.txt error --drop '^\s'
           exit $rc
+
+  # The app's own questions asked of production itself, once a night, and never
+  # on a push (P0.37): an embed resolves, a visitor may read what the app asks
+  # for. Their answers are statuses, never rows. scripts/contracts-ran.cjs says
+  # no to a run whose contracts skipped.
+  contracts:
+    name: 🔌 The app's questions, asked of production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install Mobile Dependencies
+        id: install-2
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-2.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: ./mobile
+        run: npm ci
+
+      - name: The app's questions, asked of production
+        working-directory: ./mobile
+        env:
+          CONTRACT_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          CONTRACT_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          set +e
+          npx jest --ci --testPathPattern '\.contract\.test\.tsx?$' --json --outputFile=contracts.json > contracts-output.txt 2>&1
+          rc=$?
+          tail -n 30 contracts-output.txt
+          node scripts/contracts-ran.cjs contracts.json || exit 1
+          exit $rc

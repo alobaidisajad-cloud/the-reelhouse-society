@@ -310,6 +310,19 @@ it('every Android install asks the disk, not sdkmanager\'s exit code, whether it
   expect(asksTheDisk('sdkmanager --install ndk\n')).toBe(false);
 });
 
+it('production is asked by the nightly contracts alone, and every contract run is proven not to have skipped', () => {
+  type EnvStep = RunStep & { env?: Record<string, unknown> };
+  const steps = workflows.flatMap((w) => Object.entries(w.wf.jobs).flatMap(([job, j]) =>
+    ((j.steps ?? []) as EnvStep[]).map((s) => ({ file: w.file, job, s }))));
+  // Production's address, as the contract tests read it: from the repository's secrets.
+  const asksProduction = steps.filter(({ s }) => Object.entries(s.env ?? {})
+    .some(([k, v]) => /^CONTRACT_SUPABASE_/.test(k) && /secrets\./.test(String(v))));
+  expect(asksProduction.map(({ file, job }) => `${file} › ${job}`)).toEqual(['nightly.yml › contracts']);
+  const runsContracts = steps.filter(({ s }) => /\\\.contract\\\.test/.test(s.run ?? ''));
+  expect(runsContracts.map(({ file, job }) => `${file} › ${job}`).sort()).toEqual(['db-integration.yml › contracts', 'nightly.yml › contracts']);
+  expect(runsContracts.filter(({ s }) => !/node scripts\/contracts-ran\.cjs contracts\.json \|\| exit 1/.test(s.run ?? ''))).toEqual([]);
+});
+
 it('a TMDB request the E2E world has no recording for fails the run, by name', () => {
   const e2e = workflows.find((w) => w.file === 'e2e.yml')!;
   const step = Object.values(e2e.wf.jobs).flatMap((j) => (j.steps ?? []) as RunStep[]).find((s) => s.name === 'TMDB requests with no recording');

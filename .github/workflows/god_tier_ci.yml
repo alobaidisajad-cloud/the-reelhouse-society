@@ -267,16 +267,14 @@ jobs:
 
       # This part's test files in UTC, keeping their coverage (coverage/coverage-final.json)
       # and the record of which files ran; the floors are judged by jest-together.
-      # TZ is set before jest starts: set inside a test it does nothing. CONTRACT_*
-      # reach one test only (loungeEmbeds.contract, against the live API; it skips
-      # without them): as EXPO_PUBLIC_* they would reach every test and its dummy URL.
+      # TZ is set before jest starts: set inside a test it does nothing. No address
+      # is handed in, so the contract tests skip here: a push asks production's
+      # sealed shape (db-integration.yml), and production is asked a night (nightly.yml).
       - name: Jest in UTC, with coverage
         id: utc
         working-directory: ./mobile
         env:
           TZ: UTC
-          CONTRACT_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-          CONTRACT_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           set -o pipefail
           npx jest --ci --maxWorkers=2 --shard=${{ matrix.part }}/${{ strategy.job-total }} \
@@ -298,9 +296,6 @@ jobs:
       - name: Jest in every other time zone
         if: ${{ !cancelled() && steps.utc.outcome != 'skipped' }}
         working-directory: ./mobile
-        env:
-          CONTRACT_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-          CONTRACT_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           set +e
           mapfile -t zones < <(node -p "const t = require('./scripts/test-timezones.js');

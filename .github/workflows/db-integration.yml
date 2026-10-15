@@ -145,3 +145,100 @@ jobs:
         run: |
           psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" \
             -X -q -v ON_ERROR_STOP=1 -f mobile/e2e/db/security.sql
+
+  # The app's own questions (src/services/__tests__/*.contract.test.ts: an embed
+  # resolves, a visitor may read the columns the app asks for) asked of
+  # production's shape, as it will be after the pending migrations, through the
+  # same API the app calls. A push never asks production itself: that is
+  # nightly.yml's, once a night (P0.37). scripts/contracts-ran.cjs says no to a
+  # run whose contracts skipped themselves.
+  contracts:
+    name: The app's questions, asked of production's shape through its API
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      # Downloaded at run time: tried once more (see the job above).
+      - name: Supabase CLI
+        id: supabase-cli
+        timeout-minutes: 5
+        continue-on-error: true
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+      - name: Supabase CLI, once more
+        if: steps.supabase-cli.outcome == 'failure'
+        timeout-minutes: 5
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+
+      - name: Postgres 18 client tools
+        id: install-2
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+      - name: Postgres 18 client tools, once more
+        if: steps.install-2.outcome == 'failure'
+        timeout-minutes: 5
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+
+      - name: Install the app's packages
+        id: install-3
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: mobile
+        run: npm ci
+      - name: Install the app's packages, once more
+        if: steps.install-3.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: mobile
+        run: npm ci
+
+      # The database and the API in front of it (kong, PostgREST), as the app reaches them.
+      - name: Start the local database and its API
+        run: |
+          cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta,gotrue,storage-api,edge-runtime,mailpit "The contracts' database"
+
+      - name: Seal it — production's host goes nowhere
+        run: bash mobile/e2e/db/seal.sh "Contracts seal"
+
+      - name: Build production's shape from the snapshot
+        run: node mobile/e2e/db/bootstrap.mjs
+
+      - name: Every pending migration, applied
+        run: node mobile/e2e/db/up-down-up.mjs
+
+      # PostgREST read its schema before the snapshot was built: it reads it again.
+      - name: The API reads the schema it now serves
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -q -c "NOTIFY pgrst, 'reload schema'"
+          sleep 3
+
+      - name: The app's questions, asked as the app asks them
+        working-directory: mobile
+        run: |
+          key=$(node e2e/anon-key.mjs) || { echo "$key"; exit 1; }
+          set +e
+          CONTRACT_SUPABASE_URL=http://127.0.0.1:54321 CONTRACT_SUPABASE_ANON_KEY="$key" \
+            npx jest --ci --testPathPattern '\.contract\.test\.tsx?$' --json --outputFile=contracts.json > contracts-output.txt 2>&1
+          rc=$?
+          tail -n 30 contracts-output.txt
+          node scripts/contracts-ran.cjs contracts.json || exit 1
+          exit $rc
