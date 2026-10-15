@@ -143,7 +143,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
 | e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: the fake phone keeps time to the millisecond, as a phone does |
 | e2e/__tests__/runtimeDump.test.ts | 2026-10-15 | new: the runtime's parts joined per launch, held to the copy, and every way it says no |
-| e2e/__tests__/screenTimes.test.ts | 2026-10-15 | edited: a failed read fails the run, but in the flows that cut the network; that list is held to the flows |
+| e2e/__tests__/screenTimes.test.ts | 2026-10-15 | edited: the median, the hang cap and the few-opened screen each shown saying no |
 | e2e/__tests__/seed.rehearsal.test.ts | 2026-10-15 | new: the real seed against a fake Supabase that keeps the filing's door |
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | true as written |
@@ -172,7 +172,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/old-clients.cjs | 2026-10-15 | edited: own crashes held whole; ownCrashFaults against the register and git; --own-crashes for run-flows.sh |
 | e2e/run-flows.sh | 2026-10-15 | edited: the device's clock to the millisecond, so a flow's start no longer takes the last lines of the flow before |
 | e2e/runtime-dump.mjs | 2026-10-15 | new: the phone's runtime from the device log, held to the committed copy |
-| e2e/screen-times.mjs | 2026-10-15 | edited: a screen.failed fails the run outside the flows that take the network away |
+| e2e/screen-times.mjs | 2026-10-15 | edited: a screen opened 3 times or more is judged by its median; any one opening by twice its ceiling, a hang |
 | e2e/start-stack.sh | 2026-10-15 | true as written |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it |
 | plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |

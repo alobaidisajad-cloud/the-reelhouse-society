@@ -20,7 +20,10 @@
  * point, and not counted.
  *
  * With a ceilings file ({ "<screen>": <ms> }), it is also a gate. It fails when:
- *   - a screen's slowest opening is above its ceiling;
+ *   - a screen opened at least MEDIAN_OPENS times has a median above its ceiling:
+ *     its typical opening got slower (one slow opening on a shared emulator is
+ *     the machine: the same code's slowest Darkroom ran 634 to 2242 ms in a day);
+ *   - any one opening is above HANG times its ceiling: a hang, however rare;
  *   - a screen reported and has no ceiling (a new screen gets one as it lands);
  *   - with --complete (every flow ran to its end), a ceiling's screen never
  *     reported: it was renamed, or no flow reaches it any more, so the list
@@ -37,6 +40,11 @@ import { flowAt, readFlowTimes, stamp } from './app-crashes.mjs';
 
 /** The flows that cut the network on purpose: exactly those (screenTimes.test.ts). */
 export const PLANTS_FAILURES = ['offline_resilience'];
+
+/** A screen opened this often is judged by its median; fewer, by the hang cap alone. */
+export const MEDIAN_OPENS = 3;
+/** Any one opening past this many times its ceiling is a hang. */
+export const HANG = 2;
 
 /** Every screen line in the log: its kind, its screen, its time, and the flow it ran in. */
 export function readScreens(log, flowTimes) {
@@ -94,7 +102,14 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     rows.push(`${name.padEnd(12)} ${pad(ms.length, 6)} ${pad(`${median} ms`, 9)} ${pad(`${slowest} ms`, 9)} ${pad(ceiling === undefined ? '—' : `${ceiling} ms`, 9)}`);
     if (!ceilings) continue;
     if (ceiling === undefined) problems.push(`${name} has no ceiling: add it to the ceilings file`);
-    else if (slowest > ceiling) problems.push(`${name} took ${slowest} ms, over its ceiling of ${ceiling} ms`);
+    else {
+      if (ms.length >= MEDIAN_OPENS && median > ceiling) {
+        problems.push(`${name}'s typical opening took ${median} ms (median of ${ms.length}), over its ceiling of ${ceiling} ms`);
+      }
+      if (slowest > ceiling * HANG) {
+        problems.push(`${name} took ${slowest} ms once, over ${HANG} times its ceiling (${ceiling * HANG} ms): a hang`);
+      }
+    }
   }
   if (ceilings && complete) {
     for (const name of Object.keys(ceilings).sort()) {

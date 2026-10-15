@@ -55,11 +55,23 @@ describe('screen-times.mjs', () => {
     expect(run(LOG, { lobby: 3000, film: 1500 }, '--complete').code).toBe(0);
   });
 
-  it('fails a screen whose slowest opening is over its ceiling, naming it', () => {
-    const { code, out } = run(LOG, { lobby: 2500, film: 1500 });
+  it('fails a screen opened three times or more whose typical opening is over its ceiling, naming it', () => {
+    const { code, out } = run(LOG, { lobby: 800, film: 1500 });
     expect(code).toBe(1);
-    expect(out).toContain('✗ lobby took 2600 ms, over its ceiling of 2500 ms');
+    expect(out).toContain("✗ lobby's typical opening took 900 ms (median of 3), over its ceiling of 800 ms");
     expect(out).not.toContain('✗ film');
+  });
+
+  it('lets one slow opening pass under twice the ceiling, and fails one past it as a hang', () => {
+    expect(run(LOG, { lobby: 1400, film: 1500 }).code).toBe(0);
+    const { code, out } = run(LOG, { lobby: 1200, film: 1500 });
+    expect(code).toBe(1);
+    expect(out).toContain('✗ lobby took 2600 ms once, over 2 times its ceiling (2400 ms): a hang');
+  });
+
+  it('judges a screen opened fewer than three times by the hang cap alone', () => {
+    expect(run(LOG, { lobby: 3000, film: 1000 }).code).toBe(0);
+    expect(run(LOG, { lobby: 3000, film: 600 }).out).toContain('✗ film took 1400 ms once, over 2 times its ceiling (1200 ms): a hang');
   });
 
   it('fails a screen that reports with no ceiling', () => {
