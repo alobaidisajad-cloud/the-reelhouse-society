@@ -9,7 +9,7 @@ name: 🎬 Sealed E2E
 #     container, and proved: the database's one outbound call cannot connect
 #   · members made through the auth API, with a fresh password each run
 #   · TMDB answered from recordings (e2e/supabase/functions/tmdb-proxy), and
-#     every request with no recording listed on the run's summary
+#     every request with no recording named on the run's summary, failing it
 #
 # Free: the repository is public, so Actions minutes cost nothing.
 
@@ -495,8 +495,11 @@ jobs:
           # The checks ask for two paths on purpose; they are not gaps.
           grep -o 'E2E-TMDB-MISS .*' "$RUNNER_TEMP/functions.log" 2>/dev/null | grep -v 'e2e-never-recorded\|/movie/999999999' \
             | sed 's/^E2E-TMDB-MISS //' | sort -u > "$RUNNER_TEMP/tmdb-misses.txt" || true
+          # A miss is a flow shown "nothing" where a member is shown the film: the
+          # world is not production's, so the run fails until it is recorded.
           if [ -s "$RUNNER_TEMP/tmdb-misses.txt" ]; then
-            node mobile/e2e/annotate.mjs "TMDB requests with no recording — record with: node e2e/tmdb/record.mjs --from <list>" "$RUNNER_TEMP/tmdb-misses.txt" notice
+            node mobile/e2e/annotate.mjs "TMDB requests with no recording — record with: node e2e/tmdb/record.mjs --from <list>" "$RUNNER_TEMP/tmdb-misses.txt" error
+            exit 1
           else
             echo "### TMDB requests with no recording" >> "$GITHUB_STEP_SUMMARY"; echo "None." >> "$GITHUB_STEP_SUMMARY"
           fi

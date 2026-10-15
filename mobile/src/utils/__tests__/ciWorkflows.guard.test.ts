@@ -300,6 +300,13 @@ it('every Gradle run finds its Android packages installed by a step tried once m
   expect(gradleFaults(wf(install + build('-Pandroid.builder.sdkDownload=false')))).toEqual([]);
 });
 
+it('a TMDB request the E2E world has no recording for fails the run, by name', () => {
+  const e2e = workflows.find((w) => w.file === 'e2e.yml')!;
+  const step = Object.values(e2e.wf.jobs).flatMap((j) => (j.steps ?? []) as RunStep[]).find((s) => s.name === 'TMDB requests with no recording');
+  expect(step?.if).toBe('always()');
+  expect(step?.run).toMatch(/annotate\.mjs "TMDB requests with no recording[^"]*" "\$RUNNER_TEMP\/tmdb-misses\.txt" error\n\s*exit 1\n/);
+});
+
 it('no workflow that runs the E2E flows is cancelled by a later push: each commit\'s run is read', () => {
   const flows = workflows.filter(runsFlows);
   expect(flows.map((w) => w.file).sort()).toEqual(expect.arrayContaining(['e2e-old-clients.yml', 'e2e.yml']));

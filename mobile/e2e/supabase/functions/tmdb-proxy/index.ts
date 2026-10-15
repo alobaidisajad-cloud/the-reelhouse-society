@@ -9,8 +9,8 @@
  *
  * A request with no recording is answered the way TMDB answers "nothing": an
  * empty list, or a 404 for a single film or person. It is also printed as
- * `E2E-TMDB-MISS <path>`, and the workflow lists every miss on the run's
- * summary, so a gap is seen and recorded rather than guessed at.
+ * `E2E-TMDB-MISS <path>`, and the workflow names every miss on the run's
+ * summary and fails the run, so a gap is recorded rather than guessed at.
  *
  * It refuses to answer anywhere but a local stack, so a deploy by mistake
  * from this folder breaks loudly instead of quietly replacing the real proxy.
