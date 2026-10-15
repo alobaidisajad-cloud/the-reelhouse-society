@@ -78,32 +78,41 @@ jobs:
           xcrun simctl install "$DEV" "$RUNNER_TEMP/ios/app.app"
           # A JS console.warn is written at the Info level, which `log show` leaves out
           # without --info: so a stream, started before the launch.
+          # Each second for 45 s, the process launchd runs for the app ("-" for
+          # none); e2e/ios-launch.cjs gives the verdict from the samples, the JS
+          # log and any crash report.
           launch() {
-            : > "$S/stream-$1.txt"
+            : > "$S/stream-$1.txt"; : > "$S/samples-$1.txt"
             xcrun simctl spawn "$DEV" log stream --level info --style compact \
               --predicate 'subsystem == "com.facebook.react.log" AND category == "javascript"' > "$S/stream-$1.txt" 2>&1 &
             stream=$!
             sleep 2
+            start=$(date +%s)
             ( xcrun simctl launch --console-pty "$DEV" com.reelhouse.society > "$S/console-$1.txt" 2>&1 & )
-            sleep 5
-            a5=$(xcrun simctl spawn "$DEV" launchctl list | grep -ci reelhouse || true)
-            sleep 20
-            a25=$(xcrun simctl spawn "$DEV" launchctl list | grep -ci reelhouse || true)
+            while [ $(( $(date +%s) - start )) -le 45 ]; do
+              pid=$(xcrun simctl spawn "$DEV" launchctl list | awk '/UIKitApplication:com\.reelhouse\.society/ { print $1; exit }')
+              echo "$(( $(date +%s) - start )) ${pid:--}" >> "$S/samples-$1.txt"
+              sleep 1
+            done
             kill $stream 2>/dev/null || true
-            ready=$(grep -c '\[e2e\] screen.ready {"name":"welcome"' "$S/stream-$1.txt" || true)
-            echo "attempt $1: alive at 5 s: $a5 · at 25 s: $a25 · welcome ready: $ready" >> "$S/result.txt"
             xcrun simctl terminate "$DEV" com.reelhouse.society > /dev/null 2>&1 || true
-            [ "$a5" != "0" ] && [ "$a25" != "0" ] && [ "$ready" != "0" ]
+            rc=0
+            v=$(node e2e/ios-launch.cjs "$S/samples-$1.txt" "$S/stream-$1.txt" "$start") || rc=$?
+            echo "attempt $1: $v" >> "$S/result.txt"
+            last=$1
           }
-          # A first launch on a fresh simulator can stall in the simulator itself;
-          # once more, recorded as the harness, never as the app.
-          if launch 1; then ok=1
-          else echo "attempt 1 failed; run once more as the harness's own retry" >> "$S/result.txt"; launch 2 && ok=1 || ok=0; fi
+          # The app failing is never tried again. Only a simulator that never
+          # started it (exit 2) gets once more, recorded as the harness.
+          launch 1
+          if [ "$rc" = "2" ]; then
+            echo "attempt 1: the simulator, not the app; once more as the harness's own retry" >> "$S/result.txt"
+            launch 2
+          fi
           cat "$S/result.txt"
-          if [ "$ok" != "1" ]; then
+          if [ "$rc" != "0" ]; then
             { cat "$S/result.txt"
-              echo "── the app's own output:"; grep -v '^[[:space:]]*$' "$S/console-2.txt" 2>/dev/null | tail -n 25
-              echo "── its JS log:"; tail -n 25 "$S/stream-2.txt" 2>/dev/null
+              echo "── the app's own output:"; grep -v '^[[:space:]]*$' "$S/console-$last.txt" 2>/dev/null | tail -n 25
+              echo "── its JS log:"; tail -n 25 "$S/stream-$last.txt" 2>/dev/null
               echo "── crash report:"; node e2e/ios-crash.mjs; } > "$S/why.txt"
             node e2e/annotate.mjs "The app did not open on an iPhone" "$S/why.txt"
             exit 1
