@@ -20,18 +20,18 @@
         },
         {
           "path": "mobile/.maestro/subflows/sign_in.yaml",
-          "from": "835bb30480fbd3ede3e8449b1012555e9af7636d",
-          "why": "the flows' scroll centres its target; a harness fix, the app untouched"
+          "from": "707c1721c3a1a9b721e6c48df1706bddceb8f1e9",
+          "why": "the flows' scroll centres what it taps, with time for a slow runner; a harness fix, the app untouched"
         },
         {
           "path": "mobile/.maestro/lobby_wall_flow.yaml",
-          "from": "835bb30480fbd3ede3e8449b1012555e9af7636d",
-          "why": "the flows' scroll centres its target; a harness fix, the app untouched"
+          "from": "707c1721c3a1a9b721e6c48df1706bddceb8f1e9",
+          "why": "the page's last line is reached without centring; a harness fix, the app untouched"
         },
         {
           "path": "mobile/.maestro/session_survives_restart.yaml",
-          "from": "835bb30480fbd3ede3e8449b1012555e9af7636d",
-          "why": "the flows' scroll centres its target; a harness fix, the app untouched"
+          "from": "707c1721c3a1a9b721e6c48df1706bddceb8f1e9",
+          "why": "the flows' scroll centres what it taps, with time for a slow runner; a harness fix, the app untouched"
         }
       ]
     },
