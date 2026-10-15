@@ -56,7 +56,6 @@
     "mobile/src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx": 5,
     "mobile/src/components/feed/ActionDeck.tsx": 2,
     "mobile/src/components/film/FilmDetailLayout.tsx": 2,
-    "mobile/src/components/film/__tests__/aFileIsSharedWhole.test.tsx": 2,
     "mobile/src/components/film/__tests__/whatAFilmPageNames.test.tsx": 3,
     "mobile/src/components/layout/__tests__/everyModalSheetAndOverlayEndsAboveItsFoot.test.tsx": 1,
     "mobile/src/components/layout/__tests__/everyTabStartsBelowTheBar.test.tsx": 1,

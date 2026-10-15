@@ -139,13 +139,13 @@ describe("the film page's file is shared only whole", () => {
     mockShareAsync.mockResolvedValue(undefined);
     const r2 = render(<ShareCardModal visible onClose={jest.fn()} film={FILM} log={null} username="morpho" memberNo={12} />);
     await act(async () => { seal(r2)[0].props.onDisplay!(); posters(r2, POSTER).forEach((p) => p.props.onDisplay!()); });
-    await act(async () => { fireEvent.press(r2.getByText('SHARE TO SOCIALS')); });
+    await act(async () => { await fireEvent.press(r2.getByText('SHARE TO SOCIALS')); });
     expect(mockCapture).toHaveBeenCalledTimes(1);
   });
 
   it('a pressed button that is still developing captures nothing', async () => {
     const r = render(<ShareCardModal visible onClose={jest.fn()} film={FILM} log={null} username="morpho" memberNo={12} />);
-    await act(async () => { fireEvent.press(r.getByText('DEVELOPING...')); });
+    await act(async () => { await fireEvent.press(r.getByText('DEVELOPING...')); });
     expect(mockCapture).not.toHaveBeenCalled();
   });
 
@@ -178,7 +178,7 @@ describe('the preview fills the room the card stands in, and no more', () => {
     const r = render(<ShareCardModal visible onClose={jest.fn()} film={FILM} log={null} username="morpho" memberNo={12} />);
     const sheet = r.getByTestId('nitrate-file-sheet');
     const previewHeight = () => StyleSheet.flatten(r.getByTestId('nitrate-file-preview').props.style).height as number;
-    const lay = (h: number) => act(() => { fireEvent(sheet, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: h } } }); });
+    const lay = (h: number) => act(async () => { await fireEvent(sheet, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: h } } }); });
     // Drawn, the frame turns out to be 300: the preview is sized to the room less that.
     await lay(previewHeight() + 300);
     expect(previewHeight()).toBeCloseTo(NITRATE_CARD_HEIGHT * previewScaleFor(width, height, room, 300), 5);

@@ -132,7 +132,7 @@ const CARDS: Card[] = [
     draw: (close) => <WatchlistRoulette visible watchlist={QUEUE} onClose={close} onSelect={jest.fn()} /> },
   { file: 'src/components/profile/WatchlistRoulette.tsx', name: 'the Oracle’s verdict', ground: true,
     draw: (close) => <WatchlistRoulette visible watchlist={QUEUE} onClose={close} onSelect={jest.fn()} />,
-    open: async (r) => { await act(async () => { fireEvent.press(r.getByLabelText('Consult the oracle — pick a film from your watchlist')); }); } },
+    open: async (r) => { await act(async () => { await fireEvent.press(r.getByLabelText('Consult the oracle — pick a film from your watchlist')); }); } },
   { file: 'src/components/InitiationModal.tsx', name: 'the Initiation', ground: false,
     draw: (close) => <InitiationModal visible username="kane" memberNo={12} onComplete={close} /> },
   { file: 'src/components/auth/PasswordRecoveryModal.tsx', name: 'password recovery', ground: true,
@@ -150,6 +150,17 @@ const CARDS: Card[] = [
 ];
 
 /** The card drawn and opened: its <Modal>, the one scroll in it, and what lies between them. */
+/** The one item a list must hold: a test that finds none, or more, says how many. */
+function one<T>(list: readonly T[], what: string): T {
+  if (list.length !== 1) throw new Error(`expected one ${what}, found ${list.length}`);
+  return list[0] as T;
+}
+/** The first item of a list that must hold some. */
+function firstOf<T>(list: readonly T[], what: string): T {
+  if (list.length === 0) throw new Error(`expected a ${what}, found none`);
+  return list[0] as T;
+}
+
 async function drawn(card: Card, close: () => void) {
   let r!: ReturnType<typeof render>;
   await act(async () => { r = render(card.draw(close)); });
@@ -159,8 +170,9 @@ async function drawn(card: Card, close: () => void) {
   walk(tree, (n) => { if (n.type === 'Modal') modals.push(n); });
   expect(modals).toHaveLength(1);
   const rooms: { node: J; above: J[] }[] = [];
-  walk(modals[0], (n, above) => { if (n.props.testID === 'centred-card') rooms.push({ node: n, above }); });
-  return { r, modal: modals[0], rooms };
+  const modal = one(modals, '<Modal>');
+  walk(modal, (n, above) => { if (n.props.testID === 'centred-card') rooms.push({ node: n, above }); });
+  return { r, modal, rooms };
 }
 
 afterEach(() => { mockKeyboard = 0; mockInsetBottom = 34; });
@@ -177,7 +189,7 @@ describe.each(CARDS.map((c) => [c.name, c] as const))('%s', (_name, card) => {
     mockInsetBottom = b;
     const { r, modal, rooms } = await drawn(card, jest.fn());
     expect(rooms).toHaveLength(1);
-    const { node: room, above } = rooms[0];
+    const { node: room, above } = one(rooms, 'centred card');
 
     // It scrolls, vertically, and a tap on a field or a button lands with the keyboard up.
     expect(room.type).toBe('RCTScrollView');
@@ -211,7 +223,7 @@ describe.each(CARDS.map((c) => [c.name, c] as const))('%s', (_name, card) => {
     const { r, rooms } = await drawn(card, jest.fn());
     const lift = 336 - overlayRoomKeyboardClearance({ top: TOP, bottom: 34 });
     expect(lift).toBe(277);
-    expect(StyleSheet.flatten(rooms[0].node.props.style as never)).toMatchObject({ flex: 1, marginBottom: lift });
+    expect(StyleSheet.flatten(one(rooms, 'centred card').node.props.style as never)).toMatchObject({ flex: 1, marginBottom: lift });
     r.unmount();
   });
 
@@ -219,13 +231,13 @@ describe.each(CARDS.map((c) => [c.name, c] as const))('%s', (_name, card) => {
     const close = jest.fn();
     const { r, rooms } = await drawn(card, close);
     // A press on the card's first words reaches only the card.
-    const [first] = words(rooms[0].node);
-    await act(async () => { fireEvent.press(r.getAllByText(first, { exact: false, includeHiddenElements: true })[0]); });
+    const first = firstOf(words(one(rooms, 'centred card').node), 'word on the card');
+    await act(async () => { await fireEvent.press(firstOf(r.getAllByText(first, { exact: false, includeHiddenElements: true }), 'match')); });
     expect(close).not.toHaveBeenCalled();
     const ground = r.queryAllByTestId('centred-card-ground', { includeHiddenElements: true });
     expect(ground).toHaveLength(card.ground ? 1 : 0);
     if (card.ground) {
-      await act(async () => { fireEvent.press(ground[0]); });
+      await act(async () => { await fireEvent.press(one(ground, 'ground')); });
       expect(close).toHaveBeenCalledTimes(1);
     }
     r.unmount();

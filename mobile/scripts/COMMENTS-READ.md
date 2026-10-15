@@ -461,7 +461,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/home/VelvetRopeCTA.tsx | 2026-10-03 | read whole: its sheen moved to theme/BrassSheen |
 | src/components/InitiationModal.tsx | 2026-10-15 | beats cross-fade and the door closes through Presence; the card in a CentredCard |
 | src/components/KeyboardRoom.tsx | 2026-10-01 | written: the keyboard's room on Android |
-| src/components/layout/__tests__/aCentredCardScrollsAtTheLargestText.test.tsx | 2026-10-15 | new: every centred card in a Modal scrolls in one room at x3.1; every Modal named with its kind |
+| src/components/layout/__tests__/aCentredCardScrollsAtTheLargestText.test.tsx | 2026-10-15 | new: every centred card in a Modal scrolls in one room at x3.1; every Modal named with its kind; each list read through one() or firstOf(), which say what they found |
 | src/components/layout/__tests__/aCentredPageScrollsAtTheLargestText.test.tsx | 2026-10-15 | new: every centred page scrolls in one room at x3.1 |
 | src/components/layout/__tests__/aSectionIsAHeading.test.tsx | 2026-10-01 | written: a section title is a heading |
 | src/components/layout/__tests__/aSwipeBackIsHeard.test.tsx | 2026-10-02 | nav's history hears the swipe back |

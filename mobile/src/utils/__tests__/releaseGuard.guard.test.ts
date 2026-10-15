@@ -15,7 +15,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { readCode } from '@/test-utils/readCode';
 
-const { parseAllDocuments } = require(require.resolve('yaml/package.json').replace(/package\.json$/, 'dist/index.js')) as typeof import('yaml');
+const { parseAllDocuments, parseDocument } = require(require.resolve('yaml/package.json').replace(/package\.json$/, 'dist/index.js')) as typeof import('yaml');
 const JSZip = require('jszip');
 
 const MOBILE = join(__dirname, '..', '..', '..');
@@ -313,7 +313,7 @@ describe('the input is a real build, never the E2E app', () => {
 
   type Step = { name?: string; run?: string; uses?: string; with?: Record<string, unknown>; env?: Record<string, unknown> };
   type Job = { env?: Record<string, unknown>; steps: Step[] };
-  const workflow = (file: string) => parseAllDocuments(readFileSync(join(MOBILE, '..', '.github', 'workflows', file), 'utf8'))[0].toJS() as { env?: Record<string, unknown>; jobs: Record<string, Job> };
+  const workflow = (file: string) => parseDocument(readFileSync(join(MOBILE, '..', '.github', 'workflows', file), 'utf8')).toJS() as { env?: Record<string, unknown>; jobs: Record<string, Job> };
   const WORKFLOWS = readdirSync(join(MOBILE, '..', '.github', 'workflows')).filter((f) => f.endsWith('.yml'));
 
   it('every CI step that runs it reads a build made without E2E, in a job that never fetches the E2E app', () => {
