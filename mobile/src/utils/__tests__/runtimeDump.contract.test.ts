@@ -19,13 +19,26 @@ import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { MOBILE } from '@/test-utils/readCode';
 import { apiFor, appSources, namesOnNode, programFor, readList, unlisted, type Source } from '@/test-utils/runtimeLacks';
-import { runtimeNames } from '@/src/utils/e2eRuntime';
+import * as ts from 'typescript';
 
 const COPY_FILE = 'e2e/runtime/phone-runtime.json';
 const COPY: Record<string, string[] | null> | null = existsSync(join(MOBILE, COPY_FILE))
   ? JSON.parse(readFileSync(join(MOBILE, COPY_FILE), 'utf8')) : null;
 const LIST = readList();
-const NODE = namesOnNode(runtimeNames.toString(), LIST.reads);
+/**
+ * runtimeNames as its file holds it, made plain JavaScript: the copy jest imports
+ * carries coverage counters under --coverage, which the Node it is sent to has not.
+ */
+const RUNTIME_NAMES = (() => {
+  const file = join(MOBILE, 'src', 'utils', 'e2eRuntime.ts');
+  const sf = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
+  const fn = sf.statements.find((s): s is ts.FunctionDeclaration =>
+    ts.isFunctionDeclaration(s) && s.name?.text === 'runtimeNames');
+  if (!fn) throw new Error('e2eRuntime.ts has no runtimeNames');
+  const text = fn.getText(sf).replace(/^export\s+/, '');
+  return ts.transpileModule(text, { compilerOptions: { target: ts.ScriptTarget.ES2020 } }).outputText.trim();
+})();
+const NODE = namesOnNode(RUNTIME_NAMES, LIST.reads);
 
 const { readCommitted } = require('../../../scripts/register.cjs') as { readCommitted: () => { classes: Record<string, unknown>[] } };
 const CLASS = readCommitted().classes.find((c) => c.id === 'RUNTIME-api-missing-on-phone');
