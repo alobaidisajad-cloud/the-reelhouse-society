@@ -112,7 +112,9 @@ export const s = StyleSheet.create({
   // scale with Dynamic Type, so the box has to be sized for the CAP: 42 clears
   // the 1.2 tier this title declares (42 / 38.4 = 1.09) and the extra leading
   // is invisible at rest under a 32pt display face.
-  logFilmTitle: { fontFamily: fonts.display, fontSize: 32, lineHeight: 42, color: colors.parchment, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 12 },
+  logFilmTitle: { fontFamily: fonts.display, fontSize: 32, lineHeight: 42, color: colors.parchment, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 12,
+    // The shadow's room inside the box a phone cuts it at; the margins keep the layout.
+    paddingTop: 8, paddingBottom: 16, paddingHorizontal: 12, marginTop: -8, marginBottom: -16, marginHorizontal: -12 },
   logFilmYear: { fontFamily: fonts.sub, fontSize: 12, letterSpacing: 3.6, color: colors.fog, marginTop: 8, includeFontPadding: false },
   ratingWrap: { marginTop: 12 },
 
@@ -122,7 +124,9 @@ export const s = StyleSheet.create({
   ornamentalLine: { flex: 1, maxWidth: 80, height: 1, backgroundColor: colors.sepiaBorderStrong },
   ornamentalStar: { opacity: 0.7 },
   featuredQuoteWrap: { paddingVertical: 24, alignItems: 'center' },
-  featuredQuote: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, fontStyle: 'italic', lineHeight: 27, textAlign: 'center', textShadowColor: colors.sepiaSubtle, textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12 },
+  featuredQuote: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, fontStyle: 'italic', lineHeight: 27, textAlign: 'center', textShadowColor: colors.sepiaSubtle, textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12,
+    // The glow's room inside the box a phone cuts it at; the margins keep the layout.
+    paddingTop: 10, paddingBottom: 14, paddingHorizontal: 12, marginTop: -10, marginBottom: -14, marginHorizontal: -12 },
   featuredQuoteAuteur: { color: colors.crimsonInk, textShadowColor: 'rgba(107,26,10,0.15)' },
   reviewBodyWrap: { paddingHorizontal: 0, marginTop: 0 },
   // The essay, set as paragraphs — a raised drop cap opens the first.

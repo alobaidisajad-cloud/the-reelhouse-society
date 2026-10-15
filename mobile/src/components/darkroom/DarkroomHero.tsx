@@ -146,7 +146,6 @@ const s = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 34,
     color: colors.silverScreen,
-    marginBottom: 14,
     textAlign: 'center',
     // No fixed lineHeight: a fixed box stays tall while adjustsFontSizeToFit
     // shrinks "Late Night Projection", and the words sit off-centre.
@@ -154,6 +153,10 @@ const s = StyleSheet.create({
     ...effects.textGlowSepia,
     textShadowRadius: 20,
     textShadowColor: 'rgba(180,45,45, 0.6)',
+    // The glow's room inside the box a phone cuts it at; the margins keep the layout.
+    padding: 20,
+    margin: -20,
+    marginBottom: 14 - 20,
   },
   searchWrap: {
     width: '100%',

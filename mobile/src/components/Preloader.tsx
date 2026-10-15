@@ -73,14 +73,20 @@ function Digit({ d }: { d: DigitConfig }) {
     opacity: op.value,
     transform: [{ scale: scale.value }],
     position: 'absolute',
-    textShadowColor: d.shadowColor,
-    textShadowRadius: d.shadowRadius,
-    textShadowOffset: { width: 0, height: 0 },
   }));
 
     const { width } = useWindowDimensions();
+    // The glow is the digit's own and holds still. Its room is inside the box a
+    // phone cuts it at; the margin keeps the digit centred where it was.
+    const glow = {
+      textShadowColor: d.shadowColor,
+      textShadowRadius: d.shadowRadius,
+      textShadowOffset: { width: 0, height: 0 },
+      padding: d.shadowRadius,
+      margin: -d.shadowRadius,
+    };
     return (
-      <AnimatedText style={[styles.digit, style, { fontSize: Math.min(120, width * 0.28) }]}>
+      <AnimatedText style={[styles.digit, style, glow, { fontSize: Math.min(120, width * 0.28) }]}>
       {d.char}
     </AnimatedText>
   );

@@ -95,7 +95,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/_layout.tsx | 2026-10-15 | edited: each tab's own button draws its icon; no tabBarIcon; the icon's animated views stay native |
 | app/(tabs)/darkroom.tsx | 2026-10-15 | edited: the screen says its read failed when the tray could not reach the catalogue |
 | app/(tabs)/dispatch.tsx | 2026-10-15 | edited: the screen says its read failed; each filing carries dispatch-filing |
-| app/(tabs)/index.tsx | 2026-10-15 | edited: the Lobby's read is the programme and the wall, failed when neither kept anything; the welcome's door has an id |
+| app/(tabs)/index.tsx | 2026-10-15 | edited: the Lobby's read is the programme and the wall, failed when neither kept anything; the welcome's door has an id; the welcome title's glow has room in its box |
 | app/(tabs)/lounge.tsx | 2026-10-15 | edited: the screen says its read failed when no salon could be read |
 | app/(tabs)/profile.tsx | 2026-10-15 | centred states centre between the bars (useTabRoomPadding) |
 | app/(tabs)/reels.tsx | 2026-10-15 | edited: the screen says its read failed when the house's logs could not be read |
@@ -306,7 +306,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/DarkroomCards.tsx | 2026-10-02 | doors through nav |
 | src/components/darkroom/DarkroomFilterPanel.tsx | 2026-10-15 | enters and leaves as a PresenceView |
 | src/components/darkroom/DarkroomHeader.tsx | 2026-10-15 | the filter panel is held through its exit |
-| src/components/darkroom/DarkroomHero.tsx | 2026-10-03 | edited: the search box names SEARCH_MAX |
+| src/components/darkroom/DarkroomHero.tsx | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
 | src/components/darkroom/DarkroomMoodBar.tsx | 2026-10-02 | keys; selected as a state; meaning spoken |
 | src/components/Decorative.tsx | 2026-10-01 | the dead marquee and styles gone |
 | src/components/dispatch/__tests__/aBallotsClosingTimes.test.ts | 2026-09-29 | new |
@@ -387,7 +387,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/paperPerf.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/PaperPost.tsx | 2026-10-04 | edited: its own initialOf gone; the one in utils/text |
 | src/components/dispatch/paper/PaperStrike.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/dispatch/paper/paperStyles.ts | 2026-10-02 | Read whole in the launch audit: sound. |
+| src/components/dispatch/paper/paperStyles.ts | 2026-10-15 | the masthead title's glow has room inside the box a phone cuts it at |
 | src/components/dispatch/paper/paperText.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
 | src/components/dispatch/roomLink.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -396,7 +396,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/ErrorBoundary.tsx | 2026-10-02 | Read whole (launch audit). Retries spent left a disabled PLEASE RESTART APP: the button now restarts the app (expo-updates reloadAsync), and says how only when it cannot. |
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/feed/ActionDeck.tsx | 2026-10-04 | edited: the certify lock lifts through useLater, gone with the item and the card |
-| src/components/feed/ActivityCard.tsx | 2026-10-01 | lies flat unless an Auteur's; comments made true |
+| src/components/feed/ActivityCard.tsx | 2026-10-15 | the film title's glow has room inside the box a phone cuts it at |
 | src/components/feed/AutopsyView.tsx | 2026-10-01 | each score read whole |
 | src/components/feed/PosterFrame.tsx | 2026-10-01 | the poster says its film |
 | src/components/feed/ReviewContent.tsx | 2026-10-04 | edited: the review and the pull quote each take their own direction |
@@ -469,12 +469,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-09-30 | new |
 | src/components/lobby/__tests__/theWallIsRead.test.ts | 2026-09-30 | new |
 | src/components/lobby/__tests__/theWallKeepsTheDay.test.tsx | 2026-10-03 | new: the clock reads on the hour and on return; a wall behind the day is asked again |
-| src/components/lobby/FeatureRow.tsx | 2026-09-30 | new |
+| src/components/lobby/FeatureRow.tsx | 2026-10-15 | the one-sheet title's shadow has room inside the box a phone cuts it at |
 | src/components/lobby/FilingsBill.tsx | 2026-09-30 | new; the byline moved out of the filing's door |
 | src/components/lobby/KeepOff.tsx | 2026-09-30 | new |
 | src/components/lobby/LobbyHonour.tsx | 2026-09-30 | new |
 | src/components/lobby/LobbyWall.tsx | 2026-10-15 | edited: the read wall carries lobby-wall-hung |
-| src/components/lobby/Masthead.tsx | 2026-09-30 | new |
+| src/components/lobby/Masthead.tsx | 2026-10-15 | the Lobby's name: its glow has room inside the box a phone cuts it at |
 | src/components/lobby/measure.ts | 2026-09-30 | new |
 | src/components/lobby/PairBills.tsx | 2026-09-30 | new; "of one height" held only side by side |
 | src/components/lobby/parts.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
@@ -506,7 +506,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogChronicle.tsx | 2026-10-01 | the typed card, said as why |
 | src/components/log/LogClearanceGate.tsx | 2026-10-01 | the rope said as what it is |
 | src/components/log/LogComments.tsx | 2026-10-01 | true as written |
-| src/components/log/logDetailStyles.ts | 2026-10-01 | flat record card; the Vault's unread line |
+| src/components/log/logDetailStyles.ts | 2026-10-15 | the film title's and the pull quote's glows have room inside their boxes |
 | src/components/log/LogForm.tsx | 2026-10-03 | edited: review, note and companion name their caps; the review counter reads the cap |
 | src/components/log/LogFormBody.tsx | 2026-10-01 | true as written |
 | src/components/log/LogHero.tsx | 2026-10-01 | the filing mark in the present tense |
@@ -516,7 +516,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogReviewBody.tsx | 2026-10-01 | a Vault that could not open says so |
 | src/components/log/LogSealBar.tsx | 2026-10-01 | histories to the present |
 | src/components/log/LogSearchEngine.tsx | 2026-10-03 | edited: the search box names SEARCH_MAX |
-| src/components/log/LogVerdict.tsx | 2026-10-01 | histories to the present |
+| src/components/log/LogVerdict.tsx | 2026-10-15 | the verdict word's glow has room inside the box a phone cuts it at |
 | src/components/log/NoteSheet.tsx | 2026-10-01 | true as written |
 | src/components/log/VaultNote.tsx | 2026-10-01 | true as written |
 | src/components/lounge/__tests__/aKeystrokeRedrawsNoMessage.test.tsx | 2026-10-03 | read whole: openRoom proves rows were drawn before counting redraws |
@@ -569,7 +569,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/person/PersonHero.tsx | 2026-10-04 | edited: the portrait letter is initialOf, unspoken |
 | src/components/person/PersonOrnaments.tsx | 2026-10-01 | the rarity mark in the present tense |
 | src/components/person/personStyles.ts | 2026-10-01 | histories to the present |
-| src/components/Preloader.tsx | 2026-10-02 | Read whole (launch audit). A comment about a noise overlay that was never drawn removed. |
+| src/components/Preloader.tsx | 2026-10-15 | a digit's glow is a still style with room inside its box, out of the animated style |
 | src/components/PressableScale.tsx | 2026-10-02 | Read whole (launch audit). A suspected dropped disabled state was disproved (RN's Pressable merges it). Sound; left alone. |
 | src/components/profile/__tests__/aNameIsEarnedOnce.test.ts | 2026-10-02 | Written in the launch audit: no honour or stamp shares a name or borrows a rank's. |
 | src/components/profile/__tests__/anEmptyLedgerSaysSo.test.tsx | 2026-10-01 | written: an empty ledger is said as one |
@@ -638,7 +638,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/ProfileListsTab.tsx | 2026-10-01 | a search that found nothing is said; nav; no ticket tags or history |
 | src/components/profile/ProfilePhysicalTab.tsx | 2026-10-01 | a search that found nothing is said; catalogued as VHS (the space); nav; comments say what is true now |
 | src/components/profile/ProfilePosterCard.tsx | 2026-10-01 | three modes no caller used, removed; nav; comments say what is true now |
-| src/components/profile/profileStyles.ts | 2026-10-01 | 61 styles nothing read, removed; comments say what is true now |
+| src/components/profile/profileStyles.ts | 2026-10-15 | the member's name: its shadow has room inside the box a phone cuts it at |
 | src/components/profile/ProfileTriptych.tsx | 2026-10-01 | a refused change is said; nav; the close backdrop is a button; comments say what is true now |
 | src/components/profile/ProfileWatchlistTab.tsx | 2026-10-01 | sized by the true total: a search keeps its box, finding nothing is said; the Oracle only with a choice; nav |
 | src/components/profile/ProjectorRoom.tsx | 2026-10-01 | a visitor shares the standing as the member's; a failed share said plainly; comments say what is true now |
@@ -647,7 +647,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/roomStyles.ts | 2026-10-02 | Read whole in the launch audit: sound. |
 | src/components/profile/TasteDNA.tsx | 2026-10-01 | says retrieving, failed, too few or still reading — never a heading over nothing; whose-words |
 | src/components/profile/TasteDNAExportCanvas.tsx | 2026-10-02 | unspoken; words fixed-size (it is a picture); history comments trimmed |
-| src/components/profile/TasteMatch.tsx | 2026-10-01 |  |
+| src/components/profile/TasteMatch.tsx | 2026-10-15 | the percentage's glow has room inside the box a phone cuts it at |
 | src/components/profile/tasteMatchRead.ts | 2026-10-03 | Written with the Taste Match client: the read of both members' whole-record shapes, and the comparison the card shows. |
 | src/components/profile/WatchlistRoulette.tsx | 2026-10-01 | a mid-spin close stops the spin; opens filmId; nav |
 | src/components/RankBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -658,7 +658,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/MemberRegistry.tsx | 2026-10-01 | nav; comments cut to the why |
 | src/components/reels/ReelsCards.tsx | 2026-10-03 | edited: the loader is his eyes; the flicker is gone |
 | src/components/reels/ReelsFeedList.tsx | 2026-10-15 | edited: each log row carries reel-log |
-| src/components/reels/ReelsHeader.tsx | 2026-10-01 | comments cut to the why |
+| src/components/reels/ReelsHeader.tsx | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
 | src/components/reels/ReelsStackList.tsx | 2026-10-15 | edited: each stack cell carries reel-stack |
 | src/components/reels/types.ts | 2026-10-01 | true as written |
 | src/components/RouteErrorBoundary.tsx | 2026-10-15 | top from useOverlayTop |
@@ -728,7 +728,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/__tests__/theEditDeskSaysWhatWentWrong.test.tsx | 2026-10-01 | written: the edit desk says what went wrong |
 | src/features/profile/EditProfileScreen.tsx | 2026-10-15 | nav top from usePushedHeaderTop |
 | src/features/profile/LinksEditor.tsx | 2026-10-03 | edited: the link title and address name their caps |
-| src/features/profile/profile.styles.ts | 2026-10-01 | 19 styles nothing read, removed |
+| src/features/profile/profile.styles.ts | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
 | src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-15 | edited: the storage mock lists its keys |
 | src/features/settings/__tests__/anExportIsWhole.test.ts | 2026-10-01 | written: an export holds every row once |
 | src/features/settings/__tests__/theSignOutNamesWhatItErases.test.tsx | 2026-10-15 | written: the sign-out confirm counts unsent changes, drafts and failed words; online, the queue goes first |
@@ -988,8 +988,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/tellMarks.ts | 2026-10-01 | true as written |
 | src/stores/vaultStore.ts | 2026-10-03 | edited: the note is cleaned by its own cap on the live save |
 | src/test-support/swallowedTypeError.ts | 2026-10-03 | read whole: sound |
+| src/theme/__tests__/aGlowFadesInsideItsBox.guard.test.ts | 2026-10-15 | written: no radial glow keeps strength on an edge of its box that can show |
 | src/theme/__tests__/aGradientIsNeverABitmap.guard.test.ts | 2026-10-08 | written: no gradient-only SVG but the three it names |
 | src/theme/__tests__/aPhotographIsNotLit.test.ts | — |  |
+| src/theme/__tests__/aTextGlowHasRoom.guard.test.ts | 2026-10-15 | written: every wide text glow has room inside the box each phone cuts it at |
 | src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts | 2026-10-01 | written: the flat-but-elevated ratchet |
 | src/theme/__tests__/everyStyleIsRead.guard.test.ts | 2026-10-02 | Written in the launch audit: every style a sheet defines is drawn by the app. |
 | src/theme/__tests__/lightFloor.test.ts | — |  |

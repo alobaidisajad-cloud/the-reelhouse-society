@@ -298,6 +298,8 @@ const s = StyleSheet.create({
   welcomeTitle: {
     fontFamily: fonts.display, fontSize: 38, color: colors.parchment,
     textAlign: 'center', lineHeight: 46, ...effects.textGlowSepia, textShadowRadius: 20,
+    // The glow's room inside the box a phone cuts it at; the margin keeps the layout.
+    padding: 20, margin: -20,
   },
   welcomeTagline: {
     fontFamily: fonts.sub, fontSize: 12, color: colors.fog, textAlign: 'center',

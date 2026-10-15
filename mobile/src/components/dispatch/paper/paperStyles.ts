@@ -116,8 +116,10 @@ export const p = StyleSheet.create({
   },
   mastTitle: {
     fontFamily: fonts.display, fontSize: 36, lineHeight: 42, letterSpacing: 2.2,
-    color: colors.silverScreen, textAlign: 'center', marginBottom: 12,
+    color: colors.silverScreen, textAlign: 'center',
     ...effects.textGlowSepia, textShadowRadius: 30,
+    // The glow's room inside the box a phone cuts it at; the margins keep the layout.
+    padding: 30, margin: -30, marginBottom: 12 - 30,
   },
   mastMetaRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

@@ -27,7 +27,9 @@ export const st = StyleSheet.create({
   },
   heroEyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   heroEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3.2, color: colors.sepia },
-  heroTitle: { fontFamily: fonts.display, fontSize: 32, color: colors.parchment, lineHeight: 36, marginBottom: 6, ...effects.textGlowSepia, textShadowRadius: 25 },
+  // The glow's room inside the box a phone cuts it at; the margins keep the layout.
+  heroTitle: { fontFamily: fonts.display, fontSize: 32, color: colors.parchment, lineHeight: 36, ...effects.textGlowSepia, textShadowRadius: 25,
+    padding: 25, margin: -25, marginBottom: 6 - 25 },
   heroDesc: { fontFamily: fonts.body, fontSize: 13, color: colors.fogQuiet, fontStyle: 'italic', textAlign: 'center', lineHeight: 20, letterSpacing: 0.5, marginBottom: 16 },
   heroRuleBottom: { width: '80%', height: 6, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.25)', borderBottomWidth: 3, borderBottomColor: colors.sepia, opacity: 0.5 },
   

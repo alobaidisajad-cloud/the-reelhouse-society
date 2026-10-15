@@ -134,8 +134,10 @@ const st = StyleSheet.create({
 
   sectionHeaderWrap: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
   headerTitle: {
-    fontFamily: fonts.display, fontSize: 36, color: colors.silverScreen, marginBottom: 4,
-    ...effects.textGlowSepia, textShadowRadius: 25, textShadowColor: 'rgba(184,137,26, 0.4)', letterSpacing: 2
+    fontFamily: fonts.display, fontSize: 36, color: colors.silverScreen,
+    ...effects.textGlowSepia, textShadowRadius: 25, textShadowColor: 'rgba(184,137,26, 0.4)', letterSpacing: 2,
+    // The glow's room inside the box a phone cuts it at; the margins keep the layout.
+    padding: 25, margin: -25, marginBottom: 4 - 25,
   },
   liveDot: { width: 6, height: 6, borderRadius: 3 },
   liveDotDefault: { backgroundColor: colors.sepia, shadowColor: colors.sepia, shadowOpacity: 0.8, shadowRadius: 6, elevation: 3 },

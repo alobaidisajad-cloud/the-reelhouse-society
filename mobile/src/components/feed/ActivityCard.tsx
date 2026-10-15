@@ -379,6 +379,9 @@ const s = StyleSheet.create({
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
     includeFontPadding: false,
+    // The glow's room inside the box a phone cuts it at; the margins keep the layout.
+    padding: 12,
+    margin: -12,
   },
   cardYear: {
     fontFamily: fonts.sub,

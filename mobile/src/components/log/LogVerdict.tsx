@@ -97,6 +97,8 @@ const s = StyleSheet.create({
         fontFamily: fonts.display, fontSize: 28, lineHeight: 34, color: colors.flicker,
         textAlign: 'center', includeFontPadding: false,
         textShadowColor: 'rgba(240,232,176,0.22)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20,
+        // The glow's room inside the box a phone cuts it at; the margin keeps the layout.
+        padding: 20, margin: -20,
     },
     // Crimson here is SEMANTIC — loss, not rank. The provenance colours label
     // where a capability comes from; a verdict is not a capability.

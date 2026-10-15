@@ -72,8 +72,10 @@ const s = StyleSheet.create({
   mast: { alignItems: 'center', paddingTop: 4, paddingBottom: MAST_GAPS.foot },
   kick: { color: colors.sepia, lineHeight: MAST_LINES.kick, textAlign: 'center' },
   name: {
-    color: colors.silverScreen, lineHeight: MAST_LINES.name, marginTop: MAST_GAPS.afterKick, textAlign: 'center',
+    color: colors.silverScreen, lineHeight: MAST_LINES.name, textAlign: 'center',
     textShadowColor: 'rgba(236,190,120,0.18)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 22,
+    // The glow's room inside the box a phone cuts it at; the margins keep the layout.
+    padding: 22, margin: -22, marginTop: MAST_GAPS.afterKick - 22,
   },
   bulbRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: MAST_GAPS.afterName, alignSelf: 'stretch' },
   dateline: { color: colors.bone, lineHeight: MAST_LINES.dateline, flexShrink: 1 },

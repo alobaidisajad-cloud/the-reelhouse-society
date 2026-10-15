@@ -72,9 +72,12 @@ const s = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 48,
     lineHeight: 56,
-    marginBottom: 4,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 16,
+    // The glow's room inside the box a phone cuts it at; the margins keep the layout.
+    padding: 16,
+    margin: -16,
+    marginBottom: 4 - 16,
   },
   label: {
     fontFamily: fonts.sub,

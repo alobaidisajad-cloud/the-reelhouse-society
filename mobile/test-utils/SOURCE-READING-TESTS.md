@@ -105,6 +105,8 @@ Decisions, as of 2026-09-28:
 | `src/stores/__tests__/logoutClearsEveryModuleCache.test.ts` | Every module-level cache has a logout reset. |
 | `src/stores/__tests__/logoutLeavesNoTrace.guard.test.ts` | A real logout leaves no member key behind; every key is enumerated. |
 | `src/stores/__tests__/staleWriteGuard.test.ts` | Every store write after an await re-checks the member. |
+| `src/theme/__tests__/aGlowFadesInsideItsBox.guard.test.ts` | Each radial glow's box where its users lay it (a route's own sheet, the welcome page's scroll padding, the seal's halo size): no render here lays a box out on a screen. |
+| `src/theme/__tests__/aTextGlowHasRoom.guard.test.ts` | Every style with a wide text shadow across the app, and React Native's own Android text view, whose clipping is the rule: a sweep of styles no render measures. |
 | `src/theme/__tests__/aPhotographIsNotLit.test.ts` | No edge light is laid on an image. |
 | `src/theme/__tests__/theGroundLadder.test.ts` | Every ground is on the ladder. |
 | `src/theme/__tests__/theRoomIsLit.test.ts` | Every screen painted in the house colour carries the room's light. |

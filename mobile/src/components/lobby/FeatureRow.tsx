@@ -205,6 +205,8 @@ const s = StyleSheet.create({
   title: {
     fontFamily: fonts.display, color: colors.silverScreen, textAlign: 'center',
     textShadowColor: 'rgba(0,0,0,0.65)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 14,
+    // The shadow's room inside the box a phone cuts it at; the margins keep the layout.
+    paddingTop: 12, paddingBottom: 16, paddingHorizontal: 14, marginTop: -12, marginBottom: -16, marginHorizontal: -14,
   },
   billing: { color: colors.bone, marginTop: 7, textAlign: 'center' },
   billingQuiet: { color: colors.fog, marginTop: 2 },
