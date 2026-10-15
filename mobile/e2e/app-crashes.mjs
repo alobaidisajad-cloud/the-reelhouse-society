@@ -38,16 +38,41 @@ const timeOf = (line) => /^\d\d-\d\d (\d\d:\d\d:\d\d)/.exec(line)?.[1] ?? '??:??
 // The app's own process, or one of its named processes ("com.reelhouse.society:remote").
 const isApp = (name, pkg) => name === pkg || name.startsWith(`${pkg}:`);
 
+/** What React Native writes when an error destroys its instance with no crash dialog. */
+const SOFT = /handleHostException\(message|JavascriptException|ReactNoCrashSoftException.*getOrCreateDestroyTask|Tried to enqueue runnable on already finished thread/;
+
 /**
  * The app's crashes and freezes in logcat lines (`threadtime`), in order.
  * Java: AndroidRuntime's "FATAL EXCEPTION" whose "Process:" line (same pid,
  * just after) names the app. Native: the tombstone's ">>> <process> <<<" line.
- * Freeze: ActivityManager's "ANR in <process>". Any other process is left out.
+ * Freeze: ActivityManager's "ANR in <process>". A soft one: a SOFT line from a
+ * pid the log names as the app's (ActivityManager's "Start proc <pid>:<app>",
+ * or a "Process: <app>, PID: <pid>" line), since those lines carry no
+ * "Process:" of their own; the app looks alive, its screen is gone. Any other
+ * process is left out.
  */
 export function findCrashes(lines, pkg = APP) {
   const found = [];
+  const appPids = new Set();
+  const softSeen = new Set();
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    const started = /\sActivityManager\s*: Start proc (\d+):([^/\s]+)/.exec(line) ?? /Process: ([^,\s]+), PID: (\d+)/.exec(line);
+    if (started) {
+      const [pid, name] = /Start proc/.test(line) ? [started[1], started[2]] : [started[2], started[1]];
+      if (isApp(name, pkg)) appPids.add(pid);
+    }
+    // AndroidRuntime's lines belong to a hard crash's report, read below.
+    if (SOFT.test(line) && appPids.has(pidOf(line)) && !/\sAndroidRuntime\s*:/.test(line)) {
+      // One report per process per second: a destruction writes several of these lines.
+      const key = `${pidOf(line)} ${line.slice(0, 14)}`;
+      if (!softSeen.has(key)) {
+        softSeen.add(key);
+        const what = /message = "([^"]*)/.exec(line)?.[1] ?? line.replace(/^.*?:\s+/, '').trim();
+        found.push({ kind: 'JS error (React instance destroyed)', at: line.slice(0, 18), time: timeOf(line), what, detail: [] });
+      }
+      continue;
+    }
     if (/\s[EF] AndroidRuntime\s*: FATAL EXCEPTION\b/.test(line)) {
       const pid = pidOf(line);
       for (let j = i + 1; j < Math.min(lines.length, i + 8); j++) {

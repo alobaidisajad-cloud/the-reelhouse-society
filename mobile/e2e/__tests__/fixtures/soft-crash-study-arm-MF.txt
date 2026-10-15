@@ -1,0 +1,282 @@
+10-08 15:46:50.857   521   549 I ActivityManager: Start proc 6416:com.reelhouse.society/u0a192 for next-top-activity {com.reelhouse.society/com.reelhouse.society.MainActivity}
+10-08 15:46:50.922  6416  6416 I elhouse.society: Using CollectorTypeCC GC.
+10-08 15:46:50.925  6416  6416 W elhouse.society: Unexpected CPU variant for x86: x86_64.
+10-08 15:46:50.925  6416  6416 W elhouse.society: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, tremont, kabylake, default
+10-08 15:46:50.927  6416  6416 E elhouse.society: Not starting debugger since process cannot load the jdwp agent.
+10-08 15:46:51.032  6416  6416 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10192; state: ENABLED
+10-08 15:46:51.032  6416  6416 D CompatibilityChangeReporter: Compat change id reported: 242716250; UID 10192; state: ENABLED
+10-08 15:46:51.156  6416  6416 D nativeloader: Configuring clns-6 for other apk /data/app/~~2jr2HYzq_s5z7omVmYYk0A==/com.reelhouse.society-U2K8uzQOFTmhzCy7k-X43A==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~2jr2HYzq_s5z7omVmYYk0A==/com.reelhouse.society-U2K8uzQOFTmhzCy7k-X43A==/lib/x86_64:/data/app/~~2jr2HYzq_s5z7omVmYYk0A==/com.reelhouse.society-U2K8uzQOFTmhzCy7k-X43A==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.reelhouse.society
+10-08 15:46:51.164  6416  6416 V GraphicsEnvironment: Currently set values for:
+10-08 15:46:51.164  6416  6416 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+10-08 15:46:51.164  6416  6416 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+10-08 15:46:51.164  6416  6416 V GraphicsEnvironment: ANGLE GameManagerService for com.reelhouse.society: false
+10-08 15:46:51.164  6416  6416 V GraphicsEnvironment: com.reelhouse.society is not listed in per-application setting
+10-08 15:46:51.164  6416  6416 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+10-08 15:46:51.176  6416  6416 W FirebaseApp: Default FirebaseApp failed to initialize because no default options were found. This usually means that com.google.gms:google-services was not applied to your gradle project.
+10-08 15:46:51.176  6416  6416 I FirebaseInitProvider: FirebaseApp initialization unsuccessful
+10-08 15:46:51.179  6416  6416 D Sentry  : io.sentry.auto-init read: false
+10-08 15:46:51.185  6416  6416 W SoLoader: Initializing SoLoader: 0
+10-08 15:46:51.185  6416  6416 W SoLoader: Recording new base apk path: /data/app/~~2jr2HYzq_s5z7omVmYYk0A==/com.reelhouse.society-U2K8uzQOFTmhzCy7k-X43A==/base.apk
+10-08 15:46:51.185  6416  6416 W SoLoader: Previously recorded 0 base apk paths.
+10-08 15:46:51.186  6416  6416 I SoLoader: Preparing SO source: DirectorySoSource[root = /vendor/lib64 flags = 2]
+10-08 15:46:51.186  6416  6416 I SoLoader: Preparing SO source: DirectorySoSource[root = /system/lib64 flags = 2]
+10-08 15:46:51.186  6416  6416 I SoLoader: Preparing SO source: DirectApkSoSource[root = [/data/app/~~2jr2HYzq_s5z7omVmYYk0A==/com.reelhouse.society-U2K8uzQOFTmhzCy7k-X43A==/base.apk!/lib/x86_64]]
+10-08 15:46:51.190  6416  6416 I SoLoader: Preparing SO source: ApplicationSoSource[DirectorySoSource[root = /data/app/~~2jr2HYzq_s5z7omVmYYk0A==/com.reelhouse.society-U2K8uzQOFTmhzCy7k-X43A==/lib/x86_64 flags = 0]]
+10-08 15:46:51.191  6416  6416 I SoLoader: init finish: 4 SO sources prepared
+10-08 15:46:51.191  6416  6416 W SoLoader: SoLoader initialized: 8
+10-08 15:46:51.209  6416  6416 D jni_lib_merge: Entering merged library JNI_OnLoad.
+10-08 15:46:51.209  6416  6416 D jni_lib_merge: Preparing 12 pre-merged libs (including stub)
+10-08 15:46:51.209  6416  6416 D jni_lib_merge: Preparing to register libfabricjni_so.  onload_func: 0x7a6c5a0b2ba0
+10-08 15:46:51.210  6416  6416 D jni_lib_merge: Preparing to register libreact_devsupportjni_so.  onload_func: 0x7a6c5a18e530
+10-08 15:46:51.210  6416  6416 D jni_lib_merge: Preparing to register libreact_featureflagsjni_so.  onload_func: 0x7a6c5a1a10a0
+10-08 15:46:51.210  6416  6416 D jni_lib_merge: Preparing to register libreact_newarchdefaults_so.  onload_func: 0x7a6c5a1c7fa0
+10-08 15:46:51.210  6416  6416 D jni_lib_merge: Preparing to register libreactnativeblob_so.  onload_func: 0x7a6c5a26fa50
+10-08 15:46:51.210  6416  6416 D jni_lib_merge: Preparing to register libreactnativejni_so.  onload_func: 0x7a6c5a28a8c0
+10-08 15:46:51.210  6416  6416 D jni_lib_merge: Preparing to register libreactnativejni_common_so.  onload_func: 0x7a6c5a291150
+10-08 15:46:51.210  6416  6416 D jni_lib_merge: Preparing to register librninstance_so.  onload_func: 0x7a6c5a2af450
+10-08 15:46:51.210  6416  6416 D jni_lib_merge: Preparing to register libturbomodulejsijni_so.  onload_func: 0x7a6c5a35ab80
+10-08 15:46:51.210  6416  6416 D jni_lib_merge: Preparing to register libuimanagerjni_so.  onload_func: 0x7a6c5a362ab0
+10-08 15:46:51.210  6416  6416 D jni_lib_merge: Preparing to register libyoga_so.  onload_func: 0x7a6c5a36a130
+10-08 15:46:51.210  6416  6416 D jni_lib_merge: About to register 11 actual methods.
+10-08 15:46:51.217  6416  6416 D jni_lib_merge: Entering merged library JNI_OnLoad.
+10-08 15:46:51.217  6416  6416 D jni_lib_merge: Preparing 12 pre-merged libs (including stub)
+10-08 15:46:51.217  6416  6416 D jni_lib_merge: Preparing to register libfabricjni_so.  onload_func: 0x7a6c5a0b2ba0
+10-08 15:46:51.217  6416  6416 D jni_lib_merge: Preparing to register libreact_devsupportjni_so.  onload_func: 0x7a6c5a18e530
+10-08 15:46:51.217  6416  6416 D jni_lib_merge: Preparing to register libreact_featureflagsjni_so.  onload_func: 0x7a6c5a1a10a0
+10-08 15:46:51.217  6416  6416 D jni_lib_merge: Preparing to register libreact_newarchdefaults_so.  onload_func: 0x7a6c5a1c7fa0
+10-08 15:46:51.218  6416  6416 D jni_lib_merge: Preparing to register libreactnativeblob_so.  onload_func: 0x7a6c5a26fa50
+10-08 15:46:51.218  6416  6416 D jni_lib_merge: Preparing to register libreactnativejni_so.  onload_func: 0x7a6c5a28a8c0
+10-08 15:46:51.218  6416  6416 D jni_lib_merge: Preparing to register libreactnativejni_common_so.  onload_func: 0x7a6c5a291150
+10-08 15:46:51.218  6416  6416 D jni_lib_merge: Preparing to register librninstance_so.  onload_func: 0x7a6c5a2af450
+10-08 15:46:51.218  6416  6416 D jni_lib_merge: Preparing to register libturbomodulejsijni_so.  onload_func: 0x7a6c5a35ab80
+10-08 15:46:51.218  6416  6416 D jni_lib_merge: Preparing to register libuimanagerjni_so.  onload_func: 0x7a6c5a362ab0
+10-08 15:46:51.218  6416  6416 D jni_lib_merge: Preparing to register libyoga_so.  onload_func: 0x7a6c5a36a130
+10-08 15:46:51.218  6416  6416 D jni_lib_merge: About to register 11 actual methods.
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Entering merged library JNI_OnLoad.
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Preparing 12 pre-merged libs (including stub)
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Preparing to register libfabricjni_so.  onload_func: 0x7a6c5a0b2ba0
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Preparing to register libreact_devsupportjni_so.  onload_func: 0x7a6c5a18e530
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Preparing to register libreact_featureflagsjni_so.  onload_func: 0x7a6c5a1a10a0
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Preparing to register libreact_newarchdefaults_so.  onload_func: 0x7a6c5a1c7fa0
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Preparing to register libreactnativeblob_so.  onload_func: 0x7a6c5a26fa50
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Preparing to register libreactnativejni_so.  onload_func: 0x7a6c5a28a8c0
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Preparing to register libreactnativejni_common_so.  onload_func: 0x7a6c5a291150
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Preparing to register librninstance_so.  onload_func: 0x7a6c5a2af450
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Preparing to register libturbomodulejsijni_so.  onload_func: 0x7a6c5a35ab80
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Preparing to register libuimanagerjni_so.  onload_func: 0x7a6c5a362ab0
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: Preparing to register libyoga_so.  onload_func: 0x7a6c5a36a130
+10-08 15:46:51.275  6416  6416 D jni_lib_merge: About to register 11 actual methods.
+10-08 15:46:51.478  6416  6416 D AppCompatDelegate: Checking for metadata for AppLocalesMetadataHolderService : Service not found
+10-08 15:46:51.501  6416  6416 D CompatibilityChangeReporter: Compat change id reported: 237531167; UID 10192; state: DISABLED
+10-08 15:46:51.503  6416  6416 W OpenGLRenderer: Unknown dataspace 0
+10-08 15:46:51.504  6416  6437 W dev.expo.updates: {"timestamp":1791474411503,"message":"The expo-updates system is explicitly disabled. To enable it, set the enabled setting to true.","code":"InitializationError","level":"warn"}
+10-08 15:46:51.516  6416  6434 D libEGL  : loaded /vendor/lib64/egl/libEGL_emulation.so
+10-08 15:46:51.517  6416  6434 D libEGL  : loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+10-08 15:46:51.519  6416  6434 D libEGL  : loaded /vendor/lib64/egl/libGLESv2_emulation.so
+10-08 15:46:51.591  6416  6434 W OpenGLRenderer: Failed to choose config with EGL_SWAP_BEHAVIOR_PRESERVED, retrying without...
+10-08 15:46:51.591  6416  6434 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+10-08 15:46:51.716  6416  6434 I Gralloc4: mapper 4.x is not supported
+10-08 15:46:51.724  6416  6434 E OpenGLRenderer: Unable to match the desired swap behavior.
+10-08 15:46:51.736  6416  6416 W unknown:BridgelessReact: ReactHost{0}.startSurface(surfaceId = 0): Schedule
+10-08 15:46:51.736  6416  6416 W unknown:BridgelessReact: ReactHost{0}.attachSurface(surfaceId = 0)
+10-08 15:46:51.736  6416  6444 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask()
+10-08 15:46:51.736  6416  6444 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Start
+10-08 15:46:51.736  6416  6444 W unknown:BridgelessReact: ReactHost{0}.getJSBundleLoader()
+10-08 15:46:51.737  6416  6444 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactContext(): Creating BridgelessReactContext
+10-08 15:46:51.737  6416  6416 W unknown:BridgelessReact: ReactHost{0}.onHostResume(activity)
+10-08 15:46:51.737  6416  6444 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Creating ReactInstance
+10-08 15:46:51.743  6416  6444 D jni_lib_merge: Entering merged library JNI_OnLoad.
+10-08 15:46:51.743  6416  6444 D jni_lib_merge: Preparing 4 pre-merged libs (including stub)
+10-08 15:46:51.743  6416  6444 D jni_lib_merge: Preparing to register libhermes_executor_so.  onload_func: 0x7a6c543dc730
+10-08 15:46:51.743  6416  6444 D jni_lib_merge: Preparing to register libhermesinstancejni_so.  onload_func: 0x7a6c543e3db0
+10-08 15:46:51.743  6416  6444 D jni_lib_merge: Preparing to register libjsijniprofiler_so.  onload_func: 0x7a6c543e4540
+10-08 15:46:51.743  6416  6444 D jni_lib_merge: About to register 3 actual methods.
+10-08 15:46:51.844  6416  6444 I ExpoModulesCore: ✅ AppContext was initialized
+10-08 15:46:51.860  6416  6444 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Loading JS Bundle
+10-08 15:46:51.860  6416  6444 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Calling DevSupportManagerBase.onNewReactContextCreated(reactContext)
+10-08 15:46:51.860  6416  6444 W unknown:BridgelessReact: ReactHost{0}.startSurface(surfaceId = 0): Execute
+10-08 15:46:51.863  6416  6416 W unknown:BridgelessReact: ReactContext.onHostResume()
+10-08 15:46:51.867  6416  6416 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Executing ReactInstanceEventListeners
+10-08 15:46:51.875  6416  6445 D CompatibilityChangeReporter: Compat change id reported: 210923482; UID 10192; state: ENABLED
+10-08 15:46:51.877  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaProviderManager
+10-08 15:46:51.877  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.uimanager.LayoutShadowNode
+10-08 15:46:51.878  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.SearchBarManager
+10-08 15:46:51.878  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenFooterManager
+10-08 15:46:51.878  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.gamma.tabs.TabScreenViewManager
+10-08 15:46:51.879  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class expo.modules.kotlin.views.GroupViewManagerWrapper
+10-08 15:46:51.879  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenContainerViewManager
+10-08 15:46:51.880  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.gamma.tabs.TabsHostViewManager
+10-08 15:46:51.880  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativecommunity.webview.RNCWebViewManager
+10-08 15:46:51.881  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.shopify.reactnative.skia.SkiaPictureViewManager
+10-08 15:46:51.881  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class io.sentry.react.replay.RNSentryReplayUnmaskManager
+10-08 15:46:51.881  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ModalScreenViewManager
+10-08 15:46:51.882  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderConfigViewManager
+10-08 15:46:51.882  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenContentWrapperManager
+10-08 15:46:51.882  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewManager
+10-08 15:46:51.882  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewShadowNode
+10-08 15:46:51.882  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenViewManager
+10-08 15:46:51.882  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class expo.modules.kotlin.views.SimpleViewManagerWrapper
+10-08 15:46:51.883  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderSubviewManager
+10-08 15:46:51.883  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class io.sentry.react.replay.RNSentryReplayMaskManager
+10-08 15:46:51.883  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenStackViewManager
+10-08 15:46:51.883  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class io.sentry.react.RNSentryOnDrawReporterManager
+10-08 15:46:51.891  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$DefsViewManager
+10-08 15:46:51.891  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.VirtualViewManager$RenderableShadowNode
+10-08 15:46:51.892  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeMergeManager
+10-08 15:46:51.893  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.safeareaview.ReactSafeAreaViewManager
+10-08 15:46:51.893  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.safeareaview.ReactSafeAreaViewShadowNode
+10-08 15:46:51.893  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LinearGradientManager
+10-08 15:46:51.894  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeGaussianBlurManager
+10-08 15:46:51.894  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.progressbar.ReactProgressBarViewManager
+10-08 15:46:51.894  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.progressbar.ProgressBarShadowNode
+10-08 15:46:51.895  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollViewManager
+10-08 15:46:51.896  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactTextViewManager
+10-08 15:46:51.896  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactTextShadowNode
+10-08 15:46:51.897  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeColorMatrixManager
+10-08 15:46:51.897  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollContainerViewManager
+10-08 15:46:51.898  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ClipPathViewManager
+10-08 15:46:51.898  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$SymbolManager
+10-08 15:46:51.899  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PatternManager
+10-08 15:46:51.900  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeBlendManager
+10-08 15:46:51.900  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.view.ReactViewManager
+10-08 15:46:51.900  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.SvgViewManager
+10-08 15:46:51.901  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchManager
+10-08 15:46:51.901  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchShadowNode
+10-08 15:46:51.902  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$UseViewManager
+10-08 15:46:51.902  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$CircleViewManager
+10-08 15:46:51.903  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TSpanViewManager
+10-08 15:46:51.904  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FilterManager
+10-08 15:46:51.904  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MarkerManager
+10-08 15:46:51.905  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerButtonViewManager
+10-08 15:46:51.905  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.modal.ReactModalHostManager
+10-08 15:46:51.906  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ForeignObjectManager
+10-08 15:46:51.906  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$EllipseViewManager
+10-08 15:46:51.907  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LineViewManager
+10-08 15:46:51.908  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageViewManager
+10-08 15:46:51.908  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageShadowNode
+10-08 15:46:51.908  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeFloodManager
+10-08 15:46:51.908  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$GroupViewManager
+10-08 15:46:51.909  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextViewManager
+10-08 15:46:51.910  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ImageViewManager
+10-08 15:46:51.910  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeCompositeManager
+10-08 15:46:51.911  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.image.ReactImageManager
+10-08 15:46:51.912  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RadialGradientManager
+10-08 15:46:51.912  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MaskManager
+10-08 15:46:51.913  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.unimplementedview.ReactUnimplementedViewManager
+10-08 15:46:51.913  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RectViewManager
+10-08 15:46:51.914  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextPathViewManager
+10-08 15:46:51.915  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactScrollViewManager
+10-08 15:46:51.915  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeOffsetManager
+10-08 15:46:51.916  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PathViewManager
+10-08 15:46:51.916  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.drawer.ReactDrawerLayoutManager
+10-08 15:46:51.917  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextViewManager
+10-08 15:46:51.917  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextShadowNode
+10-08 15:46:51.918  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.swiperefresh.SwipeRefreshLayoutManager
+10-08 15:46:51.918  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactRawTextManager
+10-08 15:46:51.918  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactRawTextShadowNode
+10-08 15:46:51.919  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputManager
+10-08 15:46:51.919  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputShadowNode
+10-08 15:46:51.920  6416  6445 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerRootViewManager
+10-08 15:46:51.922  6416  6445 W BridgelessReactContext: [WARNING] Bridgeless doesn't support CatalystInstance. Accessing an API that's not part of the new architecture is not encouraged usage.
+10-08 15:46:51.924  6416  6445 I ExpoModulesCore: ✅ JSI interop was installed
+10-08 15:46:51.926  6416  6445 I ExpoModulesCore: ✅ Constants were exported
+10-08 15:46:51.926  6416  6445 I dev.expo.updates: {"timestamp":1791474411926,"message":"UpdatesModule: getConstants called","code":"None","level":"info"}
+10-08 15:46:51.951  6416  6445 D CompatibilityChangeReporter: Compat change id reported: 289878283; UID 10192; state: ENABLED
+10-08 15:46:51.952  6416  6445 I ReactNativeJS: Running "main"
+10-08 15:46:51.961  6416  6445 I RNMMKV  : Initializing MMKV at /data/user/0/com.reelhouse.society/files/mmkv...
+10-08 15:46:51.961  6416  6445 I RNMMKV  : Creating MMKV instance "reelhouse-preinit"... (Path: , Encrypted: false)
+10-08 15:46:52.038  6416  6445 W BridgelessReactContext: [WARNING] Bridgeless doesn't support CatalystInstance. Accessing an API that's not part of the new architecture is not encouraged usage.
+10-08 15:46:52.118  6416  6445 I RNMMKV  : Creating MMKV instance "mmkv.default"... (Path: , Encrypted: false)
+10-08 15:46:52.119  6416  6445 W ReactNativeJS: [e2e] storage.opened {"encrypted":true}
+10-08 15:46:52.123  6416  6467 I WebViewFactory: Loading com.google.android.webview version 113.0.5672.136 (code 567263637)
+10-08 15:46:52.124  6416  6467 W ziparchive: Unable to open '/data/app/~~efx7_sLRk790LOmsQqbeAg==/com.google.android.trichromelibrary_567263637-jGH7Tg2R--4UJXAyK8Lzcw==/TrichromeLibrary.dm': No such file or directory
+10-08 15:46:52.124  6416  6467 W ziparchive: Unable to open '/data/app/~~efx7_sLRk790LOmsQqbeAg==/com.google.android.trichromelibrary_567263637-jGH7Tg2R--4UJXAyK8Lzcw==/TrichromeLibrary.dm': No such file or directory
+10-08 15:46:52.124  6416  6467 W elhouse.society: Entry not found
+10-08 15:46:52.124  6416  6467 D nativeloader: Configuring clns-7 for other apk /data/app/~~efx7_sLRk790LOmsQqbeAg==/com.google.android.trichromelibrary_567263637-jGH7Tg2R--4UJXAyK8Lzcw==/TrichromeLibrary.apk. target_sdk_version=34, uses_libraries=ALL, library_path=/data/app/~~l7dR38d7YdATtEK84iFnrA==/com.google.android.webview-q7BJapqy6HmfpsPmSAxa5A==/lib/x86_64:/data/app/~~l7dR38d7YdATtEK84iFnrA==/com.google.android.webview-q7BJapqy6HmfpsPmSAxa5A==/WebViewGoogle.apk!/lib/x86_64:/data/app/~~efx7_sLRk790LOmsQqbeAg==/com.google.android.trichromelibrary_567263637-jGH7Tg2R--4UJXAyK8Lzcw==/TrichromeLibrary.apk!/lib/x86_64, permitted_path=/data:/mnt/expand
+10-08 15:46:52.126  6416  6467 D nativeloader: Configuring clns-8 for other apk /data/app/~~l7dR38d7YdATtEK84iFnrA==/com.google.android.webview-q7BJapqy6HmfpsPmSAxa5A==/WebViewGoogle.apk. target_sdk_version=34, uses_libraries=, library_path=/data/app/~~l7dR38d7YdATtEK84iFnrA==/com.google.android.webview-q7BJapqy6HmfpsPmSAxa5A==/lib/x86_64:/data/app/~~l7dR38d7YdATtEK84iFnrA==/com.google.android.webview-q7BJapqy6HmfpsPmSAxa5A==/WebViewGoogle.apk!/lib/x86_64:/data/app/~~efx7_sLRk790LOmsQqbeAg==/com.google.android.trichromelibrary_567263637-jGH7Tg2R--4UJXAyK8Lzcw==/TrichromeLibrary.apk!/lib/x86_64, permitted_path=/data:/mnt/expand
+10-08 15:46:52.136  6416  6467 I cr_WVCFactoryProvider: Loaded version=113.0.5672.136 minSdkVersion=29 isBundle=false multiprocess=true packageId=2
+10-08 15:46:52.143  6416  6467 I cr_LibraryLoader: Successfully loaded native library
+10-08 15:46:52.144  6416  6467 I cr_CachingUmaRecorder: Flushed 8 samples from 8 histograms.
+10-08 15:46:52.155  6416  6472 I cr_VariationsUtils: Failed reading seed file "/data/user/0/com.reelhouse.society/app_webview/variations_seed_new"
+10-08 15:46:52.156  6416  6472 I cr_VariationsUtils: Failed reading seed file "/data/user/0/com.reelhouse.society/app_webview/variations_seed"
+10-08 15:46:52.156  6416  6472 I cr_VariationsUtils: Requesting new seed from IVariationsSeedServer
+10-08 15:46:52.166  6416  6467 D TrafficStats: tagSocket(118) with statsTag=0xffffffff, statsUid=-1
+10-08 15:46:52.217  6416  6445 W ReactNativeJS: [e2e] screen.ready {"name":"welcome","ms":69}
+10-08 15:46:52.234  6416  6416 D CompatibilityChangeReporter: Compat change id reported: 171228096; UID 10192; state: ENABLED
+10-08 15:46:52.242  6416  6416 W [RNScreens]: backTitleVisible prop is not available on Android
+10-08 15:46:52.242  6416  6416 W [RNScreens]: backTitleFontFamily prop is not available on Android
+10-08 15:46:52.242  6416  6416 W [RNScreens]: disableBackButtonMenu prop is not available on Android
+10-08 15:46:52.242  6416  6416 W [RNScreens]: largeTitleFontFamily prop is not available on Android
+10-08 15:46:52.242  6416  6416 W [RNScreens]: largeTitleFontWeight prop is not available on Android
+10-08 15:46:52.242  6416  6416 W [RNScreens]: largeTitleHideShadow prop is not available on Android
+10-08 15:46:52.252  6416  6446 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.
+10-08 15:46:52.253  6416  6446 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.
+10-08 15:46:52.253  6416  6445 W ReactNativeJS: [e2e] auth.storage.read {"kind":"session","from":"none","encrypted":true}
+10-08 15:46:52.264  6416  6416 I ReactNative: [GESTURE HANDLER] Initialize gesture handler for root view com.facebook.react.runtime.ReactSurfaceView{75aedd1 V.E...... ......ID 0,0-1080,2400 #1}
+10-08 15:46:52.272  6416  6445 W ReactNativeJS: [e2e] auth.storage.read {"kind":"session","from":"none","encrypted":true}
+10-08 15:46:52.272  6416  6445 W ReactNativeJS: [e2e] auth.storage.read {"kind":"session","from":"none","encrypted":true}
+10-08 15:46:52.273  6416  6445 W ReactNativeJS: [e2e] auth.storage.read {"kind":"session","from":"none","encrypted":true}
+10-08 15:46:52.273  6416  6445 W ReactNativeJS: [e2e] auth.restore {"session":false,"cached":false}
+10-08 15:46:52.278  6416  6446 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.
+10-08 15:46:52.278  6416  6446 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.
+10-08 15:46:52.278  6416  6445 W ReactNativeJS: [e2e] auth.storage.read {"kind":"session","from":"none","encrypted":true}
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Entering merged library JNI_OnLoad.
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Preparing 12 pre-merged libs (including stub)
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Preparing to register libfabricjni_so.  onload_func: 0x7a6c5a0b2ba0
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Preparing to register libreact_devsupportjni_so.  onload_func: 0x7a6c5a18e530
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Preparing to register libreact_featureflagsjni_so.  onload_func: 0x7a6c5a1a10a0
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Preparing to register libreact_newarchdefaults_so.  onload_func: 0x7a6c5a1c7fa0
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Preparing to register libreactnativeblob_so.  onload_func: 0x7a6c5a26fa50
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Preparing to register libreactnativejni_so.  onload_func: 0x7a6c5a28a8c0
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Preparing to register libreactnativejni_common_so.  onload_func: 0x7a6c5a291150
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Preparing to register librninstance_so.  onload_func: 0x7a6c5a2af450
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Preparing to register libturbomodulejsijni_so.  onload_func: 0x7a6c5a35ab80
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Preparing to register libuimanagerjni_so.  onload_func: 0x7a6c5a362ab0
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: Preparing to register libyoga_so.  onload_func: 0x7a6c5a36a130
+10-08 15:46:52.280  6416  6445 D jni_lib_merge: About to register 11 actual methods.
+10-08 15:46:52.281  6416  6445 W ReactNativeJS: [e2e] auth.storage.read {"kind":"session","from":"none","encrypted":true}
+10-08 15:46:52.580  6416  6416 D Glide   : Finished loading BitmapDrawable from LOCAL for android.resource://com.reelhouse.society/2131230858 with size [445x444] in 304.622971 ms
+10-08 15:46:52.587  6416  6416 D Glide   : Finished loading BitmapDrawable from LOCAL for android.resource://com.reelhouse.society/2131230858 with size [445x444] in 311.94667 ms
+10-08 15:46:52.588  6416  6416 D SplashScreenView: Building from parcel drawable: android.graphics.drawable.BitmapDrawable@edddef3
+10-08 15:46:52.589  6416  6416 D SplashScreenView: Build android.window.SplashScreenView{c0b629 V.E...... ......ID 0,0-0,0}
+10-08 15:46:52.589  6416  6416 D SplashScreenView: Icon: view: androidx.appcompat.widget.AppCompatImageView{6443dae V.ED..... ......I. 0,0-0,0 #10204f0 android:id/splashscreen_icon_view} drawable: android.graphics.drawable.BitmapDrawable@edddef3 size: 504
+10-08 15:46:52.589  6416  6416 D SplashScreenView: Branding: view: android.view.View{86d774f G.ED..... ......I. 0,0-0,0 #10204ef android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-08 15:46:53.043  6416  6494 D TrafficStats: tagSocket(132) with statsTag=0xffffffff, statsUid=-1
+10-08 15:46:53.043  6416  6492 D TrafficStats: tagSocket(133) with statsTag=0xffffffff, statsUid=-1
+10-08 15:46:53.043  6416  6493 D TrafficStats: tagSocket(134) with statsTag=0xffffffff, statsUid=-1
+10-08 15:46:53.043  6416  6491 D TrafficStats: tagSocket(135) with statsTag=0xffffffff, statsUid=-1
+10-08 15:46:53.043  6416  6495 D TrafficStats: tagSocket(136) with statsTag=0xffffffff, statsUid=-1
+10-08 15:46:53.182  6416  6467 D TrafficStats: tagSocket(132) with statsTag=0xffffffff, statsUid=-1
+10-08 15:46:53.425  6416  6483 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/i7UyjfPio0VFHB9rBUZSFyhOoM8.jpg with size [-2147483648x-2147483648] in 503.048449 ms
+10-08 15:46:53.426  6416  6484 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/fYXqpgPmHMphSF2W30GbTeJVIa5.jpg with size [-2147483648x-2147483648] in 503.474995 ms
+10-08 15:46:53.453  6416  6483 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/sfQtVlIHljToOwYjhe21KPGzZWK.jpg with size [-2147483648x-2147483648] in 528.670356 ms
+10-08 15:46:53.455  6416  6484 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/39aMkR8Y5vhCG9dTkjiqRl8AVqp.jpg with size [-2147483648x-2147483648] in 532.4883169999999 ms
+10-08 15:46:53.458  6416  6483 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/1ApfSA8JTqeha3GTFEY8syV4auq.jpg with size [-2147483648x-2147483648] in 533.562639 ms
+10-08 15:46:53.462  6416  6483 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/niQ4NBh2jqAf1hDZP5m6ReWFAb7.jpg with size [-2147483648x-2147483648] in 538.07862 ms
+10-08 15:46:53.465  6416  6483 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/bRwnj8WEKBCvmfeUNOukJPwB43K.jpg with size [-2147483648x-2147483648] in 540.831815 ms
+10-08 15:46:53.468  6416  6483 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/rhGx6E3qRNMgj3i5su2oukNHwIQ.jpg with size [-2147483648x-2147483648] in 543.821111 ms
+10-08 15:46:53.471  6416  6483 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/bjiS5ipwxb9JFy3XRRN4OAilSeX.jpg with size [-2147483648x-2147483648] in 547.250805 ms
+10-08 15:46:53.480  6416  6484 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/vfZxVHextAGC70zrNhS8lsROqP1.jpg with size [-2147483648x-2147483648] in 556.4261329999999 ms
+10-08 15:46:53.508  6416  6483 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/5rhTDKUhPYvpdQIijFIs5VoWsON.jpg with size [-2147483648x-2147483648] in 583.503709 ms
+10-08 15:46:53.510  6416  6483 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/jzPwsojjFStf5lR5Nm07w2hH56G.jpg with size [-2147483648x-2147483648] in 585.886722 ms
+10-08 15:46:53.522  6416  6483 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/6Q6Zo6GNXMLP600OJSh6MhW21um.jpg with size [-2147483648x-2147483648] in 597.838629 ms
+10-08 15:46:53.617  6416  6483 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/gaet1xQ2nxrG0V1Ep9T20ZMNEIC.jpg with size [-2147483648x-2147483648] in 692.3747609999999 ms
+10-08 15:46:53.647  6416  6416 D SplashScreenView: remove starting view
+10-08 15:46:53.658  6416  6484 D Glide   : Finished loading BitmapDrawable from REMOTE for https://image.tmdb.org/t/p/w342/lmrulvLbmaejTix1YaMxo1oGhH1.jpg with size [-2147483648x-2147483648] in 733.2170719999999 ms
+10-08 15:46:53.718  6416  6423 I elhouse.society: NativeAlloc concurrent copying GC freed 531308(24MB) AllocSpace objects, 57(3620KB) LOS objects, 49% free, 13MB/26MB, paused 43us,21us total 276.579ms
+10-08 15:46:53.728  6416  6425 W System  : A resource failed to call release. 
+10-08 15:46:53.806  6416  6434 D EGL_emulation: app_time_stats: avg=154.28ms min=39.38ms max=375.50ms count=8
+10-08 15:46:54.982  6416  6434 D EGL_emulation: app_time_stats: avg=84.24ms min=33.22ms max=187.70ms count=9
+10-08 15:46:55.743  6416  6446 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.
+10-08 15:46:55.744  6416  6446 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.
+10-08 15:46:56.021  6416  6434 D EGL_emulation: app_time_stats: avg=147.47ms min=39.26ms max=263.43ms count=4
+10-08 15:46:57.157  6416  6434 D EGL_emulation: app_time_stats: avg=64.18ms min=3.12ms max=156.63ms count=6
+10-08 15:46:57.535  6416  6524 D ProfileInstaller: Installing profile for com.reelhouse.society
+10-08 15:46:58.217  6416  6434 D EGL_emulation: app_time_stats: avg=74.24ms min=30.29ms max=159.24ms count=6
+10-08 15:46:59.325  6416  6434 D EGL_emulation: app_time_stats: avg=81.17ms min=15.10ms max=195.26ms count=6
+10-08 15:47:00.454  6416  6434 D EGL_emulation: app_time_stats: avg=90.11ms min=35.15ms max=223.24ms count=6
+10-08 15:47:01.583  6416  6434 D EGL_emulation: app_time_stats: avg=60.11ms min=31.87ms max=148.22ms count=6
+10-08 15:47:02.608  6416  6434 D EGL_emulation: app_time_stats: avg=72.84ms min=29.01ms max=178.18ms count=5
+10-08 15:47:03.775  6416  6434 D EGL_emulation: app_time_stats: avg=91.12ms min=36.22ms max=207.09ms count=6
+10-08 15:47:04.804  6416  6434 D EGL_emulation: app_time_stats: avg=40.31ms min=35.20ms max=46.04ms count=5
+10-08 15:47:05.823  6416  6434 D EGL_emulation: app_time_stats: avg=64.19ms min=32.67ms max=156.35ms count=5

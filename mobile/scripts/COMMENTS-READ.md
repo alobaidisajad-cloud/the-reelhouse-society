@@ -134,7 +134,7 @@ without one). "Read" is the day its comments were last read against its code.
 | CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
 | e2e/__tests__/flowScreens.test.ts | 2026-10-04 | QueryController no longer counted; Android 14 names what animated; Maestro's JUnit reason, the no-record flow, the decision line |
 | e2e/__tests__/attempt.test.ts | 2026-10-04 | written with attempt.mjs: each retry rule shown to refuse on its own, in Maestro 2.10.0's record shapes |
-| e2e/__tests__/appCrashes.test.ts | 2026-10-04 | written with app-crashes.mjs: the app's crash, native crash and ANR in threadtime lines; other processes left out; an unproven copy fails |
+| e2e/__tests__/appCrashes.test.ts | 2026-10-15 | edited: the soft crash caught from cut logs (study arm A, Sealed E2E 38262703073), the fixed launch and another process passed |
 | e2e/__tests__/animationWaits.test.ts | 2026-10-04 | written with animation-waits.mjs: each wait on its flow, Android 14's named container |
 | e2e/__tests__/glideLogLevel.test.ts | 2026-10-08 | written with glide-log-level.mjs, on dexdump lines in the shape of runs 37628665206 and 37674283540 |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
@@ -144,7 +144,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/screenTimes.test.ts | 2026-10-02 | Written in the launch audit: the screen-time reader on threadtime log lines, and every way its gate says no. |
 | e2e/annotate.mjs | 2026-10-04 | the password hidden at the one door out; a summary-only level for past ten notices |
 | e2e/animation-waits.mjs | 2026-10-04 | the probes come first now; true as written |
-| e2e/app-crashes.mjs | 2026-10-04 | written: the app crashing or freezing at any moment fails the run; the copy must be shown to reach the end |
+| e2e/app-crashes.mjs | 2026-10-15 | edited: a soft crash (React destroyed, no dialog) from a pid the log names as the app's counts as a crash |
 | e2e/attempt.mjs | 2026-10-04 | written: the retry rule, from runs 37155828199 and 37165878763, read against Maestro 2.10.0's source |
 | e2e/db/bootstrap.mjs | 2026-09-28 | 7 findings; stale function count and 'how this was found' asides dropped |
 | e2e/db/old-clients.mjs | 2026-10-15 | new |

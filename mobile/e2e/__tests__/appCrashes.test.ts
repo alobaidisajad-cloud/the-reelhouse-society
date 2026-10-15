@@ -7,7 +7,7 @@
  * Maestro's per-flow crash reports.
  */
 import { spawnSync } from 'child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
@@ -126,5 +126,36 @@ describe('a log that did not see the whole run cannot vouch for it', () => {
     const r = check(javaCrash('01:21:30', 16631, 'com.reelhouse.society'), ['--stream-alive', 'no']);
     expect(r.out.split('\n')[0]).toContain('crashed or froze during the run');
     expect(r.out).toContain('cannot vouch for the whole run');
+  });
+});
+
+describe('a soft crash: React destroyed with no crash dialog, the app alive and its screen gone', () => {
+  // Cut from kept logs, never typed: study run 37800869905 and Sealed E2E run 38262703073.
+  const fixture = (name: string) => readFileSync(join(__dirname, 'fixtures', name), 'utf8');
+
+  it('is caught: the launch crash with animations on (the study\'s arm A)', () => {
+    const r = check(fixture('soft-crash-study-arm-A.txt'));
+    expect(r.status).toBe(1);
+    expect(r.out).toContain('JS error (React instance destroyed)');
+    expect(r.out).toContain('undefined is not a function');
+  });
+
+  it('is caught: React destroyed mid-run by a mount on a missing parent (Sealed E2E 38262703073)', () => {
+    const r = check(fixture('soft-crash-e2e-38262703073.txt'));
+    expect(r.status).toBe(1);
+    expect(r.out.split('\n').filter((l) => l.includes('JS error (React instance destroyed)'))).toEqual([
+      expect.stringContaining('Unable to find viewState for tag 2450. Surface stopped: false'),
+    ]);
+  });
+
+  it('passes the fixed build\'s launch (the study\'s arm MF)', () => {
+    expect(check(fixture('soft-crash-study-arm-MF.txt')).status).toBe(0);
+  });
+
+  it('passes the same lines from another process', () => {
+    const elsewhere = fixture('soft-crash-study-arm-A.txt').split('\n')
+      .map((l) => (l.includes('Start proc') ? l : l.replace(/^(\S+ \S+\s+)6176(\s+)/, '$17777$2'))).join('\n');
+    expect(elsewhere).toContain(' 7777 ');
+    expect(check(elsewhere).status).toBe(0);
   });
 });
