@@ -4,6 +4,7 @@ import { Text } from '@/src/components/text';
 import { useBottomEdge, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import Animated, { useSharedValue, useAnimatedScrollHandler, withSequence, withTiming } from 'react-native-reanimated';
 import { arrive, MARK_PULSE, MS } from '@/src/theme/motion';
+import { useScrollTraceOf } from '@/src/hooks/useScrollTrace';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { ArrowLeft, RotateCcw, Check, XCircle } from 'lucide-react-native';
@@ -110,8 +111,15 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     bookmarkScale
   } = useFilmAnimations({ isFocused, skeleton: loading && validFilmId, scrollY, backdropHeight: BACKDROP_H });
 
-  const onScroll = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
+  // Each scroll measured on the phones, as one transaction (useScrollTrace).
+  const isScrolling = useSharedValue(false);
+  useScrollTraceOf(isScrolling);
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (event) => { scrollY.value = event.contentOffset.y; },
+    onBeginDrag: () => { isScrolling.value = true; },
+    onEndDrag: () => { isScrolling.value = false; },
+    onMomentumBegin: () => { isScrolling.value = true; },
+    onMomentumEnd: () => { isScrolling.value = false; },
   });
 
   const handleWatchlistToggled = useCallback(() => {

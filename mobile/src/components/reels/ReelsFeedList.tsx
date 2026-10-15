@@ -9,6 +9,7 @@ import { globalScrollY } from '@/src/lib/scrollBridge';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { CinematicScrollbar } from '@/src/components/layout/CinematicScrollbar';
+import { useScrollTraceOf } from '@/src/hooks/useScrollTrace';
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as any;
 
@@ -63,6 +64,8 @@ export function ReelsFeedList({
   const scrollHeight = useSharedValue(0);
   const viewHeight = useSharedValue(0);
   const isScrolling = useSharedValue(false);
+  // Each scroll measured on the phones, as one transaction (useScrollTrace).
+  useScrollTraceOf(isScrolling, 'logs');
 
   useEffect(() => {
     return () => {

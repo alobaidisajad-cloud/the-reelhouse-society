@@ -12,6 +12,47 @@ import { logger } from '../utils/logger';
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
 const IS_DEV = __DEV__;
 
+/** The share of transactions kept that are not kept whole. */
+export const OTHER_RATE = 0.2;
+
+/** A scroll's transaction: its name begins with this, then its screen (startScrollSpan). */
+export const SCROLL_SPAN = 'scroll';
+
+/** The name a screen's transaction starts with, before its route is known. */
+const ROUTE_CHANGE = 'Route Change';
+
+/**
+ * The main screens, by their route's name: each opening of one is kept, so its
+ * warm opens can be judged on the phones. The six tabs, a salon, a film, a
+ * member's file, a stack, a log and a Dispatch paper.
+ */
+export const MAIN_ROUTES: readonly string[] = [
+  'index', 'reels', 'dispatch', 'darkroom', 'lounge', 'profile',
+  'lounge/[id]', 'film/[id]', 'user/[username]', 'stacks/[id]', 'log/[id]', 'dispatch/[id]',
+];
+
+type Sampled = { name: string; attributes?: Record<string, unknown> };
+
+/**
+ * Which transactions are kept: every scroll, so each one's slow and frozen
+ * frames reach Sentry; every screen's opening, which keepTransaction thins
+ * once its route is named; the rest at OTHER_RATE.
+ */
+export function tracesSampler({ name, attributes }: Sampled): number {
+  if (IS_DEV) return 1;
+  if (name.startsWith(`${SCROLL_SPAN} `)) return 1;
+  if (name === ROUTE_CHANGE || attributes?.['sentry.op'] === 'navigation') return 1;
+  return OTHER_RATE;
+}
+
+type Sent = { transaction?: string; contexts?: { trace?: { op?: string } } };
+
+/** A screen's opening, now named: a main screen's is sent, another's at OTHER_RATE. */
+export function keepTransaction<E extends Sent>(event: E, random: () => number = Math.random): E | null {
+  if (event.contexts?.trace?.op !== 'navigation') return event;
+  return MAIN_ROUTES.includes(event.transaction ?? '') || random() < OTHER_RATE ? event : null;
+}
+
 /**
  * Called once, when the root layout's module loads: before the first render,
  * so the app's start and any error in it are seen. Nothing is sent in
@@ -25,8 +66,8 @@ export function initSentry() {
 
   Sentry.init({
     dsn: SENTRY_DSN,
-    // Performance monitoring — sample 20% of transactions in production
-    tracesSampleRate: IS_DEV ? 1.0 : 0.2,
+    tracesSampler,
+    beforeSendTransaction: (event) => keepTransaction(event),
     // What a member waits for, measured on their phone: the app's start, cold
     // and warm (ended by markAppLoaded, when the first screen shows); each
     // screen until its first frame and until its content is in (useScreenReady);
@@ -68,6 +109,23 @@ export function initSentry() {
     // Environment tagging
     environment: IS_DEV ? 'development' : 'production',
   });
+}
+
+/**
+ * Opens a scroll's transaction; the function it returns closes it. The slow
+ * and frozen frames drawn between the two are counted in it
+ * (enableNativeFramesTracking). Without a DSN, nothing is opened.
+ */
+export function startScrollSpan(screen: string): () => void {
+  if (!SENTRY_DSN) return () => {};
+  try {
+    const span = Sentry.startInactiveSpan({ name: `${SCROLL_SPAN} ${screen}`, op: 'ui.scroll', forceTransaction: true });
+    return () => {
+      try { span.end(); } catch { /* telemetry must never break the caller — see captureError */ }
+    };
+  } catch {
+    return () => {};
+  }
 }
 
 let appLoaded = false;

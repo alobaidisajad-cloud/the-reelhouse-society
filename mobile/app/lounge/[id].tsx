@@ -54,6 +54,7 @@ import { formatClockTime, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import { authorName, isDepartedHandle, quotedName } from '@/src/constants/departed';
+import { useScrollTrace } from '@/src/hooks/useScrollTrace';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -345,6 +346,8 @@ export default function LoungeRoomScreen() {
   const barFoot = useBottomEdge() + BAR_FOOT_GAP;
   const headerTop = usePushedHeaderTop();
   const { isOffline } = useOfflineAware();
+  // Each scroll measured on the phones, as one transaction (useScrollTrace).
+  const { traceProps } = useScrollTrace();
 
   const keyboard = useAnimatedKeyboard();
   // iOS only: on Android the root ends at the keyboard (KeyboardRoom).
@@ -669,6 +672,7 @@ export default function LoungeRoomScreen() {
         <FlashList
           data={currentMessages}
           keyExtractor={(item) => item.id}
+          {...traceProps}
           contentContainerStyle={s.list}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}

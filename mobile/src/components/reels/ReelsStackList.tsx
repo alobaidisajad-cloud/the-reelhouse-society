@@ -10,6 +10,7 @@ import Animated, { useAnimatedScrollHandler, type SharedValue, useSharedValue } 
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { colors } from '@/src/theme/theme';
 import { CinematicScrollbar } from '@/src/components/layout/CinematicScrollbar';
+import { useScrollTraceOf } from '@/src/hooks/useScrollTrace';
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as any;
 
@@ -58,6 +59,8 @@ export function ReelsStackList({
   const scrollHeight = useSharedValue(0);
   const viewHeight = useSharedValue(0);
   const isScrolling = useSharedValue(false);
+  // Each scroll measured on the phones, as one transaction (useScrollTrace).
+  useScrollTraceOf(isScrolling, 'stacks');
 
   const onScrollWorklet = useAnimatedScrollHandler({
     onScroll: (e) => {

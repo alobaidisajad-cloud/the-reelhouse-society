@@ -101,7 +101,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/reels.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/+not-found.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
 | app/auth-callback.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
-| app/dispatch/[id].tsx | 2026-10-15 | edited: the reader's read; the docked bar on the edge, the page above it (useAboveDockedBar) |
+| app/dispatch/[id].tsx | 2026-10-15 | edited: the reader's read; the docked bar on the edge, the page above it (useAboveDockedBar); each scroll traced |
 | app/dispatch/archive.tsx | 2026-10-15 | foot from useContentBottom |
 | app/dispatch/compose.tsx | 2026-10-15 | header and door from useModalTop; feet from navMetrics; the essay's footer never on the edge |
 | app/dispatch/room/[username].tsx | 2026-10-15 | foot from useContentBottom, scrollbar from useBottomEdge |
@@ -118,7 +118,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | 2026-10-15 | header and badge from usePushedHeaderTop; foot from useContentBottom |
 | app/lounge.tsx | 2026-10-01 | true as written |
-| app/lounge/[id].tsx | 2026-10-15 | edited: the room's read; the composer and its bars stand on the edge (BAR_FOOT_GAP) |
+| app/lounge/[id].tsx | 2026-10-15 | edited: the room's read; the composer and its bars stand on the edge (BAR_FOOT_GAP); each scroll traced |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-04 | edited: a portrait without a photograph carries the whole first letter, unspoken |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | 2026-10-15 | back, veil and scrollbar from usePushedHeaderTop; foot from useContentBottom |
@@ -425,7 +425,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-01 | written: the critiques' failure reaches the page; an unread verdict is unknown |
 | src/components/film/CastCarousel.tsx | 2026-10-04 | edited: an actor without a photograph is drawn by initialOf |
 | src/components/film/FilmActionTray.tsx | 2026-10-01 | histories to the present |
-| src/components/film/FilmDetailLayout.tsx | 2026-10-15 | back and scroll header from usePushedHeaderTop; the stub on the edge (useBottomEdge) |
+| src/components/film/FilmDetailLayout.tsx | 2026-10-15 | back and scroll header from usePushedHeaderTop; the stub on the edge (useBottomEdge); each scroll traced |
 | src/components/film/FilmDossier.tsx | 2026-10-01 | what it holds, not what it absorbed |
 | src/components/film/FilmHero.tsx | 2026-10-01 | an unknown verdict claims nothing; histories to the present |
 | src/components/film/FilmHeroSkeleton.tsx | 2026-10-15 | the waiting dock on the edge (bottomEdge) |
@@ -465,9 +465,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/__tests__/theThumbStaysInItsTrack.test.ts | 2026-10-01 | runs the real maths |
 | src/components/layout/__tests__/TopNavBar.test.tsx | — |  |
 | src/components/layout/CentredRoom.tsx | 2026-10-15 | new: a centred page between its edges, scrolled when taller |
-| src/components/layout/CinematicFlashList.tsx | 2026-10-02 | Read (launch audit). Sound; left alone. |
+| src/components/layout/CinematicFlashList.tsx | 2026-10-15 | edited: each scroll traced (useScrollTraceOf) |
 | src/components/layout/CinematicScrollbar.tsx | 2026-10-01 | the thumb maths in one place |
-| src/components/layout/CinematicScrollView.tsx | 2026-10-01 | true as written |
+| src/components/layout/CinematicScrollView.tsx | 2026-10-15 | edited: each scroll traced (useScrollTraceOf) |
 | src/components/layout/ConciergeButton.tsx | 2026-10-02 | door through nav; the hint names all three doors |
 | src/components/layout/FrozenTab.tsx | 2026-10-01 | says it passes through; freezing carried to performance |
 | src/components/layout/navMetrics.ts | 2026-10-15 | every page's top and foot: the bar's measure and the helpers |
@@ -668,9 +668,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | 2026-10-15 | edited: the E2E is told a failed reel failed, and an empty one was read |
 | src/components/reels/MemberRegistry.tsx | 2026-10-01 | nav; comments cut to the why |
 | src/components/reels/ReelsCards.tsx | 2026-10-03 | edited: the loader is his eyes; the flicker is gone |
-| src/components/reels/ReelsFeedList.tsx | 2026-10-15 | edited: each log row carries reel-log |
+| src/components/reels/ReelsFeedList.tsx | 2026-10-15 | edited: each log row carries reel-log; each scroll traced |
 | src/components/reels/ReelsHeader.tsx | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
-| src/components/reels/ReelsStackList.tsx | 2026-10-15 | edited: each stack cell carries reel-stack |
+| src/components/reels/ReelsStackList.tsx | 2026-10-15 | edited: each stack cell carries reel-stack; each scroll traced |
 | src/components/reels/types.ts | 2026-10-01 | true as written |
 | src/components/RouteErrorBoundary.tsx | 2026-10-15 | top from useOverlayTop |
 | src/components/search/SearchResultRow.tsx | 2026-10-02 | ReelRating draws halves; resultLabel says what the row is |
@@ -755,10 +755,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx | 2026-10-01 | written: each read cancelled only by what makes it stale |
 | src/hooks/__tests__/aRestoredNoteIsSent.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a draft's restored private note is sealed with the record. |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
+| src/hooks/__tests__/aScrollIsOneTransaction.test.tsx | 2026-10-15 | new |
 | src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-01 | written with useSheetPresence |
 | src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-01 | written with useKeyboardLift |
 | src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-15 | the count lowered: nine entrances moved into PresenceView |
 | src/hooks/__tests__/aSlowPhoneIsKnownAtOnce.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a throttled phone is known on the first render. |
+| src/hooks/__tests__/everyMainScreenTracesItsScroll.guard.test.ts | 2026-10-15 | new |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
 | src/hooks/__tests__/theArchiveDoesNotRepeatItself.test.tsx | — |  |
 | src/hooks/__tests__/theRoomDoesNotRepeatItself.test.tsx | 2026-10-01 | written: the room pages on what the server gave |
@@ -810,6 +812,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useProfileController.ts | 2026-10-01 | one isNarrowed for refresh and filters; a follow that throws is said; dead ref gone; no ticket history |
 | src/hooks/useProfileData.ts | 2026-10-01 | each read cancelled only by what makes it stale; failures wiped with the member; comments say what is true now |
 | src/hooks/useScreenReady.tsx | 2026-10-15 | edited: takes the read state; a failed read is screen.failed |
+| src/hooks/useScrollTrace.ts | 2026-10-15 | new: a scroll is one Sentry transaction, begin to rest |
 | src/hooks/useSheetPresence.ts | 2026-10-01 | written: five sheets' rise and fall, once |
 | src/hooks/useTextScale.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
@@ -828,6 +831,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/theSessionIsKeptWhole.test.ts | 2026-10-01 | written with the session store |
 | src/lib/__tests__/theTokenMustNotSurviveLogout.test.ts | — |  |
 | src/lib/__tests__/tmdb.test.ts | — |  |
+| src/lib/__tests__/whatSentryKeeps.test.ts | 2026-10-15 | new |
 | src/lib/authSessionStorage.ts | 2026-10-15 | edited: the first session read stamps an older build's ownerless writes |
 | src/lib/gateMetricsSink.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lib/nativeOnly/revenuecatWebStub.js | 2026-10-03 | read whole: sound |
@@ -838,7 +842,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/refusalEvents.ts | 2026-10-02 | Written in the launch audit: every refusal's sentence, for whoever listens. |
 | src/lib/revenueCat.ts | 2026-10-03 | payments pass: the SDK is required (Jest runs every store path); a rank is queued for the account the store sold to |
 | src/lib/scrollBridge.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/lib/sentry.ts | 2026-10-02 | Read whole (launch audit). The re-export was said to be for an ErrorBoundary wrapper in _layout; its one caller tags the session. |
+| src/lib/sentry.ts | 2026-10-15 | edited: tracesSampler keeps every scroll and screen opening, keepTransaction thins the rest; MAIN_ROUTES; startScrollSpan |
 | src/lib/supabase.ts | 2026-10-01 | the session kept by authSessionStorage; comments short |
 | src/lib/tmdb.ts | 2026-10-02 | read; sound |
 | src/lib/tmdbErrors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |

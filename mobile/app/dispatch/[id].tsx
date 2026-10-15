@@ -63,6 +63,7 @@ import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useUnsent } from '@/src/stores/offlineQueueStore';
 import { HOUSE_WEB } from '@/src/constants/support';
 import { useAboveDockedBar, useBottomEdge } from '@/src/components/layout/navMetrics';
+import { useScrollTrace } from '@/src/hooks/useScrollTrace';
 
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
 const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
@@ -128,6 +129,8 @@ export default function FilingReader() {
     }, 1000);
     return () => clearTimeout(t);
   }, [draft, id, me?.id]);
+  // Each scroll measured on the phones, as one transaction (useScrollTrace).
+  const { traceProps } = useScrollTrace();
   const scroller = useRef<ScrollView>(null);
   // Where the critiques begin, for the mark of a filing that is gone.
   const critiquesAt = useRef(0);
@@ -415,6 +418,7 @@ export default function FilingReader() {
 
       <ScrollView
         ref={scroller}
+        {...traceProps}
         // The app's law for a router screen: the OS moves the content for the
         // keyboard. KeyboardAvoidingView is for a Modal, and using it here would
         // fight the inset the system already applies.

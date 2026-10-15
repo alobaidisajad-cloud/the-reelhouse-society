@@ -61,6 +61,7 @@ Decisions, as of 2026-09-28:
 | File | The class it enumerates |
 |---|---|
 | `src/components/__tests__/animation-parking.test.ts` | Every endless animation parks when its screen is not focused. |
+| `src/hooks/__tests__/everyMainScreenTracesItsScroll.guard.test.ts` | Each main screen (MAIN_ROUTES) names the file that draws its scroll, and that file traces it to Sentry: a stutter in a scroll is only measured on the phones, which no render shows. |
 | `src/utils/__tests__/everyPictureStatesItsCache.guard.test.ts` | Every expo-image picture in app/ and src/, read with TypeScript's parser: each states its `cachePolicy`, and one on another policy is listed with its reason. A picture with none decodes again on every visit, which no render shows. |
 | `src/components/motion/__tests__/exitingIsNeverUsed.guard.test.ts` | Every JSX attribute in app/ and src/, read with TypeScript's parser: none is Reanimated's `exiting`, which withholds a removal React has made and can destroy React on Android; and the count of exits that play through `PresenceView`. Leaving is tested by mounting (`Presence.test.tsx`). |
 | `src/components/__tests__/busterRegister.test.ts` | Every place Buster is drawn, read from each file's syntax tree (a renamed import followed), held to the register (one to a screen, never in a row); and every picture of him, by file and by its PNG's own pixel size. His behaviour is tested by mounting him (`Buster.test.tsx`). |

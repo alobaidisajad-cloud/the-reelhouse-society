@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { ScrollViewProps, LayoutChangeEvent } from 'react-native';
 import Animated, { useAnimatedScrollHandler, useSharedValue, type SharedValue } from 'react-native-reanimated';
 import { CinematicScrollbar } from './CinematicScrollbar';
+import { useScrollTraceOf } from '@/src/hooks/useScrollTrace';
 
 interface CinematicScrollViewProps extends ScrollViewProps {
   externalScrollY?: SharedValue<number>;
@@ -43,6 +44,8 @@ export const CinematicScrollView = React.forwardRef<Animated.ScrollView, Cinemat
   const activeScrollHeight = scrollMetrics?.scrollHeight ?? internalScrollHeight;
   const activeViewHeight = scrollMetrics?.viewHeight ?? internalViewHeight;
   const activeIsScrolling = scrollMetrics?.isScrolling ?? internalIsScrolling;
+  // Each scroll measured on the phones, as one transaction (useScrollTrace).
+  useScrollTraceOf(activeIsScrolling);
 
   const handleContentSizeChange = useCallback((w: number, h: number) => {
     activeScrollHeight.value = h;
