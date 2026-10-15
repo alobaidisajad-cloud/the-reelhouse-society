@@ -8,22 +8,24 @@
  * A list that keeps an `isScrolling` value hands it to useScrollTraceOf; a
  * plain list spreads `traceProps` from useScrollTrace onto itself.
  */
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useSegments } from 'expo-router';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import * as Navigation from '@react-navigation/native';
 import { runOnJS, useAnimatedReaction, type SharedValue } from 'react-native-reanimated';
 import { startScrollSpan } from '@/src/lib/sentry';
 
 /** A drag that ends and the glide that follows are one scroll: the end waits this long for the glide. */
 export const SCROLL_SETTLE_MS = 150;
 
-/** The route's name, as the router's screens are named: its folders and file, without groups. */
-export function routeName(segments: readonly string[]): string {
-  return segments.filter((s) => !s.startsWith('(')).join('/') || 'index';
-}
+/** Outside any screen (or where the navigation library is absent), a scroll has no route. */
+const NO_ROUTE = createContext<{ name: string } | undefined>(undefined);
+const ROUTE = (Navigation.NavigationRouteContext as typeof NO_ROUTE | undefined) ?? NO_ROUTE;
+
+/** Where a scroll is named from no screen. */
+export const NO_SCREEN = 'unrouted';
 
 export function useScrollTrace(list?: string) {
-  const segments = useSegments();
-  const route = routeName(segments);
+  // The nearest screen's route, named as Sentry names its opening: 'reels', 'film/[id]'.
+  const route = useContext(ROUTE)?.name ?? NO_SCREEN;
   const name = list ? `${route} ${list}` : route;
   const end = useRef<(() => void) | null>(null);
   const settling = useRef<ReturnType<typeof setTimeout> | null>(null);
