@@ -157,6 +157,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/easUpload.guard.test.ts` | Every .gitignore rule against the root .easignore, which EAS reads in their place. |
 | `src/utils/__tests__/maestroFlows.guard.test.ts` | Every Maestro flow names only what the app has. |
 | `src/utils/__tests__/notificationColumns.guard.test.ts` | A notification column's four gates, the SELECT among them. |
+| `src/utils/__tests__/rehearsalsRunInCi.guard.test.ts` | Every production rehearsal (SQL a person runs on production), its kit, the seed and the CI step that runs them: each opens and ends the one way, holds no transaction control or real member's id, and CI runs them all. What each case asks is run by e2e/db/rehearsals.mjs in db-integration.yml. |
 | `src/utils/__tests__/secretsScan.guard.test.ts` | The secrets scan's rules, its baseline and the job that runs them: the files ARE the rule. |
 | `src/utils/__tests__/schemaSnapshot.guard.test.ts` | The committed snapshot of production holds what it must. |
 | `src/utils/__tests__/theFrontDeskAnswers.test.ts` | The support address, held in one place and printed from it. |

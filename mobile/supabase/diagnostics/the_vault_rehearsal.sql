@@ -1,53 +1,73 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- THE VAULT — a rehearsal against production, always rolled back
+-- the_vault_rehearsal.sql — every rule a private note lives by. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
--- Runs every rule a private note lives by as REAL members on REAL rows, inside
--- one transaction that is rolled back. Prints PASS/FAIL per case, then proves
--- nothing changed.
+--   psql "$SUPABASE_DB_URL" -X -q -t -A -f mobile/supabase/diagnostics/the_vault_rehearsal.sql
+--   psql "$SUPABASE_DB_URL" -X -q -t -A -v migration=<file.sql> -f mobile/supabase/diagnostics/the_vault_rehearsal.sql
 --
---   psql "$SUPABASE_DB_URL" -X -q -f supabase/diagnostics/the_vault_rehearsal.sql
---   psql "$SUPABASE_DB_URL" -X -q -v migration=<file.sql> -f supabase/diagnostics/the_vault_rehearsal.sql
+-- Runs every rule a private note lives by as members on their own rows, inside
+-- one transaction that is rolled back. The second form applies a migration
+-- INSIDE the transaction first, so a fix can be proven on production before
+-- anybody runs it. The migration must hold NO BEGIN/COMMIT/ROLLBACK: one would
+-- close this transaction and write for real.
 --
--- The second form applies a migration INSIDE the transaction first, so a fix
--- can be proven on production before anybody runs it. The migration must hold
--- NO BEGIN/COMMIT/ROLLBACK — one would close this transaction and write for
--- real (it has happened twice; see memory "never nest transaction control").
---
--- Members used: morpho (Auteur, the owner), malal (free — raised to Archivist
--- inside the transaction, so the attacks are made with full rank), malal1
--- (free, playing a lapsed member).
+-- Members, picked by query: the owner (the member with the most logs that hold
+-- a past viewing, four at least; made an Auteur inside the transaction if not
+-- one), a stranger (a member with a log of their own, raised to Archivist so
+-- the attacks are made with full rank), and a lapsed member (a member with a
+-- log, made free, playing one whose rank ran out). Production runs it by hand;
+-- db-integration.yml runs it on the sealed copy (e2e/db/rehearsals.mjs). Read
+-- each NOTICE as  case|expected|got ; the last line is the verdict, and any
+-- miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
-\pset pager off
-\set ON_ERROR_STOP on
+\set ON_ERROR_STOP 1
 BEGIN;
+\ir rehearsal_kit.sql
 
 \if :{?migration}
 \echo == applying :migration inside the transaction
 \i :migration
 \endif
 
-CREATE TEMP TABLE r (n serial, verdict text, what text) ON COMMIT DROP;
-GRANT ALL ON r TO authenticated; GRANT USAGE ON SEQUENCE r_n_seq TO authenticated;
 CREATE TEMP TABLE ctx (k text PRIMARY KEY, v text) ON COMMIT DROP;
 GRANT ALL ON ctx TO authenticated;
 
+-- The owner: four logs with a past viewing at least; never an admin, and in good standing.
+INSERT INTO ctx SELECT 'victim', pg_temp.rh_found('a member in good standing with four logs that hold a past viewing', (
+  SELECT l.user_id FROM public.logs l JOIN public.profiles p ON p.id = l.user_id
+   WHERE jsonb_array_length(l.viewing_history) > 0 AND p.role IS DISTINCT FROM 'admin'
+     AND NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
+   GROUP BY l.user_id HAVING count(*) >= 4
+   ORDER BY count(*) DESC, l.user_id LIMIT 1))::text;
+-- The stranger and the lapsed member: each with a log of their own, neither an admin.
+INSERT INTO ctx SELECT 'stranger', pg_temp.rh_found('a second member in good standing with a log', (
+  SELECT l.user_id FROM public.logs l JOIN public.profiles p ON p.id = l.user_id
+   WHERE l.user_id::text <> (SELECT v FROM ctx WHERE k = 'victim') AND p.role IS DISTINCT FROM 'admin'
+     AND NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
+   GROUP BY l.user_id ORDER BY min(l.created_at), l.user_id LIMIT 1))::text;
+INSERT INTO ctx SELECT 'lapsed', pg_temp.rh_found('a third member in good standing with a log', (
+  SELECT l.user_id FROM public.logs l JOIN public.profiles p ON p.id = l.user_id
+   WHERE l.user_id::text NOT IN (SELECT v FROM ctx WHERE k IN ('victim', 'stranger')) AND p.role IS DISTINCT FROM 'admin'
+     AND NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
+   GROUP BY l.user_id ORDER BY min(l.created_at), l.user_id LIMIT 1))::text;
 INSERT INTO ctx VALUES
- ('victim',  '6fecf15b-0623-43f1-b240-098ad19df754'),
- ('stranger','fc717f12-c82e-41b4-b608-5cd39e4ac18d'),
- ('lapsed',  '629b60b4-5c56-4b88-a708-afc50ed82637'),
  ('before_notes', (SELECT count(*)::text FROM log_private_notes)),
  ('before_logs',  (SELECT count(*)::text FROM logs));
 INSERT INTO ctx SELECT 'L' || (row_number() OVER (ORDER BY id)), id::text FROM logs
- WHERE user_id = '6fecf15b-0623-43f1-b240-098ad19df754' AND jsonb_array_length(viewing_history) > 0
+ WHERE user_id::text = (SELECT v FROM ctx WHERE k = 'victim') AND jsonb_array_length(viewing_history) > 0
  ORDER BY id LIMIT 4;
-INSERT INTO ctx SELECT 'LL', id::text FROM logs WHERE user_id = '629b60b4-5c56-4b88-a708-afc50ed82637' ORDER BY id LIMIT 1;
-INSERT INTO ctx SELECT 'SL', id::text FROM logs WHERE user_id = 'fc717f12-c82e-41b4-b608-5cd39e4ac18d' ORDER BY id LIMIT 1;
+INSERT INTO ctx SELECT 'LL', id::text FROM logs WHERE user_id::text = (SELECT v FROM ctx WHERE k = 'lapsed') ORDER BY id LIMIT 1;
+INSERT INTO ctx SELECT 'SL', id::text FROM logs WHERE user_id::text = (SELECT v FROM ctx WHERE k = 'stranger') ORDER BY id LIMIT 1;
 -- two films the stranger has not logged, so their new logs are legal
 INSERT INTO ctx SELECT 'film' || (row_number() OVER (ORDER BY film_id)), film_id::text FROM (
   SELECT DISTINCT film_id FROM logs WHERE film_id IS NOT NULL
-     AND film_id NOT IN (SELECT film_id FROM logs WHERE user_id = 'fc717f12-c82e-41b4-b608-5cd39e4ac18d' AND film_id IS NOT NULL)
+     AND film_id NOT IN (SELECT film_id FROM logs WHERE user_id::text = (SELECT v FROM ctx WHERE k = 'stranger') AND film_id IS NOT NULL)
    ORDER BY film_id LIMIT 2) f;
-UPDATE profiles SET tier = 'archivist' WHERE id = 'fc717f12-c82e-41b4-b608-5cd39e4ac18d';
+SELECT pg_temp.rh_need('films the stranger has not logged', (SELECT count(*) FROM ctx WHERE k IN ('film1', 'film2')), 2) AS done \gset rh_
+
+-- Their ranks for the rehearsal: the owner an Auteur, the stranger an Archivist, the lapsed member free.
+UPDATE profiles SET tier = 'auteur' WHERE id::text = (SELECT v FROM ctx WHERE k = 'victim') AND public.profile_tier_weight(tier, role, is_founding) < 2;
+UPDATE profiles SET tier = 'archivist' WHERE id::text = (SELECT v FROM ctx WHERE k = 'stranger');
+UPDATE profiles SET tier = 'cinephile', role = 'cinephile', is_founding = false WHERE id::text = (SELECT v FROM ctx WHERE k = 'lapsed');
 -- a note the lapsed member wrote while they were paid
 INSERT INTO log_private_notes (log_id, viewing_id, user_id, notes)
   SELECT l.id, l.viewing_id, l.user_id, 'written while paid' FROM logs l WHERE l.id = (SELECT v::uuid FROM ctx WHERE k='LL');
@@ -58,7 +78,7 @@ CREATE FUNCTION pg_temp.as_member(uid uuid) RETURNS void LANGUAGE sql AS $$
 $$;
 CREATE FUNCTION pg_temp.c(k text) RETURNS uuid LANGUAGE sql AS $$ SELECT v::uuid FROM ctx WHERE ctx.k = $1 $$;
 CREATE FUNCTION pg_temp.ok(cond boolean, what text) RETURNS void LANGUAGE sql AS $$
-  INSERT INTO r (verdict, what) VALUES (CASE WHEN cond THEN 'PASS' ELSE 'FAIL' END, what);
+  SELECT pg_temp.rh_case(what, 'true', coalesce(cond::text, 'null'));
 $$;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA pg_temp TO authenticated;
 
@@ -249,15 +269,8 @@ DO $$ DECLARE n_live bigint; n_reg bigint; n_bad bigint; BEGIN
       UNION ALL SELECT l.id, (e->>'viewingId')::uuid FROM logs l, jsonb_array_elements(l.viewing_history) e) s
     WHERE NOT EXISTS (SELECT 1 FROM public.viewings v WHERE v.viewing_id = s.vid AND v.log_id = s.id)$q$ INTO n_bad;
   PERFORM pg_temp.ok(n_live = n_reg AND n_bad = 0, format('30 every viewing is registered to exactly its own log (%s viewings, %s registered, %s wrong)', n_live, n_reg, n_bad));
+  RAISE NOTICE 'before the rehearsal: % notes, % logs', (SELECT v FROM ctx WHERE k = 'before_notes'), (SELECT v FROM ctx WHERE k = 'before_logs');
 END $$;
 
-SELECT verdict, what FROM r ORDER BY left(what, 2);
-SELECT count(*) FILTER (WHERE verdict = 'PASS') AS passed, count(*) FILTER (WHERE verdict = 'FAIL') AS failed FROM r;
-SELECT (SELECT v FROM ctx WHERE k = 'before_notes') AS notes_before, (SELECT v FROM ctx WHERE k = 'before_logs') AS logs_before;
+SELECT pg_temp.rh_verdict();
 ROLLBACK;
-
-\echo == after the rollback: nothing changed
-SELECT (SELECT count(*) FROM log_private_notes) AS notes_now,
-       (SELECT count(*) FROM logs)              AS logs_now,
-       (SELECT tier FROM profiles WHERE id = 'fc717f12-c82e-41b4-b608-5cd39e4ac18d') AS stranger_tier,
-       (SELECT count(*) FROM logs WHERE film_title = 'rehearsal') AS rehearsal_logs;

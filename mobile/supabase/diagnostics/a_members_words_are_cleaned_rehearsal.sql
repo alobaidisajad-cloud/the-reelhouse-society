@@ -1,24 +1,26 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_members_words_are_cleaned_rehearsal.sql — 20261003_05. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   cd mobile; psql "$SUPABASE_DB_URL" -X -q -t -A -v with_fix=1 -f supabase/diagnostics/a_members_words_are_cleaned_rehearsal.sql
+--   cd mobile; psql "$SUPABASE_DB_URL" -X -q -t -A -f supabase/diagnostics/a_members_words_are_cleaned_rehearsal.sql
 --
 -- Run from mobile/: the corpus is read from e2e/db/member-text.corpus.json.
 -- The database answers every case in the corpus as the app does; every value
--- already kept becomes the cleaning of what it was, and no other row is
--- touched; a member writing through the API is cleaned on every kind of
--- column (text, a link's title, a past viewing); the cleaning runs first on
--- each table; no API role can call it. Without with_fix the rehearsal says no.
--- Read each NOTICE as  case | expected | got.
+-- the house keeps is already its own cleaning; a member writing through the
+-- API is cleaned on every kind of column (text, a link's title, a past
+-- viewing); the cleaning runs first on each table; no API role can call it.
+-- Production runs it by hand; db-integration.yml runs it on the sealed copy
+-- (e2e/db/rehearsals.mjs). Read each NOTICE as  case|expected|got ; the last
+-- line is the verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
 BEGIN;
+\ir rehearsal_kit.sql
 
 CREATE TEMP TABLE mw_corpus_lines (n serial, t text) ON COMMIT DROP;
 \copy mw_corpus_lines (t) FROM 'e2e/db/member-text.corpus.json' WITH (FORMAT csv, DELIMITER E'\x01', QUOTE E'\x02')
 
 -- Every member's word the house keeps, stated here on its own so a column the
--- migration forgot is a value left as it was.
+-- cleaning forgot is a value left uncleaned.
 CREATE TEMP VIEW mw_words AS
           SELECT 'logs' AS tbl, id::text AS id, 'review' AS col, review AS v FROM public.logs
 UNION ALL SELECT 'logs', id::text, 'pull_quote', pull_quote FROM public.logs
@@ -60,23 +62,14 @@ UNION ALL SELECT 'reports', id::text, 'resolution_notes', resolution_notes FROM 
 UNION ALL SELECT 'mod_actions', id::text, 'reason', reason FROM public.mod_actions
 UNION ALL SELECT 'warnings', id::text, 'reason', reason FROM public.warnings;
 
-CREATE TEMP TABLE mw_before ON COMMIT DROP AS SELECT * FROM mw_words WHERE v IS NOT NULL;
-CREATE TEMP TABLE mw_stamps ON COMMIT DROP AS SELECT id, updated_at FROM public.logs;
-
-\if :{?with_fix}
-\ir ../../../supabase/migrations/20261003_05_a_members_words_are_cleaned.sql
-\endif
-
--- What the migration left, before the rehearsal's own writes below.
-CREATE TEMP TABLE mw_after ON COMMIT DROP AS SELECT * FROM mw_words WHERE v IS NOT NULL;
-CREATE TEMP TABLE mw_stamps_after ON COMMIT DROP AS SELECT id, updated_at FROM public.logs;
-
--- What the cleaning should make of each value, asked of the function only if it exists.
+-- What the house keeps now, and what the cleaning makes of each value (asked only if it exists).
+CREATE TEMP TABLE mw_kept ON COMMIT DROP AS SELECT * FROM mw_words WHERE v IS NOT NULL;
+SELECT pg_temp.rh_need('member''s word kept in the house', (SELECT count(*) FROM mw_kept), 1) AS done \gset rh_
 CREATE TEMP TABLE mw_expected (tbl text, id text, col text, was text, should text) ON COMMIT DROP;
 DO $$
 BEGIN
   IF to_regprocedure('public.clean_member_text(text)') IS NOT NULL THEN
-    EXECUTE 'INSERT INTO mw_expected SELECT tbl, id, col, v, public.clean_member_text(v) FROM mw_before';
+    EXECUTE 'INSERT INTO mw_expected SELECT tbl, id, col, v, public.clean_member_text(v) FROM mw_kept';
   END IF;
 END $$;
 
@@ -86,6 +79,7 @@ SELECT l.user_id AS member, l.id AS log_id
   FROM public.logs l JOIN public.profiles p ON p.id = l.user_id
  WHERE NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until < now())
  ORDER BY l.created_at LIMIT 1;
+SELECT pg_temp.rh_need('log by a member in good standing', (SELECT count(*) FROM mw_cast), 1) AS done \gset rh_
 CREATE TEMP TABLE mw_out (k text, got text) ON COMMIT DROP;
 GRANT ALL ON mw_out TO authenticated;
 GRANT SELECT ON mw_cast TO authenticated;
@@ -105,6 +99,8 @@ INSERT INTO mw_out SELECT 'bio', bio FROM u UNION ALL SELECT 'link', social_link
 RESET ROLE;
 
 -- A past viewing written straight to the row, as an older client still can.
+SELECT pg_temp.rh_need('log with a past viewing',
+  (SELECT count(*) FROM public.logs WHERE jsonb_typeof(viewing_history) = 'array' AND jsonb_array_length(viewing_history) > 0), 1) AS done \gset rh_
 WITH target AS (
   SELECT id FROM public.logs WHERE jsonb_typeof(viewing_history) = 'array' AND jsonb_array_length(viewing_history) > 0 ORDER BY created_at LIMIT 1),
 u AS (
@@ -128,46 +124,38 @@ BEGIN
 END $$;
 
 DO $$
-DECLARE failed integer := 0; c record;
+DECLARE
   has_fn boolean := to_regprocedure('public.clean_member_text(text)') IS NOT NULL;
   corpus jsonb := (SELECT string_agg(t, E'\n' ORDER BY n) FROM mw_corpus_lines)::jsonb;
   disagree integer;
-  should_change integer := (SELECT count(*) FROM mw_expected WHERE was IS DISTINCT FROM should);
-  did_change integer := (SELECT count(*) FROM mw_before b LEFT JOIN mw_after w USING (tbl, id, col) WHERE w.v IS DISTINCT FROM b.v);
-  restamped integer := (SELECT count(*) FROM mw_stamps_after l JOIN mw_stamps s USING (id) WHERE l.updated_at IS DISTINCT FROM s.updated_at);
-  logs_changed integer := (SELECT count(DISTINCT b.id) FROM mw_before b LEFT JOIN mw_after w USING (tbl, id, col) WHERE b.tbl = 'logs' AND w.v IS DISTINCT FROM b.v);
 BEGIN
   IF has_fn THEN
     EXECUTE 'SELECT count(*) FROM jsonb_array_elements($1) e WHERE public.clean_member_text(e ->> ''input'') IS DISTINCT FROM e ->> ''output'''
       INTO disagree USING corpus;
   END IF;
-  FOR c IN SELECT * FROM (VALUES
-    ('the corpus holds its cases', '230', jsonb_array_length(corpus)::text),
-    ('the database answers every case as the app does', '0', disagree::text),
-    ('values the cleaning changes, kept before (at least the 36 measured)', 'true', (should_change >= 36)::text),
-    ('every kept value is the cleaning of what it was', '0',
-       (SELECT count(*)::text FROM mw_expected e LEFT JOIN mw_after w USING (tbl, id, col) WHERE w.v IS DISTINCT FROM e.should)),
-    ('only those values changed', should_change::text, did_change::text),
-    ('no log was written that did not change', logs_changed::text, restamped::text),
-    ('a member''s review is kept cleaned', 'ab', (SELECT got FROM mw_out WHERE k = 'review')),
-    ('a member''s bio is kept cleaned', 'Cinephile.', (SELECT got FROM mw_out WHERE k = 'bio')),
-    ('a member''s link title is kept cleaned, its address as given', '{"url": "https://example.com", "title": "Blog"}', (SELECT got FROM mw_out WHERE k = 'link')),
-    ('a past viewing''s review is kept cleaned', 'xy', (SELECT got FROM mw_out WHERE k = 'viewing')),
-    ('the tables that clean a member''s words', '16', (SELECT count(*)::text FROM pg_trigger WHERE tgname = 'a_clean_member_text')),
-    ('on each, the cleaning runs before every other trigger', '0',
-       (SELECT count(*)::text FROM pg_trigger a JOIN pg_trigger o ON o.tgrelid = a.tgrelid
-         WHERE a.tgname = 'a_clean_member_text' AND NOT o.tgisinternal AND (o.tgtype & 2) <> 0 AND (o.tgtype & 1) <> 0
-           AND o.tgname < a.tgname)),
-    ('a member cannot call the cleaning', 'false', has_function_privilege('authenticated', to_regprocedure('public.clean_member_text(text)'), 'EXECUTE')::text),
-    ('a visitor cannot call the cleaning', 'false', has_function_privilege('anon', to_regprocedure('public.clean_member_text(text)'), 'EXECUTE')::text),
-    ('nor its trigger function', 'false', has_function_privilege('authenticated', to_regprocedure('public.clean_member_words()'), 'EXECUTE')::text),
-    ('the longest essay is cleaned in under 50 ms', 'true', (SELECT (ms < 50)::text FROM mw_time))
-  ) AS t(label, expected, got) LOOP
-    RAISE NOTICE '% | % | %', c.label, c.expected, c.got;
-    IF c.got IS DISTINCT FROM c.expected THEN failed := failed + 1; END IF;
-  END LOOP;
+  PERFORM pg_temp.rh_case('the corpus holds its cases', '230', jsonb_array_length(corpus)::text);
+  PERFORM pg_temp.rh_case('the database answers every case as the app does', '0', disagree::text);
+  PERFORM pg_temp.rh_case('every value the house keeps is already its own cleaning (of ' || (SELECT count(*) FROM mw_kept) || ')', '0',
+    CASE WHEN has_fn THEN (SELECT count(*)::text FROM mw_expected WHERE was IS DISTINCT FROM should) END);
+  PERFORM pg_temp.rh_case('a member''s review is kept cleaned', 'ab', (SELECT got FROM mw_out WHERE k = 'review'));
+  PERFORM pg_temp.rh_case('a member''s bio is kept cleaned', 'Cinephile.', (SELECT got FROM mw_out WHERE k = 'bio'));
+  PERFORM pg_temp.rh_case('a member''s link title is kept cleaned, its address as given', '{"url": "https://example.com", "title": "Blog"}',
+    (SELECT got FROM mw_out WHERE k = 'link'));
+  PERFORM pg_temp.rh_case('a past viewing''s review is kept cleaned', 'xy', (SELECT got FROM mw_out WHERE k = 'viewing'));
+  PERFORM pg_temp.rh_case('the tables that clean a member''s words', '16', (SELECT count(*)::text FROM pg_trigger WHERE tgname = 'a_clean_member_text'));
+  PERFORM pg_temp.rh_case('on each, the cleaning runs before every other trigger', '0',
+    (SELECT count(*)::text FROM pg_trigger a JOIN pg_trigger o ON o.tgrelid = a.tgrelid
+      WHERE a.tgname = 'a_clean_member_text' AND NOT o.tgisinternal AND (o.tgtype & 2) <> 0 AND (o.tgtype & 1) <> 0
+        AND o.tgname < a.tgname));
+  PERFORM pg_temp.rh_case('a member cannot call the cleaning', 'false',
+    has_function_privilege('authenticated', to_regprocedure('public.clean_member_text(text)'), 'EXECUTE')::text);
+  PERFORM pg_temp.rh_case('a visitor cannot call the cleaning', 'false',
+    has_function_privilege('anon', to_regprocedure('public.clean_member_text(text)'), 'EXECUTE')::text);
+  PERFORM pg_temp.rh_case('nor its trigger function', 'false',
+    has_function_privilege('authenticated', to_regprocedure('public.clean_member_words()'), 'EXECUTE')::text);
+  PERFORM pg_temp.rh_case('the longest essay is cleaned in under 50 ms', 'true', (SELECT (ms < 50)::text FROM mw_time));
   RAISE NOTICE 'the longest essay took % ms', (SELECT round(ms, 2) FROM mw_time);
-  RAISE NOTICE 'FAILED: %', failed;
 END $$;
 
+SELECT pg_temp.rh_verdict();
 ROLLBACK;

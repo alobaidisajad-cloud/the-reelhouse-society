@@ -1,24 +1,27 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- taste_match_reads_both_records_rehearsal.sql — 20261002_04. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   psql "$SUPABASE_DB_URL" -X -q -t -A -v with_fix=1 -f mobile/supabase/diagnostics/taste_match_reads_both_records_rehearsal.sql
+--   psql "$SUPABASE_DB_URL" -X -q -t -A -f mobile/supabase/diagnostics/taste_match_reads_both_records_rehearsal.sql
 --
--- Without with_fix there is no get_taste_match and the rehearsal stops on it:
--- it can say no. Read each NOTICE as  case | expected | got. The last line
--- counts failures.
+-- The member with the longest record asks how their taste matches the longest
+-- public record besides: each side is that member's whole record, every rated
+-- film counted once, decades from real years only; a visitor is refused, and
+-- no member reads a shape directly. Production runs it by hand;
+-- db-integration.yml runs it on the sealed copy (e2e/db/rehearsals.mjs).
+-- Read each NOTICE as  case|expected|got ; the last line is the verdict, and
+-- any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
 BEGIN;
-
-\if :{?with_fix}
-\ir ../../../supabase/migrations/20261002_04_taste_match_reads_both_records.sql
-\endif
+\ir rehearsal_kit.sql
 
 -- The member with the longest record, and the longest public one besides.
-SELECT set_config('rehearsal.a', (SELECT user_id::text FROM public.logs GROUP BY user_id ORDER BY count(*) DESC LIMIT 1), true) AS done \gset rh_
-SELECT set_config('rehearsal.b', (SELECT l.user_id::text FROM public.logs l JOIN public.profiles p ON p.id = l.user_id
-  WHERE l.user_id::text <> current_setting('rehearsal.a') AND NOT coalesce(p.is_social_private, false)
-  GROUP BY l.user_id ORDER BY count(*) DESC LIMIT 1), true) AS done \gset rh_
+SELECT set_config('rehearsal.a', pg_temp.rh_found('a member with a log',
+  (SELECT user_id FROM public.logs GROUP BY user_id ORDER BY count(*) DESC, user_id LIMIT 1))::text, true) AS done \gset rh_
+SELECT set_config('rehearsal.b', pg_temp.rh_found('a second, public member with a log',
+  (SELECT l.user_id FROM public.logs l JOIN public.profiles p ON p.id = l.user_id
+    WHERE l.user_id::text <> current_setting('rehearsal.a') AND NOT coalesce(p.is_social_private, false)
+    GROUP BY l.user_id ORDER BY count(*) DESC, l.user_id LIMIT 1))::text, true) AS done \gset rh_
 
 -- What the whole records hold, counted here as postgres.
 CREATE TEMP TABLE tm_want ON COMMIT DROP AS
@@ -49,33 +52,25 @@ EXCEPTION WHEN insufficient_privilege THEN
 END $$;
 RESET ROLE;
 
-CREATE TEMP TABLE tm_cases ON COMMIT DROP AS
-WITH g AS (SELECT out FROM tm_got WHERE who = 'member'), w AS (SELECT * FROM tm_want)
-SELECT * FROM (VALUES
-  ('mine is the viewer''s whole record', (SELECT logs_a::text FROM w), (SELECT out->'mine'->>'logs' FROM g)),
-  ('theirs is the other member''s whole record', (SELECT logs_b::text FROM w), (SELECT out->'theirs'->>'logs' FROM g)),
-  ('five reels, each rated film once (mine)', (SELECT '5|' || rated_a FROM w),
-     (SELECT jsonb_array_length(out->'mine'->'ratings') || '|' || (SELECT sum(v::int) FROM jsonb_array_elements_text(out->'mine'->'ratings') v) FROM g)),
-  ('five reels, each rated film once (theirs)', (SELECT '5|' || rated_b FROM w),
-     (SELECT jsonb_array_length(out->'theirs'->'ratings') || '|' || (SELECT sum(v::int) FROM jsonb_array_elements_text(out->'theirs'->'ratings') v) FROM g)),
-  ('decades from real years only (theirs)', (SELECT dated_b::text FROM w),
-     (SELECT coalesce(sum(v::int), 0)::text FROM g, jsonb_each_text(g.out->'theirs'->'decades') x(k, v))),
-  ('a half rounds up, as the app counted (3.5 is a 4)', '4', round(3.5::numeric)::text),
-  ('a visitor is refused', 'refused',
-     (SELECT CASE WHEN out->>'error' IN ('forbidden', 'refused') THEN 'refused' ELSE 'answered' END FROM tm_got WHERE who = 'visitor')),
-  ('a member cannot read a shape directly', 'false',
-     CASE WHEN to_regprocedure('public.taste_shape(uuid)') IS NULL THEN 'no function'
-          ELSE has_function_privilege('authenticated', 'public.taste_shape(uuid)', 'EXECUTE')::text END)
-) AS c(label, expected, got);
-
 DO $$
-DECLARE c record; failed integer := 0;
+DECLARE g jsonb := (SELECT out FROM tm_got WHERE who = 'member'); w record;
 BEGIN
-  FOR c IN SELECT * FROM tm_cases LOOP
-    RAISE NOTICE '% | % | %', c.label, c.expected, c.got;
-    IF c.got IS DISTINCT FROM c.expected THEN failed := failed + 1; END IF;
-  END LOOP;
-  RAISE NOTICE 'FAILED: %', failed;
+  SELECT * INTO w FROM tm_want;
+  PERFORM pg_temp.rh_case('mine is the viewer''s whole record', w.logs_a::text, g->'mine'->>'logs');
+  PERFORM pg_temp.rh_case('theirs is the other member''s whole record', w.logs_b::text, g->'theirs'->>'logs');
+  PERFORM pg_temp.rh_case('five reels, each rated film once (mine)', '5|' || w.rated_a,
+    jsonb_array_length(g->'mine'->'ratings') || '|' || (SELECT sum(v::int) FROM jsonb_array_elements_text(g->'mine'->'ratings') v));
+  PERFORM pg_temp.rh_case('five reels, each rated film once (theirs)', '5|' || w.rated_b,
+    jsonb_array_length(g->'theirs'->'ratings') || '|' || (SELECT sum(v::int) FROM jsonb_array_elements_text(g->'theirs'->'ratings') v));
+  PERFORM pg_temp.rh_case('decades from real years only (theirs)', w.dated_b::text,
+    (SELECT coalesce(sum(v::int), 0)::text FROM jsonb_each_text(g->'theirs'->'decades') x(k, v)));
+  PERFORM pg_temp.rh_case('a half rounds up, as the app counted (3.5 is a 4)', '4', round(3.5::numeric)::text);
+  PERFORM pg_temp.rh_case('a visitor is refused', 'refused',
+    (SELECT CASE WHEN out->>'error' IN ('forbidden', 'refused') THEN 'refused' ELSE 'answered' END FROM tm_got WHERE who = 'visitor'));
+  PERFORM pg_temp.rh_case('a member cannot read a shape directly', 'false',
+    CASE WHEN to_regprocedure('public.taste_shape(uuid)') IS NULL THEN 'no function'
+         ELSE has_function_privilege('authenticated', 'public.taste_shape(uuid)', 'EXECUTE')::text END);
 END $$;
 
+SELECT pg_temp.rh_verdict();
 ROLLBACK;

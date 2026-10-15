@@ -41,7 +41,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/utils/offlineQueue.test.ts | 2026-10-03 | edited: the kind list matches the queue's union |
 | ../.github/workflows/ci-alert.yml | 2026-10-15 | edited: watches the shipped clients' runs |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
-| ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result |
+| ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; then every production rehearsal, its verdict first proven able to fail |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
 | ../.github/workflows/e2e.yml | 2026-10-15 | edited: callable for a shipped client; pending migrations applied before the seed |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the secrets scan, the add-only check, the migration lint, the website freeze, the hooks trailer |
@@ -148,6 +148,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/attempt.mjs | 2026-10-04 | written: the retry rule, from runs 37155828199 and 37165878763, read against Maestro 2.10.0's source |
 | e2e/db/bootstrap.mjs | 2026-09-28 | 7 findings; stale function count and 'how this was found' asides dropped |
 | e2e/db/old-clients.mjs | 2026-10-15 | new |
+| e2e/db/rehearsals.mjs | 2026-10-15 | new: seeds the made-up house, runs every *_rehearsal.sql as postgres, fails naming each that missed; --self-test proves the verdict can fail |
 | e2e/db/seal.sh | 2026-10-03 | Written in the tooling audit: the seal e2e.yml and load.yml each carried, in one place for three workflows. |
 | e2e/db/seed.mjs | 2026-09-29 | true as written |
 | e2e/db/up-down-up.mjs | 2026-10-15 | new |
@@ -1058,6 +1059,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/queueErrorClassification.test.ts | — |  |
 | src/utils/__tests__/raceDeadline.test.ts | 2026-10-04 | written whole |
 | src/utils/__tests__/recommendations.test.ts | — |  |
+| src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-03 | rewritten: whom an event concerns, what a record grants, applying it |
 | src/utils/__tests__/roomFilters.test.ts | 2026-10-01 | written: one answer to is-this-room-narrowed |

@@ -94,6 +94,15 @@ jobs:
           SNAPSHOT_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
         run: node mobile/e2e/db/old-clients.mjs
 
+      # Every production rehearsal (mobile/supabase/diagnostics/*_rehearsal.sql),
+      # on a made-up house laid down first; each rolls back, and a miss fails
+      # the run. The run first proves a miss, an empty pick and a file with no
+      # case each fail.
+      - name: The rehearsals' verdict is proven able to fail
+        run: node mobile/e2e/db/rehearsals.mjs --self-test
+      - name: Every production rehearsal, on the sealed copy
+        run: node mobile/e2e/db/rehearsals.mjs
+
       # As supabase_admin: the house is laid down with triggers off, and each case
       # is asked as anon or authenticated.
       - name: Production's row rules, asked as visitors and members
