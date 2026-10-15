@@ -19,3 +19,4 @@ production shows only its id, area, seriousness and count here.
 | CI-check-only-in-ci | tooling | code | OPEN | 1 | A check CI runs that no local gate runs, so a push meets it only in red |
 | SALON-channel | lounge | serious | OPEN | 1 | open in production |
 | DB-function-grants | database | serious | OPEN | 71 | open in production |
+| DB-extension-reach | database | serious | OPEN | 1 | open in production |

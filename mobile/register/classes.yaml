@@ -125,3 +125,10 @@ classes:
     status: OPEN
     count: 71
     open_in_production: true
+
+  - id: DB-extension-reach
+    area: database
+    seriousness: serious
+    status: OPEN
+    count: 1
+    open_in_production: true
