@@ -32,7 +32,7 @@
  * BACKDROP LAW: iOS gets native blur; Android gets a plain scrim (expo-blur
  * on Android is a weak tint at best, and its experimental method flickers).
  */
-import React, { memo, useCallback, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Modal, Pressable, Platform, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, {
@@ -59,9 +59,13 @@ import { BRASS, BRASS_STOPS, BRASS_START, BRASS_END, CROWN, RIM } from '@/src/th
 import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT } from '@/src/theme/light';
 import { arrive, MS } from '@/src/theme/motion';
+import { ARRIVAL_GRACE_MS } from '@/src/hooks/useArrival';
 
 const OPEN_MS = 200;
 const CLOSE_MS = 160;
+/** Where the sheet's rise ends, as plain styles. */
+export const RISEN_BACKDROP = { opacity: 1 } as const;
+export const RISEN_CARD = { opacity: 1, transform: [{ translateY: 0 }, { scale: 1 }] } as const;
 
 /** Gap between the bottom of the disc and the top of the card. */
 const CARD_GAP = 12;
@@ -264,16 +268,34 @@ export const ConciergeButton = memo(function ConciergeButton() {
     // progress animates in onShow so frame 1 is animation frame 1
   }, [rotation, reducedMotion]);
 
+  // Risen, the sheet is drawn with plain styles, and closing, it closes when its fall should
+  // have ended whether or not the fall says so. An animation that never reaches its view (the
+  // film tray, Sealed E2E run 38790116312) would otherwise leave an invisible sheet over the
+  // app, taking every touch.
+  const [risen, setRisen] = useState(false);
+  const timers = useRef<{ rise?: ReturnType<typeof setTimeout>; close?: ReturnType<typeof setTimeout> }>({});
+  useEffect(() => () => {
+    clearTimeout(timers.current.rise);
+    clearTimeout(timers.current.close);
+  }, []);
+
   const closeSheet = useCallback(() => {
     setOpen(false);
+    clearTimeout(timers.current.rise);
+    setRisen(false);
     rotation.value = reducedMotion ? 0 : withTiming(0, { duration: MS.quick, easing: arrive() });
     progress.value = withTiming(0, { duration: CLOSE_MS, easing: Easing.in(Easing.quad) }, (finished) => {
       if (finished) runOnJS(finishClose)();
     });
+    clearTimeout(timers.current.close);
+    timers.current.close = setTimeout(finishClose, CLOSE_MS + ARRIVAL_GRACE_MS);
   }, [rotation, progress, reducedMotion, finishClose]);
 
   const onModalShow = useCallback(() => {
     progress.value = withTiming(1, { duration: OPEN_MS, easing: Easing.out(Easing.quad) });
+    clearTimeout(timers.current.close);
+    clearTimeout(timers.current.rise);
+    timers.current.rise = setTimeout(() => setRisen(true), OPEN_MS + ARRIVAL_GRACE_MS);
   }, [progress]);
 
   const handleAction = useCallback((route: string) => {
@@ -349,7 +371,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
         onRequestClose={closeSheet}
       >
         {/* Backdrop — iOS: native blur; Android: plain scrim */}
-        <Animated.View style={[StyleSheet.absoluteFill, backdropStyle]}>
+        <Animated.View style={[StyleSheet.absoluteFill, risen ? RISEN_BACKDROP : backdropStyle]}>
           {Platform.OS === 'ios' ? (
             <BlurView tint="dark" intensity={40} style={StyleSheet.absoluteFill} />
           ) : null}
@@ -367,7 +389,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
             closes this — invisible to VoiceOver. */}
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none" accessibilityViewIsModal
           onAccessibilityEscape={closeSheet}>
-          <Animated.View style={[s.cardWrap, { top: cardTop, width: cardWidth }, cardStyle]}>
+          <Animated.View style={[s.cardWrap, { top: cardTop, width: cardWidth }, risen ? (reducedMotion ? RISEN_BACKDROP : RISEN_CARD) : cardStyle]}>
             <ConciergeCard onLog={onLog} onStack={onStack} onFile={onFile} />
 
             {/* The notch, pointing back at the button. Drawn AFTER the card so its

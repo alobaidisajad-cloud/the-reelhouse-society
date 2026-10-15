@@ -7,7 +7,7 @@ import { readCode } from '@/test-utils/readCode';
 import { files as universe } from '@/test-utils/universe';
 import Animated, { withTiming } from 'react-native-reanimated';
 import { render } from '@testing-library/react-native';
-import { useArrival, ARRIVAL_GRACE_MS } from '../useArrival';
+import { useArrival, ARRIVAL_GRACE_MS, ARRIVED } from '../useArrival';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 
 jest.mock('@/src/utils/e2eTrace', () => ({ e2eTrace: jest.fn(), E2E_BUILD: false }));
@@ -41,6 +41,17 @@ describe('an arrival', () => {
     const config = (withTiming as jest.Mock).mock.calls[0][1];
     expect(config).toEqual(expect.objectContaining({ duration: 300 }));
     expect(Object.keys(config)).not.toContain('easing');
+  });
+
+  /**
+   * The film tray (Sealed E2E run 38790116312): its value risen, its animated style
+   * never reaching the view just mounted. Arrived, the view is drawn with a plain style.
+   */
+  it('is drawn with a plain style once arrived, not its animated one', () => {
+    const r = render(<Held redraw={0} />);
+    expect(r.getByTestId('held').props.style).not.toBe(ARRIVED);
+    React.act(() => { jest.advanceTimersByTime(300 + ARRIVAL_GRACE_MS); });
+    expect(r.getByTestId('held').props.style).toBe(ARRIVED);
   });
 
   it('that lands is left alone', () => {

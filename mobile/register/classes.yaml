@@ -100,6 +100,24 @@ classes:
     count: 0
     source: { kind: history, ref: "Sealed E2E 38610514483" }
 
+  - id: E2E-open-overlay-drawn-by-animation-alone
+    title: An open overlay whose resting state is drawn only by its animated style, so an animated style not applied leaves it open and invisible
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "Sealed E2E 38790116312 (the film tray)" }
+    fix: "Every view that rises on a shared value and takes touches, found by reading each file that pairs useAnimatedStyle with an open prop and touches: FilmActionTray (RISEN_SCRIM, RISEN_TRAY), Presence's PresenceView (restingStyle, every arriving view in the app), useArrival (ARRIVED), the Reels sections (sectionLayers SHOWN, HIDDEN) and the Concierge sheet (RISEN_BACKDROP, RISEN_CARD, and a close that no longer waits on its fall's callback). Each rests on plain styles once its motion's time is over, each held by its own test"
+
+  - id: E2E-ceiling-not-measured
+    title: A screen's time ceiling set from too few runs, so the shared emulator's spread reads as the app's
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "Sealed E2E 38812556019 and 38780996970; 12 runs in e2e/screen-history.json" }
+    fix: "each screen's two ceilings derived by ceilingsFrom from the recorded history, held by screenTimes.test. The one left: the Darkroom's 5.7 s on returning to focus at the start of auth_deep_link (run 38780996970), during Maestro's driver install, a 0.7 s system GC and 71 skipped frames; not yet shown to be the machine's"
+
   - id: CI-check-only-in-ci
     title: A check CI runs that no local gate runs, so a push meets it only in red
     seriousness: code

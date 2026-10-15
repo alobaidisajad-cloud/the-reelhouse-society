@@ -43,6 +43,8 @@ import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import reelToast from '@/src/utils/reelToast';
 import { BrassSheen } from '@/src/components/theme/BrassSheen';
+import { ARRIVAL_GRACE_MS } from '@/src/hooks/useArrival';
+import { CROSSFADE_MS, HIDDEN, SHOWN } from '@/src/components/reels/sectionLayers';
 
 const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: string; onChangeText: (text: string) => void; onClear: () => void }) => {
   const [localText, setLocalText] = useState(value);
@@ -136,7 +138,7 @@ export default function ReelScreen() {
   // Never animate zIndex: on Fabric it races FlashList's commits and the layers blink.
   // Opacity crossfades; pointerEvents gates the touches.
   const logsProgress = useDerivedValue(() =>
-    withTiming(activeTabSV.value === 'logs' ? 1 : 0, { duration: 300, easing: Easing.out(Easing.quad) })
+    withTiming(activeTabSV.value === 'logs' ? 1 : 0, { duration: CROSSFADE_MS, easing: Easing.out(Easing.quad) })
   );
 
   const logsOpacityStyle = useAnimatedStyle(() => ({ opacity: logsProgress.value }));
@@ -146,6 +148,15 @@ export default function ReelScreen() {
   const stacksFlatListRef = useRef<any>(null);
   
   const [section, setSection] = useState<ReelSection>('logs');
+  // Once the crossfade is over, each layer is drawn plainly, shown or hidden as its touches are:
+  // an animated style that never reached its view (the film tray, Sealed E2E run 38790116312)
+  // would leave a member seeing one section and touching the other.
+  const [crossfaded, setCrossfaded] = useState(true);
+  useEffect(() => {
+    setCrossfaded(false);
+    const settled = setTimeout(() => setCrossfaded(true), CROSSFADE_MS + ARRIVAL_GRACE_MS);
+    return () => clearTimeout(settled);
+  }, [section]);
 
   const activeSectionRef = useRef(section);
   activeSectionRef.current = section;
@@ -438,7 +449,7 @@ export default function ReelScreen() {
       />
       <ReelProjectorBeam scrollY={activeScrollY} />
 
-      <Animated.View pointerEvents={section === 'logs' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, logsOpacityStyle]}>
+      <Animated.View testID="reels-logs-layer" pointerEvents={section === 'logs' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, crossfaded ? (section === 'logs' ? SHOWN : HIDDEN) : logsOpacityStyle]}>
         <ReelsFeedList
           feed={activeFeed}
           refreshing={isManualRefreshing}
@@ -457,7 +468,7 @@ export default function ReelScreen() {
         />
       </Animated.View>
 
-      <Animated.View pointerEvents={section === 'stacks' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, stacksOpacityStyle]}>
+      <Animated.View testID="reels-stacks-layer" pointerEvents={section === 'stacks' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, crossfaded ? (section === 'stacks' ? SHOWN : HIDDEN) : stacksOpacityStyle]}>
         <ReelsStackList
           stacks={filteredStacks}
           refreshing={isManualRefreshing}

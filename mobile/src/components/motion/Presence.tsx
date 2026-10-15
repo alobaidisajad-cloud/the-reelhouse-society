@@ -14,7 +14,7 @@
  * under it there is no motion, and a leaving view is removed at once.
  */
 import React, {
-  createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useReducer, useRef,
+  createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState,
 } from 'react';
 import type { LayoutChangeEvent, LayoutRectangle, StyleProp, ViewProps, ViewStyle } from 'react-native';
 import Animated, {
@@ -44,6 +44,15 @@ export interface Motion<Kind> {
 
 type Pose = { opacity: number; x: number; y: number };
 const REST: Pose = { opacity: 1, x: 0, y: 0 };
+
+/** REST as plain styles, for the properties its motion animates: what an arrived view is drawn with. */
+const AT_REST = {
+  fade: { opacity: 1 },
+  move: { transform: [{ translateX: 0 }, { translateY: 0 }] },
+  both: { opacity: 1, transform: [{ translateX: 0 }, { translateY: 0 }] },
+} as const;
+export const restingStyle = (fading: boolean, moving: boolean) =>
+  (fading && moving ? AT_REST.both : moving ? AT_REST.move : fading ? AT_REST.fade : null);
 
 /** Where an entrance starts. `screenH` is the root's height, as Reanimated's window is. */
 function entranceFrom(kind: Entrance, screenH: number): Pose {
@@ -227,6 +236,11 @@ export function PresenceView({
   const opacity = useSharedValue(start.opacity);
   const x = useSharedValue(start.x);
   const y = useSharedValue(start.y);
+  // Arrived, it is drawn with plain styles. A value can reach rest while its animated style
+  // never reaches the view just mounted (the film tray, Sealed E2E run 38790116312: open, and
+  // nothing of it on the screen), so where a view rests never waits on an animation having
+  // drawn it. Leaving, it takes its animated style back.
+  const [arrived, setArrived] = useState(start === REST);
 
   const box = useRef<LayoutRectangle | null>(null);
   const measured = useCallback((e: LayoutChangeEvent) => {
@@ -259,15 +273,18 @@ export function PresenceView({
     if (!e || r) {
       [opacity, x, y].forEach((v) => cancelAnimation(v));
       pose(opacity, x, y, REST);
+      setArrived(true);
       return undefined;
     }
     pose(opacity, x, y, entranceFrom(e.kind, s.height));
     if (fades(e.kind)) opacity.value = timing(1, e);
     if (e.kind === 'FadeInUp' || e.kind === 'FadeInDown' || e.kind === 'SlideInDown') y.value = timing(0, e);
     const rescue = setTimeout(() => {
-      if (opacity.value >= 1 && y.value === 0) return;
-      e2eTrace('arrival.rescued', { name, at: opacity.value });
-      pose(opacity, x, y, REST);
+      if (opacity.value < 1 || y.value !== 0) {
+        e2eTrace('arrival.rescued', { name, at: opacity.value });
+        pose(opacity, x, y, REST);
+      }
+      setArrived(true);
     }, (e.delay ?? 0) + (e.duration ?? PRESET_MS) + ARRIVAL_GRACE_MS);
     return () => clearTimeout(rescue);
     // The arrival belongs to the mount and to each return; its motion is read when it runs.
@@ -282,6 +299,7 @@ export function PresenceView({
       leave();
       return undefined;
     }
+    setArrived(false);
     // Not yet laid out: it leaves from its parent's origin, where the presets read it.
     const to = exitTo(e.kind, box.current ?? { x: 0, y: 0, width: 0, height: 0 }, s);
     const ended = (done?: boolean) => {
@@ -325,7 +343,7 @@ export function PresenceView({
     <StageContext.Provider value={holds}>
       <Animated.View
         {...rest}
-        style={[style, animated, pin.current ? pinAt(pin.current) : null]}
+        style={[style, arrived ? restingStyle(fading, moving) : animated, pin.current ? pinAt(pin.current) : null]}
         onLayout={measured}
         pointerEvents={leaving ? 'none' : pointerEvents}
         accessibilityElementsHidden={leaving || rest.accessibilityElementsHidden}

@@ -6,7 +6,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { StyleSheet, Text } from 'react-native';
 import * as Reanimated from 'react-native-reanimated';
-import { Presence, PresenceView, PRESET_MS, type Motion, type Exit } from '../Presence';
+import { Presence, PresenceView, PRESET_MS, restingStyle, type Motion, type Exit } from '../Presence';
 import { ARRIVAL_GRACE_MS } from '@/src/hooks/useArrival';
 
 const timing = Reanimated.withTiming as jest.Mock;
@@ -174,6 +174,27 @@ describe('the motion is the preset\'s', () => {
       [0, { duration: 400, reduceMotion: 'system' }],
     ]);
     expect(delay.mock.calls.map((c) => c[0])).toEqual([100, 100]);
+  });
+
+  /**
+   * The film tray (Sealed E2E run 38790116312): a value at rest while its animated style
+   * never reached the view just mounted. Arrived, a view rests on plain styles; leaving,
+   * it takes its animated style back for the exit.
+   */
+  it('rests on plain styles once arrived, and leaves on its animated ones', () => {
+    const plain = restingStyle(true, true);
+    const styles = (r: ReturnType<typeof render>) => (r.getByTestId('a', ALL).props.style as unknown[]).flat();
+    const Arriving = ({ on }: { on: boolean }) => (
+      <Presence>
+        {on && <PresenceView key="a" name="a" testID="a" enter={{ kind: 'FadeInUp', duration: 400 }} exit={FADE} />}
+      </Presence>
+    );
+    const r = render(<Arriving on />);
+    expect(styles(r)).not.toContain(plain);
+    React.act(() => { jest.advanceTimersByTime(400 + ARRIVAL_GRACE_MS); });
+    expect(styles(r)).toContain(plain);
+    r.rerender(<Arriving on={false} />);
+    expect(styles(r)).not.toContain(plain);
   });
 
   it('an entrance under reduced motion starts where it ends', () => {

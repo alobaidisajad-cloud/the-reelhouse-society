@@ -74,6 +74,10 @@ jest.mock('@/src/components/reels/ReelsStackList', () => {
 
 // eslint-disable-next-line import/first
 import ReelScreen from '@/app/(tabs)/reels';
+// eslint-disable-next-line import/first
+import { CROSSFADE_MS, HIDDEN, SHOWN } from '@/src/components/reels/sectionLayers';
+// eslint-disable-next-line import/first
+import { ARRIVAL_GRACE_MS } from '@/src/hooks/useArrival';
 
 const query = (over: Record<string, unknown> = {}) => ({
   data: undefined, isLoading: false, isError: false, refetch: jest.fn(async () => ({ isError: false })),
@@ -155,4 +159,28 @@ it('the stacks search says what it searches: stacks, not "the archives"', async 
   expect(head.getByPlaceholderText('SEARCH STACKS...')).toBeTruthy();
   expect(head.getByLabelText('Search curated stacks')).toBeTruthy();
   head.unmount();
+});
+
+/**
+ * The film tray (Sealed E2E run 38790116312): an animated style that never reached its
+ * view. Once their crossfade is over, the two sections are drawn with plain styles, so a
+ * member always sees the section their touches go to.
+ */
+it('once the crossfade is over, each section is drawn shown or hidden as its touches are', async () => {
+  const r = await mount();
+  const all = { includeHiddenElements: true };
+  const layer = (s: 'logs' | 'stacks') => r.getByTestId(`reels-${s}-layer`, all);
+  const drawn = (s: 'logs' | 'stacks') => {
+    const own = (layer(s).props.style as unknown[]).flat();
+    return own.includes(SHOWN) ? 'shown' : own.includes(HIDDEN) ? 'hidden' : 'crossfading';
+  };
+  const settle = () => act(async () => { await new Promise((done) => setTimeout(done, CROSSFADE_MS + ARRIVAL_GRACE_MS + 50)); });
+  await settle();
+  expect([drawn('logs'), layer('logs').props.pointerEvents, drawn('stacks'), layer('stacks').props.pointerEvents])
+    .toEqual(['shown', 'auto', 'hidden', 'none']);
+  await act(async () => { fireEvent.press(r.getAllByLabelText('Stacks tab')[0]!); });
+  expect([drawn('logs'), drawn('stacks'), layer('stacks').props.pointerEvents]).toEqual(['crossfading', 'crossfading', 'auto']);
+  await settle();
+  expect([drawn('logs'), layer('logs').props.pointerEvents, drawn('stacks'), layer('stacks').props.pointerEvents])
+    .toEqual(['hidden', 'none', 'shown', 'auto']);
 });

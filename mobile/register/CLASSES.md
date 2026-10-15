@@ -16,6 +16,8 @@ production shows only its id, area, seriousness and count here.
 | DB-change-without-undo | database | behaviour | OPEN | 0 | A pending migration with no tested undo |
 | WEB-change-unapproved | website | behaviour | OPEN | 0 | A change to the website's files reaches members without the user's approval |
 | E2E-scroll-leaves-target-under-bar | tests | code | OPEN | 0 | A flow's scroll stops with its target under the tab bar, and the next tap lands on a tab |
+| E2E-open-overlay-drawn-by-animation-alone | tests | behaviour | OPEN | 0 | An open overlay whose resting state is drawn only by its animated style, so an animated style not applied leaves it open and invisible |
+| E2E-ceiling-not-measured | tests | code | OPEN | 1 | A screen's time ceiling set from too few runs, so the shared emulator's spread reads as the app's |
 | CI-check-only-in-ci | tooling | code | OPEN | 1 | A check CI runs that no local gate runs, so a push meets it only in red |
 | SALON-channel | lounge | serious | OPEN | 1 | open in production |
 | DB-function-grants | database | serious | OPEN | 0 | A public function any login the database has may run, because PUBLIC kept EXECUTE on it |

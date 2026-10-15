@@ -687,6 +687,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/WatchlistRoulette.tsx | 2026-10-15 | a mid-spin close stops the spin; opens filmId; nav; the card in a CentredCard, its ground behind it |
 | src/components/RankBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/ReelEyeIcon.tsx | 2026-10-02 | Read (launch audit): artwork. Left alone. |
+| src/components/reels/sectionLayers.ts | 2026-10-16 | new: read against reels.tsx's two layers and the film tray's run 38790116312 |
 | src/components/reels/__tests__/MemberRegistry.select.test.ts | 2026-10-01 | no comments |
 | src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | 2026-10-15 | edited: the E2E is told a failed reel failed, and an empty one was read |

@@ -91,7 +91,7 @@ jest.mock('expo-linear-gradient', () => {
 // in place before the component that consumes them. Jest hoists jest.mock
 // regardless, so this is about legibility, not correctness.
 // eslint-disable-next-line import/first
-import { ConciergeButton, conciergeGeometry } from '../ConciergeButton';
+import { ConciergeButton, conciergeGeometry, RISEN_BACKDROP, RISEN_CARD } from '../ConciergeButton';
 // eslint-disable-next-line import/first
 import { NAV_BTN_SIZE, NAV_H_PADDING } from '../navMetrics';
 
@@ -166,6 +166,45 @@ describe('ConciergeButton', () => {
     await waitPastBackstop();
 
     expect(mockPush).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * The film tray (Sealed E2E run 38790116312): an animated style that never reached its
+   * view. Risen, the sheet is drawn with plain styles; and a fall that never says it ended
+   * still closes the sheet, or an invisible one would sit over the app taking every touch.
+   */
+  it('rests on plain styles once risen', async () => {
+    const api = render(<ConciergeButton />);
+    type Node = { props?: { style?: unknown }; children?: (Node | string)[] | null };
+    const drawnWith = (style: object) => {
+      const walk = (n: Node | Node[] | string | null): boolean => {
+        if (!n || typeof n === 'string') return false;
+        if (Array.isArray(n)) return n.some(walk);
+        const own = n.props?.style;
+        return (Array.isArray(own) && own.flat().includes(style)) || (n.children ?? []).some(walk);
+      };
+      return walk(api.toJSON() as Node | Node[] | null);
+    };
+    await open(api);
+    expect([drawnWith(RISEN_BACKDROP), drawnWith(RISEN_CARD)]).toEqual([false, false]);
+    await waitPastBackstop();
+    expect([drawnWith(RISEN_BACKDROP), drawnWith(RISEN_CARD)]).toEqual([true, true]);
+  });
+
+  it('closes when its fall should have ended, though the fall never says so', async () => {
+    const reanimated = jest.requireMock('react-native-reanimated');
+    const said = reanimated.withTiming;
+    reanimated.withTiming = (v: unknown) => v; // a fall that never reports its end
+    try {
+      const api = render(<ConciergeButton />);
+      await open(api);
+      await act(async () => { mockModal.props.onRequestClose?.(); });
+      expect(mockModal.props.visible).toBe(true);
+      await waitPastBackstop();
+      expect(mockModal.props.visible).toBe(false);
+    } finally {
+      reanimated.withTiming = said;
+    }
   });
 
   it('closing without choosing navigates nowhere', async () => {
