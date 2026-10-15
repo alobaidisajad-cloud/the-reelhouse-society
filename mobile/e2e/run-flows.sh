@@ -95,8 +95,10 @@ trap 'kill $sampler $streamer 2>/dev/null' EXIT
 # One flow at a time: Maestro's records keep no screen for a failed step, so the
 # screen is read the moment a flow fails, before the next one relaunches the app.
 # The flows share a budget well inside the job's (a job that runs out is killed
-# with nothing explained), and each has at most ten minutes of it.
-MINUTES=${E2E_FLOWS_MINUTES:-42}
+# with nothing explained), and each has at most ten minutes of it. It fits the
+# slowest runner measured: one ran every step about twice as slow (38610514483,
+# 38663626040, 38672855339 ran out at 42 minutes with no fault of the app).
+MINUTES=${E2E_FLOWS_MINUTES:-55}
 DEADLINE=$(( $(date +%s) + MINUTES * 60 ))
 FLOW_LIST="$(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort)"
 FLOW_COUNT=$(echo "$FLOW_LIST" | grep -c .)
