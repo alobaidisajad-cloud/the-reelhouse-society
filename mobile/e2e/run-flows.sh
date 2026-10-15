@@ -21,7 +21,10 @@ cd "$(dirname "$0")/../.." || exit 1
 export MAESTRO_CLI_NO_ANALYTICS=1
 
 APK=mobile/android/app/build/outputs/apk/release/app-release.apk
+PKG=com.reelhouse.society
 FLOWS=${E2E_FLOWS:-mobile/.maestro}
+# How long the launch with animations on must stay alive (its rehearsal shortens it).
+MOTION_SECONDS=${E2E_MOTION_SECONDS:-15}
 OUT=${RUNNER_TEMP:-/tmp}
 MAESTRO=${MAESTRO_BIN:-$HOME/.maestro/bin/maestro}
 
@@ -167,6 +170,44 @@ set_aside() {
   for f in "$@"; do [ -e "$f" ] && mv "$f" "$dest/"; done
   return 0
 }
+
+# ── ONE LAUNCH WITH ANIMATIONS ON ─────────────────────────────────────────────
+# Every flow runs with Android's animations off, and an animation config with an
+# empty key crashed only the launches with them on. So once, before the flows:
+# all three scales at 1, a cold launch from cleared data, and after 15 s the app
+# must be alive, the crash gate must find nothing in this launch's log, and the
+# first screen must have said it is ready (a launch that never drew is no pass).
+# A launch right after `pm clear` races the old task's removal, so the old pid
+# is waited out, and 3 s more.
+mkdir -p "$OUT/motion"
+for s in window_animation_scale transition_animation_scale animator_duration_scale; do
+  timeout 20 adb shell settings put global "$s" 1 > /dev/null 2>&1
+done
+timeout 20 adb shell am force-stop "$PKG" > /dev/null 2>&1
+timeout 20 adb shell pm clear "$PKG" > /dev/null 2>&1
+for _ in $(seq 1 20); do [ -z "$(timeout 20 adb shell pidof "$PKG" | tr -d '\r')" ] && break; sleep 0.5; done
+sleep 3
+timeout 20 adb logcat -c
+timeout 90 adb shell am start-activity -W -n "$PKG/.MainActivity" > "$OUT/motion/am.txt" 2>&1
+sleep "$MOTION_SECONDS"
+motion_pid="$(timeout 20 adb shell pidof "$PKG" | tr -d '\r')"
+timeout 60 adb logcat -d -v threadtime > "$OUT/motion/launch.log" 2>/dev/null
+node mobile/e2e/app-crashes.mjs "$OUT/motion/launch.log" --stream-alive yes --device-now "$(device_clock)" > "$OUT/motion/gate.txt" 2>&1
+motion_gate=$?
+motion_fault=""
+[ -n "$motion_pid" ] || motion_fault="the app was not running ${MOTION_SECONDS} s after its launch"
+[ $motion_gate -eq 0 ] || motion_fault="${motion_fault:+$motion_fault; }the crash gate: $(head -n 3 "$OUT/motion/gate.txt" | tr '\n' ' ')"
+grep -q '\[e2e\] screen.ready' "$OUT/motion/launch.log" || motion_fault="${motion_fault:+$motion_fault; }no screen said it was ready"
+for s in window_animation_scale transition_animation_scale animator_duration_scale; do
+  timeout 20 adb shell settings put global "$s" 0 > /dev/null 2>&1
+done
+if [ -n "$motion_fault" ]; then
+  echo "A launch with animations on failed: $motion_fault" > "$OUT/motion/result.txt"
+  node mobile/e2e/annotate.mjs "A launch with animations on failed" "$OUT/motion/result.txt"
+  rc=1
+else
+  echo "A launch with animations on: alive at ${MOTION_SECONDS} s (pid $motion_pid), no crash, the first screen ready." > "$OUT/motion/result.txt"
+fi
 
 # ── THE KEYBOARD'S ROOM ───────────────────────────────────────────────────────
 # The flows type with no keyboard on the device, so none of them can see

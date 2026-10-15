@@ -56,6 +56,15 @@ case "$1" in
       "dumpsys input_method") echo "mInputShown=true" ;;
       "dumpsys window windows") cat "$T/fixtures/windows.txt" ;;
       "pidof com.reelhouse.society") echo 16631 ;;
+      # A launch, as Android logs it: the process, then the first screen ready, or React destroyed.
+      "am start-activity"*)
+        now=$(date +'%m-%d %H:%M:%S.000')
+        echo "$now  523  543 I ActivityManager: Start proc 16631:com.reelhouse.society/u0a192 for next-top-activity" >> "$T/device.log"
+        if [ -f "$T/state/motion-crash" ]; then
+          echo "$now  16631  16631 W unknown:BridgelessReact: ReactHost{0}.handleHostException(message = \\"undefined is not a function\\")" >> "$T/device.log"
+        else
+          echo "$now  16631  16651 W ReactNativeJS: [e2e] screen.ready {\\"name\\":\\"welcome\\",\\"ms\\":100}" >> "$T/device.log"
+        fi ;;
     esac ;;
 esac
 exit 0
@@ -106,7 +115,9 @@ case "$behaviour" in
     echo "maestro.android.DeviceServerDiedException: Device server died during 'deviceInfo'" >> "$log"
     junit "maestro.android.DeviceServerDiedException: Device server died during &apos;deviceInfo&apos; on emulator-5554 (1085ms since last byte, connection age 1726ms): StatusRuntimeException: UNAVAILABLE"
     echo "[Failed] $name (230ms)"; exit 1 ;;
-  lost-driver)
+  lost-driver|lost-driver-and-a-scale)
+    # The second: the emulator also lost its window animation setting on the way down.
+    [ "$behaviour" = lost-driver-and-a-scale ] && echo 1.0 > "$T/state/window_animation_scale"
     step 'Launch app'; step 'Input text \${E2E_MEMBER_EMAIL}'
     echo '[{"command":{"launchAppCommand":{}},"metadata":{"status":"COMPLETED"}},{"command":{"inputTextCommand":{"text":"x"}},"metadata":{"status":"RUNNING"}}]' > "$tests/$name/commands.json"
     junit "maestro.android.DeviceServerDiedException: Device server died during &apos;inputText&apos; on emulator-5554 (120041ms since last byte)"
@@ -169,7 +180,7 @@ function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { e
     PATH: `${join(T, 'bin')}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`,
     HOME: T + '/home', RUNNER_TEMP: T + '/out', E2E_FLOWS: T + '/flows', MAESTRO_BIN: T + '/bin/maestro',
     E2E_MEMBER_EMAIL: 'e2e_member@e2e.test', E2E_MEMBER_PASSWORD: 'rehearsal-Pw_0123456789x', E2E_MEMBER_USERNAME: 'e2e_member',
-    GITHUB_STEP_SUMMARY: T + '/summary.md',
+    GITHUB_STEP_SUMMARY: T + '/summary.md', E2E_MOTION_SECONDS: '1',
     ...opts.env,
   };
   return new Promise((resolve, reject) => {
@@ -209,8 +220,7 @@ it('runs in bash, as stored: LF line endings', () => {
 });
 
 it('a hiccup is run again and the run is green, with a warning that says so', async () => {
-  const r = await rehearse(['a_flow', 'b_flow'], { stack: ['lost-driver', 'pass'], a_flow: ['never-began', 'pass'] },
-    { state: { window_animation_scale: '1.0' } });
+  const r = await rehearse(['a_flow', 'b_flow'], { stack: ['lost-driver-and-a-scale', 'pass'], a_flow: ['never-began', 'pass'] });
   expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
   expect([calls(r, 'stack'), calls(r, 'a_flow'), calls(r, 'b_flow')]).toEqual([2, 2, 1]);
   const twice = titled(r, 'warning', 'Run twice  2 attempts told nothing about the app');
@@ -280,6 +290,23 @@ it('a launch that takes Android\'s splash over fails the run, though every flow 
   expect(r.status).toBe(1);
   expect(titled(r, 'error', "The app took Android's splash over")).toContain("took Android's splash over on 1 of 1 launch.");
   expect(titled(r, 'error', 'E2E flows failed')).toBe('');
+  always(r);
+});
+
+it('a launch with animations on that destroys React fails the run, though every flow passed', async () => {
+  const r = await rehearse(['a_flow'], { a_flow: ['pass'] }, { state: { 'motion-crash': '' } });
+  expect(r.status).toBe(1);
+  const said = titled(r, 'error', 'A launch with animations on failed');
+  expect(said).toContain('JS error (React instance destroyed)');
+  expect(said).toContain('no screen said it was ready');
+  expect(titled(r, 'error', 'E2E flows failed')).toBe('');
+  always(r);
+});
+
+it('a launch with animations on that lives and draws passes, and says so', async () => {
+  const r = await rehearse(['a_flow'], { a_flow: ['pass'] });
+  expect(r.status).toBe(0);
+  expect(file(r, 'motion', 'result.txt')).toBe('A launch with animations on: alive at 1 s (pid 16631), no crash, the first screen ready.\n');
   always(r);
 });
 

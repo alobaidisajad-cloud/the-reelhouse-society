@@ -14,6 +14,5 @@ appId: com.reelhouse.society
     element: "The projection booth never closes."
     direction: DOWN
     timeout: 20000
-    # To the middle, never left under the tab bar where a tap lands on a tab.
-    centerElement: true
+    # The page's last line, only reached, never tapped: it cannot come to the middle.
 - assertNotVisible: "PROJECTION FAILURE"

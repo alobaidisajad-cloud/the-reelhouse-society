@@ -119,13 +119,21 @@ it('every text a flow looks for matches, as Maestro matches, a text in the app',
   expect(missing.map((a) => `${a.flow}: "${a.value}"`)).toEqual([]);
 });
 
-it('every scroll brings its target to the middle of the screen, never under the tab bar', () => {
+// A page's last line, only reached, never tapped: it cannot come to the middle (run 38663626040).
+const END_OF_PAGE = ['The projection booth never closes.'];
+
+it('every scroll to something tapped brings it to the middle, with time to get there', () => {
   // A scroll that stops as soon as its target shows can leave it under the
   // docked tab bar, and the next tap lands on a tab: browse_vault opened the
-  // Reel instead of the Watchlist on a slow run.
-  const scrolls = FLOWS.flatMap((f) => f.scrolls.map((arg) => ({ flow: f.flow, arg })));
+  // Reel instead of the Watchlist on a slow run. Each centring swipe takes
+  // seconds there, and 20 s ran out after one (log_film_flow, 38663626040).
+  const scrolls = FLOWS.flatMap((f) => f.scrolls.map((arg) => ({ flow: f.flow, arg, end: END_OF_PAGE.includes(String(arg.element)) })));
   expect(scrolls.length).toBeGreaterThanOrEqual(3);
-  expect(scrolls.filter((s) => s.arg.centerElement !== true).map((s) => s.flow)).toEqual([]);
+  const centred = scrolls.filter((s) => !s.end);
+  expect(centred.filter((s) => s.arg.centerElement !== true || Number(s.arg.timeout) < 60000).map((s) => s.flow)).toEqual([]);
+  // The named exceptions exist, and are not centred.
+  expect(scrolls.filter((s) => s.end).map((s) => [s.flow, s.arg.centerElement ?? false]))
+    .toEqual(END_OF_PAGE.map(() => ['lobby_wall_flow.yaml', false]));
 });
 
 it('every flow drives this app, and none holds an account', () => {

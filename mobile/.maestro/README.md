@@ -84,8 +84,9 @@ takeover on any launch fails the run** (`e2e/splash-handoff.mjs`).
 each id must be a testID in the app, each text must match (as Maestro matches:
 the whole text, as a pattern) something the app writes, each flow must drive
 this app, none may hold an account, and every scroll must bring its target to
-the middle of the screen (a target left under the tab bar gets the tab tapped). A change to the app that strands a flow
-fails CI the same day.
+the middle of the screen with time to get there (a target left under the tab
+bar gets the tab tapped), except the last line of a page, which cannot. A change
+to the app that strands a flow fails CI the same day.
 
 ## When a flow fails only sometimes
 

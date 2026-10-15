@@ -139,7 +139,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/glideLogLevel.test.ts | 2026-10-08 | written with glide-log-level.mjs, on dexdump lines in the shape of runs 37628665206 and 37674283540 |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
-| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-04 | written: the real run-flows.sh against a fake phone and a fake Maestro, six whole runs |
+| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: the fake phone answers a launch; a launch with animations on that destroys React fails the run; a lost scale is planted mid-run |
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/screenTimes.test.ts | 2026-10-02 | Written in the launch audit: the screen-time reader on threadtime log lines, and every way its gate says no. |
 | e2e/annotate.mjs | 2026-10-04 | the password hidden at the one door out; a summary-only level for past ten notices |
@@ -163,7 +163,7 @@ without one). "Read" is the day its comments were last read against its code.
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it |
 | e2e/old-client-tree.mjs | 2026-10-15 | new |
 | e2e/old-clients.cjs | 2026-10-15 | new |
-| e2e/run-flows.sh | 2026-10-04 | the warm-up removed (it prevented nothing); the splash check after the crash check; earlier: the retry rule, crash gate, phone settled per Maestro |
+| e2e/run-flows.sh | 2026-10-15 | edited: one launch with animations on before the flows, judged alive, crash-free and drawn |
 | e2e/screen-times.mjs | 2026-10-02 | Written in the launch audit: each screen's time to its content, read from the E2E device log; a gate once ceilings are set. |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/splash-handoff.mjs | 2026-10-04 | written: no launch takes the splash over, scoped to the app's own processes; no launch, no pass |
@@ -1036,7 +1036,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/logger.test.ts | — |  |
 | src/utils/__tests__/logScreenPolish.guard.test.ts | — |  |
 | src/utils/__tests__/lucideIconsAreBundled.guard.test.ts | — |  |
-| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-15 | every scroll brings its target to the middle |
+| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-15 | edited: a scroll to something tapped centres it with 60 s; a page's last line is named and not centred |
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
