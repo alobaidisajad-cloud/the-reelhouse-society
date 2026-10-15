@@ -13,9 +13,10 @@ import { join } from 'path';
 const MOBILE = join(__dirname, '..', '..', '..');
 const ROOT = join(MOBILE, '..');
 const { refusalOf } = require('../../../scripts/hooks/pre-commit.cjs') as { refusalOf: (path: string, bytes: Buffer) => string | null };
-const { basesOf, ignored } = require('../../../scripts/hooks/pre-push.cjs') as {
+const { basesOf, ignored, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
   basesOf: (input: string, git: (...a: string[]) => string) => string[];
   ignored: (mobile: string) => string[];
+  workersFor: (freeBytes: number, cores: number) => number;
 };
 const { faultOf } = require('../../../scripts/hooks-ran.cjs') as {
   faultOf: (c: { author: string; committer: string; message: string }) => string | null;
@@ -65,6 +66,25 @@ describe('before a push', () => {
       expect([mobile, left(`${mobile}/src/utils/__tests__/a.test.ts`)]).toEqual([mobile, false]);
       expect([mobile, left(`${mobile}/.claude/worktrees/b/mobile/src/a.test.ts`)]).toEqual([mobile, true]);
       expect([mobile, left(`${mobile}/node_modules/x/a.test.ts`)]).toEqual([mobile, true]);
+    }
+  });
+
+  it('runs as many jest workers as the free memory holds, at least one, never every core', () => {
+    const GB = 1024 ** 3;
+    expect(workersFor(4 * GB, 16)).toBe(5);
+    expect(workersFor(64 * GB, 16)).toBe(15);
+    expect(workersFor(1 * GB, 16)).toBe(1);
+    expect(workersFor(0, 16)).toBe(1);
+  });
+});
+
+describe('jest itself', () => {
+  it('leaves out the worktrees inside a checkout, never a checkout that is itself a worktree', () => {
+    const { testPathIgnorePatterns } = require(join(MOBILE, 'jest.config.js')) as { testPathIgnorePatterns: string[] };
+    for (const mobile of ['/home/m/reelhouse/mobile', '/home/m/reelhouse/.claude/worktrees/agent-a/mobile']) {
+      const left = (path: string) => testPathIgnorePatterns.some((p) => new RegExp(p.replace('<rootDir>', mobile)).test(path));
+      expect([mobile, left(`${mobile}/src/utils/__tests__/a.test.ts`)]).toEqual([mobile, false]);
+      expect([mobile, left(`${mobile}/.claude/worktrees/b/mobile/src/a.test.ts`)]).toEqual([mobile, true]);
     }
   });
 });

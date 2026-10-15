@@ -29,6 +29,17 @@ const ignored = (mobile) => [
   `${mobile.split(sep).join('/').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/\\.claude/worktrees/`,
 ];
 
+/**
+ * How many jest workers the push can afford: each holds about one suite's heap
+ * (jest.config.js lets a worker grow to 400 MB before it restarts), with a
+ * gigabyte left for everything else. Too many on a busy machine and workers are
+ * killed for memory, failing suites that have nothing wrong with them.
+ */
+const WORKER_BYTES = 600 * 1024 ** 2;
+const RESERVE_BYTES = 1024 ** 3;
+const workersFor = (freeBytes, cores) =>
+  Math.max(1, Math.min(cores - 1, Math.floor((freeBytes - RESERVE_BYTES) / WORKER_BYTES)));
+
 /** Where each pushed ref starts: the remote's tip, or where a new branch left main. */
 const basesOf = (input, git) => input.split('\n').filter(Boolean).flatMap((line) => {
   const [, local, , remote] = line.trim().split(/\s+/);
@@ -62,7 +73,8 @@ if (require.main === module) {
     const l = run('lint on the changed files', 'npx', ['eslint', '--max-warnings=0', '--no-warn-ignored', ...code], MOBILE);
     if (l) faults.push(l);
   }
-  const jest = ['jest', '--testPathIgnorePatterns', ...ignored(MOBILE)];
+  const workers = workersFor(require('os').freemem(), require('os').cpus().length);
+  const jest = ['jest', `--maxWorkers=${workers}`, '--testPathIgnorePatterns', ...ignored(MOBILE)];
   if (code.length) {
     const j = run('the tests related to the changed files', 'npx', [...jest, '--passWithNoTests', '--findRelatedTests', ...code], MOBILE);
     if (j) faults.push(j);
@@ -74,4 +86,4 @@ if (require.main === module) {
   if (faults.length) { console.error(`\nPush refused: ${faults.join('; ')}`); process.exit(1); }
 }
 
-module.exports = { basesOf, ignored };
+module.exports = { basesOf, ignored, workersFor };

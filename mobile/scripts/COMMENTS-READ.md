@@ -192,7 +192,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/tmdb/record.mjs | 2026-09-29 | true as written |
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
-| jest.config.js | 2026-10-15 | edited: testEnvironment, the timer-checking one, says what it is; the repo copies under .claude are not this tree |
+| jest.config.js | 2026-10-15 | edited: testEnvironment, the timer-checking one, says what it is; the repo copies under this checkout's .claude are not its tree, a copy runs its own |
 | jest.setup.ts | 2026-10-15 | edited: expo-image's getCachePathAsync answers null, as native does for a picture not on disk |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
@@ -240,7 +240,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
 | scripts/hooks/commit-msg.cjs | 2026-10-15 | new |
 | scripts/hooks/pre-commit.cjs | 2026-10-15 | new |
-| scripts/hooks/pre-push.cjs | 2026-10-15 | edited: jest leaves out only the worktrees inside this checkout, so a worktree runs its own tests |
+| scripts/hooks/pre-push.cjs | 2026-10-15 | edited: jest leaves out only the worktrees inside this checkout, so a worktree runs its own tests; workers sized to the free memory |
 | scripts/hooks-ran.cjs | 2026-10-15 | new |
 | scripts/install-hooks.cjs | 2026-10-15 | new |
 | scripts/lucide-icons.js | 2026-10-03 | read whole: sound |
@@ -1089,7 +1089,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/handleHistory.wiring.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.reader.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.test.ts | — |  |
-| src/utils/__tests__/hooks.guard.test.ts | 2026-10-15 | edited: the push's jest leaves out nested worktrees, never the checkout's own tests |
+| src/utils/__tests__/hooks.guard.test.ts | 2026-10-15 | edited: the push's jest and jest.config leave out nested worktrees, never the checkout's own tests; workers fit the memory |
 | src/utils/__tests__/html.test.ts | — |  |
 | src/utils/__tests__/everyPictureStatesItsCache.guard.test.ts | 2026-10-15 | new: every expo-image picture states its cache; another policy is listed with its reason |
 | src/utils/__tests__/imagePrefetchSites.guard.test.ts | 2026-10-15 | edited: the four places go through prefetchPictures; a direct prefetch anywhere else fails |
