@@ -1,0 +1,102 @@
+# The register: every kind of mistake the app can make, one entry per class (WORKLIST P0.49–P0.54).
+# mobile/scripts/register.cjs generates CLASSES.md from this file; everyClassIsAccountedFor holds each status
+# to its rules. A class still open in production keeps only id, area, seriousness, count and status here; the
+# rest is in the private file until its fix is live and probed.
+classes:
+  - id: MOTION-empty-config-key
+    title: An animation config key holding no value replaces Reanimated's default with nothing
+    seriousness: serious
+    area: motion
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: c56597db }
+    methods:
+      - { kind: static, file: src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts, test: "reads every animation config in the app, and each is a literal whose keys all hold a value" }
+      - { kind: running, file: src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts, test: "the jest fake refuses an empty key in every config a test runs, withDecay's included" }
+    places: [emulator, simulator]
+
+  - id: E2E-soft-crash-unseen
+    title: React destroyed with no crash dialog passes a run whose flows relaunched over it
+    seriousness: serious
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "Sealed E2E 38262703073" }
+    places: [emulator]
+
+  - id: SEC-secret-committed
+    area: security
+    seriousness: serious
+    status: OPEN
+    count: 21
+    open_in_production: true
+
+  - id: BUILD-upload-carries-ignored-files
+    title: An EAS build's upload carries files git keeps out
+    seriousness: serious
+    area: release
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "build 41" }
+
+  - id: DB-breaking-change-unexplained
+    title: A database change narrows what a shipped client relies on, with no reason why it is safe
+    seriousness: serious
+    area: database
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: eef64759 }
+
+  - id: DB-apply-not-one-unit
+    title: A migration that cannot apply as one unit under the time limits
+    seriousness: serious
+    area: database
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: P0.57 }
+
+  - id: DB-change-without-undo
+    title: A pending migration with no tested undo
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: P0.9 }
+
+  - id: WEB-change-unapproved
+    title: A change to the website's files reaches members without the user's approval
+    seriousness: behaviour
+    area: website
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: P0.5 }
+
+  - id: E2E-scroll-leaves-target-under-bar
+    title: A flow's scroll stops with its target under the tab bar, and the next tap lands on a tab
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "Sealed E2E 38610514483" }
+
+  - id: CI-check-only-in-ci
+    title: A check CI runs that no local gate runs, so a push meets it only in red
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "God-Tier 38672855330 (yamllint)" }
+
+  - id: SALON-channel
+    area: lounge
+    seriousness: serious
+    status: OPEN
+    count: 1
+    open_in_production: true
+
+  - id: DB-function-grants
+    area: database
+    seriousness: serious
+    status: OPEN
+    count: 71
+    open_in_production: true

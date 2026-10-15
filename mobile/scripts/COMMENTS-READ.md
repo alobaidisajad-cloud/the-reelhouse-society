@@ -209,6 +209,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/shoot.cjs | 2026-09-29 | true as written |
 | mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
+| register/classes.yaml | 2026-10-15 | new |
 | scripts/add-only.cjs | 2026-10-15 | new |
 | scripts/bundle-size.js | 2026-10-03 | read whole: sound |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route) |
@@ -229,6 +230,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/lucide-icons.js | 2026-10-03 | read whole: sound |
 | scripts/migration-lint.cjs | 2026-10-15 | new |
 | scripts/private-settings.cjs | 2026-10-15 | new |
+| scripts/register.cjs | 2026-10-15 | new |
 | scripts/schema-snapshot.mjs | 2026-10-15 | edited: the address from the private settings file; default privileges that name no schema |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
 | scripts/secrets-planted.cjs | 2026-10-15 | new |
@@ -1021,6 +1023,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyBackHasAWayOut.guard.test.ts | — |  |
 | src/utils/__tests__/everyCapAnswersToItsColumn.test.ts | 2026-10-03 | read whole: every new cap answers to its column or says why it is smaller |
 | src/utils/__tests__/everyChannelIsPrivate.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/everyClassIsAccountedFor.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | — |  |
 | src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
