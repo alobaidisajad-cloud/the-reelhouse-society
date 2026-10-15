@@ -92,7 +92,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/notifications-modal.tsx | 2026-10-02 | rows say new/who/what/when; the rest could not be reached; history comments trimmed |
 | app/(modals)/search-modal.tsx | 2026-10-03 | edited: no results holds through the next letter |
 | app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
-| app/(tabs)/_layout.tsx | 2026-10-15 | edited: the tab icon's two timings take literal configs |
+| app/(tabs)/_layout.tsx | 2026-10-15 | edited: each tab's own button draws its icon; no tabBarIcon; the icon's animated views stay native |
 | app/(tabs)/darkroom.tsx | 2026-10-02 | the next batch that could not be developed is said, and asked again |
 | app/(tabs)/dispatch.tsx | 2026-10-15 | the new-filings pill leaves through Presence |
 | app/(tabs)/index.tsx | 2026-10-03 | edited: the join plate draws the shared BrassSheen |
@@ -182,7 +182,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-04 | edited: testEnvironment, the timer-checking one, says what it is |
-| jest.setup.ts | 2026-10-15 | edited: the fake withDecay refuses an empty key, as withTiming and withSpring do |
+| jest.setup.ts | 2026-10-15 | edited: the safe-area stand-in carries its two contexts, as React Navigation's tab bar reads them |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
 | mockups/paper/__tests__/zz-badge.gen.test.tsx | 2026-09-29 | described the real badge as it was at one commit (brass ramp); now says A is whatever RankBadge is |
@@ -244,6 +244,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/website-freeze.cjs | 2026-10-15 | new |
 | src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-02 | Written in the launch audit: no two modules export a component under one name. |
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
+| src/components/__tests__/aTabDrawsItsIconOnce.test.tsx | 2026-10-15 | true as written |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
 | src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: the lids lie beside the picture, outside the points’ layer, over the whole figure; the still one shows whole |
 | src/components/__tests__/busterRegister.test.ts | 2026-10-04 | edited: every layer of every picture, at every density |
@@ -431,7 +432,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/ShareCardModal.tsx | 2026-10-08 | shares only once the card is whole; the probe image and the 2 s fallback gone |
 | src/components/film/TrailerModal.tsx | 2026-10-01 | names what it plays |
 | src/components/film/WatchProviders.tsx | 2026-10-04 | edited: the monogram takes each initial whole |
-| src/components/HapticTab.tsx | 2026-10-02 | Read whole (launch audit). Its 10pt reach gave each tab's edge to its neighbour and took 10pt of the screen above the bar: removed. |
+| src/components/HapticTab.tsx | 2026-10-15 | edited: given an icon, the button draws it once, chosen by aria-selected; why tabBarIcon is not used |
 | src/components/home/ProjectorBeam.tsx | 2026-10-01 | true as written |
 | src/components/home/types.ts | 2026-10-01 | true as written |
 | src/components/home/VelvetRopeCTA.tsx | 2026-10-03 | read whole: its sheen moved to theme/BrassSheen |

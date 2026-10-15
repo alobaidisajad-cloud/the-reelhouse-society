@@ -14,6 +14,7 @@ import {
 } from 'lucide-react-native';
 import { ReelEyeIcon } from '@/src/components/ReelEyeIcon';
 import { HapticTab } from '@/src/components/HapticTab';
+import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { colors, effects } from '@/src/theme/theme';
 import { TopNavBar } from '@/src/components/layout/TopNavBar';
 import InitiationModal from '@/src/components/InitiationModal';
@@ -61,7 +62,7 @@ function TabIcon({
   const { iconStyle, dotStyle } = useTabIconMotion(focused);
   return (
     <View style={s.tabIconRoot}>
-      <Animated.View style={[s.tabIconInner, iconStyle]}>
+      <Animated.View collapsable={false} style={[s.tabIconInner, iconStyle]}>
         <IconComponent
           size={22}
           color={focused ? colors.sepia : colors.bone}
@@ -69,7 +70,7 @@ function TabIcon({
         />
       </Animated.View>
       <View style={s.indicatorSlot}>
-        <Animated.View style={[s.indicatorDot, { backgroundColor: colors.sepia }, dotStyle]} />
+        <Animated.View collapsable={false} style={[s.indicatorDot, { backgroundColor: colors.sepia }, dotStyle]} />
       </View>
     </View>
   );
@@ -80,7 +81,7 @@ function LobbyTabIcon({ focused }: { focused: boolean }) {
   const iconColor = focused ? colors.flicker : colors.bone;
   return (
     <View style={s.tabIconRoot}>
-      <Animated.View style={[s.tabIconInner, iconStyle]}>
+      <Animated.View collapsable={false} style={[s.tabIconInner, iconStyle]}>
         <ReelEyeIcon
           size={26}
           color={iconColor}
@@ -88,7 +89,7 @@ function LobbyTabIcon({ focused }: { focused: boolean }) {
         />
       </Animated.View>
       <View style={s.indicatorSlot}>
-        <Animated.View style={[
+        <Animated.View collapsable={false} style={[
           s.indicatorDot,
           { backgroundColor: colors.flicker },
           s.centerGlow,
@@ -132,11 +133,17 @@ function TabBarBackground() {
 
 const renderHeader = () => <TopNavBar />;
 const renderTabBarBackground = () => <TabBarBackground />;
-const renderDispatchIcon = ({ focused }: { focused: boolean }) => <TabIcon IconComponent={Newspaper} focused={focused} />;
-const renderReelsIcon = ({ focused }: { focused: boolean }) => <TabIcon IconComponent={Film} focused={focused} />;
-const renderLobbyIcon = ({ focused }: { focused: boolean }) => <LobbyTabIcon focused={focused} />;
-const renderDarkroomIcon = ({ focused }: { focused: boolean }) => <TabIcon IconComponent={Clapperboard} focused={focused} />;
-const renderProfileIcon = ({ focused }: { focused: boolean }) => <TabIcon IconComponent={User} focused={focused} />;
+// Each tab's button draws its own icon, once; no screen sets tabBarIcon (HapticTab says why).
+const dispatchIcon = (focused: boolean) => <TabIcon IconComponent={Newspaper} focused={focused} />;
+const reelsIcon = (focused: boolean) => <TabIcon IconComponent={Film} focused={focused} />;
+const lobbyIcon = (focused: boolean) => <LobbyTabIcon focused={focused} />;
+const darkroomIcon = (focused: boolean) => <TabIcon IconComponent={Clapperboard} focused={focused} />;
+const profileIcon = (focused: boolean) => <TabIcon IconComponent={User} focused={focused} />;
+const dispatchButton = (props: BottomTabBarButtonProps) => <HapticTab {...props} icon={dispatchIcon} />;
+const reelsButton = (props: BottomTabBarButtonProps) => <HapticTab {...props} icon={reelsIcon} />;
+const lobbyButton = (props: BottomTabBarButtonProps) => <HapticTab {...props} icon={lobbyIcon} />;
+const darkroomButton = (props: BottomTabBarButtonProps) => <HapticTab {...props} icon={darkroomIcon} />;
+const profileButton = (props: BottomTabBarButtonProps) => <HapticTab {...props} icon={profileIcon} />;
 
 // ════════════════════════════════════════════════════════════════
 //  TAB LAYOUT
@@ -195,7 +202,7 @@ export default function TabLayout() {
           title: 'Dispatch',
           tabBarAccessibilityLabel: 'Dispatch tab',
           tabBarButtonTestID: 'dispatch-tab',
-          tabBarIcon: renderDispatchIcon,
+          tabBarButton: dispatchButton,
         }}
       />
 
@@ -205,7 +212,7 @@ export default function TabLayout() {
           title: 'The Reel',
           tabBarAccessibilityLabel: 'The Reel tab',
           tabBarButtonTestID: 'reels-tab',
-          tabBarIcon: renderReelsIcon,
+          tabBarButton: reelsButton,
         }}
       />
 
@@ -215,7 +222,7 @@ export default function TabLayout() {
           title: 'Lobby',
           tabBarAccessibilityLabel: 'Lobby tab',
           tabBarButtonTestID: 'home-tab',
-          tabBarIcon: renderLobbyIcon,
+          tabBarButton: lobbyButton,
         }}
       />
 
@@ -225,7 +232,7 @@ export default function TabLayout() {
           title: 'Darkroom',
           tabBarAccessibilityLabel: 'Darkroom tab',
           tabBarButtonTestID: 'darkroom-tab',
-          tabBarIcon: renderDarkroomIcon,
+          tabBarButton: darkroomButton,
         }}
       />
 
@@ -235,7 +242,7 @@ export default function TabLayout() {
           title: 'Profile',
           tabBarAccessibilityLabel: 'Profile tab',
           tabBarButtonTestID: 'profile-tab',
-          tabBarIcon: renderProfileIcon,
+          tabBarButton: profileButton,
         }}
       />
 

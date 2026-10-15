@@ -3,7 +3,15 @@ import { Pressable } from 'react-native';
 import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import TactileEngine from '../utils/TactileEngine';
 
-export function HapticTab(props: BottomTabBarButtonProps) {
+/**
+ * A tab's button. Given `icon`, it draws that icon once, chosen or not by the
+ * tab's own `aria-selected`, in place of React Navigation's `tabBarIcon`. That
+ * one draws each icon twice, stacked, and swaps their wrappers' opacity between
+ * 0 and 1 on every change of tab. On Android a wrapper at 1 is folded away and
+ * one at 0 is made again, both in one update; the update lost the making, and
+ * React was destroyed (Unable to find viewState for tag N, Sealed E2E).
+ */
+export function HapticTab({ icon, ...props }: BottomTabBarButtonProps & { icon?: (focused: boolean) => React.ReactNode }) {
   const isRealTouch = useRef(false);
   const resetTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -17,6 +25,7 @@ export function HapticTab(props: BottomTabBarButtonProps) {
   return (
     <Pressable
       {...(props as any)}
+      {...(icon ? { children: icon(props['aria-selected'] === true) } : null)}
       // No reach past its own edges: a tab is a fifth of the screen wide and the
       // bar's full height, and the tabs sit edge to edge. A 10pt reach gave each
       // tab's right edge to its neighbour (opened on the touch DOWN) and took

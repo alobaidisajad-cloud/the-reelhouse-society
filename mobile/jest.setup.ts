@@ -599,11 +599,17 @@ jest.mock('expo-notifications', () => ({
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
   const { View } = require('react-native');
+  const insets = { top: 0, bottom: 0, left: 0, right: 0 };
+  const frame = { x: 0, y: 0, width: 375, height: 812 };
+  // The contexts too: React Navigation's tab bar reads the insets from SafeAreaInsetsContext.
   return {
     SafeAreaProvider: ({ children, style }: any) => React.createElement(View, { style: [{ flex: 1 }, style] }, children),
     SafeAreaView: ({ children, ...props }: any) => React.createElement(View, props, children),
-    useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
-    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 375, height: 812 }),
+    SafeAreaInsetsContext: React.createContext(insets),
+    SafeAreaFrameContext: React.createContext(frame),
+    initialWindowMetrics: { insets, frame },
+    useSafeAreaInsets: () => insets,
+    useSafeAreaFrame: () => frame,
   };
 });
 
