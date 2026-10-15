@@ -81,6 +81,13 @@ describe('the comparison says NO', () => {
     .map(([t, names]) => [t, (names ?? []).filter((n) => !(gone[t] ?? []).includes(n))]));
   const plant = (text: string): Source[] => [{ file: 'app/planted.tsx', text }];
 
+  it('never to the bundler\'s own `global`, nor to a `declare global` of types; still to a global truly lacked', () => {
+    const phone = less({ globalThis: ['global', 'structuredClone'] });
+    const text = 'declare global { interface X { a: string } }\nif (global.gc) global.gc();\nconst c = structuredClone(x);';
+    expect(unlisted(NODE, phone, LIST.lacks, plant(text)).map((u) => `${u.line} ${u.api}`))
+      .toEqual(['3 globalThis.structuredClone']);
+  });
+
   it('to a use of a static, a global or a method the phone lacks, until the list names it', () => {
     const phone = less({ Promise: ['withResolvers'], globalThis: ['structuredClone'], 'String.prototype': ['isWellFormed'] });
     const text = 'const r = Promise.withResolvers(); const c = structuredClone(x); const ok = name.isWellFormed();';

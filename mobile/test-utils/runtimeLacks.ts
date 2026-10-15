@@ -107,6 +107,8 @@ const readAsValue = (id: ts.Identifier): boolean => {
     || ts.isBindingElement(p) || ts.isLabeledStatement(p)) && (p as { name?: ts.Node }).name === id) return false;
   if (ts.isBindingElement(p) && p.propertyName === id) return false;
   if (ts.isImportSpecifier(p) || ts.isExportSpecifier(p) || ts.isImportClause(p) || ts.isNamespaceImport(p)) return false;
+  // `declare global { … }` names a scope for types, and runs nothing.
+  if (ts.isModuleDeclaration(p) && p.name === id) return false;
   if (ts.isJsxOpeningElement(p) || ts.isJsxClosingElement(p) || ts.isJsxSelfClosingElement(p)) return false;
   return true;
 };
@@ -213,6 +215,9 @@ export function namesOnNode(source: string, reads: string[]): Record<string, str
   return JSON.parse(r.stdout);
 }
 
+/** What Metro passes each module's wrapper: the app has it, whatever the global object holds. */
+export const BUNDLER_GIVES = new Set(['global']);
+
 /** A dump's target → the shape of API its names are (`Name.member`, prototype, global). */
 export const apiFor = (target: string, name: string): string =>
   (target === 'globalThis' ? `globalThis.${name}` : `${target}.${name}`);
@@ -230,6 +235,7 @@ export function unlisted(node: Record<string, string[] | null>, phone: Record<st
     for (const name of names ?? []) {
       // Only names an app can write as Name.member: not symbols' keys, not `constructor`.
       if (!/^[A-Za-z_$][\w$]*$/.test(name) || name === 'constructor' || name === 'prototype') continue;
+      if (target === 'globalThis' && BUNDLER_GIVES.has(name)) continue;
       if (!there.has(name)) missing.push(apiFor(target, name));
     }
   }

@@ -26,10 +26,6 @@ classes:
       - { kind: static, file: src/utils/__tests__/runtimeLacks.guard.test.ts, test: "no file in app/ or src/ uses an API the phone lacks" }
       - { kind: running, file: src/utils/__tests__/runtimeLacks.guard.test.ts, test: "each entry is there on Node, and gone in the tests' engine" }
     places: [emulator]
-    pending: >-
-      The phone's runtime is not committed yet: the next sealed E2E run writes it (phone-runtime.json
-      in its e2e-logs) and fails until it is committed as e2e/runtime/phone-runtime.json;
-      runtimeDump.contract.test.ts then reads the list against it, and this note goes.
 
   - id: E2E-soft-crash-unseen
     title: React destroyed with no crash dialog passes a run whose flows relaunched over it

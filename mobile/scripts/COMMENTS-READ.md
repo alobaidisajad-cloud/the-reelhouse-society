@@ -86,7 +86,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx | 2026-10-03 | new: your own circle is said to you |
 | app/(modals)/cover-picker.tsx | 2026-10-15 | top from useModalTop |
 | app/(modals)/list-modal.tsx | 2026-10-15 | handle's top from useModalTop; the bar on the edge, the list above it (useAboveDockedBar) |
-| app/(modals)/log-modal.tsx | 2026-10-15 | handle's top from useModalTop; the form ends above the seal (useAboveDockedBar) |
+| app/(modals)/log-modal.tsx | 2026-10-15 | edited: each step and each Back to search said in the E2E log |
 | app/(modals)/login.tsx | 2026-10-15 | header top from useModalTop; the page stops at the edge (useBottomEdge) |
 | app/(modals)/membership.tsx | 2026-10-15 | nav top from useModalTop; ends above the window and its fade, or at useContentBottom |
 | app/(modals)/notifications-modal.tsx | 2026-10-15 | handle's top from useModalTop; foot from useContentBottom |
@@ -1107,7 +1107,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-03 | rewritten: whom an event concerns, what a record grants, applying it |
 | src/utils/__tests__/roomFilters.test.ts | 2026-10-01 | written: one answer to is-this-room-narrowed |
-| src/utils/__tests__/runtimeDump.contract.test.ts | 2026-10-15 | new: the list of what the phone lacks, held to the phone's runtime and Node |
+| src/utils/__tests__/runtimeDump.contract.test.ts | 2026-10-15 | edited: runtimeNames read from its file (coverage-safe); says NO past global and declare global |
 | src/utils/__tests__/runtimeLacks.guard.test.ts | 2026-10-15 | new: no line uses an API the phone lacks; jest takes away exactly the list |
 | src/utils/__tests__/sanitisationCallSites.test.ts | 2026-10-03 | edited: the hostile samples written as escapes |
 | src/utils/__tests__/sanitizeInput.test.ts | — |  |
@@ -1217,7 +1217,7 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/contractEnv.ts | 2026-10-03 | read whole: sound; "all 5,000 tests" is every unit test |
 | test-utils/react-native-testing-library.js | 2026-10-04 | edited: every render's client is testQueryClient(); the comment says what that keeps |
 | test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
-| test-utils/runtimeLacks.ts | 2026-10-15 | new: the finder of APIs the phone lacks, and the comparison with Node |
+| test-utils/runtimeLacks.ts | 2026-10-15 | edited: a declare global is a type; the bundler's own global is never read as lacked |
 | test-utils/SOURCE-READING-TESTS.md | 2026-10-03 | read whole: rows for the new source readers |
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
 | test-utils/testQueryClient.ts | 2026-10-04 | written whole: the one client a test builds — the app's rules, no collection timer, errors heard |
