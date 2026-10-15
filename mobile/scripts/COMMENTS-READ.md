@@ -409,7 +409,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/feed/PosterFrame.tsx | 2026-10-01 | the poster says its film |
 | src/components/feed/ReviewContent.tsx | 2026-10-04 | edited: the review and the pull quote each take their own direction |
 | src/components/feed/UserAttributionRow.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
-| src/components/film/__tests__/aFileIsSharedWhole.test.tsx | 2026-10-08 | written: nothing is captured before every picture on the file is drawn |
+| src/components/film/__tests__/aFileIsSharedWhole.test.tsx | 2026-10-15 | written: nothing is captured before every picture on the file is drawn; edited: the preview fills the room less the measured frame |
 | src/components/film/__tests__/castRailFits.test.ts | — |  |
 | src/components/film/__tests__/FilmActionTray.test.tsx | — |  |
 | src/components/film/__tests__/filmDossier.test.tsx | — |  |
@@ -441,7 +441,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/LogShareCard.tsx | 2026-10-08 | passes the card's onReady through |
 | src/components/film/NitrateFileCard.tsx | 2026-10-08 | says when every picture is drawn (onReady); a failed poster turns to the no-poster face; the house's domain, not REELHOUSE.APP |
 | src/components/film/pickCertificate.ts | 2026-10-01 | the member's own region is real now |
-| src/components/film/ShareCardModal.tsx | 2026-10-15 | edited: the card in a CentredCard; its ground closes it |
+| src/components/film/ShareCardModal.tsx | 2026-10-15 | edited: the card in a CentredCard; its ground closes it; the preview sized to the room less its measured frame |
 | src/components/film/TrailerModal.tsx | 2026-10-15 | close from useOverlayTop |
 | src/components/film/WatchProviders.tsx | 2026-10-04 | edited: the monogram takes each initial whole |
 | src/components/HapticTab.tsx | 2026-10-15 | edited: given an icon, the button draws it once, chosen by aria-selected; why tabBarIcon is not used |

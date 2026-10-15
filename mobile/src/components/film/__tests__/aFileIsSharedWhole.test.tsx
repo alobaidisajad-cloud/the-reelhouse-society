@@ -13,7 +13,11 @@
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { NitrateFileCard, type NitrateFileData } from '../NitrateFileCard';
-import { ShareCardModal } from '../ShareCardModal';
+import { previewScaleFor, ShareCardModal } from '../ShareCardModal';
+import { NITRATE_CARD_HEIGHT } from '../NitrateFileCard';
+import { overlayRoomEdge } from '@/src/components/layout/navMetrics';
+import { Dimensions, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const mockCapture = jest.fn();
 jest.mock('react-native-view-shot', () => {
@@ -150,5 +154,41 @@ describe("the film page's file is shared only whole", () => {
     await act(async () => { seal(r)[0].props.onDisplay!(); posters(r, POSTER)[0].props.onError!(); });
     expect(posters(r, POSTER)).toHaveLength(0);
     expect(r.getByText('SHARE TO SOCIALS')).toBeTruthy();
+  });
+});
+
+describe('the preview fills the room the card stands in, and no more', () => {
+  it('on a 390 × 844 phone at a 59pt inset, a card with a 143pt frame stands in the room exactly', () => {
+    const room = overlayRoomEdge({ top: 59, bottom: 34 });
+    const preview = NITRATE_CARD_HEIGHT * previewScaleFor(390, 844, room, 143);
+    expect(Math.abs(preview + 143 + 2 * room - 844)).toBeLessThan(0.01);
+    // The old budget, the window less 240, was 2pt taller than this room.
+    expect(NITRATE_CARD_HEIGHT * Math.min(1, 318 / 360, (844 - 240) / NITRATE_CARD_HEIGHT) + 143 + 2 * room).toBeGreaterThan(845);
+  });
+
+  it('measures the card’s own frame once drawn, and gives the preview the rest of the room', async () => {
+    // A 390 × 844 phone, where the room's height, not its width, sizes the preview once the frame is tall.
+    const [width, height] = [390, 844];
+    const window = jest.spyOn(Dimensions, 'get');
+    const before = window.getMockImplementation();
+    window.mockImplementation(() => ({ width, height, scale: 3, fontScale: 1 }));
+    try {
+    const room = overlayRoomEdge(useSafeAreaInsets());
+    const FILM = { id: 1, title: 'The Odyssey', poster_path: '/odyssey.jpg' };
+    const r = render(<ShareCardModal visible onClose={jest.fn()} film={FILM} log={null} username="morpho" memberNo={12} />);
+    const sheet = r.getByTestId('nitrate-file-sheet');
+    const previewHeight = () => StyleSheet.flatten(r.getByTestId('nitrate-file-preview').props.style).height as number;
+    const lay = (h: number) => act(() => { fireEvent(sheet, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: h } } }); });
+    // Drawn, the frame turns out to be 300: the preview is sized to the room less that.
+    await lay(previewHeight() + 300);
+    expect(previewHeight()).toBeCloseTo(NITRATE_CARD_HEIGHT * previewScaleFor(width, height, room, 300), 5);
+    expect(previewHeight() + 300 + 2 * room).toBeCloseTo(height, 5);
+    // Measured again as drawn now, it stays: no second correction.
+    const settled = previewHeight();
+    await lay(settled + 300);
+    expect(previewHeight()).toBe(settled);
+    } finally {
+      window.mockImplementation(before!);
+    }
   });
 });

@@ -5,7 +5,7 @@
  * card template itself lives in NitrateFileCard (shared with the log page).
  */
 import React, { useRef, useState, memo, useEffect } from 'react';
-import { View, StyleSheet, Modal, Share, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Modal, Share, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { Text } from '@/src/components/text';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -25,6 +25,7 @@ import {
 } from '@/src/components/film/NitrateFileCard';
 import { ToastHost } from '@/src/components/ToastHost';
 import { CentredCard } from '@/src/components/layout/CentredCard';
+import { useOverlayRoomPadding } from '@/src/components/layout/navMetrics';
 import reelToast from '@/src/utils/reelToast';
 
 interface ShareFilm {
@@ -46,6 +47,13 @@ interface ShareLog {
   pullQuote?: string | null;
 }
 
+/** The card's own frame around its preview (padding, header, gaps, button), as last measured; a guess until then. */
+let frameSeen = 144;
+
+/** Across: the room's sides and the card's padding. Down: the room above and below, and the card's frame. */
+export const previewScaleFor = (winW: number, winH: number, room: number, frame: number) =>
+  Math.min(1, (winW - 72) / NITRATE_CARD_WIDTH, (winH - 2 * room - frame) / NITRATE_CARD_HEIGHT);
+
 interface ShareCardModalProps {
   visible: boolean;
   onClose: () => void;
@@ -58,8 +66,16 @@ interface ShareCardModalProps {
 export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, film, log, username, memberNo }: ShareCardModalProps) {
   const viewShotRef = useRef<ViewShot>(null);
   const { width: winW, height: winH } = useWindowDimensions();
-  // The preview shrinks to fit ANY phone; the capture always exports full-size.
-  const previewScale = Math.min(1, (winW - 72) / NITRATE_CARD_WIDTH, (winH - 240) / NITRATE_CARD_HEIGHT);
+  const room = useOverlayRoomPadding().paddingTop;
+  const [frame, setFrame] = useState(frameSeen);
+  // The preview shrinks to fit ANY phone, in the room above and below the card
+  // less the card's own frame, so a card that fits never scrolls; the capture
+  // always exports full-size.
+  const previewScale = previewScaleFor(winW, winH, room, frame);
+  const measureFrame = (e: LayoutChangeEvent) => {
+    const seen = Math.ceil(e.nativeEvent.layout.height - NITRATE_CARD_HEIGHT * previewScale);
+    if (seen !== frame) { frameSeen = seen; setFrame(seen); }
+  };
   const [sharing, setSharing] = useState(false);
   /**
    * The poster the file was last drawn with, every picture on it shown ('' for
@@ -120,7 +136,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
       <View style={s.overlay} onAccessibilityEscape={onClose}>
         {/* The ground closes it for a finger; a screen reader has the named ✕. */}
         <CentredCard onGround={onClose} style={s.room}>
-          <View style={s.modalContent}>
+          <View style={s.modalContent} onLayout={measureFrame} testID="nitrate-file-sheet">
             <View style={s.header}>
               <Text style={s.title}>✦ THE NITRATE FILE</Text>
               <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="light" pressedScale={0.96}
@@ -129,7 +145,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
               </PressableScale>
             </View>
   
-            <View style={[s.cardWrapper, { width: NITRATE_CARD_WIDTH * previewScale, height: NITRATE_CARD_HEIGHT * previewScale }]}>
+            <View testID="nitrate-file-preview" style={[s.cardWrapper, { width: NITRATE_CARD_WIDTH * previewScale, height: NITRATE_CARD_HEIGHT * previewScale }]}>
               <View style={{ transform: [{ scale: previewScale }] }}>
                 <ViewShot
                   ref={viewShotRef}
