@@ -53,6 +53,9 @@ export const RISE_MS = 260;
 export const FALL_MS = 180;
 /** An open tray not risen by now is set risen: a stalled rise never hides it. */
 export const RISE_RESCUE_MS = RISE_MS + 240;
+/** The risen tray's plain styles: where the rise ends, with no animated style between. */
+export const RISEN_SCRIM = { opacity: 1 } as const;
+export const RISEN_TRAY = { transform: [{ translateY: 0 }] } as const;
 /** A gloss may give back what large type added — down to its designed size, never below. */
 const GLOSS_FLOOR = 1 / scaledTextProps.maxFontSizeMultiplier;
 
@@ -180,6 +183,11 @@ export const FilmActionTray = memo(function FilmActionTray({
 
   const rise = useSharedValue(0); // 0 gone, 1 risen: the scrim's fade and the tray's rise
   const [shown, setShown] = useState(visible);
+  // Risen, the open tray is drawn with plain styles. Its value can reach 1 while
+  // the animated style is never applied to the view just mounted (Sealed E2E run
+  // 38790116312: the tray open, its scrim and acts nowhere on the screen), so the
+  // resting state never waits on an animation having drawn it.
+  const [risen, setRisen] = useState(false);
   // It rises on its own shared value, not a mount-time `entering` animation,
   // which can fail to start and leave an OPEN tray transparent. Closing, it is
   // drawn through its fall and a timer unmounts it: it never holds the page.
@@ -189,12 +197,16 @@ export const FilmActionTray = memo(function FilmActionTray({
       e2eTrace('tray.open');
       rise.value = withTiming(1, { duration: RISE_MS, reduceMotion: ReduceMotion.System });
       const rescue = setTimeout(() => {
-        if (rise.value >= 1) return;
-        e2eTrace('tray.rise.rescued', { at: rise.value });
-        rise.value = 1;
+        const at = rise.value;
+        if (at < 1) {
+          e2eTrace('tray.rise.rescued', { at });
+          rise.value = 1;
+        }
+        setRisen(true);
       }, RISE_RESCUE_MS);
       return () => clearTimeout(rescue);
     }
+    setRisen(false);
     rise.value = withTiming(0, { duration: FALL_MS, reduceMotion: ReduceMotion.System });
     const gone = setTimeout(() => setShown(false), FALL_MS);
     return () => clearTimeout(gone);
@@ -222,7 +234,7 @@ export const FilmActionTray = memo(function FilmActionTray({
       pointerEvents={visible ? 'auto' : 'none'}
       testID="film-action-tray"
     >
-      <Animated.View style={[s.scrim, scrimStyle]}>
+      <Animated.View style={[s.scrim, risen ? RISEN_SCRIM : scrimStyle]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={handleScrim}
@@ -232,7 +244,7 @@ export const FilmActionTray = memo(function FilmActionTray({
         />
       </Animated.View>
 
-      <Animated.View style={[s.tray, { maxHeight, paddingBottom: dockHeight + 6 }, trayStyle]}>
+      <Animated.View style={[s.tray, { maxHeight, paddingBottom: dockHeight + 6 }, risen ? RISEN_TRAY : trayStyle]}>
         {/* The tear line the stub was torn along. */}
         <View style={s.perf} pointerEvents="none">
           {PERF_HOLES.map((k) => <View key={k} style={s.perfHole} />)}

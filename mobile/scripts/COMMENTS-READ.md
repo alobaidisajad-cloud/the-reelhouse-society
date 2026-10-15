@@ -430,7 +430,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/feed/UserAttributionRow.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
 | src/components/film/__tests__/aFileIsSharedWhole.test.tsx | 2026-10-15 | written: nothing is captured before every picture on the file is drawn; edited: the preview fills the room less the measured frame |
 | src/components/film/__tests__/castRailFits.test.ts | — |  |
-| src/components/film/__tests__/FilmActionTray.test.tsx | — |  |
+| src/components/film/__tests__/FilmActionTray.test.tsx | 2026-10-16 | edited: risen, the tray is drawn with plain styles, and falls on its animated ones |
 | src/components/film/__tests__/filmDossier.test.tsx | — |  |
 | src/components/film/__tests__/filmPageWiring.test.ts | 2026-10-15 | edited: the waiting dock and the stub stand on the same edge (bottomEdge) |
 | src/components/film/__tests__/FilmStub.test.tsx | — |  |
@@ -445,7 +445,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/zz-film.gen.test.tsx | — |  |
 | src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-01 | written: the critiques' failure reaches the page; an unread verdict is unknown |
 | src/components/film/CastCarousel.tsx | 2026-10-04 | edited: an actor without a photograph is drawn by initialOf |
-| src/components/film/FilmActionTray.tsx | 2026-10-01 | histories to the present |
+| src/components/film/FilmActionTray.tsx | 2026-10-16 | histories to the present; edited: risen, it is drawn with plain styles (RISEN_SCRIM, RISEN_TRAY), read against Sealed E2E run 38790116312 |
 | src/components/film/FilmDetailLayout.tsx | 2026-10-15 | back and scroll header from usePushedHeaderTop; the stub on the edge (useBottomEdge); each scroll traced |
 | src/components/film/FilmDossier.tsx | 2026-10-01 | what it holds, not what it absorbed |
 | src/components/film/FilmHero.tsx | 2026-10-01 | an unknown verdict claims nothing; histories to the present |

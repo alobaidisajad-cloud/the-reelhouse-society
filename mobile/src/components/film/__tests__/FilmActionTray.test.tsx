@@ -6,7 +6,7 @@ import React from 'react';
 import { BackHandler, StyleSheet } from 'react-native';
 import { withTiming } from 'react-native-reanimated';
 import { render, fireEvent } from '@testing-library/react-native';
-import { FilmActionTray, TrayIcons, FALL_MS, RISE_RESCUE_MS, type TrayAct } from '../FilmActionTray';
+import { FilmActionTray, TrayIcons, FALL_MS, RISE_RESCUE_MS, RISEN_SCRIM, RISEN_TRAY, type TrayAct } from '../FilmActionTray';
 import { trayMaxHeight } from '../filmStubMetrics';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 
@@ -155,6 +155,25 @@ describe('an open tray is always seen, and a closed one always goes', () => {
     t.rerender(<FilmActionTray {...base} acts={[...base.acts]} />); // memo: a new list redraws it
     expect(risen(t)).toBe(1);
     expect(e2eTrace).toHaveBeenCalledWith('tray.rise.rescued', { at: 0 });
+  });
+
+  /**
+   * Sealed E2E run 38790116312: the tray open (its stub said "closes"), its
+   * value risen, and its scrim and acts nowhere on the screen — the animated
+   * style never applied to the view just mounted. Risen, the tray is drawn with
+   * plain styles, and falling it takes its animated ones back.
+   */
+  it('is drawn with plain styles once risen, and falls on its animated ones', () => {
+    const styles = (t: ReturnType<typeof render>) => ({
+      scrim: (t.getByTestId('film-tray-scrim').parent!.props.style as unknown[]).flat(),
+      tray: (t.getByTestId('film-action-tray').props.children[1].props.style as unknown[]).flat(),
+    });
+    const t = render(<FilmActionTray {...base} />);
+    expect([styles(t).scrim.includes(RISEN_SCRIM), styles(t).tray.includes(RISEN_TRAY)]).toEqual([false, false]);
+    React.act(() => { jest.advanceTimersByTime(RISE_RESCUE_MS); });
+    expect([styles(t).scrim.includes(RISEN_SCRIM), styles(t).tray.includes(RISEN_TRAY)]).toEqual([true, true]);
+    t.rerender(<FilmActionTray {...base} visible={false} />);
+    expect([styles(t).scrim.includes(RISEN_SCRIM), styles(t).tray.includes(RISEN_TRAY)]).toEqual([false, false]);
   });
 
   it('is drawn through its fall, then gone, and holds nothing while it falls', () => {
