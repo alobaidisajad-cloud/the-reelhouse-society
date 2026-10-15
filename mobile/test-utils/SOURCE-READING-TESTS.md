@@ -122,6 +122,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts` | Every `enqueueMutation` call site in the app, and the kind each type it queues has in the typed map. |
 | `src/utils/__tests__/noControlCharacters.guard.test.ts` | No source file carries a raw control character. |
 | `src/utils/__tests__/noMachinePaths.guard.test.ts` | No code names a place on one computer. |
+| `src/utils/__tests__/noPageAddsToTheInset.guard.test.ts` | Every file in app/ and src/, read with TypeScript's parser: no sum on the safe-area inset's top, no bare inset as a top, and no `navTopPadding(` outside navMetrics. Where each page starts is tested by mounting it (everyTabStartsBelowTheBar.test.tsx, everyPushedHeaderStartsAtItsTop.test.tsx, everyModalAndOverlayStartsAtItsTop.test.tsx). |
 | `src/utils/__tests__/prose-handlers.guard.test.ts` | Every handler that writes prose passes it through the sanitiser. |
 | `src/utils/__tests__/searchFieldsDoNotAutocorrect.guard.test.ts` | Every search field turns autocorrect off (the keyboard's composing is not drawn in jest). |
 | `src/utils/__tests__/searchWiring.guard.test.ts` | Every search call site uses the escaper, unquoted. |
@@ -185,6 +186,7 @@ Decisions, as of 2026-09-28:
 | `src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx` | No paper component defaults a count the reader should pass. |
 | `src/components/dispatch/__tests__/theInvitationHasAnAddress.test.tsx` | The desks' routes, beside the mounted picker. |
 | `src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx` | Where each key's route leads, beside the mounted cards. |
+| `src/components/layout/__tests__/everyModalAndOverlayStartsAtItsTop.test.tsx` | Which routes the root layout presents as modals (its `Stack.Screen` options), so a new one is measured; every modal and overlay is mounted. |
 | `src/components/film/__tests__/trayActsFire.test.tsx` | Which acts close the tray after acting, and the one that deliberately does not. |
 | `src/components/log/__tests__/theVaultBelongsToItsViewing.test.tsx` | The columns and services the note travels through. |
 | `src/components/profile/__tests__/memberFile.test.tsx` | Sweeps of the page's files (every control named, every text capped), beside the mounted file. |

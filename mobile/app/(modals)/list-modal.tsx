@@ -15,6 +15,7 @@ import Animated, { cancelAnimation, FadeIn, ReduceMotion, useAnimatedKeyboard, u
 
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useModalTop } from '@/src/components/layout/navMetrics';
 
 import PressableScale from '@/src/components/PressableScale';
 import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
@@ -144,6 +145,7 @@ export default function ListModal() {
     const updateList = useListStore((s: any) => s.updateList);
     const { checkBan } = useBanCheck();
     const insets = useSafeAreaInsets();
+    const handleTop = useModalTop();
     const queryClient = useQueryClient();
     
     const keyboard = useAnimatedKeyboard();
@@ -362,7 +364,7 @@ export default function ListModal() {
 
     const ListHeader = (
         <>
-            <View style={[s.handleWrap, { paddingTop: Math.max(insets.top + 10, 20) }]}>
+            <View style={[s.handleWrap, { paddingTop: handleTop }]}>
                 <View style={s.handle} />
             </View>
 

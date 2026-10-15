@@ -27,6 +27,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabContentTop } from '@/src/components/layout/navMetrics';
 
 // ── Extracted components ──
 import { LoungeGate } from '@/src/components/lounge/LoungeGate';
@@ -61,6 +62,8 @@ export default function LoungeScreen() {
   const salonsLost = loungesFailed && lounges.length === 0;
   const readyMark = useScreenReady('lounges', !(loading && lounges.length === 0));
   const insets = useSafeAreaInsets();
+  // The header starts below the top bar, which is drawn over this tab too.
+  const topPad = useTabContentTop();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -236,7 +239,7 @@ export default function LoungeScreen() {
       <RoomLight room="default" />
       {readyMark}
       {/* ── Compact ceremonial header ── */}
-      <Arrive name="lounge.header" duration={700} rise={0} style={[s.header, { paddingTop: Math.max(insets.top + 10, 44) }]}>
+      <Arrive name="lounge.header" duration={700} rise={0} style={[s.header, { paddingTop: topPad }]}>
         <View style={s.headerCrestRow}>
           <View style={s.headerCrest}>
             <MasterLogo size={26} />

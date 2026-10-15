@@ -10,7 +10,7 @@ import reelToast from '@/src/utils/reelToast';
 import { useAuthStore, storage } from '@/src/stores/auth';
 import TactileEngine from '@/src/utils/TactileEngine';
 import PressableScale from '@/src/components/PressableScale';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import { Lock } from 'lucide-react-native';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { passwordIsAccepted, passwordFits, PASSWORD_TOO_LONG, PASSWORD_MAX_BYTES, PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
@@ -20,13 +20,16 @@ import { nav } from '@/src/utils/typedRouter';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
+/** The back button's row and the gap under it: the form starts this far below the header's top. */
+const BACK_ROW = 54;
+
 export default function ResetPasswordScreen() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const insets = useSafeAreaInsets();
+  const headerTop = usePushedHeaderTop();
   // Whether the recovery link left a session to set the password on (null: still asking).
   const [hasSession, setHasSession] = useState<boolean | null>(null);
 
@@ -168,7 +171,7 @@ export default function ResetPasswordScreen() {
       <RoomLight room="default" />
       <ScrollView
         style={s.fill}
-        contentContainerStyle={[s.scroll, { paddingTop: Math.max(insets.top + 64, 96) }]}
+        contentContainerStyle={[s.scroll, { paddingTop: headerTop + BACK_ROW }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={true}
@@ -177,7 +180,7 @@ export default function ResetPasswordScreen() {
             a recovery link alone must never leave the user signed in with an
             unchanged password. */}
         <PressableScale
-          style={[s.backBtn, { top: Math.max(insets.top + 16, 56) }]}
+          style={[s.backBtn, { top: headerTop }]}
           onPress={async () => {
             if (storage.getString('recovery_pending') === 'true') {
               storage.delete('recovery_pending');

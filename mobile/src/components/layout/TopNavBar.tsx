@@ -1,5 +1,5 @@
 import React, { useCallback, memo } from 'react';
-import { View, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, Platform, type LayoutChangeEvent } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Search, Bell, MessageSquareText } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, withTiming, useSharedValue, useAnimatedProps } from 'react-native-reanimated';
@@ -18,7 +18,8 @@ import {
   NAV_ROW_MIN_H,
   NAV_BTN_SIZE,
   NAV_BOTTOM_PADDING,
-  navTopPadding,
+  reportTopBarHeight,
+  useTopBarPadding,
 } from '@/src/components/layout/navMetrics';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 
@@ -93,6 +94,7 @@ export const TopNavBar = memo(function TopNavBar() {
   const unread = useNotificationStore((s) => s._unreadCount);
   const noticesLabel = unread > 0 ? `Notices, ${unread} unread` : 'Notices';
   const insets = useSafeAreaInsets();
+  const topPadding = useTopBarPadding();
   const router = useRouter();
 
   // iOS: native blur intensity animates with scroll (UIViewPropertyAnimator
@@ -192,10 +194,16 @@ export const TopNavBar = memo(function TopNavBar() {
     </>
   );
 
-  const shellStyle = [styles.blur, { paddingTop: navTopPadding(insets.top) }, animatedBlurStyle];
+  const shellStyle = [styles.blur, { paddingTop: topPadding }, animatedBlurStyle];
+
+  // Every tab starts below this measure (useTabContentTop), never a sum of its own.
+  const onLayout = useCallback(
+    (e: LayoutChangeEvent) => reportTopBarHeight(insets.top, e.nativeEvent.layout.height),
+    [insets.top],
+  );
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={onLayout} testID="top-nav-bar">
       {Platform.OS === 'ios' ? (
         <AnimatedBlurView animatedProps={animatedProps} tint="dark" style={shellStyle}>
           {navInner}

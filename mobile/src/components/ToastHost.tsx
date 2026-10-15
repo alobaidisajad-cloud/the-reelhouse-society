@@ -19,7 +19,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { View, StyleSheet, useWindowDimensions, Platform, AccessibilityInfo, Pressable } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { InIosSheet, useOverlayTop } from '@/src/components/layout/navMetrics';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -121,13 +121,14 @@ function ToastScreen({ children, navigation, presentation }: {
 }) {
   const depth = useContext(ScreenDepth) + 1;
   const showing = useHost('screen', depth, navigation);
+  const inSheet = Platform.OS === 'ios' && IOS_SHEETS.has(presentation ?? '');
   const pill = showing?.toast ? (
     <ToastPill
       key={showing.toast.id}
       toast={showing.toast}
       leaving={showing.leaving}
       slide={showing.arrived}
-      inSheet={Platform.OS === 'ios' && IOS_SHEETS.has(presentation ?? '')}
+      inSheet={inSheet}
     />
   ) : null;
 
@@ -146,17 +147,22 @@ function ToastScreen({ children, navigation, presentation }: {
   if (PRESENTED.has(presentation ?? '')) {
     return (
       <ScreenDepth.Provider value={depth}>
-        <View style={styles.layer} accessibilityViewIsModal>
-          {children}
-          {pill}
-        </View>
+        <InIosSheet.Provider value={inSheet}>
+          <View style={styles.layer} accessibilityViewIsModal>
+            {children}
+            {pill}
+          </View>
+        </InIosSheet.Provider>
       </ScreenDepth.Provider>
     );
   }
+  // An overlay in this route starts from its top: a sheet's own, or the status bar's edge.
   return (
     <ScreenDepth.Provider value={depth}>
-      {children}
-      {pill}
+      <InIosSheet.Provider value={inSheet}>
+        {children}
+        {pill}
+      </InIosSheet.Provider>
     </ScreenDepth.Provider>
   );
 }
@@ -170,7 +176,7 @@ function ToastPill({ toast, leaving, slide, inSheet = false }: {
   inSheet?: boolean;
 }) {
   const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
+  const top = useOverlayTop(inSheet);
   const reducedMotion = useReducedMotion();
   const animate = slide && !reducedMotion;
   const translateY = useSharedValue(animate ? -80 : 0);
@@ -239,7 +245,7 @@ function ToastPill({ toast, leaving, slide, inSheet = false }: {
    */
   return (
     <Animated.View
-      style={[styles.container, { top: (inSheet ? 0 : insets.top) + 12 }, animatedStyle]}
+      style={[styles.container, { top }, animatedStyle]}
       pointerEvents="box-none"
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
@@ -297,7 +303,7 @@ const styles = StyleSheet.create({
   layer: { flex: 1 },
   container: {
     position: 'absolute',
-    // top is set dynamically via insets — see inline style
+    // top is navMetrics' overlay top — see inline style
     left: 0,
     right: 0,
     zIndex: 99999,

@@ -32,6 +32,7 @@ import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
@@ -316,7 +317,7 @@ function ActionModal({
 
 export default function TribunalScreen() {
   const { user } = useAuthStore();
-  const insets = useSafeAreaInsets();
+  const headerTop = usePushedHeaderTop();
   const queryClient = useQueryClient();
 
   const [actionModal, setActionModal] = useState<ActionModalState>({
@@ -686,7 +687,7 @@ export default function TribunalScreen() {
         style={[StyleSheet.absoluteFillObject, WASH]}
       />
 
-      <Animated.View entering={FadeInDown.duration(600)} style={[s.header, { paddingTop: insets.top + 12 }]}>
+      <Animated.View entering={FadeInDown.duration(600)} style={[s.header, { paddingTop: headerTop }]}>
         <PressableScale
           onPress={() => nav.back()}
           style={s.backBtn}

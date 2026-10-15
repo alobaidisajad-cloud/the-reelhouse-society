@@ -25,7 +25,7 @@ import { EmptyOffline } from '@/src/components/EmptyStates';
 import { rankOf } from '@/src/components/RankBadge';
 import { useAuthStore } from '@/src/stores/auth';
 import { useLineScale, useTextScale } from '@/src/hooks/useTextScale';
-import { navBarHeight, tabBarHeight } from '@/src/components/layout/navMetrics';
+import { tabBarHeight, useTopBarHeight } from '@/src/components/layout/navMetrics';
 import { colors } from '@/src/theme/theme';
 import { EDGE_LIT } from '@/src/theme/light';
 import { Masthead, useWallClock } from './Masthead';
@@ -70,7 +70,7 @@ export const LobbyWall = memo(function LobbyWall() {
   const { width, height } = useWindowDimensions();
   const scale = useTextScale();
   const lineScale = useLineScale();
-  const visible = height - navBarHeight(insets.top) - tabBarHeight(insets.bottom);
+  const visible = height - useTopBarHeight() - tabBarHeight(insets.bottom);
   const viewer = useAuthStore((st) => rankOf(st.user));
   const admin = useAuthStore((st) => st.user?.role === 'admin');
   const plan = planWall({ width, visible, scale, lineScale, admin });

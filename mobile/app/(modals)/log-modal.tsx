@@ -4,6 +4,7 @@ import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useModalTop } from '@/src/components/layout/navMetrics';
 
 import LogForm from '@/src/components/log/LogForm';
 import { st } from '@/src/components/log/LogModalStyles';
@@ -30,6 +31,7 @@ export default function LogModalScreen() {
     // root ends at the keyboard (KeyboardRoom) and the shortened ScrollView
     // scrolls the focused field into view.
     const insets = useSafeAreaInsets();
+    const handleTop = useModalTop();
 
     // ── Not authenticated ──
     if (!isAuthenticated) {
@@ -55,7 +57,7 @@ export default function LogModalScreen() {
             {step === 1 && <LogAtmosphere posterPath={film?.poster_path} />}
             <View style={st.kavFlex}>
                 {/* Drag handle */}
-                <View style={st.dragHandleWrap}><View style={st.dragHandle} /></View>
+                <View style={[st.dragHandleWrap, { paddingTop: handleTop }]}><View style={st.dragHandle} /></View>
 
                 {/* Header */}
                 <View style={[st.header, step === 1 && st.headerOnFilm]}>

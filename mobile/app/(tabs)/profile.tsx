@@ -16,15 +16,17 @@ import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { EmptyOffline } from '@/src/components/EmptyStates';
+import { useTabRoomPadding } from '@/src/components/layout/navMetrics';
 
 export default function ProfileTab() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const user = useAuthStore(s => s.user);
+  const room = useTabRoomPadding();
 
   if (!isAuthenticated || !user) {
     return (
       <FrozenTab>
-        <View style={s.container}>
+        <View style={[s.container, room]}>
           <RoomLight room="member" />
           <Buster size={80} mood="unimpressed" message="The archive awaits your identity." />
           <Text style={s.prompt}>Identify yourself to access your dossier</Text>
@@ -71,9 +73,10 @@ function HandleArriving() {
     ask();
     return () => { mounted.current = false; };
   }, [ask]);
+  const room = useTabRoomPadding();
 
   return (
-    <View style={s.container}>
+    <View style={[s.container, room]}>
       <RoomLight room="member" />
       {failed
         ? <EmptyOffline onRetry={ask} />

@@ -18,6 +18,7 @@ import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 
 import { supabase } from '../../src/lib/supabase';
 import { colors, fonts } from '../../src/theme/theme';
@@ -58,6 +59,7 @@ interface RawLogRow {
 export default function FilmReviewsScreen() {
   const { id: filmId, title } = useLocalSearchParams<{ id: string; title?: string }>();
   const insets = useSafeAreaInsets();
+  const headerTop = usePushedHeaderTop();
 
   const [logs, setLogs] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,7 +157,7 @@ export default function FilmReviewsScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
-      <View style={[s.header, { paddingTop: Math.max(insets.top + 10, 60) }]}>
+      <View style={[s.header, { paddingTop: headerTop }]}>
         <PressableScale onPress={() => nav.back()} style={s.backBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
         </PressableScale>

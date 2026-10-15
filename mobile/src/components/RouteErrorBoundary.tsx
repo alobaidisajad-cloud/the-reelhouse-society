@@ -16,17 +16,18 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useOverlayTop } from '@/src/components/layout/navMetrics';
 import { router, type ErrorBoundaryProps } from 'expo-router';
 import { BusterStill } from '@/src/components/Buster';
 
-import { colors, fonts, spacing } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import { captureError } from '@/src/lib/sentry';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import TryAgain, { TRY_AGAIN_ABOVE_A_WAY_OUT, WayOut } from '@/src/components/TryAgain';
 
 export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
-  const insets = useSafeAreaInsets();
+  // Over the whole screen, or a sheet's top in a modal route (navMetrics asks the route).
+  const top = useOverlayTop();
   const canGoBack = router.canGoBack();
   const leave = () => {
     if (router.canGoBack()) router.back();
@@ -41,7 +42,7 @@ export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   }, [error]);
 
   return (
-    <View style={[s.container, { paddingTop: insets.top + spacing.xl }]}>
+    <View style={[s.container, { paddingTop: top }]}>
       <RoomLight room="default" />
       <BusterStill mood="moved" size={80} />
       <Text style={s.title} accessibilityRole="header">This reel jammed.</Text>

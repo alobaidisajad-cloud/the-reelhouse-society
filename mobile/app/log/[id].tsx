@@ -17,6 +17,7 @@ import { Platform, RefreshControl, Share, StyleSheet, useWindowDimensions, View 
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { Easing, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
  
 import { s, PARALLAX_PADDER_HEIGHT, BACKDROP_H, HEADER_ACTION_GAP } from '@/src/components/log/logDetailStyles';
 import { hasPhysicalFormat } from '@/src/components/log/logRecord';
@@ -61,6 +62,9 @@ const BACKDROP_VEIL: VeilStops = [[0, 0], [1 / 3, 0.4], [2 / 3, 0.95], [1, 1]];
 
 /** How long a share waits for its card's pictures before it fails and says so. */
 const SHARE_CARD_WAIT_MS = 20_000;
+
+/** The EDITORIAL badge hangs below the header's top: its 24pt row, 16pt foot, 4pt of air. */
+const BELOW_THE_HEADER = 44;
 
 interface LogDetail {
   id: string;
@@ -124,6 +128,7 @@ export default function LogDetailScreen() {
   const blockUser = useBlockStore((state) => state.blockUser);
   const muteUser = useBlockStore((state) => state.muteUser);
   const insets = useSafeAreaInsets();
+  const headerTop = usePushedHeaderTop();
 
   const queryClient = useQueryClient();
 
@@ -700,7 +705,7 @@ export default function LogDetailScreen() {
                 <View style={[StyleSheet.absoluteFillObject, s.textureOverlay]} />
                 
                 {log.editorial_header && (
-                  <View style={[s.editorialBadge, { top: Math.max(insets.top + 8, 56) + 44 }]}>
+                  <View style={[s.editorialBadge, { top: headerTop + BELOW_THE_HEADER }]}>
                     <Sparkles size={7} color={'rgba(218,165,32,0.85)'} strokeWidth={1.5} />
                     <Text style={s.editorialBadgeText}>EDITORIAL</Text>
                   </View>
@@ -709,7 +714,7 @@ export default function LogDetailScreen() {
           </View>
       )}
 
-      <View style={[s.header, { paddingTop: Math.max(insets.top + 8, 56) }]}>
+      <View style={[s.header, { paddingTop: headerTop }]}>
         <View style={s.headerRow}>
           <PressableScale style={s.backBtn} onPress={() => { nav.back(); }} hitSlop={{top:20,bottom:20,left:20,right:20}} haptic="selection" pressedScale={0.92} accessibilityLabel="Go back">
             <ChevronLeft size={22} color={colors.sepia} strokeWidth={1.5} />

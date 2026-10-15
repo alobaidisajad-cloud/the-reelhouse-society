@@ -4,6 +4,7 @@ import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import Animated, {
   useSharedValue, useAnimatedStyle, useAnimatedScrollHandler, withTiming,
   Easing, withRepeat, cancelAnimation, interpolate, Extrapolation, ReduceMotion,
@@ -77,6 +78,7 @@ export function SettingsScreen() {
   const { user, logout } = useAuthStore();
   const { mutateAsync: updateUserMutation, isPending: isUpdatingUser } = useUpdateUser();
   const insets = useSafeAreaInsets();
+  const headerTop = usePushedHeaderTop();
   // A door to one section (`/settings?section=import`) lands on it, once.
   const { section } = useLocalSearchParams<{ section?: string }>();
   const scrollRef = useRef<React.ComponentRef<typeof Animated.ScrollView>>(null);
@@ -454,7 +456,7 @@ export function SettingsScreen() {
       <Animated.View style={[st.ambientGlow, glowStyle]} pointerEvents="none">
         <LinearGradient colors={['rgba(184,137,26,0.15)', 'transparent', 'transparent']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
       </Animated.View>
-      <View style={[st.navBar, { paddingTop: insets.top + 12 }]}>
+      <View style={[st.navBar, { paddingTop: headerTop }]}>
         <PressableScale
           onPress={() => { if (!saving) nav.back(); }}
           style={st.navBackBtn}

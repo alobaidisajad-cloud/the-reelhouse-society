@@ -225,7 +225,8 @@ describe('the hero', () => {
 
   it('is measured from the safe area, not from the phone', () => {
     // Whole points: the room's light hangs from this hem and the veil meets it.
-    expect(SOURCE).toMatch(/HEADER_HEIGHT = Math\.round\(insets\.top \+ Math\.min\(320, Math\.max\(236/);
+    // From the pushed header's top (navMetrics), as the chrome above it is.
+    expect(SOURCE).toMatch(/HEADER_HEIGHT = Math\.round\(headerTop \+ Math\.min\(320, Math\.max\(236/);
     expect(SOURCE).not.toMatch(/HEADER_HEIGHT = windowHeight \* 0\.45/);
   });
 

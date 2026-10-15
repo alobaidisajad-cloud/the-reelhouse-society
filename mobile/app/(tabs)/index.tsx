@@ -23,7 +23,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { ProjectorBeam } from '@/src/components/home/ProjectorBeam';
 import { VelvetRopeCTA } from '@/src/components/home/VelvetRopeCTA';
 import { BrassSheen } from '@/src/components/theme/BrassSheen';
-import { NAV_ROW_MIN_H, navTopPadding, tabBarHeight } from '@/src/components/layout/navMetrics';
+import { tabBarHeight, useTabContentTop } from '@/src/components/layout/navMetrics';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
@@ -101,9 +101,8 @@ export default function LobbyScreen() {
     }
   });
   
-  const NAV_HEIGHT = NAV_ROW_MIN_H + 12;
-  // The bar's own top padding: with no inset it still pads (navMetrics).
-  const topPad = navTopPadding(insets.top) + NAV_HEIGHT + 12;
+  // Below the top bar, as it measured itself; the welcome starts there too.
+  const topPad = useTabContentTop();
 
   // The member's own reads. Their notices and the live channel are the
   // bootstrapper's, for the whole session: this tab never opens or closes them.
@@ -145,7 +144,7 @@ export default function LobbyScreen() {
   if (!isAuthenticated) {
     return (
       <FrozenTab>
-      <View style={[s.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={[s.container, { paddingTop: topPad, paddingBottom: insets.bottom }]}>
         <RoomLight room="lobby" />
         {readyMark}
         <LinearGradient

@@ -5,7 +5,7 @@ import { X } from 'lucide-react-native';
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useOverlayTop } from '@/src/components/layout/navMetrics';
 import { WebView } from 'react-native-webview';
 import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
@@ -58,7 +58,8 @@ export function footageLabel(video: Footage): string {
 export const TrailerModal = memo(function TrailerModal({ visible, videoId, label, onClose }: {
     visible: boolean; videoId: string; label: string; onClose: () => void;
 }) {
-    const insets = useSafeAreaInsets();
+    // A React Native <Modal>: the whole screen, never a sheet.
+    const closeTop = useOverlayTop(false);
     const [shouldRender, setShouldRender] = useState(visible);
     const webviewRef = useRef<WebView>(null);
 
@@ -83,7 +84,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
         <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={s.overlay} accessibilityViewIsModal={true} onAccessibilityEscape={onClose}>
                 {/* Close button — matches web: "X CLOSE" text button above video */}
-                <PressableScale style={[s.closeBtn, { top: Math.max(insets.top + 10, 50) }]} onPress={onClose} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.96}
+                <PressableScale style={[s.closeBtn, { top: closeTop }]} onPress={onClose} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.96}
                     accessibilityRole="button" accessibilityLabel="Close">
                     <X size={12} color={colors.parchment} />
                     <Text style={s.closeBtnText}>CLOSE</Text>

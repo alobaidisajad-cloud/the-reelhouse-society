@@ -36,6 +36,7 @@ import { PaperKeyWell } from './PaperKeyWell';
 import { DeskDoc } from './PaperDeskDoc';
 import { EDGE_LIT } from '@/src/theme/light';
 import { PaperEmpty } from './PaperFrame';
+import { useModalTop } from '@/src/components/layout/navMetrics';
 
 /**
  * The head every desk wears, one component so the desks cannot drift. BACK and
@@ -44,8 +45,10 @@ import { PaperEmpty } from './PaperFrame';
 export const DeskHead = memo(function DeskHead({
   kind, ready, onBack, onFile,
 }: { kind: string; ready?: boolean; onBack: () => void; onFile: () => void }) {
+  // A desk is drawn in the compose modal: it starts at the modal's top.
+  const top = useModalTop();
   return (
-    <View style={p.ch}>
+    <View style={[p.ch, { paddingTop: top }]}>
       <PressableScale onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
         <Text style={p.chs} {...scaledTextProps}>BACK</Text>
       </PressableScale>

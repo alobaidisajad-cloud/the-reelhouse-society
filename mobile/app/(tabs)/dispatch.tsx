@@ -24,7 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import FrozenTab from '@/src/components/layout/FrozenTab';
-import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics';
+import { useTabContentTop } from '@/src/components/layout/navMetrics';
 import {
   DayDivider, Ornament, PaperChrome, PaperEmpty, PaperMasthead, PaperSkeletons,
   RunningHead,
@@ -112,8 +112,8 @@ export default function DispatchScreen() {
   // Filed on this phone while the wire was down, and not gone yet.
   const unsent = useUnsent('add_filing');
 
-  // The floating bar's height, from its own constants (navMetrics), not a copy.
-  const topPad = navTopPadding(insets.top) + NAV_ROW_MIN_H + 8;
+  // Below the floating bar, as it measured itself (navMetrics), not a copy.
+  const topPad = useTabContentTop();
 
   const scrollY = useSharedValue(0);
   const scrollHeight = useSharedValue(0);

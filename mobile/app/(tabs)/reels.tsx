@@ -37,7 +37,7 @@ import { useCommunityFeed, useFollowingFeed, useStacksFeed } from '@/src/hooks/u
 import { ReelsFeedList } from '@/src/components/reels/ReelsFeedList';
 import { ReelsStackList } from '@/src/components/reels/ReelsStackList';
 import { MemberRegistry } from '@/src/components/reels/MemberRegistry';
-import { NAV_ROW_MIN_H, navTopPadding } from '@/src/components/layout/navMetrics';
+import { useTabContentTop } from '@/src/components/layout/navMetrics';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
@@ -114,10 +114,8 @@ export default function ReelScreen() {
   const user = useAuthStore(s => s.user);
   const resolvedRole = resolveTier(user);
 
-  // The bar's row and bottom padding; the 12 is 2pt over the padding, as on the Lobby.
-  const NAV_HEIGHT = NAV_ROW_MIN_H + 12;
-  // The bar's own top padding: with no inset it still pads, and a bare inset hides the masthead.
-  const topPad = navTopPadding(insets.top) + NAV_HEIGHT + 8;
+  // Below the top bar, as it measured itself.
+  const topPad = useTabContentTop();
 
   useEffect(() => { globalScrollY.value = 0; }, []);
 

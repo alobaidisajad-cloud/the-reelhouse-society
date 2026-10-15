@@ -25,6 +25,7 @@ import {
 } from 'lucide-react-native';
 import Animated, { FadeIn, useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useModalTop } from '@/src/components/layout/navMetrics';
 
 import PressableScale from '@/src/components/PressableScale';
 import { SearchResultRow } from '@/src/components/search/SearchResultRow';
@@ -49,6 +50,7 @@ const TABS: { key: FilterTab; label: string; icon: typeof Film }[] = [
 
 export default function SearchModal() {
   const insets = useSafeAreaInsets();
+  const headerTop = useModalTop();
   const keyboard = useAnimatedKeyboard();
 
   const [query, setQuery] = useState('');
@@ -210,7 +212,7 @@ export default function SearchModal() {
       <BlurView intensity={Platform.OS === 'ios' ? 55 : 100} tint="dark" style={StyleSheet.absoluteFillObject} />
 
       {/* ── SEARCH BAR ── */}
-      <View style={[st.header, { paddingTop: Math.max(insets.top, 20) + 4 }]}>
+      <View style={[st.header, { paddingTop: headerTop }]}>
         <View style={st.inputWrap}>
           <AnimatedSearchIcon size={15} animatedProps={animatedSearchProps} style={[animatedSearchStyle, { marginLeft: 12, marginRight: 8 }]} />
           <TextInput

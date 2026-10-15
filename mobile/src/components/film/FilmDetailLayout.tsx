@@ -2,6 +2,7 @@ import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, useWindowDimensions, InteractionManager } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import Animated, { useSharedValue, useAnimatedScrollHandler, withSequence, withTiming } from 'react-native-reanimated';
 import { arrive, MARK_PULSE, MS } from '@/src/theme/motion';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -88,6 +89,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   // and a fractional hem leaves the last row of pixels to only one of them.
   const BACKDROP_H = useMemo(() => Math.round(windowHeight * metrics.backdropHeightRatio), [windowHeight]);
   const insets = useSafeAreaInsets();
+  const headerTop = usePushedHeaderTop();
   const scrollY = useSharedValue(0);
 
   const [isTransitionComplete, setIsTransitionComplete] = useState(false);
@@ -323,7 +325,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         {/* Hung where the backdrop will be, as the skeleton draws it: the
             light must not move when the page arrives. */}
         <RoomLight room="film" hem={BACKDROP_H} />
-        <Animated.View style={[s.floatingBack, { top: Math.max(insets.top + 10, 20), zIndex: 100 }]}>
+        <Animated.View style={[s.floatingBack, { top: headerTop, zIndex: 100 }]}>
           <PressableScale onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityLabel="Go back">
             <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
@@ -385,7 +387,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
           hidden from the reader while the tray is up, for the same reason the
           page beneath is: a modal that can be talked around is not modal. */}
       <Animated.View
-        style={[s.floatingBack, { top: Math.max(insets.top + 10, 20) }, immersiveAnimatedStyle]}
+        style={[s.floatingBack, { top: headerTop }, immersiveAnimatedStyle]}
         importantForAccessibility={trayOpen ? 'no-hide-descendants' : 'auto'}
       >
         <PressableScale onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityLabel="Go back">
@@ -397,7 +399,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
       <FilmScrollHeader
         title={film.title ?? ''}
         onBack={goBack}
-        topInset={Math.max(insets.top, 20)}
+        top={headerTop}
         animatedStyle={scrollHeaderStyle}
         hiddenFromReader={trayOpen}
       />

@@ -22,6 +22,7 @@ import { BlurView } from 'expo-blur';
 import { Check, Film as FilmIcon, Send, User, UserCircle2, Users, X } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { useModalTop } from '@/src/components/layout/navMetrics';
 import TryAgain, { TryAgainLine } from '@/src/components/TryAgain';
 
 interface SocialProfile {
@@ -114,6 +115,7 @@ const LoungeRow = React.memo(function LoungeRow({
 });
 
 export default function SocialModal() {
+    const handleTop = useModalTop();
     const rawParams = useLocalSearchParams<{
         userId?: string;
         type?: string;
@@ -369,7 +371,7 @@ export default function SocialModal() {
         <BlurView intensity={90} tint="dark" style={styles.container}>
             <RoomLight room="default" />
             {/* Drag handle */}
-            <View style={styles.dragHandleWrap}><View style={styles.dragHandle} /></View>
+            <View style={[styles.dragHandleWrap, { paddingTop: handleTop }]}><View style={styles.dragHandle} /></View>
 
             <View style={styles.header}>
                 <View style={styles.headerBalance} />
@@ -452,7 +454,8 @@ export default function SocialModal() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.ink },
-    dragHandleWrap: { alignItems: 'center', paddingTop: 10 },
+    /** Its paddingTop is the modal's top (useModalTop), set where it is drawn. */
+    dragHandleWrap: { alignItems: 'center' },
     dragHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
     header: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

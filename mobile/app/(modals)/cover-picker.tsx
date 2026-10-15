@@ -11,7 +11,7 @@ import React, { useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useModalTop } from '@/src/components/layout/navMetrics';
 import { X } from 'lucide-react-native';
 import LogSearchEngine, { LogSearchResult } from '@/src/components/log/LogSearchEngine';
 import { useLoungeStore } from '@/src/stores/lounge';
@@ -23,7 +23,7 @@ import { nav } from '@/src/utils/typedRouter';
 
 export default function CoverPicker() {
   const { loungeId } = useLocalSearchParams<{ loungeId: string }>();
-  const insets = useSafeAreaInsets();
+  const top = useModalTop();
   const setLoungeCover = useLoungeStore(s => s.setLoungeCover);
 
   const handlePick = useCallback((film: LogSearchResult) => {
@@ -38,7 +38,7 @@ export default function CoverPicker() {
   }, [loungeId, setLoungeCover]);
 
   return (
-    <View style={[s.container, { paddingTop: Math.max(insets.top + 8, 16) }]}>
+    <View style={[s.container, { paddingTop: top }]}>
       <RoomLight room="default" />
       <View style={s.header}>
         <View style={s.headerText}>

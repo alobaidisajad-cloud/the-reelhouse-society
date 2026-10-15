@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator, InteractionManager, Platform, AccessibilityInfo } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FormProvider } from 'react-hook-form';
@@ -114,6 +115,7 @@ const bd = StyleSheet.create({
 
 export function EditProfileScreen() {
   const insets = useSafeAreaInsets();
+  const headerTop = usePushedHeaderTop();
 
   const {
     user,
@@ -172,7 +174,7 @@ export function EditProfileScreen() {
           />
         </Animated.View>
 
-      <View style={[st.navBar, { paddingTop: insets.top + 8 }]}>
+      <View style={[st.navBar, { paddingTop: headerTop }]}>
         <PressableScale onPress={handleBack} style={st.navBackBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light" accessibilityLabel="Go back">
           <ChevronLeft size={22} color={colors.bone} />
         </PressableScale>

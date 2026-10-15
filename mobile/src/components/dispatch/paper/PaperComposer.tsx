@@ -8,6 +8,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
+import { useModalTop } from '@/src/components/layout/navMetrics';
 import { COUNTER_SHOWS_AT, CRIMSON_INK, UNSPOKEN, nameOf } from './paperMetrics';
 import { LEAD_STYLE } from './paperPerf';
 import { Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
@@ -91,9 +92,11 @@ export const PaperComposer = memo(function PaperComposer({
   const live = !!onBody;
   const canFile = ready !== undefined ? ready : body.trim().length > 0 && remaining >= 0;
   const blocked = !canFile || !!sending;
+  // Drawn in the compose modal: the head starts at the modal's top, as DeskHead's does.
+  const top = useModalTop();
   return (
     <View style={p.desk}>
-      <View style={p.ch}>
+      <View style={[p.ch, { paddingTop: top }]}>
         <PressableScale onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
           <Text style={p.chs} {...scaledTextProps}>BACK</Text>
         </PressableScale>

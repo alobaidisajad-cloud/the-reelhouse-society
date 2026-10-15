@@ -31,6 +31,7 @@ import { clipToSentence, counted } from './paperText';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
 import { EDGE_LIT } from '@/src/theme/light';
 import { Arrive } from '@/src/components/Arrive';
+import { useModalTop, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 
 /* ═══ THE PICKER ══════════════════════════════════════════════════════════════
  * The brass ＋ opens this: five forms, each in its own ink, so the colour code is
@@ -802,12 +803,17 @@ export const NewFilings = memo(function NewFilings({
   );
 });
 
-/** A plain screen head for the pages reached from somewhere else. */
+/**
+ * A plain screen head for the pages reached from somewhere else: a pushed
+ * screen's top, or with `presented`, the compose modal's (navMetrics).
+ */
 export const PaperBack = memo(function PaperBack({
-  label, onBack, onMore,
-}: { label: string; onBack?: () => void; onMore?: () => void }) {
+  label, onBack, onMore, presented = false,
+}: { label: string; onBack?: () => void; onMore?: () => void; presented?: boolean }) {
+  const pushedTop = usePushedHeaderTop();
+  const modalTop = useModalTop();
   return (
-    <View style={m.back}>
+    <View style={[m.back, { paddingTop: presented ? modalTop : pushedTop }]}>
       <PressableScale hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }} haptic="selection"
         onPress={onBack}
         accessibilityRole="button" accessibilityLabel="Back">

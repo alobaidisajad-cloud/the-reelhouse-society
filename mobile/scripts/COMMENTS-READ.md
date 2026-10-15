@@ -80,56 +80,56 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(admin)/__tests__/tribunal.test.tsx | — |  |
 | app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | app/(admin)/_layout.tsx | 2026-10-02 | read; sound |
-| app/(admin)/tribunal.tsx | 2026-10-15 | a closed case slides out through Presence |
+| app/(admin)/tribunal.tsx | 2026-10-15 | header top from usePushedHeaderTop |
 | app/(modals)/__tests__/list-modal.curate.test.tsx | 2026-10-03 | edited: the stack's boxes name their caps |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx | 2026-10-03 | new: your own circle is said to you |
-| app/(modals)/cover-picker.tsx | 2026-10-01 |  |
-| app/(modals)/list-modal.tsx | 2026-10-03 | edited: title and description name their caps |
-| app/(modals)/log-modal.tsx | 2026-10-01 | Arrive; the scroll needs no Animated |
-| app/(modals)/login.tsx | 2026-10-03 | edited: email, handle and password name their limits |
-| app/(modals)/membership.tsx | 2026-10-03 | payments pass: one watchForRank for purchase, seat and restore; restore says "yours again" only once the house holds it; no session read mid-purchase |
-| app/(modals)/notifications-modal.tsx | 2026-10-02 | rows say new/who/what/when; the rest could not be reached; history comments trimmed |
-| app/(modals)/search-modal.tsx | 2026-10-03 | edited: no results holds through the next letter |
-| app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
+| app/(modals)/cover-picker.tsx | 2026-10-15 | top from useModalTop |
+| app/(modals)/list-modal.tsx | 2026-10-15 | handle's top from useModalTop |
+| app/(modals)/log-modal.tsx | 2026-10-15 | handle's top from useModalTop |
+| app/(modals)/login.tsx | 2026-10-15 | header top from useModalTop; its two inset comments rewritten |
+| app/(modals)/membership.tsx | 2026-10-15 | nav top from useModalTop |
+| app/(modals)/notifications-modal.tsx | 2026-10-15 | handle's top from useModalTop |
+| app/(modals)/search-modal.tsx | 2026-10-15 | header top from useModalTop |
+| app/(modals)/social-modal.tsx | 2026-10-15 | handle's top from useModalTop |
 | app/(tabs)/_layout.tsx | 2026-10-15 | edited: each tab's own button draws its icon; no tabBarIcon; the icon's animated views stay native |
-| app/(tabs)/darkroom.tsx | 2026-10-02 | the next batch that could not be developed is said, and asked again |
-| app/(tabs)/dispatch.tsx | 2026-10-15 | the new-filings pill leaves through Presence |
-| app/(tabs)/index.tsx | 2026-10-03 | edited: the join plate draws the shared BrassSheen |
-| app/(tabs)/lounge.tsx | 2026-10-03 | edited: the search box names SEARCH_MAX |
-| app/(tabs)/profile.tsx | 2026-10-03 | your file waits for your handle: read first, a failed read says so with TRY AGAIN, never "Member Not Found" |
-| app/(tabs)/reels.tsx | 2026-10-03 | edited: the curate plate draws the shared BrassSheen |
+| app/(tabs)/darkroom.tsx | 2026-10-15 | list top from useTabContentTop |
+| app/(tabs)/dispatch.tsx | 2026-10-15 | index top from useTabContentTop |
+| app/(tabs)/index.tsx | 2026-10-15 | wall and welcome start at useTabContentTop |
+| app/(tabs)/lounge.tsx | 2026-10-15 | header top from useTabContentTop |
+| app/(tabs)/profile.tsx | 2026-10-15 | centred states centre between the bars (useTabRoomPadding) |
+| app/(tabs)/reels.tsx | 2026-10-15 | feed top from useTabContentTop |
 | app/+not-found.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | app/auth-callback.tsx | 2026-10-01 | a link with no code verifies nothing; comments short |
 | app/dispatch/[id].tsx | 2026-10-02 | Read whole (launch audit). An open ballot said 'CLOSES MOMENTS AGO' (timeAgo clamps the future): timeUntil now. Measured at the real width (the share card keeps a fixed 390 measure on purpose). Its share link went to another company's domain (fixed in f01e7408). |
 | app/dispatch/archive.tsx | 2026-10-02 | Read (launch audit). Column at the real width. Its paging re-asks on every scroll event, so a failed page is asked again: sound. |
-| app/dispatch/compose.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| app/dispatch/compose.tsx | 2026-10-15 | header and door from useModalTop |
 | app/dispatch/room/[username].tsx | 2026-10-02 | Read (launch audit). A failed later page ended the room silently (its list asks once per length): the foot says so. Column at the real width. |
 | app/dispatch/rules.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | app/dispatch/series/[id].tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | app/dossier/[id].tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | app/edit-profile.tsx | 2026-10-01 |  |
 | app/film-reviews/__tests__/theArchiveSaysWhenItCouldNotRead.test.tsx | — |  |
-| app/film-reviews/[id].tsx | 2026-10-01 | paged by cursor, never by offset; a failed page says so |
+| app/film-reviews/[id].tsx | 2026-10-15 | header top from usePushedHeaderTop |
 | app/film/[id].tsx | 2026-10-01 | doors through nav; the critiques' failure carried down; the footage named |
 | app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx | 2026-09-30 | written with the log page's critiques matched to the stack's |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
 | app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-08 | the share captured only once the card is whole; the 20 s limit |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
-| app/log/[id].tsx | 2026-10-08 | the share waits for the card to say it is whole, 20 s at most |
+| app/log/[id].tsx | 2026-10-15 | header and badge from usePushedHeaderTop |
 | app/lounge.tsx | 2026-10-01 | true as written |
-| app/lounge/[id].tsx | 2026-10-15 | edited: the channel joined as the salon's rules allow and joined again as the seat changes; a waiting member asks again on each notice; the typing line and the reply banner leave through Presence |
+| app/lounge/[id].tsx | 2026-10-15 | header top from usePushedHeaderTop |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-04 | edited: a portrait without a photograph carries the whole first letter, unspoken |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
-| app/person/[id].tsx | 2026-10-01 | the not-found way out says where it goes; histories to the present |
-| app/reset-password.tsx | 2026-10-03 | edited: a new password must fit the lock (72 bytes) |
+| app/person/[id].tsx | 2026-10-15 | back, veil and scrollbar from usePushedHeaderTop |
+| app/reset-password.tsx | 2026-10-15 | back and form from usePushedHeaderTop |
 | app/settings.tsx | 2026-10-02 | read; sound |
-| app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-09-29 | 13 fixed + test that runs the real queryFn |
+| app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-10-15 | edited: the hero is measured from the pushed header's top |
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
-| app/stacks/[id].tsx | 2026-10-04 | edited: the comment field focus moved out of the state updater into an effect, through useLater |
-| app/user/[username].tsx | 2026-10-15 | the DNA card and the lock leave through Presence; the lock after the rooms |
-| app/year-in-cinema.tsx | 2026-10-01 | nav; a single reel says so far, not the year is young |
+| app/stacks/[id].tsx | 2026-10-15 | chrome, hero and critiques from usePushedHeaderTop |
+| app/user/[username].tsx | 2026-10-15 | tab or pushed top from navMetrics |
+| app/year-in-cinema.tsx | 2026-10-15 | close from useOverlayTop; slides from safeAreaHeight |
 | ARCHITECTURE.md | 2026-10-03 | read against the code: reads are not all TanStack Query (the Lounge, the Dispatch and notices read in their stores); CACHE_MAX_AGE in limits.ts never existed (now CACHE_KEYS) |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
@@ -191,7 +191,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/paper/__tests__/zz-drafts.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/paper/__tests__/zz-final.gen.test.tsx | 2026-09-29 | called itself 'the final look' but draws the design before it shipped (RankBadge's wash differs); the paywall line it argued against is long gone |
 | mockups/paper/__tests__/zz-memberroom.gen.test.tsx | 2026-09-29 | 1 finding |
-| mockups/paper/__tests__/zz-paper.gen.test.tsx | 2026-09-29 | 26 findings and 12 unflagged histories; TOKYO's note named backdrop 14 over a 7; two tombstone notes for deleted plates removed |
+| mockups/paper/__tests__/zz-paper.gen.test.tsx | 2026-10-15 | edited: the bar's room is the tab's content top |
 | mockups/paper/__tests__/zz-proposals.gen.test.tsx | 2026-09-29 | a design record: its present-tense claims about the app were true only when drawn; now said as such |
 | mockups/paper/__tests__/zz-rank.gen.test.tsx | 2026-09-29 | a design record: its present-tense claims about the app were true only when drawn; now said as such |
 | mockups/paper/__tests__/zz-room.gen.test.tsx | 2026-09-29 | 1 finding |
@@ -278,7 +278,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/atmosphere/RoomLight.tsx | 2026-10-08 | the room drawn as one native background (roomLightImage); no SVG |
 | src/components/atmosphere/useSharedImage.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/auth/AuthChrome.tsx | 2026-10-08 | the candlelight halo a native gradient; written as an ellipse (RN misreads circle <r> at) |
-| src/components/auth/EmailConfirmationScreen.tsx | 2026-10-01 | true as written |
+| src/components/auth/EmailConfirmationScreen.tsx | 2026-10-15 | close from useModalTop |
 | src/components/auth/PasswordRecoveryModal.tsx | 2026-10-03 | edited: the email box names EMAIL_MAX |
 | src/components/auth/PasswordStrengthMeter.tsx | 2026-10-03 | read whole: one answer for a new password; says when it is too long for the lock |
 | src/components/auth/SocietySeal.tsx | 2026-10-01 | true as written |
@@ -369,16 +369,16 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
 | src/components/dispatch/FilingRow.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperBallot.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/dispatch/paper/PaperComposer.tsx | 2026-10-04 | edited: initialOf comes from utils/text |
-| src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-04 | edited: initialOf comes from utils/text |
-| src/components/dispatch/paper/PaperDesk.tsx | 2026-09-29 | CLOSES made a working control; handler-less controls disabled; 7 dead styles; histories to rules |
+| src/components/dispatch/paper/PaperComposer.tsx | 2026-10-15 | head top from useModalTop |
+| src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-15 | spine top from usePushedHeaderTop |
+| src/components/dispatch/paper/PaperDesk.tsx | 2026-10-15 | DeskHead top from useModalTop |
 | src/components/dispatch/paper/PaperDeskDoc.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperEssay.tsx | 2026-10-04 | edited: the raised initial is extractDropCap’s |
 | src/components/dispatch/paper/PaperFill.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperFrame.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperKeyWell.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/paperMetrics.ts | 2026-10-02 | Read in the launch audit: issueOf counts calendar days (summer-time bug). |
-| src/components/dispatch/paper/PaperMore.tsx | 2026-10-15 | the new-filings pill fades as a PresenceView |
+| src/components/dispatch/paper/PaperMore.tsx | 2026-10-15 | PaperBack starts at a pushed or modal top |
 | src/components/dispatch/paper/paperMotion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperPerf.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/PaperPost.tsx | 2026-10-04 | edited: its own initialOf gone; the one in utils/text |
@@ -415,13 +415,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-01 | written: the critiques' failure reaches the page; an unread verdict is unknown |
 | src/components/film/CastCarousel.tsx | 2026-10-04 | edited: an actor without a photograph is drawn by initialOf |
 | src/components/film/FilmActionTray.tsx | 2026-10-01 | histories to the present |
-| src/components/film/FilmDetailLayout.tsx | 2026-10-01 | histories to the present; the not-found way out named |
+| src/components/film/FilmDetailLayout.tsx | 2026-10-15 | back and scroll header from usePushedHeaderTop |
 | src/components/film/FilmDossier.tsx | 2026-10-01 | what it holds, not what it absorbed |
 | src/components/film/FilmHero.tsx | 2026-10-01 | an unknown verdict claims nothing; histories to the present |
 | src/components/film/FilmHeroSkeleton.tsx | 2026-10-01 | the promise, not its history |
 | src/components/film/FilmMediaCarousel.tsx | 2026-10-01 | hands the whole video on; named |
 | src/components/film/FilmReviews.tsx | 2026-10-04 | edited: no drop cap from right-to-left words |
-| src/components/film/FilmScrollHeader.tsx | 2026-10-01 | the fault it fixes, said as what it does |
+| src/components/film/FilmScrollHeader.tsx | 2026-10-15 | takes its top; back level with the floating one |
 | src/components/film/FilmSectionHeader.tsx | 2026-10-01 | true as written |
 | src/components/film/FilmSimilar.tsx | 2026-10-01 | nav; named for a screen reader |
 | src/components/film/FilmStub.tsx | 2026-10-01 | histories to the present; rated of 5 |
@@ -430,7 +430,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/NitrateFileCard.tsx | 2026-10-08 | says when every picture is drawn (onReady); a failed poster turns to the no-poster face; the house's domain, not REELHOUSE.APP |
 | src/components/film/pickCertificate.ts | 2026-10-01 | the member's own region is real now |
 | src/components/film/ShareCardModal.tsx | 2026-10-08 | shares only once the card is whole; the probe image and the 2 s fallback gone |
-| src/components/film/TrailerModal.tsx | 2026-10-01 | names what it plays |
+| src/components/film/TrailerModal.tsx | 2026-10-15 | close from useOverlayTop |
 | src/components/film/WatchProviders.tsx | 2026-10-04 | edited: the monogram takes each initial whole |
 | src/components/HapticTab.tsx | 2026-10-15 | edited: given an icon, the button draws it once, chosen by aria-selected; why tabBarIcon is not used |
 | src/components/home/ProjectorBeam.tsx | 2026-10-01 | true as written |
@@ -442,7 +442,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/__tests__/aSwipeBackIsHeard.test.tsx | 2026-10-02 | nav's history hears the swipe back |
 | src/components/layout/__tests__/ConciergeButton.test.tsx | — |  |
 | src/components/layout/__tests__/everyListChoosesItsAnchor.guard.test.ts | 2026-09-29 | new |
+| src/components/layout/__tests__/everyModalAndOverlayStartsAtItsTop.test.tsx | 2026-10-15 | new: modals and overlays at three insets, both platforms |
+| src/components/layout/__tests__/everyPushedHeaderStartsAtItsTop.test.tsx | 2026-10-15 | new: every pushed route at three insets |
+| src/components/layout/__tests__/everyTabStartsBelowTheBar.test.tsx | 2026-10-15 | new: every tab under the bar, built and measured |
 | src/components/layout/__tests__/flashListKeyboard.test.tsx | 2026-09-29 | anchor tests |
+| src/components/layout/__tests__/memberFileFixture.ts | 2026-10-15 | new: a loaded member file |
+| src/components/layout/__tests__/navMetrics.test.tsx | 2026-10-15 | new: helper values; the measure's redraws |
 | src/components/layout/__tests__/theThumbStaysInItsTrack.test.ts | 2026-10-01 | runs the real maths |
 | src/components/layout/__tests__/TopNavBar.test.tsx | — |  |
 | src/components/layout/CinematicFlashList.tsx | 2026-10-02 | Read (launch audit). Sound; left alone. |
@@ -450,10 +455,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/CinematicScrollView.tsx | 2026-10-01 | true as written |
 | src/components/layout/ConciergeButton.tsx | 2026-10-02 | door through nav; the hint names all three doors |
 | src/components/layout/FrozenTab.tsx | 2026-10-01 | says it passes through; freezing carried to performance |
-| src/components/layout/navMetrics.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/components/layout/navMetrics.ts | 2026-10-15 | every page's top: the bar's measure and four helpers |
 | src/components/layout/PathTracker.tsx | 2026-10-02 | tells openSociety and nav the screen on every navigation |
 | src/components/layout/SectionCards.tsx | 2026-10-01 | a section title is a heading |
-| src/components/layout/TopNavBar.tsx | 2026-10-02 | Read whole (launch audit). router.navigate kept on purpose: the Lounge is a tab, and push would stack a second tab navigator. Sound. |
+| src/components/layout/TopNavBar.tsx | 2026-10-15 | measures itself into navMetrics |
 | src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-09-30 | new: doors, names, states, counts, every line's room |
 | src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-09-30 | new |
 | src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-01 | both doors, every pull |
@@ -464,7 +469,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/FilingsBill.tsx | 2026-09-30 | new; the byline moved out of the filing's door |
 | src/components/lobby/KeepOff.tsx | 2026-09-30 | new |
 | src/components/lobby/LobbyHonour.tsx | 2026-09-30 | new |
-| src/components/lobby/LobbyWall.tsx | 2026-09-30 | new |
+| src/components/lobby/LobbyWall.tsx | 2026-10-15 | visible room from the bar's measured height |
 | src/components/lobby/Masthead.tsx | 2026-09-30 | new |
 | src/components/lobby/measure.ts | 2026-09-30 | new |
 | src/components/lobby/PairBills.tsx | 2026-09-30 | new; "of one height" held only side by side |
@@ -502,7 +507,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogFormBody.tsx | 2026-10-01 | true as written |
 | src/components/log/LogHero.tsx | 2026-10-01 | the filing mark in the present tense |
 | src/components/log/LogIndexEntry.tsx | 2026-10-01 | a held-but-unshown entry said as holding something |
-| src/components/log/LogModalStyles.ts | 2026-10-01 | flat sheet and delete box; histories to the present |
+| src/components/log/LogModalStyles.ts | 2026-10-15 | handle's top set where drawn |
 | src/components/log/logRecord.ts | 2026-10-01 | histories to the present |
 | src/components/log/LogReviewBody.tsx | 2026-10-01 | a Vault that could not open says so |
 | src/components/log/LogSealBar.tsx | 2026-10-01 | histories to the present |
@@ -531,7 +536,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/CreateLoungeSheet.tsx | 2026-10-03 | edited: name and description name their caps, boxes and counters |
 | src/components/lounge/EmptyMyLounges.tsx | 2026-10-01 | contrast history to its reason |
 | src/components/lounge/JoinedLoungeCard.tsx | 2026-10-03 | read whole: says "more than 99" where the server stops counting |
-| src/components/lounge/LoungeGate.tsx | 2026-10-01 | the door names membership, without its history |
+| src/components/lounge/LoungeGate.tsx | 2026-10-15 | centres between the bars |
 | src/components/lounge/LoungeSettingsPanel.tsx | 2026-10-15 | the sheet slides away through Presence |
 | src/components/lounge/LoungeStyles.ts | 2026-10-01 | true as written |
 | src/components/lounge/loungeTabStyles.ts | 2026-10-01 | contrast history to its reasons |
@@ -577,7 +582,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/heroNameSize.test.ts | — |  |
 | src/components/profile/__tests__/hideStatsRemoved.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/holdingsFit.test.ts | — |  |
-| src/components/profile/__tests__/memberFile.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/components/profile/__tests__/memberFile.test.tsx | 2026-10-15 | edited: the hero's top is the tab's or the pushed header's (navMetrics) |
 | src/components/profile/__tests__/memberFileRooms.test.tsx | — |  |
 | src/components/profile/__tests__/memberFileScreen.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
 | src/components/profile/__tests__/portraitInitial.test.ts | 2026-10-04 | edited: both member-file screens ask it; scripts tested in aCharacterIsNeverCut |
@@ -613,7 +618,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
 | src/components/profile/ArchiveLock.tsx | 2026-10-15 | enters and leaves as a PresenceView |
 | src/components/profile/AvatarCropSheet.tsx | 2026-10-15 | enters and leaves as a PresenceView |
-| src/components/profile/CinemaDNACard.tsx | 2026-10-15 | enters and leaves as a PresenceView |
+| src/components/profile/CinemaDNACard.tsx | 2026-10-15 | close from useOverlayTop |
 | src/components/profile/CinematicInsights.tsx | 2026-10-01 | says retrieving or failed; whose-words; no history comments |
 | src/components/profile/favourites.ts | 2026-10-01 | comments say what is true now |
 | src/components/profile/FollowRequestsPanel.tsx | 2026-10-15 | the sheet rises and slides away through Presence |
@@ -652,7 +657,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/ReelsHeader.tsx | 2026-10-01 | comments cut to the why |
 | src/components/reels/ReelsStackList.tsx | 2026-10-01 | true as written |
 | src/components/reels/types.ts | 2026-10-01 | true as written |
-| src/components/RouteErrorBoundary.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/components/RouteErrorBoundary.tsx | 2026-10-15 | top from useOverlayTop |
 | src/components/search/SearchResultRow.tsx | 2026-10-02 | ReelRating draws halves; resultLabel says what the row is |
 | src/components/search/SearchUnreachable.tsx | 2026-10-02 | SearchPartly: above results that came back while a source did not |
 | src/components/SectionErrorBoundary.tsx | 2026-10-01 | retries; comments made true |
@@ -678,7 +683,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/theme/CrestGlow.tsx | 2026-10-01 | the leak note to what it does |
 | src/components/theme/DiamondDivider.tsx | 2026-10-01 |  |
 | src/components/theme/OrnamentalRule.tsx | 2026-10-01 | no comments |
-| src/components/ToastHost.tsx | 2026-10-02 | Read whole (launch audit). Messages were cut at 2 lines (4 with a button): the body face is monospaced, so a 375pt phone kept ~66 characters (48 at x1.35) and the longest sentences lost the support address. Never cut now. |
+| src/components/ToastHost.tsx | 2026-10-15 | pill from useOverlayTop; screens say if a sheet |
 | src/components/Toggle.tsx | 2026-10-01 | comments say what is true now |
 | src/components/TryAgain.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/__tests__/aLabelIsSpoken.test.ts | 2026-10-01 | written: a label on a View is spoken |
@@ -717,7 +722,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/__tests__/linksEditor.test.tsx | — |  |
 | src/features/profile/__tests__/theDossierSealIsSpoken.test.tsx | — |  |
 | src/features/profile/__tests__/theEditDeskSaysWhatWentWrong.test.tsx | 2026-10-01 | written: the edit desk says what went wrong |
-| src/features/profile/EditProfileScreen.tsx | 2026-10-15 | the crop sheet is held through its exit |
+| src/features/profile/EditProfileScreen.tsx | 2026-10-15 | nav top from usePushedHeaderTop |
 | src/features/profile/LinksEditor.tsx | 2026-10-03 | edited: the link title and address name their caps |
 | src/features/profile/profile.styles.ts | 2026-10-01 | 19 styles nothing read, removed |
 | src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-15 | edited: the storage mock lists its keys |
@@ -726,7 +731,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/settings/DataVault.tsx | 2026-10-02 | no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
 | src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
 | src/features/settings/settings.styles.ts | 2026-10-02 | read; sound |
-| src/features/settings/SettingsScreen.tsx | 2026-10-15 | edited: the sign-out sends the queue first, then names what it would erase, and offers to stay |
+| src/features/settings/SettingsScreen.tsx | 2026-10-15 | nav top from usePushedHeaderTop |
 | src/features/settings/SettingsSections.tsx | 2026-10-03 | edited: a new password is judged by passwordIsAccepted |
 | src/generated/lucideIcons.js | 2026-10-03 | generated by scripts/lucide-icons.js; its --check guard holds it |
 | src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx | 2026-10-01 | written: a follow that throws is said and rolled back |
@@ -1073,6 +1078,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/networkError.test.ts | — |  |
 | src/utils/__tests__/noControlCharacters.guard.test.ts | 2026-10-03 | read whole: raw bidi, invisible and separator characters refused in source too (Trojan Source) |
 | src/utils/__tests__/noMachinePaths.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/utils/__tests__/noPageAddsToTheInset.guard.test.ts | 2026-10-15 | new: no sum on the inset outside navMetrics |
 | src/utils/__tests__/notificationColumns.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/offlineIsSaidOneWay.guard.test.ts | — |  |
 | src/utils/__tests__/offlineQueue.integration.test.ts | 2026-10-15 | edited: writes carry their owner; another member's is kept for them, never sent |
@@ -1198,4 +1204,5 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
 | test-utils/testQueryClient.ts | 2026-10-04 | written whole: the one client a test builds — the app's rules, no collection timer, errors heard |
 | test-utils/timerCheckingEnvironment.js | 2026-10-04 | written whole: the environment that fails a file ending with a timer still waiting |
+| test-utils/topEdge.ts | 2026-10-15 | new: where a drawn page puts its top |
 | types/react-test-renderer.d.ts | 2026-09-29 | history reduced to the reason |

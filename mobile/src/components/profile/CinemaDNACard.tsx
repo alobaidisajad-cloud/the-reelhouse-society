@@ -3,7 +3,7 @@ import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import { PresenceView } from '@/src/components/motion/Presence';
 import { X } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useOverlayTop } from '@/src/components/layout/navMetrics';
 import { Image } from 'expo-image';
 import { initialOf } from '@/src/utils/text';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
@@ -38,14 +38,14 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
     onRetry?: () => void;
     onClose: () => void;
 }) {
-    const insets = useSafeAreaInsets();
+    const closeTop = useOverlayTop();
     const { width: windowWidth } = useWindowDimensions();
 
     const stamps = analytics?.stamps;
     const totalCount = stamps?.total_logs ?? 0;
 
     const close = (
-        <PressableScale onPress={() => { onClose(); }} style={[s.closeBtn, { top: Math.max(insets.top + 10, 40) }]} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close cinema DNA">
+        <PressableScale onPress={() => { onClose(); }} style={[s.closeBtn, { top: closeTop }]} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close cinema DNA">
             <X size={16} color={colors.parchment} />
         </PressableScale>
     );

@@ -6,6 +6,7 @@ import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useModalTop } from '@/src/components/layout/navMetrics';
 import { Bold, Italic, Type, Quote, Minus, Link2 } from 'lucide-react-native';
 import { EssayBody } from '@/src/components/dispatch/EssayBody';
 import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
@@ -191,7 +192,7 @@ function TheDoor({ door }: { door: ReturnType<typeof useDoor> }) {
         <View style={p.screen}>
             <RoomLight room="dispatch" />
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
-            <PaperBack label="THE DISPATCH" onBack={() => nav.back()} />
+            <PaperBack label="THE DISPATCH" onBack={() => nav.back()} presented />
             <ScrollView
                 contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingBottom: insets.bottom + 24 }}
                 showsVerticalScrollIndicator={false}
@@ -215,6 +216,7 @@ function ComposeDossierScreen() {
     const { edit, initialTitle, initialContent } = useLocalSearchParams<{ edit?: string, initialTitle?: string, initialContent?: string }>();
     const { user } = useAuthStore();
     const insets = useSafeAreaInsets();
+    const headerTop = useModalTop();
     /** Publishing the long form is the Auteur's act — asked from the registry. */
     const essay = useClearance('essays', '/dispatch/compose');
     // The registry's one answer, not a second tier check beside it.
@@ -643,7 +645,7 @@ function ComposeDossierScreen() {
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
 
-            <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+            <View style={[styles.header, { paddingTop: headerTop }]}>
                 <PressableScale onPress={() => {
                     if (title.trim() || content.trim()) {
                         // No save mark anywhere; a refused save is said here, at the exit.

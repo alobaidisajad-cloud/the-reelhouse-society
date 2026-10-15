@@ -16,6 +16,7 @@ import { computeYearStats, fetchYearLogs, YearStats } from '@/src/services/YearI
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { safeAreaHeight, useOverlayTop } from '@/src/components/layout/navMetrics';
 import { WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { BusterEyes } from '@/src/components/Buster';
@@ -26,13 +27,13 @@ type SlideType = 'intro' | 'total' | 'verdict' | 'rhythm' | 'top' | 'outro';
 
 // Chrome shared by the loading / error / empty states. Module-level so it
 // keeps a stable identity and never remounts its subtree between renders.
-function StateShell({ topInset, children }: { topInset: number; children: React.ReactNode }) {
+function StateShell({ closeTop, children }: { closeTop: number; children: React.ReactNode }) {
   return (
     <View style={s.container}>
       <RoomLight room="member" />
       <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFillObject, WASH]} />
       {children}
-      <PressableScale style={[s.closeBtn, { top: topInset + 10 }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
+      <PressableScale style={[s.closeBtn, { top: closeTop }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
         <X size={24} color={colors.bone} />
       </PressableScale>
     </View>
@@ -57,6 +58,8 @@ function FilmEdges() {
 export default function YearInCinemaScreen() {
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
+  // The close button floats over the slides: an overlay's top (navMetrics).
+  const closeTop = useOverlayTop();
   const { isOffline } = useOfflineAware();
   const { width, height } = useWindowDimensions();
 
@@ -94,7 +97,7 @@ export default function YearInCinemaScreen() {
     return list;
   }, [stats]);
 
-  const slideHeight = height - insets.top - insets.bottom;
+  const slideHeight = safeAreaHeight(height, insets);
 
   const renderSlide = useCallback(({ item, index }: { item: SlideType; index: number }) => {
     const isActive = currentIndex === index;
@@ -203,7 +206,7 @@ export default function YearInCinemaScreen() {
 
   if (phase === 'loading') {
     return (
-      <StateShell topInset={insets.top}>
+      <StateShell closeTop={closeTop}>
         <View style={s.stateBox}>
           <BusterEyes />
           <Text style={s.stateEyebrow}>THE PROJECTOR WARMS</Text>
@@ -215,7 +218,7 @@ export default function YearInCinemaScreen() {
 
   if (phase === 'error') {
     return (
-      <StateShell topInset={insets.top}>
+      <StateShell closeTop={closeTop}>
         <View style={s.stateBox}>
           <Text style={s.stateTitle}>{isOffline ? 'Your year awaits a\nconnection' : 'The projector jammed'}</Text>
           <Text style={s.stateSub}>{isOffline ? 'Reconnect to develop this year’s reel.' : 'The reel slipped the gate. Try once more.'}</Text>
@@ -228,7 +231,7 @@ export default function YearInCinemaScreen() {
   // Ready but the year is genuinely empty — an invitation, not a hollow story.
   if (!stats || stats.total === 0) {
     return (
-      <StateShell topInset={insets.top}>
+      <StateShell closeTop={closeTop}>
         <View style={s.stateBox}>
           <FilmEdges />
           <Text style={s.blankGlyph}>▦</Text>
@@ -262,7 +265,7 @@ export default function YearInCinemaScreen() {
         }}
         renderItem={renderSlide}
       />
-      <PressableScale style={[s.closeBtn, { top: insets.top + 10 }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
+      <PressableScale style={[s.closeBtn, { top: closeTop }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
         <X size={24} color={colors.bone} />
       </PressableScale>
     </View>

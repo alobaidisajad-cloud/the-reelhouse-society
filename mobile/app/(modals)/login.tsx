@@ -10,6 +10,7 @@ import Animated, {
   Easing, interpolate, ReduceMotion,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useModalTop } from '@/src/components/layout/navMetrics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { nav } from '@/src/utils/typedRouter';
@@ -36,6 +37,10 @@ import { EMAIL_MAX } from '@/src/constants/inputLimits';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
+/** The pinned header's row, below the modal's top: the close button's 56pt. */
+const HEADER_ROW = 56;
+/** Between the header's lower edge and the titles. */
+const BELOW_THE_HEADER = 16;
 const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
 
 // ── Subtle animated pulse for the gold accent line ──
@@ -63,6 +68,9 @@ function PulsingRule() {
 export default function LoginScreen() {
 
   const insets = useSafeAreaInsets();
+  // The sheet's own top on iOS, the status bar's edge on Android (navMetrics).
+  const headerTop = useModalTop();
+  const headerBottom = headerTop + HEADER_ROW;
   
   const {
     isLogin,
@@ -169,17 +177,15 @@ export default function LoginScreen() {
   }
 
   return (
-    // No paddingTop here any more. The pinned header is absolutely positioned
-    // at top:0 — which is the container's PADDING box — and then adds
-    // `paddingTop: insets.top` and `height: 56 + insets.top` of its own. With
-    // the container also padding the inset it was counted twice, which is why
-    // the close button sat so far down the screen.
+    // No paddingTop on the container: the pinned header is absolutely positioned
+    // at top:0 — the container's PADDING box — and pads to the modal's top itself.
+    // Padded twice, the close button would sit a whole inset too low.
     <View style={[s.container, { paddingBottom: insets.bottom }]}>
       {/* ── Background & Atmospherics ── */}
       <AuthBackdrop />
 
       {/* ── Pinned Header / Close (0-Overlap) ── */}
-      <BlurView intensity={80} tint="dark" style={[s.fixedHeader, { paddingTop: insets.top, height: 56 + insets.top }]}>
+      <BlurView intensity={80} tint="dark" style={[s.fixedHeader, { paddingTop: headerTop, height: headerBottom }]}>
         <PressableScale
           style={s.closeBtn}
           onPress={() => {
@@ -201,18 +207,15 @@ export default function LoginScreen() {
       <LinearGradient
         pointerEvents="none"
         colors={['rgba(13,11,9,0.85)', 'rgba(13,11,9,0)']}
-        style={[s.headerFade, { top: 56 + insets.top }]}
+        style={[s.headerFade, { top: headerBottom }]}
       />
 
       {/* IMP #2: Native keyboard handling — no KeyboardAvoidingView jank */}
       <ScrollView
         style={{ flex: 1 }}
-          // The header is `56 + insets.top` tall, not 56. The hardcoded 56+16
-          // cleared a header that does not exist at that height, so on any
-          // notched device the title was guillotined by roughly a full inset —
-          // and because s.scroll centred its content, that slice was
-          // unreachable rather than merely scrolled past.
-          contentContainerStyle={[s.scroll, { paddingTop: 56 + insets.top + 16 }]}
+          // Below the header's real lower edge, its top included: s.scroll centres
+          // its content, so a title cut by the header could not be scrolled to.
+          contentContainerStyle={[s.scroll, { paddingTop: headerBottom + BELOW_THE_HEADER }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"

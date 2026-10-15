@@ -20,6 +20,7 @@ import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useModalTop } from '@/src/components/layout/navMetrics';
 import { ChevronLeft } from 'lucide-react-native';
 import { useAuthStore } from '@/src/stores/auth';
 
@@ -116,6 +117,7 @@ async function readFoundingCount(): Promise<number | null> {
 export default function MembershipScreen() {
 
   const insets = useSafeAreaInsets();
+  const navTop = useModalTop();
   const { height } = useWindowDimensions();
   const { user, isAuthenticated } = useAuthStore();
   const pricing = useMembershipPricing(); // live store prices (falls back to static)
@@ -442,7 +444,7 @@ export default function MembershipScreen() {
     <View style={st.container} testID="society-page">
       <RoomLight room="default" />
       {/* Nav */}
-      <View style={[st.navBar, { paddingTop: insets.top + 4 }]}>
+      <View style={[st.navBar, { paddingTop: navTop }]}>
         <PressableScale onPress={() => nav.back()} style={st.navBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="light" accessibilityRole="button" accessibilityLabel="Go back">
           <ChevronLeft size={24} color={colors.bone} />
         </PressableScale>

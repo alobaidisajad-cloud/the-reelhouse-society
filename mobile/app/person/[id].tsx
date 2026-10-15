@@ -32,6 +32,7 @@ import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ArrowLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import NetInfo from '@react-native-community/netinfo';
 
 import { s } from '@/src/components/person/personStyles';
@@ -104,6 +105,9 @@ const CREDIT_LABELS: [string, string] = ['CREDIT', 'CREDITS'];
 // "Self" documentary appearances are part of the record, never performances.
 const SELF_RE = /^self\b/i;
 
+/** The veil reaches past the back button: its 36pt and 10pt of fall below it. */
+const VEIL_BELOW_BACK = 46;
+
 // "Today" is the member's OWN calendar day — timeAgo.localCalendarDate, the
 // app's one answer, and the one the time-zone suite checks. Not
 // `toISOString().slice(0, 10)`: that is UTC, so a member in Los Angeles at 5pm
@@ -120,6 +124,7 @@ export default function PersonDetailScreen() {
   const _loggedIndex = useArchiveStore(s => s._loggedIndex);
   const user = useAuthStore(s => s.user);
   const insets = useSafeAreaInsets();
+  const headerTop = usePushedHeaderTop();
   const { width: windowWidth } = useWindowDimensions();
 
   // The hero's height as it is really drawn — its box clamps to 240..300 —
@@ -127,7 +132,7 @@ export default function PersonDetailScreen() {
   // veil meets the light exactly here.
   const heroH = Math.round(Math.min(300, Math.max(240, windowWidth * 0.6)));
   const heroDynStyle = useMemo(() => ({ height: heroH }), [heroH]);
-  const floatingBackDynStyle = useMemo(() => ({ top: Math.max(insets.top + 10, 20) }), [insets.top]);
+  const floatingBackDynStyle = useMemo(() => ({ top: headerTop }), [headerTop]);
   const scrollContentDynStyle = useMemo(() => ({ paddingBottom: 100 + insets.bottom }), [insets.bottom]);
 
   // ── The veil ──
@@ -137,7 +142,7 @@ export default function PersonDetailScreen() {
   const scrollY = useSharedValue(0);
   // Tall enough to cover the status bar and the button beneath it, and to give
   // the gradient room to fall away before it reaches content.
-  const veilDynStyle = useMemo(() => ({ height: Math.max(insets.top, 20) + 56 }), [insets.top]);
+  const veilDynStyle = useMemo(() => ({ height: headerTop + VEIL_BELOW_BACK }), [headerTop]);
   const veilStyle = useAnimatedStyle(() => ({
     // Fully drawn by the time the hero starts leaving; nothing at rest.
     opacity: interpolate(scrollY.value, [0, 64], [0, 1], Extrapolation.CLAMP),
@@ -451,7 +456,7 @@ export default function PersonDetailScreen() {
 
       <CinematicFlashList
         externalScrollY={scrollY}
-        topInset={insets.top}
+        topInset={headerTop}
         bottomInset={insets.bottom}
         data={canonSorted}
         numColumns={3}

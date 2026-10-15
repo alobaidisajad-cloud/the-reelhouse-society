@@ -24,6 +24,7 @@ import { timeAgo } from '@/src/utils/timeAgo';
 import { Award, Bell, ChevronRight, Heart, KeyRound, MessageCircle, Star, UserPlus, X } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { useModalTop } from '@/src/components/layout/navMetrics';
 import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
 
 const HITSLOP_15 = { top: 15, bottom: 15, left: 15, right: 15 } as const;
@@ -179,7 +180,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
 });
 
 export default function NotificationsModal() {
-
+  const handleTop = useModalTop();
   const { notifications, loading, fetchFailed, markAllRead, fetchNotifications, loadMoreNotifications } = useNotificationStore();
   const allRead = useNotificationStore(s => s._unreadCount) === 0;
   const moreFailed = useNotificationStore(s => s.moreFailed);
@@ -238,7 +239,7 @@ export default function NotificationsModal() {
     <View style={s.container}>
       <RoomLight room="default" />
       {/* Drag handle */}
-      <View style={s.dragHandleWrap}><View style={s.dragHandle} /></View>
+      <View style={[s.dragHandleWrap, { paddingTop: handleTop }]}><View style={s.dragHandle} /></View>
 
       <View style={s.header}>
         <PressableScale style={s.closeBtn} onPress={() => { nav.back(); }} hitSlop={HITSLOP_15} haptic="selection" pressedScale={0.95} accessibilityLabel="Close notices">
@@ -341,7 +342,8 @@ export default function NotificationsModal() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
-  dragHandleWrap: { alignItems: 'center', paddingTop: 10 },
+  /** Its paddingTop is the modal's top (useModalTop), set where it is drawn. */
+  dragHandleWrap: { alignItems: 'center' },
   dragHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',

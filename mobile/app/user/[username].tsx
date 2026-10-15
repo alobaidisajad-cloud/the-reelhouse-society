@@ -68,6 +68,7 @@ import {
     Sparkles
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePushedHeaderTop, useTabContentTop } from '@/src/components/layout/navMetrics';
 
 // ════════════════════════════════════════════════════════════
 // HELPER COMPONENTS
@@ -86,6 +87,8 @@ import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import Buster, { BusterEyes } from '@/src/components/Buster';
 
+/** The back button's 40pt row and the 6pt under it, which a pushed file's hero clears. */
+const BACK_ROW = 46;
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
 
@@ -144,6 +147,9 @@ function VelvetGate({ title, line, isSelf, onAscend }: { title: string; line: st
 export default function UserProfileScreen({ usernameOverride, isRootTab = false }: { usernameOverride?: string, isRootTab?: boolean } = {}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // Your own file is a tab under the top bar; anyone's, pushed, has no bar above it.
+  const tabTop = useTabContentTop();
+  const pushedTop = usePushedHeaderTop();
 
   const scrollY = useSharedValue(0);
 
@@ -320,11 +326,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // Founding is a FLAG, not a rank (`RankBadge` decides the rank): its own line.
   const isFounding = !!(targetUser as any)?.is_founding;
 
-  // Your own file is a tab, with no back button; a pushed one clears the button,
-  // from the expression the button itself is placed by.
-  const heroTop = usernameOverride
-    ? insets.top + 16
-    : Math.max(insets.top + 10, 40) + 46;   // topNav padding + the 40pt button + 6
+  // Your file, a tab, starts below the top bar; a pushed one clears its back button.
+  const heroTop = usernameOverride ? tabTop : pushedTop + BACK_ROW;
 
 
   const {
@@ -612,7 +615,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ════════════════════════════════════════════════════════════
   if (activeTab) {
     return (
-      <View style={[s.container, { paddingTop: Math.max(insets.top + 6, 36) }]}>
+      <View style={[s.container, { paddingTop: usernameOverride ? tabTop : pushedTop }]}>
         <RoomLight room="member" />
         {/* ── THE ROOM PLATE — one threshold for all six ── */}
         <RoomPlate
@@ -942,7 +945,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
       {readyMark}
       {/* Back button (only when navigated to, not on own tab) */}
       {!usernameOverride && (
-        <View style={[s.topNav, { paddingTop: Math.max(insets.top + 10, 40) }]}>
+        <View style={[s.topNav, { paddingTop: pushedTop }]}>
           {/* Icon-only: the label is its only name for a screen reader. */}
           <PressableScale
             onPress={handleBack}

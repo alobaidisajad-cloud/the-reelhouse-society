@@ -46,6 +46,7 @@ import { Text, TextInput } from '@/src/components/text';
 import Animated, { FadeInDown, SlideInDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
 import { EDGE_LIT } from '@/src/theme/light';
@@ -340,6 +341,7 @@ export default function LoungeRoomScreen() {
   const user = useAuthStore(s => s.user);
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const headerTop = usePushedHeaderTop();
   const { isOffline } = useOfflineAware();
 
   const keyboard = useAnimatedKeyboard();
@@ -613,7 +615,7 @@ export default function LoungeRoomScreen() {
       <RoomLight room="default" />
       {readyMark}
       {/* ── Marquee header ── */}
-      <View style={[s.header, { paddingTop: Math.max(insets.top + 10, 44) }]}>
+      <View style={[s.header, { paddingTop: headerTop }]}>
         <PressableScale style={s.headerBtn} onPress={() => nav.back()} haptic="selection" accessibilityRole="button" accessibilityLabel="Back">
           <ArrowLeft size={20} color={colors.parchment} strokeWidth={1.5} />
         </PressableScale>

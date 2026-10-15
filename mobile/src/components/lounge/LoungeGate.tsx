@@ -10,13 +10,14 @@ import PressableScale from '@/src/components/PressableScale';
 import { OrnamentalRule } from '@/src/components/theme/OrnamentalRule';
 import { CrestGlow } from '@/src/components/theme/CrestGlow';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { useTabRoomPadding } from '@/src/components/layout/navMetrics';
 
 /** `mark`: the screen's ready mark (useScreenReady), drawn inside the gate's own root. */
 export function LoungeGate({ mark }: { mark?: React.ReactNode } = {}) {
-
+  const room = useTabRoomPadding();
   return (
     <>
-      <View style={s.gateContainer}>
+      <View style={[s.gateContainer, room]}>
         <RoomLight room="default" />
         {mark}
         <Arrive name="lounge-gate" duration={900} delay={200} style={s.gateCard}>

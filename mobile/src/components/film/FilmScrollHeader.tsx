@@ -25,13 +25,16 @@ import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 
-/** The bar under the status area. The safe-area inset is added by the caller. */
-export const HEADER_BAR_HEIGHT = 52;
+/** The bar's back button, level with the floating one it takes over from. */
+const BACK_SIZE = 36;
+/** The bar below its back button, down to its rule. */
+const BAR_FOOT = 8;
 
 interface FilmScrollHeaderProps {
   title: string;
   onBack: () => void;
-  topInset: number;
+  /** Where the bar's back button starts: the pushed header's top (navMetrics). */
+  top: number;
   /** Drives the cross-fade with the floating back button. */
   animatedStyle: StyleProp<ViewStyle>;
   /**
@@ -43,13 +46,13 @@ interface FilmScrollHeaderProps {
 }
 
 export const FilmScrollHeader = memo(function FilmScrollHeader({
-  title, onBack, topInset, animatedStyle, hiddenFromReader = false,
+  title, onBack, top, animatedStyle, hiddenFromReader = false,
 }: FilmScrollHeaderProps) {
   return (
     <Animated.View
       testID="film-scroll-header"
       importantForAccessibility={hiddenFromReader ? 'no-hide-descendants' : 'auto'}
-      style={[s.header, { paddingTop: topInset, height: topInset + HEADER_BAR_HEIGHT }, animatedStyle]}
+      style={[s.header, { paddingTop: top, paddingBottom: BAR_FOOT }, animatedStyle]}
       // While it is faded out it must not swallow taps meant for the page
       // beneath it — the whole top of the film's backdrop lives under here.
       pointerEvents="box-none"
@@ -84,11 +87,12 @@ const s = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.sepiaBorder,
   },
   bar: {
-    height: HEADER_BAR_HEIGHT, flexDirection: 'row', alignItems: 'center',
+    height: BACK_SIZE, flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, gap: 12,
   },
   back: {
-    width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
+    width: BACK_SIZE, height: BACK_SIZE, borderRadius: BACK_SIZE / 2,
+    alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: colors.sepiaBorder, backgroundColor: colors.surface,
   },
   title: {
@@ -96,5 +100,5 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.parchment,
     includeFontPadding: false,
   },
-  spacer: { width: 36 },
+  spacer: { width: BACK_SIZE },
 });

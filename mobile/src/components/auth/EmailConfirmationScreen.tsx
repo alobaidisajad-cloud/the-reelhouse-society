@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useModalTop } from '@/src/components/layout/navMetrics';
 import { Mail, X } from 'lucide-react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { displayTextProps } from '@/src/constants/textScaling';
@@ -21,14 +21,15 @@ interface Props {
 }
 
 export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, onClose, resendCooldown = 0, onManualConfirm, submitting = false }: Props) {
-  const insets = useSafeAreaInsets();
+  // Drawn only in the login sheet, so its close button sits at the modal's top.
+  const closeTop = useModalTop();
   return (
     <View style={s.container}>
       <AuthBackdrop />
 
       {/* Close — pinned top-right, clear of the notch */}
       <PressableScale
-        style={[s.closeBtn, { top: insets.top + 10 }]}
+        style={[s.closeBtn, { top: closeTop }]}
         onPress={onClose}
         hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
         haptic="light"

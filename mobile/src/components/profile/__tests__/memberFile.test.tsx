@@ -397,8 +397,8 @@ describe('the hero is a composition, not a stack of eleven centred rows', () => 
     // space above your own portrait on the tab, where there is no back button.
     expect(CODE_STYLES).not.toMatch(/paddingTop:\s*120/);
     expect(CODE_SCREEN).toMatch(/heroTop/);
-    // Derived from the same expression the back button itself uses.
-    expect(CODE_SCREEN).toMatch(/usernameOverride\s*\n?\s*\?\s*insets\.top/);
+    // The tab's top below the bar, or the pushed header's top the back button uses (navMetrics).
+    expect(CODE_SCREEN).toMatch(/usernameOverride \? tabTop : pushedTop \+ BACK_ROW/);
   });
 
   it('says the member’s rank ONCE, and does not compute it itself', () => {

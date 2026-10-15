@@ -8,6 +8,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
+import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import { formatCount, COMMENT_PAGE_SIZE, actionLabelProps, CRIMSON_INK, nameOf, UNSPOKEN } from './paperMetrics';
 import { EndMark } from './PaperFrame';
 import { PaperStrike } from './PaperStrike';
@@ -76,8 +77,10 @@ export const CritiqueSpine = memo(function CritiqueSpine({
   kind: string; opening: string; count: number;
   onTop?: () => void; onBack?: () => void; onMore?: () => void;
 }) {
+  // The reader's head, on a pushed screen: it starts at the pushed header's top.
+  const top = usePushedHeaderTop();
   return (
-    <View style={p.spine}>
+    <View style={[p.spine, { paddingTop: top }]}>
       <PressableScale
         style={p.spineBack} onPress={onBack} haptic="selection"
         hitSlop={{ top: 8, bottom: 8, left: 6, right: 0 }}

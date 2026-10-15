@@ -27,6 +27,7 @@ import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { useTabContentTop } from '@/src/components/layout/navMetrics';
 
 // === MAIN SCREEN ===
 export default function DarkRoomScreen() {
@@ -85,11 +86,9 @@ export default function DarkRoomScreen() {
 
   const isSearching = !!query;
 
-  // Memoize contentContainerStyle — insets are stable per session
-  const listContentStyle = useMemo(
-    () => ({ ...s.listContent, paddingTop: insets.top + 90 }),
-    [insets.top]
-  );
+  // Below the top bar, as it measured itself; memoised, as the bar's height rarely moves.
+  const topPad = useTabContentTop();
+  const listContentStyle = useMemo(() => ({ ...s.listContent, paddingTop: topPad }), [topPad]);
 
   // Cache key based on current discovery params
   const cacheKey = useMemo(() => {

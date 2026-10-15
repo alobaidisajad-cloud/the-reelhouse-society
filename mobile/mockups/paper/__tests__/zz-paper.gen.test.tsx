@@ -41,7 +41,7 @@ import {
 } from '@/src/components/dispatch/paper/PaperDesk';
 import { ConciergeCard } from '@/src/components/layout/ConciergeButton';
 import { TopNavBar } from '@/src/components/layout/TopNavBar';
-import { navTopPadding, NAV_ROW_MIN_H, NAV_BOTTOM_PADDING } from '@/src/components/layout/navMetrics';
+import { TAB_CONTENT_GAP, navBarHeight } from '@/src/components/layout/navMetrics';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { columnWidth } from '@/src/components/dispatch/paper/paperMetrics';
 
@@ -96,7 +96,7 @@ jest.mock('react-native-safe-area-context', () => {
 /** The floating header draws OVER content, so the page reserves its height —
  *  from the app's own constants, exactly as topPad does. */
 const NavSpace = () => (
-  <View style={{ height: navTopPadding(59) + NAV_ROW_MIN_H + NAV_BOTTOM_PADDING }} />
+  <View style={{ height: navBarHeight(59) + TAB_CONTENT_GAP }} />
 );
 
 const TODAY = new Date(2026, 7, 28);

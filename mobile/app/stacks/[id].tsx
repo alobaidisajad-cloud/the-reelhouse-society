@@ -13,6 +13,7 @@ import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
 import Animated, { FadeInDown, FadeInUp, ReduceMotion, interpolate, useAnimatedKeyboard, useAnimatedStyle, useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import { offerWord } from '@/src/lib/pushPrimer';
@@ -54,6 +55,8 @@ const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
 /** The epigraph's fold: ONE number for the clamp and for the test of it. */
 const DESC_CLAMP_LINES = 4;
+/** The chrome's row below its top: the 48pt back button. */
+const STACK_NAV_ROW = 48;
 /** A film caption's line. Its two-line box is this × 2 × the text size. */
 const FILM_TITLE_LINE = 14;
 
@@ -169,17 +172,18 @@ const StackDetailFilmCard = React.memo(({
  * nothing, so the chrome dissolves into the film with no ruled edge.
  */
 const StackNav = React.memo(function StackNav({
-    topInset, onBack, blurStyle, children,
+    top, onBack, blurStyle, children,
 }: {
-    topInset: number;
+    /** Where the bar's row starts: the pushed header's top (navMetrics). */
+    top: number;
     onBack: () => void;
     /** Scroll-driven blur, on iOS only. Omitted on the loading and error screens. */
     blurStyle?: any;
     children?: React.ReactNode;
 }) {
-    const height = Math.max(topInset + 50, 70);
+    const height = top + STACK_NAV_ROW;
     return (
-        <View style={[s.navBar, { height, paddingTop: topInset }]} pointerEvents="box-none">
+        <View style={[s.navBar, { height, paddingTop: top }]} pointerEvents="box-none">
             <View style={[s.navScrim, { height: height + 44 }]} pointerEvents="none">
                 <LinearGradient
                     colors={['rgba(13,11,9,0.92)', 'rgba(13,11,9,0.78)', 'rgba(13,11,9,0.34)', 'rgba(13,11,9,0)']}
@@ -205,6 +209,9 @@ export default function StackDetailScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
+  const headerTop = usePushedHeaderTop();
+  // The chrome's lower edge: the critiques hang from it, and the pull's spinner shows below it.
+  const navBottom = headerTop + STACK_NAV_ROW;
   const queryClient = useQueryClient();
   
   const [refreshing, setRefreshing] = useState(false);
@@ -239,7 +246,7 @@ export default function StackDetailScreen() {
   const ITEM_WIDTH = (windowWidth - 18 - 14 * COLUMNS) / COLUMNS;   // 9*2 page + 7*2 per cell
   const ITEM_HEIGHT = ITEM_WIDTH * 1.5;
   // From the safe area, floored and capped, in whole points (the veil meets the hem).
-  const HEADER_HEIGHT = Math.round(insets.top + Math.min(320, Math.max(236, windowHeight * 0.38)));
+  const HEADER_HEIGHT = Math.round(headerTop + Math.min(320, Math.max(236, windowHeight * 0.38)));
 
 
   // ── React Query: MMKV-cached stack detail (instant revisits & offline fallback) ──
@@ -734,7 +741,7 @@ export default function StackDetailScreen() {
     return (
       <View style={s.container}>
         <RoomLight room="default" />
-        <StackNav topInset={insets.top} onBack={() => nav.back()} />
+        <StackNav top={headerTop} onBack={() => nav.back()} />
         <View style={s.loadingCenter}>
           <BusterEyes label="Loading stack" />
         </View>
@@ -749,7 +756,7 @@ export default function StackDetailScreen() {
     return (
       <View style={s.container}>
         <RoomLight room="default" />
-        <StackNav topInset={insets.top} onBack={() => nav.back()} />
+        <StackNav top={headerTop} onBack={() => nav.back()} />
         <View style={s.loadingCenter}>
           <EmptyOffline onRetry={() => { void rereadStack(); }} />
         </View>
@@ -763,7 +770,7 @@ export default function StackDetailScreen() {
     return (
       <View style={s.container}>
         <RoomLight room="default" />
-        <StackNav topInset={insets.top} onBack={() => nav.back()} />
+        <StackNav top={headerTop} onBack={() => nav.back()} />
         <View style={s.loadingCenter}>
           <Buster size={80} mood="suspicious" style={s.classifiedBuster} />
           <Text style={s.title}>CLASSIFIED</Text>
@@ -790,7 +797,7 @@ export default function StackDetailScreen() {
       {/* The room's light hangs from where the hero ends, and blooms from it. */}
       <RoomLight room="default" hem={heroPoster ? HEADER_HEIGHT : undefined} art={heroPoster} />
       {/* Absolute Dynamic Nav Bar */}
-      <StackNav topInset={insets.top} onBack={() => nav.back()} blurStyle={navBlurStyle}>
+      <StackNav top={headerTop} onBack={() => nav.back()} blurStyle={navBlurStyle}>
         {isOwner ? (
           <View style={s.headerActions}>
             <PressableScale style={s.actionBtn} onPress={() => { (router.push as any)({ pathname: '/list-modal', params: { editId: id } } as import('expo-router').Href); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Edit stack">
@@ -825,7 +832,7 @@ export default function StackDetailScreen() {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         estimatedItemSize={200}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} progressViewOffset={Math.max(insets.top + 50, 70)} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} progressViewOffset={navBottom} />}
         ListHeaderComponent={
           <>
             {/* Parallax Image Background */}
@@ -966,7 +973,7 @@ export default function StackDetailScreen() {
       {showComments && (
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
           <PressableScale
-            style={[s.critiqueBackdrop, { height: Math.max(insets.top + 50, 70) }]}
+            style={[s.critiqueBackdrop, { height: navBottom }]}
             onPress={handleToggleComments}
             hitSlop={null}
             pressedScale={1}
@@ -975,7 +982,7 @@ export default function StackDetailScreen() {
           />
           <Animated.View
             entering={FadeInUp.duration(260).reduceMotion(ReduceMotion.System)}
-            style={[s.critiqueSheet, { top: Math.max(insets.top + 50, 70) }, critiqueSheetStyle]}
+            style={[s.critiqueSheet, { top: navBottom }, critiqueSheetStyle]}
           >
             <View style={s.critiqueHandleWrap}><View style={s.critiqueHandle} /></View>
             <View style={s.critiqueHead}>

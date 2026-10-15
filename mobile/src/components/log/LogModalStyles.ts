@@ -8,7 +8,8 @@ export const st = StyleSheet.create({
     centerAuthPrompt: { justifyContent: 'center', alignItems: 'center' },
     identifyText: { fontFamily: fonts.display, fontSize: 17, color: colors.parchment },
     kavFlex: { flex: 1 },
-    dragHandleWrap: { alignItems: 'center', paddingTop: 10 },
+    /** Its paddingTop is the modal's top (useModalTop), set where it is drawn. */
+    dragHandleWrap: { alignItems: 'center' },
     dragHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
     /**
      * THE CHROME DOES NOT GROW.
