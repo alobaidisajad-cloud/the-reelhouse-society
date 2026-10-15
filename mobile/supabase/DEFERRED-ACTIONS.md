@@ -15,45 +15,10 @@ change later**, which no snapshot can infer.
 
 ---
 
-## 1. Revoke `anon`'s read on `profiles.preferences`
+## DA-1. A narrowing of one column's read, held for the old build
 
-**File** `supabase/migrations/20260731_08_public_prefs_projection.sql`, STEP 4
-**Marked** `-- STEP 4 — THE ACTUAL CLOSURE. DO NOT RUN THIS YET.`
-**Blocked on** the launch build reaching the App Store and Play Store
-**Verify it is still pending** — `true` means not yet run:
-
-```sql
-SELECT has_column_privilege('anon','public.profiles','preferences','SELECT');
-```
-
-### Why it waits
-
-The mobile app is **browsable logged out**. There is no auth guard on the tab
-layout — login is a modal — so a visitor with no session loads profiles. Reading
-a JSONB path still requires column-level SELECT on `preferences`, so revoking it
-today breaks the profile fetch for every logged-out visitor on the **frozen
-TestFlight build**, which cannot be patched.
-
-Steps 1–3 are applied and are purely additive: `public_prefs()` plus a generated
-`profiles.public_prefs` column expose only whitelisted keys, and both clients
-read that instead. The leak is closed for anyone on the new build. STEP 4 removes
-the old door once nobody is using it.
-
-### What is still exposed until it runs
-
-`anon` can read the raw `preferences` JSONB, which carries roughly 8 keys beyond
-the 3 the app exposes — including notification settings and privacy
-configuration. Not credentials, and not visible in any app UI, but more than the
-whitelist intends.
-
-### When to run it
-
-After the launch build is live on **both** stores and TestFlight traffic on the
-frozen build has stopped. Then run STEP 4, re-run `npm run schema:snapshot`, and
-delete this entry.
-
-⚠️ Running it early does not corrupt anything — it makes logged-out profile
-views fail on the old build until members update.
+**Blocked on** the launch build replacing the TestFlight build on every phone that has it (and any old client the
+audit records). Its text, its probe and its steps are kept privately until it is closed and probed.
 
 ---
 
@@ -113,6 +78,40 @@ caller.
 
 ---
 
+## DA-4. A Realtime setting switched off
+
+**Blocked on** the launch build having shipped. Its text is kept privately until it is done and probed.
+
+---
+
+## DA-5. The admin second factor required
+
+**Blocked on** the launch build (which offers the second factor) replacing the TestFlight build. Its text is kept
+privately until it is done and probed.
+
+---
+
+## DA-6. Updates unpaused
+
+The update channels a build on a phone follows (`production`, `preview`, `e2e`) are paused on Expo's server, so a
+publish from any machine reaches no phone.
+**Blocked on** a build whose runtime is tied to its native code having shipped, and the user's answer to keeping
+updates on. If the answer is no, they stay paused.
+
+---
+
+## DA-7. The legacy-handle grace in `enforce_username_policy`
+
+**File** `mobile/supabase/migrations/20260802_01_username_charset_backstop.sql`, the block marked TEMPORARY
+**Blocked on** the launch build replacing the TestFlight build.
+
+The policy treats a new handle that is exactly the cleaned form of the stored one as no change, because the
+TestFlight build sends the cleaned form on every profile save: a bio edit would otherwise rename a member whose
+handle predates the charset rules. Once that build is gone the block is removed, with a sealed test that a legacy
+member can then rename to the cleaned form of their handle.
+
+---
+
 ## A web page for one filing — `/dispatch/:id`
 
 **Where:** the web app, `src/App.tsx` and a new page beside `DispatchPage.tsx`.
@@ -151,13 +150,6 @@ essay itself.
 **Until then** the mobile share is correct as it stands: the image carries the
 writing, the link carries the house.
 
----
-
-## ~~A member cannot fix a typo~~ — BUILT 2026-09-05
-
-AMEND now sits beside WITHDRAW on the reader for the author of a live filing,
-and opens the desk the filing was written at. See the commit for what it does
-and, more importantly, what it deliberately does not.
 ---
 
 ## SAVE THE CARD — a row that needs a native dependency
