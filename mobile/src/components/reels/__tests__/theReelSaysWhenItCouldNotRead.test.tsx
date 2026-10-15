@@ -178,7 +178,7 @@ it('once the crossfade is over, each section is drawn shown or hidden as its tou
   await settle();
   expect([drawn('logs'), layer('logs').props.pointerEvents, drawn('stacks'), layer('stacks').props.pointerEvents])
     .toEqual(['shown', 'auto', 'hidden', 'none']);
-  await act(async () => { fireEvent.press(r.getAllByLabelText('Stacks tab')[0]!); });
+  await act(async () => { await fireEvent.press(r.getAllByLabelText('Stacks tab')[0]!); });
   expect([drawn('logs'), drawn('stacks'), layer('stacks').props.pointerEvents]).toEqual(['crossfading', 'crossfading', 'auto']);
   await settle();
   expect([drawn('logs'), layer('logs').props.pointerEvents, drawn('stacks'), layer('stacks').props.pointerEvents])
