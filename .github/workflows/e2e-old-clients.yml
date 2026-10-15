@@ -1,0 +1,32 @@
+name: 🎞️ Shipped clients, end to end
+
+# ── THE BUILDS ALREADY IN MEMBERS' HANDS, AGAINST PRODUCTION AS IT WILL BE ──────
+# Each client mobile/e2e/old-clients.json marks as checked runs the whole Sealed
+# E2E (e2e.yml): its own app, from its own commit with only its recorded
+# patches, over the harness of the run, on a database with every pending
+# migration applied. Nightly, and on every push that changes a migration or an
+# edge function, so no train reaches production unless the shipped builds pass.
+
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'mobile/supabase/migrations/**'
+      - 'mobile/supabase/migrations-down/**'
+      - 'supabase/functions/**'
+      - 'mobile/supabase/functions/**'
+      - 'mobile/e2e/old-clients.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testflight-build-41:
+    name: TestFlight build 41
+    uses: ./.github/workflows/e2e.yml
+    with:
+      client: TestFlight build 41

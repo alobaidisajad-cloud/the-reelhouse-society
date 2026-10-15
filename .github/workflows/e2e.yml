@@ -19,6 +19,14 @@ on:
   schedule:
     - cron: '0 6 * * 1'
   workflow_dispatch:
+  # A build already in members' hands, by its name in mobile/e2e/old-clients.json:
+  # its app is laid over this harness, and it runs against production as it will
+  # be (e2e-old-clients.yml calls this; nothing else names a client).
+  workflow_call:
+    inputs:
+      client:
+        type: string
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -40,8 +48,15 @@ jobs:
       # Which flows run, for run-flows.sh and verify-writes.mjs alike: every flow
       # in the folder (subflows/ holds only the steps they share).
       E2E_FLOWS: mobile/.maestro
+      # The shipped client this run is of, or empty for this commit's own app.
+      E2E_OLD_CLIENT: ${{ inputs.client }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      # Before the package cache is keyed: the client's own lock file decides it.
+      - name: The shipped client's app, over this harness
+        if: ${{ inputs.client }}
+        run: node mobile/e2e/old-client-tree.mjs "$E2E_OLD_CLIENT"
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
@@ -233,6 +248,12 @@ jobs:
           cat "$RUNNER_TEMP/fidelity.txt"
           [ $rc -eq 0 ] || node mobile/e2e/annotate.mjs "E2E fidelity — the copy differs from production" "$RUNNER_TEMP/fidelity.txt"
           exit $rc
+
+      # Production as it will be: every pending migration (not in
+      # mobile/supabase/APPLIED.txt) applied, undone and applied again, so the
+      # app runs against the database it will meet after the next train.
+      - name: Every pending migration, applied
+        run: node mobile/e2e/db/up-down-up.mjs
 
       - name: Seed the members
         run: node mobile/e2e/db/seed.mjs

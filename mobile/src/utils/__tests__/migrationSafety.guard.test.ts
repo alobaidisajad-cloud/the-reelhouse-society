@@ -122,6 +122,22 @@ describe('the clients in members\' hands', () => {
     }
   });
 
+  it('are run end to end from their own commit, with only patches that name an app file, a commit and a reason', () => {
+    const { clientNamed, HARNESS } = require('../../../e2e/old-clients.cjs') as {
+      clientNamed: (r: unknown, n: string) => { refuse?: string; client?: { patches?: unknown[] } };
+      HARNESS: string[];
+    };
+    expect(HARNESS).toEqual(['e2e', 'scripts', 'supabase', 'node_modules']);
+    expect(clientNamed(record, 'TestFlight build 41').client?.patches).toHaveLength(4);
+    expect(clientNamed(record, 'the website').refuse).toBe('the website is not a checked client with a full commit');
+    expect(clientNamed(record, 'build 99').refuse).toBe('no client named "build 99" in old-clients.json');
+    const bad = (patch: object) => clientNamed({ clients: [{ name: 'x', checked: true, commit: 'a'.repeat(40), patches: [patch] }] }, 'x').refuse;
+    expect(bad({ path: 'mobile/e2e/run-flows.sh', from: 'b'.repeat(40), why: 'the harness' })).toMatch(/^x: a patch needs/);
+    expect(bad({ path: 'mobile/src/x.ts', from: 'b'.repeat(40), why: '' })).toMatch(/^x: a patch needs/);
+    expect(bad({ path: 'mobile/src/x.ts', from: 'bbbb', why: 'short commit' })).toMatch(/^x: a patch needs/);
+    expect(bad({ path: 'mobile/src/x.ts', from: 'b'.repeat(40), why: 'a reason' })).toBeUndefined();
+  });
+
   it('are checked in CI after every pending migration is applied, before the security checks', () => {
     const ci = readFileSync(join(MOBILE, '..', '.github/workflows/db-integration.yml'), 'utf8');
     const at = ci.indexOf('run: node mobile/e2e/db/old-clients.mjs');

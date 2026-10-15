@@ -25,6 +25,7 @@ on:
       - "🏛️ Nitrate Noir - God-Tier CI Matrix"
       - "DB Security Integration Tests"
       - "🎬 Sealed E2E"
+      - "🎞️ Shipped clients, end to end"
       - "🏋️ Load — 100,000 members"
     types: [completed]
 

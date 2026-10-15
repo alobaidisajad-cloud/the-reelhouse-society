@@ -11,7 +11,29 @@
       "update": null,
       "expires": "about 2027-01-08 (90 days after upload; the exact date is read in App Store Connect)",
       "checked": true,
-      "note": "Its tree also holds the website's code as main serves it: no website file has changed since this commit."
+      "note": "Its tree also holds the website's code as main serves it: no website file has changed since this commit.",
+      "patches": [
+        {
+          "path": "mobile/src/hooks/useArrival.ts",
+          "from": "ef697e383a23a01df4423c042de27ff0fa96043d",
+          "why": "for the Android emulator: Sealed E2E was red there with build 41's form of the launch-crash fix and green with this one's (P0.15a); build 41 itself shipped to iPhones"
+        },
+        {
+          "path": "mobile/.maestro/subflows/sign_in.yaml",
+          "from": "835bb30480fbd3ede3e8449b1012555e9af7636d",
+          "why": "the flows' scroll centres its target; a harness fix, the app untouched"
+        },
+        {
+          "path": "mobile/.maestro/lobby_wall_flow.yaml",
+          "from": "835bb30480fbd3ede3e8449b1012555e9af7636d",
+          "why": "the flows' scroll centres its target; a harness fix, the app untouched"
+        },
+        {
+          "path": "mobile/.maestro/session_survives_restart.yaml",
+          "from": "835bb30480fbd3ede3e8449b1012555e9af7636d",
+          "why": "the flows' scroll centres its target; a harness fix, the app untouched"
+        }
+      ]
     },
     {
       "name": "the website",

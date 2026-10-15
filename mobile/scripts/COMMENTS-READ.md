@@ -39,11 +39,12 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/utils/mappers.test.ts | — |  |
 | __tests__/utils/mutationExecutor.test.ts | 2026-10-03 | edited: the duplicate merge is a server rewatch under the device viewing id; the insert keeps it |
 | __tests__/utils/offlineQueue.test.ts | 2026-10-03 | edited: the kind list matches the queue's union |
-| ../.github/workflows/ci-alert.yml | 2026-09-29 | history reduced to the rule each step keeps |
+| ../.github/workflows/ci-alert.yml | 2026-10-15 | edited: watches the shipped clients' runs |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
-| ../.github/workflows/db-integration.yml | 2026-10-03 | rebuilt in the tooling audit: production's shape from the snapshot, then e2e/db/security.sql; the copy of production's rules it tested is gone |
-| ../.github/workflows/e2e.yml | 2026-10-04 | the build proves MainActivity clears the splash listener after super.onCreate; warm-up paths gone; logs kept every run, scrubbed first |
-| ../.github/workflows/god_tier_ci.yml | 2026-10-04 | edited: the character table is checked against Node’s segmenter |
+| ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result |
+| ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
+| ../.github/workflows/e2e.yml | 2026-10-15 | edited: callable for a shipped client; pending migrations applied before the seed |
+| ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the secrets scan, the add-only check, the migration lint, the website freeze, the hooks trailer |
 | ../.github/workflows/load.yml | 2026-10-03 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
@@ -160,6 +161,8 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
 | plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it |
+| e2e/old-client-tree.mjs | 2026-10-15 | new |
+| e2e/old-clients.cjs | 2026-10-15 | new |
 | e2e/run-flows.sh | 2026-10-04 | the warm-up removed (it prevented nothing); the splash check after the crash check; earlier: the retry rule, crash gate, phone settled per Maestro |
 | e2e/screen-times.mjs | 2026-10-02 | Written in the launch audit: each screen's time to its content, read from the E2E device log; a gate once ceilings are set. |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
@@ -997,7 +1000,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/boundedCounts.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
 | src/utils/__tests__/ciAlert.behaviour.test.ts | — |  |
-| src/utils/__tests__/ciWorkflows.guard.test.ts | — |  |
+| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-15 | a call to this repo's own workflow is let off only for what its callee carries; the shipped clients' runs |
 | src/utils/__tests__/csv.test.ts | — |  |
 | src/utils/__tests__/dispatchExecutors.test.ts | — |  |
 | src/utils/__tests__/dispatchFieldCaps.test.ts | 2026-09-28 | Claimed to reconcile every live ceiling but read three old migrations, so subject_backdrop_ceiling had no cap. Reads the live snapshot now, and fails on any ceiling without an app cap or a stated reason. |

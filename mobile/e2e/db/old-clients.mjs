@@ -19,6 +19,9 @@ import { cpSync, existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import oldClients from '../old-clients.cjs';
+
+const { toCheck } = oldClients;
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MOBILE = join(HERE, '..', '..');
@@ -26,12 +29,6 @@ const ROOT = join(MOBILE, '..');
 const TESTS = ['src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts',
   'src/services/__tests__/everyNameAClientCallsExists.test.ts', '__tests__/backendContract.test.ts'];
 const SNAPSHOT = ['live-schema.sql', 'live-extensions.sql', 'live-outside-public.sql'];
-
-/** The clients to check: those marked checked, each with a full commit. */
-export const toCheck = (record) => record.clients.filter((c) => c.checked).map((c) => {
-  if (!/^[0-9a-f]{40}$/.test(c.commit ?? '')) throw new Error(`${c.name} is marked checked but has no full commit`);
-  return c;
-});
 
 const sh = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, stdio: 'inherit', env: process.env });
 

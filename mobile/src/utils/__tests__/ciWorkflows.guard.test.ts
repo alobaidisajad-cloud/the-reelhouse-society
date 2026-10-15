@@ -22,7 +22,10 @@ const { parse } = require(require.resolve('yaml/package.json').replace(/package\
 
 const DIR = join(__dirname, '..', '..', '..', '..', '.github', 'workflows');
 type Step = { uses?: string };
-type Job = { 'timeout-minutes'?: number; 'runs-on'?: string; steps?: Step[] };
+type Job = { 'timeout-minutes'?: number; 'runs-on'?: string; steps?: Step[]; uses?: string; with?: Record<string, unknown> };
+/** A call to another of this repo's workflows: its runner and limit are checked there. */
+const LOCAL_CALL = /^\.\/\.github\/workflows\/[\w-]+\.ya?ml$/;
+const calls = (job: Job) => typeof job.uses === 'string' && LOCAL_CALL.test(job.uses);
 type Workflow = { name: string; on: Record<string, unknown> | string | string[]; jobs: Record<string, Job> };
 
 const files = readdirSync(DIR).filter((f) => /\.ya?ml$/.test(f));
@@ -37,8 +40,16 @@ it('reads every workflow — it is not passing on an empty folder', () => {
 });
 
 describe.each(workflows.map((w) => [w.file, w] as const))('%s', (_file, { text, wf }) => {
+  it('has jobs, each run here or a call to a workflow checked in its own file', () => {
+    const jobs = Object.values(wf.jobs);
+    expect(jobs.length).toBeGreaterThan(0);
+    expect(jobs.filter((j) => !calls(j) && !j.steps?.length)).toEqual([]);
+  });
+
   it('pins every outside action to a full commit, with its release noted', () => {
-    const lines = text.split('\n').filter((l) => /^\s*-?\s*uses:\s/.test(l));
+    const all = text.split('\n').filter((l) => /^\s*-?\s*uses:\s/.test(l));
+    const lines = all.filter((l) => !LOCAL_CALL.test(l.replace(/^\s*-?\s*uses:\s*/, '').trim()));
+    expect(all.length).toBeGreaterThan(0);
     for (const line of lines) {
       const ref = /uses:\s*([^@\s]+)@(\S+)(\s*#\s*(\S+))?/.exec(line);
       expect({ line: line.trim(), pinned: !!ref && /^[0-9a-f]{40}$/.test(ref[2]), noted: !!ref?.[4] })
@@ -47,18 +58,36 @@ describe.each(workflows.map((w) => [w.file, w] as const))('%s', (_file, { text, 
   });
 
   it('gives every job a time limit', () => {
-    for (const [name, job] of Object.entries(wf.jobs)) {
-      expect({ job: name, limit: typeof job['timeout-minutes'] === 'number' && job['timeout-minutes'] > 0 })
-        .toEqual({ job: name, limit: true });
-    }
+    const limits = Object.entries(wf.jobs).filter(([, j]) => !calls(j))
+      .map(([name, job]) => ({ job: name, limit: typeof job['timeout-minutes'] === 'number' && job['timeout-minutes'] > 0 }));
+    expect(limits.filter((l) => !l.limit)).toEqual([]);
   });
 
   it('runs every job on a named runner image, never a moving -latest', () => {
-    for (const [name, job] of Object.entries(wf.jobs)) {
-      const image = String(job['runs-on'] ?? '');
-      expect({ job: name, named: /^[a-z]+-\d+(\.\d+)?$/.test(image) }).toEqual({ job: name, named: true });
-    }
+    const images = Object.entries(wf.jobs).filter(([, j]) => !calls(j))
+      .map(([name, job]) => ({ job: name, named: /^[a-z]+-\d+(\.\d+)?$/.test(String(job['runs-on'] ?? '')) }));
+    expect(images.filter((i) => !i.named)).toEqual([]);
   });
+});
+
+it('a job that calls a workflow calls one that exists and takes the call, and nothing else is let off', () => {
+  const callers = workflows.flatMap((w) => Object.entries(w.wf.jobs).filter(([, j]) => j.uses).map(([name, j]) => ({ file: w.file, name, uses: j.uses! })));
+  expect(callers.filter((c) => !LOCAL_CALL.test(c.uses))).toEqual([]);
+  for (const c of callers) {
+    const callee = workflows.find((w) => `./.github/workflows/${w.file}` === c.uses);
+    expect({ caller: `${c.file}:${c.name}`, takesTheCall: !!callee && triggers(callee.wf).includes('workflow_call') })
+      .toEqual({ caller: `${c.file}:${c.name}`, takesTheCall: true });
+  }
+});
+
+it('runs every shipped client the record marks checked, and only that workflow names a client', () => {
+  const record = JSON.parse(readFileSync(join(DIR, '..', '..', 'mobile', 'e2e', 'old-clients.json'), 'utf8')) as {
+    clients: { name: string; checked: boolean }[];
+  };
+  const named = workflows.flatMap((w) => Object.values(w.wf.jobs).filter((j) => j.with && 'client' in j.with)
+    .map((j) => ({ file: w.file, client: String(j.with!.client) })));
+  expect([...new Set(named.map((n) => n.file))]).toEqual(['e2e-old-clients.yml']);
+  expect(named.map((n) => n.client).sort()).toEqual(record.clients.filter((c) => c.checked).map((c) => c.name).sort());
 });
 
 it('the alert watches every workflow that runs on main, by its exact name', () => {
