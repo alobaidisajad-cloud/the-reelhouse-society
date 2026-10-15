@@ -26,6 +26,9 @@ CREATE POLICY avatars_read_own ON storage.objects AS PERMISSIVE FOR SELECT TO au
 CREATE POLICY avatars_replace_own ON storage.objects AS PERMISSIVE FOR UPDATE TO authenticated USING (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))) WITH CHECK (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text) AND (name ~* '\.(png|jpe?g|webp|gif)$'::text)));
 CREATE POLICY avatars_upload_own ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated WITH CHECK (((bucket_id = 'avatars'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text) AND (name ~* '\.(png|jpe?g|webp|gif)$'::text)));
 
+-- ── default privileges that name no schema
+-- (none)
+
 -- ── scheduled jobs
 SELECT cron.schedule_in_database('freeze-closed-ballots', '*/5 * * * *', 'SELECT public.freeze_closed_ballots();', 'postgres', 'postgres', 't');
 SELECT cron.schedule_in_database('lobby-edition', '5 * * * *', 'SELECT public.lobby_choose_edition();', 'postgres', 'postgres', 't');

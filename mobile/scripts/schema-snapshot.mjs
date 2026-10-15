@@ -186,6 +186,25 @@ function dumpOutside(url) {
       WHERE n.nspname <> 'public'
         AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_class'::regclass AND d.objid = c.oid AND d.deptype = 'e')`)),
 
+    // `pg_dump -n public` never prints a default that names no schema, yet one decides
+    // whether every new function starts open to PUBLIC. Each is written as the
+    // statements that make it from the built-in default.
+    ...section('default privileges that name no schema', q(`
+      WITH rows AS (SELECT d.defaclrole AS role, d.defaclobjtype AS t, d.defaclacl AS acl FROM pg_default_acl d WHERE d.defaclnamespace = 0),
+      have AS (SELECT r.role, r.t, a.grantee, a.privilege_type FROM rows r CROSS JOIN LATERAL aclexplode(r.acl) a),
+      base AS (SELECT r.role, r.t, a.grantee, a.privilege_type FROM rows r CROSS JOIN LATERAL aclexplode(acldefault(r.t, r.role)) a),
+      changes AS (
+        SELECT 'REVOKE' AS verb, x.* FROM (SELECT * FROM base EXCEPT SELECT * FROM have) x
+        UNION ALL SELECT 'GRANT', y.* FROM (SELECT * FROM have EXCEPT SELECT * FROM base) y),
+      lines AS (
+        SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I %s %s ON %s %s %s;', pg_get_userbyid(c.role), c.verb,
+            string_agg(c.privilege_type, ', ' ORDER BY c.privilege_type),
+            CASE c.t WHEN 'r' THEN 'TABLES' WHEN 'S' THEN 'SEQUENCES' WHEN 'f' THEN 'FUNCTIONS' WHEN 'T' THEN 'TYPES' ELSE 'SCHEMAS' END,
+            CASE c.verb WHEN 'GRANT' THEN 'TO' ELSE 'FROM' END,
+            CASE WHEN c.grantee = 0 THEN 'PUBLIC' ELSE quote_ident(pg_get_userbyid(c.grantee)) END) AS line
+        FROM changes c GROUP BY c.role, c.t, c.verb, c.grantee)
+      SELECT string_agg(line, E'\\n' ORDER BY line) FROM lines`)),
+
     ...section('scheduled jobs', q(`
       SELECT string_agg(format('SELECT cron.schedule_in_database(%L, %L, %L, %L, %L, %L);', j.jobname, j.schedule, j.command, j.database, j.username, j.active),
         E'\\n' ORDER BY j.jobname)

@@ -143,8 +143,12 @@ const outside = read('live-outside-public.sql');
 const sections = outside.split(/^(?=-- ── )/m);
 const isJobs = (s) => s.startsWith('-- ── scheduled jobs');
 if (sections.filter(isJobs).length !== 1) fail('4. outside public', 'expected exactly one "scheduled jobs" section in live-outside-public.sql');
-runSql('4a. outside public (live-outside-public.sql), as postgres', AS_POSTGRES, sections.filter((s) => !isJobs(s)).join(''));
+// A default naming no schema is changed by its own role: postgres's here, supabase_admin's in 4c.
+const ownLines = sections.filter((s) => !isJobs(s)).join('').split('\n');
+runSql('4a. outside public (live-outside-public.sql), as postgres', AS_POSTGRES, ownLines.filter((l) => !isAdminDefault(l)).join('\n'));
 runSql('4b. scheduled jobs, as supabase_admin (each runs as the role it names)', AS_ADMIN, sections.find(isJobs));
+const adminOutside = ownLines.filter(isAdminDefault);
+if (adminOutside.length) runSql(`4c. ${adminOutside.length} default-privilege rules for supabase_admin naming no schema`, AS_ADMIN, adminOutside.join('\n'));
 
 // ── 5. vault stand-ins ────────────────────────────────────────────────────────
 // Production's secrets never leave production. Each name the snapshot records
