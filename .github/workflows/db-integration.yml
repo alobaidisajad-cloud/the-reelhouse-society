@@ -45,7 +45,19 @@ jobs:
         with:
           node-version: '24'
 
-      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+      # The CLI is downloaded from npm at run time; one failed download failed
+      # this whole run (2026-10-15), so it is tried once more, as every install is.
+      - name: Supabase CLI
+        id: supabase-cli
+        timeout-minutes: 5
+        continue-on-error: true
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+      - name: Supabase CLI, once more
+        if: steps.supabase-cli.outcome == 'failure'
+        timeout-minutes: 5
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         with:
           version: 2.118.0
 

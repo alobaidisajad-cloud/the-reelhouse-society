@@ -126,26 +126,51 @@ const cancels = (wf: Workflow & { concurrency?: string | { group?: string; 'canc
 };
 
 /** A step that installs packages: the kind that hung for 25 minutes in a nightly (2026-10-12). */
-const INSTALLS = /(^|[\s;&|(])(sudo\s+)?(apt-get|apt|brew)\s+install\b|\bnpm\s+(ci|install)\b|\bpip3?\s+install\b|\bplaywright\s+install\b/m;
-type RunStep = { name?: string; id?: string; run?: string; if?: string; 'timeout-minutes'?: number; 'continue-on-error'?: boolean };
+const INSTALLS = /(^|[\s;&|(])(sudo\s+)?(apt-get|apt|brew)\s+install\b|\bnpm\s+(ci|install)\b|\bpip3?\s+install\b|\bplaywright\s+install\b|\bsdkmanager\b[^\n]*\s--install\b/m;
+
+/** The action's name, without the commit it is pinned to. */
+const actionOf = (uses: string) => uses.split('@')[0];
+/**
+ * Every action a scheduled workflow uses, judged: true when it downloads what
+ * it installs while the run runs, so it is an install like any other; or why
+ * it is not one.
+ */
+const ACTIONS: Record<string, true | string> = {
+  // "No matching Supabase CLI binary package found for linux-x64": one failed
+  // download from npm failed the database run of 2026-10-15.
+  'supabase/setup-cli': true,
+  'actions/checkout': "this repository, from GitHub's own servers; the action tries each fetch again itself",
+  'actions/setup-node': "Node 24 from the runner's own disk (\"Found in cache\", run 38804362129): nothing is downloaded",
+  'actions/setup-java': "Java 17 from the runner's own disk (\"Resolved Java 17 from tool-cache\", run 38786642483): nothing is downloaded",
+  'actions/upload-artifact': "the run's own files, to GitHub's store for the run",
+  'actions/download-artifact': "the run's own files, from GitHub's store for the run",
+  // What it would download is installed by the step before it: held by the emulator's test below.
+  'reactivecircus/android-emulator-runner': 'boots the emulator and runs the flows in one step; its packages are installed before it, by a step tried once more alone',
+};
+
+type RunStep = { name?: string; id?: string; run?: string; uses?: string; with?: Record<string, unknown>; if?: string; 'timeout-minutes'?: number; 'continue-on-error'?: boolean };
+const isInstall = (s: RunStep) => (!!s.run && INSTALLS.test(s.run)) || (!!s.uses && ACTIONS[actionOf(s.uses)] === true);
+/** The same step: the same command, or the same action given the same inputs. */
+const sameStep = (a: RunStep, b: RunStep) => a.run === b.run && a.uses === b.uses && JSON.stringify(a.with) === JSON.stringify(b.with);
 /**
  * Each install, in a workflow that runs on a schedule (or one such a workflow
- * calls): the step with its own limit of at most 5 minutes and let fail, then
- * the same step once more, only if it failed, under the same limit. Its second
- * failure fails the run. Each fault named by job and step.
+ * calls), written as a command or made by an action that downloads: the step
+ * with its own limit of at most 5 minutes and let fail, then the same step
+ * once more, only if it failed, under the same limit. Its second failure fails
+ * the run. Each fault named by job and step.
  */
 function installFaults(wf: Workflow): string[] {
   const faults: string[] = [];
   for (const [job, j] of Object.entries(wf.jobs)) {
     const steps = (j.steps ?? []) as RunStep[];
     steps.forEach((s, i) => {
-      if (!s.run || !INSTALLS.test(s.run) || /^steps\.[\w-]+\.outcome == 'failure'$/.test(s.if ?? '')) return;
-      const at = `${job} › ${s.name ?? s.run}`;
+      if (!isInstall(s) || /^steps\.[\w-]+\.outcome == 'failure'$/.test(s.if ?? '')) return;
+      const at = `${job} › ${s.name ?? s.run ?? s.uses}`;
       const again = steps[i + 1];
       const limited = (x?: RunStep) => typeof x?.['timeout-minutes'] === 'number' && x['timeout-minutes']! <= 5;
       if (!limited(s)) faults.push(`${at}: no limit of 5 minutes or less`);
       if (!s.id || s['continue-on-error'] !== true) faults.push(`${at}: not let fail (id and continue-on-error) for its retry`);
-      else if (!again || again.run !== s.run || again.if !== `steps.${s.id}.outcome == 'failure'`) faults.push(`${at}: no retry right after it`);
+      else if (!again || !sameStep(again, s) || again.if !== `steps.${s.id}.outcome == 'failure'`) faults.push(`${at}: no retry right after it`);
       else if (!limited(again)) faults.push(`${at}: its retry has no limit of 5 minutes or less`);
       else if (again['continue-on-error']) faults.push(`${at}: its retry may fail without failing the run`);
     });
@@ -179,10 +204,42 @@ it('says no to an install with no limit, one with no retry, and a retry that may
   expect(installFaults(wf(first + retry('        timeout-minutes: 5\n')))).toEqual([]);
   expect(installFaults(wf(first + retry('        timeout-minutes: 9\n')))).toEqual(['j › Packages: its retry has no limit of 5 minutes or less']);
   expect(installFaults(wf(first + retry('        timeout-minutes: 5\n        continue-on-error: true\n')))).toEqual(['j › Packages: its retry may fail without failing the run']);
-  for (const cmd of ['sudo apt-get install -y x', 'brew install x', 'pip install x', 'npm install', 'npx playwright install --with-deps chromium']) {
+  for (const cmd of ['sudo apt-get install -y x', 'brew install x', 'pip install x', 'npm install', 'npx playwright install --with-deps chromium',
+    '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install emulator']) {
     expect([cmd, INSTALLS.test(cmd)]).toEqual([cmd, true]);
   }
   expect(INSTALLS.test('npm run build')).toBe(false);
+  expect(INSTALLS.test('yes | sdkmanager --licenses')).toBe(false);
+  // An action that downloads is an install: bare, it fails; retried with other inputs, it fails.
+  const cli = (extra: string, version = '2') => `      - name: CLI\n${extra}        uses: supabase/setup-cli@abc\n        with:\n          version: ${version}\n`;
+  const cliFirst = cli('        id: c\n        timeout-minutes: 5\n        continue-on-error: true\n');
+  const cliAgain = (version?: string) => cli("        if: steps.c.outcome == 'failure'\n        timeout-minutes: 5\n", version);
+  expect(installFaults(wf(cli('')))).toEqual(['j › CLI: no limit of 5 minutes or less', 'j › CLI: not let fail (id and continue-on-error) for its retry']);
+  expect(installFaults(wf(cliFirst + cliAgain('3')))).toEqual(['j › CLI: no retry right after it']);
+  expect(installFaults(wf(cliFirst + cliAgain()))).toEqual([]);
+});
+
+it('judges every action a scheduled workflow uses: it downloads, and is an install, or it is named with why not', () => {
+  const used = [...new Set(scheduled().flatMap((w) => Object.values(w.wf.jobs).flatMap((j) => ((j.steps ?? []) as RunStep[])
+    .map((s) => s.uses).filter((u): u is string => !!u && !LOCAL_CALL.test(u)).map(actionOf))))].sort();
+  expect(used).toEqual(expect.arrayContaining(['supabase/setup-cli', 'actions/checkout']));
+  expect(used.filter((a) => !(a in ACTIONS))).toEqual([]);
+  // Each one named is still used: a stale entry is a judgement nothing reads.
+  expect(Object.keys(ACTIONS).filter((a) => !used.includes(a))).toEqual([]);
+});
+
+it('the emulator finds every package it would download already installed, by a step tried once more alone', () => {
+  const e2e = workflows.find((w) => w.file === 'e2e.yml')!;
+  const runs = Object.values(e2e.wf.jobs).filter((j) => ((j.steps ?? []) as RunStep[]).some((s) => s.uses && actionOf(s.uses) === 'reactivecircus/android-emulator-runner'));
+  expect(runs.length).toBe(1);
+  const steps = runs[0]!.steps as RunStep[];
+  const at = steps.findIndex((s) => s.uses && actionOf(s.uses) === 'reactivecircus/android-emulator-runner');
+  const w = steps[at]!.with as { 'api-level': number; target: string; arch: string };
+  const installed = steps.slice(0, at).filter((s) => s.run && INSTALLS.test(s.run) && /\bsdkmanager\b/.test(s.run) && !s.if).map((s) => s.run!).join('\n');
+  // What the action installs before it boots (its log, run 38786642483); the build tools' version is its own.
+  for (const pkg of [`'system-images;android-${w['api-level']};${w.target};${w.arch}'`, 'emulator', 'platform-tools', `'platforms;android-${w['api-level']}'`, "'build-tools;"]) {
+    expect([pkg, installed.includes(pkg)]).toEqual([pkg, true]);
+  }
 });
 
 it('no workflow that runs the E2E flows is cancelled by a later push: each commit\'s run is read', () => {

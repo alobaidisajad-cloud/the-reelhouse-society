@@ -260,7 +260,18 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+      # Downloaded at run time: tried once more (see db-integration.yml).
+      - name: Supabase CLI
+        id: supabase-cli
+        timeout-minutes: 5
+        continue-on-error: true
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+      - name: Supabase CLI, once more
+        if: steps.supabase-cli.outcome == 'failure'
+        timeout-minutes: 5
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         with:
           version: 2.118.0
 
@@ -401,6 +412,25 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+
+      # What the emulator action below installs before it boots: the tools, the
+      # emulator and the system image (about 100 seconds of downloads, run
+      # 38786642483). Installed here, where a failed download is tried once
+      # more alone, the action finds each one already there instead of failing
+      # the flows' step.
+      - name: The emulator and its system image
+        id: android-sdk
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64' --channel=0 > /dev/null
+      - name: The emulator and its system image, once more
+        if: steps.android-sdk.outcome == 'failure'
+        timeout-minutes: 5
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64' --channel=0 > /dev/null
 
       - name: The flows, on an Android emulator
         # A backstop under the job's limit, so the steps after it still run. The
