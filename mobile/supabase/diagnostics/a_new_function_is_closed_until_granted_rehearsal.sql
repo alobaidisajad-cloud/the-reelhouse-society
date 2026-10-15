@@ -1,11 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_new_function_is_closed_until_granted_rehearsal.sql — 20261015_03. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_new_function_is_closed_until_granted_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_new_function_is_closed_until_granted_rehearsal.sql
 --
--- With with_train set, 20261015_03 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up). Then:
+-- 20261015_03 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml):
 --   - a function made now can be run by no visitor and no member until granted;
 --   - visitors run none of the salon channel's three functions; members keep them;
 --   - the functions members and visitors call keep their grants.
@@ -15,9 +14,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261015_03_a_new_function_is_closed_until_granted.sql
-\endif
 
 CREATE FUNCTION public.rh_made_now() RETURNS integer LANGUAGE sql AS 'SELECT 1';
 DO $$ BEGIN

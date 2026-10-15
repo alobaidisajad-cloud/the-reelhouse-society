@@ -1,11 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_row_keeps_what_it_is_rehearsal.sql — 20261015_06. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_row_keeps_what_it_is_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_row_keeps_what_it_is_rehearsal.sql
 --
--- With with_train set, 20261015_06 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up). Rows are made here, as the house,
+-- 20261015_06 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml). Rows are made here, as the house,
 -- for two members (one made private), then each is edited as its own member,
 -- signed in as the app signs in. Every edit a member makes of what a row is
 -- comes back as it was; every edit of what they wrote lands; and the house's
@@ -16,9 +15,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261015_06_a_row_keeps_what_it_is.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

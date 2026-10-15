@@ -1,11 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- the_job_history_is_kept_two_weeks_rehearsal.sql — 20261015_04. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs the_job_history_is_kept_two_weeks_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs the_job_history_is_kept_two_weeks_rehearsal.sql
 --
--- With with_train set, 20261015_04 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up). Then:
+-- 20261015_04 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml):
 --   - no run older than 14 days is left, and every run of the last 14 days is;
 --   - the removal is scheduled each night, and touches only the job log;
 --   - the jobs themselves are untouched.
@@ -19,9 +18,6 @@ BEGIN;
 -- changes no count.
 SELECT count(*) AS recent FROM cron.job_run_details WHERE start_time >= now() - interval '14 days' AND start_time < now() \gset rh_
 SELECT count(*) AS jobs FROM cron.job WHERE jobname <> 'the-job-history-is-kept-two-weeks' \gset rh_
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261015_04_the_job_history_is_kept_two_weeks.sql
-\endif
 
 DO $$ BEGIN
   PERFORM pg_temp.rh_case('no run older than 14 days is left', '0',

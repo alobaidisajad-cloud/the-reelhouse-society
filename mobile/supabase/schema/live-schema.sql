@@ -54,6 +54,29 @@ $$;
 
 
 --
+-- Name: a_row_keeps_what_it_is(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.a_row_keeps_what_it_is() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  kept jsonb := '{}'::jsonb;
+  was  jsonb := to_jsonb(OLD);
+  col  text;
+BEGIN
+  IF current_user IN ('postgres', 'service_role', 'supabase_admin') THEN
+    RETURN NEW;
+  END IF;
+  FOREACH col IN ARRAY TG_ARGV LOOP
+    kept := kept || jsonb_build_object(col, was -> col);
+  END LOOP;
+  RETURN jsonb_populate_record(NEW, kept);
+END $$;
+
+
+--
 -- Name: accept_follow_request(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -7314,6 +7337,104 @@ CREATE TRIGGER a_keep_viewings BEFORE INSERT OR UPDATE ON public.logs FOR EACH R
 
 
 --
+-- Name: dispatch_dossiers_legacy a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.dispatch_dossiers_legacy FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'views', 'certify_count', 'created_at');
+
+
+--
+-- Name: dossier_comments_legacy a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.dossier_comments_legacy FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('dossier_id', 'user_id', 'created_at');
+
+
+--
+-- Name: interactions a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.interactions FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'target_user_id', 'target_log_id', 'target_list_id', 'target_film_id', 'target_review_id', 'type', 'created_at');
+
+
+--
+-- Name: list_comments a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.list_comments FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('list_id', 'user_id', 'created_at');
+
+
+--
+-- Name: lists a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.lists FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'created_at');
+
+
+--
+-- Name: log_comments a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('log_id', 'user_id', 'created_at');
+
+
+--
+-- Name: logs a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.logs FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'created_at');
+
+
+--
+-- Name: lounge_members a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.lounge_members FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('lounge_id', 'user_id', 'joined_at');
+
+
+--
+-- Name: lounge_messages a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.lounge_messages FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('lounge_id', 'user_id', 'content', 'type', 'metadata', 'reply_to_id', 'reply_to_content', 'reply_to_username', 'film_id', 'film_title', 'film_poster', 'created_at', 'deleted_at');
+
+
+--
+-- Name: lounges a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.lounges FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('member_count', 'created_at');
+
+
+--
+-- Name: notifications a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.notifications FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'type', 'from_user_id', 'from_username', 'related_lounge_id', 'film_id', 'poster_path', 'title', 'body', 'message', 'metadata', 'group_key', 'created_at');
+
+
+--
+-- Name: physical_archive a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.physical_archive FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'created_at');
+
+
+--
+-- Name: warnings a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.warnings FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'admin_id', 'reason', 'created_at');
+
+
+--
+-- Name: watchlists a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.watchlists FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'created_at');
+
+
+--
 -- Name: log_private_notes a_lpn_belongs_to_its_viewing; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -9874,6 +9995,14 @@ GRANT ALL ON FUNCTION public.a_request_takes_its_notice() TO service_role;
 
 
 --
+-- Name: FUNCTION a_row_keeps_what_it_is(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.a_row_keeps_what_it_is() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.a_row_keeps_what_it_is() TO service_role;
+
+
+--
 -- Name: FUNCTION accept_follow_request(requester_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -11009,7 +11138,6 @@ GRANT ALL ON FUNCTION public.rls_auto_enable() TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.salon_channel_readable(p_topic text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.salon_channel_readable(p_topic text) TO anon;
 GRANT ALL ON FUNCTION public.salon_channel_readable(p_topic text) TO authenticated;
 GRANT ALL ON FUNCTION public.salon_channel_readable(p_topic text) TO service_role;
 
@@ -11019,7 +11147,6 @@ GRANT ALL ON FUNCTION public.salon_channel_readable(p_topic text) TO service_rol
 --
 
 REVOKE ALL ON FUNCTION public.salon_channel_seated(p_topic text) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.salon_channel_seated(p_topic text) TO anon;
 GRANT ALL ON FUNCTION public.salon_channel_seated(p_topic text) TO authenticated;
 GRANT ALL ON FUNCTION public.salon_channel_seated(p_topic text) TO service_role;
 
@@ -11047,7 +11174,6 @@ GRANT ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description t
 --
 
 REVOKE ALL ON FUNCTION public.send_salon_typing(p_lounge_id uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.send_salon_typing(p_lounge_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.send_salon_typing(p_lounge_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.send_salon_typing(p_lounge_id uuid) TO service_role;
 
@@ -12111,8 +12237,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON S
 --
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO service_role;
 
 

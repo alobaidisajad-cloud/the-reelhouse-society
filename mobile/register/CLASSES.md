@@ -18,9 +18,9 @@ production shows only its id, area, seriousness and count here.
 | E2E-scroll-leaves-target-under-bar | tests | code | OPEN | 0 | A flow's scroll stops with its target under the tab bar, and the next tap lands on a tab |
 | CI-check-only-in-ci | tooling | code | OPEN | 1 | A check CI runs that no local gate runs, so a push meets it only in red |
 | SALON-channel | lounge | serious | OPEN | 1 | open in production |
-| DB-function-grants | database | serious | OPEN | 71 | open in production |
+| DB-function-grants | database | serious | OPEN | 0 | A public function any login the database has may run, because PUBLIC kept EXECUTE on it |
 | DB-extension-reach | database | serious | OPEN | 1 | open in production |
-| DB-row-edited-past-its-gates | database | serious | OPEN | 14 | open in production |
+| DB-row-edited-past-its-gates | database | serious | OPEN | 0 | A member's own row passed its gates when written, then was edited past them (gates on INSERT only; an UPDATE changed its kind, parties, place or time) |
 | CODE-promise-not-awaited | code | behaviour | OPEN | 589 | A promise nobody waits for, so its failure goes unheard and what follows may run first |
 | CODE-index-read-unchecked | code | behaviour | OPEN | 1517 | A value read by index or key used as if it is always there |
 | EDGE-function-static-fault | server | code | OPEN | 4 | An edge function's type error or lint finding, where no gate read the functions |

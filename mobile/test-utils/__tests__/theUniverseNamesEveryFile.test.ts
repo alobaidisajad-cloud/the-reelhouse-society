@@ -17,6 +17,8 @@ import {
 } from '../universe';
 
 const inATree = (r: string) => /^(mobile\/)?supabase\//.test(r);
+/** The migrations production does not hold yet, by the train's own rule (a file of comments alone is none). */
+const pending = () => (require(join(MOBILE, 'supabase', 'diagnostics', 'train.cjs')) as { pendingIn: () => { name: string }[] }).pendingIn();
 /** A path from mobile/ that is a test file, by the universe's own rule. */
 const aTest = (r: string) => isTest(`mobile/${r}`);
 
@@ -45,13 +47,17 @@ describe('the shared file list names every file', () => {
   it('the kinds the plan names: the archive is not a migration, migrations-down holds undo files', () => {
     const kinds = (dir: string) => [...new Set(all.filter((r) => r.startsWith(dir) && r.endsWith('.sql')).map(kindOf))];
     expect(kinds('supabase/migrations/archive/')).toEqual(['not a migration']);
-    expect(kinds('mobile/supabase/migrations-down/')).toEqual(['undo']);
+    // Each pending migration's undo, and nothing else: the folder is empty while no migration is pending.
+    expect(kindOf('mobile/supabase/migrations-down/20990101_01_x.sql')).toBe('undo');
+    expect(kinds('mobile/supabase/migrations-down/')).toEqual(pending().length ? ['undo'] : []);
     expect(files('migrations').map(repoRel).filter((r) => r.includes('/archive/') || r.includes('migrations-down'))).toEqual([]);
     expect(files('notMigrations').length).toBeGreaterThan(10);
   });
 
   it('every universe holds files, so none passes a sweep by being empty', () => {
-    const empty = (Object.keys(UNIVERSES) as UniverseName[]).filter((n) => files(n).length === 0);
+    // The undo files are the pending migrations' alone, so they are none while none is pending.
+    const mayBeEmpty = pending().length ? [] : ['undo'];
+    const empty = (Object.keys(UNIVERSES) as UniverseName[]).filter((n) => files(n).length === 0 && !mayBeEmpty.includes(n));
     expect(empty).toEqual([]);
   });
 });

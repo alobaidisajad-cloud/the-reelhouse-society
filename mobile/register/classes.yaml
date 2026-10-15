@@ -116,11 +116,13 @@ classes:
     open_in_production: true
 
   - id: DB-function-grants
+    title: A public function any login the database has may run, because PUBLIC kept EXECUTE on it
     area: database
     seriousness: serious
     status: OPEN
-    count: 71
-    open_in_production: true
+    count: 0
+    source: { kind: reviewer, ref: "DECISIONS §1.1 (3); P0.16: 71 functions" }
+    fix: "20261015_02 (PUBLIC loses EXECUTE on every public function; each is granted to the roles that call it) and 20261015_03 (a new function starts closed to anon and authenticated); applied by the train of 2026-10-16, read back by train_1_live_check.sql: 0 functions PUBLIC may run, 0 default grants"
 
   - id: DB-extension-reach
     area: database
@@ -130,11 +132,13 @@ classes:
     open_in_production: true
 
   - id: DB-row-edited-past-its-gates
+    title: A member's own row passed its gates when written, then was edited past them (gates on INSERT only; an UPDATE changed its kind, parties, place or time)
     area: database
     seriousness: serious
     status: OPEN
-    count: 14
-    open_in_production: true
+    count: 0
+    source: { kind: reviewer, ref: "P0.48 doc read, 2026-10-15: 14 tables" }
+    fix: "20261015_06 (the a_keeps_what_it_is trigger keeps each table's columns for every role but the house's); rehearsal 13/13 with it, 11/13 missed without; applied by the train of 2026-10-16, read back by train_1_live_check.sql: 14 tables, each trigger enabled. Still OPEN: a new table a member may edit gets no trigger unless its migration adds one"
 
   # The three below are held at their totals in register/frozen-counts.json, file by file, by
   # scripts/frozen-counts.cjs; `--lower` writes their counts here when one falls.
