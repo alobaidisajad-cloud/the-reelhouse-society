@@ -160,6 +160,14 @@ jobs:
             BEFORE=HEAD~1
           fi
           node mobile/scripts/add-only.cjs "$BEFORE"
+      - name: Every migration applies as one unit, under the time limits
+        env:
+          BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            BEFORE=HEAD~1
+          fi
+          node mobile/scripts/migration-lint.cjs "$BEFORE"
       - name: The website is frozen; a change to it carries the user's dated approval
         env:
           BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}

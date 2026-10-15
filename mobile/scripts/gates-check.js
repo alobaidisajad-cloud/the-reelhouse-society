@@ -12,7 +12,7 @@
  *
  *   npm run gates:check
  *
- * Needs SUPABASE_DB_URL in mobile/.env.local.
+ * Needs SUPABASE_DB_URL in the private settings file (private-settings.cjs).
  */
 const fs = require('fs');
 const path = require('path');
@@ -49,15 +49,11 @@ if (!claimedTriggers.length || !claimedStrips.length) {
 }
 
 // ── the database ────────────────────────────────────────────────────────────
-const envFile = path.join(MOBILE, '.env.local');
-const dbUrl = (fs.existsSync(envFile) ? fs.readFileSync(envFile, 'utf8') : '')
-  .split(/\r?\n/)
-  .map((l) => /^\s*SUPABASE_DB_URL\s*=\s*(.*)$/.exec(l))
-  .filter(Boolean)
-  .map((m) => m[1].trim().replace(/^["']|["']$/g, ''))[0];
+const { privateFile, readPrivate } = require('./private-settings.cjs');
+const dbUrl = readPrivate('SUPABASE_DB_URL');
 
 if (!dbUrl) {
-  console.error('gates:check — no SUPABASE_DB_URL in mobile/.env.local; cannot verify anything.');
+  console.error(`gates:check — no SUPABASE_DB_URL in ${privateFile()}; cannot verify anything.`);
   process.exit(1);
 }
 

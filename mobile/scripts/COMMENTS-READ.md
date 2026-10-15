@@ -204,16 +204,18 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/add-only.cjs | 2026-10-15 | new |
 | scripts/bundle-size.js | 2026-10-03 | read whole: sound |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route) |
-| scripts/check-backend-live.mjs | 2026-09-28 | 13 findings; section numbers ran 1-5,9,10,8,6,7,8 and the admin-RPC note sat above the TRUNCATE block — renumbering dropped, each note moved over its own code; '#24' output replaced with what it means |
+| scripts/check-backend-live.mjs | 2026-10-15 | edited: the address is read from, and saved to, the private settings file outside the repo and OneDrive |
 | scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added |
 | scripts/coverage-ratchet.js | 2026-09-29 | the header's why-stories reduced to the rule |
 | scripts/eas-build-preflight.cjs | 2026-10-15 | new |
 | scripts/edge-functions.cjs | 2026-10-03 | paytabs-handler NOT_DEPLOYED, with why (it granted any rank to a posted "paid" message) |
 | scripts/functions-check.mjs | 2026-10-03 | compares every file a deploy bundles, _shared included, each function in its own folder; a listed exception is reported once |
-| scripts/gates-check.js | 2026-10-03 | read whole: the door sweep reads code through stripComments.js |
+| scripts/gates-check.js | 2026-10-15 | edited: the address comes from the private settings file |
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
 | scripts/lucide-icons.js | 2026-10-03 | read whole: sound |
-| scripts/schema-snapshot.mjs | 2026-09-28 | 5 findings; an orphan note trailed its code; the case for the snapshot kept, the incident counts dropped |
+| scripts/migration-lint.cjs | 2026-10-15 | new |
+| scripts/private-settings.cjs | 2026-10-15 | new |
+| scripts/schema-snapshot.mjs | 2026-10-15 | edited: the address comes from the private settings file |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
 | scripts/secrets-planted.cjs | 2026-10-15 | new |
 | scripts/surface-jest-failure.sh | 2026-10-03 | read whole: sound |
@@ -1024,6 +1026,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
+| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
 | src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | payments pass: a failed rank sync carries its status |
 | src/utils/__tests__/networkError.test.ts | — |  |
@@ -1125,7 +1128,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/withAbortSignal.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/withRetry.ts | 2026-10-02 | read; sound |
 | src/utils/withTimeout.ts | 2026-10-14 | edited: its own timer, since Hermes has no AbortSignal.timeout |
-| supabase/diagnostics/apply.cjs | 2026-10-03 | Applies one migration file to production as a single transaction; the database URL is read from .env.local and never printed. |
+| supabase/diagnostics/apply.cjs | 2026-10-15 | rewritten: lints first, runs under the time limits, --no-transaction for a CONCURRENTLY file alone; the address from the private settings file |
 | supabase/functions/fetch-rss/index.ts | 2026-09-29 | the header said it serves the Dispatch tab; no current source calls it (kept for installed builds, per backend-contract); audit tags and the relay's history dropped |
 | supabase/functions/notify-push/index.ts | 2026-10-03 | v4: the sender is named whenever there is one; an accepted request has its title; a house notice is The Lounge only about a salon |
 | supabase/functions/_shared/storeRecord.ts | 2026-10-03 | new: the one home for "apply what RevenueCat says a member holds", read whole record, grace included |

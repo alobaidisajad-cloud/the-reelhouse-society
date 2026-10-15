@@ -25,36 +25,22 @@
  * and a SKIPPED CHECK COUNTS AS A FAILURE. An unrun check is not a pass; this
  * script once printed "Verified present in production: nothing." and exited 0.
  */
-import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs';
+import { readFileSync, readdirSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import privateSettings from './private-settings.cjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const contract = JSON.parse(readFileSync(join(__dirname, 'backend-contract.json'), 'utf8'));
-
-/**
- * Reading a value out of a KEY=value file, tolerating CRLF.
- */
-function fromEnvFile(file, key) {
-  try {
-    for (const line of readFileSync(join(__dirname, '..', file), 'utf8').split('\n')) {
-      const i = line.indexOf('=');
-      if (i < 0) continue;
-      if (line.slice(0, i).trim() === key) return line.slice(i + 1).trim();
-    }
-  } catch {
-    /* no such file */
-  }
-  return '';
-}
 
 // A connection string still carrying its placeholder, caught before psql fails on it.
 const PLACEHOLDERS = ['YOURPASSWORD', 'YOUR-PASSWORD', 'YOUR_PASSWORD', '[YOUR', 'PASTE', 'XXXX'];
 const looksUnfinished = (s) => PLACEHOLDERS.some((p) => s.toUpperCase().includes(p));
 
-let PROJECT_REF = process.env.SUPABASE_PROJECT_REF || fromEnvFile('.env.local', 'SUPABASE_PROJECT_REF');
-let DB_URL = process.env.SUPABASE_DB_URL || fromEnvFile('.env.local', 'SUPABASE_DB_URL');
+// Both come from the private settings file, outside the repo and OneDrive (private-settings.cjs).
+let PROJECT_REF = privateSettings.readPrivate('SUPABASE_PROJECT_REF');
+let DB_URL = privateSettings.readPrivate('SUPABASE_DB_URL');
 
 if (DB_URL && looksUnfinished(DB_URL)) {
   console.warn(
@@ -85,25 +71,12 @@ if (!DB_URL && process.stdin.isTTY) {
     DB_URL = answer;
     const save = (await rl.question('Save it so you are not asked again? (y/N) ')).trim().toLowerCase();
     if (save === 'y' || save === 'yes') {
-      // .env.local is gitignored (mobile/.gitignore: `.env*.local`), so the
-      // password cannot be committed by accident.
-      const path = join(__dirname, '..', '.env.local');
-      let existing = '';
-      try {
-        existing = readFileSync(path, 'utf8');
-      } catch {
-        /* first time */
-      }
-      const kept = existing
-        .split('\n')
-        .filter((l) => !l.startsWith('SUPABASE_DB_URL=') && !l.startsWith('SUPABASE_PROJECT_REF='))
-        .join('\n')
-        .replace(/\n+$/, '');
-      writeFileSync(
-        path,
-        `${kept ? `${kept}\n` : ''}SUPABASE_DB_URL=${DB_URL}\nSUPABASE_PROJECT_REF=${PROJECT_REF || 'wihyqkpoymwcvbprslyz'}\n`,
-      );
-      console.log('  Saved to mobile/.env.local (gitignored).');
+      // Outside the repo and OneDrive, so the password is neither committed nor synced.
+      const saved = privateSettings.writePrivate({
+        SUPABASE_DB_URL: DB_URL,
+        SUPABASE_PROJECT_REF: PROJECT_REF || 'wihyqkpoymwcvbprslyz',
+      });
+      console.log(`  Saved to ${saved}.`);
     }
   }
   rl.close();

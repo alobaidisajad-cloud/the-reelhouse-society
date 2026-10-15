@@ -51,6 +51,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import secretShapes from './secret-shapes.cjs';
+import privateSettings from './private-settings.cjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = join(HERE, '..', 'supabase', 'schema');
@@ -59,22 +60,12 @@ const SCHEMA_FILE = join(OUT_DIR, 'live-schema.sql');
 const OUTSIDE_FILE = join(OUT_DIR, 'live-outside-public.sql');
 const CHECK = process.argv.includes('--check');
 
-/**
- * The database to read. Production's, from SUPABASE_DB_URL in .env.local (the
- * way check-backend-live.mjs reads it) — unless SNAPSHOT_DB_URL names another.
- * The sealed E2E world sets it to its local copy and runs --check: the copy
- * must produce the same three files as production, or the tests run on it
- * prove nothing about production.
- */
+// Production's (private-settings.cjs), unless SNAPSHOT_DB_URL names another: the
+// sealed E2E world names its local copy and runs --check, which must yield
+// production's three files, or tests run on it prove nothing about production.
 function dbUrl() {
   if (process.env.SNAPSHOT_DB_URL) return process.env.SNAPSHOT_DB_URL;
-  for (const f of ['.env.local', '.env']) {
-    const p = join(HERE, '..', f);
-    if (!existsSync(p)) continue;
-    const m = readFileSync(p, 'utf8').match(/^SUPABASE_DB_URL=(.+)$/m);
-    if (m) return m[1].trim().replace(/^["']|["']$/g, '');
-  }
-  return null;
+  return privateSettings.readPrivate('SUPABASE_DB_URL') || null;
 }
 
 /** Strip credentials before anything is printed — the connection string carries a password. */
@@ -211,7 +202,7 @@ function dumpOutside(url) {
 
 const url = dbUrl();
 if (!url) {
-  console.error('SUPABASE_DB_URL not found in mobile/.env.local or mobile/.env — cannot reach the database.');
+  console.error(`SUPABASE_DB_URL not found in ${privateSettings.privateFile()} — cannot reach the database.`);
   process.exit(2);
 }
 
