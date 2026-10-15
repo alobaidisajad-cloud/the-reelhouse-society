@@ -6,7 +6,7 @@ import { INVISIBLE_CHAR_CLASS } from './sanitizeInput';
  * Not a policy limit — `validateUsername` caps NEW handles at 30 and the database
  * enforces that. This is a payload bound, so a pathological string never reaches a
  * network call. The longest handle that exists live is 25 characters
- * (`saleelsaleel555@gmail.com`), so 64 is generous headroom in both directions.
+ * (`member@example.com`), so 64 is generous headroom in both directions.
  */
 const MAX_HANDLE_LENGTH = 64;
 
@@ -32,7 +32,7 @@ const INVISIBLE = new RegExp(`[${INVISIBLE_CHAR_CLASS}]`);
  * actually hold — and the database holds five handles that policy rejects:
  *
  *     sajad.s.alobaidi · saleel.house · saleel.sjs
- *     saleelsaleel555@gmail.com · ug.mb          → 5 of 32 live members
+ *     member@example.com · ug.mb          → 5 of 32 live members
  *
  * Their profiles load (that lookup has no such guard), the Follow button renders, and
  * tapping it fails with a generic error that retrying never fixes. 15.6% of the member

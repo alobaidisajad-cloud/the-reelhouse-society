@@ -27,7 +27,7 @@ in plaintext by the web app. **No member's note content was printed or stored.**
 carrying real private notes". That was wrong and overstated the exposure by 34×: 33 of
 those 34 rows hold an **empty string**, not a note. Measured in pass 3 by splitting
 `not.is.null` from `neq.`. **Exactly one row carries actual content** — and it is the
-note the original finding quoted, about a member's darkest day.
+note the original finding quoted, about a member's own life.
 
 The severity is unchanged in kind. A written privacy promise, on a paid feature, is
 broken, and one real person's private words are on the open internet. The *scale* is

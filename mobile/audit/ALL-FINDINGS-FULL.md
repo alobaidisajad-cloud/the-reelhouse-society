@@ -1601,7 +1601,7 @@ That is a **row**-level policy. It has no column dimension. For any public profi
 ```
 GET /rest/v1/logs?select=user_id,film_title,private_notes&private_notes=neq.
 200 -> [{"user_id":"d1c40ed8-…","film_title":"The Shawshank Redemption",
-         "private_notes":"watched it in my darkest day "}]
+         "private_notes":"[a member's private note, removed]"}]
 ```
 
 That is a real member's real private note about a real bad day, retrievable by anyone holding the anon key — which ships inside the iOS binary and is served in plaintext by the web app.
@@ -1714,7 +1714,7 @@ It sorts `created_at` **ascending** but pages backwards (`< cursor`), and the pr
 I read a real member's private note using nothing but the public anon key, unauthenticated:
 
 ```json
-{"film_title":"The Shawshank Redemption","private_notes":"watched it in my darkest day "}
+{"film_title":"The Shawshank Redemption","private_notes":"[a member's private note, removed]"}
 ```
 
 **The full mechanism, every link proven:**
@@ -2162,7 +2162,7 @@ COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1))
 ```
 Email local parts routinely contain dots. This is live and ongoing — not a legacy artifact.
 
-2. Live consequence: **5 of 32 usernames violate the app's own validator** — `sajad.s.alobaidi`, `saleel.house`, `saleel.sjs`, `saleelsaleel555@gmail.com`, `ug.mb`.
+2. Live consequence: **5 of 32 usernames violate the app's own validator** — `sajad.s.alobaidi`, `saleel.house`, `saleel.sjs`, `member@example.com`, `ug.mb`.
 
 3. `useEditProfile.ts:123` seeds the form with the stored username verbatim. On save, `validateUsername` strips the illegal characters and returns **`valid: true`** — it sanitizes rather than rejects.
 
@@ -2174,7 +2174,7 @@ Email local parts routinely contain dots. This is live and ongoing — not a leg
 "sajad.s.alobaidi"          -> "sajadsalobaidi"           *** SILENTLY RENAMED ***
 "saleel.house"              -> "saleelhouse"              *** SILENTLY RENAMED ***
 "saleel.sjs"                -> "saleelsjs"                *** SILENTLY RENAMED ***
-"saleelsaleel555@gmail.com" -> "saleelsaleel555gmailcom"  *** SILENTLY RENAMED ***
+"member@example.com" -> "memberexamplecom"  *** SILENTLY RENAMED ***
 "ug.mb"                     -> "ugmb"                     *** SILENTLY RENAMED ***
 ```
 
@@ -2978,7 +2978,7 @@ No `error` destructured, no throw. The `UNIQUE (lower(username))` index rejects 
 
 **4 · Impact.** A member who picks `morpho` and taps Register quickly becomes `morpho_4f8a21`, is told nothing, and finds out only when they look at their own profile. Reserved handles behave identically. Note `validateUsername` *is* wired at signup ([useAuthFlow.ts:225](src/hooks/useAuthFlow.ts:225)), so charset and reserved words are caught client-side — the gap is specifically the collision race and the discarded UPDATE.
 
-I'll be careful about one thing: the odd handles I found live (`sajad.s.alobaidi`, `saleelsaleel555@gmail.com`) contain characters `validateUsername` strips, so they came from a path that doesn't run it — most likely the existing web client on the same backend, not this mechanism. I'm not claiming this code produced them.
+I'll be careful about one thing: the odd handles I found live (`sajad.s.alobaidi`, `member@example.com`) contain characters `validateUsername` strips, so they came from a path that doesn't run it — most likely the existing web client on the same backend, not this mechanism. I'm not claiming this code produced them.
 
 **5 · Recommended fix.** The root cause is that the system has no way to tell the user "we gave you a different name." The honest fix is to close that loop rather than only tightening the race: after signup, compare `profile.username` to the requested handle and, if they differ, surface it plainly ("*that handle was claimed — you're registered as `morpho_4f8a21`*") with a path to change it. That covers the debounce race, the reserved-word case, **and** the OAuth/metadata path in one place, and needs no schema change.
 
@@ -3889,7 +3889,7 @@ with live executors at `mutationExecutor.ts:478` (`follow_user`) and `:515` (`un
 ### 🔴 #26 → Blocking (was "exposure surface")
 Live exfiltration of a real member's private note, unauthenticated:
 ```json
-{"film_title":"The Shawshank Redemption","private_notes":"watched it in my darkest day "}
+{"film_title":"The Shawshank Redemption","private_notes":"[a member's private note, removed]"}
 ```
 Chain: `logs_select_authorized USING (can_view_user_data(user_id))` → returns `TRUE` for any public profile **including to anon** → RLS is row-level so all 27 columns come along → `private_notes` is not column-revoked, though `profiles.email` **is**.
 
@@ -3933,7 +3933,7 @@ Returns every column, **bypasses RLS entirely** — so it leaks from *private* p
 
 **Every backend finding already applies to both apps.** Same Supabase project. #26 (private notes readable by anon), #42 (account deletion deletes nothing), #23 (block-graph leak), #24, #32, #48 — all of them hit web too, and several are *worse* there, because a browser bundle hands out the anon key with no reverse-engineering required.
 
-It also probably explains **#36**: the dotted usernames (`sajad.s.alobaidi`, `saleelsaleel555@gmail.com`) contain characters mobile's `validateUsername` strips. I said then they came from "a path that doesn't run it — most likely the web client." That path is now confirmed to exist, and it's 38,000 unread lines.
+It also probably explains **#36**: the dotted usernames (`sajad.s.alobaidi`, `member@example.com`) contain characters mobile's `validateUsername` strips. I said then they came from "a path that doesn't run it — most likely the web client." That path is now confirmed to exist, and it's 38,000 unread lines.
 
 ===MSG===
 
@@ -3994,7 +3994,7 @@ Run against the real usernames in production:
 *** BLOCKED   sajad.s.alobaidi
 *** BLOCKED   saleel.house
 *** BLOCKED   saleel.sjs
-*** BLOCKED   saleelsaleel555@gmail.com
+*** BLOCKED   member@example.com
 *** BLOCKED   ug.mb
 followable    banen
 followable    morpho
@@ -7433,7 +7433,7 @@ That is a **row**-level policy. It has no column dimension. For any public profi
 ```
 GET /rest/v1/logs?select=user_id,film_title,private_notes&private_notes=neq.
 200 -> [{"user_id":"d1c40ed8-…","film_title":"The Shawshank Redemption",
-         "private_notes":"watched it in my darkest day "}]
+         "private_notes":"[a member's private note, removed]"}]
 ```
 
 That is a real member's real private note about a real bad day, retrievable by anyone holding the anon key — which ships inside the iOS binary and is served in plaintext by the web app.

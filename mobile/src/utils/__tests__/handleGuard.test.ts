@@ -25,13 +25,13 @@ import { isLookupSafeHandle } from '../handleGuard';
  */
 const LIVE_HANDLES = [
   'alobaidisajad', 'test_agent_1772958016439', 'sajad.s.alobaidi', 'saleel.house',
-  'saleel.sjs', 'saleelsaleel555@gmail.com', 'ug.mb', 'morpho', 'sajjadobaidi',
+  'saleel.sjs', 'member@example.com', 'ug.mb', 'morpho', 'sajjadobaidi',
   'banen', 'maybeelamis', 'malal', 'malal1', 'dividbyzero', 'divisionops', 'one',
 ];
 
 /** The five the old guard rejected — the entire finding, by name. */
 const PREVIOUSLY_BLOCKED = [
-  'sajad.s.alobaidi', 'saleel.house', 'saleel.sjs', 'saleelsaleel555@gmail.com', 'ug.mb',
+  'sajad.s.alobaidi', 'saleel.house', 'saleel.sjs', 'member@example.com', 'ug.mb',
 ];
 
 const OLD_GUARD = /^[a-zA-Z0-9_]{1,30}$/;

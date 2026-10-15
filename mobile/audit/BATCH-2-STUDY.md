@@ -14,7 +14,7 @@ Nothing trusted on its register note — that register has been wrong in both di
 
 | # | verdict | proof |
 |---|---|---|
-| #26 | REAL · BLOCKING | anon `curl`, HTTP 200: `{"film_title":"The Shawshank Redemption","private_notes":"watched it in my darkest day "}` |
+| #26 | REAL · BLOCKING | anon `curl`, HTTP 200: `{"film_title":"The Shawshank Redemption","private_notes":"[a member's private note, removed]"}` |
 | #32 | REAL · BLOCKING | `get_featured_critique()` returns **30 columns incl. `private_notes`** to anon. SECURITY DEFINER → **ignores RLS, so #26's revoke does NOT close it** |
 | DESYNC | REAL · **worse than filed** | a member has `preferences.social_visibility="private"`; `is_social_private=eq.true` returns **`[]`** — the enforcing column says public for EVERY account |
 | #84 | REAL | live: `logs?select=username` → `42703 column does not exist`; same for `role` |

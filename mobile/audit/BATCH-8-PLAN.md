@@ -259,7 +259,7 @@ what made rotation look impossible. Re-checked later, five spaced requests each:
 |---|---|
 | the originally leaked key (`d1e75fde…`, in 7 public commits) | **401 × 5 — DEAD** |
 | the second key (`46f9f4df…`) | **401 × 5 — DEAD** |
-| the current key (`55c9f4be…`) | 200 × 5 — active |
+| the current key (`[redacted]…`) | 200 × 5 — active |
 
 The copy in public git history is now a dead string. History was never rewritten, and
 did not need to be — which is exactly what §6 predicted.

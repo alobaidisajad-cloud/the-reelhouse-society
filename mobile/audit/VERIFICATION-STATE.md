@@ -10,7 +10,7 @@ For each: (1) prove it's real, (2) prove it's not intentional, (3) design the be
 Unauthenticated `curl` with only the public anon key returned a real member's private note:
 
 ```json
-{"film_title":"The Shawshank Redemption","private_notes":"watched it in my darkest day "}
+{"film_title":"The Shawshank Redemption","private_notes":"[a member's private note, removed]"}
 ```
 
 **Mechanism (fully proven):**

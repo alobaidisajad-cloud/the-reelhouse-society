@@ -235,7 +235,7 @@ wrong, and the fix is four things, not one.
 **THE DATA REPAIR WAS NOT DONE, DELIBERATELY.** The owner's call, and the right one:
 renaming members without asking is the exact harm this batch exists to stop. All five
 keep their handles. They can rename themselves whenever they like. One consequence is
-accepted and open: `saleelsaleel555@gmail.com` remains a publicly readable email
+accepted and open: `member@example.com` remains a publicly readable email
 address until that member chooses a new handle.
 
 **⚠️ TEMPORARY CODE IN THE MIGRATION — REMOVE AT LAUNCH.** The backstop alone does NOT

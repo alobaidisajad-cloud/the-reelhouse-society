@@ -7,7 +7,7 @@ Live backend facts established this session (anon key, unauthenticated curl):
 - `is_social_private` = false for **all 32**; `is_banned` = false for all 32. No private/banned account exists live.
 - 254 `logs` rows readable by **anon**, `private_notes` included.
 - `profiles.email` → `42501` (column revoked). `profiles.preferences` → readable by anon.
-- 5 of 32 usernames fail `^[a-zA-Z0-9_]{1,30}$`: `sajad.s.alobaidi`, `saleel.house`, `saleel.sjs`, `saleelsaleel555@gmail.com`, `ug.mb`.
+- 5 of 32 usernames fail `^[a-zA-Z0-9_]{1,30}$`: `sajad.s.alobaidi`, `saleel.house`, `saleel.sjs`, `member@example.com`, `ug.mb`.
 - 0 of 32 usernames contain uppercase.
 
 ---
@@ -86,7 +86,7 @@ Android launch wiring (FCM, RC android key, Play IAPs) is genuinely absent; the 
 
 ### #26 · REAL · **BLOCKING** · re-proven live this session
 ```
-curl anon → {"film_title":"The Shawshank Redemption","private_notes":"watched it in my darkest day ","user_id":"d1c40ed8-…"}
+curl anon → {"film_title":"The Shawshank Redemption","private_notes":"[a member's private note, removed]","user_id":"d1c40ed8-…"}
 ```
 254 log rows anon-readable. `profiles.email` returns `42501` on the same connection — **proving the column-revoke technique is already deployed in this database**, which is what makes the omission on `private_notes` an oversight rather than a decision.
 
@@ -106,7 +106,7 @@ Live: `logs?select=username` → `{"code":"42703","message":"column logs.usernam
 Live: `sajjadobaidi` = `role:"admin"`, `tier:"projectionist"`. 29 of 32 rows have `tier: NULL`; 2 have `"free"`. Verification of `normalizeTier`'s fall-through pending in batch 3.
 
 ### #36 · REAL, premise confirmed exactly · bio edit silently renames
-The 5 offending usernames are live and are exactly the 5 named: `sajad.s.alobaidi`, `saleel.house`, `saleel.sjs`, `saleelsaleel555@gmail.com`, `ug.mb` (15.6%).
+The 5 offending usernames are live and are exactly the 5 named: `sajad.s.alobaidi`, `saleel.house`, `saleel.sjs`, `member@example.com`, `ug.mb` (15.6%).
 `validateUsername.ts:37-41` strips `[^a-z0-9_]` and returns `valid: true` — it sanitizes rather than rejects. Confirmed by reading the function: there is no "changed the input" signal in the return type at all, only `sanitized`.
 The PII sub-claim is confirmed: one live username **is** a full email address, and `profiles.username` is anon-readable, which routes around the `profiles.email` revoke for that account.
 
@@ -2346,7 +2346,7 @@ This also proves **#50** outright: the INSERT branch silently rewrites a reserve
 
 **Why this beats the alternative:** migrating the 5 handles would break every shared link to those profiles and orphan their denormalised `username` rows (the live `sajjadsaleel_` problem, five more times). **Grandfathering costs nothing and risks nothing.** Zero rows written ⇒ zero migration risk.
 
-**The one account that still needs a decision:** `saleelsaleel555@gmail.com` is a full email address serving as an anon-readable username — a real PII leak that grandfathering preserves. That one should be renamed **with the member's consent**, never silently. It is a conversation, not a migration.
+**The one account that still needs a decision:** `member@example.com` is a full email address serving as an anon-readable username — a real PII leak that grandfathering preserves. That one should be renamed **with the member's consent**, never silently. It is a conversation, not a migration.
 
 ## #55 · the fix is one line *above* the catch, not inside it
 The catches already toast. supabase-js returns PostgREST failures in `{data, error}` **without throwing**, so `loadMoreMessages:541`'s `if (data && data.length > 0 && !error)` swallows them before any catch can see them.
