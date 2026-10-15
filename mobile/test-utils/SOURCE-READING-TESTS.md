@@ -61,6 +61,7 @@ Decisions, as of 2026-09-28:
 | File | The class it enumerates |
 |---|---|
 | `src/components/__tests__/animation-parking.test.ts` | Every endless animation parks when its screen is not focused. |
+| `src/components/motion/__tests__/exitingIsNeverUsed.guard.test.ts` | Every JSX attribute in app/ and src/, read with TypeScript's parser: none is Reanimated's `exiting`, which withholds a removal React has made and can destroy React on Android; and the count of exits that play through `PresenceView`. Leaving is tested by mounting (`Presence.test.tsx`). |
 | `src/components/__tests__/busterRegister.test.ts` | Every place Buster is drawn, read from each file's syntax tree (a renamed import followed), held to the register (one to a screen, never in a row); and every picture of him, by file and by its PNG's own pixel size. His behaviour is tested by mounting him (`Buster.test.tsx`). |
 | `src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts` | Every style that spreads `effects.flat` and still carries elevation (a black shadow on Android before 9); an exact ratchet, lowered as each feature is read. |
 | `src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx` | No sheet unmounts itself at the end of its own fall; useSheetPresence is the one place (its behaviour is tested on the hook). |

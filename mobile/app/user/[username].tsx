@@ -34,6 +34,7 @@ import { NoirPassport } from '@/src/components/profile/NoirPassport';
 import ProfileArchiveTab from '@/src/components/profile/ProfileArchiveTab';
 import { ProfileBackdrop, backdropSource } from '@/src/components/profile/ProfileBackdrop';
 import ArchiveLock, { ArchiveLockedLine, useArchiveLock } from '@/src/components/profile/ArchiveLock';
+import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import ProfileLedgerTab from '@/src/components/profile/ProfileLedgerTab';
 import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
@@ -572,7 +573,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ════════════════════════════════════════════════════════════
   const modals = (
     <>
-      {dnaCardOpen && <CinemaDNACard user={targetUser as never} analytics={serverAnalytics} failed={!!data.tabFailed.projector} onRetry={() => { void data.retryRoom('projector'); }} onClose={closeDnaCard} />}
+      <Presence>
+        {dnaCardOpen && <CinemaDNACard key="dna" user={targetUser as never} analytics={serverAnalytics} failed={!!data.tabFailed.projector} onRetry={() => { void data.retryRoom('projector'); }} onClose={closeDnaCard} />}
+      </Presence>
       <WatchlistRoulette visible={rouletteOpen} watchlist={watchlistFiltered} onClose={closeRoulette} onSelect={onRouletteSelect} />
       {!isSelf && (
         <>
@@ -633,11 +636,6 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           </View>
         ) :['archive', 'ledger', 'watchlist', 'lists', 'physical'].includes(activeTab) ? (
           <View style={{ flex: 1 }}>
-            {/* While the lock stands, the rooms that hold the Archive are not drawn at all. */}
-            {archiveLock.locked && (activeTab === 'archive' || activeTab === 'ledger') && (
-              <View style={{ flex: 1 }}><ArchiveLock onUnlocked={archiveLock.opened} /></View>
-            )}
-
             {/* ═══ ARCHIVE TAB ═══ */}
             {activeTab === 'archive' && !archiveLock.locked && (
               <ProfileArchiveTab
@@ -781,6 +779,16 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 </View>
               )
             )}
+
+            {/* While the lock stands, the rooms that hold the Archive are not drawn at all.
+                After the rooms: opened, it fades over the room that takes its place. */}
+            <Presence>
+              {archiveLock.locked && (activeTab === 'archive' || activeTab === 'ledger') && (
+                <PresenceView key="lock" name="archive-lock.room" style={{ flex: 1 }}>
+                  <ArchiveLock onUnlocked={archiveLock.opened} />
+                </PresenceView>
+              )}
+            </Presence>
           </View>
         ) : (
           <ScrollView contentContainerStyle={[s.tabScrollContent, { paddingBottom: Math.max(insets.bottom + 80, 80) }]} showsVerticalScrollIndicator={false}
@@ -907,10 +915,14 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 <SectionDivider label="VIEWING HISTORY" />
                 {/* Its own read, never the member's logs standing in for their year. */}
                 {archiveLock.locked
-                  ? <ArchiveLock inline onUnlocked={archiveLock.opened} />
+                  ? null
                   : calendarData
                   ? <NitrateCalendarGrid logs={calendarData} isSelf={isSelf} />
                   : roomFailed ? <RoomUnreachable room="the calendar" onRetry={retryRoom} /> : <RoomRetrieving room="the calendar" />}
+                {/* After the calendar: opened, the lock fades over it. */}
+                <Presence>
+                  {archiveLock.locked ? <ArchiveLock key="lock" inline onUnlocked={archiveLock.opened} /> : null}
+                </Presence>
               </View>
             )}
           </ScrollView>

@@ -11,7 +11,8 @@
 import { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import Animated, { FadeOut, useReducedMotion } from 'react-native-reanimated';
+import { useReducedMotion } from 'react-native-reanimated';
+import { PresenceView } from '@/src/components/motion/Presence';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, ChevronUp, Search, ArrowLeft, Lock, ExternalLink, MoreHorizontal } from 'lucide-react-native';
@@ -785,7 +786,7 @@ export const NewFilings = memo(function NewFilings({
   const reduced = useReducedMotion();
   return (
     <View style={m.newWrap} pointerEvents="box-none">
-      <Animated.View exiting={reduced ? undefined : FadeOut.duration(MS.quick)}>
+      <PresenceView name="new-filings.leave" exit={reduced ? undefined : { kind: 'FadeOut', duration: MS.quick }}>
         <Arrive name="new-filings" duration={MS.base} rise={-PILL_Y}>
           <PressableScale style={m.newPill} haptic="medium" onPress={onPress}
             accessibilityRole="button"
@@ -796,7 +797,7 @@ export const NewFilings = memo(function NewFilings({
             </Text>
           </PressableScale>
         </Arrive>
-      </Animated.View>
+      </PresenceView>
     </View>
   );
 });

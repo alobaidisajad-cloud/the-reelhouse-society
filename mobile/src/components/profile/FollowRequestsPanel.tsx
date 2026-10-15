@@ -14,7 +14,7 @@ import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
-import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyRound, X, Check, Search, User } from 'lucide-react-native';
@@ -30,7 +30,6 @@ import TryAgain from '@/src/components/TryAgain';
 import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
 import { useSocialStore } from '@/src/stores/followStore';
 
-const AnimatedView = Animated.createAnimatedComponent(View);
 const HITSLOP = { top: 10, bottom: 10, left: 10, right: 10 } as const;
 /** The row's gap (10) halved between DECLINE and ADMIT, so neither takes the other's tap. */
 const DECLINE_SLOP = { ...HITSLOP, right: 5 } as const;
@@ -82,12 +81,8 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
   } = useFollowRequests(visible);
   const pending = useSocialStore(s => s.pendingRequestCount);
 
-  // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
-  // platform — the search field rises with the keyboard on BOTH.
-  // (Hook must run before the early return — rules of hooks.)
+  // KEYBOARD LAW (RN-Modal tier): a Modal never resizes; the search rises with the keyboard.
   const kbPad = useModalKeyboardPadding(Math.max(insets.bottom + 8, 24));
-
-  if (!visible) return null;
 
   const showSearch = items.length > 0 || search.length > 0;
 
@@ -105,12 +100,17 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
     );
   };
 
+  // Kept open while the sheet slides away.
   return (
-    <Modal statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
+    <Presence>
+    {visible ? (
+    <Modal key="door" statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
       <View style={s.host} onAccessibilityEscape={onClose}>
         <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
         <Pressable style={s.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
-        <AnimatedView entering={SlideInDown.duration(MS.considered).easing(arrive())} exiting={SlideOutDown.duration(MS.quick).easing(leave())} style={[s.sheet, kbPad]}>
+        <PresenceView name="follow-requests" style={[s.sheet, kbPad]}
+          enter={{ kind: 'SlideInDown', duration: MS.considered, easing: arrive() }}
+          exit={{ kind: 'SlideOutDown', duration: MS.quick, easing: leave() }}>
           <View style={s.handle} />
 
           <View style={s.headerRow}>
@@ -186,10 +186,12 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
               <Text {...scaledTextProps} style={s.declineAllText}>DECLINE ALL REMAINING</Text>
             </PressableScale>
           )}
-        </AnimatedView>
+        </PresenceView>
       </View>
       <ToastHost />
     </Modal>
+    ) : null}
+    </Presence>
   );
 }
 

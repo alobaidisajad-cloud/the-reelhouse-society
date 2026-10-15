@@ -30,6 +30,7 @@ import {
   RunningHead,
 } from '@/src/components/dispatch/paper/PaperFrame';
 import { NewFilings, NEW_FILINGS_ROOM } from '@/src/components/dispatch/paper/PaperMore';
+import { Presence } from '@/src/components/motion/Presence';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { columnWidth, formatCount, PAPER_MAX } from '@/src/components/dispatch/paper/paperMetrics';
 import { itemType } from '@/src/components/dispatch/paper/paperPerf';
@@ -372,7 +373,7 @@ export default function DispatchScreen() {
         </View>
 
         {/* New paper is offered above the list, never spliced in under a reader's thumb. */}
-        {newCount > 0 ? <NewFilings count={newCount} onPress={takeTheNew} /> : null}
+        <Presence>{newCount > 0 ? <NewFilings key="new" count={newCount} onPress={takeTheNew} /> : null}</Presence>
       </View>
     </FrozenTab>
   );

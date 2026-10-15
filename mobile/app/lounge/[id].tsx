@@ -43,7 +43,8 @@ import {
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import Animated, { FadeIn, FadeInDown, FadeOut, SlideInDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { FadeInDown, SlideInDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
@@ -718,19 +719,24 @@ export default function LoungeRoomScreen() {
           {/* THE HOUSE PULSE — the typewriter line. Reserved height: the
               composer never shifts a pixel when a typist appears or goes quiet. */}
           <View style={s.typingLine}>
-            {typingUsers.length > 0 && (
-              <AnimatedView entering={FadeIn.duration(250)} exiting={FadeOut.duration(200)} style={s.typingRow}>
-                <View style={s.typingDot} />
-                <Text style={s.typingText} numberOfLines={1}>
-                  {typingUsers.length === 1
-                    ? `AT THE TYPEWRITER — @${typingUsers[0].toUpperCase()}`
-                    : 'SEVERAL MEMBERS AT THE TYPEWRITER…'}
-                </Text>
-              </AnimatedView>
-            )}
+            <Presence>
+              {typingUsers.length > 0 && (
+                <PresenceView key="typing" name="lounge.typing" style={s.typingRow}
+                  enter={{ kind: 'FadeIn', duration: 250 }} exit={{ kind: 'FadeOut', duration: 200 }}>
+                  <View style={s.typingDot} />
+                  <Text style={s.typingText} numberOfLines={1}>
+                    {typingUsers.length === 1
+                      ? `AT THE TYPEWRITER — @${typingUsers[0].toUpperCase()}`
+                      : 'SEVERAL MEMBERS AT THE TYPEWRITER…'}
+                  </Text>
+                </PresenceView>
+              )}
+            </Presence>
           </View>
+          <Presence>
           {replyTo && (
-            <AnimatedView entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={s.replyBanner}>
+            <PresenceView key="reply" name="lounge.reply" style={s.replyBanner}
+              enter={{ kind: 'FadeIn', duration: 200 }} exit={{ kind: 'FadeOut', duration: 150 }}>
               <View style={s.replyBannerCol}>
                 <Text style={s.replyBannerAuthor} numberOfLines={1}>Replying to {authorName(replyTo.user_id, replyTo.username)}</Text>
                 <Text style={s.replyBannerText} numberOfLines={1}>{replyTo.content || 'Shared content'}</Text>
@@ -739,8 +745,9 @@ export default function LoungeRoomScreen() {
                 accessibilityLabel="Cancel the reply">
                 <X size={14} color={colors.fog} strokeWidth={1.5} />
               </PressableScale>
-            </AnimatedView>
+            </PresenceView>
           )}
+          </Presence>
           <View style={s.inputRow}>
             <TextInput
               style={s.input}

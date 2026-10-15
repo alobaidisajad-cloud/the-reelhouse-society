@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { colors, fonts } from '@/src/theme/theme';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { PresenceView } from '@/src/components/motion/Presence';
 import PressableScale from '@/src/components/PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { nav } from '@/src/utils/typedRouter';
@@ -84,7 +84,8 @@ export default function ArchiveLock({ onUnlocked, inline = false }: { onUnlocked
     }, []);
 
     return (
-        <Animated.View entering={FadeIn} exiting={FadeOut} style={inline ? styles.inline : styles.container}>
+        <PresenceView name="archive-lock" enter={{ kind: 'FadeIn' }} exit={{ kind: 'FadeOut' }}
+            style={inline ? styles.inline : styles.container}>
             <Text {...scaledTextProps} style={styles.title}>RESTRICTED ACCESS</Text>
             <Text {...scaledTextProps} style={styles.subtitle}>Authenticate to view your private archive.</Text>
             {error ? <Text {...scaledTextProps} style={styles.error}>{error}</Text> : null}
@@ -96,7 +97,7 @@ export default function ArchiveLock({ onUnlocked, inline = false }: { onUnlocked
                     <Text {...scaledTextProps} style={styles.settingsText}>TURN THE LOCK OFF IN SETTINGS</Text>
                 </PressableScale>
             )}
-        </Animated.View>
+        </PresenceView>
     );
 }
 

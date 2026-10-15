@@ -6,6 +6,7 @@
 import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import OfflineBanner from '../OfflineBanner';
+import { ARRIVAL_GRACE_MS } from '@/src/hooks/useArrival';
 
 // Mock NetInfo
 const mockUseNetInfo = jest.fn();
@@ -18,6 +19,7 @@ jest.mock('@react-native-community/netinfo', () => ({
 // Mock safe area
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  useSafeAreaFrame: () => ({ x: 0, y: 0, width: 375, height: 812 }),
 }));
 
 // Mock PressableScale
@@ -57,6 +59,23 @@ describe('OfflineBanner', () => {
       const r = render(<OfflineBanner />);
       await act(async () => { jest.advanceTimersByTime(150_000); });
       expect(r.getByText('OPERATING IN ISOLATION · 2 MIN.')).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('back online, it rises away over its own 300ms, then leaves the tree', () => {
+    jest.useFakeTimers();
+    try {
+      mockUseNetInfo.mockReturnValue({ isConnected: false });
+      const r = render(<OfflineBanner />);
+      mockUseNetInfo.mockReturnValue({ isConnected: true });
+      r.rerender(<OfflineBanner />);
+      // While it goes it is drawn, and hidden from the screen reader.
+      expect(r.queryByText(/OPERATING IN ISOLATION/)).toBeNull();
+      expect(r.getByText(/OPERATING IN ISOLATION/, { includeHiddenElements: true })).toBeTruthy();
+      React.act(() => { jest.advanceTimersByTime(300 + ARRIVAL_GRACE_MS); });
+      expect(r.toJSON()).toBeNull();
     } finally {
       jest.useRealTimers();
     }

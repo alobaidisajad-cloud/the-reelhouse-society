@@ -28,6 +28,7 @@ import { BureauCard, BureauHead } from '@/src/components/layout/SectionCards';
 import { st } from '@/src/features/profile/profile.styles';
 import { DiamondDivider } from '@/src/components/theme/DiamondDivider';
 import AvatarCropSheet from '@/src/components/profile/AvatarCropSheet';
+import { Presence } from '@/src/components/motion/Presence';
 import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
 import { LinksEditor } from '@/src/features/profile/LinksEditor';
 import { portraitInitial } from '@/src/components/profile/portraitInitial';
@@ -380,16 +381,19 @@ export function EditProfileScreen() {
       )}
 
       {/* Decouple modal from keyboard avoidance view to prevent UI jump */}
-      {showCropModal && (
-        <AvatarCropSheet
-           onClose={() => setShowCropModal(false)}
-           onSuccess={(base64: string) => {
-               setAvatarBase64(base64);
-               setAvatarPreview(`data:image/jpeg;base64,${base64}`);
-               setShowCropModal(false);
-           }}
-        />
-      )}
+      <Presence>
+        {showCropModal && (
+          <AvatarCropSheet
+             key="crop"
+             onClose={() => setShowCropModal(false)}
+             onSuccess={(base64: string) => {
+                 setAvatarBase64(base64);
+                 setAvatarPreview(`data:image/jpeg;base64,${base64}`);
+                 setShowCropModal(false);
+             }}
+          />
+        )}
+      </Presence>
     </View>
   );
 }

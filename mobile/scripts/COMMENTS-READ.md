@@ -80,7 +80,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(admin)/__tests__/tribunal.test.tsx | — |  |
 | app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | app/(admin)/_layout.tsx | 2026-10-02 | read; sound |
-| app/(admin)/tribunal.tsx | 2026-10-04 | edited: the accused’s letter is initialOf, whole |
+| app/(admin)/tribunal.tsx | 2026-10-15 | a closed case slides out through Presence |
 | app/(modals)/__tests__/list-modal.curate.test.tsx | 2026-10-03 | edited: the stack's boxes name their caps |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx | 2026-10-03 | new: your own circle is said to you |
@@ -94,7 +94,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/social-modal.tsx | 2026-10-01 | a failed read said in place, never an empty circle; the circle pages past fifty; no ticket history |
 | app/(tabs)/_layout.tsx | 2026-10-15 | edited: the tab icon's two timings take literal configs |
 | app/(tabs)/darkroom.tsx | 2026-10-02 | the next batch that could not be developed is said, and asked again |
-| app/(tabs)/dispatch.tsx | 2026-10-02 | Read whole (launch audit). A failed next page ended the paper as though it were the last filing: the foot says the rest could not be reached. The column was measured for a 390pt phone whatever the screen: the real width now. |
+| app/(tabs)/dispatch.tsx | 2026-10-15 | the new-filings pill leaves through Presence |
 | app/(tabs)/index.tsx | 2026-10-03 | edited: the join plate draws the shared BrassSheen |
 | app/(tabs)/lounge.tsx | 2026-10-03 | edited: the search box names SEARCH_MAX |
 | app/(tabs)/profile.tsx | 2026-10-03 | your file waits for your handle: read first, a failed read says so with TRY AGAIN, never "Member Not Found" |
@@ -118,7 +118,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | 2026-10-08 | the share waits for the card to say it is whole, 20 s at most |
 | app/lounge.tsx | 2026-10-01 | true as written |
-| app/lounge/[id].tsx | 2026-10-15 | edited: the channel joined as the salon's rules allow and joined again as the seat changes; a waiting member asks again on each notice |
+| app/lounge/[id].tsx | 2026-10-15 | edited: the channel joined as the salon's rules allow and joined again as the seat changes; a waiting member asks again on each notice; the typing line and the reply banner leave through Presence |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-04 | edited: a portrait without a photograph carries the whole first letter, unspoken |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | 2026-10-01 | the not-found way out says where it goes; histories to the present |
@@ -128,7 +128,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
 | app/stacks/[id].tsx | 2026-10-04 | edited: the comment field focus moved out of the state updater into an effect, through useLater |
-| app/user/[username].tsx | 2026-10-08 | the plate's spotlight a native gradient (spotlightImage) |
+| app/user/[username].tsx | 2026-10-15 | the DNA card and the lock leave through Presence; the lock after the rooms |
 | app/year-in-cinema.tsx | 2026-10-01 | nav; a single reel says so far, not the year is young |
 | ARCHITECTURE.md | 2026-10-03 | read against the code: reads are not all TanStack Query (the Lounge, the Dispatch and notices read in their stores); CACHE_MAX_AGE in limits.ts never existed (now CACHE_KEYS) |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
@@ -242,6 +242,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
 | src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: the lids lie beside the picture, outside the points’ layer, over the whole figure; the still one shows whole |
 | src/components/__tests__/busterRegister.test.ts | 2026-10-04 | edited: every layer of every picture, at every density |
+| src/components/__tests__/theInitiationLeavesAfterItsFade.test.tsx | 2026-10-15 | new: a beat and the door leave after their fade |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
 | src/components/__tests__/ActionDeck.test.tsx | 2026-10-01 | rendered: owner, certify, save, stranger |
@@ -252,7 +253,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/ControlledInput.test.tsx | 2026-10-03 | edited: the counter reads the bio's cap |
 | src/components/__tests__/EmptyStates.test.tsx | — |  |
 | src/components/__tests__/ErrorBoundary.test.tsx | — |  |
-| src/components/__tests__/OfflineBanner.test.tsx | — |  |
+| src/components/__tests__/OfflineBanner.test.tsx | 2026-10-15 | the frame in the safe-area mock; the banner leaves after its rise |
 | src/components/__tests__/oneRankMark.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/__tests__/overlayElevation.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/__tests__/PressableScale.hitSlop.test.tsx | — |  |
@@ -293,8 +294,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/__tests__/theTraySaysWhenTheCatalogueIsAway.test.tsx | — |  |
 | src/components/darkroom/constants.ts | 2026-10-02 | read; sound |
 | src/components/darkroom/DarkroomCards.tsx | 2026-10-02 | doors through nav |
-| src/components/darkroom/DarkroomFilterPanel.tsx | 2026-10-03 | edited: the year boxes name YEAR_DIGITS |
-| src/components/darkroom/DarkroomHeader.tsx | 2026-10-02 | Read (launch audit, the unsaid-selection sweep). The filter toggle had no role, no expanded state, and a bare count; CLEAR had no name. Both speak now. |
+| src/components/darkroom/DarkroomFilterPanel.tsx | 2026-10-15 | enters and leaves as a PresenceView |
+| src/components/darkroom/DarkroomHeader.tsx | 2026-10-15 | the filter panel is held through its exit |
 | src/components/darkroom/DarkroomHero.tsx | 2026-10-03 | edited: the search box names SEARCH_MAX |
 | src/components/darkroom/DarkroomMoodBar.tsx | 2026-10-02 | keys; selected as a state; meaning spoken |
 | src/components/Decorative.tsx | 2026-10-01 | the dead marquee and styles gone |
@@ -371,7 +372,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperFrame.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperKeyWell.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/paperMetrics.ts | 2026-10-02 | Read in the launch audit: issueOf counts calendar days (summer-time bug). |
-| src/components/dispatch/paper/PaperMore.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/paper/PaperMore.tsx | 2026-10-15 | the new-filings pill fades as a PresenceView |
 | src/components/dispatch/paper/paperMotion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperPerf.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/PaperPost.tsx | 2026-10-04 | edited: its own initialOf gone; the one in utils/text |
@@ -429,7 +430,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/home/ProjectorBeam.tsx | 2026-10-01 | true as written |
 | src/components/home/types.ts | 2026-10-01 | true as written |
 | src/components/home/VelvetRopeCTA.tsx | 2026-10-03 | read whole: its sheen moved to theme/BrassSheen |
-| src/components/InitiationModal.tsx | 2026-10-02 | Read whole (launch audit). Told every new member of private notes (the Vault, an Archivist's) and a Lounge behind the brass key (the house's mark for a locked door, which it is not). Both made true. |
+| src/components/InitiationModal.tsx | 2026-10-15 | beats cross-fade and the door closes through Presence |
 | src/components/KeyboardRoom.tsx | 2026-10-01 | written: the keyboard's room on Android |
 | src/components/layout/__tests__/aSectionIsAHeading.test.tsx | 2026-10-01 | written: a section title is a heading |
 | src/components/layout/__tests__/aSwipeBackIsHeard.test.tsx | 2026-10-02 | nav's history hears the swipe back |
@@ -520,12 +521,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/__tests__/theSealSaysWhatTheCountMeans.test.tsx | 2026-10-03 | written whole: the unread seal seen and said at each count, and its limit against the SQL |
 | src/components/lounge/__tests__/theSheetOffersOnlyWhatCanWork.test.tsx | 2026-10-02 | Written in the launch audit: a departed member's message offers no report or block; a block always names who it blocks. |
 | src/components/lounge/ActionSheet.tsx | 2026-10-01 | true as written |
-| src/components/lounge/AtTheDoorPanel.tsx | 2026-10-01 | true as written |
+| src/components/lounge/AtTheDoorPanel.tsx | 2026-10-15 | the sheet slides away through Presence |
 | src/components/lounge/CreateLoungeSheet.tsx | 2026-10-03 | edited: name and description name their caps, boxes and counters |
 | src/components/lounge/EmptyMyLounges.tsx | 2026-10-01 | contrast history to its reason |
 | src/components/lounge/JoinedLoungeCard.tsx | 2026-10-03 | read whole: says "more than 99" where the server stops counting |
 | src/components/lounge/LoungeGate.tsx | 2026-10-01 | the door names membership, without its history |
-| src/components/lounge/LoungeSettingsPanel.tsx | 2026-10-01 | contrast history dropped |
+| src/components/lounge/LoungeSettingsPanel.tsx | 2026-10-15 | the sheet slides away through Presence |
 | src/components/lounge/LoungeStyles.ts | 2026-10-01 | true as written |
 | src/components/lounge/loungeTabStyles.ts | 2026-10-01 | contrast history to its reasons |
 | src/components/lounge/MemberFaceStack.tsx | 2026-10-04 | edited: its own initialOf gone; the one in utils/text |
@@ -540,8 +541,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/moderation/ContentActionSheet.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/moderation/ReportSheet.tsx | 2026-10-03 | edited: the details cap is MAX_LENGTHS.reportDetails |
+| src/components/motion/__tests__/exitingIsNeverUsed.guard.test.ts | 2026-10-15 | new: no JSX `exiting` in app/ or src/, proven on a fixture |
+| src/components/motion/__tests__/fixtures/exiting.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
+| src/components/motion/__tests__/Presence.test.tsx | 2026-10-15 | new: kept through its exit, removed after; reduced motion at once; frame, order, nesting |
+| src/components/motion/Presence.tsx | 2026-10-15 | new: a view plays its exit and is removed by state; Reanimated `exiting` is never used |
 | src/components/NitrateCalendar.tsx | 2026-10-01 | the header without a stale line count |
-| src/components/OfflineBanner.tsx | 2026-10-02 | Read whole (launch audit). Elapsed time in the house measure (MIN.), the label says it is offline, and the settle timer is cleared on unmount. |
+| src/components/OfflineBanner.tsx | 2026-10-15 | the banner rises away through Presence |
 | src/components/person/canon.ts | 2026-10-01 | the order, not the sort it replaced |
 | src/components/person/PersonBio.tsx | 2026-10-01 | READ MORE named and its state said |
 | src/components/person/PersonDefining.tsx | 2026-10-01 | histories to the present |
@@ -586,6 +591,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/theCalendarDrawsToday.test.tsx | 2026-10-01 | written: the calendar draws today and counts what it draws |
 | src/components/profile/__tests__/theDnaCardReadsTheRecord.test.tsx | 2026-10-01 | written: the DNA card reads the record and always opens |
 | src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx | 2026-10-02 | a failed door is said; a failed count keeps the last; @handles; decline-all asks first |
+| src/components/profile/__tests__/theFileLetsItsViewsLeave.test.tsx | 2026-10-15 | new: the DNA card and the lock leave after their fade |
 | src/components/profile/__tests__/theHonoursCountTheWholeRecord.test.tsx | 2026-10-01 | written: honours and stamps from the whole record |
 | src/components/profile/__tests__/theOracleClosesClean.test.tsx | 2026-10-01 | written: the Oracle closes clean |
 | src/components/profile/__tests__/theProfileRedrawsForItsOwn.guard.test.ts | 2026-10-02 | Written 2026-10-02 (launch audit): the member page never takes the whole film store. |
@@ -599,12 +605,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/zz-render.lib.test.ts | — |  |
 | src/components/profile/__tests__/zz-render.lib.ts | 2026-09-28 | 35 findings; the RN-vs-CSS differences kept as short present-tense rules, the story of each bug left to history |
 | src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
-| src/components/profile/ArchiveLock.tsx | 2026-10-01 | asks the phone's own means; never opens unasked; the room is not drawn behind it |
-| src/components/profile/AvatarCropSheet.tsx | 2026-10-01 | a refused permission offers Settings; a failed photo said plainly; dead imports gone |
-| src/components/profile/CinemaDNACard.tsx | 2026-10-04 | edited: the letter is the handle’s, as the card names its member |
+| src/components/profile/ArchiveLock.tsx | 2026-10-15 | enters and leaves as a PresenceView |
+| src/components/profile/AvatarCropSheet.tsx | 2026-10-15 | enters and leaves as a PresenceView |
+| src/components/profile/CinemaDNACard.tsx | 2026-10-15 | enters and leaves as a PresenceView |
 | src/components/profile/CinematicInsights.tsx | 2026-10-01 | says retrieving or failed; whose-words; no history comments |
 | src/components/profile/favourites.ts | 2026-10-01 | comments say what is true now |
-| src/components/profile/FollowRequestsPanel.tsx | 2026-10-02 | a failed door is said; the rest could not be reached; decline-all asks first |
+| src/components/profile/FollowRequestsPanel.tsx | 2026-10-15 | the sheet rises and slides away through Presence |
 | src/components/profile/heroNameSize.ts | 2026-10-01 |  |
 | src/components/profile/NitrateCalendarGrid.tsx | 2026-10-01 | today drawn; counts what it draws, "in the past year"; the app date helper; nav |
 | src/components/profile/NoirPassport.tsx | 2026-10-01 | stamps from the whole record only; labels broken between words; said while unread or failed |
@@ -705,7 +711,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/__tests__/linksEditor.test.tsx | — |  |
 | src/features/profile/__tests__/theDossierSealIsSpoken.test.tsx | — |  |
 | src/features/profile/__tests__/theEditDeskSaysWhatWentWrong.test.tsx | 2026-10-01 | written: the edit desk says what went wrong |
-| src/features/profile/EditProfileScreen.tsx | 2026-10-03 | edited: handle, name and bio name their caps |
+| src/features/profile/EditProfileScreen.tsx | 2026-10-15 | the crop sheet is held through its exit |
 | src/features/profile/LinksEditor.tsx | 2026-10-03 | edited: the link title and address name their caps |
 | src/features/profile/profile.styles.ts | 2026-10-01 | 19 styles nothing read, removed |
 | src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-15 | edited: the storage mock lists its keys |
@@ -725,7 +731,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
 | src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-01 | written with useSheetPresence |
 | src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-01 | written with useKeyboardLift |
-| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-08 | an arrival with no easing hands Reanimated none |
+| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-15 | the count lowered: nine entrances moved into PresenceView |
 | src/hooks/__tests__/aSlowPhoneIsKnownAtOnce.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a throttled phone is known on the first render. |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |
 | src/hooks/__tests__/theArchiveDoesNotRepeatItself.test.tsx | — |  |

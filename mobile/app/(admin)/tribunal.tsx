@@ -19,7 +19,8 @@ import { Image } from 'expo-image';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import Animated, { FadeInDown, FadeInUp, SlideOutRight } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Presence, PresenceView } from '@/src/components/motion/Presence';
 
 import PressableScale from '@/src/components/PressableScale';
 import { ModerationService, PriorityCursor, ReportEvidence } from '@/src/services/ModerationService';
@@ -826,9 +827,11 @@ export default function TribunalScreen() {
             <Scale size={48} color={colors.ash} style={{ opacity: 0.5, marginBottom: 16 }} />
             <Text style={s.emptyText}>The docket is clear. The house rests.</Text>
           </View>
-        ) : (
-          <>
-            {displayData.map((item, index) => {
+        ) : null}
+
+        {/* A closed case slides out over the docket closing up behind it. */}
+        <Presence>
+            {!isLoadingData && !queueFailed && displayData.map((item, index) => {
               const reporterName = Array.isArray(item.reporter)
                 ? (item.reporter[0] as any)?.username
                 : item.reporter && typeof item.reporter === 'object' && 'username' in item.reporter
@@ -841,10 +844,11 @@ export default function TribunalScreen() {
               const ev = evidence[item.id];
 
               return (
-                <Animated.View
+                <PresenceView
                   key={item.id}
-                  entering={FadeInUp.duration(400).delay(Math.min(index * 50, 400))}
-                  exiting={SlideOutRight}
+                  name="tribunal.case"
+                  enter={{ kind: 'FadeInUp', duration: 400, delay: Math.min(index * 50, 400) }}
+                  exit={{ kind: 'SlideOutRight' }}
                 >
                   <PressableScale
                     style={[s.reportCard, isSelected && s.reportCardSelected]}
@@ -1065,10 +1069,13 @@ export default function TribunalScreen() {
                       </View>
                     )}
                   </PressableScale>
-                </Animated.View>
+                </PresenceView>
               );
             })}
+        </Presence>
 
+        {!isLoadingData && !queueFailed && displayData.length > 0 && (
+          <>
             {/* ── Load More (pending docket — exact remainder) ──────────── */}
             {activeView === 'pending' && pendingRemaining > 0 && (
               <PressableScale

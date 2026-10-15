@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
+import { PresenceView } from '@/src/components/motion/Presence';
 import { X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -102,7 +102,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
     const tones = avgRatingNum >= 4 ? 'Romanticism' : avgRatingNum >= 3 ? 'Realism' : avgRatingNum >= 2 ? 'Dark Romanticism' : 'Nihilism';
 
     return (
-        <Animated.View entering={FadeInDown} exiting={FadeOut} style={s.overlay}>
+        <PresenceView name="cinema-dna" enter={{ kind: 'FadeInDown' }} exit={{ kind: 'FadeOut' }} style={s.overlay}>
             {close}
 
             <View style={[s.card, { width: windowWidth * 0.85 }]}>
@@ -187,7 +187,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
                     )}
                 </View>
             </View>
-        </Animated.View>
+        </PresenceView>
     );
 });
 

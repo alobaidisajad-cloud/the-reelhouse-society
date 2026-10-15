@@ -19,6 +19,7 @@ import { MOODS } from './constants';
 import { DarkroomHero } from './DarkroomHero';
 import { DarkroomMoodBar } from './DarkroomMoodBar';
 import { DarkroomFilterPanel } from './DarkroomFilterPanel';
+import { Presence } from '@/src/components/motion/Presence';
 
 // Shared with DarkroomFilterPanel.
 export const Chip = React.memo(function Chip({ active, onPress, children, color }: { active: boolean; onPress: () => void; children: React.ReactNode; color?: string }) {
@@ -299,16 +300,19 @@ export const DarkroomHeader = React.memo(() => {
             )}
           </View>
 
-          {filtersVisible && (
-            <DarkroomFilterPanel 
-              filters={filters}
-              updateFilter={updateFilter}
-              localYearFrom={localYearFrom}
-              setLocalYearFrom={setLocalYearFrom}
-              localYearTo={localYearTo}
-              setLocalYearTo={setLocalYearTo}
-            />
-          )}
+          <Presence>
+            {filtersVisible && (
+              <DarkroomFilterPanel
+                key="filters"
+                filters={filters}
+                updateFilter={updateFilter}
+                localYearFrom={localYearFrom}
+                setLocalYearFrom={setLocalYearFrom}
+                localYearTo={localYearTo}
+                setLocalYearTo={setLocalYearTo}
+              />
+            )}
+          </Presence>
         </>
       )}
 

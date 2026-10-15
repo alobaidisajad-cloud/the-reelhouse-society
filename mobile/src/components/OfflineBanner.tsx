@@ -2,11 +2,11 @@ import NetInfo, { useNetInfo } from '@react-native-community/netinfo';
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts } from '../theme/theme';
 import PressableScale from './PressableScale';
 import { Arrive } from './Arrive';
+import { Presence, PresenceView } from './motion/Presence';
 import { ARRIVAL_RISE } from '@/src/hooks/useArrival';
 
 export default function OfflineBanner() {
@@ -34,8 +34,6 @@ export default function OfflineBanner() {
         }
     }, [netInfo.isConnected]);
 
-    if (netInfo.isConnected !== false) return null;
-
     const handleRetry = async () => {
         setChecking(true);
         await NetInfo.fetch(); // Force re-check
@@ -44,8 +42,12 @@ export default function OfflineBanner() {
     };
 
     return (
-        <Animated.View
-            exiting={FadeOutUp.duration(300)}
+        <Presence>
+        {netInfo.isConnected === false ? (
+        <PresenceView
+            key="offline"
+            name="offline-banner.leave"
+            exit={{ kind: 'FadeOutUp', duration: 300 }}
             // Clear of the tab bar on every device; touches pass around the plate.
             style={[styles.frame, { bottom: Math.max(insets.bottom, 20) + 82 }]}
             pointerEvents="box-none"
@@ -66,7 +68,9 @@ export default function OfflineBanner() {
                     </Text>
                 </PressableScale>
             </Arrive>
-        </Animated.View>
+        </PresenceView>
+        ) : null}
+        </Presence>
     );
 }
 

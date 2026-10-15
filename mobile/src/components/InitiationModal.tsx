@@ -19,7 +19,8 @@ import { Text } from '@/src/components/text';
 import { BlurView } from 'expo-blur';
 // Reanimated's: it knows the setting on the first frame, so a member who asked
 // for less motion never sees the entrance begin.
-import Animated, { FadeIn, FadeOut, Easing, useSharedValue, useAnimatedStyle, useReducedMotion, withDelay, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn, Easing, useSharedValue, useAnimatedStyle, useReducedMotion, withDelay, withTiming } from 'react-native-reanimated';
+import { Presence, PresenceView } from '@/src/components/motion/Presence';
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
@@ -126,11 +127,12 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
     onComplete('log');
   };
 
-  if (!visible) return null;
-
+  // Kept open while the last beat fades; nothing in it answers a touch as it goes.
   return (
-    <Modal statusBarTranslucent visible transparent animationType="fade" onRequestClose={handleQuiet}>
-      <View style={s.overlay} accessibilityViewIsModal={true} onAccessibilityEscape={handleQuiet}>
+    <Presence>
+    {visible ? (
+    <Modal key="initiation" statusBarTranslucent visible transparent animationType="fade" onRequestClose={handleQuiet}>
+      <PresenceView name="initiation" style={s.overlay} accessibilityViewIsModal={true} onAccessibilityEscape={handleQuiet}>
         {/* The house is real, behind the door — the living Lobby, blurred. */}
         <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
         <View style={s.dim} />
@@ -149,10 +151,12 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
             ))}
           </View>
 
-          <Animated.View
+          <Presence>
+          <PresenceView
             key={beat}
-            entering={reduceMotion ? undefined : FadeIn.duration(320).easing(CURVE)}
-            exiting={reduceMotion ? undefined : FadeOut.duration(180).easing(CURVE)}
+            name="initiation.beat"
+            enter={reduceMotion ? undefined : { kind: 'FadeIn', duration: 320, easing: CURVE }}
+            exit={reduceMotion ? undefined : { kind: 'FadeOut', duration: 180, easing: CURVE }}
             style={s.beatContent}
           >
             <Text style={s.eyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{current.eyebrow}</Text>
@@ -176,7 +180,8 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
                 <Text style={s.firstLogText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦&nbsp; LOG YOUR FIRST FILM</Text>
               </PressableScale>
             )}
-          </Animated.View>
+          </PresenceView>
+          </Presence>
 
           <View style={s.footer}>
             {!isFinal ? (
@@ -193,8 +198,10 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
           <Text style={s.societyTag}>THE REELHOUSE SOCIETY · EST. 1924</Text>
         </Animated.View>
         <ToastHost />
-      </View>
+      </PresenceView>
     </Modal>
+    ) : null}
+    </Presence>
   );
 }
 

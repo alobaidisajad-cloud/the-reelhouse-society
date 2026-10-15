@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, Alert, Linking } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
+import { PresenceView } from '@/src/components/motion/Presence';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
@@ -88,7 +88,9 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
   return (
     <View style={StyleSheet.absoluteFill}>
       <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-      <Animated.View entering={FadeInUp.duration(MS.considered).easing(arrive())} exiting={FadeOutDown.duration(MS.quick).easing(leave())} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
+      <PresenceView name="avatar-crop" style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 40) }]}
+        enter={{ kind: 'FadeInUp', duration: MS.considered, easing: arrive() }}
+        exit={{ kind: 'FadeOutDown', duration: MS.quick, easing: leave() }}>
         <View style={s.header}>
           <Text {...scaledTextProps} style={s.title}>UPDATE IDENTITY</Text>
           <PressableScale onPress={() => { onClose(); }} style={s.closeBtn} hitSlop={{ top: 15, bottom: 9, left: 15, right: 15 }} haptic="selection" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Close">
@@ -118,7 +120,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
             </PressableScale>
           </View>
         )}
-      </Animated.View>
+      </PresenceView>
     </View>
   );
 }

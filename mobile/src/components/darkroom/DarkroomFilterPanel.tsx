@@ -7,7 +7,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import Animated, { FadeInDown, SlideOutDown } from 'react-native-reanimated';
+import { PresenceView } from '@/src/components/motion/Presence';
 import { X } from 'lucide-react-native';
 
 import { colors, fonts, spacing } from '@/src/theme/theme';
@@ -57,7 +57,8 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
     (end === 'from' ? setLocalYearFrom : setLocalYearTo)(year ? String(year) : '');
   };
   return (
-    <Animated.View entering={FadeInDown.duration(300)} exiting={SlideOutDown.duration(200)} style={s.filterPanel}>
+    <PresenceView name="darkroom.filters" style={s.filterPanel}
+      enter={{ kind: 'FadeInDown', duration: 300 }} exit={{ kind: 'SlideOutDown', duration: 200 }}>
       <Text style={s.filterSectionTitle}>GENRE</Text>
       <View style={s.chipRow}>
         {GENRES.map(g => (
@@ -148,7 +149,7 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
           </Chip>
         ))}
       </View>
-    </Animated.View>
+    </PresenceView>
   );
 });
 

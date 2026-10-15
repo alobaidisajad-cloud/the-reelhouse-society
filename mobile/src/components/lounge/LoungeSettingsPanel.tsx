@@ -12,14 +12,13 @@ import { tmdb } from '@/src/lib/tmdb';
 import React, { useCallback, useState } from 'react';
 import { Alert, InteractionManager, Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ToastHost } from '@/src/components/ToastHost';
 import { leave, MS } from '@/src/theme/motion';
 import { Arrive } from '@/src/components/Arrive';
+import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { nav } from '@/src/utils/typedRouter';
 
-const AnimatedView = Animated.createAnimatedComponent(View);
 const BLOOD = colors.crimson;
 /** The same red as WORDS — BANNED, REMOVE, BAN. The pigment is 2.78:1 as a word. */
 const BLOOD_INK = colors.crimsonInk;
@@ -157,16 +156,18 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
     );
   }, [lounge.creator_id, lounge.id, isCreator, expanded, setMemberStatus, removeMember, confirmAction]);
 
-  if (!visible) return null;
-
+  // Kept open while the sheet slides away.
   return (
-    <Modal statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
+    <Presence>
+    {visible ? (
+    <Modal key="settings" statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
       <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
         {/* The ground closes it for a finger; a screen reader has the named Close. */}
         <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no-hide-descendants"><View /></PressableScale>
       </BlurView>
       {/* Arrive, rising from below, not a mount-time `entering` that can stall. */}
-      <AnimatedView exiting={SlideOutDown.duration(MS.quick).easing(leave())} style={s.frame} pointerEvents="box-none">
+      <PresenceView name="lounge.settings.leave" style={s.frame} pointerEvents="box-none"
+        exit={{ kind: 'SlideOutDown', duration: MS.quick, easing: leave() }}>
       <Arrive name="lounge.settings" duration={MS.considered} rise={SETTINGS_RISE} style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 28) }]}>
       <View style={s.body} onAccessibilityEscape={onClose}>
         <View style={s.handle} />
@@ -229,9 +230,11 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         />
       </View>
       </Arrive>
-      </AnimatedView>
+      </PresenceView>
       <ToastHost />
     </Modal>
+    ) : null}
+    </Presence>
   );
 }
 
