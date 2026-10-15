@@ -12,12 +12,11 @@ test.describe('Cinematic Feed ("The Underground")', () => {
   test('Navigation tabs are accessible', async ({ page }) => {
     await page.goto('/');
 
-    // Click the Dispatch tab if available
-    const dispatchLink = page.getByRole('link', { name: /DISPATCH/i });
-    if (await dispatchLink.isVisible()) {
-      await dispatchLink.click();
-      await expect(page).toHaveURL(/.*\/dispatch/);
-    }
+    // The masthead's own link: the footer names the Dispatch too.
+    const dispatchLink = page.locator('a.nav-link', { hasText: /DISPATCH/i });
+    await expect(dispatchLink).toBeVisible({ timeout: 15_000 });
+    await dispatchLink.click();
+    await expect(page).toHaveURL(/\/dispatch$/);
   });
 
   test('Testing the 3D Poster tilt effect does not cause overflow crashes', async ({ page }) => {
