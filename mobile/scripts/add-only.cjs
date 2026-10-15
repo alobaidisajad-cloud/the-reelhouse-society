@@ -130,6 +130,11 @@ const breaksIn = (sql, existing) => {
     if (exists(table(/^CREATE UNIQUE INDEX (?:CONCURRENTLY )?(?:IF NOT EXISTS )?(?:[\w.]+ )?ON (?:ONLY )?([\w.]+)/))) kinds.push('a unique index on an existing table');
     if (exists(table(/^CREATE (?:OR REPLACE )?(?:CONSTRAINT )?TRIGGER \w+ .*?\bON ([\w.]+)/))) kinds.push('a new trigger on an existing table');
     if (/^ALTER FUNCTION\b.*\b(?:SET|RESET|OWNER TO|SECURITY DEFINER|SECURITY INVOKER)\b/.test(m)) kinds.push('a changed function setting');
+    // A DO block runs its own SQL, blanked above, and dynamic SQL hides any break: one that changes
+    // or runs SQL is read whole and needs its reason like any other.
+    if (/^DO\b/.test(m) && /\b(?:DROP|REVOKE|RENAME|ALTER|EXECUTE|CREATE OR REPLACE|CREATE TRIGGER|CREATE POLICY|DELETE|UPDATE|TRUNCATE)\b/i.test(s.text)) {
+      kinds.push('a DO block that changes what exists');
+    }
     const replaced = m.match(/^CREATE OR REPLACE FUNCTION ([\w.]+) ?\(/);
     if (replaced && existing.functions.has(plain(replaced[1]))) kinds.push('a new body for an existing function');
     if (kinds.length) found.push({ statement: s.text.split('\n')[0].slice(0, 120), kinds, reason: s.reason });

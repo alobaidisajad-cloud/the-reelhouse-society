@@ -38,6 +38,8 @@ describe('each kind of break is found', () => {
     ['CREATE TRIGGER t BEFORE INSERT ON public.profiles FOR EACH ROW EXECUTE FUNCTION f();', 'a new trigger on an existing table'],
     ['ALTER FUNCTION public.get_feed(int) SET search_path = public;', 'a changed function setting'],
     ['CREATE OR REPLACE FUNCTION public.get_feed(p int) RETURNS int LANGUAGE sql AS $$ SELECT 1 $$;', 'a new body for an existing function'],
+    ["DO $$ BEGIN EXECUTE format('REVOKE ALL ON public.%I FROM anon', 'profiles'); END $$;", 'a DO block that changes what exists'],
+    ['DO $$ BEGIN DROP POLICY IF EXISTS x ON public.profiles; END $$;', 'a DO block that changes what exists'],
   ])('%s', (sql, kind) => {
     expect(kindsOf(sql)).toEqual([kind]);
   });
@@ -51,6 +53,7 @@ describe('what is not a break is left alone', () => {
     ['a grant', 'GRANT SELECT ON public.profiles TO anon;'],
     ['a word in a string', "COMMENT ON TABLE public.profiles IS 'we DROP and REVOKE nothing';"],
     ['a word in a quoted name', 'CREATE INDEX "drop_rename" ON public.profiles (id);'],
+    ['a DO block that only reads', "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM public.profiles) THEN RAISE NOTICE 'empty'; END IF; END $$;"],
   ])('%s', (_name, sql) => {
     expect(kindsOf(sql)).toEqual([]);
   });
