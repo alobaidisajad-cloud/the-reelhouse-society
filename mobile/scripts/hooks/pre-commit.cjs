@@ -35,7 +35,7 @@ const check = () => {
   const staged = git('diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z').toString('utf8').split('\0').filter(Boolean);
   const faults = staged.map((p) => [p, refusalOf(p, git('show', `:${p}`))]).filter(([, why]) => why).map(([p, why]) => `${p}: ${why}`);
   const scan = spawnSync('gitleaks', ['git', '--pre-commit', '--staged', '--config', '.gitleaks.toml', '--gitleaks-ignore-path',
-    '.gitleaksignore', '--redact=100', '--no-banner', '--log-level', 'warn', '.'], { cwd: ROOT, encoding: 'utf8', shell: process.platform === 'win32' });
+    '.gitleaksignore', '--redact=100', '--no-banner', '--log-level', 'warn', '.'], { cwd: ROOT, encoding: 'utf8' });
   if (scan.error || scan.status === 127 || /not recognized|not found/i.test(scan.stderr || '')) faults.push('gitleaks is not installed, so the staged changes were not scanned for secrets (scoop install gitleaks)');
   else if (scan.status !== 0) faults.push(`gitleaks found a secret in the staged changes:\n${(scan.stdout || '') + (scan.stderr || '')}`);
   return faults;
