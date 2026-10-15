@@ -26,6 +26,7 @@ on:
       - "DB Security Integration Tests"
       - "🎬 Sealed E2E"
       - "🎞️ Shipped clients, end to end"
+      - "📱 iPhone launch"
       - "🏋️ Load — 100,000 members"
     types: [completed]
 

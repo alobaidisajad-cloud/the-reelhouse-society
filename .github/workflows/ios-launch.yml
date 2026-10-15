@@ -1,0 +1,110 @@
+name: 📱 iPhone launch
+
+# ── THE APP OPENS ON AN IPHONE, WITH ITS ANIMATIONS ON ──────────────────────────
+# Every launch with animations on aborted within 5 s on iPhones once (an
+# animation config with an empty key), and nothing that ran on Android caught
+# it. So on every push and pull request: a Release build for the simulator,
+# signed to run locally (an unsigned build never starts, so a signing failure
+# fails the job), launched on a freshly booted simulator, whose animations are
+# on. It must be alive at 5 s and at 25 s, and its first screen must say it is
+# ready by 25 s in the app's own log stream (a launch that never drew fails). No
+# backend: the first screen needs none.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  launch:
+    name: 📱 The app opens on an iPhone
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install the app's packages
+        working-directory: mobile
+        run: npm ci
+
+      - name: A Release build for the simulator, signed to run locally
+        working-directory: mobile
+        env:
+          E2E: '1'
+          EXPO_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ios-launch-placeholder
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          set -u
+          L="$RUNNER_TEMP/ios-build.log"
+          xcodebuild -version
+          npx expo prebuild --platform ios --clean > "$L" 2>&1 || { tail -n 40 "$L"; exit 1; }
+          WS=$(ls -d ios/*.xcworkspace | head -n 1)
+          SCHEME=$(basename "$WS" .xcworkspace)
+          if ! xcodebuild -workspace "$WS" -scheme "$SCHEME" -configuration Release -sdk iphonesimulator \
+              -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/build \
+              ONLY_ACTIVE_ARCH=YES ARCHS=arm64 >> "$L" 2>&1; then
+            grep -nE 'error:|\*\* BUILD FAILED|[Ss]igning' "$L" | head -n 30 > "$RUNNER_TEMP/build-errors.txt"
+            node e2e/annotate.mjs "The iPhone build failed (it is never built unsigned: an unsigned build never starts)" "$RUNNER_TEMP/build-errors.txt"
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/ios"
+          cp -R "$(ls -d ios/build/Build/Products/Release-iphonesimulator/*.app | head -n 1)" "$RUNNER_TEMP/ios/app.app"
+
+      - name: Launched on a fresh simulator, animations on
+        working-directory: mobile
+        run: |
+          set -u
+          S="$RUNNER_TEMP/launch"; mkdir -p "$S"
+          DEV=$(xcrun simctl list devices available | grep -E 'iPhone 16 Pro \(' | head -n 1 | grep -oE '[0-9A-F-]{36}')
+          [ -n "$DEV" ] || DEV=$(xcrun simctl list devices available | grep -E 'iPhone' | head -n 1 | grep -oE '[0-9A-F-]{36}')
+          xcrun simctl boot "$DEV"
+          xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl install "$DEV" "$RUNNER_TEMP/ios/app.app"
+          # A JS console.warn is written at the Info level, which `log show` leaves out
+          # without --info: so a stream, started before the launch.
+          launch() {
+            : > "$S/stream-$1.txt"
+            xcrun simctl spawn "$DEV" log stream --level info --style compact \
+              --predicate 'subsystem == "com.facebook.react.log" AND category == "javascript"' > "$S/stream-$1.txt" 2>&1 &
+            stream=$!
+            sleep 2
+            ( xcrun simctl launch --console-pty "$DEV" com.reelhouse.society > "$S/console-$1.txt" 2>&1 & )
+            sleep 5
+            a5=$(xcrun simctl spawn "$DEV" launchctl list | grep -ci reelhouse || true)
+            sleep 20
+            a25=$(xcrun simctl spawn "$DEV" launchctl list | grep -ci reelhouse || true)
+            kill $stream 2>/dev/null || true
+            ready=$(grep -c '\[e2e\] screen.ready {"name":"welcome"' "$S/stream-$1.txt" || true)
+            echo "attempt $1: alive at 5 s: $a5 · at 25 s: $a25 · welcome ready: $ready" >> "$S/result.txt"
+            xcrun simctl terminate "$DEV" com.reelhouse.society > /dev/null 2>&1 || true
+            [ "$a5" != "0" ] && [ "$a25" != "0" ] && [ "$ready" != "0" ]
+          }
+          # A first launch on a fresh simulator can stall in the simulator itself;
+          # once more, recorded as the harness, never as the app.
+          if launch 1; then ok=1
+          else echo "attempt 1 failed; run once more as the harness's own retry" >> "$S/result.txt"; launch 2 && ok=1 || ok=0; fi
+          cat "$S/result.txt"
+          if [ "$ok" != "1" ]; then
+            { cat "$S/result.txt"
+              echo "── the app's own output:"; grep -v '^[[:space:]]*$' "$S/console-2.txt" 2>/dev/null | tail -n 25
+              echo "── its JS log:"; tail -n 25 "$S/stream-2.txt" 2>/dev/null
+              echo "── crash report:"; node e2e/ios-crash.mjs; } > "$S/why.txt"
+            node e2e/annotate.mjs "The app did not open on an iPhone" "$S/why.txt"
+            exit 1
+          fi

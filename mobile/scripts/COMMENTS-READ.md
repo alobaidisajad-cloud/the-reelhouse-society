@@ -39,12 +39,13 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/utils/mappers.test.ts | — |  |
 | __tests__/utils/mutationExecutor.test.ts | 2026-10-03 | edited: the duplicate merge is a server rewatch under the device viewing id; the insert keeps it |
 | __tests__/utils/offlineQueue.test.ts | 2026-10-03 | edited: the kind list matches the queue's union |
-| ../.github/workflows/ci-alert.yml | 2026-10-15 | edited: watches the shipped clients' runs |
+| ../.github/workflows/ci-alert.yml | 2026-10-15 | edited: watches the shipped clients' runs and the iPhone launch |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; then every production rehearsal, its verdict first proven able to fail |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
 | ../.github/workflows/e2e.yml | 2026-10-15 | edited: callable for a shipped client; pending migrations applied before the seed |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the secrets scan, the add-only check, the migration lint, the website freeze, the hooks trailer |
+| ../.github/workflows/ios-launch.yml | 2026-10-15 | new |
 | ../.github/workflows/load.yml | 2026-10-03 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
@@ -157,6 +158,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/verify-writes.mjs | 2026-09-29 | true as written |
 | e2e/flow-screens.mjs | 2026-10-04 | Maestro's JUnit reason, a report for a flow with no step record, the decision line, the named animation; QueryController dropped (logged on every key of fast runs) |
 | e2e/glide-log-level.mjs | 2026-10-08 | written: the APK hands Glide level 6 (ERROR), once, as a constant |
+| e2e/ios-crash.mjs | 2026-10-15 | new |
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
 | e2e/load/probe.mjs | 2026-10-03 | read whole: the paper in all four orders, critiques newest first, the following feed for a member of 2,000 follows; nested plans via auto_explain |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
