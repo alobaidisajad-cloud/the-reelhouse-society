@@ -178,8 +178,8 @@ export const s = StyleSheet.create({
   // ── the particulars ──
   particulars: { flex: 1, minWidth: 0, paddingTop: 2 },
   heroName: { fontFamily: fonts.display, color: colors.silverScreen, textShadowColor: 'rgba(0,0,0,0.9)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12,
-    // The shadow's room inside the box a phone cuts it at; the margins keep the layout.
-    paddingTop: 10, paddingBottom: 14, paddingHorizontal: 12, marginTop: -10, marginBottom: -14, marginHorizontal: -12 },
+    // Its shadow's room above and below (its sides are KEPT in aTextGlowHasRoom).
+    paddingTop: 10, paddingBottom: 14, marginTop: -10, marginBottom: -14 },
   // A hairline that starts at the name and fades out — a letterhead rule, not a
   // box. It ends the name without enclosing it.
   nameRule: { height: 1, marginTop: 11 },

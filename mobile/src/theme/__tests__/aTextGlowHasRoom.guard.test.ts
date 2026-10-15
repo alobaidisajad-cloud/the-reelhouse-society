@@ -158,7 +158,12 @@ function cutSides(g: Glow, os: 'ios' | 'android'): Side[] {
 }
 
 /** Text glows whose box gives no room, each with why it is kept. */
-const KEPT: Record<string, string> = {};
+const KEPT: Record<string, string> = {
+  // Room at the sides took 24pt from the name's column, and heroNameSize sizes the
+  // name to that column: "ARCHIVIST" ran past its line at 320pt (God-Tier 38749518814).
+  'src/components/profile/profileStyles.ts · heroName':
+    'a black shadow on a near-black plate: an edge cut at its sides cannot show; room above and below is kept',
+};
 
 // Why Android's left and right are not checked; its last test holds it true.
 const ANDROID_ACROSS = 'TextView cuts a span shadow at its content edge; padding cannot widen that';

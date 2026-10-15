@@ -643,7 +643,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/ProfileListsTab.tsx | 2026-10-15 | ends above its foot (scrollEndAbove) |
 | src/components/profile/ProfilePhysicalTab.tsx | 2026-10-15 | ends above its foot (scrollEndAbove) |
 | src/components/profile/ProfilePosterCard.tsx | 2026-10-01 | three modes no caller used, removed; nav; comments say what is true now |
-| src/components/profile/profileStyles.ts | 2026-10-15 | centred states and the room's foot set where drawn |
+| src/components/profile/profileStyles.ts | 2026-10-15 | edited: the name's shadow has room above and below; its sides are kept, the column whole |
 | src/components/profile/ProfileTriptych.tsx | 2026-10-15 | the sheet stands on the edge; the plate's foot from useSheetBottom |
 | src/components/profile/ProfileWatchlistTab.tsx | 2026-10-15 | ends above its foot (scrollEndAbove) |
 | src/components/profile/ProjectorRoom.tsx | 2026-10-01 | a visitor shares the standing as the member's; a failed share said plainly; comments say what is true now |
@@ -996,7 +996,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/aGlowFadesInsideItsBox.guard.test.ts | 2026-10-15 | written: no radial glow keeps strength on an edge of its box that can show |
 | src/theme/__tests__/aGradientIsNeverABitmap.guard.test.ts | 2026-10-08 | written: no gradient-only SVG but the three it names |
 | src/theme/__tests__/aPhotographIsNotLit.test.ts | — |  |
-| src/theme/__tests__/aTextGlowHasRoom.guard.test.ts | 2026-10-15 | written: every wide text glow has room inside the box each phone cuts it at |
+| src/theme/__tests__/aTextGlowHasRoom.guard.test.ts | 2026-10-15 | edited: the member's name kept at its sides, with why |
 | src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts | 2026-10-01 | written: the flat-but-elevated ratchet |
 | src/theme/__tests__/everyStyleIsRead.guard.test.ts | 2026-10-02 | Written in the launch audit: every style a sheet defines is drawn by the app. |
 | src/theme/__tests__/lightFloor.test.ts | — |  |
