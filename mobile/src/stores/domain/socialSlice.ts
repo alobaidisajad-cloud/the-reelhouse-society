@@ -200,8 +200,10 @@ export async function followUser(targetUsername: string): Promise<boolean> {
 
   try {
     const targetProfile = await resolveUsernameToProfile(targetUsername);
+    // Answered after they left: the store and the saved list are the next member's now.
+    if (!stillSignedIn(userId)) return false;
     if (!targetProfile) throw new Error(`User "${targetUsername}" not found in profiles table`);
-    
+
     const { id: targetId, isPrivate } = targetProfile;
     const interactionType = isPrivate ? 'follow_request' : 'follow';
 
@@ -245,6 +247,8 @@ export async function followUser(targetUsername: string): Promise<boolean> {
     if (!isNetworkError(msg) && !isNetworkError(err)) {
       captureError(err, { scope: 'socialSlice', targetUsername });
     }
+    // Neither queued nor undone for a member who has left: both would land on the next.
+    if (!stillSignedIn(userId)) return false;
     if (isNetworkError(msg) || isNetworkError(err)) {
       const cached = _usernameProfileCache.get(targetUsername);
       const interactionType = cached?.isPrivate ? 'follow_request' : 'follow';
@@ -294,17 +298,19 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
 
   try {
     const targetProfile = await resolveUsernameToProfile(targetUsername);
-    if (targetProfile) {
-      const { error } = await supabase.from('interactions').delete()
-        .eq('user_id', userId).eq('target_user_id', targetProfile.id).in('type', ['follow', 'follow_request']);
-      if (error) throw error;
-    } else {
+    // Answered after they left: the queue is the next member's now.
+    if (!stillSignedIn(userId)) return false;
+    if (!targetProfile) {
       // The handle did not resolve: queued, so the unfollow the member saw still happens.
       logger.warn(`[socialSlice.unfollowUser] Could not resolve ID for @${targetUsername} — queuing for retry`);
       enqueueMutation({
         type: 'unfollow_user',
         payload: { user_id: userId, target_username: targetUsername },
       });
+    } else {
+      const { error } = await supabase.from('interactions').delete()
+        .eq('user_id', userId).eq('target_user_id', targetProfile.id).in('type', ['follow', 'follow_request']);
+      if (error) throw error;
     }
     refreshFollowGraphFeeds();
     return true;
@@ -315,6 +321,8 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
     if (!isNetworkError(msg) && !isNetworkError(err)) {
       captureError(err, { scope: 'socialSlice', targetUsername });
     }
+    // Neither their lists put back nor their unfollow queued, once they have left.
+    if (!stillSignedIn(userId)) return false;
     // No signal: the screen keeps the unfollow and the queue sends it, with the id if known.
     if (isNetworkError(msg) || isNetworkError(err)) {
       const cachedId = _usernameProfileCache.get(targetUsername)?.id ?? null;

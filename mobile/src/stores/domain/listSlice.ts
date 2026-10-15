@@ -290,6 +290,8 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             wallMayHaveChanged();
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.updateList' });
+            // A throw skips the check in the try: neither queued nor undone once they have left.
+            if (!stillSignedIn(user.id)) return;
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 let removedIds: number[] = [];
@@ -348,6 +350,8 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             wallMayHaveChanged();
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.deleteList' });
+            // A throw skips the check in the try: neither queued nor undone once they have left.
+            if (!stillSignedIn(user.id)) return;
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 enqueueMutation({ type: 'delete_list', payload: { list_id: listId, user_id: user.id } });
@@ -402,6 +406,8 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.addFilmToList' });
+            // A throw skips the check in the try: neither queued nor undone once they have left.
+            if (!stillSignedIn(startedAs)) return;
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 enqueueMutation({ 
@@ -454,6 +460,8 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             wallMayHaveChanged();
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.removeFilmFromList' });
+            // A throw skips the check in the try: neither queued nor undone once they have left.
+            if (!stillSignedIn(startedAs)) return;
             if (isNetworkError(e)) {
                 enqueueMutation({ type: 'remove_film_from_list', payload: { list_id: listId, film_id: filmId } });
                 queryClient.invalidateQueries({ queryKey: ['stack', listId] });

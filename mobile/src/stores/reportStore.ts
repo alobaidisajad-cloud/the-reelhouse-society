@@ -33,6 +33,9 @@ interface ReportState {
   hasReported: (contentId: string) => boolean;
 }
 
+/** The reporter signed out before the report was sent: it was not filed. */
+const LEFT: ReportResult = { status: 'error', message: 'Signed out before the report was sent.' };
+
 export const useReportStore = create<ReportState>()((set, get) => ({
   isSubmitting: false,
   recentReports: new Set<string>(),
@@ -77,56 +80,13 @@ export const useReportStore = create<ReportState>()((set, get) => ({
 
     try {
       const netState = await NetInfo.fetch();
+      // Left before it was sent: not filed, queued or blocked as the next member.
+      if (!stillSignedIn(startedAs)) return LEFT;
 
-      if (netState.isConnected && netState.isInternetReachable) {
-        // Online: submit via RPC
-        const { error } = await supabase.rpc('submit_report', {
-          p_reporter_id: payload.reporter_id,
-          p_content_id: payload.content_id,
-          p_content_type: payload.content_type,
-          p_reason: payload.reason,
-          p_details: cleanDetails,
-          p_target_user_id: payload.target_user_id,
-        });
-
-        if (error) {
-          // The house holds one pending report per member per thing (20261001_03),
-          // and the list above forgets on every restart: this is the answer that stays.
-          if (error.code === '23505') {
-            if (stillSignedIn(startedAs)) set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
-            reelToast("You've already reported this content.");
-            return { status: 'duplicate', message: "You've already reported this content." };
-          }
-          if (error.message?.includes('Rate limit')) {
-            reelToast.error('Too many reports. Please wait.');
-            return { status: 'error', message: 'Rate limit exceeded' };
-          }
-          if (isNetworkError(error)) {
-            // Fall back to offline queue
-            enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> });
-            if (stillSignedIn(startedAs)) set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
-            TactileEngine.success();
-            reelToast('Report saved offline. Will be filed when connected.');
-            return { status: 'queued' };
-          }
-          throw error;
-        }
-
-        // Success
-        if (stillSignedIn(startedAs)) set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
-        TactileEngine.success();
-        reelToast('Report filed. The Tribunal will review.');
-
-        // Handle optional block
-        if (payload.block_target && payload.target_user_id) {
-          await useBlockStore.getState().blockUser(payload.target_user_id);
-        }
-
-        return { status: 'submitted' };
-      } else {
+      if (!(netState.isConnected && netState.isInternetReachable)) {
         // Offline: enqueue
         enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> });
-        if (stillSignedIn(startedAs)) set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
+        set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
         TactileEngine.success();
         reelToast('Report saved offline. Will be filed when connected.');
 
@@ -136,6 +96,53 @@ export const useReportStore = create<ReportState>()((set, get) => ({
 
         return { status: 'queued' };
       }
+
+      // Online: submit via RPC
+      const { error } = await supabase.rpc('submit_report', {
+        p_reporter_id: payload.reporter_id,
+        p_content_id: payload.content_id,
+        p_content_type: payload.content_type,
+        p_reason: payload.reason,
+        p_details: cleanDetails,
+        p_target_user_id: payload.target_user_id,
+      });
+
+      if (error) {
+        // The house holds one pending report per member per thing (20261001_03),
+        // and the list above forgets on every restart: this is the answer that stays.
+        if (error.code === '23505') {
+          if (stillSignedIn(startedAs)) set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
+          reelToast("You've already reported this content.");
+          return { status: 'duplicate', message: "You've already reported this content." };
+        }
+        if (error.message?.includes('Rate limit')) {
+          reelToast.error('Too many reports. Please wait.');
+          return { status: 'error', message: 'Rate limit exceeded' };
+        }
+        if (isNetworkError(error)) {
+          if (!stillSignedIn(startedAs)) return LEFT;
+          // Fall back to offline queue
+          enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> });
+          set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
+          TactileEngine.success();
+          reelToast('Report saved offline. Will be filed when connected.');
+          return { status: 'queued' };
+        }
+        throw error;
+      }
+
+      // Success. Filed as them; nothing of it is kept, said or blocked as the next member.
+      if (!stillSignedIn(startedAs)) return { status: 'submitted' };
+      set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
+      TactileEngine.success();
+      reelToast('Report filed. The Tribunal will review.');
+
+      // Handle optional block
+      if (payload.block_target && payload.target_user_id) {
+        await useBlockStore.getState().blockUser(payload.target_user_id);
+      }
+
+      return { status: 'submitted' };
     } catch (err) {
       logger.error('[ReportStore] submitReport failed:', err);
       reelToast.error('Unable to file report. Please try again.');

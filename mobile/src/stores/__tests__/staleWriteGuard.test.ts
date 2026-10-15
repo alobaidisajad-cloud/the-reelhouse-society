@@ -75,87 +75,176 @@ const ESTABLISHES_A_MEMBER = new Set([
   'login', 'signup', 'restoreSession', 'logout', 'deleteAccount',
 ]);
 
-type Op = { file: string; name: string; line: number };
+type Write = { at: number; text: string };
+type Op = {
+  file: string;
+  name: string;
+  line: number;
+  /** Writes that come after an await, guarded or not. */
+  writes: { line: number; text: string }[];
+  unguarded: { line: number; text: string }[];
+};
 
-function opsWritingAfterAwait(file: string): Op[] {
+/** The helpers that save to the phone, or queue an act to be sent as the member. */
+const PERSISTS = /\b(?:enqueueMutation|persistFollowingToCache|setSensitive)\(|\bstorage\.set\(/g;
+/** A store method that only reads, or starts its own operation for whoever is signed in now. */
+const READS = /^(?:is|has|get|can|fetch|load|hydrate)(?:[A-Z]|$)/;
+
+/**
+ * Every write in a body: the store's own `set(`; a method that is not a read,
+ * called on `getState()`, on `get()`, or on a variable holding
+ * `useXStore.getState()`; and the persist helpers above. Seeing only bare
+ * `set(` left followUser's shape unseen: `store.addFollowing(` after an await,
+ * then `persistFollowingToCache(` under the id it began with.
+ */
+function writesIn(body: string): Write[] {
+  const out: Write[] = [];
+  for (const m of body.matchAll(/(^|[^.\w])set\(/g)) out.push({ at: m.index! + m[1].length, text: 'set(' });
+  for (const m of body.matchAll(/\b(?:getState|get)\(\)\.(\w+)\(/g)) {
+    if (!READS.test(m[1])) out.push({ at: m.index!, text: m[0] });
+  }
+  for (const held of body.matchAll(/\b(?:const|let)\s+(\w+)\s*=\s*use\w+Store\.getState\(\)\s*;/g)) {
+    for (const m of body.matchAll(new RegExp(`\\b${held[1]}\\.(\\w+)\\(`, 'g'))) {
+      if (!READS.test(m[1])) out.push({ at: m.index!, text: m[0] });
+    }
+  }
+  for (const m of body.matchAll(PERSISTS)) out.push({ at: m.index!, text: m[0] });
+  return out;
+}
+
+/** `set({ loading: false })`: in-flight flags lowered to the reset's own value, nobody's data. */
+const LOWERS_FLAGS = /^set\(\{(?:\s*\w+:\s*false\s*,?)+\s*\}\)/;
+
+/** `name: (…) => Type,` is a type (an interface member, a parameter), never a definition. */
+const TYPE_ONLY = /^\s*\w+\??:\s*\(.*=>\s*[^\s(={][^(={]*$/;
+
+/** The `{…}` block that closes just before `pos`, as [open, close]; null if none does. */
+function blockBefore(body: string, pos: number): [number, number] | null {
+  let close = pos - 1;
+  while (close >= 0 && /\s/.test(body[close])) close--;
+  if (body[close] !== '}') return null;
+  let depth = 0;
+  for (let i = close; i >= 0; i--) {
+    if (body[i] === '}') depth++;
+    else if (body[i] === '{' && --depth === 0) return [i, close];
+  }
+  return null;
+}
+
+/**
+ * The code a `catch` or `finally` at `pos` can be reached from: its `try`
+ * block, and for a `finally` the `catch` before it too. A write in it follows
+ * an await only if one of those holds an await.
+ */
+function reachedFrom(body: string, pos: number): string {
+  const last = blockBefore(body, pos);
+  if (!last) return '';
+  const head = body.slice(0, last[0]);
+  const isCatch = /(?<![.\w])catch\s*(?:\([^)]*\))?\s*$/.exec(head);
+  const tryBlock = isCatch ? blockBefore(body, isCatch.index) : null;
+  return body.slice(tryBlock ? tryBlock[0] : last[0], last[1] + 1);
+}
+
+/** The first `}` after `from` that closes a block opened before it. */
+function blockEnd(body: string, from: number): number {
+  let depth = 0;
+  for (let i = from; i < body.length; i++) {
+    if (body[i] === '{') depth++;
+    else if (body[i] === '}' && depth-- === 0) return i;
+  }
+  return body.length;
+}
+
+/**
+ * The code a check at `g` protects. `if (!stillSignedIn(id)) return;` protects
+ * the rest of its block; `if (stillSignedIn(id)) set(…)`, its own line, or the
+ * block its line opens. A check in any other shape protects nothing.
+ */
+function coverOf(body: string, g: number): [number, number] {
+  const lineStart = body.lastIndexOf('\n', g) + 1;
+  const lineEnd = body.indexOf('\n', g) < 0 ? body.length : body.indexOf('\n', g);
+  const line = body.slice(lineStart, lineEnd);
+  if (/!\s*$/.test(body.slice(lineStart, g))) {
+    return /^\s*if\s*\(.*\)\s*(?:\{[^}]*)?\b(?:return|throw)\b/.test(line) ? [g, blockEnd(body, g)] : [g, g];
+  }
+  return /\{\s*$/.test(line) ? [g, blockEnd(body, lineEnd)] : [g, lineEnd];
+}
+
+const at = (body: string, re: RegExp) => [...body.matchAll(re)].map((m) => m.index!);
+
+function opsIn(file: string): Op[] {
   const src = readCode(path.join(ROOT, file));
   const lines = src.split(/\r?\n/);
 
-  // Boundaries include NON-async members too. They were async-only at first, so
-  // an async op followed by a sync one had no end — its body ran on into the
-  // next function and inherited that function's writes. deleteLounge was
-  // reported unguarded on exactly that basis, while its own rollback is a
-  // refetch that is guarded in its own right.
-  // ── A BOUNDARY IS A DEFINITION, NEVER A BARE CALL ─────────────────────────
-  // The previous pattern made `:` and `=` optional, so ANY `word(` sitting at
-  // four spaces or less opened a new pseudo-function — `set(`, `if (`,
-  // `return (`. fetchMessages was being cut into three fragments, and that is
-  // not merely noisy: the fragment holding `memberUnchanged(...)` becomes a
-  // DIFFERENT fragment from the one holding the writes. So the walker could
-  // report a guarded operation as unguarded, and — the direction that actually
-  // costs something — exempt a fragment because a guard belonging to unrelated
-  // code happened to fall inside it.
-  //
-  // A member is `name: (`, `name: async (`, or `name = (`. A call is not.
+  // A boundary is a DEFINITION, never a bare call: a store member (`name: (`,
+  // `name: async (`, `name = (`), a top-level `const name = (`, or a `function`
+  // declaration. Read as a boundary, `set(` or `if (` would cut an operation in
+  // two, and a check in one piece would be counted for writes in another.
   const starts: number[] = [];
   lines.forEach((l, i) => {
-    if (/^\s{0,4}(export const )?\w+\s*(?::|=)\s*(?:async\s*)?\(/.test(l)) starts.push(i);
+    if (TYPE_ONLY.test(l)) return;
+    if (/^\s{0,6}(export const )?\w+\s*(?::|=)\s*(?:async\s*)?\(/.test(l)
+      || /^(?:export\s+)?(?:const|let)\s+\w+\s*=\s*(?:async\s*)?\(/.test(l)
+      || /^\s{0,4}(?:export\s+)?(?:async\s+)?function\s+\w+/.test(l)) starts.push(i);
   });
 
   const out: Op[] = [];
   for (let s = 0; s < starts.length; s++) {
     const start = starts[s];
     const end = s + 1 < starts.length ? starts[s + 1] : lines.length;
-    const body = lines.slice(start, end);
+    const body = lines.slice(start, end).join('\n');
+    const lineOf = (offset: number) => start + 1 + (body.slice(0, offset).match(/\n/g) ?? []).length;
 
-    let sawAwait = false;
-    let writesAfterAwait = false;
-    for (const l of body) {
-      if (/\bawait\b/.test(l)) sawAwait = true;
-      if (sawAwait && /(^|[^.\w])set\(/.test(l) && !/getState|useAuthStore/.test(l)) {
-        writesAfterAwait = true;
-        break;
-      }
-    }
-    if (!writesAfterAwait) continue;
+    const name = (/^\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)/.exec(lines[start])
+      ?? /^\s*(?:export\s+)?(?:const\s+|let\s+)?(\w+)\s*[:=]/.exec(lines[start]) ?? [])[1] ?? '';
+    // Exempt: a subscription (no caller; logout unsubscribes it, tested below), and sign-in/out.
+    if (/^subscribeTo\w+$/.test(name) || ESTABLISHES_A_MEMBER.has(name)) continue;
 
-    // Guarded if the operation consults the captured member anywhere in its
-    // body — by EITHER primitive. `stillSignedIn` requires a member and suits
-    // the film store, where every operation needs one; `memberUnchanged` also
-    // accepts nobody-then-nobody-now, which is what stores reachable by
-    // anonymous browsing need. Recognising only the first would have reported
-    // eighteen correctly-guarded operations as unguarded.
-    if (body.some((l) => /stillSignedIn\(|memberUnchanged\(/.test(l))) continue;
+    const awaits = at(body, /\bawait\b/g);
+    // `await get().removeLog(` — the call is made before its own await waits.
+    const before = (w: Write) => awaits.filter((a) => a < w.at && !/^await[\s\w.$]*$/.test(body.slice(a, w.at)));
+    const barriers = at(body, /(?<![.\w])(?:catch\s*[({]|finally\s*\{)/g)
+      .filter((c) => /\bawait\b/.test(reachedFrom(body, c)));
+    // Either primitive: `stillSignedIn` needs a member, `memberUnchanged` also
+    // accepts nobody-then-nobody-now, for stores anonymous browsing reaches.
+    const guards = at(body, /\b(?:stillSignedIn|memberUnchanged)\(/g);
+    const after = writesIn(body).filter((w) => before(w).length > 0);
+    if (after.length === 0) continue;
 
-    // A realtime SUBSCRIPTION is exempt, and only this shape is. It has no
-    // caller and therefore no member captured at a start to compare against —
-    // the guard has nothing to ask. Its equivalent protection is unsubscribing
-    // on logout, which the test below asserts actually happens.
-    if (/^\s*subscribeTo\w+:/.test(lines[start])) continue;
-
-    // Signing in, out, and account deletion CHANGE who the member is on
-    // purpose, so the captured-member question has no useful answer for them.
-    // Named individually above; anything not on that list is policed normally.
-    const opName = (/^\s*(\w+)\s*[:=]/.exec(lines[start]) ?? [])[1];
-    if (opName && ESTABLISHES_A_MEMBER.has(opName)) continue;
-
-    out.push({ file, name: lines[start].trim().slice(0, 70), line: start + 1 });
+    // Guarded only by a check after the write's OWN last wait — or after the
+    // `catch` it sits in, which any wait in the `try` can reach — and one that
+    // covers it. A check anywhere in the body passed followUser, whose writes
+    // after its first await were checked by nothing.
+    const unguarded = after.filter((w) => {
+      if (LOWERS_FLAGS.test(body.slice(w.at))) return false;
+      const barrier = Math.max(...before(w), ...barriers.filter((b) => b < w.at));
+      return !guards.some((g) => g > barrier && g < w.at && coverOf(body, g)[1] > w.at);
+    });
+    const where = (w: Write) => ({ line: lineOf(w.at), text: w.text });
+    out.push({ file, name, line: start + 1, writes: after.map(where), unguarded: unguarded.map(where) });
   }
   return out;
 }
 
 describe('a write that lands after logout must not repopulate the store', () => {
-  it('EVERY operation that writes after awaiting is guarded — enumerated', () => {
-    const unguarded = SLICES.flatMap(opsWritingAfterAwait)
-      .map((o) => `${o.file}:${o.line}  ${o.name}`);
+  it('EVERY write after an await is checked after its own last await — enumerated', () => {
+    const unguarded = SLICES.flatMap(opsIn)
+      .flatMap((o) => o.unguarded.map((w) => `${o.file}:${w.line}  ${o.name}  ${w.text}`));
     expect(unguarded).toEqual([]);
   });
 
-  it('the detector actually finds operations — it is not passing on an empty set', () => {
-    // A sweep that matches nothing passes silently. This pins that the walker
-    // still recognises the shape it is meant to police.
-    const src = readCode(path.join(ROOT, 'src/stores/domain/logSlice/helpers/logOperations.ts'));
-    expect((src.match(/stillSignedIn\(/g) ?? []).length).toBeGreaterThanOrEqual(4);
+  it('EVERY swept file yields a write after an await — none is read as empty', () => {
+    // A file whose writes the walker cannot see would read as clean, and pass.
+    const empty = SLICES.filter((f) => opsIn(f).every((o) => o.writes.length === 0));
+    expect(empty).toEqual([]);
+  });
+
+  it("sees followUser's writes: through a held store, and through the persist helpers", () => {
+    const follow = opsIn('src/stores/domain/socialSlice.ts').find((o) => o.name === 'followUser');
+    const seen = new Set(follow?.writes.map((w) => w.text));
+    expect([...seen]).toEqual(expect.arrayContaining([
+      'store.addRequested(', 'persistFollowingToCache(', 'enqueueMutation(', 'getState().removeFollowing(',
+    ]));
   });
 
   it('EVERY store that registers a logout reset is covered — no store is exempt', () => {
@@ -176,11 +265,12 @@ describe('a write that lands after logout must not repopulate the store', () => 
     };
     walk(path.join(ROOT, 'src', 'stores'));
 
-    // A store with a reset must either be swept, or hold nothing that writes
+    // A store with a reset must either be swept, or hold no unchecked write
     // after an await. Anything else is an unswept store.
     const unswept = [...resetting].filter(
-      (f) => !SLICES.includes(f) && opsWritingAfterAwait(f).length > 0
+      (f) => !SLICES.includes(f) && opsIn(f).some((o) => o.unguarded.length > 0)
     );
+    expect(resetting.size).toBeGreaterThan(SLICES.length / 2);
     expect(unswept).toEqual([]);
   });
 

@@ -333,7 +333,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         await loadViewerState(filings, set, startedAs);
         return true;
       } catch (e) {
-        if (gen !== generation) return false;
+        if (gen !== generation || !memberUnchanged(startedAs)) return false;
         if (!isNetworkError(e)) captureError(e, { where: 'dispatch.fetch' });
         if (get().filings.length === 0) set({ pageState: 'failed' });
         return false;
@@ -403,7 +403,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       await loadViewerState(fresh, set, startedAs);
     } catch (e) {
       if (!isNetworkError(e)) captureError(e, { where: 'dispatch.loadMore' });
-      if (gen === generation) set({ moreFailed: true });
+      if (gen === generation && memberUnchanged(startedAs)) set({ moreFailed: true });
     } finally {
       if (gen === generation) set({ loadingMore: false });
     }
@@ -513,15 +513,15 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       if (error) throw error;
       return { id };
     } catch (e) {
+      // Neither queued as the next member nor taken off their page.
+      if (!memberUnchanged(startedAs)) throw e;
       if (isNetworkError(e)) {
         enqueueMutation({ type: 'add_filing', payload: { _tempId: id, ...row } });
         flushOfflineQueue();
         reelToast.success('Filed. It goes out when the wire is back.');
         return { id, offline: true };
       }
-      if (memberUnchanged(startedAs)) {
-        set((st) => ({ filings: st.filings.filter((f) => f.id !== id) }));
-      }
+      set((st) => ({ filings: st.filings.filter((f) => f.id !== id) }));
       throw e;
     }
   },
@@ -534,8 +534,10 @@ export const useDispatch = create<DispatchState>((set, get) => ({
   amend: async (id, updates) => {
     const user = useAuthStore.getState().user;
     if (!user) return;
-    const filing = heldFiling(get(), id) ?? await readForAct(get, id, 'amend');
     const startedAs = user.id;
+    const filing = heldFiling(get(), id) ?? await readForAct(get, id, 'amend');
+    // A filing read for a member who has since left is not amended on the next one's page.
+    if (!memberUnchanged(startedAs)) return;
 
     const clean = cleanUpdate(filing.kind, updates);
     const before = filing;
@@ -567,6 +569,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       // Its words or its spoiler mark: the Lobby may be hanging it.
       wallMayHaveChanged();
     } catch (e) {
+      // Neither queued as the next member nor put back on their page.
+      if (!memberUnchanged(startedAs)) throw e;
       if (isNetworkError(e)) {
         enqueueMutation({
           type: 'update_filing',
@@ -575,9 +579,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         flushOfflineQueue();
         return { offline: true };
       }
-      if (memberUnchanged(startedAs)) {
-        set((st) => patchFiling(st, id, () => before));
-      }
+      set((st) => patchFiling(st, id, () => before));
       throw e;
     }
   },
@@ -592,8 +594,10 @@ export const useDispatch = create<DispatchState>((set, get) => ({
   end: async (id) => {
     const user = useAuthStore.getState().user;
     if (!user) return;
-    const before = heldFiling(get(), id) ?? await readForAct(get, id, 'end');
     const startedAs = user.id;
+    const before = heldFiling(get(), id) ?? await readForAct(get, id, 'end');
+    // A filing read for a member who has since left is not ended on the next one's page.
+    if (!memberUnchanged(startedAs)) return;
 
     // The page empties what the house empties (dispatch_empty_filing): the
     // words, the stills and cover, the source and its link.
@@ -610,14 +614,14 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       if (error) throw error;
       wallMayHaveChanged();
     } catch (e) {
+      // Neither queued as the next member nor put back on their page.
+      if (!memberUnchanged(startedAs)) throw e;
       if (isNetworkError(e)) {
         enqueueMutation({ type: 'end_filing', payload: { id, user_id: user.id } });
         flushOfflineQueue();
         return { offline: true };
       }
-      if (memberUnchanged(startedAs)) {
-        set((st) => patchFiling(st, id, () => before));
-      }
+      set((st) => patchFiling(st, id, () => before));
       throw e;
     }
   },
@@ -857,19 +861,19 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       const { error } = await supabase.from('dispatch_comments').insert([row]);
       if (error) throw error;
     } catch (e) {
+      // Neither queued as the next member nor taken off their page.
+      if (!memberUnchanged(startedAs)) throw e;
       if (isNetworkError(e)) {
         enqueueMutation({ type: 'add_critique', payload: { _tempId: id, ...row } });
         flushOfflineQueue();
         return { offline: true };
       }
-      if (memberUnchanged(startedAs)) {
-        set((st) => ({
-          critiques: { ...st.critiques, [postId]: (st.critiques[postId] ?? []).filter((c) => c.id !== id) },
-          ...patchFiling(st, postId, (f) => ({
-            ...f, commentCount: Math.max(0, f.commentCount - 1),
-          })),
-        }));
-      }
+      set((st) => ({
+        critiques: { ...st.critiques, [postId]: (st.critiques[postId] ?? []).filter((c) => c.id !== id) },
+        ...patchFiling(st, postId, (f) => ({
+          ...f, commentCount: Math.max(0, f.commentCount - 1),
+        })),
+      }));
       throw e;
     }
   },
@@ -903,19 +907,19 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       if (error) throw error;
       if (!data || data.length === 0) throw new Error('dispatch.amendCritique: refused');
     } catch (e) {
+      // Neither queued as the next member nor put back on their page.
+      if (!memberUnchanged(startedAs)) throw e;
       if (isNetworkError(e)) {
         enqueueMutation({ type: 'update_critique', payload: { id, user_id: user.id, body: clean } });
         flushOfflineQueue();
         return;
       }
-      if (memberUnchanged(startedAs)) {
-        set((st) => ({
-          critiques: {
-            ...st.critiques,
-            [postId]: (st.critiques[postId] ?? []).map((c) => (c.id === id ? before : c)),
-          },
-        }));
-      }
+      set((st) => ({
+        critiques: {
+          ...st.critiques,
+          [postId]: (st.critiques[postId] ?? []).map((c) => (c.id === id ? before : c)),
+        },
+      }));
       throw e;
     }
   },
@@ -947,22 +951,22 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       if (error) throw error;
       if (!removed || removed.length === 0) throw new Error('critique not removed');
     } catch (e) {
+      // Neither queued as the next member nor put back on their page.
+      if (!memberUnchanged(startedAs)) throw e;
       if (isNetworkError(e)) {
         enqueueMutation({ type: 'remove_critique', payload: { id, user_id: user.id } });
         flushOfflineQueue();
         return;
       }
       // Back where it was, not at the top: a failed network must not reorder an argument.
-      if (memberUnchanged(startedAs)) {
-        set((st) => {
-          const next = [...(st.critiques[postId] ?? [])];
-          next.splice(Math.min(at, next.length), 0, before);
-          return {
-            critiques: { ...st.critiques, [postId]: next },
-            ...patchFiling(st, postId, (f) => ({ ...f, commentCount: f.commentCount + 1 })),
-          };
-        });
-      }
+      set((st) => {
+        const next = [...(st.critiques[postId] ?? [])];
+        next.splice(Math.min(at, next.length), 0, before);
+        return {
+          critiques: { ...st.critiques, [postId]: next },
+          ...patchFiling(st, postId, (f) => ({ ...f, commentCount: f.commentCount + 1 })),
+        };
+      });
       throw e;
     }
   },
@@ -1057,14 +1061,15 @@ async function writeThrough(
   try {
     await online();
   } catch (e) {
+    // After a logout the store is already clear: undoing would write the last member's
+    // counts back into it (and to disk), and queueing would send the act as the next
+    // member. Their whole store is gone, a stronger undo.
+    if (!memberUnchanged(startedAs)) return;
     if (isNetworkError(e)) {
       enqueueMutation(queued);
       flushOfflineQueue();
       return;
     }
-    // After a logout the store is already clear: undoing would write the last member's
-    // counts back into it (and to disk). Their whole store is gone, a stronger undo.
-    if (!memberUnchanged(startedAs)) return;
     undo();
     captureError(e, { where });
     reelToast.error('The house did not accept that.');

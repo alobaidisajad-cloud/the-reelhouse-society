@@ -508,6 +508,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       set({ lounges: enriched, loungesFailed: false, loading: false });
     } catch (err) {
       if (__DEV__) console.warn('[Lounge] fetchLounges failed:', err);
+      // Their failed read is not the next member's.
+      if (!memberUnchanged(startedAs)) return;
       // Said by the screen that asked, not here: the Lounge polls every thirty
       // seconds while open, and a toast here would be a toast every thirty
       // seconds for as long as the signal is gone.
@@ -596,6 +598,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
             );
           }
         }
+        // Only for the member who asked: the queued messages stitched in are theirs.
+        if (!memberUnchanged(startedAs)) return;
         // Only if this room is still the open one: a slower fetch for a room left
         // behind would put its words under the new room's name.
         set(s => (s.currentLoungeId !== loungeId ? s : {
@@ -798,6 +802,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       });
       return true;
     } catch (error: unknown) {
+      // Neither queued as the next member nor marked in their transcript.
+      if (!memberUnchanged(startedAs)) return false;
       if (isNetworkError(error)) {
         enqueueMutation({
           type: 'send_lounge_message',
@@ -1095,6 +1101,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const { error } = await supabase.rpc('withdraw_lounge_message', { p_message_id: messageId });
       if (error) throw error;
     } catch (e) {
+      // Neither queued as the next member nor restored into their room.
+      if (!memberUnchanged(startedAs)) return;
       // Offline is not a refusal — keep the tombstone and finish the withdrawal
       // when the connection returns. Snapping the message back would resurrect
       // something the member deliberately took down, on a dropped bar of signal.
@@ -1106,7 +1114,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       }
       // A real refusal (not yours to withdraw, row gone) — restore it intact.
       logger.error('[LoungeStore.withdrawMessage] failed, reverting:', e);
-      if (!memberUnchanged(startedAs)) return;
       set(s => ({
         currentMessages: s.currentMessages.map(m => m.id === messageId ? target : m),
       }));
@@ -1149,6 +1156,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         ),
       }));
     } catch (e) {
+      // Neither queued as the next member nor marked in their transcript.
+      if (!memberUnchanged(startedAs)) return;
       if (isNetworkError(e)) {
         enqueueMutation({ type: 'send_lounge_message', payload: { ...payload, _tempId: payload.id } });
         flushOfflineQueue();

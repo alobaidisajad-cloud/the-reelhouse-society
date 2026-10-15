@@ -190,6 +190,8 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             }));
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'archiveSlice.addToPhysicalArchive' });
+            // A throw skips the check in the try: neither queued nor undone once they have left.
+            if (!stillSignedIn(user.id)) return;
             if (isNetworkError(e)) {
                 // Queued as what to ADD; the replay merges it with the server's entry the same way.
                 enqueueMutation({ type: 'add_archive', payload: { ...entry, formats } });
@@ -236,6 +238,8 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
 
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'archiveSlice.removeFromPhysicalArchive' });
+            // A throw skips the check in the try: neither queued nor undone once they have left.
+            if (!stillSignedIn(user.id)) return;
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 enqueueMutation({ type: 'remove_archive', payload: { user_id: user.id, film_id: filmId } });
@@ -268,6 +272,8 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
 
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'archiveSlice.updatePhysicalArchiveItem' });
+            // A throw skips the check in the try: neither queued nor undone once they have left.
+            if (!stillSignedIn(user.id)) return;
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 const dbUpdates: Record<string, any> = {};

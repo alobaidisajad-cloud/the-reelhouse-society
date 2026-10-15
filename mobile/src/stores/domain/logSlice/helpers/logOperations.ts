@@ -211,6 +211,8 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
  * it. Mirrors the offline executor's handleDuplicateLogMerge for online/offline parity.
  */
 const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: DomainLog, log: Partial<DomainLog>) => {
+    // Captured before any await: addLogOp calls this right after its own check.
+    const startedAs = useAuthStore.getState().user?.id ?? null;
     const oldHistory = (Array.isArray(existingLog.viewingHistory) ? existingLog.viewingHistory : []) as any[];
     // What the viewing being left looked like. Built here for the screen only —
     // the SERVER writes the real one, from the row it holds, so the archive never
@@ -273,6 +275,9 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
         viewingId: newViewingId,
     } as Partial<DomainLog>, { silentAnnounce: true, viewingOp: { kind: 'add', viewingId: newViewingId } });
 
+    // Their note is not written into the next member's Vault.
+    if (!stillSignedIn(startedAs)) return { queuedOffline: merge?.queuedOffline === true };
+
     // The note the member wrote in the form belongs to the viewing that has just
     // begun — not to the one now in the history, which keeps its own. Written
     // after the viewing exists, because a note must have a viewing to belong to.
@@ -322,6 +327,8 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                 if (serverCheck && serverCheck.length > 0) {
                     existingLog = mapLogRow(serverCheck[0] as any) as unknown as DomainLog;
                 }
+                // Left during the check: nothing is filed as them, or as the next member.
+                if (!stillSignedIn(user.id)) return;
             }
 
             if (existingLog) {
@@ -361,6 +368,8 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                 viewing_history: [],
             };
             const { data, error } = await supabase.from('logs').insert([payload]).select().single();
+            // Left mid-write: neither shown nor queued, where either would be the next member's.
+            if (!stillSignedIn(user.id)) return;
 
             let finalData = data;
             // A queued write is not an archived one, and the announcement at the
@@ -383,6 +392,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                             .select(LOG_SELECT_COLUMNS)
                             .eq('user_id', user.id).eq('film_id', log.filmId)
                             .order('created_at', { ascending: false }).limit(1);
+                        if (!stillSignedIn(user.id)) return;
                         if (serverRows && serverRows.length > 0) {
                             const existing = mapLogRow(serverRows[0] as any) as unknown as DomainLog;
                             const dupMerged = await applyRewatchMerge(set, get, existing, log);
@@ -411,6 +421,8 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                     if (!isNetworkError(e)) captureError(e, { scope: 'addLogOp.saveNote', logId: newId });
                 }
             }
+            // Asked again: the note's save, when there is one, is a second wait.
+            if (!stillSignedIn(user.id)) return;
 
             const fullLog = mapLogRow(finalData) as import('@/src/types').DomainLog;
             set((state) => {
@@ -476,6 +488,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
     }
 
 export const unmarkWatchedOp = async (set: SetState, get: GetState, filmId: number) => {
+    const startedAs = useAuthStore.getState().user?.id ?? null;
     const existingLog = get().logs.find(l => l.filmId === filmId);
         if (!existingLog) return;
 
@@ -483,6 +496,8 @@ export const unmarkWatchedOp = async (set: SetState, get: GetState, filmId: numb
         // unreachable Vault means "there may be one", and the record stays.
         const vault = useVaultStore.getState();
         if (!vault.isLoaded(existingLog.id)) await vault.loadForLog(existingLog.id);
+        // A record is deleted only by the member who asked.
+        if (!stillSignedIn(startedAs)) return;
         const after = useVaultStore.getState();
         // ANY viewing's note: every one goes with the record.
         const mayHoldANote = after.isUnreachable(existingLog.id)
@@ -661,6 +676,8 @@ export const updateLogOp = async (
                     .eq('id', id)
                     .eq('user_id', user.id));
             }
+            // Left mid-write: nothing is queued, noted or shelved as the next member.
+            if (!stillSignedIn(user.id)) return;
             // A queued edit is not a saved one (it falls through to the announcement).
             let queuedOffline = false;
             if (error) {
@@ -694,6 +711,8 @@ export const updateLogOp = async (
                     }
                 }
             }
+            // Asked again: the note's save, when there is one, is a second wait.
+            if (!stillSignedIn(user.id)) return;
 
             if (updates.physicalMedia && FORMAT_MAP[updates.physicalMedia]) {
                 const fmt = FORMAT_MAP[updates.physicalMedia];
@@ -748,6 +767,72 @@ export const updateLogOp = async (
         }
     }
 
+/**
+ * A log with rewatches loses its latest viewing, not the record: the log steps
+ * back to the one before.
+ */
+const removeRewatchOp = async (
+    set: SetState, get: GetState, logToRemove: DomainLog,
+    history: NonNullable<DomainLog['viewingHistory']>, startedAs: string | null,
+) => {
+    const id = logToRemove.id;
+    const poppedEntry = history[0] as { viewingId?: string } & Record<string, any>;
+    const remainingHistory = history.slice(1);
+
+    // The viewing removed is the one the log is ON; naming it makes a retry do
+    // nothing. A log cached without viewing ids asks the server for it.
+    let leavingViewingId = logToRemove.viewingId ?? null;
+    if (!leavingViewingId) {
+        try {
+            const { data } = await supabase.from('logs').select('viewing_id').eq('id', id).maybeSingle();
+            leavingViewingId = (data as { viewing_id?: string } | null)?.viewing_id ?? null;
+        } catch { /* offline — handled immediately below */ }
+        // Their log is not stepped back as the next member.
+        if (!stillSignedIn(startedAs)) return;
+    }
+    if (!leavingViewingId) {
+        // Nothing to name, nothing honest to queue (the database refuses it).
+        reelToast('Removing a rewatch needs a connection.');
+        return;
+    }
+
+    const updates: Partial<DomainLog> = {
+        watchedDate: poppedEntry.date ?? logToRemove.createdAt ?? localCalendarDate(),
+        rating: poppedEntry.rating ?? 0,
+        review: poppedEntry.review ?? '',
+        status: poppedEntry.status ?? 'watched',
+        isSpoiler: poppedEntry.isSpoiler ?? false,
+        watchedWith: poppedEntry.watchedWith ?? null,
+        physicalMedia: poppedEntry.physicalMedia ?? 'None',
+        abandonedReason: poppedEntry.abandonedReason ?? null,
+        isAutopsied: poppedEntry.isAutopsied ?? false,
+        autopsy: poppedEntry.autopsy ?? null,
+        altPoster: poppedEntry.altPoster ?? null,
+        editorialHeader: poppedEntry.editorialHeader ?? null,
+        dropCap: poppedEntry.dropCap ?? false,
+        pullQuote: poppedEntry.pullQuote ?? null,
+        videoUrl: poppedEntry.videoUrl ?? null,
+        format: poppedEntry.format ?? 'digital',
+        viewingHistory: remainingHistory,
+        viewCount: Math.max(1, (logToRemove.viewCount ?? 1) - 1),
+        viewingId: poppedEntry.viewingId ?? null,
+    };
+
+    // A silent STEP: the toast below says what the member did. A failure throws
+    // on to the caller, which toasts once.
+    const undone = await updateLogOp(set, get, id, updates, {
+        silentAnnounce: true,
+        viewingOp: { kind: 'remove', viewingId: leavingViewingId },
+    });
+    // The next member's Vault keeps its own notes.
+    if (!stillSignedIn(startedAs)) return;
+    // The server removed its note; the local Vault forgets it too.
+    useVaultStore.getState().forgetNote(leavingViewingId);
+    reelToast(undone?.queuedOffline
+        ? 'Rewatch removed offline. Will sync when connected.'
+        : 'Rewatch removed. Reverted to previous viewing.');
+};
+
 export const removeLogOp = async (set: SetState, get: GetState, id: string, forceDeleteAll: boolean = false) => {
         // Captured before any await, so the rollback can tell whether it is still them.
         const startedAs = useAuthStore.getState().user?.id ?? null;
@@ -756,63 +841,7 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
         
         // Pop history instead of a hard delete
         const history = Array.isArray(logToRemove.viewingHistory) ? logToRemove.viewingHistory : [];
-        if (!forceDeleteAll && history.length > 0) {
-            const poppedEntry = history[0] as { viewingId?: string } & Record<string, any>;
-            const remainingHistory = history.slice(1);
-
-            // The viewing removed is the one the log is ON; naming it makes a retry do
-            // nothing. A log cached without viewing ids asks the server for it.
-            let leavingViewingId = logToRemove.viewingId ?? null;
-            if (!leavingViewingId) {
-                try {
-                    const { data } = await supabase.from('logs').select('viewing_id').eq('id', id).maybeSingle();
-                    leavingViewingId = (data as { viewing_id?: string } | null)?.viewing_id ?? null;
-                } catch { /* offline — handled immediately below */ }
-            }
-            if (!leavingViewingId) {
-                // Nothing to name, nothing honest to queue (the database refuses it).
-                reelToast('Removing a rewatch needs a connection.');
-                return;
-            }
-
-            const updates: Partial<DomainLog> = {
-                watchedDate: poppedEntry.date ?? logToRemove.createdAt ?? localCalendarDate(),
-                rating: poppedEntry.rating ?? 0,
-                review: poppedEntry.review ?? '',
-                status: poppedEntry.status ?? 'watched',
-                isSpoiler: poppedEntry.isSpoiler ?? false,
-                watchedWith: poppedEntry.watchedWith ?? null,
-                physicalMedia: poppedEntry.physicalMedia ?? 'None',
-                abandonedReason: poppedEntry.abandonedReason ?? null,
-                isAutopsied: poppedEntry.isAutopsied ?? false,
-                autopsy: poppedEntry.autopsy ?? null,
-                altPoster: poppedEntry.altPoster ?? null,
-                editorialHeader: poppedEntry.editorialHeader ?? null,
-                dropCap: poppedEntry.dropCap ?? false,
-                pullQuote: poppedEntry.pullQuote ?? null,
-                videoUrl: poppedEntry.videoUrl ?? null,
-                format: poppedEntry.format ?? 'digital',
-                viewingHistory: remainingHistory,
-                viewCount: Math.max(1, (logToRemove.viewCount ?? 1) - 1),
-                viewingId: poppedEntry.viewingId ?? null,
-            };
-
-            try {
-                // A silent STEP: the toast below says what the member did.
-                const undone = await updateLogOp(set, get, id, updates, {
-                    silentAnnounce: true,
-                    viewingOp: { kind: 'remove', viewingId: leavingViewingId },
-                });
-                // The server removed its note; the local Vault forgets it too.
-                useVaultStore.getState().forgetNote(leavingViewingId);
-                reelToast(undone?.queuedOffline
-                    ? 'Rewatch removed offline. Will sync when connected.'
-                    : 'Rewatch removed. Reverted to previous viewing.');
-            } catch (e) {
-                throw e; // the caller toasts, once
-            }
-            return;
-        }
+        if (!forceDeleteAll && history.length > 0) return removeRewatchOp(set, get, logToRemove, history, startedAs);
 
         set((state) => {
             const nextIdx = { ...state._loggedIndex };
@@ -838,6 +867,8 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             const user = useAuthStore.getState().user;
             if (!user) { throw new Error('Must be authenticated to delete logs'); }
             const { error } = await supabase.from('logs').delete().eq('id', id).eq('user_id', user.id);
+            // Left mid-write: nothing is queued as the next member.
+            if (!stillSignedIn(startedAs)) return;
             if (error) {
                 // Use shared network error detection
                 if (isNetworkError(error)) {

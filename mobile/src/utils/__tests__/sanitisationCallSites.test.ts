@@ -139,14 +139,23 @@ describe('ProfileService.updateProfile', () => {
 describe('submitReport', () => {
   it('cleans the details a moderator will read', async () => {
     const { useReportStore } = require('../../stores/reportStore');
-    await useReportStore.getState().submitReport({
-      reporter_id: '11111111-1111-4111-8111-111111111111',
-      content_id: '22222222-2222-4222-8222-222222222222',
-      content_type: 'log',
-      reason: 'spam',
-      details: HOSTILE_DETAILS,
-      target_user_id: '33333333-3333-4333-8333-333333333333',
-    } as any);
+    const { useAuthStore } = require('../../stores/auth');
+    // The reporter is the member signed in, as the report sheet sends it.
+    const REPORTER = '11111111-1111-4111-8111-111111111111';
+    const signedIn = useAuthStore.getState.getMockImplementation();
+    useAuthStore.getState.mockImplementation(() => ({ user: { id: REPORTER, username: 'cinephile' } }));
+    try {
+      await useReportStore.getState().submitReport({
+        reporter_id: REPORTER,
+        content_id: '22222222-2222-4222-8222-222222222222',
+        content_type: 'log',
+        reason: 'spam',
+        details: HOSTILE_DETAILS,
+        target_user_id: '33333333-3333-4333-8333-333333333333',
+      } as any);
+    } finally {
+      useAuthStore.getState.mockImplementation(signedIn);
+    }
 
     const call = captured.rpc.find(c => c.name === 'submit_report');
     expect(call).toBeDefined();

@@ -912,6 +912,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/aFailedLoadKeepsWhoYouFollow.test.ts | 2026-09-29 | follow-list wipe fixed; comments read |
 | src/stores/__tests__/aFailedReadIsSaid.test.ts | 2026-10-01 | written: a failed read is answered as failed |
 | src/stores/__tests__/aFailedSettingStaysUndone.test.ts | 2026-09-29 | new |
+| src/stores/__tests__/aFollowLandsOnlyForItsMember.test.ts | 2026-10-15 | new: a follow or unfollow answered after a sign-out or a switch writes, saves and queues nothing |
 | src/stores/__tests__/aFollowMadeOfflineIsKept.test.ts | — |  |
 | src/stores/__tests__/aMarkReadThatFailedIsHeard.test.ts | 2026-10-01 | written with the marks fix |
 | src/stores/__tests__/aNoticeIsNarrowedToItsOwner.test.ts | 2026-10-03 | edited: a notice type the house sends |
@@ -950,7 +951,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/reportStore.pbt.test.ts | — |  |
 | src/stores/__tests__/socialSlice.hydrationReconcile.test.ts | — |  |
 | src/stores/__tests__/socialSlice.unfollow.test.ts | — |  |
-| src/stores/__tests__/staleWriteGuard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/stores/__tests__/staleWriteGuard.test.ts | 2026-10-15 | edited: the walker sees held stores, getState setters and the persist helpers; a write is checked after its own last await; no swept file reads as empty |
 | src/stores/__tests__/telemetryGating.test.ts | — |  |
 | src/stores/__tests__/theBoardSaysWhenItCouldNotBeRead.test.tsx | — |  |
 | src/stores/__tests__/theCursorCarriesATiebreaker.test.ts | — |  |
@@ -972,7 +973,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/blockStore.ts | 2026-10-02 | sign-out erases the leaving member's saved list |
 | src/stores/createSelectors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/discover.ts | 2026-10-02 | Read whole (launch audit). Its comment said the Darkroom's results survive a restart; the films found are not persisted, only the mood, filters and search. |
-| src/stores/dispatch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/stores/dispatch.ts | 2026-10-15 | edited: an act read or answered after its member left neither queues nor puts back |
 | src/stores/dispatchTypes.ts | 2026-10-02 | Read whole (launch audit): row shapes match the live schema (body NOT NULL DEFAULT '', so an ended filing parses). Sound; left alone. |
 | src/stores/domain/__tests__/aFilmAlreadyQueuedStaysQueued.test.ts | 2026-10-02 | a film already on the watchlist stays, and is said to be |
 | src/stores/domain/__tests__/aLogsWordsAreCleanedEverywhere.test.ts | 2026-10-03 | edited: its hidden characters built from code points |
@@ -982,23 +983,23 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/__tests__/logOperations.pure.test.ts | — |  |
 | src/stores/domain/__tests__/logReconciliation.test.ts | 2026-10-03 | rewritten whole: drives overlayQueuedLogs and oneOfEachLog |
 | src/stores/domain/__tests__/theDiaryPagesWithoutGaps.test.ts | 2026-10-02 | the log list orders as its cursor reads |
-| src/stores/domain/archiveSlice.ts | 2026-10-03 | read whole: the shelf filing goes through ShelfService |
+| src/stores/domain/archiveSlice.ts | 2026-10-15 | edited: a shelf write that throws is checked for its member before it queues or undoes |
 | src/stores/domain/helpers/promiseMutex.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/domain/helpers/sessionGuard.ts | 2026-10-01 | true as written |
 | src/stores/domain/interactionSlice.ts | 2026-10-03 | read whole: a certification made before the answer is kept (index and list) |
-| src/stores/domain/listSlice.ts | 2026-10-15 | edited: a stack's posters fetched ahead through prefetchPictures; the comment says disk cache, not warming |
+| src/stores/domain/listSlice.ts | 2026-10-15 | edited: a stack's posters fetched ahead through prefetchPictures, to the disk cache; a stack write that throws is checked for its member before it queues or undoes |
 | src/stores/domain/logSlice.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-15 | edited: the overlay note says where another member's writes go |
-| src/stores/domain/socialSlice.ts | 2026-10-08 | one follow-list read per member, written only while theirs; clearSocialCaches registered for sign-out |
+| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-15 | edited: every wait in a log write is followed by its member check; a rewatch removed is its own function |
+| src/stores/domain/socialSlice.ts | 2026-10-15 | edited: follow and unfollow write, save and queue only for the member who asked |
 | src/stores/domain/watchlistSlice.ts | 2026-10-08 | no posters fetched ahead |
 | src/stores/films.ts | 2026-10-08 | nothing fetched ahead on restore |
 | src/stores/followStore.ts | 2026-10-01 | comments cut to the why |
-| src/stores/lounge.ts | 2026-10-15 | edited: the salon channel joined privately, presence from a seat alone, typing through send_salon_typing |
+| src/stores/lounge.ts | 2026-10-15 | edited: a salon read or send answered after its member left writes and queues nothing |
 | src/stores/markCounts.ts | 2026-10-02 | read; sound |
 | src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
 | src/stores/notificationStore.ts | 2026-10-15 | edited: the notices channel joined privately; the notices heard live are counted |
 | src/stores/offlineQueueStore.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/stores/reportStore.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/stores/reportStore.ts | 2026-10-15 | edited: a report answered after its reporter left is not kept, queued or blocked as the next member |
 | src/stores/resetAllStores.ts | 2026-10-02 | Read whole (launch audit). Failures were counted only in development: reported through logger.warn now. |
 | src/stores/settings.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/socialStore.ts | 2026-10-01 | the header says where the store lives |
@@ -1125,7 +1126,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/roomFilters.test.ts | 2026-10-01 | written: one answer to is-this-room-narrowed |
 | src/utils/__tests__/runtimeDump.contract.test.ts | 2026-10-15 | edited: runtimeNames read from its file (coverage-safe); says NO past global and declare global |
 | src/utils/__tests__/runtimeLacks.guard.test.ts | 2026-10-15 | new: no line uses an API the phone lacks; jest takes away exactly the list |
-| src/utils/__tests__/sanitisationCallSites.test.ts | 2026-10-03 | edited: the hostile samples written as escapes |
+| src/utils/__tests__/sanitisationCallSites.test.ts | 2026-10-15 | edited: the report is sent by the member signed in, as the sheet sends it |
 | src/utils/__tests__/sanitizeInput.test.ts | — |  |
 | src/utils/__tests__/schemaSnapshot.guard.test.ts | — |  |
 | src/utils/__tests__/searchFieldsDoNotAutocorrect.guard.test.ts | 2026-09-29 | new guard |
