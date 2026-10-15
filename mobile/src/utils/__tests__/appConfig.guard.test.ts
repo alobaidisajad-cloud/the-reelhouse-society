@@ -44,6 +44,20 @@ it('no real build carries the trace switch', () => {
   expect(appJson.extra?.e2e).toBeUndefined();
 });
 
+const entry = (name: string): unknown => appJson.plugins.find((p: unknown) => (Array.isArray(p) ? p[0] : p) === name);
+
+it('no real build carries the development client\'s way in, or a route the house did not write', () => {
+  // Without these, expo-dev-client adds an exp+reelhouse scheme and expo-router
+  // a /_sitemap route; scripts/release-guard.cjs reads the built result.
+  expect(entry('expo-dev-client')).toEqual(['expo-dev-client', expect.objectContaining({ addGeneratedScheme: false })]);
+  expect(entry('expo-router')).toEqual(['expo-router', expect.objectContaining({ sitemap: false })]);
+  expect(entry('./plugins/withoutDevLauncherScanner')).toBe('./plugins/withoutDevLauncherScanner');
+});
+
+it('iOS allows plain http to no host: the template\'s local-network exception is turned off', () => {
+  expect(appJson.ios.infoPlist.NSAppTransportSecurity).toEqual({ NSAllowsArbitraryLoads: false, NSAllowsLocalNetworking: false });
+});
+
 it('EAS uploads the commit alone, numbered as committed', () => {
   // requireCommit: EAS uploads a clone of what is committed, so no ignored or
   // untracked file travels, and a dirty tree is refused. No autoIncrement: with

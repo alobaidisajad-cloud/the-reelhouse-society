@@ -9,6 +9,8 @@
  *
  *   npm run bundle:size                  fail if either grew; record it if it shrank
  *   npm run bundle:size -- --accept "why"   record a larger size, with the reason
+ *   npm run bundle:size -- --keep <dir>     leave the export in <dir>, for
+ *                                           scripts/release-guard.cjs to read
  *
  * Growth is allowed only by --accept, so it is a line in a commit, never an
  * accident. The tolerance covers the few bytes a machine's paths can change.
@@ -23,8 +25,8 @@ const BASELINE = path.join(ROOT, '.bundle-size.json');
 const PLATFORMS = ['ios', 'android'];
 const TOLERANCE = 0.002;
 
-function build() {
-  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'bundle-size-'));
+function build(keep) {
+  const out = keep ? path.resolve(keep) : fs.mkdtempSync(path.join(os.tmpdir(), 'bundle-size-'));
   const env = { ...process.env, ...JSON.parse(fs.readFileSync(path.join(ROOT, 'eas.json'), 'utf8')).build.production.env };
   const args = ['expo', 'export', '--output-dir', out, '--clear', ...PLATFORMS.flatMap((p) => ['--platform', p])];
   const r = spawnSync('npx', args, { cwd: ROOT, env, encoding: 'utf8', shell: process.platform === 'win32' });
@@ -39,7 +41,7 @@ function build() {
     if (hbc.length !== 1) throw new Error(`${p}: expected one .hbc bundle, found ${hbc.length}`);
     sizes[p] = fs.statSync(path.join(dir, hbc[0])).size;
   }
-  fs.rmSync(out, { recursive: true, force: true });
+  if (!keep) fs.rmSync(out, { recursive: true, force: true });
   return sizes;
 }
 
@@ -49,9 +51,12 @@ function main() {
   const accept = process.argv.indexOf('--accept');
   const reason = accept >= 0 ? process.argv[accept + 1] : null;
   if (accept >= 0 && !reason) throw new Error('--accept needs the reason the app grew');
+  const keepAt = process.argv.indexOf('--keep');
+  const keep = keepAt >= 0 ? process.argv[keepAt + 1] : null;
+  if (keepAt >= 0 && !keep) throw new Error('--keep needs the folder to leave the export in');
 
   const base = JSON.parse(fs.readFileSync(BASELINE, 'utf8'));
-  const now = build();
+  const now = build(keep);
   let grew = false;
   let shrank = false;
   for (const p of PLATFORMS) {

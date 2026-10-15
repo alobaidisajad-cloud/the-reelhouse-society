@@ -19,3 +19,12 @@ appId: com.reelhouse.society
 - tapOn: "RETURN TO LOBBY"
 - assertVisible:
     id: "dispatch-tab"
+
+# reelhouse://_sitemap, opened with the app closed: expo-router makes that
+# route unless app.json turns its sitemap off, and with it off the path is
+# one the app does not have, so it lands on +not-found.
+- stopApp
+- openLink: "reelhouse://_sitemap"
+- extendedWaitUntil:
+    visible: "ROUTE NOT IN THE ARCHIVE"
+    timeout: 30000

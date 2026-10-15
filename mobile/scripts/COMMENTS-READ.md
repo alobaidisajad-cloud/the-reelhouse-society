@@ -43,13 +43,13 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; Realtime started for the salon channels' rules; each package install let fail once and tried once more, 5 minutes each |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
-| ../.github/workflows/e2e.yml | 2026-10-15 | edited: the app built once, its anon key beside it; the flows on three machines, each its own sealed world holding its stack's key to the app's; a verdict reads all three, and fails with any shard; the APK's prefetch read for downloadOnly, and a shipped client's named as not run; each package install let fail once and tried once more, 5 minutes each |
-| ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash; each package install let fail once and tried once more, 5 minutes each; the Maestro lint installs its linter in its own step |
+| ../.github/workflows/e2e.yml | 2026-10-15 | edited: the app built once, its anon key beside it; the flows on three machines, each its own sealed world holding its stack's key to the app's; a verdict reads all three, and fails with any shard; the APK's prefetch read for downloadOnly, and a shipped client's named as not run; each package install let fail once and tried once more, 5 minutes each; a verdict reads all three |
+| ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash; each package install let fail once and tried once more, 5 minutes each; the Maestro lint installs its linter in its own step; the bundle job keeps its export and reads it with release-guard.cjs; a release-build job makes the release manifest, the Info.plist and the embedded config without E2E, and reads them |
 | ../.github/workflows/ios-launch.yml | 2026-10-15 | new |
 | ../.github/workflows/load.yml | 2026-10-15 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans; each package install let fail once and tried once more, 5 minutes each |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
-| .maestro/auth_deep_link.yaml | 2026-09-29 | header narrowed to what it proves |
+| .maestro/auth_deep_link.yaml | 2026-10-15 | edited: reelhouse://_sitemap, opened with the app closed, lands on not-found |
 | .maestro/auth_flow.yaml | 2026-09-29 | true as written |
 | .maestro/boot_verification.yaml | 2026-10-01 | header narrowed to what it proves; wrapped to 80 |
 | .maestro/browse_vault.yaml | 2026-09-29 | true as written |
@@ -66,7 +66,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/login_flow.yaml | 2026-09-29 | true as written |
 | .maestro/lounge_flow.yaml | 2026-09-29 | true as written |
 | .maestro/offline_resilience.yaml | 2026-09-29 | true as written |
-| .maestro/README.md | 2026-10-15 | edited: the flows on three machines from one built app, the shard map, the verdict, one logs artifact a machine |
+| .maestro/README.md | 2026-10-15 | edited: auth_deep_link also opens reelhouse://_sitemap cold, to not-found |
 | .maestro/lobby_wall_flow.yaml | 2026-10-15 | edited: the wall the house read is scrolled to before the sign-off |
 | .maestro/session_survives_restart.yaml | 2026-10-01 | written with the session kept on the device |
 | .maestro/subflows/open_a_film.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
@@ -182,7 +182,9 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/shard-verdict.mjs | 2026-10-15 | new: every shard finished, every flow ran once, every ceiling's screen reported somewhere |
 | e2e/shards.mjs | 2026-10-15 | new: one shard's plan from e2e/shards.json; an unmapped flow runs in the last, said |
 | e2e/start-stack.sh | 2026-10-15 | edited: the stack's ports reserved from the machine's own connections, and waited for |
+| plugins/__tests__/withoutDevLauncherScanner.test.ts | 2026-10-15 | new: through withAndroidManifest, read back as XML; the entry read from the installed expo-dev-launcher's manifest |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it |
+| plugins/withoutDevLauncherScanner.js | 2026-10-15 | new: read against expo-dev-launcher 6.0's main and debug manifests and ML Kit's install-time model download |
 | plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/splash-handoff.mjs | 2026-10-04 | written: no launch takes the splash over, scoped to the app's own processes; no launch, no pass |
@@ -227,7 +229,7 @@ without one). "Read" is the day its comments were last read against its code.
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
 | register/classes.yaml | 2026-10-15 | edited: RN-react-destroyed-on-mount |
 | scripts/add-only.cjs | 2026-10-15 | new |
-| scripts/bundle-size.js | 2026-10-03 | read whole: sound |
+| scripts/bundle-size.js | 2026-10-15 | edited: --keep leaves the export for release-guard.cjs |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route) |
 | scripts/check-backend-live.mjs | 2026-10-15 | edited: the address is read from, and saved to, the private settings file outside the repo and OneDrive |
 | scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added |
@@ -247,6 +249,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/migration-lint.cjs | 2026-10-15 | new |
 | scripts/private-settings.cjs | 2026-10-15 | new |
 | scripts/register.cjs | 2026-10-15 | new |
+| scripts/release-guard.cjs | 2026-10-15 | new: read against expo-dev-client's scheme plugins, expo-router's sitemap switch, expo-constants' getAppConfig, the Expo template's Info.plist and a production export's strings |
 | scripts/schema-snapshot.mjs | 2026-10-15 | edited: the address from the private settings file; default privileges that name no schema |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
 | scripts/secrets-planted.cjs | 2026-10-15 | new |
@@ -1053,7 +1056,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts | 2026-10-15 | written: every enqueue call site's type has its kind in the map |
 | src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |
 | src/utils/__tests__/fixtures/imageCache.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
-| src/utils/__tests__/appConfig.guard.test.ts | 2026-10-15 | EAS uploads the commit alone, numbered as committed |
+| src/utils/__tests__/appConfig.guard.test.ts | 2026-10-15 | edited: the dev client's scheme off, the sitemap off, the scanner removed, iOS https only |
 | src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
 | src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-10-15 | edited: a member is signed in |
 | src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | — |  |
@@ -1123,6 +1126,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/raceDeadline.test.ts | 2026-10-04 | written whole |
 | src/utils/__tests__/recommendations.test.ts | — |  |
 | src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/releaseGuard.guard.test.ts | 2026-10-15 | new: each rule says no in each format; the input is never the E2E app; the sitemap flow |
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-03 | rewritten: whom an event concerns, what a record grants, applying it |
 | src/utils/__tests__/roomFilters.test.ts | 2026-10-01 | written: one answer to is-this-room-narrowed |

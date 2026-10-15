@@ -23,7 +23,8 @@
     "gates:check": "node scripts/gates-check.js",
     "comments:check": "node scripts/comment-truth.js",
     "icons": "node scripts/lucide-icons.js",
-    "bundle:size": "node scripts/bundle-size.js"
+    "bundle:size": "node scripts/bundle-size.js",
+    "release:guard": "node scripts/release-guard.cjs"
   },
   "dependencies": {
     "@expo-google-fonts/courier-prime": "^0.4.1",

@@ -15,7 +15,11 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "The ReelHouse requires access to your archives to set your Society portrait.",
         "NSCameraUsageDescription": "The ReelHouse requires the camera to capture your Society portrait.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": false
+        }
       }
     },
     "android": {
@@ -36,7 +40,19 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "sitemap": false
+        }
+      ],
+      [
+        "expo-dev-client",
+        {
+          "addGeneratedScheme": false
+        }
+      ],
+      "./plugins/withoutDevLauncherScanner",
       [
         "expo-splash-screen",
         {

@@ -514,9 +514,102 @@ jobs:
         working-directory: ./mobile
         run: |
           set -o pipefail
-          npm run --silent bundle:size 2>&1 | tee bundle-size.txt
+          npm run --silent bundle:size -- --keep "$RUNNER_TEMP/bundles" 2>&1 | tee bundle-size.txt
           rc=${PIPESTATUS[0]}
           [ $rc -eq 0 ] || node e2e/annotate.mjs "The app's code grew" bundle-size.txt error
+          exit $rc
+
+      # The same bundles, read for the release rules (scripts/release-guard.cjs):
+      # no E2E backend built in and the production one is, and no test crash
+      # but the one written exception. Run even when the size step failed.
+      - name: The phone bundles hold the release rules
+        if: always()
+        working-directory: ./mobile
+        run: |
+          set +e
+          node scripts/release-guard.cjs --bundles "$RUNNER_TEMP/bundles" > release-guard.txt 2>&1
+          rc=$?
+          cat release-guard.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "The phone bundles break the release rules" release-guard.txt error
+          exit $rc
+
+  release-build:
+    name: 🛡️ What a store build is made of holds the release rules
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    needs: strict-analysis
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+          # android/ is made by prebuild, so there is no Gradle file to key on yet.
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install Mobile Dependencies
+        working-directory: ./mobile
+        run: npm ci
+
+      # The native projects as a store build starts from them: prebuild with no
+      # E2E set (the E2E app is never this guard's input), iOS too, which needs
+      # no Mac when no pods are installed. Then Gradle merges every library's
+      # manifest into the release one, and expo-constants' own script writes the
+      # config the build embeds, as the build runs it.
+      - name: The release manifest, the Info.plist and the embedded config
+        working-directory: ./mobile
+        env:
+          NODE_ENV: production
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          set +e
+          {
+            npx expo prebuild --platform all --no-install --clean \
+            && (cd android && ./gradlew :app:processReleaseManifest --no-daemon --console=plain \
+                  "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g") \
+            && mkdir -p "$RUNNER_TEMP/embedded" \
+            && node node_modules/expo-constants/scripts/getAppConfig.js . "$RUNNER_TEMP/embedded"
+          } > "$RUNNER_TEMP/release-build.log" 2>&1
+          rc=$?
+          tail -n 80 "$RUNNER_TEMP/release-build.log"
+          if [ $rc -ne 0 ]; then
+            grep -n -A 20 'What went wrong' "$RUNNER_TEMP/release-build.log" | head -n 30 > "$RUNNER_TEMP/release-build-errors.txt"
+            tail -n 30 "$RUNNER_TEMP/release-build.log" >> "$RUNNER_TEMP/release-build-errors.txt"
+            node e2e/annotate.mjs "The release manifest could not be made" "$RUNNER_TEMP/release-build-errors.txt"
+          fi
+          # The Kotlin compiler's daemon outlives a --no-daemon build; it ends with it.
+          pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
+          exit $rc
+
+      - name: The release manifest, the Info.plist and the embedded config hold the release rules
+        working-directory: ./mobile
+        run: |
+          set +e
+          manifest=$(find android/app/build/intermediates/merged_manifests -path '*/release/*' -name AndroidManifest.xml)
+          plist=$(ls ios/*/Info.plist)
+          if [ "$(printf '%s\n' "$manifest" | grep -c .)" != 1 ] || [ "$(printf '%s\n' "$plist" | grep -c .)" != 1 ]; then
+            {
+              echo "Not one merged release manifest and one Info.plist:"
+              echo "manifest: ${manifest:-none}"; echo "plist: ${plist:-none}"
+              echo "release manifests Gradle wrote:"
+              find android/app/build/intermediates -path '*release*' -name AndroidManifest.xml
+            } > release-guard.txt
+            rc=1
+          else
+            node scripts/release-guard.cjs --config "$RUNNER_TEMP/embedded/app.config" \
+              --manifest "$manifest" --plist "$plist" > release-guard.txt 2>&1
+            rc=$?
+          fi
+          cat release-guard.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "What a store build is made of breaks the release rules" release-guard.txt error
           exit $rc
 
   web-unit-tests:

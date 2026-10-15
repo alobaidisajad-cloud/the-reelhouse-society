@@ -58,7 +58,7 @@ with the seeded member's password scrubbed out first (`e2e/scrub.mjs`).
 | `boot_verification.yaml` | the app boots, and the whole tab bar is there |
 | `login_flow.yaml` | signing in through the Profile tab (through the Initiation, as a new member) lands on your member file |
 | `auth_flow.yaml` | forgot-password: the recovery modal, and back to sign-in |
-| `auth_deep_link.yaml` | `reelhouse://reset-password` with no session gets the rescue screen |
+| `auth_deep_link.yaml` | `reelhouse://reset-password` with no session gets the rescue screen; `reelhouse://_sitemap`, opened with the app closed, lands on not-found (the generated sitemap is off) |
 | `darkroom_search.yaml` | the Darkroom's suggestions open a film page (no account) |
 | `flow_critical_path.yaml` | sign in → find → log with a review → the tray offers to edit it; the row is in the database |
 | `log_film_flow.yaml` | logging from the full results, not the suggestion row |
