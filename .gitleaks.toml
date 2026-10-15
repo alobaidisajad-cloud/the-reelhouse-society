@@ -1,0 +1,42 @@
+# The secrets scan's rules: gitleaks' own, and four shapes its own miss, each
+# one this repository has leaked before. A finding is excused only by its
+# fingerprint in .gitleaksignore, each with its reason; no path is ever
+# allowed, and the one value allowed is named where it is. mobile/src/utils/__tests__/secretsScan.guard.test.ts
+# holds both, and mobile/scripts/secrets-planted.cjs proves each rule fires.
+
+title = "ReelHouse secrets"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "supabase-personal-token"
+description = "A Supabase personal access token: it reaches every project in the account"
+regex = '''\bsbp_[0-9a-f]{40}\b'''
+keywords = ["sbp_"]
+
+[[rules]]
+id = "postgres-url-password"
+description = "A Postgres address with its password written in"
+regex = '''postgres(?:ql)?://[^:/@\s'"]+:([^@\s'"$]{6,})@'''
+secretGroup = 1
+keywords = ["postgres://", "postgresql://"]
+# The one value never a secret: the local Supabase stack's published default,
+# which the sealed worlds (e2e, load, db-integration) use on 127.0.0.1.
+[[rules.allowlists]]
+regexTarget = "secret"
+regexes = ['''^postgres$''']
+
+[[rules]]
+id = "password-in-code"
+description = "A password written into code, to be built into an address later"
+regex = '''(?i)\b(?:const|let|var)\s+[a-z_]*password\s*=\s*['"`]([^'"`\s$]{8,})['"`]'''
+secretGroup = 1
+keywords = ["password"]
+
+[[rules]]
+id = "vapid-private-key"
+description = "A web-push VAPID private key: 43 base64url characters after a label naming a private key"
+regex = '''(?i)(?:vapid[^\n]{0,40}?priv|private[ _-]?key)[^\n]{0,60}?[=:]\s*['"]?([A-Za-z0-9_-]{43})(?:[^A-Za-z0-9_-]|$)'''
+secretGroup = 1
+keywords = ["vapid", "private"]

@@ -214,6 +214,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/lucide-icons.js | 2026-10-03 | read whole: sound |
 | scripts/schema-snapshot.mjs | 2026-09-28 | 5 findings; an orphan note trailed its code; the case for the snapshot kept, the incident counts dropped |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
+| scripts/secrets-planted.cjs | 2026-10-15 | new |
 | scripts/surface-jest-failure.sh | 2026-10-03 | read whole: sound |
 | scripts/test-timezones.js | 2026-09-29 | the batch story reduced to the fact it guards |
 | src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-02 | Written in the launch audit: no two modules export a component under one name. |
@@ -1106,6 +1107,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/svgId.ts | 2026-10-03 | new: the one paint id (the Lobby’s and the room light’s) |
 | src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-01 | written: the raw-router ratchet |
+| src/utils/__tests__/secretsScan.guard.test.ts | 2026-10-15 | new |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
 | src/utils/text.ts | 2026-10-04 | edited: right-to-left is every block Unicode gives to right-to-left scripts, beyond the first plane too |
 | src/utils/tier.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |

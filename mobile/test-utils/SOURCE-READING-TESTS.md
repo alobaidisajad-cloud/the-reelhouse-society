@@ -153,6 +153,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/easUpload.guard.test.ts` | Every .gitignore rule against the root .easignore, which EAS reads in their place. |
 | `src/utils/__tests__/maestroFlows.guard.test.ts` | Every Maestro flow names only what the app has. |
 | `src/utils/__tests__/notificationColumns.guard.test.ts` | A notification column's four gates, the SELECT among them. |
+| `src/utils/__tests__/secretsScan.guard.test.ts` | The secrets scan's rules, its baseline and the job that runs them: the files ARE the rule. |
 | `src/utils/__tests__/schemaSnapshot.guard.test.ts` | The committed snapshot of production holds what it must. |
 | `src/utils/__tests__/theFrontDeskAnswers.test.ts` | The support address, held in one place and printed from it. |
 | `src/utils/__tests__/theTappedNoticeOpensIt.test.ts` | The push payload the edge function sends, against what the app reads. |

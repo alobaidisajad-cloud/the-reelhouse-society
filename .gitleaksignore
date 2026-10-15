@@ -1,0 +1,37 @@
+# The secrets scan's baseline: each finding judged, by fingerprint only
+# (commit:file:rule:line), never by its value, under the reason that excuses
+# it. secretsScan.guard.test.ts fails on a fingerprint under no reason, or
+# under one not in this list:
+#   dead            no longer works anywhere
+#   rotated         replaced, and the old one shown refused
+#   retired         removed from every place that used it
+#   public by design built into the app or site on purpose (a publishable key)
+#   test value      a made-up value of a test or the sealed world
+# A key still live is never listed here.
+
+# dead: Supabase personal tokens of two removed scripts; the account's
+# tokens were all deleted on 2026-10-08 (WORKLIST P0.0)
+e7e1dc74b8214521b54c1ab60d35e1ab7b26618e:scripts/migrate-staging.ps1:supabase-personal-token:2
+8a8c91b74ff1106a4dfb96dc3f2f57c59748e2e5:scripts/migrate-notifications.ps1:supabase-personal-token:1
+
+# dead: an old production database password; the login's password has been
+# a different one since before 2026-10 (WORKLIST P0.82)
+875116702e3b5db097a9b10266ba9591a9274803:run_sql.js:password-in-code:4
+3b70de0c07d25adf3a3745e900eb8ef2e8df1814:check_migration.js:password-in-code:4
+5b681aa76d8869c8ba0242ae6dde9357efdef8e7:run_lounge_migration.js:password-in-code:4
+
+# dead: a Vercel OIDC token from `vercel env pull` on 2026-04-05; such a
+# token lasts hours
+f66caf0a08dd538571ab604a447e4df76c52c888:.env.vercel.pull:jwt:2
+
+# public by design: the Supabase publishable (anon) key, built into the app
+# and the website
+c9dba7b85043933b1d626137d64a8bd2ffedaf14:mobile/eas.json:generic-api-key:31
+f66caf0a08dd538571ab604a447e4df76c52c888:.env.vercel.pull:generic-api-key:3
+3b70de0c07d25adf3a3745e900eb8ef2e8df1814:run_migration_20260329.mjs:generic-api-key:12
+
+# test value: the sealed world's made-up member password and a planted
+# secret of a guard's own test
+da6b98aaf982b7edf598c9c4cee2344baf109d74:mobile/e2e/__tests__/passwordNeverLeaves.test.ts:password-in-code:12
+da6b98aaf982b7edf598c9c4cee2344baf109d74:mobile/e2e/__tests__/runFlows.rehearsal.test.ts:generic-api-key:160
+f2d5643543611e67e66c092a0012a0ee9f317e43:mobile/src/utils/__tests__/schemaSnapshot.guard.test.ts:generic-api-key:42
