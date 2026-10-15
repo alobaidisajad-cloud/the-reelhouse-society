@@ -1,0 +1,3 @@
+#!/bin/sh
+# The checks live in mobile/scripts/hooks/pre-commit.cjs.
+exec node mobile/scripts/hooks/pre-commit.cjs

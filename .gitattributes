@@ -25,3 +25,5 @@ mobile/supabase/schema/** -text
 # runs it on both. Every *.sh was already stored with LF, so this rule changes
 # no committed byte; it only stops git from adding the CRs on checkout.
 *.sh text eol=lf
+# The git hooks have no extension, and sh reads them: the same rule.
+mobile/githooks/* text eol=lf

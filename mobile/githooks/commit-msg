@@ -1,0 +1,3 @@
+#!/bin/sh
+# Marks a commit made with the hooks: mobile/scripts/hooks/commit-msg.cjs.
+exec node mobile/scripts/hooks/commit-msg.cjs "$1"
