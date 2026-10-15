@@ -3,7 +3,7 @@
 //
 //   node mobile/supabase/diagnostics/read-only.cjs <name>_check.sql
 //
-// The address comes from the private settings file (scripts/private-settings.cjs) and is never printed.
+// The address comes from the private settings file (scripts/private-settings.cjs), never printed.
 const { spawnSync } = require('child_process');
 const { basename, join } = require('path');
 

@@ -13,7 +13,7 @@ const { readSamples, reportsSince, verdict } = require('../ios-launch.cjs') as {
   verdict: (v: { samples: { t: number; pid: string }[]; ready: boolean; reports: string[] }) => { code: number; line: string };
 };
 
-/** One sample a second for 45 s: no process before `start`, then `pid`, then `after` from `change` on. */
+/** A sample a second for 45 s: none before `start`, then `pid`, then `after` from `change` on. */
 const run = (start: number, pid = '4242', change = Infinity, after = '-') =>
   Array.from({ length: 46 }, (_, t) => ({ t, pid: t < start ? '-' : t < change ? pid : after }));
 
