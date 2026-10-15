@@ -12,36 +12,13 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { MOBILE } from '../readCode';
 import {
-  everyFile, files, kindOf, notSweptBecause, rel, repoRel, routeClosure, universesOf, UNIVERSES,
+  everyFile, files, isTest, kindOf, notSweptBecause, rel, repoRel, routeClosure, universesOf, UNIVERSES,
   type UniverseName,
 } from '../universe';
 
 const inATree = (r: string) => /^(mobile\/)?supabase\//.test(r);
-
-/**
- * Test files inside app/, which expo-router's pattern takes for routes and the
- * bundle therefore carries. Found by P0.42, fix in Phase 4: each moves out of
- * app/, or the router is told to leave it.
- */
-const TESTS_THE_ROUTER_LOADS = [
-  'app/(admin)/__tests__/tribunal.test.tsx',
-  'app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts',
-  'app/(modals)/__tests__/list-modal.curate.test.tsx',
-  'app/(modals)/__tests__/social-modal.telemetry.test.tsx',
-  'app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx',
-  'app/__tests__/boot-structure.test.tsx',
-  'app/__tests__/yourFileWaitsForYourHandle.test.tsx',
-  'app/film-reviews/__tests__/theArchiveSaysWhenItCouldNotRead.test.tsx',
-  'app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx',
-  'app/log/__tests__/theLogPageMovesEveryCard.test.tsx',
-  'app/log/__tests__/theRecordReadsTrue.test.tsx',
-  'app/log/__tests__/zz-log.gen.test.tsx',
-  'app/person/__tests__/thePersonFileReadsTrue.test.tsx',
-  'app/person/__tests__/zz-person.gen.test.tsx',
-  'app/stacks/__tests__/stack-detail.redesign.test.tsx',
-  'app/stacks/__tests__/stack-detail.telemetry.test.tsx',
-  'app/stacks/__tests__/zz-stacks.gen.test.tsx',
-];
+/** A path from mobile/ that is a test file, by the universe's own rule. */
+const aTest = (r: string) => isTest(`mobile/${r}`);
 
 describe('the shared file list names every file', () => {
   const all = everyFile();
@@ -89,9 +66,10 @@ describe('the route files, and what they reach', () => {
     const routes = files('routes').map(rel);
     expect(routes.length).toBeGreaterThan(30);
     expect(routes.filter((r) => !loaded.includes(r))).toEqual([]);
-    expect(loaded.filter((r) => !routes.includes(r) && !TESTS_THE_ROUTER_LOADS.includes(r))).toEqual([]);
-    // Each listed test is still where the router loads it, or its line goes.
-    expect(TESTS_THE_ROUTER_LOADS.filter((r) => !loaded.includes(r))).toEqual([]);
+    // The pattern also takes the tests under app/; Metro leaves each of them
+    // out of the bundle (aTestNeverShipsAsAScreen.guard.test.ts holds that).
+    expect(loaded.filter((r) => !routes.includes(r) && !aTest(r))).toEqual([]);
+    expect(loaded.filter(aTest).length).toBeGreaterThan(10);
   });
 
   it('every code file a route reaches is in the app universe', () => {
