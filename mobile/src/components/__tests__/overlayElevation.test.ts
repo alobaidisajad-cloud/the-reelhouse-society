@@ -46,7 +46,7 @@ const EXEMPT: Record<string, string> = {
     videoPlayOverlay: 'nothing in FilmMediaCarousel declares an elevation',
     topFade: 'nothing in ProfileBackdrop declares an elevation',
     // In src/features/, which this sweep reads with the whole app.
-    avatarOverlay: 'found by P0.42, fix in Phase 4: the edit-profile avatar scrim, not yet read against its siblings',
+    avatarOverlay: 'its only sibling in avatarWrap is the portrait Image or the initial Text, neither elevated (EDGE_LIT is a shadow and a gradient on the wrap itself)',
     // VERIFIED in the Person pass, 2026-08-15. The two elevated styles in
     // personStyles.ts (portraitGlow, auteurHuntMastery) live in entirely
     // different subtrees. defOverlay's only siblings inside defPosterWrap are

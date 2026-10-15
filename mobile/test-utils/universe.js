@@ -191,7 +191,6 @@ const NOT_SWEPT = [
   { why: 'files git and the env read at the top of mobile/', match: (r) => /^mobile\/(\.gitignore|\.env\.example)$/.test(r) },
   { why: 'the E2E world configuration the Supabase CLI reads', match: (r) => r === 'mobile/e2e/supabase/config.toml' },
   { why: 'the recordings the stand-in TMDB answers from', match: (r) => r.startsWith('mobile/e2e/supabase/functions/tmdb-proxy/fixtures/') },
-  { why: 'SQL kept in src/ beside the code that once called it; no tool applies it', match: (r) => r === 'mobile/src/lib/migrations/20260521_server_rpcs.sql' },
 ];
 
 /**
