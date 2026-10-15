@@ -13,7 +13,10 @@ import { join } from 'path';
 const MOBILE = join(__dirname, '..', '..', '..');
 const ROOT = join(MOBILE, '..');
 const { refusalOf } = require('../../../scripts/hooks/pre-commit.cjs') as { refusalOf: (path: string, bytes: Buffer) => string | null };
-const { basesOf } = require('../../../scripts/hooks/pre-push.cjs') as { basesOf: (input: string, git: (...a: string[]) => string) => string[] };
+const { basesOf, ignored } = require('../../../scripts/hooks/pre-push.cjs') as {
+  basesOf: (input: string, git: (...a: string[]) => string) => string[];
+  ignored: (mobile: string) => string[];
+};
 const { faultOf } = require('../../../scripts/hooks-ran.cjs') as {
   faultOf: (c: { author: string; committer: string; message: string }) => string | null;
 };
@@ -54,6 +57,15 @@ describe('before a push', () => {
       `(delete) ${'0'.repeat(40)} refs/heads/old ${'d'.repeat(40)}`,
     ].join('\n');
     expect(basesOf(input, git)).toEqual(['b'.repeat(40), 'f'.repeat(40)]);
+  });
+
+  it('leaves out the worktrees inside a checkout, never a checkout that is itself a worktree', () => {
+    for (const mobile of ['/home/m/reelhouse/mobile', '/home/m/reelhouse/.claude/worktrees/agent-a/mobile']) {
+      const left = (path: string) => ignored(mobile).some((p) => new RegExp(p).test(path));
+      expect([mobile, left(`${mobile}/src/utils/__tests__/a.test.ts`)]).toEqual([mobile, false]);
+      expect([mobile, left(`${mobile}/.claude/worktrees/b/mobile/src/a.test.ts`)]).toEqual([mobile, true]);
+      expect([mobile, left(`${mobile}/node_modules/x/a.test.ts`)]).toEqual([mobile, true]);
+    }
   });
 });
 
