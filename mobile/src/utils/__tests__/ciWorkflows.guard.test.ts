@@ -11,6 +11,10 @@
  *    workflow_run finds it — and can be started by hand. Rename a workflow and
  *    forget the alert, and its failures would go back to being silent.
  * 4. A later push never cancels an E2E run in progress, so each commit's run is read.
+ * 5. Supabase's advisers run on every push, and only as names and counts: the
+ *    repository is public, and a finding's detail could describe a weakness.
+ * 6. Known-vulnerable packages: every push judges the packages the phone holds;
+ *    the nightly judges those, the website's and the edge functions' imports.
  *
  * Parsed as YAML, not matched as text: the rules are about the structure.
  */
@@ -22,7 +26,7 @@ import { join } from 'path';
 const { parse } = require(require.resolve('yaml/package.json').replace(/package\.json$/, 'dist/index.js')) as typeof import('yaml');
 
 const DIR = join(__dirname, '..', '..', '..', '..', '.github', 'workflows');
-type Step = { uses?: string };
+type Step = { uses?: string; run?: string };
 type Job = { 'timeout-minutes'?: number; 'runs-on'?: string; steps?: Step[]; uses?: string; with?: Record<string, unknown> };
 /** A call to another of this repo's workflows: its runner and limit are checked there. */
 const LOCAL_CALL = /^\.\/\.github\/workflows\/[\w-]+\.ya?ml$/;
@@ -177,4 +181,31 @@ it('no workflow that runs the E2E flows is cancelled by a later push: each commi
   expect(flows.filter((w) => cancels(w.wf)).map((w) => w.file)).toEqual([]);
   const planted = 'name: x\non: push\nconcurrency:\n  group: g\n  cancel-in-progress: true\njobs: {}\n';
   expect([runsFlows({ text: 'run: bash mobile/e2e/run-flows.sh' }), cancels(parse(planted) as Workflow)]).toEqual([true, true]);
+});
+
+/** Every step that runs a command, with its workflow and its triggers. */
+const runSteps = () => workflows.flatMap((w) => Object.values(w.wf.jobs).flatMap((j) => (j.steps ?? [])
+  .filter((s) => typeof s.run === 'string').map((s) => ({ file: w.file, on: triggers(w.wf), run: s.run! }))));
+
+it("Supabase's advisers run on every push to main, proven able to fail, and print only names and counts", () => {
+  const advisers = runSteps().filter((s) => /e2e\/db\/advisers\.mjs/.test(s.run));
+  expect(advisers.map((s) => s.file)).toEqual(['db-integration.yml', 'db-integration.yml']);
+  expect(advisers.every((s) => s.on.includes('push'))).toBe(true);
+  expect(advisers.filter((s) => /--details|--from|--allowlist/.test(s.run)).map((s) => s.run)).toEqual([]);
+  expect(advisers.map((s) => /--self-test/.test(s.run))).toEqual([true, false]);
+});
+
+it('known-vulnerable packages: every push judges the phone, and the nightly judges the website and the functions too', () => {
+  const steps = runSteps();
+  const judged = steps.filter((s) => /e2e\/advisories\.mjs judge/.test(s.run));
+  const pushed = judged.filter((s) => s.on.includes('push'));
+  const nightly = judged.filter((s) => s.on.includes('schedule') && !s.on.includes('push'));
+  expect(pushed.map((s) => s.file)).toEqual(['god_tier_ci.yml']);
+  expect(nightly.map((s) => s.file)).toEqual(['nightly.yml']);
+  expect(nightly.every((s) => /--website/.test(s.run) && /--functions/.test(s.run))).toBe(true);
+  expect(judged.filter((s) => /--allowlist/.test(s.run)).map((s) => s.run)).toEqual([]);
+  for (const s of judged) {
+    expect({ file: s.file, readsTheBundle: steps.some((o) => o.file === s.file && /advisories\.mjs phone-modules/.test(o.run)) })
+      .toEqual({ file: s.file, readsTheBundle: true });
+  }
 });

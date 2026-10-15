@@ -29,6 +29,7 @@ on:
       - "📱 iPhone launch"
       - "🏋️ Load — 100,000 members"
       - "CI — Lighthouse Performance Gate"
+      - "🌙 Nightly"
     types: [completed]
 
 permissions:

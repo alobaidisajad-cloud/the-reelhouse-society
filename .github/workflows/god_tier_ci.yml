@@ -620,6 +620,53 @@ jobs:
           [ $rc -eq 0 ] || node e2e/annotate.mjs "What a store build is made of breaks the release rules" release-guard.txt error
           exit $rc
 
+  # ── NO KNOWN-VULNERABLE PACKAGE REACHES THE PHONE ────────────────────────────
+  # The packages the production bundles hold, read from their source maps, against
+  # npm audit's report of the app's lockfile. An advisory on one of them fails
+  # unless mobile/e2e/advisories-allowlist.json holds it with its reason. Advisories
+  # on dev and build tools are listed by the nightly (nightly.yml), never here.
+  phone-packages:
+    name: 📦 No known-vulnerable package reaches the phone
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    needs: strict-analysis
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install Mobile Dependencies
+        id: install-16
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-16.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: ./mobile
+        run: npm ci
+
+      - name: The packages the phone bundles hold
+        working-directory: ./mobile
+        run: node e2e/advisories.mjs phone-modules "$RUNNER_TEMP/phone-modules.json"
+
+      # npm audit exits 1 when it finds anything; the judge reads its report, and
+      # fails by name on one that is not a report (the registry unreachable).
+      - name: Known advisories on them
+        working-directory: ./mobile
+        run: |
+          npm audit --package-lock-only --json > "$RUNNER_TEMP/audit-app.json" || true
+          set -o pipefail
+          node e2e/advisories.mjs judge --phone "$RUNNER_TEMP/phone-modules.json" --app "$RUNNER_TEMP/audit-app.json" 2>&1 | tee advisories.txt
+          rc=${PIPESTATUS[0]}
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A known-vulnerable package reaches the phone" advisories.txt error
+          exit $rc
+
+
   web-unit-tests:
     name: 🧪 Web Vitest Unit Tests
     runs-on: ubuntu-24.04

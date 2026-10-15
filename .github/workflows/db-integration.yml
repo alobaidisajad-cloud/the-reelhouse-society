@@ -98,6 +98,18 @@ jobs:
       - name: Every pending migration, up, down and up again
         run: node mobile/e2e/db/up-down-up.mjs
 
+      # Supabase's advisers (its database linter, the dashboard's Security and
+      # Performance Advisors) on production as it will be. Every finding must be
+      # on mobile/e2e/db/advisers-allowlist.json, and every entry there must still
+      # fire. The repository is public, so only each lint's name and counts are
+      # printed; the findings themselves come from a local run with --details.
+      # The run first proves a table planted without row security is found and
+      # refused.
+      - name: The advisers are proven able to fail
+        run: node mobile/e2e/db/advisers.mjs --self-test
+      - name: Supabase's advisers, on production as it will be
+        run: node mobile/e2e/db/advisers.mjs
+
       # The builds already in members' hands (mobile/e2e/old-clients.json), each
       # checked out at its own commit and held by its own tests to the schema
       # just made: a change that breaks a shipped build fails here, not on a phone.

@@ -39,14 +39,15 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/utils/mappers.test.ts | — |  |
 | __tests__/utils/mutationExecutor.test.ts | 2026-10-03 | edited: the duplicate merge is a server rewatch under the device viewing id; the insert keeps it |
 | __tests__/utils/offlineQueue.test.ts | 2026-10-15 | edited: a member is signed in; the clear names who leaves |
-| ../.github/workflows/ci-alert.yml | 2026-10-15 | edited: watches the shipped clients' runs and the iPhone launch |
+| ../.github/workflows/ci-alert.yml | 2026-10-15 | edited: watches the nightly too |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
-| ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; Realtime started for the salon channels' rules; each package install let fail once and tried once more, 5 minutes each |
+| ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; Realtime started for the salon channels' rules; each package install let fail once and tried once more, 5 minutes each; Supabase's advisers on production as it will be, held to their allowlist, names and counts only; first proven able to fail |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
 | ../.github/workflows/e2e.yml | 2026-10-15 | edited: the app built once, its anon key beside it; the flows on three machines, each its own sealed world holding its stack's key to the app's; a verdict reads all three, and fails with any shard; the APK's prefetch read for downloadOnly, and a shipped client's named as not run; each package install let fail once and tried once more, 5 minutes each; a verdict reads all three |
-| ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash; each package install let fail once and tried once more, 5 minutes each; the Maestro lint installs its linter in its own step; the bundle job keeps its export and reads it with release-guard.cjs; a release-build job makes the release manifest, the Info.plist and the embedded config without E2E, and reads them |
+| ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash; each package install let fail once and tried once more, 5 minutes each; the Maestro lint installs its linter in its own step; the bundle job keeps its export and reads it with release-guard.cjs; a release-build job makes the release manifest, the Info.plist and the embedded config without E2E, and reads them; a job that fails when a known-vulnerable package reaches the phone and the allowlist does not hold it |
 | ../.github/workflows/ios-launch.yml | 2026-10-15 | new |
 | ../.github/workflows/load.yml | 2026-10-15 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans; each package install let fail once and tried once more, 5 minutes each |
+| ../.github/workflows/nightly.yml | 2026-10-15 | new: known-vulnerable packages each night: the phone's and the functions' fail unless allowlisted; dev, build and website listed |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
 | .maestro/auth_deep_link.yaml | 2026-10-15 | edited: reelhouse://_sitemap, opened with the app closed, lands on not-found |
@@ -137,6 +138,8 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/attempt.test.ts | 2026-10-15 | edited: a shipped client's own crash is run again once, then not judged; with no --own, or beside another crash, final as ever |
 | e2e/__tests__/appCrashes.test.ts | 2026-10-15 | edited: build 41's own crash and its aftermath reported apart and passed (cut from 38679641286); another crash, a late or foreign aftermath, no --own: fail |
 | e2e/__tests__/animationWaits.test.ts | 2026-10-04 | written with animation-waits.mjs: each wait on its flow, Android 14's named container |
+| e2e/__tests__/advisers.test.ts | 2026-10-15 | new: the advisers' verdict on saved answers: names and counts only, a refused finding, a stale entry, a sha256 entry, production-only lints, a malformed list, an unreadable answer |
+| e2e/__tests__/advisories.test.ts | 2026-10-15 | new: a phone advisory held or refused, the rest listed, stale entries, the functions' imports read offline, the source map's package folders |
 | e2e/__tests__/anonKey.test.ts | 2026-10-15 | new: the key made without a stack is the CLI's published one (by its sha256), from claims that never change; a config that sets the secret says no |
 | e2e/__tests__/glideLogLevel.test.ts | 2026-10-08 | written with glide-log-level.mjs, on dexdump lines in the shape of runs 37628665206 and 37674283540 |
 | e2e/__tests__/iosLaunch.test.ts | 2026-10-15 | the iPhone launch verdict shown saying no to each way a launch fails |
@@ -152,11 +155,13 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | edited: the ports reserved and waited for, against a fake kernel |
 | e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | edited: one shard's list of flows is what is checked, every flow without one |
+| e2e/advisories.mjs | 2026-10-15 | new: the phone's packages from the bundles' source maps; npm audit for the app and website, OSV for the functions' imports; the verdict against the allowlist |
 | e2e/anon-key.mjs | 2026-10-15 | new: the local stack's anon key as the Supabase CLI makes it, read against its apikeys.go |
 | e2e/annotate.mjs | 2026-10-04 | the password hidden at the one door out; a summary-only level for past ten notices |
 | e2e/animation-waits.mjs | 2026-10-04 | the probes come first now; true as written |
 | e2e/app-crashes.mjs | 2026-10-15 | edited: --own sets a shipped client's own crashes and their aftermath apart, failing nothing; each soft report keeps its lines |
 | e2e/attempt.mjs | 2026-10-15 | edited: a shipped client's own crash is run again once within the limits, else not judged (exit 3) |
+| e2e/db/advisers.mjs | 2026-10-15 | new: supabase db advisors on the sealed copy with the API's schemas set, judged against the allowlist, names and counts only; --self-test plants a table without row security |
 | e2e/db/bootstrap.mjs | 2026-10-15 | edited: a default naming no schema is changed by its own role, supabase_admin's in 4c |
 | e2e/db/old-clients.mjs | 2026-10-15 | new |
 | e2e/db/rehearsals.mjs | 2026-10-15 | new: seeds the made-up house, runs every *_rehearsal.sql as postgres, fails naming each that missed; --self-test proves the verdict can fail |
@@ -1063,7 +1068,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/boundedCounts.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
 | src/utils/__tests__/ciAlert.behaviour.test.ts | — |  |
-| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-15 | edited: every workflow watched and started by hand; no E2E run cancelled by a later push; a scheduled install has its limit and one retry of that step alone |
+| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-15 | edited: every workflow watched and started by hand; no E2E run cancelled by a later push; a scheduled install has its limit and one retry of that step alone; the advisers run on every push in their count-only mode; the push judges the phone's packages, the nightly the website's and the functions' too |
 | src/utils/__tests__/csv.test.ts | — |  |
 | src/utils/__tests__/dispatchExecutors.test.ts | — |  |
 | src/utils/__tests__/dispatchFieldCaps.test.ts | 2026-09-28 | Claimed to reconcile every live ceiling but read three old migrations, so subject_backdrop_ceiling had no cap. Reads the live snapshot now, and fails on any ceiling without an app cap or a stated reason. |

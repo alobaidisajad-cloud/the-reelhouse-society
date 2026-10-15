@@ -1,0 +1,65 @@
+name: 🌙 Nightly
+
+# ── WHAT CHANGES WHILE THE CODE STANDS STILL ────────────────────────────────────
+# Each night, with no push behind it. Advisories are published against packages
+# the repo already holds, so the packages are asked about again every night:
+#   - the app's: one that reaches the phone fails the run unless
+#     mobile/e2e/advisories-allowlist.json holds it; dev and build tools are listed;
+#   - the website's (the root package-lock.json): listed, never failing;
+#   - the edge functions' https://esm.sh and npm: imports, each at its exact
+#     version (an unpinned one at the version https://esm.sh resolves it to
+#     tonight), asked of the OSV database: one with an advisory fails the run
+#     unless the allowlist holds it.
+# The list is the run's summary. No push cancels a run of this workflow: it has
+# no push trigger and no concurrency group.
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  packages:
+    name: 📦 Known-vulnerable packages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      # An install that fails is tried once more, this step only; one that fails
+      # twice, or outlasts the limit, fails the run.
+      - name: Install Mobile Dependencies
+        working-directory: ./mobile
+        timeout-minutes: 5
+        run: npm ci || { echo "::warning title=npm ci::the install failed once and is tried again"; npm ci; }
+
+      - name: The packages the phone bundles hold
+        working-directory: ./mobile
+        run: node e2e/advisories.mjs phone-modules "$RUNNER_TEMP/phone-modules.json"
+
+      - name: The edge functions' imports, asked of the OSV database
+        working-directory: ./mobile
+        run: node e2e/advisories.mjs functions "$RUNNER_TEMP/functions.json"
+
+      # npm audit exits 1 when it finds anything; the judge reads its report, and
+      # fails by name on one that is not a report (the registry unreachable).
+      - name: Known advisories — the app, the website, the edge functions
+        working-directory: ./mobile
+        run: |
+          npm audit --package-lock-only --json > "$RUNNER_TEMP/audit-app.json" || true
+          (cd .. && npm audit --package-lock-only --json > "$RUNNER_TEMP/audit-website.json") || true
+          set -o pipefail
+          node e2e/advisories.mjs judge --phone "$RUNNER_TEMP/phone-modules.json" --app "$RUNNER_TEMP/audit-app.json" \
+            --website "$RUNNER_TEMP/audit-website.json" --functions "$RUNNER_TEMP/functions.json" 2>&1 | tee advisories.txt
+          rc=${PIPESTATUS[0]}
+          node e2e/annotate.mjs "Known-vulnerable packages" advisories.txt summary
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A known-vulnerable package is not on the allowlist" advisories.txt error --drop '^\s'
+          exit $rc

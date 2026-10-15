@@ -1,0 +1,53 @@
+{
+  "phone": [
+    {
+      "package": "decode-uri-component",
+      "version": "0.2.2",
+      "advisory": "GHSA-vcc3-ghjq-m6fr",
+      "reason": "Only query-string's parse calls it, and only React Navigation's default path reader calls that. expo-router gives the navigator its own reader, which decodes with the platform's decodeURIComponent, so an opened link never reaches this package."
+    },
+    {
+      "package": "linkify-it",
+      "version": "2.2.0",
+      "advisory": "GHSA-22p9-wv53-3rq4",
+      "reason": "react-native-markdown-display builds markdown-it with typographer only, and linkify is off by default, so linkify-it never scans a member's text."
+    },
+    {
+      "package": "linkify-it",
+      "version": "2.2.0",
+      "advisory": "GHSA-v245-v573-v5vm",
+      "reason": "react-native-markdown-display builds markdown-it with typographer only, and linkify is off by default, so linkify-it never scans a member's text."
+    },
+    {
+      "package": "markdown-it",
+      "version": "10.0.0",
+      "advisory": "GHSA-253c-mchw-3w2r",
+      "reason": "Both slow paths are in linkify, which react-native-markdown-display never turns on."
+    },
+    {
+      "package": "markdown-it",
+      "version": "10.0.0",
+      "advisory": "GHSA-6v5v-wf23-fmfq",
+      "reason": "The smart-quotes slowdown grows with the length of the text. The one mount, EssayBody, renders only text cut by capMarkdownForRender to the 25,000 characters an essay is written under, where the worst case measures under half a second (src/utils/markdownSafety.ts)."
+    },
+    {
+      "package": "markdown-it",
+      "version": "10.0.0",
+      "advisory": "GHSA-6vfc-qv3f-vr6c",
+      "reason": "The slowdown needs a pattern longer than 50,000 characters. The one mount, EssayBody, renders only text cut by capMarkdownForRender to 25,000."
+    },
+    {
+      "package": "nanoid",
+      "version": "3.3.13",
+      "advisory": "GHSA-28wg-ghj8-5hjv",
+      "reason": "The loop needs a negative size. React Navigation and expo-router call nanoid/non-secure's nanoid() with no size, so it is always 21."
+    },
+    {
+      "package": "nanoid",
+      "version": "3.3.13",
+      "advisory": "GHSA-2v37-7h3g-55p8",
+      "reason": "The loop needs customAlphabet or customRandom with a size of 0. Nothing on the phone calls either; React Navigation and expo-router call only nanoid()."
+    }
+  ],
+  "functions": []
+}

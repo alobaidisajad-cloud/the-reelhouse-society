@@ -167,7 +167,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/appConfig.guard.test.ts` | The build configs: only the E2E build differs; EAS uploads the commit alone, numbered as committed. |
 | `src/utils/__tests__/releaseGuard.guard.test.ts` | The workflow steps that run the release guard (never on the E2E app), the Maestro flow that opens the sitemap cold, the trace's one switch and the written exception's file: workflows, flows and which code can turn E2E on are files no render reaches. The rules themselves run on built inputs. |
 | `src/utils/__tests__/ciAlert.behaviour.test.ts` | The CI alert's script, run out of its workflow. |
-| `src/utils/__tests__/ciWorkflows.guard.test.ts` | Every workflow: actions pinned, permissions scoped. |
+| `src/utils/__tests__/ciWorkflows.guard.test.ts` | Every workflow: actions pinned, permissions scoped; the advisers run in their count-only mode, and known-vulnerable packages are judged where the item says. |
 | `src/utils/__tests__/dispatchFieldCaps.test.ts` | The Dispatch's field caps against the migrations' CHECKs. |
 | `src/utils/__tests__/easUpload.guard.test.ts` | Every .gitignore rule against the root .easignore, which EAS reads in their place. |
 | `src/utils/__tests__/maestroFlows.guard.test.ts` | Every Maestro flow names only what the app has. |
