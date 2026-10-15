@@ -201,6 +201,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/shoot.cjs | 2026-09-29 | true as written |
 | mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
+| scripts/add-only.cjs | 2026-10-15 | new |
 | scripts/bundle-size.js | 2026-10-03 | read whole: sound |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route) |
 | scripts/check-backend-live.mjs | 2026-09-28 | 13 findings; section numbers ran 1-5,9,10,8,6,7,8 and the admin-RPC note sat above the TRUNCATE block — renumbering dropped, each note moved over its own code; '#24' output replaced with what it means |
@@ -969,6 +970,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
 | src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-04 | edited: every right-to-left script reads right to left |
+| src/utils/__tests__/addOnly.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
 | src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts | 2026-10-02 | Written in the launch audit: the handle filter judged by words, one rule in apps and database. |
 | src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-02 | a hidden pressable is hidden whole (no-hide-descendants) |

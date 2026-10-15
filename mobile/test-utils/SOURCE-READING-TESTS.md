@@ -146,6 +146,7 @@ Decisions, as of 2026-09-28:
 | `src/stores/__tests__/aReactionIsOneOfFive.test.ts` | The app's five reactions against the CHECK in the schema snapshot. |
 | `test-utils/__tests__/everyCommentIsTrue.test.ts` | The reading ledger (scripts/COMMENTS-READ.md) against the files comment-truth checks. |
 | `src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts` | Every column of a filing, emptied or kept when it ends, against the schema snapshot. |
+| `src/utils/__tests__/addOnly.guard.test.ts` | Every migration in both trees, read by the add-only check, and the CI job that runs it. |
 | `src/utils/__tests__/appConfig.guard.test.ts` | The build configs: only the E2E build differs; EAS uploads the commit alone, numbered as committed. |
 | `src/utils/__tests__/ciAlert.behaviour.test.ts` | The CI alert's script, run out of its workflow. |
 | `src/utils/__tests__/ciWorkflows.guard.test.ts` | Every workflow: actions pinned, permissions scoped. |

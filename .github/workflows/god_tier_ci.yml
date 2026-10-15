@@ -134,6 +134,33 @@ jobs:
           gitleaks git . --log-opts="$range" --config .gitleaks.toml --gitleaks-ignore-path .gitleaksignore \
             --redact=100 --no-banner --log-level warn
 
+  # ── A DATABASE CHANGE NEVER QUIETLY BREAKS A SHIPPED CLIENT ──────────────────
+  # The TestFlight build and the live website keep calling the database as they
+  # were built to. Every migration this push brings is read statement by
+  # statement; a drop, rename, revoke, tighter rule or new body for an existing
+  # function needs its reason right above it (mobile/scripts/add-only.cjs).
+  add-only:
+    name: 🧱 Migrations Are Add-Only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+      - name: Every migration and function change is add-only, or says why it is safe
+        env:
+          BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # A first push of a branch, a schedule or a manual run has no "before":
+          # the commit's own parent is the base.
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            BEFORE=HEAD~1
+          fi
+          node mobile/scripts/add-only.cjs "$BEFORE"
+
   native-unit-tests:
     name: 🧪 Native Jest Unit Tests + Coverage Gate
     runs-on: ubuntu-24.04
