@@ -221,7 +221,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
 | scripts/hooks/commit-msg.cjs | 2026-10-15 | new |
 | scripts/hooks/pre-commit.cjs | 2026-10-15 | new |
-| scripts/hooks/pre-push.cjs | 2026-10-15 | new |
+| scripts/hooks/pre-push.cjs | 2026-10-15 | edited: jest leaves out only the worktrees inside this checkout, so a worktree runs its own tests |
 | scripts/hooks-ran.cjs | 2026-10-15 | new |
 | scripts/install-hooks.cjs | 2026-10-15 | new |
 | scripts/lucide-icons.js | 2026-10-03 | read whole: sound |
@@ -1029,7 +1029,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/handleHistory.wiring.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.reader.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.test.ts | — |  |
-| src/utils/__tests__/hooks.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/hooks.guard.test.ts | 2026-10-15 | edited: the push's jest leaves out nested worktrees, never the checkout's own tests |
 | src/utils/__tests__/html.test.ts | — |  |
 | src/utils/__tests__/imagePrefetchSites.guard.test.ts | 2026-10-08 | written: the four places that fetch ahead, at the size their screens draw; none on restore |
 | src/utils/__tests__/inputTrustBoundary.test.ts | 2026-10-03 | edited: a pasted separator stays a break; hidden test characters written as escapes |

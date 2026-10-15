@@ -12,12 +12,22 @@
  */
 const { execFileSync, spawnSync } = require('child_process');
 const { readFileSync } = require('fs');
-const { join } = require('path');
+const { join, sep } = require('path');
 
 const ROOT = join(__dirname, '..', '..', '..');
 const MOBILE = join(ROOT, 'mobile');
 const ZERO = /^0+$/;
 const GUARDS = ['everyCommentIsTrue', 'everySourceReaderIsLedgered', 'ciWorkflows.guard', 'hooks.guard'];
+
+/**
+ * What jest leaves out: node_modules, and the worktrees made inside this
+ * checkout, each a second copy of every test. Anchored at the checkout, so one
+ * that is itself a worktree still runs its own tests.
+ */
+const ignored = (mobile) => [
+  'node_modules',
+  `${mobile.split(sep).join('/').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/\\.claude/worktrees/`,
+];
 
 /** Where each pushed ref starts: the remote's tip, or where a new branch left main. */
 const basesOf = (input, git) => input.split('\n').filter(Boolean).flatMap((line) => {
@@ -52,7 +62,7 @@ if (require.main === module) {
     const l = run('lint on the changed files', 'npx', ['eslint', '--max-warnings=0', '--no-warn-ignored', ...code], MOBILE);
     if (l) faults.push(l);
   }
-  const jest = ['jest', '--testPathIgnorePatterns', 'worktrees', 'node_modules'];
+  const jest = ['jest', '--testPathIgnorePatterns', ...ignored(MOBILE)];
   if (code.length) {
     const j = run('the tests related to the changed files', 'npx', [...jest, '--passWithNoTests', '--findRelatedTests', ...code], MOBILE);
     if (j) faults.push(j);
@@ -64,4 +74,4 @@ if (require.main === module) {
   if (faults.length) { console.error(`\nPush refused: ${faults.join('; ')}`); process.exit(1); }
 }
 
-module.exports = { basesOf };
+module.exports = { basesOf, ignored };
