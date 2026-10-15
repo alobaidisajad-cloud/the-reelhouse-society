@@ -157,7 +157,7 @@ describe('the clients in members\' hands', () => {
     });
 
     it('each names a class in the register and a commit git has', () => {
-      expect(build41.ownCrashes?.map((o) => [o.class, o.fixedIn])).toEqual([['RN-react-destroyed-on-mount', 'e103781c']]);
+      expect(build41.ownCrashes?.map((o) => [o.class, o.fixedIn])).toEqual([['RN-react-destroyed-on-mount', '10a39fa3']]);
       for (const c of record.clients) expect(ownCrashFaults(c, { classIds, commitExists })).toEqual([]);
     });
 

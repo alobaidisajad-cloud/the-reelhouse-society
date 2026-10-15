@@ -7,7 +7,7 @@ production shows only its id, area, seriousness and count here.
 |---|---|---|---|---|---|
 | MOTION-empty-config-key | motion | serious | OPEN | 0 | An animation config key holding no value replaces Reanimated's default with nothing |
 | E2E-soft-crash-unseen | tests | serious | OPEN | 0 | React destroyed with no crash dialog passes a run whose flows relaunched over it |
-| RN-react-destroyed-on-mount | motion | serious | OPEN | 0 | A view Reanimated's exiting holds back is mounted into, and Fabric destroys React on Android |
+| RN-react-destroyed-on-mount | navigation | serious | OPEN | 0 | React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed |
 | SEC-secret-committed | security | serious | OPEN | 21 | open in production |
 | BUILD-upload-carries-ignored-files | release | serious | OPEN | 0 | An EAS build's upload carries files git keeps out |
 | DB-breaking-change-unexplained | database | serious | OPEN | 0 | A database change narrows what a shipped client relies on, with no reason why it is safe |

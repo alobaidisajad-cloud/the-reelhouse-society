@@ -25,12 +25,12 @@ classes:
     places: [emulator]
 
   - id: RN-react-destroyed-on-mount
-    title: A view Reanimated's exiting holds back is mounted into, and Fabric destroys React on Android
+    title: React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed
     seriousness: serious
-    area: motion
+    area: navigation
     status: OPEN
     count: 0
-    source: { kind: history, ref: e103781c }
+    source: { kind: history, ref: 10a39fa3 }
     places: [emulator]
 
   - id: SEC-secret-committed

@@ -16,8 +16,8 @@
         {
           "class": "RN-react-destroyed-on-mount",
           "match": "Unable to find viewState for tag",
-          "fixedIn": "e103781c",
-          "why": "On Android, Reanimated's exiting holds back a removal and the next view added into it destroys React; build 41 cannot be fixed, and this crash says nothing about the server."
+          "fixedIn": "10a39fa3",
+          "why": "On Android, React Navigation's double tab icon makes Fabric lose a view on a change of tab, and React is destroyed; build 41 cannot be fixed, and this crash says nothing about the server."
         }
       ],
       "patches": [

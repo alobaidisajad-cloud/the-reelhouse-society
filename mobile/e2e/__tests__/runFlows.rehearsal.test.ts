@@ -269,7 +269,7 @@ it('a crash fails a run whose every flow passed — and the flows are not blamed
 
 describe('a shipped client\'s own crash (E2E_OLD_CLIENT, from the real old-clients.json)', () => {
   const OLD = { E2E_OLD_CLIENT: 'TestFlight build 41' };
-  const OWN = "TestFlight build 41's own crash, class RN-react-destroyed-on-mount, fixed in e103781c";
+  const OWN = "TestFlight build 41's own crash, class RN-react-destroyed-on-mount, fixed in 10a39fa3";
 
   it('is run again once; twice, its flow is not judged and listed; the run is green', async () => {
     const r = await rehearse(['a_flow', 'b_flow'], { a_flow: ['own-crash', 'pass'], b_flow: ['own-crash', 'own-crash'] }, { env: OLD });
