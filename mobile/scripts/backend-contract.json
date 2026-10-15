@@ -162,6 +162,10 @@
       "signature": "save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean)"
     },
     {
+      "name": "send_salon_typing",
+      "signature": "send_salon_typing(p_lounge_id uuid)"
+    },
+    {
       "name": "set_lobby_withheld",
       "signature": "set_lobby_withheld(p_kind text, p_target uuid, p_keep_off boolean)"
     },

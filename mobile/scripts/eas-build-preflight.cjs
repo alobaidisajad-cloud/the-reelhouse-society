@@ -30,5 +30,12 @@ execFileSync('npx', ['jest', '--testPathIgnorePatterns', 'worktrees', 'node_modu
   'src/utils/__tests__/easUpload.guard.test.ts', 'src/utils/__tests__/appConfig.guard.test.ts'],
 { cwd: MOBILE, stdio: 'inherit', shell: process.platform === 'win32' });
 
+// No build names what production does not have yet: a pending migration is applied first.
+try {
+  execFileSync('npx', ['jest', '--testPathIgnorePatterns', 'worktrees', 'node_modules',
+    '--testMatch', '**/*.release-test.ts', '--', 'aBuildNamesOnlyWhatProductionHas'],
+  { cwd: MOBILE, stdio: 'inherit', shell: process.platform === 'win32' });
+} catch { refuse('the app names what production does not have yet (listed above)'); }
+
 const app = require(join(MOBILE, 'app.json')).expo;
 console.log(`READY: commit ${head}, iOS build ${app.ios.buildNumber}, Android versionCode ${app.android.versionCode}`);

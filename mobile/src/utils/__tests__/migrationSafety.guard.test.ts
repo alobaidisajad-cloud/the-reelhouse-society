@@ -11,7 +11,7 @@
  *     folder inside OneDrive or the repo; no other script reads it from a
  *     `.env` file or writes it anywhere.
  */
-import { readdirSync, readFileSync, statSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 
@@ -184,6 +184,22 @@ describe('a read-only check on production', () => {
     expect(checkPlan(['train_0_rehearsal.sql']).refuse).toMatch(/is not a check/);
     expect(checkPlan(['20261015_01_a_salon_channel_follows_the_salon.sql']).refuse).toMatch(/is not a check/);
     expect(checkPlan(['a_check.sql', 'b_check.sql']).refuse).toMatch(/^usage/);
+  });
+});
+
+describe('a build waits for its migrations', () => {
+  const preflight = readFileSync(join(MOBILE, 'scripts', 'eas-build-preflight.cjs'), 'utf8');
+  const { testMatch } = require(join(MOBILE, 'jest.config.js')) as { testMatch: string[] };
+
+  it('the build\'s pre-flight runs the release test, and refuses when it fails', () => {
+    expect(preflight).toContain("'--testMatch', '**/*.release-test.ts', '--', 'aBuildNamesOnlyWhatProductionHas'");
+    expect(preflight).toMatch(/catch \{ refuse\('the app names what production does not have yet/);
+    expect(existsSync(join(MOBILE, 'src', 'services', '__tests__', 'aBuildNamesOnlyWhatProductionHas.release-test.ts'))).toBe(true);
+  });
+
+  it('the ordinary suite never runs it (it is red while a migration the app needs is pending)', () => {
+    expect(testMatch.some((m) => m.includes('release-test'))).toBe(false);
+    expect(testMatch.every((m) => /\.test\.\{ts,tsx\}$/.test(m))).toBe(true);
   });
 });
 

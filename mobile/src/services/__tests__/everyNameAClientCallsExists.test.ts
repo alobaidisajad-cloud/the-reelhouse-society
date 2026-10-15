@@ -15,61 +15,26 @@
  * supabase/schema/live-schema.sql and live-outside-public.sql, which `npm run
  * schema:check` compares against the live database. The columns each query
  * asks for are held by aQueryAsksOnlyForWhatExists.
+ *
+ * One allowance: the app may name what a migration not yet applied makes, since
+ * the app reaches members only in a build, and the build's pre-flight refuses
+ * while any such name is pending (aBuildNamesOnlyWhatProductionHas.release-test.ts).
+ * The website goes live from main, so it never may.
  */
-import { readdirSync, readFileSync } from 'fs';
-import { join, relative } from 'path';
-import { stripComments } from '@/test-utils/readCode';
+import { readFileSync } from 'fs';
+import { relative } from 'path';
+import {
+  BUCKETS, type Call, callsIn, FILES, FUNCTIONS, fromTheApp, inProduction, namesMadeIn, pendingMaker, REPO, TABLES,
+} from './clientNames';
 
-const MOBILE = join(__dirname, '..', '..', '..');
-const REPO = join(MOBILE, '..');
-const SCHEMA = readFileSync(join(MOBILE, 'supabase', 'schema', 'live-schema.sql'), 'utf8');
-const OUTSIDE = readFileSync(join(MOBILE, 'supabase', 'schema', 'live-outside-public.sql'), 'utf8');
-
-const collect = (re: RegExp, src: string) => new Set([...src.matchAll(re)].map(m => m[1]));
-const TABLES = collect(/CREATE (?:TABLE|VIEW|MATERIALIZED VIEW) public\.([a-z_0-9]+) /g, SCHEMA);
-const FUNCTIONS = collect(/CREATE FUNCTION public\.([a-z_0-9]+)\(/g, SCHEMA);
-const BUCKETS = collect(/^INSERT INTO storage\.buckets \([^)]*\) VALUES \('([^']+)'/gm, OUTSIDE);
-
-const walk = (dir: string, out: string[] = []): string[] => {
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.isDirectory()) {
-      if (!['node_modules', '__tests__', 'test', 'dist'].includes(e.name)) walk(full, out);
-    } else if (/\.(ts|tsx|js|jsx)$/.test(e.name) && !/\.test\./.test(e.name)) out.push(full);
-  }
-  return out;
-};
-
-const FILES = [
-  ...walk(join(MOBILE, 'app')), ...walk(join(MOBILE, 'src')),
-  ...walk(join(REPO, 'src')), ...walk(join(REPO, 'api')),
-];
-
-type Call = { kind: 'table' | 'rpc' | 'bucket'; name: string; at: string };
-
-/** Every name a source asks the database for. */
-export const callsIn = (file: string, raw: string): Call[] => {
-  const src = stripComments(raw, file);
-  const calls: Call[] = [];
-  const line = (i: number) => `${file}:${src.slice(0, i).split('\n').length}`;
-  for (const m of src.matchAll(/\.from\(\s*['"`]([A-Za-z_0-9-]+)['"`]\s*\)/g)) {
-    const before = src.slice(0, m.index).trimEnd().slice(-40);
-    calls.push({ kind: /storage\s*$/.test(before) ? 'bucket' : 'table', name: m[1], at: line(m.index!) });
-  }
-  for (const m of src.matchAll(/\.rpc\(\s*['"`]([A-Za-z_0-9]+)['"`]/g)) {
-    calls.push({ kind: 'rpc', name: m[1], at: line(m.index!) });
-  }
-  return calls;
-};
-
-const missing = (c: Call) =>
-  c.kind === 'table' ? !TABLES.has(c.name) : c.kind === 'rpc' ? !FUNCTIONS.has(c.name) : !BUCKETS.has(c.name);
+const missing = (c: Call, pending?: Parameters<typeof pendingMaker>[1]) =>
+  !inProduction(c) && !(fromTheApp(c) && pendingMaker(c, pending));
 
 describe('every table, function and bucket a client names exists in production', () => {
   const calls = FILES.flatMap(f => callsIn(relative(REPO, f).replace(/\\/g, '/'), readFileSync(f, 'utf8')));
 
   it('none is missing — in the mobile app or the web app', () => {
-    expect(calls.filter(missing).map(c => `${c.at}  ${c.kind} ${c.name}`)).toEqual([]);
+    expect(calls.filter((c) => missing(c)).map(c => `${c.at}  ${c.kind} ${c.name}`)).toEqual([]);
   });
 
   it('the scan sees both clients and the snapshot is read — it cannot pass on nothing', () => {
@@ -88,6 +53,18 @@ describe('every table, function and bucket a client names exists in production',
       "// supabase.from('in_a_comment')",
     ].join('\n'));
     expect(planted.map(c => `${c.kind} ${c.name}`)).toEqual(['table vaults', 'bucket avatars', 'rpc fetch_programmes']);
-    expect(planted.filter(missing).map(c => c.name)).toEqual(['vaults', 'fetch_programmes']);
+    expect(planted.filter((c) => missing(c)).map(c => c.name)).toEqual(['vaults', 'fetch_programmes']);
+  });
+
+  it('lets the app, never the website, name what a pending migration makes', () => {
+    const pending = [{ name: '20990101_01_x.sql', made: namesMadeIn(
+      'CREATE TABLE public.salon_typing_sent (id uuid);\nCREATE OR REPLACE FUNCTION public.send_salon_typing(p uuid)',
+    ) }];
+    const app: Call = { kind: 'rpc', name: 'send_salon_typing', at: 'mobile/src/stores/lounge.ts:1' };
+    const site: Call = { kind: 'rpc', name: 'send_salon_typing', at: 'src/store.js:1' };
+    const table: Call = { kind: 'table', name: 'salon_typing_sent', at: 'mobile/src/x.ts:1' };
+    expect([missing(app, pending), missing(site, pending), missing(table, pending)]).toEqual([false, true, false]);
+    expect(missing(app, [])).toBe(true);
+    expect(pendingMaker(app, pending)).toBe('20990101_01_x.sql');
   });
 });
