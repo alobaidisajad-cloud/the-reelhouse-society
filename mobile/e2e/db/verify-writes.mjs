@@ -6,19 +6,17 @@
  * anything was kept. After the flows, this reads the local database for the
  * row each flow must have written, as the seeded member, with the exact words
  * it typed. Only the flows that ran are checked (E2E_FLOWS: a folder, or one file).
+ *
+ * A run of a shipped client lists, in $RUNNER_TEMP/own-crash-flows.txt, each
+ * flow its own crash ended (run-flows.sh): a flow run again after one may have
+ * saved in its first attempt too, and a flow not judged may have saved nothing.
  */
 import { execFileSync } from 'node:child_process';
-import { readdirSync } from 'node:fs';
-import { basename } from 'node:path';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { basename, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const DB = 'postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres';
-const FLOWS = process.env.E2E_FLOWS ?? 'mobile/.maestro';
-const USER = process.env.E2E_MEMBER_USERNAME;
-if (!USER) { console.error('E2E_MEMBER_USERNAME is needed.'); process.exit(2); }
-
-const ran = FLOWS.endsWith('.yaml')
-  ? [basename(FLOWS)]
-  : readdirSync(FLOWS).filter((f) => f.endsWith('.yaml') && f !== 'config.yaml');
 
 /** Per flow: the log it must leave, found by the words it typed. */
 const EXPECT = {
@@ -28,16 +26,50 @@ const EXPECT = {
   'offline_resilience.yaml': { what: 'Casablanca, logged offline and sent on reconnect', where: "l.review = 'E2E offline: we''ll always have the queue.' AND l.film_title ILIKE 'Casablanca%'" },
 };
 
-let bad = 0;
-for (const flow of ran) {
-  const e = EXPECT[flow];
-  if (!e) continue;
-  const n = Number(execFileSync('psql', [DB, '-X', '-tA', '-c',
-    `SELECT count(*) FROM public.logs l JOIN public.profiles p ON p.id = l.user_id WHERE p.username = '${USER}' AND ${e.where}`,
-  ], { encoding: 'utf8' }).trim());
-  const ok = n === 1;
-  console.log(`${ok ? '✓' : '✗'} ${flow}: ${e.what} — ${n} row(s)`);
-  if (!ok) { bad++; console.log(`::error title=E2E writes — ${flow}::expected exactly one log (${e.what}); found ${n}`); }
+/** run-flows.sh's list: flow name → "retried" or "not-judged". Empty when no file. */
+export function readOwnCrashFlows(file) {
+  if (!file || !existsSync(file)) return new Map();
+  return new Map(readFileSync(file, 'utf8').split(/\r?\n/).filter(Boolean).map((l) => l.split('\t')));
 }
-if (!ran.some((f) => EXPECT[f])) console.log('(none of the flows that ran writes a log)');
-process.exit(bad ? 1 : 0);
+
+/**
+ * The rows a flow's write check accepts: exactly one; one or two when its first
+ * attempt was ended by the client's own crash; none checked (null) when the
+ * flow was not judged.
+ */
+export function rowsAccepted(mark) {
+  if (mark === 'not-judged') return null;
+  return mark === 'retried' ? [1, 2] : [1];
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  const FLOWS = process.env.E2E_FLOWS ?? 'mobile/.maestro';
+  const USER = process.env.E2E_MEMBER_USERNAME;
+  if (!USER) { console.error('E2E_MEMBER_USERNAME is needed.'); process.exit(2); }
+
+  const ran = FLOWS.endsWith('.yaml')
+    ? [basename(FLOWS)]
+    : readdirSync(FLOWS).filter((f) => f.endsWith('.yaml') && f !== 'config.yaml');
+  const marks = readOwnCrashFlows(process.env.RUNNER_TEMP && join(process.env.RUNNER_TEMP, 'own-crash-flows.txt'));
+
+  let bad = 0;
+  for (const flow of ran) {
+    const e = EXPECT[flow];
+    if (!e) continue;
+    const accepted = rowsAccepted(marks.get(basename(flow, '.yaml')));
+    if (!accepted) {
+      console.log(`– ${flow}: not judged (the client's own crash ended it), so its write is not checked`);
+      continue;
+    }
+    const n = Number(execFileSync('psql', [DB, '-X', '-tA', '-c',
+      `SELECT count(*) FROM public.logs l JOIN public.profiles p ON p.id = l.user_id WHERE p.username = '${USER}' AND ${e.where}`,
+    ], { encoding: 'utf8' }).trim());
+    const ok = accepted.includes(n);
+    const why = accepted.length > 1 ? " (its first attempt, ended by the client's own crash, may have saved too)" : '';
+    console.log(`${ok ? '✓' : '✗'} ${flow}: ${e.what} — ${n} row(s)${why}`);
+    const expected = accepted.length > 1 ? 'one or two logs' : 'exactly one log';
+    if (!ok) { bad++; console.log(`::error title=E2E writes — ${flow}::expected ${expected} (${e.what}); found ${n}`); }
+  }
+  if (!ran.some((f) => EXPECT[f])) console.log('(none of the flows that ran writes a log)');
+  process.exit(bad ? 1 : 0);
+}

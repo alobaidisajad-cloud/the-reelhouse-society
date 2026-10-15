@@ -5,10 +5,11 @@
  *   node e2e/attempt.mjs --kind flow|probe --exit <code> --junit <report.xml>
  *        --debug <maestro --debug-output dir> --log <device log for the attempt>
  *        --left <seconds> --need <seconds> --retries <so far> --max <cap>
- *        --device alive|gone [--attempt <1|2>]
+ *        --device alive|gone [--attempt <1|2>] [--own <file>] [--before own]
  *
- * Prints "retry" or "final" on its first line, then why, then the evidence;
- * exits 0 for "retry", 1 for "final". run-flows.sh runs a flow again only on 0.
+ * Prints "retry", "final" or "not-judged" on its first line, then why, then the
+ * evidence; exits 0 for "retry", 1 for "final", 3 for "not-judged". run-flows.sh
+ * runs a flow again only on 0.
  *
  * Only an attempt that tells us nothing about the app is run again, once:
  *
@@ -32,11 +33,17 @@
  * emulator is gone, the app crashed or froze in it (the device's log, or
  * Maestro's own crash/ANR report), it was already the second attempt, the run
  * already ran `--max` attempts again, or fewer than `--need` seconds are left.
+ *
+ * A SHIPPED CLIENT'S OWN CRASH (--own, from old-clients.json; nothing else
+ * crashed): the build carries it, fixed since in the app, so the attempt says
+ * nothing about the server. It is run again once, within the same limits. If
+ * it cannot be, or dies of it again, the flow is not judged (exit 3): no
+ * verdict, and run-flows.sh lists it, so the gap is seen.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { findCrashes, maestroReports } from './app-crashes.mjs';
+import { findCrashes, maestroReports, ownName, readOwn, splitOwn } from './app-crashes.mjs';
 
 /** Maestro's transport deaths: its own "infrastructure, not a test failure" types. */
 export const TRANSPORT_DEATHS = ['maestro.android.DeviceServerDiedException', 'maestro.DeviceUnreachableException'];
@@ -105,17 +112,32 @@ export function decide(o) {
   const steps = recordedSteps(o.debug);
   const log = maestroLog(o.debug);
   const lines = o.log && existsSync(o.log) ? readFileSync(o.log, 'utf8').split(/\r?\n/) : [];
-  const crashes = [...findCrashes(lines), ...maestroReports([o.debug])];
+  const own = o.own ?? { client: '', ownCrashes: [] };
+  const { mine, rest } = splitOwn(findCrashes(lines), own.ownCrashes);
+  const crashes = [...rest, ...maestroReports([o.debug])];
   const reason = junit?.firstLine ? junit.firstLine.slice(0, 300) : '(Maestro wrote no report)';
 
   evidence.push(`Maestro said: ${reason}`);
   evidence.push(`steps Maestro recorded: ${steps}; steps in its own log: ${log.present ? log.steps : '(no log)'}`);
   evidence.push(`app crash or freeze in this attempt: ${crashes.length ? crashes.map((c) => `${c.kind} — ${c.what}`.slice(0, 160)).join('; ') : 'none'}`);
+  const owned = mine.find((c) => !c.aftermath);
+  if (owned) evidence.push(`${ownName(own.client, owned.own)}, in this attempt: ${owned.what.slice(0, 160)}`);
 
   const final = (why) => ({ retry: false, why: `not run again: ${why}`, evidence });
   if (o.exit === 124 || o.exit === 137) return final('it ran out of its time');
   if (o.device !== 'alive') return final('the emulator no longer answers');
   if (crashes.length) return final(`the app crashed or froze during it — ${crashes[0].what.slice(0, 160)}`);
+  if (owned) {
+    const named = ownName(own.client, owned.own);
+    const notJudged = (why) => ({ retry: false, notJudged: true, why: `not judged: ${why}`, evidence });
+    if (o.attempt >= 2) {
+      const again = o.before === 'own' ? 'twice' : 'on its second attempt';
+      return notJudged(`${own.client}'s own crash, ${again}: class ${owned.own.class}`);
+    }
+    if (o.retries >= o.max) return notJudged(`${named}, and this run has already run ${o.retries} attempt${o.retries === 1 ? '' : 's'} again (the most it may)`);
+    if (o.left < o.need) return notJudged(`${named}, and ${o.left}s are left where running it again needs ${o.need}s`);
+    return { retry: true, why: `run again: ${named}`, evidence };
+  }
 
   const neverBegan = !!junit?.failed && steps === 0 && log.present && log.steps === 0;
   const death = junit?.cls && TRANSPORT_DEATHS.includes(junit.cls) ? junit.cls : (!junit?.firstLine && log.death) || null;
@@ -142,13 +164,14 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const o = {
     kind: opt('--kind'), exit: num('--exit'), junit: opt('--junit'), debug: opt('--debug') ?? '', log: opt('--log'),
     left: num('--left'), need: num('--need'), retries: num('--retries'), max: num('--max'), device: opt('--device'),
-    attempt: Number(opt('--attempt') ?? 1),
+    attempt: Number(opt('--attempt') ?? 1), before: opt('--before') ?? '',
   };
   if (!['flow', 'probe'].includes(o.kind) || [o.exit, o.left, o.need, o.retries, o.max, o.attempt].some(Number.isNaN) || !['alive', 'gone'].includes(o.device)) {
-    console.error('usage: node e2e/attempt.mjs --kind flow|probe --exit N --junit F --debug D --log F --left S --need S --retries N --max N --device alive|gone [--attempt N]');
+    console.error('usage: node e2e/attempt.mjs --kind flow|probe --exit N --junit F --debug D --log F --left S --need S --retries N --max N --device alive|gone [--attempt N] [--own F] [--before own]');
     process.exit(2);
   }
+  try { o.own = readOwn(opt('--own')); } catch (e) { console.error(`attempt: ${e.message}`); process.exit(2); }
   const d = decide(o);
-  console.log([d.retry ? 'retry' : 'final', d.why, ...d.evidence.map((e) => `  ${e}`)].join('\n'));
-  process.exit(d.retry ? 0 : 1);
+  console.log([d.retry ? 'retry' : d.notJudged ? 'not-judged' : 'final', d.why, ...d.evidence.map((e) => `  ${e}`)].join('\n'));
+  process.exit(d.retry ? 0 : d.notJudged ? 3 : 1);
 }

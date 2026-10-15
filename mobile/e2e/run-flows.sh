@@ -15,6 +15,9 @@
 # And whatever the flows said, the app crashing or freezing at any moment of the
 # run fails it (e2e/app-crashes.mjs): a flow can pass over a crash. So does the
 # app taking Android's splash over on any launch (e2e/splash-handoff.mjs).
+# A run of a shipped client (E2E_OLD_CLIENT) is told the crashes that build
+# carries, fixed since in the app (old-clients.json): they fail nothing, a flow
+# one ends is run once more, and a flow it ends twice is listed as not judged.
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 # Maestro sends usage analytics unless told not to; nothing leaves the sealed world.
@@ -27,6 +30,15 @@ FLOWS=${E2E_FLOWS:-mobile/.maestro}
 MOTION_SECONDS=${E2E_MOTION_SECONDS:-15}
 OUT=${RUNNER_TEMP:-/tmp}
 MAESTRO=${MAESTRO_BIN:-$HOME/.maestro/bin/maestro}
+# The shipped client's own crashes, for the crash gate and attempt.mjs; none for this app.
+own=()
+: > "$OUT/own-crash-flows.txt"
+: > "$OUT/not-judged.txt"
+if [ -n "${E2E_OLD_CLIENT:-}" ]; then
+  node mobile/e2e/old-clients.cjs --own-crashes "$E2E_OLD_CLIENT" > "$OUT/own-crashes.json" \
+    || { echo "::error title=E2E::no whole record of ${E2E_OLD_CLIENT} in old-clients.json"; exit 1; }
+  own=(--own "$OUT/own-crashes.json")
+fi
 
 adb install -r "$APK" || { echo "::error title=E2E::the app would not install"; exit 1; }
 # A freshly booted emulator on a software GPU is slow enough that its own
@@ -194,7 +206,8 @@ timeout 90 adb shell am start-activity -W -n "$PKG/.MainActivity" > "$OUT/motion
 sleep "$MOTION_SECONDS"
 motion_pid="$(timeout 20 adb shell pidof "$PKG" | tr -d '\r')"
 timeout 60 adb logcat -d -v threadtime > "$OUT/motion/launch.log" 2>/dev/null
-node mobile/e2e/app-crashes.mjs "$OUT/motion/launch.log" --stream-alive yes --device-now "$(device_clock)" > "$OUT/motion/gate.txt" 2>&1
+node mobile/e2e/app-crashes.mjs "$OUT/motion/launch.log" --stream-alive yes --device-now "$(device_clock)" \
+  ${own[@]+"${own[@]}"} > "$OUT/motion/gate.txt" 2>&1
 motion_gate=$?
 motion_fault=""
 [ -n "$motion_pid" ] || motion_fault="the app was not running ${MOTION_SECONDS} s after its launch"
@@ -234,7 +247,7 @@ mkdir -p "$OUT/keyboard-room"
 room_rc=0
 for probe in 'stack|"FILE THE STACK"' 'log|#review-input'; do
   name=${probe%%|*}; target=${probe#*|}
-  attempt=1
+  attempt=1; probe_before=""
   while :; do
     if [ $gone -eq 1 ]; then echo "$name: skipped (the emulator was gone)" >> "$OUT/keyboard-room.txt"; room_rc=1; break; fi
     left=$(( DEADLINE - $(date +%s) ))
@@ -264,10 +277,17 @@ for probe in 'stack|"FILE THE STACK"' 'log|#review-input'; do
       verdict="$(node mobile/e2e/attempt.mjs --kind probe --exit "$prc" --junit "$OUT/flow-reports/keyboard-$name.xml" \
         --debug "$OUT/maestro-debug/keyboard-$name" --log "$OUT/flow-hierarchy/$name.log" \
         --left $(( left - RESERVE )) --need 240 --retries "$retries" --max "$RETRIES_MAX" \
-        --device "$(device_state)" --attempt "$attempt" 2>&1)"
+        --device "$(device_state)" --attempt "$attempt" ${own[@]+"${own[@]}"} $probe_before 2>&1)"
       vrc=$?
       echo "$verdict" > "$OUT/flow-hierarchy/$name.verdict"
+      if [ $vrc -eq 3 ]; then
+        why="$(echo "$verdict" | sed -n 2p | sed 's/^not judged: //')"
+        echo "$name: not judged ($why)" >> "$OUT/keyboard-room.txt"
+        echo "[Not judged] the $name probe ($why)" >> "$OUT/not-judged.txt"
+        break
+      fi
       if [ $vrc -eq 0 ]; then
+        echo "$verdict" | sed -n 2p | grep -q "'s own crash, class " && probe_before="--before own"
         { echo "the $name probe — $(echo "$verdict" | sed -n 2p) (first attempt: ${took}s, exit ${prc})"
           echo "$verdict" | tail -n +3; } >> "$OUT/retries.txt"
         set_aside "keyboard-$name" "$OUT/keyboard-room/$name.log" "$OUT/flow-reports/keyboard-$name.xml" \
@@ -330,7 +350,7 @@ idx=0
 for flow in $FLOW_LIST; do
   idx=$((idx + 1))
   name=$(basename "$flow" .yaml)
-  attempt=1
+  attempt=1; before=""
   while :; do
     if [ $gone -eq 1 ]; then
       echo "[Skipped] $name (the emulator was gone)" >> "$OUT/maestro.log"; rc=1; flows_failed=1; break
@@ -363,9 +383,14 @@ for flow in $FLOW_LIST; do
     verdict="$(node mobile/e2e/attempt.mjs --kind flow --exit "$frc" --junit "$OUT/flow-reports/$name.xml" \
       --debug "$OUT/maestro-debug/$name" --log "$OUT/flow-hierarchy/$name.log" \
       --left "$left" --need $(( (FLOW_COUNT - idx + 1) * PER_FLOW )) --retries "$retries" --max "$RETRIES_MAX" \
-      --device "$(device_state)" --attempt "$attempt" 2>&1)"
+      --device "$(device_state)" --attempt "$attempt" ${own[@]+"${own[@]}"} $before 2>&1)"
     vrc=$?
     if [ $vrc -eq 0 ]; then
+      # A first attempt ended by the client's own crash may have saved something:
+      # verify-writes.mjs reads this list.
+      if echo "$verdict" | sed -n 2p | grep -q "'s own crash, class "; then
+        before="--before own"; printf '%s\tretried\n' "$name" >> "$OUT/own-crash-flows.txt"
+      fi
       echo "[Retried] $name (its first attempt, ${took}s: $(echo "$verdict" | sed -n 2p | sed 's/^run again: //'))" >> "$OUT/maestro.log"
       { echo "$name — $(echo "$verdict" | sed -n 2p) (first attempt: ${took}s, exit ${frc})"
         echo "$verdict" | tail -n +3; } >> "$OUT/retries.txt"
@@ -374,10 +399,18 @@ for flow in $FLOW_LIST; do
         "$OUT/flow-hierarchy/$name.log" "$OUT/flow-hierarchy/$name.verdict"
       retries=$((retries + 1)); attempt=2; continue
     fi
-    cat "$OUT/attempt.out" >> "$OUT/maestro.log"
     echo "$verdict" > "$OUT/flow-hierarchy/$name.verdict"
     [ $attempt -eq 2 ] && echo "  and ${name}'s second attempt failed: $(echo "$verdict" | sed -n 2p)" >> "$OUT/retries.txt"
-    rc=1; flows_failed=1
+    if [ $vrc -eq 3 ]; then
+      # No verdict on the server either way: listed, never counted as passed or failed
+      # (Maestro's own "[Failed]" line is kept, renamed, out of the summary).
+      sed 's/^\[Failed\] /Maestro: failed, not counted: /' "$OUT/attempt.out" >> "$OUT/maestro.log"
+      echo "[Not judged] $name ($(echo "$verdict" | sed -n 2p | sed 's/^not judged: //'))" | tee -a "$OUT/not-judged.txt" >> "$OUT/maestro.log"
+      printf '%s\tnot-judged\n' "$name" >> "$OUT/own-crash-flows.txt"
+    else
+      cat "$OUT/attempt.out" >> "$OUT/maestro.log"
+      rc=1; flows_failed=1
+    fi
     { [ $frc -eq 124 ] || [ $frc -eq 137 ]; } && echo "[Failed] $name (ran out of its time)" >> "$OUT/maestro.log"
     rm -rf "$HOME/.maestro/sessions"
     timeout 60 "$MAESTRO" hierarchy > "$OUT/flow-hierarchy/$name.json" 2>/dev/null || true
@@ -392,7 +425,7 @@ done
 
 
 cat "$OUT/maestro.log"
-grep -E '^\[(Passed|Failed|Skipped|Gone|Retried)\]' "$OUT/maestro.log" > "$OUT/maestro-summary.txt" || true
+grep -E '^\[(Passed|Failed|Skipped|Gone|Retried|Not judged)\]' "$OUT/maestro.log" > "$OUT/maestro-summary.txt" || true
 # Everything below that asks the device waits for it forever if it is gone, so
 # each such call has a limit, and a vanished device is reported as what it is.
 alive=1
@@ -438,8 +471,12 @@ device_now=""
 sleep 2   # the copy is a moment behind the device
 if node mobile/e2e/app-crashes.mjs "$OUT/logcat-stream.txt" --flow-times "$OUT/flow-times.txt" \
     --maestro "$OUT/maestro-debug" --maestro "$OUT/first-attempts" \
-    --stream-alive "$stream_alive" --device-now "$device_now" > "$OUT/app-crashes.txt"; then
-  node mobile/e2e/annotate.mjs "No crash or freeze" "$OUT/app-crashes.txt" summary
+    --stream-alive "$stream_alive" --device-now "$device_now" ${own[@]+"${own[@]}"} > "$OUT/app-crashes.txt"; then
+  if grep -q "'s own crash, class " "$OUT/app-crashes.txt"; then
+    node mobile/e2e/annotate.mjs "No crash or freeze but ${E2E_OLD_CLIENT}'s own" "$OUT/app-crashes.txt" warning
+  else
+    node mobile/e2e/annotate.mjs "No crash or freeze" "$OUT/app-crashes.txt" summary
+  fi
 else
   rc=1
   node mobile/e2e/annotate.mjs "The app crashed or froze during the run" "$OUT/app-crashes.txt"
@@ -463,6 +500,8 @@ else
 fi
 [ -s "$OUT/retries.txt" ] && node mobile/e2e/annotate.mjs "Run twice: ${retries} attempt$([ $retries -eq 1 ] || echo s) told nothing about the app" "$OUT/retries.txt" warning
 [ -s "$OUT/phone-fixes.txt" ] && node mobile/e2e/annotate.mjs "The phone's animations were not off" "$OUT/phone-fixes.txt" warning
+not_judged=$(grep -c . "$OUT/not-judged.txt")
+[ "$not_judged" -gt 0 ] && node mobile/e2e/annotate.mjs "Not judged — ${not_judged} ended by ${E2E_OLD_CLIENT}'s own crash" "$OUT/not-judged.txt" warning
 
 # How long each screen took to show what it was opened for (useScreenReady),
 # read from the device's log. With a ceilings file it is a gate; --complete
@@ -470,7 +509,7 @@ fi
 slow=0
 times_args=()
 [ -f mobile/e2e/screen-ceilings.json ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
-[ $flows_failed -eq 0 ] && [ $gone -eq 0 ] && times_args+=(--complete)
+[ $flows_failed -eq 0 ] && [ $gone -eq 0 ] && [ "$not_judged" -eq 0 ] && times_args+=(--complete)
 if node mobile/e2e/screen-times.mjs "$OUT/logcat-stream.txt" ${times_args[@]+"${times_args[@]}"} > "$OUT/screen-times.txt"; then
   note "How long each screen took" "$OUT/screen-times.txt"
 else
@@ -484,7 +523,9 @@ if [ $rc -ne 0 ]; then
   if [ $flows_failed -ne 0 ]; then
     node mobile/e2e/annotate.mjs "E2E flows failed" "$OUT/maestro-summary.txt"
   else
-    note "Every flow passed — the run failed on what the other errors name" "$OUT/maestro-summary.txt"
+    passed="Every flow passed"
+    [ "$not_judged" -gt 0 ] && passed="Every flow passed or was not judged"
+    note "$passed — the run failed on what the other errors name" "$OUT/maestro-summary.txt"
   fi
   # Each failed flow's step, why — in Maestro's own words too, from its JUnit
   # report — and its OWN screen at that moment. Past ten notices, the summary.

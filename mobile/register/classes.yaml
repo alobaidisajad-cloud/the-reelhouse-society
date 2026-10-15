@@ -24,6 +24,15 @@ classes:
     source: { kind: history, ref: "Sealed E2E 38262703073" }
     places: [emulator]
 
+  - id: RN-react-destroyed-on-mount
+    title: A view Reanimated's exiting holds back is mounted into, and Fabric destroys React on Android
+    seriousness: serious
+    area: motion
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: e103781c }
+    places: [emulator]
+
   - id: SEC-secret-committed
     area: security
     seriousness: serious

@@ -1,0 +1,284 @@
+10-15 04:38:51.500   522   551 I ActivityManager: Start proc 14462:com.reelhouse.society/u0a192 for next-top-activity {com.reelhouse.society/com.reelhouse.society.MainActivity}
+10-15 04:40:08.138 14462 14491 W ReactNativeJS: [e2e] darkroom.header {"instance":"vau7","mounted":true}
+10-15 04:40:08.138 14462 14491 W ReactNativeJS: [e2e] darkroom.suggestions {"instance":"vau7","open":false,"count":0}
+10-15 04:40:08.275 14462 14462 E unknown:MountItemDispatcher: dispatchMountItems: caught exception, displaying mount state
+10-15 04:40:08.275 14462 14462 E unknown:MountItemDispatcher: com.facebook.react.bridge.RetryableMountingLayerException: Unable to find viewState for tag 2450. Surface stopped: false
+10-15 04:40:08.365 14462 14462 E unknown:SurfaceMountingManager: Views created for surface {1}:
+10-15 04:40:08.425 14462 14462 E unknown:FabricUIManager: Exception thrown when executing UIFrameGuarded
+10-15 04:40:08.425 14462 14462 E unknown:FabricUIManager: com.facebook.react.bridge.RetryableMountingLayerException: Unable to find viewState for tag 2450. Surface stopped: false
+10-15 04:40:08.426 14462 14462 W unknown:BridgelessReact: ReactHost{0}.handleHostException(message = "Unable to find viewState for tag 2450. Surface stopped: false")
+10-15 04:40:08.429 14462 14490 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask()
+10-15 04:40:08.429 14462 14490 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(getOrCreateDestroyTask()): handleHostException(message = "Unable to find viewState for tag 2450. Surface stopped: false")
+10-15 04:40:08.430 14462 14490 E unknown:ReactHost: Unhandled SoftException
+10-15 04:40:08.430 14462 14490 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(getOrCreateDestroyTask()): handleHostException(message = "Unable to find viewState for tag 2450. Surface stopped: false")
+10-15 04:40:08.430 14462 14490 E unknown:ReactHost: Caused by: com.facebook.react.bridge.RetryableMountingLayerException: Unable to find viewState for tag 2450. Surface stopped: false
+10-15 04:40:08.430 14462 14490 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting createReactInstance task ref
+10-15 04:40:08.437 14462 14480 D EGL_emulation: app_time_stats: avg=1400.45ms min=143.60ms max=2657.31ms count=2
+10-15 04:40:08.442 14462 14462 D AutofillManager: view not autofillable - not passing ime action check
+10-15 04:40:08.442 14462 14462 D AutofillManager: view not autofillable - not passing ime action check
+10-15 04:40:08.448 14462 14462 D AutofillManager: view not autofillable - not passing ime action check
+10-15 04:40:08.448 14462 14462 D AutofillManager: view not autofillable - not passing ime action check
+10-15 04:40:08.451 14462 14462 W unknown:FabricUIManager: Not flushing pending UI operations: exception was previously thrown
+10-15 04:40:08.547 14462 14462 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Starting React Native destruction
+10-15 04:40:08.547 14462 14462 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Move ReactHost to onHostDestroy()
+10-15 04:40:08.547 14462 14462 W unknown:BridgelessReact: ReactContext.onHostPause()
+10-15 04:40:08.547 14462 14462 E unknown:ReactNative: Tried to remove non-existent frame callback
+10-15 04:40:08.548 14462 14462 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:40:08.548 14462 14462 E unknown:ReactHost: Unhandled SoftException
+10-15 04:40:08.548 14462 14462 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:40:08.548 14462 14462 W unknown:BridgelessReact: ReactContext.onHostDestroy()
+10-15 04:40:08.555 14462 14462 E unknown:ReactNative: Tried to remove non-existent frame callback
+10-15 04:40:08.562 14462 14490 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Stopping all React Native surfaces
+10-15 04:40:08.562 14462 14490 E unknown:SurfaceMountingManager: Stopping surface [1]
+10-15 04:40:08.574 14462 14462 E Reanimated: Unable to get reference to react activity
+10-15 04:40:08.592 14462 14462 E unknown:ViewManager: onDropViewInstance: view [222] has a context that is not a ThemedReactContext: com.facebook.react.runtime.BridgelessReactContext@e0ad317
+10-15 04:40:08.599 14462 14462 E unknown:ViewManager: onDropViewInstance: view [4636] has a context that is not a ThemedReactContext: com.facebook.react.runtime.BridgelessReactContext@e0ad317
+10-15 04:40:08.599 14462 14462 I ReactNative: [GESTURE HANDLER] Tearing down gesture handler registered for root view com.facebook.react.runtime.ReactSurfaceView{9eafbf1 V.E...... ........ 0,0-1080,2400 #1}
+10-15 04:40:08.601 14462 14462 E unknown:ViewManager: onDropViewInstance: view [1850] has a context that is not a ThemedReactContext: com.facebook.react.runtime.BridgelessReactContext@e0ad317
+10-15 04:40:08.605 14462 14462 E unknown:ViewManager: onDropViewInstance: view [2826] has a context that is not a ThemedReactContext: com.facebook.react.runtime.BridgelessReactContext@e0ad317
+10-15 04:40:08.605 14462 14462 E unknown:ViewManager: onDropViewInstance: view [2902] has a context that is not a ThemedReactContext: com.facebook.react.runtime.BridgelessReactContext@e0ad317
+10-15 04:40:08.606 14462 14462 E unknown:SurfaceMountingManager: Surface [1] was stopped on SurfaceMountingManager.
+10-15 04:40:08.630 14462 14490 E ViewRootImpl: Accessibility content change on non-UI thread. Future Android versions will throw an exception.
+10-15 04:40:08.630 14462 14490 E ViewRootImpl: android.view.ViewRootImpl$CalledFromWrongThreadException: Only the original thread that created a view hierarchy can touch its views.
+10-15 04:40:08.669 14462 14491 W ReactNativeJS: [e2e] screen.ready {"name":"darkroom","ms":611}
+10-15 04:40:08.884 14462 14492 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is null.
+10-15 04:40:08.884 14462 14492 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is null.
+10-15 04:40:08.884 14462 14492 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is null.
+10-15 04:40:08.885 14462 14491 E Reanimated: Unable to get reference to react activity
+10-15 04:40:08.892 14462 14491 W ReactNativeJS: [e2e] darkroom.header {"instance":"vau7","mounted":false}
+10-15 04:40:08.921 14462 14569 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:40:08.922 14462 14569 E unknown:ReactHost: Unhandled SoftException
+10-15 04:40:08.922 14462 14569 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:40:08.942 14462 14569 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:40:08.943 14462 14569 E unknown:ReactHost: Unhandled SoftException
+10-15 04:40:08.943 14462 14569 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:40:08.946 14462 14569 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:40:08.946 14462 14569 E unknown:ReactHost: Unhandled SoftException
+10-15 04:40:08.946 14462 14569 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:40:08.947 14462 14569 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:40:08.947 14462 14569 E unknown:ReactHost: Unhandled SoftException
+10-15 04:40:08.947 14462 14569 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:40:08.947 14462 14569 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:40:08.947 14462 14569 E unknown:ReactHost: Unhandled SoftException
+10-15 04:40:08.947 14462 14569 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:40:08.948 14462 14462 D AutofillManager: view not autofillable - not passing ime action check
+10-15 04:40:08.948 14462 14462 D AutofillManager: view not autofillable - not passing ime action check
+10-15 04:40:08.954 14462 14462 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Destroying MemoryPressureRouter
+10-15 04:40:08.954 14462 14462 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting ReactContext ref
+10-15 04:40:08.954 14462 14462 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Destroying ReactContext
+10-15 04:40:08.958 14462 14490 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting ReactInstance ptr
+10-15 04:40:08.959 14462 14490 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Destroying ReactInstance
+10-15 04:40:09.026 14462 14490 I ExpoModulesCore: ✅ ModuleRegistry was destroyed
+10-15 04:40:09.029 14462 14490 I ExpoModulesCore: ✅ AppContext was destroyed
+10-15 04:40:09.030 14462 14490 I ExpoModulesCore: ✅ KotlinInteropModuleRegistry was destroyed
+10-15 04:40:09.070 14462 14462 E Reanimated: Unable to get reference to react activity
+10-15 04:40:09.070 14462 14462 E Reanimated: Unable to get reference to react activity
+10-15 04:40:09.072 14462 14490 I RNSkia  : JniSkiaManager dtor
+10-15 04:40:09.074 14462 14490 E unknown:ReactNative: Tried to remove non-existent frame callback
+10-15 04:40:09.076 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.076 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.077 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.077 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.078 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.078 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.079 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.079 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.080 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.080 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.081 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.083 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.083 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.084 14462 14490 I RNMMKV  : Destroying MMKV instance "reelhouse-preinit"...
+10-15 04:40:09.084 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.085 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.085 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.085 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.086 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.087 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.087 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.088 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.089 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.090 14462 14490 W System.err: java.lang.NoSuchFieldException: No field mIsFinished in class Lcom/facebook/react/bridge/queue/MessageQueueThreadImpl; (declaration of 'com.facebook.react.bridge.queue.MessageQueueThreadImpl' appears in /data/app/~~rDQZqHeYzbqxqKFFpGFnVA==/com.reelhouse.society-eeEkMeGDeaLgwRZ0B7phxw==/base.apk!classes3.dex)
+10-15 04:40:09.097 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.097 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.098 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.099 14462 14490 I RNMMKV  : Destroying MMKV instance "mmkv.default"...
+10-15 04:40:09.103 14462 14490 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:40:09.139 14462 14490 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting start task ref
+10-15 04:40:09.139 14462 14490 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting destroy task ref
+10-15 04:42:26.564   522   551 I ActivityManager: Start proc 16204:com.reelhouse.society/u0a192 for next-top-activity {com.reelhouse.society/com.reelhouse.society.MainActivity}
+10-15 04:42:28.001 16204 16233 I ExpoModulesCore: ✅ Constants were exported
+10-15 04:42:28.002 16204 16233 I dev.expo.updates: {"timestamp":1792039348002,"message":"UpdatesModule: getConstants called","code":"None","level":"info"}
+10-15 04:42:28.039 16204 16233 D CompatibilityChangeReporter: Compat change id reported: 289878283; UID 10192; state: ENABLED
+10-15 04:42:28.039 16204 16233 I ReactNativeJS: Running "main"
+10-15 04:42:28.052 16204 16233 I RNMMKV  : Initializing MMKV at /data/user/0/com.reelhouse.society/files/mmkv...
+10-15 04:42:28.052 16204 16233 I RNMMKV  : Creating MMKV instance "reelhouse-preinit"... (Path: , Encrypted: false)
+10-15 04:42:28.169 16204 16233 W BridgelessReactContext: [WARNING] Bridgeless doesn't support CatalystInstance. Accessing an API that's not part of the new architecture is not encouraged usage.
+10-15 04:42:28.265 16204 16233 I RNMMKV  : Creating MMKV instance "mmkv.default"... (Path: , Encrypted: false)
+10-15 04:42:28.266 16204 16233 W ReactNativeJS: [e2e] storage.opened {"encrypted":true}
+10-15 04:42:28.371 16204 16204 D CompatibilityChangeReporter: Compat change id reported: 171228096; UID 10192; state: ENABLED
+10-15 04:42:28.379 16204 16233 W ReactNativeJS: [e2e] screen.ready {"name":"welcome","ms":74}
+10-15 04:42:28.388 16204 16204 W [RNScreens]: backTitleVisible prop is not available on Android
+10-15 04:42:28.388 16204 16204 W [RNScreens]: backTitleFontFamily prop is not available on Android
+10-15 04:42:28.388 16204 16204 W [RNScreens]: disableBackButtonMenu prop is not available on Android
+10-15 04:42:28.388 16204 16204 W [RNScreens]: largeTitleFontFamily prop is not available on Android
+10-15 04:42:28.389 16204 16204 W [RNScreens]: largeTitleFontWeight prop is not available on Android
+10-15 04:42:28.389 16204 16204 W [RNScreens]: largeTitleHideShadow prop is not available on Android
+10-15 04:42:28.411 16204 16234 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.
+10-15 04:42:28.411 16204 16234 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.
+10-15 04:42:28.412 16204 16233 W ReactNativeJS: [e2e] auth.storage.read {"kind":"session","from":"none","encrypted":true}
+10-15 04:42:28.417 16204 16204 I ReactNative: [GESTURE HANDLER] Initialize gesture handler for root view com.facebook.react.runtime.ReactSurfaceView{8adee86 V.E...... ......ID 0,0-1080,2400 #1}
+10-15 04:42:28.439 16204 16233 W ReactNativeJS: [e2e] auth.storage.read {"kind":"session","from":"none","encrypted":true}
+10-15 04:42:28.439 16204 16233 W ReactNativeJS: [e2e] auth.storage.read {"kind":"session","from":"none","encrypted":true}
+10-15 04:42:28.441 16204 16233 W ReactNativeJS: [e2e] auth.storage.read {"kind":"session","from":"none","encrypted":true}
+10-15 04:42:28.441 16204 16233 W ReactNativeJS: [e2e] auth.restore {"session":false,"cached":false}
+10-15 04:42:28.446 16204 16234 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.
+10-15 04:42:28.446 16204 16234 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.
+10-15 04:42:28.448 16204 16233 W ReactNativeJS: [e2e] auth.storage.read {"kind":"session","from":"none","encrypted":true}
+10-15 04:42:28.448 16204 16233 W ReactNativeJS: [e2e] auth.storage.read {"kind":"session","from":"none","encrypted":true}
+10-15 04:42:28.450 16204 16233 D jni_lib_merge: Entering merged library JNI_OnLoad.
+10-15 04:42:28.450 16204 16233 D jni_lib_merge: Preparing 12 pre-merged libs (including stub)
+10-15 04:42:28.451 16204 16233 D jni_lib_merge: Preparing to register libfabricjni_so.  onload_func: 0x73ae120b2ba0
+10-15 04:42:28.451 16204 16233 D jni_lib_merge: Preparing to register libreact_devsupportjni_so.  onload_func: 0x73ae1218e530
+10-15 04:42:28.451 16204 16233 D jni_lib_merge: Preparing to register libreact_featureflagsjni_so.  onload_func: 0x73ae121a10a0
+10-15 04:42:28.451 16204 16233 D jni_lib_merge: Preparing to register libreact_newarchdefaults_so.  onload_func: 0x73ae121c7fa0
+10-15 04:42:28.451 16204 16233 D jni_lib_merge: Preparing to register libreactnativeblob_so.  onload_func: 0x73ae1226fa50
+10-15 04:42:28.452 16204 16233 D jni_lib_merge: Preparing to register libreactnativejni_so.  onload_func: 0x73ae1228a8c0
+10-15 04:42:28.452 16204 16233 D jni_lib_merge: Preparing to register libreactnativejni_common_so.  onload_func: 0x73ae12291150
+10-15 04:42:28.452 16204 16233 D jni_lib_merge: Preparing to register librninstance_so.  onload_func: 0x73ae122af450
+10-15 04:42:28.452 16204 16233 D jni_lib_merge: Preparing to register libturbomodulejsijni_so.  onload_func: 0x73ae1235ab80
+10-15 04:42:28.452 16204 16233 D jni_lib_merge: Preparing to register libuimanagerjni_so.  onload_func: 0x73ae12362ab0
+10-15 04:42:28.452 16204 16233 D jni_lib_merge: Preparing to register libyoga_so.  onload_func: 0x73ae1236a130
+10-15 04:42:28.452 16204 16233 D jni_lib_merge: About to register 11 actual methods.
+10-15 04:42:28.453 16204 16261 I WebViewFactory: Loading com.google.android.webview version 113.0.5672.136 (code 567263637)
+10-15 04:42:28.455 16204 16261 W ziparchive: Unable to open '/data/app/~~vRqbPePaTXBsA4SZ05-9hQ==/com.google.android.trichromelibrary_567263637-3_uerCQ1_giNLcCtN4iBrQ==/TrichromeLibrary.dm': No such file or directory
+10-15 04:42:28.455 16204 16261 W ziparchive: Unable to open '/data/app/~~vRqbPePaTXBsA4SZ05-9hQ==/com.google.android.trichromelibrary_567263637-3_uerCQ1_giNLcCtN4iBrQ==/TrichromeLibrary.dm': No such file or directory
+10-15 04:42:28.455 16204 16261 W elhouse.society: Entry not found
+10-15 04:42:28.456 16204 16261 D nativeloader: Configuring clns-7 for other apk /data/app/~~vRqbPePaTXBsA4SZ05-9hQ==/com.google.android.trichromelibrary_567263637-3_uerCQ1_giNLcCtN4iBrQ==/TrichromeLibrary.apk. target_sdk_version=34, uses_libraries=ALL, library_path=/data/app/~~zvc69VIuXxvBuan3PyelwA==/com.google.android.webview-7wyQJ7RD7OHkrfpNJF8vbA==/lib/x86_64:/data/app/~~zvc69VIuXxvBuan3PyelwA==/com.google.android.webview-7wyQJ7RD7OHkrfpNJF8vbA==/WebViewGoogle.apk!/lib/x86_64:/data/app/~~vRqbPePaTXBsA4SZ05-9hQ==/com.google.android.trichromelibrary_567263637-3_uerCQ1_giNLcCtN4iBrQ==/TrichromeLibrary.apk!/lib/x86_64, permitted_path=/data:/mnt/expand
+10-15 04:42:28.459 16204 16261 D nativeloader: Configuring clns-8 for other apk /data/app/~~zvc69VIuXxvBuan3PyelwA==/com.google.android.webview-7wyQJ7RD7OHkrfpNJF8vbA==/WebViewGoogle.apk. target_sdk_version=34, uses_libraries=, library_path=/data/app/~~zvc69VIuXxvBuan3PyelwA==/com.google.android.webview-7wyQJ7RD7OHkrfpNJF8vbA==/lib/x86_64:/data/app/~~zvc69VIuXxvBuan3PyelwA==/com.google.android.webview-7wyQJ7RD7OHkrfpNJF8vbA==/WebViewGoogle.apk!/lib/x86_64:/data/app/~~vRqbPePaTXBsA4SZ05-9hQ==/com.google.android.trichromelibrary_567263637-3_uerCQ1_giNLcCtN4iBrQ==/TrichromeLibrary.apk!/lib/x86_64, permitted_path=/data:/mnt/expand
+10-15 04:42:28.485 16204 16261 I cr_WVCFactoryProvider: Loaded version=113.0.5672.136 minSdkVersion=29 isBundle=false multiprocess=true packageId=2
+10-15 04:42:28.569 16204 16234 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.
+10-15 04:42:28.569 16204 16234 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is edge-to-edge.
+10-15 04:42:28.573 16204 16204 E unknown:MountItemDispatcher: dispatchMountItems: caught exception, displaying mount state
+10-15 04:42:28.573 16204 16204 E unknown:MountItemDispatcher: com.facebook.react.bridge.RetryableMountingLayerException: Unable to find viewState for tag 680. Surface stopped: false
+10-15 04:42:28.574 16204 16204 E unknown:SurfaceMountingManager: Views created for surface {1}:
+10-15 04:42:28.593 16204 16232 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask()
+10-15 04:42:28.594 16204 16232 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(getOrCreateDestroyTask()): handleHostException(message = "Unable to find viewState for tag 680. Surface stopped: false")
+10-15 04:42:28.595 16204 16232 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:28.595 16204 16232 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(getOrCreateDestroyTask()): handleHostException(message = "Unable to find viewState for tag 680. Surface stopped: false")
+10-15 04:42:28.595 16204 16232 E unknown:ReactHost: Caused by: com.facebook.react.bridge.RetryableMountingLayerException: Unable to find viewState for tag 680. Surface stopped: false
+10-15 04:42:28.595 16204 16232 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting createReactInstance task ref
+10-15 04:42:28.597 16204 16204 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.627 16204 16204 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:28.627 16204 16204 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.627 16204 16204 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.628 16204 16204 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:28.628 16204 16204 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.628 16204 16204 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.628 16204 16204 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:28.628 16204 16204 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.674 16204 16204 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.675 16204 16204 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:28.675 16204 16204 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.675 16204 16204 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.676 16204 16204 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:28.676 16204 16204 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.677 16204 16204 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.677 16204 16204 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:28.677 16204 16204 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.695 16204 16204 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.701 16204 16204 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:28.701 16204 16204 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.701 16204 16204 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.706 16204 16204 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:28.706 16204 16204 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.706 16204 16204 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.707 16204 16204 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:28.707 16204 16204 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:28.924 16204 16261 I cr_LibraryLoader: Successfully loaded native library
+10-15 04:42:28.924 16204 16261 I cr_CachingUmaRecorder: Flushed 8 samples from 8 histograms.
+10-15 04:42:28.932 16204 16270 I cr_VariationsUtils: Failed reading seed file "/data/user/0/com.reelhouse.society/app_webview/variations_seed_new"
+10-15 04:42:28.932 16204 16270 I cr_VariationsUtils: Failed reading seed file "/data/user/0/com.reelhouse.society/app_webview/variations_seed"
+10-15 04:42:28.932 16204 16270 I cr_VariationsUtils: Requesting new seed from IVariationsSeedServer
+10-15 04:42:28.999 16204 16261 D TrafficStats: tagSocket(126) with statsTag=0xffffffff, statsUid=-1
+10-15 04:42:29.004 16204 16261 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.004 16204 16261 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:29.004 16204 16261 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.004 16204 16261 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.004 16204 16261 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:29.004 16204 16261 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.578 16204 16204 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Starting React Native destruction
+10-15 04:42:29.579 16204 16204 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Move ReactHost to onHostDestroy()
+10-15 04:42:29.579 16204 16204 W unknown:BridgelessReact: ReactContext.onHostPause()
+10-15 04:42:29.579 16204 16204 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.580 16204 16204 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:29.580 16204 16204 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.581 16204 16204 W unknown:BridgelessReact: ReactContext.onHostDestroy()
+10-15 04:42:29.584 16204 16261 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.586 16204 16261 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:29.586 16204 16261 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.594 16204 16261 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.597 16204 16261 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:29.597 16204 16261 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.629 16204 16261 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.630 16204 16261 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:29.630 16204 16261 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.630 16204 16261 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.630 16204 16261 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:29.630 16204 16261 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.642 16204 16204 E unknown:ReactNative: Tried to remove non-existent frame callback
+10-15 04:42:29.643 16204 16204 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.644 16204 16204 E unknown:ReactHost: Unhandled SoftException
+10-15 04:42:29.644 16204 16204 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(callWithExistingReactInstance(callFunctionOnModule("RCTDeviceEventEmitter", "emit"))): Execute: reactInstance is null. Dropping work.
+10-15 04:42:29.647 16204 16232 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Stopping all React Native surfaces
+10-15 04:42:29.647 16204 16232 E unknown:SurfaceMountingManager: Stopping surface [1]
+10-15 04:42:29.650 16204 16229 I OpenGLRenderer: Davey! duration=1140ms; Flags=0, FrameTimelineVsyncId=318173, IntendedVsync=1384755208865, Vsync=1384871875527, InputEventId=0, HandleInputStart=1384882564139, AnimationStart=1384882564910, PerformTraversalsStart=1384908837045, DrawStart=1384912466746, FrameDeadline=1384971875523, FrameInterval=1384882444321, FrameStartTime=16666666, SyncQueued=1384952837501, SyncStart=1384953562941, IssueDrawCommandsStart=1384954517181, SwapBuffers=1385470631119, FrameCompleted=1385896208170, DequeueBufferDuration=4316, QueueBufferDuration=13496774, GpuCompleted=1385896208170, SwapBuffersCompleted=1385485017617, DisplayPresentTime=20401094660746, CommandSubmissionCompleted=1385470631119, 
+10-15 04:42:29.671 16204 16234 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is null.
+10-15 04:42:29.671 16204 16234 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is null.
+10-15 04:42:29.671 16204 16234 W unknown:ReactNative: StatusBarModule: Ignored status bar change, current activity is null.
+10-15 04:42:29.672 16204 16233 E Reanimated: Unable to get reference to react activity
+10-15 04:42:29.687 16204 16204 I Choreographer: Skipped 59 frames!  The application may be doing too much work on its main thread.
+10-15 04:42:29.705 16204 16204 I ReactNative: [GESTURE HANDLER] Tearing down gesture handler registered for root view com.facebook.react.runtime.ReactSurfaceView{8adee86 V.E...... ........ 0,0-1080,2400 #1}
+10-15 04:42:29.706 16204 16204 E unknown:ViewManager: onDropViewInstance: view [222] has a context that is not a ThemedReactContext: com.facebook.react.runtime.BridgelessReactContext@e0ad317
+10-15 04:42:29.706 16204 16204 E unknown:SurfaceMountingManager: Surface [1] was stopped on SurfaceMountingManager.
+10-15 04:42:29.716 16204 16204 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Destroying MemoryPressureRouter
+10-15 04:42:29.716 16204 16204 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting ReactContext ref
+10-15 04:42:29.716 16204 16204 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Destroying ReactContext
+10-15 04:42:29.719 16204 16232 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting ReactInstance ptr
+10-15 04:42:29.719 16204 16232 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Destroying ReactInstance
+10-15 04:42:29.722 16204 16204 E Reanimated: Unable to get reference to react activity
+10-15 04:42:29.722 16204 16204 E Reanimated: Unable to get reference to react activity
+10-15 04:42:29.728 16204 16232 I ExpoModulesCore: ✅ ModuleRegistry was destroyed
+10-15 04:42:29.729 16204 16232 I ExpoModulesCore: ✅ AppContext was destroyed
+10-15 04:42:29.729 16204 16232 I ExpoModulesCore: ✅ KotlinInteropModuleRegistry was destroyed
+10-15 04:42:29.734 16204 16232 I RNSkia  : JniSkiaManager dtor
+10-15 04:42:29.734 16204 16232 E unknown:ReactNative: Tried to remove non-existent frame callback
+10-15 04:42:29.735 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.736 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.736 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.736 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.736 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.736 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.736 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.737 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.737 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.740 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.741 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.741 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.742 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.742 16204 16232 I RNMMKV  : Destroying MMKV instance "reelhouse-preinit"...
+10-15 04:42:29.751 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.751 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.752 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.752 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.753 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.754 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.754 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.754 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.754 16204 16232 W System.err: java.lang.NoSuchFieldException: No field mIsFinished in class Lcom/facebook/react/bridge/queue/MessageQueueThreadImpl; (declaration of 'com.facebook.react.bridge.queue.MessageQueueThreadImpl' appears in /data/app/~~rDQZqHeYzbqxqKFFpGFnVA==/com.reelhouse.society-eeEkMeGDeaLgwRZ0B7phxw==/base.apk!classes3.dex)
+10-15 04:42:29.770 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.772 16204 16232 I RNMMKV  : Destroying MMKV instance "mmkv.default"...
+10-15 04:42:29.777 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.778 16204 16232 W unknown:ReactNative: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.
+10-15 04:42:29.787 16204 16232 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting start task ref
+10-15 04:42:29.787 16204 16232 W unknown:BridgelessReact: ReactHost{0}.getOrCreateDestroyTask(): Resetting destroy task ref

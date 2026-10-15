@@ -11,6 +11,7 @@
  *     folder inside OneDrive or the repo; no other script reads it from a
  *     `.env` file or writes it anywhere.
  */
+import { spawnSync } from 'child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
@@ -129,7 +130,7 @@ describe('the clients in members\' hands', () => {
       HARNESS: string[];
     };
     expect(HARNESS).toEqual(['e2e', 'scripts', 'supabase', 'node_modules']);
-    expect(clientNamed(record, 'TestFlight build 41').client?.patches).toHaveLength(4);
+    expect(clientNamed(record, 'TestFlight build 41').client?.patches).toHaveLength(3);
     expect(clientNamed(record, 'the website').refuse).toBe('the website is not a checked client with a full commit');
     expect(clientNamed(record, 'build 99').refuse).toBe('no client named "build 99" in old-clients.json');
     const bad = (patch: object) => clientNamed({ clients: [{ name: 'x', checked: true, commit: 'a'.repeat(40), patches: [patch] }] }, 'x').refuse;
@@ -137,6 +138,53 @@ describe('the clients in members\' hands', () => {
     expect(bad({ path: 'mobile/src/x.ts', from: 'b'.repeat(40), why: '' })).toMatch(/^x: a patch needs/);
     expect(bad({ path: 'mobile/src/x.ts', from: 'bbbb', why: 'short commit' })).toMatch(/^x: a patch needs/);
     expect(bad({ path: 'mobile/src/x.ts', from: 'b'.repeat(40), why: 'a reason' })).toBeUndefined();
+  });
+
+  describe('a client\'s own crashes: fixed since in the app, so its run is not failed by them', () => {
+    const { clientNamed, ownCrashFaults } = require('../../../e2e/old-clients.cjs') as {
+      clientNamed: (r: unknown, n: string) => { refuse?: string; client?: OldClient };
+      ownCrashFaults: (c: OldClient, repo: { classIds: string[]; commitExists: (sha: string) => boolean }) => string[];
+    };
+    type OldClient = { name: string; patches?: { path: string }[]; ownCrashes?: { class: string; fixedIn: string }[] };
+    const { readCommitted } = require('../../../scripts/register.cjs') as { readCommitted: () => { classes: { id: string }[] } };
+    const classIds = readCommitted().classes.map((c) => c.id);
+    const commitExists = (sha: string) => spawnSync('git', ['cat-file', '-e', `${sha}^{commit}`], { cwd: MOBILE }).status === 0;
+    const build41 = clientNamed(record, 'TestFlight build 41').client!;
+
+    it('build 41 is run as shipped: its patches are the flows\' alone, the arrival form not among them', () => {
+      expect(build41.patches?.map((p) => p.path).filter((p) => !p.startsWith('mobile/.maestro/'))).toEqual([]);
+      expect(JSON.stringify(build41)).not.toContain('useArrival');
+    });
+
+    it('each names a class in the register and a commit git has', () => {
+      expect(build41.ownCrashes?.map((o) => [o.class, o.fixedIn])).toEqual([['RN-react-destroyed-on-mount', 'e103781c']]);
+      for (const c of record.clients) expect(ownCrashFaults(c, { classIds, commitExists })).toEqual([]);
+    });
+
+    it('a class the register does not hold, or a commit git does not have, is refused', () => {
+      const planted = { name: 'x', ownCrashes: [{ class: 'RN-not-in-the-register', fixedIn: '0000000deadbeef' }] };
+      expect(ownCrashFaults(planted, { classIds, commitExists })).toEqual([
+        'x: own crash class RN-not-in-the-register is not in the register',
+        'x: own crash RN-not-in-the-register is fixed in 0000000deadbeef, which is not a commit git has',
+      ]);
+    });
+
+    it('a record that is not whole is refused before any run', () => {
+      const whole = { class: 'RN-react-destroyed-on-mount', match: 'Unable to find viewState for tag', fixedIn: 'e103781c', why: 'a reason' };
+      const bad = (o: object) => clientNamed({ clients: [{ name: 'x', checked: true, commit: 'a'.repeat(40), ownCrashes: [{ ...whole, ...o }] }] }, 'x').refuse;
+      expect(bad({})).toBeUndefined();
+      for (const o of [{ class: 'not an id' }, { match: 'viewState' }, { fixedIn: 'e103' }, { fixedIn: 'not-hex1' }, { why: ' ' }]) {
+        expect([o, bad(o)]).toEqual([o, expect.stringMatching(/^x: an own crash needs/)]);
+      }
+    });
+
+    it('are handed to run-flows.sh by name, and a name with no record is refused', () => {
+      const cli = (name: string) => spawnSync(process.execPath, [join(MOBILE, 'e2e/old-clients.cjs'), '--own-crashes', name], { encoding: 'utf8' });
+      const ok = cli('TestFlight build 41');
+      expect(ok.status).toBe(0);
+      expect(JSON.parse(ok.stdout)).toEqual({ client: 'TestFlight build 41', ownCrashes: build41.ownCrashes });
+      expect(cli('build 99')).toMatchObject({ status: 1, stderr: expect.stringContaining('no client named "build 99"') });
+    });
   });
 
   it('are checked in CI after every pending migration is applied, before the security checks', () => {

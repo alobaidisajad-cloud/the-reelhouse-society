@@ -1,17 +1,31 @@
 /**
  * Reading mobile/e2e/old-clients.json: which shipped clients are checked, and
  * whether a client's record is whole. Shared by db/old-clients.mjs (each client
- * held to the proposed schema) and old-client-tree.mjs (each client run end to
- * end), and held by migrationSafety.guard.test.ts.
+ * held to the proposed schema), old-client-tree.mjs (each client run end to
+ * end) and run-flows.sh (a client's own crashes, for the crash gate), and held
+ * by migrationSafety.guard.test.ts.
+ *
+ *   node mobile/e2e/old-clients.cjs --own-crashes "TestFlight build 41"
+ *
+ * prints that client's own crashes as JSON ({ client, ownCrashes }), or refuses.
  */
 
 /** What an E2E run of a shipped client keeps from this checkout. */
 const HARNESS = ['e2e', 'scripts', 'supabase', 'node_modules'];
 
 const FULL = /^[0-9a-f]{40}$/;
+const SHORT_OR_FULL = /^[0-9a-f]{7,40}$/;
 const APP_PATH = /^mobile\/(?!e2e\/|scripts\/|supabase\/)[\w./[\]-]+$/;
+/** The register's own id shape (scripts/register.cjs). */
+const CLASS_ID = /^[A-Z][A-Z0-9]*(-[a-z0-9]+)+$/;
+/** A match this short could take any crash for the client's own. */
+const MATCH_MIN = 12;
 
-/** The named client: checked, a full commit, each patch an app file, a commit and a reason. */
+/** An own crash, fixed since in the app: a register id, a piece of its message, a reason. */
+const ownCrashWhole = (o) => CLASS_ID.test(o.class ?? '') && typeof o.match === 'string'
+  && o.match.trim().length >= MATCH_MIN && SHORT_OR_FULL.test(o.fixedIn ?? '') && !!(o.why ?? '').trim();
+
+/** The named client: checked, a full commit, each patch and own crash whole. */
 const clientNamed = (record, name) => {
   const c = record.clients.find((x) => x.name === name);
   if (!c) return { refuse: `no client named "${name}" in old-clients.json` };
@@ -19,6 +33,11 @@ const clientNamed = (record, name) => {
   for (const p of c.patches ?? []) {
     if (!APP_PATH.test(p.path ?? '') || !FULL.test(p.from ?? '') || !(p.why ?? '').trim()) {
       return { refuse: `${name}: a patch needs an app path outside the harness, a full commit and a reason (${p.path})` };
+    }
+  }
+  for (const o of c.ownCrashes ?? []) {
+    if (!ownCrashWhole(o)) {
+      return { refuse: `${name}: an own crash needs a register id, a match of ${MATCH_MIN} or more characters, the commit that fixed it and a reason (${o.class})` };
     }
   }
   return { client: c };
@@ -31,4 +50,26 @@ const toCheck = (record) => record.clients.filter((c) => c.checked).map((c) => {
   return client;
 });
 
-module.exports = { HARNESS, clientNamed, toCheck };
+/**
+ * What is wrong with a client's own crashes against the repository: each class
+ * must be in the register, and each fixedIn a commit git has. `classIds` is the
+ * register's ids; `commitExists(sha)` asks git. [] when nothing.
+ */
+const ownCrashFaults = (client, { classIds, commitExists }) => (client.ownCrashes ?? []).flatMap((o) => [
+  ...(classIds.includes(o.class) ? [] : [`${client.name}: own crash class ${o.class} is not in the register`]),
+  ...(commitExists(o.fixedIn) ? [] : [`${client.name}: own crash ${o.class} is fixed in ${o.fixedIn}, which is not a commit git has`]),
+]);
+
+module.exports = { HARNESS, clientNamed, toCheck, ownCrashFaults };
+
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  if (args[0] !== '--own-crashes' || !args[1]) {
+    console.error('usage: node mobile/e2e/old-clients.cjs --own-crashes "<client name>"');
+    process.exit(2);
+  }
+  const record = require('./old-clients.json');
+  const { client, refuse } = clientNamed(record, args[1]);
+  if (refuse) { console.error(`REFUSED: ${refuse}`); process.exit(1); }
+  console.log(JSON.stringify({ client: client.name, ownCrashes: client.ownCrashes ?? [] }));
+}

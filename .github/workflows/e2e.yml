@@ -348,6 +348,8 @@ jobs:
             ${{ runner.temp }}/logcat-stream.txt
             ${{ runner.temp }}/flow-times.txt
             ${{ runner.temp }}/retries.txt
+            ${{ runner.temp }}/not-judged.txt
+            ${{ runner.temp }}/own-crash-flows.txt
             ${{ runner.temp }}/phone-fixes.txt
             ${{ runner.temp }}/app-crashes.txt
             ${{ runner.temp }}/splash-handoff.txt

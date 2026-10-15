@@ -4,6 +4,7 @@
  *
  *   node e2e/app-crashes.mjs <device log> [--package <id>] [--flow-times <file>]
  *        [--maestro <dir>]... [--stream-alive yes|no] [--device-now "MM-DD HH:MM:SS"]
+ *        [--own <file>]
  *
  * A flow can pass over a crash: the app dies in the background, the next step
  * relaunches it, and every check after that is green. So the whole run's log
@@ -17,6 +18,10 @@
  * still have been running at the end (--stream-alive) and its last line must be
  * recent against the device's clock (--device-now). If either is unproven, it
  * says so and fails.
+ *
+ * A run of a shipped client (--own: its own crashes, from old-clients.json)
+ * reports a crash that build carries, fixed since in the app, in a section of
+ * its own, and does not fail on it: it says nothing about the server.
  *
  * Prints its report; exits 1 on a crash, a freeze, or an unproven copy.
  */
@@ -40,6 +45,11 @@ const isApp = (name, pkg) => name === pkg || name.startsWith(`${pkg}:`);
 
 /** What React Native writes when an error destroys its instance with no crash dialog. */
 const SOFT = /handleHostException\(message|JavascriptException|ReactNoCrashSoftException.*getOrCreateDestroyTask|Tried to enqueue runnable on already finished thread/;
+const SOFT_KIND = 'JS error (React instance destroyed)';
+/** What a destroyed React writes after it, as its threads are already gone. */
+const AFTERMATH = /Tried to enqueue runnable on already finished thread/;
+/** How long an own crash's aftermath may follow it (run 38679641286: 1.1 s). */
+export const AFTERMATH_SECONDS = 5;
 
 /**
  * The app's crashes and freezes in logcat lines (`threadtime`), in order.
@@ -54,7 +64,7 @@ const SOFT = /handleHostException\(message|JavascriptException|ReactNoCrashSoftE
 export function findCrashes(lines, pkg = APP) {
   const found = [];
   const appPids = new Set();
-  const softSeen = new Set();
+  const softSeen = new Map();
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const started = /\sActivityManager\s*: Start proc (\d+):([^/\s]+)/.exec(line) ?? /Process: ([^,\s]+), PID: (\d+)/.exec(line);
@@ -65,11 +75,14 @@ export function findCrashes(lines, pkg = APP) {
     // AndroidRuntime's lines belong to a hard crash's report, read below.
     if (SOFT.test(line) && appPids.has(pidOf(line)) && !/\sAndroidRuntime\s*:/.test(line)) {
       // One report per process per second: a destruction writes several of these lines.
+      // Each report keeps all its lines, so an own crash is matched on every one (splitOwn).
       const key = `${pidOf(line)} ${line.slice(0, 14)}`;
-      if (!softSeen.has(key)) {
-        softSeen.add(key);
+      if (softSeen.has(key)) softSeen.get(key).lines.push(line);
+      else {
         const what = /message = "([^"]*)/.exec(line)?.[1] ?? line.replace(/^.*?:\s+/, '').trim();
-        found.push({ kind: 'JS error (React instance destroyed)', at: line.slice(0, 18), time: timeOf(line), what, detail: [] });
+        const report = { kind: SOFT_KIND, at: line.slice(0, 18), time: timeOf(line), what, detail: [], pid: pidOf(line), lines: [line] };
+        softSeen.set(key, report);
+        found.push(report);
       }
       continue;
     }
@@ -102,6 +115,50 @@ export function findCrashes(lines, pkg = APP) {
   }
   return found;
 }
+
+/**
+ * A shipped client's own crashes (old-clients.json's ownCrashes), set apart.
+ * A soft crash is its own when every line of its report holds that crash's
+ * `match`, or is the aftermath; a later report from the same process, within
+ * AFTERMATH_SECONDS and made only of aftermath, is its own too. Everything else
+ * stays in `rest`. With no own crashes, `rest` is `crashes`.
+ */
+export function splitOwn(crashes, own = []) {
+  const mine = [];
+  const rest = [];
+  const lastOwn = new Map();
+  for (const c of crashes) {
+    if (!own.length || c.kind !== SOFT_KIND) { rest.push(c); continue; }
+    const hit = own.find((o) => c.lines.some((l) => l.includes(o.match))
+      && c.lines.every((l) => l.includes(o.match) || AFTERMATH.test(l)));
+    if (hit) {
+      mine.push({ ...c, own: hit, aftermath: false });
+      lastOwn.set(c.pid, { since: stamp(c.at), own: hit });
+      continue;
+    }
+    const before = lastOwn.get(c.pid);
+    const gap = before ? stamp(c.at) - before.since : NaN;
+    if (before && gap >= 0 && gap <= AFTERMATH_SECONDS && c.lines.every((l) => AFTERMATH.test(l))) {
+      mine.push({ ...c, own: before.own, aftermath: true });
+      continue;
+    }
+    rest.push(c);
+  }
+  return { mine, rest };
+}
+
+/** The file run-flows.sh writes from `old-clients.cjs --own-crashes`; none when no file. */
+export function readOwn(file) {
+  if (!file) return { client: '', ownCrashes: [] };
+  const o = JSON.parse(readFileSync(file, 'utf8'));
+  const whole = typeof o.client === 'string' && o.client && Array.isArray(o.ownCrashes)
+    && o.ownCrashes.every((c) => c.class && typeof c.match === 'string' && c.match && c.fixedIn);
+  if (!whole) throw new Error(`${file} does not hold a client's own crashes`);
+  return o;
+}
+
+/** One own crash, as the gate and attempt.mjs name it. */
+export const ownName = (client, o) => `${client}'s own crash, class ${o.class}, fixed in ${o.fixedIn}`;
 
 /** Maestro's own crash and ANR reports under `dirs`, as found. */
 export function maestroReports(dirs) {
@@ -157,13 +214,15 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const all = (name) => args.flatMap((a, i) => (a === name ? [args[i + 1]] : []));
   const file = args[0];
   if (!file || file.startsWith('--')) {
-    console.error('usage: node e2e/app-crashes.mjs <device log> [--package id] [--flow-times file] [--maestro dir]... [--stream-alive yes|no] [--device-now "MM-DD HH:MM:SS"]');
+    console.error('usage: node e2e/app-crashes.mjs <device log> [--package id] [--flow-times file] [--maestro dir]... [--stream-alive yes|no] [--device-now "MM-DD HH:MM:SS"] [--own file]');
     process.exit(2);
   }
   const pkg = opt('--package') ?? APP;
   const lines = existsSync(file) ? readFileSync(file, 'utf8').split(/\r?\n/) : [];
   const times = readFlowTimes(opt('--flow-times'));
-  const crashes = findCrashes(lines, pkg);
+  let own;
+  try { own = readOwn(opt('--own')); } catch (e) { console.error(`app-crashes: ${e.message}`); process.exit(2); }
+  const { mine, rest: crashes } = splitOwn(findCrashes(lines, pkg), own.ownCrashes);
   const reports = maestroReports(all('--maestro'));
   const unproven = existsSync(file)
     ? streamProof(lines, opt('--stream-alive') ?? 'yes', opt('--device-now'))
@@ -181,7 +240,15 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   if (unproven) out.push(`The crash check cannot vouch for the whole run: ${unproven}.`);
   if (!out.length) {
     const stamped = lines.filter((l) => !Number.isNaN(stamp(l)));
-    out.push(`No crash or freeze of ${pkg}: ${stamped.length} log lines read, ${timeOf(stamped[0] ?? '')} to ${timeOf(stamped[stamped.length - 1] ?? '')}, and Maestro reported none.`);
+    const but = mine.length ? ` but ${own.client}'s own` : '';
+    out.push(`No crash or freeze of ${pkg}${but}: ${stamped.length} log lines read, ${timeOf(stamped[0] ?? '')} to ${timeOf(stamped[stamped.length - 1] ?? '')}, and Maestro reported none.`);
+  }
+  if (mine.length) {
+    out.push(`${own.client} carries these crashes, each fixed since in the app; they do not fail this run:`);
+    for (const c of mine) {
+      if (c.aftermath) out.push(`  ${c.time} then, from the same process: ${c.what.slice(0, 200)} (${c.lines.length} line${c.lines.length === 1 ? '' : 's'})`);
+      else out.push(`${c.time} ${ownName(own.client, c.own)}: during ${flowAt(times, stamp(c.at))}: ${c.what.slice(0, 200)}`);
+    }
   }
   console.log(out.join('\n'));
   process.exit(crashes.length || reports.length || unproven ? 1 : 0);

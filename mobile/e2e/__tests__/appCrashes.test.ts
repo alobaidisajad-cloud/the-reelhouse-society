@@ -159,3 +159,76 @@ describe('a soft crash: React destroyed with no crash dialog, the app alive and 
     expect(check(elsewhere).status).toBe(0);
   });
 });
+
+describe('a shipped client\'s own crash (--own): reported apart, failing nothing; anything else fails as ever', () => {
+  // Cut from Sealed E2E 38679641286 (build 41, two crashes), with that run's flow times.
+  const RUN = readFileSync(join(__dirname, 'fixtures', 'own-crash-e2e-38679641286.txt'), 'utf8');
+  const STUDY_A = readFileSync(join(__dirname, 'fixtures', 'soft-crash-study-arm-A.txt'), 'utf8');
+  const TIMES = 'lobby_wall_flow\t1\t10-15 04:37:04.000\nlog_film_flow\t1\t10-15 04:38:42.000\n' +
+    'login_flow\t1\t10-15 04:40:36.000\nlounge_flow\t1\t10-15 04:42:04.000\n';
+  const BUILD_41 = {
+    client: 'TestFlight build 41',
+    ownCrashes: [{ class: 'RN-react-destroyed-on-mount', match: 'Unable to find viewState for tag', fixedIn: 'e103781c', why: 'x' }],
+  };
+  const own = (log: string, record: unknown = BUILD_41) => {
+    writeFileSync(join(dir, 'own.json'), JSON.stringify(record));
+    writeFileSync(join(dir, 'run-times.txt'), TIMES);
+    return check(log, ['--own', join(dir, 'own.json'), '--flow-times', join(dir, 'run-times.txt')]);
+  };
+  const OWN_LINES = [
+    "TestFlight build 41 carries these crashes, each fixed since in the app; they do not fail this run:",
+    "04:40:08 TestFlight build 41's own crash, class RN-react-destroyed-on-mount, fixed in e103781c: during log_film_flow: Unable to find viewState for tag 2450. Surface stopped: false",
+    "  04:40:09 then, from the same process: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable. (26 lines)",
+    "04:42:28 TestFlight build 41's own crash, class RN-react-destroyed-on-mount, fixed in e103781c: during lounge_flow: Unable to find viewState for tag 680. Surface stopped: false",
+    "  04:42:29 then, from the same process: Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable. (24 lines)",
+  ];
+
+  it('passes the run, each own crash and the aftermath of its process in a section of its own', () => {
+    const r = own(RUN);
+    expect(r).toMatchObject({ status: 0, stderr: '' });
+    expect(r.out.split('\n')).toEqual([
+      "No crash or freeze of com.reelhouse.society but TestFlight build 41's own: 286 log lines read, 01:00:00 to 01:29:58, and Maestro reported none.",
+      ...OWN_LINES,
+    ]);
+  });
+
+  it('fails the same log with no --own, exactly as before', () => {
+    const r = check(RUN);
+    expect(r.status).toBe(1);
+    expect(r.out.split('\n').filter((l) => l.includes('JS error (React instance destroyed)'))).toHaveLength(4);
+    expect(r.out).not.toContain('own crash');
+  });
+
+  it('fails a different soft crash in the same log, and still sets the own ones apart', () => {
+    const r = own(RUN + STUDY_A);
+    expect(r.status).toBe(1);
+    const failing = r.out.split('\n').slice(0, r.out.split('\n').indexOf(OWN_LINES[0]));
+    expect(failing[0]).toContain('crashed or froze during the run');
+    expect(failing.join('\n')).toContain('undefined is not a function');
+    expect(failing.join('\n')).not.toContain('viewState');
+    expect(r.out.split('\n').slice(-5)).toEqual(OWN_LINES);
+  });
+
+  it('fails an aftermath line too late to be the own crash\'s, or from another process', () => {
+    const after = RUN.split('\n').find((l) => l.includes('already finished thread') && l.includes(' 14462 '))!;
+    expect(own(RUN + after.replace('04:40:09', '04:40:14') + '\n').status).toBe(1);
+    expect(own(RUN + after.replace('04:40:09', '04:40:13') + '\n').status).toBe(0);
+    const started = RUN.split('\n').find((l) => l.includes('Start proc 14462'))!;
+    const elsewhere = `${started.replace(/14462/g, '14999')}\n${after.replace(/ 14462 /, ' 14999 ')}\n`;
+    expect(own(RUN + elsewhere).status).toBe(1);
+  });
+
+  it('fails a report whose lines are not all the own crash\'s: one that does not hold its match', () => {
+    const at = RUN.split('\n').find((l) => l.includes('handleHostException(message = "Unable to find viewState for tag 2450'))!;
+    const other = at.replace(/message = "[^"]*"/, 'message = "undefined is not a function"');
+    expect(own(RUN + other + '\n').status).toBe(1);
+    // Nor is a new crash of the same process two seconds on its aftermath.
+    expect(own(RUN + other.replace('04:40:08', '04:40:10') + '\n').status).toBe(1);
+  });
+
+  it('refuses an own file that does not hold a client\'s own crashes', () => {
+    const r = own(RUN, { client: 'TestFlight build 41', ownCrashes: [{ class: 'RN-react-destroyed-on-mount', match: '' }] });
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain("does not hold a client's own crashes");
+  });
+});

@@ -43,8 +43,8 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-10-15 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; Realtime started for the salon channels' rules |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
-| ../.github/workflows/e2e.yml | 2026-10-15 | edited: callable for a shipped client; pending migrations applied before the seed |
-| ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the secrets scan, the add-only check, the migration lint, the website freeze, the hooks trailer |
+| ../.github/workflows/e2e.yml | 2026-10-15 | edited: a run keeps its not-judged list and the own-crash flows' list |
+| ../.github/workflows/god_tier_ci.yml | 2026-10-15 | edited: the Jest job checks out the whole history, for the commit that fixed a shipped client's own crash |
 | ../.github/workflows/ios-launch.yml | 2026-10-15 | new |
 | ../.github/workflows/load.yml | 2026-10-03 | read whole: applies e2e/load/proposed.sql to the full house before the probe; the probe runs as supabase_admin for nested plans |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
@@ -134,20 +134,21 @@ without one). "Read" is the day its comments were last read against its code.
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
 | e2e/__tests__/flowScreens.test.ts | 2026-10-04 | QueryController no longer counted; Android 14 names what animated; Maestro's JUnit reason, the no-record flow, the decision line |
-| e2e/__tests__/attempt.test.ts | 2026-10-04 | written with attempt.mjs: each retry rule shown to refuse on its own, in Maestro 2.10.0's record shapes |
-| e2e/__tests__/appCrashes.test.ts | 2026-10-15 | edited: the soft crash caught from cut logs (study arm A, Sealed E2E 38262703073), the fixed launch and another process passed |
+| e2e/__tests__/attempt.test.ts | 2026-10-15 | edited: a shipped client's own crash is run again once, then not judged; with no --own, or beside another crash, final as ever |
+| e2e/__tests__/appCrashes.test.ts | 2026-10-15 | edited: build 41's own crash and its aftermath reported apart and passed (cut from 38679641286); another crash, a late or foreign aftermath, no --own: fail |
 | e2e/__tests__/animationWaits.test.ts | 2026-10-04 | written with animation-waits.mjs: each wait on its flow, Android 14's named container |
 | e2e/__tests__/glideLogLevel.test.ts | 2026-10-08 | written with glide-log-level.mjs, on dexdump lines in the shape of runs 37628665206 and 37674283540 |
 | e2e/__tests__/iosLaunch.test.ts | 2026-10-15 | the iPhone launch verdict shown saying no to each way a launch fails |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe |
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
-| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: the fake phone answers a launch; a launch with animations on that destroys React fails the run; a lost scale is planted mid-run |
+| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: a shipped client's own crash run again once, twice not judged and listed, green; any other failure or crash red; this app's run red |
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
+| e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | written with the own-crash list: one row, one or two, or none checked |
 | e2e/__tests__/screenTimes.test.ts | 2026-10-02 | Written in the launch audit: the screen-time reader on threadtime log lines, and every way its gate says no. |
 | e2e/annotate.mjs | 2026-10-04 | the password hidden at the one door out; a summary-only level for past ten notices |
 | e2e/animation-waits.mjs | 2026-10-04 | the probes come first now; true as written |
-| e2e/app-crashes.mjs | 2026-10-15 | edited: a soft crash (React destroyed, no dialog) from a pid the log names as the app's counts as a crash |
-| e2e/attempt.mjs | 2026-10-04 | written: the retry rule, from runs 37155828199 and 37165878763, read against Maestro 2.10.0's source |
+| e2e/app-crashes.mjs | 2026-10-15 | edited: --own sets a shipped client's own crashes and their aftermath apart, failing nothing; each soft report keeps its lines |
+| e2e/attempt.mjs | 2026-10-15 | edited: a shipped client's own crash is run again once within the limits, else not judged (exit 3) |
 | e2e/db/bootstrap.mjs | 2026-10-15 | edited: a default naming no schema is changed by its own role, supabase_admin's in 4c |
 | e2e/db/old-clients.mjs | 2026-10-15 | new |
 | e2e/db/rehearsals.mjs | 2026-10-15 | new: seeds the made-up house, runs every *_rehearsal.sql as postgres, fails naming each that missed; --self-test proves the verdict can fail |
@@ -156,7 +157,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/up-down-up.mjs | 2026-10-15 | new |
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
-| e2e/db/verify-writes.mjs | 2026-09-29 | true as written |
+| e2e/db/verify-writes.mjs | 2026-10-15 | edited: a flow run again after the client's own crash may have two rows; a flow not judged is not checked |
 | e2e/flow-screens.mjs | 2026-10-04 | Maestro's JUnit reason, a report for a flow with no step record, the decision line, the named animation; QueryController dropped (logged on every key of fast runs) |
 | e2e/glide-log-level.mjs | 2026-10-08 | written: the APK hands Glide level 6 (ERROR), once, as a constant |
 | e2e/ios-crash.mjs | 2026-10-15 | new |
@@ -167,8 +168,8 @@ without one). "Read" is the day its comments were last read against its code.
 | plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it |
 | e2e/old-client-tree.mjs | 2026-10-15 | new |
-| e2e/old-clients.cjs | 2026-10-15 | new |
-| e2e/run-flows.sh | 2026-10-15 | edited: one launch with animations on before the flows, judged alive, crash-free and drawn |
+| e2e/old-clients.cjs | 2026-10-15 | edited: own crashes held whole; ownCrashFaults against the register and git; --own-crashes for run-flows.sh |
+| e2e/run-flows.sh | 2026-10-15 | edited: a shipped client's own crashes go to the crash gate and attempt.mjs; a not-judged flow is listed, never failed |
 | e2e/screen-times.mjs | 2026-10-02 | Written in the launch audit: each screen's time to its content, read from the E2E device log; a gate once ceilings are set. |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/splash-handoff.mjs | 2026-10-04 | written: no launch takes the splash over, scoped to the app's own processes; no launch, no pass |
@@ -211,7 +212,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/shoot.cjs | 2026-09-29 | true as written |
 | mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
-| register/classes.yaml | 2026-10-15 | new |
+| register/classes.yaml | 2026-10-15 | edited: RN-react-destroyed-on-mount |
 | scripts/add-only.cjs | 2026-10-15 | new |
 | scripts/bundle-size.js | 2026-10-03 | read whole: sound |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route) |
@@ -1063,7 +1064,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
-| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-15 | edited: the read-only check and the build waiting for its migrations |
+| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-15 | edited: the read-only check and the build waiting for its migrations; build 41 run as shipped; own crashes name a register class and a commit git has, each rule shown refusing |
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
 | src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | payments pass: a failed rank sync carries its status |
 | src/utils/__tests__/networkError.test.ts | — |  |

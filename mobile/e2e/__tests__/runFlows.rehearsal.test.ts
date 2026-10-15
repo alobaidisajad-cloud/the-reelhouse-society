@@ -10,7 +10,7 @@
  *     Maestro writes to, so crashes and screen times reach the script as on CI.
  *   - `maestro` is a script that plays each flow's part from a scenario file
  *     (one behaviour per attempt: pass, never-began, lost-driver, step-failed,
- *     gone, crash-then-pass, takeover-then-pass) and writes Maestro 2.10.0's own
+ *     gone, crash-then-pass, takeover-then-pass, own-crash) and writes Maestro 2.10.0's own
  *     records: the JUnit report,
  *     commands.json under .maestro/tests/<time>/<flow>/, and its log. Every
  *     Maestro it plays leaves a session file behind, as a killed one would; every
@@ -128,6 +128,15 @@ case "$behaviour" in
     echo '[{"command":{"launchAppCommand":{}},"metadata":{"status":"COMPLETED"}},{"command":{"tapOnElement":{"selector":{"idRegex":"profile-tab"}}},"metadata":{"status":"RUNNING"}}]' > "$tests/$name/commands.json"
     junit "maestro.DeviceUnreachableException: Device emulator-5554 is unreachable during &apos;tap&apos;: AdbException"
     echo "[Failed] $name (31s)"; exit 1 ;;
+  own-crash)
+    # Build 41's own crash, in the words of run 38679641286, then the step it failed.
+    say 523 I ActivityManager "Start proc 16631:com.reelhouse.society/u0a192 for next-top-activity {com.reelhouse.society/com.reelhouse.society.MainActivity}"
+    step 'Launch app'; step 'Tap on id: darkroom-search-input'
+    say 16631 W unknown:BridgelessReact 'ReactHost{0}.handleHostException(message = "Unable to find viewState for tag 2450. Surface stopped: false")'
+    say 16631 W unknown:ReactNative "Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable."
+    echo '[{"command":{"launchAppCommand":{}},"metadata":{"status":"COMPLETED"}},{"command":{"tapOnElement":{"selector":{"idRegex":"darkroom-search-input"}}},"metadata":{"status":"FAILED"}}]' > "$tests/$name/commands.json"
+    junit "Element not found: Id matching regex: darkroom-search-input"
+    echo "[Failed] $name (1m 38s) (Element not found: Id matching regex: darkroom-search-input)"; exit 1 ;;
   step-failed)
     step 'Launch app'; step 'Assert that id: profile-tab is visible'
     echo '[{"command":{"launchAppCommand":{}},"metadata":{"status":"COMPLETED"}},{"command":{"assertConditionCommand":{"condition":{"visible":{"idRegex":"profile-tab"}}}},"metadata":{"status":"FAILED","error":{"message":"Assertion is false: id: profile-tab is visible"}}}]' > "$tests/$name/commands.json"
@@ -256,6 +265,54 @@ it('a crash fails a run whose every flow passed — and the flows are not blamed
   expect(titled(r, 'error', 'E2E flows failed')).toBe('');
   expect(titled(r, 'notice', 'Every flow passed — the run failed on what the other errors name')).toContain('[Passed] b_flow');
   always(r);
+});
+
+describe('a shipped client\'s own crash (E2E_OLD_CLIENT, from the real old-clients.json)', () => {
+  const OLD = { E2E_OLD_CLIENT: 'TestFlight build 41' };
+  const OWN = "TestFlight build 41's own crash, class RN-react-destroyed-on-mount, fixed in e103781c";
+
+  it('is run again once; twice, its flow is not judged and listed; the run is green', async () => {
+    const r = await rehearse(['a_flow', 'b_flow'], { a_flow: ['own-crash', 'pass'], b_flow: ['own-crash', 'own-crash'] }, { env: OLD });
+    expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
+    expect([calls(r, 'a_flow'), calls(r, 'b_flow')]).toEqual([2, 2]);
+    expect(file(r, 'maestro-summary.txt')).toMatch(new RegExp(
+      `^\\[Retried\\] a_flow \\(its first attempt, \\d+s: ${OWN}\\)\\n\\[Passed\\] a_flow \\(1s\\)\\n` +
+      `\\[Retried\\] b_flow \\(its first attempt, \\d+s: ${OWN}\\)\\n` +
+      "\\[Not judged\\] b_flow \\(TestFlight build 41's own crash, twice: class RN-react-destroyed-on-mount\\)\\n$"));
+    expect(file(r, 'maestro.log')).toContain('Maestro: failed, not counted: b_flow (1m 38s)');
+    expect(titled(r, 'warning', "Not judged — 1 ended by TestFlight build 41's own crash")).toContain('[Not judged] b_flow');
+    const gate = titled(r, 'warning', "No crash or freeze but TestFlight build 41's own");
+    expect(gate).toContain(`${OWN}: during a_flow:`);
+    expect(gate).toContain(`${OWN}: during b_flow (attempt 2):`);
+    // verify-writes.mjs's list: a_flow may have saved twice, b_flow is not checked.
+    expect(file(r, 'own-crash-flows.txt')).toBe('a_flow\tretried\nb_flow\tretried\nb_flow\tnot-judged\n');
+    always(r);
+  });
+
+  it('fails a flow that fails for any other reason, own crash before it or not, and any other crash', async () => {
+    const r = await rehearse(['a_flow', 'b_flow', 'c_flow'],
+      { a_flow: ['own-crash', 'step-failed'], b_flow: ['step-failed', 'pass'], c_flow: ['crash-then-pass'] }, { env: OLD });
+    expect(r.status).toBe(1);
+    expect([calls(r, 'a_flow'), calls(r, 'b_flow'), calls(r, 'c_flow')]).toEqual([2, 1, 1]);
+    const failed = titled(r, 'error', 'E2E flows failed');
+    expect(failed).toContain('[Failed] a_flow (9s)');
+    expect(failed).toContain('[Failed] b_flow (9s)');
+    expect(file(r, 'not-judged.txt')).toBe('');
+    const said = titled(r, 'error', 'The app crashed or froze during the run');
+    expect(said).toContain('crash during c_flow: java.lang.IllegalStateException: a rehearsed crash');
+    expect(said).toContain(`${OWN}: during a_flow:`);
+    always(r);
+  });
+
+  it('is the app\'s crash in a run of this app: not run again, and the run fails', async () => {
+    const r = await rehearse(['a_flow'], { a_flow: ['own-crash', 'pass'] }, { env: { E2E_OLD_CLIENT: '' } });
+    expect(r.status).toBe(1);
+    expect(calls(r, 'a_flow')).toBe(1);
+    expect(titled(r, 'error', 'The app crashed or froze during the run')).toContain('JS error (React instance destroyed) during a_flow: Unable to find viewState for tag 2450');
+    expect(r.stdout).toContain('decided: not run again: the app crashed or froze during it — Unable to find viewState for tag 2450');
+    expect(existsSync(join(r.out, 'own-crashes.json'))).toBe(false);
+    always(r);
+  });
 });
 
 it('at most three attempts a run are run again', async () => {

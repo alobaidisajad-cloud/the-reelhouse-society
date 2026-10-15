@@ -8,7 +8,7 @@
  * for the attempt (logcat -v threadtime). Each rule is shown to refuse on its own.
  */
 import { spawnSync } from 'child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
@@ -215,6 +215,59 @@ describe('never run again, whatever Maestro said', () => {
   it('no report from Maestro at all', () => {
     commands([STEP]); maestroLog(1); deviceLog('');
     expect(decide()).toMatchObject({ status: 1, why: 'not run again: Maestro left no report to read' });
+  });
+});
+
+describe('a shipped client\'s own crash (--own)', () => {
+  // Build 41's crash in log_film_flow, cut from Sealed E2E 38679641286 (its second crash dropped).
+  const RUN = readFileSync(join(__dirname, 'fixtures', 'own-crash-e2e-38679641286.txt'), 'utf8')
+    .split('\n').filter((l) => !/ 16204 |Start proc 16204/.test(l)).join('\n');
+  const OWN = 'TestFlight build 41\'s own crash, class RN-react-destroyed-on-mount, fixed in e103781c';
+  /** The attempt as run 38679641286 recorded it: a step failed after the crash. */
+  function ownCrash(extra = '') {
+    junit('Element not found: Id matching regex: darkroom-search-input'); commands([STEP]); maestroLog(3);
+    deviceLog(RUN + extra);
+    writeFileSync(join(dir, 'own.json'), JSON.stringify({
+      client: 'TestFlight build 41',
+      ownCrashes: [{ class: 'RN-react-destroyed-on-mount', match: 'Unable to find viewState for tag', fixedIn: 'e103781c', why: 'x' }],
+    }));
+  }
+  const withOwn = (over: Record<string, string | number> = {}) => decide({ own: join(dir, 'own.json'), ...over });
+
+  it('runs the flow again, and says whose crash it was', () => {
+    ownCrash();
+    const d = withOwn();
+    expect(d).toMatchObject({ status: 0, verdict: 'retry', why: `run again: ${OWN}` });
+    expect(d.evidence).toContain(`${OWN}, in this attempt: Unable to find viewState for tag 2450. Surface stopped: false`);
+    expect(d.evidence).toContain('app crash or freeze in this attempt: none');
+  });
+
+  it('leaves the flow not judged when the crash ends it twice', () => {
+    ownCrash();
+    expect(withOwn({ attempt: 2, before: 'own' })).toMatchObject({
+      status: 3, verdict: 'not-judged', why: 'not judged: TestFlight build 41\'s own crash, twice: class RN-react-destroyed-on-mount',
+    });
+    expect(withOwn({ attempt: 2 }).why).toBe('not judged: TestFlight build 41\'s own crash, on its second attempt: class RN-react-destroyed-on-mount');
+  });
+
+  it('runs it again only within the run\'s limits, and otherwise leaves it not judged', () => {
+    ownCrash();
+    expect(withOwn({ retries: 3 })).toMatchObject({ status: 3, why: `not judged: ${OWN}, and this run has already run 3 attempts again (the most it may)` });
+    expect(withOwn({ left: 1679, need: 1680 })).toMatchObject({ status: 3, why: `not judged: ${OWN}, and 1679s are left where running it again needs 1680s` });
+  });
+
+  it('is the app\'s crash, as ever, with no --own', () => {
+    ownCrash();
+    expect(decide()).toMatchObject({ status: 1, verdict: 'final', why: 'not run again: the app crashed or froze during it — Unable to find viewState for tag 2450. Surface stopped: false' });
+  });
+
+  it('decides nothing for another crash in the same attempt, nor for an attempt that ran out of its time', () => {
+    ownCrash(line('01:27:18', 16631, 'E', 'AndroidRuntime', 'FATAL EXCEPTION: main') +
+      line('01:27:18', 16631, 'E', 'AndroidRuntime', 'Process: com.reelhouse.society, PID: 16631') +
+      line('01:27:18', 16631, 'E', 'AndroidRuntime', 'java.lang.IllegalStateException: boom'));
+    expect(withOwn()).toMatchObject({ status: 1, why: 'not run again: the app crashed or froze during it — java.lang.IllegalStateException: boom' });
+    ownCrash();
+    expect(withOwn({ exit: 124 })).toMatchObject({ status: 1, why: 'not run again: it ran out of its time' });
   });
 });
 
