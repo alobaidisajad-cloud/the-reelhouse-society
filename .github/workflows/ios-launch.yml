@@ -89,9 +89,20 @@ jobs:
             sleep 2
             start=$(date +%s)
             ( xcrun simctl launch --console-pty "$DEV" com.reelhouse.society > "$S/console-$1.txt" 2>&1 & )
-            while [ $(( $(date +%s) - start )) -le 45 ]; do
-              pid=$(xcrun simctl spawn "$DEV" launchctl list | awk '/UIKitApplication:com\.reelhouse\.society/ { print $1; exit }')
-              echo "$(( $(date +%s) - start )) ${pid:--}" >> "$S/samples-$1.txt"
+            # simctl writes "<bundle id>: <pid>" as it starts the app; that process is
+            # then read each second with the host's own ps (a simulator's app is a
+            # host process), cheap enough to keep the clock true on a busy runner.
+            pid=""; seen=""
+            while [ $(( $(date +%s) - start )) -le 90 ]; do
+              now=$(( $(date +%s) - start ))
+              [ -n "$pid" ] || pid=$(sed -n 's/^com\.reelhouse\.society: \([0-9][0-9]*\).*/\1/p' "$S/console-$1.txt" | head -n 1)
+              if [ -n "$pid" ] && ps -p "$pid" > /dev/null 2>&1; then
+                echo "$now $pid" >> "$S/samples-$1.txt"; [ -n "$seen" ] || seen=$now
+              else
+                echo "$now -" >> "$S/samples-$1.txt"
+              fi
+              { [ -n "$seen" ] && [ "$now" -ge $(( seen + 30 )) ]; } && break
+              { [ -z "$pid" ] && [ "$now" -ge 60 ]; } && break
               sleep 1
             done
             kill $stream 2>/dev/null || true

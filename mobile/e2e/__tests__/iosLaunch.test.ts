@@ -66,7 +66,11 @@ describe('the iPhone launch workflow', () => {
   const wf = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'ios-launch.yml'), 'utf8');
 
   it('samples the app\'s process each second and lets the verdict decide', () => {
-    expect(wf).toContain('launchctl list | awk');
+    // The process simctl names as it starts it, read with the host's ps: launchd's list
+    // was too slow to read each second on a busy runner (run 38703680568).
+    expect(wf).toContain("sed -n 's/^com\\.reelhouse\\.society: \\([0-9][0-9]*\\).*/\\1/p'");
+    expect(wf).toContain('ps -p "$pid"');
+    expect(wf).not.toContain('launchctl list');
     expect(wf).toMatch(/node e2e\/ios-launch\.cjs "\$S\/samples-\$1\.txt" "\$S\/stream-\$1\.txt" "\$start"/);
   });
 
