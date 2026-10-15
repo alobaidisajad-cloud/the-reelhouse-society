@@ -129,6 +129,13 @@ classes:
     count: 1
     open_in_production: true
 
+  - id: DB-row-edited-past-its-gates
+    area: database
+    seriousness: serious
+    status: OPEN
+    count: 14
+    open_in_production: true
+
   # The three below are held at their totals in register/frozen-counts.json, file by file, by
   # scripts/frozen-counts.cjs; `--lower` writes their counts here when one falls.
   - id: CODE-promise-not-awaited
