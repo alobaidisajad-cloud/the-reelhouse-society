@@ -36,3 +36,11 @@ mobile/githooks/* text eol=lf
 # ends in CR: the patched file is no longer the one the patch was made from, as
 # tried on expo-image's patch, where 39 lines came out CRLF.
 mobile/patches/*.patch text eol=lf
+
+# ── A generated file's copy keeps the bytes it was generated with ───────────
+#
+# The plugin tests run on MainActivity.kt exactly as `expo prebuild` writes it
+# on the build machines: LF. Checked out with CRLF, the copy was no longer that
+# file, and the splash plugin's test failed on every Windows checkout while CI
+# passed (its CRLF case builds its own CRLF copy).
+mobile/plugins/__tests__/fixtures/** text eol=lf

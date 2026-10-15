@@ -418,7 +418,6 @@
     "mobile/src/utils/__tests__/dispatchFieldCaps.test.ts": 10,
     "mobile/src/utils/__tests__/dispatchMutationRegistry.test.ts": 3,
     "mobile/src/utils/__tests__/dispatchOfflineParity.test.ts": 3,
-    "mobile/src/utils/__tests__/edgeFunctions.guard.test.ts": 1,
     "mobile/src/utils/__tests__/endorsementGrouping.test.ts": 22,
     "mobile/src/utils/__tests__/everyCapAnswersToItsColumn.test.ts": 4,
     "mobile/src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts": 5,

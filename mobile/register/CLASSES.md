@@ -22,5 +22,5 @@ production shows only its id, area, seriousness and count here.
 | DB-extension-reach | database | serious | OPEN | 1 | open in production |
 | DB-row-edited-past-its-gates | database | serious | OPEN | 14 | open in production |
 | CODE-promise-not-awaited | code | behaviour | OPEN | 589 | A promise nobody waits for, so its failure goes unheard and what follows may run first |
-| CODE-index-read-unchecked | code | behaviour | OPEN | 1518 | A value read by index or key used as if it is always there |
+| CODE-index-read-unchecked | code | behaviour | OPEN | 1517 | A value read by index or key used as if it is always there |
 | EDGE-function-static-fault | server | code | OPEN | 4 | An edge function's type error or lint finding, where no gate read the functions |
