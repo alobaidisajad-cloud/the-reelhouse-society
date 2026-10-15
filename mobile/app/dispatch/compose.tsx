@@ -5,8 +5,7 @@ import { Text, TextInput } from '@/src/components/text';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useModalTop } from '@/src/components/layout/navMetrics';
+import { useBottomEdge, useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
 import { Bold, Italic, Type, Quote, Minus, Link2 } from 'lucide-react-native';
 import { EssayBody } from '@/src/components/dispatch/EssayBody';
 import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
@@ -55,6 +54,11 @@ import { nav } from '@/src/utils/typedRouter';
 
 /** The counter shows only in the last ~870 words: from the first, a fence would feel editorial. */
 const LIMIT_WARNING_CHARS = 5000;
+
+/** Under the essay's footer: its own 40, the keyboard's or the edge's, whichever is under it. */
+export const ESSAY_FOOT = 40;
+/** And at least this clear of the home indicator's edge: what the 40 keeps on a 34pt inset. */
+export const ESSAY_FOOT_GAP = 6;
 
 /**
  * `TUESDAY · 21:40`, from the app's own tables.
@@ -142,7 +146,7 @@ function KindPicker() {
     const essays = useClearance('essays', '/dispatch/compose');
     const ballots = useClearance('ballots', '/dispatch/compose');
     const holds = (k: string) => (k === 'ballot' ? ballots.held : essays.held);
-    const insets = useSafeAreaInsets();
+    const edge = useBottomEdge();
     // Read once, on mount. A draft cannot appear while this sheet is open — the
     // only thing that writes one is the room this sheet leads to.
     const hasDossierDraft = useMemo(
@@ -154,7 +158,7 @@ function KindPicker() {
         <View style={[p.screen, { justifyContent: 'flex-end' }]}>
             <RoomLight room="dispatch" />
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
-            <View style={{ paddingBottom: insets.bottom }}>
+            <View style={{ paddingBottom: edge }}>
                 <PaperPicker
                     forms={FORMS.map((f) => ({
                         ...f,
@@ -182,7 +186,7 @@ function KindPicker() {
  * dismissed this would be a button that changed nothing.
  */
 function TheDoor({ door }: { door: ReturnType<typeof useDoor> }) {
-    const insets = useSafeAreaInsets();
+    const end = useContentBottom();
     const user = useAuthStore((s) => s.user);
     const hasHeldWork = useMemo(
         () => readDraft(user?.id, 'dossier') !== null,
@@ -194,7 +198,7 @@ function TheDoor({ door }: { door: ReturnType<typeof useDoor> }) {
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
             <PaperBack label="THE DISPATCH" onBack={() => nav.back()} presented />
             <ScrollView
-                contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingBottom: insets.bottom + 24 }}
+                contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingBottom: end }}
                 showsVerticalScrollIndicator={false}
             >
                 <PaperDoor
@@ -215,7 +219,7 @@ function TheDoor({ door }: { door: ReturnType<typeof useDoor> }) {
 function ComposeDossierScreen() {
     const { edit, initialTitle, initialContent } = useLocalSearchParams<{ edit?: string, initialTitle?: string, initialContent?: string }>();
     const { user } = useAuthStore();
-    const insets = useSafeAreaInsets();
+    const edge = useBottomEdge();
     const headerTop = useModalTop();
     /** Publishing the long form is the Auteur's act — asked from the registry. */
     const essay = useClearance('essays', '/dispatch/compose');
@@ -691,7 +695,7 @@ function ComposeDossierScreen() {
             </View>
 
             {isPreview ? (
-                <CinematicScrollView style={styles.workspace} contentContainerStyle={styles.previewContent} showsVerticalScrollIndicator={false} bottomInset={insets.bottom}>
+                <CinematicScrollView style={styles.workspace} contentContainerStyle={styles.previewContent} showsVerticalScrollIndicator={false} bottomInset={edge}>
                     <Text style={styles.previewEyebrow} {...scaledTextProps}>AS THE HOUSE WILL SET IT</Text>
                     {/* The reader's own head, cover and all, so the preview is the page. */}
                     {title || film ? (
@@ -729,7 +733,7 @@ function ComposeDossierScreen() {
                 </CinematicScrollView>
             ) : (
                 <Animated.View style={[styles.kavFlex, animatedContainerStyle]}>
-                    <CinematicScrollView style={styles.workspace} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bottomInset={insets.bottom}>
+                    <CinematicScrollView style={styles.workspace} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bottomInset={edge}>
                         {/* It asks, never merges: both sides with a time and a length. */}
                         {elsewhere ? (
                             <View style={styles.elsewhereBox}>
@@ -895,7 +899,7 @@ function ComposeDossierScreen() {
                         </ScrollView>
                     </View>
 
-                    <BlurView intensity={90} tint="dark" style={styles.footer}>
+                    <BlurView intensity={90} tint="dark" style={[styles.footer, { paddingBottom: Math.max(ESSAY_FOOT, edge + ESSAY_FOOT_GAP) }]}>
                         <View style={styles.stats}>
                             {/* A fixed strip of three: the deck cap, inherited by the values. */}
                             <Text style={styles.statText} {...deckLabelProps}>WORDS <Text style={styles.statVal}>{stats.words}</Text></Text>
@@ -935,7 +939,7 @@ function ComposeDossierScreen() {
                 preview and back. They draw nothing until opened. */}
             <FilmPicker
                 visible={filmOpen}
-                bottomInset={insets.bottom}
+                bottomInset={edge}
                 onClose={() => setFilmOpen(false)}
                 onPick={(f, id) => {
                     // The id comes from the finder by POSITION, which is the one
@@ -954,7 +958,7 @@ function ComposeDossierScreen() {
             <SeriesPicker
                 visible={seriesOpen}
                 chosen={series}
-                bottomInset={insets.bottom}
+                bottomInset={edge}
                 onClose={() => setSeriesOpen(false)}
                 onSet={(choice) => { setSeries(choice); setSeriesOpen(false); }}
                 onClear={() => { setSeries(null); setSeriesOpen(false); }}
@@ -1061,7 +1065,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 20,
         paddingTop: 16,
-        paddingBottom: 40,
         borderTopWidth: 1,
         borderTopColor: colors.sepiaBorder,
     },

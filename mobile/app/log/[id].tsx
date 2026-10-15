@@ -16,8 +16,9 @@ import React, { useCallback, useRef, useState } from 'react';
 import { Platform, RefreshControl, Share, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { Easing, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
+import {
+  useBottomEdge, useContentBottom, usePushedHeaderTop,
+} from '@/src/components/layout/navMetrics';
  
 import { s, PARALLAX_PADDER_HEIGHT, BACKDROP_H, HEADER_ACTION_GAP } from '@/src/components/log/logDetailStyles';
 import { hasPhysicalFormat } from '@/src/components/log/logRecord';
@@ -127,7 +128,8 @@ export default function LogDetailScreen() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const blockUser = useBlockStore((state) => state.blockUser);
   const muteUser = useBlockStore((state) => state.muteUser);
-  const insets = useSafeAreaInsets();
+  const edge = useBottomEdge();
+  const end = useContentBottom();
   const headerTop = usePushedHeaderTop();
 
   const queryClient = useQueryClient();
@@ -773,8 +775,8 @@ export default function LogDetailScreen() {
 
       <CinematicScrollView
         ref={scrollViewRef}
-        contentContainerStyle={s.content}
-        bottomInset={insets.bottom}
+        contentContainerStyle={{ paddingBottom: end }}
+        bottomInset={edge}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}
       >
         {/* Transparent Padder for Parallax Overlap — Web: height IS_TOUCH ? '10vh' ≈ 80px */}

@@ -3,8 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useModalTop } from '@/src/components/layout/navMetrics';
+import { useAboveDockedBar, useModalTop } from '@/src/components/layout/navMetrics';
 
 import LogForm from '@/src/components/log/LogForm';
 import { st } from '@/src/components/log/LogModalStyles';
@@ -30,7 +29,7 @@ export default function LogModalScreen() {
     // container padding only made room without scrolling to it. On Android the
     // root ends at the keyboard (KeyboardRoom) and the shortened ScrollView
     // scrolls the focused field into view.
-    const insets = useSafeAreaInsets();
+    const scrollEnd = useAboveDockedBar(SEAL_BAR_HEIGHT);
     const handleTop = useModalTop();
 
     // ── Not authenticated ──
@@ -90,7 +89,7 @@ export default function LogModalScreen() {
                     // The scroll must END above the docked seal, or the last index
                     // entry hides behind it. One measured number: the bar's own
                     // height plus the safe area.
-                    <ScrollView style={st.formScroll} contentContainerStyle={[st.formContent, { paddingBottom: insets.bottom + SEAL_BAR_HEIGHT + 16 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+                    <ScrollView style={st.formScroll} contentContainerStyle={[st.formContent, { paddingBottom: scrollEnd }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
                         <LogForm flow={flow} user={user} />
                     </ScrollView>
                 )}

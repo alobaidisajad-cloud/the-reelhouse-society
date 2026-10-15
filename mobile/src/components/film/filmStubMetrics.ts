@@ -11,6 +11,8 @@
  * re-derives it from these same parts rather than hardcoding what it expects.
  */
 
+import { bottomEdge, scrollEndAbove } from '@/src/components/layout/navMetrics';
+
 /** The brass plate itself. 46 read as a control; 52 reads as a plate. */
 export const STUB_HEIGHT = 52;
 
@@ -23,21 +25,22 @@ export const STUB_BORDER = 1;
 /**
  * The height of the whole dock for a given bottom safe-area inset.
  *
- * `Math.max(inset, 16)` because a phone with no home indicator still needs the
- * plate held off the glass — an inset of 0 would sit it flush against the
- * bottom edge, which reads as a rendering error rather than a design.
+ * The home indicator's edge (navMetrics' bottomEdge) because a phone with no
+ * home indicator still needs the plate held off the glass — an inset of 0
+ * would sit it flush against the bottom edge, which reads as a rendering
+ * error rather than a design.
  */
 export function dockHeight(bottomInset: number): number {
-  return STUB_PAD_TOP + STUB_HEIGHT + Math.max(bottomInset, 16) + STUB_BORDER;
+  return STUB_PAD_TOP + STUB_HEIGHT + bottomEdge(bottomInset) + STUB_BORDER;
 }
 
 /**
  * What the scroll must reserve so the last line of the page clears the dock.
- * The extra 24 is breathing room, not padding for its own sake: without it the
- * final row ends exactly at the hairline and looks clipped.
+ * The scroll's end gap is breathing room, not padding for its own sake:
+ * without it the final row ends exactly at the hairline and looks clipped.
  */
 export function scrollReserve(bottomInset: number): number {
-  return dockHeight(bottomInset) + 24;
+  return scrollEndAbove(dockHeight(bottomInset));
 }
 
 /**

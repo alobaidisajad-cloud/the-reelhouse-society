@@ -67,8 +67,10 @@ import {
     Settings,
     Sparkles
 } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePushedHeaderTop, useTabContentTop } from '@/src/components/layout/navMetrics';
+import {
+  useBottomEdge, useContentBottom, usePushedHeaderTop, useTabBarHeight, useTabContentBottom, useTabContentTop,
+} from '@/src/components/layout/navMetrics';
+import { CentredRoom } from '@/src/components/layout/CentredRoom';
 
 // ════════════════════════════════════════════════════════════
 // HELPER COMPONENTS
@@ -146,10 +148,17 @@ function VelvetGate({ title, line, isSelf, onAscend }: { title: string; line: st
 
 export default function UserProfileScreen({ usernameOverride, isRootTab = false }: { usernameOverride?: string, isRootTab?: boolean } = {}) {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   // Your own file is a tab under the top bar; anyone's, pushed, has no bar above it.
   const tabTop = useTabContentTop();
   const pushedTop = usePushedHeaderTop();
+  // And it ends above the tab bar; anyone's, above the home indicator.
+  const tabBar = useTabBarHeight();
+  const edge = useBottomEdge();
+  const tabEnd = useTabContentBottom();
+  const pushedEnd = useContentBottom();
+  const foot = isRootTab ? tabBar : edge;
+  const endPad = isRootTab ? tabEnd : pushedEnd;
+  const roomKind = isRootTab ? 'tab' : 'pushed';
 
   const scrollY = useSharedValue(0);
 
@@ -533,42 +542,48 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // repairingHandle: the route is our own stale handle, being corrected, so not
   // "Member Not Found"; it clears itself after 4s, never a permanent spinner.
   if (loading || repairingHandle) return (
-    <View style={[s.container, s.centeredFull]}>
+    <View style={s.container}>
       <RoomLight room="member" />
       {readyMark}
-      <BusterEyes style={s.loadingEyes} />
-      <View style={s.loadingRow}>
-        <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />
-        <Text {...scaledTextProps} style={s.loadingText}>RETRIEVING DOSSIER</Text>
-        <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />
-      </View>
+      <CentredRoom kind={roomKind} style={s.centeredFull}>
+        <BusterEyes style={s.loadingEyes} />
+        <View style={s.loadingRow}>
+          <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />
+          <Text {...scaledTextProps} style={s.loadingText}>RETRIEVING DOSSIER</Text>
+          <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />
+        </View>
+      </CentredRoom>
     </View>
   );
 
   // Could not be asked — not "Member Not Found", which it said of any member
   // opened with no signal (the not-found answer is `targetUser` null, no error).
   if (!targetUser && data.error) return (
-    <View style={[s.container, s.centeredPadded]}>
+    <View style={s.container}>
       <RoomLight room="member" />
       {readyMark}
-      <EmptyOffline onRetry={() => { void data.fetchUserData(); }} wayOut={{ label: 'Go back', onPress: handleBack }} />
+      <CentredRoom kind={roomKind} style={s.centeredPadded}>
+        <EmptyOffline onRetry={() => { void data.fetchUserData(); }} wayOut={{ label: 'Go back', onPress: handleBack }} />
+      </CentredRoom>
     </View>
   );
 
   if (!targetUser) return (
-    <View style={[s.container, s.centeredPadded]}>
+    <View style={s.container}>
       <RoomLight room="member" />
       {readyMark}
-      <Buster size={80} mood="suspicious" style={s.notFoundBuster} />
-      <Text {...scaledTextProps} style={s.notFoundTitle}>Member Not Found</Text>
-      {/* eslint-disable-next-line react/no-unescaped-entities */}
-      <Text {...scaledTextProps} style={s.notFoundBody}>This member doesn't exist yet, or has been removed.</Text>
-      <PressableScale style={s.ghostBtn} onPress={handleBack} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
-        <View style={s.ghostBtnRow}>
-          <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
-          <Text {...scaledTextProps} style={s.ghostBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>GO BACK</Text>
-        </View>
-      </PressableScale>
+      <CentredRoom kind={roomKind} style={s.centeredPadded}>
+        <Buster size={80} mood="suspicious" style={s.notFoundBuster} />
+        <Text {...scaledTextProps} style={s.notFoundTitle}>Member Not Found</Text>
+        {/* eslint-disable-next-line react/no-unescaped-entities */}
+        <Text {...scaledTextProps} style={s.notFoundBody}>This member doesn't exist yet, or has been removed.</Text>
+        <PressableScale style={s.ghostBtn} onPress={handleBack} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
+          <View style={s.ghostBtnRow}>
+            <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
+            <Text {...scaledTextProps} style={s.ghostBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>GO BACK</Text>
+          </View>
+        </PressableScale>
+      </CentredRoom>
     </View>
   );
 
@@ -663,7 +678,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 moreFailed={!!data.moreFailed.logs}
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                bottomInset={insets.bottom}
+                bottomInset={foot}
               />
             )}
 
@@ -688,7 +703,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 isSelf={isSelf}
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                bottomInset={insets.bottom}
+                bottomInset={foot}
               />
             )}
 
@@ -718,7 +733,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 setRouletteOpen={setRouletteOpen}
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                bottomInset={insets.bottom}
+                bottomInset={foot}
               />
             )}
 
@@ -741,7 +756,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 isSelf={isSelf}
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                bottomInset={insets.bottom}
+                bottomInset={foot}
               />
             )}
 
@@ -771,7 +786,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   hasMore={(isSelf && !physicalFilter) ? filmStore.archiveHasMore : hasMoreVault}
                   refreshing={refreshing}
                   onRefresh={onRefresh}
-                  bottomInset={insets.bottom}
+                  bottomInset={foot}
                 />
               ) : (
                 <View style={s.tabContentPad}>
@@ -796,7 +811,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             </Presence>
           </View>
         ) : (
-          <ScrollView contentContainerStyle={[s.tabScrollContent, { paddingBottom: Math.max(insets.bottom + 80, 80) }]} showsVerticalScrollIndicator={false}
+          <ScrollView contentContainerStyle={[s.tabScrollContent, { paddingBottom: endPad }]} showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}>
             {/* ═══ PASSPORT TAB ═══ */}
@@ -962,8 +977,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         </View>
       )}
 
-      <CinematicScrollView contentContainerStyle={[s.mainScrollContent, { paddingBottom: Math.max(insets.bottom + 60, 60) }]} showsVerticalScrollIndicator={false}
-        externalScrollY={scrollY} bottomInset={Math.max(insets.bottom + 60, 60)} scrollEventThrottle={16}
+      <CinematicScrollView contentContainerStyle={{ paddingBottom: endPad }} showsVerticalScrollIndicator={false}
+        externalScrollY={scrollY} bottomInset={foot} scrollEventThrottle={16}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}>
 
         {/* ═══ THE MEMBERSHIP PLATE — atmosphere ends at the stats grid ═══ */}

@@ -102,9 +102,9 @@ export const s = StyleSheet.create({
   },
 
   // ── Scroll ──
+  // Its foot is the tab's (useTabContentBottom), set where it is drawn.
   scrollContent: {
     paddingTop: 22,
-    paddingBottom: 120,
   },
 
   // ── Loading ──

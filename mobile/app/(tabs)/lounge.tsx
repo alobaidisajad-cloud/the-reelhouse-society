@@ -26,8 +26,7 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import { LinearGradient } from 'expo-linear-gradient';
 import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTabContentTop } from '@/src/components/layout/navMetrics';
+import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
 
 // ── Extracted components ──
 import { LoungeGate } from '@/src/components/lounge/LoungeGate';
@@ -62,9 +61,10 @@ export default function LoungeScreen() {
   const salonsLost = loungesFailed && lounges.length === 0;
   const readyMark = useScreenReady('lounges',
     loading && lounges.length === 0 ? 'reading' : salonsLost ? 'failed' : 'ready');
-  const insets = useSafeAreaInsets();
-  // The header starts below the top bar, which is drawn over this tab too.
+  // The header starts below the top bar, and the list ends above the tab bar: both drawn over it.
   const topPad = useTabContentTop();
+  const endPad = useTabContentBottom();
+  const tabBar = useTabBarHeight();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -310,10 +310,10 @@ export default function LoungeScreen() {
         renderItem={renderPublicCard as any}
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={s.scrollContent}
+        contentContainerStyle={[s.scrollContent, { paddingBottom: endPad }]}
         scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
         onScroll={onScroll}
-        bottomInset={insets.bottom + 49}
+        bottomInset={tabBar}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />
         }

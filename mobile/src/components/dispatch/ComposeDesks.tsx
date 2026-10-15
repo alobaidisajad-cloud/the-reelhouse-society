@@ -22,7 +22,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager, StyleSheet, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomEdge } from '@/src/components/layout/navMetrics';
 
 import PressableScale from '@/src/components/PressableScale';
 import { PaperComposer } from '@/src/components/dispatch/paper/PaperComposer';
@@ -86,7 +86,7 @@ function useSendBackIfNotAMember(me: unknown) {
 export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire' }) {
   const me = useMe();
   useSendBackIfNotAMember(me);
-  const insets = useSafeAreaInsets();
+  const edge = useBottomEdge();
   const hour = useOpeningHour();
 
   // `?edit=<id>`: the same desk, amending. Two desks for one shape would drift.
@@ -206,7 +206,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
         visible={finding}
         onClose={() => setFinding(false)}
         onPick={(f, id) => { setFilm(f); setFilmId(id); setFinding(false); }}
-        bottomInset={insets.bottom}
+        bottomInset={edge}
       />
     </View>
   );
@@ -217,7 +217,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
 export function ComposeBallotScreen() {
   const me = useMe();
   useSendBackIfNotAMember(me);
-  const insets = useSafeAreaInsets();
+  const edge = useBottomEdge();
   const hour = useOpeningHour();
 
   const userId = useAuthStore((s) => s.user?.id); // the draft's key; `useMe` is the byline
@@ -335,7 +335,7 @@ export function ComposeBallotScreen() {
           setSlots((prev) => prev.map((s, n) => (n === finding ? { film: f, id } : s)));
           setFinding(null);
         }}
-        bottomInset={insets.bottom}
+        bottomInset={edge}
       />
     </View>
   );

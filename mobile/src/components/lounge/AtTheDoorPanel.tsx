@@ -9,11 +9,11 @@ import { Check, DoorOpen, Users, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ToastHost } from '@/src/components/ToastHost';
 import { Arrive } from '@/src/components/Arrive';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { leave, MS } from '@/src/theme/motion';
+import { useSheetBottom } from '@/src/components/layout/navMetrics';
 
 const BLOOD = colors.crimson;
 
@@ -26,7 +26,7 @@ interface Props {
 }
 
 export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved }: Props) {
-  const insets = useSafeAreaInsets();
+  const sheetFoot = useSheetBottom();
   const { approveMember, declineMember } = useLoungeStore();
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -51,7 +51,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
           leaves the host a blurred screen and nobody to admit. */}
       <PresenceView name="lounge.door.leave" style={s.frame} pointerEvents="box-none"
         exit={{ kind: 'SlideOutDown', duration: MS.quick, easing: leave() }}>
-      <Arrive name="lounge.door" duration={MS.considered} rise={DOOR_RISE} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 8, 28) }]}>
+      <Arrive name="lounge.door" duration={MS.considered} rise={DOOR_RISE} style={[s.sheet, { paddingBottom: sheetFoot }]}>
       <View style={s.body} onAccessibilityEscape={onClose}>
         <View style={s.handle} />
         <View style={s.headerRow}>

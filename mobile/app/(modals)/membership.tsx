@@ -19,8 +19,9 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
 
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useModalTop } from '@/src/components/layout/navMetrics';
+import {
+  useAboveDockedBar, useBottomEdge, useContentBottom, useModalTop,
+} from '@/src/components/layout/navMetrics';
 import { ChevronLeft } from 'lucide-react-native';
 import { useAuthStore } from '@/src/stores/auth';
 
@@ -49,7 +50,7 @@ import { PrivilegeLedger } from '@/src/components/society/PrivilegeLedger';
 import { FoundingCertificate } from '@/src/components/society/FoundingCertificate';
 import { SmallPrint, STORE } from '@/src/components/society/SmallPrint';
 import { purchaseStop } from '@/src/components/society/purchaseStop';
-import { PurchaseDock, DOCK, DOCK_HEIGHT } from '@/src/components/society/PurchaseDock';
+import { PurchaseDock, DOCK_REACH } from '@/src/components/society/PurchaseDock';
 import { ticketPrice, savePercent, foundingPitch, type Billing } from '@/src/components/society/societyPricing';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
@@ -100,8 +101,6 @@ export const MANAGE_URL = Platform.OS === 'android'
 
 /** Below this height the poster steps down so a ticket shows on the first screen. */
 const SHORT_SCREEN = 740;
-/** Clear space between the last line of the page and the window above it. */
-export const SCROLL_BREATH = 32;
 
 const PAID: (Rank & { id: PaidRankId })[] = RANKS.filter((r): r is Rank & { id: PaidRankId } => r.id !== 'cinephile');
 
@@ -116,7 +115,9 @@ async function readFoundingCount(): Promise<number | null> {
 
 export default function MembershipScreen() {
 
-  const insets = useSafeAreaInsets();
+  const edge = useBottomEdge();
+  const aboveDock = useAboveDockedBar(DOCK_REACH);
+  const end = useContentBottom();
   const navTop = useModalTop();
   const { height } = useWindowDimensions();
   const { user, isAuthenticated } = useAuthStore();
@@ -463,9 +464,9 @@ export default function MembershipScreen() {
       </View>
 
       <ScrollView
-        // The window's exact height and the inset it sits on, then room to breathe,
-        // so the last line of the small print always scrolls clear of the window.
-        contentContainerStyle={{ paddingBottom: (showDock ? DOCK_HEIGHT + Math.max(insets.bottom, DOCK.minInset) : insets.bottom) + SCROLL_BREATH }}
+        // Above the window and its fade (navMetrics), so the last line of the
+        // small print always scrolls clear of both.
+        contentContainerStyle={{ paddingBottom: showDock ? aboveDock : end }}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeIn.duration(500)}>
@@ -526,7 +527,7 @@ export default function MembershipScreen() {
           auteur={selected === 'auteur'}
           busy={isRedirecting || isRestoring}
           onBuy={() => selected && handleCheckout(selected)}
-          bottomInset={insets.bottom}
+          bottomInset={edge}
         />
       ) : null}
     </View>

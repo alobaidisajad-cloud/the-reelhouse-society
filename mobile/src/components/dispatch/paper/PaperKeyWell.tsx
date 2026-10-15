@@ -23,6 +23,9 @@
  * So in the app this reserves the keyboard's REAL height, the same way
  * `compose.tsx` already does for the dossier, and in the harness — where there
  * is no keyboard and no handler — it draws the block the design expects.
+ *
+ * With the keyboard down, the well keeps the home indicator's edge (navMetrics),
+ * so the rail above it never sits on the indicator.
  */
 import { memo } from 'react';
 import { Platform, View } from 'react-native';
@@ -31,14 +34,15 @@ import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-re
 
 import { p } from './paperStyles';
 import { decorativeTextProps } from '@/src/constants/textScaling';
+import { useBottomEdge } from '@/src/components/layout/navMetrics';
 
 export const PaperKeyWell = memo(function PaperKeyWell({ drawn }: { drawn?: boolean }) {
   // Hooks run unconditionally; only what is RENDERED differs.
   const keyboard = useAnimatedKeyboard();
+  const edge = useBottomEdge();
   const room = useAnimatedStyle(() => ({
-    // iOS only, matching `compose.tsx`: on Android the root ends at the
-    // keyboard (KeyboardRoom), and padding for it here would double the inset.
-    height: Platform.OS === 'ios' ? keyboard.height.value : 0,
+    // Up: iOS only, as in `compose.tsx`; Android's root ends at the keyboard (KeyboardRoom).
+    height: keyboard.height.value > 0 ? (Platform.OS === 'ios' ? keyboard.height.value : 0) : edge,
   }));
 
   if (drawn) {

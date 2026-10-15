@@ -3,8 +3,7 @@ import { View, StyleSheet, Alert, Modal, KeyboardAvoidingView, type LayoutChange
 import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
 import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
+import { useContentBottom, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import Animated, {
   useSharedValue, useAnimatedStyle, useAnimatedScrollHandler, withTiming,
   Easing, withRepeat, cancelAnimation, interpolate, Extrapolation, ReduceMotion,
@@ -77,7 +76,7 @@ const TITLE_FADE_TO = 210;
 export function SettingsScreen() {
   const { user, logout } = useAuthStore();
   const { mutateAsync: updateUserMutation, isPending: isUpdatingUser } = useUpdateUser();
-  const insets = useSafeAreaInsets();
+  const end = useContentBottom();
   const headerTop = usePushedHeaderTop();
   // A door to one section (`/settings?section=import`) lands on it, once.
   const { section } = useLocalSearchParams<{ section?: string }>();
@@ -507,7 +506,7 @@ export function SettingsScreen() {
           root ends at the keyboard (KeyboardRoom) and this shorter view scrolls. */}
       <Animated.ScrollView
         ref={scrollRef}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+        contentContainerStyle={{ paddingBottom: end }}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}

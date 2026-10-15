@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator, InteractionManager, Platform, AccessibilityInfo } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
+import { useContentBottom, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FormProvider } from 'react-hook-form';
@@ -114,7 +113,7 @@ const bd = StyleSheet.create({
 });
 
 export function EditProfileScreen() {
-  const insets = useSafeAreaInsets();
+  const end = useContentBottom();
   const headerTop = usePushedHeaderTop();
 
   const {
@@ -186,7 +185,7 @@ export function EditProfileScreen() {
       </View>
 
       <FormProvider {...form}>
-        <ScrollView contentContainerStyle={[st.scrollContent, { paddingBottom: Math.max(insets.bottom, 100) }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+        <ScrollView contentContainerStyle={[st.scrollContent, { paddingBottom: end }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
 
         {!!submitError && (
           <Animated.View entering={FadeInDown} style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder, borderRadius: 4, marginBottom: 16, marginHorizontal: 16 }}>

@@ -6,7 +6,6 @@ import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, Image as ImageIcon, X } from 'lucide-react-native';
 import { logger } from '@/src/utils/logger';
 import { useAuthStore } from '@/src/stores/auth';
@@ -16,6 +15,7 @@ import reelToast from '@/src/utils/reelToast';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { EDGE_LIT } from '@/src/theme/light';
 import { arrive, leave, MS } from '@/src/theme/motion';
+import { useSheetBottom } from '@/src/components/layout/navMetrics';
 
 interface Props {
   onClose: () => void;
@@ -36,7 +36,7 @@ function askForSettings(what: string) {
 export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
   const { user } = useAuthStore();
   const [uploading, setUploading] = useState(false);
-  const insets = useSafeAreaInsets();
+  const sheetFoot = useSheetBottom();
 
   const handlePick = async (source: 'camera' | 'library') => {
     TactileEngine.selection();
@@ -88,7 +88,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
   return (
     <View style={StyleSheet.absoluteFill}>
       <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-      <PresenceView name="avatar-crop" style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 40) }]}
+      <PresenceView name="avatar-crop" style={[s.sheet, { paddingBottom: sheetFoot }]}
         enter={{ kind: 'FadeInUp', duration: MS.considered, easing: arrive() }}
         exit={{ kind: 'FadeOutDown', duration: MS.quick, easing: leave() }}>
         <View style={s.header}>

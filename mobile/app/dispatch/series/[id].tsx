@@ -29,7 +29,6 @@ import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaperEmpty, PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
 import { PaperBack } from '@/src/components/dispatch/paper/PaperMore';
@@ -44,13 +43,14 @@ import { logger } from '@/src/utils/logger';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { BusterEyes } from '@/src/components/Buster';
+import { useContentBottom } from '@/src/components/layout/navMetrics';
 
 /** A series is a handful of essays. Bounded because every read here is. */
 const MOST_PARTS = 24;
 
 export default function SeriesScreen() {
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
-  const insets = useSafeAreaInsets();
+  const end = useContentBottom();
 
   const [parts, setParts] = useState<Filing[]>([]);
   /**
@@ -182,7 +182,7 @@ export default function SeriesScreen() {
     <View style={p.screen}>
       <RoomLight room="dispatch" />
       <PaperBack label="SERIES" onBack={() => nav.back()} />
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: end }}>
         {/* No `top` rail — the same as the reader, which is the page on the
             other side of this one. Both sit under a PaperBack bar, and that bar
             is the top edge; a second one 40pt below it reads as two headers.

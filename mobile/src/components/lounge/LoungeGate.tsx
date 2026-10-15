@@ -11,67 +11,68 @@ import PressableScale from '@/src/components/PressableScale';
 import { OrnamentalRule } from '@/src/components/theme/OrnamentalRule';
 import { CrestGlow } from '@/src/components/theme/CrestGlow';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
-import { useTabRoomPadding } from '@/src/components/layout/navMetrics';
+import { CentredRoom } from '@/src/components/layout/CentredRoom';
 
 /** `mark`: the screen's ready mark (useScreenReady), drawn inside the gate's own root. */
 export function LoungeGate({ mark }: { mark?: React.ReactNode } = {}) {
-  const room = useTabRoomPadding();
   return (
     <>
-      <View style={[s.gateContainer, room]}>
+      <View style={s.gateContainer}>
         <RoomLight room="default" />
         {mark}
-        <Arrive name="lounge-gate" duration={900} delay={200} style={s.gateCard}>
-          <View style={s.gateCrestWrap}>
-            <CrestGlow />
-            <View style={s.gateCrest}>
-              <MasterLogo size={28} />
+        <CentredRoom kind="tab" style={s.gateRoom}>
+          <Arrive name="lounge-gate" duration={900} delay={200} style={s.gateCard}>
+            <View style={s.gateCrestWrap}>
+              <CrestGlow />
+              <View style={s.gateCrest}>
+                <MasterLogo size={28} />
+              </View>
             </View>
-          </View>
 
-          <Text style={s.gateTitle} accessibilityRole="header">The Lounge</Text>
-          {/* No "EST. 1924" here: a visitor stopped at this rope needs to know
-              what would let them in, not when the house was founded. */}
-          <OrnamentalRule />
+            <Text style={s.gateTitle} accessibilityRole="header">The Lounge</Text>
+            {/* No "EST. 1924" here: a visitor stopped at this rope needs to know
+                what would let them in, not when the house was founded. */}
+            <OrnamentalRule />
 
-          {/* ── WHAT STANDS AT THIS DOOR IS A NAME, NOT A RANK ─────────────────
-              Only a visitor who is not signed in meets this gate. Any member
-              walks in and reads every public salon, and the rank waits at the
-              seat inside, so what the visitor lacks is membership, which is
-              free; it never sells them a paid rank. */}
-          <Text style={s.gateSub}>[ MEMBERS ONLY ]</Text>
+            {/* ── WHAT STANDS AT THIS DOOR IS A NAME, NOT A RANK ─────────────────
+                Only a visitor who is not signed in meets this gate. Any member
+                walks in and reads every public salon, and the rank waits at the
+                seat inside, so what the visitor lacks is membership, which is
+                free; it never sells them a paid rank. */}
+            <Text style={s.gateSub}>[ MEMBERS ONLY ]</Text>
 
-          <Text style={s.gateDesc}>
-            Beyond this door lies The Lounge — intimate cinema
-            salons where the devoted gather to discuss, debate,
-            and discover. Private screening rooms. Whispered
-            critiques. {"\n\n"}A place where cinema lives between the frames,
-            and every conversation is a love letter to the art.
-          </Text>
+            <Text style={s.gateDesc}>
+              Beyond this door lies The Lounge — intimate cinema
+              salons where the devoted gather to discuss, debate,
+              and discover. Private screening rooms. Whispered
+              critiques. {"\n\n"}A place where cinema lives between the frames,
+              and every conversation is a love letter to the art.
+            </Text>
 
-          {/* Sign-UP, not sign-in: the label promises membership, and a bare
-              '/login' opens the sign-in form (authRouting.test pins this). */}
-          <PressableScale
-            testID="lounge-gate-cta"
-            style={s.gateCta}
-            onPress={() => nav.push('/login', { action: 'signup' })}
-            haptic="medium"
-            accessibilityRole="button" accessibilityLabel="Join the Society — free. Opens sign up."
-          >
-            <Sparkles size={11} color={colors.ink} strokeWidth={2} />
-            <Text style={s.gateCtaText} numberOfLines={1}>✦ JOIN THE SOCIETY</Text>
-          </PressableScale>
+            {/* Sign-UP, not sign-in: the label promises membership, and a bare
+                '/login' opens the sign-in form (authRouting.test pins this). */}
+            <PressableScale
+              testID="lounge-gate-cta"
+              style={s.gateCta}
+              onPress={() => nav.push('/login', { action: 'signup' })}
+              haptic="medium"
+              accessibilityRole="button" accessibilityLabel="Join the Society — free. Opens sign up."
+            >
+              <Sparkles size={11} color={colors.ink} strokeWidth={2} />
+              <Text style={s.gateCtaText} numberOfLines={1}>✦ JOIN THE SOCIETY</Text>
+            </PressableScale>
 
-          {/* What the rank DOES buy here, in the corridor's own words — so the
-              ladder is still shown, at the seat where it applies. */}
-          <Text style={s.gateKeyLine} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-            FREE TO JOIN · ARCHIVISTS TAKE A SEAT
-          </Text>
+            {/* What the rank DOES buy here, in the corridor's own words — so the
+                ladder is still shown, at the seat where it applies. */}
+            <Text style={s.gateKeyLine} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              FREE TO JOIN · ARCHIVISTS TAKE A SEAT
+            </Text>
 
-          <Text style={s.gateFootnote}>
-            PRIVATE SCREENING ROOMS / PUBLIC SALONS / CINEMA DISCOURSE
-          </Text>
-        </Arrive>
+            <Text style={s.gateFootnote}>
+              PRIVATE SCREENING ROOMS / PUBLIC SALONS / CINEMA DISCOURSE
+            </Text>
+          </Arrive>
+        </CentredRoom>
       </View>
     </>
   );
@@ -81,7 +82,8 @@ const s = StyleSheet.create({
   gateContainer: {
     flex: 1,
     backgroundColor: colors.ink,
-    justifyContent: 'center',
+  },
+  gateRoom: {
     paddingHorizontal: 36,
   },
   gateCard: {

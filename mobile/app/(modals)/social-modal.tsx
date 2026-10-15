@@ -22,7 +22,7 @@ import { BlurView } from 'expo-blur';
 import { Check, Film as FilmIcon, Send, User, UserCircle2, Users, X } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
-import { useModalTop } from '@/src/components/layout/navMetrics';
+import { useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
 import TryAgain, { TryAgainLine } from '@/src/components/TryAgain';
 
 interface SocialProfile {
@@ -116,6 +116,7 @@ const LoungeRow = React.memo(function LoungeRow({
 
 export default function SocialModal() {
     const handleTop = useModalTop();
+    const end = useContentBottom();
     const rawParams = useLocalSearchParams<{
         userId?: string;
         type?: string;
@@ -424,7 +425,7 @@ export default function SocialModal() {
                     data={lounges}
                     estimatedItemSize={68}
                     keyExtractor={item => item.id}
-                    contentContainerStyle={{ padding: 16 }}
+                    contentContainerStyle={{ padding: 16, paddingBottom: end }}
                     renderItem={renderLoungeItem}
                 />
             ) : (
@@ -433,7 +434,7 @@ export default function SocialModal() {
                     data={profiles}
                     estimatedItemSize={68}
                     keyExtractor={item => item.id}
-                    contentContainerStyle={{ padding: 16 }}
+                    contentContainerStyle={{ padding: 16, paddingBottom: end }}
                     renderItem={renderSocialItem}
                     onEndReached={loadMore}
                     onEndReachedThreshold={0.5}

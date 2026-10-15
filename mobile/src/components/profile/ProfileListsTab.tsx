@@ -12,6 +12,7 @@ import type { ProfileList, ProfileListFilm, ShelfSort } from '../../types';
 import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, roomTier, ROOM_INSET } from './roomStyles';
+import { scrollEndAbove } from '@/src/components/layout/navMetrics';
 import { RoomChip, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore, RoomMoreFailed } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
 
@@ -49,6 +50,7 @@ interface ProfileListsTabProps {
   isSelf?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** What the room's scroll runs down to: the tab bar, or the home indicator's edge. */
   bottomInset?: number;
 }
 
@@ -276,7 +278,7 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
         estimatedItemSize={200}
-        contentContainerStyle={r.listContentGrid}
+        contentContainerStyle={{ ...r.listContentGrid, paddingBottom: scrollEndAbove(bottomInset ?? 0) }}
         refreshing={refreshing}
         onRefresh={onRefresh}
         onEndReached={onLoadMore}

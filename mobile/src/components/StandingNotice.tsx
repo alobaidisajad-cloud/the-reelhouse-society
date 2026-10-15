@@ -9,22 +9,22 @@
  */
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/src/components/text';
 import { colors, fonts } from '@/src/theme/theme';
 import { useAuthStore } from '@/src/stores/auth';
 import { standingOf } from '@/src/utils/standing';
 import { formatClockTime, formatDate } from '@/src/utils/timeAgo';
+import { useOverlayBottom } from '@/src/components/layout/navMetrics';
 
-/** Above where the offline plate sits, so the two never cover each other. */
-const ABOVE_THE_TAB_BAR = 82 + 44;
+/** The offline plate's room, above which this one stands: the two never cover each other. */
+const ABOVE_THE_OFFLINE_PLATE = 44;
 
 /** The longest a timer is set for: past it, the notice looks again (a day is plenty). */
 const LOOK_AGAIN_MS = 24 * 60 * 60 * 1000;
 
 export default function StandingNotice() {
   const user = useAuthStore((s) => s.user) as { is_banned?: boolean | null; suspended_until?: string | null } | null;
-  const insets = useSafeAreaInsets();
+  const overlayBottom = useOverlayBottom();
   const [now, setNow] = useState(() => Date.now());
   const standing = standingOf(user, now);
 
@@ -44,7 +44,7 @@ export default function StandingNotice() {
 
   return (
     <View
-      style={[s.frame, { bottom: Math.max(insets.bottom, 20) + ABOVE_THE_TAB_BAR }]}
+      style={[s.frame, { bottom: overlayBottom + ABOVE_THE_OFFLINE_PLATE }]}
       pointerEvents="none"
       accessibilityLiveRegion="polite"
     >

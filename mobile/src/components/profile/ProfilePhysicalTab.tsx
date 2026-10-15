@@ -13,6 +13,7 @@ import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { FORMAT_META, shelfRank } from '@/src/constants/formats';
 import { r, posterColumns, countLabel } from './roomStyles';
+import { scrollEndAbove } from '@/src/components/layout/navMetrics';
 import { RoomChip, RoomChipDivider, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore, RoomMoreFailed } from './RoomParts';
 
 /**
@@ -62,6 +63,7 @@ interface ProfilePhysicalTabProps {
   hasMore?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** What the room's scroll runs down to: the tab bar, or the home indicator's edge. */
   bottomInset?: number;
 }
 
@@ -446,7 +448,7 @@ export default React.memo(function ProfilePhysicalTab({
         // A row of cases (3:2) plus its shelf board.
         estimatedItemSize={Math.round(grid.width * 1.5) + 11}
         getItemType={(item: VaultListItem) => item.type}
-        contentContainerStyle={r.listContent}
+        contentContainerStyle={{ ...r.listContent, paddingBottom: scrollEndAbove(bottomInset ?? 0) }}
         refreshing={refreshing}
         onRefresh={onRefresh}
         onEndReached={onLoadMore}

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Modal, Switch, Keyboard, ActivityIndicator } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle, withTiming, Easing, runOnJS
 } from 'react-native-reanimated';
@@ -18,10 +17,11 @@ import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ToastHost } from '@/src/components/ToastHost';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { useSheetBottom } from '@/src/components/layout/navMetrics';
 
 export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
 
-  const insets = useSafeAreaInsets();
+  const sheetFoot = useSheetBottom();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
@@ -137,7 +137,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
         </Animated.View>
 
           <Animated.View 
-            style={[s.sheet, sheetStyle, { paddingBottom: Math.max(insets.bottom + 20, 24) }]}
+            style={[s.sheet, sheetStyle, { paddingBottom: sheetFoot }]}
           >
           <GestureDetector gesture={pan}>
             <View style={{ backgroundColor: 'transparent' }}>

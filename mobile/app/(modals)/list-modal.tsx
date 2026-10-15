@@ -14,8 +14,9 @@ import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-nativ
 import Animated, { cancelAnimation, FadeIn, ReduceMotion, useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useModalTop } from '@/src/components/layout/navMetrics';
+import {
+  DOCKED_BAR_GAP, useAboveDockedBar, useBottomEdge, useModalTop,
+} from '@/src/components/layout/navMetrics';
 
 import PressableScale from '@/src/components/PressableScale';
 import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
@@ -144,7 +145,8 @@ export default function ListModal() {
     const createList = useListStore((s: any) => s.createList);
     const updateList = useListStore((s: any) => s.updateList);
     const { checkBan } = useBanCheck();
-    const insets = useSafeAreaInsets();
+    const edge = useBottomEdge();
+    const scrollEnd = useAboveDockedBar(CURATE_BAR_HEIGHT);
     const handleTop = useModalTop();
     const queryClient = useQueryClient();
     
@@ -574,7 +576,7 @@ export default function ListModal() {
                 // No empty state: the search field above is its own instruction.
                 ListEmptyComponent={null}
                 ListFooterComponent={ListFooter}
-                contentContainerStyle={{ paddingBottom: insets.bottom + CURATE_BAR_HEIGHT + 16 }}
+                contentContainerStyle={{ paddingBottom: scrollEnd }}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
                 containerStyle={s.containerFlex}
@@ -586,7 +588,7 @@ export default function ListModal() {
 
             {/* THE ACT, docked (the composer's seal is the same): never scrolled to,
                 and a refusal says why. */}
-            <View style={[s.bar, { paddingBottom: insets.bottom + 14 }]}>
+            <View style={[s.bar, { paddingBottom: edge + DOCKED_BAR_GAP }]}>
                 <Text style={s.barLine} numberOfLines={1} {...scaledTextProps}>{barLine}</Text>
                 <PressableScale
                     style={[s.barPress, !canFile && s.barDim]}

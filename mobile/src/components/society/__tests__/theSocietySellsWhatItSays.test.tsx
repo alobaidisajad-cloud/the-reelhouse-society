@@ -529,6 +529,7 @@ describe('nothing false is printed', () => {
 // ════════════════════════════════════════════════════════════════════════════
 describe('the window is as tall as it says, and the page makes room for it', () => {
   const { PurchaseDock, DOCK, DOCK_HEIGHT } = require('../PurchaseDock');
+  const { HOME_INDICATOR_FLOOR, SCROLL_END_GAP } = require('@/src/components/layout/navMetrics');
   const { StyleSheet } = require('react-native');
   const flat = (n: any) => StyleSheet.flatten(n.props.style) ?? {};
 
@@ -549,11 +550,11 @@ describe('the window is as tall as it says, and the page makes room for it', () 
 
   it('on a phone with no inset it still stands clear of the edge', () => {
     const r = render(<PurchaseDock summary="s" cta="c" spoken="x" auteur={false} busy={false} onBuy={() => {}} bottomInset={0} />);
-    expect(flat(r.getByTestId('purchase-dock')).paddingBottom).toBe(DOCK.minInset + DOCK.padBottom);
+    expect(flat(r.getByTestId('purchase-dock')).paddingBottom).toBe(HOME_INDICATOR_FLOOR + DOCK.padBottom);
   });
 
-  it('the page reserves exactly the window, its inset, and room to breathe', async () => {
-    const { SCROLL_BREATH } = require('@/app/(modals)/membership');
+  it('the page reserves exactly the window, its fade, its inset, and room to breathe', async () => {
+    const { DOCK_REACH } = require('../PurchaseDock');
     const r = await mount();
     // The page's one vertical scroll, found in the drawn tree.
     const find = (n: any): any => {
@@ -564,8 +565,9 @@ describe('the window is as tall as it says, and the page makes room for it', () 
     };
     const scroll = find(r.toJSON());
     expect(scroll).toBeTruthy();
-    // The suite's safe-area stand-in reports a zero inset, so the window sits on its minimum.
-    expect(StyleSheet.flatten(scroll.props.contentContainerStyle).paddingBottom).toBe(DOCK_HEIGHT + DOCK.minInset + SCROLL_BREATH);
+    // The suite's safe-area stand-in reports a zero inset, so the window sits on the floor.
+    expect(StyleSheet.flatten(scroll.props.contentContainerStyle).paddingBottom)
+      .toBe(HOME_INDICATOR_FLOOR + DOCK_REACH + SCROLL_END_GAP);
   });
 });
 

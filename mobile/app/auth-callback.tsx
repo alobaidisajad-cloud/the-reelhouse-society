@@ -14,6 +14,7 @@ import PressableScale from '@/src/components/PressableScale';
 import type { EmailOtpType, Session } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { CentredRoom } from '@/src/components/layout/CentredRoom';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -121,113 +122,114 @@ export default function AuthCallbackScreen() {
   return (
     <View style={s.container}>
       <RoomLight room="default" />
-      <View style={s.content}>
-        {/* ── Verifying ── */}
-        {status === 'verifying' && (
-          <AnimatedView entering={FadeIn.duration(500).reduceMotion(ReduceMotion.Never)} style={s.stateWrap}>
-            <ActivityIndicator size="large" color={colors.sepia} style={{ marginBottom: 24 }} />
-            <Text style={s.eyebrow}>ONE MOMENT</Text>
-            <Text style={s.title}>Verifying your link</Text>
-            <Text style={s.body}>This should only take a few seconds.</Text>
-          </AnimatedView>
-        )}
+      <CentredRoom kind="pushed" style={s.content}>
+          {/* ── Verifying ── */}
+          {status === 'verifying' && (
+            <AnimatedView entering={FadeIn.duration(500).reduceMotion(ReduceMotion.Never)} style={s.stateWrap}>
+              <ActivityIndicator size="large" color={colors.sepia} style={{ marginBottom: 24 }} />
+              <Text style={s.eyebrow}>ONE MOMENT</Text>
+              <Text style={s.title}>Verifying your link</Text>
+              <Text style={s.body}>This should only take a few seconds.</Text>
+            </AnimatedView>
+          )}
 
-        {/* ── Success ── */}
-        {status === 'success' && (
-          <AnimatedView entering={FadeInDown.duration(600).reduceMotion(ReduceMotion.Never)} style={s.stateWrap}>
-            <View style={s.successIconWrap}>
-              <Text style={s.successIcon} {...UNSPOKEN}>✓</Text>
-            </View>
-            <Text style={[s.eyebrow, { color: colors.sepia }]}>
-              {resolvedType === 'recovery' ? 'LINK VERIFIED' : 'CLEARANCE GRANTED'}
-            </Text>
-            <Text style={s.title}>
-              {resolvedType === 'recovery' ? 'Link verified.' : 'Welcome to\nThe Society.'}
-            </Text>
-            <Text style={s.body}>
-              {resolvedType === 'recovery'
-                ? 'Taking you to set a new password...'
-                : 'Your identity has been verified. Initiating access...'}
-            </Text>
-          </AnimatedView>
-        )}
+          {/* ── Success ── */}
+          {status === 'success' && (
+            <AnimatedView entering={FadeInDown.duration(600).reduceMotion(ReduceMotion.Never)} style={s.stateWrap}>
+              <View style={s.successIconWrap}>
+                <Text style={s.successIcon} {...UNSPOKEN}>✓</Text>
+              </View>
+              <Text style={[s.eyebrow, { color: colors.sepia }]}>
+                {resolvedType === 'recovery' ? 'LINK VERIFIED' : 'CLEARANCE GRANTED'}
+              </Text>
+              <Text style={s.title}>
+                {resolvedType === 'recovery' ? 'Link verified.' : 'Welcome to\nThe Society.'}
+              </Text>
+              <Text style={s.body}>
+                {resolvedType === 'recovery'
+                  ? 'Taking you to set a new password...'
+                  : 'Your identity has been verified. Initiating access...'}
+              </Text>
+            </AnimatedView>
+          )}
 
-        {/* ── Error ── */}
-        {status === 'error' && (
-          <AnimatedView entering={FadeInDown.duration(600).reduceMotion(ReduceMotion.Never)} style={s.stateWrap}>
-            <View style={s.errorIconWrap}>
-              <Text style={s.errorIcon} {...UNSPOKEN}>✕</Text>
-            </View>
-            <Text style={[s.eyebrow, { color: colors.crimsonInk }]}>VERIFICATION FAILED</Text>
-            <Text style={s.title}>Link Expired{'\n'}or Invalid</Text>
-            <Text style={s.body}>{errorMsg}</Text>
-            
-            {/* Dynamic Rescue Options based on type */}
-            <View style={{ marginTop: 28, width: '100%', gap: 12 }}>
-              {params.type === 'recovery' ? (
-                <PressableScale
-                  style={s.retryBtn}
-                  onPress={() => nav.replace('/login', { action: 'forgot_password' })}
-                  pressedScale={0.97}
-                  haptic="medium"
-                >
-                  <Text style={s.retryText}>REQUEST NEW RESET LINK</Text>
-                </PressableScale>
-              ) : params.type === 'signup' ? (
-                <PressableScale
-                  style={s.retryBtn}
-                  onPress={() => nav.replace('/login', { action: 'resend_signup' })}
-                  pressedScale={0.97}
-                  haptic="medium"
-                >
-                  <Text style={s.retryText}>REQUEST NEW VERIFICATION</Text>
-                </PressableScale>
-              ) : (
-                // What this opens is the sign-in form, and it says so.
-                <PressableScale
-                  style={s.retryBtn}
-                  onPress={() => nav.replace('/login')}
-                  pressedScale={0.97}
-                  haptic="medium"
-                  accessibilityRole="button"
-                  accessibilityLabel="Go to sign in"
-                >
-                  <Text style={s.retryText}>SIGN IN</Text>
-                </PressableScale>
-              )}
+          {/* ── Error ── */}
+          {status === 'error' && (
+            <AnimatedView entering={FadeInDown.duration(600).reduceMotion(ReduceMotion.Never)} style={s.stateWrap}>
+              <View style={s.errorIconWrap}>
+                <Text style={s.errorIcon} {...UNSPOKEN}>✕</Text>
+              </View>
+              <Text style={[s.eyebrow, { color: colors.crimsonInk }]}>VERIFICATION FAILED</Text>
+              <Text style={s.title}>Link Expired{'\n'}or Invalid</Text>
+              <Text style={s.body}>{errorMsg}</Text>
+              
+              {/* Dynamic Rescue Options based on type */}
+              <View style={{ marginTop: 28, width: '100%', gap: 12 }}>
+                {params.type === 'recovery' ? (
+                  <PressableScale
+                    style={s.retryBtn}
+                    onPress={() => nav.replace('/login', { action: 'forgot_password' })}
+                    pressedScale={0.97}
+                    haptic="medium"
+                  >
+                    <Text style={s.retryText}>REQUEST NEW RESET LINK</Text>
+                  </PressableScale>
+                ) : params.type === 'signup' ? (
+                  <PressableScale
+                    style={s.retryBtn}
+                    onPress={() => nav.replace('/login', { action: 'resend_signup' })}
+                    pressedScale={0.97}
+                    haptic="medium"
+                  >
+                    <Text style={s.retryText}>REQUEST NEW VERIFICATION</Text>
+                  </PressableScale>
+                ) : (
+                  // What this opens is the sign-in form, and it says so.
+                  <PressableScale
+                    style={s.retryBtn}
+                    onPress={() => nav.replace('/login')}
+                    pressedScale={0.97}
+                    haptic="medium"
+                    accessibilityRole="button"
+                    accessibilityLabel="Go to sign in"
+                  >
+                    <Text style={s.retryText}>SIGN IN</Text>
+                  </PressableScale>
+                )}
 
-              <PressableScale
-                style={s.retryBtnSecondary}
-                onPress={() => nav.replace('/(tabs)')}
-                pressedScale={0.97}
-                haptic="light"
-              >
-                <Text style={s.retryTextSecondary}>RETURN TO THE LOBBY</Text>
-              </PressableScale>
-
-              {/* Beside a SIGN IN above, this would be the same door twice. */}
-              {(params.type === 'recovery' || params.type === 'signup') && (
                 <PressableScale
-                  style={s.retryBtnTertiary}
-                  onPress={() => nav.replace('/login')}
+                  style={s.retryBtnSecondary}
+                  onPress={() => nav.replace('/(tabs)')}
                   pressedScale={0.97}
                   haptic="light"
                 >
-                  <Text style={s.retryTextTertiary}>RETURN TO LOGIN</Text>
+                  <Text style={s.retryTextSecondary}>RETURN TO THE LOBBY</Text>
                 </PressableScale>
-              )}
-            </View>
-          </AnimatedView>
-        )}
-      </View>
+
+                {/* Beside a SIGN IN above, this would be the same door twice. */}
+                {(params.type === 'recovery' || params.type === 'signup') && (
+                  <PressableScale
+                    style={s.retryBtnTertiary}
+                    onPress={() => nav.replace('/login')}
+                    pressedScale={0.97}
+                    haptic="light"
+                  >
+                    <Text style={s.retryTextTertiary}>RETURN TO LOGIN</Text>
+                  </PressableScale>
+                )}
+              </View>
+            </AnimatedView>
+          )}
+      </CentredRoom>
     </View>
   );
 }
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
+  // Centred between the status bar and the home indicator by CentredRoom.
   content: {
-    flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32,
+    alignItems: 'center', paddingHorizontal: 32,
   },
   stateWrap: { alignItems: 'center', maxWidth: 340 },
 

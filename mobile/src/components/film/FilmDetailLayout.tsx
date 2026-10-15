@@ -1,8 +1,7 @@
 import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, useWindowDimensions, InteractionManager } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
+import { useBottomEdge, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import Animated, { useSharedValue, useAnimatedScrollHandler, withSequence, withTiming } from 'react-native-reanimated';
 import { arrive, MARK_PULSE, MS } from '@/src/theme/motion';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -88,7 +87,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   // Whole points: the backdrop's veil and the room's light meet at this line,
   // and a fractional hem leaves the last row of pixels to only one of them.
   const BACKDROP_H = useMemo(() => Math.round(windowHeight * metrics.backdropHeightRatio), [windowHeight]);
-  const insets = useSafeAreaInsets();
+  const edge = useBottomEdge();
   const headerTop = usePushedHeaderTop();
   const scrollY = useSharedValue(0);
 
@@ -278,7 +277,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     return [year, runtime].filter(Boolean).join('  ·  ');
   }, [film]);
 
-  const dockH = useMemo(() => dockHeight(insets.bottom), [insets.bottom]);
+  const dockH = useMemo(() => dockHeight(edge), [edge]);
 
   /** The certificate, with the region it belongs to. */
   const certificate = useMemo(
@@ -330,7 +329,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
             <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
         </Animated.View>
-        <FilmHeroSkeleton skeletonAnimStyle={skeletonAnimStyle} backdropHeight={BACKDROP_H} bottomInset={insets.bottom} />
+        <FilmHeroSkeleton skeletonAnimStyle={skeletonAnimStyle} backdropHeight={BACKDROP_H} bottomInset={edge} />
       </View>
     );
   }
@@ -405,7 +404,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
       />
 
       <Animated.ScrollView
-        contentContainerStyle={[s.scrollContent, { paddingBottom: scrollReserve(insets.bottom) }]}
+        contentContainerStyle={[s.scrollContent, { paddingBottom: scrollReserve(edge) }]}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -564,7 +563,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         watchedLabel={watchedLabel}
         open={trayOpen}
         onPress={toggleTray}
-        bottomInset={insets.bottom}
+        bottomInset={edge}
       />
 
       <FilmActionTray

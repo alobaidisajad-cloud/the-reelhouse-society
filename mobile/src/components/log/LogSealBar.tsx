@@ -2,7 +2,6 @@ import React from 'react';
 import { StyleSheet, Image } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -11,6 +10,7 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import { validateLogSubmission } from '@/src/hooks/useLogFlow';
 import { buildFilingMark } from '@/src/components/log/logRecord';
 import { EDGE_LIT } from '@/src/theme/light';
+import { DOCKED_BAR_GAP, useBottomEdge } from '@/src/components/layout/navMetrics';
 
 const MARK = require('../../../assets/images/reelhouse-logo.png');
 
@@ -61,7 +61,7 @@ export default React.memo(function LogSealBar({
     status, rating, review, abandonedReason, date, watchedWith, physicalMedia,
     submitting, sealed, isEditing, onSeal,
 }: Props) {
-    const insets = useSafeAreaInsets();
+    const edge = useBottomEdge();
     const keyboard = useAnimatedKeyboard();
 
     const blockReason = validateLogSubmission(status, rating, review, abandonedReason);
@@ -69,7 +69,7 @@ export default React.memo(function LogSealBar({
 
     // Writing deserves the whole sheet. The bar returns the moment you look up.
     const barStyle = useAnimatedStyle(() => ({
-        transform: [{ translateY: keyboard.height.value > 0 ? SEAL_BAR_HEIGHT + insets.bottom : 0 }],
+        transform: [{ translateY: keyboard.height.value > 0 ? SEAL_BAR_HEIGHT + edge : 0 }],
         opacity: keyboard.height.value > 0 ? 0 : 1,
     }));
 
@@ -97,7 +97,7 @@ export default React.memo(function LogSealBar({
             : isEditing ? 'RESEAL THE RECORD' : 'SEAL THE RECORD';
 
     return (
-        <Animated.View style={[s.bar, { paddingBottom: insets.bottom + 14 }, barStyle]}>
+        <Animated.View style={[s.bar, { paddingBottom: edge + DOCKED_BAR_GAP }, barStyle]}>
             <Text style={s.line} numberOfLines={1} {...scaledTextProps}>
                 {line}
             </Text>

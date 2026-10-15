@@ -13,6 +13,7 @@ import { decadeLabel } from '../../types';
 import { tmdb } from '../../lib/tmdb';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, posterColumns, EMBER_REST, EMBER_BEATS } from './roomStyles';
+import { scrollEndAbove } from '@/src/components/layout/navMetrics';
 import { RoomChip, RoomChipDivider, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomSearch, RoomMoreFailed } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
 
@@ -62,6 +63,7 @@ interface ProfileWatchlistTabProps {
   moreFailed?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** What the room's scroll runs down to: the tab bar, or the home indicator's edge. */
   bottomInset?: number;
 }
 
@@ -326,7 +328,7 @@ export default function ProfileWatchlistTab({
         ListEmptyComponent={ListEmptyComponent}
         // A 3-wide poster row: a poster at 3:2 and the gap beneath.
         estimatedItemSize={Math.round(grid.width * 1.5) + grid.gap}
-        contentContainerStyle={r.listContent}
+        contentContainerStyle={{ ...r.listContent, paddingBottom: scrollEndAbove(bottomInset ?? 0) }}
         refreshing={refreshing}
         onRefresh={onRefresh}
         onEndReached={onLoadMore}

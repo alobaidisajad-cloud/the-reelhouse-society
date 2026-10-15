@@ -16,7 +16,6 @@ import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyRound, X, Check, Search, User } from 'lucide-react-native';
 
 import PressableScale from '@/src/components/PressableScale';
@@ -29,6 +28,7 @@ import { arrive, leave, MS } from '@/src/theme/motion';
 import TryAgain from '@/src/components/TryAgain';
 import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
 import { useSocialStore } from '@/src/stores/followStore';
+import { useSheetBottom } from '@/src/components/layout/navMetrics';
 
 const HITSLOP = { top: 10, bottom: 10, left: 10, right: 10 } as const;
 /** The row's gap (10) halved between DECLINE and ADMIT, so neither takes the other's tap. */
@@ -74,7 +74,7 @@ const RequestRow = React.memo(function RequestRow({
 });
 
 export default function FollowRequestsPanel({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const insets = useSafeAreaInsets();
+  const sheetFoot = useSheetBottom();
   const {
     items, loading, loadingMore, hasMore, search, busyId, failed, moreFailed,
     setSearch, loadMore, retry, accept, decline, declineAll,
@@ -82,7 +82,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
   const pending = useSocialStore(s => s.pendingRequestCount);
 
   // KEYBOARD LAW (RN-Modal tier): a Modal never resizes; the search rises with the keyboard.
-  const kbPad = useModalKeyboardPadding(Math.max(insets.bottom + 8, 24));
+  const kbPad = useModalKeyboardPadding(sheetFoot);
 
   const showSearch = items.length > 0 || search.length > 0;
 

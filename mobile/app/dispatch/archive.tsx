@@ -17,7 +17,6 @@
 import { useCallback } from 'react';
 import { ActivityIndicator, ScrollView, View, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DayDivider, PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
 import { ArchiveFilm, PaperArchive, PaperBack } from '@/src/components/dispatch/paper/PaperMore';
@@ -35,9 +34,10 @@ import { useClearance } from '@/src/hooks/useClearance';
 import { ClearanceGate } from '@/src/components/clearance/Clearance';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { TryAgainLine } from '@/src/components/TryAgain';
+import { useContentBottom } from '@/src/components/layout/navMetrics';
 
 export default function ArchiveScreen() {
-  const insets = useSafeAreaInsets();
+  const end = useContentBottom();
   const me = useAuthStore((s) => s.user);
   /** Opening a film's gathered archive is the act the rank buys. */
   const gathering = useClearance('dispatch-archive', '/dispatch/archive');
@@ -66,7 +66,7 @@ export default function ArchiveScreen() {
       <RoomLight room="dispatch" />
       <PaperBack label="THE ARCHIVE" onBack={back} />
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: end }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}

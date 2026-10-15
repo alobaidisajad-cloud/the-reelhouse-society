@@ -9,8 +9,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withRepeat,
   Easing, interpolate, ReduceMotion,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useModalTop } from '@/src/components/layout/navMetrics';
+import { useBottomEdge, useModalTop } from '@/src/components/layout/navMetrics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { nav } from '@/src/utils/typedRouter';
@@ -67,7 +66,7 @@ function PulsingRule() {
 
 export default function LoginScreen() {
 
-  const insets = useSafeAreaInsets();
+  const edge = useBottomEdge();
   // The sheet's own top on iOS, the status bar's edge on Android (navMetrics).
   const headerTop = useModalTop();
   const headerBottom = headerTop + HEADER_ROW;
@@ -180,7 +179,7 @@ export default function LoginScreen() {
     // No paddingTop on the container: the pinned header is absolutely positioned
     // at top:0 — the container's PADDING box — and pads to the modal's top itself.
     // Padded twice, the close button would sit a whole inset too low.
-    <View style={[s.container, { paddingBottom: insets.bottom }]}>
+    <View style={[s.container, { paddingBottom: edge }]}>
       {/* ── Background & Atmospherics ── */}
       <AuthBackdrop />
 

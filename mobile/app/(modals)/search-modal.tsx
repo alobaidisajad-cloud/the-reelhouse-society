@@ -24,8 +24,7 @@ import {
     X,
 } from 'lucide-react-native';
 import Animated, { FadeIn, useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useModalTop } from '@/src/components/layout/navMetrics';
+import { useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
 
 import PressableScale from '@/src/components/PressableScale';
 import { SearchResultRow } from '@/src/components/search/SearchResultRow';
@@ -49,7 +48,7 @@ const TABS: { key: FilterTab; label: string; icon: typeof Film }[] = [
 ];
 
 export default function SearchModal() {
-  const insets = useSafeAreaInsets();
+  const end = useContentBottom();
   const headerTop = useModalTop();
   const keyboard = useAnimatedKeyboard();
 
@@ -169,8 +168,8 @@ export default function SearchModal() {
 
   const listContentStyle = useMemo(() => ({
     paddingTop: 8,
-    paddingBottom: Math.max(insets.bottom, 20) + 60,
-  }), [insets.bottom]);
+    paddingBottom: end,
+  }), [end]);
 
   const renderTabItem = useCallback(({ item: t }: { item: typeof TABS[0] }) => {
     const active = tab === t.key;

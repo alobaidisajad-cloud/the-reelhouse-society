@@ -21,6 +21,7 @@ import { StyleSheet, type ViewStyle } from 'react-native';
 import { readCode } from '@/test-utils/readCode';
 import { st } from '@/src/components/log/LogModalStyles';
 import { EDGE_LIT } from '@/src/theme/light';
+import { DOCKED_BAR_GAP } from '@/src/components/layout/navMetrics';
 
 const FORM = 'src/components/log/LogForm.tsx';
 const STYLES = 'src/components/log/LogModalStyles.ts';
@@ -61,8 +62,8 @@ describe('the seal rides the keyboard', () => {
 
 /**
  * The docked seal reserves its own space twice over, from ONE hand-typed
- * number: the scroll ends at `insets.bottom + SEAL_BAR_HEIGHT + 16`, and the
- * bar slides away by `SEAL_BAR_HEIGHT + insets.bottom` when the keyboard opens.
+ * number: the scroll ends at `useAboveDockedBar(SEAL_BAR_HEIGHT)`, and the
+ * bar slides away by `SEAL_BAR_HEIGHT + edge` when the keyboard opens.
  * The first is measured on the drawn page (the audit's UNDER: a last row the
  * bar covers even scrolled to the end). The second happens only when a
  * keyboard opens, which no drawing has — so the number is checked against the
@@ -80,14 +81,17 @@ describe('the seal reserves enough room for itself', () => {
     // Everything above the safe-area inset, which the caller adds separately.
     const lineBox = Math.ceil(num(line, 'fontSize')! * CAP * 1.3);
     const real = num(bar, 'paddingTop')! + lineBox + num(line, 'marginBottom')! + num(press, 'minHeight')!
-      + 14;                                  // the bar's own paddingBottom, added in the component
+      + DOCKED_BAR_GAP;                      // the bar's own paddingBottom, over the edge
     expect(real).toBeGreaterThan(0);         // a failed parse must not pass vacuously
     expect(declared).toBeGreaterThanOrEqual(real);
   });
 
   it('and both reservations read that same number', () => {
-    expect(readCode(SCREEN)).toMatch(/paddingBottom:\s*insets\.bottom\s*\+\s*SEAL_BAR_HEIGHT/);
-    expect(readCode(SEAL)).toMatch(/translateY:[\s\S]{0,80}SEAL_BAR_HEIGHT \+ insets\.bottom/);
+    expect(readCode(SCREEN)).toMatch(/const scrollEnd = useAboveDockedBar\(SEAL_BAR_HEIGHT\)/);
+    expect(readCode(SCREEN)).toMatch(/paddingBottom: scrollEnd/);
+    expect(readCode(SEAL)).toMatch(/const edge = useBottomEdge\(\)/);
+    expect(readCode(SEAL)).toMatch(/translateY:[\s\S]{0,80}SEAL_BAR_HEIGHT \+ edge/);
+    expect(readCode(SEAL)).toMatch(/paddingBottom: edge \+ DOCKED_BAR_GAP/);
   });
 });
 

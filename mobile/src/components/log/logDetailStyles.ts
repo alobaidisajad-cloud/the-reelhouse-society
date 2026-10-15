@@ -63,8 +63,6 @@ export const s = StyleSheet.create({
   shareBtnText: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, letterSpacing: 1.2, includeFontPadding: false },
   moreBtn: { paddingHorizontal: 2, paddingVertical: 8 },
 
-  content: { paddingBottom: 40 },
-
   // ── The record card ──
   // Shadow host / clip host. This card lifts UPWARD off the backdrop above it
   // (offset -20, radius 40) — a deliberate, large effect that iOS has never

@@ -5,9 +5,9 @@
  * ticket in one line, then one button. It follows the chosen ticket, so there
  * is never a second button on the page arguing with it.
  *
- * The page reserves `DOCK_HEIGHT` + the home-indicator inset below its scroll
- * (the docked-bar law), so the last line of the small print can always be
- * scrolled clear of the window instead of living under it.
+ * The page reserves `DOCK_REACH` over the home indicator's edge below its scroll
+ * (the docked-bar law, navMetrics' useAboveDockedBar), so the last line of the
+ * small print can always be scrolled clear of the window and its fade.
  */
 import { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -17,12 +17,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { deckLabelProps, scaledTextProps } from '@/src/constants/textScaling';
+import { bottomEdge } from '@/src/components/layout/navMetrics';
 
 /**
  * The window's parts — the SAME numbers its styles use, so its height is their
  * sum and cannot drift from what is drawn (the docked-bar law; a test adds up
- * the rendered window and compares). The home-indicator inset is added by the
- * page on top of this, at the size the device reports.
+ * the rendered window and compares). The home indicator's edge (navMetrics'
+ * bottomEdge, floored on a phone with no inset) is added on top of this.
  *
  * Text lines are fixed by lineHeight, which does not grow with Dynamic Type,
  * and both are one line (numberOfLines 1, shrink to fit), so the height holds
@@ -38,12 +39,12 @@ export const DOCK = {
   sub: 16,
   /** Below the footnote, over the home indicator's own inset. */
   padBottom: 4,
-  /** The least the window sits above the screen's edge on a phone with no inset. */
-  minInset: 12,
 } as const;
 export const DOCK_HEIGHT = DOCK.rule + DOCK.padTop + DOCK.summary + DOCK.summaryGap + DOCK.button + DOCK.subGap + DOCK.sub + DOCK.padBottom;
 /** The fade that lets the page run under the window rather than stop at it. */
 const FADE = 32;
+/** How far up the window reaches over the home indicator's edge, its fade included. */
+export const DOCK_REACH = DOCK_HEIGHT + FADE;
 
 export const PurchaseDock = memo(function PurchaseDock({
   summary, cta, spoken, auteur, busy, onBuy, bottomInset,
@@ -57,7 +58,7 @@ export const PurchaseDock = memo(function PurchaseDock({
   bottomInset: number;
 }) {
   return (
-    <View testID="purchase-dock" style={[s.dock, { paddingBottom: Math.max(bottomInset, DOCK.minInset) + DOCK.padBottom }]}>
+    <View testID="purchase-dock" style={[s.dock, { paddingBottom: bottomEdge(bottomInset) + DOCK.padBottom }]}>
       <LinearGradient colors={['rgba(13,11,9,0)', colors.ink]} style={s.fade} pointerEvents="none" />
       <Text style={s.summary} {...scaledTextProps} maxFontSizeMultiplier={1.2} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{summary}</Text>
       <PressableScale

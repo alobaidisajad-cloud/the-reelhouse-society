@@ -3,7 +3,6 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
 import Animated, { FadeInDown, useSharedValue, withTiming, withRepeat, Easing, cancelAnimation } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useFocusEffect } from 'expo-router';
 import { useScrollToTop, useIsFocused } from '@react-navigation/native';
@@ -27,11 +26,10 @@ import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
-import { useTabContentTop } from '@/src/components/layout/navMetrics';
+import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
 
 // === MAIN SCREEN ===
 export default function DarkRoomScreen() {
-  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const loadingRef = useRef(false);
   // Re-tap the active tab icon → smoothly scroll this feed to the top (iOS-standard).
@@ -86,9 +84,11 @@ export default function DarkRoomScreen() {
 
   const isSearching = !!query;
 
-  // Below the top bar, as it measured itself; memoised, as the bar's height rarely moves.
+  // Below the top bar, as it measured itself, and above the tab bar; memoised, as both rarely move.
   const topPad = useTabContentTop();
-  const listContentStyle = useMemo(() => ({ ...s.listContent, paddingTop: topPad }), [topPad]);
+  const endPad = useTabContentBottom();
+  const tabBar = useTabBarHeight();
+  const listContentStyle = useMemo(() => ({ ...s.listContent, paddingTop: topPad, paddingBottom: endPad }), [topPad, endPad]);
 
   // Cache key based on current discovery params
   const cacheKey = useMemo(() => {
@@ -299,7 +299,7 @@ export default function DarkRoomScreen() {
         </View>
       );
     }
-    return <View style={s.footerSpacer} />;
+    return null;
   }, [loading, page, moreFailed, setPage]);
 
   const renderEmpty = useMemo(() => {
@@ -396,7 +396,7 @@ export default function DarkRoomScreen() {
           onEndReachedThreshold={0.5}
           externalScrollY={globalScrollY}
           scrollMetrics={{ scrollY: localScrollY, scrollHeight, viewHeight, isScrolling }}
-          bottomInset={insets.bottom}
+          bottomInset={tabBar}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
         />
@@ -416,9 +416,6 @@ const s = StyleSheet.create({
   footerLoading: {
     paddingVertical: spacing.xl,
     alignItems: 'center',
-  },
-  footerSpacer: {
-    height: 100,
   },
   moreRetry: { marginTop: 10 },
   paginationRetrieving: {

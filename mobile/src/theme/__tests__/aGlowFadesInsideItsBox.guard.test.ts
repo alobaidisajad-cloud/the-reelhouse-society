@@ -180,7 +180,8 @@ it('reads each user’s box from its source', () => {
   expect([spotTop, spotH]).toEqual([-30, 340]);
   expect(plateLeast).toBeGreaterThan(250);
   expect(profile.headerWrap.overflow).toBe('hidden');
-  expect((profile.mainScrollContent as { paddingTop?: number }).paddingTop).toBeUndefined();
+  // The file's scroll starts at the top of the screen: its content has a foot and no top padding.
+  expect(readCode('app/user/[username].tsx')).toMatch(/<CinematicScrollView contentContainerStyle=\{\{ paddingBottom: endPad \}\}/);
   expect(welcomeTop).toBeGreaterThanOrEqual(0);
   expect(readCode(WELCOME)).toMatch(/<SocietySeal size=\{Math\.min\(104, Math\.round\(windowHeight \* 0\.15\)\)\} \/>/);
   expect(readCode('src/components/auth/SocietySeal.tsx')).toMatch(/const haloSize = Math\.round\(size \* 2\.3\);/);

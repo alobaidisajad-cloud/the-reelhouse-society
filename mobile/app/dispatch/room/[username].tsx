@@ -17,7 +17,6 @@ import { useCallback, useMemo } from 'react';
 import { ActivityIndicator, View, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import {
@@ -38,12 +37,14 @@ import { colors } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { nav } from '@/src/utils/typedRouter';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { useBottomEdge, useContentBottom } from '@/src/components/layout/navMetrics';
 
 type Row = MonthRow<Filing>;
 
 export default function MemberRoomScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
-  const insets = useSafeAreaInsets();
+  const edge = useBottomEdge();
+  const end = useContentBottom();
   const me = useAuthStore((s) => s.user);
 
   const {
@@ -134,8 +135,8 @@ export default function MemberRoomScreen() {
             data={rows}
             keyExtractor={(r: Row) => r.key}
             getItemType={getItemType}
-            bottomInset={insets.bottom}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 64 }}
+            bottomInset={edge}
+            contentContainerStyle={{ paddingBottom: end }}
             ListHeaderComponent={
               author ? (
                 <PaperRoom

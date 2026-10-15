@@ -18,22 +18,22 @@
  * if one comes back.
  */
 import { ScrollView, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
 import { PaperBack, PaperRules } from '@/src/components/dispatch/paper/PaperMore';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { nav } from '@/src/utils/typedRouter';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { useContentBottom } from '@/src/components/layout/navMetrics';
 
 export default function HouseRulesScreen() {
-  const insets = useSafeAreaInsets();
+  const end = useContentBottom();
   return (
     <View style={p.screen}>
       <RoomLight room="dispatch" />
       <PaperBack label="THE HOUSE RULES" onBack={() => nav.back()} />
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: end }}
         showsVerticalScrollIndicator={false}
       >
         {/* `flexGrow` on the content and `flex: 1` inside the sheet, so a short

@@ -18,13 +18,13 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { useSheetPresence } from '@/src/hooks/useSheetPresence';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import type { ReportableContentType } from '@/src/types/moderation';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { ToastHost } from '@/src/components/ToastHost';
+import { useSheetBottom } from '@/src/components/layout/navMetrics';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -64,7 +64,7 @@ export function ContentActionSheet({
   showUnmute = false,
   hideMute = false,
 }: ContentActionSheetProps) {
-  const insets = useSafeAreaInsets();
+  const sheetFoot = useSheetBottom();
   const { isRendered, opacity, translateY } = useSheetPresence({ visible });
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
@@ -180,7 +180,7 @@ export function ContentActionSheet({
             style={[
               styles.sheet,
               sheetStyle,
-              { paddingBottom: Math.max(insets.bottom + 20, 24) },
+              { paddingBottom: sheetFoot },
             ]}
           >
             {/* Handle */}

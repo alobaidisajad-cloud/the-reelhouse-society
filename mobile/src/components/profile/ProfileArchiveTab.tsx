@@ -13,6 +13,7 @@ import { nav } from '@/src/utils/typedRouter';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { r, rtlText, posterColumns, completeCount, countLabel, ROOM_INSET, yearMarker } from './roomStyles';
+import { scrollEndAbove } from '@/src/components/layout/navMetrics';
 import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomMoreFailed } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
 
@@ -47,6 +48,7 @@ interface ProfileArchiveTabProps {
   moreFailed?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** What the room's scroll runs down to: the tab bar, or the home indicator's edge. */
   bottomInset?: number;
 }
 
@@ -458,7 +460,7 @@ export default function ProfileArchiveTab({
             : `row-${item.id}`}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
-        contentContainerStyle={r.listContent}
+        contentContainerStyle={{ ...r.listContent, paddingBottom: scrollEndAbove(bottomInset ?? 0) }}
         refreshing={refreshing}
         onRefresh={onRefresh}
         onEndReached={onLoadMore}

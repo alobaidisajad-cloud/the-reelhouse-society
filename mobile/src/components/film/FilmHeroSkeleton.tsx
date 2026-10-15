@@ -4,6 +4,7 @@ import Animated from 'react-native-reanimated';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { colors, metrics } from '@/src/theme/theme';
 import { STUB_HEIGHT, STUB_PAD_TOP } from './filmStubMetrics';
+import { bottomEdge } from '@/src/components/layout/navMetrics';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 
@@ -44,7 +45,7 @@ export const FilmHeroSkeleton = memo(function FilmHeroSkeleton({
 
       {/* The stub's place, held. Docked, the height it will be, so nothing
           moves under the member's thumb when the film resolves. */}
-      <View style={[styles.waitingDock, { paddingBottom: Math.max(bottomInset, 16) }]}>
+      <View style={[styles.waitingDock, { paddingBottom: bottomEdge(bottomInset) }]}>
         <Animated.View style={[styles.shimmer, styles.shimmerStub, skeletonAnimStyle]} />
       </View>
     </>

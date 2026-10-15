@@ -13,18 +13,19 @@ import {
   STUB_HEIGHT, STUB_PAD_TOP, STUB_BORDER,
   dockHeight, scrollReserve, trayMaxHeight, TRAY_MAX_RATIO,
 } from '../filmStubMetrics';
+import { HOME_INDICATOR_FLOOR, bottomEdge } from '@/src/components/layout/navMetrics';
 
 describe('the dock is made of its parts', () => {
   it.each([0, 16, 34, 48])('at a %ipt inset it is exactly its own pieces', (inset) => {
     expect(dockHeight(inset)).toBe(
-      STUB_PAD_TOP + STUB_HEIGHT + Math.max(inset, 16) + STUB_BORDER,
+      STUB_PAD_TOP + STUB_HEIGHT + bottomEdge(inset) + STUB_BORDER,
     );
   });
 
   it('holds the plate off the glass on a phone with no home indicator', () => {
     // An inset of 0 would sit the brass flush against the bottom edge, which
     // reads as a rendering fault rather than a design.
-    expect(dockHeight(0)).toBe(dockHeight(16));
+    expect(dockHeight(0)).toBe(dockHeight(HOME_INDICATOR_FLOOR));
     expect(dockHeight(0)).toBeGreaterThan(STUB_PAD_TOP + STUB_HEIGHT);
   });
 

@@ -8,6 +8,7 @@ import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
+import { useSheetBottom } from '@/src/components/layout/navMetrics';
 
 import PressableScale from '@/src/components/PressableScale';
 import { useAuthStore } from '@/src/stores/auth';
@@ -189,11 +190,13 @@ function ShareSheet({
 
     // A Modal window never resizes for the keyboard on either platform: the sheet rises itself.
     const animatedSheetStyle = useModalKeyboardPadding();
+    // Its last control clears the home indicator, as every bottom sheet's does.
+    const sheetFoot = useSheetBottom();
 
     return (
         <Modal statusBarTranslucent visible={visible} transparent animationType="slide" onRequestClose={onClose}>
             <Animated.View style={[s.overlay, animatedSheetStyle]} accessibilityViewIsModal={true} onAccessibilityEscape={onClose}>
-                <View style={s.card}>
+                <View style={[s.card, { paddingBottom: sheetFoot }]}>
                     <View style={s.header}>
                         <Text style={s.title}>Share to Lounge</Text>
                         <PressableScale onPress={() => { onClose(); }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic="selection" pressedScale={0.92}

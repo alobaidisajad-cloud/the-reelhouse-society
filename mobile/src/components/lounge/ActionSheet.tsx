@@ -11,11 +11,11 @@ import { Alert, Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, { Easing, runOnJS, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSheetPresence } from '@/src/hooks/useSheetPresence';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { s } from './LoungeStyles';
 
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ToastHost } from '@/src/components/ToastHost';
+import { useSheetBottom } from '@/src/components/layout/navMetrics';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -37,7 +37,7 @@ interface ActionSheetProps {
 }
 
 function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose, onReply, onReact, onDelete, onReport, onBlock }: ActionSheetProps) {
-  const insets = useSafeAreaInsets();
+  const sheetFoot = useSheetBottom();
   
   const [internalMsg, setInternalMsg] = React.useState<LoungeMessage | null>(null);
   const [internalIsSelf, setInternalIsSelf] = React.useState(false);
@@ -85,7 +85,7 @@ function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose
       </Animated.View>
       
       <GestureDetector gesture={pan}>
-        <AnimatedView style={[s.actionSheet, sheetStyle, { paddingBottom: Math.max(insets.bottom + 20, 24) }]}>
+        <AnimatedView style={[s.actionSheet, sheetStyle, { paddingBottom: sheetFoot }]}>
           <View style={s.actionHandle} />
 
           {canReact && !internalMsg.deleted_at && onReact && (

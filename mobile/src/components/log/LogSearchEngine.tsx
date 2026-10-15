@@ -15,6 +15,7 @@ import PressableScale from '@/src/components/PressableScale';
 import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
+import { useContentBottom } from '@/src/components/layout/navMetrics';
 
 export interface LogSearchResult {
     id: number;
@@ -75,6 +76,8 @@ const LogSearchResultRow = React.memo(({ r, onSelectFilm }: { r: LogSearchResult
 });
 
 export default function LogSearchEngine({ onSelectFilm }: Props) {
+    // Drawn in a modal: its last result clears the home indicator.
+    const end = useContentBottom();
     const [query, setQuery] = useState('');
     const search = useCatalogueSearch(query);
     const { searching, searchType, matchedContext: searchContext, unreachable } = search;
@@ -153,7 +156,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                 data={results}
                 keyExtractor={r => String(r.id)}
                 style={st.searchResults}
-                contentContainerStyle={st.searchResultsContent}
+                contentContainerStyle={{ ...st.searchResultsContent, paddingBottom: end }}
                 estimatedItemSize={74}
                 renderItem={renderItem}
                 keyboardShouldPersistTaps="handled"
@@ -186,7 +189,7 @@ const st = StyleSheet.create({
     searchBadgeSepia: { color: colors.sepia },
     searchBadgeFlicker: { color: colors.flicker },
     searchResults: { marginTop: 8 },
-    searchResultsContent: { gap: 8, paddingBottom: 40 },
+    searchResultsContent: { gap: 8 },
     resultRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, padding: 10 },
     resultPoster: { width: 36, height: 54, borderRadius: 2 },
     resultFlex: { flex: 1 },

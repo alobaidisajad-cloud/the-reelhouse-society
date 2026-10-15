@@ -10,7 +10,7 @@ import reelToast from '@/src/utils/reelToast';
 import { useAuthStore, storage } from '@/src/stores/auth';
 import TactileEngine from '@/src/utils/TactileEngine';
 import PressableScale from '@/src/components/PressableScale';
-import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
+import { useContentBottom, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import { Lock } from 'lucide-react-native';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { passwordIsAccepted, passwordFits, PASSWORD_TOO_LONG, PASSWORD_MAX_BYTES, PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
@@ -30,6 +30,7 @@ export default function ResetPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const headerTop = usePushedHeaderTop();
+  const end = useContentBottom();
   // Whether the recovery link left a session to set the password on (null: still asking).
   const [hasSession, setHasSession] = useState<boolean | null>(null);
 
@@ -171,7 +172,7 @@ export default function ResetPasswordScreen() {
       <RoomLight room="default" />
       <ScrollView
         style={s.fill}
-        contentContainerStyle={[s.scroll, { paddingTop: headerTop + BACK_ROW }]}
+        contentContainerStyle={[s.scroll, { paddingTop: headerTop + BACK_ROW, paddingBottom: end }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets={true}
@@ -307,7 +308,8 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
   // The form scrolls over the room; the room stays put.
   fill: { flex: 1 },
-  scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 40 },
+  // Its foot is the page's (useContentBottom), set where it is drawn.
+  scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32 },
 
   // Back
   backBtn: { position: 'absolute', left: 0, zIndex: 10, padding: 8 },

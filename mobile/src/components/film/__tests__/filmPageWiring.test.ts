@@ -190,7 +190,9 @@ describe('the skeleton promises what actually arrives', () => {
 
   it('and holds the dock at the height the real one will be', () => {
     expect(skeleton).toMatch(/paddingTop: STUB_PAD_TOP/);
-    expect(skeleton).toMatch(/Math\.max\(bottomInset, 16\)/);
+    // The same edge the real dock stands on (filmStubMetrics' dockHeight).
+    expect(skeleton).toMatch(/paddingBottom: bottomEdge\(bottomInset\)/);
+    expect(readCode(join(FILM, 'FilmStub.tsx'))).toMatch(/paddingBottom: bottomEdge\(bottomInset\)/);
   });
 });
 

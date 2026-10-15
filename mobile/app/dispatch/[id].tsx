@@ -19,7 +19,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Image, Platform, ScrollView, Share, View, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
@@ -63,16 +62,25 @@ import { BusterEyes } from '@/src/components/Buster';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useUnsent } from '@/src/stores/offlineQueueStore';
 import { HOUSE_WEB } from '@/src/constants/support';
+import { useAboveDockedBar, useBottomEdge } from '@/src/components/layout/navMetrics';
 
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
 const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
+
+/** The room the reader keeps for its docked bar (PostDock or the composer), over the edge. */
+export const DOCK_ROOM = 96;
+/** Between the docked bar's controls and the home indicator's edge. */
+export const POST_DOCK_GAP = 12;
+/** Between the critique composer's field and the home indicator's edge. */
+const COMPOSER_GAP = 10;
 
 /** The critiques' order before anyone chooses: for the state AND the first read. */
 const FIRST_ORDER: CritiqueOrder = 'CERTIFIED';
 
 export default function FilingReader() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const insets = useSafeAreaInsets();
+  const edge = useBottomEdge();
+  const scrollEnd = useAboveDockedBar(DOCK_ROOM);
   // The page is measured at THIS screen's width, not a 390pt phone's.
   const { width: screenWidth } = useWindowDimensions();
   const me = useAuthStore((s) => s.user);
@@ -413,7 +421,7 @@ export default function FilingReader() {
         automaticallyAdjustKeyboardInsets
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
+        contentContainerStyle={{ paddingBottom: scrollEnd }}
       >
         <PaperSheet>
           {/* The honour stays: the day this filing hung in the Lobby, if it did. */}
@@ -635,7 +643,7 @@ export default function FilingReader() {
             onChangeText={setDraft}
             onFile={fileCritique}
             sending={sending}
-            bottomInset={insets.bottom + 10}
+            bottomInset={edge + COMPOSER_GAP}
           />
         ) : (
           <PostDock
@@ -643,7 +651,7 @@ export default function FilingReader() {
             commentCount={live.commentCount}
             certified={certified}
             saved={saved}
-            bottomInset={insets.bottom + 12}
+            bottomInset={edge + POST_DOCK_GAP}
             onCertify={(next) => useDispatch.getState().certify(live.id, next)}
             onCritique={() => setComposing(true)}
             onShare={() => setSharing(true)}
@@ -716,7 +724,7 @@ export default function FilingReader() {
       {/* ── WHERE IT GOES ──────────────────────────────────────────────────
           The house first, the world second. No SAVE THE CARD: see `card`. */}
       {sharing ? (
-        <View style={[p.sheetHost, { paddingBottom: insets.bottom }]}>
+        <View style={[p.sheetHost, { paddingBottom: edge }]}>
           <PressableScale
             style={p.sheetGround}
             onPress={() => setSharing(false)}

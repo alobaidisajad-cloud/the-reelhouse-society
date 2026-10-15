@@ -24,7 +24,7 @@ import { timeAgo } from '@/src/utils/timeAgo';
 import { Award, Bell, ChevronRight, Heart, KeyRound, MessageCircle, Star, UserPlus, X } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
-import { useModalTop } from '@/src/components/layout/navMetrics';
+import { useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
 import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
 
 const HITSLOP_15 = { top: 15, bottom: 15, left: 15, right: 15 } as const;
@@ -181,6 +181,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
 
 export default function NotificationsModal() {
   const handleTop = useModalTop();
+  const end = useContentBottom();
   const { notifications, loading, fetchFailed, markAllRead, fetchNotifications, loadMoreNotifications } = useNotificationStore();
   const allRead = useNotificationStore(s => s._unreadCount) === 0;
   const moreFailed = useNotificationStore(s => s.moreFailed);
@@ -286,7 +287,7 @@ export default function NotificationsModal() {
         maintainVisibleContentPosition={ANCHORED_BELOW_THE_TOP}
         estimatedItemSize={80}
         keyExtractor={(item: DisplayItem) => item.kind === 'group' ? item.groupKey : item.notification.id}
-        contentContainerStyle={s.listContent}
+        contentContainerStyle={{ ...s.listContent, paddingBottom: end }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -374,7 +375,8 @@ const s = StyleSheet.create({
   doorTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia, includeFontPadding: false },
   doorSub: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, marginTop: 2 },
 
-  listContent: { paddingBottom: 40, flexGrow: 1 },
+  // Its foot is the modal's (useContentBottom), set where it is drawn.
+  listContent: { flexGrow: 1 },
 
   itemWrap: {
     flexDirection: 'row', alignItems: 'center', padding: 14,

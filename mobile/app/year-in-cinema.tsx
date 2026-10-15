@@ -16,7 +16,7 @@ import { computeYearStats, fetchYearLogs, YearStats } from '@/src/services/YearI
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { safeAreaHeight, useOverlayTop } from '@/src/components/layout/navMetrics';
+import { safeAreaHeight, useBottomEdge, useOverlayTop } from '@/src/components/layout/navMetrics';
 import { WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { BusterEyes } from '@/src/components/Buster';
@@ -27,6 +27,9 @@ type SlideType = 'intro' | 'total' | 'verdict' | 'rhythm' | 'top' | 'outro';
 
 // Chrome shared by the loading / error / empty states. Module-level so it
 // keeps a stable identity and never remounts its subtree between renders.
+/** Between the slides' footer and the home indicator's edge. */
+const FOOTER_GAP = 16;
+
 function StateShell({ closeTop, children }: { closeTop: number; children: React.ReactNode }) {
   return (
     <View style={s.container}>
@@ -58,6 +61,7 @@ function FilmEdges() {
 export default function YearInCinemaScreen() {
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
+  const edge = useBottomEdge();
   // The close button floats over the slides: an overlay's top (navMetrics).
   const closeTop = useOverlayTop();
   const { isOffline } = useOfflineAware();
@@ -192,7 +196,7 @@ export default function YearInCinemaScreen() {
 
         {/* Footer — its own region; the film-strip paginator can never overlap content */}
         {isActive && (
-          <Animated.View entering={FadeIn} style={[s.footer, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
+          <Animated.View entering={FadeIn} style={[s.footer, { paddingBottom: edge + FOOTER_GAP }]}>
             <View style={s.paginator}>
               {slides.map((_, i) => (
                 <View key={i} style={[s.frame, i === currentIndex && s.frameActive]} />
@@ -202,7 +206,7 @@ export default function YearInCinemaScreen() {
         )}
       </View>
     );
-  }, [currentIndex, width, slideHeight, stats, slides, user, insets.bottom]);
+  }, [currentIndex, width, slideHeight, stats, slides, user, edge]);
 
   if (phase === 'loading') {
     return (

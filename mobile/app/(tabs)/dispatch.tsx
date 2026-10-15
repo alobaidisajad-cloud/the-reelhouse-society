@@ -20,11 +20,10 @@ import { ActivityIndicator, RefreshControl, View, useWindowDimensions } from 're
 import { useFocusEffect } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
 import { useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import FrozenTab from '@/src/components/layout/FrozenTab';
-import { useTabContentTop } from '@/src/components/layout/navMetrics';
+import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
 import {
   DayDivider, Ornament, PaperChrome, PaperEmpty, PaperMasthead, PaperSkeletons,
   RunningHead,
@@ -90,7 +89,6 @@ const EMPTY: Record<Section, { title: string; body: string; action?: string }> =
 };
 
 export default function DispatchScreen() {
-  const insets = useSafeAreaInsets();
   const me = useAuthStore((s) => s.user);
 
   const filings = useDispatch((s) => s.filings);
@@ -114,8 +112,10 @@ export default function DispatchScreen() {
   // Filed on this phone while the wire was down, and not gone yet.
   const unsent = useUnsent('add_filing');
 
-  // Below the floating bar, as it measured itself (navMetrics), not a copy.
+  // Below the floating bar, as it measured itself (navMetrics), not a copy; above the tab bar.
   const topPad = useTabContentTop();
+  const endPad = useTabContentBottom();
+  const tabBar = useTabBarHeight();
 
   const scrollY = useSharedValue(0);
   const scrollHeight = useSharedValue(0);
@@ -295,12 +295,12 @@ export default function DispatchScreen() {
               scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
               onScroll={onScroll}
               topInset={0}
-              bottomInset={insets.bottom + 49}
+              bottomInset={tabBar}
               contentContainerStyle={{
                 // Room for the new-filings pill, only while it shows, so it
                 // never sits across the first byline.
                 paddingTop: newCount > 0 ? NEW_FILINGS_ROOM : 0,
-                paddingBottom: insets.bottom + 64,
+                paddingBottom: endPad,
               }}
               ListHeaderComponent={header}
               renderItem={renderItem as any}

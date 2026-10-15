@@ -12,8 +12,9 @@ import { Alert, BackHandler, Platform, RefreshControl, ScrollView, StyleSheet, u
 import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
 import Animated, { FadeInDown, FadeInUp, ReduceMotion, interpolate, useAnimatedKeyboard, useAnimatedStyle, useDerivedValue, useSharedValue } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
+import {
+  useBottomEdge, useContentBottom, usePushedHeaderTop,
+} from '@/src/components/layout/navMetrics';
 
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import { offerWord } from '@/src/lib/pushPrimer';
@@ -59,6 +60,8 @@ const DESC_CLAMP_LINES = 4;
 const STACK_NAV_ROW = 48;
 /** A film caption's line. Its two-line box is this × 2 × the text size. */
 const FILM_TITLE_LINE = 14;
+/** Between the critique field and the keyboard it rides on (iOS). */
+const ABOVE_THE_KEYBOARD = 16;
 
 /** The hero's fade into the room: how much house it lays down, top to hem. */
 const HERO_VEIL: VeilStops = [[0, 0.4], [0.6, 0.9], [1, 1]];
@@ -208,7 +211,8 @@ export default function StackDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
-  const insets = useSafeAreaInsets();
+  const edge = useBottomEdge();
+  const end = useContentBottom();
   const headerTop = usePushedHeaderTop();
   // The chrome's lower edge: the critiques hang from it, and the pull's spinner shows below it.
   const navBottom = headerTop + STACK_NAV_ROW;
@@ -235,6 +239,10 @@ export default function StackDetailScreen() {
   // keyboard (KeyboardRoom), so there is nothing to lift there.
   const critiqueSheetStyle = useAnimatedStyle(() => ({
     bottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
+  }));
+  // Its field: above the keyboard while it is up (iOS), else above the home indicator.
+  const critiqueFootStyle = useAnimatedStyle(() => ({
+    paddingBottom: Platform.OS === 'ios' && keyboard.height.value > 0 ? ABOVE_THE_KEYBOARD : edge,
   }));
   const logs = useListStore(s => s.logs);
   const toggleListEndorse = useListStore(s => s.toggleListEndorse);
@@ -826,9 +834,9 @@ export default function StackDetailScreen() {
         data={list.films}
         keyExtractor={(item: any) => String(item.id)}
         numColumns={COLUMNS}
-        contentContainerStyle={s.scrollContent}
+        contentContainerStyle={{ ...s.scrollContent, paddingBottom: end }}
         externalScrollY={scrollY}
-        bottomInset={insets.bottom}
+        bottomInset={edge}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         estimatedItemSize={200}
@@ -1038,7 +1046,7 @@ export default function StackDetailScreen() {
             </ScrollView>
 
             {user && (
-              <View style={[s.critiqueFoot, { paddingBottom: Platform.OS === 'ios' ? 16 : Math.max(insets.bottom, 16) }]}>
+              <Animated.View style={[s.critiqueFoot, critiqueFootStyle]}>
                 <TextInput
                   ref={commentInputRef}
                   style={s.critiqueField}
@@ -1059,7 +1067,7 @@ export default function StackDetailScreen() {
                 <PressableScale onPress={handleSubmitComment} disabled={submittingComment || !commentText.trim()} style={[s.critiqueSend, (!commentText.trim()) && s.sendBtnDisabled]} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Submit critique">
                   <Send size={15} color={colors.ink} />
                 </PressableScale>
-              </View>
+              </Animated.View>
             )}
           </Animated.View>
         </View>
@@ -1138,7 +1146,8 @@ const s = StyleSheet.create({
 
   // ONE left edge: 9 here + 7 on each cell = 16 (and a 14 gutter); the hero
   // wrap's 7 puts the title on it too. These three numbers move together.
-  scrollContent: { paddingBottom: 60, paddingHorizontal: 9 },
+  // Its foot is the page's (useContentBottom), set where it is drawn.
+  scrollContent: { paddingHorizontal: 9 },
   parallaxHeader: { position: 'absolute', top: 0, left: 0, right: 0 },
   headerContentWrap: { paddingHorizontal: 7, paddingBottom: 24 },
   title: { fontFamily: fonts.display, fontSize: 36, color: colors.parchment, lineHeight: 40, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },

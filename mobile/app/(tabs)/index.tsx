@@ -3,7 +3,6 @@ import { View, StyleSheet, RefreshControl, ScrollView, useWindowDimensions } fro
 import { Text } from '@/src/components/text';
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useQueryClient } from '@tanstack/react-query';
 import { useScrollToTop } from '@react-navigation/native';
@@ -23,7 +22,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { ProjectorBeam } from '@/src/components/home/ProjectorBeam';
 import { VelvetRopeCTA } from '@/src/components/home/VelvetRopeCTA';
 import { BrassSheen } from '@/src/components/theme/BrassSheen';
-import { tabBarHeight, useTabContentTop } from '@/src/components/layout/navMetrics';
+import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
@@ -45,7 +44,6 @@ const LOBBY = ['lobby'] as const;
 //  MAIN SCREEN: THE LOBBY
 // ════════════════════════════════════════════════════════════════
 export default function LobbyScreen() {
-  const insets = useSafeAreaInsets();
   // Re-tap the active tab icon → smoothly scroll the Lobby to the top.
   const scrollRef = useRef<any>(null);
   useScrollToTop(scrollRef);
@@ -108,6 +106,9 @@ export default function LobbyScreen() {
   
   // Below the top bar, as it measured itself; the welcome starts there too.
   const topPad = useTabContentTop();
+  // Above the tab bar, which is drawn over the tab: the wall's last bill, the welcome's doors.
+  const endPad = useTabContentBottom();
+  const tabBar = useTabBarHeight();
 
   // The member's own reads. Their notices and the live channel are the
   // bootstrapper's, for the whole session: this tab never opens or closes them.
@@ -149,7 +150,7 @@ export default function LobbyScreen() {
   if (!isAuthenticated) {
     return (
       <FrozenTab>
-      <View style={[s.container, { paddingTop: topPad, paddingBottom: insets.bottom }]}>
+      <View style={[s.container, { paddingTop: topPad }]}>
         <RoomLight room="lobby" />
         {readyMark}
         <LinearGradient
@@ -167,7 +168,7 @@ export default function LobbyScreen() {
             seal into the status bar. */}
         <ScrollView
           style={s.welcomeRootFlex}
-          contentContainerStyle={s.welcomeScrollContent}
+          contentContainerStyle={[s.welcomeScrollContent, { paddingBottom: endPad }]}
           showsVerticalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"
@@ -255,8 +256,8 @@ export default function LobbyScreen() {
         ref={scrollRef}
         scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
         topInset={topPad}
-        bottomInset={tabBarHeight(insets.bottom)}
-        contentContainerStyle={{ paddingTop: topPad, paddingBottom: tabBarHeight(insets.bottom) + 24 }}
+        bottomInset={tabBar}
+        contentContainerStyle={{ paddingTop: topPad, paddingBottom: endPad }}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -287,7 +288,7 @@ const s = StyleSheet.create({
   // ── Welcome (Unauthenticated) strict layout ──
   welcomeRootFlex: { flex: 1, zIndex: 10 },
   // Grows, and scrolls when tall: fixed top padding, never space pushed off the top.
-  welcomeScrollContent: { flexGrow: 1, paddingHorizontal: 32, paddingTop: 24, paddingBottom: 12, justifyContent: 'flex-start' },
+  welcomeScrollContent: { flexGrow: 1, paddingHorizontal: 32, paddingTop: 24, justifyContent: 'flex-start' },
   welcomeSpacer: { flex: 1, minHeight: 24 },
   welcomeTopHalf: { justifyContent: 'center', alignItems: 'center' },
   welcomeBottomHalf: { justifyContent: 'center', alignItems: 'center', paddingTop: 24 },

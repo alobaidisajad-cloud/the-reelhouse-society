@@ -34,6 +34,7 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { ReelRating } from '@/src/components/Decorative';
 import { STUB_HEIGHT, STUB_PAD_TOP, dockHeight } from './filmStubMetrics';
+import { bottomEdge } from '@/src/components/layout/navMetrics';
 import { EDGE_LIT } from '@/src/theme/light';
 
 export interface FilmStubProps {
@@ -168,7 +169,7 @@ export const FilmStub = memo(function FilmStub({
   );
 
   return (
-    <View style={[s.dock, { paddingBottom: Math.max(bottomInset, 16) }]} testID="film-stub-dock">
+    <View style={[s.dock, { paddingBottom: bottomEdge(bottomInset) }]} testID="film-stub-dock">
       <PressableScale
         testID="film-stub"
         onPress={onPress}

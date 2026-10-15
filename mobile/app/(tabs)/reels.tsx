@@ -7,7 +7,6 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, useDerivedValue, Easing
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useFocusEffect } from 'expo-router';
 import { nav } from '@/src/utils/typedRouter';
@@ -37,7 +36,7 @@ import { useCommunityFeed, useFollowingFeed, useStacksFeed } from '@/src/hooks/u
 import { ReelsFeedList } from '@/src/components/reels/ReelsFeedList';
 import { ReelsStackList } from '@/src/components/reels/ReelsStackList';
 import { MemberRegistry } from '@/src/components/reels/MemberRegistry';
-import { useTabContentTop } from '@/src/components/layout/navMetrics';
+import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
@@ -109,13 +108,14 @@ AutonomousSearchBar.displayName = 'AutonomousSearchBar';
 
 
 export default function ReelScreen() {
-  const insets = useSafeAreaInsets();
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const user = useAuthStore(s => s.user);
   const resolvedRole = resolveTier(user);
 
-  // Below the top bar, as it measured itself.
+  // Below the top bar, as it measured itself; above the tab bar drawn over the tab.
   const topPad = useTabContentTop();
+  const endPad = useTabContentBottom();
+  const tabBar = useTabBarHeight();
 
   useEffect(() => { globalScrollY.value = 0; }, []);
 
@@ -444,12 +444,12 @@ export default function ReelScreen() {
           refreshing={isManualRefreshing}
           onRefresh={onRefresh}
           topPad={topPad}
-          bottomInset={insets.bottom + 49}
+          bottomInset={tabBar}
           overallLogsScrollY={overallLogsScrollY}
           activeTabSV={activeTabSV}
           ListHeaderComponent={logsHeader}
           ListEmptyComponent={logsEmpty}
-          contentContainerStyle={{ ...st.listContent, paddingTop: topPad }}
+          contentContainerStyle={{ paddingTop: topPad, paddingBottom: endPad }}
           listRef={logsFlatListRef}
           onEndReached={onLoadMoreLogs}
           isFetchingNextPage={feedFilter === 'following' ? isFetchingNextFollowing : isFetchingNextCommunity}
@@ -463,12 +463,12 @@ export default function ReelScreen() {
           refreshing={isManualRefreshing}
           onRefresh={onRefresh}
           topPad={topPad}
-          bottomInset={insets.bottom + 49}
+          bottomInset={tabBar}
           stacksScrollY={stacksScrollY}
           activeTabSV={activeTabSV}
           ListHeaderComponent={stackHeader}
           ListEmptyComponent={stackEmpty}
-          contentContainerStyle={{ ...st.listContent, paddingTop: topPad, paddingHorizontal: 10 }}
+          contentContainerStyle={{ paddingTop: topPad, paddingBottom: endPad, paddingHorizontal: 10 }}
           listRef={stacksFlatListRef}
           onEndReached={onLoadMoreStacks}
           isFetchingNextPage={isFetchingNextStacks}
@@ -483,7 +483,6 @@ export default function ReelScreen() {
 
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
-  listContent: { paddingBottom: 120 },
 
   filterRow: {
     flexDirection: 'row', paddingHorizontal: 16, gap: FILTER_GAP,

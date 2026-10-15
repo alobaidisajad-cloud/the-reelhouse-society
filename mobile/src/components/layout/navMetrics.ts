@@ -1,5 +1,5 @@
 /**
- * navMetrics — where every page starts, stated once.
+ * navMetrics — where every page starts and ends, stated once.
  * ─────────────────────────────────────────────────────────────
  * TopNavBar's styles are BUILT from these constants, so nothing here can
  * describe a bar that isn't the one on screen. The Concierge menu anchors
@@ -13,6 +13,15 @@
  *   a pushed screen    usePushedHeaderTop()   the status bar's edge + PUSHED_HEADER_GAP
  *   a modal route      useModalTop()          an iOS sheet's own top, or Android's status bar
  *   an overlay         useOverlayTop()        the status bar's edge, or a sheet's top
+ *
+ * And every page's foot, over the home indicator's edge (bottomEdge, 10pt floor):
+ *
+ *   a tab              useTabContentBottom()  the tab bar's height + SCROLL_END_GAP
+ *   a centred page     CentredRoom            useTabRoomPadding(), usePushedRoomPadding()
+ *   a pushed screen    useContentBottom()     the edge + SCROLL_END_GAP; a modal route too
+ *   a docked bar       useAboveDockedBar(h)   the scroll above it; the bar sits on the edge
+ *   a bottom sheet     useSheetBottom()       the edge + SHEET_BOTTOM_GAP
+ *   an overlay         useOverlayBottom()     above the tab bar, where a tab's scroll ends
  *
  * No other file adds to the safe-area inset by hand (noPageAddsToTheInset.guard.test.ts).
  * The status bar's edge has a 20pt floor: on a zero-inset device the bar is
@@ -105,13 +114,6 @@ export function useTabContentTop() {
   return useTopBarHeight() + TAB_CONTENT_GAP;
 }
 
-/** A centred tab's padding: its content centres in the room between the two bars. */
-export function useTabRoomPadding() {
-  const top = useTabContentTop();
-  const bottom = tabBarHeight(useSafeAreaInsets().bottom);
-  return { paddingTop: top, paddingBottom: bottom };
-}
-
 // ── a pushed screen: no bar above it ──────────────────────────────────────────
 
 /** Between the status bar's edge and a pushed screen's header: the back button's row. */
@@ -165,18 +167,109 @@ export function useOverlayTop(inIosSheet?: boolean) {
 export const safeAreaHeight = (windowHeight: number, insets: { top: number; bottom: number }) =>
   windowHeight - insets.top - insets.bottom;
 
+// ── the bottom edge ───────────────────────────────────────────────────────────
+
+/**
+ * The least room kept for the home indicator, on a device that reports none:
+ * the same zero-inset floor the top bar keeps, for the same reason.
+ */
+export const HOME_INDICATOR_FLOOR = 10;
+
+/** Where a page's room ends at its foot: the home indicator's edge, never under the floor. */
+export const bottomEdge = (insetBottom: number) => Math.max(insetBottom, HOME_INDICATOR_FLOOR);
+
+/** The home indicator's edge on this device: a scrollbar's end, a docked bar's base. */
+export function useBottomEdge() {
+  return bottomEdge(useSafeAreaInsets().bottom);
+}
+
+/** Between a scroll's last line and the foot under it (a bar, a dock, the edge): the wall's 24. */
+export const SCROLL_END_GAP = 24;
+
+/** Where a scroll ends that runs down to `foot`: the foot, then the gap. */
+export const scrollEndAbove = (foot: number) => foot + SCROLL_END_GAP;
+
+// ── a tab: above the tab bar ──────────────────────────────────────────────────
+
 /** The tab bar's icon row, above the home indicator's room. */
 export const TAB_ROW_H = 56;
 
-/**
- * The room under the tab bar's icons: the home indicator's inset, never less
- * than 10 — the same zero-inset floor the top bar keeps, for the same reason.
- */
-export const tabBarBottomPadding = (insetBottom: number) => Math.max(insetBottom, 10);
+/** The room under the tab bar's icons: the home indicator's edge. */
+export const tabBarBottomPadding = (insetBottom: number) => bottomEdge(insetBottom);
 
 /**
  * The whole tab bar's height. The tab bar is BUILT from this ((tabs)/_layout),
- * and the Lobby sizes its first screen by it: a copy of the sum in either place
- * would let the wall's first poster slip under the bar.
+ * and every tab ends above it: a copy of the sum anywhere else would let a
+ * tab's last line, or the wall's first poster, slip under the bar.
  */
 export const tabBarHeight = (insetBottom: number) => TAB_ROW_H + tabBarBottomPadding(insetBottom);
+
+/** The tab bar's height on this device: where a tab's scrollbar track ends. */
+export function useTabBarHeight() {
+  return tabBarHeight(useSafeAreaInsets().bottom);
+}
+
+/** Where a tab's scroll ends: above the tab bar the tab is drawn over. */
+export function useTabContentBottom() {
+  return scrollEndAbove(useTabBarHeight());
+}
+
+/**
+ * A centred tab's padding: its content centres in the room between the two
+ * bars, TAB_CONTENT_GAP clear of each, so the middle is the room's own middle.
+ * It goes on a scroll's content (CentredRoom), so a page taller than the room scrolls.
+ */
+export function useTabRoomPadding() {
+  return { paddingTop: useTabContentTop(), paddingBottom: useTabBarHeight() + TAB_CONTENT_GAP };
+}
+
+// ── a pushed screen, a modal, a sheet ─────────────────────────────────────────
+
+/** Where the scroll of a pushed screen or a modal route ends: above the home indicator. */
+export const contentBottom = (insetBottom: number) => scrollEndAbove(bottomEdge(insetBottom));
+
+/** 58 at a 34pt inset; 34 on a phone with none. */
+export function useContentBottom() {
+  return contentBottom(useSafeAreaInsets().bottom);
+}
+
+/**
+ * A centred pushed page's padding (no bar above or below it): its content
+ * centres between the status bar and the home indicator, PUSHED_HEADER_GAP clear of each.
+ */
+export function usePushedRoomPadding() {
+  return { paddingTop: usePushedHeaderTop(), paddingBottom: useBottomEdge() + PUSHED_HEADER_GAP };
+}
+
+/** Between a bottom sheet's last control and the home indicator: the sheets' own 20. */
+export const SHEET_BOTTOM_GAP = 20;
+
+/** A bottom sheet's padding under its last control, at this inset. */
+export const sheetBottom = (insetBottom: number) => bottomEdge(insetBottom) + SHEET_BOTTOM_GAP;
+
+/** 54 at a 34pt inset; 30 on a phone with none. */
+export function useSheetBottom() {
+  return sheetBottom(useSafeAreaInsets().bottom);
+}
+
+/** Between a docked bar's last control and the home indicator's edge: the seal's own 14. */
+export const DOCKED_BAR_GAP = 14;
+
+/**
+ * Where a scroll ends above a bar docked at the foot. `barHeight` is the bar's
+ * own exported height (the docked-bar law), drawn over the home indicator's edge.
+ */
+export const aboveDockedBar = (insetBottom: number, barHeight: number) =>
+  scrollEndAbove(bottomEdge(insetBottom) + barHeight);
+
+/** The scroll's end above this docked bar, on this device. */
+export function useAboveDockedBar(barHeight: number) {
+  return aboveDockedBar(useSafeAreaInsets().bottom, barHeight);
+}
+
+// ── an overlay at the foot ────────────────────────────────────────────────────
+
+/** Where a plate drawn over every screen stands: above the tab bar, where a tab's scroll ends. */
+export function useOverlayBottom() {
+  return useTabContentBottom();
+}

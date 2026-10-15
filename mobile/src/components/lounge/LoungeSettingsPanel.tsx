@@ -12,12 +12,12 @@ import { tmdb } from '@/src/lib/tmdb';
 import React, { useCallback, useState } from 'react';
 import { Alert, InteractionManager, Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ToastHost } from '@/src/components/ToastHost';
 import { leave, MS } from '@/src/theme/motion';
 import { Arrive } from '@/src/components/Arrive';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { nav } from '@/src/utils/typedRouter';
+import { useSheetBottom } from '@/src/components/layout/navMetrics';
 
 const BLOOD = colors.crimson;
 /** The same red as WORDS — BANNED, REMOVE, BAN. The pigment is 2.78:1 as a word. */
@@ -33,7 +33,7 @@ export interface LoungeSettingsPanelProps {
 }
 
 export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator, onMembersChanged }: LoungeSettingsPanelProps) {
-  const insets = useSafeAreaInsets();
+  const sheetFoot = useSheetBottom();
   const { leaveLounge, deleteLounge, setMemberStatus, removeMember, setLoungeCover } = useLoungeStore();
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -168,7 +168,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
       {/* Arrive, rising from below, not a mount-time `entering` that can stall. */}
       <PresenceView name="lounge.settings.leave" style={s.frame} pointerEvents="box-none"
         exit={{ kind: 'SlideOutDown', duration: MS.quick, easing: leave() }}>
-      <Arrive name="lounge.settings" duration={MS.considered} rise={SETTINGS_RISE} style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 28) }]}>
+      <Arrive name="lounge.settings" duration={MS.considered} rise={SETTINGS_RISE} style={[s.sheet, { paddingBottom: sheetFoot }]}>
       <View style={s.body} onAccessibilityEscape={onClose}>
         <View style={s.handle} />
         <View style={s.headerRow}>

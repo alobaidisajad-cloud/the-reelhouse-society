@@ -84,8 +84,9 @@ export const s = StyleSheet.create({
   favouriteRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
 
   // ── Early Return States ──
-  centeredFull: { justifyContent: 'center' as const, alignItems: 'center' as const },
-  centeredPadded: { justifyContent: 'center' as const, alignItems: 'center' as const, padding: 40 },
+  // Centred in the room between the bars by CentredRoom, which these style.
+  centeredFull: { alignItems: 'center' as const },
+  centeredPadded: { alignItems: 'center' as const, paddingHorizontal: 40 },
   loadingEyes: { marginBottom: 14 },
   loadingRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
   loadingText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia },
@@ -95,7 +96,8 @@ export const s = StyleSheet.create({
   ghostBtnRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
 
   // ── A room ──
-  tabScrollContent: { paddingBottom: 80, paddingTop: 8 },
+  // Its foot is the page's (a tab's, or a pushed page's), set where it is drawn.
+  tabScrollContent: { paddingTop: 8 },
   /** A sealed room, which has no list to inherit the room inset from. */
   sealedPad: { paddingHorizontal: ROOM_INSET },
   tabContentPad: { paddingHorizontal: ROOM_INSET },
@@ -127,7 +129,6 @@ export const s = StyleSheet.create({
   contentArea: {},
 
   // ── Main Scroll ──
-  mainScrollContent: { paddingBottom: 60 },
 
   // ══════════════════════════════════════════════════════════════════════════
   // THE MEMBER FILE

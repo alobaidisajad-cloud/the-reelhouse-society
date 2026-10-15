@@ -31,8 +31,7 @@ import reelToast from '@/src/utils/reelToast';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
+import { useContentBottom, usePushedHeaderTop, useSheetBottom } from '@/src/components/layout/navMetrics';
 import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
@@ -170,7 +169,7 @@ function ActionModal({
 }) {
   const [reason, setReason] = useState('');
   const [durationHours, setDurationHours] = useState('');
-  const insets = useSafeAreaInsets();
+  const sheetFoot = useSheetBottom();
 
   const reset = useCallback(() => {
     setReason('');
@@ -248,7 +247,7 @@ function ActionModal({
         // keyboard (Android's resize mode can't reach them).
         behavior="padding"
       >
-        <View style={[s.modalSheet, { paddingBottom: insets.bottom + 20 }]}>
+        <View style={[s.modalSheet, { paddingBottom: sheetFoot }]}>
           <View style={s.modalHandle} />
 
           <View style={s.modalHeader}>
@@ -318,6 +317,7 @@ function ActionModal({
 export default function TribunalScreen() {
   const { user } = useAuthStore();
   const headerTop = usePushedHeaderTop();
+  const end = useContentBottom();
   const queryClient = useQueryClient();
 
   const [actionModal, setActionModal] = useState<ActionModalState>({
@@ -793,7 +793,7 @@ export default function TribunalScreen() {
       </Animated.View>
 
       <ScrollView
-        contentContainerStyle={s.listContent}
+        contentContainerStyle={[s.listContent, { paddingBottom: end }]}
         refreshControl={
           <RefreshControl refreshing={isRefreshingData} onRefresh={onRefresh} tintColor={colors.crimson} />
         }
@@ -1160,7 +1160,8 @@ const s = StyleSheet.create({
   title: { fontFamily: fonts.display, fontSize: 32, color: colors.parchment, marginBottom: 4 },
   subtitle: { fontFamily: fonts.sub, fontSize: 14, color: colors.fog },
 
-  listContent: { padding: 16, paddingBottom: 60 },
+  // Its foot is the page's (useContentBottom), set where it is drawn.
+  listContent: { padding: 16 },
   reportCard: { ...EDGE_LIT,
     backgroundColor: colors.soot,
     borderRadius: radii.sm,

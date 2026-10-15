@@ -2,16 +2,16 @@ import NetInfo, { useNetInfo } from '@react-native-community/netinfo';
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts } from '../theme/theme';
 import PressableScale from './PressableScale';
 import { Arrive } from './Arrive';
 import { Presence, PresenceView } from './motion/Presence';
 import { ARRIVAL_RISE } from '@/src/hooks/useArrival';
+import { useOverlayBottom } from '@/src/components/layout/navMetrics';
 
 export default function OfflineBanner() {
     const netInfo = useNetInfo();
-    const insets = useSafeAreaInsets();
+    const overlayBottom = useOverlayBottom();
     const [checking, setChecking] = useState(false);
     // Track elapsed offline time
     const offlineSince = useRef<number | null>(null);
@@ -49,7 +49,7 @@ export default function OfflineBanner() {
             name="offline-banner.leave"
             exit={{ kind: 'FadeOutUp', duration: 300 }}
             // Clear of the tab bar on every device; touches pass around the plate.
-            style={[styles.frame, { bottom: Math.max(insets.bottom, 20) + 82 }]}
+            style={[styles.frame, { bottom: overlayBottom }]}
             pointerEvents="box-none"
         >
             {/* Arrive, not an `entering`: one stalled at opacity 0 and the E2E

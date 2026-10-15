@@ -31,8 +31,9 @@ import { useClearance } from '@/src/hooks/useClearance';
 import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ArrowLeft } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
+import {
+  useBottomEdge, useContentBottom, usePushedHeaderTop,
+} from '@/src/components/layout/navMetrics';
 import NetInfo from '@react-native-community/netinfo';
 
 import { s } from '@/src/components/person/personStyles';
@@ -123,7 +124,8 @@ export default function PersonDetailScreen() {
   const [isManualRefresh, setIsManualRefresh] = useState(false);
   const _loggedIndex = useArchiveStore(s => s._loggedIndex);
   const user = useAuthStore(s => s.user);
-  const insets = useSafeAreaInsets();
+  const edge = useBottomEdge();
+  const end = useContentBottom();
   const headerTop = usePushedHeaderTop();
   const { width: windowWidth } = useWindowDimensions();
 
@@ -133,7 +135,7 @@ export default function PersonDetailScreen() {
   const heroH = Math.round(Math.min(300, Math.max(240, windowWidth * 0.6)));
   const heroDynStyle = useMemo(() => ({ height: heroH }), [heroH]);
   const floatingBackDynStyle = useMemo(() => ({ top: headerTop }), [headerTop]);
-  const scrollContentDynStyle = useMemo(() => ({ paddingBottom: 100 + insets.bottom }), [insets.bottom]);
+  const scrollContentDynStyle = useMemo(() => ({ paddingBottom: end }), [end]);
 
   // ── The veil ──
   // CinematicFlashList already mirrors its scroll offset into whatever shared
@@ -457,7 +459,7 @@ export default function PersonDetailScreen() {
       <CinematicFlashList
         externalScrollY={scrollY}
         topInset={headerTop}
-        bottomInset={insets.bottom}
+        bottomInset={edge}
         data={canonSorted}
         numColumns={3}
         estimatedItemSize={215}

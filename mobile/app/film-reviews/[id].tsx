@@ -17,8 +17,9 @@ import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
+import {
+  useBottomEdge, useContentBottom, usePushedHeaderTop,
+} from '@/src/components/layout/navMetrics';
 
 import { supabase } from '../../src/lib/supabase';
 import { colors, fonts } from '../../src/theme/theme';
@@ -58,7 +59,8 @@ interface RawLogRow {
 
 export default function FilmReviewsScreen() {
   const { id: filmId, title } = useLocalSearchParams<{ id: string; title?: string }>();
-  const insets = useSafeAreaInsets();
+  const edge = useBottomEdge();
+  const end = useContentBottom();
   const headerTop = usePushedHeaderTop();
 
   const [logs, setLogs] = useState<FeedItem[]>([]);
@@ -176,13 +178,13 @@ export default function FilmReviewsScreen() {
         </View>
       ) : (
         <CinematicFlashList
-          bottomInset={insets.bottom}
+          bottomInset={edge}
           data={logs}
           keyExtractor={(item: FeedItem) => item.id}
           renderItem={renderLog}
           onEndReached={() => fetchLogs(true)}
           onEndReachedThreshold={0.5}
-          contentContainerStyle={[s.listContent, { paddingBottom: Math.max(insets.bottom + 20, 100) }]}
+          contentContainerStyle={[s.listContent, { paddingBottom: end }]}
           showsVerticalScrollIndicator={false}
           estimatedItemSize={230}
           ListFooterComponent={
@@ -219,7 +221,8 @@ const s = StyleSheet.create({
   headerEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
   headerTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment },
   centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  listContent: { paddingTop: 20, paddingBottom: 100 },
+  // Its foot is the page's (useContentBottom), set where it is drawn.
+  listContent: { paddingTop: 20 },
 
   emptyBox: { padding: 40, alignItems: 'center' },
   moreFailed: { alignItems: 'center', paddingVertical: 20, gap: 4 },

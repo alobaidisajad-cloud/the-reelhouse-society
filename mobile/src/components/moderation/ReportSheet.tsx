@@ -24,7 +24,6 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PressableScale from '@/src/components/PressableScale';
 import { Arrive } from '@/src/components/Arrive';
@@ -42,6 +41,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { ToastHost } from '@/src/components/ToastHost';
 import { arrive, MS } from '@/src/theme/motion';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { useSheetBottom } from '@/src/components/layout/navMetrics';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -149,7 +149,7 @@ function ReportSheet({
   targetUsername,
   onDismiss,
 }: ReportSheetProps) {
-  const insets = useSafeAreaInsets();
+  const sheetFoot = useSheetBottom();
   // Reactive, so a rotation or a split-screen resize re-measures. See the note
   // on SHEET_HEIGHT_RATIO.
   const { height: windowHeight } = useWindowDimensions();
@@ -182,7 +182,7 @@ function ReportSheet({
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
   // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
   // platform — the context field rises with the keyboard on BOTH.
-  const kbPad = useModalKeyboardPadding(Math.max(insets.bottom + 20, 24));
+  const kbPad = useModalKeyboardPadding(sheetFoot);
 
   // ── Gesture Dismiss ─────────────────────────────────────────────────────
   const pan = Gesture.Pan()

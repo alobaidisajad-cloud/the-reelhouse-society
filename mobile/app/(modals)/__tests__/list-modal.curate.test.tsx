@@ -18,6 +18,7 @@ import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { stripComments } from '@/test-utils/readCode';
+import { DOCKED_BAR_GAP } from '@/src/components/layout/navMetrics';
 
 import ListModal from '../list-modal';
 
@@ -300,15 +301,16 @@ describe('the docked act reserves exactly the room it takes', () => {
       Math.ceil(num(line, 'fontSize') * CAP * 1.3) +
       num(line, 'marginBottom') +
       num(press, 'minHeight') +
-      14;                                  // the bar's own paddingBottom, added in the component
+      DOCKED_BAR_GAP;                      // the bar's own paddingBottom, over the edge
 
     expect(real).toBeGreaterThan(0);       // a failed parse must not pass vacuously
     expect(declared).toBeGreaterThanOrEqual(real);
   });
 
   it('and the scroll ends above it, using that same number', () => {
-    expect(SOURCE).toMatch(/paddingBottom: insets\.bottom \+ CURATE_BAR_HEIGHT \+ 16/);
-    expect(SOURCE).toMatch(/paddingBottom: insets\.bottom \+ 14/);   // the bar's own
+    expect(SOURCE).toMatch(/const scrollEnd = useAboveDockedBar\(CURATE_BAR_HEIGHT\)/);
+    expect(SOURCE).toMatch(/paddingBottom: scrollEnd/);
+    expect(SOURCE).toMatch(/paddingBottom: edge \+ DOCKED_BAR_GAP/);   // the bar's own
   });
 
   it('the line is capped, which is what makes that number hold', () => {

@@ -16,25 +16,26 @@ import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { EmptyOffline } from '@/src/components/EmptyStates';
-import { useTabRoomPadding } from '@/src/components/layout/navMetrics';
+import { CentredRoom } from '@/src/components/layout/CentredRoom';
 
 export default function ProfileTab() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const user = useAuthStore(s => s.user);
-  const room = useTabRoomPadding();
 
   if (!isAuthenticated || !user) {
     return (
       <FrozenTab>
-        <View style={[s.container, room]}>
+        <View style={s.container}>
           <RoomLight room="member" />
-          <Buster size={80} mood="unimpressed" message="The archive awaits your identity." />
-          <Text style={s.prompt}>Identify yourself to access your dossier</Text>
-          <PressableScale testID="profile-sign-in-prompt" style={s.ctaBtn} onPress={() => nav.push('/login')} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="medium"
-            accessibilityRole="button" accessibilityLabel="Identify yourself. Sign in.">
-            <LogIn size={11} color={colors.sepia} strokeWidth={1.5} />
-            <Text style={s.ctaBtnText}>IDENTIFY YOURSELF</Text>
-          </PressableScale>
+          <CentredRoom kind="tab" style={s.centre}>
+            <Buster size={80} mood="unimpressed" message="The archive awaits your identity." />
+            <Text style={s.prompt}>Identify yourself to access your dossier</Text>
+            <PressableScale testID="profile-sign-in-prompt" style={s.ctaBtn} onPress={() => nav.push('/login')} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="medium"
+              accessibilityRole="button" accessibilityLabel="Identify yourself. Sign in.">
+              <LogIn size={11} color={colors.sepia} strokeWidth={1.5} />
+              <Text style={s.ctaBtnText}>IDENTIFY YOURSELF</Text>
+            </PressableScale>
+          </CentredRoom>
         </View>
       </FrozenTab>
     );
@@ -73,20 +74,22 @@ function HandleArriving() {
     ask();
     return () => { mounted.current = false; };
   }, [ask]);
-  const room = useTabRoomPadding();
 
   return (
-    <View style={[s.container, room]}>
+    <View style={s.container}>
       <RoomLight room="member" />
-      {failed
-        ? <EmptyOffline onRetry={ask} />
-        : <><BusterEyes style={s.retrievingEyes} /><Text style={s.retrieving}>RETRIEVING DOSSIER</Text></>}
+      <CentredRoom kind="tab" style={s.centre}>
+        {failed
+          ? <EmptyOffline onRetry={ask} />
+          : <><BusterEyes style={s.retrievingEyes} /><Text style={s.retrieving}>RETRIEVING DOSSIER</Text></>}
+      </CentredRoom>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: colors.ink },
+  centre: { alignItems: 'center' },
   // Room above as well as below: under Buster's line it read as part of the bubble.
   prompt: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, marginTop: 20, marginBottom: 16 },
   ctaBtn: {

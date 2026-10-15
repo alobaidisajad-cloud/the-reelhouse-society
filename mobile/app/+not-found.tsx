@@ -15,6 +15,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { ArrowLeft } from 'lucide-react-native';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import Buster from '@/src/components/Buster';
+import { CentredRoom } from '@/src/components/layout/CentredRoom';
 
 export default function NotFoundScreen() {
   const router = useRouter();
@@ -22,24 +23,26 @@ export default function NotFoundScreen() {
   return (
     <View style={s.container}>
       <RoomLight room="default" />
-      <Buster size={80} mood="suspicious" style={s.buster} />
-      <Text style={s.title}>ROUTE NOT IN THE ARCHIVE</Text>
-      <Text style={s.body}>
-        This path could not be resolved. It may have been withdrawn or the link is malformed.
-      </Text>
-      <PressableScale
-        style={s.backBtn}
-        onPress={() => (router.replace as any)('/(tabs)')}
-        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-        haptic="selection"
-        accessibilityRole="button"
-        accessibilityLabel="Return to lobby"
-      >
-        <View style={s.backRow}>
-          <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
-          <Text style={s.backText}>RETURN TO LOBBY</Text>
-        </View>
-      </PressableScale>
+      <CentredRoom kind="pushed" style={s.room}>
+        <Buster size={80} mood="suspicious" style={s.buster} />
+        <Text style={s.title}>ROUTE NOT IN THE ARCHIVE</Text>
+        <Text style={s.body}>
+          This path could not be resolved. It may have been withdrawn or the link is malformed.
+        </Text>
+        <PressableScale
+          style={s.backBtn}
+          onPress={() => (router.replace as any)('/(tabs)')}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          haptic="selection"
+          accessibilityRole="button"
+          accessibilityLabel="Return to lobby"
+        >
+          <View style={s.backRow}>
+            <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
+            <Text style={s.backText}>RETURN TO LOBBY</Text>
+          </View>
+        </PressableScale>
+      </CentredRoom>
     </View>
   );
 }
@@ -48,7 +51,9 @@ const s = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.ink,
-    justifyContent: 'center',
+  },
+  // Centred between the status bar and the home indicator by CentredRoom.
+  room: {
     alignItems: 'center',
     paddingHorizontal: 32,
   },

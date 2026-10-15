@@ -24,7 +24,6 @@ import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { Easing, runOnJS, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSheetPresence } from '@/src/hooks/useSheetPresence';
 
 import PressableScale from '@/src/components/PressableScale';
@@ -33,6 +32,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { isRTLText } from '@/src/utils/text';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import TactileEngine from '@/src/utils/TactileEngine';
+import { useSheetBottom } from '@/src/components/layout/navMetrics';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -58,7 +58,7 @@ export default function NoteSheet({
   onEdit,
   onRemove,
 }: NoteSheetProps) {
-  const insets = useSafeAreaInsets();
+  const sheetFoot = useSheetBottom();
   const { isRendered, opacity, translateY } = useSheetPresence({ visible });
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
@@ -89,7 +89,7 @@ export default function NoteSheet({
         </Animated.View>
 
         <GestureDetector gesture={pan}>
-          <AnimatedView style={[styles.sheet, sheetStyle, { paddingBottom: Math.max(insets.bottom + 20, 24) }]}>
+          <AnimatedView style={[styles.sheet, sheetStyle, { paddingBottom: sheetFoot }]}>
             <View style={styles.handle} />
 
             <View style={styles.titleRow}>

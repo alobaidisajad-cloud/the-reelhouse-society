@@ -16,6 +16,7 @@ import { LEDGER_HIGH_FLOOR, ledgerRung } from '../../types';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
 import { r, rtlText, EMBER_REST, EMBER_BEATS, yearMarker } from './roomStyles';
+import { scrollEndAbove } from '@/src/components/layout/navMetrics';
 import { RoomChip, RoomRail, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomSearch, RoomMoreFailed } from './RoomParts';
 
 /**
@@ -84,6 +85,7 @@ interface ProfileLedgerTabProps {
   isSelf?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** What the room's scroll runs down to: the tab bar, or the home indicator's edge. */
   bottomInset?: number;
 }
 
@@ -536,7 +538,7 @@ export default function ProfileLedgerTab({
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         estimatedItemSize={ROW_EST}
-        contentContainerStyle={r.listContent}
+        contentContainerStyle={{ ...r.listContent, paddingBottom: scrollEndAbove(bottomInset ?? 0) }}
         refreshing={refreshing}
         onRefresh={onRefresh}
         onEndReached={onLoadMore}

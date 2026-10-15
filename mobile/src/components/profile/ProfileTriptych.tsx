@@ -16,7 +16,6 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
 import { logger } from '@/src/utils/logger';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
 import { isNetworkError } from '@/src/utils/networkError';
@@ -26,6 +25,7 @@ import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT } from '@/src/theme/light';
 import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
+import { useBottomEdge, useSheetBottom } from '@/src/components/layout/navMetrics';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 // Module-scoped: prevents remount on every render cycle
@@ -184,11 +184,12 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
 
     // Positional — a cleared mount stays a hole. See ./favourites.ts.
     const mounts = useMemo(() => readMounts(user?.preferences?.favorites), [user?.preferences?.favorites]);
-    const insets = useSafeAreaInsets();
+    const edge = useBottomEdge();
+    const sheetFoot = useSheetBottom();
 
     // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
     // platform — the film-search field rises with the keyboard on BOTH.
-    const kbPad = useModalKeyboardPadding(insets.bottom);
+    const kbPad = useModalKeyboardPadding(edge);
 
     // ── ONE MODAL, TWO PANES ─────────────────────────────────────────────────
     // Managing a mount and searching for a film share one sheet: dismissing one
@@ -468,7 +469,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                     />
 
                     {sheet?.mode === 'plate' && sheetFilm ? (
-                        <Animated.View entering={FadeIn.duration(180)} style={[s.sheet, s.plateSheet, { paddingBottom: 20 + insets.bottom }]}>
+                        <Animated.View entering={FadeIn.duration(180)} style={[s.sheet, s.plateSheet, { paddingBottom: sheetFoot }]}>
                             <View style={s.grabber} />
                             <Text {...scaledTextProps} style={s.plateEyebrow}>{MOUNT_NAME[sheet.index].toUpperCase()}</Text>
                             <Text {...scaledTextProps} style={s.plateTitle} numberOfLines={2}>{sheetFilm.title}</Text>

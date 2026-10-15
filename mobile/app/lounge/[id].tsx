@@ -45,8 +45,7 @@ import { ActivityIndicator, AppState, Platform, StyleSheet, View } from 'react-n
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { FadeInDown, SlideInDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
+import { useBottomEdge, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
 import { EDGE_LIT } from '@/src/theme/light';
@@ -323,6 +322,9 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
 });
 Dispatch.displayName = 'Dispatch';
 
+/** Between the composer, or a bar in its place, and the home indicator's edge. */
+export const BAR_FOOT_GAP = 8;
+
 function formatDay(iso: string): string {
   const d = new Date(iso);
   const today = new Date();
@@ -340,7 +342,7 @@ export default function LoungeRoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore(s => s.user);
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const barFoot = useBottomEdge() + BAR_FOOT_GAP;
   const headerTop = usePushedHeaderTop();
   const { isOffline } = useOfflineAware();
 
@@ -721,7 +723,7 @@ export default function LoungeRoomScreen() {
 
       {/* ── Composer / preview / muted ── */}
       {gate === 'chat' && canPost && (
-        <View style={[s.composer, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+        <View style={[s.composer, { paddingBottom: barFoot }]}>
           {/* THE HOUSE PULSE — the typewriter line. Reserved height: the
               composer never shifts a pixel when a typist appears or goes quiet. */}
           <View style={s.typingLine}>
@@ -784,14 +786,14 @@ export default function LoungeRoomScreen() {
       {/* A public room still reads for a member the host has banned; they are
           told why there is no seat, not offered one. */}
       {gate === 'banned' && canRead && (
-        <View style={[s.mutedBar, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+        <View style={[s.mutedBar, { paddingBottom: barFoot }]}>
           <VolumeX size={13} color={colors.fog} strokeWidth={1.5} />
           <Text style={s.mutedText}>You no longer have a seat in this salon — you can read, but not post.</Text>
         </View>
       )}
 
       {gate === 'chat' && isMuted && (
-        <View style={[s.mutedBar, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+        <View style={[s.mutedBar, { paddingBottom: barFoot }]}>
           <VolumeX size={13} color={colors.fog} strokeWidth={1.5} />
           <Text style={s.mutedText}>You&apos;ve been muted — you can read, but not post.</Text>
         </View>
@@ -800,7 +802,7 @@ export default function LoungeRoomScreen() {
       {/* A public salon reads for any member; the rope sits on the one act that
           needs the rank, taking a seat. */}
       {gate === 'preview' && (
-        <AnimatedView entering={SlideInDown.duration(300)} style={[s.previewBar, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+        <AnimatedView entering={SlideInDown.duration(300)} style={[s.previewBar, { paddingBottom: barFoot }]}>
           <Text style={s.previewText}>
             {seat.held
               ? "You're previewing this salon."
@@ -827,7 +829,7 @@ export default function LoungeRoomScreen() {
       {/* A public room is readable while the roster is out; if it cannot be read,
           the member is told why they cannot post, and may ask again. */}
       {gate === 'unreachable' && canRead && (
-        <View style={[s.mutedBar, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+        <View style={[s.mutedBar, { paddingBottom: barFoot }]}>
           <Text style={s.mutedText}>Your seat could not be confirmed.</Text>
           <PressableScale style={s.retryBtn} onPress={retryRoster} haptic="selection" accessibilityRole="button"
             accessibilityLabel="Try again to confirm your seat">
