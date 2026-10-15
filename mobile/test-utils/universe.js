@@ -194,15 +194,37 @@ const NOT_SWEPT = [
   { why: 'SQL kept in src/ beside the code that once called it; no tool applies it', match: (r) => r === 'mobile/src/lib/migrations/20260521_server_rpcs.sql' },
 ];
 
-/** Every file under a folder, as paths from the repo, skipping what no universe reaches. */
+/**
+ * The files git ignores in a repo (a local .env, a log, a scratch file): no
+ * checkout but this machine's has them, so no sweep reads them. Empty for a
+ * folder that is not a git repo.
+ */
+const ignoredBy = new Map();
+function ignored(repo) {
+  if (!ignoredBy.has(repo)) {
+    let list = [];
+    try {
+      // --directory: a folder git ignores whole is one line ending in '/', not its every file.
+      list = require('child_process').execFileSync('git', ['ls-files', '--others', '--ignored', '--exclude-standard', '--directory'],
+        { cwd: repo, encoding: 'utf8', maxBuffer: 1e8, stdio: ['ignore', 'pipe', 'ignore'] }).split('\n').filter(Boolean);
+    } catch { list = []; }
+    const files = new Set(list.filter((l) => !l.endsWith('/')));
+    const folders = list.filter((l) => l.endsWith('/'));
+    ignoredBy.set(repo, { has: (r) => files.has(r) || folders.some((f) => r.startsWith(f)) });
+  }
+  return ignoredBy.get(repo);
+}
+
+/** Every file under a folder, as paths from the repo, skipping what no universe reaches and what git ignores. */
 function walk(repo, rootRel, top, out) {
   let entries;
   try { entries = fs.readdirSync(path.join(repo, rootRel), { withFileTypes: true }); } catch { return out; }
+  const skip = ignored(repo);
   for (const e of entries) {
     const r = rootRel ? `${rootRel}/${e.name}` : e.name;
     if (e.isDirectory()) {
       if (!top && !NEVER.has(e.name) && !MADE.includes(r)) walk(repo, r, false, out);
-    } else out.push(r);
+    } else if (!skip.has(r)) out.push(r);
   }
   return out;
 }

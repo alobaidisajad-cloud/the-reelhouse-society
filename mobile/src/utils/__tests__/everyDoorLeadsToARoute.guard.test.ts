@@ -12,16 +12,16 @@
  * listed in COMPUTED with where it comes from, so a new one is read, not missed.
  */
 import ts from 'typescript';
-import { execFileSync } from 'child_process';
-import { existsSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
-const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', 'app', 'src'], { cwd: MOBILE, encoding: 'utf8' })
-  .split('\n').filter((f) => /\.tsx?$/.test(f) && !/__tests__|\.test\./.test(f) && existsSync(join(MOBILE, f)));
+/** The app's code, where a target is written. */
+const files = universe('appCode', { ext: ['.ts', '.tsx'] }).filter((f) => !f.endsWith('.d.ts')).map(rel);
 
 /** Each route, as segments: a literal, or null for one dynamic segment; a catch-all is '*'. */
-const routes = files.filter((f) => f.startsWith('app/') && !/(^|\/)(_layout|\+[\w-]+)\.tsx?$/.test(f)).map((f) =>
+const routes = universe('routes', { ext: ['.ts', '.tsx'] }).map(rel).filter((f) => !/(^|\/)(_layout|\+[\w-]+)\.tsx?$/.test(f)).map((f) =>
   f.replace(/^app\//, '').replace(/\.tsx?$/, '').split('/')
     .filter((s) => !/^\(.*\)$/.test(s) && s !== 'index')
     .map((s) => (/^\[\.\.\..+\]$/.test(s) ? '*' : /^\[.+\]$/.test(s) ? null : s)));

@@ -28,6 +28,8 @@ const MAY_LIST: Record<string, string> = {
   'mockups/tools/harness.cjs': 'the drawn pages a run of the mockups wrote',
   'e2e/shard-verdict.mjs': 'the flows folder its workflow names, as Maestro reads it: the files directly in it',
   'e2e/db/verify-writes.mjs': 'the flows folder its workflow names, as Maestro reads it: the files directly in it',
+  'src/utils/__tests__/everyCheckRuns.guard.test.ts': 'a workflow GitHub never reads can sit in any folder: git’s list of every file in the repo, outside any universe',
+  'scripts/commit.cjs': 'asks git whether each path it is given is tracked; it lists no folder',
   // The output of a run.
   'e2e/app-crashes.mjs': "the device logs a run wrote",
   'e2e/attempt.mjs': "Maestro's debug folder for the attempt",
@@ -38,6 +40,8 @@ const MAY_LIST: Record<string, string> = {
   'e2e/old-client-tree.mjs': 'the old client checkout it is making, emptied of all but the harness',
   'e2e/__tests__/flowScreens.test.ts': 'the folder its own run of flow-screens.mjs wrote',
   'scripts/bundle-size.js': 'the bundle an export just wrote',
+  'scripts/release-guard.cjs': 'the bundles an export wrote, in the folder it is given',
+  'e2e/advisories.mjs': 'the source map an export just wrote, and the folders --roots hands it; the edge trees themselves come from the universe',
   'scripts/dump-production.cjs': 'the dump folder, for the dumps a newer one replaces',
 };
 

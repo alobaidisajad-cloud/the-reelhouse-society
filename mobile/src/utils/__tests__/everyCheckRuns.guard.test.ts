@@ -12,8 +12,9 @@
  *     the ESLint config names.
  */
 import { execFileSync } from 'child_process';
-import { existsSync, readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync } from 'fs';
+import { basename, join } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const ROOT = join(MOBILE, '..');
@@ -41,8 +42,8 @@ const LOCAL: Record<string, string> = {
   'release:guard': 'the owner runs it on each EAS download before submitting (P0.0a); CI runs its file too',
 };
 
-const workflows = readdirSync(join(ROOT, '.github', 'workflows')).map((f) => read(join(ROOT, '.github', 'workflows', f)));
-const hooks = readdirSync(join(MOBILE, 'scripts', 'hooks')).map((f) => read(join(MOBILE, 'scripts', 'hooks', f)));
+const workflows = universe('workflows').map(read);
+const hooks = universe('scripts', { under: ['scripts/hooks'] }).map(read);
 const runners = [...workflows, ...hooks].join('\n');
 const scripts = JSON.parse(read(join(MOBILE, 'package.json'))).scripts as Record<string, string>;
 
@@ -69,9 +70,9 @@ it('runs every npm script in a workflow or a hook, or says why it is run by hand
 });
 
 it('points a tool at every tsconfig', () => {
-  const configs = readdirSync(MOBILE).filter((f) => /^tsconfig.*\.json$/.test(f) && f !== 'tsconfig.json');
+  const configs = universe('config').map((f) => basename(f)).filter((f) => /^tsconfig.*\.json$/.test(f) && f !== 'tsconfig.json');
   const named = [runners, read(join(MOBILE, 'eslint.config.js')),
-    ...readdirSync(join(MOBILE, 'scripts')).filter((f) => /\.(c|m)?js$/.test(f)).map((f) => read(join(MOBILE, 'scripts', f)))].join('\n');
+    ...universe('scripts', { under: ['scripts'], ext: ['.js', '.cjs', '.mjs'] }).map(read)].join('\n');
   expect(configs.filter((c) => !named.includes(c))).toEqual([]);
 });
 

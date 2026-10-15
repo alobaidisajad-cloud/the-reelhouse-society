@@ -10,10 +10,11 @@
  * in the files that make them.
  */
 import { spawnSync } from 'child_process';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { basename, join } from 'path';
 import { readCode } from '@/test-utils/readCode';
+import { files as universe, rel } from '@/test-utils/universe';
 
 const { parseAllDocuments, parseDocument } = require(require.resolve('yaml/package.json').replace(/package\.json$/, 'dist/index.js')) as typeof import('yaml');
 const JSZip = require('jszip');
@@ -314,7 +315,7 @@ describe('the input is a real build, never the E2E app', () => {
   type Step = { name?: string; run?: string; uses?: string; with?: Record<string, unknown>; env?: Record<string, unknown> };
   type Job = { env?: Record<string, unknown>; steps: Step[] };
   const workflow = (file: string) => parseDocument(readFileSync(join(MOBILE, '..', '.github', 'workflows', file), 'utf8')).toJS() as { env?: Record<string, unknown>; jobs: Record<string, Job> };
-  const WORKFLOWS = readdirSync(join(MOBILE, '..', '.github', 'workflows')).filter((f) => f.endsWith('.yml'));
+  const WORKFLOWS = universe('workflows', { ext: ['.yml'] }).map((f) => basename(f));
 
   it('every CI step that runs it reads a build made without E2E, in a job that never fetches the E2E app', () => {
     const calls = WORKFLOWS.flatMap((file) => {
@@ -347,14 +348,7 @@ describe('the input is a real build, never the E2E app', () => {
 
 // ── The facts the rules lean on ─────────────────────────────────────────────
 
-const appFiles = (dir: string, out: string[] = []): string[] => {
-  for (const e of readdirSync(join(MOBILE, dir), { withFileTypes: true })) {
-    const p = `${dir}/${e.name}`;
-    if (e.isDirectory()) { if (e.name !== '__tests__') appFiles(p, out); } else if (/\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name)) out.push(p);
-  }
-  return out;
-};
-const APP_FILES = [...appFiles('app'), ...appFiles('src')];
+const APP_FILES = universe('appCode', { ext: ['.ts', '.tsx'] }).map(rel);
 
 it('the E2E trace is off unless the embedded config turns it on: extra.e2e is its only switch', () => {
   // The config rule reads extra.e2e out of the build; that proves the trace
@@ -372,7 +366,7 @@ it('the one written exception names a file that exists, and its label is written
 });
 
 it('an E2E flow opens reelhouse://_sitemap with the app closed, and waits for the not-found screen', () => {
-  const flows = readdirSync(join(MOBILE, '.maestro')).filter((f) => f.endsWith('.yaml'));
+  const flows = universe('runFlows').map((f) => basename(f));
   const steps = flows.flatMap((f) => {
     const docs = parseAllDocuments(readFileSync(join(MOBILE, '.maestro', f), 'utf8')).map((d) => d.toJS());
     return Array.isArray(docs[1]) ? [{ f, steps: docs[1] as unknown[] }] : [];

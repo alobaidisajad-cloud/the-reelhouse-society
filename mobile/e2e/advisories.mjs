@@ -45,7 +45,6 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const MOBILE = join(HERE, '..');
 const ROOT = join(MOBILE, '..');
 const ALLOWLIST = join(HERE, 'advisories-allowlist.json');
-const TREES = [join(ROOT, 'supabase', 'functions'), join(MOBILE, 'supabase', 'functions')];
 const PLATFORMS = ['ios', 'android'];
 
 // ── the phone's packages ──────────────────────────────────────────────────────
@@ -129,14 +128,20 @@ const ESM = /^https:\/\/esm\.sh\/(?:v\d+\/|stable\/)?((?:@[^/@?#]+\/)?[^/@?#]+)(
 const NPM = /^npm:((?:@[^/@]+\/)?[^/@]+)(?:@([^/]+))?/;
 const EXACT = /^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/;
 
-/** Every file under a folder, with the code extensions Deno reads. */
-const codeFiles = (dir) => (existsSync(dir) ? readdirSync(dir, { withFileTypes: true }) : []).flatMap((d) => (d.isDirectory()
-  ? codeFiles(join(dir, d.name)) : /\.(ts|tsx|js|mjs|jsx)$/.test(d.name) ? [join(dir, d.name)] : []));
+const DENO_CODE = /\.(ts|tsx|js|mjs|jsx)$/;
 
-/** Each package the trees import from https://esm.sh or npm:, with the range each file asks for. */
-export function importsOf(roots, base = ROOT) {
+/** Every file under a folder it is given (--roots), with the code extensions Deno reads. */
+const codeFiles = (dir) => (existsSync(dir) ? readdirSync(dir, { withFileTypes: true }) : []).flatMap((d) => (d.isDirectory()
+  ? codeFiles(join(dir, d.name)) : DENO_CODE.test(d.name) ? [join(dir, d.name)] : []));
+
+/** The edge functions' code, in both trees, as the shared file list names it. */
+const edgeFiles = () => createRequire(import.meta.url)('../test-utils/universe.js').files('functions')
+  .filter((f) => DENO_CODE.test(f) && !f.endsWith('.d.ts'));
+
+/** Each package these files import from https://esm.sh or npm:, with the range each file asks for. */
+export function importsOf(files, base = ROOT) {
   const found = new Map();
-  for (const file of roots.flatMap(codeFiles)) {
+  for (const file of files) {
     const text = readFileSync(file, 'utf8');
     for (const m of text.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*)['"]([^'"]+)['"]/g)) {
       const spec = m[1];
@@ -165,7 +170,7 @@ async function resolve(name, range) {
 }
 
 async function functions(out, { offline, roots }) {
-  const imports = importsOf(roots);
+  const imports = importsOf(roots ? roots.flatMap(codeFiles) : edgeFiles());
   for (const i of imports) i.version = i.pinned ? i.range : offline ? null : await resolve(i.name, i.range);
   if (!offline) {
     const queries = imports.map((i) => ({ package: { name: i.name, ecosystem: 'npm' }, version: i.version }));
@@ -285,7 +290,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
       phoneModules(args[0]);
     } else if (command === 'functions') {
       const offline = has('--offline');
-      const roots = flag('--roots')?.split(',') ?? TREES;
+      const roots = flag('--roots')?.split(',');
       if (args.length !== 1) usage();
       await functions(args[0], { offline, roots });
     } else if (command === 'judge') {

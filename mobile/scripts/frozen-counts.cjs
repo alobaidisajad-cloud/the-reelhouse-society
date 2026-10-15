@@ -28,7 +28,7 @@
  *   node mobile/scripts/frozen-counts.cjs --selftest       each finder counts its planted cases
  */
 const { execFileSync, spawnSync } = require('child_process');
-const { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } = require('fs');
+const { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } = require('fs');
 const { tmpdir } = require('os');
 const { dirname, join, relative, resolve, sep } = require('path');
 const { fileURLToPath } = require('url');
@@ -143,18 +143,8 @@ const deno = () => {
 const denoEnv = () => ({ ...process.env, NO_COLOR: '1', DENO_NO_PACKAGE_JSON: '1', DENO_NO_UPDATE_CHECK: '1' });
 
 /** Every code file of the edge functions, by path from the repository root. */
-const edgeFiles = () => {
-  const out = [];
-  const walk = (d) => {
-    for (const n of readdirSync(d)) {
-      const p = join(d, n);
-      if (statSync(p).isDirectory()) walk(p);
-      else if (/\.(ts|js)$/.test(n) && !n.endsWith('.d.ts')) out.push(fromRoot(p));
-    }
-  };
-  for (const t of EDGE_TREES) if (existsSync(join(ROOT, t))) walk(join(ROOT, t));
-  return out.sort();
-};
+const edgeFiles = () => require('../test-utils/universe.js').files(['functions', 'standIns'])
+  .filter((p) => /\.(ts|js)$/.test(p) && !p.endsWith('.d.ts')).map(fromRoot).sort();
 
 const located = (where) => fromRoot(where.startsWith('file:') ? fileURLToPath(where) : where);
 
