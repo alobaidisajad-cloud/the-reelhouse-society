@@ -46,9 +46,24 @@ jobs:
           cache: 'npm'
           
       - name: Install Root (Web) Dependencies
+        id: install-1
+        timeout-minutes: 5
+        continue-on-error: true
+        run: npm ci
+      - name: Install Root (Web) Dependencies, once more
+        if: steps.install-1.outcome == 'failure'
+        timeout-minutes: 5
         run: npm ci
         
       - name: Install Mobile (Native) Dependencies
+        id: install-2
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile (Native) Dependencies, once more
+        if: steps.install-2.outcome == 'failure'
+        timeout-minutes: 5
         working-directory: ./mobile
         run: npm ci
 
@@ -202,6 +217,14 @@ jobs:
           cache-dependency-path: mobile/package-lock.json
 
       - name: Install Mobile Dependencies
+        id: install-3
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-3.outcome == 'failure'
+        timeout-minutes: 5
         working-directory: ./mobile
         run: npm ci
 
@@ -280,10 +303,32 @@ jobs:
       # The measuring tools drive the web project's Playwright (root), and
       # draw with the app's own fonts (mobile).
       - name: Install Root (Web) Dependencies
+        id: install-4
+        timeout-minutes: 5
+        continue-on-error: true
+        run: npm ci
+      - name: Install Root (Web) Dependencies, once more
+        if: steps.install-4.outcome == 'failure'
+        timeout-minutes: 5
         run: npm ci
       - name: Chromium for the measuring tools
+        id: install-5
+        timeout-minutes: 5
+        continue-on-error: true
+        run: npx playwright install --with-deps chromium
+      - name: Chromium for the measuring tools, once more
+        if: steps.install-5.outcome == 'failure'
+        timeout-minutes: 5
         run: npx playwright install --with-deps chromium
       - name: Install Mobile Dependencies
+        id: install-6
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-6.outcome == 'failure'
+        timeout-minutes: 5
         working-directory: ./mobile
         run: npm ci
 
@@ -382,10 +427,32 @@ jobs:
             package-lock.json
             mobile/package-lock.json
       - name: Install Root (Web) Dependencies
+        id: install-7
+        timeout-minutes: 5
+        continue-on-error: true
+        run: npm ci
+      - name: Install Root (Web) Dependencies, once more
+        if: steps.install-7.outcome == 'failure'
+        timeout-minutes: 5
         run: npm ci
       - name: Chromium for the measuring tools
+        id: install-8
+        timeout-minutes: 5
+        continue-on-error: true
+        run: npx playwright install --with-deps chromium
+      - name: Chromium for the measuring tools, once more
+        if: steps.install-8.outcome == 'failure'
+        timeout-minutes: 5
         run: npx playwright install --with-deps chromium
       - name: Install Mobile Dependencies
+        id: install-9
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-9.outcome == 'failure'
+        timeout-minutes: 5
         working-directory: ./mobile
         run: npm ci
 
@@ -430,6 +497,14 @@ jobs:
           cache-dependency-path: mobile/package-lock.json
 
       - name: Install Mobile Dependencies
+        id: install-10
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-10.outcome == 'failure'
+        timeout-minutes: 5
         working-directory: ./mobile
         run: npm ci
 
@@ -456,7 +531,15 @@ jobs:
           node-version: '24'
           cache: 'npm'
 
-      - run: npm ci
+      - name: Install the packages
+        id: install-11
+        timeout-minutes: 5
+        continue-on-error: true
+        run: npm ci
+      - name: Install the packages, once more
+        if: steps.install-11.outcome == 'failure'
+        timeout-minutes: 5
+        run: npm ci
 
       # Here, not only in ci.yml: that runs on pull requests, and this project pushes
       # to main. (ci.yml keeps Lighthouse, on PR and by hand.)
@@ -474,8 +557,24 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-      - run: npm ci
-      - run: npx playwright install --with-deps
+      - name: Install the packages
+        id: install-12
+        timeout-minutes: 5
+        continue-on-error: true
+        run: npm ci
+      - name: Install the packages, once more
+        if: steps.install-12.outcome == 'failure'
+        timeout-minutes: 5
+        run: npm ci
+      - name: Playwright's browsers and their system libraries
+        id: install-13
+        timeout-minutes: 5
+        continue-on-error: true
+        run: npx playwright install --with-deps
+      - name: Playwright's browsers and their system libraries, once more
+        if: steps.install-13.outcome == 'failure'
+        timeout-minutes: 5
+        run: npx playwright install --with-deps
       
       # A path outside playwright.config.ts's testDir (./tests) silently finds nothing.
       - name: Run E2E Feed Tests
@@ -484,17 +583,27 @@ jobs:
   native-smoke-test:
     name: 📱 Maestro Flow YAML Lint
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    # Two tries at the linter's install, 5 minutes each, and the lint.
+    timeout-minutes: 12
     needs: strict-analysis
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: The YAML linter
+        id: install-14
+        timeout-minutes: 5
+        continue-on-error: true
+        run: pip install --quiet yamllint==1.38.0
+      - name: The YAML linter, once more
+        if: steps.install-14.outcome == 'failure'
+        timeout-minutes: 5
+        run: pip install --quiet yamllint==1.38.0
 
       # Fast signal: catches malformed flow YAML without a build or a device.
       # The flows themselves run in the sealed test world (e2e.yml).
       # --strict: a warning fails the step too; one nobody reads is no warning.
       - name: Lint All Maestro Flows
         run: |
-          pip install --quiet yamllint==1.38.0
           yamllint --strict -d relaxed mobile/.maestro/
 
   # The app on a device is e2e.yml's: a SEALED world, never production.

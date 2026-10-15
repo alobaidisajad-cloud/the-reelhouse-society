@@ -111,6 +111,66 @@ const runsFlows = (w: { text: string }) => /run-flows\.sh|uses:\s*\.\/\.github\/
 const cancels = (wf: Workflow & { concurrency?: { 'cancel-in-progress'?: unknown } }) =>
   wf.concurrency?.['cancel-in-progress'] === true;
 
+/** A step that installs packages: the kind that hung for 25 minutes in a nightly (2026-10-12). */
+const INSTALLS = /(^|[\s;&|(])(sudo\s+)?(apt-get|apt|brew)\s+install\b|\bnpm\s+(ci|install)\b|\bpip3?\s+install\b|\bplaywright\s+install\b/m;
+type RunStep = { name?: string; id?: string; run?: string; if?: string; 'timeout-minutes'?: number; 'continue-on-error'?: boolean };
+/**
+ * Each install, in a workflow that runs on a schedule (or one such a workflow
+ * calls): the step with its own limit of at most 5 minutes and let fail, then
+ * the same step once more, only if it failed, under the same limit. Its second
+ * failure fails the run. Each fault named by job and step.
+ */
+function installFaults(wf: Workflow): string[] {
+  const faults: string[] = [];
+  for (const [job, j] of Object.entries(wf.jobs)) {
+    const steps = (j.steps ?? []) as RunStep[];
+    steps.forEach((s, i) => {
+      if (!s.run || !INSTALLS.test(s.run) || /^steps\.[\w-]+\.outcome == 'failure'$/.test(s.if ?? '')) return;
+      const at = `${job} › ${s.name ?? s.run}`;
+      const again = steps[i + 1];
+      const limited = (x?: RunStep) => typeof x?.['timeout-minutes'] === 'number' && x['timeout-minutes']! <= 5;
+      if (!limited(s)) faults.push(`${at}: no limit of 5 minutes or less`);
+      if (!s.id || s['continue-on-error'] !== true) faults.push(`${at}: not let fail (id and continue-on-error) for its retry`);
+      else if (!again || again.run !== s.run || again.if !== `steps.${s.id}.outcome == 'failure'`) faults.push(`${at}: no retry right after it`);
+      else if (!limited(again)) faults.push(`${at}: its retry has no limit of 5 minutes or less`);
+      else if (again['continue-on-error']) faults.push(`${at}: its retry may fail without failing the run`);
+    });
+  }
+  return faults;
+}
+/** The workflows that run on a schedule, and the ones they call. */
+const scheduled = () => {
+  const own = workflows.filter((w) => triggers(w.wf).includes('schedule'));
+  const called = own.flatMap((w) => Object.values(w.wf.jobs).map((j) => j.uses).filter((u): u is string => !!u && LOCAL_CALL.test(u)))
+    .map((u) => u.split('/').pop()!);
+  return workflows.filter((w) => own.includes(w) || called.includes(w.file));
+};
+
+it('in a workflow run on a schedule, every install has its own short limit and one retry of that step alone', () => {
+  const nightly = scheduled();
+  expect(nightly.map((w) => w.file)).toEqual(expect.arrayContaining(['db-integration.yml', 'e2e.yml', 'god_tier_ci.yml']));
+  expect(nightly.flatMap((w) => installFaults(w.wf).map((f) => `${w.file} › ${f}`))).toEqual([]);
+  // Each install counted: a parse that found none would pass on nothing.
+  expect(nightly.flatMap((w) => Object.values(w.wf.jobs).flatMap((j) => (j.steps ?? []) as RunStep[]))
+    .filter((s) => s.run && INSTALLS.test(s.run) && !s.if).length).toBeGreaterThanOrEqual(10);
+});
+
+it('says no to an install with no limit, one with no retry, and a retry that may fail', () => {
+  const wf = (steps: string) => parse(`name: x\non: push\njobs:\n  j:\n    steps:\n${steps}`) as Workflow;
+  const bare = '      - name: Packages\n        run: npm ci\n';
+  expect(installFaults(wf(bare))).toEqual(['j › Packages: no limit of 5 minutes or less', 'j › Packages: not let fail (id and continue-on-error) for its retry']);
+  const first = '      - name: Packages\n        id: p\n        timeout-minutes: 5\n        continue-on-error: true\n        run: npm ci\n';
+  expect(installFaults(wf(first))).toEqual(['j › Packages: no retry right after it']);
+  const retry = (extra: string) => `      - name: Packages, once more\n        if: steps.p.outcome == 'failure'\n${extra}        run: npm ci\n`;
+  expect(installFaults(wf(first + retry('        timeout-minutes: 5\n')))).toEqual([]);
+  expect(installFaults(wf(first + retry('        timeout-minutes: 9\n')))).toEqual(['j › Packages: its retry has no limit of 5 minutes or less']);
+  expect(installFaults(wf(first + retry('        timeout-minutes: 5\n        continue-on-error: true\n')))).toEqual(['j › Packages: its retry may fail without failing the run']);
+  for (const cmd of ['sudo apt-get install -y x', 'brew install x', 'pip install x', 'npm install', 'npx playwright install --with-deps chromium']) {
+    expect([cmd, INSTALLS.test(cmd)]).toEqual([cmd, true]);
+  }
+  expect(INSTALLS.test('npm run build')).toBe(false);
+});
+
 it('no workflow that runs the E2E flows is cancelled by a later push: each commit\'s run is read', () => {
   const flows = workflows.filter(runsFlows);
   expect(flows.map((w) => w.file).sort()).toEqual(expect.arrayContaining(['e2e-old-clients.yml', 'e2e.yml']));

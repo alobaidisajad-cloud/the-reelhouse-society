@@ -91,6 +91,14 @@ jobs:
           echo "key=$key" >> "$GITHUB_OUTPUT"
 
       - name: Install the app's packages
+        id: install-1
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: mobile
+        run: npm ci
+      - name: Install the app's packages, once more
+        if: steps.install-1.outcome == 'failure'
+        timeout-minutes: 5
         working-directory: mobile
         run: npm ci
 
@@ -257,6 +265,17 @@ jobs:
       # The snapshot was taken with pg_dump 18; the fidelity check must read the
       # copy with the same major, or every line of formatting looks like drift.
       - name: Postgres 18 client tools
+        id: install-2
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+      - name: Postgres 18 client tools, once more
+        if: steps.install-2.outcome == 'failure'
+        timeout-minutes: 5
         run: |
           sudo apt-get install -y -q postgresql-common
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
