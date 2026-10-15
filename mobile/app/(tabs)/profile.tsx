@@ -17,10 +17,22 @@ import FrozenTab from '@/src/components/layout/FrozenTab';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import { CentredRoom } from '@/src/components/layout/CentredRoom';
+import { useFocusEffect } from 'expo-router';
+import { withTiming } from 'react-native-reanimated';
+import { globalScrollY } from '@/src/lib/scrollBridge';
 
 export default function ProfileTab() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const user = useAuthStore(s => s.user);
+  const ownFile = isAuthenticated && !!user?.username;
+
+  // One bar over every tab. The member's file gives it its own scroll as it
+  // arrives; the pages here before it do not scroll, so the bar is clear.
+  useFocusEffect(
+    useCallback(() => {
+      if (!ownFile) globalScrollY.value = withTiming(0, { duration: 250 });
+    }, [ownFile]),
+  );
 
   if (!isAuthenticated || !user) {
     return (

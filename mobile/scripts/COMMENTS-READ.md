@@ -95,9 +95,9 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/_layout.tsx | 2026-10-15 | edited: each tab's own button draws its icon; no tabBarIcon; the icon's animated views stay native |
 | app/(tabs)/darkroom.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/(tabs)/dispatch.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
-| app/(tabs)/index.tsx | 2026-10-15 | edited: the Lobby's read; the wall and the welcome end above the tab bar (useTabContentBottom) |
+| app/(tabs)/index.tsx | 2026-10-15 | edited: the Lobby's read; the wall and the welcome end above the tab bar (useTabContentBottom); the welcome's scroll begins at the screen's top |
 | app/(tabs)/lounge.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
-| app/(tabs)/profile.tsx | 2026-10-15 | centred states in a CentredRoom: between the bars, and scrolled when taller |
+| app/(tabs)/profile.tsx | 2026-10-15 | centred states in a CentredRoom: between the bars, and scrolled when taller; the bar clear on arrival before the file |
 | app/(tabs)/reels.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/+not-found.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
 | app/auth-callback.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
@@ -190,7 +190,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/tmdb/record.mjs | 2026-09-29 | true as written |
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
-| jest.config.js | 2026-10-04 | edited: testEnvironment, the timer-checking one, says what it is |
+| jest.config.js | 2026-10-15 | edited: testEnvironment, the timer-checking one, says what it is; the repo copies under .claude are not this tree |
 | jest.setup.ts | 2026-10-15 | edited: what the phone lacks is taken away from the one list |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
@@ -458,7 +458,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/__tests__/everyPushedHeaderStartsAtItsTop.test.tsx | 2026-10-15 | new: every pushed route at three insets |
 | src/components/layout/__tests__/everyPushedScreenEndsAboveItsFoot.test.tsx | 2026-10-15 | new: every pushed route's foot, at 0, 21 and 34 |
 | src/components/layout/__tests__/everyTabEndsAboveTheTabBar.test.tsx | 2026-10-15 | new: every tab ends above the tab bar, at 0, 21 and 34 |
-| src/components/layout/__tests__/everyTabStartsBelowTheBar.test.tsx | 2026-10-15 | new: every tab under the bar, built and measured |
+| src/components/layout/__tests__/everyTabStartsBelowTheBar.test.tsx | 2026-10-15 | new: every tab under the bar, built and measured; each sets the bar’s tint as it arrives |
 | src/components/layout/__tests__/flashListKeyboard.test.tsx | 2026-09-29 | anchor tests |
 | src/components/layout/__tests__/memberFileFixture.ts | 2026-10-15 | new: a loaded member file |
 | src/components/layout/__tests__/navMetrics.test.tsx | 2026-10-15 | new: helper values; the measure's redraws |
@@ -999,7 +999,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/tellMarks.ts | 2026-10-01 | true as written |
 | src/stores/vaultStore.ts | 2026-10-03 | edited: the note is cleaned by its own cap on the live save |
 | src/test-support/swallowedTypeError.ts | 2026-10-03 | read whole: sound |
-| src/theme/__tests__/aGlowFadesInsideItsBox.guard.test.ts | 2026-10-15 | written: no radial glow keeps strength on an edge of its box that can show |
+| src/theme/__tests__/aGlowFadesInsideItsBox.guard.test.ts | 2026-10-15 | written: no radial glow keeps strength on an edge of its box that can show; the welcome seal no longer kept |
 | src/theme/__tests__/aGradientIsNeverABitmap.guard.test.ts | 2026-10-08 | written: no gradient-only SVG but the three it names |
 | src/theme/__tests__/aPhotographIsNotLit.test.ts | — |  |
 | src/theme/__tests__/aTextGlowHasRoom.guard.test.ts | 2026-10-15 | edited: the member's name kept at its sides, with why |

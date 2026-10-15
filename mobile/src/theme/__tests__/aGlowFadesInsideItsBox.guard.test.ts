@@ -145,12 +145,12 @@ const haloBox = (mark: number, halo: number, x: number, y: number): Rect =>
   ({ x: x + (mark - halo) / 2, y: y + (mark - halo) / 2, w: halo, h: halo });
 
 const WELCOME = 'app/(tabs)/index.tsx';
-const welcomeTop = Number(readCode(WELCOME).match(/welcomeScrollContent: \{[^}]*paddingTop: (\d+)/)?.[1]);
+const welcomeTop = Number(readCode(WELCOME).match(/welcomeTopHalf: \{[^}]*paddingTop: (\d+)/)?.[1]);
 const sealHalo = (size: number) => Math.round(size * 2.3);
 /**
  * THE CANDLELIGHT HALO, where each user lays it.
- *   The welcome page's seal: the top of its ScrollView is below the status bar,
- *   inside the screen, and the seal hangs `paddingTop` under it.
+ *   The welcome page's seal: its ScrollView begins at the top of the screen,
+ *   and the seal hangs below the bar (here, the status bar alone: nearer the top).
  *   The sign-in seal: its ScrollView begins at the top of the screen.
  *   The founding certificate's seal and the two unframed icons: no parent cuts them.
  */
@@ -158,9 +158,8 @@ const halos: Use[] = SCREENS.flatMap(([W, H]) => {
   const screen = { w: W, h: H };
   const seal = Math.min(104, Math.round(H * 0.15));
   const statusBar = 44;
-  const scroll = { x: 0, y: statusBar, w: W, h: H - statusBar };
   return [
-    { name: `welcome seal ${seal}, ${W}×${H}`, size: sealHalo(seal), box: haloBox(seal, sealHalo(seal), (W - seal) / 2, statusBar + welcomeTop), clips: [scroll] },
+    { name: `welcome seal ${seal}, ${W}×${H}`, size: sealHalo(seal), box: haloBox(seal, sealHalo(seal), (W - seal) / 2, statusBar + welcomeTop), clips: [full(W, H)] },
     { name: `sign-in seal, ${W}×${H}`, size: sealHalo(92), box: haloBox(92, sealHalo(92), (W - 92) / 2, 200), clips: [full(W, H)] },
     { name: `certificate seal, ${W}×${H}`, size: sealHalo(64), box: haloBox(64, sealHalo(64), (W - 64) / 2, 300), clips: [] },
     { name: `inbox icon, ${W}×${H}`, size: 130, box: haloBox(72, 130, (W - 72) / 2, 300), clips: [] },
@@ -169,11 +168,7 @@ const halos: Use[] = SCREENS.flatMap(([W, H]) => {
 });
 
 /** Glows cut where they show today, each with why it is kept. */
-const KEPT: Record<string, string> = {
-  'welcome seal':
-    'the top of the welcome page’s ScrollView cuts the seal’s halo. The fix is in that page’s top ' +
-    'layout (the scroll begins under the status bar), held while another change edits the same page',
-};
+const KEPT: Record<string, string> = {};
 const keptAs = (line: string) => Object.keys(KEPT).find((k) => line.startsWith(k));
 
 it('reads each user’s box from its source', () => {
@@ -183,6 +178,10 @@ it('reads each user’s box from its source', () => {
   // The file's scroll starts at the top of the screen: its content has a foot and no top padding.
   expect(readCode('app/user/[username].tsx')).toMatch(/<CinematicScrollView contentContainerStyle=\{\{ paddingBottom: endPad \}\}/);
   expect(welcomeTop).toBeGreaterThanOrEqual(0);
+  // The welcome's scroll is the page's whole height: its holder has no top padding, its content has the bar's.
+  const welcome = readCode(WELCOME).split('if (!isAuthenticated) {')[1]?.split('</FrozenTab>')[0] ?? '';
+  expect(welcome).toMatch(/<FrozenTab>\s*<View style=\{s\.container\}>/);
+  expect(welcome).toMatch(/contentContainerStyle=\{\[s\.welcomeScrollContent, \{ paddingTop: topPad,/);
   expect(readCode(WELCOME)).toMatch(/<SocietySeal size=\{Math\.min\(104, Math\.round\(windowHeight \* 0\.15\)\)\} \/>/);
   expect(readCode('src/components/auth/SocietySeal.tsx')).toMatch(/const haloSize = Math\.round\(size \* 2\.3\);/);
 });

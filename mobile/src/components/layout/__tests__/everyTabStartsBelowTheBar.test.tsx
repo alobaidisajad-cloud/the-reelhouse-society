@@ -7,6 +7,9 @@
  * three top insets, signed out and signed in, and its content must start at the
  * bar's height plus TAB_CONTENT_GAP: first as the bar is built (its first
  * frame), then as the bar measures itself, at a height no sum could reach.
+ *
+ * The bar's tint follows the page's scroll (`globalScrollY`), and every tab
+ * shares one bar: so each tab, as it arrives, sets the tint to its own scroll.
  */
 import React, { act } from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
@@ -17,6 +20,7 @@ import {
   TAB_CONTENT_GAP, navBarHeight, resetTopBarHeight,
 } from '@/src/components/layout/navMetrics';
 import { TopNavBar } from '@/src/components/layout/TopNavBar';
+import { globalScrollY } from '@/src/lib/scrollBridge';
 import LobbyScreen from '@/app/(tabs)/index';
 import ReelScreen from '@/app/(tabs)/reels';
 import DispatchScreen from '@/app/(tabs)/dispatch';
@@ -125,5 +129,15 @@ describe.each(TABS)('%s', (_name, tab, arrange) => {
     // The same place, at every inset: a number that matched once by chance does not pass.
     expect(built!.size).toBeGreaterThan(0);
     expect(measured!.size).toBeGreaterThan(0);
+  });
+
+  it('sets the bar’s tint to its own scroll as it arrives, not the last tab’s', async () => {
+    // The tab left behind was scrolled: the bar was dark.
+    globalScrollY.value = 500;
+    mockInsetTop = 59;
+    const r = await draw(tab());
+    // Each tab arrives at its top.
+    expect(globalScrollY.value).toBe(0);
+    r.unmount();
   });
 });

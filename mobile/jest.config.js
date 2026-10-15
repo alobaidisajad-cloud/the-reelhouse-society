@@ -10,7 +10,8 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|react-native-mmkv|react-native-reanimated)',
   ],
-  testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/'],
+  // `.claude/worktrees` holds whole copies of the repo, each with its own tests.
+  testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/', '/\\.claude/'],
   /**
    * ── WHY THIS IS HERE ────────────────────────────────────────────────────
    * "A worker process has failed to exit gracefully" was chased for a long time

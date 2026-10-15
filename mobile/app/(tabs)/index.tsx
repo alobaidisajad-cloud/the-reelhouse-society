@@ -1,7 +1,8 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
-import { View, StyleSheet, RefreshControl, ScrollView, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, RefreshControl, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedScrollHandler, withTiming } from 'react-native-reanimated';
+import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useQueryClient } from '@tanstack/react-query';
@@ -103,7 +104,16 @@ export default function LobbyScreen() {
       isScrolling.value = false;
     }
   });
-  
+
+  // One bar over every tab: arriving, the Lobby gives it its own scroll back.
+  useFocusEffect(
+    useCallback(() => {
+      globalScrollY.value = withTiming(scrollY.value, { duration: 250 });
+    }, [scrollY]),
+  );
+  // The other side of the door is a new page, at its top.
+  useEffect(() => { scrollY.value = 0; }, [isAuthenticated, scrollY]);
+
   // Below the top bar, as it measured itself; the welcome starts there too.
   const topPad = useTabContentTop();
   // Above the tab bar, which is drawn over the tab: the wall's last bill, the welcome's doors.
@@ -150,7 +160,7 @@ export default function LobbyScreen() {
   if (!isAuthenticated) {
     return (
       <FrozenTab>
-      <View style={[s.container, { paddingTop: topPad }]}>
+      <View style={s.container}>
         <RoomLight room="lobby" />
         {readyMark}
         <LinearGradient
@@ -165,10 +175,14 @@ export default function LobbyScreen() {
 
         {/* 0-Overlap layout: a scroll container can never push content off the
             top of the screen — small displays scroll instead of clipping the
-            seal into the status bar. */}
-        <ScrollView
+            seal into the status bar. It begins at the screen's top, under the
+            bar (which darkens as it scrolls), and its content below the bar: an
+            edge inside the screen would cut the seal's halo in a straight line. */}
+        <Animated.ScrollView
           style={s.welcomeRootFlex}
-          contentContainerStyle={[s.welcomeScrollContent, { paddingBottom: endPad }]}
+          contentContainerStyle={[s.welcomeScrollContent, { paddingTop: topPad, paddingBottom: endPad }]}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"
@@ -236,7 +250,7 @@ export default function LobbyScreen() {
             </View>
           </View>
 
-        </ScrollView>
+        </Animated.ScrollView>
       </View>
       </FrozenTab>
     );
@@ -288,9 +302,9 @@ const s = StyleSheet.create({
   // ── Welcome (Unauthenticated) strict layout ──
   welcomeRootFlex: { flex: 1, zIndex: 10 },
   // Grows, and scrolls when tall: fixed top padding, never space pushed off the top.
-  welcomeScrollContent: { flexGrow: 1, paddingHorizontal: 32, paddingTop: 24, justifyContent: 'flex-start' },
+  welcomeScrollContent: { flexGrow: 1, paddingHorizontal: 32, justifyContent: 'flex-start' },
   welcomeSpacer: { flex: 1, minHeight: 24 },
-  welcomeTopHalf: { justifyContent: 'center', alignItems: 'center' },
+  welcomeTopHalf: { justifyContent: 'center', alignItems: 'center', paddingTop: 24 },
   welcomeBottomHalf: { justifyContent: 'center', alignItems: 'center', paddingTop: 24 },
 
   welcomeHeader: { alignItems: 'center' },
