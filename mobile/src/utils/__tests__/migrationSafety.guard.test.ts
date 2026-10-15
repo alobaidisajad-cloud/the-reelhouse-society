@@ -168,6 +168,25 @@ describe('a rehearsal on production', () => {
   });
 });
 
+describe('a read-only check on production', () => {
+  const { plan: checkPlan } = require('../../../supabase/diagnostics/read-only.cjs') as {
+    plan: (args: string[]) => { refuse?: string; psqlArgs?: string[]; pgoptions?: string };
+  };
+
+  it('runs one check file in a session that cannot write, under the time limits', () => {
+    const p = checkPlan(['drift_login_preflight_check.sql']);
+    expect(p.pgoptions).toBe('-c default_transaction_read_only=on -c lock_timeout=2s -c statement_timeout=30s');
+    expect(p.psqlArgs?.slice(0, 6)).toEqual(['-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1']);
+    expect(p.psqlArgs?.[p.psqlArgs.length - 1]).toMatch(/[\\/]diagnostics[\\/]drift_login_preflight_check\.sql$/);
+  });
+
+  it('says NO to anything that is not one check: a rehearsal, a migration, two files', () => {
+    expect(checkPlan(['train_0_rehearsal.sql']).refuse).toMatch(/is not a check/);
+    expect(checkPlan(['20261015_01_a_salon_channel_follows_the_salon.sql']).refuse).toMatch(/is not a check/);
+    expect(checkPlan(['a_check.sql', 'b_check.sql']).refuse).toMatch(/^usage/);
+  });
+});
+
 describe('the copy taken before a change', () => {
   const { plan: dumpPlan } = require('../../../scripts/dump-production.cjs') as {
     plan: (kind: string, tables: string[], stamp: string) => { refuse?: string; name?: string; args?: string[] };
