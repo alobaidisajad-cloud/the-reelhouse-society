@@ -12,7 +12,7 @@ without one). "Read" is the day its comments were last read against its code.
 | File | Read | What changed |
 |---|---|---|
 | __tests__/animationMockCoverage.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| __tests__/backendContract.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| __tests__/backendContract.test.ts | 2026-10-16 | edited: the tables and buckets read from the code, those passed through the export's and the import's helpers included |
 | __tests__/colorLock.test.ts | 2026-10-15 | edited: the app universe (test-utils/universe.js), its .js files included |
 | __tests__/components/feed/ActivityCard.test.tsx | 2026-10-01 | the poster says its film; the card lies flat |
 | __tests__/deletionIntegrity.test.ts | — |  |
@@ -43,7 +43,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-10-16 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; Realtime started for the salon channels' rules; each package install let fail once and tried once more, 5 minutes each; Supabase's advisers on production as it will be, held to their allowlist, names and counts only; first proven able to fail; a contracts job asks the app's questions of production's sealed shape through its API |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
-| ../.github/workflows/e2e.yml | 2026-10-16 | edited: the app built once, its anon key beside it; the flows on three machines, each its own sealed world holding its stack's key to the app's; a verdict reads all three, and fails with any shard; the APK's prefetch read for downloadOnly, and a shipped client's named as not run; each package install let fail once and tried once more, 5 minutes each; a verdict reads all three; grouped by commit, so no push drops another commit's waiting run; the Supabase CLI and the emulator's packages each installed in a step tried once more alone; the Android packages the build needs installed first, tried once more, and Gradle downloads none; the system image kept in GitHub's cache once installed whole, each try starting from no half-download; a round input, so a night runs it three times on one commit |
+| ../.github/workflows/e2e.yml | 2026-10-16 | edited: the app reaches the house through the fault proxy, which runs for the flows and keeps the gateway's log; every request the app made held to the list its code names |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind; the mutants standing on what a push changed, run on it |
 | ../.github/workflows/ios-launch.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind |
 | ../.github/workflows/load.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind |
@@ -135,6 +135,7 @@ without one). "Read" is the day its comments were last read against its code.
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
 | e2e/__tests__/flowHistory.test.ts | 2026-10-16 | new: a shard's logs read (new and older shapes, retries summed, a part the budget stopped left out) and every file it reads uploaded, the map a history makes, the committed map equal to it and inside the workflow's limits |
+| e2e/__tests__/faultProxy.test.ts | 2026-10-16 | new |
 | e2e/__tests__/flowScreens.test.ts | 2026-10-04 | QueryController no longer counted; Android 14 names what animated; Maestro's JUnit reason, the no-record flow, the decision line |
 | e2e/__tests__/attempt.test.ts | 2026-10-15 | edited: a shipped client's own crash is run again once, then not judged; with no --own, or beside another crash, final as ever |
 | e2e/__tests__/appCrashes.test.ts | 2026-10-15 | edited: build 41's own crash and its aftermath reported apart and passed (cut from 38679641286); another crash, a late or foreign aftermath, no --own: fail |
@@ -159,6 +160,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | edited: the ports reserved and waited for, against a fake kernel |
 | e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | edited: one shard's list of flows is what is checked, every flow without one |
+| e2e/__tests__/whatTheAppAsked.test.ts | 2026-10-16 | new |
 | e2e/__tests__/fixtures/judges/shard-verdict/flows/a_flow.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
 | e2e/__tests__/fixtures/judges/shard-verdict/flows/b_flow.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
 | e2e/__tests__/fixtures/judges/shard-verdict/flows/c_flow.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
@@ -203,6 +205,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/screen-times.mjs | 2026-10-16 | edited: --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs; edited: two ceilings a screen, derived by ceilingsFrom from e2e/screen-history.json |
 | e2e/shard-verdict.mjs | 2026-10-15 | new: every shard finished, every flow ran once, every ceiling's screen reported somewhere |
 | e2e/flow-history.mjs | 2026-10-16 | edited: a shard with no logs is said; any other download failure ends the run in gh's words |
+| e2e/fault-proxy.mjs | 2026-10-16 | new: the network between the app and the house, a fault on command, a part stopped or the DNS blocked, every request logged |
 | e2e/shards.mjs | 2026-10-16 | edited: a shard's minutes, checked and printed for run-flows.sh |
 | e2e/start-stack.sh | 2026-10-15 | edited: the stack's ports reserved from the machine's own connections, and waited for |
 | plugins/__tests__/withoutDevLauncherScanner.test.ts | 2026-10-15 | new: through withAndroidManifest, read back as XML; the entry read from the installed expo-dev-launcher's manifest |
@@ -212,13 +215,15 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/splash-handoff.mjs | 2026-10-04 | written: no launch takes the splash over, scoped to the app's own processes; no launch, no pass |
 | e2e/scrub.mjs | 2026-10-04 | written: the password out of the kept logs, byte for byte |
+| e2e/what-the-app-asked.mjs | 2026-10-16 | new: every request the gateway saw, held to the list the reading of the code made |
 | e2e/supabase/functions/tmdb-proxy/index.ts | 2026-09-29 | history reduced to the rule |
 | e2e/supabase/functions/tmdb-proxy/normalize.mjs | 2026-09-29 | true as written |
 | e2e/tmdb/record.mjs | 2026-09-29 | true as written |
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
-| jest.config.js | 2026-10-16 | edited: testEnvironment, the timer-checking one, says what it is; the repo copies under this checkout's .claude are not its tree, a copy runs its own; in CI the floors are off in each part and judged once on the parts together, by jest's own reporter; outside UTC (JEST_OUTSIDE_UTC=1) the tooling's tests are left out |
+| jest.config.js | 2026-10-16 | edited: Stryker's sandbox (.stryker-tmp) is never read as tests or modules |
 | jest.setup.ts | 2026-10-15 | edited: expo-image's getCachePathAsync answers null, as native does for a picture not on disk |
+| jest.stryker.config.js | 2026-10-16 | new: the tests' config in Stryker's own process, its environment by its whole path |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
 | mockups/paper/__tests__/zz-badge.gen.test.tsx | 2026-09-29 | described the real badge as it was at one commit (brass ramp); now says A is whatever RankBadge is |
@@ -253,6 +258,8 @@ without one). "Read" is the day its comments were last read against its code.
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
 | register/classes.yaml | 2026-10-16 | edited: the E2E judges' classes, each with the test that refuses its bad log; the store call's limit among the request class's tests |
 | register/mutants.yaml | 2026-10-16 | new: every mutant, past, new-shape and judge, each with its class and the test that must fail on it |
+| register/stryker-equivalents.yaml | 2026-10-16 | new: the survivors no test can tell apart, each by its file, line, column, mutator and replacement, with why |
+| register/stryker.yaml | 2026-10-16 | new: the logic files Stryker scores, each with its own tests, at a floor of 90% |
 | scripts/__tests__/commit.test.ts | 2026-10-16 | edited: an ignored path refused with the index as it was |
 | scripts/__tests__/androidPackages.test.ts | 2026-10-16 | new: a package counts as installed only with its package.xml |
 | scripts/__tests__/contractsRan.test.ts | 2026-10-16 | new |
@@ -280,23 +287,24 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/gates-check.js | 2026-10-16 | edited: a failed read of the database ends the check with psql's reason, the address hidden |
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
 | scripts/hooks/commit-msg.cjs | 2026-10-15 | new |
-| scripts/hooks/pre-commit.cjs | 2026-10-15 | new |
-| scripts/hooks/pre-push.cjs | 2026-10-16 | edited: last, the mutants standing on what changed from each base |
+| scripts/hooks/pre-commit.cjs | 2026-10-16 | edited: refuses while a stopped mutants run left a mutant in place |
+| scripts/hooks/pre-push.cjs | 2026-10-16 | edited: every source-reading test, not only those an import reaches; refuses while a mutant is in place; the mutants standing on what changed, last; Stryker's sandbox left out |
 | scripts/hooks-ran.cjs | 2026-10-15 | new |
 | scripts/jest-shards.cjs | 2026-10-16 | new: read against jest --json's record and --listTests, and layout.cjs's --sites; each zone's record is held to that zone's files |
 | scripts/install-hooks.cjs | 2026-10-15 | new |
 | scripts/lucide-icons.js | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | scripts/merge-coverage.cjs | 2026-10-15 | new: read against @jest/reporters 29.7's CoverageReporter (onTestResult, onRunComplete, _checkThreshold) and jest-config's readConfig |
 | scripts/migration-lint.cjs | 2026-10-15 | edited: reads a file by its kind (test-utils/universe.js); the archive is not read; SQL no rule names is refused |
-| scripts/mutants.cjs | 2026-10-16 | new: each mutant applied by the code around it and judged by the kill rules; a judge fed a bad log; those a change stands on, a part of all, the parts read together, and the private record of each run |
+| scripts/mutants.cjs | 2026-10-16 | new: each mutant applied by the code around it and judged by the kill rules; a judge fed a bad log; those a change stands on, a part of all, the parts read together; the mutant in place recorded first and put back by the next run; an unknown option refused |
 | scripts/press-again.cjs | 2026-10-16 | new: the finder of TST-14, a second press of the same control in a test with no timer advanced and no real wait between |
 | scripts/private-settings.cjs | 2026-10-16 | edited: once a value is read, an error nobody catches is printed with every value read hidden; a rejection reaches the same handler |
 | scripts/register.cjs | 2026-10-15 | new |
-| scripts/release-guard.cjs | 2026-10-15 | new: read against expo-dev-client's scheme plugins, expo-router's sitemap switch, expo-constants' getAppConfig, the Expo template's Info.plist and a production export's strings |
+| scripts/release-guard.cjs | 2026-10-16 | edited: the fault proxy's port among the E2E world's addresses |
 | scripts/resume.cjs | 2026-10-16 | edited: says why gh could not be asked |
 | scripts/schema-snapshot.mjs | 2026-10-15 | edited: the address from the private settings file; default privileges that name no schema |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
 | scripts/secrets-planted.cjs | 2026-10-16 | edited: gitleaks writing no report ends it in gitleaks's words |
+| scripts/stryker-files.cjs | 2026-10-16 | new: Stryker file by file, on the console as it goes, in a zone behind UTC; each report judged against the floor and the equivalents; an unknown option refused |
 | scripts/surface-jest-failure.sh | 2026-10-03 | read whole: sound |
 | scripts/test-timezones.js | 2026-10-16 | edited: ZONES and each zone's record name exported, the one list CI reads; ONLY_IN_UTC: the tooling's tests run in UTC alone, the app's in all six zones |
 | scripts/website-freeze.cjs | 2026-10-15 | new |
@@ -411,6 +419,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theIssueIsTheCalendarDay.test.ts | 2026-10-02 | Written in the launch audit: the issue number counted in calendar days, every hour of two years. |
 | src/components/dispatch/__tests__/theMarginSaysWhatItCounts.test.tsx | 2026-09-29 | new |
 | src/components/dispatch/__tests__/theNumberIsAMembershipFact.test.tsx | 2026-10-04 | edited: initialOf comes from utils/text |
+| src/components/dispatch/__tests__/thePaperIsMeasuredAndCounted.test.ts | 2026-10-16 | new |
 | src/components/dispatch/__tests__/theParagraphKnowsItsDirection.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
 | src/components/dispatch/__tests__/thePreviewIsThePage.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theSeriesSheet.test.tsx | 2026-10-01 | written: the series sheet says what it read |
@@ -638,7 +647,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/anEmptyLedgerSaysSo.test.tsx | 2026-10-01 | written: an empty ledger is said as one |
 | src/components/profile/__tests__/anHonourIsNeverBroken.test.tsx | — |  |
 | src/components/profile/__tests__/aRewatchShowsItsHalfLife.test.ts | 2026-10-02 | Written in the launch audit: a rewatch's half-life from the viewing history and the current rating. |
-| src/components/profile/__tests__/aRoomKeepsWhatTheServerFound.test.ts | 2026-10-01 | written: a room's search on the phone is the server's |
+| src/components/profile/__tests__/aRoomKeepsWhatTheServerFound.test.ts | 2026-10-16 | edited: no search keeps every row; a backslash is itself |
 | src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx | 2026-10-01 | written: rows, paging and failure from one answer |
 | src/components/profile/__tests__/aSearchKeepsItsBox.test.tsx | 2026-10-01 | written: every searchable room, searched to nothing |
 | src/components/profile/__tests__/aStandingIsSharedAsWhoseItIs.test.tsx | 2026-10-01 | written: a standing is shared as whose it is |
@@ -827,6 +836,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useAuthFlow.validation.test.ts | — |  |
 | src/hooks/__tests__/useAuthThrottle.pbt.test.ts | 2026-10-01 | the countdown keeps the rule |
 | src/hooks/__tests__/useBanCheck.test.ts | — |  |
+| src/hooks/__tests__/useClearance.test.ts | 2026-10-16 | new |
 | src/hooks/__tests__/useEditProfile.logic.test.ts | — |  |
 | src/hooks/__tests__/useFeeds.test.ts | 2026-10-01 | rewritten: drives the real hooks |
 | src/hooks/__tests__/useInitiation.test.ts | — |  |
@@ -875,7 +885,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | 2026-10-03 | payments pass: a stand-in store drives every answer a configured one gives |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | 2026-10-03 | payments pass: the source pins went; the paths they guarded now run |
 | src/lib/__tests__/aRequestEndsInItsTime.test.ts | 2026-10-16 | new: a request with no answer is given up at its limit as not reached (storage waits longer); a caller's own cancel stays the caller's; an answer in time comes back untouched with no timer left |
-| src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/lib/__tests__/aRequestIsWrittenToTheE2ELog.test.ts | 2026-10-16 | new |
+| src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-16 | edited: the queue's standing read is no longer judged; it reads its error |
 | src/lib/__tests__/revenueCat.selectPackage.test.ts | — |  |
 | src/lib/__tests__/sentryMeasures.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/lib/__tests__/signingOutSilencesOnlyThisDevice.test.ts | — |  |
@@ -897,7 +908,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/revenueCat.ts | 2026-10-03 | payments pass: the SDK is required (Jest runs every store path); a rank is queued for the account the store sold to |
 | src/lib/scrollBridge.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lib/sentry.ts | 2026-10-15 | edited: tracesSampler keeps every scroll and screen opening, keepTransaction thins the rest; MAIN_ROUTES; startScrollSpan |
-| src/lib/supabase.ts | 2026-10-16 | edited: each request given up at its time limit (fetchWithinLimit), a caller's cancel kept its own |
+| src/lib/supabase.ts | 2026-10-16 | edited: in the E2E build, each request and how it ended written to the device log |
 | src/lib/tmdb.ts | 2026-10-02 | read; sound |
 | src/lib/tmdbErrors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lore/fragments.ts | 2026-10-02 | Read whole in the launch audit: the false 'Ledger is encrypted' line replaced. |
@@ -1088,20 +1099,38 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/profile.types.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
 | src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
-| src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-04 | edited: every right-to-left script reads right to left |
+| src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-16 | edited: a capital past Georgian's letters, and Georgian's first and last |
+| src/utils/__tests__/aDateIsSaidInTheHouseVoice.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/addOnly.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
 | src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aFailureOfAnyShapeIsReadAndTold.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aFieldIsCleanedAndCappedToTheLetter.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts | 2026-10-02 | Written in the launch audit: the handle filter judged by words, one rule in apps and database. |
 | src/utils/__tests__/aHiddenControlIsHiddenWhole.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/airplaneModeIsAndroidsAlone.guard.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aJoinerIsKeptOnlyWhereItJoins.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aLetterIsTakenWhole.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/aLogsHistoryKeepsEveryViewingOnce.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts | 2026-10-01 | new |
 | src/utils/__tests__/aMembersWordsAreCleaned.test.ts | 2026-10-03 | the profile excuses went with the INSERT grant that made those columns writable (20261003_07) |
 | src/utils/__tests__/anAbsenceIsAnchored.guard.test.ts | 2026-10-16 | new: no test only finds absences on a screen it never shows drawn; each shape found or not as it should be |
+| src/utils/__tests__/anAddressIsToldFromAHandle.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/anOlderBuildsDossierStillLands.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aQueuedFilingIsCutToEachColumn.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aQueuedFollowFindsItsMember.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aQueuedLogIsFiledAsTheMemberWroteIt.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aQueuedStackIsSavedAsTheMemberLeftIt.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aQueueSendsOnlyItsOwnMembersWrites.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aRankIsReadOneWay.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aRankRefusalIsOnlyARanksRefusal.test.ts | 2026-10-16 | new: tierRefusal asked directly: each rank's sentence under 42501 is its door; a privacy refusal, the sentence without 42501, a cut or wrapped one, and no words are never a rank's |
+| src/utils/__tests__/aRefusalForStandingIsKnownByItsWords.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aReviewIsCleanedOfItsMarkup.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aReviewIsCutAtAWord.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aReviewReadsInItsOwnDirection.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aSecondPressWaitsOutTheDebounce.guard.test.ts | 2026-10-16 | new: no test presses a control again inside its debounce, but those judged; each shape found or not as it should be |
 | src/utils/__tests__/aTestNeverShipsAsAScreen.guard.test.ts | 2026-10-16 | new: every test file under app/ is one Metro leaves out of the bundle, and no route file is |
 | src/utils/__tests__/e2eRuntime.test.ts | 2026-10-15 | new: the runtime written once a launch by the E2E build alone, in lines the run can join |
@@ -1114,7 +1143,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/fixtures/imageCache.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
 | src/utils/__tests__/appConfig.guard.test.ts | 2026-10-16 | edited: the project, update feed, store ids and Sentry project as the services hold them; the maps written and their upload left on |
 | src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
-| src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-10-15 | edited: a member is signed in |
+| src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-10-16 | edited: a write refused for a suspension waits, the standing read failed or the suspension begun mid-send; a silenced one is given up |
 | src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | — |  |
 | src/utils/__tests__/boundedCounts.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
@@ -1150,16 +1179,16 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/handleHistory.wiring.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.reader.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.test.ts | — |  |
-| src/utils/__tests__/hooks.guard.test.ts | 2026-10-15 | edited: the push's jest and jest.config leave out nested worktrees, never the checkout's own tests; workers fit the memory |
+| src/utils/__tests__/hooks.guard.test.ts | 2026-10-16 | edited: Stryker's sandbox left out like the worktrees; a mutant in place refused |
 | src/utils/__tests__/html.test.ts | — |  |
 | src/utils/__tests__/everyPictureStatesItsCache.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/imagePrefetchSites.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/inputTrustBoundary.test.ts | 2026-10-03 | edited: a pasted separator stays a break; hidden test characters written as escapes |
-| src/utils/__tests__/keysetCursor.test.ts | — |  |
+| src/utils/__tests__/keysetCursor.test.ts | 2026-10-16 | edited: a missing primary or id is built empty |
 | src/utils/__tests__/logger.test.ts | — |  |
 | src/utils/__tests__/logScreenPolish.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/lucideIconsAreBundled.guard.test.ts | — |  |
-| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-16 | edited: a flow's steps include those inside an inline runFlow |
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
@@ -1172,14 +1201,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/noPageAddsToTheInset.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/notificationColumns.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/offlineIsSaidOneWay.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/utils/__tests__/offlineQueue.integration.test.ts | 2026-10-16 | edited: a send asked for during a send is not lost |
+| src/utils/__tests__/offlineQueue.integration.test.ts | 2026-10-16 | edited: its house answers the standing read every send makes |
 | src/utils/__tests__/offlineQueue.test.ts | 2026-10-15 | edited: a queued write carries its member |
 | src/utils/__tests__/profileCountsCache.test.ts | — |  |
 | src/utils/__tests__/profileCountsCache.wiring.guard.test.ts | — |  |
 | src/utils/__tests__/profileMappers.test.ts | — |  |
 | src/utils/__tests__/prefetchPictures.test.ts | 2026-10-15 | new: Android to disk only; iOS skips what is on disk |
 | src/utils/__tests__/prose-handlers.guard.test.ts | — |  |
-| src/utils/__tests__/queryClient.test.ts | — |  |
+| src/utils/__tests__/queryClient.test.ts | 2026-10-16 | edited: the exact freshness, keeping and retry waits; a retry made after the connection left fails, never pauses |
 | src/utils/__tests__/queueErrorClassification.test.ts | — |  |
 | src/utils/__tests__/raceDeadline.test.ts | 2026-10-04 | written whole |
 | src/utils/__tests__/recommendations.test.ts | — |  |
@@ -1198,21 +1227,30 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/searchPattern.test.ts | — |  |
 | src/utils/__tests__/searchWiring.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
-| src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-16 | edited: the flags' cost timed with Node's own clock, not the setup's whole-millisecond one |
+| src/utils/__tests__/strykerFilesAreListed.guard.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/theCharacterRuleHoldsForEveryShortString.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-16 | edited: the search stops at twenty disagreements |
 | src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts | 2026-10-03 | Written with 20261003_05: the corpus holds every character the cleaning acts on, with cleanForStorage's answer. |
 | src/utils/__tests__/theLineEndsChangeNoFunction.guard.test.ts | 2026-10-16 | new: read against the snapshot's 144 bodies (96 with CRLF, one JSON literal holding it) and up-down-up.mjs's comparison |
 | src/utils/__tests__/theDeadLetterIsNobodyElsesToKeep.test.ts | 2026-10-15 | edited: another member's held and failed writes stay at this one's sign-out |
 | src/utils/__tests__/theDraftIsYours.test.ts | — |  |
 | src/utils/__tests__/theFrontDeskAnswers.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/theFunnelHasOneSeam.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/utils/__tests__/theQueueAtEveryTurn.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/theQueueAtLaunch.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/theRecordingsTravel.test.ts | — |  |
+| src/utils/__tests__/theSendAsksWhoIsSendingFirst.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/theSocietyOpensOverYou.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/utils/__tests__/theStandingIsReadAgainWhenRefused.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/theStoreIsReadToTheLetter.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/theTappedNoticeOpensIt.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/utils/__tests__/theWallHearsEachReplayThatMovesAPiece.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/tier.test.ts | — |  |
 | src/utils/__tests__/tier.warning.test.ts | — |  |
 | src/utils/__tests__/validateUsername.test.ts | — |  |
 | src/utils/__tests__/validateWithTelemetry.test.ts | — |  |
 | src/utils/__tests__/websiteFreeze.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/whatTheQueueKeepsAndForHowLong.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/whatThisPhoneHoldsIsSaid.test.ts | 2026-10-16 | new: keptOnThisPhone's words asked directly: nothing said of nothing, 'it' of one and 'all of them' of more, uncounted drafts said so, kinds named at the return |
 | src/utils/__tests__/withAbortSignal.test.ts | — |  |
 | src/utils/__tests__/withRetry.test.ts | — |  |
@@ -1243,10 +1281,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/memberDrafts.ts | 2026-10-15 | edited: countDrafts; drafts are erased only at the member's own sign-out |
 | src/utils/memoryManager.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/utils/mutationExecutor.ts | 2026-10-03 | payments pass: a failed rank sync carries its status (kept and retried, not dead-lettered); the reply nobody read is gone |
+| src/utils/mutationExecutor.ts | 2026-10-16 | edited: an empty place in a queued history is dropped, not sorted (it threw); a log's decade and genres and a Lounge message's username, columns neither table has, are never written; a rewatch's conflict reads the log's id alone |
 | src/utils/networkError.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/noticeRoute.ts | 2026-10-02 | Read whole (launch audit). Follows groupRoute's one argument. |
-| src/utils/offlineQueue.ts | 2026-10-16 | edited: a send asked for during a send runs once more after it; the E2E build traces each send |
+| src/utils/offlineQueue.ts | 2026-10-16 | edited: a write refused for a suspension waits with the rest (the standing read failed, or the suspension began mid-send); the standing read's error is read (its catch could never run); at sign-out another member's writes stay wherever they are |
 | src/utils/openNoticeFromPush.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/openSociety.ts | 2026-10-02 | Read whole (launch audit). URLSearchParams.set is implemented in RN 0.81's polyfill (checked). Sound. |
 | src/utils/prefetchPictures.ts | 2026-10-15 | new: the one caller of expo-image's prefetch |
@@ -1255,22 +1293,23 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/raceDeadline.ts | 2026-10-04 | written whole: the one deadline race; its timer cleared when the race is decided |
 | src/utils/recommendations.ts | 2026-10-01 | the shelf's own name |
 | src/utils/reelToast.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/utils/refusedForStanding.ts | 2026-10-16 | new: the server's two refusals for standing, and which ends; imports nothing, so the queue and the standing reader both ask it |
 | src/utils/requestReview.ts | 2026-10-01 | never more than 3 in any 365 days, as it claimed |
 | src/utils/roomFilters.ts | 2026-10-01 | new |
 | src/utils/sanitizeInput.ts | 2026-10-03 | read whole: U+2028/U+2029 kept as the breaks they are, not stripped |
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/softBreak.ts | 2026-10-04 | edited: one place asked per character, the flag count stopping at the run’s start; a joint breaks only between characters |
-| src/utils/standing.ts | 2026-10-02 | Written in the launch audit: the member's standing, read with the profile and on refusal. |
+| src/utils/standing.ts | 2026-10-16 | edited: its two sentences come from refusedForStanding |
 | src/utils/svgId.ts | 2026-10-03 | new: the one paint id (the Lobby’s and the room light’s) |
 | src/utils/TactileEngine.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/__tests__/everyDoorGoesThroughNav.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/secretsScan.guard.test.ts | 2026-10-15 | new |
 | src/utils/authSignals.ts | 2026-10-01 | written: the sign-in rules every door reads alike |
-| src/utils/text.ts | 2026-10-04 | edited: right-to-left is every block Unicode gives to right-to-left scripts, beyond the first plane too |
-| src/utils/tier.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/utils/text.ts | 2026-10-16 | edited: the &amp; entry the decoder never read is gone |
+| src/utils/tier.ts | 2026-10-16 | edited: no rank is read once, the free rank's spellings by the switch |
 | src/utils/tierDoor.ts | 2026-10-01 | the server sentence as a door |
 | src/utils/tierRefusal.ts | 2026-10-01 | by the sentence, not the code |
-| src/utils/timeAgo.ts | 2026-10-02 | Read whole (launch audit). formatTMDBDate had two branches returning the same value: one. |
+| src/utils/timeAgo.ts | 2026-10-16 | edited: toParts answers the parts alone (the kind was never read); a minute's two equal phrasings are one |
 | src/utils/toastBus.ts | 2026-10-02 | a toast stays long enough to read |
 | src/utils/typedRouter.ts | 2026-10-02 | read; sound |
 | src/utils/validateUsername.ts | 2026-10-02 | Read whole (launch audit). The profanity patterns refuse film names (moby_dick, philipkdick): listed for the owner, a policy call. |
@@ -1278,6 +1317,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/withAbortSignal.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/withRetry.ts | 2026-10-02 | read; sound |
 | src/utils/withTimeout.ts | 2026-10-14 | edited: its own timer, since Hermes has no AbortSignal.timeout |
+| stryker.config.mjs | 2026-10-16 | new: one listed file at a time, against its own tests alone, every mutant run fresh, its progress printed |
 | supabase/diagnostics/apply.cjs | 2026-10-15 | rewritten: lints first, runs under the time limits, --no-transaction for a CONCURRENTLY file alone; the address from the private settings file |
 | supabase/diagnostics/read-only.cjs | 2026-10-15 | true as written |
 | supabase/diagnostics/rehearse.cjs | 2026-10-15 | new |
@@ -1289,13 +1329,13 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/functions/revenuecat-webhook/index.ts | 2026-10-16 | edited: the store's address from the settings |
 | supabase/functions/sync-entitlement/index.ts | 2026-10-16 | edited: the store's address from the settings |
 | test-utils/__tests__/aFileEndsWithNoTimerWaiting.test.ts | 2026-10-16 | edited: the worktrees inside this checkout are left out of its own jest run; edited: only the timers Node starts are left out |
-| test-utils/__tests__/aSweepAsksTheUniverse.test.ts | 2026-10-15 | new: no test or script lists a folder itself, unless named with why |
+| test-utils/__tests__/aSweepAsksTheUniverse.test.ts | 2026-10-16 | edited: the mutant runner's judge logs and parts, and the registry guard's question to git, named with why |
 | test-utils/__tests__/everyCommentIsTrue.test.ts | — |  |
 | test-utils/__tests__/everySourceReaderIsLedgered.test.ts | 2026-10-15 | edited: every test in mobile/, from the shared file list |
 | test-utils/__tests__/everyTestClientKeepsTheHouseRules.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | test-utils/__tests__/oneCommentStripper.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | test-utils/__tests__/readCode.test.ts | 2026-10-03 | read whole: adds the generic-arrow case TSX misreads |
-| test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts | 2026-10-16 | new: each refusal of the fake asked for and seen; each answer the one the real client gets |
+| test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts | 2026-10-16 | edited: an empty body's answer |
 | test-utils/__tests__/theUniverseNamesEveryFile.test.ts | 2026-10-16 | new: every file is in a universe or named as unread; every supabase/ file has a kind; the routes are what expo-router loads, and what else its pattern takes is a test, which Metro leaves out |
 | test-utils/__tests__/theUniverseSeesANewFolder.test.ts | 2026-10-15 | new: a file planted in a new folder is seen by each universe; the migration checks refuse SQL no rule names |
 | test-utils/__tests__/timerFixtures/leavesATimer.fixture.ts | 2026-10-04 | written whole |
@@ -1310,7 +1350,7 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/schema.ts | 2026-10-16 | new: production's tables, columns with their types, views and functions, read from the snapshot: the one reader for the query check and the fake |
 | test-utils/SOURCE-READING-TESTS.md | 2026-10-15 | edited: every test in mobile/ is ledgered; the readers in __tests__/, e2e/ and plugins/, listed |
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
-| test-utils/supabaseFake.ts | 2026-10-16 | new: the house as the client meets it: refuses what production refuses (tables, columns, rpc arguments, fixture shapes, unfilled tables) and answers as PostgREST does (PGRST116, 1,000 rows, filters, order, range, writes kept) |
+| test-utils/supabaseFake.ts | 2026-10-16 | edited: silent, an answer with an empty body (no data and no error), as postgrest-js reads one |
 | test-utils/testQueryClient.ts | 2026-10-04 | written whole: the one client a test builds — the app's rules, no collection timer, errors heard |
 | test-utils/timerCheckingEnvironment.js | 2026-10-16 | written whole: the environment that fails a file ending with a timer still waiting; edited: timers Node starts for itself (startedByNode) are not counted |
 | test-utils/topEdge.ts | 2026-10-15 | new: where a drawn page puts its top |

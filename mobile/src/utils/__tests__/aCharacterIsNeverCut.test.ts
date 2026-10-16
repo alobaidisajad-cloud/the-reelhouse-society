@@ -185,6 +185,8 @@ describe('a letter for a portrait', () => {
     expect(initialOf(`${s(0x65, 0x301)}lise`)).toBe(s(0x45, 0x301)); // é, its accent written after
     expect(initialOf(s(0x0131, 0x6c))).toBe('I'); // Turkish dotless ı
     expect(initialOf(s(0x10e1, 0x10d0))).toBe(s(0x10e1)); // Georgian keeps its everyday letter
+    expect(initialOf(s(0x1ea5, 0x75))).toBe(s(0x1ea4)); // ấ, past Georgian's letters: Vietnamese has its capital
+    expect([initialOf(s(0x10d0)), initialOf(s(0x10ff))]).toEqual([s(0x10d0), s(0x10ff)]); // Georgian's first and last
     expect(initialOf(s(0xdf, 0x70))).toBe(s(0xdf)); // ß: its capital is two letters
     expect(initialOf(`${JA_NUKTA}${s(0x0930)}`)).toBe(JA_NUKTA);
     expect(initialOf(`${TECHNOLOGIST} dev`)).toBe(TECHNOLOGIST);

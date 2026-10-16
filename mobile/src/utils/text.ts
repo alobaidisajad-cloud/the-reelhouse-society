@@ -287,11 +287,12 @@ export function isRTLText(text: string | null | undefined): boolean {
 }
 
 /**
- * The named entities a review can realistically carry out of the web editor.
- * Anything else is left alone rather than mangled.
+ * The named entities a review can realistically carry out of the web editor,
+ * `&amp;` aside: it is decoded last, on its own (below). Anything else is left
+ * alone rather than mangled.
  */
 const HTML_ENTITIES: Record<string, string> = {
-    '&quot;': '"', '&apos;': "'", '&#39;': "'", '&amp;': '&',
+    '&quot;': '"', '&apos;': "'", '&#39;': "'",
     '&lt;': '<', '&gt;': '>', '&nbsp;': ' ',
     '&mdash;': '—', '&ndash;': '–', '&hellip;': '…',
     '&lsquo;': '‘', '&rsquo;': '’', '&ldquo;': '“', '&rdquo;': '”',

@@ -37,6 +37,10 @@ describe('a cursor survives the round trip', () => {
     // page after it is a page that exists.
     expect(parseCursor('|99')).toEqual({ primary: '', id: '99' });
   });
+
+  it('builds a missing primary or id as empty, never as the word "null"', () => {
+    expect([buildCursor(null, 7), buildCursor(undefined, 7), buildCursor('Heat', null), buildCursor(0, 0)]).toEqual(['|7', '|7', 'Heat|', '0|0']);
+  });
 });
 
 describe('a value cannot escape the filter it sits in', () => {

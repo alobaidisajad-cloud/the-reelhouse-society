@@ -12,9 +12,11 @@ module.exports = {
   ],
   // `.claude/worktrees` holds whole copies of the repo, each with its own tests:
   // anchored at this checkout, so one that is itself such a copy runs its own.
+  // `.stryker-tmp` is Stryker's copy of the app while it runs (stryker.config.mjs).
   // Outside UTC, the tests of code that runs only in UTC are left out (scripts/test-timezones.js).
-  testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/', '<rootDir>/\\.claude/',
+  testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/', '<rootDir>/\\.claude/', '<rootDir>/\\.stryker-tmp/',
     ...(process.env.JEST_OUTSIDE_UTC === '1' ? require('./scripts/test-timezones').ONLY_IN_UTC.map((p) => `<rootDir>/${p}`) : [])],
+  modulePathIgnorePatterns: ['<rootDir>/\\.stryker-tmp/'],
   /**
    * ── WHY THIS IS HERE ────────────────────────────────────────────────────
    * "A worker process has failed to exit gracefully" was chased for a long time

@@ -97,6 +97,8 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/jest-runner": "10.0.0",
     "@testing-library/react-native": "^14.0.0",
     "@types/jest": "29.5.14",
     "@types/react": "~19.1.0",

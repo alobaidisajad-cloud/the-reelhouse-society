@@ -147,6 +147,9 @@ mobile/**/*_output.txt
 mobile/**/*.log
 mobile/**/scratch/
 mobile/**/coverage/
+mobile/**/reports/
+mobile/**/.stryker-tmp/
+mobile/**/.mutant-in-place.json
 mobile/**/docs/
 mobile/**/.mockup-preview/
 

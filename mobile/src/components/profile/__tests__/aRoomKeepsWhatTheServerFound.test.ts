@@ -78,4 +78,9 @@ describe('matchesSearch, the server’s ILIKE on the phone', () => {
     expect(matchesSearch('dad', 'Alien', 'the one Dad gave me')).toBe(true);
     expect(matchesSearch('dad', null, undefined)).toBe(false);
   });
+
+  it('keeps every row for no search at all, and reads a backslash as itself', () => {
+    expect([matchesSearch(null, 'Alien'), matchesSearch(undefined), matchesSearch('   ', null)]).toEqual([true, true, true]);
+    expect([matchesSearch('a\\b', 'see a\\b here'), matchesSearch('a\\b', 'see ab here')]).toEqual([true, false]);
+  });
 });

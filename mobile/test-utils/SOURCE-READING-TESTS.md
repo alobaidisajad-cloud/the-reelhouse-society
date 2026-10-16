@@ -71,6 +71,8 @@ Decisions, as of 2026-09-28:
 | `src/components/__tests__/busterRegister.test.ts` | Every place Buster is drawn, read from each file's syntax tree (a renamed import followed), held to the register (one to a screen, never in a row); and every picture of him, by file and by its PNG's own pixel size. His behaviour is tested by mounting him (`Buster.test.tsx`). |
 | `src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts` | Every style that spreads `effects.flat` and still carries elevation (a black shadow on Android before 9); an exact ratchet, lowered as each feature is read. |
 | `src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx` | No sheet unmounts itself at the end of its own fall; useSheetPresence is the one place (its behaviour is tested on the hook). |
+| `src/utils/__tests__/strykerFilesAreListed.guard.test.ts` | Stryker's list against the plan's files and their own tests' imports, and the config's and the nightly job's text (every mutant run fresh). |
+| `src/utils/__tests__/airplaneModeIsAndroidsAlone.guard.test.ts` | Every Maestro flow's steps, inline runFlows followed: airplane mode is toggled only inside a step that runs on Android alone (iOS has no such command). |
 | `test-utils/__tests__/everyTestClientKeepsTheHouseRules.test.ts` | Every `new QueryClient(` in the tree: only the app's client and testQueryClient(), both built from queryPolicy.ts. What the test client does is tested by the screens that render with it. |
 | `src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx` | The film and series sheets are wrapped in the lift; the lift itself is tested on the hook (a keyboard cannot be rendered). |
 | `src/features/settings/__tests__/anExportIsWhole.test.ts` | Every export of the private notes names their key (the viewing); the paging itself is tested on readAllRows. |
@@ -192,6 +194,7 @@ Decisions, as of 2026-09-28:
 | `test-utils/__tests__/readCode.test.ts` | The comment stripper itself. |
 | `test-utils/__tests__/oneCommentStripper.test.ts` | No file takes comments out with a regex of its own; the parser is the only stripper. |
 | `__tests__/backendContract.test.ts` | Every RPC and edge function the app calls, against the backend contract file. |
+| `e2e/__tests__/whatTheAppAsked.test.ts` | The real contract (scripts/backend-contract.json), read by the judge as a run reads it. |
 | `__tests__/deletionIntegrity.test.ts` | The deletion migration it holds to its rules. |
 | `__tests__/moderationActs.test.ts` | The moderation migration and both clients' tribunal screens. |
 | `__tests__/schemaLengthCaps.test.ts` | The text ceilings in the migrations and the snapshot, against both clients' limits. |

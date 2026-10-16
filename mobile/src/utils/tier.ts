@@ -51,7 +51,7 @@ const reportedUnknownValues = new Set<string>();
  * behaviour. logger.warn forwards to Sentry in production.
  */
 export function normalizeTier(tierStr?: string | null): ReelHouseTier {
-  if (!tierStr || tierStr === 'free') return 'cinephile';
+  if (!tierStr) return 'cinephile';
   const t = tierStr.toLowerCase();
   if (t === 'archivist' || t === 'auteur' || t === 'founding') {
     return t as ReelHouseTier;
@@ -120,10 +120,9 @@ export function isAuteurPlusTier(input?: TierInput): boolean {
 export function getDisplayTier(tierStr?: string | null): string {
   const tier = normalizeTier(tierStr);
   switch (tier) {
-    case 'founding': return 'AUTEUR';
+    case 'founding':
     case 'auteur': return 'AUTEUR';
     case 'archivist': return 'ARCHIVIST';
-    case 'cinephile':
     default: return 'CINEPHILE';
   }
 }

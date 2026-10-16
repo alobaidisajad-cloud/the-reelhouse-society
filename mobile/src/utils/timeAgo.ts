@@ -103,7 +103,7 @@ function renderParts(p: DateParts, format: 'short' | 'long'): string {
  */
 export function dateParts(value: string | Date | undefined | null): DateParts | null {
   if (!value) return null;
-  return toParts(value)?.parts ?? null;
+  return toParts(value);
 }
 
 /**
@@ -121,17 +121,15 @@ export function calendarDateString(value: string | Date | undefined | null): str
 }
 
 /**
- * Resolve any accepted input to parts, saying which kind it was.
- * `calendar` inputs keep their own day; `instant` inputs are the reader's local day.
+ * Resolve any accepted input to parts: a calendar date keeps its own day; an
+ * instant is the reader's local day.
  */
-function toParts(value: string | Date): { parts: DateParts; kind: 'calendar' | 'instant' } | null {
-  if (typeof value !== 'string') {
-    return isNaN(value.getTime()) ? null : { parts: localParts(value), kind: 'instant' };
-  }
+function toParts(value: string | Date): DateParts | null {
+  if (typeof value !== 'string') return isNaN(value.getTime()) ? null : localParts(value);
   const calendar = parseCalendarDate(value);
-  if (calendar) return { parts: calendar, kind: 'calendar' };
+  if (calendar) return calendar;
   const d = new Date(value);
-  return isNaN(d.getTime()) ? null : { parts: localParts(d), kind: 'instant' };
+  return isNaN(d.getTime()) ? null : localParts(d);
 }
 
 /**
@@ -201,7 +199,7 @@ export function timeAgo(dateStr: string | Date | undefined | null): string {
   const diff = Math.max(0, Date.now() - then);
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'MOMENTS AGO';
-  if (mins < 60) return mins === 1 ? '1 MIN. AGO' : `${mins} MIN. AGO`;
+  if (mins < 60) return `${mins} MIN. AGO`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return hrs === 1 ? '1 HR. AGO' : `${hrs} HRS. AGO`;
   const days = Math.floor(hrs / 24);
@@ -230,7 +228,7 @@ export function timeUntil(value: string | Date | undefined | null): string {
   if (ahead <= 0) return '';
   const mins = Math.floor(ahead / 60000);
   if (mins < 1) return 'IN MOMENTS';
-  if (mins < 60) return mins === 1 ? 'IN 1 MIN.' : `IN ${mins} MIN.`;
+  if (mins < 60) return `IN ${mins} MIN.`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return hrs === 1 ? 'IN 1 HR.' : `IN ${hrs} HRS.`;
   const days = Math.floor(hrs / 24);
@@ -242,9 +240,9 @@ export function timeUntil(value: string | Date | undefined | null): string {
  */
 export function formatDate(dateStr: string | Date | undefined | null, format: 'short' | 'long' = 'short'): string {
   if (!dateStr) return '';
-  const resolved = toParts(dateStr);
-  if (!resolved) return echo(dateStr);
-  return renderParts(resolved.parts, format);
+  const parts = toParts(dateStr);
+  if (!parts) return echo(dateStr);
+  return renderParts(parts, format);
 }
 
 const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
@@ -289,9 +287,9 @@ export function formatLongCalendarDate(value: string | null | undefined): string
  */
 export function formatDateMonthDay(dateStr: string | Date | undefined | null, format: 'short' | 'long' = 'short'): string {
   if (!dateStr) return '';
-  const resolved = toParts(dateStr);
-  if (!resolved) return echo(dateStr);
-  return `${(format === 'long' ? MONTHS_LONG : MONTHS_SHORT)[resolved.parts.month]} ${resolved.parts.day}`;
+  const parts = toParts(dateStr);
+  if (!parts) return echo(dateStr);
+  return `${(format === 'long' ? MONTHS_LONG : MONTHS_SHORT)[parts.month]} ${parts.day}`;
 }
 
 /**
@@ -323,9 +321,9 @@ export function formatClockTime(value: string | Date | undefined | null): string
  */
 export function formatDateMonthYear(dateStr: string | Date | undefined | null): string {
   if (!dateStr) return '';
-  const resolved = toParts(dateStr);
-  if (!resolved) return echo(dateStr);
-  return `${MONTHS_LONG[resolved.parts.month]} ${resolved.parts.year}`;
+  const parts = toParts(dateStr);
+  if (!parts) return echo(dateStr);
+  return `${MONTHS_LONG[parts.month]} ${parts.year}`;
 }
 
 /**

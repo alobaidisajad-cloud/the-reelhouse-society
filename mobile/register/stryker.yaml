@@ -1,0 +1,102 @@
+# The logic files where one wrong operator hurts a member (WORKLIST P0.70). Stryker mutates each, one
+# file at a time, against that file's own tests alone (a mutant counts only when its own suite kills
+# it, P0.71). Each file must score at least `floor`: every mutant its tests do not kill is killed by
+# a new test, or written in stryker-equivalents.yaml as one no test can tell apart. stryker.config.mjs
+# and scripts/stryker-files.cjs read this list; strykerFilesAreListed holds it.
+floor: 90
+files:
+  - file: src/utils/text.ts
+    tests:
+      - src/utils/__tests__/aCharacterIsNeverCut.test.ts
+      - src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts
+      - src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts
+      - src/utils/__tests__/theCharacterRuleHoldsForEveryShortString.test.ts
+      - src/utils/__tests__/aReviewIsCleanedOfItsMarkup.test.ts
+      - src/utils/__tests__/aReviewReadsInItsOwnDirection.test.ts
+      - src/utils/__tests__/aReviewIsCutAtAWord.test.ts
+      - src/components/log/__tests__/logSurfaces.test.ts
+  - file: src/utils/sanitizeInput.ts
+    tests:
+      - src/utils/__tests__/sanitizeInput.test.ts
+      - src/utils/__tests__/inputTrustBoundary.test.ts
+      - src/utils/__tests__/markdownSafety.test.ts
+      - src/utils/__tests__/aJoinerIsKeptOnlyWhereItJoins.test.ts
+      - src/utils/__tests__/aFieldIsCleanedAndCappedToTheLetter.test.ts
+  - file: src/lib/queryPolicy.ts
+    tests:
+      - src/utils/__tests__/queryClient.test.ts
+  - file: src/utils/offlineQueue.ts
+    tests:
+      - src/utils/__tests__/offlineQueue.test.ts
+      - src/utils/__tests__/offlineQueue.integration.test.ts
+      - src/utils/__tests__/queueErrorClassification.test.ts
+      - src/utils/__tests__/theDeadLetterIsNobodyElsesToKeep.test.ts
+      - src/utils/__tests__/whatThisPhoneHoldsIsSaid.test.ts
+      - src/utils/__tests__/aSuspendedMembersWritesWait.test.ts
+      - __tests__/utils/offlineQueue.test.ts
+      - __tests__/integration/offlineQueueFlush.test.ts
+      - src/utils/__tests__/theQueueAtEveryTurn.test.ts
+      - src/utils/__tests__/aQueueSendsOnlyItsOwnMembersWrites.test.ts
+      - src/utils/__tests__/theSendAsksWhoIsSendingFirst.test.ts
+      - src/utils/__tests__/aFailureOfAnyShapeIsReadAndTold.test.ts
+      - src/utils/__tests__/theQueueAtLaunch.test.ts
+      - src/utils/__tests__/whatTheQueueKeepsAndForHowLong.test.ts
+  - file: src/utils/mutationExecutor.ts
+    tests:
+      - src/utils/__tests__/mutationExecutor.test.ts
+      - src/utils/__tests__/mutationExecutor.pbt.test.ts
+      - src/utils/__tests__/dispatchExecutors.test.ts
+      - src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts
+      - __tests__/utils/mutationExecutor.test.ts
+      - src/utils/__tests__/aQueuedLogIsFiledAsTheMemberWroteIt.test.ts
+      - src/utils/__tests__/aLogsHistoryKeepsEveryViewingOnce.test.ts
+      - src/utils/__tests__/aQueuedStackIsSavedAsTheMemberLeftIt.test.ts
+      - src/utils/__tests__/aQueuedFollowFindsItsMember.test.ts
+      - src/utils/__tests__/anOlderBuildsDossierStillLands.test.ts
+      - src/utils/__tests__/aQueuedFilingIsCutToEachColumn.test.ts
+      - src/utils/__tests__/theWallHearsEachReplayThatMovesAPiece.test.ts
+  - file: src/utils/tier.ts
+    tests:
+      - src/utils/__tests__/tier.test.ts
+      - src/utils/__tests__/tier.warning.test.ts
+      - src/utils/__tests__/aRankIsReadOneWay.test.ts
+  - file: src/utils/authSignals.ts
+    tests:
+      - src/stores/__tests__/auth.test.ts
+      - src/utils/__tests__/anAddressIsToldFromAHandle.test.ts
+  - file: src/utils/standing.ts
+    tests:
+      - src/components/__tests__/aSuspensionIsSaid.test.tsx
+      - src/utils/__tests__/theStandingIsReadAgainWhenRefused.test.ts
+  - file: src/utils/refusedForStanding.ts
+    tests:
+      - src/utils/__tests__/aRefusalForStandingIsKnownByItsWords.test.ts
+  - file: src/utils/timeAgo.ts
+    tests:
+      - src/utils/__tests__/calendarDates.test.ts
+      - src/components/log/__tests__/logSurfaces.test.ts
+      - src/utils/__tests__/aDateIsSaidInTheHouseVoice.test.ts
+  - file: src/components/dispatch/paper/paperMetrics.ts
+    tests:
+      - src/components/dispatch/__tests__/paperTextLogic.test.ts
+      - src/components/dispatch/__tests__/aBallotsClosingTimes.test.ts
+      - src/components/dispatch/__tests__/theIssueIsTheCalendarDay.test.ts
+      - src/components/dispatch/__tests__/thePaperIsMeasuredAndCounted.test.ts
+  - file: supabase/functions/revenuecat-webhook/decide.ts
+    tests:
+      - src/utils/__tests__/revenuecatWebhookDecide.test.ts
+      - src/utils/__tests__/theStoreIsReadToTheLetter.test.ts
+  - file: supabase/functions/_shared/storeRecord.ts
+    tests:
+      - src/utils/__tests__/revenuecatWebhookDecide.test.ts
+      - src/utils/__tests__/theStoreIsReadToTheLetter.test.ts
+  - file: src/utils/keysetCursor.ts
+    tests:
+      - src/utils/__tests__/keysetCursor.test.ts
+  - file: src/utils/searchPattern.ts
+    tests:
+      - src/utils/__tests__/searchPattern.test.ts
+      - src/components/profile/__tests__/aRoomKeepsWhatTheServerFound.test.ts
+  - file: src/hooks/useClearance.ts
+    tests:
+      - src/hooks/__tests__/useClearance.test.ts

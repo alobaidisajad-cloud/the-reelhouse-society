@@ -76,9 +76,11 @@ describe('the table', () => {
 
 describe('the rule is Unicode’s', () => {
   it('beside every class, at both ends of every run, both ways round, and at the end of every sequence that looks back', () => {
+    // Twenty disagreements say what is wrong; the search stops there, so a broken rule fails at once.
     const wrong: string[] = [];
     const others = Object.values(ONE_OF_EACH);
     for (const run of RUNS) {
+      if (wrong.length >= 20) break;
       for (const cp of new Set([run.from, run.to])) {
         if (!real(cp)) continue;
         // Two rules look further back than one code point: an emoji sequence

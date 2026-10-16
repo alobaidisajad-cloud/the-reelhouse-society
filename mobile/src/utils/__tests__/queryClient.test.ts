@@ -1,10 +1,8 @@
 /**
- * queryClient.test.ts — exercises the REAL MMKV persister.
- *
- * The previous version described the persister's safety rules and then asserted
- * on objects it built itself, never importing it. These rules exist to stop a
- * cold start stalling on a huge or stale cache, so they need to bind to the
- * code that actually runs at launch.
+ * queryClient.test.ts — the app's own query client and its REAL MMKV persister:
+ * how long a read stays fresh and is kept, how a failed read waits before it is
+ * tried again, and the persister's safety rules, which stop a cold start
+ * stalling on a huge or stale cache, bound to the code that runs at launch.
  */
 import { onlineManager, QueryObserver } from '@tanstack/react-query';
 import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
@@ -199,6 +197,27 @@ describe('the connection, as React Query hears it', () => {
     queryClient.unmount();
   });
 
+  it('a read that failed online, the connection gone before its one more try, still tries, fails and says so — never pauses', async () => {
+    jest.useFakeTimers();
+    try {
+      queryClient.mount();
+      const read = jest.fn().mockRejectedValue(new TypeError('Network request failed'));
+      const observer = new QueryObserver(queryClient, { queryKey: ['dropped-test'], queryFn: read });
+      const stop = observer.subscribe(() => {});
+      await jest.advanceTimersByTimeAsync(0);
+      expect(read).toHaveBeenCalledTimes(1);
+      connection({ isConnected: false });
+      await jest.advanceTimersByTimeAsync(8000);
+      const r = observer.getCurrentResult();
+      expect([read.mock.calls.length, r.fetchStatus, r.isError]).toEqual([2, 'idle', true]);
+      stop();
+      queryClient.unmount();
+    } finally {
+      connection({ isConnected: true });
+      jest.useRealTimers();
+    }
+  });
+
   it('an action taken with no connection fails, rather than waiting unseen', () => {
     expect(queryClient.getDefaultOptions().mutations?.networkMode).toBe('always');
   });
@@ -207,6 +226,15 @@ describe('the connection, as React Query hears it', () => {
 describe('queryClient — launch defaults', () => {
   it('is built from the one policy, which the clients tests build read too', () => {
     expect(queryClient.getDefaultOptions()).toEqual(QUERY_POLICY);
+  });
+
+  it('keeps a read fresh five minutes, and an unused one half an hour', () => {
+    expect(QUERY_POLICY.queries.staleTime).toBe(300_000);
+    expect(QUERY_POLICY.queries.gcTime).toBe(1_800_000);
+  });
+
+  it('waits a second before its one more try, and twice as long each time after, never more than eight', () => {
+    expect([0, 1, 2, 3, 4, 10].map((attempt) => QUERY_POLICY.queries.retryDelay(attempt))).toEqual([1000, 2000, 4000, 8000, 8000, 8000]);
   });
 
   it('refetches on reconnect, and never reorders a feed on return to the app', () => {
