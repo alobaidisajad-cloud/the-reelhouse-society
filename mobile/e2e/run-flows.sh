@@ -23,7 +23,8 @@
 # N for what no one machine can judge. With none, it runs everything.
 # A fault run (E2E_FAULTS) clears the fault before each flow and is judged by
 # e2e/fault-judges.mjs; with E2E_WALK, every route is then opened cold by its
-# link and captured (e2e/walk-routes.mjs, judged by e2e/route-judges.mjs).
+# link and captured (e2e/walk-routes.mjs, judged by e2e/route-judges.mjs), on the
+# phone as E2E_VARIANT has it (e2e/variants.json, put back after the walk).
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 # Maestro sends usage analytics unless told not to; nothing leaves the sealed world.
@@ -487,7 +488,28 @@ done
 # app-crashes.mjs's to name below; route-judges.mjs holds every route to its capture.
 if [ -n "${E2E_WALK:-}" ] && [ $gone -eq 0 ]; then
   mkdir -p "$OUT/walk"
-  if node mobile/e2e/walk-routes.mjs "$OUT/walk" > "$OUT/walk-plan.txt" 2>&1; then
+  # The phone as the variant has it (e2e/variants.json): what it had read first, each command
+  # and its answer kept in variant.txt, and put back once the walk ends, whatever it said. A
+  # variant with no name in the list walks nothing: its refusal is never sent to the phone.
+  variant=${E2E_VARIANT:-plain}
+  : > "$OUT/variant.txt"
+  variant_known=1
+  if ! node mobile/e2e/variants.mjs "$variant" setup > "$OUT/variant-setup.txt" 2>&1; then
+    variant_known=0; rc=1
+    node mobile/e2e/annotate.mjs "No variant named ${variant}" "$OUT/variant-setup.txt"
+  fi
+  read_cmd=$(node mobile/e2e/variants.mjs "$variant" read 2>/dev/null)
+  was=""
+  if [ $variant_known -eq 1 ] && [ -n "$read_cmd" ]; then
+    was=$(timeout 20 adb shell "$read_cmd" 2>&1 | tr -d '\r' | awk 'NF { last = $NF } END { print last }')
+    echo "read: $read_cmd -> $was" >> "$OUT/variant.txt"
+  fi
+  [ $variant_known -eq 1 ] && while IFS= read -r cmd; do
+    [ -n "$cmd" ] && echo "set: $cmd -> $(timeout 20 adb shell "$cmd" 2>&1 | tr -d '\r' | head -n 3)" >> "$OUT/variant.txt"
+  done < "$OUT/variant-setup.txt"
+  if [ $variant_known -eq 0 ]; then
+    :
+  elif node mobile/e2e/walk-routes.mjs "$OUT/walk" > "$OUT/walk-plan.txt" 2>&1; then
     printf 'walk\t1\t%s\n' "$(device_clock)" >> "$OUT/flow-times.txt"
     timeout --signal=INT --kill-after=30 900s "$MAESTRO" test "$OUT/walk/walk.yaml" \
       -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
@@ -506,6 +528,10 @@ if [ -n "${E2E_WALK:-}" ] && [ $gone -eq 0 ]; then
     rc=1
     node mobile/e2e/annotate.mjs "The route walk could not be planned" "$OUT/walk-plan.txt"
   fi
+  [ $variant_known -eq 1 ] && while IFS= read -r cmd; do
+    [ -n "$cmd" ] && echo "put back: $cmd -> $(timeout 20 adb shell "$cmd" 2>&1 | tr -d '\r' | head -n 3)" >> "$OUT/variant.txt"
+  done < <(node mobile/e2e/variants.mjs "$variant" reset "$was" 2>> "$OUT/variant.txt")
+  [ $variant_known -eq 1 ] && note "The phone as the ${variant} walk had it" "$OUT/variant.txt"
 fi
 
 

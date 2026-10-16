@@ -1,0 +1,47 @@
+{
+  "why": "The phone as each variant run of the route walk has it (WORKLIST P0.86): each name's adb shell commands set before the walk and put back after it, so nothing outlives its run; where the phone's own value is not a fixed default, `read` takes it first (its last word) and a reset's {was} puts it back. run-flows.sh runs them (e2e/variants.mjs); variants.test.ts holds every one to a setup, a reset and a reason.",
+  "variants": {
+    "plain": {
+      "why": "The phone as every run has it: the walk's captures every other variant is read against.",
+      "setup": [],
+      "reset": []
+    },
+    "motion-on": {
+      "why": "Android's transitions and animations at 1, as most members have them: every other run has them at 0, which React Native and Reanimated read as Reduce Motion. The window animation stays 0, because one holds injected keys.",
+      "setup": ["settings put global transition_animation_scale 1", "settings put global animator_duration_scale 1", "settings put global window_animation_scale 0"],
+      "reset": ["settings put global transition_animation_scale 0", "settings put global animator_duration_scale 0", "settings put global window_animation_scale 0"]
+    },
+    "largest-text": {
+      "why": "The largest text Android offers a member (font scale 2).",
+      "setup": ["settings put system font_scale 2.0"],
+      "reset": ["settings put system font_scale 1.0"]
+    },
+    "bold-text": {
+      "why": "Bold text, as Android's accessibility setting gives it.",
+      "setup": ["settings put secure font_weight_adjustment 300"],
+      "reset": ["settings put secure font_weight_adjustment 0"]
+    },
+    "narrowest": {
+      "why": "The narrowest width a member's phone can be, under 320 dp: the emulator's 1080 px at density 560 is 308 dp.",
+      "setup": ["wm density 560"],
+      "reset": ["wm density reset"]
+    },
+    "three-button": {
+      "why": "Android's three-button navigation bar, taller than the gesture bar every other run has.",
+      "setup": ["cmd overlay enable com.android.internal.systemui.navbar.threebutton"],
+      "reset": ["cmd overlay disable com.android.internal.systemui.navbar.threebutton"]
+    },
+    "right-to-left": {
+      "why": "Every screen laid out right to left, as a member reading Arabic or Hebrew has the system.",
+      "setup": ["settings put global debug.force_rtl 1"],
+      "reset": ["settings put global debug.force_rtl 0"]
+    },
+    "light": {
+      "why": "The system in light mode: the app keeps its own grounds, and what the system draws over it (an alert, the keyboard, the date picker) must still read. The mode the phone had is read first and put back.",
+      "read": "cmd uimode night",
+      "answers": ["no", "yes", "auto", "custom_schedule", "custom_bedtime"],
+      "setup": ["cmd uimode night no"],
+      "reset": ["cmd uimode night {was}"]
+    }
+  }
+}

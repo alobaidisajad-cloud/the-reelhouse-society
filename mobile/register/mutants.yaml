@@ -507,3 +507,12 @@ mutants:
         find: "  if (!existsSync(path)) return 'not captured';\n"
         replace: "  if (!existsSync(path)) return null;\n"
     proof: { file: e2e/__tests__/routeJudges.test.ts, test: "names a route never captured, one captured empty, and one captured as no picture" }
+
+  - id: shape-variant-refusal-sent
+    class: E2E-phone-only-as-the-runner-has-it
+    source: shape
+    edits:
+      - file: e2e/run-flows.sh
+        find: "  [ $variant_known -eq 1 ] && while IFS= read -r cmd; do\n    [ -n \"$cmd\" ] && echo \"set: "
+        replace: "  while IFS= read -r cmd; do\n    [ -n \"$cmd\" ] && echo \"set: "
+    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "walks nothing for a variant with no name in the list, and sends the phone nothing of it" }

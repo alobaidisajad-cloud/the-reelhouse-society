@@ -27,7 +27,8 @@ on:
         required: false
         default: false
       # A variant run (WORKLIST P0.86): every route opened cold by deep link and captured
-      # (e2e/walk-routes.mjs), on one machine. "plain": the phone as every run has it.
+      # (e2e/walk-routes.mjs), on one machine, the phone set as the variant has it and put back
+      # after (run-flows.sh). The variants (mobile/e2e/variants.json): plain, motion-on, largest-text, bold-text, narrowest, three-button, right-to-left, light
       variant:
         type: string
         required: false

@@ -216,6 +216,20 @@ classes:
     fix: "useScreenReady writes each wait's start (screen.reading) as well as its end; the fault runs' judge refuses a wait past 20 s or still waiting when its flow ends (mutant judge-wait-without-end); P4.6 sets each kind of request's own deadline"
     places: [emulator]
 
+  - id: E2E-phone-only-as-the-runner-has-it
+    title: Every run's phone has the default text, width, navigation bar, direction and mode, with animations off, so a screen that breaks for a member who set any of them passes every run
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.86" }
+    methods:
+      - { kind: static, file: e2e/__tests__/variants.test.ts, test: "is the list the workflow says a variant run may be given, and the night walks every one" }
+      - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "reads the mode the phone had, sets the variant, walks, and puts back exactly what it read" }
+      - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "walks nothing for a variant with no name in the list, and sends the phone nothing of it" }
+    fix: "e2e/variants.json names each setting a member may choose (largest text, bold text, the narrowest width, three-button navigation, right to left, light mode, motion on), with its commands to set and to put back; run-flows.sh sets one before the route walk and puts it back after, a variant not in the list sent nothing (mutant shape-variant-refusal-sent); every night walks every variant. Each variant's own pass rules are P0.86's next part"
+    places: [emulator]
+
   - id: RN-react-destroyed-on-mount
     title: React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed
     seriousness: serious

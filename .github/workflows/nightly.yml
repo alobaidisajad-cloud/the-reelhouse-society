@@ -149,6 +149,19 @@ jobs:
     with:
       faults: true
 
+  # Every route opened cold and captured on the phone as each variant has it (mobile/e2e/variants.json,
+  # WORKLIST P0.86): four at a time, each its own machine and its own build.
+  e2e-variants:
+    name: 🎬 The route walk, ${{ matrix.variant }}
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        variant: [plain, motion-on, largest-text, bold-text, narrowest, three-button, right-to-left, light]
+    uses: ./.github/workflows/e2e.yml
+    with:
+      variant: ${{ matrix.variant }}
+
   jest-random:
     name: 🎲 Jest, each file's tests in a random order
     runs-on: ubuntu-24.04

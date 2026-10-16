@@ -37,8 +37,9 @@ const PEOPLE = [
   // A member with no rank: the ordinary path through the app. Able to file.
   { env: 'E2E_MEMBER', username: 'e2e_member', files: true },
   // For the route walk alone (E2E_SEED_WALK, WORKLIST P0.86), so the flows' world is as it was: a
-  // writer at the Auteur rank whose open Lounge and essay in a series give the walk's rooms an id.
-  ...(process.env.E2E_SEED_WALK ? [{ env: 'E2E_WRITER', username: 'e2e_writer', files: true, rank: 'auteur', writes: true }] : []),
+  // writer at the Auteur rank whose open Lounge and essay in a series give the walk's rooms an id,
+  // each read back as the member the walk opens it as.
+  ...(process.env.E2E_SEED_WALK ? [{ env: 'E2E_WRITER', username: 'e2e_writer', files: true, rank: 'auteur', writes: true, readBy: 'e2e_member' }] : []),
 ];
 
 /**
@@ -79,8 +80,10 @@ const call = async (path, { key, token, ...init } = {}) => {
   return { status: res.status, body };
 };
 
+// Each person's session, by username, once they are made: a later one's rooms are read back as an earlier one.
+const sessions = {};
 try {
-  for (const p of PEOPLE) await seedPerson(p);
+  for (const p of PEOPLE) sessions[p.username] = await seedPerson(p);
 } catch (e) {
   if (!(e instanceof SeedFailed)) throw e;
   process.exitCode = 1;
@@ -113,13 +116,14 @@ async function seedPerson(p) {
     if (granted.status !== 200 || g?.out_tier !== p.rank) fail(p.username, `could not be given the ${p.rank} rank: HTTP ${granted.status} ${JSON.stringify(granted.body).slice(0, 200)}`);
   }
   if (p.files) await becomeAbleToFile(p.username, made.body.id, session.body.access_token);
-  if (p.writes) await makeTheWalksRooms(p.username, made.body.id, session.body.access_token);
+  if (p.writes) await makeTheWalksRooms(p.username, made.body.id, session.body.access_token, p.readBy, sessions[p.readBy]);
 
   if (process.env.GITHUB_ENV) {
     console.log(`::add-mask::${password}`);
     appendFileSync(process.env.GITHUB_ENV, `${p.env}_EMAIL=${email}\n${p.env}_PASSWORD=${password}\n${p.env}_USERNAME=${p.username}\n`);
   }
   console.log(`✓ ${p.username}: made, signs in, reads their own profile${p.files ? ', files, and is read back' : ''}`);
+  return session.body.access_token;
 }
 
 /**
@@ -137,9 +141,11 @@ async function seedPerson(p) {
 /**
  * The route walk's rooms that only a ranked writer can make, made as the app makes them, as
  * the writer, with RLS on: an open Lounge (create_lounge) and an essay that opens a series.
- * Each read back as a guest would read it; the walk reads their ids from the database.
+ * Each read back as the reader would read it (the member the walk opens them as: a Lounge is
+ * a signed-in member's to read, never a guest's); the walk reads their ids from the database.
  */
-async function makeTheWalksRooms(username, id, token) {
+async function makeTheWalksRooms(username, id, token, readerName, readerToken) {
+  if (!readerToken) fail(username, `no session of ${readerName} to read their rooms back as`);
   const as = { key: ANON, token };
   const said = (r) => `HTTP ${r.status} ${JSON.stringify(r.body).slice(0, 300)}`;
   const lounge = await call('/rest/v1/rpc/create_lounge', {
@@ -156,8 +162,8 @@ async function makeTheWalksRooms(username, id, token) {
   });
   if (essay.status !== 201 || !essay.body?.[0]?.series_id) fail(username, `could not file an essay in a series: ${said(essay)}`);
   for (const [what, path] of [['the Lounge', `/rest/v1/lounges?id=eq.${lounge.body}&select=id`], ['the essay', `/rest/v1/dispatch_posts?id=eq.${essay.body[0].id}&select=id`]]) {
-    const read = await call(path, { key: ANON });
-    if (read.status !== 200 || read.body?.length !== 1) fail(username, `${what} is not read back by a guest: ${said(read)}`);
+    const read = await call(path, { key: ANON, token: readerToken });
+    if (read.status !== 200 || read.body?.length !== 1) fail(username, `${what} is not read back by ${readerName}: ${said(read)}`);
   }
 }
 

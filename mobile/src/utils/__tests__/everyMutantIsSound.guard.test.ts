@@ -82,6 +82,7 @@ const NOT_JUDGES: Record<string, string> = {
   'scrub.mjs': 'it takes secrets out of kept logs',
   'shards.mjs': 'it splits the flows between machines',
   'walk-routes.mjs': 'it plans the route walk and writes its flow; route-judges.mjs judges what it captured',
+  'variants.mjs': 'it gives the commands that set the phone as a variant has it and put it back; run-flows.sh runs them (shape-variant-refusal-sent)',
   'route-judges.mjs': 'its captures are pictures, which a judge\'s text fixtures cannot carry: a shape mutant edits the judge itself (shape-route-capture-unchecked)',
 };
 

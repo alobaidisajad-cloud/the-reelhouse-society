@@ -27,6 +27,8 @@ import { spawn } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { createServer, type Server } from 'http';
+import type { AddressInfo } from 'net';
 
 const SCRIPT = join(__dirname, '..', 'run-flows.sh');
 const BASH = process.platform === 'win32' ? 'C:\\Program Files\\Git\\bin\\bash.exe' : 'bash';
@@ -49,7 +51,12 @@ case "$1" in
   exec-out) cat "$T/fixtures/dump.xml" ;;
   shell)
     shift; cmd="$*"
+    # Every command, in the order the phone was asked, with Maestro's flows among them.
+    echo "adb: $cmd" >> "$T/state/order"
     case "$cmd" in
+      # The system's dark mode, as Android answers it; a phone whose read fails, as one that went away.
+      "cmd uimode night") [ -f "$T/state/night-unread" ] && { echo "error: closed"; exit 1; }; echo "Night mode: yes" ;;
+      "cmd uimode night "*) echo "Night mode: \${cmd##* }" ;;
       "ime list -a -s") echo "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME" ;;
       "pm disable"*) echo "Package x new state: disabled" ;;
       "settings get global "*_scale) cat "$T/state/\${cmd##* }" 2>/dev/null || echo 0.0 ;;
@@ -87,6 +94,7 @@ if [ "$1" = hierarchy ]; then echo '{"attributes":{},"children":[]}'; exit 0; fi
 flow="$2"; name=$(basename "$flow" .yaml); out=""; dbg=""
 while [ $# -gt 0 ]; do case "$1" in --output) out="$2"; shift ;; --debug-output) dbg="$2"; shift ;; esac; shift; done
 case "$flow" in *.tap.yaml) exit 0 ;; esac
+echo "maestro: $name" >> "$T/state/order"
 n=$(( $(cat "$T/state/count-$name" 2>/dev/null || echo 0) + 1 )); echo $n > "$T/state/count-$name"
 behaviour=$(sed -n "\${n}p" "$T/scenario/$name" 2>/dev/null); [ -z "$behaviour" ] && behaviour=pass
 tests="$dbg/.maestro/tests/2026-10-04_0000$n"; mkdir -p "$tests/$name"
@@ -110,6 +118,12 @@ pass() {
 }
 case "$behaviour" in
   pass) pass ;;
+  # The route walk: a picture of every route its plan (walk.tsv, beside the flow) names.
+  captures)
+    while IFS="$(printf '\\t')" read -r _ _ shot; do
+      { printf '\\211PNG'; head -c 2048 /dev/zero; } > "$(dirname "$flow")/routes/$shot"
+    done < "$(dirname "$flow")/walk.tsv"
+    pass ;;
   failed-read-then-pass)
     say 16631 W ReactNativeJS "[e2e] screen.failed {\\"name\\":\\"dispatch\\",\\"ms\\":100}"
     pass ;;
@@ -467,4 +481,71 @@ it('an emulator that goes away is reported as gone: its flow is not run again, a
   expect(titled(r, 'error', 'The emulator went away during the flows')).toContain('adb no longer sees the emulator');
   expect(titled(r, 'error', 'The app crashed or froze during the run')).toContain('the device did not answer for its clock');
   always(r);
+});
+
+describe('a variant run (E2E_WALK, E2E_VARIANT): the phone set before the walk and put back after it', () => {
+  // The sealed world's rows, as the walk reads them back by name (walkRoutes.test.ts holds the reads).
+  let world: Server;
+  let API = '';
+  beforeAll(async () => {
+    world = createServer((req, res) => {
+      const path = req.url ?? '';
+      const rows = path.includes('profiles') ? [{ id: 'm-1' }]
+        : path.includes('title=eq.E2E%20walk%20essay') ? [{ id: 'd-1', series_id: 's-1' }]
+          : path.includes('dispatch_posts') ? [{ id: 'f-1' }]
+            : path.includes('/lists') ? [{ id: 'st-1' }]
+              : path.includes('/logs') ? [{ id: 'l-1' }]
+                : path.includes('/lounges') ? [{ id: 'lo-1' }] : [];
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(rows));
+    });
+    await new Promise<void>((done) => world.listen(0, '127.0.0.1', done));
+    API = `http://127.0.0.1:${(world.address() as AddressInfo).port}`;
+  });
+  afterAll(() => new Promise<void>((done) => world.close(() => done())));
+
+  const WALK_MAP = JSON.parse(readFileSync(join(__dirname, '..', 'walk-shards.json'), 'utf8'));
+  const walk = (variant: string, scenario: Record<string, string[]>, state: Record<string, string> = {}) => rehearse([], scenario, {
+    map: WALK_MAP, state,
+    env: { E2E_SHARD: '1/1', E2E_FLOWS: 'none', E2E_WALK: '1', E2E_VARIANT: variant, API_URL: API, SERVICE_ROLE_KEY: 'rehearsal-key' },
+  });
+  /** What the phone was asked about the variant, and the walk among it, in order. */
+  const order = (r: Run) => (existsSync(join(r.T, 'state', 'order')) ? readFileSync(join(r.T, 'state', 'order'), 'utf8') : '')
+    .split('\n').filter((l) => /uimode|font_scale|^maestro: walk$/.test(l));
+
+  it('reads the mode the phone had, sets the variant, walks, and puts back exactly what it read', async () => {
+    const r = await walk('light', { walk: ['captures'] });
+    expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
+    expect(order(r)).toEqual(['adb: cmd uimode night', 'adb: cmd uimode night no', 'maestro: walk', 'adb: cmd uimode night yes']);
+    expect(file(r, 'variant.txt')).toBe(
+      'read: cmd uimode night -> yes\nset: cmd uimode night no -> Night mode: no\nput back: cmd uimode night yes -> Night mode: yes\n');
+    expect(titled(r, 'notice', 'The phone as the light walk had it')).toContain('put back: cmd uimode night yes');
+    expect(titled(r, 'notice', 'Every route  opened cold and captured')).toMatch(/every route captured: \d+/);
+    always(r);
+  });
+
+  it('puts the phone back after a walk that failed', async () => {
+    const r = await walk('largest-text', { walk: ['pass'] });
+    expect(r.status).toBe(1);
+    expect(order(r)).toEqual(['adb: settings put system font_scale 2.0', 'maestro: walk', 'adb: settings put system font_scale 1.0']);
+    expect(titled(r, 'error', 'The route walk did not capture every route')).toContain('not captured');
+    always(r);
+  });
+
+  it('puts back nothing it could not read, and says so, rather than a word of an error', async () => {
+    const r = await walk('light', { walk: ['captures'] }, { 'night-unread': '' });
+    expect(order(r)).toEqual(['adb: cmd uimode night', 'adb: cmd uimode night no', 'maestro: walk']);
+    expect(file(r, 'variant.txt')).toContain("light's read answered closed, which is none of no, yes, auto, custom_schedule, custom_bedtime: nothing is put back");
+    always(r);
+  });
+
+  it('walks nothing for a variant with no name in the list, and sends the phone nothing of it', async () => {
+    const r = await walk('sideways', { walk: ['captures'] });
+    expect(r.status).toBe(1);
+    expect(order(r)).toEqual([]);
+    // Not even its refusal, sent as though it were a command.
+    expect(readFileSync(join(r.T, 'state', 'order'), 'utf8')).not.toMatch(/variant|sideways/);
+    expect(calls(r, 'walk')).toBe(0);
+    expect(titled(r, 'error', 'No variant named sideways')).toContain('no variant named sideways (the variants: plain, motion-on');
+    always(r);
+  });
 });
