@@ -50,7 +50,7 @@ if (!claimedTriggers.length || !claimedStrips.length) {
 }
 
 // ── the database ────────────────────────────────────────────────────────────
-const { privateFile, readPrivate } = require('./private-settings.cjs');
+const { hide, privateFile, readPrivate } = require('./private-settings.cjs');
 const dbUrl = readPrivate('SUPABASE_DB_URL');
 
 if (!dbUrl) {
@@ -60,10 +60,19 @@ if (!dbUrl) {
 
 /**
  * Split on the line ending, CR included: psql on Windows ends every row with CR,
- * and one trim() of the whole output would clean only the last row.
+ * and one trim() of the whole output would clean only the last row. A failure
+ * ends the check with psql's own reason.
  */
+const ask = (sql) => {
+  try {
+    return execFileSync('psql', [dbUrl, '-t', '-A', '-F', '\t', '-c', sql], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (e) {
+    console.error(`gates:check — the database could not be read: ${hide(String(e.stderr || e.message).trim().split('\n')[0])}`);
+    process.exit(2);
+  }
+};
 const q = (sql) =>
-  execFileSync('psql', [dbUrl, '-t', '-A', '-F', '\t', '-c', sql], { encoding: 'utf8' })
+  ask(sql)
     .split(/\r?\n/)
     .map((l) => l.replace(/\r$/, '').trim())
     .filter(Boolean)

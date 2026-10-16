@@ -137,9 +137,15 @@ const add = (runs) => {
         const m = /shard (\d+) of/.exec(job.name);
         if (!m) continue;
         const dir = join(tmp, m[1]);
+        // A shard with no logs is said; any other failure ends the run, in gh's words.
         try {
-          execFileSync('gh', ['run', 'download', String(run), '-n', `e2e-logs-${m[1]}`, '-D', dir], { stdio: 'ignore' });
-        } catch { console.log(`${run} shard ${m[1]}: no logs`); continue; }
+          execFileSync('gh', ['run', 'download', String(run), '-n', `e2e-logs-${m[1]}`, '-D', dir], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+        } catch (e) {
+          const said = String(e.stderr || e.message).trim();
+          if (!/no (valid )?artifacts?\b/i.test(said)) throw new Error(`${run} shard ${m[1]}: the logs could not be downloaded: ${said}`);
+          console.log(`${run} shard ${m[1]}: no logs`);
+          continue;
+        }
         for (const p of partsOf(dir, job.conclusion === 'success')) {
           history.samples.push({ run: Number(run), shard: Number(m[1]), ...p });
           added++;

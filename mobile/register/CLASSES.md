@@ -30,6 +30,12 @@ production shows only its id, area, seriousness and count here.
 | TEST-guard-only-through-a-caller | tests | code | OPEN | 27 | A module's own guard (an early return or throw) reached only through its callers' tests, which never hand it what it turns away, so the guard is never shown to hold (TST-27) |
 | E2E-ceiling-not-measured | tests | code | OPEN | 1 | A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's |
 | CI-check-only-in-ci | tooling | code | OPEN | 1 | A check CI runs that no local gate runs, so a push meets it only in red |
+| CI-gate-never-runs | tooling | code | OPEN | 0 | A gate that never runs reads as coverage, whether it runs on pull requests alone, is a script nothing runs, or is cancelled by a run of another kind (CI-02) |
+| CI-check-passes-on-nothing | tooling | code | OPEN | 0 | A step allowed to fail without failing its job, so a check that broke passes as if it had run (CI-03) |
+| CI-background-job-left-running | tooling | code | OPEN | 0 | A process started in the background and never stopped, so what runs after it meets a port taken, a log still written or a machine short of memory (CI-15) |
+| CI-tool-hides-its-cause | tooling | code | OPEN | 0 | A tool run by a script fails, and the script reports something other than the tool's own words (a missing file, "no logs", "Command failed" and a wall of SQL), so the wrong cause is chased (CI-19) |
+| SEC-private-value-in-a-tool-error | security | serious | OPEN | 0 | A script that holds the production database address runs a tool that fails, and the error printed names the whole command, the address and its password among it |
+| BUILD-identity-drifts | release | behaviour | OPEN | 0 | The build names a project, an update feed or a Sentry project other than the one the house reads, so updates or readable crashes go nowhere, silently (CI-20) |
 | SALON-channel | lounge | serious | OPEN | 1 | open in production |
 | DB-function-grants | database | serious | OPEN | 0 | A public function any login the database has may run, because PUBLIC kept EXECUTE on it |
 | DB-extension-reach | database | serious | OPEN | 1 | open in production |

@@ -172,7 +172,7 @@ Decisions, as of 2026-09-28:
 | `test-utils/__tests__/everyCommentIsTrue.test.ts` | The reading ledger (scripts/COMMENTS-READ.md) against the files comment-truth checks. |
 | `src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts` | Every column of a filing, emptied or kept when it ends, against the schema snapshot. |
 | `src/utils/__tests__/addOnly.guard.test.ts` | Every migration in both trees, read by the add-only check, and the CI job that runs it. |
-| `src/utils/__tests__/appConfig.guard.test.ts` | The build configs: only the E2E build differs; EAS uploads the commit alone, numbered as committed. |
+| `src/utils/__tests__/appConfig.guard.test.ts` | The build configs: only the E2E build differs; EAS uploads the commit alone, numbered as committed; the project, update feed and Sentry project as the services hold them, and Metro's config writing the maps. |
 | `src/utils/__tests__/releaseGuard.guard.test.ts` | The workflow steps that run the release guard (never on the E2E app), the Maestro flow that opens the sitemap cold, the trace's one switch and the written exception's file: workflows, flows and which code can turn E2E on are files no render reaches. The rules themselves run on built inputs. |
 | `src/utils/__tests__/ciAlert.behaviour.test.ts` | The CI alert's script, run out of its workflow. |
 | `src/utils/__tests__/ciWorkflows.guard.test.ts` | Every workflow: actions pinned, permissions scoped; the advisers run in their count-only mode, and known-vulnerable packages are judged where the item says; jest and the captures run in parts their read-together jobs count alike, jest in every zone of `scripts/test-timezones.js`; every gate runs on main or a schedule; a step let fail is a download tried again. |
@@ -212,6 +212,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/resumeSaysWhereTheWorkStands.test.ts` | APPLIED.txt, against the shared migration list, and resume.cjs's own text for how it finds the private folder: the record of what production has applied is a file, not a render. |
 | `src/utils/__tests__/everySecretIsInventoried.test.ts` | Every functions tree, script, workflow, the schema snapshot and eas.json, for the names they read, against the inventory: which secret a file reads is spelled in the file. |
 | `src/utils/__tests__/everyEventIsAwaited.guard.test.ts` | Every test file, parsed, for each fireEvent, act and renderHook nobody waits for: a sweep of the tests themselves, which no render of a screen sees. |
+| `src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts` | Every script that ships, for each run of another program: its answer heard, or why not named. |
 | `src/utils/__tests__/aSecondPressWaitsOutTheDebounce.guard.test.ts` | Every test file, parsed, for a control pressed again with no time passed: a sweep of the tests themselves. |
 | `src/utils/__tests__/anAbsenceIsAnchored.guard.test.ts` | Every test file, parsed, for a test that only finds things absent on a screen: a sweep of the tests themselves. |
 | `src/utils/__tests__/revenuecatWebhookDecide.test.ts` | The app's limit on a call to the house (src/lib/supabase.ts), which the store's own limit, in Deno, must stay under: no one runtime holds both. |

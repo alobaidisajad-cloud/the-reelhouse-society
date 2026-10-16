@@ -103,6 +103,37 @@ it('EAS uploads the commit alone, numbered as committed', () => {
   expect(Number.isInteger(appJson.android.versionCode) && appJson.android.versionCode > 0).toBe(true);
 });
 
+/**
+ * The build's identity as the services hold it: Expo's `eas project:info` (the account's own
+ * spelling), and the Sentry organization its API knows. A change here is made at the service first.
+ */
+const IDENTITY = {
+  owner: 'thereehouse.society',
+  slug: 'reelhouse',
+  projectId: '9527b5a1-c663-4262-883c-7b85e6aa748d',
+  bundle: 'com.reelhouse.society',
+  sentry: { organization: 'the-reelhouse-society', project: 'react-native' },
+};
+
+it('names the project as Expo holds it, and asks that project alone for updates (CI-20)', () => {
+  expect({ owner: appJson.owner, slug: appJson.slug, projectId: appJson.extra?.eas?.projectId })
+    .toEqual({ owner: IDENTITY.owner, slug: IDENTITY.slug, projectId: IDENTITY.projectId });
+  // A phone asks this address for updates: another project's would be a feed nobody publishes to.
+  expect(appJson.updates.url).toBe(`https://u.expo.dev/${IDENTITY.projectId}`);
+  expect([appJson.ios.bundleIdentifier, appJson.android.package]).toEqual([IDENTITY.bundle, IDENTITY.bundle]);
+});
+
+it('sends crashes, and the maps that make them readable, to the Sentry project the house reads (CI-20)', () => {
+  expect(entry('@sentry/react-native')).toEqual(['@sentry/react-native', { url: 'https://sentry.io/', ...IDENTITY.sentry }]);
+  // Metro's Sentry wrapper writes the maps the plugin uploads; switching the upload off leaves every crash minified.
+  expect(readFileSync(join(MOBILE, 'metro.config.js'), 'utf8')).toMatch(/= getSentryExpoConfig\(__dirname\b/);
+  const easText = readFileSync(join(MOBILE, 'eas.json'), 'utf8');
+  expect(easText).not.toMatch(/SENTRY_DISABLE_AUTO_UPLOAD/);
+  const eas = JSON.parse(easText);
+  expect(eas.build.production.env.EXPO_PUBLIC_SENTRY_DSN).toMatch(/^https:\/\/[0-9a-f]{32}@o\d+\.ingest\.(us\.|de\.)?sentry\.io\/\d+$/);
+  expect(eas.build.internal.extends).toBe('production');
+});
+
 it('no real build profile sets E2E, or points at a local backend', () => {
   const eas = readFileSync(join(MOBILE, 'eas.json'), 'utf8');
   expect(eas).not.toMatch(/"E2E"/);

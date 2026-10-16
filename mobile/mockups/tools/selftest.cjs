@@ -221,7 +221,12 @@ const CASES = {
 
 for (const [name, [html]] of Object.entries(CASES)) fs.writeFileSync(path.join(DIR, `${name}.html`), html);
 const json = path.join(DIR, 'report.json');
-spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', DIR, '--json', json], { encoding: 'utf8' });
+const measured = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', DIR, '--json', json], { encoding: 'utf8' });
+// It ends 1 on the faults planted here; a missing report means it never measured.
+if (!fs.existsSync(json)) {
+  console.error(`layout.cjs wrote no report (exit ${measured.status}): ${`${measured.stderr}${measured.stdout}`.trim().split('\n').slice(-5).join('\n')}`);
+  process.exit(1);
+}
 const report = JSON.parse(fs.readFileSync(json, 'utf8'));
 
 let bad = 0;

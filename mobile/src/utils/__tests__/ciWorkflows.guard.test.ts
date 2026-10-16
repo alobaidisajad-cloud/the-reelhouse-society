@@ -22,6 +22,13 @@
  *    push, so a gate on pull requests alone never runs.
  * 9. A check that fails without failing its job passes on nothing (CI-03): a step
  *    let fail is a download, named, and tried once more by the step after it.
+ * 10. A process left running corrupts what runs after it (CI-15): every process a
+ *    workflow step or a shell script starts in the background keeps its id and
+ *    is stopped by what started it, or is named as living for the job with why.
+ *    No script starts a Node child it does not wait for.
+ * 11. A run cancels only an older run of its own kind (CI-02): a workflow that
+ *    cancels runs in progress keys them by the event as well, so a nightly that
+ *    GitHub starts hours late never cancels a push's run, nor a push the nightly's.
  *
  * Parsed as YAML, not matched as text: the rules are about the structure.
  */
@@ -491,4 +498,82 @@ it('lets a step fail only when it is a download tried once more by the step afte
     }
   }
   expect(loose).toEqual([]);
+});
+
+/** Background processes that live until the job ends, when the runner stops them, each with why. */
+const LIVES_FOR_THE_JOB: Record<string, string> = {
+  'db-integration.yml functions: node mobile/e2e/functions/stand-ins.mjs':
+    'the stand-ins answer every later step of the functions world; the runner stops them with the job, and their log is shown if a step fails',
+};
+
+/** Each command a text starts in the background, and whether the text stops it again by its id. */
+function backgrounded(text: string): { command: string; stopped: boolean }[] {
+  const lines = text.split('\n').map((l) => l.replace(/(^|\s)#.*$/, '')).join('\n').replace(/\\\n\s*/g, ' ').split('\n');
+  const found: { command: string; stopped: boolean }[] = [];
+  lines.forEach((line, i) => {
+    if (!/(^|[^&])&\s*$/.test(line)) return;
+    const id = /^\s*(\w+)=\$!\s*$/.exec(lines[i + 1] ?? '')?.[1];
+    // `kill -0` only asks whether it still runs.
+    const stopped = !!id && lines.some((l) => new RegExp(`\\b(kill(?!\\s+-0)|trap)\\b.*\\$\\{?${id}\\b`).test(l));
+    found.push({ command: line.trim().replace(/^nohup\s+/, '').replace(/\s*[<>].*$/, '').replace(/\s*&$/, '').replace(/\s+/g, ' '), stopped });
+  });
+  return found;
+}
+
+it('stops every process it starts in the background, or names why it lives for the job (CI-15)', () => {
+  const loose: string[] = [];
+  const kept: string[] = [];
+  for (const { file, wf } of workflows) {
+    for (const [name, job] of Object.entries(wf.jobs ?? {})) {
+      for (const step of job.steps ?? []) {
+        for (const { command, stopped } of backgrounded(step.run ?? '')) {
+          const key = `${file} ${name}: ${command}`;
+          if (key in LIVES_FOR_THE_JOB) kept.push(key);
+          else if (!stopped) loose.push(key);
+        }
+      }
+    }
+  }
+  const shells = universe('scripts').filter((p) => p.endsWith('.sh'));
+  expect(shells.length).toBeGreaterThan(3);
+  for (const path of shells) {
+    for (const { command, stopped } of backgrounded(readFileSync(path, 'utf8'))) {
+      if (!stopped) loose.push(`${relative(join(DIR, '..', '..'), path)}: ${command}`);
+    }
+  }
+  expect(loose).toEqual([]);
+  expect(Object.keys(LIVES_FOR_THE_JOB).filter((key) => !kept.includes(key))).toEqual([]);
+});
+
+it('starts no Node child it does not wait for (CI-15)', () => {
+  // What a file takes from child_process: a name taken, or the module held whole and a call made through it.
+  const ASYNC = ['spawn', 'fork', 'exec', 'execFile'];
+  const code = universe('scripts').filter((p) => /\.(c|m)?[jt]s$/.test(p));
+  expect(code.length).toBeGreaterThan(50);
+  const starts = code.filter((p) => {
+    const text = readFileSync(p, 'utf8');
+    const taken = [...text.matchAll(/(?:\{([^}]*)\}\s*=\s*require\(|import\s*\{([^}]*)\}\s*from\s*)['"](?:node:)?child_process['"]/g)]
+      .flatMap((m) => (m[1] ?? m[2]).split(',').map((n) => n.trim().split(/\s*:\s*|\s+as\s+/)[0]));
+    const whole = [...text.matchAll(/(?:(\w+)\s*=\s*require\(|import\s+(?:\*\s+as\s+)?(\w+)\s+from\s*)['"](?:node:)?child_process['"]/g)].map((m) => m[1] ?? m[2]);
+    return taken.some((n) => ASYNC.includes(n)) || whole.some((w) => new RegExp(`\\b${w}\\.(${ASYNC.join('|')})\\s*\\(`).test(text));
+  });
+  expect(starts.map((p) => relative(join(DIR, '..', '..'), p))).toEqual([]);
+});
+
+it('finds a background start the rule would let through, in a planted script', () => {
+  expect(backgrounded('adb logcat > out.txt &\nstreamer=$!\ntrap \'kill $streamer\' EXIT')).toEqual([{ command: 'adb logcat', stopped: true }]);
+  expect(backgrounded('adb logcat > out.txt 2>&1 &\nsleep 2')).toEqual([{ command: 'adb logcat', stopped: false }]);
+  expect(backgrounded('xcrun simctl spawn "$DEV" log stream \\\n  --level info > s.txt 2>&1 &\nstream=$!\nkill $stream')).toEqual([{ command: 'xcrun simctl spawn "$DEV" log stream --level info', stopped: true }]);
+  expect(backgrounded('adb logcat > out.txt &\nstreamer=$!\nkill -0 "$streamer" && echo alive')).toEqual([{ command: 'adb logcat', stopped: false }]);
+  expect(backgrounded('a && b\n# x &\nc 2>&1')).toEqual([]);
+});
+
+it('cancels only an older run of its own kind (CI-02)', () => {
+  const byEvent = /\$\{\{\s*github\.event_name\s*\}\}/;
+  const mixed = workflows.filter(({ wf }) => {
+    const c = (wf as Workflow & { concurrency?: { group?: string; 'cancel-in-progress'?: unknown } }).concurrency;
+    return typeof c === 'object' && c?.['cancel-in-progress'] === true && !byEvent.test(String(c.group ?? ''));
+  });
+  expect(mixed.map(({ file }) => file)).toEqual([]);
+  expect(workflows.filter(({ text }) => /cancel-in-progress:\s*true/.test(text)).length).toBeGreaterThan(1);
 });

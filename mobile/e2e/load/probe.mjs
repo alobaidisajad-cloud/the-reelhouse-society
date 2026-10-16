@@ -121,7 +121,9 @@ function plan(p) {
   const inner = "LOAD 'auto_explain'; SET auto_explain.log_min_duration = 0; SET auto_explain.log_analyze = on; SET auto_explain.log_buffers = on; SET auto_explain.log_nested_statements = on; SET auto_explain.log_format = 'json'; SET client_min_messages = log;";
   const sql = `${inner}\nBEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', '${claims(p.as)}', true);\nEXPLAIN (ANALYZE, BUFFERS) ${p.sql};\nROLLBACK;`;
   const r = spawnSync('psql', [DB, '-X', '-q', '-t', '-A', '-c', sql], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-  return [slowestInside(r.stderr || ''), `── the call ──\n${r.stdout || ''}`].filter(Boolean).join('\n');
+  // auto_explain may be refused; any other error is the reason the plan is missing.
+  const errors = (r.stderr || '').split('\n').filter((l) => /ERROR:/.test(l) && !/auto_explain/.test(l)).join('\n');
+  return [errors && `── psql said ──\n${errors}`, slowestInside(r.stderr || ''), `── the call ──\n${r.stdout || ''}`].filter(Boolean).join('\n');
 }
 
 /**

@@ -9,6 +9,10 @@
  *
  * Every script that needs SUPABASE_DB_URL or SUPABASE_PROJECT_REF reads them
  * here (migrationSafety.guard.test.ts holds that).
+ *
+ * A failed child process's error names its whole command, the address with its
+ * password among it. So once a value is read, an error nobody catches is printed
+ * with every value read replaced by ***, and the script ends as it would have.
  */
 const { existsSync, mkdirSync, readFileSync, writeFileSync } = require('fs');
 const { homedir } = require('os');
@@ -34,14 +38,30 @@ const guard = () => {
   if (why) throw new Error(`The private settings folder may not be used: ${why}. Set REELHOUSE_PRIVATE to a folder outside both.`);
 };
 
+const read = new Set();
+/** Text with every value read here replaced by ***. */
+const hide = (text) => [...read].reduce((s, v) => s.split(v).join('***'), String(text ?? ''));
+let hiding = false;
+const remember = (value) => {
+  if (!value) return value;
+  read.add(value);
+  if (!hiding) {
+    hiding = true;
+    const end = (e) => { process.stderr.write(`${hide(e instanceof Error ? e.stack : e)}\n`); process.exit(1); };
+    process.on('uncaughtException', end);
+    process.on('unhandledRejection', end);
+  }
+  return value;
+};
+
 /** NAME's value from the private file ('' when absent), unless the environment sets it. */
 const readPrivate = (name) => {
-  if (process.env[name]) return process.env[name];
+  if (process.env[name]) return remember(process.env[name]);
   guard();
   if (!existsSync(privateFile())) return '';
   for (const line of readFileSync(privateFile(), 'utf8').split(/\r?\n/)) {
     const i = line.indexOf('=');
-    if (i > 0 && line.slice(0, i).trim() === name) return line.slice(i + 1).trim().replace(/^["']|["']$/g, '');
+    if (i > 0 && line.slice(0, i).trim() === name) return remember(line.slice(i + 1).trim().replace(/^["']|["']$/g, ''));
   }
   return '';
 };
@@ -57,4 +77,4 @@ const writePrivate = (entries) => {
   return privateFile();
 };
 
-module.exports = { privateDir, privateFile, readPrivate, refusal, writePrivate };
+module.exports = { hide, privateDir, privateFile, readPrivate, refusal, writePrivate };

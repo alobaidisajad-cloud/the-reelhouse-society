@@ -20,9 +20,11 @@ on:
 # ubuntu-24.04.
 
 # A run a newer push has already superseded is cancelled instead of finishing work
-# nobody will read. (A cancelled run raises no alert — see ci-alert.yml.)
+# nobody will read. (A cancelled run raises no alert — see ci-alert.yml.) Keyed by
+# the event too: a nightly GitHub starts late never cancels a push's run, nor a push
+# the nightly's.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 # Read only: every package install runs with this token, and no step writes back

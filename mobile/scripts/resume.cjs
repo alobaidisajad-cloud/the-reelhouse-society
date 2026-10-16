@@ -94,8 +94,9 @@ if (require.main === module) {
       const shown = runs.filter((r) => !/CI alert/.test(r.name));
       console.log(`\nThis commit's workflows: ${shown.length ? '' : 'none yet (not pushed, or not started)'}`);
       for (const r of shown) console.log(`  ${r.status === 'completed' ? r.conclusion : r.status}  ${r.name}`);
-    } catch {
-      console.log('\nThis commit\'s workflows: GitHub could not be asked (gh); run with --no-ci to skip.');
+    } catch (e) {
+      const said = String(e.stderr || e.message).trim().split('\n')[0];
+      console.log(`\nThis commit's workflows: GitHub could not be asked (gh: ${said}); run with --no-ci to skip.`);
     }
   }
 

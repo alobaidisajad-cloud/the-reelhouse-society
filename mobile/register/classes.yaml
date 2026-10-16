@@ -259,6 +259,86 @@ classes:
     count: 1
     source: { kind: history, ref: "God-Tier 38672855330 (yamllint)" }
 
+  - id: CI-gate-never-runs
+    title: A gate that never runs reads as coverage, whether it runs on pull requests alone, is a script nothing runs, or is cancelled by a run of another kind (CI-02)
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "God-Tier 38889096174: the push's jest and captures cancelled by the nightly, which GitHub started five hours late" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "runs every gate on a push to main or on a schedule, or names why not (CI-02)" }
+      - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "cancels only an older run of its own kind (CI-02)" }
+      - { kind: static, file: src/utils/__tests__/everyCheckRuns.guard.test.ts, test: "runs every script file, from a workflow, a hook, an npm script or another script, or a test that loads it, or says why by hand" }
+      - { kind: static, file: src/utils/__tests__/everyCheckRuns.guard.test.ts, test: "runs the preflight before every store build asks EAS" }
+    fix: "every workflow runs on a push to main or on a schedule, or is named with why (the website's Lighthouse gate by hand, the alert after the others); God-Tier, the load test and the iPhone launch key their cancelling by the event too, so a late nightly never cancels a push's run nor a push the nightly's; every script file is run by a workflow, a hook, an npm script, another script or a test, or named as run by hand; the store builds run through npm (build:ios, build:android), so the preflight always runs first"
+    places: [none]
+
+  - id: CI-check-passes-on-nothing
+    title: A step allowed to fail without failing its job, so a check that broke passes as if it had run (CI-03)
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.64, CI-03" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "lets a step fail only when it is a download tried once more by the step after it (CI-03)" }
+    fix: "every step let fail was read: each is a download, named, and tried once more by the step after it (or read next by jest-shards.cjs or shard-verdict.mjs, which count the parts they were given); none was a check"
+    places: [none]
+
+  - id: CI-background-job-left-running
+    title: A process started in the background and never stopped, so what runs after it meets a port taken, a log still written or a machine short of memory (CI-15)
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.64, CI-15" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "stops every process it starts in the background, or names why it lives for the job (CI-15)" }
+      - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "starts no Node child it does not wait for (CI-15)" }
+      - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "finds a background start the rule would let through, in a planted script" }
+    fix: "four background starts in the workflows and shell scripts, each read: run-flows.sh's memory sampler and log stream are stopped by its trap, the iPhone launch's log stream by its kill, and the functions world's stand-ins live for the job by design and are named; no script starts a Node child it does not wait for. Jest's side (a timer that outlives its file) is held by the timer-checking environment"
+    places: [none]
+
+  - id: CI-tool-hides-its-cause
+    title: A tool run by a script fails, and the script reports something other than the tool's own words (a missing file, "no logs", "Command failed" and a wall of SQL), so the wrong cause is chased (CI-19)
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "13b1cce8 (psql's reason dropped; the password was blamed for an IPv6-only host)" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts, test: "hears what every program it runs says, unless it names why not" }
+      - { kind: static, file: src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts, test: "says NO to a run whose answer is dropped, kept and never read, or thrown away" }
+    fix: "every run of another program in the scripts read (76): gates-check says psql's reason; secrets-planted and the layout self-test say the tool's words when it writes no report (each read a missing file instead); flow-history fails in gh's words unless the shard truly has no logs (any failure was 'no logs'); the load probe shows psql's error beside a missing plan; resume says why gh could not be asked. The guard holds every run to inherit, throw, or have its answer's output read, and names the four that drop it on purpose"
+    places: [none]
+
+  - id: SEC-private-value-in-a-tool-error
+    title: A script that holds the production database address runs a tool that fails, and the error printed names the whole command, the address and its password among it
+    seriousness: serious
+    area: security
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.64, read with CI-19" }
+    methods:
+      - { kind: running, file: scripts/__tests__/privateSettings.test.ts, test: "hides a value read from an error nobody catches, and still ends the script" }
+      - { kind: running, file: scripts/__tests__/privateSettings.test.ts, test: "hides it from a promise nobody waits for" }
+    fix: "gates-check let psql's failure go uncaught, and Node's error named the command with the address in it. Now private-settings.cjs, the one reader of the address, prints any error nobody catches with every value it read replaced by ***, for every script that reads one; gates-check catches its own and says psql's reason"
+    places: [none]
+
+  - id: BUILD-identity-drifts
+    title: The build names a project, an update feed or a Sentry project other than the one the house reads, so updates or readable crashes go nowhere, silently (CI-20)
+    seriousness: behaviour
+    area: release
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.64, CI-20" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/appConfig.guard.test.ts, test: "names the project as Expo holds it, and asks that project alone for updates (CI-20)" }
+      - { kind: static, file: src/utils/__tests__/appConfig.guard.test.ts, test: "sends crashes, and the maps that make them readable, to the Sentry project the house reads (CI-20)" }
+    fix: "read against the services on 2026-10-16: Expo's project:info names the same account, slug and project id as app.json, and Sentry's API knows the organization; app.json's update feed is that project's, both stores' ids agree, Metro writes the maps and no profile turns their upload off. Whether each build's maps reached Sentry is P0.85's count and P4.45's check after every build and update"
+    places: [none]
+
   - id: SALON-channel
     area: lounge
     seriousness: serious

@@ -10,7 +10,7 @@
  */
 const { spawnSync } = require('child_process');
 const { createHash } = require('crypto');
-const { mkdtempSync, readFileSync, writeFileSync } = require('fs');
+const { existsSync, mkdtempSync, readFileSync, writeFileSync } = require('fs');
 const { tmpdir } = require('os');
 const { join } = require('path');
 
@@ -47,6 +47,8 @@ const run = spawnSync('gitleaks', ['dir', dir, '--config', join(ROOT, '.gitleaks
   join(ROOT, '.gitleaksignore'), '--redact=100', '--no-banner', '--report-format', 'json', '--report-path', report,
   '--log-level', 'error'], { encoding: 'utf8' });
 if (run.error) { console.error(`gitleaks did not run: ${run.error.message}`); process.exit(1); }
+// It ends 1 on finding a secret, as here it must; its report is the sign it scanned at all.
+if (!existsSync(report)) { console.error(`gitleaks wrote no report (exit ${run.status}): ${`${run.stderr}${run.stdout}`.trim()}`); process.exit(1); }
 const found = JSON.parse(readFileSync(report, 'utf8')).map((f) => `${f.File.split(/[\\/]/).pop()} ${f.RuleID}`);
 
 const missed = PLANTED.filter(([file, , rule]) => !found.includes(`${file} ${rule}`)).map(([file, , rule]) => `${file}: ${rule}`);
