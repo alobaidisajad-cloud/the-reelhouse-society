@@ -15,14 +15,21 @@ import ts from 'typescript';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const yaml = require(require.resolve('yaml/package.json').replace(/package\.json$/, 'dist/index.js')) as typeof import('yaml');
+type Result = { class: string; mutant: string; proof: string | null; commit: string; verdict: string };
 const mutantsCjs = require('../../../scripts/mutants.cjs') as {
   applyEdits: (text: string, edits: { find: string; replace: string }[]) => { text?: string; notApplied?: string };
   changesOf: (m: Mutant) => { notApplied?: string; changes?: unknown[] };
+  gather: (parts: Result[][], mutants: Mutant[]) => { results: Result[]; faults: string[] };
   hunksOf: (commit: string, file: string) => { before: string[]; after: string[] }[];
+  partOf: (mutants: Mutant[], spec: string) => Mutant[];
+  privateDir: () => string | null;
+  proofId: (m: Mutant, classes: Klass[]) => string | null;
   really: (c: { before: string | null; after: string }) => boolean;
   reverse: (text: string, hunks: { before: string[]; after: string[] }[]) => { text?: string; notApplied?: string };
+  standsOn: (m: Mutant, changed: string) => boolean;
   statusIn: (report: unknown, title: string) => string;
 };
+const RESULTS = JSON.parse(readFileSync(join(MOBILE, 'register', 'mutant-results.json'), 'utf8')) as Result[];
 
 type Edit = { file: string; find: string; replace: string };
 type Mutant = {
@@ -123,8 +130,9 @@ it('changes files that exist, and plants a new shape where nothing stands yet, i
   const badPlants = plants.filter(({ path }) => existsSync(join(MOBILE, path)) || !existsSync(join(MOBILE, path, '..'))
     || !statSync(join(MOBILE, path, '..')).isDirectory());
   expect(badPlants).toEqual([]);
-  // Today's code holds every find of a hand-written change once, so none is NOT-APPLIED by a typo.
-  const notApplied = MUTANTS.filter((m) => m.source !== 'judge' && m.edits).flatMap((m) => {
+  // Today's code holds every find of a hand-written change once, and every past fix still reverses
+  // where it has no stand-in: a change that stops one says so here, not first in the nightly.
+  const notApplied = MUTANTS.filter((m) => m.source !== 'judge' && (m.edits || m.source === 'past')).flatMap((m) => {
     const made = mutantsCjs.changesOf({ ...m, plant: [] });
     return made.notApplied ? [`${m.id}: ${made.notApplied}`] : [];
   });
@@ -162,7 +170,66 @@ it('proves every class that has a test with a mutant, and puts back every past f
   expect(reversed).toEqual([]);
 });
 
+describe('the verdicts kept (register/mutant-results.json): ids and verdicts only', () => {
+  it('holds every mutant once, in the registry\'s order, each caught, by its own proof', () => {
+    expect(RESULTS.map((r) => r.mutant)).toEqual(MUTANTS.map((m) => m.id));
+    expect(RESULTS.filter((r) => Object.keys(r).join() !== 'class,mutant,proof,commit,verdict')).toEqual([]);
+    expect(RESULTS.filter((r) => r.verdict !== 'caught').map((r) => `${r.mutant}: ${r.verdict}`)).toEqual([]);
+    const wrong = RESULTS.filter((r) => {
+      const m = MUTANTS.find((x) => x.id === r.mutant);
+      return !m || r.class !== m.class || r.proof !== (m.source === 'judge' ? 'judge' : mutantsCjs.proofId(m, CLASSES));
+    });
+    expect(wrong.map((r) => r.mutant)).toEqual([]);
+  });
+
+  it('ran each at a commit this branch holds', () => {
+    const commits = [...new Set(RESULTS.map((r) => r.commit))];
+    const foreign = commits.filter((c) => {
+      try { execFileSync('git', ['merge-base', '--is-ancestor', c, 'HEAD'], { cwd: MOBILE, stdio: 'ignore' }); return false; } catch { return true; }
+    });
+    expect(foreign).toEqual([]);
+  });
+
+  it('agrees with the private record of the same run, where this checkout holds it', () => {
+    const dir = mutantsCjs.privateDir();
+    const differ = [...new Set(RESULTS.map((r) => r.commit))].flatMap((commit) => {
+      const file = dir && join(dir, 'mutants', `${commit}.json`);
+      if (!file || !existsSync(file)) return [];
+      const full = JSON.parse(readFileSync(file, 'utf8')) as Result[];
+      return RESULTS.filter((r) => r.commit === commit).filter((r) => {
+        const f = full.find((x) => x.mutant === r.mutant);
+        return f && (f.verdict !== r.verdict || f.proof !== r.proof);
+      }).map((r) => r.mutant);
+    });
+    expect(differ).toEqual([]);
+  });
+});
+
 describe('the runner\'s own rules say NO', () => {
+  it('runs a mutant on a push that changes what it stands on, and on no other', () => {
+    const m = { id: 'shape-x', class: 'X-y', source: 'shape', edits: [{ file: 'src/a.ts', find: 'a', replace: 'b' }],
+      proof: { file: 'src/__tests__/a.test.ts', test: 't' } } as Mutant;
+    expect(['src/a.ts', 'src/__tests__/a.test.ts'].map((p) => mutantsCjs.standsOn(m, p))).toEqual([true, true]);
+    expect(mutantsCjs.standsOn(m, 'src/b.ts')).toBe(false);
+    const j = { id: 'judge-x', class: 'X-y', source: 'judge', judge: { from: 'e2e/fx/x', run: ['node', 'e2e/x.mjs'] }, edits: [{ file: 'log.txt', find: 'a', replace: 'b' }] } as Mutant;
+    expect(['e2e/x.mjs', 'e2e/fx/x/log.txt', 'log.txt'].map((p) => mutantsCjs.standsOn(j, p))).toEqual([true, true, false]);
+  });
+
+  it('splits the mutants between parts so each runs in exactly one', () => {
+    const parts = ['1/3', '2/3', '3/3'].map((s) => mutantsCjs.partOf(MUTANTS, s).map((m) => m.id));
+    expect(parts.flat().sort()).toEqual(MUTANTS.map((m) => m.id).sort());
+    expect(() => mutantsCjs.partOf(MUTANTS, '4/3')).toThrow();
+  });
+
+  it('reads the parts together, saying no to a mutant no part ran, one run twice, and one not registered', () => {
+    const r = (mutant: string): Result => ({ class: 'X-y', mutant, proof: 'm1', commit: 'c', verdict: 'caught' });
+    const two = [{ id: 'shape-a' }, { id: 'shape-b' }, { id: 'shape-c' }] as Mutant[];
+    expect(mutantsCjs.gather([[r('shape-a'), r('shape-b')], [r('shape-c')]], two).faults).toEqual([]);
+    expect(mutantsCjs.gather([[r('shape-a'), r('shape-b')], [r('shape-b'), r('shape-x')]], two).faults).toEqual([
+      'shape-c: no part ran it', 'shape-b: run by more than one part', 'shape-x: not in the registry',
+    ]);
+  });
+
   it('a change whose find is not there, or there twice, is NOT-APPLIED; once, it is made', () => {
     expect(mutantsCjs.applyEdits('a\nb\n', [{ find: 'c', replace: 'd' }]).notApplied).toMatch(/^not found/);
     expect(mutantsCjs.applyEdits('a\na\n', [{ find: 'a', replace: 'd' }]).notApplied).toMatch(/^found more than once/);

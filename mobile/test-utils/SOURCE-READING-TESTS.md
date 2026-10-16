@@ -46,7 +46,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts` | Every Reanimated config written in src/ and app/, read with TypeScript's checker: what no test runs. |
 | `src/utils/__tests__/everyChannelIsPrivate.guard.test.ts` | Every supabase.channel call in app/ and src/, and the realtime.messages rules in production as it will be. |
 | `src/utils/__tests__/everyClassIsAccountedFor.test.ts` | The register's classes.yaml and CLASSES.md, and each GUARDED class's named test files, read for their titles. |
-| `src/utils/__tests__/everyMutantIsSound.guard.test.ts` | The mutant registry against the register's classes and their tests' titles, the past fixes in git, and the E2E scripts that judge a run. |
+| `src/utils/__tests__/everyMutantIsSound.guard.test.ts` | The mutant registry against the register's classes and their tests' titles, the past fixes in git, and the E2E scripts that judge a run; the verdicts kept, against the registry, git and the private record. |
 | `src/utils/__tests__/hooks.guard.test.ts` | The hooks' files, their install, the committed snapshot the dump check must pass, and the CI step. |
 | `src/utils/__tests__/logScreenPolish.guard.test.ts` | Five contracts the log screen's render cannot show. Behaviour: `theLogSaysWhatHappened.test.ts`, `theSealLeavesWithTheScreen.test.tsx`, `theDossierSealIsSpoken.test.tsx`. |
 | `src/components/__tests__/stackedRowHitSlop.test.ts` | Touch rules only for the 16 controls no drawn screen measures beside a neighbour; the rest are MEASURED (`layout.cjs` STEAL, CI `captures`) and held to `mockups/touch-measured.txt`. Keeps the sweep that every repeated control declares its halo. |

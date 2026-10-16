@@ -9,7 +9,9 @@
  *   - every comment names what exists (comments:check, as god_tier_ci runs it);
  *   - the app's types, lint on the changed files, and the tests related to them
  *     with the repo's own guards (the comment ledger, the source-reading
- *     ledger, the workflows, the hooks).
+ *     ledger, the workflows, the hooks);
+ *   - each mutant standing on what changed, caught by its class's own test
+ *     (scripts/mutants.cjs --changed).
  * Run by mobile/githooks/pre-push, which git feeds one line per ref:
  *   <local ref> <local sha> <remote ref> <remote sha>
  */
@@ -100,6 +102,11 @@ if (require.main === module) {
   if (changed.length) {
     const g = run('the repo\'s own guards', 'npx', [...jest, '--', ...GUARDS], MOBILE);
     if (g) faults.push(g);
+  }
+  // Last, on a tree the checks above found whole: each mutant standing on what changed, put back and caught.
+  for (const base of bases) {
+    const m = run(`the mutants standing on what changed from ${base.slice(0, 8)}`, 'node', [join(MOBILE, 'scripts', 'mutants.cjs'), '--changed', base], MOBILE);
+    if (m) faults.push(m);
   }
   if (faults.length) { console.error(`\nPush refused: ${faults.join('; ')}`); process.exit(1); }
 }

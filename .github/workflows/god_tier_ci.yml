@@ -167,6 +167,45 @@ jobs:
             --redact=100 --no-banner --log-level warn
 
   # ── A DATABASE CHANGE NEVER QUIETLY BREAKS A SHIPPED CLIENT ──────────────────
+  # A guard this push changes, or the code a mutant puts a mistake back into, is
+  # proven again here: each mutant standing on what the push changed must still be
+  # caught by its class's own test (register/mutants.yaml; every one runs nightly).
+  mutants:
+    name: 🧪 The mutants this push stands on, each caught
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install Mobile Dependencies
+        id: install-mutants
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-mutants.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: ./mobile
+        run: npm ci
+
+      - name: Each mutant standing on what this push changed, by the kill rules
+        working-directory: ./mobile
+        env:
+          BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            BEFORE=HEAD~1
+          fi
+          node scripts/mutants.cjs --changed "$BEFORE"
+
   # The TestFlight build and the live website keep calling the database as they
   # were built to. Every migration this push brings is read statement by
   # statement; a drop, rename, revoke, tighter rule or new body for an existing

@@ -44,10 +44,10 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/db-integration.yml | 2026-10-16 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; Realtime started for the salon channels' rules; each package install let fail once and tried once more, 5 minutes each; Supabase's advisers on production as it will be, held to their allowlist, names and counts only; first proven able to fail; a contracts job asks the app's questions of production's sealed shape through its API |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
 | ../.github/workflows/e2e.yml | 2026-10-16 | edited: the app built once, its anon key beside it; the flows on three machines, each its own sealed world holding its stack's key to the app's; a verdict reads all three, and fails with any shard; the APK's prefetch read for downloadOnly, and a shipped client's named as not run; each package install let fail once and tried once more, 5 minutes each; a verdict reads all three; grouped by commit, so no push drops another commit's waiting run; the Supabase CLI and the emulator's packages each installed in a step tried once more alone; the Android packages the build needs installed first, tried once more, and Gradle downloads none; the system image kept in GitHub's cache once installed whole, each try starting from no half-download; a round input, so a night runs it three times on one commit |
-| ../.github/workflows/god_tier_ci.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind, so a late nightly never cancels a push's run, nor a push the nightly's |
+| ../.github/workflows/god_tier_ci.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind; the mutants standing on what a push changed, run on it |
 | ../.github/workflows/ios-launch.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind |
 | ../.github/workflows/load.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind |
-| ../.github/workflows/nightly.yml | 2026-10-16 | edited: every mutant each night, by the kill rules, its verdicts kept as ids and verdicts only |
+| ../.github/workflows/nightly.yml | 2026-10-16 | edited: every mutant each night in three parts, read together: each run once, by one part, and caught; ids and verdicts only |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
 | .maestro/auth_deep_link.yaml | 2026-10-15 | edited: reelhouse://_sitemap, opened with the app closed, lands on not-found |
@@ -281,14 +281,14 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
 | scripts/hooks/commit-msg.cjs | 2026-10-15 | new |
 | scripts/hooks/pre-commit.cjs | 2026-10-15 | new |
-| scripts/hooks/pre-push.cjs | 2026-10-16 | edited: jest leaves out only the worktrees inside this checkout, so a worktree runs its own tests; workers sized to the free memory; no frozen count raised in its baseline, and every count the changes can move measured whole; the comment gate god_tier_ci runs, run before a push |
+| scripts/hooks/pre-push.cjs | 2026-10-16 | edited: last, the mutants standing on what changed from each base |
 | scripts/hooks-ran.cjs | 2026-10-15 | new |
 | scripts/jest-shards.cjs | 2026-10-16 | new: read against jest --json's record and --listTests, and layout.cjs's --sites; each zone's record is held to that zone's files |
 | scripts/install-hooks.cjs | 2026-10-15 | new |
 | scripts/lucide-icons.js | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | scripts/merge-coverage.cjs | 2026-10-15 | new: read against @jest/reporters 29.7's CoverageReporter (onTestResult, onRunComplete, _checkThreshold) and jest-config's readConfig |
 | scripts/migration-lint.cjs | 2026-10-15 | edited: reads a file by its kind (test-utils/universe.js); the archive is not read; SQL no rule names is refused |
-| scripts/mutants.cjs | 2026-10-16 | new: each mutant applied by the code around it and judged by the kill rules; a judge fed a bad log |
+| scripts/mutants.cjs | 2026-10-16 | new: each mutant applied by the code around it and judged by the kill rules; a judge fed a bad log; those a change stands on, a part of all, the parts read together, and the private record of each run |
 | scripts/press-again.cjs | 2026-10-16 | new: the finder of TST-14, a second press of the same control in a test with no timer advanced and no real wait between |
 | scripts/private-settings.cjs | 2026-10-16 | edited: once a value is read, an error nobody catches is printed with every value read hidden; a rejection reaches the same handler |
 | scripts/register.cjs | 2026-10-15 | new |

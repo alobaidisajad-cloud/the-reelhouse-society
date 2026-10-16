@@ -67,6 +67,11 @@ mutants:
     source: past
     commit: 33f2864b
     files: [scripts/private-settings.cjs]
+    # The fix no longer reverses (its dead rejection handler is gone); this takes the hiding away by hand.
+    edits:
+      - file: scripts/private-settings.cjs
+        find: "    // A promise nobody waits for comes here too: Node raises its rejection as an uncaught exception.\n    process.on('uncaughtException', end);\n"
+        replace: ""
     proof: { file: scripts/__tests__/privateSettings.test.ts, test: "hides a value read from an error nobody catches, and still ends the script" }
 
   - id: past-nightly-cancels-push

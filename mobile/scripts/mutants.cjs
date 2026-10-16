@@ -277,13 +277,91 @@ const proofId = (m, classes) => {
   return i < 0 ? null : `m${i + 1}`;
 };
 
+/**
+ * The paths a mutant stands on: the files it changes or plants, its test, its judge and the
+ * judge's logs. A push that changes one runs it (P0.72); paths are from mobile/, as the registry
+ * writes them.
+ */
+const pathsOf = (m) => [
+  ...(m.files ?? []), ...(m.edits ?? []).filter(() => m.source !== 'judge').map((e) => e.file),
+  ...(m.plant ?? []).map((p) => p.path), ...(m.proof ? [m.proof.file] : []),
+  ...(m.judge ? [m.judge.run[1], `${m.judge.from}/`] : []),
+].map((p) => p.split('\\').join('/'));
+
+/** Whether a changed path (from mobile/) is one a mutant stands on: the path itself, or one under its folder. */
+const standsOn = (m, changed) => pathsOf(m).some((p) => (p.endsWith('/') ? changed.startsWith(p) : changed === p));
+
+/** The mutants a change from `base` touches: by the paths they stand on, their own entry, or the runner. */
+const touchedSince = (base, mutants) => {
+  const changed = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1e8 })
+    .split('\n').filter(Boolean).map((p) => relative(MOBILE, join(ROOT, p)).split('\\').join('/'));
+  if (changed.includes('scripts/mutants.cjs')) return mutants;
+  let before = [];
+  try {
+    before = yaml.parse(execFileSync('git', ['show', `${base}:mobile/register/mutants.yaml`], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })).mutants ?? [];
+  } catch { /* the registry is new since then: every mutant is */ }
+  const same = (m) => { const was = before.find((b) => b.id === m.id); return !!was && JSON.stringify(was) === JSON.stringify({ ...m, private: undefined }); };
+  return mutants.filter((m) => !same(m) || changed.some((c) => standsOn(m, c)));
+};
+
+/** Part i of n: every n-th mutant from the i-th, so each part holds every kind. */
+const partOf = (mutants, spec) => {
+  const [i, n] = spec.split('/').map(Number);
+  if (!(n >= 1 && i >= 1 && i <= n)) throw new Error(`--part wants i/n, as 2/3 (has ${spec})`);
+  return mutants.filter((_, k) => k % n === i - 1);
+};
+
+/** Results kept: ids and verdicts only (P0.39), each mutant once, in the registry's order. */
+const RESULT_KEYS = ['class', 'mutant', 'proof', 'commit', 'verdict'];
+const keep = (r) => Object.fromEntries(RESULT_KEYS.map((k) => [k, r[k]]));
+
+/** One results file from the parts' files: each public mutant exactly once, or what is wrong, in words. */
+const gather = (parts, mutants) => {
+  const all = parts.flat();
+  const ids = mutants.filter((m) => !m.private).map((m) => m.id);
+  const faults = [
+    ...ids.filter((id) => !all.some((r) => r.mutant === id)).map((id) => `${id}: no part ran it`),
+    ...ids.filter((id) => all.filter((r) => r.mutant === id).length > 1).map((id) => `${id}: run by more than one part`),
+    ...all.filter((r) => !ids.includes(r.mutant)).map((r) => `${r.mutant}: not in the registry`),
+  ];
+  const results = ids.map((id) => all.find((r) => r.mutant === id)).filter(Boolean).map(keep);
+  return { results, faults };
+};
+
+/** The private folder of the main checkout, where the fuller record is kept (P0.54); null when there is none. */
+const privateDir = () => {
+  try {
+    const common = execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: MOBILE, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    const dir = join(common, '..', 'mobile', 'audit', 'final', 'private');
+    return existsSync(dir) ? dir : null;
+  } catch { return null; }
+};
+
 if (require.main === module) {
   const argv = process.argv.slice(2);
   const arg = (name) => { const i = argv.indexOf(name); return i < 0 ? null : argv[i + 1]; };
-  const ids = arg('--ids')?.split(',');
   const all = readMutants();
-  const chosen = ids ? all.filter((m) => ids.includes(m.id)) : all;
+
+  if (argv.includes('--gather')) {
+    const dir = arg('--gather');
+    const files = readdirSync(dir, { recursive: true }).map(String).filter((f) => f.endsWith('.json')).map((f) => join(dir, f));
+    const { results, faults } = gather(files.map((f) => JSON.parse(readFileSync(f, 'utf8'))), all);
+    writeFileSync(arg('--out'), `${JSON.stringify(results, null, 2)}\n`);
+    const bad = results.filter((r) => r.verdict !== 'caught');
+    for (const f of faults) console.log(`✗ ${f}`);
+    for (const r of bad) console.log(`✗ ${r.mutant} (${r.class}): ${r.verdict}`);
+    console.log(`${files.length} part(s), ${results.length - bad.length} of ${all.filter((m) => !m.private).length} mutants caught`);
+    process.exit(faults.length || bad.length ? 1 : 0);
+  }
+
+  const ids = arg('--ids')?.split(',');
+  let chosen = ids ? all.filter((m) => ids.includes(m.id)) : all;
   if (ids && chosen.length !== ids.length) { console.error(`no such mutant: ${ids.filter((i) => !all.some((m) => m.id === i)).join(', ')}`); process.exit(2); }
+  if (arg('--changed')) {
+    chosen = touchedSince(arg('--changed'), chosen);
+    console.log(`${chosen.length} of ${all.length} mutants stand on what changed since ${arg('--changed').slice(0, 8)}`);
+  }
+  if (arg('--part')) chosen = partOf(chosen, arg('--part'));
   const register = require('./register.cjs');
   let classes = register.readCommitted().classes;
   try { const joined = register.readPrivate?.(); if (joined?.classes) classes = [...classes, ...joined.classes]; } catch { /* public only */ }
@@ -297,13 +375,29 @@ if (require.main === module) {
     const t0 = Date.now();
     const { verdict, why } = runOne(m);
     console.log(`${verdict.padEnd(11)} ${m.private ? '(private)' : m.id}  ${m.private ? '' : m.class}  ${Math.round((Date.now() - t0) / 1000)}s${why && !m.private ? `  — ${why}` : ''}`);
-    results.push({ class: m.class, mutant: m.id, proof: m.source === 'judge' ? 'judge' : proofId(m, classes), commit, verdict, private: !!m.private, why });
+    results.push({ class: m.class, mutant: m.id, proof: m.source === 'judge' ? 'judge' : proofId(m, classes), commit, verdict, private: !!m.private, why, m });
   }
+  // The count-only file: a run of some mutants replaces their entries and keeps the others'.
   const out = arg('--results');
-  if (out) writeFileSync(out, `${JSON.stringify(results.filter((r) => !r.private).map(({ class: c, mutant, proof, commit: at, verdict }) => ({ class: c, mutant, proof, commit: at, verdict })), null, 2)}\n`);
+  if (out) {
+    const kept = existsSync(out) && !argv.includes('--fresh') ? JSON.parse(readFileSync(out, 'utf8')) : [];
+    const ran = results.filter((r) => !r.private).map(keep);
+    const merged = all.filter((m) => !m.private).map((m) => ran.find((r) => r.mutant === m.id) ?? kept.find((r) => r.mutant === m.id)).filter(Boolean);
+    writeFileSync(out, `${JSON.stringify(merged, null, 2)}\n`);
+  }
+  // The fuller record, in the private folder: source, the test file and title, and why (P0.72).
+  const priv = privateDir();
+  if (priv && results.length) {
+    const dir = join(priv, 'mutants');
+    mkdirSync(dir, { recursive: true });
+    const file = join(dir, `${commit}.json`);
+    const had = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : [];
+    const full = results.map(({ m, ...r }) => ({ ...keep(r), source: m.source, test: m.proof ? `${m.proof.file}: ${m.proof.test}` : m.judge.run.slice(1, 2).join(''), why: r.why }));
+    writeFileSync(file, `${JSON.stringify([...had.filter((h) => !full.some((f) => f.mutant === h.mutant)), ...full], null, 2)}\n`);
+  }
   const bad = results.filter((r) => r.verdict !== 'caught');
   console.log(`\n${results.length - bad.length} of ${results.length} caught`);
   process.exit(bad.length ? 1 : 0);
 }
 
-module.exports = { applyEdits, changesOf, hunksOf, lf, proofId, readMutants, really, reverse, runOne, statusIn };
+module.exports = { applyEdits, changesOf, gather, hunksOf, lf, partOf, pathsOf, privateDir, proofId, readMutants, really, reverse, runOne, standsOn, statusIn, touchedSince };
