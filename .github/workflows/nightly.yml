@@ -110,6 +110,17 @@ jobs:
           node scripts/contracts-ran.cjs contracts.json || exit 1
           exit $rc
 
+  # ── MUTANTS (P0.68) ──────────────────────────────────────────────────────────
+  # The sealed copy of production as it will be, attacked by every kind of
+  # member, then each rule, gate trigger and column grant weakened in turn: a
+  # weakening no try notices fails the night unless matrix.json says why it
+  # changes nothing a member can do.
+  db-mutants:
+    name: 🧬 Every rule weakened in turn, and noticed
+    uses: ./.github/workflows/db-integration.yml
+    with:
+      mutants: true
+
   # ── FLAKES (P0.37) ───────────────────────────────────────────────────────────
   # Every E2E flow three times on tonight's commit, and the suite in an order
   # jest picks at random. A test that both passes and fails at one commit is a

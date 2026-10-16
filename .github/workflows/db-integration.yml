@@ -23,6 +23,12 @@ on:
   # Weekly, with no push behind it — the same rot check as god_tier_ci.yml.
   schedule:
     - cron: '0 6 * * 1'
+  # Called by nightly.yml with mutants on: the same sealed copy, then each rule weakened in turn.
+  workflow_call:
+    inputs:
+      mutants:
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -30,7 +36,8 @@ permissions:
 jobs:
   db-security:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    # About twelve minutes; the nightly mutants' run adds about twenty.
+    timeout-minutes: 60
     steps:
       - name: Fire drill — fail on purpose
         if: ${{ inputs.fire_drill }}
@@ -154,6 +161,14 @@ jobs:
         run: node mobile/e2e/db/attack/attack.mjs --self-test
       - name: Every table and view, attacked by every kind of member
         run: node mobile/e2e/db/attack/attack.mjs
+
+      # WORKLIST P0.68: each rule, gate trigger and column grant weakened in turn on
+      # the same copy; every try asked again; one that changes no answer fails the
+      # night unless matrix.json's mutantsJudged says why it changes nothing.
+      - name: Every rule weakened in turn, and each weakening noticed
+        if: ${{ inputs.mutants }}
+        timeout-minutes: 40
+        run: node mobile/e2e/db/attack/attack.mjs --mutants
 
   # The app's own questions (src/services/__tests__/*.contract.test.ts: an embed
   # resolves, a visitor may read the columns the app asks for) asked of

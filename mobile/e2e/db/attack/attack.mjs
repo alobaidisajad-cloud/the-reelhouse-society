@@ -288,13 +288,28 @@ export const plan = (matrix, columns = {}) => {
       const newId = uuidOf('probe', p.name);
       const ctx = { table: p.table, owner: actor === 'visitor' ? 'X2' : actor, newId };
       const c = { label: `probe: ${p.name} (${actor})`, table: p.table, action: p.kind, actor, target: 'probe', expect: p.expect };
+      // What the house lays first: rows of its own (lay), or many at once (laySql).
+      const lays = [
+        ...(p.lay && p.kind !== 'read' ? Object.entries(p.lay).map(([t, row]) => insertSql(t, dated(t, fill(row, ctx), columns))) : []),
+        ...(p.laySql ? [fill(p.laySql, ctx)] : []),
+      ];
+      if (lays.length) c.lay = lays.join('; ');
       if (p.kind === 'insert') c.sql = insertSql(p.table, fill(p.row, ctx));
+      if (p.kind === 'update') {
+        // A change to one row, refused however it is refused, and judged by the row it left.
+        const where = `id = ${literal(fill(p.id, ctx))}`;
+        const set = fill(p.set, ctx);
+        c.sql = `UPDATE ${rel(p.table)} SET ${setSql(set)} WHERE ${where}`;
+        // With then, the house's own reading of what the change did besides.
+        c.then = p.then ? `SELECT (${fill(p.then, ctx)})` : heldSql(p.table, set, where);
+        c.anyError = true;
+      }
       if (p.kind === 'read') {
         // A row laid for the probe, or one the setting holds (p.id).
         if (p.lay) c.lay = insertSql(p.table, dated(p.table, fill(p.lay, ctx), columns));
         c.sql = `SELECT count(*) FROM ${rel(p.table)} WHERE id = ${literal(p.id ? fill(p.id, ctx) : newId)}`;
       }
-      if (p.then) c.then = fill(p.then, ctx);
+      if (p.then && p.kind !== 'update') c.then = fill(p.then, ctx);
       cases.push(c);
     }
   }
@@ -507,7 +522,16 @@ SELECT format('grant %s update whole', c.relname), format('GRANT UPDATE ON publi
   FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
  WHERE n.nspname = 'public' AND c.relkind = 'r' AND NOT has_table_privilege('authenticated', c.oid, 'UPDATE')
    AND EXISTS (SELECT 1 FROM pg_attribute a WHERE a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
-                AND has_column_privilege('authenticated', c.oid, a.attnum, 'UPDATE'));
+                AND has_column_privilege('authenticated', c.oid, a.attnum, 'UPDATE'))
+UNION ALL
+-- The same, with the table's field guards (protect_*) dropped too: both locks of a column at once.
+SELECT format('grant %s update whole, its field guards dropped', c.relname),
+       format('GRANT UPDATE ON public.%I TO authenticated; ', c.relname)
+       || string_agg(format('DROP TRIGGER %I ON public.%I', g.tgname, g.relname), '; ')
+  FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace JOIN at_gates g ON g.relname = c.relname
+ WHERE n.nspname = 'public' AND c.relkind = 'r' AND g.proname LIKE 'protect\\_%'
+   AND NOT has_table_privilege('authenticated', c.oid, 'UPDATE')
+ GROUP BY c.relname;
 CREATE TEMP TABLE at_killed (id text PRIMARY KEY, killed_by int) ON COMMIT DROP;
 CREATE FUNCTION pg_temp.at_kind(g text) RETURNS text LANGUAGE sql IMMUTABLE AS $k$
   SELECT CASE WHEN g ~ '^[0-9A-Z]{5} ' THEN left(g, 5) ELSE regexp_replace(g, ' [[{"].*$', '') END $k$;
