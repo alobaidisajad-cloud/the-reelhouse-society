@@ -17,6 +17,11 @@
  *    the nightly judges those, the website's and the edge functions' imports.
  * 7. Jest and the captures run in parts, each read together by a job that reads
  *    as many parts as run; jest runs in every zone scripts/test-timezones.js lists.
+ * 8. A gate that never runs reads as coverage (CI-02): every workflow runs on a
+ *    push to main or on a schedule, or is named with why. Work lands on main by
+ *    push, so a gate on pull requests alone never runs.
+ * 9. A check that fails without failing its job passes on nothing (CI-03): a step
+ *    let fail is a download, named, and tried once more by the step after it.
  *
  * Parsed as YAML, not matched as text: the rules are about the structure.
  */
@@ -29,7 +34,7 @@ import { files as universe } from '@/test-utils/universe';
 const { parse } = require(require.resolve('yaml/package.json').replace(/package\.json$/, 'dist/index.js')) as typeof import('yaml');
 
 const DIR = join(__dirname, '..', '..', '..', '..', '.github', 'workflows');
-type Step = { uses?: string; run?: string };
+type Step = { uses?: string; run?: string; id?: string; name?: string; if?: string; 'continue-on-error'?: boolean };
 type Job = { 'timeout-minutes'?: number; 'runs-on'?: string; steps?: Step[]; uses?: string; with?: Record<string, unknown> };
 /** A call to another of this repo's workflows: its runner and limit are checked there. */
 const LOCAL_CALL = /^\.\/\.github\/workflows\/[\w-]+\.ya?ml$/;
@@ -449,4 +454,41 @@ it('known-vulnerable packages: every push judges the phone, and the nightly judg
     expect({ file: s.file, readsTheBundle: steps.some((o) => o.file === s.file && /advisories\.mjs phone-modules/.test(o.run)) })
       .toEqual({ file: s.file, readsTheBundle: true });
   }
+});
+
+/** Workflows that run neither on a push to main nor on a schedule, each with why. */
+const NOT_ON_MAIN: Record<string, string> = {
+  'ci.yml': "the website's Lighthouse gate, by hand since the owner stopped it emailing on every push (its own comment); the website is becoming a landing page (PLAN §3c-6)",
+  'ci-alert.yml': 'it is the alert: it runs when any other workflow ends',
+};
+
+it('runs every gate on a push to main or on a schedule, or names why not (CI-02)', () => {
+  const onMain = (wf: Workflow) => {
+    const on = typeof wf.on === 'object' && !Array.isArray(wf.on) ? wf.on : {};
+    const push = on.push as { branches?: string[] } | null | undefined;
+    return triggers(wf).includes('schedule') || (triggers(wf).includes('push') && (!push?.branches || push.branches.includes('main')));
+  };
+  const off = workflows.filter(({ wf }) => !onMain(wf)).map(({ file }) => file);
+  expect(off.filter((file) => !(file in NOT_ON_MAIN))).toEqual([]);
+  expect(Object.keys(NOT_ON_MAIN).filter((file) => !off.includes(file))).toEqual([]);
+});
+
+it('lets a step fail only when it is a download tried once more by the step after it (CI-03)', () => {
+  const loose: string[] = [];
+  for (const { file, wf } of workflows) {
+    for (const [name, job] of Object.entries(wf.jobs ?? {})) {
+      const steps = job.steps ?? [];
+      steps.forEach((step, i) => {
+        if (step['continue-on-error'] !== true) return;
+        const again = steps[i + 1];
+        const tried = !!step.id && !!again?.if && again.if.includes(`steps.${step.id}.outcome == 'failure'`)
+          && (again.uses ?? again.run ?? '') === (step.uses ?? step.run ?? '');
+        // Or the parts' download, read next by the reader that names each part it expects.
+        const read = /download-artifact@/.test(step.uses ?? '') && /(jest-shards\.cjs|shard-verdict\.mjs)/.test(again?.run ?? '')
+          && /--shards /.test(again?.run ?? '') && /--name /.test(again?.run ?? '');
+        if (!tried && !read) loose.push(`${file} ${name}: ${step.name ?? step.uses ?? step.run}`);
+      });
+    }
+  }
+  expect(loose).toEqual([]);
 });

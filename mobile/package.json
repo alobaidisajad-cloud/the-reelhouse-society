@@ -23,7 +23,9 @@
     "comments:check": "node scripts/comment-truth.js",
     "icons": "node scripts/lucide-icons.js",
     "bundle:size": "node scripts/bundle-size.js",
-    "release:guard": "node scripts/release-guard.cjs"
+    "release:guard": "node scripts/release-guard.cjs",
+    "build:ios": "node scripts/eas-build-preflight.cjs && eas build --platform ios --profile production",
+    "build:android": "node scripts/eas-build-preflight.cjs && eas build --platform android --profile production"
   },
   "dependencies": {
     "@expo-google-fonts/courier-prime": "^0.4.1",

@@ -9,7 +9,12 @@
  *   · every npm script is run by a workflow or a hook (by `npm run`, or by the
  *     file it runs), or is named in LOCAL with why it runs by hand;
  *   · every tsconfig is the project's own or one a workflow, hook, script or
- *     the ESLint config names.
+ *     the ESLint config names;
+ *   · every script file in mobile/scripts is run by a workflow, a hook, an npm
+ *     script or another script, or loaded by a test that runs it, or is named
+ *     in BY_HAND with why (the EAS preflight was named by tests alone, and no
+ *     build ran it until build:ios and build:android did, P0.64);
+ *   · every store build runs that preflight before EAS is asked.
  */
 import { execFileSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
@@ -40,6 +45,15 @@ const LOCAL: Record<string, string> = {
   'docs:deps': 'draws the dependency graph on request; it checks nothing',
   icons: 'regenerates the icon list; lucide-icons\' own test holds the list to the package',
   'release:guard': 'the owner runs it on each EAS download before submitting (P0.0a); CI runs its file too',
+  'build:ios': "the owner's store build: the preflight, then EAS; no store build is made by CI",
+  'build:android': "the owner's store build: the preflight, then EAS; no store build is made by CI",
+};
+
+/** Script files run by a person, each with why. */
+const BY_HAND: Record<string, string> = {
+  'resume.cjs': 'every working session starts by running it (P0.59)',
+  'dump-production.cjs': "the owner's full dump of production before a train that touches data (PLAN §3c-17)",
+  'commit.cjs': 'the one way a commit is made here: explicit paths, the message from a file, each refusal said',
 };
 
 const workflows = universe('workflows').map(read);
@@ -74,6 +88,33 @@ it('points a tool at every tsconfig', () => {
   const named = [runners, read(join(MOBILE, 'eslint.config.js')),
     ...universe('scripts', { under: ['scripts'], ext: ['.js', '.cjs', '.mjs'] }).map(read)].join('\n');
   expect(configs.filter((c) => !named.includes(c))).toEqual([]);
+});
+
+it('runs every script file, from a workflow, a hook, an npm script or another script, or a test that loads it, or says why by hand', () => {
+  // The hooks are git's to run, installed by `prepare` (hooks.guard holds them).
+  const files = universe('scripts', { under: ['scripts'], ext: ['.js', '.cjs', '.mjs'] })
+    .filter((p) => !/__tests__/.test(p) && !/[\\/]scripts[\\/]hooks[\\/]/.test(p));
+  expect(files.length).toBeGreaterThan(30);
+  const others = files.map((p) => [p, read(p)] as const);
+  const npm = read(join(MOBILE, 'package.json'));
+  const tests = universe('tests').filter((p) => /\.(test|spec)\.[jt]sx?$/.test(p)).map(read).join('\n');
+  const unrun = files.map((p) => basename(p)).filter((name) => {
+    if (BY_HAND[name]) return false;
+    if (runners.includes(name) || npm.includes(name)) return false;
+    if (others.some(([p, text]) => basename(p) !== name && text.includes(name))) return false;
+    const stem = name.replace(/\.[cm]?js$/, '');
+    return !new RegExp(`(require|requireActual|import|spawnSync|execFileSync|spawn)\\([^)]*scripts/${stem}\\b|from ['"][^'"]*scripts/${stem}\\b`).test(tests);
+  });
+  expect(unrun).toEqual([]);
+  expect(Object.keys(BY_HAND).filter((name) => !files.some((p) => basename(p) === name))).toEqual([]);
+});
+
+it('runs the preflight before every store build asks EAS', () => {
+  const builds = Object.entries(scripts).filter(([, cmd]) => /\beas build\b/.test(cmd));
+  expect(builds.map(([n]) => n).sort()).toEqual(['build:android', 'build:ios']);
+  for (const [name, cmd] of builds) {
+    expect([name, /^node scripts\/eas-build-preflight\.cjs && eas build /.test(cmd)]).toEqual([name, true]);
+  }
 });
 
 it('can say no: an unrun script, a nested workflow, an unread tsconfig', () => {
