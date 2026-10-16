@@ -128,8 +128,10 @@ describe('a shard\'s plan', () => {
   it('is printed for run-flows.sh: probes, launch, notices, then each flow', () => {
     const r = spawnSync(process.execPath, [SCRIPT, MAP_FILE, '2/3', ...flows.map((f) => `mobile/.maestro/${f}.yaml`).sort()], { encoding: 'utf8' });
     expect(r.status).toBe(0);
-    expect(r.stdout).toBe(['probes no', 'launch no', `minutes ${map.shards[1].minutes}`,
-      ...map.shards[1].flows.slice().sort().map((f) => `flow mobile/.maestro/${f}.yaml`)].join('\n') + '\n');
+    const second = map.shards[1];
+    expect(second).toBeDefined();
+    expect(r.stdout).toBe(['probes no', 'launch no', `minutes ${second?.minutes}`,
+      ...(second?.flows ?? []).slice().sort().map((f) => `flow mobile/.maestro/${f}.yaml`)].join('\n') + '\n');
     const bad = spawnSync(process.execPath, [SCRIPT, MAP_FILE, '4/3'], { encoding: 'utf8' });
     expect([bad.status, bad.stdout]).toEqual([1, 'E2E_SHARD is 4/3: no such shard\n']);
   });

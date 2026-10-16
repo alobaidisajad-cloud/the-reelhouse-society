@@ -28,5 +28,5 @@ production shows only its id, area, seriousness and count here.
 | DB-row-reaches-past-its-reader | database | behaviour | OPEN | 8 | open in production |
 | DB-applied-bytes-differ | database | code | OPEN | 0 | The train applied a migration with the line ends of the checkout it ran from, so production held other bytes than CI rehearsed |
 | CODE-promise-not-awaited | code | behaviour | OPEN | 589 | A promise nobody waits for, so its failure goes unheard and what follows may run first |
-| CODE-index-read-unchecked | code | behaviour | OPEN | 1489 | A value read by index or key used as if it is always there |
+| CODE-index-read-unchecked | code | behaviour | OPEN | 1488 | A value read by index or key used as if it is always there |
 | EDGE-function-static-fault | server | code | OPEN | 4 | An edge function's type error or lint finding, where no gate read the functions |
