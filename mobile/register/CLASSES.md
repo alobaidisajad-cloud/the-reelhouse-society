@@ -26,6 +26,7 @@ production shows only its id, area, seriousness and count here.
 | TEST-absence-unanchored | tests | code | OPEN | 0 | A test finds things absent on a screen it never shows drawn, so a blank screen, a crash caught upstream or a list still loading passes it as well as the right one (TST-09) |
 | TEST-rehearsal-holds-without-its-migration | tests | behaviour | OPEN | 0 | A migration's rehearsal that would hold without the migration (an identity that never took, a table with nothing to ask, a case that cannot fail), so its passing proves nothing of the migration (TST-25) |
 | TEST-mutant-unproven | tests | code | OPEN | 0 | A mutant that never applied read as caught, or one judged against a baseline that already answered wrong, so the guard it measures is taken as able to fail when nothing showed it (TST-19) |
+| TEST-mock-accepts-anything | tests | behaviour | OPEN | 128 | A test's hand-made Supabase client answers what production refuses (a missing column, an rpc argument its function does not take, [] to every read, no error from .single() with no row, more than 1,000 rows, fixtures not in a table's shape) (TST-05, TST-06, TST-10) |
 | E2E-ceiling-not-measured | tests | code | OPEN | 1 | A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's |
 | CI-check-only-in-ci | tooling | code | OPEN | 1 | A check CI runs that no local gate runs, so a push meets it only in red |
 | SALON-channel | lounge | serious | OPEN | 1 | open in production |
@@ -37,5 +38,5 @@ production shows only its id, area, seriousness and count here.
 | DB-standing-stands-in-the-way-out | database | behaviour | OPEN | 1 | open in production |
 | DB-applied-bytes-differ | database | code | OPEN | 0 | The train applied a migration with the line ends of the checkout it ran from, so production held other bytes than CI rehearsed |
 | CODE-promise-not-awaited | code | behaviour | OPEN | 310 | A promise nobody waits for, so its failure goes unheard and what follows may run first |
-| CODE-index-read-unchecked | code | behaviour | OPEN | 1487 | A value read by index or key used as if it is always there |
+| CODE-index-read-unchecked | code | behaviour | OPEN | 1472 | A value read by index or key used as if it is always there |
 | EDGE-function-static-fault | server | code | OPEN | 4 | An edge function's type error or lint finding, where no gate read the functions |

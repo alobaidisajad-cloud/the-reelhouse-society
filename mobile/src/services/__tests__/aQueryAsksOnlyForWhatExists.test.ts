@@ -28,6 +28,7 @@
 import { readFileSync } from 'fs';
 import { join, relative } from 'path';
 import { readCode, stripComments } from '@/test-utils/readCode';
+import { closingOf, readFunctions, readSchema, topLevel, type Param } from '@/test-utils/schema';
 import { files as universe } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
@@ -43,56 +44,7 @@ const SCHEMA = readFileSync(join(MOBILE, 'supabase', 'schema', 'live-schema.sql'
 const READ_WHOLE = new Set([...SCHEMA.matchAll(/^GRANT ([A-Z,]+) ON TABLE public\.(\w+) TO authenticated;$/gm)]
   .filter((m) => /(^|,)(SELECT|ALL)(,|$)/.test(m[1])).map((m) => m[2]));
 
-/** Split at commas outside brackets and quotes. */
-function topLevel(s: string, sep = ','): string[] {
-  const out: string[] = [];
-  let depth = 0;
-  let quote = '';
-  let cur = '';
-  for (const ch of s) {
-    if (quote) { if (ch === quote) quote = ''; cur += ch; continue; }
-    if (ch === '\'' || ch === '"' || ch === '`') { quote = ch; cur += ch; continue; }
-    if ('([{'.includes(ch)) depth++;
-    if (')]}'.includes(ch)) depth--;
-    if (ch === sep && depth === 0) { out.push(cur.trim()); cur = ''; } else cur += ch;
-  }
-  if (cur.trim()) out.push(cur.trim());
-  return out;
-}
 
-/** Table and view columns, from the snapshot. */
-function readSchema(sql: string): Map<string, Set<string>> {
-  const tables = new Map<string, Set<string>>();
-  for (const m of sql.matchAll(/CREATE (?:UNLOGGED )?TABLE public\.(\w+) \(\n([\s\S]*?)\n\);/g)) {
-    const set = new Set<string>();
-    for (const line of m[2].split('\n')) {
-      const c = /^ {4}"?(\w+)"? /.exec(line);
-      if (c && c[1] !== 'CONSTRAINT') set.add(c[1]);
-    }
-    tables.set(m[1], set);
-  }
-  for (const m of sql.matchAll(/CREATE (?:MATERIALIZED )?VIEW public\.(\w+)(?: WITH \([^)]*\))? AS\n([\s\S]*?);\n\n/g)) {
-    // The view's columns are the names of its first select list.
-    const body = m[2];
-    const start = body.search(/\bSELECT\b/i);
-    let depth = 0;
-    let end = -1;
-    for (let i = start + 6; i < body.length; i++) {
-      const ch = body[i];
-      if (ch === '(') depth++;
-      if (ch === ')') depth--;
-      if (depth === 0 && /^\s+FROM\b/i.test(body.slice(i, i + 8)) && /\s/.test(ch)) { end = i; break; }
-    }
-    const list = body.slice(start + 6, end === -1 ? undefined : end).replace(/^\s*DISTINCT( ON \([^)]*\))?/i, '');
-    const set = new Set<string>();
-    for (const item of topLevel(list)) {
-      const named = /\bAS\s+"?(\w+)"?\s*$/i.exec(item) || /(?:^|\.)"?(\w+)"?\s*$/.exec(item);
-      if (named) set.add(named[1]);
-    }
-    tables.set(m[1], set);
-  }
-  return tables;
-}
 
 /** The text of a query chain: from `.from('t')` to the end of its statement. */
 function chainAt(src: string, from: number): string {
@@ -244,19 +196,6 @@ function valuesOf(expr: string, src: string, seen = 0): string[] {
   return [UNKNOWN];
 }
 
-/** Where the bracket at `open` closes, strings skipped. */
-function closingOf(src: string, open: number): number {
-  let depth = 0;
-  let quote = '';
-  for (let i = open; i < src.length; i++) {
-    const c = src[i];
-    if (quote) { if (c === '\\') i++; else if (c === quote) quote = ''; continue; }
-    if (c === '\'' || c === '"' || c === '`') { quote = c; continue; }
-    if ('([{'.includes(c)) depth++;
-    else if (')]}'.includes(c)) { depth--; if (depth === 0) return i; }
-  }
-  return src.length;
-}
 
 function indexAtTop(e: string, ch: string, from = 0): number {
   let depth = 0;
@@ -456,20 +395,7 @@ export function readQueries(src: string, where: string, tables: Map<string, Set<
   return found;
 }
 
-type Param = { name: string; optional: boolean };
 
-/** Every public function's parameters, one list per overload, from the snapshot. */
-function readFunctions(sql: string): Map<string, Param[][]> {
-  const out = new Map<string, Param[][]>();
-  for (const m of sql.matchAll(/CREATE FUNCTION public\.(\w+)\(/g)) {
-    const open = m.index + m[0].length - 1;
-    const params = topLevel(sql.slice(open + 1, closingOf(sql, open)))
-      .filter((p) => p && !/^OUT\s/i.test(p))
-      .map((p) => ({ name: (/^(?:IN\s+|INOUT\s+|VARIADIC\s+)?"?(\w+)"?\s/i.exec(p) ?? [])[1] ?? '', optional: /\bDEFAULT\b/i.test(p) }));
-    out.set(m[1], [...(out.get(m[1]) ?? []), params]);
-  }
-  return out;
-}
 
 /**
  * Every `.rpc('fn', { … })` whose arguments no overload of the function takes:

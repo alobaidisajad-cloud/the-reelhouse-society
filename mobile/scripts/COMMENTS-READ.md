@@ -269,7 +269,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/eas-build-preflight.cjs | 2026-10-15 | edited: no build while the app names what production lacks |
 | scripts/edge-functions.cjs | 2026-10-03 | paytabs-handler NOT_DEPLOYED, with why (it granted any rank to a posted "paid" message) |
 | scripts/flake-history.cjs | 2026-10-16 | new: read against Maestro's JUnit reports (run 38824884948's) and jest --json's record |
-| scripts/frozen-counts.cjs | 2026-10-15 | new; edited: tsc first, so the typed lint never holds its program beside it |
+| scripts/frozen-counts.cjs | 2026-10-16 | edited: hand-supabase-mock, each test's hand-made Supabase client, frozen per file and self-tested |
 | scripts/functions-check.mjs | 2026-10-03 | compares every file a deploy bundles, _shared included, each function in its own folder; a listed exception is reported once |
 | scripts/gates-check.js | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
@@ -520,7 +520,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/TopNavBar.tsx | 2026-10-15 | measures itself into navMetrics |
 | src/components/lobby/__tests__/theQuoteMarkIsTheFontsOwn.test.ts | 2026-10-15 | new |
 | src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-10-15 | edited: lobby-wall-hung only on a wall the house read, vacant too; its files come from the shared file list (test-utils/universe.js) |
-| src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-09-30 | new |
+| src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-10-16 | edited: the record of editions is the strict fake's, rows in the table's shape: the query is shown picking the right day from decoys |
 | src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-01 | both doors, every pull |
 | src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-10-15 | the pair side by side on every phone and text size; setLines, wholeName, filmLine |
 | src/components/lobby/__tests__/theWallIsRead.test.ts | 2026-09-30 | new |
@@ -909,7 +909,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/aBuildNamesOnlyWhatProductionHas.release-test.ts | 2026-10-15 | true as written |
 | src/services/__tests__/aMemberTakesBackOnlyTheirOwnStackCritique.test.ts | 2026-09-30 | written with the stack critique delete |
 | src/services/__tests__/aMissingLogIsAnAnswer.test.tsx | 2026-10-01 | written: a missing log is null; a nameless author is never unknown |
-| src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts | 2026-10-16 | edited: the snapshot's reader comes from test-utils/schema, its one home |
 | src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/services/__tests__/aShelfEntryIsOnlyAddedTo.test.ts | 2026-10-03 | written whole: the shelf as a table that holds its rows; old replay payloads take nothing away |
 | src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | 2026-10-16 | read whole: sound; edited: given an address, an unreachable one fails |
@@ -1132,7 +1132,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyPullSaysWhatItReached.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/feedInvalidation.guard.test.ts | — |  |
-| src/utils/__tests__/frozenCounts.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/frozenCounts.guard.test.ts | 2026-10-16 | edited: the hand-made mocks are an app check, and their finder counts what is planted for it |
 | src/utils/__tests__/filterContentByBlocks.pbt.test.ts | — |  |
 | src/utils/__tests__/handleGuard.test.ts | 2026-10-03 | edited: the vectors written as escapes |
 | src/utils/__tests__/handleGuard.wiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -1284,6 +1284,7 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/__tests__/everyTestClientKeepsTheHouseRules.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | test-utils/__tests__/oneCommentStripper.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | test-utils/__tests__/readCode.test.ts | 2026-10-03 | read whole: adds the generic-arrow case TSX misreads |
+| test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts | 2026-10-16 | new: each refusal of the fake asked for and seen; each answer the one the real client gets |
 | test-utils/__tests__/theUniverseNamesEveryFile.test.ts | 2026-10-16 | new: every file is in a universe or named as unread; every supabase/ file has a kind; the routes are what expo-router loads, and what else its pattern takes is a test, which Metro leaves out |
 | test-utils/__tests__/theUniverseSeesANewFolder.test.ts | 2026-10-15 | new: a file planted in a new folder is seen by each universe; the migration checks refuse SQL no rule names |
 | test-utils/__tests__/timerFixtures/leavesATimer.fixture.ts | 2026-10-04 | written whole |
@@ -1295,8 +1296,10 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/react-native-testing-library.js | 2026-10-04 | edited: every render's client is testQueryClient(); the comment says what that keeps |
 | test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
 | test-utils/runtimeLacks.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| test-utils/schema.ts | 2026-10-16 | new: production's tables, columns with their types, views and functions, read from the snapshot: the one reader for the query check and the fake |
 | test-utils/SOURCE-READING-TESTS.md | 2026-10-15 | edited: every test in mobile/ is ledgered; the readers in __tests__/, e2e/ and plugins/, listed |
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
+| test-utils/supabaseFake.ts | 2026-10-16 | new: the house as the client meets it: refuses what production refuses (tables, columns, rpc arguments, fixture shapes, unfilled tables) and answers as PostgREST does (PGRST116, 1,000 rows, filters, order, range, writes kept) |
 | test-utils/testQueryClient.ts | 2026-10-04 | written whole: the one client a test builds — the app's rules, no collection timer, errors heard |
 | test-utils/timerCheckingEnvironment.js | 2026-10-16 | written whole: the environment that fails a file ending with a timer still waiting; edited: timers Node starts for itself (startedByNode) are not counted |
 | test-utils/topEdge.ts | 2026-10-15 | new: where a drawn page puts its top |

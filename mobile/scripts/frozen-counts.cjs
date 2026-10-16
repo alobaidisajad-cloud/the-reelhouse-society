@@ -13,6 +13,9 @@
  *   edge-type-error    deno check over every edge function: both trees, and the sealed world's
  *                      stand-in; each `@ts-ignore`, `@ts-expect-error` or `@ts-nocheck` counts too
  *   edge-lint          deno lint over the same files; each `deno-lint-ignore` counts too
+ *   hand-supabase-mock in every test file, each jest.mock of the app's Supabase client made by
+ *                      hand: its factory does not hand over test-utils/supabaseFake, so it
+ *                      answers columns, arguments and rows production would refuse
  *
  * The check fails when a file's count is above its baseline (a file the baseline
  * does not name has a baseline of 0), and when it is below it: a count that fell
@@ -42,7 +45,7 @@ const PROMISE_RULES = {
   '@typescript-eslint/no-floating-promises': 'floating-promise',
   '@typescript-eslint/no-misused-promises': 'misused-promise',
 };
-const CHECKS = ['floating-promise', 'misused-promise', 'unchecked-index', 'edge-type-error', 'edge-lint'];
+const CHECKS = ['floating-promise', 'misused-promise', 'unchecked-index', 'edge-type-error', 'edge-lint', 'hand-supabase-mock'];
 const EDGE_CHECKS = ['edge-type-error', 'edge-lint'];
 const APP_CHECKS = CHECKS.filter((c) => !EDGE_CHECKS.includes(c));
 
@@ -51,6 +54,7 @@ const CLASSES = {
   'CODE-promise-not-awaited': ['floating-promise', 'misused-promise'],
   'CODE-index-read-unchecked': ['unchecked-index'],
   'EDGE-function-static-fault': ['edge-type-error', 'edge-lint'],
+  'TEST-mock-accepts-anything': ['hand-supabase-mock'],
 };
 
 // Deno 2, which the sealed world's config.toml serves them on; one release, CI and here.
@@ -115,6 +119,41 @@ const tscCounts = (text, status, cwd) => {
   if (status !== 0 && n === 0) throw new Error(`tsc failed (exit ${status}) and named no file`);
   return counts;
 };
+
+/** Where the bracket at `open` closes, strings skipped. */
+const closing = (text, open) => {
+  let depth = 0;
+  let quote = '';
+  for (let i = open; i < text.length; i++) {
+    const c = text[i];
+    if (quote) { if (c === '\\') i++; else if (c === quote) quote = ''; continue; }
+    if (c === "'" || c === '"' || c === '`') { quote = c; continue; }
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) { depth--; if (depth === 0) return i; }
+  }
+  return text.length;
+};
+
+const testFiles = () => require('../test-utils/universe.js').files('tests').filter((p) => /\.(test|spec)\.[cm]?[jt]sx?$/.test(p));
+
+/**
+ * Each jest.mock of the app's Supabase client a test makes by hand. One is the
+ * shared fake's when its factory hands over a client and the file imports
+ * test-utils/supabaseFake; any other answers what production would refuse.
+ */
+function handMockCounts(files = testFiles()) {
+  const counts = {};
+  for (const file of files) {
+    const text = readFileSync(file, 'utf8');
+    const usesFake = /from ['"][^'"]*test-utils\/supabaseFake['"]|from ['"]\.\.\/supabaseFake['"]/.test(text);
+    for (const m of text.matchAll(/jest\.mock\(\s*(['"])([^'"]*\blib\/supabase)\1/g)) {
+      const open = m.index + m[0].indexOf('(');
+      const factory = text.slice(open, closing(text, open) + 1);
+      if (!(usesFake && /\.client\b/.test(factory))) bump(counts, fromRoot(file));
+    }
+  }
+  return { 'hand-supabase-mock': counts };
+}
 
 function indexCounts(project = join(MOBILE, 'tsconfig.strict-index.json')) {
   const r = spawnSync(process.execPath, [require.resolve('typescript/bin/tsc'), '--noEmit', '--pretty', 'false', '-p', project], {
@@ -213,6 +252,7 @@ async function measure(checks) {
   if (checks.includes('unchecked-index')) Object.assign(out, indexCounts());
   if (checks.some((c) => c.endsWith('-promise'))) Object.assign(out, await promiseCounts());
   if (checks.some((c) => EDGE_CHECKS.includes(c))) Object.assign(out, edgeCounts());
+  if (checks.includes('hand-supabase-mock')) Object.assign(out, handMockCounts());
   return Object.fromEntries(checks.map((c) => [c, out[c]]));
 }
 
@@ -316,7 +356,15 @@ const PLANTED_EDGE = [
   'export const looser: any = 2;', // edge-lint, as the comment above it
   '',
 ].join('\n');
-const PLANTED = { 'floating-promise': 2, 'misused-promise': 1, 'unchecked-index': 1, 'edge-type-error': 2, 'edge-lint': 3 };
+const PLANTED_MOCKS = {
+  // by hand: counted
+  'hand.test.ts': "jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn() } }));\n",
+  // the shared fake: not counted
+  'fake.test.ts': "import { supabaseFake } from '@/test-utils/supabaseFake';\nconst mockHouse = supabaseFake();\njest.mock('../../lib/supabase', () => ({ get supabase() { return mockHouse.client; } }));\n",
+  // a client named but no fake imported: counted
+  'named.test.ts': "jest.mock('../lib/supabase', () => ({ supabase: { client: 1 } }));\n",
+};
+const PLANTED = { 'floating-promise': 2, 'misused-promise': 1, 'unchecked-index': 1, 'edge-type-error': 2, 'edge-lint': 3, 'hand-supabase-mock': 2 };
 
 async function selftest(checks) {
   const dir = mkdtempSync(join(tmpdir(), 'frozen-counts-'));
@@ -331,6 +379,10 @@ async function selftest(checks) {
       mkdirSync(join(dir, 'edge'));
       writeFileSync(join(dir, 'edge', 'planted.ts'), PLANTED_EDGE);
       Object.assign(out, edgeCounts(['edge/planted.ts'], dir));
+    }
+    if (checks.includes('hand-supabase-mock')) {
+      for (const [name, text] of Object.entries(PLANTED_MOCKS)) writeFileSync(join(dir, name), text);
+      Object.assign(out, handMockCounts(Object.keys(PLANTED_MOCKS).map((n) => join(dir, n))));
     }
     return checks.filter((c) => total(out[c]) !== PLANTED[c]).map((c) => `${c} counted ${total(out[c])} of the ${PLANTED[c]} planted`);
   } finally {

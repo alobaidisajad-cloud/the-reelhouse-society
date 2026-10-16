@@ -216,6 +216,20 @@ classes:
     fix: "the SQL mutants (attack.mjs --mutants): a mutant that cannot be made is its own failure (NOT-APPLIED), never caught; the run passes only when every baseline try answered as matrix.json writes it (mutantsPass), and in CI the plain attack step runs first and must pass. The past and new-shape mutants of P0.66 and P0.67 are held to the same rule when they are built"
     places: [none]
 
+  - id: TEST-mock-accepts-anything
+    title: A test's hand-made Supabase client answers what production refuses (a missing column, an rpc argument its function does not take, [] to every read, no error from .single() with no row, more than 1,000 rows, fixtures not in a table's shape) (TST-05, TST-06, TST-10)
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 128
+    source: { kind: history, ref: "the salon roster read a missing column for three months under green tests (a-mock-accepts-any-column); P0.63" }
+    methods:
+      - { kind: running, file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "a column the table does not have, in a select, a filter or an order" }
+      - { kind: running, file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "a read of a table the test never said what it holds: no silent empty list" }
+      - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
+    fix: "test-utils/supabaseFake: the house as the client meets it, from the schema snapshot (test-utils/schema, now the one reader the query check uses too): refuses a table, column or rpc argument production lacks, a fixture row out of its table's shape, a read of a table the test never filled; answers .single()/.maybeSingle() with PGRST116 as PostgREST does, caps a read at 1,000 rows, filters, orders, ranges and keeps writes. The hand-made mocks are frozen per file (frozen-counts hand-supabase-mock) and only fall as tests move to it; the first (theHonourStays) now proves its query picks the right row from decoys"
+    places: [none]
+
   - id: E2E-ceiling-not-measured
     title: A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's
     seriousness: code
@@ -312,7 +326,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 1487
+    count: 1472
     source: { kind: reviewer, ref: P0.65 }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }

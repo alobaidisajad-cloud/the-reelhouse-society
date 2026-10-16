@@ -145,7 +145,7 @@ describe('a tool that broke is never a count of zero', () => {
 });
 
 it('measures, before a push, each check a change can move', () => {
-  const app = ['floating-promise', 'misused-promise', 'unchecked-index'];
+  const app = ['floating-promise', 'misused-promise', 'unchecked-index', 'hand-supabase-mock'];
   expect(frozen.checksTouchedBy(['mobile/src/a.ts', 'README.md'])).toEqual(app);
   expect(frozen.checksTouchedBy(['mobile/tsconfig.json'])).toEqual(app);
   expect(frozen.checksTouchedBy(['supabase/functions/sync-films/index.ts'])).toEqual(['edge-type-error', 'edge-lint']);
@@ -155,9 +155,9 @@ it('measures, before a push, each check a change can move', () => {
 });
 
 it('each finder counts the cases planted for it, by running it', () => {
-  const r = spawnSync(process.execPath, [join(MOBILE, 'scripts', 'frozen-counts.cjs'), '--selftest', '--only', 'floating-promise,misused-promise,unchecked-index'], {
+  const r = spawnSync(process.execPath, [join(MOBILE, 'scripts', 'frozen-counts.cjs'), '--selftest', '--only', 'floating-promise,misused-promise,unchecked-index,hand-supabase-mock'], {
     cwd: MOBILE, encoding: 'utf8',
   });
   expect({ status: r.status, said: `${r.stdout}${r.stderr}`.trim() })
-    .toEqual({ status: 0, said: 'Each finder counted the cases planted for it: floating-promise, misused-promise, unchecked-index.' });
+    .toEqual({ status: 0, said: 'Each finder counted the cases planted for it: floating-promise, misused-promise, unchecked-index, hand-supabase-mock.' });
 }, 120_000);
