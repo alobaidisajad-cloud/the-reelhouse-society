@@ -1094,6 +1094,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyCheckRuns.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/everyDoorLeadsToARoute.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts | 2026-10-15 | written: every enqueue call site's type has its kind in the map; its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/everySecretIsInventoried.test.ts | 2026-10-16 | new: every secret and setting the code reads is in register/secrets.json, with its holders and a secret's rotation; nothing listed that no code reads but the dashboard-held ones; never a value |
 | src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |
 | src/utils/__tests__/fixtures/imageCache.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
 | src/utils/__tests__/appConfig.guard.test.ts | 2026-10-15 | edited: the dev client's scheme off, the sitemap off, the scanner removed, iOS https only; every profile but development is app.json |
