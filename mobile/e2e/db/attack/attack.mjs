@@ -77,6 +77,16 @@ export const username = (who) => `at_${who.toLowerCase()}`;
 /** The tables and views the snapshot defines in public: every relation a client can name. */
 export const snapshotTables = (sql) => [...sql.matchAll(/^CREATE (?:TABLE|VIEW) public\.(\w+) [(W]/gm)].map((m) => m[1]).sort();
 
+/** Each public table's columns, from the snapshot. */
+export const columnsOf = (sql) => Object.fromEntries([...sql.matchAll(/^CREATE TABLE public\.(\w+) \(\n([\s\S]*?)\n\);/gm)]
+  .map(([, table, body]) => [table, body.split('\n').map((l) => l.trim().split(' ')[0]).filter((c) => /^[a-z_]+$/.test(c) && c !== 'CONSTRAINT')]));
+
+/** When the house laid every row: a month ago, so no rule counted over a recent window (a second, a day) sees it. */
+const LAID = new Date(Date.now() - 30 * 86400e3).toISOString();
+/** A row as the house lays it: dated a month ago where the table keeps a date and the row names none. */
+export const dated = (table, row, columns) =>
+  (columns[table]?.includes('created_at') && !('created_at' in row) ? { ...row, created_at: LAID } : row);
+
 /** Tables one side has and the other lacks. */
 export const coverage = (matrix, tables) => ({
   unjudged: tables.filter((t) => !matrix.tables[t]),
@@ -186,7 +196,7 @@ const setSql = (change) => Object.entries(change).map(([c, v]) => `${c} = ${lite
 const specimenOf = (table, spec, owner) => fill(spec.specimen, { table, owner });
 
 /** Every try of the grid, the forbidden changes and the probes, with the answer each must get. */
-export const plan = (matrix) => {
+export const plan = (matrix, columns = {}) => {
   const cases = [];
   for (const [table, spec] of Object.entries(matrix.tables)) {
     const targets = spec.owner === 'house' ? ['house'] : TARGETS;
@@ -260,7 +270,7 @@ export const plan = (matrix) => {
       const c = { label: `probe: ${p.name} (${actor})`, table: p.table, action: p.kind, actor, target: 'probe', expect: p.expect };
       if (p.kind === 'insert') c.sql = insertSql(p.table, fill(p.row, ctx));
       if (p.kind === 'read') {
-        c.lay = insertSql(p.table, fill(p.lay, ctx));
+        c.lay = insertSql(p.table, dated(p.table, fill(p.lay, ctx), columns));
         c.sql = `SELECT count(*) FROM public.${p.table} WHERE id = ${literal(newId)}`;
       }
       if (p.then) c.then = fill(p.then, ctx);
@@ -271,7 +281,7 @@ export const plan = (matrix) => {
 };
 
 /** The setting: the members, every specimen, and the logs that let each member file. */
-export const setting = (matrix) => {
+export const setting = (matrix, columns = {}) => {
   const out = [];
   const members = Object.entries(OWNERS);
   out.push(`INSERT INTO auth.users (id, instance_id, aud, role, email, raw_user_meta_data, raw_app_meta_data, created_at, updated_at, email_confirmed_at) VALUES\n${
@@ -288,25 +298,25 @@ export const setting = (matrix) => {
   for (const [table, spec] of Object.entries(matrix.tables)) {
     if (spec.laid === false) continue;
     for (const owner of ownersOf(spec)) {
-      out.push(`${insertSql(table, specimenOf(table, spec, owner))} ON CONFLICT DO NOTHING;`);
-      for (const extra of spec.extra ?? []) out.push(`${insertSql(table, fill(extra, { table, owner }))} ON CONFLICT DO NOTHING;`);
+      out.push(`${insertSql(table, dated(table, specimenOf(table, spec, owner), columns))} ON CONFLICT DO NOTHING;`);
+      for (const extra of spec.extra ?? []) out.push(`${insertSql(table, dated(table, fill(extra, { table, owner }), columns))} ON CONFLICT DO NOTHING;`);
     }
   }
   // Five films logged, so may_file() lets a ranked member file.
   for (const [w] of members) {
     for (const film of [990690, 990691, 990692, 990693]) {
-      out.push(`${insertSql('logs', { id: uuidOf('filler', w, film), user_id: uid(w), film_id: film, film_title: 'rh filler', watched_date: '2026-01-01' })} ON CONFLICT DO NOTHING;`);
+      out.push(`${insertSql('logs', dated('logs', { id: uuidOf('filler', w, film), user_id: uid(w), film_id: film, film_title: 'rh filler', watched_date: '2026-01-01' }, columns))} ON CONFLICT DO NOTHING;`);
     }
   }
   return out.join('\n');
 };
 
 /** The whole run as one transaction that ends in ROLLBACK and prints every answer as one JSON line. */
-export const script = (matrix, cases, { plant = '' } = {}) => `\\set ON_ERROR_STOP 1
+export const script = (matrix, cases, { plant = '', columns = {} } = {}) => `\\set ON_ERROR_STOP 1
 BEGIN;
 SET LOCAL request.jwt.claims = '';
 SET LOCAL session_replication_role = replica;
-${setting(matrix)}
+${setting(matrix, columns)}
 SET LOCAL session_replication_role = origin;
 ${plant}
 CREATE TEMP TABLE at_cases (n int PRIMARY KEY, before text, lay text, stmt text, is_read boolean, then_sql text, actor uuid) ON COMMIT DROP;
@@ -376,14 +386,16 @@ export const met = (expect, answer) => {
 
 export const run = ({ db = SEALED, sqlOut = null, plant = '' } = {}) => {
   const matrix = JSON.parse(readFileSync(join(HERE, 'matrix.json'), 'utf8'));
-  const tables = snapshotTables(readFileSync(SNAPSHOT, 'utf8').replace(/\r/g, ''));
+  const snapshot = readFileSync(SNAPSHOT, 'utf8').replace(/\r/g, '');
+  const tables = snapshotTables(snapshot);
   const { unjudged, gone } = coverage(matrix, tables);
   const faults = [
     ...unjudged.map((t) => `${t}: in the snapshot, not in matrix.json — write who may do what with it`),
     ...gone.map((t) => `${t}: in matrix.json, not in the snapshot`),
   ];
-  const cases = plan(matrix);
-  const sql = script(matrix, cases, { plant });
+  const columns = columnsOf(snapshot);
+  const cases = plan(matrix, columns);
+  const sql = script(matrix, cases, { plant, columns });
   if (sqlOut) { writeFileSync(sqlOut, sql); return { faults, cases, misses: [] }; }
   const r = spawnSync('psql', [db, '-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1'], { input: sql, encoding: 'utf8', maxBuffer: 1e9 });
   const line = (r.stdout ?? '').split('\n').find((l) => l.startsWith('AT-RESULT '));

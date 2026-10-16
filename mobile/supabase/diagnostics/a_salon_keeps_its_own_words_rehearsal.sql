@@ -74,10 +74,12 @@ INSERT INTO rh_rows SELECT 'a departed writer''s message', id FROM r;
 WITH r AS (INSERT INTO public.lounge_messages (lounge_id, user_id, content)
            VALUES ((SELECT id FROM rh_rows WHERE what = 'private salon'), current_setting('rehearsal.c')::uuid, 'rh words of a private room') RETURNING id)
 INSERT INTO rh_rows SELECT 'private message', id FROM r;
--- p has asked nothing yet; c asks to follow p, and c follows a, whose file is open.
-INSERT INTO public.interactions (user_id, target_user_id, type)
-VALUES (current_setting('rehearsal.c')::uuid, current_setting('rehearsal.p')::uuid, 'follow_request'),
-       (current_setting('rehearsal.c')::uuid, current_setting('rehearsal.a')::uuid, 'follow');
+-- p has asked nothing yet; c asks to follow p, and c follows a, whose file is open. Dated an
+-- hour ago, apart: a member's interactions are kept a second apart (check_interaction_rate_limit).
+INSERT INTO public.interactions (user_id, target_user_id, type, created_at)
+VALUES (current_setting('rehearsal.c')::uuid, current_setting('rehearsal.p')::uuid, 'follow_request', now() - interval '61 minutes');
+INSERT INTO public.interactions (user_id, target_user_id, type, created_at)
+VALUES (current_setting('rehearsal.c')::uuid, current_setting('rehearsal.a')::uuid, 'follow', now() - interval '60 minutes');
 
 CREATE FUNCTION pg_temp.rh_as(member text) RETURNS void LANGUAGE sql AS $$
   SELECT set_config('request.jwt.claims', json_build_object('sub', current_setting(member), 'role', 'authenticated')::text, true)

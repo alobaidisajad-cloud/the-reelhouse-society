@@ -56,6 +56,7 @@ type Answers = {
   actors: string[]; head: string; tail: string; commits: boolean;
   expected: string[]; acrossBlocks: string; ranked: string[]; judged: string[]; met: boolean[];
   filled: Record<string, unknown>; uidP: string; unknownPlaceholder: string;
+  columns: string[]; dated: string[];
 };
 
 const answers: Answers = (() => {
@@ -86,6 +87,10 @@ const answers: Answers = (() => {
       filled: a.fill({ a: '{owner}', b: '{uid@P}', c: '{ref:logs}', d: '{ref:logs@V#2}', e: '{id}', f: '{private}' },
         { table: 'notes', owner: 'P', newId: 'new-id' }),
       uidP: a.uid('P'), unknownPlaceholder,
+      columns: a.columnsOf(fs.readFileSync(${JSON.stringify(SNAPSHOT)}, 'utf8').replace(/\\r/g, '')).interactions,
+      dated: [a.dated('interactions', { id: 'x' }, { interactions: ['id', 'created_at'] }).created_at,
+        a.dated('interactions', { created_at: 'mine' }, { interactions: ['created_at'] }).created_at,
+        a.dated('viewings', { viewing_id: 'x' }, { viewings: ['viewing_id'] }).created_at ?? 'none'],
     }));`;
   const r = spawnSync(process.execPath, ['--input-type=module', '-e', program], { encoding: 'utf8', maxBuffer: 1e9 });
   if (r.status !== 0) throw new Error(r.stderr);
@@ -149,6 +154,15 @@ describe('every try is planned, filled and written out', () => {
     expect(row.c).not.toBe(row.d);
     expect([row.e, row.f]).toEqual(['new-id', true]);
     expect(String(row.a)).toMatch(/^[0-9a-f]{8}-0000-4000-8000-[0-9a-f]{12}$/);
+  });
+
+  it('lays each row a month ago where its table keeps a date, so no rule over a recent window counts it', () => {
+    // A member's interactions are kept a second apart (check_interaction_rate_limit): a row laid
+    // now would refuse each try of theirs in production's time zone.
+    expect(answers.columns).toEqual(expect.arrayContaining(['id', 'user_id', 'type', 'created_at']));
+    const [laid, kept, none] = answers.dated;
+    expect(Date.now() - Date.parse(laid)).toBeGreaterThan(29 * 86400e3);
+    expect([kept, none]).toEqual(['mine', 'none']);
   });
 
   it('writes one transaction that ends in ROLLBACK and never commits', () => {
