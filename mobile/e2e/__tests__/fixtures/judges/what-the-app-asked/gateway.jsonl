@@ -1,0 +1,4 @@
+{"id":1,"method":"POST","path":"/auth/v1/token?grant_type=password","at":"2026-10-16T10:00:00.000Z","status":200,"fault":null}
+{"id":2,"method":"GET","path":"/rest/v1/profiles?select=id,username&id=eq.u1","at":"2026-10-16T10:00:01.000Z","status":200,"fault":null}
+{"id":3,"method":"GET","path":"/rest/v1/logs?select=id,film_id&user_id=eq.u1","at":"2026-10-16T10:00:02.000Z","status":200,"fault":null}
+{"id":4,"method":"GET","path":"/realtime/v1/websocket?vsn=1.0.0","at":"2026-10-16T10:00:03.000Z","status":101,"fault":null}

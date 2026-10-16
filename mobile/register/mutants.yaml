@@ -276,6 +276,11 @@ mutants:
     source: past
     commit: 65bc9992
     files: [src/utils/offlineQueue.ts]
+    # The fix no longer reverses (an import was added beside its own); this drops the ask again by hand.
+    edits:
+      - file: src/utils/offlineQueue.ts
+        find: "        // The network may have come back while the running send waited on the old one.\n        flushAgain = true;\n"
+        replace: ""
     proof: { file: src/utils/__tests__/offlineQueue.integration.test.ts, test: "runs once more when the running send ends, sending what was queued meanwhile" }
 
   - id: shape-store-call-unbounded
@@ -460,3 +465,14 @@ mutants:
       - file: maestro.txt
         find: "Running flow f\n"
         replace: "Running flow f\n01:27:18.000 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: Launch app \"com.reelhouse.society\" with clear state RUNNING\n"
+
+  - id: judge-call-the-code-never-named
+    class: E2E-call-unseen-by-code
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/what-the-app-asked
+      run: [node, e2e/what-the-app-asked.mjs, "{dir}/gateway.jsonl"]
+    edits:
+      - file: gateway.jsonl
+        find: "\"path\":\"/rest/v1/logs?select=id,film_id&user_id=eq.u1\""
+        replace: "\"path\":\"/rest/v1/rpc/delete_every_log\""

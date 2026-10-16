@@ -12,7 +12,11 @@ appId: com.reelhouse.society
     env:
       FILM: "Casablanca"
 
-- toggleAirplaneMode
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - toggleAirplaneMode
 - extendedWaitUntil:
     visible: ".*OPERATING IN ISOLATION.*"
     timeout: 15000
@@ -41,7 +45,11 @@ appId: com.reelhouse.society
       id: "submit-log-button"
     timeout: 15000
 
-- toggleAirplaneMode
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - toggleAirplaneMode
 - extendedWaitUntil:
     visible: ".*Archive updated with offline actions.*"
     timeout: 30000

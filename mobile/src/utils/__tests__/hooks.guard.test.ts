@@ -7,15 +7,19 @@
  * push is checked from, and CI's check that every pushed commit carries the
  * trailer the hooks add.
  */
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import { join } from 'path';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const ROOT = join(MOBILE, '..');
-const { refusalOf } = require('../../../scripts/hooks/pre-commit.cjs') as { refusalOf: (path: string, bytes: Buffer) => string | null };
-const { basesOf, ignored, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
+const { mutantInPlace, refusalOf } = require('../../../scripts/hooks/pre-commit.cjs') as {
+  mutantInPlace: (root: string) => string | null; refusalOf: (path: string, bytes: Buffer) => string | null;
+};
+const { basesOf, ignored, readers, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
   basesOf: (input: string, git: (...a: string[]) => string) => string[];
   ignored: (mobile: string) => string[];
+  readers: (mobile: string) => string[];
   workersFor: (freeBytes: number, cores: number) => number;
 };
 const { faultOf } = require('../../../scripts/hooks-ran.cjs') as {
@@ -26,6 +30,19 @@ const text = (s: string) => Buffer.from(s, 'utf8');
 const DUMP = '--\n-- PostgreSQL database dump\n--\nCREATE TABLE public.t (id int);\n';
 
 describe('before a commit', () => {
+  it('refuses while a stopped mutants run left a mutant in place, and pushes refuse it too', () => {
+    const root = mkdtempSync(join(tmpdir(), 'placed-'));
+    try {
+      mkdirSync(join(root, 'mobile'));
+      expect(mutantInPlace(root)).toBeNull();
+      writeFileSync(join(root, 'mobile', '.mutant-in-place.json'), '{"mutant":"x","changes":[]}');
+      expect(mutantInPlace(root)).toBe('a mutant is still in place, from a mutants run that was stopped: node mobile/scripts/mutants.cjs --put-back');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+    expect(readFileSync(join(ROOT, 'mobile', 'scripts', 'hooks', 'pre-push.cjs'), 'utf8')).toMatch(/const placed = mutantInPlace\(ROOT\);\r?\n\s+if \(placed\) faults\.push\(placed\);/);
+  });
+
   it('refuses the plan\'s private folder', () => {
     expect(refusalOf('mobile/audit/final/PLAN.md', text('# plan'))).toBe('the plan\'s private folder (mobile/audit/final/) is never committed');
   });
@@ -60,13 +77,24 @@ describe('before a push', () => {
     expect(basesOf(input, git)).toEqual(['b'.repeat(40), 'f'.repeat(40)]);
   });
 
-  it('leaves out the worktrees inside a checkout, never a checkout that is itself a worktree', () => {
+  it('leaves out the worktrees and Stryker\'s sandbox inside a checkout, never a checkout that is itself a worktree', () => {
     for (const mobile of ['/home/m/reelhouse/mobile', '/home/m/reelhouse/.claude/worktrees/agent-a/mobile']) {
       const left = (path: string) => ignored(mobile).some((p) => new RegExp(p).test(path));
       expect([mobile, left(`${mobile}/src/utils/__tests__/a.test.ts`)]).toEqual([mobile, false]);
       expect([mobile, left(`${mobile}/.claude/worktrees/b/mobile/src/a.test.ts`)]).toEqual([mobile, true]);
+      expect([mobile, left(`${mobile}/.stryker-tmp/sandbox-x/src/a.test.ts`)]).toEqual([mobile, true]);
       expect([mobile, left(`${mobile}/node_modules/x/a.test.ts`)]).toEqual([mobile, true]);
     }
+  });
+
+  it('runs every test the source-reading ledger names, each there, the guards among them', () => {
+    const list = readers(join(__dirname, '..', '..', '..'));
+    expect(list.length).toBeGreaterThan(200);
+    expect(list).toEqual(expect.arrayContaining([
+      'test-utils/__tests__/everyCommentIsTrue.test.ts', 'src/utils/__tests__/ciWorkflows.guard.test.ts',
+      'src/utils/__tests__/hooks.guard.test.ts', 'test-utils/__tests__/aSweepAsksTheUniverse.test.ts',
+    ]));
+    expect(list.filter((p) => !existsSync(join(__dirname, '..', '..', '..', p)))).toEqual([]);
   });
 
   it('runs as many jest workers as the free memory holds, at least one, never every core', () => {

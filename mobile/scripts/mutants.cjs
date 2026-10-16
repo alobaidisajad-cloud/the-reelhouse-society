@@ -23,6 +23,10 @@
  *   node mobile/scripts/mutants.cjs                  every mutant
  *   node mobile/scripts/mutants.cjs --ids a,b        those named
  *   node mobile/scripts/mutants.cjs --results <file> also writes the count-only results (ids and verdicts, P0.39)
+ *   node mobile/scripts/mutants.cjs --put-back       puts back what a stopped run left in place, and ends
+ *
+ * Any other argument, or an option without its value, is refused before anything runs. Every
+ * run first puts back what a stopped run left in place (the mutant in place, below).
  *
  * The verdicts: caught, survived, NOT-APPLIED, or invalid (a rule above not met). Only caught passes.
  */
@@ -164,6 +168,39 @@ const restore = (changes) => {
   }
 };
 
+/**
+ * The mutant in place: written before its files change, removed once they are put back. A run
+ * ended from outside (a stopped task, a closed window: no signal reaches it) leaves it behind, so
+ * the next run puts those files back before anything else, and the commit and push hooks refuse
+ * while it is there. Git-ignored.
+ */
+const PLACED = join(MOBILE, '.mutant-in-place.json');
+
+/** What a stopped run left in place, put back and read back; the files it names ([] when none). */
+const putBackLeftover = (placed = PLACED) => {
+  if (!existsSync(placed)) return [];
+  const { changes } = JSON.parse(readFileSync(placed, 'utf8'));
+  restore(changes);
+  unlinkSync(placed);
+  return changes.map((c) => c.file);
+};
+
+/** The options and whether each takes a value. */
+const OPTIONS = { '--ids': true, '--changed': true, '--part': true, '--results': true, '--fresh': false, '--gather': true, '--out': true, '--put-back': false };
+
+/** What is wrong with these arguments, or null: an unknown one, or an option missing its value. */
+const argumentsFault = (argv) => {
+  for (let k = 0; k < argv.length; k++) {
+    const takes = OPTIONS[argv[k]];
+    if (takes === undefined) return `unknown argument ${argv[k]} (the options: ${Object.keys(OPTIONS).join(', ')})`;
+    if (takes) {
+      if (argv[k + 1] === undefined || argv[k + 1] in OPTIONS) return `${argv[k]} wants a value`;
+      k++;
+    }
+  }
+  return null;
+};
+
 /** Paths git reports changed among these (a mutant runs only on files as committed). */
 const dirty = (files) => {
   if (!files.length) return [];
@@ -241,6 +278,7 @@ const runOne = (m) => {
   const { changes } = plan;
   const same = changes.filter((c) => !really(c));
   if (same.length) return { verdict: 'invalid', why: `no real change to ${same.map((c) => c.file).join(', ')}` };
+  writeFileSync(PLACED, JSON.stringify({ mutant: m.id, changes }));
   try {
     for (const c of changes) { mkdirSync(dirname(c.path), { recursive: true }); writeFileSync(c.path, c.after); }
     const faults = compileFaults(changes);
@@ -255,6 +293,7 @@ const runOne = (m) => {
     return { verdict: 'invalid', why: `its test did not run: ${r.said}` };
   } finally {
     restore(changes);
+    unlinkSync(PLACED);
   }
 };
 
@@ -339,7 +378,12 @@ const privateDir = () => {
 
 if (require.main === module) {
   const argv = process.argv.slice(2);
+  const refused = argumentsFault(argv);
+  if (refused) { console.error(refused); process.exit(2); }
   const arg = (name) => { const i = argv.indexOf(name); return i < 0 ? null : argv[i + 1]; };
+  const left = putBackLeftover();
+  if (left.length) console.log(`put back what a stopped run left in place: ${left.join(', ')}`);
+  if (argv.includes('--put-back')) process.exit(0);
   const all = readMutants();
 
   if (argv.includes('--gather')) {
@@ -400,4 +444,7 @@ if (require.main === module) {
   process.exit(bad.length ? 1 : 0);
 }
 
-module.exports = { applyEdits, changesOf, gather, hunksOf, lf, partOf, pathsOf, privateDir, proofId, readMutants, really, reverse, runOne, standsOn, statusIn, touchedSince };
+module.exports = {
+  applyEdits, argumentsFault, changesOf, gather, hunksOf, lf, partOf, pathsOf, PLACED, privateDir, proofId, putBackLeftover,
+  readMutants, really, reverse, runOne, standsOn, statusIn, touchedSince,
+};

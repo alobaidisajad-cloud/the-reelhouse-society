@@ -169,8 +169,8 @@ function parsePlist(buf) {
 
 // ── The rules ───────────────────────────────────────────────────────────────
 
-/** The E2E world's addresses and key, as the E2E build carries them (e2e.yml, e2e/anon-key.mjs). */
-const E2E_HOSTS = ['10.0.2.2', ':54321'];
+/** The E2E world's addresses and key, as the E2E build carries them (e2e.yml, e2e/anon-key.mjs): the house, and the fault proxy before it. */
+const E2E_HOSTS = ['10.0.2.2', ':54321', ':54330'];
 /** The start of the local stack's anon key: a token over {"iss":"supabase-demo", … }. */
 const E2E_KEY = Buffer.from('{"iss":"supabase-demo",').toString('base64url').slice(0, 28);
 

@@ -198,8 +198,10 @@ const stepsOf = (file: string, inRepeat = false): Step[] => {
     if (!step || typeof step !== 'object') { if (typeof step === 'string') out.push({ cmd: step, arg: null, inRepeat: rep }); return; }
     for (const [cmd, arg] of Object.entries(step as Record<string, unknown>)) {
       if (cmd === 'runFlow') {
-        const sub = typeof arg === 'string' ? arg : (arg as { file: string }).file;
-        out.push(...stepsOf(join(file, '..', sub), rep));
+        const sub = typeof arg === 'string' ? arg : (arg as { file?: string }).file;
+        // A runFlow names a subflow's file, or holds its own commands (a block for one platform).
+        if (sub) out.push(...stepsOf(join(file, '..', sub), rep));
+        else ((arg as { commands?: unknown[] }).commands ?? []).forEach((c) => add(c, rep));
       } else if (cmd === 'repeat') {
         ((arg as { commands?: unknown[] }).commands ?? []).forEach((c) => add(c, true));
       } else out.push({ cmd, arg, inRepeat: rep });

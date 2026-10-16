@@ -146,7 +146,9 @@ jobs:
         working-directory: mobile
         env:
           E2E: '1'
-          EXPO_PUBLIC_SUPABASE_URL: http://10.0.2.2:54321
+          # The house through the fault proxy (e2e/fault-proxy.mjs), which passes every byte untouched
+          # until a flow sets a fault.
+          EXPO_PUBLIC_SUPABASE_URL: http://10.0.2.2:54330
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.anon.outputs.key }}
           SENTRY_DISABLE_AUTO_UPLOAD: 'true'
           EXPO_NO_TELEMETRY: '1'
@@ -484,6 +486,15 @@ jobs:
           path: /usr/local/lib/android/sdk/system-images/android-34/google_apis/x86_64
           key: android-system-image-34-google_apis-x86_64
 
+      # Between the app and the house, for the rest of the job: every byte passed
+      # untouched until a flow sets a fault on its control port (10.0.2.2:54331),
+      # and every request kept in the gateway's log.
+      - name: The network between the app and the house
+        run: |
+          nohup node mobile/e2e/fault-proxy.mjs --listen 54330 --to 127.0.0.1:54321 --control 54331 --log "$RUNNER_TEMP/gateway.jsonl" > "$RUNNER_TEMP/fault-proxy.txt" 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:54331/alive > /dev/null && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/fault-proxy.txt"; echo "::error title=Fault proxy::it never answered on 54331"; exit 1
+
       - name: The flows, on an Android emulator
         # A backstop under the job's limit, so the steps after it still run. The
         # shard's flows have their own budget inside it: its minutes in
@@ -519,6 +530,12 @@ jobs:
       # Only the flows this shard ran (run-flows.sh's flows-run.txt).
       - name: What the flows did, found in the database
         run: node mobile/e2e/db/verify-writes.mjs
+
+      # Every request the gateway saw the app make, on the list the reading of
+      # its code made (scripts/backend-contract.json).
+      - name: Every request the app made, on the list its code names
+        if: ${{ !cancelled() }}
+        run: node mobile/e2e/what-the-app-asked.mjs "$RUNNER_TEMP/gateway.jsonl"
 
       - name: TMDB requests with no recording
         if: always()
@@ -559,6 +576,8 @@ jobs:
           include-hidden-files: true
           path: |
             ${{ runner.temp }}/functions.log
+            ${{ runner.temp }}/gateway.jsonl
+            ${{ runner.temp }}/fault-proxy.txt
             ${{ runner.temp }}/maestro.log
             ${{ runner.temp }}/flow-reports
             ${{ runner.temp }}/flow-screens

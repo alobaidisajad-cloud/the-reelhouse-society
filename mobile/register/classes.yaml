@@ -163,6 +163,20 @@ classes:
     fix: "attempt.mjs runs an attempt again only when three records agree Maestro never began a step (mutant judge-begun-flow-run-again)"
     places: [emulator]
 
+  - id: E2E-call-unseen-by-code
+    title: The app asks the house for a table, an RPC, a function or a bucket the reading of its code never saw (a name made at run time), so no check of what exists covers that call
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.75" }
+    methods:
+      - { kind: static, file: __tests__/backendContract.test.ts, test: "tables read or written match scripts/backend-contract.json, those reached through a helper included" }
+      - { kind: static, file: __tests__/backendContract.test.ts, test: "every helper a table passes through as a variable is still called with its name written out" }
+      - { kind: running, file: e2e/__tests__/whatTheAppAsked.test.ts, test: "says no to a table, an RPC, a function or a bucket the list lacks, naming each" }
+    fix: "backend-contract.json now lists the tables and buckets as well as the RPCs and functions, read from the code (the three variable-table sites go through two helpers always given the name); every sealed E2E shard holds each request the fault proxy's gateway log saw to that list (e2e/what-the-app-asked.mjs, mutant judge-call-the-code-never-named)"
+    places: [emulator]
+
   - id: RN-react-destroyed-on-mount
     title: React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed
     seriousness: serious

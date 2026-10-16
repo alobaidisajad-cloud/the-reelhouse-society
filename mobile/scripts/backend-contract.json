@@ -209,6 +209,41 @@
     "sync-films",
     "tmdb-proxy"
   ],
+  "_tablesNote": "The tables and storage buckets the app reads or writes, read from its code: each supabase.from() and storage.from() with its name written out, and the tables the export and the import pass through their helpers. A sealed E2E run holds every request the app really made to these lists (e2e/what-the-app-asked.mjs over the gateway's log).",
+  "tables": [
+    "dispatch_certifications",
+    "dispatch_comments",
+    "dispatch_dossiers",
+    "dispatch_posts",
+    "dispatch_saves",
+    "dispatch_votes",
+    "dossier_certifications",
+    "dossier_comments",
+    "films",
+    "interactions",
+    "list_comments",
+    "list_items",
+    "lists",
+    "lobby_editions",
+    "log_comments",
+    "log_private_notes",
+    "logs",
+    "lounge_members",
+    "lounge_message_reactions",
+    "lounge_messages",
+    "lounges",
+    "member_drafts",
+    "notifications",
+    "physical_archive",
+    "profiles",
+    "push_tokens",
+    "reports",
+    "user_blocks",
+    "watchlists"
+  ],
+  "buckets": [
+    "avatars"
+  ],
   "_securityNote": "Facts about the LIVE database that no test can derive from this repo. Added 2026-08-10 after the schema snapshot misled three times in two days: it showed a column-unrestricted profiles UPDATE policy (live is locked to 7 columns), it showed two conflicting role whitelists (live has one, permitting 'admin' — acting on the snapshot would have locked out the moderators), and it showed email as world-readable (live denies it). Each entry below was OBSERVED live, not read from a migration. If one of these ever flips, this fails loudly instead of a person discovering it during an audit.",
   "security": {
     "anonMustNotRead": [

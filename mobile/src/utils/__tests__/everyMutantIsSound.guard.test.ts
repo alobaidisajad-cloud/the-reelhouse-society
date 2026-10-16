@@ -9,9 +9,11 @@
  * judge is fed a bad log or named as no judge. The runner's own rules are asked directly.
  */
 import { execFileSync } from 'child_process';
-import { existsSync, readFileSync, statSync } from 'fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import { join, relative } from 'path';
 import ts from 'typescript';
+import { files as universe } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const yaml = require(require.resolve('yaml/package.json').replace(/package\.json$/, 'dist/index.js')) as typeof import('yaml');
@@ -23,6 +25,8 @@ const mutantsCjs = require('../../../scripts/mutants.cjs') as {
   hunksOf: (commit: string, file: string) => { before: string[]; after: string[] }[];
   partOf: (mutants: Mutant[], spec: string) => Mutant[];
   privateDir: () => string | null;
+  argumentsFault: (argv: string[]) => string | null;
+  putBackLeftover: (placed?: string) => string[];
   proofId: (m: Mutant, classes: Klass[]) => string | null;
   really: (c: { before: string | null; after: string }) => boolean;
   reverse: (text: string, hunks: { before: string[]; after: string[] }[]) => { text?: string; notApplied?: string };
@@ -67,6 +71,7 @@ const titlesIn = (file: string): string[] | null => {
 const NOT_JUDGES: Record<string, string> = {
   'advisories.mjs': 'it judges the packages a build holds, not a run; its own tests plant known-vulnerable ones',
   'annotate.mjs': 'it prints a file as an annotation',
+  'fault-proxy.mjs': 'it is the network between the app and the house, not a verdict; its own tests set every fault against a real house',
   'anon-key.mjs': 'it prints the local stack\'s key',
   'flow-history.mjs': 'it records each part\'s time from a finished run',
   'flow-screens.mjs': 'it draws each failed flow\'s screens for a reader',
@@ -150,8 +155,9 @@ it('feeds every E2E judge a bad log made from a good one, or names the script as
   // A log under a name the repo ignores would be missing from every other checkout: kept under another (judge.as).
   const logs = execFileSync('git', ['ls-files', '--others', '--ignored', '--exclude-standard', '--', 'e2e/__tests__/fixtures/judges'], { cwd: MOBILE, encoding: 'utf8' });
   expect(logs.split('\n').filter(Boolean)).toEqual([]);
-  const scripts = execFileSync('git', ['ls-files', 'e2e'], { cwd: MOBILE, encoding: 'utf8' }).split('\n')
+  const scripts = universe('scripts').map((p) => relative(MOBILE, p).split('\\').join('/'))
     .filter((p) => /^e2e\/[^/]+\.(mjs|cjs)$/.test(p)).map((p) => p.slice('e2e/'.length));
+  expect(scripts.length).toBeGreaterThan(15);
   const judged = new Set(judges.map((m) => (m.judge?.run[1] ?? '').replace(/^e2e\//, '')));
   expect(scripts.filter((s) => !judged.has(s) && !(s in NOT_JUDGES))).toEqual([]);
   expect(Object.keys(NOT_JUDGES).filter((s) => !scripts.includes(s) || judged.has(s))).toEqual([]);
@@ -259,5 +265,39 @@ describe('the runner\'s own rules say NO', () => {
   it('a new shape is never planted over a file that stands', () => {
     const at = relative(MOBILE, join(MOBILE, 'package.json')).split('\\').join('/');
     expect(mutantsCjs.changesOf({ id: 'shape-x', class: 'X-y', source: 'shape', plant: [{ path: at, text: '' }] }).notApplied).toMatch(/already there/);
+  });
+
+  it('a mistyped option, or one without its value, never starts the run of every mutant', () => {
+    expect([[], ['--ids', 'a,b'], ['--changed', 'abc123', '--results', 'r.json', '--fresh'], ['--put-back']].map(mutantsCjs.argumentsFault))
+      .toEqual([null, null, null, null]);
+    expect(mutantsCjs.argumentsFault(['--help'])).toMatch(/^unknown argument --help \(the options: --ids, /);
+    expect([['--ids'], ['--part', '--fresh']].map(mutantsCjs.argumentsFault)).toEqual(['--ids wants a value', '--part wants a value']);
+  });
+
+  it('puts back what a stopped run left in place, a changed file and a planted one, before anything else', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'left-'));
+    try {
+      const changed = join(dir, 'useArrival.ts');
+      const planted = join(dir, 'mutantSettle.ts');
+      writeFileSync(changed, 'the mistake\n');
+      writeFileSync(planted, 'planted\n');
+      const placed = join(dir, '.mutant-in-place.json');
+      writeFileSync(placed, JSON.stringify({ mutant: 'past-x', changes: [
+        { file: 'src/hooks/useArrival.ts', path: changed, before: 'as committed\n' },
+        { file: 'src/hooks/mutantSettle.ts', path: planted, before: null },
+      ] }));
+      expect(mutantsCjs.putBackLeftover(placed)).toEqual(['src/hooks/useArrival.ts', 'src/hooks/mutantSettle.ts']);
+      expect([readFileSync(changed, 'utf8'), existsSync(planted), existsSync(placed)]).toEqual(['as committed\n', false, false]);
+      expect(mutantsCjs.putBackLeftover(placed)).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('records each mutant in place before its files change, and removes the record only once they are put back', () => {
+    const runner = readFileSync(join(MOBILE, 'scripts', 'mutants.cjs'), 'utf8');
+    const write = runner.indexOf('writeFileSync(PLACED');
+    expect([write > 0, write < runner.indexOf('writeFileSync(c.path, c.after)')]).toEqual([true, true]);
+    expect(runner).toMatch(/restore\(changes\);\r?\n\s+unlinkSync\(PLACED\);/);
   });
 });

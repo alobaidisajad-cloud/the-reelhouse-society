@@ -19,10 +19,18 @@ import { files as universe } from '../test-utils/universe';
 
 const ROOT = join(__dirname, '..');
 
-function extractDependencies(): { rpcs: string[]; edgeFunctions: string[] } {
+/**
+ * The helpers a table reaches the client through as a variable (readAllRows by the export's
+ * fetchAllRows, the import's upsertCounted): each is called with the table's name written out.
+ */
+const TABLE_HELPERS = ['fetchAllRows', 'upsertCounted'];
+
+function extractDependencies(): { rpcs: string[]; edgeFunctions: string[]; tables: string[]; buckets: string[] } {
   const files = universe('appCode').filter((f) => !f.endsWith('.d.ts'));
   const rpcs = new Set<string>();
   const edges = new Set<string>();
+  const tables = new Set<string>();
+  const buckets = new Set<string>();
   for (const file of files) {
     const src = readFileSync(file, 'utf8');
     let m: RegExpExecArray | null;
@@ -32,8 +40,14 @@ function extractDependencies(): { rpcs: string[]; edgeFunctions: string[] } {
     while ((m = invokeRe.exec(src))) edges.add(m[1]);
     const urlRe = /functions\/v1\/([a-z0-9-]+)/g;
     while ((m = urlRe.exec(src))) edges.add(m[1]);
+    const fromRe = /\bsupabase\s*\.from\(\s*['"]([a-z0-9_]+)['"]/g;
+    while ((m = fromRe.exec(src))) if (m[1]) tables.add(m[1]);
+    const helperRe = new RegExp(`\\b(?:${TABLE_HELPERS.join('|')})\\(\\s*['"]([a-z0-9_]+)['"]`, 'g');
+    while ((m = helperRe.exec(src))) if (m[1]) tables.add(m[1]);
+    const bucketRe = /\bstorage\s*\.from\(\s*['"]([a-z0-9_-]+)['"]/g;
+    while ((m = bucketRe.exec(src))) if (m[1]) buckets.add(m[1]);
   }
-  return { rpcs: [...rpcs].sort(), edgeFunctions: [...edges].sort() };
+  return { rpcs: [...rpcs].sort(), edgeFunctions: [...edges].sort(), tables: [...tables].sort(), buckets: [...buckets].sort() };
 }
 
 describe('backend contract (repo↔production drift guard)', () => {
@@ -43,7 +57,7 @@ describe('backend contract (repo↔production drift guard)', () => {
   // guard and the live checker both reported it healthy while every call 404'd.
   const contract = JSON.parse(
     readFileSync(join(ROOT, 'scripts', 'backend-contract.json'), 'utf8'),
-  ) as { rpcs: (string | { name: string; signature?: string })[]; edgeFunctions: string[] };
+  ) as { rpcs: (string | { name: string; signature?: string })[]; edgeFunctions: string[]; tables: string[]; buckets: string[] };
   const contractRpcNames = contract.rpcs.map((r) => (typeof r === 'string' ? r : r.name));
   const found = extractDependencies();
 
@@ -76,6 +90,30 @@ describe('backend contract (repo↔production drift guard)', () => {
 
   it('edge-function calls match scripts/backend-contract.json', () => {
     expect(found.edgeFunctions).toEqual([...contract.edgeFunctions].sort());
+  });
+
+  // A sealed E2E run holds every request the app really made to this list
+  // (e2e/what-the-app-asked.mjs over the gateway's log): one it lacks is a call
+  // the reading of the code never saw.
+  it('tables read or written match scripts/backend-contract.json, those reached through a helper included', () => {
+    expect(found.tables).toEqual([...contract.tables].sort());
+    expect(found.tables).toEqual(expect.arrayContaining(['logs', 'log_private_notes', 'physical_archive', 'list_items']));
+  });
+
+  it('storage buckets match scripts/backend-contract.json', () => {
+    expect(found.buckets).toEqual([...contract.buckets].sort());
+  });
+
+  it('every helper a table passes through as a variable is still called with its name written out', () => {
+    const variable = universe('appCode').filter((f) => !f.endsWith('.d.ts')).flatMap((f) => {
+      const src = readFileSync(f, 'utf8');
+      return [...src.matchAll(/\b(?:supabase|storage)\s*\.from\(\s*([a-zA-Z_$][\w$]*)\s*\)/g)].map((m) => `${f.slice(ROOT.length + 1).split('\\').join('/')}: .from(${m[1]})`);
+    });
+    expect(variable.sort()).toEqual([
+      'src/features/archive/archiveImport.ts: .from(table)',
+      'src/features/archive/archiveImport.ts: .from(table)',
+      'src/features/settings/readAllRows.ts: .from(table)',
+    ]);
   });
 });
 

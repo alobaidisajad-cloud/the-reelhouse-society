@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Platform, AppState } from 'react-native';
 import { authSessionStorage } from './authSessionStorage';
 import { heardRefusal } from './refusalEvents';
+import { E2E_BUILD, e2eTrace } from '../utils/e2eTrace';
 
 // The anon key is public by design: RLS and column grants guard every table.
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co';
@@ -15,6 +16,18 @@ export const STORAGE_LIMIT_MS = 90_000;
 
 /** The error a request that ran out of time ends with: read by isNetworkError as not reached. */
 const timedOut = (ms: number) => Object.assign(new Error(`The request timed out after ${ms} ms`), { name: 'TimeoutError' });
+
+/**
+ * In the E2E build alone, each request the app made and how it ended: its status, or the error it
+ * met. A fault run matches it to the gateway's log line by method, path and time (WORKLIST P0.75),
+ * so an answer the house sent and the app never heard is seen from both sides.
+ */
+const traceRequest = (method: string | undefined, url: string, at: string, outcome: { status: number } | { error: string }) => {
+  if (!E2E_BUILD) return;
+  let path = url;
+  try { const u = new URL(url); path = `${u.pathname}${u.search}`; } catch { /* written as given */ }
+  e2eTrace('request', { method: (method ?? 'GET').toUpperCase(), path, at, ...outcome });
+};
 
 /**
  * A request given up when its time runs out. Android's networking waits on a
@@ -33,10 +46,15 @@ export const fetchWithinLimit: typeof fetch = async (input, init) => {
   else theirs?.addEventListener('abort', passOn);
   let ranOut = false;
   const timer = setTimeout(() => { ranOut = true; controller.abort(); }, ms);
+  const at = new Date().toISOString();
   try {
-    return await fetch(input, { ...init, signal: controller.signal });
+    const res = await fetch(input, { ...init, signal: controller.signal });
+    traceRequest(init?.method, url, at, { status: res.status });
+    return res;
   } catch (e) {
-    throw ranOut ? timedOut(ms) : e;
+    const ended = ranOut ? timedOut(ms) : e;
+    traceRequest(init?.method, url, at, { error: ended instanceof Error ? `${ended.name}: ${ended.message}` : String(ended) });
+    throw ended;
   } finally {
     clearTimeout(timer);
     theirs?.removeEventListener('abort', passOn);
