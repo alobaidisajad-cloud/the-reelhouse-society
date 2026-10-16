@@ -66,6 +66,7 @@ type Answers = {
   columns: string[]; dated: string[];
   functions: { unjudged: string[]; gone: string[]; count: number };
   verdict: { total: number; killed: { id: string; by: string }[]; notApplied: string[]; living: string[]; stale: string[] };
+  passes: boolean[];
 };
 
 const answers: Answers = (() => {
@@ -113,6 +114,11 @@ const answers: Answers = (() => {
       })(),
       verdict: a.mutantVerdict({ caught: 0, lives: null, broken: -1, judged: null, judgedButCaught: 1 },
         { judged: 'a second lock', judgedButCaught: 'stale', gone: 'no longer made' }, [{ label: 'try one' }, { label: 'try two' }]),
+      passes: (() => {
+        const clean = { living: [], notApplied: [], stale: [] };
+        return [a.mutantsPass(true, clean), a.mutantsPass(false, clean), a.mutantsPass(true, { ...clean, notApplied: ['x'] }),
+          a.mutantsPass(true, { ...clean, living: ['x'] }), a.mutantsPass(true, { ...clean, stale: ['x'] })];
+      })(),
       columns: a.columnsOf(fs.readFileSync(${JSON.stringify(SNAPSHOT)}, 'utf8').replace(/\\r/g, '')).interactions,
       dated: [a.dated('interactions', { id: 'x' }, { interactions: ['id', 'created_at'] }).created_at,
         a.dated('interactions', { created_at: 'mine' }, { interactions: ['created_at'] }).created_at,
@@ -241,6 +247,11 @@ describe('each way a try comes back is read as what it is', () => {
       living: ['lives'],
       stale: ['judgedButCaught', 'gone'],
     });
+  });
+
+  it('passes the mutants\' run only on a green baseline, with none living unjudged, none unmade and no judgement stale', () => {
+    // A mutant compared with a baseline that already answered wrong proves nothing (TST-19).
+    expect(answers.passes).toEqual([true, false, false, false, false]);
   });
 
   it('meets refused-or-then only by a refusal or a kept row that holds', () => {

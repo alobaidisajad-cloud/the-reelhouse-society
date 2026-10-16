@@ -665,6 +665,13 @@ export const mutantVerdict = (killed, judgedLiving, cases) => {
   };
 };
 
+/**
+ * Whether the mutants' run passes: only on a green baseline (every try as matrix.json
+ * writes it, so a mutant is never judged against a wrong answer), with no mutant
+ * living unjudged, none that could not be made, and no judgement gone stale.
+ */
+export const mutantsPass = (baselineHeld, v) => baselineHeld && !v.living.length && !v.notApplied.length && !v.stale.length;
+
 const report = ({ faults, cases, misses }) => {
   for (const f of faults) console.log(`::error title=Attack matrix::${f}`);
   for (const m of misses) console.log(`✗ ${m.label}: expected ${m.expect}, got ${m.answer} (${m.got})`);
@@ -700,7 +707,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     for (const id of v.living) console.log(`✗ lived: ${id} — no try answered otherwise`);
     for (const id of v.notApplied) console.log(`✗ not applied: ${id}`);
     for (const id of v.stale) console.log(`✗ judged living, but killed or no longer made: ${id}`);
-    const fine = ok && !v.living.length && !v.notApplied.length && !v.stale.length;
+    const fine = mutantsPass(ok, v);
     console.log(`${fine ? '✓' : '✗'} ${v.total} mutants: ${v.killed.length} killed, ${v.total - v.killed.length - v.notApplied.length} living (${v.living.length} not judged), ${v.notApplied.length} not applied.`);
     if (!fine) process.exit(1);
   } else {

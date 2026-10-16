@@ -203,6 +203,19 @@ classes:
     fix: "rehearsals.mjs --without, in db-integration.yml after the rehearsals: the pending migrations are undone from the last, each rehearsal runs once its own is undone (those before it applied, as the train rehearses it) and must fail, then every one is applied again. It was a hand step of mine until now (the 'misses without' counts in PROGRESS); a miss, an empty pick and no case at all are already refused by rehearsals.mjs --self-test, and every rehearsal runs as postgres, production's own login"
     places: [none]
 
+  - id: TEST-mutant-unproven
+    title: A mutant that never applied read as caught, or one judged against a baseline that already answered wrong, so the guard it measures is taken as able to fail when nothing showed it (TST-19)
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.63, TST-19" }
+    methods:
+      - { kind: static, file: e2e/__tests__/attack.test.ts, test: "reads the mutants' run: each caught by its first changed try, one that could not be made, one that lived unjudged, and judgements gone stale" }
+      - { kind: static, file: e2e/__tests__/attack.test.ts, test: "passes the mutants' run only on a green baseline, with none living unjudged, none unmade and no judgement stale" }
+    fix: "the SQL mutants (attack.mjs --mutants): a mutant that cannot be made is its own failure (NOT-APPLIED), never caught; the run passes only when every baseline try answered as matrix.json writes it (mutantsPass), and in CI the plain attack step runs first and must pass. The past and new-shape mutants of P0.66 and P0.67 are held to the same rule when they are built"
+    places: [none]
+
   - id: E2E-ceiling-not-measured
     title: A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's
     seriousness: code
