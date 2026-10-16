@@ -109,3 +109,126 @@ jobs:
           tail -n 30 contracts-output.txt
           node scripts/contracts-ran.cjs contracts.json || exit 1
           exit $rc
+
+  # ── FLAKES (P0.37) ───────────────────────────────────────────────────────────
+  # Every E2E flow three times on tonight's commit, and the suite in an order
+  # jest picks at random. A test that both passes and fails at one commit is a
+  # flake: a defect with a register entry, and the night fails by its name.
+  e2e-round-1:
+    name: 🎬 Every flow, round 1 of 3
+    uses: ./.github/workflows/e2e.yml
+    with:
+      round: '1'
+  e2e-round-2:
+    name: 🎬 Every flow, round 2 of 3
+    uses: ./.github/workflows/e2e.yml
+    with:
+      round: '2'
+  e2e-round-3:
+    name: 🎬 Every flow, round 3 of 3
+    uses: ./.github/workflows/e2e.yml
+    with:
+      round: '3'
+
+  jest-random:
+    name: 🎲 Jest, each file's tests in a random order
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install Mobile Dependencies
+        id: install-3
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-3.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: ./mobile
+        run: npm ci
+
+      # The seed is printed, so an order that fails can be run again.
+      - name: Jest, in a random order
+        working-directory: ./mobile
+        env:
+          TZ: UTC
+        run: npx jest --ci --randomize --showSeed --maxWorkers=2 --json --outputFile=jest-random.json
+
+      - name: Keep the run's record
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: jest-random
+          path: mobile/jest-random.json
+          if-no-files-found: error
+
+  flake-history:
+    name: 🧮 Every test's passes and failures, night by night
+    needs: [e2e-round-1, e2e-round-2, e2e-round-3, jest-random]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+
+      - name: Tonight's rounds and records
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: e2e-logs-*
+          path: ${{ runner.temp }}/rounds
+      - name: Tonight's jest record
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: jest-random
+          path: ${{ runner.temp }}/jest
+
+      # The newest earlier scheduled night that kept a history.
+      - name: The last night's history
+        id: previous
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for id in $(gh run list -R "$GITHUB_REPOSITORY" --workflow nightly.yml --event schedule --status completed \
+                        --limit 30 --json databaseId --jq '.[].databaseId'); do
+            [ "$id" = "$GITHUB_RUN_ID" ] && continue
+            if gh run download "$id" -R "$GITHUB_REPOSITORY" -n flake-history -D "$RUNNER_TEMP/previous" 2>/dev/null; then
+              echo "file=$RUNNER_TEMP/previous/flake-history.json" >> "$GITHUB_OUTPUT"
+              echo "from run $id"
+              break
+            fi
+          done
+
+      - name: Every test's passes and failures, and tonight's flakes
+        working-directory: ./mobile
+        run: |
+          set +e
+          rounds=$(ls -d "$RUNNER_TEMP"/rounds/* 2>/dev/null | paste -sd, -)
+          previous=${{ steps.previous.outputs.file }}
+          node scripts/flake-history.cjs --commit "$GITHUB_SHA" --out "$RUNNER_TEMP/flake-history.json" \
+            ${previous:+--previous "$previous"} ${rounds:+--flows "$rounds"} --jest "$RUNNER_TEMP/jest/jest-random.json" > flakes.txt 2>&1
+          rc=$?
+          cat flakes.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A test both passed and failed at one commit: a flake, a defect" flakes.txt error
+          exit $rc
+
+      - name: Keep the history for the next night
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: flake-history
+          path: ${{ runner.temp }}/flake-history.json
+          if-no-files-found: error
+          retention-days: 90

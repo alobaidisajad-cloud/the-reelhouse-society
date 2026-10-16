@@ -325,6 +325,24 @@ it('production is asked by the nightly contracts alone, and every contract run i
   expect(runsContracts.filter(({ s }) => !/node scripts\/contracts-ran\.cjs contracts\.json \|\| exit 1/.test(s.run ?? ''))).toEqual([]);
 });
 
+it('every night runs each flow three times and the suite in a random order, and keeps every test\'s history (P0.37)', () => {
+  const nightly = workflows.find((w) => w.file === 'nightly.yml')!;
+  expect(triggers(nightly.wf)).toContain('schedule');
+  const jobs = nightly.wf.jobs;
+  const rounds = Object.values(jobs).filter((j) => j.uses === './.github/workflows/e2e.yml').map((j) => String(j.with?.round));
+  expect(rounds.sort()).toEqual(['1', '2', '3']);
+  const steps = (job: string) => ((jobs[job]?.steps ?? []) as RunStep[]);
+  expect(steps('jest-random').some((s) => /npx jest\b.*--randomize --showSeed/.test(s.run ?? ''))).toBe(true);
+  const history = jobs['flake-history'] as Job & { needs?: string[] };
+  expect([...(history.needs ?? [])].sort()).toEqual(['e2e-round-1', 'e2e-round-2', 'e2e-round-3', 'jest-random']);
+  expect(steps('flake-history').some((s) => /node scripts\/flake-history\.cjs --commit "\$GITHUB_SHA"/.test(s.run ?? ''))).toBe(true);
+  expect(steps('flake-history').filter((s) => s.uses && actionOf(s.uses) === 'actions/upload-artifact').map((s) => s.with?.name)).toEqual(['flake-history']);
+  // Each round's artifacts carry its round, so three in one run never share a name.
+  const e2e = workflows.find((w) => w.file === 'e2e.yml')!;
+  expect(e2e.text).toContain("inputs.round && format(' - round {0}', inputs.round)");
+  expect(e2e.text).toContain('group: ${{ github.workflow }}-${{ github.sha }}${{ inputs.round }}');
+});
+
 it('a TMDB request the E2E world has no recording for fails the run, by name', () => {
   const e2e = workflows.find((w) => w.file === 'e2e.yml')!;
   const step = Object.values(e2e.wf.jobs).flatMap((j) => (j.steps ?? []) as RunStep[]).find((s) => s.name === 'TMDB requests with no recording');

@@ -26,14 +26,22 @@ on:
     inputs:
       client:
         type: string
-        required: true
+        required: false
+        default: ''
+      # Which of the night's rounds this is: nightly.yml runs every flow three
+      # times on one commit, so a flow that passes once and fails once is seen.
+      round:
+        type: string
+        required: false
+        default: ''
 
 # A run is never cancelled by a later push: each commit's run finishes and is
 # read. Its group is its own commit, because GitHub keeps one waiting run per
 # group and drops an older one waiting: grouped by branch, three quick pushes
-# left the middle commit with no run at all.
+# left the middle commit with no run at all. A night's rounds of one commit are
+# each their own group, for the same reason.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.sha }}
+  group: ${{ github.workflow }}-${{ github.sha }}${{ inputs.round }}
   cancel-in-progress: false
 
 permissions:
@@ -45,8 +53,9 @@ env:
   E2E_FLOWS: mobile/.maestro
   # The shipped client this run is of, or empty for the app it is run on.
   E2E_OLD_CLIENT: ${{ inputs.client }}
-  # Its name on the run's artifacts, so two clients called in one run never share one.
-  E2E_TAG: ${{ inputs.client && format(' - {0}', inputs.client) || '' }}
+  # Its name on the run's artifacts, so two clients, or two rounds, called in one
+  # run never share one.
+  E2E_TAG: ${{ inputs.client && format(' - {0}', inputs.client) || inputs.round && format(' - round {0}', inputs.round) || '' }}
 
 # Three jobs. The app is built once (build), and its flows run on three
 # machines at once (flows), each its part of mobile/e2e/shards.json: a machine
