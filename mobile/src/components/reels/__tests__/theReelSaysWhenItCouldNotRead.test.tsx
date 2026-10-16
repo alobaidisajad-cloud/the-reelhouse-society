@@ -110,7 +110,7 @@ it('a feed it could not read is not "the projection booth is dark"', async () =>
   expect(screenSaid()).toEqual(['screen.failed reel']);
   expect(r.queryByText('The projection booth is dark.')).toBeNull();
   expect(r.getAllByText('Transmission Interrupted').length).toBeGreaterThan(0);
-  await act(async () => { fireEvent.press(r.getAllByLabelText('Try again')[0]); });
+  await act(async () => { await fireEvent.press(r.getAllByLabelText('Try again')[0]); });
   expect(mockFeeds.community.refetch).toHaveBeenCalledTimes(1);
 });
 
@@ -121,8 +121,8 @@ it('stacks it could not read are not "the archive awaits its first curator"', as
   const all = { includeHiddenElements: true };
   expect(r.queryByText('The archive awaits its first curator.', all)).toBeNull();
   expect(r.getByText('Transmission Interrupted', all)).toBeTruthy();
-  await act(async () => { fireEvent.press(r.getAllByLabelText('Stacks tab')[0]); });
-  await act(async () => { fireEvent.press(r.getByLabelText('Try again', all)); });
+  await act(async () => { await fireEvent.press(r.getAllByLabelText('Stacks tab')[0]); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Try again', all)); });
   expect(mockFeeds.stacks.refetch).toHaveBeenCalledTimes(1);
 });
 

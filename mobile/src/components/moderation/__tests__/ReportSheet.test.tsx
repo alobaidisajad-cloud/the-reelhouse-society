@@ -127,10 +127,10 @@ describe('ReportSheet', () => {
         .map((chip, i) => (chip.props.accessibilityState.selected ? i : -1))
         .filter((i) => i >= 0);
 
-      await act(async () => { fireEvent.press(getAllByRole('radio')[0]); });
+      await act(async () => { await fireEvent.press(getAllByRole('radio')[0]); });
       expect(selected()).toEqual([0]);
 
-      await act(async () => { fireEvent.press(getAllByRole('radio')[3]); });
+      await act(async () => { await fireEvent.press(getAllByRole('radio')[3]); });
       expect(selected()).toEqual([3]);
     });
   });
@@ -205,7 +205,7 @@ describe('ReportSheet', () => {
     it('the details field stops at 500 characters, and its counter says so', async () => {
       // The field opens only once a reason is chosen.
       const { getAllByRole, getByLabelText, getByText } = render(<ReportSheet {...defaultProps} />);
-      await act(async () => { fireEvent.press(getAllByRole('radio')[0]); });
+      await act(async () => { await fireEvent.press(getAllByRole('radio')[0]); });
 
       expect(getByLabelText('Additional details').props.maxLength).toBe(500);
       expect(getByText('0/500')).toBeTruthy();
@@ -213,13 +213,13 @@ describe('ReportSheet', () => {
 
     it('the counter turns to crimson ink at 450 characters, and not before', async () => {
       const { getAllByRole, getByLabelText, getByText } = render(<ReportSheet {...defaultProps} />);
-      await act(async () => { fireEvent.press(getAllByRole('radio')[0]); });
+      await act(async () => { await fireEvent.press(getAllByRole('radio')[0]); });
       const counterColor = (count: number) => StyleSheet.flatten(getByText(`${count}/500`).props.style).color;
 
-      await act(async () => { fireEvent.changeText(getByLabelText('Additional details'), 'x'.repeat(449)); });
+      await act(async () => { await fireEvent.changeText(getByLabelText('Additional details'), 'x'.repeat(449)); });
       expect(counterColor(449)).toBe(colors.fog);
 
-      await act(async () => { fireEvent.changeText(getByLabelText('Additional details'), 'x'.repeat(450)); });
+      await act(async () => { await fireEvent.changeText(getByLabelText('Additional details'), 'x'.repeat(450)); });
       expect(counterColor(450)).toBe(colors.crimsonInk);
     });
   });

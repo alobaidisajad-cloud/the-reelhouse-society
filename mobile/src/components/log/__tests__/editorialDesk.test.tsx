@@ -102,7 +102,7 @@ describe('the stills actually draw', () => {
     const r = desk({ availableBackdrops: [], imagesLoaded: false, imagesFailed: true, onRetryImages });
     expect(r.getByText('The stills could not be reached.')).toBeTruthy();
     expect(r.queryByText('No stills found.')).toBeNull();
-    await act(async () => { fireEvent.press(r.getByLabelText('Ask for the stills again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the stills again')); });
     expect(onRetryImages).toHaveBeenCalledTimes(1);
   });
 
@@ -159,7 +159,7 @@ describe('the desk names itself once', () => {
     // THE EDITORIAL DESK — a second title inside the panel is the heading said
     // twice, four points apart, in two different faces.
     const r = render(<Harness />);
-    await act(async () => { fireEvent.press(r.getByText('THE EDITORIAL DESK')); });
+    await act(async () => { await fireEvent.press(r.getByText('THE EDITORIAL DESK')); });
     expect(r.queryAllByText(/^The Editorial Desk$/)).toHaveLength(0);
     expect(r.getAllByText('THE EDITORIAL DESK')).toHaveLength(1);
   });

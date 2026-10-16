@@ -350,7 +350,7 @@ describe('the stacks it may be filed in', () => {
       STACK('l2', 'The Canon', { isRanked: true }),
     ] });
     const r = mount();
-    await act(async () => { fireEvent.press(r.getByText('STACKS')); });
+    await act(async () => { await fireEvent.press(r.getByText('STACKS')); });
     const iconsIn = (label: string) => {
       const chip = r.getByLabelText(label);
       const out: string[] = [];

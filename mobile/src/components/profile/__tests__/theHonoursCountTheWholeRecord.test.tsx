@@ -62,7 +62,7 @@ describe('a record not yet read is said, never guessed', () => {
     const retry = jest.fn();
     r = render(<Achievements analytics={null} failed onRetry={retry} />);
     expect(r.getByText('The honours could not be reached.')).toBeTruthy();
-    await act(async () => { fireEvent.press(r.getByLabelText('Ask for the honours again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the honours again')); });
     expect(retry).toHaveBeenCalled();
   });
 

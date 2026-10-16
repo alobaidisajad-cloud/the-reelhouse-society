@@ -56,7 +56,7 @@ const noKeyComplaint = () => {
 };
 
 describe('rows that share a label', () => {
-  it('the film finder keeps a remake and its original apart', () => {
+  it('the film finder keeps a remake and its original apart', async () => {
     const picked: string[] = [];
     const { getByLabelText } = render(
       <FilmFinder
@@ -76,13 +76,13 @@ describe('rows that share a label', () => {
     expect(getByLabelText('Suspiria, 2018')).toBeTruthy();
 
     // And the second one is the second one.
-    fireEvent.press(getByLabelText('Suspiria, 2018'));
+    await fireEvent.press(getByLabelText('Suspiria, 2018'));
     expect(picked).toEqual(['Suspiria 2018']);
 
     noKeyComplaint();
   });
 
-  it('the series list keeps two parts a member numbered alike apart', () => {
+  it('the series list keeps two parts a member numbered alike apart', async () => {
     const opened: string[] = [];
     const { getByText, getAllByText } = render(
       <SeriesList
@@ -99,7 +99,7 @@ describe('rows that share a label', () => {
     expect(getAllByText('2')).toHaveLength(2);
     expect(getByText('The Empty Room')).toBeTruthy();
 
-    fireEvent.press(getByText('A Train Leaves'));
+    await fireEvent.press(getByText('A Train Leaves'));
     expect(opened).toEqual(['A Train Leaves']);
 
     noKeyComplaint();
@@ -169,23 +169,23 @@ describe('the series meta row under a long handle', () => {
  * working version. What separates them is whether pressing it does anything.
  */
 describe('the foot of the critiques', () => {
-  it('is a control when there are more, and says how many', () => {
+  it('is a control when there are more, and says how many', async () => {
     const asked: number[] = [];
     const { getByLabelText, getByText } = render(
       <CritiqueFooter shown={30} total={192} onMore={() => asked.push(1)} />,
     );
 
     expect(getByText(new RegExp(String(COMMENT_PAGE_SIZE) + ' AT A TIME'))).toBeTruthy();
-    fireEvent.press(getByLabelText('Read 162 more critiques'));
+    await fireEvent.press(getByLabelText('Read 162 more critiques'));
     expect(asked).toHaveLength(1);
   });
 
-  it('will not fire again while a page is already on its way', () => {
+  it('will not fire again while a page is already on its way', async () => {
     const asked: number[] = [];
     const { getByLabelText } = render(
       <CritiqueFooter shown={30} total={192} loadingMore onMore={() => asked.push(1)} />,
     );
-    fireEvent.press(getByLabelText('Read 162 more critiques'));
+    await fireEvent.press(getByLabelText('Read 162 more critiques'));
     expect(asked).toHaveLength(0);
   });
 

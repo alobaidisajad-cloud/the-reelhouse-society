@@ -71,7 +71,7 @@ describe('the series sheet', () => {
     await flush();
     mockError = null;
     mockRows = [row(1)];
-    await act(async () => { fireEvent.press(r.getByLabelText('Read your series again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Read your series again')); });
     await flush();
     expect(r.getByText('Series 1')).toBeTruthy();
     expect(r.queryByText('Your series could not be read.')).toBeNull();
@@ -88,8 +88,8 @@ describe('the series sheet', () => {
   it('opens fresh: a name half-typed and closed is not there the next time', async () => {
     const r = render(sheet());
     await flush();
-    await act(async () => { fireEvent.press(r.getByLabelText('Begin a new series')); });
-    await act(async () => { fireEvent.changeText(r.getByLabelText("The new series' name"), 'Ozu'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Begin a new series')); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText("The new series' name"), 'Ozu'); });
     expect(r.getByText('THIS ESSAY WILL BE FILED AS')).toBeTruthy();
 
     r.rerender(sheet(false));

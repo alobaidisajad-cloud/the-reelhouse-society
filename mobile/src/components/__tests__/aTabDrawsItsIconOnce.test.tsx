@@ -51,7 +51,7 @@ describe('a tab draws its icon once', () => {
   it('the button draws one, chosen as its tab is, before and after a change of tab', async () => {
     const r = render(<Bar how="button" />);
     expect([copies(r, 'lobby'), copies(r, 'darkroom')]).toEqual([['chosen'], ['not']]);
-    await act(async () => { fireEvent.press(r.getByTestId('darkroom-tab')); });
+    await act(async () => { await fireEvent.press(r.getByTestId('darkroom-tab')); });
     expect([copies(r, 'lobby'), copies(r, 'darkroom')]).toEqual([['not'], ['chosen']]);
   });
 });

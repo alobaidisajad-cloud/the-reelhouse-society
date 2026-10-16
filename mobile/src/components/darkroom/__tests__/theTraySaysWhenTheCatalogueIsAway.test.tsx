@@ -61,7 +61,7 @@ it('TRY AGAIN asks again, and the films are developed', async () => {
     .mockResolvedValue({ results: [{ id: 1, title: 'Sunrise', poster_path: '/s.jpg', release_date: '1927-09-23' }], total_pages: 1 });
   let r!: ReturnType<typeof render>;
   await act(async () => { r = render(<DarkroomScreen />); await settle(); });
-  await act(async () => { fireEvent.press(r.getByLabelText('Try again')); await settle(); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); await settle(); });
   expect(mockTmdb.discover).toHaveBeenCalledTimes(2);
   expect(r.queryByText('Transmission Interrupted')).toBeNull();
   expect(r.getAllByLabelText(/Sunrise/).length).toBeGreaterThan(0);

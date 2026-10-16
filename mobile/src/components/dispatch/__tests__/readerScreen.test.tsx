@@ -215,7 +215,7 @@ describe('the reader', () => {
     expect(getByText('This filing could not be reached.')).toBeTruthy();
 
     mockRowFails = false;
-    await act(async () => { fireEvent.press(getByLabelText('TRY AGAIN')); });
+    await act(async () => { await fireEvent.press(getByLabelText('TRY AGAIN')); });
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     expect(getByText('The Empty Room')).toBeTruthy();
@@ -231,7 +231,7 @@ describe('the reader', () => {
     expect(getByText('The rest of this essay could not be reached.')).toBeTruthy();
 
     mockRowFails = false;
-    await act(async () => { fireEvent.press(getByLabelText('Read the whole essay again')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Read the whole essay again')); });
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     expect(queryByText('The rest of this essay could not be reached.')).toBeNull();
@@ -289,7 +289,7 @@ describe('the reader', () => {
     const { getByLabelText } = await mount();
     expect(getByLabelText(/Option 1 of 2. Tokyo Story/)).toBeTruthy();
 
-    await act(async () => { fireEvent.press(getByLabelText(/Option 2 of 2/)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/Option 2 of 2/)); });
     // Cast once, never changed: recorded on the mark, not after a round trip.
     expect(useDispatch.getState().myVotes.f1).toBe(1);
   });
@@ -313,16 +313,16 @@ describe('the reader', () => {
   it('moves the marks from the docked bar', async () => {
     const { getByLabelText } = await mount();
     // The dock names what it certifies — the page above has its own control.
-    await act(async () => { fireEvent.press(getByLabelText(/^Certify this filing/)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/^Certify this filing/)); });
     expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
 
-    await act(async () => { fireEvent.press(getByLabelText('Save')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Save')); });
     expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
   });
 
   it('replaces the bar with the composer, and never stacks the two', async () => {
     const { getByLabelText, queryByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Write a critique')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Write a critique')); });
 
     expect(getByLabelText('Your critique')).toBeTruthy();
     expect(queryByLabelText(/^Certify this filing/)).toBeNull();
@@ -330,11 +330,11 @@ describe('the reader', () => {
 
   it('sends a critique, and puts it on the page', async () => {
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Write a critique')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Write a critique')); });
     await act(async () => {
-      fireEvent.changeText(getByLabelText('Your critique'), 'That is the argument.');
+      await fireEvent.changeText(getByLabelText('Your critique'), 'That is the argument.');
     });
-    await act(async () => { fireEvent.press(getByLabelText('File this critique')); });
+    await act(async () => { await fireEvent.press(getByLabelText('File this critique')); });
     await act(async () => { await Promise.resolve(); });
 
     expect(useDispatch.getState().critiques.f1?.[0]?.body).toBe('That is the argument.');
@@ -344,19 +344,19 @@ describe('the reader', () => {
     const { getByLabelText } = await mount();
     expect(useDispatch.getState().critiquesOrder.f1).toBe('CERTIFIED');
 
-    await act(async () => { fireEvent.press(getByLabelText('Order by newest')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Order by newest')); });
     expect(useDispatch.getState().critiquesOrder.f1).toBe('NEWEST');
 
     // The order already chosen does not re-read (the list would only flash).
     useDispatch.setState({ critiquesOrder: { f1: 'MARKER' } } as never);
-    await act(async () => { fireEvent.press(getByLabelText('Order by newest')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Order by newest')); });
     expect(useDispatch.getState().critiquesOrder.f1).toBe('MARKER');
   });
 
   it('opens the series from the head of a dossier that is part of one', async () => {
     mockRow = row({ series_id: 's1', series_title: 'Ozu, in four parts', part_number: 2 });
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText(/Open the series/)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/Open the series/)); });
     expect(mockPushed.some((p) => p.startsWith('/dispatch/series/s1'))).toBe(true);
   });
 
@@ -372,7 +372,7 @@ describe('the reader', () => {
   it('opens the app’s own action sheet on somebody else’s filing', async () => {
     // The same sheet a log and a stack open.
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+    await act(async () => { await fireEvent.press(getByLabelText('More, for this filing')); });
 
     expect(mockSheetProps).toHaveLength(1);
     expect(mockSheetProps[0].targetUserId).toBe('u2');
@@ -391,7 +391,7 @@ describe('the reader', () => {
     mockUser = { id: 'u2', username: 'tomasreyes' };
 
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+    await act(async () => { await fireEvent.press(getByLabelText('More, for this filing')); });
 
     expect(mockSheetProps).toHaveLength(0);
     expect(alerts[0][0]).toBe('This filing');
@@ -420,7 +420,7 @@ describe('the reader', () => {
     mockPushed.length = 0;
 
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+    await act(async () => { await fireEvent.press(getByLabelText('More, for this filing')); });
     await act(async () => { alerts[0][2].find((b) => b.text === 'Amend it')?.onPress?.(); });
 
     // The essay desk, with the id that makes it AMEND IT.
@@ -444,7 +444,7 @@ describe('the reader', () => {
       alerts.length = 0;
       mockRow = row(over);
       const { getByLabelText } = await mount();
-      await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+      await act(async () => { await fireEvent.press(getByLabelText('More, for this filing')); });
       // Straight to the withdrawal, with no first sheet offering an amendment.
       expect(alerts[0][0]).toBe('Withdraw this filing?');
     }
@@ -500,7 +500,7 @@ describe('the reader', () => {
     const { getByLabelText, queryByLabelText } = await mount();
     const scrolled = jest.spyOn(ScrollView.prototype, 'scrollTo');
     scrolled.mockClear();
-    await act(async () => { fireEvent.press(getByLabelText(/^Critique\. 3 critiques remain/)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/^Critique\. 3 critiques remain/)); });
     // REACHED: the mark carries the page down to the critiques that survive.
     // The control has no disabled state, so without this a mark with no
     // handler would pass as one that leads somewhere.
@@ -522,7 +522,7 @@ describe('the reader', () => {
     const { getByLabelText, queryByText, getByText } = await mount();
     expect(getByText('The Empty Room')).toBeTruthy();
 
-    await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+    await act(async () => { await fireEvent.press(getByLabelText('More, for this filing')); });
     // Through both sheets: which act, then the confirmation.
     await act(async () => { alerts[0][2].find((b) => b.text === 'Withdraw it')?.onPress?.(); });
     await act(async () => { alerts[1][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
@@ -540,9 +540,9 @@ describe('the reader', () => {
     });
 
     const { getByLabelText, queryByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Share')); });
 
-    await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/ELSEWHERE/)); });
     expect(shared).toHaveLength(1);
     // The house's sheet closes behind the system's.
     expect(queryByLabelText(/ELSEWHERE/)).toBeNull();
@@ -558,8 +558,8 @@ describe('the reader', () => {
     mockRow = row({ kind: 'take', title: null, full_content: null, body: 'A take.' });
 
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Share')); });
-    await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
+    await act(async () => { await fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { await fireEvent.press(getByLabelText(/ELSEWHERE/)); });
 
     expect(shared[0].message).toContain('https://www.thereelhousesociety.com/dispatch');
     expect(shared[0].message).not.toContain('reelhouse://');
@@ -574,7 +574,7 @@ describe('the reader', () => {
     // One "The Empty Room" while merely reading: the essay's own head.
     expect(getAllByText('The Empty Room')).toHaveLength(1);
 
-    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Share')); });
     // Two while the sheet is open: the page, and the clipping behind it.
     expect(getAllByText('The Empty Room').length).toBeGreaterThan(1);
   });
@@ -585,22 +585,22 @@ describe('the reader', () => {
 
     mockRow = row({ kind: 'take', title: null, full_content: null, body: 'A take.' });
     const take = await mount();
-    await act(async () => { fireEvent.press(take.getByLabelText('Share')); });
+    await act(async () => { await fireEvent.press(take.getByLabelText('Share')); });
     expect(parked(take.toJSON())).toBe(false); // only an essay leaves as a picture
     await act(async () => { take.unmount(); });
 
     mockRow = row();
     const essay = await mount();
-    await act(async () => { fireEvent.press(essay.getByLabelText('Share')); });
+    await act(async () => { await fireEvent.press(essay.getByLabelText('Share')); });
     expect(parked(essay.toJSON())).toBe(true);
   });
 
   it('closes the share sheet from the ground behind it', async () => {
     const { getByLabelText, queryByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Share')); });
     expect(getByLabelText(/ELSEWHERE/)).toBeTruthy();
 
-    await act(async () => { fireEvent.press(getByLabelText(/Close|Dismiss/i)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/Close|Dismiss/i)); });
     expect(queryByLabelText(/ELSEWHERE/)).toBeNull();
   });
 
@@ -614,7 +614,7 @@ describe('the reader', () => {
     }];
 
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText(/Take .* as your answer/)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/Take .* as your answer/)); });
     expect(useDispatch.getState().opened.f1?.answerId).toBe('c1');
   });
 
@@ -630,7 +630,7 @@ describe('the reader', () => {
     }];
 
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Withdraw this critique')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Withdraw this critique')); });
     expect(alerts[0][0]).toBe('Withdraw this critique?');
 
     await act(async () => { alerts[0][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
@@ -643,11 +643,11 @@ describe('the reader', () => {
     mockRow = row({ subject_kind: 'film', subject_id: 42, subject_title: 'Tokyo Story' });
     const { getByLabelText } = await mount();
 
-    await act(async () => { fireEvent.press(getByLabelText(/Open their room/)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/Open their room/)); });
     expect(mockPushed).toContain('/dispatch/room/tomasreyes');
 
     mockPushed.length = 0;
-    await act(async () => { fireEvent.press(getByLabelText(/Tokyo Story/)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/Tokyo Story/)); });
     expect(mockPushed).toContain('/film/42');
   });
 
@@ -662,9 +662,9 @@ describe('the reader', () => {
       const { getByLabelText, unmount } = await mount();
 
       // The page's own control (the dock's says "this filing").
-      await act(async () => { fireEvent.press(getByLabelText(/^Certify this($|\. \d)/)); });
+      await act(async () => { await fireEvent.press(getByLabelText(/^Certify this($|\. \d)/)); });
       expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
-      await act(async () => { fireEvent.press(getByLabelText('Save this')); });
+      await act(async () => { await fireEvent.press(getByLabelText('Save this')); });
       expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
 
       await act(async () => { unmount(); }); // before the next tree mounts
@@ -678,7 +678,7 @@ describe('the reader', () => {
       created_at: '2026-08-28T22:00:00Z', edited_at: null, profiles: null,
     }];
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Certify this critique. 2 members have certified this critique')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Certify this critique. 2 members have certified this critique')); });
     expect(useDispatch.getState().certifiedCritiqueIds.has('c1')).toBe(true);
     expect(useDispatch.getState().critiques.f1[0].certifyCount).toBe(3);
   });
@@ -700,7 +700,7 @@ describe('the reader', () => {
     // One reportable critique, not two: you cannot report your own.
     expect(getAllByLabelText('Report this critique')).toHaveLength(1);
 
-    await act(async () => { fireEvent.press(getByLabelText('Report this critique')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Report this critique')); });
     // As a CRITIQUE, so the Tribunal sees the line that was reported.
     expect(mockReportProps[0].contentType).toBe('dispatch_comment');
     expect(mockReportProps[0].contentId).toBe('c1');
@@ -722,7 +722,7 @@ describe('the reader', () => {
       body: 'Critique ' + (i + 30), certify_count: 0,
       created_at: '2026-08-28T21:00:00Z', edited_at: null, profiles: null,
     }));
-    await act(async () => { fireEvent.press(getByLabelText(/more critiques/)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/more critiques/)); });
     await act(async () => { await Promise.resolve(); });
     expect(useDispatch.getState().critiques.f1).toHaveLength(60);
   }, 10000);   // sixty critiques drawn: ~2.5 s alone, past 5 s under a full run
@@ -730,7 +730,7 @@ describe('the reader', () => {
   it('blocks the author, then leaves the page', async () => {
     mockUpserts.length = 0;
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+    await act(async () => { await fireEvent.press(getByLabelText('More, for this filing')); });
     const author = mockSheetProps[0].targetUserId;
     await act(async () => { (mockSheetProps[0].onBlock as () => void)(); });
     expect(mockUpserts).toEqual([{ table: 'user_blocks', row: expect.objectContaining({ blocked_id: author, type: 'block' }) }]);
@@ -742,7 +742,7 @@ describe('the reader', () => {
     // The test before blocked this author, and a block outranks a mute: start clean.
     useBlockStore.setState({ blocked: [], muted: [], _blockedIndex: new Set(), _mutedIndex: new Set() });
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+    await act(async () => { await fireEvent.press(getByLabelText('More, for this filing')); });
     const author = mockSheetProps[0].targetUserId;
     expect(typeof mockSheetProps[0].onMute).toBe('function');
     await act(async () => { (mockSheetProps[0].onMute as () => void)(); });
@@ -751,7 +751,7 @@ describe('the reader', () => {
 
   it('carries a report from the sheet into the report sheet', async () => {
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('More, for this filing')); });
+    await act(async () => { await fireEvent.press(getByLabelText('More, for this filing')); });
     await act(async () => { (mockSheetProps[0].onReport as () => void)(); });
     expect(mockReportProps[0].contentType).toBe('dispatch_post');
     expect(mockReportProps[0].contentId).toBe('f1');
@@ -769,7 +769,7 @@ describe('the reader', () => {
     const foot = getByLabelText(/NEXT IN THE SERIES. Nobody Comes Back/);
     expect(foot).toBeTruthy();
 
-    await act(async () => { fireEvent.press(foot); });
+    await act(async () => { await fireEvent.press(foot); });
     expect(mockPushed).toContain('/dispatch/p3');
   });
 
@@ -802,8 +802,8 @@ describe('the reader', () => {
     });
 
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Share')); });
-    await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
+    await act(async () => { await fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { await fireEvent.press(getByLabelText(/ELSEWHERE/)); });
 
     expect(shared).toHaveLength(1);
     expect(shared[0].url).toBe('file:///clipping.png');
@@ -832,8 +832,8 @@ describe('the reader', () => {
     const plain = jest.spyOn(Share, 'share');
 
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Share')); });
-    await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
+    await act(async () => { await fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { await fireEvent.press(getByLabelText(/ELSEWHERE/)); });
 
     expect(shots).toEqual(['file:///clipping.png']);
     expect(plain).not.toHaveBeenCalled();
@@ -846,8 +846,8 @@ describe('the reader', () => {
     // TO THE LOUNGE opens the salon picker, never the OS sheet.
     const plain = jest.spyOn(Share, 'share');
     const { getByLabelText, queryByLabelText, getByText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Share')); });
-    await act(async () => { fireEvent.press(getByLabelText(/TO THE LOUNGE/)); });
+    await act(async () => { await fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { await fireEvent.press(getByLabelText(/TO THE LOUNGE/)); });
 
     // The share sheet closes and nothing is handed to the operating system.
     expect(queryByLabelText(/ELSEWHERE/)).toBeNull();
@@ -862,7 +862,7 @@ describe('the reader', () => {
   it('offers no SAVE THE CARD row, because nothing can save one', async () => {
     // Pinned, as a decision: see ShareSheet's `card`.
     const { getByLabelText, queryByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Share')); });
     expect(queryByLabelText(/SAVE THE CARD/)).toBeNull();
   });
 
@@ -876,8 +876,8 @@ describe('the reader', () => {
     });
 
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Share')); });
-    await act(async () => { fireEvent.press(getByLabelText(/ELSEWHERE/)); });
+    await act(async () => { await fireEvent.press(getByLabelText('Share')); });
+    await act(async () => { await fireEvent.press(getByLabelText(/ELSEWHERE/)); });
 
     expect(shared[0].message).toContain('https://www.thereelhousesociety.com/dispatch');
     capture.mockRestore(); spy.mockRestore();
@@ -886,11 +886,11 @@ describe('the reader', () => {
   it('says so when a critique will not go, and keeps what was written', async () => {
     mockWriteFails = true;
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Write a critique')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Write a critique')); });
     await act(async () => {
-      fireEvent.changeText(getByLabelText('Your critique'), 'That is the argument.');
+      await fireEvent.changeText(getByLabelText('Your critique'), 'That is the argument.');
     });
-    await act(async () => { fireEvent.press(getByLabelText('File this critique')); });
+    await act(async () => { await fireEvent.press(getByLabelText('File this critique')); });
     await act(async () => { await Promise.resolve(); });
 
     expect(mockToastError).toHaveBeenCalledWith('That critique did not go.');
@@ -902,11 +902,11 @@ describe('the reader', () => {
     // It was queued and drawn as though it had gone, with nothing said.
     mockWriteOffline = true;
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Write a critique')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Write a critique')); });
     await act(async () => {
-      fireEvent.changeText(getByLabelText('Your critique'), 'That is the argument.');
+      await fireEvent.changeText(getByLabelText('Your critique'), 'That is the argument.');
     });
-    await act(async () => { fireEvent.press(getByLabelText('File this critique')); });
+    await act(async () => { await fireEvent.press(getByLabelText('File this critique')); });
     await act(async () => { await Promise.resolve(); });
 
     expect(mockToastSuccess).toHaveBeenCalledWith('Filed. It goes out when the wire is back.');
@@ -1080,7 +1080,7 @@ describe('the ways out, and the ways it fails', () => {
       expect(backs.length).toBeGreaterThan(0);
       for (const b of backs) {
         mockBack.mockClear();
-        await act(async () => { fireEvent.press(b); });
+        await act(async () => { await fireEvent.press(b); });
         expect(mockBack).toHaveBeenCalled();
       }
     }
@@ -1090,7 +1090,7 @@ describe('the ways out, and the ways it fails', () => {
     mockPushed.length = 0;
     const { getAllByLabelText } = await mount();
     await act(async () => {
-      fireEvent.press(getAllByLabelText(/Open their room/i)[0]);
+      await fireEvent.press(getAllByLabelText(/Open their room/i)[0]);
     });
     expect(mockPushed).toContain('/dispatch/room/tomasreyes');
   });
@@ -1118,7 +1118,7 @@ describe('the ways out, and the ways it fails', () => {
     // stands in the store: only a re-read could replace it.
     useDispatch.setState({ critiquesOrder: { f1: 'MARKER' } } as never);
     // By its own label: the certify controls say "certified" too now.
-    await act(async () => { fireEvent.press(getByLabelText('Order by certified')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Order by certified')); });
     expect(useDispatch.getState().critiquesOrder.f1).toBe('MARKER');
   });
 
@@ -1133,7 +1133,7 @@ describe('the ways out, and the ways it fails', () => {
       .mockRejectedValue(new Error('refused'));
 
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText(/More/i)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/More/i)); });
     await act(async () => { await Promise.resolve(); });
 
     expect(mockToastError).toHaveBeenCalledWith('It could not be withdrawn.');

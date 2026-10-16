@@ -16,6 +16,6 @@ jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), back: jest
 it('a film from your own queue opens', async () => {
   const item = toProfileWatchlistItem({ id: 603, title: 'The Matrix', poster: null, year: 1999 });
   const r = render(<ProfilePosterCard item={item} width={100} />);
-  await act(async () => { fireEvent.press(r.getByLabelText('The Matrix, 1999')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('The Matrix, 1999')); });
   expect(nav.push).toHaveBeenCalledWith('/film/603');
 });

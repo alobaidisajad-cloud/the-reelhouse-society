@@ -377,7 +377,7 @@ describe('the critiques overlay', () => {
     const r = mount(over);
     await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
     const action = r.getByLabelText(/critiques?/i);
-    await act(async () => { fireEvent.press(action); });
+    await act(async () => { await fireEvent.press(action); });
     return r;
   };
 
@@ -475,10 +475,10 @@ describe('the critiques overlay', () => {
 
     // Opened and closed again inside the moment: no keyboard comes.
     const action = () => r.getByLabelText('Critiques');
-    await act(async () => { fireEvent.press(action()); });
+    await act(async () => { await fireEvent.press(action()); });
     focus.mockClear();
-    await act(async () => { fireEvent.press(action()); });
-    await act(async () => { fireEvent.press(action()); });
+    await act(async () => { await fireEvent.press(action()); });
+    await act(async () => { await fireEvent.press(action()); });
     await moment();
     expect(focus).not.toHaveBeenCalled();
   });
@@ -652,7 +652,7 @@ describe('the fold is driven, not merely described', () => {
     const r = mount({ description: 'A collection of psychological horror films.' });
     await layout(r, 9);
     await waitFor(() => expect(r.getByText(/READ MORE/)).toBeTruthy());
-    await act(async () => { fireEvent.press(r.getByText(/READ MORE/)); });
+    await act(async () => { await fireEvent.press(r.getByText(/READ MORE/)); });
     await waitFor(() => expect(r.getByText(/FOLD/)).toBeTruthy());
   });
 });
@@ -781,14 +781,14 @@ describe('filing a critique — what the action actually does', () => {
   const open = async (over: Record<string, unknown> = {}) => {
     const r = mount({ critiqueCount: 3, ...over });
     await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
-    await act(async () => { fireEvent.press(r.getByLabelText(/critiques?/i)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/critiques?/i)); });
     await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
     return r;
   };
 
   const file = async (r: ReturnType<typeof mount>, text: string) => {
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), text); });
-    await act(async () => { fireEvent.press(r.getByLabelText('Submit critique')); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), text); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Submit critique')); });
   };
 
   /** Every ['stack', id] cache write the page made, as the updater's result. */
@@ -853,14 +853,14 @@ describe('filing a critique — what the action actually does', () => {
     expect(send.props.accessibilityState?.disabled ?? send.props.disabled).toBe(true);
 
     // Spaces are not a critique.
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), '    '); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), '    '); });
     const stillShut = r.getByLabelText('Submit critique');
     expect(stillShut.props.accessibilityState?.disabled ?? stillShut.props.disabled).toBe(true);
-    await act(async () => { fireEvent.press(stillShut); });
+    await act(async () => { await fireEvent.press(stillShut); });
     expect(mockAddComment).not.toHaveBeenCalled();
 
     // and it opens the moment there is something to say
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), 'A real one.'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), 'A real one.'); });
     const open2 = r.getByLabelText('Submit critique');
     expect(open2.props.accessibilityState?.disabled ?? open2.props.disabled).toBeFalsy();
   });
@@ -870,7 +870,7 @@ describe('the overlay’s back button, driven', () => {
   it('closes the critiques and leaves the page standing', async () => {
     const r = mount({ critiqueCount: 2 });
     await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
-    await act(async () => { fireEvent.press(r.getByLabelText(/critiques?/i)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/critiques?/i)); });
     await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
 
     expect(mockBackHandlers.length).toBeGreaterThan(0);
@@ -897,7 +897,7 @@ describe('a stack it could not reach is not a sealed one', () => {
     const r = render(<StackDetailScreen />);
     expect(r.queryByText('CLASSIFIED')).toBeNull();
     expect(r.getByText('Transmission Interrupted')).toBeTruthy();
-    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     expect(mockRereadStack).toHaveBeenCalledTimes(1);
   });
 
@@ -944,7 +944,7 @@ describe('taking back one’s own critique on a stack', () => {
   const open = async () => {
     const r = mount({ critiqueCount: 2 });
     await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
-    await act(async () => { fireEvent.press(r.getByLabelText(/critiques?/i)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/critiques?/i)); });
     await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
     return r;
   };
@@ -999,7 +999,7 @@ describe('the critiques as they stand, sent or waiting', () => {
   const open = async () => {
     const r = mount({ critiqueCount: 0 });
     await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
-    await act(async () => { fireEvent.press(r.getByLabelText(/critiques?/i)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/critiques?/i)); });
     await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
     return r;
   };
@@ -1012,7 +1012,7 @@ describe('the critiques as they stand, sent or waiting', () => {
     const r = await open();
     r.getByText('The critiques could not be reached.');
     expect(r.queryByText('No critiques yet. Be the first to speak.')).toBeNull();
-    await act(async () => { fireEvent.press(r.getByLabelText('Read the critiques again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Read the critiques again')); });
     expect(mockRereadCritiques).toHaveBeenCalled();
   });
 
@@ -1064,8 +1064,8 @@ describe('the critiques as they stand, sent or waiting', () => {
     mockToastError.mockClear();
     mockAddComment.mockRejectedValue(Object.assign(new Error('new row violates row-level security policy'), { code: '42501' }));
     const r = await open();
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), 'Not mine to say.'); });
-    await act(async () => { fireEvent.press(r.getByLabelText('Submit critique')); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), 'Not mine to say.'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Submit critique')); });
     expect(mockToastError).toHaveBeenCalledWith('This member limits who may annotate their critiques.');
   });
 
@@ -1073,16 +1073,16 @@ describe('the critiques as they stand, sent or waiting', () => {
     // The page's own copy of "is this the network?" knew only fetch/network/offline.
     mockAddComment.mockRejectedValue({ code: '57014', message: 'canceling statement due to statement timeout' });
     const r = await open();
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), 'Filed through a slow line.'); });
-    await act(async () => { fireEvent.press(r.getByLabelText('Submit critique')); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), 'Filed through a slow line.'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Submit critique')); });
     expect(mockEnqueue).toHaveBeenCalledWith({ type: 'add_list_comment', payload: expect.objectContaining({ content: 'Filed through a slow line.' }) });
   });
 
   it('is filed under an id made on the phone, the one it waits under', async () => {
     mockAddComment.mockRejectedValue(new TypeError('Network request failed'));
     const r = await open();
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack critique'), 'Filed from a tunnel.'); });
-    await act(async () => { fireEvent.press(r.getByLabelText('Submit critique')); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), 'Filed from a tunnel.'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Submit critique')); });
     const sent = mockAddComment.mock.calls[0][0] as { id: string };
     expect(sent.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(mockEnqueue).toHaveBeenCalledWith({ type: 'add_list_comment', payload: expect.objectContaining({ id: sent.id, content: 'Filed from a tunnel.' }) });

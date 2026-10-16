@@ -192,14 +192,14 @@ describe('the series page', () => {
     ];
     const { getByText } = await mount();
 
-    await act(async () => { fireEvent.press(getByText('A Train Leaves')); });
+    await act(async () => { await fireEvent.press(getByText('A Train Leaves')); });
     expect(mockPushed).toEqual(['/dispatch/p2']);
   });
 
   it('opens the author’s room from the byline', async () => {
     mockRows = [part()];
     const { getByText } = await mount();
-    await act(async () => { fireEvent.press(getByText(/tomasreyes/i)); });
+    await act(async () => { await fireEvent.press(getByText(/tomasreyes/i)); });
     expect(mockPushed).toEqual(['/dispatch/room/tomasreyes']);
   });
 
@@ -263,13 +263,13 @@ describe('the series page', () => {
   it('goes back from the head, on a full page and an empty one', async () => {
     mockRows = [part()];
     const full = await mount();
-    await act(async () => { fireEvent.press(full.getByLabelText('Back')); });
+    await act(async () => { await fireEvent.press(full.getByLabelText('Back')); });
     expect(mockBack).toHaveBeenCalled();
 
     mockBack.mockClear();
     mockRows = [];
     const empty = await mount();
-    await act(async () => { fireEvent.press(empty.getByLabelText('Back')); });
+    await act(async () => { await fireEvent.press(empty.getByLabelText('Back')); });
     expect(mockBack).toHaveBeenCalled();
   });
 
@@ -294,7 +294,7 @@ describe('the series page', () => {
     const r = await mount();
     mockReadError = null;
     mockRows = [part({ title: 'The Empty Room' })];
-    await act(async () => { fireEvent.press(r.getByText('TRY AGAIN')); });
+    await act(async () => { await fireEvent.press(r.getByText('TRY AGAIN')); });
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
     expect(r.getByText('The Empty Room')).toBeTruthy();
     expect(r.queryByText('This series could not be reached.')).toBeNull();

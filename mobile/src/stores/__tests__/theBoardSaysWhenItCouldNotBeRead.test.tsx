@@ -60,7 +60,7 @@ describe('the board', () => {
     expect(r.queryByText('The board is clear.')).toBeNull();
     expect(r.getByText('Transmission Interrupted')).toBeTruthy();
     mockAnswer = { data: [], error: null, count: 0 };
-    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     expect(r.getByText('The board is clear.')).toBeTruthy();
   });
 });

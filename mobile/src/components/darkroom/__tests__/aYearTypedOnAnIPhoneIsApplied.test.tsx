@@ -34,8 +34,8 @@ function Panel({ start = {}, onUpdate }: { start?: Partial<Filters>; onUpdate: j
 }
 
 const typeThenLeave = async (field: unknown, text: string) => {
-  await act(async () => { fireEvent.changeText(field as never, text); });
-  await act(async () => { fireEvent(field as never, 'endEditing'); });
+  await act(async () => { await fireEvent.changeText(field as never, text); });
+  await act(async () => { await fireEvent(field as never, 'endEditing'); });
 };
 
 describe('the Darkroom’s year range', () => {

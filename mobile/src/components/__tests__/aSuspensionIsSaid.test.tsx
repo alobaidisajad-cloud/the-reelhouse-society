@@ -39,15 +39,15 @@ describe('the standing, read from the profile', () => {
 });
 
 describe('the notice', () => {
-  afterEach(() => { act(() => { useAuthStore.setState({ user: null }); }); jest.useRealTimers(); });
+  afterEach(async () => { await act(() => { useAuthStore.setState({ user: null }); }); jest.useRealTimers(); });
 
-  it('says nothing to a member in good standing', () => {
-    act(() => { useAuthStore.setState({ user: { id: 'u1' } as never }); });
+  it('says nothing to a member in good standing', async () => {
+    await act(() => { useAuthStore.setState({ user: { id: 'u1' } as never }); });
     expect(render(<StandingNotice />).toJSON()).toBeNull();
   });
 
-  it('a silenced member is told, and told what they may still do', () => {
-    act(() => { useAuthStore.setState({ user: { id: 'u1', is_banned: true } as never }); });
+  it('a silenced member is told, and told what they may still do', async () => {
+    await act(() => { useAuthStore.setState({ user: { id: 'u1', is_banned: true } as never }); });
     const r = render(<StandingNotice />);
     expect(r.getByText('SILENCED BY THE SOCIETY')).toBeTruthy();
     expect(r.getByText('YOU MAY READ. YOU MAY NOT WRITE.')).toBeTruthy();
@@ -57,7 +57,7 @@ describe('the notice', () => {
   it('a suspended member is told until when, and the notice goes when it ends', async () => {
     jest.useFakeTimers({ now: NOW });
     const until = new Date(NOW + 2 * HOUR).toISOString();
-    act(() => { useAuthStore.setState({ user: { id: 'u1', suspended_until: until } as never }); });
+    await act(() => { useAuthStore.setState({ user: { id: 'u1', suspended_until: until } as never }); });
     const r = render(<StandingNotice />);
     expect(r.getByText(/^SUSPENDED UNTIL [A-Z]{3} \d{1,2}, 2026, \d{2}:\d{2} (AM|PM)$/)).toBeTruthy();
     await act(async () => { jest.advanceTimersByTime(2 * HOUR + 2000); });
@@ -90,12 +90,12 @@ describe('a refusal for standing reads it again', () => {
   });
 
   it('fetches the member\'s standing into the profile the app holds', async () => {
-    act(() => { useAuthStore.setState({ user: { id: 'u1', username: 'vesper' } as never }); });
+    await act(() => { useAuthStore.setState({ user: { id: 'u1', username: 'vesper' } as never }); });
     const until = new Date(Date.now() + HOUR).toISOString();
     const single = jest.fn().mockResolvedValue({ data: { is_banned: false, suspended_until: until }, error: null });
     jest.spyOn(supabase, 'from').mockReturnValue({ select: () => ({ eq: () => ({ single }) }) } as never);
     await refreshStanding();
     expect(useAuthStore.getState().user).toMatchObject({ id: 'u1', username: 'vesper', suspended_until: until });
-    act(() => { useAuthStore.setState({ user: null }); });
+    await act(() => { useAuthStore.setState({ user: null }); });
   });
 });

@@ -49,7 +49,7 @@ it('the backdrop switch, refused, flips back and says so', async () => {
   const r = render(<EditProfileScreen />);
   await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
   const sw = r.getByLabelText('Film backdrop on your profile');
-  await act(async () => { fireEvent(sw, 'valueChange', false); });
+  await act(async () => { await fireEvent(sw, 'valueChange', false); });
   expect(reelToast.error).toHaveBeenCalledWith('The backdrop could not be changed. It is as it was.');
   expect(mockState.updateUser).toHaveBeenLastCalledWith({ preferences: { backdrop: true } });
 });
@@ -58,7 +58,7 @@ it('a refused photo permission offers the way to grant it', async () => {
   const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   const open = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined as never);
   const r = render(<AvatarCropSheet onClose={jest.fn()} onSuccess={jest.fn()} />);
-  await act(async () => { fireEvent.press(r.getByLabelText('Choose a photo from your library')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Choose a photo from your library')); });
   expect(ImagePicker.requestMediaLibraryPermissionsAsync).toHaveBeenCalled();
   const buttons = alert.mock.calls[0][2] as { text: string; onPress?: () => void }[];
   buttons.find((b) => b.text === 'Open Settings')!.onPress!();

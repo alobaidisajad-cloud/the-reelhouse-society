@@ -364,7 +364,7 @@ describe('the share card exists only while a share is in flight', () => {
 
   it('mounted for the share, captured only once it is whole, and gone when the share ends — however it ends', async () => {
     const r = await page();
-    await act(async () => { fireEvent.press(r.getByText('SHARE')); });
+    await act(async () => { await fireEvent.press(r.getByText('SHARE')); });
     // In flight: the card is up, and its pictures are not all drawn yet.
     expect(card(r)).not.toBeNull();
     await act(async () => { await new Promise((res) => setTimeout(res, 50)); });
@@ -383,7 +383,7 @@ describe('the share card exists only while a share is in flight', () => {
     const r = await page();
     jest.useFakeTimers({ doNotFake: ['Date', 'performance', 'nextTick', 'setImmediate', 'queueMicrotask'] });
     try {
-      await act(async () => { fireEvent.press(r.getByText('SHARE')); });
+      await act(async () => { await fireEvent.press(r.getByText('SHARE')); });
       await act(async () => { jest.advanceTimersByTime(19_000); });
       expect(card(r)).not.toBeNull();
       expect(mockToastError).not.toHaveBeenCalled();
@@ -401,14 +401,14 @@ describe('the share card exists only while a share is in flight', () => {
 describe('the record offers what the card offers', () => {
   it('a visitor can save the film, and take it back', async () => {
     const r = await page();
-    await act(async () => { fireEvent.press(r.getByLabelText('Save film to your watchlist')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Save film to your watchlist')); });
     expect(r.getByLabelText('Remove film from your watchlist')).toBeTruthy();
     // A second tap on the same control inside 400ms is swallowed on purpose
     // (PressableScale's debounce): a member's second tap comes later than that.
     const now = Date.now();
     const clock = jest.spyOn(Date, 'now').mockReturnValue(now + 1000);
     try {
-      await act(async () => { fireEvent.press(r.getByLabelText('Remove film from your watchlist')); });
+      await act(async () => { await fireEvent.press(r.getByLabelText('Remove film from your watchlist')); });
     } finally {
       clock.mockRestore();
     }
@@ -451,7 +451,7 @@ describe('a record that could not be read', () => {
     const { r, refetch } = await unread();
     expect(r.queryByText('Log not found.')).toBeNull();
     expect(r.getByText('Transmission Interrupted')).toBeTruthy();
-    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     expect(refetch).toHaveBeenCalled();
   });
 

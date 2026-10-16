@@ -114,7 +114,7 @@ describe('your own file, with the lock on', () => {
   it('one opening opens all of it, for the visit', async () => {
     LA.authenticateAsync.mockResolvedValue({ success: true });
     const r = await mount();
-    await act(async () => { fireEvent.press(r.getByLabelText('Authenticate to open your Archive')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Authenticate to open your Archive')); });
     expect(filmShown(r)).toBe(true);
     mockCtl = ctl({ activeTab: 'ledger' });
     await act(async () => { r.rerender(<UserProfileScreen />); });
@@ -125,7 +125,7 @@ describe('your own file, with the lock on', () => {
   it('a refusal keeps it shut', async () => {
     LA.authenticateAsync.mockResolvedValue({ success: false, error: 'authentication_failed' });
     const r = await mount();
-    await act(async () => { fireEvent.press(r.getByLabelText('Authenticate to open your Archive')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Authenticate to open your Archive')); });
     expect(filmShown(r)).toBe(false);
     expect(r.getByText('Authentication Failed')).toBeTruthy();
   });

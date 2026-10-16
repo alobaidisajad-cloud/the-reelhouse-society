@@ -54,7 +54,7 @@ it('a read that fails says the house could not be reached, and TRY AGAIN reads a
   expect(r.getByText('Transmission Interrupted')).toBeTruthy();
   expect(r.queryByText(/MEMBER FILE/)).toBeNull();
 
-  await act(async () => { fireEvent.press(r.getByText(/TRY AGAIN/)); });
+  await act(async () => { await fireEvent.press(r.getByText(/TRY AGAIN/)); });
   expect(mockRestore).toHaveBeenCalledTimes(2);
 });
 

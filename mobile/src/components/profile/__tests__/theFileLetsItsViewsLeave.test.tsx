@@ -106,9 +106,9 @@ it('the Cinema DNA card, closed, fades and then leaves the tree', async () => {
   await act(async () => { r.rerender(<UserProfileScreen />); });
   expect(r.getByText('CINEMA DNA', ALL)).toBeTruthy();
   expect(r.queryByText('CINEMA DNA')).toBeNull();
-  act(() => { jest.advanceTimersByTime(EXIT - 1); });
+  await act(() => { jest.advanceTimersByTime(EXIT - 1); });
   expect(r.getByText('CINEMA DNA', ALL)).toBeTruthy();
-  act(() => { jest.advanceTimersByTime(1); });
+  await act(() => { jest.advanceTimersByTime(1); });
   expect(r.queryByText('CINEMA DNA', ALL)).toBeNull();
 });
 
@@ -117,10 +117,10 @@ it('the Archive\'s lock, opened, fades over the calendar and then leaves the tre
   const s = await mount({ activeTab: 'calendar' });
   expect(s.getByText('RESTRICTED ACCESS')).toBeTruthy();
   LA.authenticateAsync.mockResolvedValue({ success: true });
-  await act(async () => { fireEvent.press(s.getByLabelText('Authenticate to open your Archive')); });
+  await act(async () => { await fireEvent.press(s.getByLabelText('Authenticate to open your Archive')); });
   // Still drawn while it fades, and already gone from the screen reader and the thumb.
   expect(s.getByText('RESTRICTED ACCESS', ALL)).toBeTruthy();
   expect(s.queryByText('RESTRICTED ACCESS')).toBeNull();
-  act(() => { jest.advanceTimersByTime(EXIT); });
+  await act(() => { jest.advanceTimersByTime(EXIT); });
   expect(s.queryByText('RESTRICTED ACCESS', ALL)).toBeNull();
 });

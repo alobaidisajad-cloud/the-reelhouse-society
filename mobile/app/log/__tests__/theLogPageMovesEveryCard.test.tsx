@@ -110,8 +110,8 @@ it('draws the store’s certify number on its bar', async () => {
 });
 
 const file = async (r: ReturnType<typeof render>) => {
-  await act(async () => { fireEvent.changeText(r.getByLabelText('Write a critique on this log'), 'A second look.'); });
-  await act(async () => { fireEvent.press(r.getByText('FILE CRITIQUE')); });
+  await act(async () => { await fireEvent.changeText(r.getByLabelText('Write a critique on this log'), 'A second look.'); });
+  await act(async () => { await fireEvent.press(r.getByText('FILE CRITIQUE')); });
 };
 
 it('a critique filed here moves every card’s count, at once', async () => {

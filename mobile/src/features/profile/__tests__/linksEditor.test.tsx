@@ -62,7 +62,7 @@ describe('the remove control clears the floor by its own geometry', () => {
     expect(s.position).toBe('absolute');
   });
 
-  it('there is one per link, and it removes that link', () => {
+  it('there is one per link, and it removes that link', async () => {
     const handleRemoveLink = jest.fn();
     const r = render(
       <LinksEditor links={LINKS} handleAddLink={jest.fn()} handleRemoveLink={handleRemoveLink} errors={{}} />,
@@ -70,7 +70,7 @@ describe('the remove control clears the floor by its own geometry', () => {
     const btns = r.getAllByLabelText('Remove link');
     expect(btns).toHaveLength(LINKS.length);
     const { fireEvent } = require('@testing-library/react-native');
-    fireEvent.press(btns[1]);
+    await fireEvent.press(btns[1]);
     expect(handleRemoveLink).toHaveBeenCalledWith(1);
   });
 });

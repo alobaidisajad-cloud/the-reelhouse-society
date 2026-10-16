@@ -45,7 +45,7 @@ it('salons it could not read are not "you have joined none" — and it asks agai
   expect(r.queryByText(/haven.t joined any lounges/)).toBeNull();
   expect(r.getByText('The salons could not be reached.')).toBeTruthy();
   fetchLounges.mockClear();
-  await act(async () => { fireEvent.press(r.getByLabelText('Ask for the salons again')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the salons again')); });
   expect(fetchLounges).toHaveBeenCalledTimes(1);
 });
 
@@ -82,7 +82,7 @@ it('says which salon is chosen, as chosen rather than unavailable', async () => 
     loungesFailed: false, loading: false, fetchLounges,
   } as never);
   const r = await open();
-  await act(async () => { fireEvent.press(r.getByText('Seated')); });
+  await act(async () => { await fireEvent.press(r.getByText('Seated')); });
   const chosen = r.getByRole('button', { name: 'Seated' });
   expect(chosen.props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
 });
@@ -105,8 +105,8 @@ it('a share that crashes says the house\'s sentence, never the code\'s', async (
     loungesFailed: false, loading: false, fetchLounges, sendMessage,
   } as never);
   const r = await open();
-  await act(async () => { fireEvent.press(r.getByText('Seated')); });
-  await act(async () => { fireEvent.press(r.getByText('SHARE TO LOUNGE')); });
+  await act(async () => { await fireEvent.press(r.getByText('Seated')); });
+  await act(async () => { await fireEvent.press(r.getByText('SHARE TO LOUNGE')); });
   expect(sendMessage).toHaveBeenCalled();
   expect(said).toHaveBeenCalledWith('Signal failed to transmit. Try again.');
   said.mockRestore();

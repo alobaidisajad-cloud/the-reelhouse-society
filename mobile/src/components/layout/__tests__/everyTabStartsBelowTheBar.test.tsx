@@ -118,7 +118,7 @@ describe.each(TABS)('%s', (_name, tab, arrange) => {
       // The bar measures itself at a height no sum on the inset gives.
       const height = navBarHeight(insetTop) + 0.5;
       await act(async () => {
-        fireEvent(r.getByTestId('top-nav-bar'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 390, height } } });
+        await fireEvent(r.getByTestId('top-nav-bar'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 390, height } } });
       });
       const after = placesAt(r.toJSON(), height + TAB_CONTENT_GAP);
       if (after.size === 0) missing.push(`${insetTop}pt, measured: no top at ${height + TAB_CONTENT_GAP}, only ${topValues(r.toJSON())}`);

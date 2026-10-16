@@ -250,7 +250,7 @@ describe('what the search says about itself', () => {
 
     // TRY AGAIN asks for the same words, and the answer is drawn.
     search.mockResolvedValue({ results: [{ id: 1152, title: 'The Third Man', media_type: 'movie' }], searchType: 'exact', matchedContext: '' });
-    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     await act(async () => { jest.advanceTimersByTime(400); });
     expect(search).toHaveBeenLastCalledWith('the third man', 1);
     expect(r.getByText('The Third Man')).toBeTruthy();

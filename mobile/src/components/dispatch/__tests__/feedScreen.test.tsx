@@ -262,7 +262,7 @@ describe('the Dispatch feed', () => {
     const { getByLabelText } = await mount();
     for (const label of ['Open this filing', /^Critique\./, 'Share this filing']) {
       mockPushed.length = 0;
-      await act(async () => { fireEvent.press(getByLabelText(label as never)); });
+      await act(async () => { await fireEvent.press(getByLabelText(label as never)); });
       // Share and the film both open from the READER, where the sheet and the
       // film page have room. On a card the four marks are already the row's
       // full width; a fifth destination would be a target nobody can hit.
@@ -274,11 +274,11 @@ describe('the Dispatch feed', () => {
     put({ filings: [filing({ subjectId: 42, film: { title: 'Tokyo Story', posterPath: null } })] });
     const { getByLabelText } = await mount();
 
-    await act(async () => { fireEvent.press(getByLabelText(/Tokyo Story/)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/Tokyo Story/)); });
     expect(mockPushed).toContain('/film/42');
 
     mockPushed.length = 0;
-    await act(async () => { fireEvent.press(getByLabelText(/Open their room/)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/Open their room/)); });
     // Their ROOM. The label has said so since the design was drawn; for a long
     // time it opened the member file — six rooms about films, none of them the
     // Dispatch — and the promise on the control is now the destination.
@@ -288,9 +288,9 @@ describe('the Dispatch feed', () => {
   it('moves the marks from a card', async () => {
     put({ filings: [filing()] });
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText(CERTIFY)); });
+    await act(async () => { await fireEvent.press(getByLabelText(CERTIFY)); });
     expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
-    await act(async () => { fireEvent.press(getByLabelText('Save this')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Save this')); });
     expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
   });
 
@@ -298,13 +298,13 @@ describe('the Dispatch feed', () => {
     put({ filings: [filing()] });
     const { getByLabelText } = await mount();
 
-    await act(async () => { fireEvent.press(getByLabelText(/WIRE section/i)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/WIRE section/i)); });
     expect(useDispatch.getState().section).toBe('WIRE');
 
-    await act(async () => { fireEvent.press(getByLabelText(/Sorted by latest/i)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/Sorted by latest/i)); });
     expect(useDispatch.getState().sort).toBe('CERTIFIED');
 
-    await act(async () => { fireEvent.press(getByLabelText(/Your saved filings/i)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/Your saved filings/i)); });
     expect(useDispatch.getState().savedOnly).toBe(true);
   });
 
@@ -313,7 +313,7 @@ describe('the Dispatch feed', () => {
     // one. The Concierge carries it everywhere else.
     put({ filings: [], loading: false, section: 'TAKES' });
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('SAY IT')); });
+    await act(async () => { await fireEvent.press(getByLabelText('SAY IT')); });
     expect(mockPushed).toContain('/dispatch/compose');
   });
 
@@ -323,7 +323,7 @@ describe('the Dispatch feed', () => {
     // above whatever somebody is reading.
     put({ filings: [filing()], newCount: 3 });
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('3 new filings. Go to the top.')); });
+    await act(async () => { await fireEvent.press(getByLabelText('3 new filings. Go to the top.')); });
     await act(async () => { await Promise.resolve(); });
     expect(useDispatch.getState().newCount).toBe(0);
   });
@@ -366,7 +366,7 @@ describe('the Dispatch feed', () => {
     put({ filings: [filing()] });
     const { getByLabelText } = await mount();
     mockPushed.length = 0;
-    await act(async () => { fireEvent.press(getByLabelText(/The archive\./)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/The archive\./)); });
     expect(mockPushed).toEqual(['/dispatch/archive']);
   });
 
@@ -391,7 +391,7 @@ describe('the Dispatch feed', () => {
  */
 describe('an empty page, in every shape it takes', () => {
   const pressIt = async (el: unknown) => {
-    await act(async () => { fireEvent.press(el as never); });
+    await act(async () => { await fireEvent.press(el as never); });
   };
 
   it('what you kept, when you have kept nothing — and the way back out', async () => {
@@ -522,7 +522,7 @@ describe('a page not read yet, and a page that could not be read', () => {
     expect(useDispatch.getState().pageState).toBe('failed');
 
     mockPageFails = false;
-    await act(async () => { fireEvent.press(getByLabelText('TRY AGAIN')); });
+    await act(async () => { await fireEvent.press(getByLabelText('TRY AGAIN')); });
     await flush();
     expect(mockPageAsks).toBe(2);
     expect(queryByText('The paper could not be reached.')).toBeNull();
@@ -588,10 +588,10 @@ describe('a filing written while the wire was down', () => {
     const { getAllByText, getByLabelText, queryByText, getAllByLabelText } = await mount();
 
     expect(getAllByText('NOT SENT YET · THE HOUSE HAS NOT SEEN THIS')).toHaveLength(1);
-    await act(async () => { fireEvent.press(getByLabelText('Certify this. Not sent yet')); });
-    await act(async () => { fireEvent.press(getByLabelText('Share this filing. Not sent yet')); });
-    await act(async () => { fireEvent.press(getByLabelText('Critique. Not sent yet')); });
-    await act(async () => { fireEvent.press(getByLabelText('Save this. Not sent yet')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Certify this. Not sent yet')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Share this filing. Not sent yet')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Critique. Not sent yet')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Save this. Not sent yet')); });
     expect(useDispatch.getState().certifiedIds.has('mine')).toBe(false);
     expect(useDispatch.getState().savedIds.has('mine')).toBe(false);
     expect(mockPushed).toEqual([]);
@@ -612,7 +612,7 @@ describe('what a change redraws (a render budget)', () => {
     put({ filings: TEN });
     const { getAllByLabelText } = await mount();
     mockRowRenders.length = 0;
-    await act(async () => { fireEvent.press(getAllByLabelText(CERTIFY)[3]); });
+    await act(async () => { await fireEvent.press(getAllByLabelText(CERTIFY)[3]); });
     expect(mockRowRenders).toHaveLength(1);
   });
 
@@ -620,7 +620,7 @@ describe('what a change redraws (a render budget)', () => {
     put({ filings: TEN });
     const { getAllByLabelText } = await mount();
     mockRowRenders.length = 0;
-    await act(async () => { fireEvent.press(getAllByLabelText('Save this')[5]); });
+    await act(async () => { await fireEvent.press(getAllByLabelText('Save this')[5]); });
     expect(mockRowRenders).toHaveLength(1);
   });
 
@@ -708,7 +708,7 @@ describe('the page, in the rest of its states', () => {
     const { getByLabelText } = await mount();
     // The running head's own label: a certify control now says "members have
     // certified this", so a looser pattern would find two controls.
-    await act(async () => { fireEvent.press(getByLabelText(/Sorted by latest/i)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/Sorted by latest/i)); });
     expect(useDispatch.getState().sort).toBe('CERTIFIED');
   });
 

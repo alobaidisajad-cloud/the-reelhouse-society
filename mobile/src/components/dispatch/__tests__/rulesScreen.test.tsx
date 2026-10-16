@@ -78,14 +78,14 @@ describe('the house rules', () => {
 
   it('goes back', async () => {
     const { getByLabelText } = render(<RulesScreen />);
-    await act(async () => { fireEvent.press(getByLabelText('Back')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Back')); });
     expect(mockBack).toHaveBeenCalled();
   });
 
   it('is reachable — the picker carries the door', async () => {
     const onRules = jest.fn();
     const { getByLabelText } = render(<PaperPicker onRules={onRules} />);
-    await act(async () => { fireEvent.press(getByLabelText('Read the house rules')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Read the house rules')); });
     expect(onRules).toHaveBeenCalled();
   });
 
@@ -100,7 +100,7 @@ describe('the house rules', () => {
       .mockReturnValue({ cancel() {} } as never);
     const { getByLabelText } = render(<ComposeScreen />);
     await act(async () => { await Promise.resolve(); });
-    await act(async () => { fireEvent.press(getByLabelText('Read the house rules')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Read the house rules')); });
     expect(push).toHaveBeenCalledWith('/dispatch/rules');
     held.mockRestore();
   });

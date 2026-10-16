@@ -62,7 +62,7 @@ it('a phone with nothing to open it stays shut, says why, and offers the way to 
   expect(LA.authenticateAsync).not.toHaveBeenCalled();
   expect(filmShown(r)).toBe(false);
   expect(r.getByText('This phone has no Face ID, Touch ID or passcode to open it with.')).toBeTruthy();
-  await act(async () => { fireEvent.press(r.getByLabelText('Turn the lock off in Settings')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Turn the lock off in Settings')); });
   expect(nav.push).toHaveBeenCalledWith('/settings');
 });
 

@@ -167,7 +167,7 @@ describe('the circle, read and failed, and read a page at a time', () => {
         const screen = render(<SocialModal />);
         expect(await screen.findByText('COULD NOT BE REACHED')).toBeTruthy();
         expect(screen.queryByText('The Circle Is Empty')).toBeNull();
-        await act(async () => { fireEvent.press(screen.getByLabelText('Try again')); });
+        await act(async () => { await fireEvent.press(screen.getByLabelText('Try again')); });
         expect(await screen.findByText('@MEMBER1')).toBeTruthy();
     });
 
@@ -191,7 +191,7 @@ describe('the circle, read and failed, and read a page at a time', () => {
         expect(await screen.findByText('@MEMBER1')).toBeTruthy();
         await act(async () => { mockList.onEndReached?.(); });
         expect(await screen.findByText('The rest could not be reached.')).toBeTruthy();
-        await act(async () => { fireEvent.press(screen.getByLabelText('Ask for the rest again')); });
+        await act(async () => { await fireEvent.press(screen.getByLabelText('Ask for the rest again')); });
         expect(await screen.findByText('@MEMBER2')).toBeTruthy();
     });
 });

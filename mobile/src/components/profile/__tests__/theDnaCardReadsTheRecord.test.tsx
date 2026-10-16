@@ -54,7 +54,7 @@ it('below five films it opens, says what a reading needs, and closes', async () 
   const onClose = jest.fn();
   const r = render(<CinemaDNACard user={{ username: 'vesper' }} analytics={record(3)} onClose={onClose} />);
   expect(r.getByText('A reading needs 5 films; 3 are logged.')).toBeTruthy();
-  await act(async () => { fireEvent.press(r.getByLabelText('Close cinema DNA')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Close cinema DNA')); });
   expect(onClose).toHaveBeenCalled();
 });
 
@@ -63,6 +63,6 @@ it('until the record is read it says so — and if it could not be, offers to as
   const retry = jest.fn();
   const r = render(<CinemaDNACard user={{}} analytics={null} failed onRetry={retry} onClose={jest.fn()} />);
   expect(r.getByText('The reading could not be reached.')).toBeTruthy();
-  await act(async () => { fireEvent.press(r.getByLabelText('Ask for the reading again')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the reading again')); });
   expect(retry).toHaveBeenCalled();
 });

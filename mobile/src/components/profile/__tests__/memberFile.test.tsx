@@ -608,8 +608,8 @@ describe('the altarpiece, driven', () => {
     // The defect this whole positional rewrite exists for. Open the centre's
     // plate, remove it, and check what was actually sent to the server.
     const r = mount(FILMS);
-    await act(async () => { fireEvent.press(r.getByLabelText(/Stalker, the centre/)); });
-    await act(async () => { fireEvent.press(r.getByLabelText('Remove from the altarpiece')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/Stalker, the centre/)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Remove from the altarpiece')); });
 
     await waitFor(() => expect(mockRpc).toHaveBeenCalled());
     const sent = (mockRpc.mock.calls[0] as unknown as [string, { p_preferences: { favorites: unknown[] } }])[1];
@@ -622,8 +622,8 @@ describe('the altarpiece, driven', () => {
     const reelToast = jest.requireMock('@/src/utils/reelToast').default as { error: jest.Mock };
     mockRpc.mockImplementationOnce(() => Promise.resolve({ error: { message: 'permission denied', code: '42501' } }));
     const r = mount(FILMS);
-    await act(async () => { fireEvent.press(r.getByLabelText(/Stalker, the centre/)); });
-    await act(async () => { fireEvent.press(r.getByLabelText('Remove from the altarpiece')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/Stalker, the centre/)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Remove from the altarpiece')); });
 
     await waitFor(() => expect(reelToast.error).toHaveBeenCalledWith('Your favourites could not be changed. They are as they were.'));
     // Applied at once, then put back exactly as it was.
@@ -632,8 +632,8 @@ describe('the altarpiece, driven', () => {
 
   it('a wing reaches the centre only when the member asks', async () => {
     const r = mount(FILMS);
-    await act(async () => { fireEvent.press(r.getByLabelText(/Persona, the left wing/)); });
-    await act(async () => { fireEvent.press(r.getByLabelText('Move to the centre')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/Persona, the left wing/)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Move to the centre')); });
 
     await waitFor(() => expect(mockRpc).toHaveBeenCalled());
     const sent = (mockRpc.mock.calls[0] as unknown as [string, { p_preferences: { favorites: unknown[] } }])[1];
@@ -645,14 +645,14 @@ describe('the altarpiece, driven', () => {
 
   it('the centre panel offers no "move to the centre"', async () => {
     const r = mount(FILMS);
-    await act(async () => { fireEvent.press(r.getByLabelText(/Stalker, the centre/)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/Stalker, the centre/)); });
     expect(r.queryByLabelText('Move to the centre')).toBeNull();
     expect(r.getByLabelText('Replace this film')).toBeTruthy();
   });
 
   it('an empty mount goes straight to the search — there is nothing to manage', async () => {
     const r = mount([null, null, null], true);
-    await act(async () => { fireEvent.press(r.getByLabelText(/Add a film to the centre/)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/Add a film to the centre/)); });
     expect(r.getByLabelText(/Search films for the centre/)).toBeTruthy();
     expect(r.queryByLabelText('Remove from the altarpiece')).toBeNull();
   });
@@ -664,17 +664,17 @@ describe('the altarpiece, driven', () => {
       .mockRejectedValueOnce(Object.assign(new Error('offline'), { name: 'TmdbUnreachable' }))
       .mockResolvedValueOnce({ results: [{ id: 7, title: 'Mirror', media_type: 'movie', poster_path: '/m.jpg' }] });
     const r = mount([null, null, null], true);
-    await act(async () => { fireEvent.press(r.getByLabelText(/Add a film to the centre/)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/Add a film to the centre/)); });
     const field = r.getByLabelText(/Search films for the centre/);
-    await act(async () => { fireEvent.changeText(field, 'solaris'); });
+    await act(async () => { await fireEvent.changeText(field, 'solaris'); });
     await waitFor(() => expect(r.getByText('Solaris')).toBeTruthy(), { timeout: 2000 });
 
-    await act(async () => { fireEvent.changeText(field, 'mirror'); });
+    await act(async () => { await fireEvent.changeText(field, 'mirror'); });
     await waitFor(() => expect(r.getByText('THE TELEGRAPH IS DOWN')).toBeTruthy(), { timeout: 2000 });
     expect(r.queryByText('Solaris')).toBeNull();
     expect(r.queryByText('NO MATCHES FOUND')).toBeNull();
 
-    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     await waitFor(() => expect(r.getByText('Mirror')).toBeTruthy(), { timeout: 2000 });
   });
 

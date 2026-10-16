@@ -106,11 +106,11 @@ describe('ErrorBoundary Recovery Integration', () => {
     jest.useRealTimers();
   });
 
-  it('render with error → retry → children render successfully', () => {
+  it('render with error → retry → children render successfully', async () => {
     let renderer!: TestRenderer.ReactTestRenderer;
 
     // 1. Initial render: component throws — ErrorBoundary catches it
-    act(() => {
+    await act(() => {
       renderer = TestRenderer.create(
         <ErrorBoundary>
           <UnstableChild />
@@ -132,7 +132,7 @@ describe('ErrorBoundary Recovery Integration', () => {
 
     // 3. Invoke handleRetry directly on the ErrorBoundary instance
     const ebInstance = root.findByType(ErrorBoundary as any).instance as InstanceType<typeof ErrorBoundary>;
-    act(() => {
+    await act(() => {
       ebInstance.handleRetry();
     });
 
@@ -141,11 +141,11 @@ describe('ErrorBoundary Recovery Integration', () => {
     expect(findByTestId(root, 'child-content')).not.toBeNull();
   });
 
-  it('retryCount resets after successful recovery (stability timer)', () => {
+  it('retryCount resets after successful recovery (stability timer)', async () => {
     let renderer!: TestRenderer.ReactTestRenderer;
 
     // 1. Initial render: component throws
-    act(() => {
+    await act(() => {
       renderer = TestRenderer.create(
         <ErrorBoundary>
           <UnstableChild />
@@ -161,7 +161,7 @@ describe('ErrorBoundary Recovery Integration', () => {
     // 2. Fix error and retry
     shouldThrow = false;
     const ebInstance = root.findByType(ErrorBoundary as any).instance as InstanceType<typeof ErrorBoundary>;
-    act(() => {
+    await act(() => {
       ebInstance.handleRetry();
     });
 
@@ -169,7 +169,7 @@ describe('ErrorBoundary Recovery Integration', () => {
     expect(hasText(root, 'App is working')).toBe(true);
 
     // 3. Wait for stability timer to reset retryCount (3 seconds)
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(3000);
     });
 
@@ -177,7 +177,7 @@ describe('ErrorBoundary Recovery Integration', () => {
     shouldThrow = true;
 
     // Force re-render — the child will throw again
-    act(() => {
+    await act(() => {
       renderer.update(
         <ErrorBoundary>
           <UnstableChild />
@@ -193,7 +193,7 @@ describe('ErrorBoundary Recovery Integration', () => {
 
     // 6. Fix and retry again — should still work (not exhausted)
     shouldThrow = false;
-    act(() => {
+    await act(() => {
       ebInstance.handleRetry();
     });
     expect(hasText(root, 'App is working')).toBe(true);

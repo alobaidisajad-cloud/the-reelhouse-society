@@ -244,7 +244,7 @@ describe('every state of the page has the same labelled way back', () => {
 describe('the share sends what the share sheet reads', () => {
   it('to the plain route, with the person, and the sheet reads it as a person', async () => {
     const r = await screen({ data: { person: PERSON, allCredits: [credit(3, 'In the Mood for Love', '2000-09-29')] } });
-    await act(async () => { fireEvent.press(r.getByLabelText('Share to lounge')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Share to lounge')); });
     expect(nav.push).toHaveBeenCalledWith('/social-modal', expect.objectContaining({ personId: '1032', personName: 'Wong Kar-wai' }));
     // '/(modals)/social-modal' would count as a different room in nav's history.
     expect((nav.push as jest.Mock).mock.calls.map((c) => c[0])).not.toContain('/(modals)/social-modal');
@@ -276,7 +276,7 @@ describe('a file that could not be reached', () => {
   it('with nothing to show, says so in the house\'s words, and asks again', async () => {
     const r = await screen({ data: undefined, error: new Error('offline') });
     expect(r.getByText('Transmission Interrupted')).toBeTruthy();
-    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     expect(mockQuery.refetch).toHaveBeenCalledTimes(1);
   });
 

@@ -93,15 +93,15 @@ describe('the press', () => {
     expect(label).toBe('SEAL THE RECORD');
   });
 
-  it('still answers while dim, so nobody taps a control that ignores them', () => {
+  it('still answers while dim, so nobody taps a control that ignores them', async () => {
     const onSeal = jest.fn();
-    fireEvent.press(bar({ onSeal }).getByTestId('submit-log-button'));
+    await fireEvent.press(bar({ onSeal }).getByTestId('submit-log-button'));
     expect(onSeal).toHaveBeenCalled();
   });
 
-  it('will not fire twice while a record is being filed', () => {
+  it('will not fire twice while a record is being filed', async () => {
     const onSeal = jest.fn();
-    fireEvent.press(bar({ onSeal, submitting: true, rating: 4 }).getByTestId('submit-log-button'));
+    await fireEvent.press(bar({ onSeal, submitting: true, rating: 4 }).getByTestId('submit-log-button'));
     expect(onSeal).not.toHaveBeenCalled();
   });
 

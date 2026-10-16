@@ -384,7 +384,7 @@ describe('a member’s room', () => {
     expect(queryByText('No such member.')).toBeNull();
     expect(getByText('This room could not be reached.')).toBeTruthy();
     mockMemberError = null;
-    await act(async () => { fireEvent.press(getByLabelText('TRY AGAIN')); await new Promise((res) => setTimeout(res, 0)); });
+    await act(async () => { await fireEvent.press(getByLabelText('TRY AGAIN')); await new Promise((res) => setTimeout(res, 0)); });
     await act(async () => { await Promise.resolve(); });
     expect(queryByText('This room could not be reached.')).toBeNull();
   });
@@ -411,7 +411,7 @@ describe('a mark made in a room', () => {
     const r = await mount();
     mockRowRenders.length = 0;
     await act(async () => {
-      fireEvent.press(r.getAllByLabelText('Certify this. 5 members have certified this')[1]);
+      await fireEvent.press(r.getAllByLabelText('Certify this. 5 members have certified this')[1]);
       await Promise.resolve();
     });
     expect(mockRowRenders).toHaveLength(1);

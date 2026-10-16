@@ -127,7 +127,7 @@ describe('a restored draft is the whole piece', () => {
     // And the essay's cover travelled with it: the preview draws the head, and
     // the head draws a band only when there is a backdrop. Read off the ROOM,
     // not off storage — storage still holds the draft this test put there.
-    await act(async () => { fireEvent.press(getByLabelText('Preview the essay')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Preview the essay')); });
     expect(JSON.stringify(toJSON())).toContain('https://x/backdrop.jpg');
   });
 
@@ -194,7 +194,7 @@ describe('the room says what it found', () => {
     expect(getByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeTruthy();
 
     await act(async () => {
-      fireEvent.changeText(getByLabelText('Essay content body'), 'y and more');
+      await fireEvent.changeText(getByLabelText('Essay content body'), 'y and more');
     });
     expect(queryByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeNull();
   });
@@ -206,7 +206,7 @@ describe('the room says what it found', () => {
     const { getByLabelText, queryByText } = await mount();
 
     await act(async () => {
-      fireEvent.press(getByLabelText('Start clean, and discard what was here'));
+      await fireEvent.press(getByLabelText('Start clean, and discard what was here'));
     });
 
     expect(queryByText('The Long Silence')).toBeNull();

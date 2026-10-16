@@ -77,7 +77,7 @@ describe('a critique whose author could not be read', () => {
     );
     expect(r.getByText('a member')).toBeTruthy();
     expect(r.queryByText(/unknown/)).toBeNull();
-    await act(async () => { fireEvent.press(r.getByLabelText('Critique by a member')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Critique by a member')); });
     expect(onPressUser).not.toHaveBeenCalled();
   });
 

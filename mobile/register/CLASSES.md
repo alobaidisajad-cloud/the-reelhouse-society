@@ -21,6 +21,7 @@ production shows only its id, area, seriousness and count here.
 | EDGE-function-unexercised | server | behaviour | OPEN | 0 | A deployed edge function no test serves and asks, so its refusals, its failures and the calls it makes out are known only from production |
 | FN-the-house-failing-told-as-theirs | server | behaviour | OPEN | 2 | open in production |
 | AUTH-sign-in-counted-together | security | serious | OPEN | 1 | open in production |
+| TEST-event-not-awaited | tests | code | OPEN | 0 | A fireEvent, act or renderHook nobody waits for (all three are async in Testing Library 14), so what the test checks next can be the screen from before the event, and a negative passes on a stale tree (TST-08) |
 | E2E-ceiling-not-measured | tests | code | OPEN | 1 | A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's |
 | CI-check-only-in-ci | tooling | code | OPEN | 1 | A check CI runs that no local gate runs, so a push meets it only in red |
 | SALON-channel | lounge | serious | OPEN | 1 | open in production |
@@ -31,6 +32,6 @@ production shows only its id, area, seriousness and count here.
 | DB-row-reaches-past-its-reader | database | behaviour | OPEN | 8 | open in production |
 | DB-standing-stands-in-the-way-out | database | behaviour | OPEN | 1 | open in production |
 | DB-applied-bytes-differ | database | code | OPEN | 0 | The train applied a migration with the line ends of the checkout it ran from, so production held other bytes than CI rehearsed |
-| CODE-promise-not-awaited | code | behaviour | OPEN | 589 | A promise nobody waits for, so its failure goes unheard and what follows may run first |
+| CODE-promise-not-awaited | code | behaviour | OPEN | 310 | A promise nobody waits for, so its failure goes unheard and what follows may run first |
 | CODE-index-read-unchecked | code | behaviour | OPEN | 1487 | A value read by index or key used as if it is always there |
 | EDGE-function-static-fault | server | code | OPEN | 4 | An edge function's type error or lint finding, where no gate read the functions |

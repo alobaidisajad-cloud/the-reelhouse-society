@@ -29,11 +29,11 @@ describe('the door of a private room', () => {
     expect(r.queryByText('REQUEST A SEAT')).toBeNull();
   });
 
-  it('says the list could not be reached, and TRY AGAIN asks again', () => {
+  it('says the list could not be reached, and TRY AGAIN asks again', async () => {
     const { r, onRetry, onRequest } = door('unreachable');
     expect(r.getByText(/The guest list could not be reached/)).toBeTruthy();
     expect(r.queryByText('REQUEST A SEAT')).toBeNull();
-    fireEvent.press(r.getByLabelText('Try the guest list again'));
+    await fireEvent.press(r.getByLabelText('Try the guest list again'));
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(onRequest).not.toHaveBeenCalled();
   });

@@ -98,8 +98,8 @@ const mount = async () => {
   return r;
 };
 const file = async (r: ReturnType<typeof render>) => {
-  await act(async () => { fireEvent.changeText(r.getByLabelText('Write a critique on this log'), 'A third look.'); });
-  await act(async () => { fireEvent.press(r.getByText('FILE CRITIQUE')); });
+  await act(async () => { await fireEvent.changeText(r.getByLabelText('Write a critique on this log'), 'A third look.'); });
+  await act(async () => { await fireEvent.press(r.getByText('FILE CRITIQUE')); });
 };
 /** WITHDRAW, and a yes to the house's question (a critique is never taken back on one tap). */
 const withdrawCritique = async (r: ReturnType<typeof render>) => {
@@ -163,7 +163,7 @@ describe('critiques that could not be read', () => {
     const r = await mount();
     r.getByText('The critiques could not be reached.');
     expect(r.queryByText('No critiques yet. Leave a mark on this record.')).toBeNull();
-    await act(async () => { fireEvent.press(r.getByLabelText('Read the critiques again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Read the critiques again')); });
     expect(rereadLog).toHaveBeenCalled();
   });
 

@@ -81,7 +81,7 @@ it('salons it could not read are not "the velvet seats await" — said once, and
   expect(r.getAllByText('Transmission Interrupted')).toHaveLength(1);
   expect(r.queryByText('The Velvet Seats Await')).toBeNull();
   expect(r.queryByText('No open salons at this time.')).toBeNull();
-  await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
   expect(fetchLounges).toHaveBeenCalledTimes(1);
 });
 
@@ -106,7 +106,7 @@ describe('what the corridor says when it is empty', () => {
   it('a search that matches nothing says so, not that no salon is open', async () => {
     useLoungeStore.setState({ lounges: [{ ...ROOM, unread_count: undefined, mine: false, membership_status: undefined }], loungesFailed: false, loading: false, fetchLounges } as never);
     const r = await mount();
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Search salons'), 'zzzz'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Search salons'), 'zzzz'); });
     expect(r.getByText('No salon matches that.')).toBeTruthy();
     expect(r.queryByText('No open salons at this time.')).toBeNull();
   });
@@ -126,7 +126,7 @@ describe('ESTABLISH, for a member without the rank', () => {
     const r = await mount();
     mockPushed.length = 0;
     await act(async () => {
-      fireEvent.press(r.getByLabelText('Establish a new salon. The Archivist opens this. Opens the Society.'));
+      await fireEvent.press(r.getByLabelText('Establish a new salon. The Archivist opens this. Opens the Society.'));
     });
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     expect(mockPushed.some((h) => h.startsWith('/membership'))).toBe(true);

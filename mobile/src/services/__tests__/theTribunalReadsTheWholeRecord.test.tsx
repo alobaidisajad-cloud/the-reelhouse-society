@@ -163,11 +163,11 @@ describe("the accused's record", () => {
     await expect(ModerationService.getModerationHistoryForUsers(['u1'])).rejects.toBeTruthy();
   });
 
-  it('on the Tribunal, a record not read says so, and can be asked for again', () => {
+  it('on the Tribunal, a record not read says so, and can be asked for again', async () => {
     const retry = jest.fn();
     const { getByText, getByLabelText } = render(<EnforcementHistory history={[]} isLoading={false} failed onRetry={retry} />);
     expect(getByText('The record could not be read.')).toBeTruthy();
-    fireEvent.press(getByLabelText('Read the enforcement record again'));
+    await fireEvent.press(getByLabelText('Read the enforcement record again'));
     expect(retry).toHaveBeenCalledTimes(1);
   });
 

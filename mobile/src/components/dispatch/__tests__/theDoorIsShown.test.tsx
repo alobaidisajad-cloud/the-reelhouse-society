@@ -160,7 +160,7 @@ describe('the door', () => {
   it('offers the one act that moves the count', async () => {
     mockStanding = { films: 3, films_needed: 5, days: 1, days_needed: 2, may_file: false };
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Go and log a film')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Go and log a film')); });
     // REPLACE, not push: a member who logs a film and presses back should land
     // on the paper, not on the door they have just been let through.
     expect(mockReplaced).toEqual(['/log-modal']);
@@ -198,7 +198,7 @@ describe('the door', () => {
   it('has a way back out', async () => {
     mockStanding = { films: 0, films_needed: 5, days: 0, days_needed: 2, may_file: false };
     const { getByLabelText } = await mount();
-    await act(async () => { fireEvent.press(getByLabelText('Back')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Back')); });
     expect(mockBack).toHaveBeenCalled();
   });
 });

@@ -83,7 +83,7 @@ describe('the panel', () => {
     await waitFor(() => expect(r.getByText('The door could not be reached.')).toBeTruthy());
     expect(r.queryByText("No one's at the door.")).toBeNull();
     mockAnswer = { data: [petitioner], error: null, count: 1 };
-    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     await waitFor(() => expect(r.getByText('@ORSON')).toBeTruthy());
   });
 
@@ -94,7 +94,7 @@ describe('the panel', () => {
     let r!: ReturnType<typeof render>;
     await act(async () => { r = render(<FollowRequestsPanel visible onClose={() => {}} />); });
     await waitFor(() => expect(r.getByText('@ORSON')).toBeTruthy());
-    await act(async () => { fireEvent.press(r.getByLabelText('Decline all remaining requests')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Decline all remaining requests')); });
     expect(mockRpc).not.toHaveBeenCalled();
     const [title, , buttons] = alert.mock.calls[0] as [string, string, { text: string; onPress?: () => void }[]];
     expect(title).toBe('Decline all 12 requests?');

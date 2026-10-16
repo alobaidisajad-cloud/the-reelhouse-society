@@ -108,7 +108,7 @@ describe('the lounge room, per change', () => {
   it('a keystroke in the composer redraws no message', async () => {
     const r = await openRoom();
     for (const letter of ['H', 'He', 'Hel', 'Hell', 'Hello']) {
-      await act(async () => { fireEvent.changeText(r.getByLabelText('Compose a dispatch'), letter); });
+      await act(async () => { await fireEvent.changeText(r.getByLabelText('Compose a dispatch'), letter); });
     }
     expect(mockRowRenders).toEqual([]);
   });

@@ -59,14 +59,14 @@ describe('a control with no handler is disabled, not silent', () => {
     expect(getByLabelText('Share this filing').props.accessibilityState?.disabled).toBeFalsy();
   });
 
-  it('and they come back the moment a handler is given', () => {
+  it('and they come back the moment a handler is given', async () => {
     const marked: boolean[] = [];
     const { getByLabelText } = render(
       <PaperActions certifyCount={9} commentCount={2} onCertify={(n) => marked.push(n)} />,
     );
     const control = getByLabelText('Certify this. 9 members have certified this');
     expect(control.props.accessibilityState.disabled).toBe(false);
-    fireEvent.press(control);
+    await fireEvent.press(control);
     expect(marked).toEqual([true]);
   });
 

@@ -33,7 +33,7 @@ describe('at the door', () => {
     const r = panel([ana, bea], onResolved);
     expect(r.getByText('@ANA')).toBeTruthy();
     expect(r.getByText('@BEA')).toBeTruthy();
-    await act(async () => { fireEvent.press(r.getByLabelText('Admit bea')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Admit bea')); });
     expect(approveMember).toHaveBeenCalledWith('l1', 'u2');
     expect(onResolved).toHaveBeenCalledTimes(1);
   });
@@ -42,7 +42,7 @@ describe('at the door', () => {
     declineMember.mockResolvedValueOnce(false);
     const onResolved = jest.fn();
     const r = panel([ana], onResolved);
-    await act(async () => { fireEvent.press(r.getByLabelText('Decline ana')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Decline ana')); });
     expect(declineMember).toHaveBeenCalledWith('l1', 'u1');
     expect(onResolved).not.toHaveBeenCalled();
   });

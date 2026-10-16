@@ -63,7 +63,7 @@ describe('it waits for the door to close', () => {
     expect(r.toJSON()).toBeNull();
   });
 
-  it('arrives once the entrance has settled', () => {
+  it('arrives once the entrance has settled', async () => {
     let arrive: (() => void) | undefined;
     jest.spyOn(InteractionManager, 'runAfterInteractions').mockImplementation((cb) => {
       arrive = cb as () => void;
@@ -71,21 +71,21 @@ describe('it waits for the door to close', () => {
     });
     const r = render(<LogAtmosphere posterPath="/poster.jpg" />);
     expect(images(r)).toHaveLength(0);
-    act(() => { arrive!(); });
+    await act(() => { arrive!(); });
     expect(images(r)).toHaveLength(1);
   });
 
-  it('arrives anyway if that handle is never released', () => {
+  it('arrives anyway if that handle is never released', async () => {
     // The one element carrying the atmosphere must not depend on a promise
     // that can be starved. 450ms, and the lamp warms regardless.
     starve();
     const r = render(<LogAtmosphere posterPath="/poster.jpg" />);
     expect(images(r)).toHaveLength(0);
-    act(() => { jest.advanceTimersByTime(450); });
+    await act(() => { jest.advanceTimersByTime(450); });
     expect(images(r)).toHaveLength(1);
   });
 
-  it('does not fade in a second time when both arrivals fire', () => {
+  it('does not fade in a second time when both arrivals fire', async () => {
     // There are two of them by design, and only one lamp. Without the guard
     // the second restarts the fade from zero — the film appears, then dips and
     // comes back. Counted at the source: the fade must be started ONCE.
@@ -95,20 +95,20 @@ describe('it waits for the door to close', () => {
       return { then: jest.fn(), done: jest.fn(), cancel: jest.fn() } as never;
     });
     const r = render(<LogAtmosphere posterPath="/poster.jpg" />);
-    act(() => { arrive!(); });
-    act(() => { jest.advanceTimersByTime(1000); });
+    await act(() => { arrive!(); });
+    await act(() => { jest.advanceTimersByTime(1000); });
     expect(images(r)).toHaveLength(1);
     expect(withTiming as jest.Mock).toHaveBeenCalledTimes(1);
   });
 });
 
 describe('it leaves cleanly', () => {
-  it('cancels both arrivals when the sheet closes before it lands', () => {
+  it('cancels both arrivals when the sheet closes before it lands', async () => {
     const { cancel } = starve();
     const warn = jest.spyOn(console, 'error').mockImplementation(() => {});
     const r = render(<LogAtmosphere posterPath="/poster.jpg" />);
     r.unmount();
-    act(() => { jest.advanceTimersByTime(2000); });
+    await act(() => { jest.advanceTimersByTime(2000); });
     expect(cancel).toHaveBeenCalled();
     // Nothing set state on a screen that had already gone.
     expect(warn).not.toHaveBeenCalled();
@@ -116,51 +116,51 @@ describe('it leaves cleanly', () => {
 });
 
 describe('a film with no poster', () => {
-  it('shows nothing rather than an empty frame', () => {
+  it('shows nothing rather than an empty frame', async () => {
     starve();
     const r = render(<LogAtmosphere posterPath={null} />);
-    act(() => { jest.advanceTimersByTime(1000); });
+    await act(() => { jest.advanceTimersByTime(1000); });
     expect(r.toJSON()).toBeNull();
   });
 
-  it('is not a crash when the field is simply absent', () => {
+  it('is not a crash when the field is simply absent', async () => {
     starve();
     const r = render(<LogAtmosphere posterPath={undefined} />);
-    act(() => { jest.advanceTimersByTime(1000); });
+    await act(() => { jest.advanceTimersByTime(1000); });
     expect(r.toJSON()).toBeNull();
   });
 });
 
 describe('what it actually paints', () => {
-  const arrived = () => {
+  const arrived = async () => {
     starve();
     const r = render(<LogAtmosphere posterPath="/poster.jpg" />);
-    act(() => { jest.advanceTimersByTime(450); });
+    await act(() => { jest.advanceTimersByTime(450); });
     return r;
   };
 
-  it('reuses the docket’s own image, so there is one download for both', () => {
+  it('reuses the docket’s own image, so there is one download for both', async () => {
     // Not the record's w780: a 20% blur throws that sharpness away, and a
     // second size would be a second download, a second decode, a second cache
     // entry — on the page whose rule is zero cost.
-    const uri = (images(arrived())[0].props as { source: { uri: string } }).source.uri;
+    const uri = (images(await arrived())[0].props as { source: { uri: string } }).source.uri;
     expect(uri).toContain('/w342/poster.jpg');
     expect(uri).not.toContain('w780');
   });
 
-  it('reaches solid ink before any writing begins', () => {
+  it('reaches solid ink before any writing begins', async () => {
     // The guarantee the whole effect rests on: text is never set over an
     // image. The last stop is the page's own background, at the very bottom.
-    const g = gradients(arrived())[0].props as { colors: string[]; locations: number[] };
+    const g = gradients(await arrived())[0].props as { colors: string[]; locations: number[] };
     expect(g.colors[g.colors.length - 1]).toBe(colors.ink);
     expect(g.locations[g.locations.length - 1]).toBe(1);
     expect(g.colors).toHaveLength(g.locations.length);
   });
 
-  it('carries a second scrim for the chrome, which sits where the film is least covered', () => {
+  it('carries a second scrim for the chrome, which sits where the film is least covered', async () => {
     // CLOSE, the drag handle and the EDITING badge live in the top 124pt —
     // the part the main gradient leaves fully transparent.
-    const scrim = gradients(arrived())[1].props as { colors: string[]; style: { top: number; height: number } };
+    const scrim = gradients(await arrived())[1].props as { colors: string[]; style: { top: number; height: number } };
     expect(scrim.style.top).toBe(0);
     expect(scrim.style.height).toBeGreaterThanOrEqual(100);
     // Darkest at the top, gone by its foot — it must not band into the film.
@@ -168,8 +168,8 @@ describe('what it actually paints', () => {
     expect(scrim.colors[scrim.colors.length - 1]).toMatch(/,\s*0\)$/);
   });
 
-  it('never takes a touch', () => {
-    const r = arrived();
+  it('never takes a touch', async () => {
+    const r = await arrived();
     const blockers = walk(r).filter(n => n.props?.pointerEvents === 'none');
     expect(blockers.length).toBeGreaterThan(0);
     // And the image is invisible to a screen reader — it is atmosphere, not

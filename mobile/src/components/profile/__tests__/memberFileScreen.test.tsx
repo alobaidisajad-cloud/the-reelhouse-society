@@ -129,7 +129,7 @@ describe('the four states the page can be in', () => {
     expect(r.queryByText('Member Not Found')).toBeNull();
     expect(r.getByText('Transmission Interrupted')).toBeTruthy();
     expect(r.getByLabelText('Go back')).toBeTruthy();
-    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     expect(fetchUserData).toHaveBeenCalledTimes(1);
   });
 
@@ -496,7 +496,7 @@ describe('a visitor\'s room whose read failed', () => {
     const r = await mount({ activeTab: 'watchlist' }, { tabFailed: { watchlist: true }, retryRoom });
     expect(r.queryByLabelText('Retrieving the queue')).toBeNull();
     expect(r.getByText('The queue could not be reached.')).toBeTruthy();
-    await act(async () => { fireEvent.press(r.getByLabelText('Ask for the queue again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the queue again')); });
     expect(retryRoom).toHaveBeenCalledWith('watchlist');
   });
 
@@ -525,7 +525,7 @@ describe('a visitor\'s room whose read failed', () => {
     let r = await mount({ activeTab: 'calendar' }, { calendarData: null, tabFailed: { calendar: true }, retryRoom });
     expect(r.getByText('The calendar could not be reached.')).toBeTruthy();
     expect(r.queryByText(/IN THE PAST YEAR/)).toBeNull();
-    await act(async () => { fireEvent.press(r.getByLabelText('Ask for the calendar again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the calendar again')); });
     expect(retryRoom).toHaveBeenCalledWith('calendar');
     r.unmount();
     r = await mount({ activeTab: 'calendar' }, { calendarData: null, tabFailed: {} });

@@ -60,38 +60,38 @@ function Probe({ onRead }: { onRead: (t: Date) => void }) {
 const shown = (r: ReturnType<typeof render>) => String(r.container.queryAll((n) => n.type === 'Text')[0]?.children.join(''));
 
 describe('the clock', () => {
-  it('reads again at the top of the hour: the hour’s line changes with it', () => {
+  it('reads again at the top of the hour: the hour’s line changes with it', async () => {
     jest.useFakeTimers({ now: new Date(2026, 9, 3, 16, 59, 30) });
     const onRead = jest.fn();
     const r = render(<Probe onRead={onRead} />);
     expect(shown(r)).toContain('the matinée is in session');
-    act(() => { jest.advanceTimersByTime(31_000); });
+    await act(() => { jest.advanceTimersByTime(31_000); });
     expect(shown(r)).toContain("tonight's programme is underway");
     expect(onRead).toHaveBeenCalledTimes(1);
     expect(onRead.mock.calls[0][0].getHours()).toBe(17);
   });
 
-  it('reads again when the app comes back: a new day prints its own date and hour', () => {
+  it('reads again when the app comes back: a new day prints its own date and hour', async () => {
     jest.useFakeTimers({ now: new Date(2026, 9, 3, 21, 0, 0) });
     const onRead = jest.fn();
     const r = render(<Probe onRead={onRead} />);
     expect(shown(r)).toContain('SATURDAY, OCTOBER 3');
     jest.setSystemTime(new Date(2026, 9, 4, 8, 15, 0));
-    act(() => { comeBack.forEach((fn) => fn('active')); });
+    await act(() => { comeBack.forEach((fn) => fn('active')); });
     expect(shown(r)).toContain('the morning screening begins');
     expect(shown(r)).toContain('SUNDAY, OCTOBER 4');
     expect(onRead).toHaveBeenCalledTimes(1);
   });
 
-  it('leaves nothing running when the Lobby goes', () => {
+  it('leaves nothing running when the Lobby goes', async () => {
     jest.useFakeTimers({ now: new Date(2026, 9, 3, 12, 0, 0) });
     const onRead = jest.fn();
     const r = render(<Probe onRead={onRead} />);
-    act(() => { jest.advanceTimersByTime(60 * 60 * 1000 + 1000); });
+    await act(() => { jest.advanceTimersByTime(60 * 60 * 1000 + 1000); });
     expect(onRead).toHaveBeenCalledTimes(1);   // its hour came, and it read
     r.unmount();
     expect(removed).toHaveBeenCalled();
-    act(() => { jest.advanceTimersByTime(3 * 60 * 60 * 1000); });
+    await act(() => { jest.advanceTimersByTime(3 * 60 * 60 * 1000); });
     expect(onRead).toHaveBeenCalledTimes(1);   // and after it went, no hour reads again
   });
 });

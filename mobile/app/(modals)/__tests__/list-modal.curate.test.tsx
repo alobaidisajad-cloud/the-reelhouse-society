@@ -128,13 +128,13 @@ describe('the form can never destroy a stack', () => {
     // deleting every list_item in the stack.
     mockParams = { editId: STACK_ID };
     const r = mount();
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack title'), 'Anything'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack title'), 'Anything'); });
 
     mockLists = [STACK];                                  // the stack lands late
     rerender(r);
     await waitFor(() => expect(r.getByText('Blade Runner')).toBeTruthy());
 
-    await act(async () => { fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
     await waitFor(() => expect(mockUpdateList).toHaveBeenCalled());
     expect(mockUpdateList.mock.calls[0][1].films).toHaveLength(2);
   });
@@ -161,7 +161,7 @@ describe('the form can never destroy a stack', () => {
     mockLists = [STACK];
     const r = mount();
     await waitFor(() => expect(r.getByLabelText('Stack title').props.value).toBe('Neon Noir Masterpieces'));
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack title'), 'My New Name'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack title'), 'My New Name'); });
     expect(r.getByLabelText('Stack title').props.value).toBe('My New Name');
 
     mockLists = [{ ...STACK, films: [...FILMS] }];   // the same stack, refetched
@@ -178,7 +178,7 @@ describe('the form can never destroy a stack', () => {
     mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: 620 } };
     const r = mount();
     await waitFor(() => expect(r.getByLabelText('Stack title').props.value).toBe('Neon Noir Masterpieces'));
-    await act(async () => { fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
     await waitFor(() => expect(mockUpdateList).toHaveBeenCalled());
     const payload = mockUpdateList.mock.calls[0][1];
     expect('films' in payload).toBe(false);              // never [], never a short set
@@ -225,7 +225,7 @@ describe('the form can never destroy a stack', () => {
     await waitFor(() => expect(r.getByLabelText('Stack title').props.value).toBe('Neon Noir Masterpieces'));
     expect(r.queryByText(/LARGER THAN THIS SHEET CAN HOLD/)).toBeNull();
     expect(r.getByLabelText('Remove Blade Runner')).toBeTruthy();   // and still editable
-    await act(async () => { fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
     await waitFor(() => expect(mockUpdateList).toHaveBeenCalled());
     expect(mockUpdateList.mock.calls[0][1].films).toHaveLength(2);
   });
@@ -233,9 +233,9 @@ describe('the form can never destroy a stack', () => {
   it('says so, rather than creating a duplicate, when the stack cannot be opened', async () => {
     mockParams = { editId: STACK_ID };                    // resolves to nothing
     const r = mount();
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack title'), 'Anything'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack title'), 'Anything'); });
     await waitFor(() => expect(r.getByText('THIS STACK COULD NOT BE OPENED')).toBeTruthy());
-    await act(async () => { fireEvent.press(r.getByLabelText(/SAVE THE AMENDMENTS/)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/SAVE THE AMENDMENTS/)); });
     await act(async () => {});
     expect(mockCreateList).not.toHaveBeenCalled();
     expect(mockUpdateList).not.toHaveBeenCalled();
@@ -329,10 +329,10 @@ describe('the act, docked', () => {
 
   it('carries the stack’s own mark once it has one', async () => {
     const r = mount();
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Stack title'), 'Neon Noir'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack title'), 'Neon Noir'); });
     await waitFor(() => expect(r.getByText('0 REELS  ·  UNRANKED  ·  PUBLIC')).toBeTruthy());
-    await act(async () => { fireEvent.press(r.getByLabelText('Set stack to ranked')); });
-    await act(async () => { fireEvent.press(r.getByLabelText('Set stack to private')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Set stack to ranked')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Set stack to private')); });
     await waitFor(() => expect(r.getByText('0 REELS  ·  RANKED  ·  SEALED')).toBeTruthy());
   });
 
@@ -381,7 +381,7 @@ describe('a change to the holdings is spoken, not only shown', () => {
     mockLists = [STACK];
     const r = mount();
     await waitFor(() => expect(r.getByText('Blade Runner')).toBeTruthy());
-    await act(async () => { fireEvent.press(r.getByLabelText('Remove Blade Runner')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Remove Blade Runner')); });
     expect(announce).toHaveBeenCalledWith('Blade Runner removed. 1 in the stack.');
   });
 
@@ -393,7 +393,7 @@ describe('a change to the holdings is spoken, not only shown', () => {
     mockLists = [STACK];
     const r = mount();
     await waitFor(() => expect(r.getByText('Blade Runner')).toBeTruthy());
-    await act(async () => { fireEvent.press(r.getByLabelText('Remove Blade Runner')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Remove Blade Runner')); });
     expect(announce.mock.calls.filter(c => String(c[0]).includes('Blade Runner removed'))).toHaveLength(1);
     expect(SOURCE).not.toMatch(/setFilms\(prev => \{[\s\S]{0,400}announceForAccessibility/);
   });
@@ -454,9 +454,9 @@ describe('what the page says, and stops saying', () => {
   it('counts the note only near its ceiling', async () => {
     const r = mount();
     const note = r.getByLabelText('Stack description');
-    await act(async () => { fireEvent.changeText(note, 'x'.repeat(400)); });
+    await act(async () => { await fireEvent.changeText(note, 'x'.repeat(400)); });
     await waitFor(() => expect(r.queryByText(/\/1000/)).toBeNull());
-    await act(async () => { fireEvent.changeText(note, 'x'.repeat(801)); });
+    await act(async () => { await fireEvent.changeText(note, 'x'.repeat(801)); });
     await waitFor(() => expect(r.getByText('801/1000')).toBeTruthy());
   });
 });
@@ -552,7 +552,7 @@ describe('the plate, and the reach', () => {
     mockLists = [STACK];
     const r = mount();
     await waitFor(() => expect(r.getByText('Blade Runner')).toBeTruthy());
-    await act(async () => { fireEvent.press(r.getByLabelText('Remove Blade Runner')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Remove Blade Runner')); });
     await waitFor(() => expect(r.queryByText('Blade Runner')).toBeNull());
     expect(r.getByText('Chinatown')).toBeTruthy();
   });
@@ -577,7 +577,7 @@ describe('the plate, and the reach', () => {
 describe('the search says what happened', () => {
   const { tmdb: mockTmdb } = jest.requireMock('@/src/lib/tmdb');
   const typeIn = async (r: ReturnType<typeof mount>, words: string) => {
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Search films to add to stack'), words); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Search films to add to stack'), words); });
   };
   afterEach(() => { mockTmdb.search.mockReset().mockResolvedValue({ results: [] }); });
 
@@ -589,7 +589,7 @@ describe('the search says what happened', () => {
     expect(r.queryByText(/No films found/)).toBeNull();
 
     mockTmdb.search.mockResolvedValueOnce({ results: [{ id: 631, title: 'Sunrise', media_type: 'movie', poster_path: null }] });
-    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     await waitFor(() => expect(r.getByText('Sunrise')).toBeTruthy(), { timeout: 2000 });
     expect(mockTmdb.search).toHaveBeenLastCalledWith('sunrise', 1);
   });
@@ -619,8 +619,8 @@ describe('a stack can be ordered, and its terms read, without sight', () => {
     await waitFor(() => expect(r.getByLabelText('Reorder Blade Runner')).toBeTruthy());
     const row = r.getByLabelText('Reorder Blade Runner');
     expect(row.props.accessibilityActions.map((a: { name: string }) => a.name)).toEqual(['moveUp', 'moveDown']);
-    await act(async () => { fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'moveDown' } }); });
-    await act(async () => { fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
+    await act(async () => { await fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'moveDown' } }); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
     await waitFor(() => expect(mockUpdateList).toHaveBeenCalled());
     expect(mockUpdateList.mock.calls[0][1].films.map((f: { title: string }) => f.title)).toEqual(['Chinatown', 'Blade Runner']);
   });

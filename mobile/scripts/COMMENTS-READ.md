@@ -256,6 +256,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/__tests__/mergeCoverage.test.ts | 2026-10-15 | new: read against jest's CoverageReporter, which it runs whole and in parts |
 | scripts/add-only.cjs | 2026-10-15 | new; a migration by its kind (test-utils/universe.js); SQL no rule names is refused |
 | scripts/android-packages.cjs | 2026-10-16 | new: read against React Native's libs.versions.toml, Expo's root project plugin and the Reanimated and Worklets build files; --installed asks the disk for each package's package.xml, as sdkmanager does |
+| scripts/await-events.cjs | 2026-10-16 | new: the finder of TST-08, a fireEvent, act or renderHook nobody waits for, in every test file; --fix waits for each where the code can, making the function async |
 | scripts/bundle-size.js | 2026-10-15 | edited: --keep leaves the export for release-guard.cjs; read whole: sound |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route); its files come from the shared file list (test-utils/universe.js) |
 | scripts/check-backend-live.mjs | 2026-10-15 | edited: the address is read from, and saved to, the private settings file outside the repo and OneDrive; its files come from the shared file list (test-utils/universe.js) |
@@ -1093,6 +1094,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/e2eRuntime.test.ts | 2026-10-15 | new: the runtime written once a launch by the E2E build alone, in lines the run can join |
 | src/utils/__tests__/everyCheckRuns.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/everyDoorLeadsToARoute.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/everyEventIsAwaited.guard.test.ts | 2026-10-16 | new: no test leaves a fireEvent, act or renderHook unwaited; each unwaited shape is found, each waited one is not; the fix makes the test async and leaves a helper to a hand |
 | src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts | 2026-10-15 | written: every enqueue call site's type has its kind in the map; its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everySecretIsInventoried.test.ts | 2026-10-16 | new: every secret and setting the code reads is in register/secrets.json, with its holders and a secret's rotation; nothing listed that no code reads but the dashboard-held ones; never a value |
 | src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |

@@ -134,7 +134,7 @@ describe('a newer one written elsewhere', () => {
 
     const r = await mount();
     await act(async () => {
-      fireEvent.press(r.getByLabelText('Take the one written elsewhere'));
+      await fireEvent.press(r.getByLabelText('Take the one written elsewhere'));
     });
 
     expect(r.getByLabelText('Essay content body').props.value).toBe('Written elsewhere.');
@@ -150,7 +150,7 @@ describe('a newer one written elsewhere', () => {
 
     const r = await mount();
     await act(async () => {
-      fireEvent.press(r.getByLabelText('Keep the one on this phone'));
+      await fireEvent.press(r.getByLabelText('Keep the one on this phone'));
     });
 
     expect(r.getByLabelText('Essay content body').props.value).toBe('On this phone.');
@@ -207,7 +207,7 @@ describe('the backup never replaces a copy the room has not seen', () => {
     mockRemote = { payload: ESSAY, saved_at: OLDER };
     const r = render(<ComposeScreen />);
     await act(async () => { for (let i = 0; i < 6; i++) await Promise.resolve(); });
-    await act(async () => { fireEvent.changeText(r.getByLabelText('Essay content body'), 'A first line, offline.'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Essay content body'), 'A first line, offline.'); });
 
     await tick();
     expect(mockPushed).toHaveLength(0);
@@ -235,7 +235,7 @@ describe('the backup never replaces a copy the room has not seen', () => {
     mockRemote = { payload: { title: 'On this phone', content: 'Rewritten on the other phone.' }, saved_at: NEWER };
     const r = render(<ComposeScreen />);
     await act(async () => { for (let i = 0; i < 6; i++) await Promise.resolve(); });
-    await act(async () => { fireEvent.press(r.getByLabelText('Keep the one on this phone')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Keep the one on this phone')); });
     await tick();
     expect(mockPushed).toHaveLength(1);
   });

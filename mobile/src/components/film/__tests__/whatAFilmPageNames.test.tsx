@@ -184,7 +184,7 @@ describe('the player names what it plays', () => {
     const onPlay = jest.fn();
     const video = { key: 'k1', name: 'Making the Sea', type: 'Featurette' };
     const r = render(<FilmMediaCarousel videos={[video]} onPlayVideo={onPlay} />);
-    await act(async () => { fireEvent.press(r.getByLabelText('Play Featurette: Making the Sea')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Play Featurette: Making the Sea')); });
     expect(onPlay).toHaveBeenCalledWith(video);
   });
 });
@@ -230,7 +230,7 @@ describe('THE NITRATE FILE', () => {
     mockCapture.mockRejectedValue(new Error('capture failed'));
     const { r, onClose } = open();
     await drawn(r);
-    await act(async () => { fireEvent.press(r.getByText('SHARE TO SOCIALS')); });
+    await act(async () => { await fireEvent.press(r.getByText('SHARE TO SOCIALS')); });
     expect(mockToastError).toHaveBeenCalledWith('The file could not be shared. Try again.');
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -240,7 +240,7 @@ describe('THE NITRATE FILE', () => {
     mockShareAsync.mockResolvedValue(undefined);
     const { r, onClose } = open();
     await drawn(r);
-    await act(async () => { fireEvent.press(r.getByText('SHARE TO SOCIALS')); });
+    await act(async () => { await fireEvent.press(r.getByText('SHARE TO SOCIALS')); });
     expect(mockShareAsync).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
     expect(mockToastError).not.toHaveBeenCalled();

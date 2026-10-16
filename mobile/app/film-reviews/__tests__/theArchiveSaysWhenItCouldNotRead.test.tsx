@@ -76,7 +76,7 @@ it('reviews it could not read are not "the projection box awaits" — said, and 
   expect(r.queryByText('The projection box awaits.')).toBeNull();
   expect(r.getByText('Transmission Interrupted')).toBeTruthy();
   mockAnswer = { data: [], error: null };
-  await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
   expect(r.getByText('The projection box awaits.')).toBeTruthy();
 });
 
@@ -140,7 +140,7 @@ describe('more critiques', () => {
     expect(r.getAllByText('Film 100').length).toBeGreaterThan(0);
     expect(r.getByText('More critiques could not be reached.')).toBeTruthy();
     mockAnswers = [{ data: [row(1, '2026-08-01T00:00:00+00:00')], error: null }];
-    await act(async () => { fireEvent.press(r.getByLabelText('Ask for more critiques')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Ask for more critiques')); });
     expect(r.queryByText('More critiques could not be reached.')).toBeNull();
     expect(r.getAllByText('Film 1').length).toBeGreaterThan(0);
   });

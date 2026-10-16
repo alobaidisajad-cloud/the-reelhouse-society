@@ -57,10 +57,10 @@ jest.mock('@/src/utils/reelToast', () => {
 });
 
 const type = async (field: unknown, text: string) => {
-  await act(async () => { fireEvent.changeText(field as never, text); });
+  await act(async () => { await fireEvent.changeText(field as never, text); });
 };
 const press = async (control: unknown) => {
-  await act(async () => { fireEvent.press(control as never); });
+  await act(async () => { await fireEvent.press(control as never); });
 };
 
 /** Search, wait out the debounce, and let the results land. */
@@ -305,7 +305,7 @@ describe('the film sheet says what the catalogue said', () => {
     expect(getByText('The catalogue could not be reached.')).toBeTruthy();
     expect(queryByText('No film by that name.')).toBeNull();
 
-    await act(async () => { fireEvent.press(getByLabelText('TRY AGAIN')); });
+    await act(async () => { await fireEvent.press(getByLabelText('TRY AGAIN')); });
     await act(async () => { jest.advanceTimersByTime(400); await Promise.resolve(); });
     expect(getByLabelText('Stalker, 1979')).toBeTruthy();
     expect(queryByText('The catalogue could not be reached.')).toBeNull();

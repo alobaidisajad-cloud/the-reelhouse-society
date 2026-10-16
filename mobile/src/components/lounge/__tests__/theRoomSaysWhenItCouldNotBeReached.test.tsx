@@ -92,7 +92,7 @@ it('a room it could not ask for is not "incinerated" — said, and asked again',
   expect(r.queryByText('Signal Lost')).toBeNull();
   expect(r.getByText('Transmission Interrupted')).toBeTruthy();
   mockRoomAnswer = { data: ROOM, error: null };
-  await act(async () => { fireEvent.press(r.getByLabelText('Try again')); await new Promise((res) => setTimeout(res, 0)); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); await new Promise((res) => setTimeout(res, 0)); });
   expect(r.queryByText('Transmission Interrupted')).toBeNull();
   expect(r.getAllByText('The Back Row').length).toBeGreaterThan(0);
 });
@@ -106,7 +106,7 @@ it('a room that is not there says so', async () => {
 it('opened from a notice, the way out says the Lobby and goes there — never a dead button', async () => {
   mockRoomAnswer = { data: null, error: null };
   const r = await openRoom();
-  await act(async () => { fireEvent.press(r.getByLabelText('RETURN TO THE LOBBY')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('RETURN TO THE LOBBY')); });
   expect(nav.back).toHaveBeenCalledTimes(1);          // the house's back: the Lobby when there is none
   expect(ROUTER.back).not.toHaveBeenCalled();
 });

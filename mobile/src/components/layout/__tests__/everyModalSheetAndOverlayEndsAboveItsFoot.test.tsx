@@ -189,7 +189,7 @@ const ARRIVED: Record<string, {
   // A search typed, and its answer back: the results list is drawn only then.
   'app/(modals)/search-modal.tsx (search)': {
     then: async (r) => {
-      await act(async () => { fireEvent.changeText(r.getByPlaceholderText('Search the archives...'), 'ozu'); });
+      await act(async () => { await fireEvent.changeText(r.getByPlaceholderText('Search the archives...'), 'ozu'); });
       await act(async () => { await new Promise((res) => setTimeout(res, 450)); });
     },
   },

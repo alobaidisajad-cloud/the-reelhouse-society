@@ -151,6 +151,19 @@ classes:
     count: 1
     open_in_production: true
 
+  - id: TEST-event-not-awaited
+    title: A fireEvent, act or renderHook nobody waits for (all three are async in Testing Library 14), so what the test checks next can be the screen from before the event, and a negative passes on a stale tree (TST-08)
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.63, TST-08" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/everyEventIsAwaited.guard.test.ts, test: "finds none unwaited, in any test file" }
+      - { kind: static, file: src/utils/__tests__/everyEventIsAwaited.guard.test.ts, test: "can say NO: each unwaited shape is found, and each waited one is not" }
+    fix: "scripts/await-events.cjs finds each one (TypeScript's parser, every test file of the shared list) and --fix waits for it where the code's shape can (a test, a hook, an act or waitFor callback, an async function), making the function async: 308 in 72 files, one helper (logAtmosphere's arrived) by hand, and each file run again"
+    places: [none]
+
   - id: E2E-ceiling-not-measured
     title: A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's
     seriousness: code
@@ -237,7 +250,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 589
+    count: 310
     source: { kind: reviewer, ref: "P0.65 (DB-42, COD-11)" }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }

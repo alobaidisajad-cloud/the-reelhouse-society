@@ -274,7 +274,7 @@ describe('the archive', () => {
     await type(r, 'stalker');
 
     await act(async () => {
-      fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
+      await fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
       await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
     });
 
@@ -300,7 +300,7 @@ describe('the archive', () => {
     await act(async () => { await Promise.resolve(); });
     await type(r, 'stalker');
     await act(async () => {
-      fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
+      await fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
       await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
     });
     // the newest month too, above its first entry; and August 2019 is not August 2026
@@ -316,13 +316,13 @@ describe('the archive', () => {
     await act(async () => { await Promise.resolve(); });
     await type(r, 'stalker');
     await act(async () => {
-      fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
+      await fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
       await Promise.resolve(); await Promise.resolve();
     });
     expect(r.getByText(/Stalker is not slow/)).toBeTruthy();
 
     // First press: back to the candidates, with the words still typed.
-    await act(async () => { fireEvent.press(r.getByLabelText('Back')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Back')); });
     expect(mockBack).not.toHaveBeenCalled();
     expect(r.getByLabelText('Search the archive for a film').props.value).toBe('stalker');
     // Really back: the film's filings are gone and the candidates are there.
@@ -339,7 +339,7 @@ describe('the archive', () => {
      * where twenty minutes went before the debounce turned up.
      */
     await act(async () => { jest.advanceTimersByTime(1000); });
-    await act(async () => { fireEvent.press(r.getByLabelText('Back')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Back')); });
     expect(mockBack).toHaveBeenCalled();
   });
 
@@ -401,7 +401,7 @@ describe('the archive', () => {
 
     const chrome = render(<PaperChrome section="ALL" onArchive={onArchive} />);
     await act(async () => {
-      fireEvent.press(chrome.getByLabelText(/The archive\./));
+      await fireEvent.press(chrome.getByLabelText(/The archive\./));
     });
     expect(onArchive).toHaveBeenCalled();
 
@@ -449,7 +449,7 @@ describe('the archive', () => {
     mockSearchError = null;
     mockSearchRows = [hit()];
     await act(async () => {
-      fireEvent.press(r.getByLabelText('Search the archive again'));
+      await fireEvent.press(r.getByLabelText('Search the archive again'));
       await Promise.resolve(); await Promise.resolve();
     });
     expect(r.getByText('Stalker')).toBeTruthy();
@@ -463,7 +463,7 @@ describe('the archive', () => {
     await act(async () => { await Promise.resolve(); });
     await type(r, 'stalker');
     await act(async () => {
-      fireEvent.press(r.getByLabelText(/Stalker. 1 filing/));
+      await fireEvent.press(r.getByLabelText(/Stalker. 1 filing/));
       await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
     });
     expect(r.getByText('This film’s filings could not be reached.')).toBeTruthy();
@@ -472,7 +472,7 @@ describe('the archive', () => {
     mockFilingError = null;
     mockFilingRows = [filing()];
     await act(async () => {
-      fireEvent.press(r.getByLabelText('Read this film again'));
+      await fireEvent.press(r.getByLabelText('Read this film again'));
       await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
     });
     expect(r.getByLabelText('Filed on the 28th')).toBeTruthy();
@@ -491,7 +491,7 @@ describe('the archive', () => {
     mockHoldFilings = new Promise<void>((done) => { release = done; });
     // A last key, then the film, inside the search's wait.
     await fireEvent.changeText(r.getByLabelText('Search the archive for a film'), 'stalke');
-    await act(async () => { fireEvent.press(r.getByLabelText(/Stalker. 1 filing/)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/Stalker. 1 filing/)); });
     await act(async () => { jest.advanceTimersByTime(400); await Promise.resolve(); await Promise.resolve(); });
     await act(async () => { release(); for (let i = 0; i < 6; i++) await Promise.resolve(); });
     expect(r.getByLabelText('Filed on the 28th')).toBeTruthy();
@@ -506,7 +506,7 @@ describe('a mark made in the archive', () => {
     await act(async () => { await Promise.resolve(); });
     await type(r, 'stalker');
     await act(async () => {
-      fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
+      await fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
       await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
     });
     // The clock moves before the next press: under fake timers Date.now stands

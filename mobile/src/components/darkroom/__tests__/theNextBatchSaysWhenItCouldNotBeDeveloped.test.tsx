@@ -60,7 +60,7 @@ it('a next batch that could not be read is said, and asked for again', async () 
   expect(r.getByText('THE NEXT BATCH COULD NOT BE DEVELOPED.')).toBeTruthy();
   expect(r.getAllByLabelText(/Film 1/).length).toBeGreaterThan(0);
 
-  await act(async () => { fireEvent.press(r.getByLabelText('Develop the next batch again')); await settle(); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Develop the next batch again')); await settle(); });
   const asked = mockTmdb.discover.mock.calls.map(([p]: [Record<string, string>]) => p.page);
   expect(asked.filter((p: string) => p === '2')).toHaveLength(2);
   expect(r.queryByText('THE NEXT BATCH COULD NOT BE DEVELOPED.')).toBeNull();

@@ -121,10 +121,10 @@ afterEach(() => { jest.useRealTimers(); });
  * it in six places.
  */
 const type = async (field: unknown, text: string) => {
-  await act(async () => { fireEvent.changeText(field as never, text); });
+  await act(async () => { await fireEvent.changeText(field as never, text); });
 };
 const press = async (control: unknown) => {
-  await act(async () => { fireEvent.press(control as never); });
+  await act(async () => { await fireEvent.press(control as never); });
 };
 
 describe('the wire desk', () => {
@@ -397,14 +397,14 @@ describe('a filing that does not go', () => {
 
   const typeAndFile = async (r: ReturnType<typeof render>, kind: string) => {
     await act(async () => {
-      fireEvent.changeText(r.getByLabelText(`Your ${kind}`), 'Ozu never once stood up.');
+      await fireEvent.changeText(r.getByLabelText(`Your ${kind}`), 'Ozu never once stood up.');
     });
     if (kind === 'wire') {
       await act(async () => {
-        fireEvent.changeText(r.getByLabelText('Where this came from'), 'Sight & Sound');
+        await fireEvent.changeText(r.getByLabelText('Where this came from'), 'Sight & Sound');
       });
     }
-    await act(async () => { fireEvent.press(r.getByLabelText('File it')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('File it')); });
     await act(async () => { await Promise.resolve(); });
   };
 

@@ -32,7 +32,7 @@ describe('the button', () => {
   it('names whose standing it shares, and shares it as theirs', async () => {
     const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
     const r = render(<ProjectorRoom stats={stats} user={{ username: 'vesper' }} isSelf={false} />);
-    await act(async () => { fireEvent.press(r.getByLabelText('Share this standing')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Share this standing')); });
     expect(share.mock.calls[0][0].message).toMatch(/^@vesper's/);
     expect(r.queryByText('SHARE YOUR STANDING')).toBeNull();
   });
@@ -40,7 +40,7 @@ describe('the button', () => {
   it('a share that fails is said plainly', async () => {
     jest.spyOn(Share, 'share').mockRejectedValue(new Error('E_SHARE_SHEET 0x8badf00d'));
     const r = render(<ProjectorRoom stats={stats} user={{ username: 'tomas' }} isSelf />);
-    await act(async () => { fireEvent.press(r.getByLabelText('Share your standing')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Share your standing')); });
     expect(reelToast.error).toHaveBeenCalledWith('The standing could not be shared.');
   });
 });

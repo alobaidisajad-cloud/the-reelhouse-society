@@ -25,28 +25,28 @@ const fail = new Error('a render that threw');
 beforeEach(() => { mockCanGoBack.mockReturnValue(true); mockBack.mockClear(); mockReplace.mockClear(); mockCapture.mockClear(); });
 
 describe('the net under a screen that crashed', () => {
-  it('reports the crash once, and lets the member try again', () => {
+  it('reports the crash once, and lets the member try again', async () => {
     const retry = jest.fn();
     const { getByText, getByLabelText } = render(<RouteErrorBoundary error={fail} retry={retry as never} />);
     expect(getByText('This reel jammed.')).toBeTruthy();
     expect(mockCapture).toHaveBeenCalledTimes(1);
     expect(mockCapture.mock.calls[0][0]).toBe(fail);
-    fireEvent.press(getByLabelText('Try loading this screen again'));
+    await fireEvent.press(getByLabelText('Try loading this screen again'));
     expect(retry).toHaveBeenCalledTimes(1);
   });
 
-  it('goes back when there is a screen to go back to', () => {
+  it('goes back when there is a screen to go back to', async () => {
     const { getByLabelText } = render(<RouteErrorBoundary error={fail} retry={jest.fn() as never} />);
-    fireEvent.press(getByLabelText('Go back'));
+    await fireEvent.press(getByLabelText('Go back'));
     expect(mockBack).toHaveBeenCalledTimes(1);
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it('returns to the Lobby when there is none (a screen opened by a link)', () => {
+  it('returns to the Lobby when there is none (a screen opened by a link)', async () => {
     mockCanGoBack.mockReturnValue(false);
     const { getByLabelText, getByText } = render(<RouteErrorBoundary error={fail} retry={jest.fn() as never} />);
     expect(getByText('RETURN TO THE LOBBY')).toBeTruthy();
-    fireEvent.press(getByLabelText('Return to the Lobby'));
+    await fireEvent.press(getByLabelText('Return to the Lobby'));
     expect(mockReplace).toHaveBeenCalledWith('/(tabs)');
     expect(mockBack).not.toHaveBeenCalled();
   });

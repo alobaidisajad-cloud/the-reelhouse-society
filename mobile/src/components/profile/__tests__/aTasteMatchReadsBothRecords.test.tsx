@@ -92,7 +92,7 @@ describe('the card', () => {
     expect(r.getByText('Your records could not be compared just now.')).toBeTruthy();
     expect(r.queryByText('100%')).toBeNull();
     mockRpc.mockResolvedValue({ data: { mine: seventies, theirs: seventies }, error: null });
-    await act(async () => { fireEvent.press(r.getByLabelText('Try again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     await settle();
     expect(r.getByText('100%')).toBeTruthy();
   });

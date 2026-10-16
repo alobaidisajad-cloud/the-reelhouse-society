@@ -58,7 +58,7 @@ describe('the picker admits the one slot', () => {
         onPick={onPick}
       />,
     );
-    await act(async () => { fireEvent.press(getByLabelText(/ESSAY\. One in progress\./)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/ESSAY\. One in progress\./)); });
     expect(onPick).toHaveBeenCalledWith('dossier');
   });
 });

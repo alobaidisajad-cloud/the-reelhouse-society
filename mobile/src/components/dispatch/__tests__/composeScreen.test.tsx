@@ -135,10 +135,10 @@ const mockAppState = {
 };
 
 const type = async (field: unknown, text: string) => {
-  await act(async () => { fireEvent.changeText(field as never, text); });
+  await act(async () => { await fireEvent.changeText(field as never, text); });
 };
 const press = async (control: unknown) => {
-  await act(async () => { fireEvent.press(control as never); });
+  await act(async () => { await fireEvent.press(control as never); });
 };
 const flush = async () => { await act(async () => { await Promise.resolve(); }); };
 
@@ -398,7 +398,7 @@ describe('the formatting toolbar', () => {
 
     // The member selects "Ozu" and presses Bold.
     await act(async () => {
-      fireEvent(body, 'selectionChange', { nativeEvent: { selection: { start: 0, end: 3 } } });
+      await fireEvent(body, 'selectionChange', { nativeEvent: { selection: { start: 0, end: 3 } } });
     });
     await press(getByLabelText('Bold'));
 
@@ -412,7 +412,7 @@ describe('the formatting toolbar', () => {
     const body = getByLabelText('Essay content body');
     await type(body, 'Ozu');
     await act(async () => {
-      fireEvent(body, 'selectionChange', { nativeEvent: { selection: { start: 3, end: 3 } } });
+      await fireEvent(body, 'selectionChange', { nativeEvent: { selection: { start: 3, end: 3 } } });
     });
     await press(getByLabelText('Italic'));
 
@@ -568,18 +568,18 @@ describe('the tools that edit what the member wrote', () => {
 
   const write = async (r: ReturnType<typeof render>, text: string) => {
     await act(async () => {
-      fireEvent.changeText(r.getByLabelText('Essay content body'), text);
+      await fireEvent.changeText(r.getByLabelText('Essay content body'), text);
     });
   };
   const selectRange = async (r: ReturnType<typeof render>, start: number, end: number) => {
     await act(async () => {
-      fireEvent(r.getByLabelText('Essay content body'), 'selectionChange', {
+      await fireEvent(r.getByLabelText('Essay content body'), 'selectionChange', {
         nativeEvent: { selection: { start, end } },
       });
     });
   };
   const tap = async (r: ReturnType<typeof render>, label: string) => {
-    await act(async () => { fireEvent.press(r.getByLabelText(label)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(label)); });
   };
   const textNow = (r: ReturnType<typeof render>) =>
     r.getByLabelText('Essay content body').props.value;

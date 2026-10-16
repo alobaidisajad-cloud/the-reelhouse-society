@@ -43,7 +43,7 @@ describe('the salon panel', () => {
   it('stays in the room when the house would not destroy it', async () => {
     deleteLounge.mockResolvedValue(false);
     const { r, onClose } = panel(true);
-    await act(async () => { fireEvent.press(r.getByText('INCINERATE SALON')); });
+    await act(async () => { await fireEvent.press(r.getByText('INCINERATE SALON')); });
     expect(deleteLounge).toHaveBeenCalledWith('l1');
     expect(onClose).not.toHaveBeenCalled();
     expect(mockReplace).not.toHaveBeenCalled();
@@ -51,7 +51,7 @@ describe('the salon panel', () => {
 
   it('goes to the corridor once it is destroyed', async () => {
     const { r, onClose } = panel(true);
-    await act(async () => { fireEvent.press(r.getByText('INCINERATE SALON')); });
+    await act(async () => { await fireEvent.press(r.getByText('INCINERATE SALON')); });
     expect(onClose).toHaveBeenCalled();
     expect(mockReplace).toHaveBeenCalledWith('/(tabs)/lounge');
   });
@@ -59,7 +59,7 @@ describe('the salon panel', () => {
   it('stays in the room when the leave did not take', async () => {
     leaveLounge.mockResolvedValue(false);
     const { r, onClose } = panel(false);
-    await act(async () => { fireEvent.press(r.getByText('STEP OUT OF SALON')); });
+    await act(async () => { await fireEvent.press(r.getByText('STEP OUT OF SALON')); });
     expect(leaveLounge).toHaveBeenCalledWith('l1');
     expect(onClose).not.toHaveBeenCalled();
     expect(mockReplace).not.toHaveBeenCalled();
@@ -67,7 +67,7 @@ describe('the salon panel', () => {
 
   it('goes to the corridor once the member is out', async () => {
     const { r } = panel(false);
-    await act(async () => { fireEvent.press(r.getByText('STEP OUT OF SALON')); });
+    await act(async () => { await fireEvent.press(r.getByText('STEP OUT OF SALON')); });
     expect(mockReplace).toHaveBeenCalledWith('/(tabs)/lounge');
   });
 });
