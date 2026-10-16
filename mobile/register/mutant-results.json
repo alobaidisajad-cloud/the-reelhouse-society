@@ -341,5 +341,12 @@
     "proof": "judge",
     "commit": "3e841e782e0c84c587084f9bdfcaea0f615e27c5",
     "verdict": "caught"
+  },
+  {
+    "class": "E2E-route-never-opened",
+    "mutant": "shape-route-capture-unchecked",
+    "proof": "m2",
+    "commit": "73b868e0cb9a0c363a7480277755feb9ab7b0ca3",
+    "verdict": "caught"
   }
 ]
