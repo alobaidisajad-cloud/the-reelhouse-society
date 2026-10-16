@@ -37,8 +37,12 @@ export const SUPABASE_URL = process.env.CONTRACT_SUPABASE_URL;
 export const ANON_KEY = process.env.CONTRACT_SUPABASE_ANON_KEY;
 export const canRun = !!SUPABASE_URL && !!ANON_KEY;
 
-/** Headers for a request made as a signed-out visitor. */
+/**
+ * Headers for a request made as a signed-out visitor. Each connection closes with
+ * its answer: one kept open for reuse holds Node's fetch timers past the test file.
+ */
 export const visitor = (): Record<string, string> => ({
   apikey: ANON_KEY as string,
   Authorization: `Bearer ${ANON_KEY}`,
+  Connection: 'close',
 });

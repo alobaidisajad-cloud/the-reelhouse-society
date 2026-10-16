@@ -39,15 +39,10 @@ function filtersFor(viewerId: string | null): string {
 /** A member id in the right shape: a visitor may ask about anyone's public marks. */
 const SOMEONE = '00000000-0000-4000-8000-000000000000';
 
-/** GET as a visitor; null when the network is not there (infra, not a failure). */
-async function asVisitor(path: string): Promise<{ status: number; body: string } | null> {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: visitor() });
-    return { status: res.status, body: await res.text() };
-  } catch {
-    console.warn(`[visitor.contract] skipped ${path.slice(0, 40)}: network unavailable`);
-    return null;
-  }
+/** GET as a visitor. Given an address, a contract that cannot reach it fails: it was asked to look. */
+async function asVisitor(path: string): Promise<{ status: number; body: string }> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: visitor() });
+  return { status: res.status, body: await res.text() };
 }
 
 const READS: { what: string; path: string }[] = [
@@ -81,23 +76,16 @@ describeMaybe('a visitor reads what the app asks for', () => {
 
   it.each(READS)('$what', async ({ path }) => {
     const r = await asVisitor(path);
-    if (!r) return;
     // 401 42501 is a refused column; 400 is a select the API cannot parse.
     expect({ status: r.status, body: r.status === 200 ? '' : r.body }).toEqual({ status: 200, body: '' });
   });
 
   it.each(['get_community_feed_auth_cursor'])('%s carries the two counts, and the viewer’s mark, on every row', async (fn) => {
-    let res: Response;
-    try {
-      res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-        method: 'POST',
-        headers: { ...visitor(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ p_limit: 3 }),
-      });
-    } catch {
-      console.warn(`[visitor.contract] skipped ${fn}: network unavailable`);
-      return;
-    }
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: { ...visitor(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_limit: 3 }),
+    });
     expect(res.status).toBe(200);
     const rows = (await res.json()) as Record<string, unknown>[];
     for (const row of rows) {

@@ -892,14 +892,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/services/__tests__/aShelfEntryIsOnlyAddedTo.test.ts | 2026-10-03 | written whole: the shelf as a table that holds its rows; old replay payloads take nothing away |
-| src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | 2026-10-03 | read whole: sound |
+| src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | 2026-10-16 | read whole: sound; edited: given an address, an unreachable one fails |
 | src/services/__tests__/aYearIsReadToTheLast.test.ts | 2026-10-01 | written: a year is read to the last row |
 | src/services/__tests__/certifyCountAuthority.test.ts | 2026-10-03 | read whole: the migration loses its SQL (--) comments, not JS ones |
 | src/services/__tests__/clientNames.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/services/__tests__/everyNameAClientCallsExists.test.ts | 2026-10-15 | edited: the app may name what a pending migration makes; the website never |
 | src/services/__tests__/FeedService.test.ts | 2026-10-01 | cursor note made true |
 | src/services/__tests__/getFilmVerdict.test.ts | 2026-10-03 | read whole: sound |
-| src/services/__tests__/loungeEmbeds.contract.test.ts | 2026-10-03 | read whole: sound (the FK names; columns are the query guard's) |
+| src/services/__tests__/loungeEmbeds.contract.test.ts | 2026-10-16 | read whole: sound (the FK names; columns are the query guard's); edited: given an address, an unreachable one fails; only 200 or 401 is an answer |
 | src/services/__tests__/loungeSharePayloads.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/ProfileDataService.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/profileRoomFilters.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -1252,7 +1252,7 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/functions/revenuecat-webhook/decide.ts | 2026-10-03 | rewritten: an event names whom to read again (both sides of a transfer), never what they hold |
 | supabase/functions/revenuecat-webhook/index.ts | 2026-10-03 | rewritten: each named account re-read and granted through storeRecord; 500 to retry, 404 member acknowledged |
 | supabase/functions/sync-entitlement/index.ts | 2026-10-03 | rewritten onto storeRecord; answers the rank in force; a store not read is 502 |
-| test-utils/__tests__/aFileEndsWithNoTimerWaiting.test.ts | 2026-10-15 | edited: the worktrees inside this checkout are left out of its own jest run |
+| test-utils/__tests__/aFileEndsWithNoTimerWaiting.test.ts | 2026-10-16 | edited: the worktrees inside this checkout are left out of its own jest run; edited: only the timers Node starts are left out |
 | test-utils/__tests__/aSweepAsksTheUniverse.test.ts | 2026-10-15 | new: no test or script lists a folder itself, unless named with why |
 | test-utils/__tests__/everyCommentIsTrue.test.ts | — |  |
 | test-utils/__tests__/everySourceReaderIsLedgered.test.ts | 2026-10-15 | edited: every test in mobile/, from the shared file list |
@@ -1266,14 +1266,14 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/__tests__/timerFixtures/leavesNothing.fixture.ts | 2026-10-04 | written whole |
 | test-utils/asOnThePhone.ts | 2026-10-15 | new: takes away in jest what the phone lacks |
 | test-utils/bottomEdge.ts | 2026-10-15 | new: where a drawn page puts its foot |
-| test-utils/contractEnv.ts | 2026-10-16 | read whole: sound; "all 5,000 tests" is every unit test; edited: the address comes from CONTRACT_SUPABASE_* alone, never the app's .env |
+| test-utils/contractEnv.ts | 2026-10-16 | read whole: sound; "all 5,000 tests" is every unit test; edited: the address comes from CONTRACT_SUPABASE_* alone, never the app's .env; each connection closes with its answer |
 | test-utils/react-native-testing-library.js | 2026-10-04 | edited: every render's client is testQueryClient(); the comment says what that keeps |
 | test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
 | test-utils/runtimeLacks.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | test-utils/SOURCE-READING-TESTS.md | 2026-10-15 | edited: every test in mobile/ is ledgered; the readers in __tests__/, e2e/ and plugins/, listed |
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
 | test-utils/testQueryClient.ts | 2026-10-04 | written whole: the one client a test builds — the app's rules, no collection timer, errors heard |
-| test-utils/timerCheckingEnvironment.js | 2026-10-04 | written whole: the environment that fails a file ending with a timer still waiting |
+| test-utils/timerCheckingEnvironment.js | 2026-10-16 | written whole: the environment that fails a file ending with a timer still waiting; edited: timers Node starts for itself (startedByNode) are not counted |
 | test-utils/topEdge.ts | 2026-10-15 | new: where a drawn page puts its top |
 | test-utils/universe.js | 2026-10-15 | new: the one list of the files each sweep reads, the route closure, and what each supabase/ file is |
 | types/react-test-renderer.d.ts | 2026-09-29 | history reduced to the reason |

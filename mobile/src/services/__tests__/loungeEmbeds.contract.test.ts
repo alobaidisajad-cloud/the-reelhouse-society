@@ -30,14 +30,8 @@ describeMaybe('Lounge profiles embeds resolve (no schema drift)', () => {
 
   it.each(EMBEDS)('$table embeds profiles without a 400', async ({ table, select }) => {
     const url = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}&limit=1`;
-    let res: Response;
-    try {
-      res = await fetch(url, { headers: visitor() });
-    } catch {
-      // Network unavailable in this environment — do not fail the suite on infra.
-      console.warn(`[loungeEmbeds.contract] skipped ${table}: network unavailable`);
-      return;
-    }
+    // Given an address, a contract that cannot reach it fails: it was asked to look.
+    const res = await fetch(url, { headers: visitor() });
 
     if (res.status === 400) {
       const body = await res.text();
@@ -47,6 +41,8 @@ describeMaybe('Lounge profiles embeds resolve (no schema drift)', () => {
       );
     }
 
-    expect(res.status).not.toBe(400);
+    // Read (200), or refused to a visitor after the embed resolved (401); a missing
+    // table (404) or a server error is no answer about the embed.
+    expect([200, 401]).toContain(res.status);
   });
 });

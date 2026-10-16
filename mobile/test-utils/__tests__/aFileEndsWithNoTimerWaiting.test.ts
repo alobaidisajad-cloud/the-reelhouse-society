@@ -62,6 +62,16 @@ describe('a file may not end with a timer still waiting', () => {
     expect(r.status).toBe('passed');
   });
 
+  it('leaves out only the timers Node starts for itself: the caller of setTimeout is in Node, not the code', () => {
+    const { startedByNode } = require('../timerCheckingEnvironment.js') as { startedByNode: (s: string) => boolean };
+    const stack = (...frames: string[]) => ['Error', '    at counted (C:\\m\\test-utils\\timerCheckingEnvironment.js:58:28)', ...frames].join('\n');
+    // Node's fetch, keeping its tick: undici's own frame calls setTimeout.
+    expect(startedByNode(stack('    at refreshTimeout (node:internal/deps/undici/undici:12719:55)', '    at fetch (C:\\m\\src\\x.test.ts:45:23)'))).toBe(true);
+    // The code's own timer, however much of Node lies under it.
+    expect(startedByNode(stack('    at C:\\m\\src\\hooks\\useThing.ts:12:3', '    at processTicksAndRejections (node:internal/process/task_queues:95:5)'))).toBe(false);
+    expect(startedByNode(stack('    at Object.<anonymous> (C:\\m\\node_modules\\@tanstack\\query-core\\build\\x.js:1:1)'))).toBe(false);
+  });
+
   it('is the environment this project runs every file in', () => {
     expect(require(join(MOBILE, 'jest.config.js')).testEnvironment).toBe('<rootDir>/test-utils/timerCheckingEnvironment.js');
   });

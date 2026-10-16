@@ -56,7 +56,8 @@ for (const [set, clear] of KINDS) {
       return callback.apply(this, args);
     };
     timer = realSet.call(this, run, ...rest);
-    ledger.set(timer, { set, delay: set === 'setImmediate' ? undefined : rest[0], during: shared.test, stack: new Error().stack });
+    const stack = new Error().stack;
+    if (!startedByNode(stack)) ledger.set(timer, { set, delay: set === 'setImmediate' ? undefined : rest[0], during: shared.test, stack });
     return timer;
   };
   // util.promisify(setTimeout) reads a symbol the real function carries.
@@ -73,6 +74,19 @@ for (const [set, clear] of KINDS) {
 }
 
 /** A timer may be cleared by the number it converts to; find that one. */
+/**
+ * Whether Node itself started a timer: the frame that called setTimeout is in
+ * Node's own internals (its fetch keeps a 499 ms tick and a socket's keep-alive,
+ * as the contract tests met in db-integration run 38829278284). Not the code's
+ * to clear, and it holds no process open. A timer the app or a test starts has
+ * its own frame there instead, however deep Node sits below it.
+ */
+function startedByNode(stack) {
+  const caller = String(stack).split('\n').slice(1).map((l) => l.trim())
+    .find((l) => !l.includes('timerCheckingEnvironment'));
+  return /^at (?:.*\()?node:internal\//.test(caller ?? '');
+}
+
 function forget(ledger, timer) {
   if (ledger.delete(timer) || timer == null || typeof timer === 'object') return;
   for (const known of ledger.keys()) {
@@ -151,3 +165,4 @@ class TimerCheckingEnvironment extends ReactNativeEnvironment {
 }
 
 module.exports = TimerCheckingEnvironment;
+module.exports.startedByNode = startedByNode;
