@@ -1,0 +1,472 @@
+{
+  "about": "The attack matrix's written table of who may do what (WORKLIST P0.77), read by e2e/db/attack/attack.mjs. Each public table and view of the snapshot has an entry (a view's rows are its tables', so laid: false); a table with none fails the run by name. owner: the column naming whose row it is, {via, on} for a row owned through another, or house for a row no member owns. specimen: the row each owner holds, laid down as the house. In a row, {owner} is the owner's id, {username} their handle, {id} the specimen's own id and {id#2} a second one, {ref:table} the owner's specimen in that table, {ref:table@V} another owner's, {uid@V} another owner's id, {peer} and {peer2} two bystanders, {admin} the admin, {private} whether the owner is the private member, {later} a month from now, {new} an id no row has. variant: what a new row changes so it is not the specimen again (none: the specimen is taken away and laid again). acrossBlocks: the others rules hold for BK and BY too; otherwise no write reaches across a block. touch: the change an update tries; forbidden: changes no one may make to any row, their own included. read: who sees another's row (everyone, members, viewable, viewable-members, owner, owner+admin, none). self and others: who may insert, update and delete their own rows and another member's (all, unbanned, ranked, rank1, rank2, admin, none; ranked asks the rank alone, rank1 and rank2 the rank and good standing). hidesBlocked: a member never sees the rows of one they blocked or who blocked them. reach: a row of one's own whose set columns point at another owner's row, and who may add it for each owner. probes: one attack each, with the answer it must get. why: the rule in words.",
+  "tables": {
+    "profiles": {
+      "owner": "id", "key": ["id"],
+      "specimen": { "id": "{owner}", "username": "{username}" }, "variant": "none",
+      "touch": { "bio": "rh changed" },
+      "forbidden": [{ "role": "admin" }, { "tier": "founding" }, { "is_founding": true }, { "is_banned": false },
+        { "suspended_until": null }, { "warning_count": 0 }, { "member_no": 1 }, { "entitlement_source": "manual" },
+        { "followers_count": 9999 }, { "total_logs": 9999 }, { "email": "rh@attack.test" }],
+      "read": "everyone",
+      "self": { "insert": "none", "update": "unbanned", "delete": "none" },
+      "why": "Every profile is seen; a member writes their own words on it, never their rank, standing, counts or address, and an account is made and closed only by the house."
+    },
+    "films": {
+      "owner": "house", "key": ["id"],
+      "specimen": { "id": 990680, "title": "rh film" }, "variant": { "id": 990681 },
+      "touch": { "title": "rh changed" },
+      "read": "everyone",
+      "why": "The film catalogue is the house's, read by everyone."
+    },
+    "founding_seat_counter": {
+      "owner": "house", "key": ["id"], "specimen": { "id": 1, "seats_claimed": 0 }, "variant": "none",
+      "touch": { "seats_claimed": 99 }, "read": "none",
+      "why": "Only the house counts the hundred seats."
+    },
+    "gate_metrics": {
+      "owner": "house", "key": ["day", "event", "feature_id", "rank", "standing"],
+      "specimen": { "day": "2026-01-01", "event": "gate_tapped", "feature_id": "rh", "rank": "", "standing": "", "count": 1 },
+      "variant": { "feature_id": "rh2" }, "touch": { "count": 99 }, "read": "none",
+      "why": "Counted by record_gate_event alone."
+    },
+    "lobby_editions": {
+      "owner": "house", "key": ["edition", "slot", "place"],
+      "specimen": { "edition": "2026-01-01", "slot": "log", "place": 1, "target_id": "{ref:logs@V}", "author_id": "{uid@V}", "score": 1 },
+      "variant": { "place": 2 }, "touch": { "score": 99 }, "read": "members",
+      "why": "The house hangs the wall; members read it."
+    },
+    "lobby_withheld": {
+      "owner": "house", "key": ["kind", "target_id"],
+      "specimen": { "kind": "log", "target_id": "{ref:logs@V}" }, "variant": { "kind": "list" },
+      "touch": { "withheld_at": "2026-01-02" }, "read": "none",
+      "why": "Only the house withholds from the wall."
+    },
+    "rank_grants": {
+      "owner": "user_id", "key": ["user_id", "source"],
+      "specimen": { "user_id": "{owner}", "source": "manual", "tier": "archivist" }, "variant": { "source": "paytabs" },
+      "touch": { "tier": "founding" }, "read": "none",
+      "why": "A rank is granted by the stores and the house, never written by a member."
+    },
+    "lounge_sanctions": {
+      "owner": "user_id", "key": ["lounge_id", "user_id"],
+      "specimen": { "lounge_id": "{ref:lounges}", "user_id": "{owner}", "status": "muted" }, "variant": "none",
+      "touch": { "status": "banned" }, "read": "none",
+      "why": "Kept by the house's moderation functions."
+    },
+    "salon_typing_sent": {
+      "owner": "user_id", "key": ["lounge_id", "user_id"],
+      "specimen": { "lounge_id": "{ref:lounges}", "user_id": "{owner}", "sent_at": "2026-01-01" }, "variant": "none",
+      "touch": { "sent_at": "2026-01-02" }, "read": "none",
+      "why": "Written by send_salon_typing alone."
+    },
+    "viewings": {
+      "owner": { "via": "logs", "on": "log_id" }, "key": ["viewing_id"],
+      "specimen": { "viewing_id": "{id}", "log_id": "{ref:logs}" }, "variant": { "viewing_id": "{id}" },
+      "extra": [{ "viewing_id": "{id#2}", "log_id": "{ref:logs}" }],
+      "touch": { "log_id": "{ref:logs}" }, "read": "none",
+      "why": "A log's viewings are kept by the house's triggers."
+    },
+    "logs": {
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "film_id": 990680, "film_title": "rh film", "watched_date": "2026-01-01", "review": "rh review" },
+      "variant": { "film_id": 990681 },
+      "touch": { "review": "rh changed" },
+      "read": "viewable",
+      "self": { "insert": "unbanned", "update": "unbanned", "delete": "all" },
+      "why": "A log is seen as its member's file is; a silenced member may still take theirs down."
+    },
+    "lists": {
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "title": "rh list", "is_private": false },
+      "extra": [{ "id": "{id#2}", "user_id": "{owner}", "title": "rh private list", "is_private": true }],
+      "touch": { "title": "rh changed" },
+      "read": "viewable",
+      "self": { "insert": "unbanned", "update": "unbanned", "delete": "all" },
+      "why": "A stack is seen as its member's file is."
+    },
+    "list_items": {
+      "owner": { "via": "lists", "on": "list_id" }, "key": ["id"],
+      "specimen": { "id": "{id}", "list_id": "{ref:lists}", "film_id": 990680, "film_title": "rh film" },
+      "variant": { "film_id": 990681 },
+      "touch": { "film_title": "rh changed" },
+      "read": "viewable",
+      "self": { "insert": "unbanned", "update": "unbanned", "delete": "all" },
+      "why": "A stack's films are its member's."
+    },
+    "watchlists": {
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "film_id": 990680, "film_title": "rh film" },
+      "variant": { "film_id": 990681 },
+      "touch": { "film_title": "rh changed" },
+      "read": "viewable",
+      "self": { "insert": "unbanned", "update": "all", "delete": "all" },
+      "why": "A watchlist is seen as its member's file is."
+    },
+    "physical_archive": {
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "film_id": 990680, "film_title": "rh film" },
+      "variant": { "film_id": 990681 },
+      "touch": { "notes": "rh changed" },
+      "read": "viewable",
+      "self": { "insert": "rank1", "update": "rank1", "delete": "all" },
+      "why": "The Physical Archive is an Archivist feature; taking a piece down never is."
+    },
+    "log_private_notes": {
+      "reach": { "set": {"log_id": "{ref:logs}", "viewing_id": "{ref:viewings#2}"}, "V": "none", "P": "none", "BK": "none", "BY": "none" },
+      "refusedAs": ["23503"],
+      "owner": "user_id", "key": ["viewing_id"],
+      "specimen": { "log_id": "{ref:logs}", "user_id": "{owner}", "notes": "rh notes", "viewing_id": "{ref:viewings}" },
+      "variant": { "viewing_id": "{ref:viewings#2}" },
+      "touch": { "notes": "rh changed" },
+      "read": "owner",
+      "self": { "insert": "ranked", "update": "ranked", "delete": "all" },
+      "why": "The Vault's notes are their member's alone, and an Archivist feature; seen by no one else, so a ban that silences a member leaves them be."
+    },
+    "log_counts": {
+      "owner": { "via": "logs", "on": "log_id" }, "key": ["log_id"],
+      "specimen": { "log_id": "{ref:logs}", "certify_count": 0, "critique_count": 0 }, "variant": "none",
+      "touch": { "certify_count": 99 }, "read": "viewable",
+      "why": "Kept by the house's triggers; read with the log."
+    },
+    "log_comments": {
+      "reach": { "set": {"log_id": "{ref:logs}"}, "V": "unbanned", "P": "none", "BK": "none", "BY": "none" },
+      "hidesBlocked": true,
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "log_id": "{ref:logs}", "user_id": "{owner}", "username": "{username}", "body": "rh critique" },
+      "touch": { "body": "rh changed" },
+      "read": "viewable",
+      "self": { "insert": "unbanned", "update": "unbanned", "delete": "all" },
+      "why": "A critique is seen where its log is."
+    },
+    "list_comments": {
+      "reach": { "set": {"list_id": "{ref:lists}"}, "V": "unbanned", "P": "none", "BK": "none", "BY": "none" },
+      "hidesBlocked": true,
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "list_id": "{ref:lists}", "user_id": "{owner}", "content": "rh note" },
+      "touch": { "content": "rh changed" },
+      "read": "viewable",
+      "self": { "insert": "unbanned", "update": "unbanned", "delete": "all" },
+      "why": "A note on a stack is seen where its stack is."
+    },
+    "interactions": {
+      "reach": { "set": {"target_user_id": "{owner}"}, "V": "unbanned", "P": "unbanned", "BK": "none", "BY": "none" },
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "target_user_id": "{peer}", "type": "follow" },
+      "variant": { "target_user_id": "{peer2}" },
+      "touch": { "updated_at": "2026-01-02" },
+      "read": "everyone",
+      "self": { "insert": "unbanned", "update": "none", "delete": "all" },
+      "why": "A follow is made and undone, never changed. It is seen when either end's file is open, as a follower list is; every specimen follows an open member."
+    },
+    "user_blocks": {
+      "owner": "blocker_id", "key": ["id"],
+      "specimen": { "id": "{id}", "blocker_id": "{owner}", "blocked_id": "{peer2}", "type": "mute" },
+      "variant": { "blocked_id": "{peer}" },
+      "touch": { "type": "block" },
+      "read": "owner",
+      "self": { "insert": "all", "update": "all", "delete": "all" },
+      "why": "Whom a member blocks or mutes is theirs alone."
+    },
+    "notifications": {
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "type": "system", "message": "rh notice" },
+      "touch": { "is_read": true },
+      "read": "owner",
+      "self": { "insert": "none", "update": "all", "delete": "all" },
+      "why": "A member's notices are theirs; only the house writes one."
+    },
+    "member_drafts": {
+      "owner": "user_id", "key": ["user_id", "kind", "scope"],
+      "specimen": { "user_id": "{owner}", "kind": "edit", "scope": "rh", "payload": {}, "saved_at": "2026-01-01" },
+      "variant": { "scope": "rh2" },
+      "touch": { "payload": { "rh": 1 } },
+      "read": "owner",
+      "self": { "insert": "all", "update": "all", "delete": "all" },
+      "why": "A draft is its member's alone."
+    },
+    "push_tokens": {
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "token": "rh-{owner}", "platform": "ios" },
+      "variant": { "token": "rh2-{owner}" },
+      "touch": { "platform": "android" },
+      "read": "owner",
+      "self": { "insert": "none", "update": "none", "delete": "all" },
+      "why": "A device's token is registered by the house's function; its member may take it down."
+    },
+    "push_subscriptions": {
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "endpoint": "https://rh.test/{owner}", "p256dh": "rh", "auth": "rh" },
+      "variant": { "endpoint": "https://rh.test/2/{owner}" },
+      "touch": { "auth": "rh changed" },
+      "read": "none",
+      "self": { "insert": "all", "update": "none", "delete": "none" },
+      "why": "The website's abandoned web push, read by nothing: a member may add their own and see none, so cannot take one away."
+    },
+    "analytics_events": {
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "event_name": "rh" },
+      "touch": { "event_name": "rh changed" },
+      "read": "none",
+      "self": { "insert": "all", "update": "none", "delete": "none" },
+      "why": "An event is filed under its own member and read by no client."
+    },
+    "error_logs": {
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "error_type": "rh", "error_message": "rh" },
+      "touch": { "error_message": "rh changed" },
+      "read": "owner",
+      "self": { "insert": "all", "update": "none", "delete": "none" },
+      "why": "A member's error reports are theirs to file and to read."
+    },
+    "warnings": {
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "admin_id": "{admin}", "reason": "rh reason" },
+      "touch": { "acknowledged": true },
+      "read": "owner+admin",
+      "forbidden": [{ "acknowledged": true, "reason": "rh rewritten" }],
+      "self": { "insert": "admin", "update": "all", "delete": "none" },
+      "others": { "insert": "admin" }, "acrossBlocks": true,
+      "why": "The house's word to a member: written by an admin, read by its member and the admins, acknowledged by its member."
+    },
+    "mod_actions": {
+      "owner": "target_user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "target_user_id": "{owner}", "admin_id": "{admin}", "action": "warn", "reason": "rh reason" },
+      "touch": { "reason": "rh changed" },
+      "read": "owner+admin",
+      "self": { "insert": "admin", "update": "none", "delete": "none" },
+      "others": { "insert": "admin" }, "acrossBlocks": true,
+      "why": "The record of the house's acts: written by an admin, read by the admins and the member it names."
+    },
+    "reports": {
+      "owner": "reporter_id", "key": ["id"],
+      "specimen": { "id": "{id}", "reporter_id": "{owner}", "content_type": "log", "content_id": "rh", "reason": "spam", "status": "pending" },
+      "touch": { "status": "resolved" },
+      "read": "owner+admin",
+      "self": { "insert": "none", "update": "none", "delete": "none" },
+      "why": "A report is filed by submit_report and read by its reporter and the admins."
+    },
+    "lounges": {
+      "owner": "creator_id", "key": ["id"],
+      "specimen": { "id": "{id}", "name": "rh salon {username}", "creator_id": "{owner}", "is_private": "{private}" },
+      "variant": { "is_private": false },
+      "touch": { "description": "rh changed" },
+      "read": "members",
+      "forbidden": [{ "member_count": 9999 }],
+      "self": { "insert": "rank1", "update": "unbanned", "delete": "all" },
+      "why": "Every salon is discoverable by members; opening one is an Archivist feature, and its name and words are speech a ban silences."
+    },
+    "lounge_members": {
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "lounge_id": "{ref:lounges}", "user_id": "{owner}", "status": "approved" },
+      "variant": "none",
+      "touch": { "last_read_at": "2026-01-02" },
+      "forbidden": [{ "lounge_id": "{ref:lounges@P}" }, { "status": "approved", "lounge_id": "{ref:lounges@V}" }],
+      "read": "owner",
+      "self": { "insert": "none", "update": "all", "delete": "all" },
+      "why": "A seat is taken through the house's functions; its member moves their reading place and may leave."
+    },
+    "lounge_messages": {
+      "reach": { "set": {"lounge_id": "{ref:lounges}"}, "V": "none", "P": "none", "BK": "none", "BY": "none" },
+      "hidesBlocked": true,
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "lounge_id": "{ref:lounges}", "user_id": "{owner}", "content": "rh said" },
+      "touch": { "content": "rh changed" },
+      "read": "viewable-members",
+      "self": { "insert": "rank1", "update": "none", "delete": "all" },
+      "why": "A salon's words are read by members when it is open and by its seats when private; said once, never changed."
+    },
+    "lounge_message_reactions": {
+      "reach": { "set": {"message_id": "{ref:lounge_messages}", "lounge_id": "{ref:lounges}"}, "V": "none", "P": "none", "BK": "none", "BY": "none" },
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "message_id": "{ref:lounge_messages}", "lounge_id": "{ref:lounges}", "user_id": "{owner}", "reaction": "bravo" },
+      "variant": { "reaction": "adored" },
+      "touch": { "reaction": "panned" },
+      "read": "viewable-members",
+      "self": { "insert": "rank1", "update": "none", "delete": "all" },
+      "why": "Read as the salon's words are; a seated member reacts."
+    },
+    "dispatch_posts": {
+      "hidesBlocked": true,
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "kind": "ballot", "user_id": "{owner}", "author_username": "{username}", "body": "rh ballot", "options": ["a", "b"], "closes_at": "{later}", "is_published": true },
+      "extra": [{ "id": "{id#2}", "kind": "dossier", "user_id": "{owner}", "author_username": "{username}", "title": "rh dossier", "body": "rh", "full_content": "rh essay", "is_published": true }],
+      "touch": { "body": "rh changed" },
+      "read": "everyone",
+      "forbidden": [{ "certify_count": 9999 }, { "comment_count": 9999 }],
+      "self": { "insert": "rank2", "update": "unbanned", "delete": "none" },
+      "why": "A filing is the Dispatch's, read by everyone; filing is an Auteur feature; a filing is withdrawn through the house, never deleted, so its critiques keep their place."
+    },
+    "dispatch_comments": {
+      "reach": { "set": {"post_id": "{ref:dispatch_posts}"}, "V": "unbanned", "P": "unbanned", "BK": "none", "BY": "none" },
+      "hidesBlocked": true,
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "post_id": "{ref:dispatch_posts}", "user_id": "{owner}", "author_username": "{username}", "body": "rh critique" },
+      "touch": { "body": "rh changed" },
+      "read": "members",
+      "forbidden": [{ "certify_count": 9999 }],
+      "self": { "insert": "unbanned", "update": "unbanned", "delete": "unbanned" },
+      "why": "Critiques are read by members."
+    },
+    "dispatch_certifications": {
+      "reach": { "set": {"post_id": "{ref:dispatch_posts}"}, "V": "unbanned", "P": "unbanned", "BK": "none", "BY": "none" },
+      "hidesBlocked": true,
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "post_id": "{ref:dispatch_posts}" },
+      "variant": { "post_id": "{ref:dispatch_posts@X1}" },
+      "touch": { "created_at": "2026-01-02" },
+      "read": "members",
+      "self": { "insert": "unbanned", "update": "none", "delete": "unbanned" },
+      "why": "Certifications are read by members."
+    },
+    "dispatch_votes": {
+      "reach": { "set": {"post_id": "{ref:dispatch_posts}"}, "V": "unbanned", "P": "unbanned", "BK": "none", "BY": "none" },
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "post_id": "{ref:dispatch_posts}", "user_id": "{owner}", "option_index": 0 },
+      "variant": { "post_id": "{ref:dispatch_posts@X1}" },
+      "touch": { "option_index": 1 },
+      "read": "owner",
+      "self": { "insert": "unbanned", "update": "none", "delete": "none" },
+      "why": "A vote is secret; cast once."
+    },
+    "dispatch_saves": {
+      "reach": { "set": {"post_id": "{ref:dispatch_posts}"}, "V": "all", "P": "all", "BK": "all", "BY": "all" },
+      "owner": "user_id", "key": ["user_id", "post_id"],
+      "specimen": { "user_id": "{owner}", "post_id": "{ref:dispatch_posts}" },
+      "variant": { "post_id": "{ref:dispatch_posts@X1}" },
+      "touch": { "created_at": "2026-01-02" },
+      "read": "owner",
+      "self": { "insert": "all", "update": "all", "delete": "all" },
+      "why": "What a member saves is theirs alone."
+    },
+    "dispatch_dossiers_legacy": {
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "author_username": "{username}", "title": "rh dossier", "is_published": true },
+      "touch": { "title": "rh changed" },
+      "read": "everyone",
+      "self": { "insert": "none", "update": "none", "delete": "none" },
+      "why": "The old Dispatch's dossiers, read by everyone and written by nothing: an older build's dossier reaches dispatch_posts through the dispatch_dossiers view."
+    },
+    "dossier_comments_legacy": {
+      "reach": { "set": {"dossier_id": "{ref:dispatch_dossiers_legacy}"}, "V": "none", "P": "none", "BK": "none", "BY": "none" },
+      "hidesBlocked": true,
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "dossier_id": "{ref:dispatch_dossiers_legacy}", "user_id": "{owner}", "username": "{username}", "body": "rh comment" },
+      "touch": { "body": "rh changed" },
+      "read": "everyone",
+      "self": { "insert": "none", "update": "none", "delete": "none" },
+      "why": "The old Dispatch's comments, read by everyone and written by nothing: an older build's comment reaches dispatch_comments through the dossier_comments view."
+    },
+    "dossier_certifications_legacy": {
+      "reach": { "set": {"dossier_id": "{ref:dispatch_dossiers_legacy}"}, "V": "none", "P": "none", "BK": "none", "BY": "none" },
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{id}", "user_id": "{owner}", "dossier_id": "{ref:dispatch_dossiers_legacy}" },
+      "variant": { "dossier_id": "{ref:dispatch_dossiers_legacy@X1}" },
+      "touch": { "created_at": "2026-01-02" },
+      "read": "everyone",
+      "self": { "insert": "none", "update": "none", "delete": "none" },
+      "why": "The old Dispatch's certifications, read by everyone and written by nothing: an older build's certification reaches dispatch_certifications through the dossier_certifications view."
+    }
+,
+    "dispatch_dossiers": {
+      "hidesBlocked": true, "laid": false,
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{ref:dispatch_posts#2}", "user_id": "{owner}", "author_username": "{username}", "title": "rh dossier", "excerpt": "rh", "full_content": "rh essay", "is_published": true },
+      "variant": { "id": "{new}" },
+      "touch": { "title": "rh changed" },
+      "read": "everyone",
+      "self": { "insert": "rank2", "update": "unbanned", "delete": "none" },
+      "why": "The old name of the Dispatch's essays, kept for older builds' queued writes: every rule of dispatch_posts holds through it."
+    },
+    "dossier_comments": {
+      "hidesBlocked": true, "laid": false,
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{ref:dispatch_comments}", "dossier_id": "{ref:dispatch_posts}", "user_id": "{owner}", "username": "{username}", "body": "rh critique" },
+      "variant": { "id": "{new}" },
+      "reach": { "set": {"dossier_id": "{ref:dispatch_posts}"}, "V": "unbanned", "P": "unbanned", "BK": "none", "BY": "none" },
+      "touch": { "body": "rh changed" },
+      "read": "members",
+      "self": { "insert": "unbanned", "update": "unbanned", "delete": "unbanned" },
+      "why": "The old name of the Dispatch's critiques: every rule of dispatch_comments holds through it."
+    },
+    "dossier_certifications": {
+      "hidesBlocked": true, "laid": false,
+      "owner": "user_id", "key": ["id"],
+      "specimen": { "id": "{ref:dispatch_certifications}", "dossier_id": "{ref:dispatch_posts}", "user_id": "{owner}" },
+      "variant": { "id": "{new}", "dossier_id": "{ref:dispatch_posts@X1}" },
+      "reach": { "set": {"dossier_id": "{ref:dispatch_posts#2}"}, "V": "unbanned", "P": "unbanned", "BK": "none", "BY": "none" },
+      "touch": { "created_at": "2026-01-02" },
+      "read": "members",
+      "self": { "insert": "unbanned", "update": "none", "delete": "unbanned" },
+      "why": "The old name of the Dispatch's certifications: every rule of dispatch_certifications holds through it."
+    }
+  },
+  "probes": [
+    {
+      "name": "a private stack takes no one else's words",
+      "table": "list_comments", "as": ["free", "admin"], "kind": "insert",
+      "row": { "id": "{new}", "list_id": "{ref:lists@V#2}", "user_id": "{owner}", "content": "rh note" },
+      "expect": "refused",
+      "why": "A private stack is its owner's alone: no one else's words reach it."
+    },
+    {
+      "name": "a private member's log is certified only by its readers",
+      "table": "interactions", "as": ["free", "admin"], "kind": "insert",
+      "row": { "id": "{new}", "user_id": "{owner}", "target_user_id": "{uid@P}", "target_log_id": "{ref:logs@P}", "type": "endorse_log" },
+      "expect": "refused",
+      "why": "A private member's work is answered only by those who may read it."
+    },
+    {
+      "name": "a private stack takes no one else's certification",
+      "table": "interactions", "as": ["free", "admin"], "kind": "insert",
+      "row": { "id": "{new}", "user_id": "{owner}", "target_user_id": "{uid@V}", "target_list_id": "{ref:lists@V#2}", "type": "endorse_list" },
+      "expect": "refused",
+      "why": "A private stack is its owner's alone."
+    },
+    {
+      "name": "an open member's log is certified by any member",
+      "table": "interactions", "as": ["free"], "kind": "insert",
+      "row": { "id": "{new}", "user_id": "{owner}", "target_user_id": "{uid@V}", "target_log_id": "{ref:logs@V}", "type": "endorse_log" },
+      "expect": "ok",
+      "why": "The control beside the two above: the same certification of work its writer may read lands."
+    },
+    {
+      "name": "a reaction belongs to its message's salon",
+      "table": "lounge_message_reactions", "as": ["archivist", "auteur"], "kind": "insert",
+      "row": { "id": "{new}", "message_id": "{ref:lounge_messages@P}", "lounge_id": "{ref:lounges}", "user_id": "{owner}", "reaction": "bravo" },
+      "expect": "refused",
+      "why": "A reaction belongs to its message's salon: a seat in one room never reaches a message in another."
+    },
+    {
+      "name": "a reply's quote is its message's own words",
+      "table": "lounge_messages", "as": ["archivist"], "kind": "insert",
+      "row": { "id": "{new}", "lounge_id": "{ref:lounges}", "user_id": "{owner}", "content": "rh reply",
+        "reply_to_id": "{ref:lounge_messages}", "reply_to_content": "rh words never said", "reply_to_username": "{username@V}" },
+      "then": "SELECT reply_to_content IS DISTINCT FROM 'rh words never said' AND reply_to_username IS DISTINCT FROM '{username@V}' FROM public.lounge_messages WHERE id = '{new}'",
+      "expect": "refused-or-then",
+      "why": "A quote is the house's copy of the message replied to, never the sender's words put in another's mouth."
+    },
+    {
+      "name": "a reply answers a message of its own salon",
+      "table": "lounge_messages", "as": ["archivist"], "kind": "insert",
+      "row": { "id": "{new}", "lounge_id": "{ref:lounges}", "user_id": "{owner}", "content": "rh reply",
+        "reply_to_id": "{ref:lounge_messages@P}", "reply_to_content": "rh said", "reply_to_username": "{username@P}" },
+      "expect": "refused",
+      "why": "A reply answers a message of its own salon; a private room's words never reach another room."
+    },
+    {
+      "name": "a request to follow is seen by its two members alone",
+      "table": "interactions", "as": ["visitor", "free"], "kind": "read",
+      "lay": { "id": "{new}", "user_id": "{uid@X1}", "target_user_id": "{uid@P}", "type": "follow_request" },
+      "expect": "unseen",
+      "why": "Who asked to follow a private member is between the two of them."
+    },
+    {
+      "name": "the member asked sees the request",
+      "table": "interactions", "as": ["P"], "kind": "read",
+      "lay": { "id": "{new}", "user_id": "{uid@X1}", "target_user_id": "{uid@P}", "type": "follow_request" },
+      "expect": "seen",
+      "why": "The control beside the probe above: the member asked sees the request."
+    }
+  ]
+}

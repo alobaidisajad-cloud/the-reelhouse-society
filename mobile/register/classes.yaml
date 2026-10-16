@@ -165,6 +165,13 @@ classes:
     count: 10
     open_in_production: true
 
+  - id: DB-row-reaches-past-its-reader
+    area: database
+    seriousness: behaviour
+    status: OPEN
+    count: 8
+    open_in_production: true
+
   - id: DB-applied-bytes-differ
     title: The train applied a migration with the line ends of the checkout it ran from, so production held other bytes than CI rehearsed
     area: database

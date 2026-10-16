@@ -198,6 +198,7 @@ Decisions, as of 2026-09-28:
 | `e2e/__tests__/advisers.test.ts` | The advisers' allowlist and the sealed world's config.toml. |
 | `e2e/__tests__/advisories.test.ts` | The reports its own runs of advisories.mjs wrote, and the advisories' allowlist. |
 | `e2e/__tests__/anonKey.test.ts` | The E2E workflow and the sealed world's config.toml. |
+| `e2e/__tests__/attack.test.ts` | The attack matrix and the schema snapshot: every table and view the snapshot defines must have its written rules. |
 | `e2e/__tests__/glideLogLevel.test.ts` | The E2E workflow and package.json. |
 | `e2e/__tests__/iosLaunch.test.ts` | The iPhone launch workflow. |
 | `e2e/__tests__/keyboardRoom.test.ts` | The flow runner, the keyboard flows and the app's code, for the ids a probe taps. |

@@ -146,6 +146,15 @@ jobs:
           psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" \
             -X -q -v ON_ERROR_STOP=1 -f mobile/e2e/db/security.sql
 
+      # Every table and view, asked by every kind of member against the written
+      # table of who may do what (mobile/e2e/db/attack/matrix.json); a table or
+      # view the snapshot has and the matrix lacks fails by name. The run first
+      # proves a rule opened on purpose is named.
+      - name: The attack matrix is proven able to fail
+        run: node mobile/e2e/db/attack/attack.mjs --self-test
+      - name: Every table and view, attacked by every kind of member
+        run: node mobile/e2e/db/attack/attack.mjs
+
   # The app's own questions (src/services/__tests__/*.contract.test.ts: an embed
   # resolves, a visitor may read the columns the app asks for) asked of
   # production's shape, as it will be after the pending migrations, through the
