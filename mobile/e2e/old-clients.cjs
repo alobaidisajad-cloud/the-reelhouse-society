@@ -10,12 +10,15 @@
  * prints that client's own crashes as JSON ({ client, ownCrashes }), or refuses.
  */
 
-/** What an E2E run of a shipped client keeps from this checkout. */
-const HARNESS = ['e2e', 'scripts', 'supabase', 'node_modules'];
+/**
+ * What an E2E run of a shipped client keeps from this checkout: the harness, and
+ * test-utils, whose shared file list (universe.js) the harness's scripts read.
+ */
+const HARNESS = ['e2e', 'scripts', 'supabase', 'test-utils', 'node_modules'];
 
 const FULL = /^[0-9a-f]{40}$/;
 const SHORT_OR_FULL = /^[0-9a-f]{7,40}$/;
-const APP_PATH = /^mobile\/(?!e2e\/|scripts\/|supabase\/)[\w./[\]-]+$/;
+const APP_PATH = /^mobile\/(?!e2e\/|scripts\/|supabase\/|test-utils\/)[\w./[\]-]+$/;
 /** The register's own id shape (scripts/register.cjs). */
 const CLASS_ID = /^[A-Z][A-Z0-9]*(-[a-z0-9]+)+$/;
 /** A match this short could take any crash for the client's own. */

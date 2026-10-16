@@ -14,7 +14,7 @@
 import { spawnSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { homedir } from 'os';
-import { basename, join } from 'path';
+import { basename, dirname, join } from 'path';
 import { files as universe } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
@@ -129,7 +129,7 @@ describe('the clients in members\' hands', () => {
       clientNamed: (r: unknown, n: string) => { refuse?: string; client?: { patches?: unknown[] } };
       HARNESS: string[];
     };
-    expect(HARNESS).toEqual(['e2e', 'scripts', 'supabase', 'node_modules']);
+    expect(HARNESS).toEqual(['e2e', 'scripts', 'supabase', 'test-utils', 'node_modules']);
     expect(clientNamed(record, 'TestFlight build 41').client?.patches).toHaveLength(3);
     expect(clientNamed(record, 'the website').refuse).toBe('the website is not a checked client with a full commit');
     expect(clientNamed(record, 'build 99').refuse).toBe('no client named "build 99" in old-clients.json');
@@ -138,6 +138,33 @@ describe('the clients in members\' hands', () => {
     expect(bad({ path: 'mobile/src/x.ts', from: 'b'.repeat(40), why: '' })).toMatch(/^x: a patch needs/);
     expect(bad({ path: 'mobile/src/x.ts', from: 'bbbb', why: 'short commit' })).toMatch(/^x: a patch needs/);
     expect(bad({ path: 'mobile/src/x.ts', from: 'b'.repeat(40), why: 'a reason' })).toBeUndefined();
+  });
+
+  it("are run over a harness that reads nothing outside itself: a shipped client's tree has its own app, not this checkout's", () => {
+    // Every run of build 41 failed from 6a58d03e to f3941581: the harness's scripts read the shared
+    // file list (test-utils/universe.js), and the tree kept build 41's test-utils, which had none.
+    const { HARNESS } = require('../../../e2e/old-clients.cjs') as { HARNESS: string[] };
+    const shared = require('@/test-utils/universe') as { rel: (p: string) => string };
+    const ts = require('typescript') as typeof import('typescript');
+    // Not run by an E2E run, and named with why.
+    const NOT_RUN: Record<string, string> = {
+      'scripts/jest-shards.cjs': "jest's shards, for God-Tier CI: it reads the capture list in mockups/tools",
+    };
+    const leaves: string[] = [];
+    for (const file of universe('scripts')) {
+      const from = shared.rel(file);
+      if (!HARNESS.includes(from.split('/')[0] ?? '') || /(^|\/)__tests__\//.test(from) || from in NOT_RUN) continue;
+      const text = readFileSync(file, 'utf8');
+      const specs = [
+        ...ts.preProcessFile(text, true, true).importedFiles.map((f) => f.fileName),
+        ...[...text.matchAll(/createRequire\(import\.meta\.url\)\('([^']+)'\)/g)].map((m) => m[1] ?? ''),
+      ];
+      for (const spec of specs.filter((s) => s.startsWith('.'))) {
+        const to = join(dirname(from), spec).split('\\').join('/');
+        if (!HARNESS.includes(to.split('/')[0] ?? '')) leaves.push(`${from} reads ${spec}`);
+      }
+    }
+    expect(leaves).toEqual([]);
   });
 
   describe('a client\'s own crashes: fixed since in the app, so its run is not failed by them', () => {
