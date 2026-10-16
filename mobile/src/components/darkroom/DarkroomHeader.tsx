@@ -74,6 +74,10 @@ export const DarkroomHeader = React.memo(() => {
   );
 
   const [suggestions, setSuggestions] = useState<DiscoverFilm[]>([]);
+  // The suggestions for the words in the field could not be read: said where they would be,
+  // never left as none (a member searching sees why nothing came). Asked again on TRY AGAIN.
+  const [suggestionsUnreachable, setSuggestionsUnreachable] = useState(false);
+  const [askedAgain, setAskedAgain] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const [localYearFrom, setLocalYearFrom] = useState(filters.yearFrom ? String(filters.yearFrom) : '');
   const [localYearTo, setLocalYearTo] = useState(filters.yearTo ? String(filters.yearTo) : '');
@@ -159,6 +163,8 @@ export const DarkroomHeader = React.memo(() => {
     let active = true;
     const val = inputVal.trim().toLowerCase();
     
+    // Words that are new: what the last ones' failure said is not said of these.
+    setSuggestionsUnreachable(false);
     // Too short, or already submitted as the search: no suggestions.
     if (!val || val.length < 2 || val === query.trim().toLowerCase()) {
       setSuggestions([]);
@@ -201,16 +207,21 @@ export const DarkroomHeader = React.memo(() => {
         e2eTrace('darkroom.search.error', { val, message: e instanceof Error ? e.message : String(e) });
         if (__DEV__) console.error('[DarkroomHeader] suggestions fetch error:', e);
         // Never the last words' suggestions under these: pressing one would open
-        // a film the member is no longer asking for. The search itself, when
-        // sent, says the catalogue could not be reached.
-        if (active) setSuggestions([]);
+        // a film the member is no longer asking for. Where they would be, the
+        // catalogue is said to be out of reach, as the search itself says it.
+        if (active) {
+          setSuggestions([]);
+          setSuggestionsUnreachable(true);
+        }
       }
     }, 450);
     return () => {
       active = false;
       clearTimeout(timeoutId);
     };
-  }, [inputVal, query]);
+  }, [inputVal, query, askedAgain]);
+
+  const askForSuggestionsAgain = useCallback(() => setAskedAgain((n) => n + 1), []);
 
   useEffect(() => {
     if (!inputVal.trim() && query !== '') {
@@ -257,6 +268,8 @@ export const DarkroomHeader = React.memo(() => {
         handleSearchSubmit={handleSearchSubmit}
         handleClearSearch={handleClearSearch}
         suggestions={suggestions}
+        suggestionsUnreachable={suggestionsUnreachable}
+        askForSuggestionsAgain={askForSuggestionsAgain}
         handleSuggestionPress={handleSuggestionPress}
         animatedSearchProps={animatedSearchProps}
         animatedSearchStyle={animatedSearchStyle}

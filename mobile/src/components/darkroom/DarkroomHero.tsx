@@ -18,6 +18,7 @@ import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 import { arrive, MS } from '@/src/theme/motion';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
+import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
@@ -29,6 +30,9 @@ interface DarkroomHeroProps {
   handleSearchSubmit: () => void;
   handleClearSearch: () => void;
   suggestions: DiscoverFilm[];
+  /** The suggestions for the field's words could not be read: said where they would be. */
+  suggestionsUnreachable: boolean;
+  askForSuggestionsAgain: () => void;
   handleSuggestionPress: (item: DiscoverFilm) => void;
   animatedSearchProps: React.ComponentProps<typeof AnimatedSearchIcon>['animatedProps'];
   animatedSearchStyle: React.ComponentProps<typeof AnimatedSearchIcon>['style'];
@@ -38,7 +42,7 @@ interface DarkroomHeroProps {
 export const DarkroomHero = React.memo(function DarkroomHero({
   isFocused, inputVal, query,
   handleInputValChange, handleSearchSubmit, handleClearSearch,
-  suggestions, handleSuggestionPress,
+  suggestions, suggestionsUnreachable, askForSuggestionsAgain, handleSuggestionPress,
   animatedSearchProps, animatedSearchStyle, setFieldFocused,
 }: DarkroomHeroProps) {
   const arrival = useArrival({ duration: MS.considered, easing: arrive(), name: 'darkroom.hero' });
@@ -113,6 +117,11 @@ export const DarkroomHero = React.memo(function DarkroomHero({
               {suggestions.map((item) => (
                 <DarkroomSuggestionRow key={`${item.media_type || 'movie'}-${item.id}`} item={item} onPress={handleSuggestionPress} />
               ))}
+            </View>
+          )}
+          {isFocused && suggestionsUnreachable && suggestions.length === 0 && (
+            <View style={s.suggestionsBox}>
+              <SearchUnreachable onRetry={askForSuggestionsAgain} />
             </View>
           )}
         </View>
