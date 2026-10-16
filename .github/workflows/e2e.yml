@@ -383,10 +383,11 @@ jobs:
             [ "$tmdb" = "200" ] && break
             sleep 2
           done
-          # No member exists yet, so the answer is its ordinary refusal — which
-          # proves it loaded, imports and all.
-          signin=$(call sign-in-with-username '{"username":"warm","password":"up"}')
-          if [ "$tmdb" != "200" ] || [ "$signin" != "401" ]; then
+          # The database has no tables yet, so a sign-in would be the house failing
+          # (503); a GET is refused by the function's own code (405), which proves it
+          # loaded, imports and all, without the house.
+          signin=$(curl -s -o /dev/null -w '%{http_code}' -X GET -H "apikey: $ANON_KEY" "$API_URL/functions/v1/sign-in-with-username" || true)
+          if [ "$tmdb" != "200" ] || [ "$signin" != "405" ]; then
             # The report must come out even if gathering it half-fails: Actions
             # runs this with -e, and a failing `docker logs` ended the step silently.
             set +e
