@@ -254,6 +254,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/__tests__/flakeHistory.test.ts | 2026-10-16 | new |
 | scripts/__tests__/jestShards.test.ts | 2026-10-16 | new: a zone's record holds that zone's files |
 | scripts/__tests__/mergeCoverage.test.ts | 2026-10-15 | new: read against jest's CoverageReporter, which it runs whole and in parts |
+| scripts/absence-only.cjs | 2026-10-16 | new: the finder of TST-09, a rendering test whose every check finds the screen without something, with nothing shown drawn |
 | scripts/add-only.cjs | 2026-10-15 | new; a migration by its kind (test-utils/universe.js); SQL no rule names is refused |
 | scripts/android-packages.cjs | 2026-10-16 | new: read against React Native's libs.versions.toml, Expo's root project plugin and the Reanimated and Worklets build files; --installed asks the disk for each package's package.xml, as sdkmanager does |
 | scripts/await-events.cjs | 2026-10-16 | new: the finder of TST-08, a fireEvent, act or renderHook nobody waits for, in every test file; --fix waits for each where the code can, making the function async |
@@ -1088,6 +1089,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aLetterIsTakenWhole.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts | 2026-10-01 | new |
 | src/utils/__tests__/aMembersWordsAreCleaned.test.ts | 2026-10-03 | the profile excuses went with the INSERT grant that made those columns writable (20261003_07) |
+| src/utils/__tests__/anAbsenceIsAnchored.guard.test.ts | 2026-10-16 | new: no test only finds absences on a screen it never shows drawn; each shape found or not as it should be |
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts | 2026-10-15 | new |

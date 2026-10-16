@@ -63,6 +63,7 @@ describe('the line is the record’s own filing mark', () => {
 
   it('never announces the composer’s "None" as a format', () => {
     const r = bar({ rating: 4, physicalMedia: 'None' });
+    expect(r.getByTestId('submit-log-button')).toBeTruthy(); // the bar is drawn
     expect(r.queryByText(/NONE/)).toBeNull();
   });
 

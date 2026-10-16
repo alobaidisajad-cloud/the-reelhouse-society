@@ -59,12 +59,14 @@ describe('the filing mark, as a member sees it', () => {
   it('never announces the absence of a format', () => {
     // 'None' is a real, selectable option in the composer.
     const r = hero({ physical_media: 'None' });
+    expect(r.getByText('Inception')).toBeTruthy(); // the record is drawn
     expect(r.queryByText(/NONE/)).toBeNull();
     expect(r.queryByText(/FORMAT/)).toBeNull();
   });
 
   it('shows no band at all when nothing was recorded', () => {
     const r = hero({ watched_date: null, watched_with: null, physical_media: null });
+    expect(r.getByText('Inception')).toBeTruthy(); // the record is drawn
     expect(r.queryByText('FILED')).toBeNull();
   });
 
@@ -72,6 +74,7 @@ describe('the filing mark, as a member sees it', () => {
     // Not the same case as a missing date: this one is PRESENT and truthy, and
     // would put an empty caption inside the ruled band.
     const r = hero({ watched_date: 'whenever', watched_with: null, physical_media: null });
+    expect(r.getByText('Inception')).toBeTruthy(); // the record is drawn
     expect(r.queryByText('FILED')).toBeNull();
   });
 

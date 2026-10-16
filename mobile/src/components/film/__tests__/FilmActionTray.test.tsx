@@ -31,6 +31,9 @@ describe('what the tray shows', () => {
   it('renders nothing at all while closed', () => {
     const t = render(<FilmActionTray {...base} visible={false} />);
     expect(t.queryByTestId('film-action-tray')).toBeNull();
+    // And the same ask finds it once it is open: the absence was the tray's.
+    t.rerender(<FilmActionTray {...base} visible />);
+    expect(t.getByTestId('film-action-tray')).toBeTruthy();
   });
 
   it("carries the film's own title, so the sheet is never generic", () => {

@@ -59,12 +59,14 @@ describe('anyone else’s', () => {
 
   it('a reader not signed in is offered no REPORT (there is no report to file)', () => {
     const r = draw(critique(), undefined);
+    expect(r.getByText('Cold is not unfeeling.')).toBeTruthy(); // the critique is drawn: its absent controls mean something
     expect(r.queryByLabelText(/^Report this critique/)).toBeNull();
     expect(r.queryByLabelText('Withdraw your critique')).toBeNull();
   });
 
   it('a former member’s says nothing — there is nobody left to report', () => {
     const r = draw(critique({ user_id: null, username: 'a former member' }), 'me', { onReport: jest.fn() });
+    expect(r.getByText('Cold is not unfeeling.')).toBeTruthy(); // the critique is drawn: its absent controls mean something
     expect(r.queryByLabelText(/^Report this critique/)).toBeNull();
     expect(r.queryByLabelText('Withdraw your critique')).toBeNull();
   });

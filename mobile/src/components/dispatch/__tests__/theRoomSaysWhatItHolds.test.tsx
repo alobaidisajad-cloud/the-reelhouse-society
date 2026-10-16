@@ -37,7 +37,8 @@ describe('the picker admits the one slot', () => {
   });
 
   it('says nothing when there is nothing unfinished', () => {
-    const { queryByText } = render(<PaperPicker forms={FORMS} />);
+    const { getByLabelText, queryByText } = render(<PaperPicker forms={FORMS} />);
+    expect(getByLabelText(/^ESSAY\./)).toBeTruthy(); // the forms are drawn: their silence means something
     expect(queryByText('IN PROGRESS')).toBeNull();
   });
 

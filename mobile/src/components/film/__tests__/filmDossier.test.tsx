@@ -51,6 +51,7 @@ describe('what it gained', () => {
 
   it('hides the row entirely when nothing is rated', () => {
     const t = render(<FilmDossier {...base} certificate={null} />);
+    expect(t.getByText('Universal Pictures, Syncopy')).toBeTruthy(); // the dossier is drawn without it
     expect(t.queryByText('CERTIFICATE')).toBeNull();
   });
 

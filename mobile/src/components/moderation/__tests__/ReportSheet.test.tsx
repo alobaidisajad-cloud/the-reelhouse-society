@@ -243,11 +243,14 @@ describe('ReportSheet', () => {
     });
 
     it('component does not render when visible=false', () => {
-      const { queryByLabelText } = render(
+      const { queryByLabelText, getByLabelText, rerender } = render(
         <ReportSheet {...defaultProps} visible={false} />
       );
 
       expect(queryByLabelText('File report')).toBeNull();
+      // And the same ask finds it once it is shown: the absence was the sheet's.
+      rerender(<ReportSheet {...defaultProps} visible />);
+      expect(getByLabelText('File report')).toBeTruthy();
     });
   });
 });

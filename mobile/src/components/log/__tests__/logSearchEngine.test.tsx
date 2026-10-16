@@ -197,6 +197,7 @@ describe('when there is nothing to show', () => {
 
   it('is silent before anything is typed', () => {
     const r = render(<LogSearchEngine onSelectFilm={jest.fn()} />);
+    expect(r.getByLabelText('Search for a film to log')).toBeTruthy(); // the field is drawn, and waiting
     expect(r.queryByText(/No films found/)).toBeNull();
     expect(r.queryByText('TRANSMITTING QUERY...')).toBeNull();
   });
@@ -229,6 +230,7 @@ describe('what the search says about itself', () => {
   it('shows no badge when the title simply matched', async () => {
     const r = render(<LogSearchEngine onSelectFilm={jest.fn()} />);
     await type(r, 'chinatown');
+    expect(r.getByText('Chinatown')).toBeTruthy(); // the match is drawn, with no badge
     expect(r.queryByText(/MATCH:/)).toBeNull();
     expect(r.queryByText(/FUZZY RESCUE/)).toBeNull();
   });

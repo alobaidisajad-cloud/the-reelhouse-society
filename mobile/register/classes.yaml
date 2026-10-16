@@ -177,6 +177,19 @@ classes:
     fix: "scripts/press-again.cjs finds each second press of the same control in a test with no timer advanced and no real wait between: 4 found, 2 hollow (the reader's 'the order already chosen does not re-read' passed with its refusal taken out; the stack's 'opened and closed inside the moment' pressed one button three times inside its window), both now wait out the debounce or use the sheet's own close, show each press landed, and fail with the refusal removed; 1 a plain Pressable, judged"
     places: [none]
 
+  - id: TEST-absence-unanchored
+    title: A test finds things absent on a screen it never shows drawn, so a blank screen, a crash caught upstream or a list still loading passes it as well as the right one (TST-09)
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.63, TST-09" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/anAbsenceIsAnchored.guard.test.ts, test: "finds no test that only finds things absent on a screen it never shows drawn" }
+      - { kind: static, file: src/utils/__tests__/anAbsenceIsAnchored.guard.test.ts, test: "can say NO: an absence alone is found; one beside anything drawn is not" }
+    fix: "scripts/absence-only.cjs finds each rendering test whose every check is a queryBy finding nothing, with no bare getBy/findBy and no positive expect: 19 in 13 files, each anchored on what the screen draws beside the absence (the list's own empty line once read, the row's words, the field, the same query finding the control once shown); none hid a defect"
+    places: [none]
+
   - id: E2E-ceiling-not-measured
     title: A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's
     seriousness: code

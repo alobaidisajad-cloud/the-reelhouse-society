@@ -213,6 +213,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/everySecretIsInventoried.test.ts` | Every functions tree, script, workflow, the schema snapshot and eas.json, for the names they read, against the inventory: which secret a file reads is spelled in the file. |
 | `src/utils/__tests__/everyEventIsAwaited.guard.test.ts` | Every test file, parsed, for each fireEvent, act and renderHook nobody waits for: a sweep of the tests themselves, which no render of a screen sees. |
 | `src/utils/__tests__/aSecondPressWaitsOutTheDebounce.guard.test.ts` | Every test file, parsed, for a control pressed again with no time passed: a sweep of the tests themselves. |
+| `src/utils/__tests__/anAbsenceIsAnchored.guard.test.ts` | Every test file, parsed, for a test that only finds things absent on a screen: a sweep of the tests themselves. |
 | `src/utils/__tests__/revenuecatWebhookDecide.test.ts` | The app's limit on a call to the house (src/lib/supabase.ts), which the store's own limit, in Deno, must stay under: no one runtime holds both. |
 | `e2e/__tests__/startStack.test.ts` | The stack's start script, its workflows and the sealed world's config.toml. |
 | `plugins/__tests__/withoutDevLauncherScanner.test.ts` | The installed expo-dev-launcher's manifest, for the entry the plugin removes, and app.json's plugins. |

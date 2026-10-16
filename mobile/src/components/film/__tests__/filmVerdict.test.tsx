@@ -190,6 +190,7 @@ describe('the meta reads as two kinds of fact', () => {
 describe('the rarity stamp, only where it means something', () => {
   it('is absent at a score that reads KNOWN', () => {
     const t = render(<FilmHero {...base} score={26} />);
+    expect(t.getByText('ADVENTURE  ·  ACTION')).toBeTruthy(); // the hero is drawn without the stamp
     expect(t.queryByText('KNOWN')).toBeNull();
   });
 

@@ -100,6 +100,7 @@ describe('a view leaving', () => {
     );
     const r = render(<Bare on />);
     laidOut(r, 'a');
+    expect(r.getByTestId('a', ALL)).toBeTruthy(); // there, until it is not
     r.rerender(<Bare on={false} />);
     expect(r.queryByTestId('a', ALL)).toBeNull();
   });

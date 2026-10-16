@@ -1058,6 +1058,8 @@ describe('the critiques as they stand, sent or waiting', () => {
   it('one taken back while it waits is gone from the page', async () => {
     useOfflineQueueStore.setState({ queued: [WAITING, { id: 'q2', type: 'remove_list_comment', timestamp: 1, payload: { comment_id: 'c-new', user_id: 'u1' } }] });
     const r = await open();
+    // The list was read and is empty: not a list still loading.
+    await waitFor(() => expect(r.getByText('No critiques yet. Be the first to speak.')).toBeTruthy());
     expect(r.queryByText('Written on a train.')).toBeNull();
   });
 
@@ -1065,6 +1067,8 @@ describe('the critiques as they stand, sent or waiting', () => {
     mockComments = [{ id: 'c-held', list_id: STACK_ID, user_id: 'u1', username: 'morpho', avatar_url: null, content: 'Said in haste.', created_at: '2026-01-01T10:00:00Z' }];
     useOfflineQueueStore.setState({ queued: [{ id: 'q3', type: 'remove_list_comment', timestamp: 1, payload: { comment_id: 'c-held', user_id: 'u1' } }] });
     const r = await open();
+    // The house's read came back and was drawn, without it: not a list still loading.
+    await waitFor(() => expect(r.getByText('No critiques yet. Be the first to speak.')).toBeTruthy());
     expect(r.queryByText('Said in haste.')).toBeNull();
   });
 

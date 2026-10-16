@@ -94,6 +94,7 @@ describe('the stills actually draw', () => {
   it('says nothing of a film\'s stills while they are still being asked for', () => {
     // It said "No stills found." from the moment it opened — of films that have them.
     const r = desk({ availableBackdrops: [], imagesLoaded: false });
+    expect(r.getByText('ARTICLE HEADER (STILL)')).toBeTruthy(); // the stills' place is drawn, silent while they are asked for
     expect(r.queryByText('No stills found.')).toBeNull();
   });
 

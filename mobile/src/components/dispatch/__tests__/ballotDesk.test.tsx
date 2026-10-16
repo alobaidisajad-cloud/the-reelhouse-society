@@ -98,11 +98,12 @@ describe('the film picker', () => {
   });
 
   it('asks for nothing until there is something to search for', async () => {
-    const { getByLabelText, queryByLabelText } = render(
+    const { getByLabelText, getByDisplayValue, queryByLabelText } = render(
       <FilmPicker visible onClose={() => {}} bottomInset={0} onPick={() => {}} />,
     );
     mockResults = [tmdbFilm(1, 'Tokyo Story', '1953')];
     await search(getByLabelText as never, 'a');
+    expect(getByDisplayValue('a')).toBeTruthy(); // the letter is in the field: the picker was asked
     expect(queryByLabelText(/Tokyo Story/)).toBeNull();
   });
 

@@ -214,10 +214,12 @@ describe('the wire desk', () => {
      * height is not knowable in advance, so it left the tool rail underneath it.
      */
     for (const kind of ['take', 'seeking', 'wire'] as const) {
-      const { queryByText } = render(<ComposeShortScreen kind={kind} />);
+      const { getByLabelText, queryByText } = render(<ComposeShortScreen kind={kind} />);
+      expect(getByLabelText(/^File it/)).toBeTruthy(); // the desk is drawn, to its foot
       expect(queryByText('KEYBOARD')).toBeNull();
     }
     const ballot = render(<ComposeBallotScreen />);
+    expect(ballot.getByLabelText(/^File it/)).toBeTruthy();
     expect(ballot.queryByText('KEYBOARD')).toBeNull();
   });
 
