@@ -277,7 +277,33 @@ export const plan = (matrix, columns = {}) => {
       cases.push(c);
     }
   }
+  // Each function a visitor or member may run, called as each kind of member.
+  for (const [fn, spec] of Object.entries(matrix.functions ?? {})) {
+    spec.cases.forEach((k, i) => {
+      for (const actor of actorsOf(k.as)) {
+        const ctx = { table: fn, owner: actor === 'visitor' ? 'X2' : actor, newId: uuidOf('call', fn, i, actor) };
+        const c = { label: `${fn} ${k.name ?? `#${i + 1}`} (${actor})`, table: fn, action: 'call', actor, target: 'call',
+          expect: typeof k.expect === 'string' ? k.expect : allows(k.expect.ok, actor) ? 'ok' : 'error',
+          call: fill(k.call, ctx) };
+        if (k.lay) c.lay = Object.entries(k.lay).map(([t, row]) => `${insertSql(t, dated(t, fill(row, ctx), columns))};`).join(' ');
+        if (k.result) c.result = fill(k.result, ctx);
+        if (k.then) c.then = `SELECT (${fill(k.then, ctx)})`;
+        cases.push(c);
+      }
+    });
+  }
   return cases;
+};
+
+/** The actors a case names: all of them, the members (every one but the visitor), or a list. */
+const actorsOf = (as) => (as === 'all' ? Object.keys(ACTORS)
+  : as === 'members' ? Object.keys(ACTORS).filter((a) => a !== 'visitor') : as);
+
+/** The public functions a visitor or member may run, by name: every one granted to anon or authenticated but a trigger's. */
+export const callableFunctions = (sql) => {
+  const triggers = new Set([...sql.matchAll(/^CREATE FUNCTION public\.(\w+)\([^)]*\) RETURNS (?:trigger|event_trigger)$/gm)].map((m) => m[1]));
+  return [...new Set([...sql.matchAll(/^GRANT (?:ALL|EXECUTE) ON FUNCTION public\.(\w+)\(.*\) TO (?:anon|authenticated);$/gm)]
+    .map((m) => m[1]).filter((f) => !triggers.has(f)))].sort();
 };
 
 /** The setting: the members, every specimen, and the logs that let each member file. */
@@ -319,12 +345,14 @@ SET LOCAL session_replication_role = replica;
 ${setting(matrix, columns)}
 SET LOCAL session_replication_role = origin;
 ${plant}
-CREATE TEMP TABLE at_cases (n int PRIMARY KEY, before text, lay text, stmt text, is_read boolean, then_sql text, actor uuid) ON COMMIT DROP;
+CREATE TEMP TABLE at_cases (n int PRIMARY KEY, before text, lay text, stmt text, is_read boolean, then_sql text, actor uuid,
+  call text, result_sql text) ON COMMIT DROP;
 CREATE TEMP TABLE at_got (n int PRIMARY KEY, got text) ON COMMIT DROP;
 -- One try as one member (or a visitor, with no member), undone at once: the rows it touched or saw,
 -- or the SQLSTATE and words it was refused with; with then, the house's reading of what it left.
+-- A call: the function's whole answer as JSON, read by its result rule as the caller.
 CREATE FUNCTION pg_temp.at_try(c at_cases) RETURNS text LANGUAGE plpgsql AS $at$
-DECLARE n bigint; ok boolean; answer text;
+DECLARE n bigint; ok boolean; answer text; r jsonb;
 BEGIN
   BEGIN
     IF c.before IS NOT NULL THEN
@@ -336,8 +364,17 @@ BEGIN
     PERFORM set_config('request.jwt.claims', CASE WHEN c.actor IS NULL THEN '{"role":"anon"}'
       ELSE json_build_object('sub', c.actor, 'role', 'authenticated')::text END, true);
     PERFORM set_config('role', CASE WHEN c.actor IS NULL THEN 'anon' ELSE 'authenticated' END, true);
-    IF c.is_read THEN EXECUTE c.stmt INTO n; ELSE EXECUTE c.stmt; GET DIAGNOSTICS n = ROW_COUNT; END IF;
-    answer := 'rows:' || n;
+    IF c.call IS NOT NULL THEN
+      EXECUTE 'SELECT coalesce(jsonb_agg(to_jsonb(x)), ''[]'') FROM ' || c.call || ' AS x' INTO r;
+      answer := 'called';
+      IF c.result_sql IS NOT NULL THEN
+        EXECUTE 'SELECT (' || c.result_sql || ')' INTO ok USING r;
+        answer := answer || ' result:' || coalesce(ok::text, 'null');
+        IF ok IS NOT TRUE THEN answer := answer || ' ' || left(r::text, 300); END IF;
+      END IF;
+    ELSIF c.is_read THEN EXECUTE c.stmt INTO n; answer := 'rows:' || n;
+    ELSE EXECUTE c.stmt; GET DIAGNOSTICS n = ROW_COUNT; answer := 'rows:' || n;
+    END IF;
     IF c.then_sql IS NOT NULL THEN
       PERFORM set_config('role', 'none', true);
       PERFORM set_config('request.jwt.claims', '', true);
@@ -351,7 +388,7 @@ BEGIN
   END;
 END $at$;
 INSERT INTO at_cases VALUES
-${cases.map((c, i) => `  (${i}, ${literal(c.before ?? null)}, ${literal(c.lay ?? null)}, ${literal(c.sql)}, ${c.action === 'select' || c.action === 'read'}, ${literal(c.then ?? null)}, ${c.actor === 'visitor' ? 'NULL' : literal(uid(c.actor))})`).join(',\n')};
+${cases.map((c, i) => `  (${i}, ${literal(c.before ?? null)}, ${literal(c.lay ?? null)}, ${literal(c.sql ?? null)}, ${c.action === 'select' || c.action === 'read'}, ${literal(c.then ?? null)}, ${c.actor === 'visitor' ? 'NULL' : literal(uid(c.actor))}, ${literal(c.call ?? null)}, ${literal(c.result ?? null)})`).join(',\n')};
 INSERT INTO at_got SELECT n, pg_temp.at_try(c) FROM at_cases c ORDER BY n;
 SELECT 'AT-RESULT ' || json_object_agg(n, got ORDER BY n) FROM at_got;
 ROLLBACK;
@@ -363,6 +400,12 @@ ROLLBACK;
  * as it was has refused that change, however many rows the statement says it touched.
  */
 export const judge = (c, got) => {
+  if (c.action === 'call') {
+    if (!got.startsWith('called')) return 'error';
+    if (/ result:(false|null)/.test(got)) return 'wrong result';
+    if (/ then:(false|null)/.test(got)) return 'wrong effect';
+    return 'ok';
+  }
   const rows = got.match(/^rows:(\d+)(?: then:(\w+))?$/);
   if (c.action === 'select' || c.action === 'read') {
     if (rows) return Number(rows[1]) > 0 ? 'seen' : 'unseen';
@@ -384,15 +427,38 @@ export const met = (expect, answer) => {
   return expect === answer;
 };
 
+/**
+ * What the database under attack holds: its public tables and views, and the public functions a
+ * visitor or member may run (granted to them or to everyone), trigger functions aside. Production as
+ * it will be, the pending migrations applied, which the snapshot is not yet.
+ */
+const RELATIONS_SQL = `SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public' AND c.relkind IN ('r', 'v', 'p', 'm') ORDER BY 1`;
+const CALLABLE_SQL = `SELECT DISTINCT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public' AND p.prorettype NOT IN ('trigger'::regtype, 'event_trigger'::regtype)
+    AND (has_function_privilege('anon', p.oid, 'EXECUTE') OR has_function_privilege('authenticated', p.oid, 'EXECUTE'))
+  ORDER BY 1`;
+const ask = (db, sql) => {
+  const r = spawnSync('psql', [db, '-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-c', sql], { encoding: 'utf8' });
+  if (r.status !== 0) throw new Error(`the database could not be read: ${r.stderr.trim()}`);
+  return r.stdout.split('\n').map((l) => l.trim()).filter(Boolean);
+};
+
 export const run = ({ db = SEALED, sqlOut = null, plant = '' } = {}) => {
   const matrix = JSON.parse(readFileSync(join(HERE, 'matrix.json'), 'utf8'));
   const snapshot = readFileSync(SNAPSHOT, 'utf8').replace(/\r/g, '');
-  const tables = snapshotTables(snapshot);
+  const tables = sqlOut ? snapshotTables(snapshot) : ask(db, RELATIONS_SQL);
   const { unjudged, gone } = coverage(matrix, tables);
   const faults = [
     ...unjudged.map((t) => `${t}: in the snapshot, not in matrix.json — write who may do what with it`),
     ...gone.map((t) => `${t}: in matrix.json, not in the snapshot`),
   ];
+  const callable = sqlOut ? callableFunctions(snapshot) : ask(db, CALLABLE_SQL);
+  const judged = Object.keys(matrix.functions ?? {});
+  faults.push(
+    ...callable.filter((f) => !judged.includes(f)).map((f) => `${f}(): a visitor or member may run it, and matrix.json does not say what it must answer`),
+    ...judged.filter((f) => !callable.includes(f)).map((f) => `${f}(): in matrix.json, and no visitor or member may run it`),
+  );
   const columns = columnsOf(snapshot);
   const cases = plan(matrix, columns);
   const sql = script(matrix, cases, { plant, columns });

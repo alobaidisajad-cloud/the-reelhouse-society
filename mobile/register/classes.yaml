@@ -185,6 +185,13 @@ classes:
     count: 8
     open_in_production: true
 
+  - id: DB-standing-stands-in-the-way-out
+    area: database
+    seriousness: behaviour
+    status: OPEN
+    count: 1
+    open_in_production: true
+
   - id: DB-applied-bytes-differ
     title: The train applied a migration with the line ends of the checkout it ran from, so production held other bytes than CI rehearsed
     area: database

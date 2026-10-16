@@ -57,12 +57,16 @@ type Answers = {
   expected: string[]; acrossBlocks: string; ranked: string[]; judged: string[]; met: boolean[];
   filled: Record<string, unknown>; uidP: string; unknownPlaceholder: string;
   columns: string[]; dated: string[];
+  functions: { unjudged: string[]; gone: string[]; count: number };
 };
 
 const answers: Answers = (() => {
   const program = `
     const a = await import(${JSON.stringify(pathToFileURL(join(DIR, 'attack.mjs')).href)});
     const fs = await import('node:fs');
+    const u = await import(${JSON.stringify(pathToFileURL(join(__dirname, '..', 'db', 'up-down-up.mjs')).href)});
+    const done = u.applied();
+    globalThis.__pending = u.migrations().filter((m) => !done.has(m.name)).map((m) => fs.readFileSync(m.path, 'utf8').replace(/\\r/g, ''));
     const matrix = JSON.parse(fs.readFileSync(${JSON.stringify(join(DIR, 'matrix.json'))}, 'utf8'));
     const tables = a.snapshotTables(fs.readFileSync(${JSON.stringify(SNAPSHOT)}, 'utf8').replace(/\\r/g, ''));
     const fixtureTables = a.snapshotTables(${JSON.stringify(FIXTURE_SNAPSHOT)});
@@ -87,6 +91,18 @@ const answers: Answers = (() => {
       filled: a.fill({ a: '{owner}', b: '{uid@P}', c: '{ref:logs}', d: '{ref:logs@V#2}', e: '{id}', f: '{private}' },
         { table: 'notes', owner: 'P', newId: 'new-id' }),
       uidP: a.uid('P'), unknownPlaceholder,
+      functions: (() => {
+        const callable = a.callableFunctions(fs.readFileSync(${JSON.stringify(SNAPSHOT)}, 'utf8').replace(/\\r/g, ''));
+        const pending = (globalThis.__pending ?? []).join('\\n');
+        const dropped = [...pending.matchAll(/^DROP FUNCTION public\\.(\\w+)\\(/gm)].map((m) => m[1]);
+        const created = [...pending.matchAll(/^CREATE (?:OR REPLACE )?FUNCTION public\\.(\\w+)\\(/gm)].map((m) => m[1]);
+        const judged = Object.keys(matrix.functions);
+        return {
+          unjudged: callable.filter((f) => !dropped.includes(f) && !judged.includes(f)),
+          gone: judged.filter((f) => !callable.includes(f) && !created.includes(f)),
+          count: judged.length,
+        };
+      })(),
       columns: a.columnsOf(fs.readFileSync(${JSON.stringify(SNAPSHOT)}, 'utf8').replace(/\\r/g, '')).interactions,
       dated: [a.dated('interactions', { id: 'x' }, { interactions: ['id', 'created_at'] }).created_at,
         a.dated('interactions', { created_at: 'mine' }, { interactions: ['created_at'] }).created_at,
@@ -102,6 +118,11 @@ describe('the written table covers every relation a client can name', () => {
     expect(answers.tables.length).toBeGreaterThan(40);
     expect(answers.tables).toEqual(expect.arrayContaining(['logs', 'dispatch_dossiers', 'dossier_comments']));
     expect(answers.coverage).toEqual({ unjudged: [], gone: [] });
+  });
+
+  it('judges each function a visitor or member may run, as production will be once the pending migrations are applied', () => {
+    expect(answers.functions.count).toBeGreaterThan(60);
+    expect({ unjudged: answers.functions.unjudged, gone: answers.functions.gone }).toEqual({ unjudged: [], gone: [] });
   });
 
   it('names a table the snapshot has and the matrix lacks, and one the matrix keeps after it is gone', () => {
