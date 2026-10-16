@@ -230,7 +230,7 @@ jobs:
         run: node mobile/e2e/functions/place.mjs
 
       - name: Start the local stack, with its functions
-        run: bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta,storage-api,mailpit "The functions world"
+        run: bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta,storage-api "The functions world"
 
       - name: Keys for the local stack
         working-directory: mobile/e2e
@@ -273,6 +273,12 @@ jobs:
       # source and the founding seats checked after each.
       - name: The payments replay
         run: node mobile/e2e/functions/payments.mjs
+
+      # WORKLIST P0.80: Auth sends as production does (place.mjs: addresses
+      # confirmed, the House's templates); each email is caught by the stack's
+      # Mailpit and used: the sign-up link, the reset link, the 6-digit code.
+      - name: The House's emails, caught and used
+        run: node mobile/e2e/functions/mail.mjs
 
       - name: What the functions and the stand-ins said, when it failed
         if: failure()

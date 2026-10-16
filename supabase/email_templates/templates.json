@@ -1,0 +1,6 @@
+{
+  "about": "The House's Auth emails, as production should send them (Authentication, Email Templates, in the dashboard); this list names the ones the sealed functions world serves. welcome.html and reset_password.html beside it are the website's first drafts (2026-03), not yet read against what production sends (P1.11). The sealed functions world serves these (e2e/functions/place.mjs) and mail.mjs checks each arrives and works. magic_link carries the 6-digit code the app's Settings ask for before an account is deleted or the biometric lock changed (signInWithOtp, then verifyOtp type email): the code, and no sign-in link.",
+  "templates": {
+    "magic_link": { "subject": "Your code from the House", "file": "magic_link.html" }
+  }
+}

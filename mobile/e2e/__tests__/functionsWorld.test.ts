@@ -35,14 +35,18 @@ const placed = (() => {
     const sections = p.functionSections(p.SERVED);
     let refused = null;
     try { p.withSections('[a]\\n[functions.x]\\nverify_jwt = true\\n[after]\\n', ''); } catch (e) { refused = e.message; }
+    const mailed = p.withMail(config, p.MAIL);
+    let mailRefused = null;
+    try { p.withMail(config + '\\n[auth.rate_limit]\\nemail_sent = 2\\n', p.MAIL); } catch (e) { mailRefused = e.message; }
     console.log(JSON.stringify({ served: p.SERVED, notServed: p.NOT_SERVED, addresses: p.ADDRESSES, standIns: p.STAND_INS,
-      sections, rewritten: p.withSections(config, sections), refused }));`;
+      sections, rewritten: p.withSections(mailed, sections), refused, mail: p.MAIL, mailed, mailRefused }));`;
   const r = spawnSync(process.execPath, ['--input-type=module', '-e', program], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error(r.stderr);
   return JSON.parse(r.stdout) as {
     served: Record<string, Fn>; notServed: Record<string, string>;
     addresses: { EXPO_PUSH_URL: string; REVENUECAT_API_URL: string; TMDB_ORIGIN: string; FEED_ORIGIN: string; RESEND_API_URL: string };
     standIns: string; sections: string; rewritten: string; refused: string | null;
+    mail: Record<string, { subject: string; file: string }>; mailed: string; mailRefused: string | null;
   };
 })();
 const SERVED = Object.entries(placed.served);
@@ -74,7 +78,10 @@ describe('every function is served as deployed, or named with why not', () => {
   it('replaces the sealed world\'s function sections and their comments, and keeps every other section', () => {
     const before = readFileSync(join(__dirname, '..', 'supabase', 'config.toml'), 'utf8');
     const others = (t: string) => (t.match(/^\[[^\]]+\]$/gm) ?? []).filter((s) => !s.startsWith('[functions.'));
-    expect(others(placed.rewritten)).toEqual(others(before));
+    // Kept, with the mail sections withMail adds (P0.80, below) and nothing else.
+    const mail = (s: string) => s === '[auth.rate_limit]' || s.startsWith('[auth.email.template.');
+    expect(others(placed.rewritten).filter((s) => !mail(s))).toEqual(others(before));
+    expect(others(placed.rewritten).filter(mail)).toEqual(['[auth.rate_limit]', ...Object.keys(placed.mail).map((n) => `[auth.email.template.${n}]`)]);
     expect(placed.rewritten).not.toContain('static_files');
     expect(placed.rewritten).not.toContain('The TMDB stand-in reads its recordings');
     expect(placed.rewritten.endsWith(placed.sections)).toBe(true);
@@ -191,6 +198,34 @@ describe('the payments replay (P0.79)', () => {
   });
 });
 
+describe("the House's emails (P0.80)", () => {
+  it('sends as production does: an address confirmed first, production\'s hourly allowance, each template with its subject', () => {
+    expect(placed.mailed).toMatch(/^enable_confirmations = true$/m);
+    expect(placed.mailed).not.toMatch(/^enable_confirmations = false$/m);
+    expect(placed.mailed).toContain('[auth.rate_limit]\nemail_sent = 300\n');
+    for (const [name, t] of Object.entries(placed.mail)) {
+      expect(placed.mailed).toContain(`[auth.email.template.${name}]\nsubject = ${JSON.stringify(t.subject)}\ncontent_path = "./supabase/templates/${t.file}"\n`);
+    }
+    expect(placed.mailRefused).toMatch(/rate_limit/);
+    expect(placed.rewritten.indexOf('[auth.email.template.')).toBeLessThan(placed.rewritten.indexOf('[functions.'));
+  });
+
+  it('the code the app asks for is in its letter, and nothing that signs anyone in', () => {
+    expect(Object.keys(placed.mail)).toEqual(['magic_link']);
+    const letter = readFileSync(join(ROOT, 'supabase', 'email_templates', placed.mail.magic_link?.file ?? ''), 'utf8');
+    expect(letter).toContain('{{ .Token }}');
+    expect(letter).not.toMatch(/ConfirmationURL|TokenHash|RedirectTo/);
+    const settings = readFileSync(join(__dirname, '..', '..', 'src', 'features', 'settings', 'SettingsScreen.tsx'), 'utf8');
+    expect(settings).toContain('supabase.auth.signInWithOtp({ email: user.email, options: { shouldCreateUser: false } })');
+    expect(settings).toContain("supabase.auth.verifyOtp({ email: user.email, token: otpCode, type: 'email' })");
+  });
+
+  it('asks for each email the app sends, and uses it', () => {
+    const mail = readFileSync(join(HERE, 'mail.mjs'), 'utf8');
+    for (const asked of ["auth('/signup'", "auth('/recover'", "auth('/otp'", "auth('/verify'"]) expect([asked, mail.includes(asked)]).toEqual([asked, true]);
+  });
+});
+
 describe('the job', () => {
   const ci = readFileSync(join(ROOT, '.github/workflows/db-integration.yml'), 'utf8');
   const job = ci.slice(ci.indexOf('\n  functions:'), ci.indexOf('\n  contracts:'));
@@ -207,6 +242,7 @@ describe('the job', () => {
       'node mobile/e2e/db/up-down-up.mjs',
       'node mobile/e2e/functions/suites.mjs',
       'node mobile/e2e/functions/payments.mjs',
+      'node mobile/e2e/functions/mail.mjs',
     ].map((step) => [step, job.indexOf(step)] as const);
     for (const [step, at] of order) expect([step, at > 0]).toEqual([step, true]);
     expect(order.map(([, at]) => at)).toEqual([...order.map(([, at]) => at)].sort((a, b) => a - b));
@@ -215,6 +251,6 @@ describe('the job', () => {
   it('serves the edge runtime: the stack leaves out only what no function needs', () => {
     const start = (/bash mobile\/e2e\/start-stack\.sh ([^ ]+) /.exec(job)?.[1] ?? '').split(',').filter(Boolean);
     expect(start.length).toBeGreaterThan(0);
-    for (const needed of ['edge-runtime', 'kong', 'gotrue', 'postgrest']) expect([needed, start.includes(needed)]).toEqual([needed, false]);
+    for (const needed of ['edge-runtime', 'kong', 'gotrue', 'postgrest', 'mailpit']) expect([needed, start.includes(needed)]).toEqual([needed, false]);
   });
 });

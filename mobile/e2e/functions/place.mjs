@@ -10,7 +10,8 @@
  *   · e2e/supabase/functions is emptied, and each function copied in, with the
  *     shared code they import (mobile/supabase/functions/_shared);
  *   · e2e/supabase/config.toml's [functions.*] sections are written from the
- *     same list, verify_jwt as each is deployed;
+ *     same list, verify_jwt as each is deployed, and its Auth mail made
+ *     production's: addresses confirmed, the House's templates (withMail);
  *   · e2e/supabase/functions/.env (read by `supabase start`) names the stand-ins
  *     and gives each secret a made-up value, and the suites read the same
  *     values from $GITHUB_ENV (FN_*; the stand-ins' Expo token as
@@ -19,7 +20,7 @@
  *
  *   node mobile/e2e/functions/place.mjs [--here]
  */
-import { appendFileSync, cpSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -77,6 +78,29 @@ export function functionSections(served) {
     .join('\n');
 }
 
+/** The House's Auth emails (supabase/email_templates), production's copy. */
+const TEMPLATES = join(ROOT, 'supabase', 'email_templates');
+export const MAIL = JSON.parse(readFileSync(join(TEMPLATES, 'templates.json'), 'utf8')).templates;
+
+/**
+ * config.toml's Auth mail as production sends it: an address is confirmed before
+ * its first sign-in, and each of the House's templates, laid at
+ * e2e/supabase/templates/, with its subject. The sections go before the
+ * functions', which withSections wants last.
+ */
+export function withMail(config, mail) {
+  const text = config.replace(/\r\n/g, '\n');
+  if (!/^enable_confirmations = false$/m.test(text)) throw new Error('config.toml no longer says enable_confirmations = false');
+  if (text.includes('[auth.rate_limit]')) throw new Error('config.toml sets [auth.rate_limit] itself: say here how it meets production\'s');
+  // Production sends 300 emails an hour (raised from 25, 2026-07-15); the CLI's own default is 2.
+  const sections = `[auth.rate_limit]\nemail_sent = 300\n\n${Object.entries(mail)
+    .map(([name, t]) => `[auth.email.template.${name}]\nsubject = ${JSON.stringify(t.subject)}\ncontent_path = "./supabase/templates/${t.file}"\n`)
+    .join('\n')}`;
+  const at = text.indexOf('\n[edge_runtime]');
+  if (at === -1) throw new Error('config.toml has no [edge_runtime] to put the mail before');
+  return `${text.slice(0, at).replace(/^enable_confirmations = false$/m, 'enable_confirmations = true')}\n\n${sections}${text.slice(at)}`;
+}
+
 /** config.toml with its [functions.*] sections, and the comments just above them, replaced by these. */
 export function withSections(config, sections) {
   const lines = config.replace(/\r\n/g, '\n').split('\n');
@@ -103,7 +127,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
   cpSync(join(ROOT, MOBILE, '_shared'), join(FUNCTIONS, '_shared'), { recursive: true });
 
-  writeFileSync(CONFIG, withSections(readFileSync(CONFIG, 'utf8'), functionSections(SERVED)));
+  mkdirSync(join(PROJECT, 'templates'), { recursive: true });
+  for (const t of Object.values(MAIL)) cpSync(join(TEMPLATES, t.file), join(PROJECT, 'templates', t.file));
+  writeFileSync(CONFIG, withSections(withMail(readFileSync(CONFIG, 'utf8'), MAIL), functionSections(SERVED)));
 
   const made = () => randomBytes(18).toString('hex');
   const secrets = {
