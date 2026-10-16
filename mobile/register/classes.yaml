@@ -34,6 +34,133 @@ classes:
     status: OPEN
     count: 0
     source: { kind: history, ref: "Sealed E2E 38262703073" }
+    methods:
+      - { kind: running, file: e2e/__tests__/appCrashes.test.ts, test: "is caught: React destroyed mid-run by a mount on a missing parent (Sealed E2E 38262703073)" }
+    places: [emulator]
+
+  - id: E2E-app-crash-unseen
+    title: The app crashes, freezes or dies during an E2E run or a launch check, and the run passes because the flows did (CI-09)
+    seriousness: serious
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.69, CI-09" }
+    methods:
+      - { kind: running, file: e2e/__tests__/appCrashes.test.ts, test: "fails a Java crash of the app, on the flow that was running, with its cause — even in a flow that passed" }
+      - { kind: running, file: e2e/__tests__/appCrashes.test.ts, test: "fails a freeze (ANR) of the app, with Android’s reason" }
+      - { kind: running, file: e2e/__tests__/iosLaunch.test.ts, test: "fails the app when it dies before 25 s, or comes back as another process" }
+    fix: "app-crashes.mjs reads the run's whole device log (crash, native crash, freeze, Maestro's own reports) and ios-launch.cjs each second of an iPhone launch; each is fed a bad log made from a good one by register/mutants.yaml (judge-java-crash, judge-freeze, judge-iphone-dies)"
+    places: [emulator, simulator]
+
+  - id: E2E-splash-taken-over
+    title: The app takes Android's splash over and hands it back late, so its window keeps animating and every key waits until a relaunch
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "Sealed E2E 37201431874" }
+    methods:
+      - { kind: running, file: e2e/__tests__/splashHandoff.test.ts, test: "fails a launch that took the splash over, and a handover that ran past Android’s 2 s — run 37201431874" }
+    fix: "plugins/withSplashWithoutHandoff.js keeps the app from taking the splash over; splash-handoff.mjs proves it on every launch of the run (mutant judge-splash-taken-over)"
+    places: [emulator]
+
+  - id: E2E-screen-unread-or-slow-unseen
+    title: A screen that could not read its content, or opened past its time, passes the run because the flow went on to tap
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "the Dispatch of TestFlight build 41 (screen.failed)" }
+    methods:
+      - { kind: running, file: e2e/__tests__/screenTimes.test.ts, test: "fails the run, without ceilings too, naming the screen and the flow — the Dispatch of build 41" }
+      - { kind: running, file: e2e/__tests__/screenTimes.test.ts, test: "lets one slow opening pass under its one-opening ceiling, and fails one past it as a stall" }
+    fix: "screen-times.mjs fails any screen.failed and any screen past its ceilings (mutants judge-screen-unread, judge-screen-stall)"
+    places: [emulator]
+
+  - id: E2E-animation-stuck-unseen
+    title: An animation that never ends holds every key and tap of the test for 5 s each, unseen until a typing call outruns Maestro's deadline
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "Sealed E2E 37155828199" }
+    methods:
+      - { kind: running, file: e2e/__tests__/animationWaits.test.ts, test: "puts each wait on the flow that was running, counts the seconds lost, and names what animated" }
+    fix: "animation-waits.mjs reads the whole run's log for Android's wait and names what animated (mutant judge-animation-stuck)"
+    places: [emulator]
+
+  - id: E2E-keyboard-covers-the-field
+    title: The keyboard covers the field or the button the member needs while typing, and the probe passes because the tap still landed
+    seriousness: layout
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.69 (android-keyboard-room)" }
+    methods:
+      - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "fails a target the keyboard covers, and says by how much" }
+    fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers)"
+    places: [emulator]
+
+  - id: E2E-phone-runtime-changed-unseen
+    title: The phone's JavaScript runtime changes (an upgrade, a polyfill added or dropped) and the list of what the phone lacks is not read again
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "build 41 (UF3)" }
+    methods:
+      - { kind: running, file: e2e/__tests__/runtimeDump.test.ts, test: "says NO to a runtime that is not the copy, naming what each side has" }
+    fix: "runtime-dump.mjs holds every launch's runtime to the committed copy (mutant judge-runtime-changed)"
+    places: [emulator]
+
+  - id: BUILD-glide-logs-every-image
+    title: The built app tells Glide to log every image it loads, address and all
+    seriousness: serious
+    area: release
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "Sealed E2E 37628665206" }
+    methods:
+      - { kind: running, file: e2e/__tests__/glideLogLevel.test.ts, test: "fails the app built with Expo’s ready-made expo-image: level 2, VERBOSE — run 37628665206" }
+    fix: "expo-image compiled from source with its logs off; glide-log-level.mjs reads the level from the built app itself (mutant judge-glide-verbose)"
+    places: [emulator]
+
+  - id: BUILD-prefetch-decodes-whole
+    title: The built app's picture prefetch decodes each picture whole under a key no view uses, instead of only downloading it
+    seriousness: behaviour
+    area: release
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.102" }
+    methods:
+      - { kind: running, file: e2e/__tests__/prefetchDownloadOnly.test.ts, test: "fails the unpatched app: the prefetch loads and submits, but never calls downloadOnly()" }
+    fix: "patches/expo-image sends a 'disk' prefetch through downloadOnly(); prefetch-download-only.mjs reads it from the built app (mutant judge-prefetch-decodes)"
+    places: [emulator]
+
+  - id: E2E-shard-lost-unseen
+    title: One machine of the split E2E run loses its flows or its logs, and the whole run reads green
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "Sealed E2E 38780996970 (shard 1 red, the verdict green)" }
+    methods:
+      - { kind: running, file: e2e/__tests__/shardVerdict.test.ts, test: "says no to a flow no shard ran, one two shards ran, and one not among the flows" }
+      - { kind: running, file: e2e/__tests__/shardVerdict.test.ts, test: "says no to a missing shard, by its number" }
+    fix: "shard-verdict.mjs reads every shard's kept logs together: each flow in exactly one shard, every shard whole (mutant judge-shard-flow-lost)"
+    places: [emulator]
+
+  - id: E2E-app-failure-run-again
+    title: A failed attempt that says something about the app is run again until it passes, so the app's failure reads as a flake
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "Sealed E2E 37165878763" }
+    methods:
+      - { kind: running, file: e2e/__tests__/attempt.test.ts, test: "does not, when its own log names a step" }
+      - { kind: running, file: e2e/__tests__/attempt.test.ts, test: "never runs a FLOW again once it had begun — it may have saved something — and says it is no verdict on the app" }
+    fix: "attempt.mjs runs an attempt again only when three records agree Maestro never began a step (mutant judge-begun-flow-run-again)"
     places: [emulator]
 
   - id: RN-react-destroyed-on-mount
@@ -120,6 +247,7 @@ classes:
       - { kind: running, file: src/lib/__tests__/aRequestEndsInItsTime.test.ts, test: "is given up at its limit as not reached, and the queue reads it as a network failure" }
       - { kind: running, file: src/utils/__tests__/offlineQueue.integration.test.ts, test: "runs once more when the running send ends, sending what was queued meanwhile" }
       - { kind: running, file: src/utils/__tests__/revenuecatWebhookDecide.test.ts, test: "gives up on the store before the app gives up on the house, so the member hears \"try again\", not silence" }
+      - { kind: running, file: src/utils/__tests__/revenuecatWebhookDecide.test.ts, test: "asks the address the settings name, RevenueCat's own otherwise, and never without a time limit" }
     fix: "the client's fetch (src/lib/supabase.ts fetchWithinLimit) gives up each request at 15 s, storage at 90 s, as a TimeoutError isNetworkError reads as not reached; a send of the queue asked for while one runs runs once more after it; the E2E build traces each change of network and each send. The edge functions' own calls out, swept (P0.78): Expo, RevenueCat, TMDB (the proxy and the film sync), the feed (its body too) and the house (sign-in-with-username) each within 10 s, under the app's 15; RevenueCat's held by revenuecatWebhookDecide.test, the proxy's 504 by the functions world (e2e/functions/suites.mjs). Proof still to come: offline_resilience passing on the nights' repeated runs, its traces read"
     places: [emulator]
 

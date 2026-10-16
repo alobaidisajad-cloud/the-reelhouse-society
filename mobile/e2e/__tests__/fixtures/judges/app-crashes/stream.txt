@@ -1,0 +1,3 @@
+10-04 01:00:00.100  525  545 I ActivityManager: Start proc 16631:com.reelhouse.society/u0a192
+10-04 01:15:00.100  16631  16651 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":293}
+10-04 01:29:58.100  525  545 D ConnectivityService: the device is still talking

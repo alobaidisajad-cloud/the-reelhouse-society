@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="test" tests="1" failures="1">
+    <testcase id="f" name="f" classname="f" status="ERROR">
+      <failure>maestro.android.DeviceServerDiedException: Device server died during &apos;deviceInfo&apos; on emulator-5554 (1085ms since last byte, connection age 1726ms): StatusRuntimeException: UNAVAILABLE
+	at maestro.android.AndroidDeviceConnection.onGrpcDeath(AndroidDeviceConnection.kt:319)</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

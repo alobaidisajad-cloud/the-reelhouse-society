@@ -8,6 +8,16 @@ production shows only its id, area, seriousness and count here.
 | MOTION-empty-config-key | motion | serious | OPEN | 0 | An animation config key holding no value replaces Reanimated's default with nothing |
 | RUNTIME-api-missing-on-phone | runtime | serious | OPEN | 0 | A JavaScript API Node has and the phone's runtime lacks is called, passing in jest and throwing on the phone |
 | E2E-soft-crash-unseen | tests | serious | OPEN | 0 | React destroyed with no crash dialog passes a run whose flows relaunched over it |
+| E2E-app-crash-unseen | tests | serious | OPEN | 0 | The app crashes, freezes or dies during an E2E run or a launch check, and the run passes because the flows did (CI-09) |
+| E2E-splash-taken-over | tests | behaviour | OPEN | 0 | The app takes Android's splash over and hands it back late, so its window keeps animating and every key waits until a relaunch |
+| E2E-screen-unread-or-slow-unseen | tests | behaviour | OPEN | 0 | A screen that could not read its content, or opened past its time, passes the run because the flow went on to tap |
+| E2E-animation-stuck-unseen | tests | code | OPEN | 0 | An animation that never ends holds every key and tap of the test for 5 s each, unseen until a typing call outruns Maestro's deadline |
+| E2E-keyboard-covers-the-field | tests | layout | OPEN | 0 | The keyboard covers the field or the button the member needs while typing, and the probe passes because the tap still landed |
+| E2E-phone-runtime-changed-unseen | tests | behaviour | OPEN | 0 | The phone's JavaScript runtime changes (an upgrade, a polyfill added or dropped) and the list of what the phone lacks is not read again |
+| BUILD-glide-logs-every-image | release | serious | OPEN | 0 | The built app tells Glide to log every image it loads, address and all |
+| BUILD-prefetch-decodes-whole | release | behaviour | OPEN | 0 | The built app's picture prefetch decodes each picture whole under a key no view uses, instead of only downloading it |
+| E2E-shard-lost-unseen | tests | behaviour | OPEN | 0 | One machine of the split E2E run loses its flows or its logs, and the whole run reads green |
+| E2E-app-failure-run-again | tests | behaviour | OPEN | 0 | A failed attempt that says something about the app is run again until it passes, so the app's failure reads as a flake |
 | RN-react-destroyed-on-mount | navigation | serious | OPEN | 0 | React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed |
 | SEC-secret-committed | security | serious | OPEN | 21 | open in production |
 | BUILD-upload-carries-ignored-files | release | serious | OPEN | 0 | An EAS build's upload carries files git keeps out |

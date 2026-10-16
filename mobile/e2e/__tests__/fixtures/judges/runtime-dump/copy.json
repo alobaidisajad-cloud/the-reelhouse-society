@@ -1,0 +1,12 @@
+{
+  "globalThis": [
+    "AbortController",
+    "fetch",
+    "structuredClone"
+  ],
+  "AbortSignal": [
+    "abort",
+    "prototype"
+  ],
+  "Intl": null
+}

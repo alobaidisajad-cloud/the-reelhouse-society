@@ -1,0 +1,13 @@
+  Virtual methods   -
+    #0              : (in Lexpo/modules/image/ExpoImageModule$definition$lambda$22$$inlined$AsyncFunction$1;)
+      name          : 'invoke'
+      code          -
+5a1000:                                        |[5a1000] expo.modules.image.ExpoImageModule$definition$lambda$22$$inlined$AsyncFunction$1.invoke:([Ljava/lang/Object;)Ljava/lang/Object;
+5a1000: 0000                                   |0000: sget-object v4, Lexpo/modules/image/records/CachePolicy;.DISK:Lexpo/modules/image/records/CachePolicy; // field@2a31
+5a1002: 0000                                   |0001: invoke-static {v6}, Lcom/bumptech/glide/Glide;.with:(Landroid/content/Context;)Lcom/bumptech/glide/RequestManager; // method@0812
+5a1004: 0000                                   |0002: invoke-virtual {v4}, Lcom/bumptech/glide/RequestManager;.downloadOnly:()Lcom/bumptech/glide/RequestBuilder; // method@0880
+5a1006: 0000                                   |0003: new-instance v5, Lcom/bumptech/glide/load/model/GlideUrl; // type@0e61
+5a1008: 0000                                   |0004: invoke-virtual {v4, v5}, Lcom/bumptech/glide/RequestBuilder;.load:(Ljava/lang/Object;)Lcom/bumptech/glide/RequestBuilder; // method@0861
+5a100a: 0000                                   |0005: invoke-virtual {v4}, Lcom/bumptech/glide/RequestBuilder;.submit:()Lcom/bumptech/glide/request/FutureTarget; // method@086f
+5a100c: 0000                                   |0006: return-object v0
+      catches       : (none)

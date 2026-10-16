@@ -1,0 +1,2 @@
+10-04 12:32:36.794   523   554 I ActivityManager: Start proc 6028:com.reelhouse.society/u0a192 for next-top-activity {com.reelhouse.society/com.reelhouse.society.MainActivity}
+10-04 12:31:54.711   843   905 D SplashScreenView: Build android.window.SplashScreenView{3c9115 V.E...... ......ID 0,0-0,0}

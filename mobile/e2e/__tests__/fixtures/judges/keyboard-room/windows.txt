@@ -1,0 +1,15 @@
+WINDOW MANAGER WINDOWS (dumpsys window windows)
+  Window #0 Window{a1b2c3 u0 com.reelhouse.society/com.reelhouse.society.MainActivity}:
+    mDisplayId=0 rootTaskId=12 mSession=Session{5d 1234:u0a10190} mClient=android.os.BinderProxy@1
+    frames: parent=[0,0][1080,2400] display=[0,0][1080,2400] frame=[0,0][1080,2400] last=[0,0][1080,2400]
+    isOnScreen=true
+  Window #1 Window{d4e5f6 u0 InputMethod}:
+    mDisplayId=0 rootTaskId=1 mSession=Session{6e 2345:u0a10120} mClient=android.os.BinderProxy@2
+    mOwnerUid=10120 showForAllUsers=true package=com.google.android.inputmethod.latin appop=NONE
+    frames: parent=[0,0][1080,2400] display=[0,0][1080,2400] frame=[0,1395][1080,2400] last=[0,1395][1080,2400]
+    mGivenContentInsets=[0,0][0,0] mGivenVisibleInsets=[0,0][0,0]
+    mViewVisibility=0x0 mHaveFrame=true mObscured=false
+    isOnScreen=true
+  Window #2 Window{f7a8b9 u0 NavigationBar0}:
+    frames: parent=[0,2337][1080,2400] display=[0,0][1080,2400] frame=[0,2337][1080,2400]
+    isOnScreen=true

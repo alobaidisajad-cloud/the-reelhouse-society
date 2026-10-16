@@ -417,6 +417,8 @@ const PLANTED_MOCKS = {
   'fake.test.ts': "import { supabaseFake } from '@/test-utils/supabaseFake';\nconst mockHouse = supabaseFake();\njest.mock('../../lib/supabase', () => ({ get supabase() { return mockHouse.client; } }));\n",
   // a client named but no fake imported: counted
   'named.test.ts': "jest.mock('../lib/supabase', () => ({ supabase: { client: 1 } }));\n",
+  // a hand-made house's .client handed over, the shared fake never imported: counted
+  'borrowed.test.ts': "const mockHouse = { client: { from: jest.fn() } };\njest.mock('../lib/supabase', () => ({ get supabase() { return mockHouse.client; } }));\n",
 };
 const PLANTED_CALLERS = {
   // two guards, and no test names it: both counted
@@ -427,7 +429,7 @@ const PLANTED_CALLERS = {
   'src/plain.ts': 'export const c = (x: number) => x + 1;\n',
   'src/__tests__/tested.test.ts': "import { b } from '../tested';\nit('b', () => expect(b(1)).toBe(1));\n",
 };
-const PLANTED = { 'floating-promise': 2, 'misused-promise': 1, 'unchecked-index': 1, 'edge-type-error': 2, 'edge-lint': 3, 'hand-supabase-mock': 2, 'guard-only-through-a-caller': 2 };
+const PLANTED = { 'floating-promise': 2, 'misused-promise': 1, 'unchecked-index': 1, 'edge-type-error': 2, 'edge-lint': 3, 'hand-supabase-mock': 3, 'guard-only-through-a-caller': 2 };
 
 async function selftest(checks) {
   const dir = mkdtempSync(join(tmpdir(), 'frozen-counts-'));

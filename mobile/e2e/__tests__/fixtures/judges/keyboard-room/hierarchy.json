@@ -1,0 +1,20 @@
+{
+  "attributes": {
+    "bounds": "[0,0][1080,2400]"
+  },
+  "children": [
+    {
+      "attributes": {
+        "resource-id": "stack-title-input",
+        "bounds": "[60,300][1020,420]",
+        "accessibilityText": "Stack title"
+      }
+    },
+    {
+      "attributes": {
+        "text": "FILE THE STACK",
+        "bounds": "[600,1300][1000,1340]"
+      }
+    }
+  ]
+}

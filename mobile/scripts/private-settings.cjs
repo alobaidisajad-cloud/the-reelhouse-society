@@ -48,8 +48,8 @@ const remember = (value) => {
   if (!hiding) {
     hiding = true;
     const end = (e) => { process.stderr.write(`${hide(e instanceof Error ? e.stack : e)}\n`); process.exit(1); };
+    // A promise nobody waits for comes here too: Node raises its rejection as an uncaught exception.
     process.on('uncaughtException', end);
-    process.on('unhandledRejection', end);
   }
   return value;
 };

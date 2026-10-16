@@ -47,7 +47,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/god_tier_ci.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind, so a late nightly never cancels a push's run, nor a push the nightly's |
 | ../.github/workflows/ios-launch.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind |
 | ../.github/workflows/load.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind |
-| ../.github/workflows/nightly.yml | 2026-10-16 | new: known-vulnerable packages each night: the phone's and the functions' fail unless allowlisted; dev, build and website listed; a contracts job asks production itself, a night; every flow three times, jest in a random order, and every test's history kept night to night |
+| ../.github/workflows/nightly.yml | 2026-10-16 | edited: every mutant each night, by the kill rules, its verdicts kept as ids and verdicts only |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
 | .maestro/auth_deep_link.yaml | 2026-10-15 | edited: reelhouse://_sitemap, opened with the app closed, lands on not-found |
@@ -159,6 +159,10 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | edited: the ports reserved and waited for, against a fake kernel |
 | e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | edited: one shard's list of flows is what is checked, every flow without one |
+| e2e/__tests__/fixtures/judges/shard-verdict/flows/a_flow.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
+| e2e/__tests__/fixtures/judges/shard-verdict/flows/b_flow.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
+| e2e/__tests__/fixtures/judges/shard-verdict/flows/c_flow.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
+| e2e/__tests__/fixtures/judges/shard-verdict/flows/config.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
 | e2e/advisories.mjs | 2026-10-15 | new: the phone's packages from the bundles' source maps; npm audit for the app and website, OSV for the functions' imports; the verdict against the allowlist |
 | e2e/anon-key.mjs | 2026-10-15 | new: the local stack's anon key as the Supabase CLI makes it, read against its apikeys.go |
 | e2e/annotate.mjs | 2026-10-04 | the password hidden at the one door out; a summary-only level for past ten notices |
@@ -247,8 +251,9 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/shoot.cjs | 2026-09-29 | true as written |
 | mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
-| register/classes.yaml | 2026-10-15 | edited: RN-react-destroyed-on-mount; the three classes held by the frozen counts |
-| scripts/__tests__/commit.test.ts | 2026-10-15 | new |
+| register/classes.yaml | 2026-10-16 | edited: the E2E judges' classes, each with the test that refuses its bad log; the store call's limit among the request class's tests |
+| register/mutants.yaml | 2026-10-16 | new: every mutant, past, new-shape and judge, each with its class and the test that must fail on it |
+| scripts/__tests__/commit.test.ts | 2026-10-16 | edited: an ignored path refused with the index as it was |
 | scripts/__tests__/androidPackages.test.ts | 2026-10-16 | new: a package counts as installed only with its package.xml |
 | scripts/__tests__/contractsRan.test.ts | 2026-10-16 | new |
 | scripts/__tests__/flakeHistory.test.ts | 2026-10-16 | new |
@@ -263,14 +268,14 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route); its files come from the shared file list (test-utils/universe.js) |
 | scripts/check-backend-live.mjs | 2026-10-16 | edited: the supabase CLI's failure told by its own reason (why), a failed fetch by its cause |
 | scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added; its files come from the shared file list (test-utils/universe.js) |
-| scripts/commit.cjs | 2026-10-15 | new: a commit of exactly the paths named; nothing staged before rides along |
+| scripts/commit.cjs | 2026-10-16 | edited: a git add that fails partway has what it staged unstaged again |
 | scripts/contracts-ran.cjs | 2026-10-16 | new: read against jest --json's record and contractEnv.ts's skip |
 | scripts/coverage-ratchet.js | 2026-10-15 | edited: in CI it reads the summary merge-coverage.cjs writes for the parts together |
 | scripts/dump-production.cjs | 2026-10-15 | new |
 | scripts/eas-build-preflight.cjs | 2026-10-15 | edited: no build while the app names what production lacks |
 | scripts/edge-functions.cjs | 2026-10-03 | paytabs-handler NOT_DEPLOYED, with why (it granted any rank to a posted "paid" message) |
 | scripts/flake-history.cjs | 2026-10-16 | new: read against Maestro's JUnit reports (run 38824884948's) and jest --json's record |
-| scripts/frozen-counts.cjs | 2026-10-16 | edited: hand-supabase-mock and guard-only-through-a-caller, frozen per file and self-tested on planted files |
+| scripts/frozen-counts.cjs | 2026-10-16 | edited: a hand-made house's client handed over without the shared fake is planted for the mock finder |
 | scripts/functions-check.mjs | 2026-10-03 | compares every file a deploy bundles, _shared included, each function in its own folder; a listed exception is reported once |
 | scripts/gates-check.js | 2026-10-16 | edited: a failed read of the database ends the check with psql's reason, the address hidden |
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
@@ -283,8 +288,9 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/lucide-icons.js | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | scripts/merge-coverage.cjs | 2026-10-15 | new: read against @jest/reporters 29.7's CoverageReporter (onTestResult, onRunComplete, _checkThreshold) and jest-config's readConfig |
 | scripts/migration-lint.cjs | 2026-10-15 | edited: reads a file by its kind (test-utils/universe.js); the archive is not read; SQL no rule names is refused |
+| scripts/mutants.cjs | 2026-10-16 | new: each mutant applied by the code around it and judged by the kill rules; a judge fed a bad log |
 | scripts/press-again.cjs | 2026-10-16 | new: the finder of TST-14, a second press of the same control in a test with no timer advanced and no real wait between |
-| scripts/private-settings.cjs | 2026-10-16 | edited: once a value is read, an error nobody catches is printed with every value read hidden |
+| scripts/private-settings.cjs | 2026-10-16 | edited: once a value is read, an error nobody catches is printed with every value read hidden; a rejection reaches the same handler |
 | scripts/register.cjs | 2026-10-15 | new |
 | scripts/release-guard.cjs | 2026-10-15 | new: read against expo-dev-client's scheme plugins, expo-router's sitemap switch, expo-constants' getAppConfig, the Expo template's Info.plist and a production export's strings |
 | scripts/resume.cjs | 2026-10-16 | edited: says why gh could not be asked |
@@ -1129,6 +1135,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyCapAnswersToItsColumn.test.ts | 2026-10-03 | read whole: every new cap answers to its column or says why it is smaller |
 | src/utils/__tests__/everyChannelIsPrivate.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyClassIsAccountedFor.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/everyMutantIsSound.guard.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | 2026-10-15 | edited: everything a person edits, from the shared file list: flows, workflows and both supabase/ trees included |
 | src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |

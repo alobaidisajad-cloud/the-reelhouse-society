@@ -1,0 +1,6 @@
+10-02 18:01:00.001  4321  4377 I ReactNativeJS: Running "main"
+10-02 18:01:02.345  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":900}
+10-02 18:01:02.345  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"film","ms":1400}
+10-02 18:01:02.345  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":700}
+10-02 18:01:02.345  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":2600}
+10-02 18:01:02.345  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"film","ms":1100}

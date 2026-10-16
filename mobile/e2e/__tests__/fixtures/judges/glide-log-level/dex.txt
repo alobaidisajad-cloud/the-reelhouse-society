@@ -1,0 +1,18 @@
+  Virtual methods   -
+    #0              : (in Lexpo/modules/image/ExpoImageAppGlideModule;)
+      name          : 'applyOptions'
+      type          : '(Landroid/content/Context;Lcom/bumptech/glide/GlideBuilder;)V'
+      access        : 0x0001 (PUBLIC)
+      code          -
+      registers     : 4
+      insns size    : 18 16-bit code units
+44d024:                                        |[44d024] expo.modules.image.ExpoImageAppGlideModule.applyOptions:(Landroid/content/Context;Lcom/bumptech/glide/GlideBuilder;)V
+44d034: 1a00 e88d                              |0000: const-string v0, "context" // string@8de8
+44d038: 7120 e7fc 0200                         |0002: invoke-static {v2, v0}, Lkotlin/jvm/internal/Intrinsics;.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V // method@fce7
+44d03e: 1a00 7787                              |0005: const-string v0, "builder" // string@8777
+44d042: 7120 e7fc 0300                         |0007: invoke-static {v3, v0}, Lkotlin/jvm/internal/Intrinsics;.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V // method@fce7
+44d048: 6f30 a008 2103                         |000a: invoke-super {v1, v2, v3}, Lcom/bumptech/glide/module/AppGlideModule;.applyOptions:(Landroid/content/Context;Lcom/bumptech/glide/GlideBuilder;)V // method@08a0
+44d04e: 1262                                   |000d: const/4 v2, #int 6 // #6
+44d050: 6e20 2908 2300                         |000e: invoke-virtual {v3, v2}, Lcom/bumptech/glide/GlideBuilder;.setLogLevel:(I)Lcom/bumptech/glide/GlideBuilder; // method@0829
+44d056: 0e00                                   |0011: return-void
+      catches       : (none)

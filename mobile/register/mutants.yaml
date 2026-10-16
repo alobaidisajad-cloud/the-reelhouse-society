@@ -1,0 +1,457 @@
+# The mutants that prove every guard (WORKLIST P0.66, P0.67, P0.69). scripts/mutants.cjs runs them by
+# the kill rules; everyMutantIsSound holds each entry to its class and its test. A class still open in
+# production keeps its mutants in the private file.
+#
+#   past:  the class's past fix reversed (commit, files); once it no longer reverses, `edits` written
+#          once by hand stand in its place, under the same id.
+#   shape: a new shape of the mistake: a file planted into a real folder (plant), or a real file changed (edits).
+#   judge: an E2E judge fed a bad log, made from a good one by edits.
+mutants:
+  - id: past-arrival-easing-key
+    class: MOTION-empty-config-key
+    source: past
+    commit: c56597db
+    files: [src/hooks/useArrival.ts]
+    # The fix no longer reverses (ef697e38 rewrote the line); this puts the same key back by hand.
+    edits:
+      - file: src/hooks/useArrival.ts
+        find: "withTiming(1, easing\n      ? { duration, easing, reduceMotion: ReduceMotion.System }\n      : { duration, reduceMotion: ReduceMotion.System }));"
+        replace: "withTiming(1, { duration, easing, reduceMotion: ReduceMotion.System }));"
+    proof: { file: src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts, test: "reads every animation config in the app, and each is a literal whose keys all hold a value" }
+
+  - id: past-abort-signal-timeout
+    class: RUNTIME-api-missing-on-phone
+    source: past
+    commit: 11b420f1
+    files: [src/utils/withTimeout.ts]
+    proof: { file: src/utils/__tests__/runtimeLacks.guard.test.ts, test: "no file in app/ or src/ uses an API the phone lacks" }
+
+  - id: past-psql-reason-dropped
+    class: CI-tool-hides-its-cause
+    source: past
+    commit: 13b1cce8
+    files: [scripts/check-backend-live.mjs]
+    # The fix no longer reverses (the file grew around it); this puts one report back as it was.
+    edits:
+      - file: scripts/check-backend-live.mjs
+        find: |-
+              console.warn(`⚠ RPC check skipped — psql could not connect:\n    ${why(e)}`);
+        replace: |-
+              console.warn(`⚠ RPC check skipped (psql failed): ${e.message.split('\n')[0]}`);
+    proof: { file: src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts, test: "reports a failed run or fetch by its cause, never by Node's first line alone" }
+
+  - id: shape-fetch-cause-dropped
+    class: CI-tool-hides-its-cause
+    source: shape
+    edits:
+      - file: scripts/check-backend-live.mjs
+        find: |-
+              console.warn(`⚠ anon posture check skipped (fetch failed): ${e.message}${e.cause ? ` — ${e.cause.code ?? e.cause.message}` : ''}`);
+        replace: |-
+              console.warn(`⚠ anon posture check skipped (fetch failed): ${e.message}`);
+    proof: { file: src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts, test: "reports a failed run or fetch by its cause, never by Node's first line alone" }
+
+  - id: shape-report-never-read
+    class: CI-tool-hides-its-cause
+    source: shape
+    edits:
+      - file: scripts/secrets-planted.cjs
+        find: |-
+          if (!existsSync(report)) { console.error(`gitleaks wrote no report (exit ${run.status}): ${`${run.stderr}${run.stdout}`.trim()}`); process.exit(1); }
+        replace: |-
+          if (!existsSync(report)) { console.error('gitleaks wrote no report'); process.exit(1); }
+    proof: { file: src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts, test: "hears what every program it runs says, unless it names why not" }
+
+  - id: past-private-value-printed
+    class: SEC-private-value-in-a-tool-error
+    source: past
+    commit: 33f2864b
+    files: [scripts/private-settings.cjs]
+    proof: { file: scripts/__tests__/privateSettings.test.ts, test: "hides a value read from an error nobody catches, and still ends the script" }
+
+  - id: past-nightly-cancels-push
+    class: CI-gate-never-runs
+    source: past
+    commit: 33f2864b
+    files: [../.github/workflows/god_tier_ci.yml]
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "cancels only an older run of its own kind (CI-02)" }
+
+  - id: shape-private-env-unremembered
+    class: SEC-private-value-in-a-tool-error
+    source: shape
+    edits:
+      - file: scripts/private-settings.cjs
+        find: "  if (process.env[name]) return remember(process.env[name]);"
+        replace: "  if (process.env[name]) return process.env[name];"
+    proof: { file: scripts/__tests__/privateSettings.test.ts, test: "hides it from a promise nobody waits for" }
+
+  - id: shape-gate-on-pull-requests-alone
+    class: CI-gate-never-runs
+    source: shape
+    edits:
+      - file: ../.github/workflows/load.yml
+        find: "on:\n  push:\n    branches: [main]"
+        replace: "on:\n  pull_request:\n    branches: [main]"
+      - file: ../.github/workflows/load.yml
+        find: "  schedule:\n    - cron: '0 7 * * 1'\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "runs every gate on a push to main or on a schedule, or names why not (CI-02)" }
+
+  - id: shape-script-nothing-runs
+    class: CI-gate-never-runs
+    source: shape
+    plant:
+      - path: scripts/mutant-unrun-check.cjs
+        text: "// A check nothing runs.\nprocess.exit(0);\n"
+    proof: { file: src/utils/__tests__/everyCheckRuns.guard.test.ts, test: "runs every script file, from a workflow, a hook, an npm script or another script, or a test that loads it, or says why by hand" }
+
+  - id: shape-build-without-preflight
+    class: CI-gate-never-runs
+    source: shape
+    edits:
+      - file: package.json
+        find: "\"build:ios\": \"node scripts/eas-build-preflight.cjs && eas build --platform ios --profile production\","
+        replace: "\"build:ios\": \"eas build --platform ios --profile production\","
+    proof: { file: src/utils/__tests__/everyCheckRuns.guard.test.ts, test: "runs the preflight before every store build asks EAS" }
+
+  - id: shape-build-step-let-fail
+    class: CI-check-passes-on-nothing
+    source: shape
+    edits:
+      - file: ../.github/workflows/ci.yml
+        find: "      - name: Build\n        run: npm run build"
+        replace: "      - name: Build\n        continue-on-error: true\n        run: npm run build"
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "lets a step fail only when it is a download tried once more by the step after it (CI-03)" }
+
+  - id: shape-log-stream-left-running
+    class: CI-background-job-left-running
+    source: shape
+    edits:
+      - file: e2e/run-flows.sh
+        find: "trap 'kill $sampler $streamer 2>/dev/null' EXIT"
+        replace: "trap 'kill $sampler 2>/dev/null' EXIT"
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "stops every process it starts in the background, or names why it lives for the job (CI-15)" }
+
+  - id: shape-node-child-unwaited
+    class: CI-background-job-left-running
+    source: shape
+    plant:
+      - path: e2e/mutant-child.mjs
+        text: "import { spawn } from 'node:child_process';\n\nspawn('adb', ['logcat']);\n"
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "starts no Node child it does not wait for (CI-15)" }
+
+  - id: shape-update-feed-elsewhere
+    class: BUILD-identity-drifts
+    source: shape
+    edits:
+      - file: app.json
+        find: "\"url\": \"https://u.expo.dev/9527b5a1-c663-4262-883c-7b85e6aa748d\""
+        replace: "\"url\": \"https://u.expo.dev/00000000-0000-4000-8000-000000000000\""
+    proof: { file: src/utils/__tests__/appConfig.guard.test.ts, test: "names the project as Expo holds it, and asks that project alone for updates (CI-20)" }
+
+  - id: shape-sentry-project-unread
+    class: BUILD-identity-drifts
+    source: shape
+    edits:
+      - file: app.json
+        find: "\"project\": \"react-native\""
+        replace: "\"project\": \"reelhouse-mobile\""
+    proof: { file: src/utils/__tests__/appConfig.guard.test.ts, test: "sends crashes, and the maps that make them readable, to the Sentry project the house reads (CI-20)" }
+
+  - id: shape-unawaited-press
+    class: TEST-event-not-awaited
+    source: shape
+    plant:
+      - path: src/components/__tests__/mutantUnawaitedPress.test.tsx
+        text: "import { fireEvent, render, screen } from '@testing-library/react-native';\nimport { Pressable, Text } from 'react-native';\n\nit('presses', async () => {\n  const pressed = jest.fn();\n  await render(<Pressable onPress={pressed}><Text>Go</Text></Pressable>);\n  fireEvent.press(screen.getByText('Go'));\n  expect(pressed).toHaveBeenCalled();\n});\n"
+    proof: { file: src/utils/__tests__/everyEventIsAwaited.guard.test.ts, test: "finds none unwaited, in any test file" }
+
+  - id: shape-second-press-at-once
+    class: TEST-press-inside-the-debounce
+    source: shape
+    plant:
+      - path: src/components/__tests__/mutantSecondPress.test.tsx
+        text: "import { fireEvent, render, screen } from '@testing-library/react-native';\nimport { Pressable, Text } from 'react-native';\n\nit('presses twice', async () => {\n  const pressed = jest.fn();\n  await render(<Pressable onPress={pressed}><Text>Go</Text></Pressable>);\n  await fireEvent.press(screen.getByText('Go'));\n  await fireEvent.press(screen.getByText('Go'));\n  expect(pressed).toHaveBeenCalledTimes(2);\n});\n"
+    proof: { file: src/utils/__tests__/aSecondPressWaitsOutTheDebounce.guard.test.ts, test: "finds none in any test, but those judged to reach their control" }
+
+  - id: shape-absence-alone
+    class: TEST-absence-unanchored
+    source: shape
+    plant:
+      - path: src/components/__tests__/mutantAbsenceAlone.test.tsx
+        text: "import { render, screen } from '@testing-library/react-native';\nimport { Text } from 'react-native';\n\nit('shows no badge', async () => {\n  await render(<Text>Hello</Text>);\n  expect(screen.queryByText('Badge')).toBeNull();\n});\n"
+    proof: { file: src/utils/__tests__/anAbsenceIsAnchored.guard.test.ts, test: "finds no test that only finds things absent on a screen it never shows drawn" }
+
+  - id: shape-rehearsals-never-without
+    class: TEST-rehearsal-holds-without-its-migration
+    source: shape
+    edits:
+      - file: ../.github/workflows/db-integration.yml
+        find: "      - name: Each pending migration's rehearsal fails without it\n        run: node mobile/e2e/db/rehearsals.mjs --without\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/rehearsalsRunInCi.guard.test.ts, test: "then shows each pending migration's rehearsal failing without it, before the row rules ask production as it will be" }
+
+  - id: shape-mutants-pass-on-red
+    class: TEST-mutant-unproven
+    source: shape
+    edits:
+      - file: e2e/db/attack/attack.mjs
+        find: "export const mutantsPass = (baselineHeld, v) => baselineHeld && !v.living.length"
+        replace: "export const mutantsPass = (baselineHeld, v) => !v.living.length"
+    proof: { file: e2e/__tests__/attack.test.ts, test: "passes the mutants' run only on a green baseline, with none living unjudged, none unmade and no judgement stale" }
+
+  - id: shape-fake-takes-any-column
+    class: TEST-mock-accepts-anything
+    source: shape
+    edits:
+      - file: test-utils/supabaseFake.ts
+        find: "  if (!columnsOf(table).has(column)) throw"
+        replace: "  if (!columnsOf(table)) throw"
+    proof: { file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "a column the table does not have, in a select, a filter or an order" }
+
+  - id: shape-hand-mock-finder-trusts-a-name
+    class: TEST-mock-accepts-anything
+    source: shape
+    edits:
+      - file: scripts/frozen-counts.cjs
+        find: "if (!(usesFake && /\\.client\\b/.test(factory))) bump"
+        replace: "if (!/\\.client\\b/.test(factory)) bump"
+    proof: { file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
+
+  - id: shape-guard-finder-skips-throws
+    class: TEST-guard-only-through-a-caller
+    source: shape
+    edits:
+      - file: scripts/frozen-counts.cjs
+        find: "const exits = (st) => ts.isReturnStatement(st) || ts.isThrowStatement(st);"
+        replace: "const exits = (st) => ts.isReturnStatement(st);"
+    proof: { file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
+
+  - id: shape-promise-finder-obeys-disables
+    class: CODE-promise-not-awaited
+    source: shape
+    edits:
+      - file: scripts/frozen-counts.cjs
+        find: "    allowInlineConfig: false,"
+        replace: "    allowInlineConfig: true,"
+    proof: { file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
+
+  - id: shape-index-finder-switched-off
+    class: CODE-index-read-unchecked
+    source: shape
+    edits:
+      - file: tsconfig.strict-index.json
+        find: "\"noUncheckedIndexedAccess\": true"
+        replace: "\"noUncheckedIndexedAccess\": false"
+    proof: { file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
+
+  - id: shape-function-fixed-address
+    class: EDGE-function-unexercised
+    source: shape
+    edits:
+      - file: supabase/functions/notify-push/index.ts
+        find: "      const res = await fetch(EXPO_PUSH_URL, {"
+        replace: "      const res = await fetch('https://exp.host/--/api/v2/push/send', {"
+    proof: { file: e2e/__tests__/functionsWorld.test.ts, test: "finds no fetch of a fixed outside address the settings cannot move" }
+
+  - id: past-request-without-limit
+    class: NET-request-without-time-limit
+    source: past
+    commit: 65bc9992
+    files: [src/lib/supabase.ts]
+    # Reversed whole, the fix takes away what its test imports; this keeps the names and drops the limit.
+    edits:
+      - file: src/lib/supabase.ts
+        find: "  const timer = setTimeout(() => { ranOut = true; controller.abort(); }, ms);"
+        replace: "  const timer = setTimeout(() => { ranOut = true; }, ms);"
+    proof: { file: src/lib/__tests__/aRequestEndsInItsTime.test.ts, test: "is given up at its limit as not reached, and the queue reads it as a network failure" }
+
+  - id: past-send-asked-during-send
+    class: NET-request-without-time-limit
+    source: past
+    commit: 65bc9992
+    files: [src/utils/offlineQueue.ts]
+    proof: { file: src/utils/__tests__/offlineQueue.integration.test.ts, test: "runs once more when the running send ends, sending what was queued meanwhile" }
+
+  - id: shape-store-call-unbounded
+    class: NET-request-without-time-limit
+    source: shape
+    edits:
+      - file: supabase/functions/_shared/storeRecord.ts
+        find: "      signal: AbortSignal.timeout(STORE_LIMIT_MS),\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/revenuecatWebhookDecide.test.ts, test: "asks the address the settings name, RevenueCat's own otherwise, and never without a time limit" }
+
+  - id: shape-spring-key-maybe-empty
+    class: MOTION-empty-config-key
+    source: shape
+    plant:
+      - path: src/hooks/mutantSettle.ts
+        text: "import { withSpring } from 'react-native-reanimated';\n\nexport const settle = (to: number, damping?: number) => withSpring(to, { damping });\n"
+    proof: { file: src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts, test: "reads every animation config in the app, and each is a literal whose keys all hold a value" }
+
+  - id: shape-any-signal-on-phone
+    class: RUNTIME-api-missing-on-phone
+    source: shape
+    plant:
+      - path: src/utils/mutantEither.ts
+        text: "export const either = (a: AbortSignal, b: AbortSignal): AbortSignal => (AbortSignal as unknown as { any: (s: AbortSignal[]) => AbortSignal }).any([a, b]);\n"
+    proof: { file: src/utils/__tests__/runtimeLacks.guard.test.ts, test: "no file in app/ or src/ uses an API the phone lacks" }
+
+  # ── the E2E judges, each fed a bad log made from a good one (P0.69) ───────────
+  - id: judge-java-crash
+    class: E2E-app-crash-unseen
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/app-crashes
+      run: [node, e2e/app-crashes.mjs, "{dir}/stream.txt", --flow-times, "{dir}/times.txt", --maestro, "{dir}/debug", --stream-alive, "yes", --device-now, "10-04 01:30:00"]
+    edits:
+      - file: stream.txt
+        find: "10-04 01:29:58.100  525  545 D ConnectivityService"
+        replace: "10-04 01:21:30.100  16631  16651 E AndroidRuntime: FATAL EXCEPTION: main\n10-04 01:21:30.100  16631  16651 E AndroidRuntime: Process: com.reelhouse.society, PID: 16631\n10-04 01:21:30.100  16631  16651 E AndroidRuntime: com.facebook.react.common.JavascriptException: TypeError: undefined is not a function\n10-04 01:29:58.100  525  545 D ConnectivityService"
+
+  - id: judge-freeze
+    class: E2E-app-crash-unseen
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/app-crashes
+      run: [node, e2e/app-crashes.mjs, "{dir}/stream.txt", --flow-times, "{dir}/times.txt", --maestro, "{dir}/debug", --stream-alive, "yes", --device-now, "10-04 01:30:00"]
+    edits:
+      - file: stream.txt
+        find: "10-04 01:29:58.100  525  545 D ConnectivityService"
+        replace: "10-04 01:21:30.100  525  545 E ActivityManager: ANR in com.reelhouse.society (com.reelhouse.society/.MainActivity)\n10-04 01:21:30.100  525  545 E ActivityManager: Reason: Input dispatching timed out\n10-04 01:29:58.100  525  545 D ConnectivityService"
+
+  - id: judge-soft-crash
+    class: E2E-soft-crash-unseen
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/app-crashes
+      run: [node, e2e/app-crashes.mjs, "{dir}/stream.txt", --flow-times, "{dir}/times.txt", --maestro, "{dir}/debug", --stream-alive, "yes", --device-now, "10-04 01:30:00"]
+    edits:
+      - file: stream.txt
+        find: "10-04 01:29:58.100  525  545 D ConnectivityService"
+        replace: "10-04 01:21:30.100  16631  16651 E ReactHost: handleHostException(message = \"undefined is not a function\")\n10-04 01:29:58.100  525  545 D ConnectivityService"
+
+  - id: judge-iphone-dies
+    class: E2E-app-crash-unseen
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/ios-launch
+      run: [node, e2e/ios-launch.cjs, "{dir}/samples.txt", "{dir}/js.txt", "0", "{dir}/reports"]
+    edits:
+      - file: samples.txt
+        find: "\n27 4242\n"
+        replace: "\n27 -\n"
+
+  - id: judge-splash-taken-over
+    class: E2E-splash-taken-over
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/splash-handoff
+      run: [node, e2e/splash-handoff.mjs, "{dir}/stream.txt", --flow-times, "{dir}/times.txt"]
+    edits:
+      - file: stream.txt
+        find: "ID 0,0-0,0}\n"
+        replace: "ID 0,0-0,0}\n10-04 12:32:42.310  6028  6028 D SplashScreenView: Building from parcel drawable: android.graphics.drawable.BitmapDrawable@82bf60a\n10-04 12:32:42.356   523   545 W ActivityTaskManager: Activity transferring splash screen timeout for ActivityRecord{b1240d8 u0 com.reelhouse.society/.MainActivity t9} state 2\n"
+
+  - id: judge-screen-unread
+    class: E2E-screen-unread-or-slow-unseen
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/screen-times
+      run: [node, e2e/screen-times.mjs, "{dir}/logcat.txt", --ceilings, "{dir}/ceilings.json"]
+    edits:
+      - file: logcat.txt
+        find: "[e2e] screen.ready {\"name\":\"film\",\"ms\":1100}"
+        replace: "[e2e] screen.ready {\"name\":\"film\",\"ms\":1100}\n10-02 18:01:30.000  4321  4377 W ReactNativeJS: [e2e] screen.failed {\"name\":\"film\",\"ms\":300}"
+
+  - id: judge-screen-stall
+    class: E2E-screen-unread-or-slow-unseen
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/screen-times
+      run: [node, e2e/screen-times.mjs, "{dir}/logcat.txt", --ceilings, "{dir}/ceilings.json"]
+    edits:
+      - file: logcat.txt
+        find: "{\"name\":\"lobby\",\"ms\":2600}"
+        replace: "{\"name\":\"lobby\",\"ms\":9000}"
+
+  - id: judge-animation-stuck
+    class: E2E-animation-stuck-unseen
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/animation-waits
+      run: [node, e2e/animation-waits.mjs, "{dir}/stream.txt", --flow-times, "{dir}/times.txt"]
+    edits:
+      - file: stream.txt
+        find: "Could not detect idle state.\n"
+        replace: "Could not detect idle state.\n10-03 21:55:49.100   519   600 W WindowManager: Timed out waiting for animations to complete, animatingContainer=Task{4b1 #12 type=standard A=10192:com.reelhouse.society} animationType=TRANSITION animateStarting=false\n"
+
+  - id: judge-keyboard-covers
+    class: E2E-keyboard-covers-the-field
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/keyboard-room
+      run: [node, e2e/keyboard-room.mjs, stack, "\"FILE THE STACK\"", "{dir}/hierarchy.json", "{dir}/windows.txt"]
+    edits:
+      - file: hierarchy.json
+        find: "[600,1300][1000,1340]"
+        replace: "[600,2240][1000,2280]"
+
+  - id: judge-runtime-changed
+    class: E2E-phone-runtime-changed-unseen
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/runtime-dump
+      run: [node, e2e/runtime-dump.mjs, "{dir}/logcat.txt", --copy, "{dir}/copy.json"]
+    edits:
+      - file: logcat.txt
+        find: "200  220 W ReactNativeJS: [e2e] runtime {\"of\":\"AbortSignal\",\"part\":1,\"parts\":1,\"names\":[\"prototype\",\"abort\"]}"
+        replace: "200  220 W ReactNativeJS: [e2e] runtime {\"of\":\"AbortSignal\",\"part\":1,\"parts\":1,\"names\":[\"prototype\",\"abort\",\"timeout\"]}"
+
+  - id: judge-glide-verbose
+    class: BUILD-glide-logs-every-image
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/glide-log-level
+      run: [node, e2e/glide-log-level.mjs, "{dir}/dex.txt"]
+    edits:
+      - file: dex.txt
+        find: "44d04e: 1262                                   |000d: const/4 v2, #int 6 // #6"
+        replace: "44d04e: 1222                                   |000d: const/4 v2, #int 2 // #2"
+
+  - id: judge-prefetch-decodes
+    class: BUILD-prefetch-decodes-whole
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/prefetch-download-only
+      run: [node, e2e/prefetch-download-only.mjs, "{dir}/dex.txt"]
+      env: { E2E_OLD_CLIENT: "" }
+    edits:
+      - file: dex.txt
+        find: "invoke-virtual {v4}, Lcom/bumptech/glide/RequestManager;.downloadOnly:()Lcom/bumptech/glide/RequestBuilder; // method@0880"
+        replace: "invoke-virtual {v4}, Lcom/bumptech/glide/RequestManager;.asDrawable:()Lcom/bumptech/glide/RequestBuilder; // method@0880"
+
+  - id: judge-shard-flow-lost
+    class: E2E-shard-lost-unseen
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/shard-verdict
+      run: [node, e2e/shard-verdict.mjs, "{dir}/kept", --shards, "3", --name, "e2e-logs-{i}", --ceilings, "{dir}/ceilings.json", --flows, "{dir}/flows"]
+    edits:
+      - file: kept/e2e-logs-2/flows-run.txt
+        find: "b_flow\n"
+        replace: "a_flow\n"
+
+  - id: judge-begun-flow-run-again
+    class: E2E-app-failure-run-again
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/attempt
+      run: [node, e2e/attempt.mjs, --kind, flow, --exit, "1", --junit, "{dir}/report.xml", --debug, "{dir}/debug", --log, "{dir}/device.txt", --left, "2000", --need, "1680", --retries, "0", --max, "3", --device, alive, --attempt, "1"]
+      # Maestro's own log is named .log, which the repo ignores: it is kept as maestro.txt.
+      as: { maestro.txt: debug/.maestro/tests/2026-10-04_012718/maestro.log }
+    edits:
+      - file: maestro.txt
+        find: "Running flow f\n"
+        replace: "Running flow f\n01:27:18.000 [ INFO] maestro.cli.runner.CliConsoleListener.onCommandStart: Launch app \"com.reelhouse.society\" with clear state RUNNING\n"

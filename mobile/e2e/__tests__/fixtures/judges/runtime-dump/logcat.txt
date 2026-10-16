@@ -1,0 +1,6 @@
+10-02 18:01:02.345  100  120 W ReactNativeJS: [e2e] runtime {"of":"globalThis","part":1,"parts":1,"names":["AbortController","fetch","structuredClone"]}
+10-02 18:01:02.345  100  120 W ReactNativeJS: [e2e] runtime {"of":"AbortSignal","part":1,"parts":1,"names":["prototype","abort"]}
+10-02 18:01:02.345  100  120 W ReactNativeJS: [e2e] runtime {"of":"Intl","part":1,"parts":1,"names":null}
+10-02 18:01:02.345  200  220 W ReactNativeJS: [e2e] runtime {"of":"globalThis","part":1,"parts":1,"names":["AbortController","fetch","structuredClone"]}
+10-02 18:01:02.345  200  220 W ReactNativeJS: [e2e] runtime {"of":"AbortSignal","part":1,"parts":1,"names":["prototype","abort"]}
+10-02 18:01:02.345  200  220 W ReactNativeJS: [e2e] runtime {"of":"Intl","part":1,"parts":1,"names":null}
