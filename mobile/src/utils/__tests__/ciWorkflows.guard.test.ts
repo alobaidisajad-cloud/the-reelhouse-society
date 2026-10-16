@@ -553,9 +553,9 @@ it('starts no Node child it does not wait for (CI-15)', () => {
   const starts = code.filter((p) => {
     const text = readFileSync(p, 'utf8');
     const taken = [...text.matchAll(/(?:\{([^}]*)\}\s*=\s*require\(|import\s*\{([^}]*)\}\s*from\s*)['"](?:node:)?child_process['"]/g)]
-      .flatMap((m) => (m[1] ?? m[2]).split(',').map((n) => n.trim().split(/\s*:\s*|\s+as\s+/)[0]));
-    const whole = [...text.matchAll(/(?:(\w+)\s*=\s*require\(|import\s+(?:\*\s+as\s+)?(\w+)\s+from\s*)['"](?:node:)?child_process['"]/g)].map((m) => m[1] ?? m[2]);
-    return taken.some((n) => ASYNC.includes(n)) || whole.some((w) => new RegExp(`\\b${w}\\.(${ASYNC.join('|')})\\s*\\(`).test(text));
+      .flatMap((m) => (m[1] ?? m[2] ?? '').split(',').map((n) => n.trim().split(/\s*:\s*|\s+as\s+/)[0] ?? ''));
+    const whole = [...text.matchAll(/(?:(\w+)\s*=\s*require\(|import\s+(?:\*\s+as\s+)?(\w+)\s+from\s*)['"](?:node:)?child_process['"]/g)].map((m) => m[1] ?? m[2] ?? '');
+    return taken.some((n) => ASYNC.includes(n)) || whole.filter(Boolean).some((w) => new RegExp(`\\b${w}\\.(${ASYNC.join('|')})\\s*\\(`).test(text));
   });
   expect(starts.map((p) => relative(join(DIR, '..', '..'), p))).toEqual([]);
 });
