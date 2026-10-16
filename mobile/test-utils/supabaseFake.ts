@@ -63,6 +63,11 @@ type Options = {
   rows?: Record<string, Row[]>;
   /** A table whose every query fails with this. */
   fail?: Record<string, Failure>;
+  /**
+   * A table whose every answer came with an empty body (a gateway's bare 404, an empty 2xx):
+   * no data and no error, as postgrest-js reads it, even from `.single()`.
+   */
+  silent?: Record<string, true>;
   /** A table the test answers itself, from the query. */
   answer?: Record<string, (ask: Ask) => Row[] | Failure>;
   /** Each rpc's answer: a value, or a function of its arguments; `{ error }` fails it. */
@@ -137,6 +142,7 @@ export function supabaseFake(options: Options = {}) {
     tables.set(t, rows.map((r) => ({ ...r })));
   }
   for (const t of Object.keys(options.fail ?? {})) columnsOf(t);
+  for (const t of Object.keys(options.silent ?? {})) columnsOf(t);
   for (const t of Object.keys(options.answer ?? {})) columnsOf(t);
   for (const fn of Object.keys(options.rpc ?? {})) {
     if (!house().functions.has(fn)) throw new Error(`supabaseFake: production has no function "${fn}"`);
@@ -146,6 +152,7 @@ export function supabaseFake(options: Options = {}) {
   const settle = (ask: Ask) => {
     const failure = options.fail?.[ask.table];
     if (failure) return { data: null, error: failure, count: null };
+    if (options.silent?.[ask.table]) return { data: null, error: null, count: null };
     let rows: Row[];
     const answered = options.answer?.[ask.table]?.(ask);
     if (answered && !Array.isArray(answered)) return { data: null, error: answered, count: null };

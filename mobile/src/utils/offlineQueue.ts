@@ -5,6 +5,7 @@
  *   • at most 100 kept: past that the oldest is dropped, and the member told
  *   • older than 24 hours: dropped at the next send, and the member told
  *   • a network failure stops the send and keeps the rest, in order
+ *   • so does a refusal for a suspension, which ends: nothing is sent until it has
  *   • a server that fails for a moment (5xx, 429, 408) is retried, five sends at most
  *   • a duplicate counts as delivered; a broken statement or an unknown refusal
  *     goes to the dead letter (7 days, 50 at most)
@@ -20,6 +21,7 @@ import { applyIdMapToPayload, executeMutation } from './mutationExecutor';
 import { isNetworkError, isTransientError } from './networkError';
 import reelToast from './reelToast';
 import { e2eTrace } from './e2eTrace';
+import { isSuspensionRefusal } from './refusedForStanding';
 import { queryClient } from '../lib/queryClient';
 import { settleDelivered } from '../stores/markCounts';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
@@ -131,7 +133,10 @@ export function getQueueLength(): number {
  * At the member's own sign-out: everything under the queue's prefix that is
  * theirs or no one's, the dead letter's failed writes with their words among
  * it. Swept, not listed, so a queue key added later goes too. What is provably
- * another member's (writes kept for them, their failed ones) stays for them.
+ * another member's — every write names its member — stays for them, wherever
+ * it is: writes kept for them, their failed ones, and their writes still in the
+ * queue (a session that ended without signing out), which are kept for them as
+ * a send keeps them.
  */
 export function clearOfflineQueue(memberId: string | null): void {
     try {
@@ -139,12 +144,12 @@ export function clearOfflineQueue(memberId: string | null): void {
             if (!key.startsWith(QUEUE_KEY)) continue;
             const heldFor = heldOwnerOf(key);
             if (heldFor && heldFor !== memberId) continue;
-            if (key === DEAD_LETTER_KEY) {
-                const others = readList(key).filter((m) => m.owner && m.owner !== memberId);
-                if (others.length > 0) {
-                    storage.set(key, JSON.stringify(others));
-                    continue;
-                }
+            const others = readList(key).filter((m) => m.owner && m.owner !== memberId);
+            if (key === QUEUE_KEY) {
+                keepForOwners(others);
+            } else if (others.length > 0) {
+                storage.set(key, JSON.stringify(others));
+                continue;
             }
             storage.delete(key);
         }
@@ -245,12 +250,17 @@ export async function flushOfflineQueue() {
 
     // A banned member's queue is not sent. useBanCheck reads the profile the phone
     // holds, which is stale for a member banned while offline; this asks the server.
-    try {
-        const { data: banProfile } = await supabase
+    {
+        const { data: banProfile, error: standingUnread } = await supabase
             .from('profiles')
             .select('is_banned, suspended_until')
             .eq('id', authenticatedUserId)
             .single();
+        // Unread, the writes go: each refusal for standing is judged on its own write below
+        // (a suspension's waits), and no connection stops the first write as it stopped this.
+        if (standingUnread && !isNetworkError(standingUnread)) {
+            logger.warn('[OfflineSync] Could not read the member\'s standing:', standingUnread.message);
+        }
         // A suspension ends: what was written is held until it does, not thrown
         // away refused (the queue's own day-old rule still applies).
         const suspendedUntil = banProfile?.suspended_until ? Date.parse(banProfile.suspended_until) : NaN;
@@ -269,11 +279,6 @@ export async function flushOfflineQueue() {
             keepForOwners(live.filter((m) => m.owner !== authenticatedUserId));
             writeQueue([]);
             return;
-        }
-    } catch (banCheckErr) {
-        // Unanswered (no network): carry on; the first write will stop on the same failure.
-        if (!isNetworkError(banCheckErr)) {
-            logger.warn('[OfflineSync] Ban check returned unexpected error:', banCheckErr);
         }
     }
 
@@ -359,6 +364,13 @@ export async function flushOfflineQueue() {
             if (isNetworkError(error)) {
                 logger.warn(`[OfflineSync] Network failure on ${mutation.type}. Halting queue to preserve causality.`);
                 e2eTrace('queue.flush.halted', { type: mutation.type, why: errMsg.slice(0, 80) });
+                break;
+            } else if (isSuspensionRefusal(errMsg)) {
+                // Refused for a suspension, which ends: this write and the rest wait for it, as the
+                // standing read above holds them, never given up (that read failed, or the
+                // suspension began while this send ran).
+                logger.warn(`[OfflineSync] ${mutation.type} refused for a suspension. Holding the queue until it ends.`);
+                e2eTrace('queue.flush.halted', { type: mutation.type, why: 'suspended' });
                 break;
             } else if (errorClass === 'schema') {
                 // The STATEMENT is wrong (a missing column, a bad ON CONFLICT

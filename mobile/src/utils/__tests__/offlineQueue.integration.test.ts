@@ -42,6 +42,8 @@ jest.mock('../../lib/supabase', () => ({
     auth: {
       getSession: jest.fn().mockResolvedValue({ data: { session: { user: { id: 'u1' }, access_token: 'mock-token' } }, error: null }),
     },
+    // The member's standing, which every send reads first: in good standing.
+    from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { is_banned: false, suspended_until: null }, error: null }) }) }) }),
   },
 }));
 

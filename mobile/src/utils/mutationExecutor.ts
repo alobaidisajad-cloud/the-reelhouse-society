@@ -67,9 +67,10 @@ const throwIfRefused = <T>(res: { error: unknown; data?: T[] | null }, where: st
 const handleDuplicateLogMerge = async (error: any, dbPayload: any, _fakeId?: string): Promise<MutationResult | null> => {
     const errLower = String(error.message || '').toLowerCase();
     if (error.code === '23505' || errLower.includes('duplicate') || errLower.includes('unique')) {
-        // Select the entire row to preserve viewing_history. A read that failed is
-        // raised: taken for "no row", the replay reported done and the log was lost.
-        const existing = throwIfError(await supabase.from('logs').select('*').eq('user_id', dbPayload.user_id).eq('film_id', dbPayload.film_id).maybeSingle());
+        // The member's log of this film, by its id alone (the rewatch below is filed by the
+        // server). A read that failed is raised: taken for "no row", the replay reported done
+        // and the log was lost.
+        const existing = throwIfError(await supabase.from('logs').select('id').eq('user_id', dbPayload.user_id).eq('film_id', dbPayload.film_id).maybeSingle());
         if (existing.data) {
             const existingData = existing.data;
 
@@ -199,8 +200,11 @@ const insertLog = async (p: any): Promise<MutationResult> => {
         user_id: raw.user_id, film_id: raw.film_id, film_title: raw.film_title,
         poster_path: raw.poster_path, rating: raw.rating, review: raw.review,
         watched_date: raw.watched_date, status: raw.status, year: raw.year,
-        decade: raw.decade, autopsy: raw.autopsy, viewing_history: raw.viewing_history,
-        genres: raw.genres, watched_with: raw.watched_with, physical_media: raw.physical_media,
+        // A log has no decade or genres of its own (its genres are the film's, its decade is read
+        // from its year): an older build's queued log that carried them is filed without them,
+        // never refused for a column that is not there.
+        autopsy: raw.autopsy, viewing_history: raw.viewing_history,
+        watched_with: raw.watched_with, physical_media: raw.physical_media,
         is_autopsied: raw.is_autopsied, alt_poster: raw.alt_poster,
         editorial_header: raw.editorial_header, drop_cap: raw.drop_cap,
         pull_quote: raw.pull_quote, abandoned_reason: raw.abandoned_reason,
@@ -293,17 +297,19 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
                 
                 // A composite key: `date` alone merges two rewatches on one day (date-only watches
                 // sit at T12:00:00Z); the other fields tell two quick marks apart.
-                const compositeKey = (entry: any, index: number): string => {
-                    if (!entry) return `__null_${index}`;
-                    return `${entry.date ?? ''}::${entry.rating ?? 0}::${entry.status ?? ''}::${entry.review?.slice(0, 40) ?? ''}::${entry.watchedWith ?? ''}::${entry.physicalMedia ?? ''}`;
-                };
-                
+                const compositeKey = (entry: any): string =>
+                    `${entry.date ?? ''}::${entry.rating ?? 0}::${entry.status ?? ''}::${entry.review?.slice(0, 40) ?? ''}::${entry.watchedWith ?? ''}::${entry.physicalMedia ?? ''}`;
+
+                // An empty place in either history is no viewing, and is dropped from both: kept, the
+                // phone's own reached the sort below, which reads its date and threw, and the edit
+                // was given up.
                 const mergedMap = new Map();
-                serverHistory.forEach((entry: any, idx: number) => {
-                    if (entry) mergedMap.set(compositeKey(entry, idx), entry);
+                serverHistory.forEach((entry: any) => {
+                    if (entry) mergedMap.set(compositeKey(entry), entry);
                 });
-                offlineHistory.forEach((entry: any, idx: number) => {
-                    const key = compositeKey(entry, idx + serverHistory.length);
+                offlineHistory.forEach((entry: any) => {
+                    if (!entry) return;
+                    const key = compositeKey(entry);
                     // Only overwrite if the entry is genuinely the same (not a distinct rewatch)
                     if (!mergedMap.has(key)) {
                         mergedMap.set(key, entry);
@@ -590,14 +596,16 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     // ── Lounge ──
     send_lounge_message: async (p: any) => {
         // Flush handler for lounge messages queued while offline.
-        // Preserves rich metadata, threading, and username for offline list shares.
-        const { id, lounge_id, user_id, username, content, type: msgType, _tempId, film_id, film_title, film_poster, reply_to_id, reply_to_username, reply_to_content, metadata } = p;
+        // Preserves rich metadata and threading for offline list shares. A message has no
+        // username of its own (the room reads the sender's profile): an older build's queued
+        // message that carried one is sent without it, never refused for a column that is not there.
+        const { id, lounge_id, user_id, content, type: msgType, _tempId, film_id, film_title, film_poster, reply_to_id, reply_to_username, reply_to_content, metadata } = p;
         const dbPayload = {
             // The message's own id, as the live send: a send whose answer was lost
             // has already landed, and a retry must hit the key (23505, "landed")
             // rather than post the message twice.
             id: id ?? _tempId,
-            lounge_id, user_id, username,
+            lounge_id, user_id,
             // One cap, the composer's: MAX_LENGTHS.loungeMessage.
             content: sanitizeInput(content as string, 'loungeMessage'),
             type: msgType ?? 'text',

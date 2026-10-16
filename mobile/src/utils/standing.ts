@@ -20,6 +20,7 @@ import { supabase } from '@/src/lib/supabase';
 import { onRefusal } from '@/src/lib/refusalEvents';
 import { useAuthStore } from '@/src/stores/auth';
 import { logger } from '@/src/utils/logger';
+import { isStandingRefusal } from '@/src/utils/refusedForStanding';
 
 export type Standing = { kind: 'silenced' } | { kind: 'suspended'; until: string } | null;
 
@@ -35,16 +36,7 @@ export function standingOf(
   return null;
 }
 
-/** The sentences enforce_not_restricted raises (SQLSTATE 42501). */
-const REFUSALS = [
-  /^Your account has been silenced by The Society\.$/,
-  /^Your account is suspended until .+\.$/,
-];
-
-/** Is this the server refusing a write for the member's standing? */
-export function isStandingRefusal(message: unknown): boolean {
-  return typeof message === 'string' && REFUSALS.some((r) => r.test(message.trim()));
-}
+export { isStandingRefusal };
 
 let reading: Promise<void> | null = null;
 

@@ -46,9 +46,6 @@ const JUDGED: Record<string, { n: number; why: string }> = {
   'src/stores/lounge.ts · [rpc] destructured without error (data)': {
     n: 1, why: 'member faces are decoration; a card without them shows its count',
   },
-  'src/utils/offlineQueue.ts · [from] destructured without error (data)': {
-    n: 1, why: 'the server refuses a banned member\'s writes; this purge is a courtesy in front of it',
-  },
   ...Object.fromEntries(['logsCount', 'ledgerCount', 'watchCount', 'vaultCount', 'listsCount'].map((c) => [
     `src/services/ProfileDataService.ts · Promise.all · ${c}`, { n: 1, why: 'read by `countRead()`' },
   ])),

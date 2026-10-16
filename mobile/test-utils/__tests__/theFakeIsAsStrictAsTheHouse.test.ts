@@ -98,4 +98,11 @@ describe('it answers as PostgREST answers', () => {
     const { client } = supabaseFake({ fail: { logs: { code: '57014', message: 'canceling statement due to statement timeout' } } });
     await expect(client.from('logs').select('id')).resolves.toMatchObject({ data: null, error: { code: '57014' } });
   });
+
+  it('answers an empty body as postgrest-js reads one: no data and no error, from .single() too', async () => {
+    const { client } = supabaseFake({ rows: { logs: [] }, silent: { profiles: true } });
+    await expect(client.from('profiles').select('id').eq('id', 'x').single()).resolves.toEqual({ data: null, error: null, count: null });
+    await expect(client.from('profiles').select('id')).resolves.toEqual({ data: null, error: null, count: null });
+    expect(() => supabaseFake({ silent: { profilez: true } })).toThrow('production has no table or view "profilez"');
+  });
 });
