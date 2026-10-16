@@ -39,9 +39,13 @@ export function mapProblems(map) {
       problems.push(`shard ${i + 1}'s minutes are ${JSON.stringify(s.minutes)}, not a whole number above 0`);
     }
   });
+  // A map that says where else they run (`probesElsewhere`: the fault runs', whose flows the
+  // normal rounds' probes already cover) runs them in no shard; any other, in exactly one.
+  const elsewhere = typeof map.probesElsewhere === 'string' && map.probesElsewhere.trim() !== '';
   for (const part of ['keyboardProbes', 'launchWithAnimations']) {
     const at = shards.flatMap((s, i) => (s?.[part] === true ? [i + 1] : []));
-    if (at.length !== 1) problems.push(`${part} must be in exactly one shard, and is in ${at.length ? at.join(', ') : 'none'}`);
+    if (elsewhere && at.length) problems.push(`${part} runs elsewhere (probesElsewhere), and is in shard ${at.join(', ')}`);
+    if (!elsewhere && at.length !== 1) problems.push(`${part} must be in exactly one shard, and is in ${at.length ? at.join(', ') : 'none'}`);
   }
   return problems;
 }

@@ -1,0 +1,13 @@
+{
+  "why": "The fault runs' one machine (e2e.yml with faults on, WORKLIST P0.76): every flow in .maestro/faults. Read by e2e/shards.mjs and run-flows.sh; faultJudges.test.ts holds it to the folder and to fault-judges.mjs's list.",
+  "probesElsewhere": "The keyboard probes and the launch with animations run in the normal rounds (e2e/shards.json); a fault run tests the network, not them.",
+  "shards": [
+    {
+      "flows": [
+        "house_unreachable",
+        "slow_link"
+      ],
+      "minutes": 20
+    }
+  ]
+}

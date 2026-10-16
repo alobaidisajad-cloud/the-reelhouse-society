@@ -11,8 +11,10 @@ import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '@/src/components/text';
 import TryAgain, { TryAgainLine } from '@/src/components/TryAgain';
 import { colors, fonts } from '@/src/theme/theme';
+import { useStateSaid } from '@/src/hooks/useStateSaid';
 
 export default function SearchUnreachable({ onRetry, style }: { onRetry?: () => void; style?: StyleProp<ViewStyle> }) {
+  useStateSaid('failed', 'THE TELEGRAPH IS DOWN');
   return (
     <View style={[s.wrap, style]}>
       <Text style={s.label}>THE TELEGRAPH IS DOWN</Text>

@@ -476,3 +476,25 @@ mutants:
       - file: gateway.jsonl
         find: "\"path\":\"/rest/v1/logs?select=id,film_id&user_id=eq.u1\""
         replace: "\"path\":\"/rest/v1/rpc/delete_every_log\""
+
+  - id: judge-failure-drawn-empty
+    class: E2E-failure-drawn-as-empty
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/fault-judges
+      run: [node, e2e/fault-judges.mjs, "{dir}/logcat.txt", --flow-times, "{dir}/flow-times.txt"]
+    edits:
+      - file: logcat.txt
+        find: "[e2e] state.failed {\"what\":\"The paper could not be reached.\"}"
+        replace: "[e2e] state.empty {\"what\":\"Nothing filed yet.\"}"
+
+  - id: judge-wait-without-end
+    class: E2E-wait-without-end
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/fault-judges
+      run: [node, e2e/fault-judges.mjs, "{dir}/logcat.txt", --flow-times, "{dir}/flow-times.txt"]
+    edits:
+      - file: logcat.txt
+        find: "10-16 18:01:39.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {\"name\":\"film\",\"ms\":8000}\n"
+        replace: ""

@@ -341,8 +341,12 @@ it('every night runs each flow three times and the suite in a random order, and 
   const nightly = workflows.find((w) => w.file === 'nightly.yml')!;
   expect(triggers(nightly.wf)).toContain('schedule');
   const jobs = nightly.wf.jobs;
-  const rounds = Object.values(jobs).filter((j) => j.uses === './.github/workflows/e2e.yml').map((j) => String(j.with?.round));
+  const calls = Object.values(jobs).filter((j) => j.uses === './.github/workflows/e2e.yml');
+  const rounds = calls.filter((j) => j.with?.round !== undefined).map((j) => String(j.with?.round));
   expect(rounds.sort()).toEqual(['1', '2', '3']);
+  // And the fault runs (P0.76), once, in a group of their own.
+  expect(calls.filter((j) => j.with?.faults === true && j.with?.round === undefined)).toHaveLength(1);
+  expect(calls).toHaveLength(4);
   const steps = (job: string) => ((jobs[job]?.steps ?? []) as RunStep[]);
   expect(steps('jest-random').some((s) => /npx jest\b.*--randomize --showSeed/.test(s.run ?? ''))).toBe(true);
   const history = jobs['flake-history'] as Job & { needs?: string[] };
@@ -352,7 +356,7 @@ it('every night runs each flow three times and the suite in a random order, and 
   // Each round's artifacts carry its round, so three in one run never share a name.
   const e2e = workflows.find((w) => w.file === 'e2e.yml')!;
   expect(e2e.text).toContain("inputs.round && format(' - round {0}', inputs.round)");
-  expect(e2e.text).toContain('group: ${{ github.workflow }}-${{ github.sha }}${{ inputs.round }}');
+  expect(e2e.text).toContain("group: ${{ github.workflow }}-${{ github.sha }}${{ inputs.round }}${{ inputs.faults && '-faults' || '' }}");
 });
 
 it('a TMDB request the E2E world has no recording for fails the run, by name', () => {

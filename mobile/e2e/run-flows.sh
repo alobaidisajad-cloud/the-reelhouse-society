@@ -401,6 +401,11 @@ for flow in $FLOW_LIST; do
     if [ $gone -eq 1 ]; then
       echo "[Skipped] $name (the emulator was gone)" >> "$OUT/maestro.log"; rc=1; flows_failed=1; break
     fi
+    # A fault run: no fault left set, by the flow before or by this one's last attempt (a flow that
+    # stopped midway never cleared its own), so each starts on a clean line (e2e/fault-proxy.mjs).
+    if [ -n "${E2E_FAULTS:-}" ]; then
+      curl -s -X DELETE http://127.0.0.1:54331/fault > /dev/null || echo "[fault proxy] could not clear the fault before $name" >> "$OUT/maestro.log"
+    fi
     left=$(( DEADLINE - $(date +%s) ))
     if [ $left -le 60 ]; then
       echo "[Skipped] $name (the flows' ${MINUTES} minutes ran out)" >> "$OUT/maestro.log"; rc=1; flows_failed=1; break
@@ -562,7 +567,16 @@ times_args=(--flow-times "$OUT/flow-times.txt")
 [ -f mobile/e2e/screen-ceilings.json ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
 [ $flows_failed -eq 0 ] && [ $gone -eq 0 ] && [ "$not_judged" -eq 0 ] && times_args+=(--complete)
 [ -n "${E2E_SHARD:-}" ] && times_args+=(--record "$OUT/screen-record.json")
-if node mobile/e2e/screen-times.mjs "$OUT/logcat-stream.txt" "${times_args[@]}" > "$OUT/screen-times.txt"; then
+if [ -n "${E2E_FAULTS:-}" ]; then
+  # A fault run breaks the network on purpose, so its screens' times and failed reads are no
+  # gate: its judges read the same lines instead (e2e/fault-judges.mjs, WORKLIST P0.76).
+  if node mobile/e2e/fault-judges.mjs "$OUT/logcat-stream.txt" --flow-times "$OUT/flow-times.txt" > "$OUT/fault-judges.txt" 2>&1; then
+    note "The fault runs, judged" "$OUT/fault-judges.txt"
+  else
+    slow=1
+    node mobile/e2e/annotate.mjs "A fault run failed its judges" "$OUT/fault-judges.txt"
+  fi
+elif node mobile/e2e/screen-times.mjs "$OUT/logcat-stream.txt" "${times_args[@]}" > "$OUT/screen-times.txt"; then
   note "How long each screen took" "$OUT/screen-times.txt"
 else
   slow=1

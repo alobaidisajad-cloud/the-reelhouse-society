@@ -327,5 +327,19 @@
     "proof": "judge",
     "commit": "7ce4626623fede5b703e04bb1598cdc16fb226e3",
     "verdict": "caught"
+  },
+  {
+    "class": "E2E-failure-drawn-as-empty",
+    "mutant": "judge-failure-drawn-empty",
+    "proof": "judge",
+    "commit": "3e841e782e0c84c587084f9bdfcaea0f615e27c5",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-wait-without-end",
+    "mutant": "judge-wait-without-end",
+    "proof": "judge",
+    "commit": "3e841e782e0c84c587084f9bdfcaea0f615e27c5",
+    "verdict": "caught"
   }
 ]

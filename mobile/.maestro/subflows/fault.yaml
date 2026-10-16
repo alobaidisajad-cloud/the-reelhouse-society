@@ -1,0 +1,8 @@
+appId: com.reelhouse.society
+---
+# Sets the fault FAULT names on the network between the app and the house,
+# or clears it ("none"): e2e/fault-proxy.mjs, through fault.js.
+- runScript:
+    file: fault.js
+    env:
+      FAULT: ${FAULT}

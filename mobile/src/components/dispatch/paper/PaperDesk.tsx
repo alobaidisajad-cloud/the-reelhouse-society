@@ -424,14 +424,14 @@ export const FilmFinder = memo(function FilmFinder({
         </View>
       ))}
       {answer === 'unreachable' && onRetry ? (
-        <PaperEmpty
+        <PaperEmpty said="failed"
           title="The catalogue could not be reached."
           body="Check the connection, and try again."
           action="TRY AGAIN"
           onAction={onRetry}
         />
       ) : answer === 'none' ? (
-        <PaperEmpty title="No film by that name." body="Try the title as it was released." />
+        <PaperEmpty said="empty" title="No film by that name." body="Try the title as it was released." />
       ) : null}
     </View>
   );

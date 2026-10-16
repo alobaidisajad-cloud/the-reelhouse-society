@@ -351,7 +351,7 @@ export default function FilingReader() {
         {readyMark}
         <PaperBack label="THE DISPATCH" onBack={() => nav.back()} />
         <View style={{ flex: 1, justifyContent: 'center' }}>
-          <PaperEmpty
+          <PaperEmpty said="failed"
             title="This filing could not be reached."
             body="Check the connection, and try again."
             action="TRY AGAIN"

@@ -239,8 +239,16 @@ const unprovenTabs = (flow: string, steps: Step[]): string[] => {
     if (s.inRepeat) { if (!proven.has(tab)) faults.push(`${flow}: ${tab} (tapped in a repeat, never shown loaded)`); continue; }
     let j = i + 1;
     while (j < steps.length && LOOKS.includes(steps[j].cmd) && !wanted.includes(lookedFor(steps[j]) ?? '')) j++;
-    if (j < steps.length && wanted.includes(lookedFor(steps[j]) ?? '')) proven.add(tab);
-    else faults.push(`${flow}: ${tab} (as a ${who}, wants one of ${wanted.join(', ')})`);
+    if (j < steps.length && wanted.includes(lookedFor(steps[j]) ?? '')) { proven.add(tab); continue; }
+    // A fault flow (faults/) opens a tab to see it fail, and its content never comes: there a wait
+    // for anything on it, its failure's words or its own field, shows the tab is there.
+    if (flow.startsWith('faults/')) {
+      const next = steps[i + 1];
+      if (next?.cmd === 'extendedWaitUntil' && (next.arg as { visible?: unknown } | null)?.visible) proven.add(tab);
+      else faults.push(`${flow}: ${tab} (a fault flow, wants a wait for what is on it)`);
+      continue;
+    }
+    faults.push(`${flow}: ${tab} (as a ${who}, wants one of ${wanted.join(', ')})`);
   }
   return faults;
 };
@@ -271,6 +279,13 @@ it('the tab check says NO — to the tab bar as proof, to a tap before the conte
   expect(unprovenTabs('x', [{ ...tap('home-tab'), inRepeat: true }])).toEqual(['x: home-tab (tapped in a repeat, never shown loaded)']);
   // And yes, to a tab whose content is looked for, other looks between.
   expect(unprovenTabs('x', [tap('home-tab'), { cmd: 'assertVisible', arg: 'The Lobby', inRepeat: false }, see('welcome-seek-admission')])).toEqual([]);
+  // A fault flow: a wait for its failure's words shows the tab; a tap straight after it, or a look that is no wait, does not.
+  const wait = (visible: unknown): Step => ({ cmd: 'extendedWaitUntil', arg: { visible, timeout: 1 }, inRepeat: false });
+  expect(unprovenTabs('faults/x', [tap('dispatch-tab'), wait('The paper could not be reached.')])).toEqual([]);
+  expect(unprovenTabs('faults/x', [tap('darkroom-tab'), tap('darkroom-search-input')])).toEqual(['faults/x: darkroom-tab (a fault flow, wants a wait for what is on it)']);
+  expect(unprovenTabs('faults/x', [tap('dispatch-tab'), { cmd: 'assertVisible', arg: 'The paper could not be reached.', inRepeat: false }])).toHaveLength(1);
+  // Its loaded content still proves it, as anywhere.
+  expect(unprovenTabs('faults/x', [tap('dispatch-tab'), see('dispatch-filing')])).toEqual([]);
 });
 
 it('the detector says NO — to a dropped id, a dropped text, and a pattern that only half-matches', () => {

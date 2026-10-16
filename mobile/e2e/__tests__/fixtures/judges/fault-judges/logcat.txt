@@ -1,0 +1,6 @@
+10-16 18:01:00.500  4321  4377 I ReactNativeJS: Running "main"
+10-16 18:01:01.000  4321  4377 W ReactNativeJS: [e2e] screen.reading {"name":"dispatch"}
+10-16 18:01:04.000  4321  4377 W ReactNativeJS: [e2e] screen.failed {"name":"dispatch","ms":3000}
+10-16 18:01:05.000  4321  4377 W ReactNativeJS: [e2e] state.failed {"what":"The paper could not be reached."}
+10-16 18:01:31.000  4321  4377 W ReactNativeJS: [e2e] screen.reading {"name":"film"}
+10-16 18:01:39.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"film","ms":8000}

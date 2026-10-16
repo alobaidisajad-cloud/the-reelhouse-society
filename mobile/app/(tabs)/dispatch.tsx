@@ -321,21 +321,21 @@ export default function DispatchScreen() {
                 reading ? (
                   <PaperSkeletons section={section} />
                 ) : pageState === 'failed' ? (
-                  <PaperEmpty
+                  <PaperEmpty said="failed"
                     title="The paper could not be reached."
                     body="Check the connection, and try again."
                     action="TRY AGAIN"
                     onAction={onRefresh}
                   />
                 ) : savedOnly ? (
-                  <PaperEmpty
+                  <PaperEmpty said="empty"
                     title="You have kept nothing yet."
                     body="The bookmark on any filing puts it here, and takes it out again."
                     quiet="TAP THE BOOKMARK ABOVE TO GO BACK"
                     onQuiet={() => useDispatch.getState().setSavedOnly(false)}
                   />
                 ) : !me ? (
-                  <PaperEmpty
+                  <PaperEmpty said="empty"
                     title="The house is open to read."
                     body="Filing is for members."
                     action="JOIN THE SOCIETY"
@@ -344,7 +344,7 @@ export default function DispatchScreen() {
                     end
                   />
                 ) : empty.action ? (
-                  <PaperEmpty
+                  <PaperEmpty said="empty"
                     title={empty.title}
                     body={empty.body}
                     action={empty.action}
@@ -353,9 +353,9 @@ export default function DispatchScreen() {
                 ) : (
                   // Auteurs file these: to anyone else, a line that explains.
                   formRope.held ? (
-                    <PaperEmpty title={empty.title} body={empty.body} />
+                    <PaperEmpty said="empty" title={empty.title} body={empty.body} />
                   ) : (
-                    <PaperEmpty
+                    <PaperEmpty said="empty"
                       title={empty.title}
                       body={empty.body}
                       quiet="WHAT AN AUTEUR CAN DO →"

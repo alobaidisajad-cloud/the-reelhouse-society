@@ -158,21 +158,21 @@ export default function MemberRoomScreen() {
               loading ? (
                 <PaperSkeletons section="ALL" />
               ) : failed ? (
-                <PaperEmpty
+                <PaperEmpty said="failed"
                   title="This room could not be reached."
                   body="Check the connection, and try again."
                   action="TRY AGAIN"
                   onAction={reload}
                 />
               ) : mine ? (
-                <PaperEmpty
+                <PaperEmpty said="empty"
                   title="You have filed nothing yet."
                   body="Say the thing nobody else will. The house is listening."
                   action="FILE SOMETHING"
                   onAction={() => nav.push('/dispatch/compose')}
                 />
               ) : (
-                <PaperEmpty
+                <PaperEmpty said="empty"
                   title="Nothing filed yet."
                   body="This member reads the paper. They have not written in it."
                 />

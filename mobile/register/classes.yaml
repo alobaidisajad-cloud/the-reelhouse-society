@@ -177,6 +177,32 @@ classes:
     fix: "backend-contract.json now lists the tables and buckets as well as the RPCs and functions, read from the code (the three variable-table sites go through two helpers always given the name); every sealed E2E shard holds each request the fault proxy's gateway log saw to that list (e2e/what-the-app-asked.mjs, mutant judge-call-the-code-never-named)"
     places: [emulator]
 
+  - id: E2E-failure-drawn-as-empty
+    title: Under a broken network a screen draws an empty room where its read reached nothing, and the run passes because the flow tapped on
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.76" }
+    methods:
+      - { kind: running, file: e2e/__tests__/faultJudges.test.ts, test: "refuses a failure drawn as an empty room" }
+      - { kind: running, file: e2e/__tests__/faultJudges.test.ts, test: "refuses a flow where nothing failed: its fault was never set" }
+      - { kind: running, file: src/components/__tests__/aRoomSaysWhetherItIsEmptyOrFailed.test.tsx, test: "each shared room with nothing to show writes which it is, once, and nothing else" }
+    fix: "every shared empty room and failure writes which it is to the E2E build's log (useStateSaid; PaperEmpty's call sites each say which by a required prop); the fault runs' judge (e2e/fault-judges.mjs, mutant judge-failure-drawn-empty) refuses an empty room in a flow whose fault fails every read, and a flow where no failure was said"
+    places: [emulator]
+
+  - id: E2E-wait-without-end
+    title: A screen's wait (its spinner) never ends, or outlasts its limit, under a broken network, and the run passes because the flow waited and went on
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.76" }
+    methods:
+      - { kind: running, file: e2e/__tests__/faultJudges.test.ts, test: "refuses a wait past the limit, and one still waiting at its flow's end" }
+    fix: "useScreenReady writes each wait's start (screen.reading) as well as its end; the fault runs' judge refuses a wait past 20 s or still waiting when its flow ends (mutant judge-wait-without-end); P4.6 sets each kind of request's own deadline"
+    places: [emulator]
+
   - id: RN-react-destroyed-on-mount
     title: React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed
     seriousness: serious

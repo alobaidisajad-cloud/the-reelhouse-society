@@ -6,12 +6,14 @@ import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { OrnamentalRule } from '@/src/components/theme/OrnamentalRule';
 import { Arrive } from '@/src/components/Arrive';
+import { useStateSaid } from '@/src/hooks/useStateSaid';
 
 /**
  * `held`: the member may found a salon. Without it ESTABLISH opens the rope
  * (the caller's `onEstablishPress`), and says so before it is pressed.
  */
 export function EmptyMyLounges({ onEstablishPress, held }: { onEstablishPress: () => void; held: boolean }) {
+  useStateSaid('empty', 'The Velvet Seats Await');
   return (
     <Arrive name="lounge.empty" duration={600} delay={200} style={s.emptyHero}>
       <View style={s.emptyCrestWrap}>

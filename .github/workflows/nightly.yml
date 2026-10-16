@@ -141,6 +141,14 @@ jobs:
     with:
       round: '3'
 
+  # The fault runs (WORKLIST P0.76, P0.35): the network between the app and the
+  # house broken on purpose, each flow judged by e2e/fault-judges.mjs.
+  e2e-faults:
+    name: 🎬 The fault runs
+    uses: ./.github/workflows/e2e.yml
+    with:
+      faults: true
+
   jest-random:
     name: 🎲 Jest, each file's tests in a random order
     runs-on: ubuntu-24.04

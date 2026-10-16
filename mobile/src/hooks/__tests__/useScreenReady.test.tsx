@@ -39,10 +39,11 @@ const handed = (r: ReturnType<typeof render>) => reporter(r).node.props.ready;
 beforeEach(() => { mockTrace.mockClear(); mockRuntime.mockClear(); });
 
 describe('useScreenReady', () => {
-  it('hands Sentry "not yet" while the content is loading, and writes nothing', () => {
+  it('hands Sentry "not yet" while the content is loading, and writes that the wait began, once', () => {
     const r = render(<Screen ready={false} />);
+    r.rerender(<Screen ready={false} />);
     expect(handed(r)).toBe(false);
-    expect(mockTrace).not.toHaveBeenCalled();
+    expect(mockTrace.mock.calls).toEqual([['screen.reading', { name: 'lobby' }]]);
   });
 
   it('hands Sentry "ready" once the content is in, and writes how long it took, once', () => {
@@ -53,14 +54,10 @@ describe('useScreenReady', () => {
     r.rerender(<Screen ready />);
     now.mockRestore();
     expect(handed(r)).toBe(true);
-    expect(mockTrace).toHaveBeenCalledTimes(1);
-    const [event, detail] = mockTrace.mock.calls[0];
-    expect(event).toBe('screen.ready');
-    expect(detail.name).toBe('lobby');
-    expect(detail.ms).toBe(600);
+    expect(mockTrace.mock.calls).toEqual([['screen.reading', { name: 'lobby' }], ['screen.ready', { name: 'lobby', ms: 600 }]]);
 
     r.rerender(<Screen ready />);
-    expect(mockTrace).toHaveBeenCalledTimes(1);
+    expect(mockTrace).toHaveBeenCalledTimes(2);
   });
 
   it('times a second load from when it began, not from when the screen was opened', () => {
@@ -75,7 +72,9 @@ describe('useScreenReady', () => {
     now.mockReturnValue(61_300);
     r.rerender(<Screen ready />);
     now.mockRestore();
-    expect(mockTrace.mock.calls.map(([, d]) => d.ms)).toEqual([500, 300]);
+    expect(mockTrace.mock.calls.map(([e, d]) => [e, d.ms])).toEqual([
+      ['screen.reading', undefined], ['screen.ready', 500], ['screen.reading', undefined], ['screen.ready', 300],
+    ]);
   });
 
   it('times a screen that becomes another from when it became it, not from when the first opened', () => {
@@ -100,14 +99,16 @@ describe('useScreenReady', () => {
     now.mockReturnValue(1_400);
     r.rerender(<Screen read="failed" />);
     expect(handed(r)).toBe(true);
-    expect(mockTrace.mock.calls).toEqual([['screen.failed', { name: 'lobby', ms: 400 }]]);
+    expect(mockTrace.mock.calls).toEqual([['screen.reading', { name: 'lobby' }], ['screen.failed', { name: 'lobby', ms: 400 }]]);
     // Asked again, and reached: the same screen is then ready, from when it asked.
     now.mockReturnValue(5_000);
     r.rerender(<Screen read="reading" />);
     now.mockReturnValue(5_250);
     r.rerender(<Screen read="ready" />);
     now.mockRestore();
-    expect(mockTrace.mock.calls.map(([e, d]) => [e, d.ms])).toEqual([['screen.failed', 400], ['screen.ready', 250]]);
+    expect(mockTrace.mock.calls.map(([e, d]) => [e, d.ms])).toEqual([
+      ['screen.reading', undefined], ['screen.failed', 400], ['screen.reading', undefined], ['screen.ready', 250],
+    ]);
   });
 
   it('the first screen writes the phone\'s runtime, once a mount', () => {

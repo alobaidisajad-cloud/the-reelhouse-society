@@ -11,6 +11,7 @@ import { scaledTextProps, decorativeTextProps, displayTextProps } from '@/src/co
 import { p } from './paperStyles';
 import { SKELETON_COUNT, PAPER_MAX, folioOf, issueOf, SECTION_COLOR, UNSPOKEN } from './paperMetrics';
 import { SECTIONS, type Section } from '@/src/stores/dispatchTypes';
+import { type SaidState, useStateSaid } from '@/src/hooks/useStateSaid';
 
 /**
  * ── ONE ROW OF CHROME ────────────────────────────────────────────────────────
@@ -345,11 +346,14 @@ type EmptyQuiet =
   | { quiet?: undefined; onQuiet?: undefined };
 
 export const PaperEmpty = memo(function PaperEmpty({
-  title, body, action, quiet, end, onAction, onQuiet,
+  said, title, body, action, quiet, end, onAction, onQuiet,
 }: {
+  /** Which this is: a page with nothing on it, or one whose read reached nothing (useStateSaid). */
+  said: SaidState;
   title: string; body: string;
   end?: boolean;
 } & EmptyAction & EmptyQuiet) {
+  useStateSaid(said, title);
   return (
     <View style={p.empty}>
       <Ruling ops={RULED_ABOVE} />

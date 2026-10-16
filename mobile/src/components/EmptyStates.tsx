@@ -15,6 +15,7 @@ import TryAgain, { ACTS_GAP, TRY_AGAIN_ABOVE_A_WAY_OUT, WayOut } from '@/src/com
 import { pickRandom } from '@/src/lore/fragments';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { Arrive } from '@/src/components/Arrive';
+import { useStateSaid } from '@/src/hooks/useStateSaid';
 
 interface EmptyStateProps {
     icon?: React.ReactNode;
@@ -61,7 +62,14 @@ function BreathingIcon({ children }: { children: React.ReactNode }) {
     return <Animated.View style={[s.iconWrap, style]}>{children}</Animated.View>;
 }
 
-export function EmptyState({ icon, glyph = '◈', title, subtitle, compact, buster }: EmptyStateProps) {
+/** A room with nothing in it. */
+export function EmptyState(props: EmptyStateProps) {
+    useStateSaid('empty', props.title);
+    return <StateCard {...props} />;
+}
+
+/** The card both states draw: the icon or Buster, the words, the rule beneath. */
+function StateCard({ icon, glyph = '◈', title, subtitle, compact, buster }: EmptyStateProps) {
     return (
         <Arrive name="empty-state" duration={600} rise={0} style={[s.container, compact && s.compact]}>
             {buster ? (
@@ -101,9 +109,10 @@ export function EmptyOffline({ onRetry, wayOut }: {
         'No signal from the Society. Hold your ground.',
         'The projector requires a connection. We wait.'
     ]));
+    useStateSaid('failed', 'Transmission Interrupted');
     return (
         <View style={s.offline}>
-            <EmptyState
+            <StateCard
                 buster="dimmed"
                 title="Transmission Interrupted"
                 subtitle={lore}

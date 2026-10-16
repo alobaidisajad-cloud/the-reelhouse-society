@@ -539,7 +539,9 @@ describe('a page not read yet, and a page that could not be read', () => {
     await flush();
     expect(failed.queryByText('The paper could not be reached.')).toBeTruthy();
     expect(mockTrace.mock.calls.filter(([e]) => String(e).startsWith('screen.')).map(([e, d]) => [e, d.name]))
-      .toEqual([['screen.failed', 'dispatch']]);
+      .toEqual([['screen.reading', 'dispatch'], ['screen.failed', 'dispatch']]);
+    expect(mockTrace.mock.calls.filter(([e]) => String(e).startsWith('state.')))
+      .toEqual([['state.failed', { what: 'The paper could not be reached.' }]]);
     expect(failed.queryByTestId('dispatch-filing')).toBeNull();
     failed.unmount();
 

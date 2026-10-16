@@ -127,7 +127,7 @@ export default function SeriesScreen() {
         <RoomLight room="dispatch" />
         <PaperBack label="SERIES" onBack={() => nav.back()} />
         <View style={{ flex: 1, justifyContent: 'center' }}>
-          <PaperEmpty
+          <PaperEmpty said="failed"
             title="This series could not be reached."
             body="Check the connection, and try again."
             action="TRY AGAIN"

@@ -19,6 +19,8 @@ production shows only its id, area, seriousness and count here.
 | E2E-shard-lost-unseen | tests | behaviour | OPEN | 0 | One machine of the split E2E run loses its flows or its logs, and the whole run reads green |
 | E2E-app-failure-run-again | tests | behaviour | OPEN | 0 | A failed attempt that says something about the app is run again until it passes, so the app's failure reads as a flake |
 | E2E-call-unseen-by-code | tests | behaviour | OPEN | 0 | The app asks the house for a table, an RPC, a function or a bucket the reading of its code never saw (a name made at run time), so no check of what exists covers that call |
+| E2E-failure-drawn-as-empty | tests | behaviour | OPEN | 0 | Under a broken network a screen draws an empty room where its read reached nothing, and the run passes because the flow tapped on |
+| E2E-wait-without-end | tests | behaviour | OPEN | 0 | A screen's wait (its spinner) never ends, or outlasts its limit, under a broken network, and the run passes because the flow waited and went on |
 | RN-react-destroyed-on-mount | navigation | serious | OPEN | 0 | React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed |
 | SEC-secret-committed | security | serious | OPEN | 21 | open in production |
 | BUILD-upload-carries-ignored-files | release | serious | OPEN | 0 | An EAS build's upload carries files git keeps out |

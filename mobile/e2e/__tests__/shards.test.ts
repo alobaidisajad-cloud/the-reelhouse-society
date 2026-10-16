@@ -52,15 +52,19 @@ describe('the committed map', () => {
       .toEqual([[true, true], [false, false], [false, false]]);
   });
 
-  it('has as many shards as e2e.yml runs, and e2e.yml tells each machine and the verdict that count', () => {
+  it('has as many shards as e2e.yml runs, and e2e.yml tells each machine and the verdict that count; the fault runs, theirs', () => {
     const text = readFileSync(join(E2E, '..', '..', '.github', 'workflows', 'e2e.yml'), 'utf8');
     const wf = parse(text) as { jobs: Record<string, {
-      strategy?: { matrix?: { shard?: number[] } }; steps?: { env?: Record<string, string>; run?: string }[];
+      strategy?: { matrix?: { shard?: string } }; steps?: { env?: Record<string, string>; run?: string }[];
     }> };
     const n = map.shards.length;
-    expect(wf.jobs.flows.strategy?.matrix?.shard).toEqual(Array.from({ length: n }, (_, i) => i + 1));
+    const faultMap = JSON.parse(readFileSync(join(E2E, 'fault-shards.json'), 'utf8')) as { shards: unknown[] };
+    const f = faultMap.shards.length;
+    const list = (k: number) => `[${Array.from({ length: k }, (_, i) => i + 1).join(', ')}]`;
+    expect(wf.jobs.flows.strategy?.matrix?.shard).toBe(`\${{ fromJSON(inputs.faults && '${list(f)}' || '${list(n)}') }}`);
     const flowsStep = wf.jobs.flows.steps!.find((s) => s.env?.E2E_SHARD);
-    expect(flowsStep?.env?.E2E_SHARD).toBe(`\${{ matrix.shard }}/${n}`);
+    expect(flowsStep?.env?.E2E_SHARD).toBe(`\${{ matrix.shard }}/\${{ inputs.faults && ${f} || ${n} }}`);
+    expect(flowsStep?.env?.E2E_SHARD_MAP).toBe("${{ inputs.faults && 'mobile/e2e/fault-shards.json' || 'mobile/e2e/shards.json' }}");
     expect(wf.jobs.verdict.steps!.some((s) => s.run?.includes(`shard-verdict.mjs "$RUNNER_TEMP/shards" --shards ${n} `))).toBe(true);
   });
 });
@@ -94,6 +98,17 @@ describe('a map that is wrong says so', () => {
     expect(ask('mapProblems', none)).toEqual(['keyboardProbes must be in exactly one shard, and is in none']);
     const both = { shards: [two.shards[0], { flows: ['c'], launchWithAnimations: true }] };
     expect(ask('mapProblems', both)).toEqual(['launchWithAnimations must be in exactly one shard, and is in 1, 2']);
+  });
+
+  it('the probes in a shard of a map that says they run elsewhere, or "elsewhere" with no reason', () => {
+    const elsewhere = { probesElsewhere: 'the normal rounds', shards: [{ flows: ['a'] }] };
+    expect(ask('mapProblems', elsewhere)).toEqual([]);
+    expect(ask('mapProblems', { ...elsewhere, shards: [{ flows: ['a'], keyboardProbes: true }] }))
+      .toEqual(['keyboardProbes runs elsewhere (probesElsewhere), and is in shard 1']);
+    expect(ask('mapProblems', { probesElsewhere: '  ', shards: [{ flows: ['a'] }] })).toEqual([
+      'keyboardProbes must be in exactly one shard, and is in none',
+      'launchWithAnimations must be in exactly one shard, and is in none',
+    ]);
   });
 
   it('and a run refuses it, as it refuses a shard the map does not have', () => {

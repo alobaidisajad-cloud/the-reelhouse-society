@@ -20,6 +20,12 @@ const house = http.createServer((req, res) => {
   req.on('end', () => {
     if (req.url === '/write') { writes.push(body); res.writeHead(201, { 'Content-Type': 'application/json' }); return res.end('{"saved":true}'); }
     if (req.url === '/big') { res.writeHead(200, { 'Content-Type': 'text/plain' }); return res.end('x'.repeat(10000)); }
+    if (req.url === '/pieces') {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      let sent = 0;
+      const piece = () => { res.write('p'.repeat(4096)); sent += 1; if (sent < 8) setTimeout(piece, 20); else res.end(); };
+      return piece();
+    }
     if (req.url === '/later') { setTimeout(() => { res.writeHead(200); res.end('late'); }, 300); return; }
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('hello');
@@ -88,6 +94,9 @@ await control('DELETE', '/fault');
 
 await control('POST', '/fault', { kind: 'slow', latencyMs: 300, jitterMs: 0, bytesPerSecond: 20480 });
 out.slow = await ask('GET', '/big');
+await control('DELETE', '/fault');
+await control('POST', '/fault', { kind: 'slow', latencyMs: 300, jitterMs: 0, bytesPerSecond: 1048576 });
+out.slowInPieces = await ask('GET', '/pieces');
 await control('DELETE', '/fault');
 
 await control('POST', '/fault', { kind: 'limit', bytes: 100 });
@@ -170,6 +179,14 @@ it('freezes: nothing comes back, not even an answer already on its way, and the 
 it('slows each chunk by its wait and its rate, and still delivers all of it', () => {
   expect(out.slow).toMatchObject({ status: 200, length: 10000 });
   expect(out.slow.ms).toBeGreaterThanOrEqual(600);
+});
+
+it('holds a reply in many pieces in flight at once, as a slow link does: one latency, never one for each piece', () => {
+  // Eight pieces, 20 ms apart, 300 ms of latency each way: about 900 ms in all. One wait for each
+  // piece in turn would be eight of them on the reply alone, past 2.7 s.
+  expect(out.slowInPieces).toMatchObject({ status: 200, length: 8 * 4096 });
+  expect(out.slowInPieces.ms).toBeGreaterThanOrEqual(600);
+  expect(out.slowInPieces.ms).toBeLessThan(1800);
 });
 
 it('closes a connection once its limit of bytes has gone back', () => {

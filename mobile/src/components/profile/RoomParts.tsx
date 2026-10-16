@@ -8,6 +8,7 @@ import { colors } from '@/src/theme/theme';
 import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { r, roomTier, chipSlop } from './roomStyles';
 import { TryAgainLine } from '@/src/components/TryAgain';
+import { useStateSaid } from '@/src/hooks/useStateSaid';
 
 /**
  * RoomParts — the furniture every room is built from.
@@ -304,6 +305,7 @@ export function RoomEmpty({ icon, title, body, actionLabel, onAction, invite }: 
   /** Your own room, or a filter you can clear: dashed and warmer. */
   invite?: boolean;
 }) {
+  useStateSaid('empty', title);
   return (
     <View style={[r.state, invite && r.stateInvite]}>
       {icon}

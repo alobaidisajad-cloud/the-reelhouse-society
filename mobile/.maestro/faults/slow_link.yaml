@@ -1,0 +1,47 @@
+appId: com.reelhouse.society
+---
+# A slow link after sign-in, the plan's EDGE (subflows/fault.js). Each room
+# opened shows its content, drawn as loading meanwhile, never said to have
+# failed; none waits past its limit (e2e/fault-judges.mjs).
+- launchApp:
+    clearState: true
+- runFlow: ../subflows/sign_in.yaml
+- runFlow:
+    file: ../subflows/fault.yaml
+    env:
+      FAULT: edge
+
+# The paper, never read before.
+- tapOn:
+    id: "dispatch-tab"
+- extendedWaitUntil:
+    visible:
+      id: "dispatch-filing"
+    timeout: 60000
+
+# The Darkroom's films, then one found by a search and opened.
+- tapOn:
+    id: "darkroom-tab"
+- extendedWaitUntil:
+    visible:
+      id: "film-card"
+    timeout: 60000
+- tapOn:
+    id: "darkroom-search-input"
+- inputText: "Casablanca"
+- extendedWaitUntil:
+    visible:
+      id: "darkroom-suggestion-row"
+    timeout: 60000
+- tapOn:
+    id: "darkroom-suggestion-row"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: "film-stub"
+    timeout: 60000
+
+- runFlow:
+    file: ../subflows/fault.yaml
+    env:
+      FAULT: none

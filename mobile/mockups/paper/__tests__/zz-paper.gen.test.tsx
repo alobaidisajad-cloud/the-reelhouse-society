@@ -354,7 +354,7 @@ add('a3-day-one', (
     <PaperSheet top>
       <PaperMasthead date={TODAY} dateLabel="AUGUST 28" />
       <Ornament />
-      <PaperEmpty title="Nothing has been filed yet."
+      <PaperEmpty said="empty" title="Nothing has been filed yet."
         body="Ask what to watch. Say the thing nobody else will. Bring the news."
         action="FILE THE FIRST" quiet="OR JUST LOOK AROUND"
         /* a screenshot: nothing to do, said out loud rather than left out */
@@ -371,7 +371,7 @@ add('a4-empty-seeking', (
     <PaperSheet>
       {/* No section head: the index above already names SEEKING, in its violet. */}
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperEmpty title="No one is asking."
+      <PaperEmpty said="empty" title="No one is asking."
         body="Tell the house what you need tonight. Someone always knows."
         action="ASK THE HOUSE"
         /* a screenshot: nothing to do, said out loud rather than left out */
@@ -387,7 +387,7 @@ add('a5-empty-ballots-free', (
     <PaperChrome onArchive={() => {}} section="BALLOTS" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperEmpty title="No ballot is open."
+      <PaperEmpty said="empty" title="No ballot is open."
         body="Auteurs call the votes. When one opens, the whole house marks it."
         quiet="WHAT AN AUTEUR CAN DO →" />
     </PaperSheet>
@@ -416,7 +416,7 @@ add('a7-end-signed-out', (
       <PaperPost kind="take" order="08:12" orderIs="hour" author={SAM} measureWidth={COL} film={CHUNGKING}
         body="Chungking Express gets better every year and I no longer trust anyone who disagrees."
         certifyCount={88} commentCount={12} />
-      <PaperEmpty title="The house is open to read."
+      <PaperEmpty said="empty" title="The house is open to read."
         body="Filing is for members." action="JOIN THE SOCIETY" end
         /* a screenshot: nothing to do, said out loud rather than left out */
         onAction={() => {}} />
@@ -478,7 +478,7 @@ add('e2-saved-empty', (
       {/* No button. There is no act to perform on a page of things you have not
           kept yet — the act is a bookmark on a filing, somewhere else. Offering
           a control here would be offering a door that opens onto this room. */}
-      <PaperEmpty title="Nothing is kept."
+      <PaperEmpty said="empty" title="Nothing is kept."
         body="The bookmark on any filing keeps it here."
         quiet="NO ONE IS TOLD WHAT YOU KEEP" />
     </PaperSheet>
@@ -1073,7 +1073,7 @@ add('g1-wire-down', (
       {/* The failure is a state of the PAGE, so it is drawn as the page: the
           same ruling, the same notice, the same one brass act. Nothing here is
           special-cased, which is why it cannot look like a crash. */}
-      <PaperEmpty title="The wire is down."
+      <PaperEmpty said="failed" title="The wire is down."
         body="The house is still here. The connection is not."
         action="TRY AGAIN" quiet="WHAT YOU SAVED IS STILL READABLE"
         /* a screenshot: nothing to do, said out loud rather than left out */

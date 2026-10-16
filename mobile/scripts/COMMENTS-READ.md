@@ -57,6 +57,8 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/config.yaml | 2026-09-29 | true as written |
 | .maestro/darkroom_search.yaml | 2026-09-29 | true as written |
 | .maestro/error_recovery.yaml | 2026-10-15 | edited: each tab asked for what only its loaded content carries; the Dispatch's is the seed's filing |
+| .maestro/faults/house_unreachable.yaml | 2026-10-16 | new: the house unreachable after sign-in, each room's failure in its words, then TRY AGAIN |
+| .maestro/faults/slow_link.yaml | 2026-10-16 | new: the plan's EDGE after sign-in, each room's content, never a failure |
 | .maestro/film_log.yaml | 2026-09-29 | true as written |
 | .maestro/flow_critical_path.yaml | 2026-09-29 | true as written |
 | .maestro/keyboard/log.tap.yaml | 2026-10-01 | written with the keyboard probe |
@@ -70,6 +72,8 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/README.md | 2026-10-15 | edited: auth_deep_link also opens reelhouse://_sitemap cold, to not-found |
 | .maestro/lobby_wall_flow.yaml | 2026-10-16 | edited: the wall the house read is scrolled to before the sign-off; the sign-off is scrolled to for as long as the wall above it |
 | .maestro/session_survives_restart.yaml | 2026-10-01 | written with the session kept on the device |
+| .maestro/subflows/fault.js | 2026-10-16 | new: the faults by name, set or cleared on the proxy's control port at localhost (Maestro runs it on the runner) |
+| .maestro/subflows/fault.yaml | 2026-10-16 | new |
 | .maestro/subflows/open_a_film.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/subflows/open_the_stub.yaml | 2026-09-30 | written with the stub's single tap |
 | .maestro/subflows/sign_in.yaml | 2026-10-15 | edited: the account is new, only its profile dated back |
@@ -134,6 +138,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ARCHITECTURE.md | 2026-10-15 | edited: Image Caching is true now that every picture states memory-disk, and names the guard that holds it |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
+| e2e/__tests__/faultJudges.test.ts | 2026-10-16 | new |
 | e2e/__tests__/flowHistory.test.ts | 2026-10-16 | new: a shard's logs read (new and older shapes, retries summed, a part the budget stopped left out) and every file it reads uploaded, the map a history makes, the committed map equal to it and inside the workflow's limits |
 | e2e/__tests__/faultProxy.test.ts | 2026-10-16 | new |
 | e2e/__tests__/flowScreens.test.ts | 2026-10-04 | QueryController no longer counted; Android 14 names what animated; Maestro's JUnit reason, the no-record flow, the decision line |
@@ -182,6 +187,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-writes.mjs | 2026-10-15 | edited: on one shard, only the flows run-flows.sh listed |
+| e2e/fault-judges.mjs | 2026-10-16 | new: the fault runs' judges (P0.76): no failure drawn empty, a fault that failed nothing proves nothing, no false failure on a slow link, no wait past 20 s or left at a flow's end |
 | e2e/flow-screens.mjs | 2026-10-04 | Maestro's JUnit reason, a report for a flow with no step record, the decision line, the named animation; QueryController dropped (logged on every key of fast runs) |
 | e2e/functions/mail.mjs | 2026-10-16 | new: every email the House's Auth sends, caught by the stack's Mailpit and used: the sign-up link confirms, the reset link opens a session, the code is the House's letter with 6 digits and no link, accepted once, a wrong one refused |
 | e2e/functions/payments.mjs | 2026-10-16 | new: the payments replay: each store event through the served webhook or the app's own call, the record RevenueCat answers after it, the rank, source and seats checked after each |
@@ -205,7 +211,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/screen-times.mjs | 2026-10-16 | edited: --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs; edited: two ceilings a screen, derived by ceilingsFrom from e2e/screen-history.json |
 | e2e/shard-verdict.mjs | 2026-10-15 | new: every shard finished, every flow ran once, every ceiling's screen reported somewhere |
 | e2e/flow-history.mjs | 2026-10-16 | edited: a shard with no logs is said; any other download failure ends the run in gh's words |
-| e2e/fault-proxy.mjs | 2026-10-16 | new: the network between the app and the house, a fault on command, a part stopped or the DNS blocked, every request logged |
+| e2e/fault-proxy.mjs | 2026-10-16 | new: the network between the app and the house, a fault on command, a part stopped, the DNS blocked, every request logged; a slow link holds every piece in flight at once, one latency per reply |
 | e2e/shards.mjs | 2026-10-16 | edited: a shard's minutes, checked and printed for run-flows.sh |
 | e2e/start-stack.sh | 2026-10-15 | edited: the stack's ports reserved from the machine's own connections, and waited for |
 | plugins/__tests__/withoutDevLauncherScanner.test.ts | 2026-10-15 | new: through withAndroidManifest, read back as XML; the entry read from the installed expo-dev-launcher's manifest |
@@ -309,6 +315,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/test-timezones.js | 2026-10-16 | edited: ZONES and each zone's record name exported, the one list CI reads; ONLY_IN_UTC: the tooling's tests run in UTC alone, the app's in all six zones |
 | scripts/website-freeze.cjs | 2026-10-15 | new |
 | src/components/__tests__/aComponentHasOneName.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/components/__tests__/aRoomSaysWhetherItIsEmptyOrFailed.test.tsx | 2026-10-16 | new |
 | src/components/__tests__/aSuspensionIsSaid.test.tsx | 2026-10-02 | Written in the launch audit: a silenced or suspended member is told, and told when it ends. |
 | src/components/__tests__/aTabDrawsItsIconOnce.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
@@ -456,7 +463,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
 | src/components/dispatch/roomLink.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/SeriesPicker.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/EmptyStates.tsx | 2026-10-03 | edited: Buster by mood; the breathing icon rests under Reduce Motion |
+| src/components/EmptyStates.tsx | 2026-10-16 | edited: one card both states draw; the empty one says empty, the failure says failed (useStateSaid) |
 | src/components/ErrorBoundary.tsx | 2026-10-02 | Read whole (launch audit). Retries spent left a disabled PLEASE RESTART APP: the button now restarts the app (expo-updates reloadAsync), and says how only when it cannot. |
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/feed/ActionDeck.tsx | 2026-10-04 | edited: the certify lock lifts through useLater, gone with the item and the card |
@@ -736,7 +743,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/types.ts | 2026-10-01 | true as written |
 | src/components/RouteErrorBoundary.tsx | 2026-10-15 | top from useOverlayTop |
 | src/components/search/SearchResultRow.tsx | 2026-10-02 | ReelRating draws halves; resultLabel says what the row is |
-| src/components/search/SearchUnreachable.tsx | 2026-10-02 | SearchPartly: above results that came back while a source did not |
+| src/components/search/SearchUnreachable.tsx | 2026-10-16 | edited: says failed (useStateSaid) |
 | src/components/SectionErrorBoundary.tsx | 2026-10-01 | retries; comments made true |
 | src/components/ShareToLoungeModal.tsx | 2026-10-15 | the sheet's foot clears the home indicator (useSheetBottom) |
 | src/components/society/__tests__/theSocietySellsWhatItSays.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -874,9 +881,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useOfflineAware.ts | 2026-10-01 | one subscription, no clock |
 | src/hooks/useProfileController.ts | 2026-10-01 | one isNarrowed for refresh and filters; a follow that throws is said; dead ref gone; no ticket history |
 | src/hooks/useProfileData.ts | 2026-10-01 | each read cancelled only by what makes it stale; failures wiped with the member; comments say what is true now |
-| src/hooks/useScreenReady.tsx | 2026-10-15 | edited: takes the read state; a failed read is screen.failed |
+| src/hooks/useScreenReady.tsx | 2026-10-16 | edited: takes the read state; a failed read is screen.failed; a wait's start is screen.reading |
 | src/hooks/useScrollTrace.ts | 2026-10-15 | new: a scroll is one Sentry transaction, begin to rest |
 | src/hooks/useSheetPresence.ts | 2026-10-01 | written: five sheets' rise and fall, once |
+| src/hooks/useStateSaid.ts | 2026-10-16 | new: which state a room drew, empty or failed, to the E2E log |
 | src/hooks/useTextScale.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
 | src/hooks/useUpdateUser.ts | 2026-10-02 | read; sound |

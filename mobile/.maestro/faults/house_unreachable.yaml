@@ -1,0 +1,50 @@
+appId: com.reelhouse.society
+---
+# The house unreachable after sign-in: every read and every function answers
+# with a gateway's 503 page. Each room opened says it could not reach the
+# house; none is drawn empty or left waiting (e2e/fault-judges.mjs reads the
+# app's own lines). Then the house returns, and TRY AGAIN reads the paper.
+- launchApp:
+    clearState: true
+- runFlow: ../subflows/sign_in.yaml
+- runFlow:
+    file: ../subflows/fault.yaml
+    env:
+      FAULT: house_down
+
+# The paper, never read before: its failure, in its own words.
+- tapOn:
+    id: "dispatch-tab"
+- extendedWaitUntil:
+    visible: "The paper could not be reached."
+    timeout: 45000
+
+# A search of the catalogue, whose function is down too.
+- tapOn:
+    id: "darkroom-tab"
+- extendedWaitUntil:
+    visible:
+      id: "darkroom-search-input"
+    timeout: 20000
+- tapOn:
+    id: "darkroom-search-input"
+- inputText: "Casablanca"
+- extendedWaitUntil:
+    visible: "THE TELEGRAPH IS DOWN"
+    timeout: 45000
+
+# The house back: the paper, asked again, is read.
+- runFlow:
+    file: ../subflows/fault.yaml
+    env:
+      FAULT: none
+- tapOn:
+    id: "dispatch-tab"
+- extendedWaitUntil:
+    visible: "The paper could not be reached."
+    timeout: 20000
+- tapOn: "TRY AGAIN"
+- extendedWaitUntil:
+    visible:
+      id: "dispatch-filing"
+    timeout: 45000

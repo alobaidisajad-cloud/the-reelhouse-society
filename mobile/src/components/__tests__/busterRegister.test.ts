@@ -60,7 +60,11 @@ const DRAWS: Record<string, keyof Found> = { Buster: 'buster', BusterStill: 'sti
  */
 function censusOf(file: string, text: string): Found {
   const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  const local: Record<string, string> = { Buster: 'Buster', BusterStill: 'BusterStill', BusterEyes: 'BusterEyes', EmptyOffline: 'EmptyOffline', EmptyState: 'EmptyState' };
+  const local: Record<string, string> = {
+    Buster: 'Buster', BusterStill: 'BusterStill', BusterEyes: 'BusterEyes', EmptyOffline: 'EmptyOffline', EmptyState: 'EmptyState',
+    // EmptyStates' own card, drawn inside that file alone (it is not exported).
+    ...(file.split('\\').join('/').endsWith('src/components/EmptyStates.tsx') ? { StateCard: 'StateCard' } : {}),
+  };
   for (const st of sf.statements) {
     if (!ts.isImportDeclaration(st) || !ts.isStringLiteral(st.moduleSpecifier)) continue;
     if (!/\/(Buster|EmptyStates)$/.test(st.moduleSpecifier.text)) continue;
@@ -75,8 +79,9 @@ function censusOf(file: string, text: string): Found {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
       const name = local[node.tagName.getText(sf)];
       if (name && DRAWS[name]) found[DRAWS[name]] += 1;
-      // An empty state is his only when it is given his mood.
-      if (name === 'EmptyState' && node.attributes.properties.some((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === 'buster')) found.empty += 1;
+      // An empty state is his only when it is given his mood: EmptyState, or the card both of
+      // EmptyStates' states draw (StateCard), which the failure gives his mood itself.
+      if ((name === 'EmptyState' || name === 'StateCard') && node.attributes.properties.some((p) => ts.isJsxAttribute(p) && p.name.getText(sf) === 'buster')) found.empty += 1;
     }
     ts.forEachChild(node, visit);
   };

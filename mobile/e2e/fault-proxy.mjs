@@ -111,18 +111,24 @@ export function startProxy({ listen = 0, to, control = 0, logFile = null, run = 
   const takes = (path) => !!fault && (fault.route === undefined || new RegExp(fault.route).test(path)) && left > 0;
 
   /**
-   * A direction's sender: under `slow`, each chunk after its wait and at the rate, in order; else at
-   * once. `after` runs its step once every chunk sent before it has gone, so a side's end follows
-   * its last bytes rather than overtaking them.
+   * A direction's sender: under `slow`, as a slow link carries it: each chunk is in flight for the
+   * latency (± jitter) from when it arrived, all in flight at once, and leaves no sooner than the
+   * rate allows after the chunk before it, in order. So a reply takes its latency once and its
+   * bytes at the rate, never a latency for each of its chunks. Else at once. `after` runs its step
+   * once every chunk sent before it has gone, so a side's end follows its last bytes rather than
+   * overtaking them.
    */
   const sender = (to) => {
     let chain = Promise.resolve();
+    let freeAt = 0;
     return {
       send(chunk) {
         if (fault?.kind !== 'slow') { chain = chain.then(() => { if (!to.destroyed) to.write(chunk); }); return; }
         const { latencyMs, jitterMs, bytesPerSecond } = fault;
-        const wait = latencyMs + Math.round((Math.random() * 2 - 1) * jitterMs) + Math.ceil((chunk.length / bytesPerSecond) * 1000);
-        chain = chain.then(() => new Promise((r) => setTimeout(r, Math.max(0, wait)))).then(() => { if (!to.destroyed) to.write(chunk); });
+        const landed = Date.now() + latencyMs + Math.round((Math.random() * 2 - 1) * jitterMs);
+        freeAt = Math.max(freeAt, landed) + Math.ceil((chunk.length / bytesPerSecond) * 1000);
+        const leaveAt = freeAt;
+        chain = chain.then(() => new Promise((r) => setTimeout(r, Math.max(0, leaveAt - Date.now())))).then(() => { if (!to.destroyed) to.write(chunk); });
       },
       after(step) { chain = chain.then(step); },
     };
