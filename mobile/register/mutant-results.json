@@ -348,5 +348,12 @@
     "proof": "m2",
     "commit": "73b868e0cb9a0c363a7480277755feb9ab7b0ca3",
     "verdict": "caught"
+  },
+  {
+    "class": "E2E-phone-only-as-the-runner-has-it",
+    "mutant": "shape-variant-refusal-sent",
+    "proof": "m3",
+    "commit": "eaed6acb519e64926dda5fbaaf3ac0cc97753f24",
+    "verdict": "caught"
   }
 ]
