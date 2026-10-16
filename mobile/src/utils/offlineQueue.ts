@@ -19,6 +19,7 @@ import { logger } from './logger';
 import { applyIdMapToPayload, executeMutation } from './mutationExecutor';
 import { isNetworkError, isTransientError } from './networkError';
 import reelToast from './reelToast';
+import { e2eTrace } from './e2eTrace';
 import { queryClient } from '../lib/queryClient';
 import { settleDelivered } from '../stores/markCounts';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
@@ -206,13 +207,18 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
 }
 
 let isFlushing = false;
+/** A send asked for while one was running: run once more when it ends, so the ask is not lost. */
+let flushAgain = false;
 
 export async function flushOfflineQueue() {
     if (isFlushing) {
-        logger.debug('[OfflineSync] Flush already in progress. Skipping duplicate call.');
+        // The network may have come back while the running send waited on the old one.
+        flushAgain = true;
+        e2eTrace('queue.flush.again');
         return;
     }
     isFlushing = true;
+    e2eTrace('queue.flush', { queued: readQueue().length });
     try {
     // Nothing queued: no session read (SecureStore) at all.
     if (readQueue().length === 0) return;
@@ -353,6 +359,7 @@ export async function flushOfflineQueue() {
             // depend on this one (a critique on a filing not yet sent).
             if (isNetworkError(error)) {
                 logger.warn(`[OfflineSync] Network failure on ${mutation.type}. Halting queue to preserve causality.`);
+                e2eTrace('queue.flush.halted', { type: mutation.type, why: errMsg.slice(0, 80) });
                 break;
             } else if (errorClass === 'schema') {
                 // The STATEMENT is wrong (a missing column, a bad ON CONFLICT
@@ -415,6 +422,7 @@ export async function flushOfflineQueue() {
             return next;
         });
     writeQueue(finalQueue);
+    e2eTrace('queue.flush.done', { sent: successCount, failed: deadLetterQueue.length, left: finalQueue.length });
 
     // A follow sent from the queue shows in the following feeds now, not when
     // their timers next run. Only after a follow: nothing else changes whose
@@ -429,5 +437,9 @@ export async function flushOfflineQueue() {
     }
     } finally {
         isFlushing = false;
+        if (flushAgain) {
+            flushAgain = false;
+            void flushOfflineQueue();
+        }
     }
 }

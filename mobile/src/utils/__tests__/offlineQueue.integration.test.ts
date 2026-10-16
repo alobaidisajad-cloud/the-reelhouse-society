@@ -122,6 +122,42 @@ describe('Offline Queue — Integration Tests', () => {
     jest.clearAllMocks();
   });
 
+  describe('Invariant 8: a send asked for during a send is not lost', () => {
+    // The network came back while a send still waited on the old one (Sealed E2E
+    // 38837073968): the second ask ran nothing, and a write queued meanwhile sat
+    // until something else asked again.
+    it('runs once more when the running send ends, sending what was queued meanwhile', async () => {
+      const sent: string[] = [];
+      let answerFirst: () => void = () => {};
+      mockExecuteMutation.mockImplementation(async (mutation: QueuedMutation) => {
+        if (mutation.type === 'create_list') await new Promise<void>((resolve) => { answerFirst = resolve; });
+        sent.push(mutation.type);
+        return {};
+      });
+
+      enqueueMutation({ type: 'create_list', payload: { id: 'temp-1', user_id: 'u1', title: 'My List' } });
+      const first = flushOfflineQueue();
+      await new Promise((r) => setTimeout(r, 0));
+      enqueueMutation({ type: 'endorse_log', payload: { user_id: 'u1', type: 'endorse_log', target_log_id: 'log-1' } });
+      await flushOfflineQueue();
+      expect(sent).toEqual([]);
+
+      answerFirst();
+      await first;
+      await new Promise((r) => setTimeout(r, 0));
+      expect(sent).toEqual(['create_list', 'endorse_log']);
+      expect(getOfflineQueue()).toEqual([]);
+    });
+
+    it('runs once more only when asked', async () => {
+      mockExecuteMutation.mockResolvedValue({});
+      enqueueMutation({ type: 'create_list', payload: { id: 'temp-1', user_id: 'u1', title: 'My List' } });
+      await flushOfflineQueue();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(mockExecuteMutation).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('Invariant 1: Causal FIFO ordering', () => {
     it('executes mutations in the order they were enqueued', async () => {
       const executionOrder: string[] = [];

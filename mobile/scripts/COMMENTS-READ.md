@@ -852,6 +852,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/aRankBoughtOfflineIsKept.test.ts | 2026-10-03 | payments pass: queued for the store's account, with no network and no session |
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | 2026-10-03 | payments pass: a stand-in store drives every answer a configured one gives |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | 2026-10-03 | payments pass: the source pins went; the paths they guarded now run |
+| src/lib/__tests__/aRequestEndsInItsTime.test.ts | 2026-10-16 | new: a request with no answer is given up at its limit as not reached (storage waits longer); a caller's own cancel stays the caller's; an answer in time comes back untouched with no timer left |
 | src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/lib/__tests__/revenueCat.selectPackage.test.ts | — |  |
 | src/lib/__tests__/sentryMeasures.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -874,14 +875,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/revenueCat.ts | 2026-10-03 | payments pass: the SDK is required (Jest runs every store path); a rank is queued for the account the store sold to |
 | src/lib/scrollBridge.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lib/sentry.ts | 2026-10-15 | edited: tracesSampler keeps every scroll and screen opening, keepTransaction thins the rest; MAIN_ROUTES; startScrollSpan |
-| src/lib/supabase.ts | 2026-10-01 | the session kept by authSessionStorage; comments short |
+| src/lib/supabase.ts | 2026-10-16 | edited: each request given up at its time limit (fetchWithinLimit), a caller's cancel kept its own |
 | src/lib/tmdb.ts | 2026-10-02 | read; sound |
 | src/lib/tmdbErrors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lore/fragments.ts | 2026-10-02 | Read whole in the launch audit: the false 'Ledger is encrypted' line replaced. |
 | src/providers/__tests__/androidTracking.test.ts | — |  |
 | src/providers/__tests__/theMissingSettingsAreNamed.test.ts | 2026-10-02 | Written in the launch audit: the missing-settings message, one line each. |
 | src/providers/androidTracking.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/providers/AppBootstrapper.tsx | 2026-10-15 | edited: each auth event is answered by stores/authEvents |
+| src/providers/AppBootstrapper.tsx | 2026-10-16 | edited: the E2E build traces each change of network the app hears |
 | src/providers/FilmDetailProvider.tsx | 2026-10-01 | reviewsFailed and playVideo, said |
 | src/schemas/__tests__/aFeedRowWithANullIsStillDrawn.test.ts | 2026-10-01 | written with the null-status fix |
 | src/schemas/__tests__/schemas.test.ts | — |  |
@@ -1142,7 +1143,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/noPageAddsToTheInset.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/notificationColumns.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/offlineIsSaidOneWay.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/utils/__tests__/offlineQueue.integration.test.ts | 2026-10-15 | edited: writes carry their owner; another member's is kept for them, never sent |
+| src/utils/__tests__/offlineQueue.integration.test.ts | 2026-10-16 | edited: a send asked for during a send is not lost |
 | src/utils/__tests__/offlineQueue.test.ts | 2026-10-15 | edited: a queued write carries its member |
 | src/utils/__tests__/profileCountsCache.test.ts | — |  |
 | src/utils/__tests__/profileCountsCache.wiring.guard.test.ts | — |  |
@@ -1214,7 +1215,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/mutationExecutor.ts | 2026-10-03 | payments pass: a failed rank sync carries its status (kept and retried, not dead-lettered); the reply nobody read is gone |
 | src/utils/networkError.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/noticeRoute.ts | 2026-10-02 | Read whole (launch audit). Follows groupRoute's one argument. |
-| src/utils/offlineQueue.ts | 2026-10-15 | edited: each write stamped with its member and sent under their session alone; the clear keeps another's |
+| src/utils/offlineQueue.ts | 2026-10-16 | edited: a send asked for during a send runs once more after it; the E2E build traces each send |
 | src/utils/openNoticeFromPush.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/openSociety.ts | 2026-10-02 | Read whole (launch audit). URLSearchParams.set is implemented in RN 0.81's polyfill (checked). Sound. |
 | src/utils/prefetchPictures.ts | 2026-10-15 | new: the one caller of expo-image's prefetch |

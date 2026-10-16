@@ -17,6 +17,7 @@ production shows only its id, area, seriousness and count here.
 | WEB-change-unapproved | website | behaviour | OPEN | 0 | A change to the website's files reaches members without the user's approval |
 | E2E-scroll-leaves-target-under-bar | tests | code | OPEN | 0 | A flow's scroll stops with its target under the tab bar, and the next tap lands on a tab |
 | E2E-open-overlay-drawn-by-animation-alone | tests | behaviour | OPEN | 0 | An open overlay whose resting state is drawn only by its animated style, so an animated style not applied leaves it open and invisible |
+| NET-request-without-time-limit | runtime | behaviour | OPEN | 1 | A request to the server with no time limit of its own, so one caught by a change of network holds it, and the queued writes behind it, for as long as Android's connection waits |
 | E2E-ceiling-not-measured | tests | code | OPEN | 1 | A screen's time ceiling set from too few runs, so the shared emulator's spread reads as the app's |
 | CI-check-only-in-ci | tooling | code | OPEN | 1 | A check CI runs that no local gate runs, so a push meets it only in red |
 | SALON-channel | lounge | serious | OPEN | 1 | open in production |

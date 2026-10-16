@@ -109,6 +109,19 @@ classes:
     source: { kind: history, ref: "Sealed E2E 38790116312 (the film tray)" }
     fix: "Every view that rises on a shared value and takes touches, found by reading each file that pairs useAnimatedStyle with an open prop and touches: FilmActionTray (RISEN_SCRIM, RISEN_TRAY), Presence's PresenceView (restingStyle, every arriving view in the app), useArrival (ARRIVED), the Reels sections (sectionLayers SHOWN, HIDDEN) and the Concierge sheet (RISEN_BACKDROP, RISEN_CARD, and a close that no longer waits on its fall's callback). Each rests on plain styles once its motion's time is over, each held by its own test"
 
+  - id: NET-request-without-time-limit
+    title: A request to the server with no time limit of its own, so one caught by a change of network holds it, and the queued writes behind it, for as long as Android's connection waits
+    seriousness: behaviour
+    area: runtime
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "Sealed E2E 38837073968, offline_resilience: back online on mobile data, moved to Wi-Fi four seconds later, the offline log not sent in thirty" }
+    methods:
+      - { kind: running, file: src/lib/__tests__/aRequestEndsInItsTime.test.ts, test: "is given up at its limit as not reached, and the queue reads it as a network failure" }
+      - { kind: running, file: src/utils/__tests__/offlineQueue.integration.test.ts, test: "runs once more when the running send ends, sending what was queued meanwhile" }
+    fix: "the client's fetch (src/lib/supabase.ts fetchWithinLimit) gives up each request at 15 s, storage at 90 s, as a TimeoutError isNetworkError reads as not reached; a send of the queue asked for while one runs runs once more after it; the E2E build traces each change of network and each send. Proof still to come: offline_resilience passing on the nights' repeated runs, its traces read"
+    places: [emulator]
+
   - id: E2E-ceiling-not-measured
     title: A screen's time ceiling set from too few runs, so the shared emulator's spread reads as the app's
     seriousness: code

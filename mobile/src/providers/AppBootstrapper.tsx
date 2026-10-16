@@ -16,6 +16,7 @@ import { storage, useAuthStore } from '../stores/auth';
 import { answerAuthEvent } from '../stores/authEvents';
 import { hydrateFollowing } from '../stores/domain/socialSlice';
 import { useNotificationStore } from '../stores/notificationStore';
+import { e2eTrace } from '../utils/e2eTrace';
 import MemoryManager from '../utils/memoryManager';
 import { flushOfflineQueue } from '../utils/offlineQueue';
 import { resolveTier } from '../utils/tier';
@@ -264,6 +265,7 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
 
     // ── Background Syncing Engines ──
     const unsubscribeNet = NetInfo.addEventListener(state => {
+      e2eTrace('net', { type: state.type, connected: state.isConnected, reachable: state.isInternetReachable });
       if (state.isConnected && state.isInternetReachable && useAuthStore.getState().isAuthenticated) {
         flushOfflineQueue();
       }
