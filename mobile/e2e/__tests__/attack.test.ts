@@ -160,7 +160,7 @@ describe('every try is planned, filled and written out', () => {
     // A member's interactions are kept a second apart (check_interaction_rate_limit): a row laid
     // now would refuse each try of theirs in production's time zone.
     expect(answers.columns).toEqual(expect.arrayContaining(['id', 'user_id', 'type', 'created_at']));
-    const [laid, kept, none] = answers.dated;
+    const [laid = '', kept, none] = answers.dated;
     expect(Date.now() - Date.parse(laid)).toBeGreaterThan(29 * 86400e3);
     expect([kept, none]).toEqual(['mine', 'none']);
   });

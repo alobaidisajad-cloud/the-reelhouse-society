@@ -448,7 +448,6 @@
     "mobile/src/utils/endorsementGroupKey.ts": 1,
     "mobile/src/utils/groupNotifications.ts": 6,
     "mobile/src/utils/noticeRoute.ts": 1,
-    "mobile/src/utils/offlineQueue.ts": 28,
     "mobile/src/utils/softBreak.ts": 2,
     "mobile/src/utils/text.ts": 2,
     "mobile/src/utils/timeAgo.ts": 1,

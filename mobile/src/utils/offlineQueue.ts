@@ -321,8 +321,7 @@ export async function flushOfflineQueue() {
     // Each write's new retry count, stored with the queue at the end (as idMap is).
     const retryBumps: Record<string, number> = {};
 
-    for (let i = 0; i < queue.length; i++) {
-        const mutation = queue[i];
+    for (const mutation of queue) {
         try {
             // A payload that fails its schema is dead-lettered unsent.
             const schema = MutationSchemaMap[mutation.type];
