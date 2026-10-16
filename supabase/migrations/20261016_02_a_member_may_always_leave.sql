@@ -90,8 +90,8 @@ $$;
 --   get_profile_metrics, and no function, policy or view of the database names it; every call failed.
 DROP FUNCTION public.get_profile_metrics(uuid);
 
--- add-only (1): no shipped client uses it: granted to service_role alone, and no edge function, client or
---   database object calls get_user_lounges.
+-- add-only (1): no shipped client uses it: TestFlight build 41, the website and the edge functions never call
+--   get_user_lounges (granted to service_role alone), and no function, policy or view of the database names it.
 DROP FUNCTION public.get_user_lounges(uuid);
 
 -- add-only (1): no shipped client uses it: TestFlight build 41 saves a stack through save_stack and the website
