@@ -258,7 +258,8 @@ jobs:
     name: 🎬 The flows, shard ${{ matrix.shard }} of 3, in a sealed world
     needs: build
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    # The flows step's limit, and the app's download and the emulator's start before it.
+    timeout-minutes: 45
     strategy:
       # Every shard runs to its end: one failing never hides what the others find.
       fail-fast: false
@@ -484,13 +485,13 @@ jobs:
 
       - name: The flows, on an Android emulator
         # A backstop under the job's limit, so the steps after it still run. The
-        # shard's flows have their own budget inside it (E2E_FLOWS_MINUTES): a
-        # shard is measured at about 8 minutes, and the slowest runner seen ran
-        # every step twice as slow.
-        timeout-minutes: 28
+        # shard's flows have their own budget inside it: its minutes in
+        # mobile/e2e/shards.json, made from every run's measured times
+        # (flow-history.mjs); this outlasts the longest and what follows the
+        # flows (flowHistory.test.ts holds it).
+        timeout-minutes: 32
         env:
           E2E_SHARD: ${{ matrix.shard }}/3
-          E2E_FLOWS_MINUTES: '20'
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34

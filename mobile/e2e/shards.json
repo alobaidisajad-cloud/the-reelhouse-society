@@ -1,16 +1,36 @@
 {
-  "why": "Each shard is one machine of e2e.yml's flows job, balanced by the flow times of run 38756692560 (about 8 minutes each). Read by e2e/shards.mjs; shards.test.ts holds it to the flows.",
+  "why": "Each shard is one machine of e2e.yml flows job: what e2e/flow-history.mjs makes of e2e/flow-history.json (each part weighed by its 90th-percentile time over the measured runs; the launch and the keyboard probes on shard 1; each flow to the lightest shard, heaviest first; minutes = weight and a quarter). Read by e2e/shards.mjs and run-flows.sh; shards.test.ts and flowHistory.test.ts hold it.",
   "shards": [
     {
       "keyboardProbes": true,
       "launchWithAnimations": true,
-      "flows": ["auth_deep_link", "offline_resilience"]
+      "flows": [
+        "auth_deep_link",
+        "auth_flow",
+        "boot_verification",
+        "lobby_wall_flow"
+      ],
+      "minutes": 25
     },
     {
-      "flows": ["boot_verification", "flow_critical_path", "log_film_flow", "lounge_flow", "session_survives_restart"]
+      "flows": [
+        "browse_vault",
+        "darkroom_search",
+        "film_log",
+        "flow_critical_path",
+        "login_flow"
+      ],
+      "minutes": 24
     },
     {
-      "flows": ["auth_flow", "browse_vault", "darkroom_search", "error_recovery", "film_log", "lobby_wall_flow", "login_flow"]
+      "flows": [
+        "error_recovery",
+        "log_film_flow",
+        "lounge_flow",
+        "offline_resilience",
+        "session_survives_restart"
+      ],
+      "minutes": 24
     }
   ]
 }

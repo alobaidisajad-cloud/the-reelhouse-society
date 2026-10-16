@@ -18,7 +18,7 @@ const E2E = join(__dirname, '..');
 const SCRIPT = join(E2E, 'shards.mjs');
 const MAP_FILE = join(E2E, 'shards.json');
 
-type Shard = { flows: string[]; keyboardProbes?: boolean; launchWithAnimations?: boolean };
+type Shard = { flows: string[]; keyboardProbes?: boolean; launchWithAnimations?: boolean; minutes?: number };
 type ShardMap = { shards: Shard[] };
 type Plan = { index: number; total: number; flows: string[]; probes: boolean; launch: boolean; notices: string[] };
 interface Shards {
@@ -81,6 +81,14 @@ describe('a map that is wrong says so', () => {
     expect(ask('coverageProblems', two, ['a', 'b'])).toEqual(['c is named but is no flow']);
   });
 
+  it("a shard's minutes that are no whole number above 0", () => {
+    const odd = { shards: [{ ...two.shards[0], minutes: 0 }, { flows: ['c'], minutes: 12.5 }] };
+    expect(ask('mapProblems', odd)).toEqual([
+      "shard 1's minutes are 0, not a whole number above 0",
+      "shard 2's minutes are 12.5, not a whole number above 0",
+    ]);
+  });
+
   it('the probes or the launch in no shard, or in two', () => {
     const none = { shards: [{ flows: ['a'] }, { flows: ['b'], launchWithAnimations: true }] };
     expect(ask('mapProblems', none)).toEqual(['keyboardProbes must be in exactly one shard, and is in none']);
@@ -120,7 +128,8 @@ describe('a shard\'s plan', () => {
   it('is printed for run-flows.sh: probes, launch, notices, then each flow', () => {
     const r = spawnSync(process.execPath, [SCRIPT, MAP_FILE, '2/3', ...flows.map((f) => `mobile/.maestro/${f}.yaml`).sort()], { encoding: 'utf8' });
     expect(r.status).toBe(0);
-    expect(r.stdout).toBe(['probes no', 'launch no', ...map.shards[1].flows.slice().sort().map((f) => `flow mobile/.maestro/${f}.yaml`)].join('\n') + '\n');
+    expect(r.stdout).toBe(['probes no', 'launch no', `minutes ${map.shards[1].minutes}`,
+      ...map.shards[1].flows.slice().sort().map((f) => `flow mobile/.maestro/${f}.yaml`)].join('\n') + '\n');
     const bad = spawnSync(process.execPath, [SCRIPT, MAP_FILE, '4/3'], { encoding: 'utf8' });
     expect([bad.status, bad.stdout]).toEqual([1, 'E2E_SHARD is 4/3: no such shard\n']);
   });

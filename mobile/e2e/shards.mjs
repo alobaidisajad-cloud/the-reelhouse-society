@@ -34,6 +34,11 @@ export function mapProblems(map) {
   for (const [f, at] of where) {
     if (at.length > 1) problems.push(`${f} is named ${at.length} times (shards ${at.join(', ')})`);
   }
+  shards.forEach((s, i) => {
+    if (s?.minutes !== undefined && !(Number.isInteger(s.minutes) && s.minutes > 0)) {
+      problems.push(`shard ${i + 1}'s minutes are ${JSON.stringify(s.minutes)}, not a whole number above 0`);
+    }
+  });
   for (const part of ['keyboardProbes', 'launchWithAnimations']) {
     const at = shards.flatMap((s, i) => (s?.[part] === true ? [i + 1] : []));
     if (at.length !== 1) problems.push(`${part} must be in exactly one shard, and is in ${at.length ? at.join(', ') : 'none'}`);
@@ -80,7 +85,7 @@ export function planShard(map, spec, files) {
   for (const f of own.flows.filter((n) => !names.includes(n))) {
     notices.push(`${f} is named for this shard but is not among the flows, so it is not run`);
   }
-  return { ...shard, flows, probes: own.keyboardProbes === true, launch: own.launchWithAnimations === true, notices };
+  return { ...shard, flows, probes: own.keyboardProbes === true, launch: own.launchWithAnimations === true, minutes: own.minutes, notices };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
@@ -97,6 +102,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const plan = planShard(map, spec, files);
   if (plan instanceof Error) { console.log(plan.message); process.exit(1); }
   const out = [`probes ${plan.probes ? 'yes' : 'no'}`, `launch ${plan.launch ? 'yes' : 'no'}`];
+  if (plan.minutes !== undefined) out.push(`minutes ${plan.minutes}`);
   for (const n of plan.notices) out.push(`notice ${n}`);
   for (const f of plan.flows) out.push(`flow ${f}`);
   console.log(out.join('\n'));

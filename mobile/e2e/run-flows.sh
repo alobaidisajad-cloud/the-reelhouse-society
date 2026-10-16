@@ -110,11 +110,10 @@ trap 'kill $sampler $streamer 2>/dev/null' EXIT
 # One flow at a time: Maestro's records keep no screen for a failed step, so the
 # screen is read the moment a flow fails, before the next one relaunches the app.
 # The flows share a budget well inside the job's (a job that runs out is killed
-# with nothing explained), and each has at most ten minutes of it. It fits the
-# slowest runner measured: one ran every step about twice as slow (38610514483,
-# 38663626040, 38672855339 ran out at 42 minutes with no fault of the app).
+# with nothing explained), and each has at most ten minutes of it. One shard's
+# is the map's own (e2e/shards.json, made from the runs' measured times by
+# flow-history.mjs); with no shard, E2E_FLOWS_MINUTES, or 55.
 MINUTES=${E2E_FLOWS_MINUTES:-55}
-DEADLINE=$(( $(date +%s) + MINUTES * 60 ))
 FLOW_LIST="$(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort)"
 # One shard: its flows in this order, the probes and the launch with animations
 # on only where the map puts them, and its list of flows, which verify-writes.mjs
@@ -134,7 +133,10 @@ if [ -n "${E2E_SHARD:-}" ]; then
   grep -qx 'launch yes' "$OUT/shard-plan.txt" || LAUNCH=no
   sed -n 's/^notice //p' "$OUT/shard-plan.txt" > "$OUT/shard-notices.txt"
   for f in $FLOW_LIST; do basename "$f" .yaml; done > "$OUT/flows-run.txt"
+  planned="$(sed -n 's/^minutes //p' "$OUT/shard-plan.txt")"
+  [ -n "$planned" ] && MINUTES=$planned
 fi
+DEADLINE=$(( $(date +%s) + MINUTES * 60 ))
 FLOW_COUNT=$(echo "$FLOW_LIST" | grep -c .)
 # The flows' own time, kept from the probes (and their second
 # attempts): two minutes a flow, measured at about one and a half (runs
@@ -216,6 +218,10 @@ set_aside() {
   for f in "$@"; do [ -e "$f" ] && mv "$f" "$dest/"; done
   return 0
 }
+
+# The flows begin: the device's clock, so flow-history.mjs can time the launch,
+# each part from its start to the next, and the last to flows-ended.txt.
+device_clock > "$OUT/flows-began.txt"
 
 # ── ONE LAUNCH WITH ANIMATIONS ON ─────────────────────────────────────────────
 # Every flow runs with Android's animations off, and an animation config with an
@@ -462,6 +468,8 @@ for flow in $FLOW_LIST; do
     break
   done
 done
+# The flows end (an emulator gone leaves no clock, and the last part unmeasured).
+[ $gone -eq 0 ] && device_clock > "$OUT/flows-ended.txt"
 
 
 cat "$OUT/maestro.log"

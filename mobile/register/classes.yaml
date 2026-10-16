@@ -123,13 +123,13 @@ classes:
     places: [emulator]
 
   - id: E2E-ceiling-not-measured
-    title: A screen's time ceiling set from too few runs, so the shared emulator's spread reads as the app's
+    title: A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's
     seriousness: code
     area: tests
     status: OPEN
     count: 1
-    source: { kind: history, ref: "Sealed E2E 38812556019 and 38780996970; 12 runs in e2e/screen-history.json" }
-    fix: "each screen's two ceilings derived by ceilingsFrom from the recorded history, held by screenTimes.test. The one left: the Darkroom's 5.7 s on returning to focus at the start of auth_deep_link (run 38780996970), during Maestro's driver install, a 0.7 s system GC and 71 skipped frames; not yet shown to be the machine's"
+    source: { kind: history, ref: "Sealed E2E 38812556019 and 38780996970 (ceilings, 12 runs in e2e/screen-history.json); 38837073968 (shard 2's flows past their 20 minutes, the map balanced by one run)" }
+    fix: "each screen's two ceilings derived by ceilingsFrom from the recorded history, held by screenTimes.test; the shard map and each shard's minutes derived by shardsFrom from every run's measured part times (e2e/flow-history.json, 19 runs), held by flowHistory.test with the workflow's limits around them. The one left: the Darkroom's 5.7 s on returning to focus at the start of auth_deep_link (run 38780996970), during Maestro's driver install, a 0.7 s system GC and 71 skipped frames; not yet shown to be the machine's"
 
   - id: CI-check-only-in-ci
     title: A check CI runs that no local gate runs, so a push meets it only in red
