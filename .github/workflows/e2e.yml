@@ -569,6 +569,8 @@ jobs:
             ${{ runner.temp }}/screen.txt
             ${{ runner.temp }}/logcat-stream.txt
             ${{ runner.temp }}/flow-times.txt
+            ${{ runner.temp }}/flows-began.txt
+            ${{ runner.temp }}/flows-ended.txt
             ${{ runner.temp }}/retries.txt
             ${{ runner.temp }}/not-judged.txt
             ${{ runner.temp }}/own-crash-flows.txt

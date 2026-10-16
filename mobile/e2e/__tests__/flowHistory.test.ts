@@ -85,6 +85,20 @@ describe('the map a history makes', () => {
   });
 });
 
+describe("a shard's logs, kept", () => {
+  it('uploads every file the history reads from a run', () => {
+    // flows-began.txt and flows-ended.txt were written and left behind on the first run that had them.
+    const wf = parse(readFileSync(join(E2E, '..', '..', '.github', 'workflows', 'e2e.yml'), 'utf8')) as {
+      jobs: { flows: { steps: { name?: string; with?: { name?: string; path?: string } }[] } };
+    };
+    const upload = wf.jobs.flows.steps.find((s) => s.with?.name?.startsWith('e2e-logs'));
+    const paths = (upload?.with?.path ?? '').split('\n').map((p) => p.trim().replace('${{ runner.temp }}/', '')).filter(Boolean);
+    const read = [...readFileSync(SCRIPT, 'utf8').matchAll(/read\((?:join\()?'([a-z-]+(?:\.[a-z]+)?)'/g)].map((m) => m[1]);
+    expect(read).toEqual(expect.arrayContaining(['flow-times.txt', 'flows-began.txt', 'flows-ended.txt', 'logcat-stream.txt', 'shard-plan.txt', 'flow-hierarchy']));
+    expect(read.filter((f) => !paths.some((p) => p === f || p.startsWith(`${f}/`) || p === `${f}/`))).toEqual([]);
+  });
+});
+
 describe('the committed map', () => {
   it('is what the committed history makes of the flows the runner runs', () => {
     const made = answer<Shard[]>(`
