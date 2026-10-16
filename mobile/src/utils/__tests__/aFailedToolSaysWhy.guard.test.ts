@@ -13,6 +13,11 @@
  *   - keeps its answer, and the script reads that answer's output.
  * A run that throws its error output away (`'ignore'`) is named below with why
  * the cause is not needed there.
+ *
+ * And where a script catches that error, it reports the cause: never only the
+ * first line of Node's message, which is "Command failed:" and the command. A
+ * failed fetch is the same mistake by another door: its message is "fetch
+ * failed", and what failed is its cause.
  */
 import { readFileSync } from 'fs';
 import { join, relative } from 'path';
@@ -70,6 +75,57 @@ it('hears what every program it runs says, unless it names why not', () => {
   expect(counted).toEqual(Object.fromEntries(Object.entries(QUIET).map(([f, q]) => [f, q.count])));
   const unheard = all.filter((r) => !quiet(r) && !heard(r, r.text)).map((r) => `${r.file}: ${r.fn}(${r.args.slice(0, 60)}…)`);
   expect(unheard).toEqual([]);
+});
+
+/** The names in a text that run a program and throw when it fails: Node's own, and each helper wrapping one. */
+const throwingRunners = (text: string): string[] => {
+  const names = ['execSync', 'execFileSync'];
+  for (const m of text.matchAll(/(?:function\s+(\w+)\s*\(|(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?(?:\([^)]*\)|\w+)\s*=>)/g)) {
+    const body = text.slice((m.index ?? 0) + m[0].length).split(/\n(?=\S)/)[0] ?? '';
+    if (/\b(execSync|execFileSync)\(/.test(body)) names.push(m[1] ?? m[2] ?? '');
+  }
+  return names.filter(Boolean);
+};
+
+/** Each catch whose error came from a run or a fetch and whose report drops the cause, in words. */
+export function causesDropped(text: string): string[] {
+  const runners = throwingRunners(text);
+  const runs = new RegExp(`\\b(${runners.join('|')})\\(`);
+  const dropped: string[] = [];
+  for (const t of text.matchAll(/\btry\s*\{/g)) {
+    const open = (t.index ?? 0) + t[0].length - 1;
+    const close = closingOf(text, open);
+    const tried = text.slice(open, close);
+    const c = /^\s*catch\s*\((\w+)\)\s*\{/.exec(text.slice(close + 1));
+    if (!c?.[1]) continue;
+    const at = close + 1 + c[0].length - 1;
+    const caught = text.slice(at, closingOf(text, at));
+    const e = c[1];
+    const firstLine = new RegExp(`\\b${e}\\.message\\b[^;\\n]*?\\.split\\([^)]*\\)\\s*\\[0\\]`);
+    if (runs.test(tried) && firstLine.test(caught) && !new RegExp(`\\b${e}\\.stderr\\b`).test(caught)) {
+      dropped.push(`a run's failure told by the first line of its message: ${caught.trim().split('\n')[0]?.slice(0, 80)}`);
+    }
+    if (/\bfetch\(/.test(tried) && new RegExp(`\\b${e}\\.message\\b`).test(caught) && !new RegExp(`\\b${e}\\.cause\\b`).test(caught)) {
+      dropped.push(`a fetch's failure told without its cause: ${caught.trim().split('\n')[0]?.slice(0, 80)}`);
+    }
+  }
+  return dropped;
+}
+
+it('reports a failed run or fetch by its cause, never by Node\'s first line alone', () => {
+  const files = [...new Set(all.map((r) => r.file))];
+  expect(files.length).toBeGreaterThan(30);
+  const texts = scripts.map((p) => ({ file: relative(ROOT, p).split('\\').join('/'), text: readFileSync(p, 'utf8') }));
+  expect(texts.flatMap(({ file, text }) => causesDropped(text).map((d) => `${file}: ${d}`))).toEqual([]);
+});
+
+it('finds a dropped cause in a planted script, and none where the cause is read', () => {
+  const sh = 'function sh(cmd) {\n  return execSync(cmd).toString();\n}\n';
+  expect(causesDropped(`${sh}try { sh('supabase functions list'); } catch (e) {\n  console.warn(\`skipped: \${e.message.split('\\n')[0]}\`);\n}`)).toHaveLength(1);
+  expect(causesDropped(`${sh}try { sh('psql'); } catch (e) {\n  console.warn(\`skipped: \${(e.stderr || e.message).split('\\n')[0]}\`);\n}`)).toEqual([]);
+  expect(causesDropped("try { await fetch(url); } catch (e) {\n  console.warn(`skipped: ${e.message}`);\n}")).toHaveLength(1);
+  expect(causesDropped("try { await fetch(url); } catch (e) {\n  console.warn(`skipped: ${e.message} ${e.cause?.code}`);\n}")).toEqual([]);
+  expect(causesDropped("try { JSON.parse(x); } catch (e) {\n  console.warn(e.message.split('\\n')[0]);\n}")).toEqual([]);
 });
 
 it('says NO to a run whose answer is dropped, kept and never read, or thrown away', () => {

@@ -239,8 +239,9 @@ function redact(s) {
 }
 
 /**
- * WHY psql failed, from stderr (the message is only the command). One cause is
- * named outright: Supabase's direct host is IPv6-only, unreachable from IPv4.
+ * WHY psql or the supabase CLI failed, from stderr (the message's first line is
+ * only the command). One cause is named outright: Supabase's direct host is
+ * IPv6-only, unreachable from IPv4.
  */
 function why(e) {
   const err =
@@ -266,7 +267,7 @@ if (PROJECT_REF) {
     }
     checkedEdges = true;
   } catch (e) {
-    console.warn(`⚠ edge-function check skipped (supabase CLI failed): ${e.message.split('\n')[0]}`);
+    console.warn(`⚠ edge-function check skipped — the supabase CLI failed:\n    ${why(e)}`);
   }
 } else {
   console.warn('⚠ edge-function check skipped (set SUPABASE_PROJECT_REF).');
@@ -421,7 +422,8 @@ if (SUPABASE_URL && ANON_KEY) {
       checkedAnon = true;
     }
   } catch (e) {
-    console.warn(`⚠ anon posture check skipped (fetch failed): ${e.message.split('\n')[0]}`);
+    // fetch says only "fetch failed"; what failed (refused, not found, timed out) is its cause.
+    console.warn(`⚠ anon posture check skipped (fetch failed): ${e.message}${e.cause ? ` — ${e.cause.code ?? e.cause.message}` : ''}`);
   }
 } else {
   console.warn('⚠ anon posture check skipped (set EXPO_PUBLIC_SUPABASE_URL + _ANON_KEY).');

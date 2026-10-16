@@ -212,7 +212,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/resumeSaysWhereTheWorkStands.test.ts` | APPLIED.txt, against the shared migration list, and resume.cjs's own text for how it finds the private folder: the record of what production has applied is a file, not a render. |
 | `src/utils/__tests__/everySecretIsInventoried.test.ts` | Every functions tree, script, workflow, the schema snapshot and eas.json, for the names they read, against the inventory: which secret a file reads is spelled in the file. |
 | `src/utils/__tests__/everyEventIsAwaited.guard.test.ts` | Every test file, parsed, for each fireEvent, act and renderHook nobody waits for: a sweep of the tests themselves, which no render of a screen sees. |
-| `src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts` | Every script that ships, for each run of another program: its answer heard, or why not named. |
+| `src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts` | Every script that ships, for each run of another program: its answer heard, or why not named; each catch of a run or a fetch reporting the cause. |
 | `src/utils/__tests__/aSecondPressWaitsOutTheDebounce.guard.test.ts` | Every test file, parsed, for a control pressed again with no time passed: a sweep of the tests themselves. |
 | `src/utils/__tests__/anAbsenceIsAnchored.guard.test.ts` | Every test file, parsed, for a test that only finds things absent on a screen: a sweep of the tests themselves. |
 | `src/utils/__tests__/revenuecatWebhookDecide.test.ts` | The app's limit on a call to the house (src/lib/supabase.ts), which the store's own limit, in Deno, must stay under: no one runtime holds both. |

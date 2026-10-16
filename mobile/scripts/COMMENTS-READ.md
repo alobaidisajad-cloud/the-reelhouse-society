@@ -261,7 +261,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/await-events.cjs | 2026-10-16 | new: the finder of TST-08, a fireEvent, act or renderHook nobody waits for, in every test file; --fix waits for each where the code can, making the function async |
 | scripts/bundle-size.js | 2026-10-15 | edited: --keep leaves the export for release-guard.cjs; read whole: sound |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route); its files come from the shared file list (test-utils/universe.js) |
-| scripts/check-backend-live.mjs | 2026-10-15 | edited: the address is read from, and saved to, the private settings file outside the repo and OneDrive; its files come from the shared file list (test-utils/universe.js) |
+| scripts/check-backend-live.mjs | 2026-10-16 | edited: the supabase CLI's failure told by its own reason (why), a failed fetch by its cause |
 | scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added; its files come from the shared file list (test-utils/universe.js) |
 | scripts/commit.cjs | 2026-10-15 | new: a commit of exactly the paths named; nothing staged before rides along |
 | scripts/contracts-ran.cjs | 2026-10-16 | new: read against jest --json's record and contractEnv.ts's skip |

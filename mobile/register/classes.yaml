@@ -310,7 +310,8 @@ classes:
     methods:
       - { kind: static, file: src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts, test: "hears what every program it runs says, unless it names why not" }
       - { kind: static, file: src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts, test: "says NO to a run whose answer is dropped, kept and never read, or thrown away" }
-    fix: "every run of another program in the scripts read (76): gates-check says psql's reason; secrets-planted and the layout self-test say the tool's words when it writes no report (each read a missing file instead); flow-history fails in gh's words unless the shard truly has no logs (any failure was 'no logs'); the load probe shows psql's error beside a missing plan; resume says why gh could not be asked. The guard holds every run to inherit, throw, or have its answer's output read, and names the four that drop it on purpose"
+      - { kind: static, file: src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts, test: "reports a failed run or fetch by its cause, never by Node's first line alone" }
+    fix: "every run of another program in the scripts read (76): gates-check says psql's reason; secrets-planted and the layout self-test say the tool's words when it writes no report (each read a missing file instead); flow-history fails in gh's words unless the shard truly has no logs (any failure was 'no logs'); the load probe shows psql's error beside a missing plan; resume says why gh could not be asked; check-backend-live told the supabase CLI's failure by the first line of Node's message (the command alone) and a failed fetch without its cause. The guard holds every run to inherit, throw, or have its answer's output read, names the four that drop it on purpose, and holds every catch of a run or a fetch to its cause"
     places: [none]
 
   - id: SEC-private-value-in-a-tool-error
