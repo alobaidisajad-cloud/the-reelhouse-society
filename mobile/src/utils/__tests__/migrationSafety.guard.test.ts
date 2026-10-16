@@ -16,6 +16,7 @@ import { existsSync, readFileSync } from 'fs';
 import { homedir } from 'os';
 import { basename, dirname, join } from 'path';
 import { files as universe } from '@/test-utils/universe';
+import { readCode } from '@/test-utils/readCode';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const { lint } = require('../../../scripts/migration-lint.cjs') as {
@@ -165,6 +166,45 @@ describe('the clients in members\' hands', () => {
       }
     }
     expect(leaves).toEqual([]);
+  });
+
+  describe("a client's flows wait as long as this checkout's: a flow's time is the harness's, never the app's", () => {
+    type Raise = { command: string; waitsFor: string; from: number; to: number };
+    const { raiseWaits } = require('../../../e2e/old-clients.cjs') as { raiseWaits: (client: string, own: string) => { text: string; raised: Raise[] } };
+    // Build 41's lobby_wall_flow as its patch (707c1721) lays it: run 38867137811 ran out of its 20 s four swipes in.
+    const BUILD_41_LOBBY = [
+      'appId: com.reelhouse.society', '---', '- launchApp:', '    clearState: true', '- runFlow: subflows/sign_in.yaml',
+      '- tapOn:', '    id: "home-tab"', '- assertVisible: "The Lobby"', '- scrollUntilVisible:',
+      '    element: "The projection booth never closes."', '    direction: DOWN', '    timeout: 20000',
+      '- assertNotVisible: "PROJECTION FAILURE"', '',
+    ].join('\n');
+
+    it("raises build 41's Lobby scroll to this checkout's, and changes nothing else in the flow", () => {
+      const own = readFileSync(join(MOBILE, '.maestro', 'lobby_wall_flow.yaml'), 'utf8');
+      const { text, raised } = raiseWaits(BUILD_41_LOBBY, own);
+      expect(raised).toEqual([{ command: 'scrollUntilVisible', waitsFor: 'The projection booth never closes.', from: 20000, to: 60000 }]);
+      expect(text).toBe(BUILD_41_LOBBY.replace('timeout: 20000', 'timeout: 60000'));
+    });
+
+    it('matches a wait by its command and what it waits for, an id or a text, nested commands included', () => {
+      const client = '- extendedWaitUntil:\n    visible:\n      id: "email-input"\n    timeout: 10000\n- runFlow:\n    commands:\n      - scrollUntilVisible:\n          element: "Sign in"\n          timeout: 5000\n';
+      const own = '- extendedWaitUntil:\n    visible:\n      id: "email-input"\n    timeout: 15000\n- scrollUntilVisible:\n    element: "Sign in"\n    timeout: 9000\n- scrollUntilVisible:\n    element: "Elsewhere"\n    timeout: 90000\n';
+      expect(raiseWaits(client, own).raised).toEqual([
+        { command: 'extendedWaitUntil', waitsFor: 'email-input', from: 10000, to: 15000 },
+        { command: 'scrollUntilVisible', waitsFor: 'Sign in', from: 5000, to: 9000 },
+      ]);
+    });
+
+    it('never lowers a wait, and never touches one this checkout does not have', () => {
+      const client = '- scrollUntilVisible:\n    element: "A"\n    timeout: 30000\n- extendedWaitUntil:\n    visible: "B"\n    timeout: 4000\n';
+      const own = '- scrollUntilVisible:\n    element: "A"\n    timeout: 20000\n- extendedWaitUntil:\n    visible: "C"\n    timeout: 40000\n';
+      expect(raiseWaits(client, own)).toEqual({ text: client, raised: [] });
+    });
+
+    it('is applied by the tree a client runs in, after its patches', () => {
+      const tree = readCode('e2e/old-client-tree.mjs');
+      expect(tree.indexOf('raiseWaits(')).toBeGreaterThan(tree.indexOf("git('checkout', p.from, '--', p.path)"));
+    });
   });
 
   describe('a client\'s own crashes: fixed since in the app, so its run is not failed by them', () => {

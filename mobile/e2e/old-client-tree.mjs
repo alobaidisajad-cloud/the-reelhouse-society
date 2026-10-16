@@ -10,15 +10,17 @@
  * run-flows.sh and the recordings), mobile/scripts (the snapshot check) and
  * mobile/supabase (production's shape, and the migrations still pending). Then
  * each patch mobile/e2e/old-clients.json lists for the client is laid over it
- * from its own commit, and nothing else: the record is the whole difference.
+ * from its own commit, and each of its flows waits at least as long as this
+ * checkout's same flow; nothing else: the record and the waits are the whole
+ * difference.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync, rmSync } from 'node:fs';
+import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import oldClients from './old-clients.cjs';
 
-const { HARNESS, clientNamed } = oldClients;
+const { HARNESS, clientNamed, raiseWaits } = oldClients;
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MOBILE = join(HERE, '..');
@@ -38,6 +40,19 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   for (const p of client.patches ?? []) {
     git('checkout', p.from, '--', p.path);
     console.log(`  patched ${p.path} from ${p.from.slice(0, 8)}: ${p.why}`);
+  }
+  // Each of the client's flows waits at least as long as this checkout's same flow (old-clients.cjs, raiseWaits).
+  const flows = new Set([
+    ...git('ls-tree', '-r', '--name-only', client.commit, 'mobile/.maestro').split('\n'),
+    ...(client.patches ?? []).map((p) => p.path),
+  ].filter((f) => f.startsWith('mobile/.maestro/') && f.endsWith('.yaml')));
+  for (const flow of [...flows].sort()) {
+    let own;
+    try { own = git('show', `HEAD:${flow}`); } catch { continue; }
+    const { text, raised } = raiseWaits(readFileSync(join(ROOT, flow), 'utf8'), own);
+    if (!raised.length) continue;
+    writeFileSync(join(ROOT, flow), text);
+    for (const r of raised) console.log(`  ${flow}: ${r.command} for "${r.waitsFor}" waits ${r.to} ms, as this checkout's (${r.from} in the client's)`);
   }
   console.log(`${client.name}: its app, from ${client.commit.slice(0, 8)}, over this checkout's harness.`);
 }

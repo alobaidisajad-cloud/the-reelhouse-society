@@ -2,8 +2,9 @@
  * Reading mobile/e2e/old-clients.json: which shipped clients are checked, and
  * whether a client's record is whole. Shared by db/old-clients.mjs (each client
  * held to the proposed schema), old-client-tree.mjs (each client run end to
- * end) and run-flows.sh (a client's own crashes, for the crash gate), and held
- * by migrationSafety.guard.test.ts.
+ * end, its flows' waits as long as this checkout's) and run-flows.sh (a
+ * client's own crashes, for the crash gate), and held by
+ * migrationSafety.guard.test.ts.
  *
  *   node mobile/e2e/old-clients.cjs --own-crashes "TestFlight build 41"
  *
@@ -46,6 +47,53 @@ const clientNamed = (record, name) => {
   return { client: c };
 };
 
+/**
+ * Each command of a flow that waits: its line, its name, what it waits for (an
+ * element's text or id) and its timeout. A command is its "- name:" line and
+ * the lines under it up to the next command, nested ones included as their own.
+ */
+const waitsIn = (yaml) => {
+  const lines = yaml.replace(/\r\n/g, '\n').split('\n');
+  const starts = lines.map((l, i) => (/^\s*- \w+:/.test(l) ? i : -1)).filter((i) => i >= 0);
+  return starts.flatMap((at, k) => {
+    const block = lines.slice(at, starts[k + 1] ?? lines.length);
+    const timeout = block.findIndex((l) => /^\s*timeout:\s*\d+\s*$/.test(l));
+    if (timeout === -1) return [];
+    const named = block.map((l) => /^\s*(?:element|id|text|visible):\s*"([^"]+)"\s*$/.exec(l)).find(Boolean);
+    return [{
+      line: at + timeout,
+      command: (/^\s*- (\w+):/.exec(lines[at]) ?? [])[1] ?? '',
+      waitsFor: named ? named[1] : '',
+      ms: Number((/(\d+)/.exec(block[timeout]) ?? [])[1] ?? 0),
+    }];
+  });
+};
+
+/**
+ * A shipped client's flow, each wait given at least the time this checkout's
+ * same flow gives the same command waiting for the same thing: a flow's time is
+ * the harness's (how slow the emulator is), never the app's, and one this
+ * checkout raised because a runner ran out of it must not fail the client on
+ * the next slow runner. Never lowers one. Returns the text and each raise.
+ */
+const raiseWaits = (clientYaml, ownYaml) => {
+  const longest = new Map();
+  for (const w of waitsIn(ownYaml)) {
+    const key = `${w.command}\u0000${w.waitsFor}`;
+    longest.set(key, Math.max(longest.get(key) ?? 0, w.ms));
+  }
+  const lines = clientYaml.replace(/\r\n/g, '\n').split('\n');
+  const raised = [];
+  for (const w of waitsIn(clientYaml)) {
+    // A wait whose target is not read is never matched: it could be any other.
+    const ms = w.waitsFor ? longest.get(`${w.command}\u0000${w.waitsFor}`) ?? 0 : 0;
+    if (ms <= w.ms) continue;
+    lines[w.line] = lines[w.line].replace(/\d+/, String(ms));
+    raised.push({ command: w.command, waitsFor: w.waitsFor, from: w.ms, to: ms });
+  }
+  return { text: lines.join('\n'), raised };
+};
+
 /** Every checked client, each whole, or an error naming the first that is not. */
 const toCheck = (record) => record.clients.filter((c) => c.checked).map((c) => {
   const { client, refuse } = clientNamed(record, c.name);
@@ -63,7 +111,7 @@ const ownCrashFaults = (client, { classIds, commitExists }) => (client.ownCrashe
   ...(commitExists(o.fixedIn) ? [] : [`${client.name}: own crash ${o.class} is fixed in ${o.fixedIn}, which is not a commit git has`]),
 ]);
 
-module.exports = { HARNESS, clientNamed, toCheck, ownCrashFaults };
+module.exports = { HARNESS, clientNamed, toCheck, ownCrashFaults, raiseWaits, waitsIn };
 
 if (require.main === module) {
   const args = process.argv.slice(2);

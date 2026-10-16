@@ -187,8 +187,8 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
 | e2e/load/probe.mjs | 2026-10-03 | read whole: the paper in all four orders, critiques newest first, the following feed for a member of 2,000 follows; nested plans via auto_explain |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
-| e2e/old-client-tree.mjs | 2026-10-15 | new |
-| e2e/old-clients.cjs | 2026-10-16 | edited: the harness keeps test-utils, whose shared file list its scripts read; a patch may not touch it |
+| e2e/old-client-tree.mjs | 2026-10-16 | edited: after the patches, each of the client's flows waits at least as long as this checkout's same flow |
+| e2e/old-clients.cjs | 2026-10-16 | edited: waitsIn reads each waiting command's target and time; raiseWaits gives a shipped client's flow at least this checkout's time for the same wait, never less |
 | e2e/prefetch-download-only.mjs | 2026-10-15 | new: the APK's prefetch on CachePolicy.DISK calls downloadOnly; not run for a shipped client |
 | e2e/run-flows.sh | 2026-10-16 | edited: a shard's budget is its minutes in the map; the device clock as the flows begin and end (flows-began.txt, flows-ended.txt) |
 | e2e/runtime-dump.mjs | 2026-10-15 | new: the phone's runtime from the device log, held to the committed copy |
@@ -1141,7 +1141,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
-| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-16 | edited: the shipped clients' harness reads nothing outside itself |
+| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-16 | edited: a shipped client's flows wait as long as this checkout's: build 41's Lobby scroll raised, matched by command and target, never lowered, applied after the patches |
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
 | src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | payments pass: a failed rank sync carries its status |
 | src/utils/__tests__/networkError.test.ts | — |  |
