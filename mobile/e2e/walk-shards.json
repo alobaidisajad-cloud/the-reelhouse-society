@@ -1,0 +1,10 @@
+{
+  "why": "The variant runs' one machine (e2e.yml with a variant, WORKLIST P0.86): no flows (E2E_FLOWS=none), the route walk alone (e2e/walk-routes.mjs). Read by e2e/shards.mjs and run-flows.sh; walkRoutes.test.ts holds it.",
+  "probesElsewhere": "The keyboard probes and the launch with animations run in the normal rounds (e2e/shards.json); a variant run walks the routes.",
+  "shards": [
+    {
+      "flows": [],
+      "minutes": 25
+    }
+  ]
+}

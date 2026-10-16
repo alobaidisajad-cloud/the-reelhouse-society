@@ -498,3 +498,12 @@ mutants:
       - file: logcat.txt
         find: "10-16 18:01:39.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {\"name\":\"film\",\"ms\":8000}\n"
         replace: ""
+
+  - id: shape-route-capture-unchecked
+    class: E2E-route-never-opened
+    source: shape
+    edits:
+      - file: e2e/route-judges.mjs
+        find: "  if (!existsSync(path)) return 'not captured';\n"
+        replace: "  if (!existsSync(path)) return null;\n"
+    proof: { file: e2e/__tests__/routeJudges.test.ts, test: "names a route never captured, one captured empty, and one captured as no picture" }

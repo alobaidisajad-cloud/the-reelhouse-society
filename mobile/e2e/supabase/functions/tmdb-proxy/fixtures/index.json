@@ -10,6 +10,8 @@
  "/movie/289?append_to_response=credits%2Cvideos%2Crecommendations%2Csimilar%2Cwatch%2Fproviders%2Crelease_dates": "movie_289_append_to_response_credits_2Cvideos_2Crecommendations_2Csimilar_2Cwatc.ef92894a.json",
  "/movie/603?append_to_response=credits%2Cvideos%2Crecommendations%2Csimilar%2Cwatch%2Fproviders%2Crelease_dates": "movie_603_append_to_response_credits_2Cvideos_2Crecommendations_2Csimilar_2Cwatc.46048354.json",
  "/movie/78?append_to_response=credits%2Cvideos%2Crecommendations%2Csimilar%2Cwatch%2Fproviders%2Crelease_dates": "movie_78_append_to_response_credits_2Cvideos_2Crecommendations_2Csimilar_2Cwatch.9da47cc6.json",
+ "/person/608": "person_608.4b9b6dbe.json",
+ "/person/608/movie_credits": "person_608_movie_credits.b4ca27e4.json",
  "/search/keyword?query=bl": "search_keyword_query_bl.810a6d5a.json",
  "/search/keyword?query=bla": "search_keyword_query_bla.5e69f3e1.json",
  "/search/keyword?query=blad": "search_keyword_query_blad.25ca5a5f.json",

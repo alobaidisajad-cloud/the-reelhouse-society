@@ -26,6 +26,12 @@ on:
         type: boolean
         required: false
         default: false
+      # A variant run (WORKLIST P0.86): every route opened cold by deep link and captured
+      # (e2e/walk-routes.mjs), on one machine. "plain": the phone as every run has it.
+      variant:
+        type: string
+        required: false
+        default: ''
   # A build already in members' hands, by its name in mobile/e2e/old-clients.json:
   # its app is laid over this harness, and it runs against production as it will
   # be (e2e-old-clients.yml calls this; nothing else names a client).
@@ -46,6 +52,11 @@ on:
         type: boolean
         required: false
         default: false
+      # A variant run instead of the flows (see workflow_dispatch above).
+      variant:
+        type: string
+        required: false
+        default: ''
 
 # A run is never cancelled by a later push: each commit's run finishes and is
 # read. Its group is its own commit, because GitHub keeps one waiting run per
@@ -53,7 +64,7 @@ on:
 # left the middle commit with no run at all. A night's rounds of one commit are
 # each their own group, for the same reason.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.sha }}${{ inputs.round }}${{ inputs.faults && '-faults' || '' }}
+  group: ${{ github.workflow }}-${{ github.sha }}${{ inputs.round }}${{ inputs.faults && '-faults' || '' }}${{ inputs.variant && format('-{0}', inputs.variant) || '' }}
   cancel-in-progress: false
 
 permissions:
@@ -63,15 +74,19 @@ env:
   # Which flows run, for run-flows.sh, verify-writes.mjs and the verdict alike:
   # every flow in the folder (subflows/ holds only the steps they share); the
   # fault runs' own folder when faults is on.
-  E2E_FLOWS: ${{ inputs.faults && 'mobile/.maestro/faults' || 'mobile/.maestro' }}
+  E2E_FLOWS: ${{ inputs.faults && 'mobile/.maestro/faults' || inputs.variant && 'none' || 'mobile/.maestro' }}
   # A fault run: run-flows.sh clears the fault before each flow and judges the run
   # with e2e/fault-judges.mjs instead of the screens' times.
   E2E_FAULTS: ${{ inputs.faults && '1' || '' }}
+  # A variant run: no flows, the route walk (run-flows.sh), its rooms seeded (seed.mjs).
+  E2E_VARIANT: ${{ inputs.variant }}
+  E2E_WALK: ${{ inputs.variant && '1' || '' }}
+  E2E_SEED_WALK: ${{ inputs.variant && '1' || '' }}
   # The shipped client this run is of, or empty for the app it is run on.
   E2E_OLD_CLIENT: ${{ inputs.client }}
   # Its name on the run's artifacts, so two clients, or two rounds, called in one
   # run never share one.
-  E2E_TAG: ${{ inputs.client && format(' - {0}', inputs.client) || inputs.round && format(' - round {0}', inputs.round) || inputs.faults && ' - faults' || '' }}
+  E2E_TAG: ${{ inputs.client && format(' - {0}', inputs.client) || inputs.round && format(' - round {0}', inputs.round) || inputs.faults && ' - faults' || inputs.variant && format(' - {0}', inputs.variant) || '' }}
 
 # Three jobs. The app is built once (build), and its flows run on three
 # machines at once (flows), each its part of mobile/e2e/shards.json: a machine
@@ -273,7 +288,7 @@ jobs:
           if-no-files-found: ignore
 
   flows:
-    name: 🎬 The flows, shard ${{ matrix.shard }} of ${{ inputs.faults && 1 || 3 }}, in a sealed world
+    name: 🎬 The flows, shard ${{ matrix.shard }} of ${{ (inputs.faults || inputs.variant) && 1 || 3 }}, in a sealed world
     needs: build
     runs-on: ubuntu-24.04
     # The flows step's limit, and the app's download and the emulator's start before it.
@@ -283,8 +298,8 @@ jobs:
       fail-fast: false
       matrix:
         # The shards of mobile/e2e/shards.json (shards.test.ts holds the count); the fault
-        # runs' one, of mobile/e2e/fault-shards.json.
-        shard: ${{ fromJSON(inputs.faults && '[1]' || '[1, 2, 3]') }}
+        # runs' one, of mobile/e2e/fault-shards.json, and a variant run's, of walk-shards.json.
+        shard: ${{ fromJSON((inputs.faults || inputs.variant) && '[1]' || '[1, 2, 3]') }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -520,8 +535,8 @@ jobs:
         # flows (flowHistory.test.ts holds it).
         timeout-minutes: 32
         env:
-          E2E_SHARD: ${{ matrix.shard }}/${{ inputs.faults && 1 || 3 }}
-          E2E_SHARD_MAP: ${{ inputs.faults && 'mobile/e2e/fault-shards.json' || 'mobile/e2e/shards.json' }}
+          E2E_SHARD: ${{ matrix.shard }}/${{ (inputs.faults || inputs.variant) && 1 || 3 }}
+          E2E_SHARD_MAP: ${{ inputs.faults && 'mobile/e2e/fault-shards.json' || inputs.variant && 'mobile/e2e/walk-shards.json' || 'mobile/e2e/shards.json' }}
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34
@@ -619,6 +634,11 @@ jobs:
             ${{ runner.temp }}/phone-runtime.json
             ${{ runner.temp }}/runtime-dump.txt
             ${{ runner.temp }}/screen-times.txt
+            ${{ runner.temp }}/fault-judges.txt
+            ${{ runner.temp }}/walk-plan.txt
+            ${{ runner.temp }}/walk.log
+            ${{ runner.temp }}/route-judges.txt
+            ${{ runner.temp }}/walk
             ${{ runner.temp }}/memory.txt
             ${{ runner.temp }}/shard-plan.txt
             ${{ runner.temp }}/flows-run.txt
@@ -658,10 +678,10 @@ jobs:
           pattern: e2e-logs-*${{ env.E2E_TAG }}
           path: ${{ runner.temp }}/shards
 
-      # The fault runs' one machine judged itself (e2e/fault-judges.mjs): the screens' ceilings and
-      # the shards between them are the normal rounds' to judge.
+      # The fault and variant runs' one machine judged itself (fault-judges.mjs, route-judges.mjs):
+      # the screens' ceilings and the shards between them are the normal rounds' to judge.
       - name: What no one shard can judge
-        if: ${{ !inputs.faults }}
+        if: ${{ !inputs.faults && !inputs.variant }}
         run: |
           set +e
           node mobile/e2e/shard-verdict.mjs "$RUNNER_TEMP/shards" --shards 3 --name "e2e-logs-{i}${E2E_TAG}" \

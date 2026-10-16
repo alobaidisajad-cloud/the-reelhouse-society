@@ -81,6 +81,8 @@ const NOT_JUDGES: Record<string, string> = {
   'screen.mjs': 'it prints what was on the screen, as words',
   'scrub.mjs': 'it takes secrets out of kept logs',
   'shards.mjs': 'it splits the flows between machines',
+  'walk-routes.mjs': 'it plans the route walk and writes its flow; route-judges.mjs judges what it captured',
+  'route-judges.mjs': 'its captures are pictures, which a judge\'s text fixtures cannot carry: a shape mutant edits the judge itself (shape-route-capture-unchecked)',
 };
 
 it('reads the registry: every mutant once, by an id that says its source', () => {

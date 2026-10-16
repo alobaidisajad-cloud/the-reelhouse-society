@@ -191,6 +191,19 @@ classes:
     fix: "every shared empty room and failure writes which it is to the E2E build's log (useStateSaid; PaperEmpty's call sites each say which by a required prop); the fault runs' judge (e2e/fault-judges.mjs, mutant judge-failure-drawn-empty) refuses an empty room in a flow whose fault fails every read, and a flow where no failure was said"
     places: [emulator]
 
+  - id: E2E-route-never-opened
+    title: A route no flow opens is never seen by any run, so a screen that crashes, freezes or cannot read when opened by its link passes every run
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.86" }
+    methods:
+      - { kind: static, file: e2e/__tests__/routes.test.ts, test: "lists every route file, and nothing that is not one" }
+      - { kind: running, file: e2e/__tests__/routeJudges.test.ts, test: "names a route never captured, one captured empty, and one captured as no picture" }
+    fix: "e2e/routes.json lists every route file with its deep link (held whole against app/); the variant runs walk them all cold by link (e2e/walk-routes.mjs, seeded ids read back by name) and route-judges.mjs fails a route never captured (mutant shape-route-capture-unchecked); app-crashes.mjs judges the walk's crashes and freezes"
+    places: [emulator]
+
   - id: E2E-wait-without-end
     title: A screen's wait (its spinner) never ends, or outlasts its limit, under a broken network, and the run passes because the flow waited and went on
     seriousness: behaviour

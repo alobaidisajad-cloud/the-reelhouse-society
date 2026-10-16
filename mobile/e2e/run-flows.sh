@@ -21,6 +21,9 @@
 # With E2E_SHARD ("i/N"), it is one of e2e.yml's N machines: it runs only its
 # part of e2e/shards.json (e2e/shards.mjs), and e2e/shard-verdict.mjs reads all
 # N for what no one machine can judge. With none, it runs everything.
+# A fault run (E2E_FAULTS) clears the fault before each flow and is judged by
+# e2e/fault-judges.mjs; with E2E_WALK, every route is then opened cold by its
+# link and captured (e2e/walk-routes.mjs, judged by e2e/route-judges.mjs).
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 # Maestro sends usage analytics unless told not to; nothing leaves the sealed world.
@@ -114,7 +117,8 @@ trap 'kill $sampler $streamer 2>/dev/null' EXIT
 # is the map's own (e2e/shards.json, made from the runs' measured times by
 # flow-history.mjs); with no shard, E2E_FLOWS_MINUTES, or 55.
 MINUTES=${E2E_FLOWS_MINUTES:-55}
-FLOW_LIST="$(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort)"
+# E2E_FLOWS=none: no flows at all (a variant run that only walks the routes, e2e/walk-shards.json).
+if [ "$FLOWS" = "none" ]; then FLOW_LIST=""; else FLOW_LIST="$(ls "$FLOWS"/*.yaml | grep -v '/config\.yaml$' | sort)"; fi
 # One shard: its flows in this order, the probes and the launch with animations
 # on only where the map puts them, and its list of flows, which verify-writes.mjs
 # and shard-verdict.mjs read.
@@ -476,6 +480,34 @@ done
 # The flows end (an emulator gone leaves no clock, and the last part unmeasured).
 [ $gone -eq 0 ] && device_clock > "$OUT/flows-ended.txt"
 
+# ── THE ROUTE WALK ────────────────────────────────────────────────────────────
+# With E2E_WALK (the variant runs, WORKLIST P0.86): every route of e2e/routes.json opened cold
+# by its deep link and captured (e2e/walk-routes.mjs writes the flow, the ids read back from the
+# seeded world). Its time is "walk" in the flow times, so a crash or a freeze on the way is
+# app-crashes.mjs's to name below; route-judges.mjs holds every route to its capture.
+if [ -n "${E2E_WALK:-}" ] && [ $gone -eq 0 ]; then
+  mkdir -p "$OUT/walk"
+  if node mobile/e2e/walk-routes.mjs "$OUT/walk" > "$OUT/walk-plan.txt" 2>&1; then
+    printf 'walk\t1\t%s\n' "$(device_clock)" >> "$OUT/flow-times.txt"
+    timeout --signal=INT --kill-after=30 900s "$MAESTRO" test "$OUT/walk/walk.yaml" \
+      -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
+      -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" \
+      --format junit --output "$OUT/flow-reports/walk.xml" \
+      --debug-output "$OUT/maestro-debug/walk" > "$OUT/walk.log" 2>&1
+    walk_rc=$?
+    if node mobile/e2e/route-judges.mjs "$OUT/walk" > "$OUT/route-judges.txt" 2>&1 && [ $walk_rc -eq 0 ]; then
+      note "Every route, opened cold and captured" "$OUT/route-judges.txt"
+    else
+      rc=1
+      { cat "$OUT/route-judges.txt"; echo "Maestro's walk ended $walk_rc:"; tail -n 20 "$OUT/walk.log"; } > "$OUT/route-walk-failed.txt"
+      node mobile/e2e/annotate.mjs "The route walk did not capture every route" "$OUT/route-walk-failed.txt"
+    fi
+  else
+    rc=1
+    node mobile/e2e/annotate.mjs "The route walk could not be planned" "$OUT/walk-plan.txt"
+  fi
+fi
+
 
 cat "$OUT/maestro.log"
 grep -E '^\[(Passed|Failed|Skipped|Gone|Retried|Not judged)\]' "$OUT/maestro.log" > "$OUT/maestro-summary.txt" || true
@@ -564,7 +596,9 @@ not_judged=$(grep -c . "$OUT/not-judged.txt")
 # it skipped. A shard leaves a ceiling no flow of its reached to shard-verdict.mjs.
 slow=0
 times_args=(--flow-times "$OUT/flow-times.txt")
-[ -f mobile/e2e/screen-ceilings.json ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
+# The ceilings are the flows' warm openings: a walk opens every screen cold, so its times are
+# reported, and a screen that could not read still fails it.
+[ -f mobile/e2e/screen-ceilings.json ] && [ -z "${E2E_WALK:-}" ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
 [ $flows_failed -eq 0 ] && [ $gone -eq 0 ] && [ "$not_judged" -eq 0 ] && times_args+=(--complete)
 [ -n "${E2E_SHARD:-}" ] && times_args+=(--record "$OUT/screen-record.json")
 if [ -n "${E2E_FAULTS:-}" ]; then

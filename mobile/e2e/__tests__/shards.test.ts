@@ -52,19 +52,21 @@ describe('the committed map', () => {
       .toEqual([[true, true], [false, false], [false, false]]);
   });
 
-  it('has as many shards as e2e.yml runs, and e2e.yml tells each machine and the verdict that count; the fault runs, theirs', () => {
+  it('has as many shards as e2e.yml runs, and e2e.yml tells each machine and the verdict that count; the fault and variant runs, theirs', () => {
     const text = readFileSync(join(E2E, '..', '..', '.github', 'workflows', 'e2e.yml'), 'utf8');
     const wf = parse(text) as { jobs: Record<string, {
       strategy?: { matrix?: { shard?: string } }; steps?: { env?: Record<string, string>; run?: string }[];
     }> };
     const n = map.shards.length;
-    const faultMap = JSON.parse(readFileSync(join(E2E, 'fault-shards.json'), 'utf8')) as { shards: unknown[] };
-    const f = faultMap.shards.length;
+    // The fault runs and the variant runs each have one machine, of their own map.
+    const one = ['fault-shards.json', 'walk-shards.json'].map((m) => (JSON.parse(readFileSync(join(E2E, m), 'utf8')) as { shards: unknown[] }).shards.length);
+    expect(one).toEqual([1, 1]);
     const list = (k: number) => `[${Array.from({ length: k }, (_, i) => i + 1).join(', ')}]`;
-    expect(wf.jobs.flows.strategy?.matrix?.shard).toBe(`\${{ fromJSON(inputs.faults && '${list(f)}' || '${list(n)}') }}`);
+    expect(wf.jobs.flows.strategy?.matrix?.shard).toBe(`\${{ fromJSON((inputs.faults || inputs.variant) && '${list(1)}' || '${list(n)}') }}`);
     const flowsStep = wf.jobs.flows.steps!.find((s) => s.env?.E2E_SHARD);
-    expect(flowsStep?.env?.E2E_SHARD).toBe(`\${{ matrix.shard }}/\${{ inputs.faults && ${f} || ${n} }}`);
-    expect(flowsStep?.env?.E2E_SHARD_MAP).toBe("${{ inputs.faults && 'mobile/e2e/fault-shards.json' || 'mobile/e2e/shards.json' }}");
+    expect(flowsStep?.env?.E2E_SHARD).toBe(`\${{ matrix.shard }}/\${{ (inputs.faults || inputs.variant) && 1 || ${n} }}`);
+    expect(flowsStep?.env?.E2E_SHARD_MAP)
+      .toBe("${{ inputs.faults && 'mobile/e2e/fault-shards.json' || inputs.variant && 'mobile/e2e/walk-shards.json' || 'mobile/e2e/shards.json' }}");
     expect(wf.jobs.verdict.steps!.some((s) => s.run?.includes(`shard-verdict.mjs "$RUNNER_TEMP/shards" --shards ${n} `))).toBe(true);
   });
 });

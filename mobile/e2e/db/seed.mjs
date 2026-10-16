@@ -36,6 +36,9 @@ export const E2E_DOMAIN = 'e2e.test';
 const PEOPLE = [
   // A member with no rank: the ordinary path through the app. Able to file.
   { env: 'E2E_MEMBER', username: 'e2e_member', files: true },
+  // For the route walk alone (E2E_SEED_WALK, WORKLIST P0.86), so the flows' world is as it was: a
+  // writer at the Auteur rank whose open Lounge and essay in a series give the walk's rooms an id.
+  ...(process.env.E2E_SEED_WALK ? [{ env: 'E2E_WRITER', username: 'e2e_writer', files: true, rank: 'auteur', writes: true }] : []),
 ];
 
 /**
@@ -101,7 +104,16 @@ async function seedPerson(p) {
     fail(p.username, `the profile trigger did not give them a readable profile: HTTP ${profile.status} ${JSON.stringify(profile.body).slice(0, 200)}`);
   }
 
+  // A rank is granted as production grants one: grant_entitlement, a source the store never uses.
+  if (p.rank) {
+    const granted = await call('/rest/v1/rpc/grant_entitlement', {
+      key: SERVICE, method: 'POST', body: JSON.stringify({ p_user_id: made.body.id, p_tier: p.rank, p_source: 'manual' }),
+    });
+    const g = Array.isArray(granted.body) ? granted.body[0] : granted.body;
+    if (granted.status !== 200 || g?.out_tier !== p.rank) fail(p.username, `could not be given the ${p.rank} rank: HTTP ${granted.status} ${JSON.stringify(granted.body).slice(0, 200)}`);
+  }
   if (p.files) await becomeAbleToFile(p.username, made.body.id, session.body.access_token);
+  if (p.writes) await makeTheWalksRooms(p.username, made.body.id, session.body.access_token);
 
   if (process.env.GITHUB_ENV) {
     console.log(`::add-mask::${password}`);
@@ -122,6 +134,33 @@ async function seedPerson(p) {
  * filed, one stack made. Each is read back, so a door that refuses fails here,
  * by name, and never as a Dispatch flow that found nothing.
  */
+/**
+ * The route walk's rooms that only a ranked writer can make, made as the app makes them, as
+ * the writer, with RLS on: an open Lounge (create_lounge) and an essay that opens a series.
+ * Each read back as a guest would read it; the walk reads their ids from the database.
+ */
+async function makeTheWalksRooms(username, id, token) {
+  const as = { key: ANON, token };
+  const said = (r) => `HTTP ${r.status} ${JSON.stringify(r.body).slice(0, 300)}`;
+  const lounge = await call('/rest/v1/rpc/create_lounge', {
+    ...as, method: 'POST', body: JSON.stringify({ p_name: 'E2E walk lounge', p_description: 'Where the route walk sits down.', p_is_private: false }),
+  });
+  if (lounge.status !== 200 || typeof lounge.body !== 'string') fail(username, `could not found an open Lounge: ${said(lounge)}`);
+  const essay = await call('/rest/v1/dispatch_posts?select=id,series_id', {
+    ...as, method: 'POST', headers: { Prefer: 'return=representation' },
+    body: JSON.stringify({
+      kind: 'dossier', user_id: id, author_username: '', title: 'E2E walk essay',
+      body: 'The first part of the walk\'s series.', full_content: 'E2E walk essay: the whole of it, in a sentence.',
+      series_id: randomUUID(), series_title: 'E2E walk series', part_number: 1,
+    }),
+  });
+  if (essay.status !== 201 || !essay.body?.[0]?.series_id) fail(username, `could not file an essay in a series: ${said(essay)}`);
+  for (const [what, path] of [['the Lounge', `/rest/v1/lounges?id=eq.${lounge.body}&select=id`], ['the essay', `/rest/v1/dispatch_posts?id=eq.${essay.body[0].id}&select=id`]]) {
+    const read = await call(path, { key: ANON });
+    if (read.status !== 200 || read.body?.length !== 1) fail(username, `${what} is not read back by a guest: ${said(read)}`);
+  }
+}
+
 async function becomeAbleToFile(username, id, token) {
   const as = { key: ANON, token };
   const said = (r) => `HTTP ${r.status} ${JSON.stringify(r.body).slice(0, 300)}`;
