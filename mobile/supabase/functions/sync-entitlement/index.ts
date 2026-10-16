@@ -45,7 +45,7 @@ serve(async (req: Request) => {
     if (!storeKey) return json({ error: 'The store is not configured' }, 500);
 
     const admin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-    const applied = await applyStoreRecord(admin, user.id, storeKey);
+    const applied = await applyStoreRecord(admin, user.id, storeKey, Date.now(), Deno.env.get('REVENUECAT_API_URL'));
     if (!applied.ok) return json({ error: applied.error }, applied.status);
 
     return json({

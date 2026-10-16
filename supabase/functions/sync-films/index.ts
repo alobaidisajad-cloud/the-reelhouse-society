@@ -31,14 +31,19 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
  *
  * ── AUTH ────────────────────────────────────────────────────────────────────
  * Deployed WITH JWT verification (the default — do NOT pass --no-verify-jwt).
- * It does no user-specific work and writes nothing a member controls, but there
- * is no reason to let the open internet spend our TMDB quota.
+ * The anon key ships in the apps, so that keeps out only those who never opened
+ * one; what spares the quota is the drain itself: a call when nothing is
+ * outstanding asks TMDB nothing, and a batch is never more than twenty.
  */
 
 const TMDB_API_KEY = Deno.env.get('TMDB_API_KEY') || ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-const TMDB_BASE = 'https://api.themoviedb.org/3'
+// TMDB's own address; the sealed world names its stand-in (TMDB_ORIGIN).
+const TMDB_BASE = `${Deno.env.get('TMDB_ORIGIN') || 'https://api.themoviedb.org'}/3`
+
+/** How long one film may take, its answer read: past it, the film comes round again. */
+const TMDB_LIMIT_MS = 10_000
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -222,12 +227,24 @@ serve(async (req) => {
 
     let synced = 0
     let failed = 0
+    /**
+     * TMDB refused OUR key (401, 403): a key rotated, revoked or mistyped. That is
+     * never the film's fault, so it is never a strike: charged to the films, three
+     * runs on a bad key would retire the whole catalogue for good. The batch stops,
+     * every claim is let go, and the answer says which secret to look at.
+     */
+    let keyRefused = false
 
     /** Read one film. Never throws — a single bad film must not end the batch. */
     const readOne = async (id: number) => {
       try {
+        if (keyRefused) {
+          await db.from('films').update({ sync_claimed_at: null }).eq('id', id)
+          return
+        }
         const res = await fetch(
           `${TMDB_BASE}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits`,
+          { signal: AbortSignal.timeout(TMDB_LIMIT_MS) },
         )
 
         if (res.status === 429) {
@@ -239,7 +256,13 @@ serve(async (req) => {
           return
         }
 
-        if (res.status === 404 || res.status === 401 || res.status === 403) {
+        if (res.status === 401 || res.status === 403) {
+          keyRefused = true
+          await db.from('films').update({ sync_claimed_at: null }).eq('id', id)
+          return
+        }
+
+        if (res.status === 404) {
           // TMDB has no answer for this id and never will. Count the strike;
           // three of them and it is retired from the worklist for good.
           await db.rpc('mark_film_sync_failed', { p_film_id: id })
@@ -279,6 +302,8 @@ serve(async (req) => {
         }
       }),
     )
+
+    if (keyRefused) return json({ error: 'TMDB refused the key', need: 'TMDB_API_KEY', synced, failed }, 503)
 
     const { count } = await db.from('films').select('id', { count: 'exact', head: true })
       .is('synced_at', null).lt('sync_failed', 3)

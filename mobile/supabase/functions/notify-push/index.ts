@@ -34,7 +34,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const EXPO_ACCESS_TOKEN = Deno.env.get('EXPO_ACCESS_TOKEN') || '' // optional
-const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
+// Expo's own address; the sealed world names its stand-in.
+const EXPO_PUSH_URL = Deno.env.get('EXPO_PUSH_URL') || 'https://exp.host/--/api/v2/push/send'
+// How long Expo may take to take one chunk, its answer read: past it, the send failed.
+const EXPO_LIMIT_MS = 10_000
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -148,6 +151,7 @@ serve(async (req) => {
           ...(EXPO_ACCESS_TOKEN ? { Authorization: `Bearer ${EXPO_ACCESS_TOKEN}` } : {}),
         },
         body: JSON.stringify(chunk),
+        signal: AbortSignal.timeout(EXPO_LIMIT_MS),
       })
       if (!res.ok) {
         const text = await res.text().catch(() => '')
@@ -165,11 +169,15 @@ serve(async (req) => {
     }
 
     // Prune tokens Expo says are dead, so they don't accumulate.
+    // A prune that failed is said, never counted as done: the tokens are pruned at the next notice.
+    let pruned = 0
     if (staleTokens.length > 0) {
-      await admin.from('push_tokens').delete().in('token', staleTokens)
+      const { error: pruneError } = await admin.from('push_tokens').delete().in('token', staleTokens)
+      if (pruneError) console.error('[notify-push] the dead tokens were not pruned:', pruneError.code ?? pruneError.message)
+      else pruned = staleTokens.length
     }
 
-    return new Response(JSON.stringify({ delivered, pruned: staleTokens.length }), {
+    return new Response(JSON.stringify({ delivered, pruned }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {

@@ -14,6 +14,12 @@
 
 export type StoreTier = 'founding' | 'auteur' | 'archivist' | 'cinephile';
 
+/** RevenueCat's own address; the sealed world names its stand-in (REVENUECAT_API_URL). */
+export const REVENUECAT_API = 'https://api.revenuecat.com/v1';
+
+/** How long the store may take to answer, its whole record read: past it, the store could not be read. */
+export const STORE_LIMIT_MS = 10_000;
+
 /** Highest first. 'cinephile' is the rank of a member the store holds nothing for. */
 const TIERS = ['founding', 'auteur', 'archivist'] as const;
 
@@ -58,7 +64,8 @@ export type Applied =
  * Read the member's record and grant it, source 'revenuecat'. A failure to read
  * the store is never "holds nothing" (502, so the caller retries); a member with
  * no record at all (404) has bought nothing. The founding seat is claimed before
- * the rank: the cap is atomic, and a full house still grants the Auteur.
+ * the rank: the cap is atomic, and a full house still grants the Auteur. `api` is
+ * the store's address, RevenueCat's own unless the function's settings name another.
  */
 export async function applyStoreRecord(
   // deno-lint-ignore no-explicit-any
@@ -66,12 +73,15 @@ export async function applyStoreRecord(
   userId: string,
   storeKey: string,
   now: number = Date.now(),
+  api?: string,
 ): Promise<Applied> {
   let subscriber: unknown = { entitlements: {} };
   let res: Response;
   try {
-    res = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`, {
+    res = await fetch(`${api || REVENUECAT_API}/subscribers/${encodeURIComponent(userId)}`, {
       headers: { Authorization: `Bearer ${storeKey}`, Accept: 'application/json' },
+      // The answer's body too: a store that stops halfway is one that could not be read.
+      signal: AbortSignal.timeout(STORE_LIMIT_MS),
     });
   } catch {
     return { ok: false, status: 502, error: 'could not reach the store' };

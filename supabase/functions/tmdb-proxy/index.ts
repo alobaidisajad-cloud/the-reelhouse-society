@@ -16,6 +16,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { resolveTmdbUrl } from "./paths.js"
 
 const TMDB_API_KEY = Deno.env.get('TMDB_API_KEY') || ''
+// Where the checked path is fetched: TMDB itself, unless the settings name the sealed world's stand-in.
+const TMDB_ORIGIN = Deno.env.get('TMDB_ORIGIN') || ''
+// How long TMDB may take, its answer read: past it, the caller hears 504 and tries again.
+const TMDB_LIMIT_MS = 10_000
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -98,12 +102,26 @@ serve(async (req) => {
         const cached = getCached(cacheKey);
         if (cached) return json(cached.data, cached.status, { 'X-Cache': 'HIT' });
 
-        target.searchParams.set('api_key', TMDB_API_KEY);
-        const response = await fetch(target.toString(), { method: 'GET', headers: { 'Accept': 'application/json' } });
-        const data = await response.json();
+        // Moved after the check: the path is still the one paths.js allowed.
+        const fetched = TMDB_ORIGIN ? new URL(target.pathname + target.search, TMDB_ORIGIN) : target;
+        fetched.searchParams.set('api_key', TMDB_API_KEY);
+        const response = await fetch(fetched.toString(), {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            signal: AbortSignal.timeout(TMDB_LIMIT_MS),
+        });
+        let data: unknown;
+        try {
+            data = await response.json();
+        } catch (err: unknown) {
+            if (err instanceof DOMException && err.name === 'TimeoutError') throw err;
+            // TMDB's own front door answers an outage with a page, not JSON: it is TMDB that failed.
+            return json({ error: 'TMDB answered something unreadable' }, 502);
+        }
         if (response.ok) setCache(cacheKey, data, response.status);
         return json(data, response.status, { 'X-Cache': 'MISS' });
     } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === 'TimeoutError') return json({ error: 'TMDB did not answer in time' }, 504);
         // Never the error's own text: a fetch error can quote the URL, and the URL holds the key.
         console.error('tmdb-proxy error:', err instanceof Error ? err.name : 'unknown');
         return json({ error: 'Internal Server Error' }, 500);

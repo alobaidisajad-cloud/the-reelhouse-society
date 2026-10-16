@@ -5,7 +5,7 @@
  * the builds already installed, which call it with no auth header, so it MUST
  * stay public:  supabase functions deploy fetch-rss --no-verify-jwt
  *
- * Server-side for CORS, 30-minute edge caching, an 8s timeout, and an empty
+ * Server-side for CORS, 30-minute edge caching, an 8s limit (the body read too), and an empty
  * items[] on any failure. It parses the XML itself (no third-party relay) and
  * fetches only allowlisted https hosts, so it is no open relay.
  */
@@ -25,6 +25,7 @@ function isRateLimited(ip: string): boolean {
   const now = Date.now();
   const e = rateLimitMap.get(ip);
   if (!e || now > e.resetAt) {
+    if (rateLimitMap.size > 5000) rateLimitMap.clear(); // a long-lived isolate keeps its memory bounded
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
     return false;
   }
@@ -32,6 +33,10 @@ function isRateLimited(ip: string): boolean {
   return e.count > RATE_LIMIT_MAX;
 }
 const ALLOWED_FEED_HOSTS = new Set(['www.theguardian.com', 'theguardian.com']);
+// Where an allowed feed is fetched from: its own host, unless the settings name the sealed world's stand-in.
+const FEED_ORIGIN = Deno.env.get('FEED_ORIGIN') || '';
+// How long the feed may take, its whole body read.
+const FEED_LIMIT_MS = 8000;
 
 const MAX_ITEMS = 30;
 
@@ -153,18 +158,17 @@ serve(async (req: Request) => {
       });
     }
 
-    // Fetch the feed XML directly (fetch follows the Guardian 302 redirect).
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(url, {
-      signal: controller.signal,
+    // Fetch the feed XML directly (fetch follows the Guardian 302 redirect). The
+    // limit holds until the body is read: a feed that stops halfway times out too.
+    const fetched = FEED_ORIGIN ? new URL(parsedUrl.pathname + parsedUrl.search, FEED_ORIGIN).toString() : url;
+    const res = await fetch(fetched, {
+      signal: AbortSignal.timeout(FEED_LIMIT_MS),
       redirect: 'follow',
       headers: {
-        'User-Agent': 'ReelHouseSociety/1.0 (+https://reelhouse.society)',
+        'User-Agent': 'ReelHouseSociety/1.0 (+https://www.thereelhousesociety.com)',
         'Accept': 'application/rss+xml, application/xml, text/xml; q=0.9, */*; q=0.8',
       },
     });
-    clearTimeout(timeout);
 
     if (!res.ok) {
       return new Response(JSON.stringify({ items: [] }), {
@@ -185,7 +189,7 @@ serve(async (req: Request) => {
       },
     });
   } catch (e) {
-    const isAbort = e instanceof DOMException && e.name === 'AbortError';
+    const isAbort = e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError');
     return new Response(
       JSON.stringify({ items: [], error: isAbort ? 'RSS feed timed out' : 'Fetch failed' }),
       {

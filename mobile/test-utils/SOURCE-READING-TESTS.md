@@ -208,6 +208,8 @@ Decisions, as of 2026-09-28:
 | `e2e/__tests__/shardVerdict.test.ts` | The E2E workflow (.github/workflows/e2e.yml). |
 | `e2e/__tests__/shards.test.ts` | The shard map and the E2E workflow. |
 | `e2e/__tests__/flowHistory.test.ts` | The flow history, the shard map it must make, and the E2E workflow's limits around it. |
+| `e2e/__tests__/functionsWorld.test.ts` | Every deployed edge function's code, the sealed world's config.toml, the functions world's scripts and the DB workflow's functions job: each function served, loaded and asked, and each outside address it reads stood in for. No jest render reaches Deno code. |
+| `src/utils/__tests__/revenuecatWebhookDecide.test.ts` | The app's limit on a call to the house (src/lib/supabase.ts), which the store's own limit, in Deno, must stay under: no one runtime holds both. |
 | `e2e/__tests__/startStack.test.ts` | The stack's start script, its workflows and the sealed world's config.toml. |
 | `plugins/__tests__/withoutDevLauncherScanner.test.ts` | The installed expo-dev-launcher's manifest, for the entry the plugin removes, and app.json's plugins. |
 | `plugins/__tests__/withSplashWithoutHandoff.test.ts` | The generated MainActivity fixture, app.json's plugins and the app's code, for who imports the splash screen. |

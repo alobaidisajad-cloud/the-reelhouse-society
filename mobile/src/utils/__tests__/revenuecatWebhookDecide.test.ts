@@ -12,7 +12,9 @@
  * record, and the record answers them.
  */
 import { accountsIn, authorized, isAccountId } from '../../../supabase/functions/revenuecat-webhook/decide';
-import { applyStoreRecord, inForce, tierFromRecord } from '../../../supabase/functions/_shared/storeRecord';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { applyStoreRecord, inForce, REVENUECAT_API, STORE_LIMIT_MS, tierFromRecord } from '../../../supabase/functions/_shared/storeRecord';
 
 const UID = '11111111-1111-4111-8111-111111111111';
 const OTHER = '22222222-2222-4222-8222-222222222222';
@@ -97,6 +99,15 @@ describe('what a record grants', () => {
 describe('applying a record', () => {
   const realFetch = global.fetch;
   afterEach(() => { global.fetch = realFetch; });
+  // Deno has AbortSignal.timeout; the test setup's stand-in AbortSignal does not.
+  // Each limit asked for is kept, and its signal never fires (the fetches here answer at once).
+  const limits: number[] = [];
+  const signalTimeout = (AbortSignal as unknown as { timeout?: unknown }).timeout;
+  beforeEach(() => {
+    limits.length = 0;
+    (AbortSignal as unknown as { timeout: (ms: number) => AbortSignal }).timeout = (ms) => { limits.push(ms); return new AbortController().signal; };
+  });
+  afterAll(() => { (AbortSignal as unknown as { timeout?: unknown }).timeout = signalTimeout; });
   const answer = (status: number, body?: unknown) => {
     global.fetch = jest.fn(async () => ({ ok: status >= 200 && status < 300, status, json: async () => body })) as any;
   };
@@ -130,7 +141,7 @@ describe('applying a record', () => {
     answer(404);
     const a = admin();
     await expect(applyStoreRecord(a, UID, 'k', NOW)).resolves.toMatchObject({ ok: true, storeTier: 'cinephile' });
-    expect(a.calls[0][1]).toMatchObject({ p_tier: 'cinephile' });
+    expect(a.calls[0]?.[1]).toMatchObject({ p_tier: 'cinephile' });
   });
 
   it('a store that could not be read is never "holds nothing": nothing is granted, and the answer is retryable', async () => {
@@ -140,6 +151,33 @@ describe('applying a record', () => {
       await expect(applyStoreRecord(a, UID, 'k', NOW)).resolves.toMatchObject({ ok: false, status: 502 });
       expect(a.calls).toEqual([]);
     }
+  });
+
+  it('asks the address the settings name, RevenueCat\'s own otherwise, and never without a time limit', async () => {
+    const asked: [string, RequestInit][] = [];
+    global.fetch = jest.fn(async (url: string, init: RequestInit) => {
+      asked.push([url, init]);
+      return { ok: false, status: 404, json: async () => ({}) };
+    }) as any;
+    await applyStoreRecord(admin(), UID, 'k', NOW);
+    await applyStoreRecord(admin(), UID, 'k', NOW, '');
+    await applyStoreRecord(admin(), UID, 'k', NOW, 'http://stand-in:54990/revenuecat/v1');
+    expect(asked.map(([url]) => url)).toEqual([
+      `${REVENUECAT_API}/subscribers/${UID}`,
+      `${REVENUECAT_API}/subscribers/${UID}`,
+      `http://stand-in:54990/revenuecat/v1/subscribers/${UID}`,
+    ]);
+    expect(REVENUECAT_API).toBe('https://api.revenuecat.com/v1');
+    for (const [, init] of asked) expect(init.signal).toBeInstanceOf(AbortSignal);
+    expect(limits).toEqual([STORE_LIMIT_MS, STORE_LIMIT_MS, STORE_LIMIT_MS]);
+  });
+
+  it('gives up on the store before the app gives up on the house, so the member hears "try again", not silence', () => {
+    // The app's own limit on a call to the house (src/lib/supabase.ts).
+    const written = /export const REQUEST_LIMIT_MS = ([\d_]+);/.exec(readFileSync(join(__dirname, '../../lib/supabase.ts'), 'utf8'))?.[1] ?? '';
+    const app = Number(written.replace(/_/g, ''));
+    expect(app).toBe(15_000);
+    expect(STORE_LIMIT_MS).toBeLessThan(app);
   });
 
   it('a member who does not exist is 404 (no retry can make one); any other failure is 500', async () => {

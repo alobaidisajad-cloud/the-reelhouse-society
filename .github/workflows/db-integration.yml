@@ -174,6 +174,102 @@ jobs:
         timeout-minutes: 40
         run: node mobile/e2e/db/attack/attack.mjs --mutants
 
+  # WORKLIST P0.78: every deployed edge function (mobile/scripts/edge-functions.cjs),
+  # production's own code served as deployed, on production's shape with every
+  # pending migration; its outside services (Expo, RevenueCat, TMDB, the feed)
+  # answered by mobile/e2e/functions/stand-ins.mjs, which keeps every request.
+  # suites.mjs asks each function as its callers do: what must work and what it
+  # leaves behind, each refusal, a wrong secret, an outside service failing.
+  functions:
+    name: Every edge function, served as deployed, the outside world stood in for
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+
+      # Downloaded at run time: tried once more (see the first job).
+      - name: Supabase CLI
+        id: supabase-cli
+        timeout-minutes: 5
+        continue-on-error: true
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+      - name: Supabase CLI, once more
+        if: steps.supabase-cli.outcome == 'failure'
+        timeout-minutes: 5
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+
+      - name: Postgres 18 client tools
+        id: install-4
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+      - name: Postgres 18 client tools, once more
+        if: steps.install-4.outcome == 'failure'
+        timeout-minutes: 5
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+
+      # Before the stack starts: it serves what e2e/supabase/functions holds, with
+      # the settings in its .env, from the moment it starts.
+      - name: The functions world — every deployed function, its outside addresses the stand-ins
+        run: node mobile/e2e/functions/place.mjs
+
+      - name: Start the local stack, with its functions
+        run: bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta,storage-api,mailpit "The functions world"
+
+      - name: Keys for the local stack
+        working-directory: mobile/e2e
+        run: |
+          set -o pipefail
+          keys=$(supabase status -o env | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' | sed 's/"//g') || keys=''
+          for k in API_URL ANON_KEY SERVICE_ROLE_KEY; do
+            grep -qE "^$k=.+" <<< "$keys" || { echo "::error title=Functions world keys::supabase status gave no $k — the local stack is not up"; exit 1; }
+          done
+          echo "$keys" >> "$GITHUB_ENV"
+
+      # On the runner itself, for the rest of the job; its log is shown if the run fails.
+      - name: The outside world's stand-ins
+        run: |
+          nohup node mobile/e2e/functions/stand-ins.mjs > "$RUNNER_TEMP/stand-ins.log" 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:54990/__alive > /dev/null && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/stand-ins.log"; echo "::error title=Functions world::the stand-ins never answered"; exit 1
+
+      - name: Each function loaded, and one reaching the stand-ins, before the seal
+        run: node mobile/e2e/functions/warm.mjs
+
+      - name: Seal it — production's host goes nowhere
+        run: bash mobile/e2e/db/seal.sh "Functions world seal"
+
+      - name: Build production's shape from the snapshot
+        run: node mobile/e2e/db/bootstrap.mjs
+
+      - name: Every pending migration, applied
+        run: node mobile/e2e/db/up-down-up.mjs
+
+      - name: Every function, asked as its callers ask it
+        run: node mobile/e2e/functions/suites.mjs
+
+      - name: What the functions and the stand-ins said, when it failed
+        if: failure()
+        run: |
+          echo "── the stand-ins ──"; tail -n 40 "$RUNNER_TEMP/stand-ins.log" || true
+          for c in $(docker ps -a --format '{{.Names}}' | grep -i edge); do echo "── $c ──"; docker logs --tail 120 "$c" 2>&1 || true; done
+
   # The app's own questions (src/services/__tests__/*.contract.test.ts: an embed
   # resolves, a visitor may read the columns the app asks for) asked of
   # production's shape, as it will be after the pending migrations, through the

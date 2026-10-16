@@ -61,7 +61,7 @@ serve(async (req) => {
 
   const results: Record<string, unknown>[] = []
   for (const id of accounts) {
-    const applied = await applyStoreRecord(admin, id, storeKey)
+    const applied = await applyStoreRecord(admin, id, storeKey, Date.now(), Deno.env.get('REVENUECAT_API_URL'))
     if (!applied.ok && applied.status === 404) {
       // No such member: no retry can make one, so it is acknowledged, loudly.
       console.warn(`[revenuecat-webhook] ${event.type}: no member ${id} — acknowledged`)

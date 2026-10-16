@@ -119,8 +119,37 @@ classes:
     methods:
       - { kind: running, file: src/lib/__tests__/aRequestEndsInItsTime.test.ts, test: "is given up at its limit as not reached, and the queue reads it as a network failure" }
       - { kind: running, file: src/utils/__tests__/offlineQueue.integration.test.ts, test: "runs once more when the running send ends, sending what was queued meanwhile" }
-    fix: "the client's fetch (src/lib/supabase.ts fetchWithinLimit) gives up each request at 15 s, storage at 90 s, as a TimeoutError isNetworkError reads as not reached; a send of the queue asked for while one runs runs once more after it; the E2E build traces each change of network and each send. Proof still to come: offline_resilience passing on the nights' repeated runs, its traces read"
+      - { kind: running, file: src/utils/__tests__/revenuecatWebhookDecide.test.ts, test: "gives up on the store before the app gives up on the house, so the member hears \"try again\", not silence" }
+    fix: "the client's fetch (src/lib/supabase.ts fetchWithinLimit) gives up each request at 15 s, storage at 90 s, as a TimeoutError isNetworkError reads as not reached; a send of the queue asked for while one runs runs once more after it; the E2E build traces each change of network and each send. The edge functions' own calls out, swept (P0.78): Expo, RevenueCat, TMDB (the proxy and the film sync), the feed (its body too) and the house (sign-in-with-username) each within 10 s, under the app's 15; RevenueCat's held by revenuecatWebhookDecide.test, the proxy's 504 by the functions world (e2e/functions/suites.mjs). Proof still to come: offline_resilience passing on the nights' repeated runs, its traces read"
     places: [emulator]
+
+  - id: EDGE-function-unexercised
+    title: A deployed edge function no test serves and asks, so its refusals, its failures and the calls it makes out are known only from production
+    seriousness: behaviour
+    area: server
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: P0.78 }
+    methods:
+      - { kind: static, file: e2e/__tests__/functionsWorld.test.ts, test: "is loaded, then asked, function by function" }
+      - { kind: static, file: e2e/__tests__/functionsWorld.test.ts, test: "points each outside address a function reads from its settings at the stand-ins" }
+      - { kind: static, file: e2e/__tests__/functionsWorld.test.ts, test: "finds no fetch of a fixed outside address the settings cannot move" }
+    fix: "the functions world (db-integration.yml, job functions): every deployed function (scripts/edge-functions.cjs) served from its one home as deployed, on production's shape with the pending migrations; each outside address (EXPO_PUSH_URL, REVENUECAT_API_URL, TMDB_ORIGIN, FEED_ORIGIN; production's own by default) pointed at e2e/functions/stand-ins.mjs, which keeps every request; suites.mjs asks each function as its callers do, and the database's own push through pg_net. Before it, the sealed world served one production function and a TMDB stand-in"
+    places: [none]
+
+  - id: FN-the-house-failing-told-as-theirs
+    area: server
+    seriousness: behaviour
+    status: OPEN
+    count: 2
+    open_in_production: true
+
+  - id: AUTH-sign-in-counted-together
+    area: security
+    seriousness: serious
+    status: OPEN
+    count: 1
+    open_in_production: true
 
   - id: E2E-ceiling-not-measured
     title: A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's
@@ -218,7 +247,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 1488
+    count: 1487
     source: { kind: reviewer, ref: P0.65 }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }

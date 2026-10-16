@@ -143,6 +143,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/advisories.test.ts | 2026-10-15 | new: a phone advisory held or refused, the rest listed, stale entries, the functions' imports read offline, the source map's package folders |
 | e2e/__tests__/anonKey.test.ts | 2026-10-15 | new: the key made without a stack is the CLI's published one (by its sha256), from claims that never change; a config that sets the secret says no |
 | e2e/__tests__/attack.test.ts | 2026-10-16 | new: the attack matrix's reasoning without a database: the written table covers every table and view of the snapshot and every function a visitor or member may run once the pending migrations are applied, each expected answer follows the matrix's words, each way a try comes back is read as what it is |
+| e2e/__tests__/functionsWorld.test.ts | 2026-10-16 | new: the functions world serves, loads and asks every deployed function; each outside address a function reads from its settings is stood in for; no function fetches a fixed outside address; the job runs its steps in an order that works |
 | e2e/__tests__/glideLogLevel.test.ts | 2026-10-08 | written with glide-log-level.mjs, on dexdump lines in the shape of runs 37628665206 and 37674283540 |
 | e2e/__tests__/iosLaunch.test.ts | 2026-10-15 | the iPhone launch verdict shown saying no to each way a launch fails |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe; its files come from the shared file list (test-utils/universe.js) |
@@ -176,6 +177,10 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-writes.mjs | 2026-10-15 | edited: on one shard, only the flows run-flows.sh listed |
 | e2e/flow-screens.mjs | 2026-10-04 | Maestro's JUnit reason, a report for a flow with no step record, the decision line, the named animation; QueryController dropped (logged on every key of fast runs) |
+| e2e/functions/place.mjs | 2026-10-16 | new: every deployed function copied into the sealed world from its one home, config.toml's function sections written as deployed, the outside addresses pointed at the stand-ins, each secret made up |
+| e2e/functions/stand-ins.mjs | 2026-10-16 | new: Expo, RevenueCat, TMDB and a feed, answering as each does, steered by the suites, keeping every request; anything else 404 |
+| e2e/functions/suites.mjs | 2026-10-16 | new: each deployed function asked as its callers ask it: what must work and what it leaves, each refusal, a wrong secret, an outside service failing; every request sent out read back |
+| e2e/functions/warm.mjs | 2026-10-16 | new: each function loaded before the seal, by a call only its own code answers so; one call proves the stand-ins are reached |
 | e2e/glide-log-level.mjs | 2026-10-08 | written: the APK hands Glide level 6 (ERROR), once, as a constant |
 | e2e/ios-crash.mjs | 2026-10-15 | new |
 | e2e/ios-launch.cjs | 2026-10-15 | true as written |
@@ -1159,7 +1164,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-15 | new; the runner runs the rehearsals the shared file list names, asked of the runner itself |
 | src/utils/__tests__/releaseGuard.guard.test.ts | 2026-10-15 | new: each rule says no in each format; the input is never the E2E app; the sitemap flow |
 | src/utils/__tests__/requestReview.test.ts | — |  |
-| src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-03 | rewritten: whom an event concerns, what a record grants, applying it |
+| src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-16 | edited: the store is asked at the address the settings name, always with a time limit, and gives up before the app does |
 | src/utils/__tests__/roomFilters.test.ts | 2026-10-01 | written: one answer to is-this-room-narrowed |
 | src/utils/__tests__/runtimeDump.contract.test.ts | 2026-10-15 | edited: runtimeNames read from its file (coverage-safe); says NO past global and declare global |
 | src/utils/__tests__/runtimeLacks.guard.test.ts | 2026-10-15 | new: no line uses an API the phone lacks; jest takes away exactly the list |
@@ -1253,12 +1258,12 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/diagnostics/read-only.cjs | 2026-10-15 | true as written |
 | supabase/diagnostics/rehearse.cjs | 2026-10-15 | new |
 | supabase/diagnostics/train.cjs | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| supabase/functions/fetch-rss/index.ts | 2026-09-29 | the header said it serves the Dispatch tab; no current source calls it (kept for installed builds, per backend-contract); audit tags and the relay's history dropped |
-| supabase/functions/notify-push/index.ts | 2026-10-03 | v4: the sender is named whenever there is one; an accepted request has its title; a house notice is The Lounge only about a salon |
-| supabase/functions/_shared/storeRecord.ts | 2026-10-03 | new: the one home for "apply what RevenueCat says a member holds", read whole record, grace included |
+| supabase/functions/fetch-rss/index.ts | 2026-10-16 | edited: the limit holds until the body is read; the house named as it is; the per-address count bounded; the stand-in's address can be named by the settings |
+| supabase/functions/notify-push/index.ts | 2026-10-16 | edited: Expo's address can be named by the settings; each chunk sent within a time limit; a prune that failed is said, not counted |
+| supabase/functions/_shared/storeRecord.ts | 2026-10-16 | edited: the store's address can be named by the settings (RevenueCat's own by default); its whole answer read within a time limit |
 | supabase/functions/revenuecat-webhook/decide.ts | 2026-10-03 | rewritten: an event names whom to read again (both sides of a transfer), never what they hold |
-| supabase/functions/revenuecat-webhook/index.ts | 2026-10-03 | rewritten: each named account re-read and granted through storeRecord; 500 to retry, 404 member acknowledged |
-| supabase/functions/sync-entitlement/index.ts | 2026-10-03 | rewritten onto storeRecord; answers the rank in force; a store not read is 502 |
+| supabase/functions/revenuecat-webhook/index.ts | 2026-10-16 | edited: the store's address from the settings |
+| supabase/functions/sync-entitlement/index.ts | 2026-10-16 | edited: the store's address from the settings |
 | test-utils/__tests__/aFileEndsWithNoTimerWaiting.test.ts | 2026-10-16 | edited: the worktrees inside this checkout are left out of its own jest run; edited: only the timers Node starts are left out |
 | test-utils/__tests__/aSweepAsksTheUniverse.test.ts | 2026-10-15 | new: no test or script lists a folder itself, unless named with why |
 | test-utils/__tests__/everyCommentIsTrue.test.ts | — |  |
