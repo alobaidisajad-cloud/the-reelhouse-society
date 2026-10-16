@@ -169,10 +169,10 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/advisers.mjs | 2026-10-15 | new: supabase db advisors on the sealed copy with the API's schemas set, judged against the allowlist, names and counts only; --self-test plants a table without row security |
 | e2e/db/bootstrap.mjs | 2026-10-15 | edited: a default naming no schema is changed by its own role, supabase_admin's in 4c |
 | e2e/db/old-clients.mjs | 2026-10-15 | new; edited: only its schema tests can say a client breaks; one not set up is unchecked, by step; its install tried twice |
-| e2e/db/rehearsals.mjs | 2026-10-15 | new: seeds the made-up house, runs every *_rehearsal.sql as postgres, fails naming each that missed; --self-test proves the verdict can fail; the rehearsals from the shared file list (test-utils/universe.js) |
+| e2e/db/rehearsals.mjs | 2026-10-16 | edited: --without, each pending migration's rehearsal run with its migration taken away, and every one applied again |
 | e2e/db/seal.sh | 2026-10-03 | Written in the tooling audit: the seal e2e.yml and load.yml each carried, in one place for three workflows. |
 | e2e/db/seed.mjs | 2026-10-15 | edited: the member is made able to file, and files, logs and stacks as themself, each read back |
-| e2e/db/up-down-up.mjs | 2026-10-16 | edited: its files come from the shared file list (test-utils/universe.js); a line's own end is taken off before two schemas compare, and the self-test shows a body given back with other line ends passes and a changed one is caught |
+| e2e/db/up-down-up.mjs | 2026-10-16 | edited: apply exported, so the rehearsals take a migration away and give it back as the train applies it |
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-writes.mjs | 2026-10-15 | edited: on one shard, only the flows run-flows.sh listed |
@@ -1173,7 +1173,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/queueErrorClassification.test.ts | — |  |
 | src/utils/__tests__/raceDeadline.test.ts | 2026-10-04 | written whole |
 | src/utils/__tests__/recommendations.test.ts | — |  |
-| src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-15 | new; the runner runs the rehearsals the shared file list names, asked of the runner itself |
+| src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-16 | edited: the rehearsals are shown failing without their migrations in CI, and every pending migration is paired with the rehearsal of its name |
 | src/utils/__tests__/releaseGuard.guard.test.ts | 2026-10-15 | new: each rule says no in each format; the input is never the E2E app; the sitemap flow |
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/resumeSaysWhereTheWorkStands.test.ts | 2026-10-16 | new: the next class is the one that matters most, a journal keeps what was written in it, every worktree finds the same journals, the next train is the pending migrations |

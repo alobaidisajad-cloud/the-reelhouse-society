@@ -22,6 +22,7 @@
  *                                                  case or finds nothing must fail
  */
 import { spawnSync } from 'node:child_process';
+import { applied, apply, migrations, undoOf } from './up-down-up.mjs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import universe from '../../test-utils/universe.js';
@@ -77,6 +78,44 @@ const run = () => {
   console.log(`\n✓ ${files.length} rehearsals, every case as expected.`);
 };
 
+/**
+ * Each pending migration's rehearsal (the one of the same name: 20261016_01_x.sql's is
+ * x_rehearsal.sql), the migration taken away. A rehearsal that holds without its
+ * migration proves nothing of it: a member's identity that never took, a table with no
+ * row to ask about, a case that cannot fail. The pending migrations are undone from the
+ * last; each rehearsal runs once its own is undone (the ones before it still applied,
+ * as the train rehearses it) and must fail; then every one is applied again, in order,
+ * and the database is as the checks after it expect.
+ */
+export const pairedWithRehearsals = (pending, files) => pending
+  .map((m) => ({ migration: m, rehearsal: `${m.name.replace(/^\d{8}_\d{2}_/, '').replace(/\.sql$/, '')}_rehearsal.sql` }))
+  .filter((p) => files.includes(p.rehearsal));
+
+const without = () => {
+  const done = applied();
+  const pending = migrations().filter((m) => !done.has(m.name));
+  const pairs = pairedWithRehearsals(pending, rehearsals());
+  const vacuous = [];
+  try {
+    for (const m of [...pending].reverse()) {
+      apply(AS_POSTGRES, undoOf(m.name));
+      const pair = pairs.find((p) => p.migration === m);
+      if (!pair) { console.log(`→ ${m.name} undone (no rehearsal of its name)`); continue; }
+      const r = psql(AS_POSTGRES, join(DIAGNOSTICS, pair.rehearsal));
+      const said = r.status === 0 ? 'HELD — it proves nothing of its migration' : why(r.out).slice(0, 300);
+      console.log(`→ ${pair.rehearsal}, without ${m.name}: ${r.status === 0 ? '✗' : '✓'} ${said}`);
+      if (r.status === 0) {
+        vacuous.push(pair.rehearsal);
+        console.log(`::error title=Rehearsal ${pair.rehearsal}::holds without ${m.name}, so it proves nothing of it`);
+      }
+    }
+  } finally {
+    for (const m of pending) apply(AS_POSTGRES, m.path);
+  }
+  if (vacuous.length) { console.error(`✗ ${vacuous.length} rehearsal(s) hold without their migration:\n  ${vacuous.join('\n  ')}`); process.exit(1); }
+  console.log(`✓ ${pairs.length} pending migration(s) with a rehearsal, each rehearsal failing without its own; every one applied again.`);
+};
+
 /** The verdict and the picks must be able to say no, on this database. */
 const selfTest = () => {
   const fixtures = join(HERE, 'fixtures', 'rehearsals');
@@ -94,5 +133,7 @@ const selfTest = () => {
 };
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  if (process.argv.includes('--self-test')) selfTest(); else run();
+  if (process.argv.includes('--self-test')) selfTest();
+  else if (process.argv.includes('--without')) without();
+  else run();
 }

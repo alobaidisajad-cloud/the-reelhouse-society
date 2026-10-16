@@ -38,7 +38,8 @@ export const applied = () => new Set(readFileSync(join(MOBILE, 'supabase', 'APPL
 
 export const undoOf = (name) => join(MOBILE, 'supabase', 'migrations-down', name);
 
-const apply = (url, file) => execFileSync('psql', [url, '-X', '-q', '-1', '-v', 'ON_ERROR_STOP=1', '-f', file],
+/** One file applied as apply.cjs applies it: one transaction, under the time limits. */
+export const apply = (url, file) => execFileSync('psql', [url, '-X', '-q', '-1', '-v', 'ON_ERROR_STOP=1', '-f', file],
   { encoding: 'utf8', env: { ...process.env, PGOPTIONS: LIMITS }, stdio: ['ignore', 'pipe', 'pipe'] });
 
 /**

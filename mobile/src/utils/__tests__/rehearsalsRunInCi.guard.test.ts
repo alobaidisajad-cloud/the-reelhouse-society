@@ -147,6 +147,30 @@ describe('CI', () => {
     expect(at(/-f mobile\/e2e\/db\/security\.sql/)).toBeGreaterThan(run);
   });
 
+  it('then shows each pending migration\'s rehearsal failing without it, before the row rules ask production as it will be', () => {
+    const run = at(/^node mobile\/e2e\/db\/rehearsals\.mjs\s*$/);
+    const withoutIt = at(/^node mobile\/e2e\/db\/rehearsals\.mjs --without\s*$/);
+    expect(withoutIt).toBeGreaterThan(run);
+    expect(at(/-f mobile\/e2e\/db\/security\.sql/)).toBeGreaterThan(withoutIt);
+  });
+
+  it('pairs every pending migration with the rehearsal of its name, so none goes untried without it', () => {
+    const url = pathToFileURL(join(MOBILE, 'e2e', 'db', 'rehearsals.mjs')).href;
+    const upDownUp = pathToFileURL(join(MOBILE, 'e2e', 'db', 'up-down-up.mjs')).href;
+    const r = spawnSync(process.execPath, ['--input-type=module', '-e', `
+      const m = await import(${JSON.stringify(url)});
+      const u = await import(${JSON.stringify(upDownUp)});
+      const done = u.applied();
+      const pending = u.migrations().filter((x) => !done.has(x.name));
+      const pairs = m.pairedWithRehearsals(pending, m.rehearsals());
+      const planted = m.pairedWithRehearsals([{ name: '20991231_01_a_thing.sql' }, { name: '20991231_02_another.sql' }], ['a_thing_rehearsal.sql']);
+      console.log(JSON.stringify({ pending: pending.map((x) => x.name), paired: pairs.map((p) => p.migration.name), planted: planted.map((p) => p.rehearsal) }));`],
+    { encoding: 'utf8', env: { ...process.env, E2E_DB_HOST: '127.0.0.1' } });
+    const got = JSON.parse(r.stdout.trim().split('\n').pop() ?? '{}') as { pending: string[]; paired: string[]; planted: string[] };
+    expect(got.paired).toEqual(got.pending);
+    expect(got.planted).toEqual(['a_thing_rehearsal.sql']);
+  });
+
   it('runs the rehearsals the shared file list names, so a new one runs without being named', () => {
     const runner = read(join(MOBILE, 'e2e', 'db', 'rehearsals.mjs'));
     const url = pathToFileURL(join(MOBILE, 'e2e', 'db', 'rehearsals.mjs')).href;

@@ -190,6 +190,19 @@ classes:
     fix: "scripts/absence-only.cjs finds each rendering test whose every check is a queryBy finding nothing, with no bare getBy/findBy and no positive expect: 19 in 13 files, each anchored on what the screen draws beside the absence (the list's own empty line once read, the row's words, the field, the same query finding the control once shown); none hid a defect"
     places: [none]
 
+  - id: TEST-rehearsal-holds-without-its-migration
+    title: A migration's rehearsal that would hold without the migration (an identity that never took, a table with nothing to ask, a case that cannot fail), so its passing proves nothing of the migration (TST-25)
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.63, TST-25" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/rehearsalsRunInCi.guard.test.ts, test: "pairs every pending migration with the rehearsal of its name, so none goes untried without it" }
+      - { kind: static, file: src/utils/__tests__/rehearsalsRunInCi.guard.test.ts, test: "then shows each pending migration's rehearsal failing without it, before the row rules ask production as it will be" }
+    fix: "rehearsals.mjs --without, in db-integration.yml after the rehearsals: the pending migrations are undone from the last, each rehearsal runs once its own is undone (those before it applied, as the train rehearses it) and must fail, then every one is applied again. It was a hand step of mine until now (the 'misses without' counts in PROGRESS); a miss, an empty pick and no case at all are already refused by rehearsals.mjs --self-test, and every rehearsal runs as postgres, production's own login"
+    places: [none]
+
   - id: E2E-ceiling-not-measured
     title: A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's
     seriousness: code

@@ -150,6 +150,13 @@ jobs:
       - name: Every production rehearsal, on the sealed copy
         run: node mobile/e2e/db/rehearsals.mjs
 
+      # A rehearsal that holds without its migration proves nothing of it (an
+      # identity that never took, a table with nothing to ask, a case that cannot
+      # fail): each pending migration is taken away from the last, its rehearsal
+      # must fail, and every one is applied again before the checks below.
+      - name: Each pending migration's rehearsal fails without it
+        run: node mobile/e2e/db/rehearsals.mjs --without
+
       # As supabase_admin: the house is laid down with triggers off, and each case
       # is asked as anon or authenticated.
       - name: Production's row rules, asked as visitors and members
