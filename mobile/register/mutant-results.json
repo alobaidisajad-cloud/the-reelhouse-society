@@ -1,0 +1,324 @@
+[
+  {
+    "class": "MOTION-empty-config-key",
+    "mutant": "past-arrival-easing-key",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-api-missing-on-phone",
+    "mutant": "past-abort-signal-timeout",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-tool-hides-its-cause",
+    "mutant": "past-psql-reason-dropped",
+    "proof": "m3",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-tool-hides-its-cause",
+    "mutant": "shape-fetch-cause-dropped",
+    "proof": "m3",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-tool-hides-its-cause",
+    "mutant": "shape-report-never-read",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "SEC-private-value-in-a-tool-error",
+    "mutant": "past-private-value-printed",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-gate-never-runs",
+    "mutant": "past-nightly-cancels-push",
+    "proof": "m2",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "SEC-private-value-in-a-tool-error",
+    "mutant": "shape-private-env-unremembered",
+    "proof": "m2",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-gate-never-runs",
+    "mutant": "shape-gate-on-pull-requests-alone",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-gate-never-runs",
+    "mutant": "shape-script-nothing-runs",
+    "proof": "m3",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-gate-never-runs",
+    "mutant": "shape-build-without-preflight",
+    "proof": "m4",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-check-passes-on-nothing",
+    "mutant": "shape-build-step-let-fail",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-background-job-left-running",
+    "mutant": "shape-log-stream-left-running",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-background-job-left-running",
+    "mutant": "shape-node-child-unwaited",
+    "proof": "m2",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "BUILD-identity-drifts",
+    "mutant": "shape-update-feed-elsewhere",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "BUILD-identity-drifts",
+    "mutant": "shape-sentry-project-unread",
+    "proof": "m2",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-event-not-awaited",
+    "mutant": "shape-unawaited-press",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-press-inside-the-debounce",
+    "mutant": "shape-second-press-at-once",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-absence-unanchored",
+    "mutant": "shape-absence-alone",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-rehearsal-holds-without-its-migration",
+    "mutant": "shape-rehearsals-never-without",
+    "proof": "m2",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-mutant-unproven",
+    "mutant": "shape-mutants-pass-on-red",
+    "proof": "m2",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-mock-accepts-anything",
+    "mutant": "shape-fake-takes-any-column",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-mock-accepts-anything",
+    "mutant": "shape-hand-mock-finder-trusts-a-name",
+    "proof": "m3",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-guard-only-through-a-caller",
+    "mutant": "shape-guard-finder-skips-throws",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "CODE-promise-not-awaited",
+    "mutant": "shape-promise-finder-obeys-disables",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "CODE-index-read-unchecked",
+    "mutant": "shape-index-finder-switched-off",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "EDGE-function-unexercised",
+    "mutant": "shape-function-fixed-address",
+    "proof": "m3",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "NET-request-without-time-limit",
+    "mutant": "past-request-without-limit",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "NET-request-without-time-limit",
+    "mutant": "past-send-asked-during-send",
+    "proof": "m2",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "NET-request-without-time-limit",
+    "mutant": "shape-store-call-unbounded",
+    "proof": "m4",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "MOTION-empty-config-key",
+    "mutant": "shape-spring-key-maybe-empty",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-api-missing-on-phone",
+    "mutant": "shape-any-signal-on-phone",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-app-crash-unseen",
+    "mutant": "judge-java-crash",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-app-crash-unseen",
+    "mutant": "judge-freeze",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-soft-crash-unseen",
+    "mutant": "judge-soft-crash",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-app-crash-unseen",
+    "mutant": "judge-iphone-dies",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-splash-taken-over",
+    "mutant": "judge-splash-taken-over",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-screen-unread-or-slow-unseen",
+    "mutant": "judge-screen-unread",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-screen-unread-or-slow-unseen",
+    "mutant": "judge-screen-stall",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-animation-stuck-unseen",
+    "mutant": "judge-animation-stuck",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-keyboard-covers-the-field",
+    "mutant": "judge-keyboard-covers",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-phone-runtime-changed-unseen",
+    "mutant": "judge-runtime-changed",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "BUILD-glide-logs-every-image",
+    "mutant": "judge-glide-verbose",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "BUILD-prefetch-decodes-whole",
+    "mutant": "judge-prefetch-decodes",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-shard-lost-unseen",
+    "mutant": "judge-shard-flow-lost",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-app-failure-run-again",
+    "mutant": "judge-begun-flow-run-again",
+    "proof": "judge",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  }
+]
