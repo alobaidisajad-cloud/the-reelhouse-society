@@ -190,19 +190,21 @@ describe('a long word is offered breaks only between characters, in the time it 
   it('a page of flags costs its length, not its length squared', () => {
     // Asking at every place counted each run of flags back from the start of it.
     const flags = (n: number) => s(0x1f1ee, 0x1f1f6).repeat(n);
+    // Node's own clock, in nanoseconds: the test setup's performance.now is Date.now, whole
+    // milliseconds, and a run of about one of them read as a ratio of exactly 9 (CI 38875676248).
     const best = (text: string) => {
       let fastest = Infinity;
-      for (let i = 0; i < 3; i += 1) {
-        const t0 = performance.now();
+      for (let i = 0; i < 5; i += 1) {
+        const t0 = process.hrtime.bigint();
         softBreak(text);
-        fastest = Math.min(fastest, performance.now() - t0);
+        fastest = Math.min(fastest, Number(process.hrtime.bigint() - t0));
       }
       return fastest;
     };
     const small = flags(2500);
     const large = flags(10000); // four times as long: about four times the time, not sixteen
     best(small); // first use unpacks the table
-    expect(best(large) / Math.max(best(small), 0.5)).toBeLessThan(9);
+    expect(best(large) / best(small)).toBeLessThan(9);
     expect(offered(softBreak(flags(40))).every((at) => at % 4 === 0)).toBe(true); // every break between two flags
   });
 });
