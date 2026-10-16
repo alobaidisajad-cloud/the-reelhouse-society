@@ -1,5 +1,5 @@
 {
-  "about": "The attack matrix's written table of who may do what (WORKLIST P0.77), read by e2e/db/attack/attack.mjs. Each public table and view of the snapshot has an entry (a view's rows are its tables', so laid: false); a table with none fails the run by name. owner: the column naming whose row it is, {via, on} for a row owned through another, or house for a row no member owns. specimen: the row each owner holds, laid down as the house. In a row, {owner} is the owner's id, {username} their handle, {id} the specimen's own id and {id#2} a second one, {ref:table} the owner's specimen in that table, {ref:table@V} another owner's, {uid@V} another owner's id, {peer} and {peer2} two bystanders, {admin} the admin, {private} whether the owner is the private member, {later} a month from now, {new} an id no row has. variant: what a new row changes so it is not the specimen again (none: the specimen is taken away and laid again). acrossBlocks: the others rules hold for BK and BY too; otherwise no write reaches across a block. touch: the change an update tries; forbidden: changes no one may make to any row, their own included. read: who sees another's row (everyone, members, viewable, viewable-members, owner, owner+admin, none). self and others: who may insert, update and delete their own rows and another member's (all, unbanned, ranked, rank1, rank2, admin, none; ranked asks the rank alone, rank1 and rank2 the rank and good standing). hidesBlocked: a member never sees the rows of one they blocked or who blocked them. reach: a row of one's own whose set columns point at another owner's row, and who may add it for each owner. functions: each function a visitor or member may run, its cases called as each kind of member named (all, members, or a list): expect ok or error (or ok only for a rule), a result rule over its answer as JSON ($1), and then, the house's reading of what it left. probes: one attack each, with the answer it must get. why: the rule in words.",
+  "about": "The attack matrix's written table of who may do what (WORKLIST P0.77), read by e2e/db/attack/attack.mjs. Each public table and view of the snapshot has an entry (a view's rows are its tables', so laid: false); a table with none fails the run by name. owner: the column naming whose row it is, {via, on} for a row owned through another, or house for a row no member owns. specimen: the row each owner holds, laid down as the house. In a row, {owner} is the owner's id, {username} their handle, {id} the specimen's own id and {id#2} a second one, {ref:table} the owner's specimen in that table, {ref:table@V} another owner's, {uid@V} another owner's id, {peer} and {peer2} two bystanders, {admin} the admin, {private} whether the owner is the private member, {later} a month from now, {new} an id no row has. variant: what a new row changes so it is not the specimen again (none: the specimen is taken away and laid again). acrossBlocks: the others rules hold for BK and BY too; otherwise no write reaches across a block. touch: the change an update tries; forbidden: changes no one may make to any row, their own included. read: who sees another's row (everyone, members, viewable, viewable-members, owner, owner+admin, none). self and others: who may insert, update and delete their own rows and another member's (all, unbanned, ranked, rank1, rank2, admin, none; ranked asks the rank alone, rank1 and rank2 the rank and good standing). hidesBlocked: a member never sees the rows of one they blocked or who blocked them. reach: a row of one's own whose set columns point at another owner's row, and who may add it for each owner. functions: each function a visitor or member may run, its cases called as each kind of member named (all, members, or a list): expect ok or error (or ok only for a rule), a result rule over its answer as JSON ($1), and then, the house's reading of what it left. channels: each live channel as Realtime asks its rules, heard (a message on its topic read) or spoken on (presence or broadcast added). probes: one attack each, with the answer it must get. why: the rule in words.",
   "tables": {
     "profiles": {
       "owner": "id", "key": ["id"],
@@ -368,6 +368,16 @@
       "why": "The old Dispatch's certifications, read by everyone and written by nothing: an older build's certification reaches dispatch_certifications through the dossier_certifications view."
     }
 ,
+    "storage.objects": {
+      "owner": "name", "key": ["id"],
+      "specimen": { "id": "{id}", "bucket_id": "avatars", "name": "{owner}/avatar.jpg" },
+      "variant": { "name": "{owner}/avatar2.png" },
+      "touch": { "metadata": { "rh": 1 } },
+      "forbidden": [{ "name": "{peer}/avatar.jpg" }, { "bucket_id": "rh-another" }],
+      "read": "owner",
+      "self": { "insert": "all", "update": "all", "delete": "all" },
+      "why": "The avatars bucket: each member's pictures in a folder of their own id. Everyone sees a picture at the bucket's public address; through the table a member reads, adds, replaces and takes away only their own."
+    },
     "dispatch_dossiers": {
       "hidesBlocked": true, "laid": false,
       "owner": "user_id", "key": ["id"],
@@ -724,7 +734,34 @@
       { "name": "another's message in another's salon", "as": "all", "expect": "error", "call": "public.withdraw_lounge_message('{ref:lounge_messages@V}')" }
     ] }
   },
+  "channels": [
+    {"name":"an open salon's channel is heard by any member","topic":"lounge-{ref:lounges@V}","as":"members","kind":"listen","expect":"seen","why":"An open salon is read by every member, so its channel is too."},
+    {"name":"an open salon's channel is heard by no visitor","topic":"lounge-{ref:lounges@V}","as":["visitor"],"kind":"listen","expect":"unseen","why":"The channels are for members."},
+    {"name":"a private salon's channel is heard from a seat alone","topic":"lounge-{ref:lounges@P}","as":"all","kind":"listen","expect":"unseen","why":"A private salon's words are its seats'."},
+    {"name":"a private salon's channel is heard by its host","topic":"lounge-{ref:lounges@P}","as":["P"],"kind":"listen","expect":"seen","why":"The control beside the case above."},
+    {"name":"presence in a salon one does not sit in","topic":"lounge-{ref:lounges@V}","as":"all","kind":"presence","expect":"refused","why":"Presence says who is in the room: only those seated in it."},
+    {"name":"presence in a salon one sits in","topic":"lounge-{ref:lounges}","as":"all","kind":"presence","expect":{"ok":"all"},"why":"A seated member shares their presence."},
+    {"name":"a broadcast on a salon one sits in","topic":"lounge-{ref:lounges}","as":"all","kind":"broadcast","expect":"refused","why":"Typing goes through send_salon_typing, as the house; no member broadcasts directly."},
+    {"name":"the notices channel is heard by members","topic":"global_notifications","as":"members","kind":"listen","expect":"seen","why":"The notices channel only says to look again; each notice is read through its own rules."},
+    {"name":"the notices channel is heard by no visitor","topic":"global_notifications","as":["visitor"],"kind":"listen","expect":"unseen","why":"The channels are for members."},
+    {"name":"no one speaks on the notices channel","topic":"global_notifications","as":"all","kind":"broadcast","expect":"refused","why":"Only the house sends on it."},
+    {"name":"a topic the house does not name is heard by no one","topic":"rh-unnamed","as":"all","kind":"listen","expect":"unseen","why":"A channel is heard only where a rule names it."}
+  ],
   "probes": [
+    {
+      "name": "an avatar is a picture by its name",
+      "table": "storage.objects", "as": ["free", "auteur"], "kind": "insert",
+      "row": { "id": "{new}", "bucket_id": "avatars", "name": "{owner}/page.html" },
+      "expect": "refused",
+      "why": "Only a picture's name (png, jpg, jpeg, webp, gif) goes up; the bucket's own limits check what the file is."
+    },
+    {
+      "name": "a member's folder is in the avatars bucket alone",
+      "table": "storage.objects", "as": ["free"], "kind": "insert",
+      "row": { "id": "{new}", "bucket_id": "rh-another", "name": "{owner}/avatar.jpg" },
+      "expect": "refused",
+      "why": "No other bucket takes a member's file through the table."
+    },
     {
       "name": "a private stack takes no one else's words",
       "table": "list_comments", "as": ["free", "admin"], "kind": "insert",

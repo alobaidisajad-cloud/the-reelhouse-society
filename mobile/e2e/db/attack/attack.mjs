@@ -90,7 +90,8 @@ export const dated = (table, row, columns) =>
 /** Tables one side has and the other lacks. */
 export const coverage = (matrix, tables) => ({
   unjudged: tables.filter((t) => !matrix.tables[t]),
-  gone: Object.keys(matrix.tables).filter((t) => !tables.includes(t)),
+  // A table of another schema (storage.objects) is named with it, and judged by its own tries.
+  gone: Object.keys(matrix.tables).filter((t) => !t.includes('.') && !tables.includes(t)),
 });
 
 /** May this actor do what a self/others rule says? */
@@ -181,13 +182,16 @@ export const fill = (value, ctx) => {
 const ownersOf = (spec) => (spec.owner === 'house' ? ['house'] : Object.keys(OWNERS));
 const ownerCol = (spec) => (typeof spec.owner === 'string' ? spec.owner : null);
 
+/** A table as SQL names it: public's by its name, another schema's (storage.objects) as written. */
+const rel = (table) => (table.includes('.') ? table : `public.${table}`);
+
 /** The house's reading, after an update, of whether the row now holds every value it was sent. */
 const heldSql = (table, change, where) =>
-  `SELECT ${Object.entries(change).map(([c, v]) => `${c} IS NOT DISTINCT FROM ${literal(v)}`).join(' AND ')} FROM public.${table} WHERE ${where}`;
+  `SELECT ${Object.entries(change).map(([c, v]) => `${c} IS NOT DISTINCT FROM ${literal(v)}`).join(' AND ')} FROM ${rel(table)} WHERE ${where}`;
 
 const insertSql = (table, row) => {
   const cols = Object.keys(row);
-  return `INSERT INTO public.${table} (${cols.join(', ')}) VALUES (${cols.map((c) => literal(row[c])).join(', ')})`;
+  return `INSERT INTO ${rel(table)} (${cols.join(', ')}) VALUES (${cols.map((c) => literal(row[c])).join(', ')})`;
 };
 const whereSql = (spec, row) => spec.key.map((k) => `${k} = ${literal(row[k])}`).join(' AND ');
 const setSql = (change) => Object.entries(change).map(([c, v]) => `${c} = ${literal(v)}`).join(', ');
@@ -208,20 +212,20 @@ export const plan = (matrix, columns = {}) => {
         const where = whereSql(spec, row);
         for (const action of ACTIONS) {
           const c = { label: `${table} ${action} ${actor}→${target}`, table, action, actor, target, expect: expected(spec, action, actor, target) };
-          if (action === 'select') c.sql = `SELECT count(*) FROM public.${table} WHERE ${where}`;
+          if (action === 'select') c.sql = `SELECT count(*) FROM ${rel(table)} WHERE ${where}`;
           if (action === 'update') {
             const touch = fill(spec.touch, { table, owner });
-            c.sql = `UPDATE public.${table} SET ${setSql(touch)} WHERE ${where}`;
+            c.sql = `UPDATE ${rel(table)} SET ${setSql(touch)} WHERE ${where}`;
             c.then = heldSql(table, touch, where);
           }
           if (action === 'delete') {
-            c.sql = `DELETE FROM public.${table} WHERE ${where}`;
+            c.sql = `DELETE FROM ${rel(table)} WHERE ${where}`;
             // A view's INSTEAD OF trigger counts a row whether or not its table let it go.
-            c.then = `SELECT NOT EXISTS (SELECT 1 FROM public.${table} WHERE ${where})`;
+            c.then = `SELECT NOT EXISTS (SELECT 1 FROM ${rel(table)} WHERE ${where})`;
           }
           if (action === 'insert') {
             if (spec.variant === 'none') {
-              c.before = `DELETE FROM public.${table} WHERE ${where}`;
+              c.before = `DELETE FROM ${rel(table)} WHERE ${where}`;
               c.sql = insertSql(table, row);
             } else {
               const newId = uuidOf('new', table, owner, actor);
@@ -257,7 +261,7 @@ export const plan = (matrix, columns = {}) => {
           const set = fill(change, { table, owner: actor });
           // Refused however it is refused: a rule, a trigger's words, or a check that names the column.
           cases.push({ label: `${table} forbidden ${Object.keys(change).join('+')} ${actor}→self`, table, action: 'update', actor, target: 'self',
-            expect: 'refused', anyError: true, sql: `UPDATE public.${table} SET ${setSql(set)} WHERE ${whereSql(spec, row)}`,
+            expect: 'refused', anyError: true, sql: `UPDATE ${rel(table)} SET ${setSql(set)} WHERE ${whereSql(spec, row)}`,
             then: heldSql(table, set, whereSql(spec, row)) });
         }
       }
@@ -271,7 +275,7 @@ export const plan = (matrix, columns = {}) => {
       if (p.kind === 'insert') c.sql = insertSql(p.table, fill(p.row, ctx));
       if (p.kind === 'read') {
         c.lay = insertSql(p.table, dated(p.table, fill(p.lay, ctx), columns));
-        c.sql = `SELECT count(*) FROM public.${p.table} WHERE id = ${literal(newId)}`;
+        c.sql = `SELECT count(*) FROM ${rel(p.table)} WHERE id = ${literal(newId)}`;
       }
       if (p.then) c.then = fill(p.then, ctx);
       cases.push(c);
@@ -291,6 +295,25 @@ export const plan = (matrix, columns = {}) => {
         cases.push(c);
       }
     });
+  }
+  // Each live channel, as Realtime asks its rules: to hear one is to read a message on its topic,
+  // laid there by the house; to share presence or broadcast is to add one.
+  for (const ch of matrix.channels ?? []) {
+    for (const actor of actorsOf(ch.as)) {
+      const ctx = { table: 'realtime.messages', owner: actor === 'visitor' ? 'X2' : actor, newId: uuidOf('channel', ch.name, actor) };
+      const topic = fill(ch.topic, ctx);
+      const c = { label: `channel: ${ch.name} (${actor})`, table: 'realtime.messages', actor, target: 'channel', topic,
+        expect: typeof ch.expect === 'string' ? ch.expect : allows(ch.expect.ok, actor) ? 'ok' : 'refused' };
+      if (ch.kind === 'listen') {
+        c.action = 'read';
+        c.lay = `INSERT INTO realtime.messages (topic, extension, payload, event, private) VALUES (${literal(topic)}, 'broadcast', '{}', ${literal(ctx.newId)}, true)`;
+        c.sql = `SELECT count(*) FROM realtime.messages WHERE topic = ${literal(topic)} AND event = ${literal(ctx.newId)}`;
+      } else {
+        c.action = 'insert';
+        c.sql = `INSERT INTO realtime.messages (topic, extension, payload, event, private) VALUES (${literal(topic)}, ${literal(ch.kind)}, '{}', 'rh', true)`;
+      }
+      cases.push(c);
+    }
   }
   return cases;
 };
@@ -346,7 +369,7 @@ ${setting(matrix, columns)}
 SET LOCAL session_replication_role = origin;
 ${plant}
 CREATE TEMP TABLE at_cases (n int PRIMARY KEY, before text, lay text, stmt text, is_read boolean, then_sql text, actor uuid,
-  call text, result_sql text) ON COMMIT DROP;
+  call text, result_sql text, topic text) ON COMMIT DROP;
 CREATE TEMP TABLE at_got (n int PRIMARY KEY, got text) ON COMMIT DROP;
 -- One try as one member (or a visitor, with no member), undone at once: the rows it touched or saw,
 -- or the SQLSTATE and words it was refused with; with then, the house's reading of what it left.
@@ -361,6 +384,8 @@ BEGIN
       PERFORM set_config('session_replication_role', 'origin', true);
     END IF;
     IF c.lay IS NOT NULL THEN EXECUTE c.lay; END IF;
+    -- A channel's try: the topic Realtime sets before it asks the rules.
+    IF c.topic IS NOT NULL THEN PERFORM set_config('realtime.topic', c.topic, true); END IF;
     PERFORM set_config('request.jwt.claims', CASE WHEN c.actor IS NULL THEN '{"role":"anon"}'
       ELSE json_build_object('sub', c.actor, 'role', 'authenticated')::text END, true);
     PERFORM set_config('role', CASE WHEN c.actor IS NULL THEN 'anon' ELSE 'authenticated' END, true);
@@ -388,7 +413,7 @@ BEGIN
   END;
 END $at$;
 INSERT INTO at_cases VALUES
-${cases.map((c, i) => `  (${i}, ${literal(c.before ?? null)}, ${literal(c.lay ?? null)}, ${literal(c.sql ?? null)}, ${c.action === 'select' || c.action === 'read'}, ${literal(c.then ?? null)}, ${c.actor === 'visitor' ? 'NULL' : literal(uid(c.actor))}, ${literal(c.call ?? null)}, ${literal(c.result ?? null)})`).join(',\n')};
+${cases.map((c, i) => `  (${i}, ${literal(c.before ?? null)}, ${literal(c.lay ?? null)}, ${literal(c.sql ?? null)}, ${c.action === 'select' || c.action === 'read'}, ${literal(c.then ?? null)}, ${c.actor === 'visitor' ? 'NULL' : literal(uid(c.actor))}, ${literal(c.call ?? null)}, ${literal(c.result ?? null)}, ${literal(c.topic ?? null)})`).join(',\n')};
 INSERT INTO at_got SELECT n, pg_temp.at_try(c) FROM at_cases c ORDER BY n;
 SELECT 'AT-RESULT ' || json_object_agg(n, got ORDER BY n) FROM at_got;
 ROLLBACK;

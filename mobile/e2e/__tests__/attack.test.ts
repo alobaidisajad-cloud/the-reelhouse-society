@@ -134,6 +134,15 @@ describe('the written table covers every relation a client can name', () => {
     const silent = Object.entries(matrix.tables).filter(([, s]) => !(s as { why?: string }).why).map(([t]) => t);
     expect(silent).toEqual([]);
     expect((matrix.probes as { why?: string }[]).filter((p) => !p.why)).toEqual([]);
+    expect((matrix.channels as { why?: string }[]).filter((c) => !c.why)).toEqual([]);
+    expect(Object.entries(matrix.functions as Record<string, { why?: string }>).filter(([, f]) => !f.why).map(([n]) => n)).toEqual([]);
+  });
+
+  it("asks the avatars bucket's table and each live channel, not only public's tables", () => {
+    expect(matrix.tables['storage.objects']).toBeDefined();
+    for (const ch of matrix.channels as { name: string }[]) {
+      expect([ch.name, answers.cases.some((c) => c.label.startsWith(`channel: ${ch.name} (`))]).toEqual([ch.name, true]);
+    }
   });
 });
 
