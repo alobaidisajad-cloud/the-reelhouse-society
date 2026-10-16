@@ -37,6 +37,7 @@ const MAY_LIST: Record<string, string> = {
   'e2e/ios-crash.mjs': 'the crash reports the simulator wrote',
   'e2e/ios-launch.cjs': 'the crash reports the simulator wrote since the launch',
   'e2e/scrub.mjs': 'the artifacts folder it is given, before upload',
+  'scripts/flake-history.cjs': "the flow reports a night's Sealed E2E rounds wrote, downloaded for it",
   'e2e/old-client-tree.mjs': 'the old client checkout it is making, emptied of all but the harness',
   'e2e/__tests__/flowScreens.test.ts': 'the folder its own run of flow-screens.mjs wrote',
   'scripts/bundle-size.js': 'the bundle an export just wrote',
