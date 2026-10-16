@@ -16,8 +16,8 @@
  *   node scripts/android-packages.cjs --installed pkg…    the same for the packages named
  *
  * sdkmanager reports a broken download as a warning and can still exit 0
- * (Sealed E2E runs 38796451028 and 38804362075: "Error on ZipFile unknown
- * archive"), so an install step asks the folders, not its exit code.
+ * (Sealed E2E runs 38796451028 and 38804362075: the system image's archive
+ * came down unreadable), so an install step asks the folders, not its exit code.
  */
 const { existsSync, readFileSync } = require('fs');
 const { join } = require('path');

@@ -20,7 +20,10 @@ appId: com.reelhouse.society
 - scrollUntilVisible:
     element: "The projection booth never closes."
     direction: DOWN
-    timeout: 20000
+    # As long as the scroll above: the wall's length is the day's edition's, and
+    # each swipe and read takes 4 to 6 s on the emulator (run 38824884948 ran
+    # out of 20 s four swipes in, the sign-off still below).
+    timeout: 60000
     # The page's last line, only reached, never tapped: it cannot come to
     # the middle.
 - assertNotVisible: "PROJECTION FAILURE"

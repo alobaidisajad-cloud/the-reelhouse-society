@@ -6,6 +6,7 @@
  *   - the website freeze, the add-only check, the migration lint, and no frozen
  *     count raised in its baseline;
  *   - every frozen count the changes can move, measured whole (scripts/frozen-counts.cjs);
+ *   - every comment names what exists (comments:check, as god_tier_ci runs it);
  *   - the app's types, lint on the changed files, and the tests related to them
  *     with the repo's own guards (the comment ledger, the source-reading
  *     ledger, the workflows, the hooks).
@@ -79,6 +80,11 @@ if (require.main === module) {
   const changed = [...new Set(bases.flatMap((b) => git('diff', '--name-only', '--diff-filter=ACMR', `${b}...HEAD`).split('\n')))]
     .filter((p) => p.startsWith('mobile/')).map((p) => p.slice('mobile/'.length));
   const code = changed.filter((p) => /\.(?:[cm]?js|tsx?)$/.test(p));
+  if (changed.length) {
+    // God-tier's own comment gate: a comment naming what does not exist failed CI on ede2cc32.
+    const c = run('every comment names what exists', 'npm', ['run', '-s', 'comments:check', '--', '--kinds', 'NAME,FILE,LINE'], MOBILE);
+    if (c) faults.push(c);
+  }
   if (code.length) {
     const t = run('types', 'npx', ['tsc', '--noEmit', '-p', '.'], MOBILE);
     if (t) faults.push(t);

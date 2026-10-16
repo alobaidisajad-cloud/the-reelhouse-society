@@ -438,12 +438,22 @@ jobs:
       # emulator and the system image (about 100 seconds of downloads, run
       # 38786642483). Installed here, where a failed download is tried once
       # more alone, the action finds each one already there instead of failing
-      # the flows' step.
+      # the flows' step. The system image is kept in GitHub's cache once a whole
+      # copy is installed: its download came back unreadable on both tries of
+      # run 38824884948, and a cached copy is never downloaded again. Each try
+      # starts from no half-downloaded file of sdkmanager's.
+      - name: The system image, from the cache
+        id: image-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /usr/local/lib/android/sdk/system-images/android-34/google_apis/x86_64
+          key: android-system-image-34-google_apis-x86_64
       - name: The emulator and its system image
         id: android-sdk
         timeout-minutes: 5
         continue-on-error: true
         run: |
+          rm -rf "$ANDROID_HOME/.temp" "$HOME/.android/cache"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64' --channel=0 > /dev/null
           node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64'
@@ -451,9 +461,17 @@ jobs:
         if: steps.android-sdk.outcome == 'failure'
         timeout-minutes: 5
         run: |
+          rm -rf "$ANDROID_HOME/.temp" "$HOME/.android/cache"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64' --channel=0 > /dev/null
           node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64'
+      # Only a copy the step above found whole.
+      - name: The system image, kept in the cache
+        if: steps.image-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /usr/local/lib/android/sdk/system-images/android-34/google_apis/x86_64
+          key: android-system-image-34-google_apis-x86_64
 
       - name: The flows, on an Android emulator
         # A backstop under the job's limit, so the steps after it still run. The

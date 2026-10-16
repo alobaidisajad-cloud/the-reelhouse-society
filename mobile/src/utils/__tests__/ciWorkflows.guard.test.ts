@@ -169,6 +169,8 @@ const ACTIONS: Record<string, true | string> = {
   'actions/setup-node': "Node 24 from the runner's own disk (\"Found in cache\", run 38804362129): nothing is downloaded",
   'actions/setup-java': "Java 17 from the runner's own disk (\"Resolved Java 17 from tool-cache\", run 38786642483): nothing is downloaded",
   'actions/upload-artifact': "the run's own files, to GitHub's store for the run",
+  'actions/cache/restore': "GitHub's own cache of a copy a run already installed and checked whole; a miss leaves the install to download it",
+  'actions/cache/save': "GitHub's own cache, given a copy the step before found whole",
   'actions/download-artifact': "the run's own files, from GitHub's store for the run",
   // What it would download is installed by the step before it: held by the emulator's test below.
   'reactivecircus/android-emulator-runner': 'boots the emulator and runs the flows in one step; its packages are installed before it, by a step tried once more alone',
