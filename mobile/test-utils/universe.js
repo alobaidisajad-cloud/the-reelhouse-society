@@ -91,6 +91,11 @@ const UNIVERSES = {
     roots: ['mobile/.maestro'],
     keep: ext('.yaml', '.yml'),
   },
+  flowScripts: {
+    says: "the scripts a flow runs (runScript): Maestro runs them on the runner, with the flow's env and its http client",
+    roots: ['mobile/.maestro'],
+    keep: ext('.js'),
+  },
   runFlows: {
     says: "the flows the runner runs: .maestro/config.yaml names the files directly in .maestro/, and only those",
     roots: ['mobile/.maestro'],

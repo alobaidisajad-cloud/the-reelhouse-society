@@ -5,9 +5,10 @@
  * workflow runs it, on log lines in logcat's threadtime shape, as e2eTrace writes them.
  */
 import { spawnSync } from 'child_process';
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { basename, join } from 'path';
+import { files as universe } from '../../test-utils/universe';
 import { pathToFileURL } from 'url';
 
 const SCRIPT = join(__dirname, '..', 'fault-judges.mjs');
@@ -49,7 +50,8 @@ it('names the two fault flows, each with what its fault does, and a limit of abo
 });
 
 it('judges every flow in .maestro/faults, which the fault runs\' one machine runs, and no other', () => {
-  const folder = readdirSync(join(__dirname, '..', '..', '.maestro', 'faults')).filter((f) => f.endsWith('.yaml')).map((f) => f.replace(/\.yaml$/, '')).sort();
+  const folder = universe('flows', { under: ['.maestro/faults'] }).map((f) => basename(f, '.yaml')).sort();
+  expect(folder.length).toBeGreaterThan(0);
   const map = JSON.parse(readFileSync(join(__dirname, '..', 'fault-shards.json'), 'utf8')) as { shards: { flows: string[] }[] };
   expect(map.shards.flatMap((s) => s.flows).sort()).toEqual(folder);
   expect(Object.keys(ask('m.FAULT_FLOWS') as Record<string, string>).sort()).toEqual(folder);
