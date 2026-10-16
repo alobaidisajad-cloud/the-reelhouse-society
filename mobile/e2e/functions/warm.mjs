@@ -2,8 +2,8 @@
 /**
  * warm.mjs — every function in the functions world loaded, before the seal.
  *
- * The runtime fetches a function's remote imports (deno.land, esm.sh) on its
- * first call, and those sit on Cloudflare as production does, so each function
+ * The runtime fetches a function's remote imports (deno.land, the esm CDN) on
+ * its first call, and those sit on Cloudflare as production does, so each function
  * is called once while the network is whole (see e2e.yml's own warm step). The
  * database is not yet production's shape, so each is asked something it answers
  * itself, without the house: an answer only its own code gives proves it loaded,

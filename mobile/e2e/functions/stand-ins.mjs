@@ -27,6 +27,7 @@
  *
  *   node mobile/e2e/functions/stand-ins.mjs [port]      (54990 by default)
  */
+import { Buffer } from 'node:buffer';
 import { createServer } from 'node:http';
 
 const PORT = Number(process.argv[2] ?? process.env.STAND_INS_PORT ?? 54990);
