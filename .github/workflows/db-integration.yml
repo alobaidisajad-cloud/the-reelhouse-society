@@ -268,6 +268,12 @@ jobs:
       - name: Every function, asked as its callers ask it
         run: node mobile/e2e/functions/suites.mjs
 
+      # WORKLIST P0.79: each store event through the served webhook and the app's
+      # own call, each followed by the record RevenueCat answers; the rank, its
+      # source and the founding seats checked after each.
+      - name: The payments replay
+        run: node mobile/e2e/functions/payments.mjs
+
       - name: What the functions and the stand-ins said, when it failed
         if: failure()
         run: |

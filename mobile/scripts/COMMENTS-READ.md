@@ -143,7 +143,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/advisories.test.ts | 2026-10-15 | new: a phone advisory held or refused, the rest listed, stale entries, the functions' imports read offline, the source map's package folders |
 | e2e/__tests__/anonKey.test.ts | 2026-10-15 | new: the key made without a stack is the CLI's published one (by its sha256), from claims that never change; a config that sets the secret says no |
 | e2e/__tests__/attack.test.ts | 2026-10-16 | new: the attack matrix's reasoning without a database: the written table covers every table and view of the snapshot and every function a visitor or member may run once the pending migrations are applied, each expected answer follows the matrix's words, each way a try comes back is read as what it is |
-| e2e/__tests__/functionsWorld.test.ts | 2026-10-16 | edited: every function deployed or written is served or named with why not; every host a function could call is sealed |
+| e2e/__tests__/functionsWorld.test.ts | 2026-10-16 | edited: every function deployed or written is served or named with why not; every host a function could call is sealed; the payments replay sends every kind of store event, buys every product, and expects ranks that change |
 | e2e/__tests__/glideLogLevel.test.ts | 2026-10-08 | written with glide-log-level.mjs, on dexdump lines in the shape of runs 37628665206 and 37674283540 |
 | e2e/__tests__/iosLaunch.test.ts | 2026-10-15 | the iPhone launch verdict shown saying no to each way a launch fails |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe; its files come from the shared file list (test-utils/universe.js) |
@@ -177,11 +177,13 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-writes.mjs | 2026-10-15 | edited: on one shard, only the flows run-flows.sh listed |
 | e2e/flow-screens.mjs | 2026-10-04 | Maestro's JUnit reason, a report for a flow with no step record, the decision line, the named animation; QueryController dropped (logged on every key of fast runs) |
+| e2e/functions/payments.mjs | 2026-10-16 | new: the payments replay: each store event through the served webhook or the app's own call, the record RevenueCat answers after it, the rank, source and seats checked after each |
 | e2e/functions/place.mjs | 2026-10-16 | edited: serves send-email too (SERVED_UNDEPLOYED), names paytabs-handler with why not (NOT_SERVED); Resend's address and the Expo access token set |
 | e2e/functions/seal-vendors.sh | 2026-10-16 | new: the services the functions call go nowhere from any container, after the functions are loaded |
 | e2e/functions/stand-ins.mjs | 2026-10-16 | edited: Resend and Sentry stood in for; Expo refuses a push without the access token |
-| e2e/functions/suites.mjs | 2026-10-16 | edited: send-email asked; Auth stopped (the same 503 for a known and an unknown handle); no key at all against the public key alone, as production's gateway answers; the push trigger changed in its address alone |
+| e2e/functions/suites.mjs | 2026-10-16 | edited: its means from world.mjs; send-email asked; Auth stopped (the same 503 for a known and an unknown handle); no key at all against the public key alone, as production's gateway answers; the push trigger changed in its address alone |
 | e2e/functions/warm.mjs | 2026-10-16 | edited: send-email loaded too; the CDN named as e2e.yml names it |
+| e2e/functions/world.mjs | 2026-10-16 | new: the means suites.mjs and payments.mjs share: a call as callers make it, a statement as the house, the stand-ins steered and read back, a member made, each check said and the verdict |
 | e2e/glide-log-level.mjs | 2026-10-08 | written: the APK hands Glide level 6 (ERROR), once, as a constant |
 | e2e/ios-crash.mjs | 2026-10-15 | new |
 | e2e/ios-launch.cjs | 2026-10-15 | true as written |
@@ -1176,7 +1178,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/searchPattern.test.ts | — |  |
 | src/utils/__tests__/searchWiring.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
-| src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-04 | edited: softBreak asks each place once, only where a run needs a break |
+| src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-16 | edited: the flags' cost timed with Node's own clock, not the setup's whole-millisecond one |
 | src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts | 2026-10-03 | Written with 20261003_05: the corpus holds every character the cleaning acts on, with cleanForStorage's answer. |
 | src/utils/__tests__/theLineEndsChangeNoFunction.guard.test.ts | 2026-10-16 | new: read against the snapshot's 144 bodies (96 with CRLF, one JSON literal holding it) and up-down-up.mjs's comparison |
 | src/utils/__tests__/theDeadLetterIsNobodyElsesToKeep.test.ts | 2026-10-15 | edited: another member's held and failed writes stay at this one's sign-out |

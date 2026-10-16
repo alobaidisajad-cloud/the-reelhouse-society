@@ -1,0 +1,131 @@
+{
+  "about": "The payments replay (WORKLIST P0.79), run by payments.mjs in the functions world. Each scenario is a member's life with the store: each step is a store event sent through the served revenuecat-webhook (or the app's own sync-entitlement call), with the record RevenueCat answers after it, and the rank and source the house must hold then. The webhook takes the rank from the record, never from the event, so each scenario's ranks differ between steps, and a webhook that read the event instead fails. Records are in RevenueCat's v1 subscriber shape (payments.mjs builds them from these lines: an entitlement's product, and its end and grace as days from now; null is no end); they are written from RevenueCat's documented shape, and are replaced by recorded answers once the store's test project exists (PLAN §3c-14). Event types are RevenueCat's own; a refund is a CANCELLATION with cancel_reason CUSTOMER_SUPPORT, as RevenueCat sends one.",
+  "scenarios": [
+    {
+      "name": "a month of Auteur: bought, renewed, cancelled, run out",
+      "members": ["a"],
+      "steps": [
+        { "via": "webhook", "event": { "type": "INITIAL_PURCHASE", "app_user_id": "a", "product_id": "auteur_monthly" },
+          "records": { "a": { "auteur": { "product": "auteur_monthly", "ends": 30 } } },
+          "expect": { "a": { "tier": "auteur", "source": "revenuecat" } } },
+        { "via": "app", "as": "a",
+          "records": { "a": { "auteur": { "product": "auteur_monthly", "ends": 30 } } },
+          "expect": { "a": { "tier": "auteur", "source": "revenuecat" } } },
+        { "via": "webhook", "event": { "type": "RENEWAL", "app_user_id": "a", "product_id": "auteur_monthly" },
+          "records": { "a": { "auteur": { "product": "auteur_monthly", "ends": 60 } } },
+          "expect": { "a": { "tier": "auteur", "source": "revenuecat" } } },
+        { "via": "webhook", "event": { "type": "CANCELLATION", "app_user_id": "a", "product_id": "auteur_monthly", "cancel_reason": "UNSUBSCRIBE" },
+          "records": { "a": { "auteur": { "product": "auteur_monthly", "ends": 60, "unsubscribed": true } } },
+          "expect": { "a": { "tier": "auteur", "source": "revenuecat" } },
+          "why": "a cancelled subscription runs to its end: the member keeps the rank they paid for until then" },
+        { "via": "webhook", "event": { "type": "EXPIRATION", "app_user_id": "a", "product_id": "auteur_monthly" },
+          "records": { "a": { "auteur": { "product": "auteur_monthly", "ends": -1, "unsubscribed": true } } },
+          "expect": { "a": { "tier": "cinephile", "source": "revenuecat" } },
+          "why": "the rank ends with the subscription; the source stays the store's, so the app knows a lapsed member" },
+        { "via": "webhook", "event": { "type": "INITIAL_PURCHASE", "app_user_id": "a", "product_id": "auteur_monthly" },
+          "records": { "a": { "auteur": { "product": "auteur_monthly", "ends": -1, "unsubscribed": true } } },
+          "expect": { "a": { "tier": "cinephile", "source": "revenuecat" } },
+          "why": "a late or retried event cannot undo a newer one: the record says it has ended" }
+      ]
+    },
+    {
+      "name": "an Archivist whose card failed: kept through the store's grace, then ended",
+      "members": ["a"],
+      "steps": [
+        { "via": "webhook", "event": { "type": "INITIAL_PURCHASE", "app_user_id": "a", "product_id": "archivist_monthly" },
+          "records": { "a": { "archivist": { "product": "archivist_monthly", "ends": 30 } } },
+          "expect": { "a": { "tier": "archivist", "source": "revenuecat" } } },
+        { "via": "webhook", "event": { "type": "BILLING_ISSUE", "app_user_id": "a", "product_id": "archivist_monthly" },
+          "records": { "a": { "archivist": { "product": "archivist_monthly", "ends": -1, "grace": 6 } } },
+          "expect": { "a": { "tier": "archivist", "source": "revenuecat" } },
+          "why": "the store retries the card in its grace, and the member keeps their rank meanwhile" },
+        { "via": "webhook", "event": { "type": "EXPIRATION", "app_user_id": "a", "product_id": "archivist_monthly" },
+          "records": { "a": { "archivist": { "product": "archivist_monthly", "ends": -7, "grace": -1 } } },
+          "expect": { "a": { "tier": "cinephile", "source": "revenuecat" } } }
+      ]
+    },
+    {
+      "name": "an Archivist who moves up to Auteur, a year at a time",
+      "members": ["a"],
+      "steps": [
+        { "via": "webhook", "event": { "type": "INITIAL_PURCHASE", "app_user_id": "a", "product_id": "archivist_annual" },
+          "records": { "a": { "archivist": { "product": "archivist_annual", "ends": 365 } } },
+          "expect": { "a": { "tier": "archivist", "source": "revenuecat" } } },
+        { "via": "webhook", "event": { "type": "PRODUCT_CHANGE", "app_user_id": "a", "product_id": "archivist_annual", "new_product_id": "auteur_annual" },
+          "records": { "a": { "auteur": { "product": "auteur_annual", "ends": 365 } } },
+          "expect": { "a": { "tier": "auteur", "source": "revenuecat" } } }
+      ]
+    },
+    {
+      "name": "two subscriptions, the lesser one ending: the greater is kept",
+      "members": ["a"],
+      "steps": [
+        { "via": "webhook", "event": { "type": "INITIAL_PURCHASE", "app_user_id": "a", "product_id": "archivist_monthly" },
+          "records": { "a": { "archivist": { "product": "archivist_monthly", "ends": 30 } } },
+          "expect": { "a": { "tier": "archivist", "source": "revenuecat" } } },
+        { "via": "webhook", "event": { "type": "INITIAL_PURCHASE", "app_user_id": "a", "product_id": "auteur_annual" },
+          "records": { "a": { "archivist": { "product": "archivist_monthly", "ends": 30 }, "auteur": { "product": "auteur_annual", "ends": 365 } } },
+          "expect": { "a": { "tier": "auteur", "source": "revenuecat" } } },
+        { "via": "webhook", "event": { "type": "EXPIRATION", "app_user_id": "a", "product_id": "archivist_monthly" },
+          "records": { "a": { "archivist": { "product": "archivist_monthly", "ends": -1 }, "auteur": { "product": "auteur_annual", "ends": 365 } } },
+          "expect": { "a": { "tier": "auteur", "source": "revenuecat" } },
+          "why": "the event is the lesser one's end; the record still holds the greater" }
+      ]
+    },
+    {
+      "name": "an Auteur refunded",
+      "members": ["a"],
+      "steps": [
+        { "via": "webhook", "event": { "type": "INITIAL_PURCHASE", "app_user_id": "a", "product_id": "auteur_annual" },
+          "records": { "a": { "auteur": { "product": "auteur_annual", "ends": 365 } } },
+          "expect": { "a": { "tier": "auteur", "source": "revenuecat" } } },
+        { "via": "webhook", "event": { "type": "CANCELLATION", "app_user_id": "a", "product_id": "auteur_annual", "cancel_reason": "CUSTOMER_SUPPORT" },
+          "records": { "a": {} },
+          "expect": { "a": { "tier": "cinephile", "source": "revenuecat" } },
+          "why": "a refund takes the entitlement out of the record at once" }
+      ]
+    },
+    {
+      "name": "a subscription moved to another account",
+      "members": ["a", "b"],
+      "steps": [
+        { "via": "webhook", "event": { "type": "INITIAL_PURCHASE", "app_user_id": "a", "product_id": "auteur_monthly" },
+          "records": { "a": { "auteur": { "product": "auteur_monthly", "ends": 30 } }, "b": {} },
+          "expect": { "a": { "tier": "auteur", "source": "revenuecat" }, "b": { "tier": null, "source": null } } },
+        { "via": "webhook", "event": { "type": "TRANSFER", "transferred_from": ["a"], "transferred_to": ["b"] },
+          "records": { "a": {}, "b": { "auteur": { "product": "auteur_monthly", "ends": 30 } } },
+          "expect": { "a": { "tier": "cinephile", "source": "revenuecat" }, "b": { "tier": "auteur", "source": "revenuecat" } },
+          "why": "both sides are read again: the one who gave it loses it, the one who took it holds it" }
+      ]
+    },
+    {
+      "name": "a founding seat bought, then refunded: the seat returns to the hundred",
+      "members": ["a"],
+      "steps": [
+        { "via": "webhook", "event": { "type": "NON_RENEWING_PURCHASE", "app_user_id": "a", "product_id": "founding_lifetime" },
+          "records": { "a": { "founding": { "product": "founding_lifetime", "ends": null } } },
+          "expect": { "a": { "tier": "auteur", "source": "revenuecat", "founding": true }, "seats": 1 },
+          "why": "a lifetime seat holds the Auteur's rank and one of the hundred seats" },
+        { "via": "webhook", "event": { "type": "CANCELLATION", "app_user_id": "a", "product_id": "founding_lifetime", "cancel_reason": "CUSTOMER_SUPPORT" },
+          "records": { "a": {} },
+          "expect": { "a": { "tier": "cinephile", "source": "revenuecat", "founding": false }, "seats": 0 },
+          "why": "the refunded seat returns to the hundred (20261003_09)" }
+      ]
+    },
+    {
+      "name": "a rank the house gave by hand is never taken by the store",
+      "members": ["a"],
+      "manual": { "a": "auteur" },
+      "steps": [
+        { "via": "webhook", "event": { "type": "EXPIRATION", "app_user_id": "a", "product_id": "archivist_monthly" },
+          "records": { "a": {} },
+          "expect": { "a": { "tier": "auteur", "source": "manual" } },
+          "why": "each source keeps its own grant: the store's ending lowers only what the store gave" },
+        { "via": "webhook", "event": { "type": "INITIAL_PURCHASE", "app_user_id": "a", "product_id": "archivist_monthly" },
+          "records": { "a": { "archivist": { "product": "archivist_monthly", "ends": 30 } } },
+          "expect": { "a": { "tier": "auteur", "source": "manual" } },
+          "why": "the highest rank in force holds, whoever gave it" }
+      ]
+    }
+  ]
+}

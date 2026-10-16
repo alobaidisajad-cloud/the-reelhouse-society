@@ -144,6 +144,53 @@ describe('every outside service is stood in for, and sealed', () => {
   });
 });
 
+describe('the payments replay (P0.79)', () => {
+  type Ent = { product: string; ends: number | null; grace?: number; unsubscribed?: boolean };
+  type Step = {
+    via: 'webhook' | 'app'; as?: string; why?: string;
+    event?: { type: string; app_user_id?: string; product_id?: string; new_product_id?: string; cancel_reason?: string; transferred_from?: string[]; transferred_to?: string[] };
+    records: Record<string, Record<string, Ent>>;
+    expect: Record<string, { tier: string | null; source: string | null; founding?: boolean } | number>;
+  };
+  const { scenarios } = JSON.parse(readFileSync(join(HERE, 'payments.json'), 'utf8')) as {
+    scenarios: { name: string; members: string[]; manual?: Record<string, string>; steps: Step[] }[];
+  };
+  const steps = scenarios.flatMap((s) => s.steps.map((step) => ({ s, step })));
+
+  it('sends every kind of store event the plan names: a purchase, a renewal, a cancellation, an expiry, a billing issue, a change of product, a transfer and a refund', () => {
+    const kinds = new Set(steps.map(({ step }) => (step.event?.cancel_reason === 'CUSTOMER_SUPPORT' ? 'REFUND' : step.event?.type)));
+    for (const kind of ['INITIAL_PURCHASE', 'RENEWAL', 'CANCELLATION', 'EXPIRATION', 'BILLING_ISSUE', 'PRODUCT_CHANGE', 'TRANSFER', 'REFUND']) {
+      expect([kind, kinds.has(kind)]).toEqual([kind, true]);
+    }
+    expect(steps.some(({ step }) => step.via === 'app')).toBe(true);
+  });
+
+  it('buys every product the app sells', () => {
+    const sold = /store products are ([^;]+?); their prices/s.exec(readFileSync(join(__dirname, '..', '..', 'src', 'lib', 'revenueCat.ts'), 'utf8'))?.[1] ?? '';
+    const products = [...sold.matchAll(/`([a-z_]+)`/g)].map((m) => m[1] ?? '');
+    expect(products).toHaveLength(5);
+    const bought = new Set(steps.flatMap(({ step }) => Object.values(step.records).flatMap((r) => Object.values(r).map((e) => e.product))));
+    for (const p of products) expect([p, bought.has(p)]).toEqual([p, true]);
+  });
+
+  it('expects ranks that change within each scenario, so a webhook that read the event and not the record would fail', () => {
+    for (const s of scenarios) {
+      const tiers = new Set(s.steps.flatMap((step) => Object.entries(step.expect).filter(([k]) => k !== 'seats').map(([, v]) => (v as { tier: string | null }).tier)));
+      const lifetime = s.steps.some((step) => Object.values(step.records).some((r) => Object.values(r).some((e) => e.ends === null)));
+      expect([s.name, tiers.size > 1 || !!s.manual || lifetime]).toEqual([s.name, true]);
+    }
+  });
+
+  it('gives each step a record for every member, and expects every member\'s rank after it', () => {
+    for (const { s, step } of steps) {
+      expect([s.name, Object.keys(step.records).sort()]).toEqual([s.name, [...s.members].sort()]);
+      expect([s.name, Object.keys(step.expect).filter((k) => k !== 'seats').sort()]).toEqual([s.name, [...s.members].sort()]);
+      const named = step.via === 'app' ? [step.as] : [step.event?.app_user_id, ...(step.event?.transferred_from ?? []), ...(step.event?.transferred_to ?? [])];
+      for (const m of named.filter(Boolean)) expect([s.name, s.members.includes(m ?? '')]).toEqual([s.name, true]);
+    }
+  });
+});
+
 describe('the job', () => {
   const ci = readFileSync(join(ROOT, '.github/workflows/db-integration.yml'), 'utf8');
   const job = ci.slice(ci.indexOf('\n  functions:'), ci.indexOf('\n  contracts:'));
@@ -159,6 +206,7 @@ describe('the job', () => {
       'node mobile/e2e/db/bootstrap.mjs',
       'node mobile/e2e/db/up-down-up.mjs',
       'node mobile/e2e/functions/suites.mjs',
+      'node mobile/e2e/functions/payments.mjs',
     ].map((step) => [step, job.indexOf(step)] as const);
     for (const [step, at] of order) expect([step, at > 0]).toEqual([step, true]);
     expect(order.map(([, at]) => at)).toEqual([...order.map(([, at]) => at)].sort((a, b) => a - b));
