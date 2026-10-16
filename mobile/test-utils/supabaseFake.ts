@@ -20,7 +20,7 @@
  *     before the cap; filters, `.order()`, and writes change what later reads
  *     find.
  *
- *   const mockHouse = supabaseFake({ rows: { logs: [ ... ] }, rpc: { get_x: () => 3 } });
+ *   const mockHouse = supabaseFake({ rows: { logs: [ ... ] }, rpc: { claim_founding_seat: true } });
  *   jest.mock('@/src/lib/supabase', () => ({ supabase: mockHouse.client }));
  *   mockHouse.asked   // every query made, in order
  *
