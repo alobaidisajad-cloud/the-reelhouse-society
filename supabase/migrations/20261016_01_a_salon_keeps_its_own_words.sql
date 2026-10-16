@@ -33,6 +33,9 @@ BEGIN
   END IF;
   RETURN NEW;
 END $$;
+
+-- add-only (1): no shipped client uses it: a trigger's function, new here; TestFlight build 41 and the
+--   website never call it.
 REVOKE ALL ON FUNCTION public.a_reaction_is_in_its_message_salon() FROM PUBLIC, anon, authenticated;
 
 -- add-only (3): it only fixes: TestFlight build 41 sends each reaction with its message's own salon
@@ -68,6 +71,9 @@ BEGIN
                                 ELSE (SELECT p.username FROM public.profiles p WHERE p.id = q.user_id) END;
   RETURN NEW;
 END $$;
+
+-- add-only (1): no shipped client uses it: a trigger's function, new here; TestFlight build 41 and the
+--   website never call it.
 REVOKE ALL ON FUNCTION public.a_reply_quotes_its_message() FROM PUBLIC, anon, authenticated;
 
 -- Named to run after a_clean_member_text, so the copy is the cleaned words the message keeps.
@@ -92,6 +98,9 @@ BEGIN
   END IF;
   RETURN NULL;
 END $$;
+
+-- add-only (1): no shipped client uses it: a trigger's function, new here; TestFlight build 41 and the
+--   website never call it.
 REVOKE ALL ON FUNCTION public.a_withdrawn_message_leaves_its_quotes() FROM PUBLIC, anon, authenticated;
 
 -- add-only (3): it only fixes: TestFlight build 41 withdraws through withdraw_lounge_message and reads a
