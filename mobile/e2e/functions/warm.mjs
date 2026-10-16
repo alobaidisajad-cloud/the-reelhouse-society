@@ -25,6 +25,7 @@ const CALLS = [
   ['notify-push', { body: {} , bare: true }, (s, j) => s === 401 && j?.error === 'Unauthorized'],
   ['sync-entitlement', { body: {} }, (s, j) => s === 401 && j?.error === 'Invalid or expired token'],
   ['revenuecat-webhook', { method: 'GET', bare: true }, (s, j) => s === 405 && j?.error === 'Method not allowed'],
+  ['send-email', { body: {}, bare: true }, (s, j) => s === 401 && j?.error === 'Unauthorized'],
 ];
 
 const call = async (name, { method = 'POST', body, bare } = {}) => {

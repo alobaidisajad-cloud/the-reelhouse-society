@@ -252,6 +252,10 @@ jobs:
       - name: Each function loaded, and one reaching the stand-ins, before the seal
         run: node mobile/e2e/functions/warm.mjs
 
+      # A call that misses its stand-in fails here, never reaching the service.
+      - name: Seal it — the services the functions call go nowhere
+        run: bash mobile/e2e/functions/seal-vendors.sh "Functions world vendor seal"
+
       - name: Seal it — production's host goes nowhere
         run: bash mobile/e2e/db/seal.sh "Functions world seal"
 

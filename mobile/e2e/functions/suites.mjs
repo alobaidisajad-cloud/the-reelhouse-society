@@ -28,9 +28,11 @@ const SECRET = {
   webhook: process.env.FN_REVENUECAT_WEBHOOK_SECRET,
   store: process.env.FN_REVENUECAT_SECRET_KEY,
   tmdb: process.env.FN_TMDB_API_KEY,
+  resend: process.env.FN_RESEND_API_KEY,
+  expo: process.env.STAND_INS_EXPO_TOKEN,
 };
 if (!API || !ANON || !SERVICE || Object.values(SECRET).some((v) => !v)) {
-  console.error('API_URL, ANON_KEY, SERVICE_ROLE_KEY and the FN_* secrets (place.mjs) are needed.');
+  console.error('API_URL, ANON_KEY, SERVICE_ROLE_KEY, the FN_* secrets and STAND_INS_EXPO_TOKEN (place.mjs) are needed.');
   process.exit(2);
 }
 if (!/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(API)) {
@@ -107,6 +109,21 @@ const member = async (username) => {
   return { id: user.id, username, email, password, token: session.access_token };
 };
 
+/** Stops, or starts again, one of the stack's containers (auth, rest, ...). */
+const container = (verb, service) => {
+  const name = `supabase_${service}_reelhouse-e2e`;
+  const r = spawnSync('docker', [verb, name], { encoding: 'utf8' });
+  if (r.status !== 0) throw new Error(`docker ${verb} ${name}: ${r.stderr.trim()}`);
+};
+/** Waits until Auth answers its health check again, up to a minute. */
+const authBack = async () => {
+  for (let i = 0; i < 60; i++) {
+    try { if ((await fetch(`${API}/auth/v1/health`, { headers: { apikey: ANON } })).ok) return true; } catch { /* not yet */ }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return false;
+};
+
 const AHEAD = new Date(Date.now() + 30 * 86400_000).toISOString();
 const tierOf = (id) => sql(`SELECT tier FROM public.profiles WHERE id = ${literal(id)}`);
 
@@ -151,6 +168,7 @@ section('tmdb-proxy — the apps\' only road to TMDB, its key never handed back'
   const slow = await fn('tmdb-proxy', { body: { path: '/movie/606' } });
   check(slow.status === 504 && slow.ms < 12_000, 'TMDB slower than its limit is 504, within the limit', `${said(slow)} after ${slow.ms} ms`);
 
+  await scriptStandIns({ tmdb: { '/3/movie/999999999': { status: 404, body: { status_code: 34, status_message: 'The resource you requested could not be found.', success: false } } } });
   const missing = await fn('tmdb-proxy', { body: { path: '/movie/999999999' } });
   check(missing.status === 404, 'a film TMDB does not have is its 404', said(missing));
 
@@ -197,13 +215,33 @@ section('sign-in-with-username — a handle and a password, the address never sh
     sql('GRANT EXECUTE ON FUNCTION public.get_email_by_username(text) TO service_role');
   }
   check(down.status === 503, 'a lookup that failed is 503 (the apps say "unavailable"), not a wrong password', said(down));
+
+  // Auth itself down: the house's failure, the same for a handle someone has and one no one has.
+  container('stop', 'auth');
+  let knownDown;
+  let unknownDown;
+  try {
+    knownDown = await fn('sign-in-with-username', { body: { username: one.username, password: one.password }, auth: null });
+    unknownDown = await fn('sign-in-with-username', { body: { username: 'fn_nobody_by_this_name', password: one.password }, auth: null });
+  } finally {
+    container('start', 'auth');
+  }
+  check(knownDown.status === 503 && unknownDown.status === 503 && knownDown.text === unknownDown.text,
+    'Auth down is 503, the very same for a known handle and an unknown one', `${said(knownDown)} / ${said(unknownDown)}`);
+  check(await authBack(), 'and Auth answers again once it is back');
+  const again = await fn('sign-in-with-username', { body: { username: one.username, password: one.password }, auth: null });
+  check(again.status === 200, 'a member signs in again once Auth is back', said(again));
   await drain();
 }
 
 section('sync-films — reads the films nobody has read, and never blames a film for the key');
 {
-  const noJwt = await fn('sync-films', { auth: null });
-  check(noJwt.status === 401, 'refused without a JWT, as deployed', said(noJwt));
+  // As production's gateway answers (probed 2026-10-16): nothing at all is refused; the
+  // public key alone reaches the function, which drains what is outstanding.
+  const bare = await fn('sync-films', { auth: null, apikey: null });
+  check(bare.status === 401, 'refused with no key and no JWT, as deployed', said(bare));
+  const keyOnly = await fn('sync-films', { auth: null });
+  check(keyOnly.status === 200, 'the public key alone reaches it, as in production', said(keyOnly));
 
   sql(`DELETE FROM public.films WHERE id BETWEEN 900001 AND 900099;
        INSERT INTO public.films (id) VALUES (900001), (900002), (900003);`);
@@ -254,6 +292,10 @@ section('notify-push — the database\'s push sender, behind its own secret');
   const seen = await drain();
   const messages = seen[0] ? JSON.parse(seen[0].body) : [];
   check(sent.status === 200 && sent.json?.delivered === 1 && sent.json?.pruned === 1, 'one delivered, the dead token pruned', said(sent));
+  check(seen[0]?.headers.authorization === `Bearer ${SECRET.expo}`, 'Expo is sent its access token, as push security asks');
+  const tokenless = await fetch(`${STAND}/--/api/v2/push/send`, { method: 'POST', body: '[]' });
+  await drain();
+  check(tokenless.status === 401, 'and the Expo stand-in refuses a push without it, as Expo does', `HTTP ${tokenless.status}`);
   check(seen.length === 1 && messages.length === 2 && messages.every((m) => m.title === 'A New Follower' && m.body === `@${one.username} is following you.` && m.data?.notificationId === record.id),
     'Expo is sent one message per Expo token (never the other), titled by kind, the sender named', JSON.stringify(messages).slice(0, 300));
   check(sql(`SELECT string_agg(token, ',' ORDER BY token) FROM public.push_tokens WHERE user_id = ${literal(two.id)}`) === 'ExponentPushToken[fn-live-1],not-an-expo-token',
@@ -269,6 +311,7 @@ section('notify-push — the database\'s push sender, behind its own secret');
   await drain();
 
   // The database's own call: its trigger, through pg_net, to this function, to Expo.
+  const before = sql("SELECT pg_get_functiondef('public.tg_notify_push()'::regprocedure)");
   sql(`DO $do$ DECLARE d text; BEGIN
          d := pg_get_functiondef('public.tg_notify_push()'::regprocedure);
          IF d !~ 'https://[a-z0-9]+[.]supabase[.]co/functions/v1/notify-push' THEN RAISE EXCEPTION 'tg_notify_push no longer names the push sender'; END IF;
@@ -279,6 +322,10 @@ section('notify-push — the database\'s push sender, behind its own secret');
            PERFORM vault.update_secret((SELECT id FROM vault.secrets WHERE name = 'notify_push_secret'), ${literal(SECRET.shared)});
          ELSE PERFORM vault.create_secret(${literal(SECRET.shared)}, 'notify_push_secret'); END IF;
        END $do$;`);
+  const after = sql("SELECT pg_get_functiondef('public.tg_notify_push()'::regprocedure)");
+  const production = /https:\/\/[a-z0-9]+[.]supabase[.]co/.exec(before)?.[0] ?? '';
+  check(production !== '' && after !== before && after.split(GATEWAY_FROM_DB).join(production) === before,
+    'the push trigger is changed in its address alone, to the local push sender');
   const notice = `A notice from the house, ${randomUUID().slice(0, 8)}.`;
   sql(`INSERT INTO public.notifications (user_id, type, message) VALUES (${literal(two.id)}, 'system', ${literal(notice)})`);
   let pushed = [];
@@ -299,8 +346,10 @@ section('notify-push — the database\'s push sender, behind its own secret');
 
 section('sync-entitlement — a member\'s rank, read from the store, never from the member');
 {
-  const noJwt = await fn('sync-entitlement', { auth: null });
-  check(noJwt.status === 401, 'refused without a JWT, as deployed', said(noJwt));
+  const noJwt = await fn('sync-entitlement', { auth: null, apikey: null });
+  check(noJwt.status === 401, 'refused with no key and no JWT, as deployed', said(noJwt));
+  const keyOnly = await fn('sync-entitlement', { auth: null });
+  check(keyOnly.status === 401 && keyOnly.json?.error === 'Missing authorization header', 'refused by its own code behind the public key alone, as in production', said(keyOnly));
   const anon = await fn('sync-entitlement');
   check(anon.status === 401, 'refused for a visitor (the anon key is no member)', said(anon));
   check((await drain()).length === 0, 'and the store is never asked');
@@ -358,6 +407,39 @@ section('revenuecat-webhook — the store says something changed');
   check(down.status === 500 && tierOf(four.id) === 'archivist', 'a store that could not be read is 500, so RevenueCat sends it again; the rank stays', `${said(down)}; ${tierOf(four.id)}`);
 }
 
+section('send-email — the house\'s mail, behind its own secret (written, not yet deployed)');
+{
+  const as = (body, headers = { 'x-function-secret': SECRET.shared }) => fn('send-email', { body, auth: null, apikey: null, headers });
+  const bare = await as({ type: 'welcome', userId: one.id }, {});
+  const wrong = await as({ type: 'welcome', userId: one.id }, { 'x-function-secret': `${SECRET.shared.slice(0, -1)}x` });
+  check(bare.status === 401 && wrong.status === 401, 'refused without its secret, and with a wrong one', `${said(bare)} / ${said(wrong)}`);
+  const get = await fn('send-email', { method: 'GET', auth: null, apikey: null });
+  check(get.status === 405, 'only POST', said(get));
+  check((await drain()).length === 0, 'and no mail is sent');
+
+  const welcome = await as({ type: 'welcome', userId: one.id });
+  let seen = await drain();
+  const mail = seen[0] ? JSON.parse(seen[0].body) : {};
+  check(welcome.status === 200 && !welcome.text.includes(one.email), 'a welcome is sent, and the answer never holds the address', said(welcome));
+  check(seen.length === 1 && seen[0].path === '/emails' && seen[0].headers.authorization === `Bearer ${SECRET.resend}`
+    && mail.to === one.email && mail.subject === 'Welcome to The ReelHouse Society' && String(mail.html).includes(one.username),
+    'Resend is sent one mail, to the member\'s own address, with the key', JSON.stringify({ path: seen[0]?.path, to: mail.to === one.email, subject: mail.subject }));
+  const twice = await as({ type: 'welcome', userId: one.id });
+  check(twice.status === 429 && (await drain()).length === 0, 'a second welcome the same day is refused, and not sent', said(twice));
+
+  await scriptStandIns({ resend: { status: 500 } });
+  const down = await as({ type: 'digest', userId: one.id });
+  await drain();
+  check(down.status === 502, 'Resend failing is a failure, never "sent"', said(down));
+  const mended = await as({ type: 'digest', userId: one.id });
+  await drain();
+  check(mended.status === 200, 'and the mail it failed is sent once Resend answers', said(mended));
+
+  const unknown = await as({ type: 'gossip', userId: two.id });
+  const nobody = await as({ type: 'welcome', userId: randomUUID() });
+  check(unknown.status === 400 && nobody.status === 404 && (await drain()).length === 0, 'an unknown kind and an unknown member are refused, and nothing is sent', `${said(unknown)} / ${said(nobody)}`);
+}
+
 section('fetch-rss — an allowed feed, read for the builds already installed');
 {
   const feed = await fn('fetch-rss', { body: { url: 'https://www.theguardian.com/film/rss' }, auth: null });
@@ -382,7 +464,7 @@ section('fetch-rss — an allowed feed, read for the builds already installed');
 section('nowhere else');
 {
   await drain();
-  const KNOWN = [/^\/--\/api\/v2\/push\/send$/, /^\/v1\/subscribers\/[^/]+$/, /^\/3\//, /\/rss$/];
+  const KNOWN = [/^\/--\/api\/v2\/push\/send$/, /^\/v1\/subscribers\/[^/]+$/, /^\/3\//, /\/rss$/, /^\/emails$/];
   const stray = everything.filter((r) => !KNOWN.some((re) => re.test(r.path)));
   check(everything.length > 0 && stray.length === 0, `every one of the ${everything.length} requests the functions sent went to a service they are meant to call`,
     JSON.stringify(stray.map((r) => `${r.method} ${r.path}`)));

@@ -13,6 +13,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || ''
+// Resend's own address; the sealed world names its stand-in.
+const RESEND_API_URL = Deno.env.get('RESEND_API_URL') || 'https://api.resend.com'
+// How long Resend may take, its answer read: past it, the mail was not sent.
+const RESEND_LIMIT_MS = 10_000
+const json = (body: unknown, status: number) =>
+  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 const FROM_EMAIL = 'noreply@thereelhousesociety.com'
 const APP_URL = 'https://thereelhousesociety.com'
 
@@ -57,19 +63,17 @@ serve(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
-    // Fetch user profile
-    const { data: profile } = await supabase
+    // A read that failed is the house's failure, never "no such member".
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('username, bio, avatar_url, tier')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
+    if (profileError) return json({ error: 'The member could not be read' }, 500)
+    if (!profile) return json({ error: 'User not found' }, 404)
 
-    if (!profile) {
-      return new Response(JSON.stringify({ error: 'User not found' }), { status: 404 })
-    }
-
-    // Fetch user email from auth
-    const { data: authUser } = await supabase.auth.admin.getUserById(userId)
+    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
+    if (authError) return json({ error: 'The member\'s address could not be read' }, 500)
     const email = authUser?.user?.email
 
     if (!email) {
@@ -85,11 +89,12 @@ serve(async (req: Request) => {
     } else if (type === 'digest') {
       // Fetch weekly stats
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString()
-      const { data: weekLogs } = await supabase
+      const { data: weekLogs, error: logsError } = await supabase
         .from('logs')
         .select('rating')
         .eq('user_id', userId)
         .gte('created_at', weekAgo)
+      if (logsError) return json({ error: 'The week could not be read' }, 500)
 
       const filmsLogged = weekLogs?.length || 0
       const avgRating = filmsLogged > 0
@@ -97,11 +102,12 @@ serve(async (req: Request) => {
         : '0'
 
       // Fetch unread notifications count
-      const { count } = await supabase
+      const { count, error: unreadError } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('is_read', false)
+      if (unreadError) return json({ error: 'The unread notices could not be counted' }, 500)
 
       subject = `Your Weekly Dispatch — ${filmsLogged} films logged`
       htmlBody = getDigestEmail(profile.username, filmsLogged, avgRating, count || 0)
@@ -109,27 +115,23 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'Unknown email type' }), { status: 400 })
     }
 
-    // Send via Resend API (or fallback)
-    if (RESEND_API_KEY) {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: FROM_EMAIL,
-          to: email,
-          subject,
-          html: htmlBody,
-        }),
-      })
-
-      if (!res.ok) {
-        const errText = await res.text()
-        return new Response(JSON.stringify({ error: `Resend error: ${errText}` }), { status: 500 })
-      }
-    }
+    // Sent through Resend, or not at all: with no key, nothing is said to be sent.
+    if (!RESEND_API_KEY) return json({ error: 'Mail is not configured (RESEND_API_KEY)' }, 503)
+    const res = await fetch(`${RESEND_API_URL}/emails`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: email,
+        subject,
+        html: htmlBody,
+      }),
+      signal: AbortSignal.timeout(RESEND_LIMIT_MS),
+    })
+    if (!res.ok) return json({ error: `Resend answered ${res.status}` }, 502)
 
     // Mark rate limit
     rateLimitCache.set(rateKey, Date.now())

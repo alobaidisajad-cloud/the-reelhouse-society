@@ -12,7 +12,8 @@
  * - 429 when the caller is asking too fast, here or at Supabase Auth.
  * - 503 when the house could not be asked (the database, Auth, a time limit):
  *   never "wrong password" for a failure that is ours. Both apps and build 41
- *   say "unavailable" for it.
+ *   say "unavailable" for it. Each answer is the same for a known handle and an
+ *   unknown one.
  * - Best-effort per-IP throttle to blunt brute-force / enumeration at scale.
  *
  * Supabase Auth counts password sign-ins per address (150 every 5 minutes), and
@@ -110,9 +111,12 @@ serve(async (req) => {
       console.error('[sign-in-with-username] the handle could not be looked up:', lookupError.code ?? lookupError.message)
       return json(UNAVAILABLE, 503)
     }
-    if (!email) return json(GENERIC, 401)
-
     // 2) Verify the password at Auth's own door, counted against the member's address.
+    //    A handle no one has is asked too, as an address no one can hold (a fresh one
+    //    each time, at a domain that cannot exist): Auth refuses it, so a known and an
+    //    unknown handle take the same time and the same road, Auth's failures included.
+    const known = typeof email === 'string' && email !== ''
+    const address = known ? email : `nobody-${crypto.randomUUID()}@handle.invalid`
     const key = SECRET_KEY || ANON_KEY
     const res = await withinLimit(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
       method: 'POST',
@@ -123,7 +127,7 @@ serve(async (req) => {
         ...(SECRET_KEY ? {} : { Authorization: `Bearer ${ANON_KEY}` }),
         ...(SECRET_KEY && ADDRESS.test(ip) ? { 'Sb-Forwarded-For': ip } : {}),
       },
-      body: JSON.stringify({ email: String(email), password }),
+      body: JSON.stringify({ email: address, password }),
     })
     if (res.status === 429) return json(TOO_MANY, 429)
     // Auth's refusal of these credentials (invalid_credentials, an unconfirmed address) is
@@ -133,6 +137,7 @@ serve(async (req) => {
       console.error('[sign-in-with-username] Auth answered', res.status)
       return json(UNAVAILABLE, 503)
     }
+    if (!known) return json(GENERIC, 401)
     const session = await res.json().catch(() => null)
     if (typeof session?.access_token !== 'string' || typeof session?.refresh_token !== 'string') {
       console.error('[sign-in-with-username] Auth answered without a session')

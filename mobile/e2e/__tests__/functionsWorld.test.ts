@@ -1,14 +1,16 @@
 /**
- * functionsWorld.test.ts — the functions world serves and asks every deployed
+ * functionsWorld.test.ts — the functions world serves and asks every edge
  * function, and stands in for every outside service they call.
  *
  * db-integration.yml's "functions" job runs e2e/functions: place.mjs serves each
- * function scripts/edge-functions.cjs says is deployed, with each outside
- * address pointed at stand-ins.mjs; warm.mjs loads each one; suites.mjs asks
- * each one. Held here, with no stack: a function deployed tomorrow is served,
- * loaded and asked, or a push fails; an outside address a function reads from
- * its settings is stood in for; no function fetches a fixed address the
- * settings cannot move; and the job runs its steps in an order that works.
+ * function scripts/edge-functions.cjs says is deployed, and the written ones it
+ * names, with each outside address pointed at stand-ins.mjs; warm.mjs loads each
+ * one; seal-vendors.sh then sends the real services nowhere; suites.mjs asks
+ * each one. Held here, with no stack: a function written or deployed tomorrow is
+ * served, loaded and asked, or named with why it is not; an outside address a
+ * function reads from its settings is stood in for, and its service sealed; no
+ * function fetches a fixed address the settings cannot move; and the job runs
+ * its steps in an order that works.
  *
  * place.mjs is a module; one child process hands back what it makes.
  */
@@ -21,34 +23,52 @@ import { files as universe, repoRel } from '../../test-utils/universe';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const HERE = join(__dirname, '..', 'functions');
-const { DEPLOYED } = require('../../scripts/edge-functions.cjs') as { DEPLOYED: Record<string, { dir: string; verifyJwt: boolean }> };
-const NAMES = Object.keys(DEPLOYED).sort();
-const ENTRIES = Object.entries(DEPLOYED);
+type Fn = { dir: string; verifyJwt: boolean };
+const { DEPLOYED, NOT_DEPLOYED } = require('../../scripts/edge-functions.cjs') as {
+  DEPLOYED: Record<string, Fn>; NOT_DEPLOYED: Record<string, { dir: string; why: string }>;
+};
 
 const placed = (() => {
   const program = `
     const p = await import(${JSON.stringify(pathToFileURL(join(HERE, 'place.mjs')).href)});
     const config = ${JSON.stringify(readFileSync(join(__dirname, '..', 'supabase', 'config.toml'), 'utf8'))};
-    const sections = p.functionSections(${JSON.stringify(DEPLOYED)});
+    const sections = p.functionSections(p.SERVED);
     let refused = null;
     try { p.withSections('[a]\\n[functions.x]\\nverify_jwt = true\\n[after]\\n', ''); } catch (e) { refused = e.message; }
-    console.log(JSON.stringify({ addresses: p.ADDRESSES, standIns: p.STAND_INS, sections, rewritten: p.withSections(config, sections), refused }));`;
+    console.log(JSON.stringify({ served: p.SERVED, notServed: p.NOT_SERVED, addresses: p.ADDRESSES, standIns: p.STAND_INS,
+      sections, rewritten: p.withSections(config, sections), refused }));`;
   const r = spawnSync(process.execPath, ['--input-type=module', '-e', program], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error(r.stderr);
-  return JSON.parse(r.stdout) as { addresses: { EXPO_PUSH_URL: string; REVENUECAT_API_URL: string; TMDB_ORIGIN: string; FEED_ORIGIN: string }; standIns: string; sections: string; rewritten: string; refused: string | null };
+  return JSON.parse(r.stdout) as {
+    served: Record<string, Fn>; notServed: Record<string, string>;
+    addresses: { EXPO_PUSH_URL: string; REVENUECAT_API_URL: string; TMDB_ORIGIN: string; FEED_ORIGIN: string; RESEND_API_URL: string };
+    standIns: string; sections: string; rewritten: string; refused: string | null;
+  };
 })();
+const SERVED = Object.entries(placed.served);
+const NAMES = SERVED.map(([name]) => name).sort();
 
-/** Every source file of a deployed function, with the shared code they import (the universe's edge functions). */
-const homes = [...ENTRIES.map(([name, f]) => `${f.dir}/${name}/`), 'mobile/supabase/functions/_shared/'];
+/** Every source file of a served function, with the shared code they import (the universe's edge functions). */
+const homes = [...SERVED.map(([name, f]) => `${f.dir}/${name}/`), 'mobile/supabase/functions/_shared/'];
 const sources = universe('functions').filter((file) => homes.some((home) => repoRel(file).startsWith(home))).map((file) => ({ file }));
 
 /** Text as code, its comments blanked, so a URL in a comment is not read as a call. */
 const code = (text: string) => stripComments(text, 'x.ts');
 
-describe('every deployed function is served as deployed', () => {
-  it('writes one section per deployed function, verify_jwt as it is deployed', () => {
+describe('every function is served as deployed, or named with why not', () => {
+  it('serves every deployed function, and each written one but those named with why', () => {
+    for (const name of Object.keys(DEPLOYED)) expect([name, name in placed.served]).toEqual([name, true]);
+    for (const name of Object.keys(NOT_DEPLOYED)) {
+      expect([name, name in placed.served !== name in placed.notServed]).toEqual([name, true]);
+      if (name in placed.notServed) expect([name, (placed.notServed[name] ?? '').length > 40]).toEqual([name, true]);
+    }
+    expect(Object.keys(placed.notServed).filter((name) => !(name in NOT_DEPLOYED))).toEqual([]);
+  });
+
+  it('writes one section per served function, verify_jwt as it is deployed', () => {
     expect(placed.sections.match(/^\[functions\.[^\]]+\]$/gm)?.map((s) => s.slice(11, -1)).sort()).toEqual(NAMES);
-    for (const [name, f] of ENTRIES) expect(placed.sections).toContain(`[functions.${name}]\nverify_jwt = ${f.verifyJwt}\n`);
+    for (const [name, f] of SERVED) expect(placed.sections).toContain(`[functions.${name}]\nverify_jwt = ${f.verifyJwt}\n`);
+    for (const [name, f] of Object.entries(DEPLOYED)) expect([name, placed.served[name]?.verifyJwt]).toEqual([name, f.verifyJwt]);
   });
 
   it('replaces the sealed world\'s function sections and their comments, and keeps every other section', () => {
@@ -71,7 +91,7 @@ describe('every deployed function is served as deployed', () => {
   });
 });
 
-describe('every outside service is stood in for', () => {
+describe('every outside service is stood in for, and sealed', () => {
   it('points each outside address a function reads from its settings at the stand-ins', () => {
     for (const name of [...NAMES, '_shared']) expect([name, sources.some(({ file }) => repoRel(file).includes(`/${name}/`))]).toEqual([name, true]);
     const read = new Set<string>();
@@ -90,6 +110,21 @@ describe('every outside service is stood in for', () => {
     expect(fixed.map(({ file }) => file)).toEqual([]);
   });
 
+  it('seals every host a function could call: each host its code names, but its imports and the house\'s own name', () => {
+    const NAMED_NOT_CALLED = new Set(['deno.land', 'esm.sh', 'thereelhousesociety.com', 'www.thereelhousesociety.com']);
+    const named = new Set<string>();
+    for (const { file } of sources) {
+      const text = readCode(file);
+      for (const m of text.matchAll(/https?:\/\/([a-z0-9.-]+)/g)) named.add(m[1] ?? '');
+      for (const m of text.matchAll(/'((?:www\.)?[a-z0-9-]+\.(?:com|org|net|io|host))'/g)) named.add(m[1] ?? '');
+    }
+    const script = readFileSync(join(HERE, 'seal-vendors.sh'), 'utf8').replace(/\r\n/g, '\n');
+    const list = script.slice(script.indexOf('HOSTS=(\n') + 'HOSTS=(\n'.length, script.indexOf('\n)\n'));
+    const sealed = list.split('\n').map((l) => l.trim().split(/\s+/)[0] ?? '').filter(Boolean);
+    expect([...named].filter((h) => !NAMED_NOT_CALLED.has(h)).sort()).toEqual([...sealed].sort());
+    expect(sealed.length).toBeGreaterThan(4);
+  });
+
   it('can say NO: a fixed address, and a setting no stand-in answers, are each found', () => {
     expect(/fetch\(\s*[`'"]https?:/.test(code("const r = await fetch('https://api.example.com/x')"))).toBe(true);
     expect(/fetch\(\s*[`'"]https?:/.test(code("// fetch('https://in.a.comment')"))).toBe(false);
@@ -104,6 +139,7 @@ describe('every outside service is stood in for', () => {
     expect(standIns).toContain('/^\\/v1\\/subscribers\\/([^/]+)$/');
     expect(standIns).toContain("path.startsWith('/3/')");
     expect(standIns).toContain("path.endsWith('/rss')");
+    expect(standIns).toContain("path === '/emails'");
     expect(standIns).toContain('return send(res, 404, { error: `no stand-in for');
   });
 });
@@ -118,6 +154,7 @@ describe('the job', () => {
       'bash mobile/e2e/start-stack.sh',
       'node mobile/e2e/functions/stand-ins.mjs',
       'node mobile/e2e/functions/warm.mjs',
+      'bash mobile/e2e/functions/seal-vendors.sh',
       'bash mobile/e2e/db/seal.sh',
       'node mobile/e2e/db/bootstrap.mjs',
       'node mobile/e2e/db/up-down-up.mjs',

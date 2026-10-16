@@ -3,24 +3,32 @@
  * stand-ins.mjs — the outside world the edge functions call, in the sealed world.
  *
  * The functions read each outside address from their settings, production's own
- * by default (EXPO_PUSH_URL, REVENUECAT_API_URL, TMDB_ORIGIN, FEED_ORIGIN); the
- * functions world names this server for all four (place.mjs). It answers as
+ * by default (EXPO_PUSH_URL, REVENUECAT_API_URL, TMDB_ORIGIN, FEED_ORIGIN,
+ * RESEND_API_URL); the functions world names this server for each (place.mjs),
+ * and the database's own check-ins (P3.7) will name it for Sentry. It answers as
  * each service answers, keeps every request it was sent, and answers anything
  * it does not stand in for with 404, so a function that calls somewhere new is
  * seen.
  *
  *   POST /--/api/v2/push/send          Expo: a ticket per message; a token
- *                                      holding "Dead" is DeviceNotRegistered
+ *                                      holding "Dead" is DeviceNotRegistered;
+ *                                      401 without the access token the
+ *                                      functions world sets (STAND_INS_EXPO_TOKEN),
+ *                                      as Expo answers once push security is on
  *   GET  /v1/subscribers/<id>          RevenueCat: the record scripted for <id>,
  *                                      or 404 (a member the store never saw)
  *   GET  /3/...                        TMDB: the answer scripted for the path,
  *                                      a film made up from its id, or 404
  *   GET  .../rss                       a feed: two items of RSS 2.0 (the Guardian's own
  *                                      paths end so; FEED_ORIGIN keeps the path)
+ *   POST /emails                       Resend: an id, or the status scripted
+ *   POST /api/<project>/envelope/      Sentry: an event or a cron check-in, kept
+ *   GET|POST /api/<project>/cron/<monitor>/<key>/   Sentry: a cron check-in, kept
  *
  * The suites steer it, never the functions:
  *   POST /__script  { revenuecat: {<id>: {status, body}}, tmdb: {<path>: {status,
- *                     body, text, delayMs}}, tmdbKeyRefused: true, expo: {status} }
+ *                     body, text, delayMs}}, tmdbKeyRefused: true, expo: {status},
+ *                     resend: {status} }
  *   GET  /__seen    every request since the last reset: { method, path, query,
  *                   headers, body }
  *   POST /__reset   forgets the script and the requests
@@ -31,6 +39,8 @@ import { Buffer } from 'node:buffer';
 import { createServer } from 'node:http';
 
 const PORT = Number(process.argv[2] ?? process.env.STAND_INS_PORT ?? 54990);
+/** The Expo access token the functions world gives notify-push; unset, Expo's door is open. */
+const EXPO_TOKEN = process.env.STAND_INS_EXPO_TOKEN ?? '';
 
 let script = {};
 let seen = [];
@@ -90,6 +100,9 @@ async function answer(req, res) {
 
   // ── Expo ──
   if (path === '/--/api/v2/push/send' && req.method === 'POST') {
+    if (EXPO_TOKEN && req.headers.authorization !== `Bearer ${EXPO_TOKEN}`) {
+      return send(res, 401, { errors: [{ code: 'UNAUTHORIZED', message: 'The bearer token is invalid.' }] });
+    }
     if (script.expo?.status) return send(res, script.expo.status, { errors: [{ code: 'STAND_IN', message: 'scripted failure' }] });
     const messages = JSON.parse(body || '[]');
     return send(res, 200, {
@@ -124,6 +137,16 @@ async function answer(req, res) {
 
   // ── a feed ──
   if (path.endsWith('/rss') && req.method === 'GET') return send(res, 200, FEED, 'application/rss+xml');
+
+  // ── Resend ──
+  if (path === '/emails' && req.method === 'POST') {
+    if (script.resend?.status) return send(res, script.resend.status, { name: 'stand_in', message: 'scripted failure' });
+    return send(res, 200, { id: `email-${seen.length}` });
+  }
+
+  // ── Sentry ──
+  if (/^\/api\/\d+\/envelope\/$/.test(path) && req.method === 'POST') return send(res, 200, { id: `event-${seen.length}` });
+  if (/^\/api\/\d+\/cron\/[\w-]+\/[\w-]+\/$/.test(path) && (req.method === 'GET' || req.method === 'POST')) return send(res, 202, '');
 
   return send(res, 404, { error: `no stand-in for ${req.method} ${path}` });
 }
