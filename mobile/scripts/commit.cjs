@@ -45,8 +45,13 @@ function main() {
   const before = staged();
   if (before.length) refuse(`already staged, and not by this commit: ${before.join(', ')}`);
 
+  // git add stages what it can before it fails on one path (an ignored file): that is unstaged again.
   const add = spawnSync('git', ['add', '--', ...paths], { encoding: 'utf8' });
-  if (add.status !== 0) refuse(`git add: ${add.stderr.trim()}`);
+  if (add.status !== 0) {
+    const added = staged();
+    if (added.length) spawnSync('git', ['reset', '-q', '--', ...added.map((p) => `:/${p}`)], { encoding: 'utf8' });
+    refuse(`git add: ${add.stderr.trim()} (nothing was committed; the index is as it was)`);
+  }
 
   const now = new Set(staged());
   // A deleted file is no longer listed by ls-files: name it by the path as given.

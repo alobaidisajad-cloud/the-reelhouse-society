@@ -61,6 +61,18 @@ it('refuses a named path that brings no change, and leaves the index as it was',
   expect(git('rev-list', '--count', 'HEAD')).toBe('1');
 });
 
+it('refuses an ignored path, and unstages what git staged before it stopped', () => {
+  write('.gitignore', '*.log\n');
+  write('src/a.ts', 'a2\n');
+  write('src/run.log', 'kept\n');
+  const r = commit('--message', 'msg.txt', '--', 'src/a.ts', 'src/run.log');
+  expect(r.status).toBe(1);
+  expect(r.stderr).toContain('REFUSED: git add:');
+  expect(r.stderr).toContain('the index is as it was');
+  expect(git('diff', '--cached', '--name-only')).toBe('');
+  expect(git('rev-list', '--count', 'HEAD')).toBe('1');
+});
+
 it('commits a new file and a deleted one by name', () => {
   write('src/c.ts', 'c\n');
   rmSync(join(repo, 'src', 'b.ts'));
