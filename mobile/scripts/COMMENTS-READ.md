@@ -283,6 +283,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/private-settings.cjs | 2026-10-15 | new |
 | scripts/register.cjs | 2026-10-15 | new |
 | scripts/release-guard.cjs | 2026-10-15 | new: read against expo-dev-client's scheme plugins, expo-router's sitemap switch, expo-constants' getAppConfig, the Expo template's Info.plist and a production export's strings |
+| scripts/resume.cjs | 2026-10-16 | new: where the work stands, from the repository: the commit against main, the pending migrations, this commit's workflows, the register's next open classes with their finders and proofs; each area's private journal header rewritten, what is below kept |
 | scripts/schema-snapshot.mjs | 2026-10-15 | edited: the address from the private settings file; default privileges that name no schema |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
 | scripts/secrets-planted.cjs | 2026-10-15 | new |
@@ -1168,6 +1169,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-15 | new; the runner runs the rehearsals the shared file list names, asked of the runner itself |
 | src/utils/__tests__/releaseGuard.guard.test.ts | 2026-10-15 | new: each rule says no in each format; the input is never the E2E app; the sitemap flow |
 | src/utils/__tests__/requestReview.test.ts | — |  |
+| src/utils/__tests__/resumeSaysWhereTheWorkStands.test.ts | 2026-10-16 | new: the next class is the one that matters most, a journal keeps what was written in it, every worktree finds the same journals, the next train is the pending migrations |
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-16 | edited: the store is asked at the address the settings name, always with a time limit, and gives up before the app does |
 | src/utils/__tests__/roomFilters.test.ts | 2026-10-01 | written: one answer to is-this-room-narrowed |
 | src/utils/__tests__/runtimeDump.contract.test.ts | 2026-10-15 | edited: runtimeNames read from its file (coverage-safe); says NO past global and declare global |
