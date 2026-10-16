@@ -22,6 +22,7 @@ production shows only its id, area, seriousness and count here.
 | FN-the-house-failing-told-as-theirs | server | behaviour | OPEN | 2 | open in production |
 | AUTH-sign-in-counted-together | security | serious | OPEN | 1 | open in production |
 | TEST-event-not-awaited | tests | code | OPEN | 0 | A fireEvent, act or renderHook nobody waits for (all three are async in Testing Library 14), so what the test checks next can be the screen from before the event, and a negative passes on a stale tree (TST-08) |
+| TEST-press-inside-the-debounce | tests | code | OPEN | 0 | A test presses the same control twice inside its 400 ms debounce (PressableScale reads Date.now; jest's clock and a test's real one both stay inside it), so the second press never reaches the screen and a check that nothing happened passes for that alone (TST-14) |
 | E2E-ceiling-not-measured | tests | code | OPEN | 1 | A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's |
 | CI-check-only-in-ci | tooling | code | OPEN | 1 | A check CI runs that no local gate runs, so a push meets it only in red |
 | SALON-channel | lounge | serious | OPEN | 1 | open in production |

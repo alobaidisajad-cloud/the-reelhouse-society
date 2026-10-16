@@ -164,6 +164,19 @@ classes:
     fix: "scripts/await-events.cjs finds each one (TypeScript's parser, every test file of the shared list) and --fix waits for it where the code's shape can (a test, a hook, an act or waitFor callback, an async function), making the function async: 308 in 72 files, one helper (logAtmosphere's arrived) by hand, and each file run again"
     places: [none]
 
+  - id: TEST-press-inside-the-debounce
+    title: A test presses the same control twice inside its 400 ms debounce (PressableScale reads Date.now; jest's clock and a test's real one both stay inside it), so the second press never reaches the screen and a check that nothing happened passes for that alone (TST-14)
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.63, TST-14" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aSecondPressWaitsOutTheDebounce.guard.test.ts, test: "finds none in any test, but those judged to reach their control" }
+      - { kind: static, file: src/utils/__tests__/aSecondPressWaitsOutTheDebounce.guard.test.ts, test: "can say NO: a second press with no time between is found; one after a wait or a timer is not" }
+    fix: "scripts/press-again.cjs finds each second press of the same control in a test with no timer advanced and no real wait between: 4 found, 2 hollow (the reader's 'the order already chosen does not re-read' passed with its refusal taken out; the stack's 'opened and closed inside the moment' pressed one button three times inside its window), both now wait out the debounce or use the sheet's own close, show each press landed, and fail with the refusal removed; 1 a plain Pressable, judged"
+    places: [none]
+
   - id: E2E-ceiling-not-measured
     title: A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's
     seriousness: code

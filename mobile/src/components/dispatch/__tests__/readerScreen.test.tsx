@@ -347,8 +347,11 @@ describe('the reader', () => {
     await act(async () => { await fireEvent.press(getByLabelText('Order by newest')); });
     expect(useDispatch.getState().critiquesOrder.f1).toBe('NEWEST');
 
-    // The order already chosen does not re-read (the list would only flash).
+    // The order already chosen does not re-read (the list would only flash). Pressed
+    // past its 400 ms (PressableScale's debounce): inside it, the press would never
+    // reach the screen, and "not re-read" would pass for that alone.
     useDispatch.setState({ critiquesOrder: { f1: 'MARKER' } } as never);
+    await act(() => new Promise((res) => setTimeout(res, 450)));
     await act(async () => { await fireEvent.press(getByLabelText('Order by newest')); });
     expect(useDispatch.getState().critiquesOrder.f1).toBe('MARKER');
   });

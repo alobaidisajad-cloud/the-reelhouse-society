@@ -125,7 +125,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/person/[id].tsx | 2026-10-15 | back, veil and scrollbar from usePushedHeaderTop; foot from useContentBottom |
 | app/reset-password.tsx | 2026-10-15 | back and form from usePushedHeaderTop; foot from useContentBottom |
 | app/settings.tsx | 2026-10-02 | read; sound |
-| app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-10-15 | edited: the hero is measured from the pushed header's top |
+| app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-10-16 | edited: each event waited for; the close inside the keyboard's moment is the sheet's own, each press shown to land |
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
 | app/stacks/[id].tsx | 2026-10-15 | chrome, hero and critiques from usePushedHeaderTop; foot from navMetrics; the critique field off the edge |
@@ -281,6 +281,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/lucide-icons.js | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | scripts/merge-coverage.cjs | 2026-10-15 | new: read against @jest/reporters 29.7's CoverageReporter (onTestResult, onRunComplete, _checkThreshold) and jest-config's readConfig |
 | scripts/migration-lint.cjs | 2026-10-15 | edited: reads a file by its kind (test-utils/universe.js); the archive is not read; SQL no rule names is refused |
+| scripts/press-again.cjs | 2026-10-16 | new: the finder of TST-14, a second press of the same control in a test with no timer advanced and no real wait between |
 | scripts/private-settings.cjs | 2026-10-15 | new |
 | scripts/register.cjs | 2026-10-15 | new |
 | scripts/release-guard.cjs | 2026-10-15 | new: read against expo-dev-client's scheme plugins, expo-router's sitemap switch, expo-constants' getAppConfig, the Expo template's Info.plist and a production export's strings |
@@ -384,7 +385,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/oneCapNotThree.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/paperTextLogic.test.ts | 2026-10-03 | edited: hidden characters written as escapes |
-| src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-10-03 | the sixty-critique page has its own 10 s limit (failed a busy full run at 5 s) |
+| src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-10-16 | edited: each event waited for; the second press of an order waits out the debounce, so "not re-read" is the screen's refusal |
 | src/components/dispatch/__tests__/roomScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/rulesScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/seriesScreen.test.tsx | — |  |
@@ -1090,6 +1091,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/aSecondPressWaitsOutTheDebounce.guard.test.ts | 2026-10-16 | new: no test presses a control again inside its debounce, but those judged; each shape found or not as it should be |
 | src/utils/__tests__/aTestNeverShipsAsAScreen.guard.test.ts | 2026-10-16 | new: every test file under app/ is one Metro leaves out of the bundle, and no route file is |
 | src/utils/__tests__/e2eRuntime.test.ts | 2026-10-15 | new: the runtime written once a launch by the E2E build alone, in lines the run can join |
 | src/utils/__tests__/everyCheckRuns.guard.test.ts | 2026-10-15 | new |

@@ -473,12 +473,20 @@ describe('the critiques overlay', () => {
     await moment();
     expect(focus).toHaveBeenCalledTimes(1);
 
-    // Opened and closed again inside the moment: no keyboard comes.
-    const action = () => r.getByLabelText('Critiques');
-    await act(async () => { await fireEvent.press(action()); });
+    // Opened and closed again inside the moment: no keyboard comes. A control
+    // refuses a second press inside its 400 ms (PressableScale's debounce), as
+    // it would a finger's, so the close inside the moment is the sheet's own,
+    // and each press is shown to have landed.
+    const pastTheDebounce = () => act(() => new Promise((res) => setTimeout(res, 450)));
+    const close = () => r.getAllByLabelText('Close critiques')[0]!;
+    await act(async () => { await fireEvent.press(close()); });
+    expect(r.queryByText('THE CRITIQUES')).toBeNull();
+    await pastTheDebounce();
     focus.mockClear();
-    await act(async () => { await fireEvent.press(action()); });
-    await act(async () => { await fireEvent.press(action()); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Critiques')); });
+    expect(r.getByText('THE CRITIQUES')).toBeTruthy();
+    await act(async () => { await fireEvent.press(close()); });
+    expect(r.queryByText('THE CRITIQUES')).toBeNull();
     await moment();
     expect(focus).not.toHaveBeenCalled();
   });
