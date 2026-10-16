@@ -62,6 +62,21 @@ const basesOf = (input, git) => input.split('\n').filter(Boolean).flatMap((line)
   return [git('merge-base', local, 'origin/main').trim()];
 });
 
+/**
+ * Paths in as few batches as fit on one command line. Windows takes 8,191 characters, the shell
+ * and jest's own arguments included: the 240 source-reading tests in one call were refused whole
+ * ("The command line is too long"), and the step never ran.
+ */
+const inBatches = (paths, room = 6000) => {
+  const batches = [[]];
+  let used = 0;
+  for (const p of paths) {
+    const last = batches[batches.length - 1];
+    if (last.length && used + p.length + 1 > room) { batches.push([p]); used = p.length + 1; } else { last.push(p); used += p.length + 1; }
+  }
+  return batches.filter((b) => b.length);
+};
+
 const run = (label, cmd, args, cwd) => {
   console.log(`→ ${label}`);
   const r = spawnSync(cmd, args, { cwd, stdio: 'inherit', shell: process.platform === 'win32' });
@@ -105,12 +120,16 @@ if (require.main === module) {
   const workers = workersFor(require('os').freemem(), require('os').cpus().length);
   const jest = ['jest', `--maxWorkers=${workers}`, '--testPathIgnorePatterns', ...ignored(MOBILE)];
   if (code.length) {
-    const j = run('the tests related to the changed files', 'npx', [...jest, '--passWithNoTests', '--findRelatedTests', ...code], MOBILE);
-    if (j) faults.push(j);
+    for (const batch of inBatches(code)) {
+      const j = run('the tests related to the changed files', 'npx', [...jest, '--passWithNoTests', '--findRelatedTests', ...batch], MOBILE);
+      if (j) faults.push(j);
+    }
   }
   if (changed.length) {
-    const g = run('every test that reads source, the guards among them', 'npx', [...jest, '--runTestsByPath', ...readers(MOBILE)], MOBILE);
-    if (g) faults.push(g);
+    for (const batch of inBatches(readers(MOBILE))) {
+      const g = run('every test that reads source, the guards among them', 'npx', [...jest, '--runTestsByPath', ...batch], MOBILE);
+      if (g) faults.push(g);
+    }
   }
   // Last, on a tree the checks above found whole: each mutant standing on what changed, put back and caught.
   for (const base of bases) {
@@ -120,4 +139,4 @@ if (require.main === module) {
   if (faults.length) { console.error(`\nPush refused: ${faults.join('; ')}`); process.exit(1); }
 }
 
-module.exports = { basesOf, ignored, readers, workersFor };
+module.exports = { basesOf, ignored, inBatches, readers, workersFor };

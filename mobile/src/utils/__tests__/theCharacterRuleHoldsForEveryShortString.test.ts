@@ -15,7 +15,7 @@ const seg = new Intl.Segmenter('en', { granularity: 'grapheme' });
 const unicodeCuts = (text: string) => [...seg.segment(text)].map((x) => x.index).filter((i) => i > 0);
 
 /** One of each break class, and the code units at the edges of the rule's own tests. */
-const ALPHABET: Record<string, string> = {
+const ALPHABET = {
   other: 'a',
   cr: '\r',
   lf: '\n',

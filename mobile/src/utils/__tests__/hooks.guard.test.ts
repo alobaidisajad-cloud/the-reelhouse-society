@@ -16,9 +16,10 @@ const ROOT = join(MOBILE, '..');
 const { mutantInPlace, refusalOf } = require('../../../scripts/hooks/pre-commit.cjs') as {
   mutantInPlace: (root: string) => string | null; refusalOf: (path: string, bytes: Buffer) => string | null;
 };
-const { basesOf, ignored, readers, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
+const { basesOf, ignored, inBatches, readers, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
   basesOf: (input: string, git: (...a: string[]) => string) => string[];
   ignored: (mobile: string) => string[];
+  inBatches: (paths: string[], room?: number) => string[][];
   readers: (mobile: string) => string[];
   workersFor: (freeBytes: number, cores: number) => number;
 };
@@ -95,6 +96,20 @@ describe('before a push', () => {
       'src/utils/__tests__/hooks.guard.test.ts', 'test-utils/__tests__/aSweepAsksTheUniverse.test.ts',
     ]));
     expect(list.filter((p) => !existsSync(join(__dirname, '..', '..', '..', p)))).toEqual([]);
+  });
+
+  it('hands jest its paths in batches that fit on one Windows command line, every path once, in order', () => {
+    expect(inBatches(['a', 'bb', 'ccc', 'dd'], 6)).toEqual([['a', 'bb'], ['ccc'], ['dd']]);
+    expect(inBatches(['a-path-longer-than-the-room'], 6)).toEqual([['a-path-longer-than-the-room']]);
+    expect(inBatches([], 6)).toEqual([]);
+    const list = readers(join(__dirname, '..', '..', '..'));
+    const batches = inBatches(list);
+    expect(batches.length).toBeGreaterThan(1);
+    expect(batches.flat()).toEqual(list);
+    expect(batches.filter((b) => b.join(' ').length > 6000)).toEqual([]);
+    const hook = readFileSync(join(ROOT, 'mobile', 'scripts', 'hooks', 'pre-push.cjs'), 'utf8');
+    expect(hook).toContain("for (const batch of inBatches(readers(MOBILE)))");
+    expect(hook).toContain("for (const batch of inBatches(code))");
   });
 
   it('runs as many jest workers as the free memory holds, at least one, never every core', () => {

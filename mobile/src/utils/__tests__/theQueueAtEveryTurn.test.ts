@@ -61,7 +61,7 @@ jest.mock('../mutationExecutor', () => ({
   executeMutation: jest.fn(),
 }));
 
-const { logger } = jest.requireMock('@/src/utils/logger') as { logger: Record<string, jest.Mock> };
+const { logger } = jest.requireMock('@/src/utils/logger') as { logger: { debug: jest.Mock; warn: jest.Mock; error: jest.Mock; info: jest.Mock } };
 const { captureError } = jest.requireMock('@/src/lib/sentry') as { captureError: jest.Mock };
 const { e2eTrace } = jest.requireMock('../e2eTrace') as { e2eTrace: jest.Mock };
 const { queryClient } = jest.requireMock('@/src/lib/queryClient') as { queryClient: { invalidateQueries: jest.Mock } };
@@ -112,8 +112,8 @@ describe('queuing', () => {
     enqueueMutation(follow());
     const q = getOfflineQueue();
     expect(q).toHaveLength(100);
-    expect(q[0].id).toBe('k0');
-    expect(q[99].type).toBe('follow_user');
+    expect(q[0]?.id).toBe('k0');
+    expect(q[99]?.type).toBe('follow_user');
     expect(warned()).toEqual(['[OfflineSync] Queue cap reached (100). Dropped 3 oldest: [endorse_log, follow_user]']);
     expect(toast.error).toHaveBeenCalledWith('Offline queue full — oldest action dropped.');
   });
@@ -244,7 +244,7 @@ describe('each write, as it goes', () => {
     await flushOfflineQueue();
     expect(executeMutation).not.toHaveBeenCalled();
     const [dead] = read(DEAD_LETTER_KEY);
-    expect(String(dead.payload._failReason)).toMatch(/^schema: /);
+    expect(String(dead?.payload._failReason)).toMatch(/^schema: /);
     expect(warned()[0]).toMatch(/^\[OfflineSync\] Schema violation in endorse_log: /);
     expect(toast.error).toHaveBeenCalledWith('A change made offline could not be sent.');
   });

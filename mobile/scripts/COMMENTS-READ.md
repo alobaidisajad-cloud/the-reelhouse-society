@@ -288,7 +288,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
 | scripts/hooks/commit-msg.cjs | 2026-10-15 | new |
 | scripts/hooks/pre-commit.cjs | 2026-10-16 | edited: refuses while a stopped mutants run left a mutant in place |
-| scripts/hooks/pre-push.cjs | 2026-10-16 | edited: every source-reading test, not only those an import reaches; refuses while a mutant is in place; the mutants standing on what changed, last; Stryker's sandbox left out |
+| scripts/hooks/pre-push.cjs | 2026-10-16 | edited: every source-reading test, not only those an import reaches, its paths in batches that fit a Windows command line (the related tests' too); refuses while a mutant is in place; the mutants standing on what changed, last; Stryker's sandbox left out |
 | scripts/hooks-ran.cjs | 2026-10-15 | new |
 | scripts/jest-shards.cjs | 2026-10-16 | new: read against jest --json's record and --listTests, and layout.cjs's --sites; each zone's record is held to that zone's files |
 | scripts/install-hooks.cjs | 2026-10-15 | new |
@@ -1179,7 +1179,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/handleHistory.wiring.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.reader.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.test.ts | — |  |
-| src/utils/__tests__/hooks.guard.test.ts | 2026-10-16 | edited: Stryker's sandbox left out like the worktrees; a mutant in place refused |
+| src/utils/__tests__/hooks.guard.test.ts | 2026-10-16 | edited: Stryker's sandbox left out like the worktrees; a mutant in place refused; the paths in batches that fit |
 | src/utils/__tests__/html.test.ts | — |  |
 | src/utils/__tests__/everyPictureStatesItsCache.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/imagePrefetchSites.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
