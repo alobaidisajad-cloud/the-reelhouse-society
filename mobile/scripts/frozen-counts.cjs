@@ -16,6 +16,9 @@
  *   hand-supabase-mock in every test file, each jest.mock of the app's Supabase client made by
  *                      hand: its factory does not hand over test-utils/supabaseFake, so it
  *                      answers columns, arguments and rows production would refuse
+ *   guard-only-through-a-caller  in every app module no test imports, each guard of its own (an
+ *                      early return or throw under an if): reached only through callers,
+ *                      which never hand it what it turns away
  *
  * The check fails when a file's count is above its baseline (a file the baseline
  * does not name has a baseline of 0), and when it is below it: a count that fell
@@ -45,7 +48,7 @@ const PROMISE_RULES = {
   '@typescript-eslint/no-floating-promises': 'floating-promise',
   '@typescript-eslint/no-misused-promises': 'misused-promise',
 };
-const CHECKS = ['floating-promise', 'misused-promise', 'unchecked-index', 'edge-type-error', 'edge-lint', 'hand-supabase-mock'];
+const CHECKS = ['floating-promise', 'misused-promise', 'unchecked-index', 'edge-type-error', 'edge-lint', 'hand-supabase-mock', 'guard-only-through-a-caller'];
 const EDGE_CHECKS = ['edge-type-error', 'edge-lint'];
 const APP_CHECKS = CHECKS.filter((c) => !EDGE_CHECKS.includes(c));
 
@@ -55,6 +58,7 @@ const CLASSES = {
   'CODE-index-read-unchecked': ['unchecked-index'],
   'EDGE-function-static-fault': ['edge-type-error', 'edge-lint'],
   'TEST-mock-accepts-anything': ['hand-supabase-mock'],
+  'TEST-guard-only-through-a-caller': ['guard-only-through-a-caller'],
 };
 
 // Deno 2, which the sealed world's config.toml serves them on; one release, CI and here.
@@ -155,6 +159,55 @@ function handMockCounts(files = testFiles()) {
   return { 'hand-supabase-mock': counts };
 }
 
+/** A module a test names, from the test (an @/ path or a relative one), or null when not one of `known`. */
+const moduleNamed = (from, spec, known) => {
+  let base;
+  if (spec.startsWith('@/')) base = join(MOBILE, spec.slice(2));
+  else if (spec.startsWith('.')) base = join(dirname(from), spec);
+  else return null;
+  for (const ext of ['', '.ts', '.tsx', '/index.ts', '/index.tsx']) { const p = resolve(base + ext); if (known.has(p)) return p; }
+  return null;
+};
+
+/** A guard of a function's own: an if whose branch is one return or throw. */
+const guardsIn = (file, text) => {
+  const ts = require('typescript');
+  const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const exits = (st) => ts.isReturnStatement(st) || ts.isThrowStatement(st);
+  let n = 0;
+  const visit = (node) => {
+    if (ts.isIfStatement(node) && (exits(node.thenStatement)
+      || (ts.isBlock(node.thenStatement) && node.thenStatement.statements.length === 1 && exits(node.thenStatement.statements[0])))) n += 1;
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return n;
+};
+
+/**
+ * Each guard of an app module that no test imports (by import, require, requireActual,
+ * import() or jest.mock): its callers are tested, and never hand it what it turns away.
+ */
+function callerOnlyCounts(app, tests) {
+  const known = new Set(app.map((p) => resolve(p)));
+  const named = new Set();
+  for (const t of tests) {
+    for (const m of readFileSync(t, 'utf8').matchAll(/(?:from\s+|require\(|requireActual\(|import\(|jest\.mock\()\s*['"]([^'"]+)['"]/g)) {
+      const p = moduleNamed(t, m[1], known);
+      if (p) named.add(p);
+    }
+  }
+  const counts = {};
+  for (const file of app) {
+    if (named.has(resolve(file))) continue;
+    const n = guardsIn(file, readFileSync(file, 'utf8'));
+    if (n) counts[fromRoot(resolve(file))] = n;
+  }
+  return { 'guard-only-through-a-caller': counts };
+}
+
+const appModules = () => require('../test-utils/universe.js').files('appCode').filter((p) => /\.tsx?$/.test(p) && !p.endsWith('.d.ts'));
+
 function indexCounts(project = join(MOBILE, 'tsconfig.strict-index.json')) {
   const r = spawnSync(process.execPath, [require.resolve('typescript/bin/tsc'), '--noEmit', '--pretty', 'false', '-p', project], {
     cwd: dirname(project), encoding: 'utf8', maxBuffer: 1e9,
@@ -253,6 +306,7 @@ async function measure(checks) {
   if (checks.some((c) => c.endsWith('-promise'))) Object.assign(out, await promiseCounts());
   if (checks.some((c) => EDGE_CHECKS.includes(c))) Object.assign(out, edgeCounts());
   if (checks.includes('hand-supabase-mock')) Object.assign(out, handMockCounts());
+  if (checks.includes('guard-only-through-a-caller')) Object.assign(out, callerOnlyCounts(appModules(), testFiles()));
   return Object.fromEntries(checks.map((c) => [c, out[c]]));
 }
 
@@ -364,7 +418,16 @@ const PLANTED_MOCKS = {
   // a client named but no fake imported: counted
   'named.test.ts': "jest.mock('../lib/supabase', () => ({ supabase: { client: 1 } }));\n",
 };
-const PLANTED = { 'floating-promise': 2, 'misused-promise': 1, 'unchecked-index': 1, 'edge-type-error': 2, 'edge-lint': 3, 'hand-supabase-mock': 2 };
+const PLANTED_CALLERS = {
+  // two guards, and no test names it: both counted
+  'src/alone.ts': 'export const a = (x?: number) => { if (!x) return 0; if (x < 0) { throw new Error("no"); } return x; };\n',
+  // a guard, and a test imports it: not counted
+  'src/tested.ts': 'export const b = (x?: number) => { if (!x) return 0; return x; };\n',
+  // no guard of its own: nothing to count
+  'src/plain.ts': 'export const c = (x: number) => x + 1;\n',
+  'src/__tests__/tested.test.ts': "import { b } from '../tested';\nit('b', () => expect(b(1)).toBe(1));\n",
+};
+const PLANTED = { 'floating-promise': 2, 'misused-promise': 1, 'unchecked-index': 1, 'edge-type-error': 2, 'edge-lint': 3, 'hand-supabase-mock': 2, 'guard-only-through-a-caller': 2 };
 
 async function selftest(checks) {
   const dir = mkdtempSync(join(tmpdir(), 'frozen-counts-'));
@@ -383,6 +446,12 @@ async function selftest(checks) {
     if (checks.includes('hand-supabase-mock')) {
       for (const [name, text] of Object.entries(PLANTED_MOCKS)) writeFileSync(join(dir, name), text);
       Object.assign(out, handMockCounts(Object.keys(PLANTED_MOCKS).map((n) => join(dir, n))));
+    }
+    if (checks.includes('guard-only-through-a-caller')) {
+      mkdirSync(join(dir, 'src', '__tests__'), { recursive: true });
+      for (const [name, text] of Object.entries(PLANTED_CALLERS)) writeFileSync(join(dir, name), text);
+      const at = (n) => join(dir, n);
+      Object.assign(out, callerOnlyCounts(['src/alone.ts', 'src/tested.ts', 'src/plain.ts'].map(at), [at('src/__tests__/tested.test.ts')]));
     }
     return checks.filter((c) => total(out[c]) !== PLANTED[c]).map((c) => `${c} counted ${total(out[c])} of the ${PLANTED[c]} planted`);
   } finally {

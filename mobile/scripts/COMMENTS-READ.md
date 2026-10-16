@@ -269,7 +269,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/eas-build-preflight.cjs | 2026-10-15 | edited: no build while the app names what production lacks |
 | scripts/edge-functions.cjs | 2026-10-03 | paytabs-handler NOT_DEPLOYED, with why (it granted any rank to a posted "paid" message) |
 | scripts/flake-history.cjs | 2026-10-16 | new: read against Maestro's JUnit reports (run 38824884948's) and jest --json's record |
-| scripts/frozen-counts.cjs | 2026-10-16 | edited: hand-supabase-mock, each test's hand-made Supabase client, frozen per file and self-tested |
+| scripts/frozen-counts.cjs | 2026-10-16 | edited: hand-supabase-mock and guard-only-through-a-caller, frozen per file and self-tested on planted files |
 | scripts/functions-check.mjs | 2026-10-03 | compares every file a deploy bundles, _shared included, each function in its own folder; a listed exception is reported once |
 | scripts/gates-check.js | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
@@ -1093,6 +1093,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
 | src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/aRankRefusalIsOnlyARanksRefusal.test.ts | 2026-10-16 | new: tierRefusal asked directly: each rank's sentence under 42501 is its door; a privacy refusal, the sentence without 42501, a cut or wrapped one, and no words are never a rank's |
 | src/utils/__tests__/aSecondPressWaitsOutTheDebounce.guard.test.ts | 2026-10-16 | new: no test presses a control again inside its debounce, but those judged; each shape found or not as it should be |
 | src/utils/__tests__/aTestNeverShipsAsAScreen.guard.test.ts | 2026-10-16 | new: every test file under app/ is one Metro leaves out of the bundle, and no route file is |
 | src/utils/__tests__/e2eRuntime.test.ts | 2026-10-15 | new: the runtime written once a launch by the E2E build alone, in lines the run can join |
@@ -1132,7 +1133,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyPullSaysWhatItReached.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/feedInvalidation.guard.test.ts | — |  |
-| src/utils/__tests__/frozenCounts.guard.test.ts | 2026-10-16 | edited: the hand-made mocks are an app check, and their finder counts what is planted for it |
+| src/utils/__tests__/frozenCounts.guard.test.ts | 2026-10-16 | edited: the hand-made mocks and the guards reached only through callers are app checks, and their finders count what is planted for them |
 | src/utils/__tests__/filterContentByBlocks.pbt.test.ts | — |  |
 | src/utils/__tests__/handleGuard.test.ts | 2026-10-03 | edited: the vectors written as escapes |
 | src/utils/__tests__/handleGuard.wiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -1203,6 +1204,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/validateUsername.test.ts | — |  |
 | src/utils/__tests__/validateWithTelemetry.test.ts | — |  |
 | src/utils/__tests__/websiteFreeze.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/whatThisPhoneHoldsIsSaid.test.ts | 2026-10-16 | new: keptOnThisPhone's words asked directly: nothing said of nothing, 'it' of one and 'all of them' of more, uncounted drafts said so, kinds named at the return |
 | src/utils/__tests__/withAbortSignal.test.ts | — |  |
 | src/utils/__tests__/withRetry.test.ts | — |  |
 | src/utils/__tests__/withTimeout.test.ts | 2026-10-15 | edited: the timeout case names withTimeout's own timer |

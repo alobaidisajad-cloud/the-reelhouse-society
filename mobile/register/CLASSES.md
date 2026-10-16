@@ -27,6 +27,7 @@ production shows only its id, area, seriousness and count here.
 | TEST-rehearsal-holds-without-its-migration | tests | behaviour | OPEN | 0 | A migration's rehearsal that would hold without the migration (an identity that never took, a table with nothing to ask, a case that cannot fail), so its passing proves nothing of the migration (TST-25) |
 | TEST-mutant-unproven | tests | code | OPEN | 0 | A mutant that never applied read as caught, or one judged against a baseline that already answered wrong, so the guard it measures is taken as able to fail when nothing showed it (TST-19) |
 | TEST-mock-accepts-anything | tests | behaviour | OPEN | 128 | A test's hand-made Supabase client answers what production refuses (a missing column, an rpc argument its function does not take, [] to every read, no error from .single() with no row, more than 1,000 rows, fixtures not in a table's shape) (TST-05, TST-06, TST-10) |
+| TEST-guard-only-through-a-caller | tests | code | OPEN | 27 | A module's own guard (an early return or throw) reached only through its callers' tests, which never hand it what it turns away, so the guard is never shown to hold (TST-27) |
 | E2E-ceiling-not-measured | tests | code | OPEN | 1 | A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's |
 | CI-check-only-in-ci | tooling | code | OPEN | 1 | A check CI runs that no local gate runs, so a push meets it only in red |
 | SALON-channel | lounge | serious | OPEN | 1 | open in production |

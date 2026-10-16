@@ -230,6 +230,18 @@ classes:
     fix: "test-utils/supabaseFake: the house as the client meets it, from the schema snapshot (test-utils/schema, now the one reader the query check uses too): refuses a table, column or rpc argument production lacks, a fixture row out of its table's shape, a read of a table the test never filled; answers .single()/.maybeSingle() with PGRST116 as PostgREST does, caps a read at 1,000 rows, filters, orders, ranges and keeps writes. The hand-made mocks are frozen per file (frozen-counts hand-supabase-mock) and only fall as tests move to it; the first (theHonourStays) now proves its query picks the right row from decoys"
     places: [none]
 
+  - id: TEST-guard-only-through-a-caller
+    title: A module's own guard (an early return or throw) reached only through its callers' tests, which never hand it what it turns away, so the guard is never shown to hold (TST-27)
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 27
+    source: { kind: reviewer, ref: "P0.63, TST-27" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
+    fix: "frozen-counts guard-only-through-a-caller counts, per app module no test names, each guard of its own: 19 modules (34 guards) found; tierRefusal (a privacy 42501 is never a rank's door) and keptOnThisPhone (the words of what a phone holds) now asked directly and found right; the rest frozen per file, to fall as each gets a test of its own"
+    places: [none]
+
   - id: E2E-ceiling-not-measured
     title: A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's
     seriousness: code

@@ -526,5 +526,24 @@
     "mobile/src/utils/__tests__/sanitisationCallSites.test.ts": 1,
     "mobile/src/utils/__tests__/stackFilmCount.test.ts": 1,
     "mobile/src/utils/__tests__/theTappedNoticeOpensIt.test.ts": 1
+  },
+  "guard-only-through-a-caller": {
+    "mobile/app/(admin)/_layout.tsx": 1,
+    "mobile/app/_layout.tsx": 1,
+    "mobile/app/year-in-cinema.tsx": 7,
+    "mobile/src/components/MarkFigure.tsx": 1,
+    "mobile/src/components/atmosphere/RoomBloom.tsx": 1,
+    "mobile/src/components/auth/PasswordStrengthMeter.tsx": 1,
+    "mobile/src/components/darkroom/DarkroomCards.tsx": 1,
+    "mobile/src/components/film/FilmSimilar.tsx": 1,
+    "mobile/src/components/home/ProjectorBeam.tsx": 1,
+    "mobile/src/components/lobby/KeepOff.tsx": 1,
+    "mobile/src/components/person/PersonOrnaments.tsx": 1,
+    "mobile/src/components/profile/RadarChart.tsx": 4,
+    "mobile/src/components/society/RankTicket.tsx": 1,
+    "mobile/src/components/society/purchaseStop.ts": 1,
+    "mobile/src/hooks/useCatalogueSearch.ts": 1,
+    "mobile/src/hooks/useFilmAnimations.ts": 2,
+    "mobile/src/types/profile.types.ts": 1
   }
 }
