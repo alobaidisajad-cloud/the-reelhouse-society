@@ -19,6 +19,8 @@ on:
       - 'supabase/functions/**'
       - 'mobile/supabase/functions/**'
       - 'mobile/e2e/old-clients.json'
+      - 'mobile/e2e/old-clients.cjs'
+      - 'mobile/e2e/old-client-tree.mjs'
   workflow_dispatch:
 
 permissions:

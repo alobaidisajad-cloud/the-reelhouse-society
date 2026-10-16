@@ -59,6 +59,8 @@ export const OWNERS = {
   BY: { tier: 'free', role: 'free' },
   X1: { tier: 'free', role: 'free' },
   X2: { tier: 'free', role: 'free' },
+  // A member who joined today with one film logged: not yet through the Dispatch's door.
+  NEW: { tier: 'free', role: 'free', fresh: true },
 };
 /** Whose rows each actor tries: their own, then the others'. */
 const TARGETS = ['self', 'V', 'P', 'BK', 'BY'];
@@ -265,6 +267,20 @@ export const plan = (matrix, columns = {}) => {
             then: heldSql(table, set, whereSql(spec, row)) });
         }
       }
+      // A write that names no row reaches the actor's own rows at most: every other owner's
+      // specimen is still there, and still as it was.
+      for (const actor of Object.keys(ACTORS)) {
+        const others = Object.keys(OWNERS).filter((o) => o !== actor);
+        const theirs = others.map((o) => `(${whereSql(spec, specimenOf(table, spec, o))})`).join(' OR ');
+        const touch = fill(spec.touch, { table, owner: actor === 'visitor' ? 'X2' : actor });
+        const held = Object.entries(touch).map(([c, v]) => `${c} IS NOT DISTINCT FROM ${literal(v)}`).join(' AND ');
+        cases.push({ label: `${table} bare update ${actor}`, table, action: 'bare', actor, target: 'others', expect: 'kept',
+          sql: `UPDATE ${rel(table)} SET ${setSql(touch)}`,
+          then: `SELECT NOT EXISTS (SELECT 1 FROM ${rel(table)} WHERE (${theirs}) AND ${held})` });
+        cases.push({ label: `${table} bare delete ${actor}`, table, action: 'bare', actor, target: 'others', expect: 'kept',
+          sql: `DELETE FROM ${rel(table)}`,
+          then: `SELECT (SELECT count(*) FROM ${rel(table)} WHERE ${theirs}) = ${others.length}` });
+      }
     }
   }
   for (const p of matrix.probes ?? []) {
@@ -274,8 +290,9 @@ export const plan = (matrix, columns = {}) => {
       const c = { label: `probe: ${p.name} (${actor})`, table: p.table, action: p.kind, actor, target: 'probe', expect: p.expect };
       if (p.kind === 'insert') c.sql = insertSql(p.table, fill(p.row, ctx));
       if (p.kind === 'read') {
-        c.lay = insertSql(p.table, dated(p.table, fill(p.lay, ctx), columns));
-        c.sql = `SELECT count(*) FROM ${rel(p.table)} WHERE id = ${literal(newId)}`;
+        // A row laid for the probe, or one the setting holds (p.id).
+        if (p.lay) c.lay = insertSql(p.table, dated(p.table, fill(p.lay, ctx), columns));
+        c.sql = `SELECT count(*) FROM ${rel(p.table)} WHERE id = ${literal(p.id ? fill(p.id, ctx) : newId)}`;
       }
       if (p.then) c.then = fill(p.then, ctx);
       cases.push(c);
@@ -302,7 +319,7 @@ export const plan = (matrix, columns = {}) => {
     for (const actor of actorsOf(ch.as)) {
       const ctx = { table: 'realtime.messages', owner: actor === 'visitor' ? 'X2' : actor, newId: uuidOf('channel', ch.name, actor) };
       const topic = fill(ch.topic, ctx);
-      const c = { label: `channel: ${ch.name} (${actor})`, table: 'realtime.messages', actor, target: 'channel', topic,
+      const c = { label: `channel: ${ch.name} (${actor})`, table: 'realtime.messages', actor, target: 'channel', settings: { 'realtime.topic': topic },
         expect: typeof ch.expect === 'string' ? ch.expect : allows(ch.expect.ok, actor) ? 'ok' : 'refused' };
       if (ch.kind === 'listen') {
         c.action = 'read';
@@ -314,6 +331,11 @@ export const plan = (matrix, columns = {}) => {
       }
       cases.push(c);
     }
+  }
+  // A table the service writes with settings of its own (storage.objects: the Storage API's flag).
+  for (const c of cases) {
+    const settings = matrix.tables[c.table]?.settings;
+    if (settings && !c.settings) c.settings = settings;
   }
   return cases;
 };
@@ -337,7 +359,7 @@ export const setting = (matrix, columns = {}) => {
     members.map(([w]) => `  (${literal(uid(w))}, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', ${literal(`${username(w)}@attack.test`)}, ${literal({ username: username(w) })}, '{"provider":"email"}', now() - interval '30 days', now() - interval '30 days', now() - interval '30 days')`).join(',\n')
   }\nON CONFLICT (id) DO NOTHING;`);
   out.push(`INSERT INTO public.profiles (id, username, email, role, tier, is_founding, is_banned, banned_at, is_social_private, entitlement_source, preferences, created_at) VALUES\n${
-    members.map(([w, s]) => `  (${literal(uid(w))}, ${literal(username(w))}, ${literal(`${username(w)}@attack.test`)}, ${literal(s.role)}, ${literal(s.tier)}, ${!!s.is_founding}, ${!!s.is_banned}, ${s.is_banned ? 'now()' : 'NULL'}, ${!!s.is_social_private}, ${literal(s.entitlement_source ?? null)}, '{}', now() - interval '30 days')`).join(',\n')
+    members.map(([w, s]) => `  (${literal(uid(w))}, ${literal(username(w))}, ${literal(`${username(w)}@attack.test`)}, ${literal(s.role)}, ${literal(s.tier)}, ${!!s.is_founding}, ${!!s.is_banned}, ${s.is_banned ? 'now()' : 'NULL'}, ${!!s.is_social_private}, ${literal(s.entitlement_source ?? null)}, '{}', ${s.fresh ? 'now()' : "now() - interval '30 days'"})`).join(',\n')
   }\nON CONFLICT (id) DO NOTHING;`);
   // Every actor has blocked BK, and BY has blocked every actor.
   const actors = Object.keys(ACTORS).filter((a) => a !== 'visitor');
@@ -351,8 +373,8 @@ export const setting = (matrix, columns = {}) => {
       for (const extra of spec.extra ?? []) out.push(`${insertSql(table, dated(table, fill(extra, { table, owner }), columns))} ON CONFLICT DO NOTHING;`);
     }
   }
-  // Five films logged, so may_file() lets a ranked member file.
-  for (const [w] of members) {
+  // Five films logged, so may_file() lets a ranked member file; the newcomer keeps their one.
+  for (const [w] of members.filter(([, s]) => !s.fresh)) {
     for (const film of [990690, 990691, 990692, 990693]) {
       out.push(`${insertSql('logs', dated('logs', { id: uuidOf('filler', w, film), user_id: uid(w), film_id: film, film_title: 'rh filler', watched_date: '2026-01-01' }, columns))} ON CONFLICT DO NOTHING;`);
     }
@@ -361,7 +383,7 @@ export const setting = (matrix, columns = {}) => {
 };
 
 /** The whole run as one transaction that ends in ROLLBACK and prints every answer as one JSON line. */
-export const script = (matrix, cases, { plant = '', columns = {} } = {}) => `\\set ON_ERROR_STOP 1
+export const script = (matrix, cases, { plant = '', columns = {}, mutants = false } = {}) => `\\set ON_ERROR_STOP 1
 BEGIN;
 SET LOCAL request.jwt.claims = '';
 SET LOCAL session_replication_role = replica;
@@ -369,7 +391,7 @@ ${setting(matrix, columns)}
 SET LOCAL session_replication_role = origin;
 ${plant}
 CREATE TEMP TABLE at_cases (n int PRIMARY KEY, before text, lay text, stmt text, is_read boolean, then_sql text, actor uuid,
-  call text, result_sql text, topic text) ON COMMIT DROP;
+  call text, result_sql text, settings jsonb) ON COMMIT DROP;
 CREATE TEMP TABLE at_got (n int PRIMARY KEY, got text) ON COMMIT DROP;
 -- One try as one member (or a visitor, with no member), undone at once: the rows it touched or saw,
 -- or the SQLSTATE and words it was refused with; with then, the house's reading of what it left.
@@ -384,8 +406,8 @@ BEGIN
       PERFORM set_config('session_replication_role', 'origin', true);
     END IF;
     IF c.lay IS NOT NULL THEN EXECUTE c.lay; END IF;
-    -- A channel's try: the topic Realtime sets before it asks the rules.
-    IF c.topic IS NOT NULL THEN PERFORM set_config('realtime.topic', c.topic, true); END IF;
+    -- What the service sets before it asks the rules: a channel's topic, the Storage API's own flag.
+    IF c.settings IS NOT NULL THEN PERFORM set_config(s.key, s.value, true) FROM jsonb_each_text(c.settings) s; END IF;
     PERFORM set_config('request.jwt.claims', CASE WHEN c.actor IS NULL THEN '{"role":"anon"}'
       ELSE json_build_object('sub', c.actor, 'role', 'authenticated')::text END, true);
     PERFORM set_config('role', CASE WHEN c.actor IS NULL THEN 'anon' ELSE 'authenticated' END, true);
@@ -413,11 +435,102 @@ BEGIN
   END;
 END $at$;
 INSERT INTO at_cases VALUES
-${cases.map((c, i) => `  (${i}, ${literal(c.before ?? null)}, ${literal(c.lay ?? null)}, ${literal(c.sql ?? null)}, ${c.action === 'select' || c.action === 'read'}, ${literal(c.then ?? null)}, ${c.actor === 'visitor' ? 'NULL' : literal(uid(c.actor))}, ${literal(c.call ?? null)}, ${literal(c.result ?? null)}, ${literal(c.topic ?? null)})`).join(',\n')};
+${cases.map((c, i) => `  (${i}, ${literal(c.before ?? null)}, ${literal(c.lay ?? null)}, ${literal(c.sql ?? null)}, ${c.action === 'select' || c.action === 'read'}, ${literal(c.then ?? null)}, ${c.actor === 'visitor' ? 'NULL' : literal(uid(c.actor))}, ${literal(c.call ?? null)}, ${literal(c.result ?? null)}, ${literal(c.settings ?? null)})`).join(',\n')};
 INSERT INTO at_got SELECT n, pg_temp.at_try(c) FROM at_cases c ORDER BY n;
 SELECT 'AT-RESULT ' || json_object_agg(n, got ORDER BY n) FROM at_got;
+${mutants ? MUTANTS_SQL : ''}
 ROLLBACK;
 `;
+
+/**
+ * The mutants (WORKLIST P0.68), made from the database itself: each row rule of public, storage
+ * and realtime dropped, opened (USING and WITH CHECK true) and given to everyone; each trigger on
+ * a public table dropped; each table whose members' writes are granted column by column granted
+ * whole. Each is applied under its own savepoint, every try is asked again, and the first answer
+ * that differs from the clean run's kills it. An answer is compared by its kind, never its words
+ * (an error's SQLSTATE; rows, result and then without the JSON a failed result prints).
+ */
+export const MUTANTS_SQL = `CREATE TEMP TABLE at_mutants (id text PRIMARY KEY, sql text) ON COMMIT DROP;
+-- A rule matters only for what its roles may do at all: a write rule on a table no member may write
+-- (the old Dispatch's) changes nothing whatever it says.
+CREATE FUNCTION pg_temp.at_may(t regclass, cmd text, roles text[]) RETURNS boolean LANGUAGE sql STABLE AS $m$
+  SELECT EXISTS (SELECT 1 FROM unnest(roles) r(role), unnest(CASE cmd WHEN 'ALL' THEN ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE'] ELSE ARRAY[cmd] END) p(priv)
+                  WHERE r.role IN ('anon', 'authenticated') AND has_table_privilege(r.role, t, p.priv)
+                     OR r.role = 'public' AND (has_table_privilege('anon', t, p.priv) OR has_table_privilege('authenticated', t, p.priv))) $m$;
+CREATE TEMP VIEW at_rules AS
+SELECT p.*, format('%I.%I', schemaname, tablename)::regclass AS rel,
+       pg_temp.at_may(format('%I.%I', schemaname, tablename)::regclass, cmd, roles::text[]) AS used
+  FROM pg_policies p WHERE schemaname IN ('public', 'storage', 'realtime');
+-- A trigger that refuses, or keeps a value as it was: a gate. A trigger that counts, tells or cleans
+-- is the rehearsals' and verify-cleaning's to see, not this run's.
+CREATE TEMP VIEW at_gates AS
+SELECT c.relname, t.tgname, f.proname
+  FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_namespace n ON n.oid = c.relnamespace JOIN pg_proc f ON f.oid = t.tgfoid
+ WHERE n.nspname = 'public' AND NOT t.tgisinternal
+   AND (f.prosrc ~* 'raise\\s+exception' OR f.proname IN ('a_row_keeps_what_it_is', 'protect_privileged_profile_fields',
+        'protect_lounge_member_status', 'a_reply_quotes_its_message', 'enforce_privacy_on_follow', 'handle_privacy_switch'));
+INSERT INTO at_mutants
+SELECT format('policy %s.%s "%s" dropped', schemaname, tablename, policyname),
+       format('DROP POLICY %I ON %I.%I', policyname, schemaname, tablename)
+  FROM at_rules WHERE used
+UNION ALL
+SELECT format('policy %s.%s "%s" opened', schemaname, tablename, policyname),
+       format('ALTER POLICY %I ON %I.%I %s', policyname, schemaname, tablename,
+              CASE cmd WHEN 'INSERT' THEN 'WITH CHECK (true)' WHEN 'SELECT' THEN 'USING (true)'
+                       WHEN 'DELETE' THEN 'USING (true)' ELSE 'USING (true) WITH CHECK (true)' END)
+  FROM at_rules WHERE used AND permissive = 'PERMISSIVE' AND (coalesce(qual, 'true') <> 'true' OR coalesce(with_check, 'true') <> 'true')
+UNION ALL
+SELECT format('policy %s.%s "%s" given to everyone', schemaname, tablename, policyname),
+       format('ALTER POLICY %I ON %I.%I TO public', policyname, schemaname, tablename)
+  FROM at_rules WHERE permissive = 'PERMISSIVE' AND NOT ('public' = ANY (roles)) AND NOT ('anon' = ANY (roles))
+   AND pg_temp.at_may(rel, cmd, ARRAY['anon'])
+UNION ALL
+SELECT format('trigger %s "%s" dropped', relname, tgname), format('DROP TRIGGER %I ON public.%I', tgname, relname)
+  FROM at_gates
+UNION ALL
+-- Each table's ban, and its rank, with every lock of it gone at once: rules and triggers together.
+SELECT format('ban gate on %s dropped whole', tbl), string_agg(stmt, '; ')
+  FROM (SELECT tablename AS tbl, format('DROP POLICY %I ON public.%I', policyname, tablename) AS stmt
+          FROM at_rules WHERE schemaname = 'public' AND permissive = 'RESTRICTIVE' AND coalesce(qual, with_check) ~ 'is_user_not_banned'
+        UNION ALL
+        SELECT relname, format('DROP TRIGGER %I ON public.%I', tgname, relname) FROM at_gates WHERE proname = 'enforce_not_restricted') g
+ GROUP BY tbl
+UNION ALL
+SELECT format('rank gate on %s dropped whole', tbl), string_agg(stmt, '; ')
+  FROM (SELECT tablename AS tbl, format('DROP POLICY %I ON public.%I', policyname, tablename) AS stmt
+          FROM at_rules WHERE schemaname = 'public' AND permissive = 'RESTRICTIVE' AND coalesce(qual, with_check) ~ 'has_tier_at_least'
+        UNION ALL
+        SELECT relname, format('DROP TRIGGER %I ON public.%I', tgname, relname) FROM at_gates WHERE proname = 'enforce_tier_gate') g
+ GROUP BY tbl
+UNION ALL
+SELECT format('grant %s update whole', c.relname), format('GRANT UPDATE ON public.%I TO authenticated', c.relname)
+  FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+ WHERE n.nspname = 'public' AND c.relkind = 'r' AND NOT has_table_privilege('authenticated', c.oid, 'UPDATE')
+   AND EXISTS (SELECT 1 FROM pg_attribute a WHERE a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+                AND has_column_privilege('authenticated', c.oid, a.attnum, 'UPDATE'));
+CREATE TEMP TABLE at_killed (id text PRIMARY KEY, killed_by int) ON COMMIT DROP;
+CREATE FUNCTION pg_temp.at_kind(g text) RETURNS text LANGUAGE sql IMMUTABLE AS $k$
+  SELECT CASE WHEN g ~ '^[0-9A-Z]{5} ' THEN left(g, 5) ELSE regexp_replace(g, ' [[{"].*$', '') END $k$;
+DO $mutants$
+DECLARE m record; c at_cases; k int;
+BEGIN
+  FOR m IN SELECT * FROM at_mutants ORDER BY id LOOP
+    k := NULL;
+    BEGIN
+      EXECUTE m.sql;
+      FOR c IN SELECT * FROM at_cases ORDER BY n LOOP
+        IF pg_temp.at_kind(pg_temp.at_try(c)) IS DISTINCT FROM (SELECT pg_temp.at_kind(got) FROM at_got WHERE at_got.n = c.n) THEN
+          k := c.n; EXIT;
+        END IF;
+      END LOOP;
+      RAISE EXCEPTION USING ERRCODE = 'RH001', MESSAGE = 'undone';
+    EXCEPTION WHEN OTHERS THEN
+      IF SQLSTATE <> 'RH001' THEN k := -1; END IF;
+    END;
+    INSERT INTO at_killed VALUES (m.id, k);
+  END LOOP;
+END $mutants$;
+SELECT 'AT-MUTANTS ' || json_object_agg(id, killed_by ORDER BY id) FROM at_killed;`;
 
 /**
  * An answer in the matrix's words: seen/unseen for a read, ok/refused for a write, or broken.
@@ -425,6 +538,7 @@ ROLLBACK;
  * as it was has refused that change, however many rows the statement says it touched.
  */
 export const judge = (c, got) => {
+  if (c.action === 'bare') return /^rows:\d+ then:true$/.test(got) || !got.startsWith('rows:') ? 'kept' : 'reached others';
   if (c.action === 'call') {
     if (!got.startsWith('called')) return 'error';
     if (/ result:(false|null)/.test(got)) return 'wrong result';
@@ -469,7 +583,7 @@ const ask = (db, sql) => {
   return r.stdout.split('\n').map((l) => l.trim()).filter(Boolean);
 };
 
-export const run = ({ db = SEALED, sqlOut = null, plant = '' } = {}) => {
+export const run = ({ db = SEALED, sqlOut = null, plant = '', mutants = false } = {}) => {
   const matrix = JSON.parse(readFileSync(join(HERE, 'matrix.json'), 'utf8'));
   const snapshot = readFileSync(SNAPSHOT, 'utf8').replace(/\r/g, '');
   const tables = sqlOut ? snapshotTables(snapshot) : ask(db, RELATIONS_SQL);
@@ -486,9 +600,11 @@ export const run = ({ db = SEALED, sqlOut = null, plant = '' } = {}) => {
   );
   const columns = columnsOf(snapshot);
   const cases = plan(matrix, columns);
-  const sql = script(matrix, cases, { plant, columns });
+  const sql = script(matrix, cases, { plant, columns, mutants });
   if (sqlOut) { writeFileSync(sqlOut, sql); return { faults, cases, misses: [] }; }
   const r = spawnSync('psql', [db, '-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1'], { input: sql, encoding: 'utf8', maxBuffer: 1e9 });
+  const killedLine = (r.stdout ?? '').split('\n').find((l) => l.startsWith('AT-MUTANTS '));
+  const killed = killedLine ? JSON.parse(killedLine.slice('AT-MUTANTS '.length)) : null;
   const line = (r.stdout ?? '').split('\n').find((l) => l.startsWith('AT-RESULT '));
   if (r.status !== 0 || !line) {
     return { faults: [...faults, `the run did not finish: ${(r.stderr ?? '').split('\n').filter(Boolean).slice(-5).join(' / ')}`], cases, misses: [] };
@@ -501,7 +617,28 @@ export const run = ({ db = SEALED, sqlOut = null, plant = '' } = {}) => {
     c.answer = answer;
     if (!met(c.expect, answer)) misses.push(c);
   });
+  if (mutants) {
+    if (!killed) faults.push('the mutants did not finish');
+    return { faults, cases, misses, mutants: mutantVerdict(killed ?? {}, matrix.mutantsJudged ?? {}, cases) };
+  }
   return { faults, cases, misses };
+};
+
+/**
+ * The mutants' verdict: each killed by the first try that answered otherwise, each that could not
+ * be applied, and each that lived. A mutant that lives fails the run unless matrix.json's
+ * mutantsJudged names it with why it changes nothing a member can do (an equivalent mutant); a
+ * judgement for a mutant that is killed, or no longer made, fails it too.
+ */
+export const mutantVerdict = (killed, judgedLiving, cases) => {
+  const ids = Object.keys(killed);
+  return {
+    total: ids.length,
+    killed: ids.filter((id) => killed[id] !== null && killed[id] >= 0).map((id) => ({ id, by: cases[killed[id]]?.label })),
+    notApplied: ids.filter((id) => killed[id] === -1),
+    living: ids.filter((id) => killed[id] === null && !(id in judgedLiving)),
+    stale: Object.keys(judgedLiving).filter((id) => !(id in killed) || killed[id] !== null),
+  };
 };
 
 const report = ({ faults, cases, misses }) => {
@@ -532,7 +669,17 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     process.exit(2);
   }
   if (process.argv.includes('--self-test')) selfTest(db);
-  else {
+  else if (process.argv.includes('--mutants')) {
+    const res = run({ db, mutants: true });
+    const ok = report(res);
+    const v = res.mutants;
+    for (const id of v.living) console.log(`✗ lived: ${id} — no try answered otherwise`);
+    for (const id of v.notApplied) console.log(`✗ not applied: ${id}`);
+    for (const id of v.stale) console.log(`✗ judged living, but killed or no longer made: ${id}`);
+    const fine = ok && !v.living.length && !v.notApplied.length && !v.stale.length;
+    console.log(`${fine ? '✓' : '✗'} ${v.total} mutants: ${v.killed.length} killed, ${v.total - v.killed.length - v.notApplied.length} living (${v.living.length} not judged), ${v.notApplied.length} not applied.`);
+    if (!fine) process.exit(1);
+  } else {
     const res = run({ db, sqlOut: arg('--sql') ?? null });
     if (arg('--sql')) console.log(`wrote ${res.cases.length} tries to ${arg('--sql')}`);
     else if (!report(res)) process.exit(1);

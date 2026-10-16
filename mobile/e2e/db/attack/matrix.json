@@ -290,7 +290,10 @@
       "hidesBlocked": true,
       "owner": "user_id", "key": ["id"],
       "specimen": { "id": "{id}", "kind": "ballot", "user_id": "{owner}", "author_username": "{username}", "body": "rh ballot", "options": ["a", "b"], "closes_at": "{later}", "is_published": true },
-      "extra": [{ "id": "{id#2}", "kind": "dossier", "user_id": "{owner}", "author_username": "{username}", "title": "rh dossier", "body": "rh", "full_content": "rh essay", "is_published": true }],
+      "extra": [{ "id": "{id#2}", "kind": "dossier", "user_id": "{owner}", "author_username": "{username}", "title": "rh dossier", "body": "rh", "full_content": "rh essay", "is_published": true },
+        { "id": "{id#3}", "kind": "take", "user_id": "{owner}", "author_username": "{username}", "body": "rh draft", "is_published": false },
+        { "id": "{id#4}", "kind": "take", "user_id": "{owner}", "author_username": "{username}", "body": "rh withheld", "is_published": true, "withheld_at": "2026-01-01" },
+        { "id": "{id#5}", "kind": "take", "user_id": "{owner}", "author_username": "{username}", "body": "rh ended", "is_published": true, "ended_at": "2026-01-01", "ended_by": "author" }],
       "touch": { "body": "rh changed" },
       "read": "everyone",
       "forbidden": [{ "certify_count": 9999 }, { "comment_count": 9999 }],
@@ -342,6 +345,7 @@
     "dispatch_dossiers_legacy": {
       "owner": "user_id", "key": ["id"],
       "specimen": { "id": "{id}", "user_id": "{owner}", "author_username": "{username}", "title": "rh dossier", "is_published": true },
+      "extra": [{ "id": "{id#2}", "user_id": "{owner}", "author_username": "{username}", "title": "rh unpublished dossier", "is_published": false }],
       "touch": { "title": "rh changed" },
       "read": "everyone",
       "self": { "insert": "none", "update": "none", "delete": "none" },
@@ -370,13 +374,14 @@
 ,
     "storage.objects": {
       "owner": "name", "key": ["id"],
+      "settings": { "storage.allow_delete_query": "true" },
       "specimen": { "id": "{id}", "bucket_id": "avatars", "name": "{owner}/avatar.jpg" },
       "variant": { "name": "{owner}/avatar2.png" },
       "touch": { "metadata": { "rh": 1 } },
       "forbidden": [{ "name": "{peer}/avatar.jpg" }, { "bucket_id": "rh-another" }],
       "read": "owner",
       "self": { "insert": "all", "update": "all", "delete": "all" },
-      "why": "The avatars bucket: each member's pictures in a folder of their own id. Everyone sees a picture at the bucket's public address; through the table a member reads, adds, replaces and takes away only their own."
+      "why": "The avatars bucket: each member's pictures in a folder of their own id. Everyone sees a picture at the bucket's public address; through the table a member reads, adds, replaces and takes away only their own. Each try is made as the Storage API makes it, its own flag set (Supabase refuses a delete without it)."
     },
     "dispatch_dossiers": {
       "hidesBlocked": true, "laid": false,
@@ -748,6 +753,18 @@
     {"name":"a topic the house does not name is heard by no one","topic":"rh-unnamed","as":"all","kind":"listen","expect":"unseen","why":"A channel is heard only where a rule names it."}
   ],
   "probes": [
+    {"name":"an unpublished old dossier is its writer's alone","table":"dispatch_dossiers_legacy","as":["free","lapsed","archivist","auteur","founding","banned","admin","visitor"],"kind":"read","id":"{ref:dispatch_dossiers_legacy@V#2}","expect":"unseen","why":"A dossier never published is read by no one but its writer."},
+    {"name":"its writer reads it","table":"dispatch_dossiers_legacy","as":["V"],"kind":"read","id":"{ref:dispatch_dossiers_legacy@V#2}","expect":"seen","why":"The control beside the case above."},
+    {"name":"a draft is its writer's alone","table":"dispatch_posts","as":["free","lapsed","archivist","auteur","founding","banned","admin"],"kind":"read","id":"{ref:dispatch_posts@V#3}","expect":"unseen","why":"An unpublished filing is read by no one but the member writing it."},
+    {"name":"the writer reads their own draft","table":"dispatch_posts","as":["V"],"kind":"read","id":"{ref:dispatch_posts@V#3}","expect":"seen","why":"The control beside the case above."},
+    {"name":"a withheld filing is read by no member","table":"dispatch_posts","as":["free","lapsed","archivist","auteur","founding","banned","admin"],"kind":"read","id":"{ref:dispatch_posts@V#4}","expect":"unseen","why":"A filing the house withheld leaves the Dispatch for everyone but its writer."},
+    {"name":"nor by a visitor","table":"dispatch_posts","as":["visitor"],"kind":"read","id":"{ref:dispatch_posts@V#4}","expect":"unseen","why":"A filing the house withheld leaves the Dispatch for everyone but its writer."},
+    {"name":"an ended filing takes no critique","table":"dispatch_comments","as":["free","auteur"],"kind":"insert","row":{"id":"{new}","post_id":"{ref:dispatch_posts@V#5}","user_id":"{owner}","author_username":"{username}","body":"rh late"},"expect":"refused","why":"An ended filing is closed to new words."},
+    {"name":"nor a certification","table":"dispatch_certifications","as":["free","auteur"],"kind":"insert","row":{"id":"{new}","user_id":"{owner}","post_id":"{ref:dispatch_posts@V#5}"},"expect":"refused","why":"An ended filing is closed to new certifications."},
+    {"name":"a notice from one who blocked the member is not shown","table":"notifications","as":["free","lapsed","archivist","auteur","founding","banned","admin"],"kind":"read","lay":{"id":"{new}","user_id":"{owner}","from_user_id":"{uid@BY}","type":"system","message":"rh notice"},"expect":"unseen","why":"A block silences its member's notices both ways."},
+    {"name":"a notice from anyone else is","table":"notifications","as":["free","lapsed","archivist","auteur","founding","banned","admin"],"kind":"read","lay":{"id":"{new}","user_id":"{owner}","from_user_id":"{uid@X1}","type":"system","message":"rh notice"},"expect":"seen","why":"The control beside the case above."},
+    {"name":"a newcomer is not yet through the Dispatch door","table":"dispatch_posts","as":["NEW"],"kind":"insert","row":{"id":"{new}","kind":"take","user_id":"{owner}","author_username":"{username}","body":"rh first take"},"expect":"refused","why":"A member files once they have been here two days and logged five films (may_file)."},
+    {"name":"a member who has is","table":"dispatch_posts","as":["V"],"kind":"insert","row":{"id":"{new}","kind":"take","user_id":"{owner}","author_username":"{username}","body":"rh take"},"expect":"ok","why":"The control beside the case above: a take needs no rank."},
     {
       "name": "an avatar is a picture by its name",
       "table": "storage.objects", "as": ["free", "auteur"], "kind": "insert",

@@ -46,6 +46,13 @@ const JUDGED: [Record<string, unknown>, string, string][] = [
   [{ action: 'delete' }, 'rows:1 then:true', 'ok'],
   [{ action: 'delete' }, 'rows:1 then:false', 'refused'],
   [{ action: 'insert' }, 'rows:1 then:false', 'ok then:false'],
+  [{ action: 'bare' }, 'rows:3 then:true', 'kept'],
+  [{ action: 'bare' }, '42501 permission denied for table x', 'kept'],
+  [{ action: 'bare' }, 'rows:9 then:false', 'reached others'],
+  [{ action: 'call' }, 'called result:true then:true', 'ok'],
+  [{ action: 'call' }, 'called result:false [1]', 'wrong result'],
+  [{ action: 'call' }, 'called then:false', 'wrong effect'],
+  [{ action: 'call' }, '42501 permission denied for function f', 'error'],
 ];
 const FIXTURE_SNAPSHOT = 'CREATE TABLE public.logs (\nCREATE VIEW public.old_name WITH (security_invoker=true) AS\nCREATE TABLE public.new_table (\n';
 
@@ -58,6 +65,7 @@ type Answers = {
   filled: Record<string, unknown>; uidP: string; unknownPlaceholder: string;
   columns: string[]; dated: string[];
   functions: { unjudged: string[]; gone: string[]; count: number };
+  verdict: { total: number; killed: { id: string; by: string }[]; notApplied: string[]; living: string[]; stale: string[] };
 };
 
 const answers: Answers = (() => {
@@ -103,6 +111,8 @@ const answers: Answers = (() => {
           count: judged.length,
         };
       })(),
+      verdict: a.mutantVerdict({ caught: 0, lives: null, broken: -1, judged: null, judgedButCaught: 1 },
+        { judged: 'a second lock', judgedButCaught: 'stale', gone: 'no longer made' }, [{ label: 'try one' }, { label: 'try two' }]),
       columns: a.columnsOf(fs.readFileSync(${JSON.stringify(SNAPSHOT)}, 'utf8').replace(/\\r/g, '')).interactions,
       dated: [a.dated('interactions', { id: 'x' }, { interactions: ['id', 'created_at'] }).created_at,
         a.dated('interactions', { created_at: 'mine' }, { interactions: ['created_at'] }).created_at,
@@ -219,6 +229,16 @@ describe('the answer the matrix expects follows its words', () => {
 describe('each way a try comes back is read as what it is', () => {
   it.each(JUDGED.map((j, i) => [...j, i] as const))('%j answering %s is %s', (_c, _got, want, i) => {
     expect(answers.judged[i]).toBe(want);
+  });
+
+  it("reads the mutants' run: each caught by its first changed try, one that could not be made, one that lived unjudged, and judgements gone stale", () => {
+    expect(answers.verdict).toEqual({
+      total: 5,
+      killed: [{ id: 'caught', by: 'try one' }, { id: 'judgedButCaught', by: 'try two' }],
+      notApplied: ['broken'],
+      living: ['lives'],
+      stale: ['judgedButCaught', 'gone'],
+    });
   });
 
   it('meets refused-or-then only by a refusal or a kept row that holds', () => {
