@@ -346,28 +346,28 @@
     "class": "E2E-route-never-opened",
     "mutant": "shape-route-capture-unchecked",
     "proof": "m2",
-    "commit": "73b868e0cb9a0c363a7480277755feb9ab7b0ca3",
+    "commit": "13c26f50e4cbb7ecfd94155e5c131ee8d0d3fae8",
     "verdict": "caught"
   },
   {
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-refusal-sent",
     "proof": "m3",
-    "commit": "b7e6b365c0f8fb14289afa3f5d1eb7ae40dba1cf",
+    "commit": "13c26f50e4cbb7ecfd94155e5c131ee8d0d3fae8",
     "verdict": "caught"
   },
   {
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-input-swallowed",
     "proof": "m4",
-    "commit": "b7e6b365c0f8fb14289afa3f5d1eb7ae40dba1cf",
+    "commit": "13c26f50e4cbb7ecfd94155e5c131ee8d0d3fae8",
     "verdict": "caught"
   },
   {
     "class": "E2E-record-not-kept",
     "mutant": "shape-variant-record-not-kept",
     "proof": "m1",
-    "commit": "b7e6b365c0f8fb14289afa3f5d1eb7ae40dba1cf",
+    "commit": "13c26f50e4cbb7ecfd94155e5c131ee8d0d3fae8",
     "verdict": "caught"
   },
   {
@@ -381,14 +381,14 @@
     "class": "E2E-text-cut-unseen",
     "mutant": "shape-cut-unsaid",
     "proof": "m1",
-    "commit": "b602284733c964e923a535b88374518894831c2b",
+    "commit": "13c26f50e4cbb7ecfd94155e5c131ee8d0d3fae8",
     "verdict": "caught"
   },
   {
     "class": "E2E-system-mode-unseen",
     "mutant": "shape-icons-unread",
     "proof": "m1",
-    "commit": "b2d843256be29d4d4101ae262dfa5d2342fead5c",
+    "commit": "13c26f50e4cbb7ecfd94155e5c131ee8d0d3fae8",
     "verdict": "caught"
   },
   {
@@ -409,14 +409,28 @@
     "class": "E2E-text-cut-unseen",
     "mutant": "shape-cut-unconfirmed",
     "proof": "m2",
-    "commit": "b602284733c964e923a535b88374518894831c2b",
+    "commit": "13c26f50e4cbb7ecfd94155e5c131ee8d0d3fae8",
     "verdict": "caught"
   },
   {
     "class": "E2E-route-never-opened",
     "mutant": "shape-walk-captures-unwaited",
     "proof": "m3",
-    "commit": "dd6c08e6164c3e22c13830374adf27c8171f9b57",
+    "commit": "13c26f50e4cbb7ecfd94155e5c131ee8d0d3fae8",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-system-mode-unseen",
+    "mutant": "shape-moment-taps-dropped",
+    "proof": "m2",
+    "commit": "13c26f50e4cbb7ecfd94155e5c131ee8d0d3fae8",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-system-mode-unseen",
+    "mutant": "shape-keyboard-read-as-the-app",
+    "proof": "m3",
+    "commit": "13c26f50e4cbb7ecfd94155e5c131ee8d0d3fae8",
     "verdict": "caught"
   },
   {
