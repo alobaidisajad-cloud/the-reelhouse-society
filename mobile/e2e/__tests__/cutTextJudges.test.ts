@@ -82,7 +82,7 @@ describe('the committed judged list (e2e/cut-text-judged.json)', () => {
   })();
 
   it('is judged in the variants that judge cut text, and only those', () => {
-    expect(judging).toEqual(['largest-text', 'bold-text']);
+    expect(judging).toEqual(['largest-text']);
     expect(judged.filter((j) => j.variants.length === 0 || j.variants.some((v) => !judging.includes(v)))).toEqual([]);
   });
 

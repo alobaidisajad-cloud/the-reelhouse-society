@@ -86,9 +86,9 @@ it("waits, after any variant that restarts the system, until the app's own launc
   }
 });
 
-it('adds a judge only by a name run-flows.sh runs, to the bold and largest text', () => {
+it('adds a judge only by a name run-flows.sh runs: cut text to the largest text, never to bold text, where the app cannot measure itself', () => {
   const judges = Object.fromEntries(Object.keys(VARIANTS).map((n) => [n, (commandsFor(n, 'judges') as { commands: string[] }).commands]));
-  expect(Object.entries(judges).filter(([, j]) => j.length > 0)).toEqual([['largest-text', ['cut-text']], ['bold-text', ['cut-text']]]);
+  expect(Object.entries(judges).filter(([, j]) => j.length > 0)).toEqual([['largest-text', ['cut-text']]]);
   const runFlows = readFileSync(join(__dirname, '..', 'run-flows.sh'), 'utf8');
   for (const j of Object.values(judges).flat()) expect(runFlows).toContain(`judges | grep -qx ${j}`);
 });

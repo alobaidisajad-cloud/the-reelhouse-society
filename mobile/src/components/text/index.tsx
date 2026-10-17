@@ -129,8 +129,9 @@ export function flooredMinimumScale(props: TextProps, scale: number): number | u
 
 /**
  * 5. In the E2E build alone, a Text that may lose words by its own settings (a numberOfLines, or
- *    shrinking to fit) says so when it does (`text.cut`, src/utils/cutText.ts): the bold-text and
- *    largest-text runs fail on a cut no one has judged (e2e/cut-text-judges.mjs). Its own
+ *    shrinking to fit) says so when it does (`text.cut`, src/utils/cutText.ts): the largest-text
+ *    run fails on a cut no one has judged (e2e/cut-text-judges.mjs); not the bold-text run, whose
+ *    drawing this measure cannot follow (e2e/variants.json says why). Its own
  *    onLayout and onTextLayout still run; any other build adds nothing.
  *
  *    Android lays the lines it reports out again at the box's width in points, turned to pixels

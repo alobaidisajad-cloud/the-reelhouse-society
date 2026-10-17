@@ -19,8 +19,7 @@
       "reset": ["settings put system font_scale 1.0"]
     },
     "bold-text": {
-      "why": "Bold text, as Android's accessibility setting gives it.",
-      "judges": ["cut-text"],
+      "why": "Bold text, as Android's accessibility setting gives it. Its cut text is not judged here: React Native measures a Text with a paint that does not carry this setting while Android draws with it, so every measure the app can make of its own lines is wrong at bold text (runs 39004285239, 39010071533, 39016139854: \"E2E_WRITER\", drawn whole, measured cut every time). What is cut at bold text is read from the screen itself, by WORKLIST P2.7's position reader.",
       "setup": ["settings put secure font_weight_adjustment 300"],
       "reset": ["settings put secure font_weight_adjustment 0"]
     },

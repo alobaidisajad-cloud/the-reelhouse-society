@@ -601,10 +601,10 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
     always(r);
   });
 
-  it('fails a bold-text run on a label the app cut, and a variant that does not judge cut text, not', async () => {
-    const bold = await walk('bold-text', { walk: ['captures-and-a-cut'] });
+  it('fails a largest-text run on a label the app cut, and a variant that does not judge cut text, not', async () => {
+    const bold = await walk('largest-text', { walk: ['captures-and-a-cut'] });
     expect(bold.status).toBe(1);
-    expect(titled(bold, 'error', 'Text cut on the bold-text phone')).toContain('✗ "FOUNDING MEMBER" ended early (said 1 time)');
+    expect(titled(bold, 'error', 'Text cut on the largest-text phone')).toContain('✗ "FOUNDING MEMBER" ended early (said 1 time)');
     always(bold);
     const light = await walk('light', { walk: ['captures-and-a-cut'] });
     expect({ status: light.status, errors: annotations(light, 'error') }).toEqual({ status: 0, errors: [] });
