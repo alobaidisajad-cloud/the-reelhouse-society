@@ -130,7 +130,7 @@ export const useDiscoverStore = create<DiscoverState>()(
     {
       name: 'reelhouse-discover',
       storage: createJSONStorage(() => zustandMMKVStorage),
-      // Only persist the filters — not ephemeral UI state or accumulatedFilms (which is handled manually by cacheKey)
+      // What the member chose (filters, mood, search) — not accumulatedFilms, fetched again (handled manually by cacheKey)
       partialize: (state) => ({
         filters: state.filters,
         mood: state.mood,

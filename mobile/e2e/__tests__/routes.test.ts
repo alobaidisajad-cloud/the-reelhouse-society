@@ -9,7 +9,7 @@ import { join, relative } from 'path';
 import { files as universe } from '../../test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..');
-type Route = { link: string; as?: 'guest' | 'member'; why?: string };
+type Route = { link: string; as?: 'guest' | 'member'; why?: string; lands?: string; then?: string };
 const LIST = JSON.parse(readFileSync(join(__dirname, '..', 'routes.json'), 'utf8')) as { routes: Record<string, Route> };
 
 /** The ids the walk reads back from the seeded world (e2e/walk-routes). */
@@ -30,6 +30,8 @@ it('gives each a link of its own, with only the walk\'s placeholders, and the me
     if (!r.link.startsWith('/')) faults.push(`${file}: a link starts at /`);
     for (const m of r.link.matchAll(/\{([a-z]+)\}/g)) if (!PLACEHOLDERS.includes(m[1] ?? '')) faults.push(`${file}: {${m[1]}} is no id the walk reads`);
     if (r.as !== undefined && r.as !== 'guest') faults.push(`${file}: as is "guest" or left out`);
+    // A tap after the link is the app's own design, and says which.
+    if (r.then !== undefined && (r.why ?? '').length < 30) faults.push(`${file}: a then says why, in words`);
     // A route whose file takes an [id] opens with a seeded one.
     if (/\[[a-z]+\]\.tsx$/.test(file) && !/\{[a-z]+\}/.test(r.link)) faults.push(`${file}: an [id] route with no seeded id`);
     return faults;

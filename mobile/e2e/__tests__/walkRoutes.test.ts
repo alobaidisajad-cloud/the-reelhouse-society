@@ -53,6 +53,8 @@ it('plans every route once, an alias with it, its ids filled in, the guests firs
   expect(steps.find((s) => s.file === 'app/(modals)/cover-picker.tsx')).toMatchObject({ lands: '/cover-picker' });
   const sent = ask(`m.plan({ 'app/a.tsx': { link: '/a/{film}', lands: '/b/{film}' } }, { film: '9' })`);
   expect(sent).toEqual([{ file: 'app/a.tsx', link: '/a/9', lands: '/b/9', as: 'member' }]);
+  // A tap after the link travels with its route, and only there: the Lobby, reached by its tab (lastTab.ts).
+  expect(steps.filter((s) => 'then' in s)).toEqual([{ file: 'app/(tabs)/index.tsx', link: '/', lands: '/', as: 'member', then: 'home-tab' }]);
   expect(steps.slice(1).every((s) => s.as === 'member')).toBe(true);
   expect(steps.find((s) => s.file === 'app/dispatch/series/[id].tsx')?.link).toBe('/dispatch/series/s-1');
   expect(steps.find((s) => s.file === 'app/(modals)/cover-picker.tsx')?.link).toBe('/cover-picker?loungeId=lo-1');
@@ -60,15 +62,18 @@ it('plans every route once, an alias with it, its ids filled in, the guests firs
   expect(() => ask(`m.plan({ 'app/x.tsx': { link: '/x/{nothing}' } }, {})`)).toThrow(/app\/x\.tsx: no id for \{nothing\}/);
 });
 
-it('writes a flow that clears the app, signs in once before the member\'s first route, and opens each cold and captures it', () => {
-  const flow = ask(`m.flowOf([{ file: 'app/(modals)/login.tsx', link: '/login', as: 'guest' }, { file: 'app/film/[id].tsx', link: '/film/129', as: 'member' }, { file: 'app/(tabs)/index.tsx', link: '/', as: 'member' }], '/x/sign_in.yaml')`) as string;
+it('writes a flow that clears the app, signs in once before the member\'s first route, opens each cold, taps on where a route says to, and captures it', () => {
+  const flow = ask(`m.flowOf([{ file: 'app/(modals)/login.tsx', link: '/login', as: 'guest' }, { file: 'app/film/[id].tsx', link: '/film/129', as: 'member' }, { file: 'app/(tabs)/index.tsx', link: '/', as: 'member', then: 'home-tab' }], '/x/sign_in.yaml')`) as string;
   expect(flow.split('\n').filter(Boolean)).toEqual([
     'appId: com.reelhouse.society', '---', '- launchApp:', '    clearState: true',
     '# app/(modals)/login.tsx', '- stopApp', '- openLink: "reelhouse://login"', '- extendedWaitUntil:', '    visible:', '      id: "e2e-route-login"', '    timeout: 30000', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "01-modals-login"',
     // From the app's own start: the login modal the guest's last route opened covers the tabs.
     '- stopApp', '- launchApp', '- runFlow: "/x/sign_in.yaml"',
     '# app/film/[id].tsx', '- stopApp', '- openLink: "reelhouse://film/129"', '- extendedWaitUntil:', '    visible:', '      id: "e2e-route-film-129"', '    timeout: 30000', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "02-film-id"',
-    '# app/(tabs)/index.tsx', '- stopApp', '- openLink: "reelhouse://"', '- extendedWaitUntil:', '    visible:', '      id: "e2e-route"', '    timeout: 30000', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "03-tabs-index"',
+    '# app/(tabs)/index.tsx', '- stopApp', '- openLink: "reelhouse://"',
+    // Any route's mark first, then the tab: the app has reopened the member's last tab by then.
+    '- extendedWaitUntil:', '    visible:', '      id: "e2e-route(-.+)?"', '    timeout: 30000', '- tapOn:', '    id: "home-tab"',
+    '- extendedWaitUntil:', '    visible:', '      id: "e2e-route"', '    timeout: 30000', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "03-tabs-index"',
   ]);
 });
 

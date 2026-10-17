@@ -73,7 +73,8 @@ export function plan(routes, ids) {
     if (seen.has(link)) continue;   // an alias that redirects: its link is opened once
     seen.add(link);
     // Where it lands: its own path, or the path its `lands` says it is sent on to.
-    out.push({ file, link, lands: fill(r.lands ?? r.link).split('?')[0], as: r.as ?? 'member' });
+    // `then`: the control a member taps from where the link leaves them, to reach the route (the Lobby: lastTab.ts).
+    out.push({ file, link, lands: fill(r.lands ?? r.link).split('?')[0], as: r.as ?? 'member', ...(r.then ? { then: r.then } : {}) });
   }
   return [...out.filter((r) => r.as === 'guest'), ...out.filter((r) => r.as !== 'guest')];
 }
@@ -89,6 +90,9 @@ export function flowOf(steps, signIn) {
       `# ${s.file}`,
       '- stopApp',
       `- openLink: ${JSON.stringify(SCHEME + s.link.replace(/^\//, ''))}`,
+      // A tap after the link waits for any route's mark first (Maestro reads an id as a pattern): the
+      // app has settled where it sent the member, past the curtain the tab it reopens is chosen behind.
+      ...(s.then ? ['- extendedWaitUntil:', '    visible:', '      id: "e2e-route(-.+)?"', '    timeout: 30000', '- tapOn:', `    id: ${JSON.stringify(s.then)}`] : []),
       // Its mark, drawn once the preloader has gone, says the app stands on where it lands.
       '- extendedWaitUntil:',
       '    visible:',

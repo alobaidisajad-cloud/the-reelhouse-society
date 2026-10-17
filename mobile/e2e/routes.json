@@ -1,7 +1,7 @@
 {
   "why": "Every route file in app/, opened cold by its deep link in the route walk (WORKLIST P0.86): its link, with a {placeholder} for each id the sealed world's seed made, read back from its database when the walk runs. routes.test.ts holds this list to the route files: a new route fails until it is here. Run as the seeded member unless `as` says otherwise.",
   "routes": {
-    "app/(tabs)/index.tsx": { "link": "/" },
+    "app/(tabs)/index.tsx": { "link": "/", "then": "home-tab", "why": "a launch at / reopens the tab the member was on within the half hour (src/utils/lastTab.ts), so the walk reaches the Lobby by its tab, as a member does (run 39021476421 landed on the profile)" },
     "app/(tabs)/darkroom.tsx": { "link": "/darkroom" },
     "app/(tabs)/dispatch.tsx": { "link": "/dispatch" },
     "app/(tabs)/lounge.tsx": { "link": "/lounge" },

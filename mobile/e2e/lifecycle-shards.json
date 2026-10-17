@@ -1,5 +1,5 @@
 {
-  "why": "The lifecycle runs' one machine (e2e.yml with lifecycle on, WORKLIST P0.86): every flow in .maestro/lifecycle, each changing the phone mid-flow, which run-flows.sh puts back before the next. Read by e2e/shards.mjs and run-flows.sh; shards.test.ts holds it to the folder.",
+  "why": "The lifecycle runs' one machine (e2e.yml with lifecycle on, WORKLIST P0.86): every flow in .maestro/lifecycle, each changing the phone mid-flow, which run-flows.sh puts back before the next. Read by e2e/shards.mjs and run-flows.sh; shards.test.ts holds it to the folder. 36 minutes: in run 39021480535 the five before the upgrade took 23 of its 26 and left the upgrade none; the job keeps 45, of which about 6 go to the machine before and after the flows.",
   "probesElsewhere": "The keyboard probes and the launch with animations run in the normal rounds (e2e/shards.json); a lifecycle run tests what the phone does to the app, not them.",
   "shards": [
     {
@@ -11,7 +11,7 @@
         "live_config",
         "upgrade"
       ],
-      "minutes": 26
+      "minutes": 36
     }
   ]
 }
