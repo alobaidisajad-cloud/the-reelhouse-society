@@ -588,7 +588,7 @@ mutants:
     edits:
       - file: src/components/text/index.tsx
         find: "    if (cut === 'ended early' && box.current) {"
-        replace: "    if (cut === 'never' && box.current) {"
+        replace: "    if (cut === 'taller than its box' && box.current) {"
     proof: { file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says nothing of a label that ended early only for want of the pixel Android rounds away (run 39004285239)" }
 
   - id: shape-walk-captures-unwaited
