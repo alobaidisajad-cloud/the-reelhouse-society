@@ -77,6 +77,29 @@ it('writes a flow that clears the app, signs in once before the member\'s first 
   ]);
 });
 
+it('plans each moment after every route, as the member, its link filled in, and walks it: its mark, each tap once, what shows, then the capture', () => {
+  const moments = { 'the calendar': { link: '/film/{film}', taps: [{ id: 'film-stub' }, { text: 'FILED.*' }], shows: { text: 'CLOSE' } }, 'the keyboard': { link: '/darkroom', taps: [{ id: 'k' }], part: 'above-keyboard' } };
+  const steps = ask(`m.plan({ 'app/a.tsx': { link: '/a', as: 'guest' }, 'app/b.tsx': { link: '/b' } }, { film: '129' }, ${JSON.stringify(moments)})`) as { file: string }[];
+  expect(steps).toEqual([
+    { file: 'app/a.tsx', link: '/a', lands: '/a', as: 'guest' },
+    { file: 'app/b.tsx', link: '/b', lands: '/b', as: 'member' },
+    { file: 'moment: the calendar', link: '/film/129', lands: '/film/129', as: 'member', taps: moments['the calendar'].taps, shows: { text: 'CLOSE' } },
+    { file: 'moment: the keyboard', link: '/darkroom', lands: '/darkroom', as: 'member', taps: [{ id: 'k' }], part: 'above-keyboard' },
+  ]);
+  expect(() => ask(`m.plan({}, {}, { 'the x': { link: '/x/{nothing}', taps: [] } })`)).toThrow(/moment: the x: no id for \{nothing\}/);
+  const flow = ask(`m.flowOf([${JSON.stringify(steps[2])}], '/x/sign_in.yaml')`) as string;
+  expect(flow.split('\n').filter(Boolean).slice(7)).toEqual([
+    '# moment: the calendar', '- stopApp', '- openLink: "reelhouse://film/129"',
+    '- extendedWaitUntil:', '    visible:', '      id: "e2e-route-film-129"', '    timeout: 30000',
+    '- scrollUntilVisible:', '    element:', '      id: "film-stub"', '    direction: DOWN', '    timeout: 20000',
+    '- tapOn:', '    id: "film-stub"', '    retryTapIfNoChange: false',
+    '- scrollUntilVisible:', '    element:', '      text: "FILED.*"', '    direction: DOWN', '    timeout: 20000',
+    '- tapOn:', '    text: "FILED.*"', '    retryTapIfNoChange: false',
+    '- extendedWaitUntil:', '    visible:', '      text: "CLOSE"', '    timeout: 15000',
+    '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "01-moment-the-calendar"',
+  ]);
+});
+
 it("waits for the very mark the app draws for each path (src/components/layout/E2ERouteMark.tsx)", () => {
   const paths = ['/', '/login', '/film/129', '/dispatch/room/e2e_member', '/cover-picker?loungeId=lo-1', '/user/a.b-c'];
   const walk = ask(`${JSON.stringify(paths)}.map(m.markOf)`);

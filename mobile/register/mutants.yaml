@@ -556,13 +556,13 @@ mutants:
     proof: { file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says a label cut to one line, once, with its words and how it was cut, when its words laid out freely are longer than its box" }
 
   - id: shape-icons-unread
-    class: E2E-light-mode-unseen
+    class: E2E-system-mode-unseen
     source: shape
     edits:
       - file: e2e/grounds-judges.mjs
         find: "  if (s0.light > 0.005 && s1.light < s0.light * LIMITS.iconsKept) why.push("
         replace: "  if (s0.light < 0) why.push("
-    proof: { file: e2e/__tests__/groundsJudges.test.ts, test: "fails a route whose ground the system turned light, and one whose status icons it turned dark" }
+    proof: { file: e2e/__tests__/groundsJudges.test.ts, test: "fails a route whose ground the system turned light, one it turned dark, and one whose status icons it turned dark" }
 
   - id: shape-phone-unchecked
     class: E2E-phone-change-unseen
@@ -598,7 +598,25 @@ mutants:
       - file: e2e/walk-routes.mjs
         find: "      `      id: ${JSON.stringify(markOf(s.lands ?? s.link))}`,"
         replace: "      `      id: ${JSON.stringify('e2e-route')}`,"
-    proof: { file: e2e/__tests__/walkRoutes.test.ts, test: "writes a flow that clears the app, signs in once before the member's first route, and opens each cold and captures it" }
+    proof: { file: e2e/__tests__/walkRoutes.test.ts, test: "writes a flow that clears the app, signs in once before the member's first route, opens each cold, taps on where a route says to, and captures it" }
+
+  - id: shape-moment-taps-dropped
+    class: E2E-system-mode-unseen
+    source: shape
+    edits:
+      - file: e2e/walk-routes.mjs
+        find: "      ...(s.taps ?? []).flatMap((t) => ["
+        replace: "      ...[].flatMap((t) => ["
+    proof: { file: e2e/__tests__/walkRoutes.test.ts, test: "plans each moment after every route, as the member, its link filled in, and walks it: its mark, each tap once, what shows, then the capture" }
+
+  - id: shape-keyboard-read-as-the-app
+    class: E2E-system-mode-unseen
+    source: shape
+    edits:
+      - file: e2e/grounds-judges.mjs
+        find: "  if (part === undefined) return NAV_START;"
+        replace: "  if (part !== null) return NAV_START;"
+    proof: { file: e2e/__tests__/groundsJudges.test.ts, test: "reads of a moment the system draws part of only the app's part: a keyboard turned light passes, and the same screen as a route fails" }
 
   - id: shape-adb-off-the-path
     class: E2E-phone-change-unseen

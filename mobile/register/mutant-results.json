@@ -385,7 +385,7 @@
     "verdict": "caught"
   },
   {
-    "class": "E2E-light-mode-unseen",
+    "class": "E2E-system-mode-unseen",
     "mutant": "shape-icons-unread",
     "proof": "m1",
     "commit": "b2d843256be29d4d4101ae262dfa5d2342fead5c",

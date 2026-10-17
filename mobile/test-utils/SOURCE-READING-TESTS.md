@@ -72,7 +72,7 @@ Decisions, as of 2026-09-28:
 | `src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts` | Every style that spreads `effects.flat` and still carries elevation (a black shadow on Android before 9); an exact ratchet, lowered as each feature is read. |
 | `src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx` | No sheet unmounts itself at the end of its own fall; useSheetPresence is the one place (its behaviour is tested on the hook). |
 | `src/utils/__tests__/strykerFilesAreListed.guard.test.ts` | Stryker's list against the plan's files and their own tests' imports, and the config's and the nightly job's text (every mutant run fresh). |
-| `e2e/__tests__/routes.test.ts` | The route walk's list (e2e/routes.json) against every route file in app/; an alias that shares a link is read for its Redirect. |
+| `e2e/__tests__/routes.test.ts` | The route walk's list (e2e/routes.json) against every route file in app/; an alias that shares a link is read for its Redirect; each moment's controls are found in the app's code. |
 | `e2e/__tests__/walkRoutes.test.ts` | The route walk's plan built from the committed e2e/routes.json; the walk itself is run on a stand-in world. |
 | `e2e/__tests__/cutTextJudges.test.ts` | The committed judged cuts (e2e/cut-text-judged.json) against the app's code and data (the shared file list), the seed and the recorded TMDB answers: no judgement names words nothing draws. The judge itself is run, on logs. |
 | `e2e/__tests__/theRunKeepsWhatItWrites.test.ts` | Every file run-flows.sh names in its run's folder, against e2e.yml's steps that keep the run's logs and scrub the member's password from them: what is kept and what is scrubbed are one list. |

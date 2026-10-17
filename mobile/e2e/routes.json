@@ -1,5 +1,5 @@
 {
-  "why": "Every route file in app/, opened cold by its deep link in the route walk (WORKLIST P0.86): its link, with a {placeholder} for each id the sealed world's seed made, read back from its database when the walk runs. routes.test.ts holds this list to the route files: a new route fails until it is here. Run as the seeded member unless `as` says otherwise.",
+  "why": "Every route file in app/, opened cold by its deep link in the route walk (WORKLIST P0.86): its link, with a {placeholder} for each id the sealed world's seed made, read back from its database when the walk runs. routes.test.ts holds this list to the route files: a new route fails until it is here. Run as the seeded member unless `as` says otherwise. Then the moments, as the member: each a screen past its link, reached by its taps in order (a control's id, or the words it shows or is labelled), with what shows once it is there, captured as the routes are (a system alert, the keyboard and the calendar, which the dark walk holds to the plain one; WORKLIST P0.86). routes.test.ts holds each tap to something the app draws.",
   "routes": {
     "app/(tabs)/index.tsx": { "link": "/", "then": "home-tab", "why": "a launch at / reopens the tab the member was on within the half hour (src/utils/lastTab.ts), so the walk reaches the Lobby by its tab, as a member does (run 39021476421 landed on the profile)" },
     "app/(tabs)/darkroom.tsx": { "link": "/darkroom" },
@@ -36,5 +36,10 @@
     "app/stacks/[id].tsx": { "link": "/stacks/{stack}" },
     "app/user/[username].tsx": { "link": "/user/{member}" },
     "app/year-in-cinema.tsx": { "link": "/year-in-cinema" }
+  },
+  "moments": {
+    "the sign-out alert": { "link": "/settings", "taps": [{ "text": "SIGN OUT" }], "shows": { "text": "Depart the Society" }, "why": "A system alert the app raises (Alert.alert): Android draws it, in the theme the app sets, so the dark walk holds it to the plain walk's, whose system is light. Nothing is signed out: the walk stops the app on the alert." },
+    "the keyboard": { "link": "/darkroom", "taps": [{ "id": "darkroom-search-input" }], "part": "above-keyboard", "why": "The keyboard over the app: Android's keyboard follows the system's mode (keyboardAppearance is iOS's alone), so the keyboard is the system's to draw and the screen above it the app's." },
+    "the calendar": { "link": "/film/{film}", "taps": [{ "id": "film-stub" }, { "id": "film-act-log" }, { "text": "FILED.*" }, { "text": "CHANGE" }], "shows": { "text": "CLOSE" }, "why": "The date picker a log is filed by: the app's own calendar (src/components/NitrateCalendar.tsx), never a native picker, so it must look the same whatever the system's mode." }
   }
 }

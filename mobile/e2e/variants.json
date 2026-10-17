@@ -43,11 +43,11 @@
       "ready": ["am get-config | grep -q ldrtl", "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER com.reelhouse.society | grep -q com.reelhouse.society/"],
       "reset": ["setprop persist.sys.locale {was}; stop; start"]
     },
-    "light": {
-      "why": "The system in light mode: the app keeps its own grounds, and what the system draws over it (an alert, the keyboard, the date picker) must still read. The mode the phone had is read first and put back.",
+    "dark": {
+      "why": "The system in dark mode. The emulator every other run uses is in light mode (run 39013202388 read \"no\" before a light run set \"no\", so that run changed nothing): the plain run is the light system, and this one the dark, so the app is seen in both. The app keeps its own grounds either way. The mode the phone had is read first and put back.",
       "read": "cmd uimode night",
       "answer": "^(no|yes|auto|custom_schedule|custom_bedtime)$",
-      "setup": ["cmd uimode night no"],
+      "setup": ["cmd uimode night yes"],
       "reset": ["cmd uimode night {was}"]
     }
   }

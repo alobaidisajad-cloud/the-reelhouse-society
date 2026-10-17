@@ -218,7 +218,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/functions/warm.mjs | 2026-10-16 | edited: send-email loaded too; the CDN named as e2e.yml names it |
 | e2e/functions/world.mjs | 2026-10-16 | new: the means suites.mjs and payments.mjs share: a call as callers make it, a statement as the house, the stand-ins steered and read back, a member made, each check said and the verdict |
 | e2e/glide-log-level.mjs | 2026-10-08 | written: the APK hands Glide level 6 (ERROR), once, as a constant |
-| e2e/grounds-judges.mjs | 2026-10-17 | new: every route of the light walk read against the plain walk: its body and its status bar |
+| e2e/grounds-judges.mjs | 2026-10-17 | edited: the dark walk read against the plain walk, whose emulator is light; a ground moved either way |
 | e2e/ios-crash.mjs | 2026-10-15 | new |
 | e2e/ios-launch.cjs | 2026-10-15 | true as written |
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |

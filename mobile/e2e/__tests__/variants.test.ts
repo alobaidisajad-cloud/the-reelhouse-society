@@ -65,9 +65,9 @@ it('is the list the workflow says a variant run may be given, and the night walk
 });
 
 it('gives each step its commands, and fills in what was read', () => {
-  expect(commandsFor('light', 'read')).toEqual({ commands: ['cmd uimode night'] });
-  expect(commandsFor('light', 'setup')).toEqual({ commands: ['cmd uimode night no'] });
-  expect(commandsFor('light', 'reset', 'auto')).toEqual({ commands: ['cmd uimode night auto'] });
+  expect(commandsFor('dark', 'read')).toEqual({ commands: ['cmd uimode night'] });
+  expect(commandsFor('dark', 'setup')).toEqual({ commands: ['cmd uimode night yes'] });
+  expect(commandsFor('dark', 'reset', 'auto')).toEqual({ commands: ['cmd uimode night auto'] });
   expect(commandsFor('narrowest', 'read')).toEqual({ commands: [] });
   expect(commandsFor('narrowest', 'ready')).toEqual({ commands: [] });
   expect(commandsFor('narrowest', 'reset')).toEqual({ commands: ['wm density reset'] });
@@ -97,7 +97,7 @@ it('says which run each variant is: every flow and the walk, or the walk alone',
   const runs = Object.fromEntries(Object.keys(VARIANTS).map((n) => [n, (commandsFor(n, 'runs') as { commands: string[] }).commands]));
   expect(runs).toEqual({
     plain: ['walk'], 'motion-on': ['walk'], 'largest-text': ['flows'], 'bold-text': ['walk'],
-    narrowest: ['flows'], 'three-button': ['walk'], 'right-to-left': ['flows'], light: ['walk'],
+    narrowest: ['flows'], 'three-button': ['walk'], 'right-to-left': ['flows'], dark: ['walk'],
   });
 });
 
@@ -108,10 +108,10 @@ it('takes back the language only as a language, with or without its script', () 
 
 it('refuses, rather than guesses, an unknown variant or step, and a reset with nothing usable to put back', () => {
   expect(commandsFor('sideways', 'setup')).toEqual({ refused: `no variant named sideways (the variants: ${Object.keys(VARIANTS).join(', ')})` });
-  expect(commandsFor('light', 'undo')).toEqual({ refused: 'a step is read, setup, ready, reset, runs or judges, not undo' });
-  expect(commandsFor('light', 'reset')).toEqual({ refused: "light's reset puts back what was read, and was given nothing" });
-  expect(commandsFor('light', 'reset', 'closed')).toEqual({
-    refused: "light's read answered closed, which ^(no|yes|auto|custom_schedule|custom_bedtime)$ does not match: nothing is put back",
+  expect(commandsFor('dark', 'undo')).toEqual({ refused: 'a step is read, setup, ready, reset, runs or judges, not undo' });
+  expect(commandsFor('dark', 'reset')).toEqual({ refused: "dark's reset puts back what was read, and was given nothing" });
+  expect(commandsFor('dark', 'reset', 'closed')).toEqual({
+    refused: "dark's read answered closed, which ^(no|yes|auto|custom_schedule|custom_bedtime)$ does not match: nothing is put back",
   });
 });
 

@@ -58,7 +58,7 @@ case "$1" in
     echo "adb: $cmd" >> "$T/state/order"
     case "$cmd" in
       # The system's dark mode, as Android answers it; a phone whose read fails, as one that went away.
-      "cmd uimode night") [ -f "$T/state/night-unread" ] && { echo "error: closed"; exit 1; }; echo "Night mode: yes" ;;
+      "cmd uimode night") [ -f "$T/state/night-unread" ] && { echo "error: closed"; exit 1; }; echo "Night mode: no" ;;
       "cmd uimode night "*) echo "Night mode: \${cmd##* }" ;;
       # The system's language: read, then set with the system restarted, which takes it a while.
       "l="*) echo "en-US" ;;
@@ -138,7 +138,8 @@ case "$behaviour" in
       echo "[Failed] $name (1s)"; exit 1
     fi
     mkdir -p "$shots/2026-10-17_000000"
-    while IFS="$(printf '\\t')" read -r _ _ shot; do
+    # A moment's fourth column, the part of it that is the app's, is no part of its capture's name.
+    while IFS="$(printf '\\t')" read -r _ _ shot _; do
       { printf '\\211PNG'; head -c 2048 /dev/zero; } > "$shots/2026-10-17_000000/$shot"
     done < "$(dirname "$flow")/walk.tsv"
     pass ;;
@@ -536,12 +537,12 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
     .split('\n').filter((l) => said.test(l));
 
   it('reads the mode the phone had, sets the variant, walks, and puts back exactly what it read', async () => {
-    const r = await walk('light', { walk: ['captures'] });
+    const r = await walk('dark', { walk: ['captures'] });
     expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
-    expect(order(r)).toEqual(['adb: cmd uimode night', 'adb: cmd uimode night no', 'maestro: walk', 'adb: cmd uimode night yes']);
+    expect(order(r)).toEqual(['adb: cmd uimode night', 'adb: cmd uimode night yes', 'maestro: walk', 'adb: cmd uimode night no']);
     expect(file(r, 'variant.txt')).toBe(
-      'read: cmd uimode night -> yes\nset: cmd uimode night no -> Night mode: no\nput back: cmd uimode night yes -> Night mode: yes\n');
-    expect(titled(r, 'notice', 'The phone as the light run had it')).toContain('put back: cmd uimode night yes');
+      'read: cmd uimode night -> no\nset: cmd uimode night yes -> Night mode: yes\nput back: cmd uimode night no -> Night mode: no\n');
+    expect(titled(r, 'notice', 'The phone as the dark run had it')).toContain('put back: cmd uimode night no');
     expect(titled(r, 'notice', 'Every route  opened cold and captured')).toMatch(/every route captured: \d+/);
     always(r);
   });
@@ -606,16 +607,16 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
     expect(bold.status).toBe(1);
     expect(titled(bold, 'error', 'Text cut on the largest-text phone')).toContain('✗ "FOUNDING MEMBER" ended early (said 1 time)');
     always(bold);
-    const light = await walk('light', { walk: ['captures-and-a-cut'] });
-    expect({ status: light.status, errors: annotations(light, 'error') }).toEqual({ status: 0, errors: [] });
-    expect(existsSync(join(light.out, 'cut-text.txt'))).toBe(false);
-    always(light);
+    const dark = await walk('dark', { walk: ['captures-and-a-cut'] });
+    expect({ status: dark.status, errors: annotations(dark, 'error') }).toEqual({ status: 0, errors: [] });
+    expect(existsSync(join(dark.out, 'cut-text.txt'))).toBe(false);
+    always(dark);
   });
 
   it('puts back nothing it could not read, and says so, rather than a word of an error', async () => {
-    const r = await walk('light', { walk: ['captures'] }, { 'night-unread': '' });
-    expect(order(r)).toEqual(['adb: cmd uimode night', 'adb: cmd uimode night no', 'maestro: walk']);
-    expect(file(r, 'variant.txt')).toContain("light's read answered closed, which ^(no|yes|auto|custom_schedule|custom_bedtime)$ does not match: nothing is put back");
+    const r = await walk('dark', { walk: ['captures'] }, { 'night-unread': '' });
+    expect(order(r)).toEqual(['adb: cmd uimode night', 'adb: cmd uimode night yes', 'maestro: walk']);
+    expect(file(r, 'variant.txt')).toContain("dark's read answered closed, which ^(no|yes|auto|custom_schedule|custom_bedtime)$ does not match: nothing is put back");
     always(r);
   });
 

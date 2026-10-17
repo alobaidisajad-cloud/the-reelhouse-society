@@ -201,7 +201,7 @@ classes:
     methods:
       - { kind: static, file: e2e/__tests__/routes.test.ts, test: "lists every route file, and nothing that is not one" }
       - { kind: running, file: e2e/__tests__/routeJudges.test.ts, test: "names a route never captured, one captured empty, and one captured as no picture" }
-      - { kind: static, file: e2e/__tests__/walkRoutes.test.ts, test: "writes a flow that clears the app, signs in once before the member's first route, and opens each cold and captures it" }
+      - { kind: static, file: e2e/__tests__/walkRoutes.test.ts, test: "writes a flow that clears the app, signs in once before the member's first route, opens each cold, taps on where a route says to, and captures it" }
     fix: "e2e/routes.json lists every route file with its deep link (held whole against app/); the variant runs walk them all cold by link (e2e/walk-routes.mjs, seeded ids read back by name) and route-judges.mjs fails a route never captured (mutant shape-route-capture-unchecked); the walk captures a route only once the E2E build's mark says the app stands on it, drawn past the preloader (src/components/layout/E2ERouteMark.tsx; run 39004285239 captured the loading mark and another route's screen; mutant shape-walk-captures-unwaited); app-crashes.mjs judges the walk's crashes and freezes"
     places: [emulator]
 
@@ -230,7 +230,7 @@ classes:
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "walks nothing for a variant with no name in the list, and sends the phone nothing of it" }
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "sends every one of a variant's commands, though adb reads its input as each is sent" }
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "runs every flow, the probes among them, on the phone as the variant has it, and puts it back after them all" }
-    fix: "e2e/variants.json names each setting a member may choose (largest text, bold text, the narrowest width, three-button navigation, the phone in Arabic, light mode, motion on), with its commands to set, to wait for and to put back; run-flows.sh sets one before the run touches the phone and puts it back at its end, every command sent (mutant shape-variant-input-swallowed), a variant not in the list running nothing (mutant shape-variant-refusal-sent); largest text, the narrowest width and Arabic run every flow on three machines and the walk on a fourth; every night runs every variant. Each variant's own pass rules are P0.86's next part"
+    fix: "e2e/variants.json names each setting a member may choose (largest text, bold text, the narrowest width, three-button navigation, the phone in Arabic, dark mode, motion on), with its commands to set, to wait for and to put back; run-flows.sh sets one before the run touches the phone and puts it back at its end, every command sent (mutant shape-variant-input-swallowed), a variant not in the list running nothing (mutant shape-variant-refusal-sent); largest text, the narrowest width and Arabic run every flow on three machines and the walk on a fourth; every night runs every variant. Each variant's own pass rules are P0.86's next part"
     places: [emulator]
 
   - id: E2E-text-cut-unseen
@@ -248,16 +248,18 @@ classes:
     fix: "the app's one Text, in the E2E build, says each cut of a Text that may cut itself (src/utils/cutText.ts, mutant shape-cut-unsaid), an early end only once a twin with no limit and no width shows the words longer than the box, at their smallest size, since Android's report of a Text's lines can call a label drawn whole cut (runs 39004285239, 39010071533; mutant shape-cut-unconfirmed); the largest-text run fails on any cut e2e/cut-text-judged.json does not judge for it (mutant judge-cut-unjudged), and no judgement outlives the words it names. Bold text is still open: React Native measures with a paint that does not carry Android's bold setting, so no measure the app makes of itself holds there (run 39016139854); WORKLIST P2.7's position reader, reading the drawn screen, is its method"
     places: [emulator]
 
-  - id: E2E-light-mode-unseen
-    title: The system in light mode changes what the app draws (a ground, an ink, the status bar's icons), and every run passes because every run's system is dark
+  - id: E2E-system-mode-unseen
+    title: The system's mode changes what the app draws (a ground, an ink, the status bar's icons, a system alert over it, its calendar), and every run passes because every run's system is in the one mode (light, as the emulator is)
     seriousness: layout
     area: tests
     status: OPEN
     count: 0
     source: { kind: reviewer, ref: "P0.86" }
     methods:
-      - { kind: running, file: e2e/__tests__/groundsJudges.test.ts, test: "fails a route whose ground the system turned light, and one whose status icons it turned dark" }
-    fix: "the nightly light walk is read against the plain walk, route by route (e2e/grounds-judges.mjs over e2e/png.mjs): the body's lightness and its near-white share, and the status bar's icons, each printed (mutant shape-icons-unread)"
+      - { kind: running, file: e2e/__tests__/groundsJudges.test.ts, test: "fails a route whose ground the system turned light, one it turned dark, and one whose status icons it turned dark" }
+      - { kind: running, file: e2e/__tests__/walkRoutes.test.ts, test: "plans each moment after every route, as the member, its link filled in, and walks it: its mark, each tap once, what shows, then the capture" }
+      - { kind: running, file: e2e/__tests__/groundsJudges.test.ts, test: "reads of a moment the system draws part of only the app's part: a keyboard turned light passes, and the same screen as a route fails" }
+    fix: "the nightly dark walk is read against the plain walk, in light mode as the emulator is (a light run read \"no\" before it set \"no\": run 39013202388), route by route (e2e/grounds-judges.mjs over e2e/png.mjs): the body's lightness and its near-white share, and the status bar's icons, each printed (mutant shape-icons-unread); the walk also reaches three moments past their links (e2e/routes.json: the sign-out alert, the keyboard, the calendar; mutant shape-moment-taps-dropped), and of the keyboard only the screen above it is the app's (mutant shape-keyboard-read-as-the-app)"
     places: [emulator]
 
   - id: E2E-phone-change-unseen

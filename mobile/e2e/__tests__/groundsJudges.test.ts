@@ -1,8 +1,8 @@
 /**
- * groundsJudges.test.ts — the light-mode run's judge (e2e/grounds-judges.mjs) and the PNG reader
+ * groundsJudges.test.ts — the dark-mode run's judge (e2e/grounds-judges.mjs) and the PNG reader
  * it stands on (e2e/png.mjs): pictures written here, through every row filter a PNG may use, are
- * read back to the pixel; a body the system turned light, or status-bar icons it turned dark,
- * fail the route; the same picture, or a small change of content, passes; two walks with no
+ * read back to the pixel; a body the system turned light or dark, or status-bar icons it turned
+ * dark, fail the route; the same picture, or a small change of content, passes; two walks with no
  * route in common prove nothing and say so.
  */
 import { spawnSync } from 'child_process';
@@ -90,29 +90,46 @@ describe('the judge', () => {
   };
   const judge = (a: string, b: string) => spawnSync(process.execPath, [SCRIPT, a, b], { encoding: 'utf8' });
 
-  it('passes a light walk that draws every route as the plain one does, a small change of content included', () => {
+  it('passes a dark walk that draws every route as the plain one does, a small change of content included', () => {
     const plain = walk('plain', { 'app/a.tsx': screen(DARK, ICON), 'app/b.tsx': screen(DARK, ICON) });
-    const light = walk('light', { 'app/a.tsx': screen(DARK, ICON), 'app/b.tsx': screen(DARK, ICON, [230, 225, 210]) });
-    const r = judge(plain, light);
+    const dark = walk('dark', { 'app/a.tsx': screen(DARK, ICON), 'app/b.tsx': screen(DARK, ICON, [230, 225, 210]) });
+    const r = judge(plain, dark);
     expect([r.status, r.stdout.trim().split('\n').at(-1)]).toEqual([0, 'every route as the plain run draws it: 2']);
   });
 
-  it('fails a route whose ground the system turned light, and one whose status icons it turned dark', () => {
-    const plain = walk('plain', { 'app/a.tsx': screen(DARK, ICON), 'app/b.tsx': screen(DARK, ICON), 'app/c.tsx': screen(DARK, ICON) });
-    const light = walk('light', { 'app/a.tsx': screen([245, 245, 245], ICON), 'app/b.tsx': screen(DARK, [30, 30, 30]), 'app/c.tsx': screen(DARK, ICON) });
-    const r = judge(plain, light);
+  it('fails a route whose ground the system turned light, one it turned dark, and one whose status icons it turned dark', () => {
+    const PAPER: Rgb = [245, 245, 245];
+    const plain = walk('plain', { 'app/a.tsx': screen(DARK, ICON), 'app/b.tsx': screen(DARK, ICON), 'app/c.tsx': screen(DARK, ICON), 'app/d.tsx': screen(PAPER, ICON) });
+    const dark = walk('dark', { 'app/a.tsx': screen(PAPER, ICON), 'app/b.tsx': screen(DARK, [30, 30, 30]), 'app/c.tsx': screen(DARK, ICON), 'app/d.tsx': screen(DARK, ICON) });
+    const r = judge(plain, dark);
     expect(r.status).toBe(1);
     const lines = r.stdout.trim().split('\n');
     expect(lines[0]).toMatch(/^✗ app\/a\.tsx: .* — its body's lightness 0\.\d\d → 0\.\d\d; near white 0% → \d+%$/);
     expect(lines[1]).toMatch(/^✗ app\/b\.tsx: .* — the status bar's icons [\d.]+% → 0\.0% light$/);
     expect(lines[2]).toMatch(/^✓ app\/c\.tsx: /);
-    expect(lines.at(-1)).toBe('2 of 3 routes drawn otherwise in light mode');
+    expect(lines[3]).toMatch(/^✗ app\/d\.tsx: .* — its body's lightness 0\.\d\d → 0\.\d\d; near white \d+% → 0%$/);
+    expect(lines.at(-1)).toBe('3 of 4 routes drawn otherwise in dark mode');
+  });
+
+  it('reads of a moment the system draws part of only the app\'s part: a keyboard turned light passes, and the same screen as a route fails', () => {
+    expect(ask(SCRIPT, 'm.PARTS')).toEqual({ 'above-keyboard': 0.5 });
+    const plain = walk('plain', { 'app/k.tsx': screen(DARK, ICON), 'moment: the keyboard': screen(DARK, ICON) });
+    // The keyboard: the lower 45% of the screen, which Android draws light in a light system.
+    const keyboard = png(40, 200, (x, y) => (y >= 110 ? [236, 239, 241] : y < 9 ? (x % 5 === 0 ? ICON : DARK) : y % 10 === 0 ? INK : DARK));
+    const dark = walk('dark', { 'app/k.tsx': keyboard, 'moment: the keyboard': keyboard });
+    writeFileSync(join(plain, 'walk.tsv'), 'app/k.tsx\t/0\t01-r.png\nmoment: the keyboard\t/1\t02-r.png\tabove-keyboard\n');
+    writeFileSync(join(dark, 'walk.tsv'), 'app/k.tsx\t/0\t01-r.png\nmoment: the keyboard\t/1\t02-r.png\tabove-keyboard\n');
+    const r = judge(plain, dark);
+    const lines = r.stdout.trim().split('\n');
+    expect(lines[0]).toMatch(/^✗ app\/k\.tsx: .* — its body's lightness/);
+    expect(lines[1]).toMatch(/^✓ moment: the keyboard \(above-keyboard\): /);
+    expect([r.status, lines.at(-1)]).toEqual([1, '1 of 2 routes drawn otherwise in dark mode']);
   });
 
   it('proves nothing, and says so, for two walks with no captured route in common, or none at all', () => {
     const plain = walk('plain', { 'app/a.tsx': screen(DARK, ICON) });
-    const light = walk('light', { 'app/z.tsx': screen(DARK, ICON) });
-    expect(judge(plain, light).status).toBe(2);
+    const dark = walk('dark', { 'app/z.tsx': screen(DARK, ICON) });
+    expect(judge(plain, dark).status).toBe(2);
     expect(judge(plain, join(dir, 'nowhere')).status).toBe(2);
   });
 });

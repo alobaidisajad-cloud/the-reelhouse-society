@@ -168,16 +168,16 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        variant: [plain, motion-on, largest-text, bold-text, narrowest, three-button, right-to-left, light]
+        variant: [plain, motion-on, largest-text, bold-text, narrowest, three-button, right-to-left, dark]
     uses: ./.github/workflows/e2e.yml
     with:
       variant: ${{ matrix.variant }}
 
-  # The light-mode walk against the plain one (P0.86): the app keeps its own grounds and inks
-  # whatever the system's mode, so each route's capture must look as the plain run's does
-  # (mobile/e2e/grounds-judges.mjs). After the walks, whatever they said: what they captured is read.
+  # The dark-mode walk against the plain one, whose emulator is in light mode (P0.86): the app
+  # keeps its own grounds and inks whatever the system's mode, so each route's capture must look
+  # as the plain run's does (mobile/e2e/grounds-judges.mjs). After the walks, whatever they said: what they captured is read.
   grounds:
-    name: 🎬 Light mode draws every route as the plain phone does
+    name: 🎬 Dark mode draws every route as light mode does
     needs: e2e-variants
     if: always()
     runs-on: ubuntu-24.04
@@ -192,13 +192,13 @@ jobs:
         with:
           name: e2e-logs-1 - plain
           path: ${{ runner.temp }}/plain
-      - name: The light walk
+      - name: The dark walk
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: e2e-logs-1 - light
-          path: ${{ runner.temp }}/light
-      - name: Every route, light against plain
-        run: node mobile/e2e/grounds-judges.mjs "$RUNNER_TEMP/plain/walk" "$RUNNER_TEMP/light/walk"
+          name: e2e-logs-1 - dark
+          path: ${{ runner.temp }}/dark
+      - name: Every route, dark against plain
+        run: node mobile/e2e/grounds-judges.mjs "$RUNNER_TEMP/plain/walk" "$RUNNER_TEMP/dark/walk"
 
   jest-random:
     name: 🎲 Jest, each file's tests in a random order

@@ -12,7 +12,9 @@
  * then the member signed in once (.maestro/subflows/sign_in.yaml), and for every route the app
  * stopped, its link opened (a cold start), the screen let settle, and captured as <n>-<name>.png,
  * a name relative to Maestro's own output folder (Maestro refuses a capture outside it: run-flows.sh
- * names <out dir>/routes as that folder). <out dir>/walk.tsv lists each route, its link and its capture.
+ * names <out dir>/routes as that folder). Then each of the list's moments the same way, past its
+ * taps. <out dir>/walk.tsv lists each route and moment, its link and its capture, and for a moment
+ * the system draws part of (the keyboard), the part that is the app's.
  * run-flows.sh runs the flow; app-crashes.mjs judges the device log, and route-judges.mjs that
  * every route was captured.
  */
@@ -60,15 +62,22 @@ export const markOf = (path) => {
   return words ? `e2e-route-${words}` : 'e2e-route';
 };
 
-/** Each route with its link filled in, guests first, in the list's order. */
-export function plan(routes, ids) {
+/** A link with each {placeholder} filled in, or an error naming whose link asked for an id the seed did not make. */
+const fillIn = (whose, text, ids) => text.replace(/\{([a-z]+)\}/g, (_, k) => {
+  if (!(k in ids)) throw new Error(`${whose}: no id for {${k}}`);
+  return encodeURIComponent(ids[k]);
+});
+
+/**
+ * Each route with its link filled in, guests first, in the list's order; then each moment, as the
+ * member: a screen past its link, reached by its taps in order (a system alert, the keyboard, the
+ * calendar), captured as `moment: <its name>`.
+ */
+export function plan(routes, ids, moments = {}) {
   const seen = new Set();
   const out = [];
   for (const [file, r] of Object.entries(routes)) {
-    const fill = (text) => text.replace(/\{([a-z]+)\}/g, (_, k) => {
-      if (!(k in ids)) throw new Error(`${file}: no id for {${k}}`);
-      return encodeURIComponent(ids[k]);
-    });
+    const fill = (text) => fillIn(file, text, ids);
     const link = fill(r.link);
     if (seen.has(link)) continue;   // an alias that redirects: its link is opened once
     seen.add(link);
@@ -76,8 +85,16 @@ export function plan(routes, ids) {
     // `then`: the control a member taps from where the link leaves them, to reach the route (the Lobby: lastTab.ts).
     out.push({ file, link, lands: fill(r.lands ?? r.link).split('?')[0], as: r.as ?? 'member', ...(r.then ? { then: r.then } : {}) });
   }
-  return [...out.filter((r) => r.as === 'guest'), ...out.filter((r) => r.as !== 'guest')];
+  const shown = Object.entries(moments).map(([name, m]) => {
+    const link = fillIn(`moment: ${name}`, m.link, ids);
+    // `part`: what of the screen is the app's to draw, when the system draws the rest (the keyboard).
+    return { file: `moment: ${name}`, link, lands: link.split('?')[0], as: 'member', taps: m.taps, ...(m.shows ? { shows: m.shows } : {}), ...(m.part ? { part: m.part } : {}) };
+  });
+  return [...out.filter((r) => r.as === 'guest'), ...out.filter((r) => r.as !== 'guest'), ...shown];
 }
+
+/** A control's selector in a flow, `indent` spaces in: its id, or the words it shows or is labelled. */
+const pick = (t, indent) => `${' '.repeat(indent)}${t.id !== undefined ? 'id' : 'text'}: ${JSON.stringify(t.id ?? t.text)}`;
 
 /** The Maestro flow that walks the plan, capturing each route by a name in Maestro's output folder. */
 export function flowOf(steps, signIn) {
@@ -98,6 +115,13 @@ export function flowOf(steps, signIn) {
       '    visible:',
       `      id: ${JSON.stringify(markOf(s.lands ?? s.link))}`,
       '    timeout: 30000',
+      // A moment's taps, each control scrolled to when it is below and tapped once (a second tap
+      // would close what the first opened); then what shows once the moment is there.
+      ...(s.taps ?? []).flatMap((t) => [
+        '- scrollUntilVisible:', '    element:', pick(t, 6), '    direction: DOWN', '    timeout: 20000',
+        '- tapOn:', pick(t, 4), '    retryTapIfNoChange: false',
+      ]),
+      ...(s.shows ? ['- extendedWaitUntil:', '    visible:', pick(s.shows, 6), '    timeout: 15000'] : []),
       '- waitForAnimationToEnd:',
       '    timeout: 8000',
       `- takeScreenshot: ${JSON.stringify(`${String(i + 1).padStart(2, '0')}-${nameOf(s.file)}`)}`,
@@ -124,13 +148,14 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     return res.json();
   };
   try {
-    const { routes } = JSON.parse(readFileSync(join(HERE, 'routes.json'), 'utf8'));
-    const steps = plan(routes, await readIds(ask));
+    const { routes, moments } = JSON.parse(readFileSync(join(HERE, 'routes.json'), 'utf8'));
+    const steps = plan(routes, await readIds(ask), moments);
     const shots = join(out, 'routes');
     mkdirSync(shots, { recursive: true });
     writeFileSync(join(out, 'walk.yaml'), flowOf(steps, join(HERE, '..', '.maestro', 'subflows', 'sign_in.yaml').split('\\').join('/')));
-    writeFileSync(join(out, 'walk.tsv'), steps.map((s, i) => `${s.file}\t${s.link}\t${String(i + 1).padStart(2, '0')}-${nameOf(s.file)}.png`).join('\n') + '\n');
-    console.log(`the walk: ${steps.length} routes (${steps.filter((s) => s.as === 'guest').length} as a guest), written to ${out}`);
+    writeFileSync(join(out, 'walk.tsv'), steps.map((s, i) => `${s.file}\t${s.link}\t${String(i + 1).padStart(2, '0')}-${nameOf(s.file)}.png${s.part ? `\t${s.part}` : ''}`).join('\n') + '\n');
+    const shown = steps.filter((s) => s.taps).length;
+    console.log(`the walk: ${steps.length - shown} routes (${steps.filter((s) => s.as === 'guest').length} as a guest) and ${shown} moments, written to ${out}`);
   } catch (e) {
     console.error(`the walk cannot be planned: ${e.message}`);
     process.exit(1);

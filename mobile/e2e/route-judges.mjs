@@ -32,10 +32,10 @@ export function findCapture(root, name) {
   return direct;
 }
 
-/** Each planned route, from the walk's list. */
+/** Each planned route and moment, from the walk's list; `part`, of a moment the system draws part of. */
 export const readPlan = (text) => text.split(/\r?\n/).filter(Boolean).map((l) => {
-  const [file, link, capture] = l.split('\t');
-  return { file, link, capture };
+  const [file, link, capture, part] = l.split('\t');
+  return { file, link, capture, ...(part ? { part } : {}) };
 });
 
 /** What is wrong with one capture, or null. */
