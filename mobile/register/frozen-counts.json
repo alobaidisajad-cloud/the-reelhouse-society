@@ -360,7 +360,7 @@
     "mobile/src/utils/__tests__/keysetCursor.test.ts": 3,
     "mobile/src/utils/__tests__/logScreenPolish.guard.test.ts": 1,
     "mobile/src/utils/__tests__/lucideIconsAreBundled.guard.test.ts": 1,
-    "mobile/src/utils/__tests__/maestroFlows.guard.test.ts": 12,
+    "mobile/src/utils/__tests__/maestroFlows.guard.test.ts": 5,
     "mobile/src/utils/__tests__/migrationSafety.guard.test.ts": 3,
     "mobile/src/utils/__tests__/offlineIsSaidOneWay.guard.test.ts": 3,
     "mobile/src/utils/__tests__/offlineQueue.integration.test.ts": 13,

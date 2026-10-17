@@ -553,7 +553,7 @@ mutants:
       - file: src/components/text/index.tsx
         find: "        lines.current = e.nativeEvent.lines;\n        judge();\n"
         replace: "        lines.current = e.nativeEvent.lines;\n"
-    proof: { file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says a label cut to one line, once, with its words and how it was cut, when its twin a pixel wider is cut too" }
+    proof: { file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says a label cut to one line, once, with its words and how it was cut, when its words laid out freely are longer than its box" }
 
   - id: shape-icons-unread
     class: E2E-light-mode-unseen
@@ -589,7 +589,7 @@ mutants:
       - file: src/components/text/index.tsx
         find: "    if (cut === 'ended early' && box.current) {"
         replace: "    if (cut === 'taller than its box' && box.current) {"
-    proof: { file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says nothing of a label that ended early only for want of the pixel Android rounds away (run 39004285239)" }
+    proof: { file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says nothing of a label Android reports cut that is no longer than its box, as at bold text (runs 39004285239, 39010071533)" }
 
   - id: shape-walk-captures-unwaited
     class: E2E-route-never-opened

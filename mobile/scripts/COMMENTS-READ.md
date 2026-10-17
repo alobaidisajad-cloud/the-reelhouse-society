@@ -65,7 +65,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/keyboard/log.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/keyboard/stack.tap.yaml | 2026-10-01 | written with the keyboard probe: the stack form, reachable by a new member |
 | .maestro/keyboard/stack.yaml | 2026-10-15 | edited: the Reel's log and the seed's stack waited for |
-| .maestro/lifecycle/backup_restore.yaml | 2026-10-17 | new: signed in, backed up, uninstalled, installed afresh, restored: the marker back, the member still signed in, every tab opening |
+| .maestro/lifecycle/backup_restore.yaml | 2026-10-17 | new: signed in, backed up, uninstalled, installed afresh, restored: the marker back, the app open signed out (the session's key never travels), sign-in working, the tabs loading |
 | .maestro/lifecycle/dont_keep_activities.yaml | 2026-10-17 | new: "don't keep activities" on, Edit Profile half-edited, home and back: the words kept |
 | .maestro/lifecycle/killed_in_background.yaml | 2026-10-17 | new: Edit Profile half-edited, home, the app killed by the system: back where they were, the words kept |
 | .maestro/lifecycle/killed_mid_write.yaml | 2026-10-17 | new: the app stopped dead while a log is on its way over a slow link; reopened, the log is the member's, exactly once |
@@ -1266,7 +1266,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/searchWiring.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
 | src/utils/__tests__/strykerFilesAreListed.guard.test.ts | 2026-10-16 | new |
-| src/utils/__tests__/theBackupMarkerIsWrittenOnce.test.ts | 2026-10-17 | new |
 | src/utils/__tests__/theCharacterRuleHoldsForEveryShortString.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-16 | edited: the search stops at twenty disagreements |
 | src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts | 2026-10-03 | Written with 20261003_05: the corpus holds every character the cleaning acts on, with cleanForStorage's answer. |
@@ -1299,7 +1298,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/cutText.ts | 2026-10-17 | new: whether a Text's laid-out lines lost its words, ran out of its box or were clipped by it |
 | src/utils/deviceRegion.ts | 2026-10-01 | new |
 | src/utils/draftSync.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/utils/e2eBackupMarker.ts | 2026-10-17 | new: the E2E build's marker in the app's own files, for the backup run; written once a launch, traced |
 | src/utils/e2eRuntime.ts | 2026-10-15 | new: the phone's runtime written once a launch, in parts, by the E2E build |
 | src/utils/e2eTrace.ts | 2026-10-15 | edited: e2eTraceAt, where a view sits on screen, in the E2E build alone |
 | src/utils/endorsementGroupKey.ts | 2026-10-02 | Read whole (launch audit). A certified-log group opened the FILM, on the belief that no log page existed (app/log/[id] does), and went nowhere without a film id: it opens the log. |

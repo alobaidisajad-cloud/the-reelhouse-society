@@ -25,7 +25,6 @@
  */
 import React, { forwardRef, useContext, useRef, useState } from 'react';
 import {
-  PixelRatio,
   Platform,
   StyleSheet,
   // The one place these may come from 'react-native' (eslint.config.js).
@@ -43,7 +42,7 @@ import TextAncestorContext from 'react-native/Libraries/Text/TextAncestorContext
 import { scaledTextProps, TYPE_FLOOR } from '@/src/constants/textScaling';
 import { useFontScale } from '@/src/hooks/useTextScale';
 import { androidTracking } from '@/src/providers/androidTracking';
-import { cutOf, type Box, type LaidLine } from '@/src/utils/cutText';
+import { cutOf, stillCut, type Box, type LaidLine } from '@/src/utils/cutText';
 import { E2E_BUILD, e2eTrace } from '@/src/utils/e2eTrace';
 
 /** Props as the phone should receive them: the house ceiling unless the text sets its own, and iOS's spacing on Android. */
@@ -135,11 +134,13 @@ export function flooredMinimumScale(props: TextProps, scale: number): number | u
  *    onLayout and onTextLayout still run; any other build adds nothing.
  *
  *    Android lays the lines it reports out again at the box's width in points, turned to pixels
- *    and rounded down (React Native's TextLayoutManager): a label sized to its own words can lose
- *    a pixel there and report a letter it never wraps on screen (run 39004285239: "E2E_WRITER",
- *    drawn whole, reported 56 times). So a Text that seems to have ended early is laid out once
- *    more, unseen, a pixel wider (its twin), and the cut is said only if the twin ends early too.
- *    A Text inside another has no box of its own and no twin: it is the outer Text's to say.
+ *    and rounded down (React Native's TextLayoutManager), and at bold text its report and its
+ *    drawing differ by more than that: "E2E_WRITER", drawn whole, was reported cut 56 times (run
+ *    39004285239), and still at a pixel wider (run 39010071533). So a Text that seems to have
+ *    ended early is laid out once more, unseen, with no limit of lines and no width of its own (its
+ *    twin): its lines' widths are its words' natural length, and the cut is said only if that,
+ *    at the smallest size the Text may shrink to, is longer than its box's lines (stillCut). A Text
+ *    inside another has no box of its own and no twin: it is the outer Text's to say.
  */
 const TWIN: TextStyle = { position: 'absolute', left: -10000, top: 0, opacity: 0 };
 
@@ -168,15 +169,23 @@ function useCutSaid(props: TextProps, drawn: TextProps): { handlers: Partial<Tex
     }
     say(cut, lines.current.length);
   };
-  const { onLayout: _l, onTextLayout: _t, testID: _id, onPress: _p, onLongPress: _lp, ...look } = drawn;
+  const {
+    onLayout: _l, onTextLayout: _t, testID: _id, onPress: _p, onLongPress: _lp,
+    numberOfLines: _n, adjustsFontSizeToFit: _a, minimumFontScale: _m, ellipsizeMode: _e, ...look
+  } = drawn;
+  // The smallest size it may shrink to; one that shrinks with no floor of its own goes down to 4pt, and is never cut.
+  const scale = props.adjustsFontSizeToFit ? (drawn.minimumFontScale ?? 0) : 1;
   const twin = doubted ? (
     <RNText
       {...look}
-      style={[drawn.style, TWIN, { width: doubted.width + 1 / PixelRatio.get() }]}
+      style={[drawn.style, TWIN]}
       pointerEvents="none"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      onTextLayout={(e) => say(cutOf(words, e.nativeEvent.lines, null), e.nativeEvent.lines.length)}
+      onTextLayout={(e) => {
+        const natural = e.nativeEvent.lines.reduce((sum, l) => sum + l.width, 0);
+        say(stillCut(natural, doubted.width, props.numberOfLines ?? 1, scale) ? 'ended early' : null, props.numberOfLines ?? 1);
+      }}
     />
   ) : null;
   return {

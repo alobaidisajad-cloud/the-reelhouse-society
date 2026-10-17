@@ -22,6 +22,20 @@ export type Cut = 'ended early' | 'wider than its box' | 'taller than its box';
 const SLACK = 0.5;
 const letters = (s: string) => s.replace(/[\s…]/gu, '').toLowerCase();
 
+/** A point: words a point longer than their room are no cut, as Android's own roundings differ by about that much. */
+const ROOM_SLACK = 1;
+
+/**
+ * Whether words whose natural length, on one line, is `natural` points still cannot fit `lines`
+ * lines of a box `width` wide, at the smallest size they may shrink to (`scale`, 1 when they do
+ * not shrink). The confirmation of an early end: Android's report of a Text's lines can say a
+ * label drawn whole ended early (run 39010071533: "E2E_WRITER" at bold text, a twin a pixel wider
+ * no different), so the cut is said only when the words, laid out freely, are longer than the room.
+ */
+export function stillCut(natural: number, width: number, lines: number, scale = 1): boolean {
+  return natural * scale > width * Math.max(1, lines) + ROOM_SLACK;
+}
+
 /** Why the laid-out words do not all show, or null when they all do. */
 export function cutOf(words: string, lines: readonly LaidLine[], box: Box | null): Cut | null {
   if (!words.trim() || lines.length === 0) return null;

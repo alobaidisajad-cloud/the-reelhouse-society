@@ -27,30 +27,48 @@ const LABEL = 'FOUNDING MEMBER OF THE SOCIETY';
 
 beforeEach(() => { mockTrace.mockClear(); mockE2E = true; });
 
-it('says a label cut to one line, once, with its words and how it was cut, when its twin a pixel wider is cut too', async () => {
+it('says a label cut to one line, once, with its words and how it was cut, when its words laid out freely are longer than its box', async () => {
   const { getByText, getAllByText } = render(<Text numberOfLines={1}>{LABEL}</Text>);
   const t = getByText(LABEL);
   await fireEvent(t, 'layout', boxed(100, 20));
   await fireEvent(t, 'textLayout', laid([{ text: 'FOUNDING MEMBER OF' }]));
-  // Not yet said: the twin, unseen and a pixel wider, is drawn to be asked.
+  // Not yet said: the twin, unseen, with no limit of lines and no width, is drawn to be asked.
   expect(mockTrace).not.toHaveBeenCalled();
   const twin = getAllByText(LABEL, { includeHiddenElements: true })[1];
   if (!twin) throw new Error('no twin was drawn');
   expect(twin.props.style).toEqual(expect.arrayContaining([expect.objectContaining({ position: 'absolute', opacity: 0 })]));
-  await fireEvent(twin, 'textLayout', laid([{ text: 'FOUNDING MEMBER OF' }]));
-  await fireEvent(twin, 'textLayout', laid([{ text: 'FOUNDING MEMBER OF' }]));
+  expect([twin.props.numberOfLines, twin.props.adjustsFontSizeToFit]).toEqual([undefined, undefined]);
+  await fireEvent(twin, 'textLayout', laid([{ text: LABEL, width: 160 }]));
+  await fireEvent(twin, 'textLayout', laid([{ text: LABEL, width: 160 }]));
   expect(mockTrace.mock.calls).toEqual([['text.cut', { words: LABEL, cut: 'ended early', lines: 1, numberOfLines: 1 }]]);
 });
 
-it('says nothing of a label that ended early only for want of the pixel Android rounds away (run 39004285239)', async () => {
+it('says nothing of a label Android reports cut that is no longer than its box, as at bold text (runs 39004285239, 39010071533)', async () => {
   const { getByText, getAllByText } = render(<Text numberOfLines={1}>{LABEL}</Text>);
   const t = getByText(LABEL);
   await fireEvent(t, 'layout', boxed(100, 20));
   await fireEvent(t, 'textLayout', laid([{ text: 'FOUNDING MEMBER OF THE' }]));
   const twin = getAllByText(LABEL, { includeHiddenElements: true })[1];
   if (!twin) throw new Error('no twin was drawn');
-  await fireEvent(twin, 'textLayout', laid([{ text: LABEL }]));
+  await fireEvent(twin, 'textLayout', laid([{ text: LABEL, width: 100.6 }]));
   expect(mockTrace).not.toHaveBeenCalled();
+});
+
+it('measures a label that shrinks to fit at the smallest size it may shrink to', async () => {
+  const shrinking = async (natural: number) => {
+    mockTrace.mockClear();
+    const { getByText, getAllByText, unmount } = render(<Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{LABEL}</Text>);
+    await fireEvent(getByText(LABEL), 'layout', boxed(100, 20));
+    await fireEvent(getByText(LABEL), 'textLayout', laid([{ text: 'FOUNDING' }]));
+    const twin = getAllByText(LABEL, { includeHiddenElements: true })[1];
+    if (!twin) throw new Error('no twin was drawn');
+    await fireEvent(twin, 'textLayout', laid([{ text: LABEL, width: natural }]));
+    const calls = mockTrace.mock.calls.length;
+    unmount();
+    return calls;
+  };
+  // 120 points at 0.8 is 96: it fits once shrunk. 140 at 0.8 is 112: cut even at its smallest.
+  expect([await shrinking(120), await shrinking(140)]).toEqual([0, 1]);
 });
 
 it('watches no Text inside another, which has no box of its own', () => {

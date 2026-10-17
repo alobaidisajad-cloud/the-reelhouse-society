@@ -18,12 +18,13 @@ export function E2ERouteMark() {
   const pathname = usePathname();
   if (!E2E_BUILD) return null;
   return (
+    // In the tree Maestro reads (Android's accessibility tree, so never hidden from it, as run
+    // 39010069408's first mark was): with no words and no action, a screen reader passes it by.
     <View
       testID={routeMarkOf(pathname)}
       collapsable={false}
       pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      accessible={false}
       style={{ position: 'absolute', top: 0, left: 0, width: 1, height: 1 }}
     />
   );

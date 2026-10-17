@@ -199,8 +199,16 @@ const stepsOf = (file: string, inRepeat = false): Step[] => {
     for (const [cmd, arg] of Object.entries(step as Record<string, unknown>)) {
       if (cmd === 'runFlow') {
         const sub = typeof arg === 'string' ? arg : (arg as { file?: string }).file;
+        // The values a runFlow gives its subflow, filled into the subflow's scripts' own env.
+        const env = typeof arg === 'string' ? undefined : (arg as { env?: Record<string, string> }).env;
+        const given = (st: Step): Step => {
+          const own = (st.arg as { env?: Record<string, string> } | null)?.env;
+          if (st.cmd !== 'runScript' || !env || !own) return st;
+          const filled = Object.fromEntries(Object.entries(own).map(([k, v]) => [k, String(v).replace(/\$\{(\w+)\}/g, (all, name: string) => env[name] ?? all)]));
+          return { ...st, arg: { ...(st.arg as object), env: filled } };
+        };
         // A runFlow names a subflow's file, or holds its own commands (a block for one platform).
-        if (sub) out.push(...stepsOf(join(file, '..', sub), rep));
+        if (sub) out.push(...stepsOf(join(file, '..', sub), rep).map(given));
         else ((arg as { commands?: unknown[] }).commands ?? []).forEach((c) => add(c, rep));
       } else if (cmd === 'repeat') {
         ((arg as { commands?: unknown[] }).commands ?? []).forEach((c) => add(c, true));
@@ -222,6 +230,12 @@ const lookedFor = (s: Step): string | null => {
 /** Steps that only look, and change nothing on the screen. */
 const LOOKS = ['assertVisible', 'assertNotVisible', 'extendedWaitUntil', 'waitForAnimationToEnd'];
 
+/** Whether a script step installs the app afresh (.maestro/subflows/backup.js's reinstall, upgrade.js's old). */
+const freshInstall = (arg: unknown): boolean => {
+  const a = arg as { file?: string; env?: Record<string, string> } | null;
+  return (a?.file === 'backup.js' && a.env?.STEP === 'reinstall') || (a?.file === 'upgrade.js' && a.env?.STEP === 'old');
+};
+
 /** Each tab a flow opens and leaves unproved, as `flow: tab (why)`. */
 const unprovenTabs = (flow: string, steps: Step[]): string[] => {
   const faults: string[] = [];
@@ -229,8 +243,11 @@ const unprovenTabs = (flow: string, steps: Step[]): string[] => {
   const proven = new Set<string>();
   for (let i = 0; i < steps.length; i++) {
     const s = steps[i];
+    if (!s) continue;
     if (s.cmd === 'launchApp' && (s.arg as { clearState?: boolean } | null)?.clearState) { who = 'guest'; proven.clear(); }
     if (s.cmd === 'tapOn' && lookedFor(s) === 'sign-in-submit') { who = 'member'; proven.clear(); }
+    // The app installed afresh by a lifecycle step (a backup's reinstall, the old build of an upgrade) opens as a guest.
+    if (s.cmd === 'runScript' && freshInstall(s.arg)) { who = 'guest'; proven.clear(); }
     const tab = s.cmd === 'tapOn' ? lookedFor(s) : null;
     if (!tab || !LOADED[tab]) continue;
     const wanted = LOADED[tab][who];
@@ -286,6 +303,12 @@ it('the tab check says NO — to the tab bar as proof, to a tap before the conte
   expect(unprovenTabs('faults/x', [tap('dispatch-tab'), { cmd: 'assertVisible', arg: 'The paper could not be reached.', inRepeat: false }])).toHaveLength(1);
   // Its loaded content still proves it, as anywhere.
   expect(unprovenTabs('faults/x', [tap('dispatch-tab'), see('dispatch-filing')])).toEqual([]);
+  // The app installed afresh by a lifecycle step opens as a guest: a member's proof no longer is one.
+  const fresh = (file: string, STEP: string): Step => ({ cmd: 'runScript', arg: { file, env: { STEP } }, inRepeat: false });
+  expect(unprovenTabs('x', [tap('sign-in-submit'), fresh('backup.js', 'reinstall'), tap('profile-tab'), see('profile-sign-in-prompt')])).toEqual([]);
+  expect(unprovenTabs('x', [tap('sign-in-submit'), fresh('upgrade.js', 'old'), tap('profile-tab'), see('collection-card-watchlist')])).toHaveLength(1);
+  // A step that keeps the app's data keeps the member.
+  expect(unprovenTabs('x', [tap('sign-in-submit'), fresh('upgrade.js', 'new'), tap('profile-tab'), see('collection-card-watchlist')])).toEqual([]);
 });
 
 it('the detector says NO — to a dropped id, a dropped text, and a pattern that only half-matches', () => {

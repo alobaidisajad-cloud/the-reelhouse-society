@@ -241,11 +241,11 @@ classes:
     count: 0
     source: { kind: reviewer, ref: "P0.86" }
     methods:
-      - { kind: running, file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says a label cut to one line, once, with its words and how it was cut, when its twin a pixel wider is cut too" }
-      - { kind: running, file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says nothing of a label that ended early only for want of the pixel Android rounds away (run 39004285239)" }
+      - { kind: running, file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says a label cut to one line, once, with its words and how it was cut, when its words laid out freely are longer than its box" }
+      - { kind: running, file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says nothing of a label Android reports cut that is no longer than its box, as at bold text (runs 39004285239, 39010071533)" }
       - { kind: running, file: e2e/__tests__/cutTextJudges.test.ts, test: "passes the judged log and fails it for a variant it is not judged in, by exit code" }
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "fails a bold-text run on a label the app cut, and a variant that does not judge cut text, not" }
-    fix: "the app's one Text, in the E2E build, says each cut of a Text that may cut itself (src/utils/cutText.ts, mutant shape-cut-unsaid), an early end only once a twin a pixel wider ends early too, since Android re-lays a Text's lines at its box width rounded down (run 39004285239, mutant shape-cut-unconfirmed); the bold-text and largest-text runs fail on any cut e2e/cut-text-judged.json does not judge for them (mutant judge-cut-unjudged), and no judgement outlives the words it names"
+    fix: "the app's one Text, in the E2E build, says each cut of a Text that may cut itself (src/utils/cutText.ts, mutant shape-cut-unsaid), an early end only once a twin with no limit and no width shows the words longer than the box, at their smallest size, since Android's report of a Text's lines can call a label drawn whole cut (runs 39004285239, 39010071533; mutant shape-cut-unconfirmed); the bold-text and largest-text runs fail on any cut e2e/cut-text-judged.json does not judge for them (mutant judge-cut-unjudged), and no judgement outlives the words it names"
     places: [emulator]
 
   - id: E2E-light-mode-unseen
@@ -273,7 +273,7 @@ classes:
       - { kind: running, file: e2e/__tests__/faultProxy.test.ts, test: "fails a backup whose marker is not back as a mis-set run, never a pass" }
       - { kind: running, file: e2e/__tests__/faultProxy.test.ts, test: "runs adb from the Android SDK the runner keeps, since the proxy starts before adb is on the PATH (run 39004287263)" }
       - { kind: running, file: e2e/__tests__/faultProxy.test.ts, test: "installs the build in members' hands afresh, then this one over it keeping its data, and fails with no old build to install" }
-    fix: "the fault proxy's control changes the phone mid-flow by fixed commands (/phone, mutant shape-phone-unchecked); .maestro/lifecycle's flows change it under a half-edited Edit Profile and hold the screen and the words to it, and stop the app dead mid-write, whose log verify-writes.mjs holds to exactly one row; backup_restore backs the app up, reinstalls and restores it by /backup's steps, each held to what Android must say, a marker not back failing the run as mis-set (mutant shape-backup-marker-unread), then holds the restored app to the member still signed in and every tab opening; upgrade installs the build in members' hands (the shipped-clients run's app), queues a write on it offline, installs this build over it, and holds the write to exactly one row and the member still signed in (mutant shape-upgrade-without-old); run-flows.sh puts the phone back before each; every night runs them (e2e.yml lifecycle). Their failures are discovery for P2.8's list until P4.14 and P4.33 land"
+    fix: "the fault proxy's control changes the phone mid-flow by fixed commands (/phone, mutant shape-phone-unchecked); .maestro/lifecycle's flows change it under a half-edited Edit Profile and hold the screen and the words to it, and stop the app dead mid-write, whose log verify-writes.mjs holds to exactly one row; backup_restore backs the app up, reinstalls and restores it by /backup's steps, each held to what Android must say, a marker laid in the shared preferences (the one place expo-secure-store's rules let the backup take) not back failing the run as mis-set (mutant shape-backup-marker-unread), then holds the restored app to P4.14's rule: open signed out, never a crash, sign-in working, the tabs loading; upgrade installs the build in members' hands (the shipped-clients run's app), queues a write on it offline, installs this build over it, and holds the write to exactly one row and the member still signed in (mutant shape-upgrade-without-old); run-flows.sh puts the phone back before each; every night runs them (e2e.yml lifecycle). Their failures are discovery for P2.8's list until P4.14 and P4.33 land"
     places: [emulator]
 
   - id: E2E-record-not-kept
@@ -673,7 +673,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 1469
+    count: 1462
     source: { kind: reviewer, ref: P0.65 }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }

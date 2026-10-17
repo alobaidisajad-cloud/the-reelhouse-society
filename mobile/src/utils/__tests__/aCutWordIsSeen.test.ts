@@ -1,9 +1,10 @@
 /**
  * aCutWordIsSeen.test.ts — cutOf (src/utils/cutText.ts) says when a Text's laid-out lines lost
  * words, ran out of their box or were clipped by it, and says nothing of a Text that shows all
- * of its words however they broke, were spaced, upper-cased or ellipsized at their natural end.
+ * of its words however they broke, were spaced, upper-cased or ellipsized at their natural end;
+ * and stillCut confirms an early end only when the words' natural length is longer than the room.
  */
-import { cutOf, type LaidLine } from '../cutText';
+import { cutOf, stillCut, type LaidLine } from '../cutText';
 
 const line = (text: string, width = 100, height = 20): LaidLine => ({ text, width, height });
 const BOX = { width: 100, height: 40 };
@@ -47,5 +48,19 @@ describe('a Text that lost words', () => {
 
   it('says first that it ended early, the cut a member cannot read past', () => {
     expect(cutOf('One two three', [line('One', 140, 50)], BOX)).toBe('ended early');
+  });
+});
+
+describe('the confirmation of an early end (stillCut)', () => {
+  it('is no cut for words no more than a point longer than their room', () => {
+    expect([stillCut(100, 100, 1), stillCut(101, 100, 1), stillCut(101.5, 100, 1)]).toEqual([false, false, true]);
+  });
+
+  it('gives a Text of several lines the room of all of them', () => {
+    expect([stillCut(190, 100, 2), stillCut(250, 100, 2)]).toEqual([false, true]);
+  });
+
+  it('measures words that shrink to fit at their smallest size, and never cuts what may shrink without end', () => {
+    expect([stillCut(120, 100, 1, 0.8), stillCut(140, 100, 1, 0.8), stillCut(900, 100, 1, 0)]).toEqual([false, true, false]);
   });
 });

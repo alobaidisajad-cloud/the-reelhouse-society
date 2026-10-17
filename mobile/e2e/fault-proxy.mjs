@@ -129,12 +129,19 @@ const PKG = 'com.reelhouse.society';
 
 /**
  * The backup-and-restore run's steps (.maestro/lifecycle/backup_restore.yaml, WORKLIST P0.86), in
- * the plan's order: save (Android's backup on, to its local transport, and taken now), reinstall
- * (the app uninstalled and installed afresh), restore (the transport's set put back), marker (the
- * file the E2E build wrote, src/utils/e2eBackupMarker.ts, back in the app's files). Each runs fixed
- * commands and holds Android's answer to what the step must say: a backup that never happened makes
- * a run that proves nothing, so it fails as a mis-set fault and never passes.
+ * the plan's order: save (a marker laid in the app's shared preferences, then Android's backup on, to
+ * its local transport, and taken now), reinstall (the app uninstalled and installed afresh), restore
+ * (the transport's set put back), marker (that marker back). Each runs fixed commands and holds
+ * Android's answer to what the step must say: a backup that never happened makes a run that proves
+ * nothing, so it fails as a mis-set fault and never passes.
+ *
+ * The marker is in the shared preferences because the app's backup takes them alone: expo-secure-store's
+ * rules include the sharedpref domain and nothing else (run 39010073843 backed up two of its files and
+ * none of the app's own files). It is laid as root and given to the app's own user, or the backup's
+ * agent, which runs as the app, could not read it.
  */
+export const BACKUP_MARKER = `/data/data/${PKG}/shared_prefs/e2e_backup_marker.xml`;
+const LAY_MARKER = `u=$(stat -c %u /data/data/${PKG}) && echo '<map />' > ${BACKUP_MARKER} && chown $u:$u ${BACKUP_MARKER} && chmod 660 ${BACKUP_MARKER} && echo laid`;
 export const BACKUP_STEPS = ['save', 'reinstall', 'restore', 'marker'];
 const backupStep = (step, run, apk) => {
   const must = (cmd, args, says, fault) => {
@@ -142,7 +149,8 @@ const backupStep = (step, run, apk) => {
     return r.status === 0 && says.test(r.said) ? null : `${fault}: ${cmd} ${args.join(' ')} said ${r.said || `nothing (exit ${r.status})`}`;
   };
   if (step === 'save') {
-    return must('adb', ['shell', 'bmgr', 'enable', 'true'], /enabled/i, 'the backup could not be turned on')
+    return must('adb', ['shell', LAY_MARKER], /laid/, 'the marker could not be laid in the shared preferences')
+      ?? must('adb', ['shell', 'bmgr', 'enable', 'true'], /enabled/i, 'the backup could not be turned on')
       ?? must('adb', ['shell', 'bmgr', 'transport', 'com.android.localtransport/.LocalTransport'], /LocalTransport/, 'the local transport could not be chosen')
       ?? must('adb', ['shell', 'bmgr', 'backupnow', PKG], /Backup finished with result: Success/, 'the backup was not taken');
   }
@@ -156,7 +164,7 @@ const backupStep = (step, run, apk) => {
     if (sets.status !== 0 || !token) return `no backup set to restore from: bmgr list sets said ${sets.said || 'nothing'}`;
     return must('adb', ['shell', 'bmgr', 'restore', token, PKG], /restoreFinished: 0/, 'the restore did not finish');
   }
-  return must('adb', ['shell', 'ls', `/data/data/${PKG}/files/e2e-backup-marker`], /e2e-backup-marker/,
+  return must('adb', ['shell', 'ls', BACKUP_MARKER], /e2e_backup_marker/,
     'the marker is not back, so the backup or the restore never happened and this run proves nothing (a mis-set fault)');
 };
 

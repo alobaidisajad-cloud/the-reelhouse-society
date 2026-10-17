@@ -51,7 +51,8 @@ const run = (cmd, args) => {
   const line = [cmd, ...args].join(' ');
   ran.push(line);
   if (args.includes('supabase_storage_reelhouse-e2e')) return { status: 1, said: 'No such container' };
-  if (line.includes('e2e-backup-marker')) return markerBack ? { status: 0, said: args.at(-1) } : { status: 1, said: 'ls: ' + args.at(-1) + ': No such file or directory' };
+  if (line.endsWith('echo laid')) return { status: 0, said: 'laid' };
+  if (line.startsWith('adb shell ls ') && line.includes('e2e_backup_marker')) return markerBack ? { status: 0, said: args.at(-1) } : { status: 1, said: 'ls: ' + args.at(-1) + ': No such file or directory' };
   const known = ANSWERS.find(([re]) => re.test(line));
   return { status: 0, said: known ? known[1] : '' };
 };
@@ -312,6 +313,10 @@ it('backs the app up, reinstalls it and restores it by the plan\'s steps, each h
     { status: 400, refused: 'step, one of save, reinstall, restore, marker' },
   ]);
   expect(out.ran.slice(out.ranPhone, out.ranBackup)).toEqual([
+    // The marker, in the one place the app's backup takes (expo-secure-store's rules: the shared preferences), the app's own.
+    "adb shell u=$(stat -c %u /data/data/com.reelhouse.society) && echo '<map />' > /data/data/com.reelhouse.society/shared_prefs/e2e_backup_marker.xml"
+      + ' && chown $u:$u /data/data/com.reelhouse.society/shared_prefs/e2e_backup_marker.xml'
+      + ' && chmod 660 /data/data/com.reelhouse.society/shared_prefs/e2e_backup_marker.xml && echo laid',
     'adb shell bmgr enable true',
     'adb shell bmgr transport com.android.localtransport/.LocalTransport',
     'adb shell bmgr backupnow com.reelhouse.society',
@@ -319,8 +324,8 @@ it('backs the app up, reinstalls it and restores it by the plan\'s steps, each h
     'adb install mobile/android/app/build/outputs/apk/release/app-release.apk',
     'adb shell bmgr list sets',
     'adb shell bmgr restore 1 com.reelhouse.society',
-    'adb shell ls /data/data/com.reelhouse.society/files/e2e-backup-marker',
-    'adb shell ls /data/data/com.reelhouse.society/files/e2e-backup-marker',
+    'adb shell ls /data/data/com.reelhouse.society/shared_prefs/e2e_backup_marker.xml',
+    'adb shell ls /data/data/com.reelhouse.society/shared_prefs/e2e_backup_marker.xml',
   ]);
 });
 
