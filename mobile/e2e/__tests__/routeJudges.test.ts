@@ -28,6 +28,14 @@ it('passes a walk that captured every route it planned', () => {
   expect([r.status, r.stdout.trim()]).toEqual([0, 'every route captured: 2']);
 });
 
+it("finds a capture Maestro nested in its own output folder, at any depth", () => {
+  mkdirSync(join(dir, 'routes', '2026-10-17_015900', 'walk'), { recursive: true });
+  writeFileSync(join(dir, 'routes', '01-film-id.png'), picture());
+  writeFileSync(join(dir, 'routes', '2026-10-17_015900', 'walk', '02-settings.png'), picture());
+  const r = judge(PLAN);
+  expect([r.status, r.stdout.trim()]).toEqual([0, 'every route captured: 2']);
+});
+
 it('names a route never captured, one captured empty, and one captured as no picture', () => {
   writeFileSync(join(dir, 'routes', '01-film-id.png'), Buffer.alloc(10));
   const r = judge([...PLAN, 'app/log/[id].tsx\t/log/l-1\t03-log-id.png']);

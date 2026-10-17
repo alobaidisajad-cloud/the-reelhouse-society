@@ -36,6 +36,7 @@ const MAY_LIST: Record<string, string> = {
   'e2e/app-crashes.mjs': "the device logs a run wrote",
   'e2e/attempt.mjs': "Maestro's debug folder for the attempt",
   'e2e/flow-screens.mjs': "Maestro's debug folder and reports for the run",
+  'e2e/route-judges.mjs': "Maestro's output folder for the route walk, which may nest the walk's captures",
   'e2e/ios-crash.mjs': 'the crash reports the simulator wrote',
   'e2e/ios-launch.cjs': 'the crash reports the simulator wrote since the launch',
   'e2e/scrub.mjs': 'the artifacts folder it is given, before upload',

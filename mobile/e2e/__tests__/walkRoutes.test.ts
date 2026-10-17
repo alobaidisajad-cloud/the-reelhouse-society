@@ -56,13 +56,13 @@ it('plans every route once, an alias with it, its ids filled in, the guests firs
 });
 
 it('writes a flow that clears the app, signs in once before the member\'s first route, and opens each cold and captures it', () => {
-  const flow = ask(`m.flowOf([{ file: 'app/(modals)/login.tsx', link: '/login', as: 'guest' }, { file: 'app/film/[id].tsx', link: '/film/129', as: 'member' }, { file: 'app/(tabs)/index.tsx', link: '/', as: 'member' }], '/x/sign_in.yaml', '/out/routes')`) as string;
+  const flow = ask(`m.flowOf([{ file: 'app/(modals)/login.tsx', link: '/login', as: 'guest' }, { file: 'app/film/[id].tsx', link: '/film/129', as: 'member' }, { file: 'app/(tabs)/index.tsx', link: '/', as: 'member' }], '/x/sign_in.yaml')`) as string;
   expect(flow.split('\n').filter(Boolean)).toEqual([
     'appId: com.reelhouse.society', '---', '- launchApp:', '    clearState: true',
-    '# app/(modals)/login.tsx', '- stopApp', '- openLink: "reelhouse://login"', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "/out/routes/01-modals-login"',
+    '# app/(modals)/login.tsx', '- stopApp', '- openLink: "reelhouse://login"', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "01-modals-login"',
     '- runFlow: "/x/sign_in.yaml"',
-    '# app/film/[id].tsx', '- stopApp', '- openLink: "reelhouse://film/129"', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "/out/routes/02-film-id"',
-    '# app/(tabs)/index.tsx', '- stopApp', '- openLink: "reelhouse://"', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "/out/routes/03-tabs-index"',
+    '# app/film/[id].tsx', '- stopApp', '- openLink: "reelhouse://film/129"', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "02-film-id"',
+    '# app/(tabs)/index.tsx', '- stopApp', '- openLink: "reelhouse://"', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "03-tabs-index"',
   ]);
 });
 

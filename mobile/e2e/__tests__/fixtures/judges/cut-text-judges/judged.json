@@ -1,0 +1,6 @@
+{
+  "why": "A judge fixture: one judged cut, a member's review ended with an ellipsis on the film page.",
+  "cuts": [
+    { "words": "Spirited Away: the whole of a long review the member wrote", "cut": "ended early", "variants": ["largest-text"], "why": "A member's review ends with an ellipsis on the film page; the whole is a tap away." }
+  ]
+}

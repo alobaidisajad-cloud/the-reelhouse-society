@@ -3,7 +3,8 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Every word the app draws goes through here (ESLint refuses Text and
  * TextInput from 'react-native' anywhere else), so four promises hold for all
- * of them, on a phone, not only in tests (the third and fourth, below, for Text):
+ * of them, on a phone, not only in tests (the third and fourth, below, for Text),
+ * and the E2E build hears every cut (the fifth):
  *
  *   1. It grows with the member's text size — up to 1.35×, unless it sets a
  *      ceiling of its own (`maxFontSizeMultiplier`, or `allowFontScaling={false}`
@@ -22,19 +23,24 @@
  * could not see it, because the test renderer's Text is a class, and a class
  * DOES read defaultProps. An explicit component cannot be skipped.
  */
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useRef } from 'react';
 import {
   Platform,
   StyleSheet,
   // The one place these may come from 'react-native' (eslint.config.js).
   Text as RNText,
   TextInput as RNTextInput,
+  type LayoutChangeEvent,
+  type NativeSyntheticEvent,
   type TextInputProps,
+  type TextLayoutEventData,
   type TextProps,
 } from 'react-native';
 import { scaledTextProps, TYPE_FLOOR } from '@/src/constants/textScaling';
 import { useFontScale } from '@/src/hooks/useTextScale';
 import { androidTracking } from '@/src/providers/androidTracking';
+import { cutOf, type Box, type LaidLine } from '@/src/utils/cutText';
+import { E2E_BUILD, e2eTrace } from '@/src/utils/e2eTrace';
 
 /** Props as the phone should receive them: the house ceiling unless the text sets its own, and iOS's spacing on Android. */
 function housed<P extends TextProps | TextInputProps>(props: P, scale: number): P {
@@ -119,6 +125,42 @@ export function flooredMinimumScale(props: TextProps, scale: number): number | u
 }
 
 /**
+ * 5. In the E2E build alone, a Text that may lose words by its own settings (a numberOfLines, or
+ *    shrinking to fit) says so when it does (`text.cut`, src/utils/cutText.ts): the bold-text and
+ *    largest-text runs fail on a cut no one has judged (e2e/cut-text-judges.mjs). Its own
+ *    onLayout and onTextLayout still run; any other build adds nothing.
+ */
+function useCutSaid(props: TextProps): Partial<TextProps> | null {
+  const box = useRef<Box | null>(null);
+  const lines = useRef<LaidLine[] | null>(null);
+  const said = useRef('');
+  const mayCut = E2E_BUILD && (props.numberOfLines != null || props.adjustsFontSizeToFit === true);
+  if (!mayCut) return null;
+  const words = wordsOf(props.children);
+  if (!words) return null;
+  const judge = () => {
+    if (!lines.current) return;
+    const cut = cutOf(words, lines.current, box.current);
+    const key = cut ? `${cut}:${words}` : '';
+    if (key === said.current) return;
+    said.current = key;
+    if (cut) e2eTrace('text.cut', { words: words.slice(0, 80), cut, lines: lines.current.length, numberOfLines: props.numberOfLines ?? null });
+  };
+  return {
+    onLayout: (e: LayoutChangeEvent) => {
+      box.current = { width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height };
+      judge();
+      props.onLayout?.(e);
+    },
+    onTextLayout: (e: NativeSyntheticEvent<TextLayoutEventData>) => {
+      lines.current = e.nativeEvent.lines;
+      judge();
+      props.onTextLayout?.(e);
+    },
+  };
+}
+
+/**
  * Each name is a component AND the type of its ref, as React Native's were —
  * so `useRef<TextInput>(null)` still means what it meant.
  */
@@ -126,9 +168,10 @@ export type Text = React.ComponentRef<typeof RNText>;
 export const Text = forwardRef<Text, TextProps>(function Text(props, ref) {
   const scale = useFontScale();
   const said = spoken(props);
+  const cutSaid = useCutSaid(props);
   const housedProps = housed(said ? { ...props, ...said } : props, scale);
   const minimumFontScale = flooredMinimumScale(housedProps, scale);
-  return <RNText ref={ref} {...housedProps} {...(minimumFontScale !== undefined ? { minimumFontScale } : null)} />;
+  return <RNText ref={ref} {...housedProps} {...(minimumFontScale !== undefined ? { minimumFontScale } : null)} {...cutSaid} />;
 });
 
 export type TextInput = React.ComponentRef<typeof RNTextInput>;

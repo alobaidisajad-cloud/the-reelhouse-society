@@ -232,6 +232,20 @@ classes:
     fix: "e2e/variants.json names each setting a member may choose (largest text, bold text, the narrowest width, three-button navigation, the phone in Arabic, light mode, motion on), with its commands to set, to wait for and to put back; run-flows.sh sets one before the run touches the phone and puts it back at its end, every command sent (mutant shape-variant-input-swallowed), a variant not in the list running nothing (mutant shape-variant-refusal-sent); largest text, the narrowest width and Arabic run every flow on three machines and the walk on a fourth; every night runs every variant. Each variant's own pass rules are P0.86's next part"
     places: [emulator]
 
+  - id: E2E-text-cut-unseen
+    title: A label cut at bold or the largest text (an ellipsis, lines past its limit, a word out of its box) passes every run, because a cut label draws without an error
+    seriousness: layout
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.86" }
+    methods:
+      - { kind: running, file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says a label cut to one line, once, with its words and how it was cut" }
+      - { kind: running, file: e2e/__tests__/cutTextJudges.test.ts, test: "passes the judged log and fails it for a variant it is not judged in, by exit code" }
+      - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "fails a bold-text run on a label the app cut, and a variant that does not judge cut text, not" }
+    fix: "the app's one Text, in the E2E build, says each cut of a Text that may cut itself (src/utils/cutText.ts, mutant shape-cut-unsaid); the bold-text and largest-text runs fail on any cut e2e/cut-text-judged.json does not judge for them (mutant judge-cut-unjudged), and no judgement outlives the words it names"
+    places: [emulator]
+
   - id: E2E-record-not-kept
     title: The E2E run writes a record (a probe's result, a judge's words, the phone's settings) that is never kept with its logs, or kept with the member's password in it
     seriousness: behaviour

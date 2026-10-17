@@ -138,6 +138,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ARCHITECTURE.md | 2026-10-15 | edited: Image Caching is true now that every picture states memory-disk, and names the guard that holds it |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
+| e2e/__tests__/cutTextJudges.test.ts | 2026-10-17 | new |
 | e2e/__tests__/faultJudges.test.ts | 2026-10-16 | new |
 | e2e/__tests__/flowHistory.test.ts | 2026-10-16 | new: a shard's logs read (new and older shapes, retries summed, a part the budget stopped left out) and every file it reads uploaded, the map a history makes, the committed map equal to it and inside the workflow's limits |
 | e2e/__tests__/faultProxy.test.ts | 2026-10-16 | new |
@@ -181,6 +182,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/animation-waits.mjs | 2026-10-04 | the probes come first now; true as written |
 | e2e/app-crashes.mjs | 2026-10-15 | edited: --own sets a shipped client's own crashes and their aftermath apart, failing nothing; each soft report keeps its lines |
 | e2e/attempt.mjs | 2026-10-15 | edited: a shipped client's own crash is run again once within the limits, else not judged (exit 3) |
+| e2e/cut-text-judges.mjs | 2026-10-17 | new: every cut the app said fails the variant's run unless the judged list names it for that variant |
 | e2e/db/attack/attack.mjs | 2026-10-16 | new: every table and view, tried by every kind of member on their own rows and four others', against matrix.json; each function a visitor or member may run, called as each kind of member, judged by its refusal, its answer and the rows it left; the avatars bucket's table, written as the Storage API writes; each live channel heard or spoken on as Realtime asks; a write that names no row reaches no other owner's; --mutants weakens each rule, gate trigger and column grant in turn and names the first try that notices; an update or delete is judged by the row it left; what is covered is read from the database attacked; --self-test plants an open read; mutantsPass: the mutants' run passes only on a green baseline |
 | e2e/db/advisers.mjs | 2026-10-15 | new: supabase db advisors on the sealed copy with the API's schemas set, judged against the allowlist, names and counts only; --self-test plants a table without row security |
 | e2e/db/bootstrap.mjs | 2026-10-15 | edited: a default naming no schema is changed by its own role, supabase_admin's in 4c |
@@ -211,7 +213,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/old-client-tree.mjs | 2026-10-16 | edited: after the patches, each of the client's flows waits at least as long as this checkout's same flow |
 | e2e/old-clients.cjs | 2026-10-16 | edited: waitsIn reads each waiting command's target and time; raiseWaits gives a shipped client's flow at least this checkout's time for the same wait, never less |
 | e2e/prefetch-download-only.mjs | 2026-10-15 | new: the APK's prefetch on CachePolicy.DISK calls downloadOnly; not run for a shipped client |
-| e2e/route-judges.mjs | 2026-10-17 | new: every route the walk planned, captured as a picture; a plan of no route is unread |
+| e2e/route-judges.mjs | 2026-10-17 | new: every route the walk planned, captured as a picture; a plan of no route is unread; edited: a capture found at any depth of Maestro's output folder |
 | e2e/run-flows.sh | 2026-10-17 | edited: a fault run clears the fault before each flow and is judged by fault-judges.mjs; E2E_FLOWS=none runs no flows; with E2E_WALK, the route walk after the flows, judged by route-judges.mjs, its screens not held to the flows' ceilings; edited: the whole run on the phone as E2E_VARIANT has it, set before the run's log begins, waited for, put back at its end |
 | e2e/runtime-dump.mjs | 2026-10-15 | new: the phone's runtime from the device log, held to the committed copy |
 | e2e/screen-times.mjs | 2026-10-16 | edited: --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs; edited: two ceilings a screen, derived by ceilingsFrom from e2e/screen-history.json |
@@ -221,7 +223,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/shards.mjs | 2026-10-16 | edited: a shard's minutes, checked and printed for run-flows.sh |
 | e2e/start-stack.sh | 2026-10-15 | edited: the stack's ports reserved from the machine's own connections, and waited for |
 | e2e/variants.mjs | 2026-10-17 | new: each variant's commands to read, set, wait for and put back the phone, and whether it runs every flow; an unknown variant, a reset with nothing, or a read that answered no word the variant allows, refused |
-| e2e/walk-routes.mjs | 2026-10-17 | new: the route walk's plan and flow: every route of routes.json, its ids read from the seeded world by name, guests first, each opened cold and captured |
+| e2e/walk-routes.mjs | 2026-10-17 | new: the route walk's plan and flow: every route of routes.json, its ids read from the seeded world by name, guests first, each opened cold and captured; edited: each capture a name inside Maestro's output folder, which refuses any other |
 | plugins/__tests__/withoutDevLauncherScanner.test.ts | 2026-10-15 | new: through withAndroidManifest, read back as XML; the entry read from the installed expo-dev-launcher's manifest |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it; its files come from the shared file list (test-utils/universe.js) |
 | plugins/withoutDevLauncherScanner.js | 2026-10-15 | new: read against expo-dev-launcher 6.0's main and debug manifests and ML Kit's install-time model download |
@@ -768,9 +770,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/society/societyPricing.ts | 2026-10-02 | never a static dollar price for a product the store answered without |
 | src/components/SpoilerVeil.tsx | 2026-10-01 | veiled from the first frame |
 | src/components/StandingNotice.tsx | 2026-10-15 | stands above the offline plate (useOverlayBottom) |
+| src/components/text/__tests__/aCutLabelIsHeard.test.tsx | 2026-10-17 | new |
 | src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | — |  |
 | src/components/text/AnimatedText.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/text/index.tsx | 2026-10-01 | the fourth promise: a word stops at the floor |
+| src/components/text/index.tsx | 2026-10-17 | read whole; edited: the fifth promise, a cut said in the E2E build by a Text that may cut itself |
 | src/components/theme/__tests__/oneBrassSheen.test.tsx | 2026-10-03 | written whole: the sheen sweeps only in front, and both plates draw it |
 | src/components/theme/BrassSheen.tsx | 2026-10-03 | written whole: the one sheen both brass plates draw; still behind another tab and under Reduce Motion |
 | src/components/theme/CrestGlow.tsx | 2026-10-01 | the leak note to what it does |
@@ -1117,6 +1120,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
 | src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-16 | edited: a capital past Georgian's letters, and Georgian's first and last |
+| src/utils/__tests__/aCutWordIsSeen.test.ts | 2026-10-17 | new |
 | src/utils/__tests__/aDateIsSaidInTheHouseVoice.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/addOnly.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
@@ -1274,6 +1278,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/withTimeout.test.ts | 2026-10-15 | edited: the timeout case names withTimeout's own timer |
 | src/utils/AppError.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/csv.ts | 2026-10-02 | read; sound |
+| src/utils/cutText.ts | 2026-10-17 | new: whether a Text's laid-out lines lost its words, ran out of its box or were clipped by it |
 | src/utils/deviceRegion.ts | 2026-10-01 | new |
 | src/utils/draftSync.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/e2eRuntime.ts | 2026-10-15 | new: the phone's runtime written once a launch, in parts, by the E2E build |

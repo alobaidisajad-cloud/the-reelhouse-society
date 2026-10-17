@@ -1,0 +1,4 @@
+{
+  "why": "The cuts the bold-text and largest-text runs may say and still pass (e2e/cut-text-judges.mjs, WORKLIST P0.86): each by its words and its cut, for the variants it is judged in, with why the cut is the design (a member's long words ended with an ellipsis, with the whole a tap away). A house label cut is a defect, never judged here. cutTextJudged.test.ts holds every entry's words to the code or the seeded world that still draws them.",
+  "cuts": []
+}

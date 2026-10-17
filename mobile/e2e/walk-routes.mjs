@@ -10,8 +10,9 @@
  * with E2E_SEED_WALK), never written down: a row the seed did not make stops the walk, naming it.
  * Then a Maestro flow is written (<out dir>/walk.yaml): the guests' routes first from a cleared app,
  * then the member signed in once (.maestro/subflows/sign_in.yaml), and for every route the app
- * stopped, its link opened (a cold start), the screen let settle, and captured as
- * <out dir>/routes/<n>-<name>.png. <out dir>/walk.tsv lists each route, its link and its capture.
+ * stopped, its link opened (a cold start), the screen let settle, and captured as <n>-<name>.png,
+ * a name relative to Maestro's own output folder (Maestro refuses a capture outside it: run-flows.sh
+ * names <out dir>/routes as that folder). <out dir>/walk.tsv lists each route, its link and its capture.
  * run-flows.sh runs the flow; app-crashes.mjs judges the device log, and route-judges.mjs that
  * every route was captured.
  */
@@ -66,8 +67,8 @@ export function plan(routes, ids) {
   return [...out.filter((r) => r.as === 'guest'), ...out.filter((r) => r.as !== 'guest')];
 }
 
-/** The Maestro flow that walks the plan, capturing each route under `shots`. */
-export function flowOf(steps, signIn, shots) {
+/** The Maestro flow that walks the plan, capturing each route by a name in Maestro's output folder. */
+export function flowOf(steps, signIn) {
   const lines = ['appId: com.reelhouse.society', '---', '- launchApp:', '    clearState: true'];
   let signedIn = false;
   steps.forEach((s, i) => {
@@ -78,7 +79,7 @@ export function flowOf(steps, signIn, shots) {
       `- openLink: ${JSON.stringify(SCHEME + s.link.replace(/^\//, ''))}`,
       '- waitForAnimationToEnd:',
       '    timeout: 8000',
-      `- takeScreenshot: ${JSON.stringify(join(shots, `${String(i + 1).padStart(2, '0')}-${nameOf(s.file)}`).split('\\').join('/'))}`,
+      `- takeScreenshot: ${JSON.stringify(`${String(i + 1).padStart(2, '0')}-${nameOf(s.file)}`)}`,
     );
   });
   return `${lines.join('\n')}\n`;
@@ -106,7 +107,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     const steps = plan(routes, await readIds(ask));
     const shots = join(out, 'routes');
     mkdirSync(shots, { recursive: true });
-    writeFileSync(join(out, 'walk.yaml'), flowOf(steps, join(HERE, '..', '.maestro', 'subflows', 'sign_in.yaml').split('\\').join('/'), shots));
+    writeFileSync(join(out, 'walk.yaml'), flowOf(steps, join(HERE, '..', '.maestro', 'subflows', 'sign_in.yaml').split('\\').join('/')));
     writeFileSync(join(out, 'walk.tsv'), steps.map((s, i) => `${s.file}\t${s.link}\t${String(i + 1).padStart(2, '0')}-${nameOf(s.file)}.png`).join('\n') + '\n');
     console.log(`the walk: ${steps.length} routes (${steps.filter((s) => s.as === 'guest').length} as a guest), written to ${out}`);
   } catch (e) {

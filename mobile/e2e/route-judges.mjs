@@ -5,7 +5,8 @@
  *   node e2e/route-judges.mjs <walk dir>
  *
  * Reads <walk dir>/walk.tsv (each route, its link and its capture's name) and holds each capture
- * under <walk dir>/routes/ to be there and to be a picture (a PNG, not an empty file). A route
+ * under <walk dir>/routes/ (Maestro's output folder for the walk, at any depth it chose) to be there
+ * and to be a picture (a PNG, not an empty file). A route
  * with no capture is one the walk never reached: Maestro stopped before it, or the app did. A
  * crash or a freeze on the way is app-crashes.mjs's to name, from the same run's device log.
  *
@@ -13,11 +14,23 @@
  * or a plan of no route.
  */
 import { Buffer } from 'node:buffer';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+
+/** Where a capture of this name is under `root` (Maestro's output folder may nest it), or the path it should be at. */
+export function findCapture(root, name) {
+  const direct = join(root, name);
+  if (!name || existsSync(direct) || !existsSync(root)) return direct;
+  for (const e of readdirSync(root, { withFileTypes: true })) {
+    if (!e.isDirectory()) continue;
+    const found = findCapture(join(root, e.name), name);
+    if (existsSync(found)) return found;
+  }
+  return direct;
+}
 
 /** Each planned route, from the walk's list. */
 export const readPlan = (text) => text.split(/\r?\n/).filter(Boolean).map((l) => {
@@ -35,7 +48,7 @@ export function captureFault(path) {
 
 /** Every route the walk planned and did not capture, in words. */
 export const judge = (dir) => readPlan(readFileSync(join(dir, 'walk.tsv'), 'utf8'))
-  .flatMap((r) => { const why = captureFault(join(dir, 'routes', r.capture ?? '')); return why ? [`${r.file} (${r.link}): ${why}`] : []; });
+  .flatMap((r) => { const why = captureFault(findCapture(join(dir, 'routes'), r.capture ?? '')); return why ? [`${r.file} (${r.link}): ${why}`] : []; });
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const dir = process.argv[2];

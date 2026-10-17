@@ -12,7 +12,7 @@ import { join } from 'path';
 import { pathToFileURL } from 'url';
 
 const SCRIPT = join(__dirname, '..', 'variants.mjs');
-interface Variant { why: string; flows?: boolean; read?: string; answer?: string; ready?: string[]; setup: string[]; reset: string[] }
+interface Variant { why: string; flows?: boolean; read?: string; answer?: string; ready?: string[]; judges?: string[]; setup: string[]; reset: string[] }
 const VARIANTS = (JSON.parse(readFileSync(join(__dirname, '..', 'variants.json'), 'utf8')) as { variants: Record<string, Variant> }).variants;
 const E2E_YML = readFileSync(join(__dirname, '..', '..', '..', '.github', 'workflows', 'e2e.yml'), 'utf8');
 const NIGHTLY = readFileSync(join(__dirname, '..', '..', '..', '.github', 'workflows', 'nightly.yml'), 'utf8');
@@ -72,7 +72,25 @@ it('gives each step its commands, and fills in what was read', () => {
   expect(commandsFor('narrowest', 'ready')).toEqual({ commands: [] });
   expect(commandsFor('narrowest', 'reset')).toEqual({ commands: ['wm density reset'] });
   expect(commandsFor('right-to-left', 'reset', 'en-US')).toEqual({ commands: ['setprop persist.sys.locale en-US; stop; start'] });
-  expect(commandsFor('right-to-left', 'ready')).toEqual({ commands: ['am get-config | grep -q ldrtl', 'test "$(getprop sys.boot_completed)" = 1'] });
+  expect((commandsFor('right-to-left', 'ready') as { commands: string[] }).commands[0]).toBe('am get-config | grep -q ldrtl');
+});
+
+it("waits, after any variant that restarts the system, until the app's own launch screen resolves", () => {
+  // Run 38991750276: the system answered its new language and said it had booted (that flag is
+  // never cleared by a restart) while it had not yet loaded the app: "Activity class does not exist".
+  const restarts = Object.entries(VARIANTS).filter(([, v]) => v.setup.some((c) => / stop; start$/.test(c)));
+  expect(restarts.map(([n]) => n)).toEqual(['right-to-left']);
+  for (const [, v] of restarts) {
+    expect(v.ready?.at(-1)).toBe('cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER com.reelhouse.society | grep -q com.reelhouse.society/');
+    expect(v.ready?.some((c) => c.includes('sys.boot_completed'))).toBe(false);
+  }
+});
+
+it('adds a judge only by a name run-flows.sh runs, to the bold and largest text', () => {
+  const judges = Object.fromEntries(Object.keys(VARIANTS).map((n) => [n, (commandsFor(n, 'judges') as { commands: string[] }).commands]));
+  expect(Object.entries(judges).filter(([, j]) => j.length > 0)).toEqual([['largest-text', ['cut-text']], ['bold-text', ['cut-text']]]);
+  const runFlows = readFileSync(join(__dirname, '..', 'run-flows.sh'), 'utf8');
+  for (const j of Object.values(judges).flat()) expect(runFlows).toContain(`judges | grep -qx ${j}`);
 });
 
 it('says which run each variant is: every flow and the walk, or the walk alone', () => {
@@ -90,7 +108,7 @@ it('takes back the language only as a language, with or without its script', () 
 
 it('refuses, rather than guesses, an unknown variant or step, and a reset with nothing usable to put back', () => {
   expect(commandsFor('sideways', 'setup')).toEqual({ refused: `no variant named sideways (the variants: ${Object.keys(VARIANTS).join(', ')})` });
-  expect(commandsFor('light', 'undo')).toEqual({ refused: 'a step is read, setup, ready, reset or runs, not undo' });
+  expect(commandsFor('light', 'undo')).toEqual({ refused: 'a step is read, setup, ready, reset, runs or judges, not undo' });
   expect(commandsFor('light', 'reset')).toEqual({ refused: "light's reset puts back what was read, and was given nothing" });
   expect(commandsFor('light', 'reset', 'closed')).toEqual({
     refused: "light's read answered closed, which ^(no|yes|auto|custom_schedule|custom_bedtime)$ does not match: nothing is put back",

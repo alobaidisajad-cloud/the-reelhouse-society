@@ -534,3 +534,23 @@ mutants:
         find: "            ${{ runner.temp }}/variant-setup.txt\n            ${{ runner.temp }}/variant.txt\n"
         replace: "            ${{ runner.temp }}/variant-setup.txt\n"
     proof: { file: e2e/__tests__/theRunKeepsWhatItWrites.test.ts, test: "keeps every file the runner writes, or names it as scratch with why" }
+
+  - id: judge-cut-unjudged
+    class: E2E-text-cut-unseen
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/cut-text-judges
+      run: [node, e2e/cut-text-judges.mjs, "{dir}/logcat.txt", --judged, "{dir}/judged.json", --variant, largest-text]
+    edits:
+      - file: logcat.txt
+        find: "10-17 09:00:02.000  4321  4377 W ReactNativeJS: [e2e] text.cut {\"words\":\"Spirited Away: the whole of a long review the member wrote\""
+        replace: "10-17 09:00:02.000  4321  4377 W ReactNativeJS: [e2e] text.cut {\"words\":\"FOUNDING MEMBER\""
+
+  - id: shape-cut-unsaid
+    class: E2E-text-cut-unseen
+    source: shape
+    edits:
+      - file: src/components/text/index.tsx
+        find: "      lines.current = e.nativeEvent.lines;\n      judge();\n"
+        replace: "      lines.current = e.nativeEvent.lines;\n"
+    proof: { file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says a label cut to one line, once, with its words and how it was cut" }

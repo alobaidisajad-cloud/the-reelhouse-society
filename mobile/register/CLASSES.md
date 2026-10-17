@@ -23,6 +23,7 @@ production shows only its id, area, seriousness and count here.
 | E2E-route-never-opened | tests | behaviour | OPEN | 0 | A route no flow opens is never seen by any run, so a screen that crashes, freezes or cannot read when opened by its link passes every run |
 | E2E-wait-without-end | tests | behaviour | OPEN | 0 | A screen's wait (its spinner) never ends, or outlasts its limit, under a broken network, and the run passes because the flow waited and went on |
 | E2E-phone-only-as-the-runner-has-it | tests | behaviour | OPEN | 0 | Every run's phone has the default text, width, navigation bar, direction and mode, with animations off, so a screen that breaks for a member who set any of them passes every run |
+| E2E-text-cut-unseen | tests | layout | OPEN | 0 | A label cut at bold or the largest text (an ellipsis, lines past its limit, a word out of its box) passes every run, because a cut label draws without an error |
 | E2E-record-not-kept | tests | behaviour | OPEN | 0 | The E2E run writes a record (a probe's result, a judge's words, the phone's settings) that is never kept with its logs, or kept with the member's password in it |
 | RN-react-destroyed-on-mount | navigation | serious | OPEN | 0 | React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed |
 | SEC-secret-committed | security | serious | OPEN | 21 | open in production |

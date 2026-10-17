@@ -537,6 +537,7 @@ if [ -n "${E2E_WALK:-}" ] && [ $gone -eq 0 ]; then
       -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
       -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" \
       --format junit --output "$OUT/flow-reports/walk.xml" \
+      --test-output-dir "$OUT/walk/routes" \
       --debug-output "$OUT/maestro-debug/walk" > "$OUT/walk.log" 2>&1
     walk_rc=$?
     if node mobile/e2e/route-judges.mjs "$OUT/walk" > "$OUT/route-judges.txt" 2>&1 && [ $walk_rc -eq 0 ]; then
@@ -660,6 +661,17 @@ elif node mobile/e2e/screen-times.mjs "$OUT/logcat-stream.txt" "${times_args[@]}
 else
   slow=1
   node mobile/e2e/annotate.mjs "A screen could not read or is slower than its ceiling" "$OUT/screen-times.txt"
+fi
+# The variant's own judges (e2e/variants.json): on a phone with bold or the largest text, every
+# Text the app said it cut fails the run unless it is judged (e2e/cut-text-judges.mjs).
+if node mobile/e2e/variants.mjs "$variant" judges | grep -qx cut-text; then
+  if node mobile/e2e/cut-text-judges.mjs "$OUT/logcat-stream.txt" --judged mobile/e2e/cut-text-judged.json \
+      --variant "$variant" > "$OUT/cut-text.txt" 2>&1; then
+    note "Every cut text, judged" "$OUT/cut-text.txt"
+  else
+    rc=1
+    node mobile/e2e/annotate.mjs "Text cut on the ${variant} phone" "$OUT/cut-text.txt"
+  fi
 fi
 # The phone's own runtime (src/utils/e2eRuntime.ts), written by every launch:
 # it must be whole and the committed copy, which runtimeDump.contract.test.ts

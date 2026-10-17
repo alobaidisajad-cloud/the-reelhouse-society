@@ -74,6 +74,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/strykerFilesAreListed.guard.test.ts` | Stryker's list against the plan's files and their own tests' imports, and the config's and the nightly job's text (every mutant run fresh). |
 | `e2e/__tests__/routes.test.ts` | The route walk's list (e2e/routes.json) against every route file in app/; an alias that shares a link is read for its Redirect. |
 | `e2e/__tests__/walkRoutes.test.ts` | The route walk's plan built from the committed e2e/routes.json; the walk itself is run on a stand-in world. |
+| `e2e/__tests__/cutTextJudges.test.ts` | The committed judged cuts (e2e/cut-text-judged.json) against the app's code and data (the shared file list), the seed and the recorded TMDB answers: no judgement names words nothing draws. The judge itself is run, on logs. |
 | `e2e/__tests__/theRunKeepsWhatItWrites.test.ts` | Every file run-flows.sh names in its run's folder, against e2e.yml's steps that keep the run's logs and scrub the member's password from them: what is kept and what is scrubbed are one list. |
 | `e2e/__tests__/variants.test.ts` | The phone's variants (e2e/variants.json) against the list e2e.yml's input names and the night's matrix in nightly.yml; their commands are asked of variants.mjs itself, and run-flows.sh runs them on a fake phone (runFlows.rehearsal.test.ts). |
 | `e2e/__tests__/faultJudges.test.ts` | The fault flows in .maestro/faults against the fault runs' shard map (e2e/fault-shards.json) and the judges' own list; the judges themselves are run, on logs. |

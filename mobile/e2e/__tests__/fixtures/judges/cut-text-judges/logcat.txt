@@ -1,0 +1,5 @@
+10-17 09:00:00.500  4321  4377 I ReactNativeJS: Running "main"
+10-17 09:00:01.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"film","ms":900}
+10-17 09:00:01.200  4321  4377 W ReactNativeJS: [e2e] text.cut {"words":"Spirited Away: the whole of a long review the member wrote","cut":"ended early","lines":2,"numberOfLines":2}
+10-17 09:00:02.000  4321  4377 W ReactNativeJS: [e2e] text.cut {"words":"Spirited Away: the whole of a long review the member wrote","cut":"ended early","lines":2,"numberOfLines":2}
+10-17 09:00:03.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"profile","ms":700}

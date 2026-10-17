@@ -1,5 +1,5 @@
 {
-  "why": "The phone as each variant run has it (WORKLIST P0.86): each name's adb shell commands set before the run touches the phone and put back once it ends, so nothing outlives its run. Where the phone's own value is not a fixed default, `read` takes it first (the last word of its answer, which must match `answer`) and a reset's {was} puts it back. `ready`, for a setting the system takes a while to apply, is asked until it answers yes (exit 0). `flows`: the run takes every flow before the route walk, on three machines; every other variant walks the routes alone, on one. run-flows.sh runs them (e2e/variants.mjs); variants.test.ts holds every one to a setup, a reset and a reason.",
+  "why": "The phone as each variant run has it (WORKLIST P0.86): each name's adb shell commands set before the run touches the phone and put back once it ends, so nothing outlives its run. Where the phone's own value is not a fixed default, `read` takes it first (the last word of its answer, which must match `answer`) and a reset's {was} puts it back. `ready`, for a setting the system takes a while to apply, is asked until it answers yes (exit 0). `flows`: the run takes every flow before the route walk, on three machines; every other variant walks the routes alone, on one. `judges`: what else fails the run on that phone (cut-text: e2e/cut-text-judges.mjs). run-flows.sh runs them (e2e/variants.mjs); variants.test.ts holds every one to a setup, a reset and a reason.",
   "variants": {
     "plain": {
       "why": "The phone as every run has it: the walk's captures every other variant is read against.",
@@ -14,11 +14,13 @@
     "largest-text": {
       "why": "The largest text Android offers a member (font scale 2).",
       "flows": true,
+      "judges": ["cut-text"],
       "setup": ["settings put system font_scale 2.0"],
       "reset": ["settings put system font_scale 1.0"]
     },
     "bold-text": {
       "why": "Bold text, as Android's accessibility setting gives it.",
+      "judges": ["cut-text"],
       "setup": ["settings put secure font_weight_adjustment 300"],
       "reset": ["settings put secure font_weight_adjustment 0"]
     },
@@ -39,7 +41,7 @@
       "read": "l=$(getprop persist.sys.locale); echo ${l:-$(getprop ro.product.locale)}",
       "answer": "^[a-z]{2,3}(-[A-Z][a-z]{3})?(-[A-Z]{2})?$",
       "setup": ["setprop persist.sys.locale ar-IQ; stop; start"],
-      "ready": ["am get-config | grep -q ldrtl", "test \"$(getprop sys.boot_completed)\" = 1"],
+      "ready": ["am get-config | grep -q ldrtl", "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER com.reelhouse.society | grep -q com.reelhouse.society/"],
       "reset": ["setprop persist.sys.locale {was}; stop; start"]
     },
     "light": {

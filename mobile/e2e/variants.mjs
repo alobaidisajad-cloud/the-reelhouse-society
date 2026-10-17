@@ -9,6 +9,7 @@
  *   node e2e/variants.mjs <variant> ready           the commands asked until each answers yes
  *   node e2e/variants.mjs <variant> reset [<was>]   the commands that put it back, {was} filled in
  *   node e2e/variants.mjs <variant> runs            "flows" (every flow, then the walk) or "walk"
+ *   node e2e/variants.mjs <variant> judges          the judges it adds, one a line (cut-text)
  *
  * Each command is an adb shell command. An unknown variant or step, a reset that needs what was
  * read and is given nothing, or one given a word the variant's `answer` does not match (a failed
@@ -27,7 +28,8 @@ export function commandsFor(variants, name, step, was) {
   if (step === 'setup') return { commands: v.setup };
   if (step === 'ready') return { commands: v.ready ?? [] };
   if (step === 'runs') return { commands: [v.flows ? 'flows' : 'walk'] };
-  if (step !== 'reset') return { refused: `a step is read, setup, ready, reset or runs, not ${step}` };
+  if (step === 'judges') return { commands: v.judges ?? [] };
+  if (step !== 'reset') return { refused: `a step is read, setup, ready, reset, runs or judges, not ${step}` };
   if (v.reset.some((c) => c.includes('{was}')) && !was) return { refused: `${name}'s reset puts back what was read, and was given nothing` };
   if (v.answer && !new RegExp(v.answer).test(was ?? '')) return { refused: `${name}'s read answered ${was}, which ${v.answer} does not match: nothing is put back` };
   return { commands: v.reset.map((c) => c.split('{was}').join(was ?? '')) };

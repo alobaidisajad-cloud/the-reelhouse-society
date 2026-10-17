@@ -100,8 +100,8 @@ echo "$*" >> "$T/state/calls"
 mkdir -p "$HOME/.maestro"; echo "MAESTRO_SESSION=1" > "$HOME/.maestro/sessions"
 say() { echo "$(date +'%m-%d %H:%M:%S.%3N')  $1  $(( $1 + 20 )) $2 $3: $4" >> "$T/device.log"; }
 if [ "$1" = hierarchy ]; then echo '{"attributes":{},"children":[]}'; exit 0; fi
-flow="$2"; name=$(basename "$flow" .yaml); out=""; dbg=""
-while [ $# -gt 0 ]; do case "$1" in --output) out="$2"; shift ;; --debug-output) dbg="$2"; shift ;; esac; shift; done
+flow="$2"; name=$(basename "$flow" .yaml); out=""; dbg=""; shots=""
+while [ $# -gt 0 ]; do case "$1" in --output) out="$2"; shift ;; --debug-output) dbg="$2"; shift ;; --test-output-dir) shots="$2"; shift ;; esac; shift; done
 case "$flow" in *.tap.yaml) exit 0 ;; esac
 echo "maestro: $name" >> "$T/state/order"
 n=$(( $(cat "$T/state/count-$name" 2>/dev/null || echo 0) + 1 )); echo $n > "$T/state/count-$name"
@@ -128,9 +128,18 @@ pass() {
 case "$behaviour" in
   pass) pass ;;
   # The route walk: a picture of every route its plan (walk.tsv, beside the flow) names.
-  captures)
+  captures|captures-and-a-cut)
+    # The second: a label the app says it cut on the way (src/components/text).
+    [ "$behaviour" = captures-and-a-cut ] && say 16631 W ReactNativeJS "[e2e] text.cut {\\"words\\":\\"FOUNDING MEMBER\\",\\"cut\\":\\"ended early\\",\\"lines\\":1,\\"numberOfLines\\":1}"
+    # As Maestro 2.10 does: a capture is a name inside its output folder (--test-output-dir), and a
+    # path that leaves it fails the flow at that step (run 38991748010).
+    if grep -qE '^- takeScreenshot: "(/|[A-Za-z]:)' "$flow" || [ -z "$shots" ]; then
+      junit "Invalid path for takeScreenshot: it resolves outside this run's takeScreenshot output folder"
+      echo "[Failed] $name (1s)"; exit 1
+    fi
+    mkdir -p "$shots/2026-10-17_000000"
     while IFS="$(printf '\\t')" read -r _ _ shot; do
-      { printf '\\211PNG'; head -c 2048 /dev/zero; } > "$(dirname "$flow")/routes/$shot"
+      { printf '\\211PNG'; head -c 2048 /dev/zero; } > "$shots/2026-10-17_000000/$shot"
     done < "$(dirname "$flow")/walk.tsv"
     pass ;;
   failed-read-then-pass)
@@ -575,7 +584,7 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
       'maestro: stack', 'maestro: log', 'maestro: a_flow',
       'adb: setprop persist.sys.locale en-US; stop; start',
     ]);
-    expect(file(r, 'variant.txt')).toMatch(/^read: .* -> en-US\nset: setprop persist\.sys\.locale ar-IQ; stop; start -> \nready: am get-config \| grep -q ldrtl\nready: test /);
+    expect(file(r, 'variant.txt')).toMatch(/^read: .* -> en-US\nset: setprop persist\.sys\.locale ar-IQ; stop; start -> \nready: am get-config \| grep -q ldrtl\nready: cmd package resolve-activity /);
     always(r);
   });
 
@@ -590,6 +599,17 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
     ]);
     expect(titled(r, 'error', 'The phone never became the right-to-left variant')).toContain('never ready: am get-config | grep -q ldrtl');
     always(r);
+  });
+
+  it('fails a bold-text run on a label the app cut, and a variant that does not judge cut text, not', async () => {
+    const bold = await walk('bold-text', { walk: ['captures-and-a-cut'] });
+    expect(bold.status).toBe(1);
+    expect(titled(bold, 'error', 'Text cut on the bold-text phone')).toContain('✗ "FOUNDING MEMBER" ended early (said 1 time)');
+    always(bold);
+    const light = await walk('light', { walk: ['captures-and-a-cut'] });
+    expect({ status: light.status, errors: annotations(light, 'error') }).toEqual({ status: 0, errors: [] });
+    expect(existsSync(join(light.out, 'cut-text.txt'))).toBe(false);
+    always(light);
   });
 
   it('puts back nothing it could not read, and says so, rather than a word of an error', async () => {
