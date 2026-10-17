@@ -145,7 +145,6 @@
     "mobile/e2e/__tests__/appCrashes.test.ts": 1,
     "mobile/e2e/__tests__/flowScreens.test.ts": 31,
     "mobile/e2e/__tests__/keyboardRoom.test.ts": 7,
-    "mobile/e2e/__tests__/shards.test.ts": 3,
     "mobile/e2e/__tests__/startStack.test.ts": 2,
     "mobile/mockups/paper/__tests__/zz-badge.gen.test.tsx": 2,
     "mobile/mockups/paper/__tests__/zz-paper.gen.test.tsx": 1,

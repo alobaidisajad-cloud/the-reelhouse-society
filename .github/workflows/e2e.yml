@@ -75,14 +75,14 @@ env:
   # Which flows run, for run-flows.sh, verify-writes.mjs and the verdict alike:
   # every flow in the folder (subflows/ holds only the steps they share); the
   # fault runs' own folder when faults is on.
-  E2E_FLOWS: ${{ inputs.faults && 'mobile/.maestro/faults' || inputs.variant && 'none' || 'mobile/.maestro' }}
+  # A variant that walks the routes alone has none (the flows job says so).
+  E2E_FLOWS: ${{ inputs.faults && 'mobile/.maestro/faults' || 'mobile/.maestro' }}
   # A fault run: run-flows.sh clears the fault before each flow and judges the run
   # with e2e/fault-judges.mjs instead of the screens' times.
   E2E_FAULTS: ${{ inputs.faults && '1' || '' }}
-  # A variant run: no flows, the route walk (run-flows.sh), its rooms seeded (seed.mjs).
+  # A variant run: the whole run on the phone as the variant has it (run-flows.sh), then the
+  # route walk (the flows job says where), its rooms seeded (seed.mjs).
   E2E_VARIANT: ${{ inputs.variant }}
-  E2E_WALK: ${{ inputs.variant && '1' || '' }}
-  E2E_SEED_WALK: ${{ inputs.variant && '1' || '' }}
   # The shipped client this run is of, or empty for the app it is run on.
   E2E_OLD_CLIENT: ${{ inputs.client }}
   # Its name on the run's artifacts, so two clients, or two rounds, called in one
@@ -101,8 +101,20 @@ jobs:
     name: 🎬 The app, built once for every shard
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    # What a variant run runs (e2e/variants.json): "flows", every flow on three machines and
+    # then the walk, or "walk", the walk alone on one.
+    outputs:
+      runs: ${{ steps.variant.outputs.runs }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      # First, so a variant not in the list stops the run before anything is built.
+      - name: What the variant runs
+        id: variant
+        if: ${{ inputs.variant }}
+        run: |
+          runs=$(node mobile/e2e/variants.mjs "$E2E_VARIANT" runs) || exit 1
+          echo "runs=$runs" >> "$GITHUB_OUTPUT"
 
       # Before the package cache is keyed: the client's own lock file decides it.
       - name: The shipped client's app, over this harness
@@ -289,7 +301,7 @@ jobs:
           if-no-files-found: ignore
 
   flows:
-    name: 🎬 The flows, shard ${{ matrix.shard }} of ${{ (inputs.faults || inputs.variant) && 1 || 3 }}, in a sealed world
+    name: 🎬 ${{ (inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == 4)) && 'The route walk' || format('The flows, shard {0} of {1}', matrix.shard, inputs.faults && 1 || 3) }}, in a sealed world
     needs: build
     runs-on: ubuntu-24.04
     # The flows step's limit, and the app's download and the emulator's start before it.
@@ -299,8 +311,16 @@ jobs:
       fail-fast: false
       matrix:
         # The shards of mobile/e2e/shards.json (shards.test.ts holds the count); the fault
-        # runs' one, of mobile/e2e/fault-shards.json, and a variant run's, of walk-shards.json.
-        shard: ${{ fromJSON((inputs.faults || inputs.variant) && '[1]' || '[1, 2, 3]') }}
+        # runs' one, of mobile/e2e/fault-shards.json. A variant's route walk is a machine of its
+        # own (walk-shards.json): the only one of a walk-alone variant, a fourth beside the
+        # flows' three of a variant that runs them.
+        shard: ${{ fromJSON((inputs.faults || needs.build.outputs.runs == 'walk') && '[1]' || needs.build.outputs.runs == 'flows' && '[1, 2, 3, 4]' || '[1, 2, 3]') }}
+    env:
+      # The walk's machine: no flows, the walk, and the writer the seed makes for it, so every
+      # flow's world is as every other run has it.
+      E2E_FLOWS: ${{ inputs.faults && 'mobile/.maestro/faults' || (inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == 4)) && 'none' || 'mobile/.maestro' }}
+      E2E_WALK: ${{ (inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == 4)) && '1' || '' }}
+      E2E_SEED_WALK: ${{ (inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == 4)) && '1' || '' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -536,8 +556,8 @@ jobs:
         # flows (flowHistory.test.ts holds it).
         timeout-minutes: 32
         env:
-          E2E_SHARD: ${{ matrix.shard }}/${{ (inputs.faults || inputs.variant) && 1 || 3 }}
-          E2E_SHARD_MAP: ${{ inputs.faults && 'mobile/e2e/fault-shards.json' || inputs.variant && 'mobile/e2e/walk-shards.json' || 'mobile/e2e/shards.json' }}
+          E2E_SHARD: ${{ (inputs.faults || env.E2E_WALK) && '1/1' || format('{0}/3', matrix.shard) }}
+          E2E_SHARD_MAP: ${{ inputs.faults && 'mobile/e2e/fault-shards.json' || env.E2E_WALK && 'mobile/e2e/walk-shards.json' || 'mobile/e2e/shards.json' }}
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34
@@ -591,10 +611,28 @@ jobs:
       # Maestro's records hold each command as it ran, values filled in, so the
       # seeded member's password can sit in them in the clear. It goes before
       # anything is kept (e2e/scrub.mjs). Its own step, so a flows step killed
-      # by its time limit is scrubbed too.
+      # by its time limit is scrubbed too. Every file the next step keeps, and no
+      # other (theRunKeepsWhatItWrites.test.ts holds the two lists alike).
       - name: The member's password, out of the kept logs
         if: always()
-        run: node mobile/e2e/scrub.mjs "$RUNNER_TEMP/maestro.log" "$RUNNER_TEMP/flow-reports" "$RUNNER_TEMP/flow-screens" "$RUNNER_TEMP/maestro-debug" "$RUNNER_TEMP/first-attempts" "$RUNNER_TEMP/flow-hierarchy" "$RUNNER_TEMP/keyboard-room" "$RUNNER_TEMP/keyboard-room.txt" "$RUNNER_TEMP/logcat-stream.txt"
+        run: |
+          node mobile/e2e/scrub.mjs \
+            "$RUNNER_TEMP/functions.log" "$RUNNER_TEMP/gateway.jsonl" "$RUNNER_TEMP/fault-proxy.txt" \
+            "$RUNNER_TEMP/maestro.log" "$RUNNER_TEMP/flow-reports" "$RUNNER_TEMP/flow-screens" \
+            "$RUNNER_TEMP/flow-hierarchy" "$RUNNER_TEMP/maestro-debug" "$RUNNER_TEMP/first-attempts" \
+            "$RUNNER_TEMP/keyboard-room" "$RUNNER_TEMP/keyboard-room.txt" "$RUNNER_TEMP/screen.txt" \
+            "$RUNNER_TEMP/logcat-stream.txt" "$RUNNER_TEMP/flow-times.txt" "$RUNNER_TEMP/flows-began.txt" \
+            "$RUNNER_TEMP/flows-ended.txt" "$RUNNER_TEMP/retries.txt" "$RUNNER_TEMP/not-judged.txt" \
+            "$RUNNER_TEMP/own-crash-flows.txt" "$RUNNER_TEMP/phone-fixes.txt" "$RUNNER_TEMP/app-crashes.txt" \
+            "$RUNNER_TEMP/splash-handoff.txt" "$RUNNER_TEMP/animation-waits.txt" "$RUNNER_TEMP/phone-runtime.json" \
+            "$RUNNER_TEMP/runtime-dump.txt" "$RUNNER_TEMP/screen-times.txt" "$RUNNER_TEMP/fault-judges.txt" \
+            "$RUNNER_TEMP/walk-plan.txt" "$RUNNER_TEMP/walk.log" "$RUNNER_TEMP/route-judges.txt" \
+            "$RUNNER_TEMP/walk" "$RUNNER_TEMP/memory.txt" "$RUNNER_TEMP/shard-plan.txt" \
+            "$RUNNER_TEMP/flows-run.txt" "$RUNNER_TEMP/screen-record.json" "$RUNNER_TEMP/shard-notices.txt" \
+            "$RUNNER_TEMP/maestro-summary.txt" "$RUNNER_TEMP/motion" "$RUNNER_TEMP/own-crashes.json" \
+            "$RUNNER_TEMP/device-gone.txt" "$RUNNER_TEMP/crash.txt" "$RUNNER_TEMP/screen.json" \
+            "$RUNNER_TEMP/debug-listing.txt" "$RUNNER_TEMP/route-walk-failed.txt" "$RUNNER_TEMP/variant-setup.txt" \
+            "$RUNNER_TEMP/variant.txt"
 
       # Every run, not only a failed one: a run that passed only on a second
       # attempt keeps its first, and the device's whole log names any animation
@@ -644,6 +682,17 @@ jobs:
             ${{ runner.temp }}/shard-plan.txt
             ${{ runner.temp }}/flows-run.txt
             ${{ runner.temp }}/screen-record.json
+            ${{ runner.temp }}/shard-notices.txt
+            ${{ runner.temp }}/maestro-summary.txt
+            ${{ runner.temp }}/motion
+            ${{ runner.temp }}/own-crashes.json
+            ${{ runner.temp }}/device-gone.txt
+            ${{ runner.temp }}/crash.txt
+            ${{ runner.temp }}/screen.json
+            ${{ runner.temp }}/debug-listing.txt
+            ${{ runner.temp }}/route-walk-failed.txt
+            ${{ runner.temp }}/variant-setup.txt
+            ${{ runner.temp }}/variant.txt
           if-no-files-found: ignore
 
   verdict:
@@ -679,10 +728,10 @@ jobs:
           pattern: e2e-logs-*${{ env.E2E_TAG }}
           path: ${{ runner.temp }}/shards
 
-      # The fault and variant runs' one machine judged itself (fault-judges.mjs, route-judges.mjs):
-      # the screens' ceilings and the shards between them are the normal rounds' to judge.
+      # The fault runs' and a walk-alone variant's one machine judged itself (fault-judges.mjs,
+      # route-judges.mjs); a variant that runs every flow is three machines, read together here.
       - name: What no one shard can judge
-        if: ${{ !inputs.faults && !inputs.variant }}
+        if: ${{ !inputs.faults && needs.build.outputs.runs != 'walk' }}
         run: |
           set +e
           node mobile/e2e/shard-verdict.mjs "$RUNNER_TEMP/shards" --shards 3 --name "e2e-logs-{i}${E2E_TAG}" \

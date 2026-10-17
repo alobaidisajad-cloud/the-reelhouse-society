@@ -1,5 +1,5 @@
 {
-  "why": "The phone as each variant run of the route walk has it (WORKLIST P0.86): each name's adb shell commands set before the walk and put back after it, so nothing outlives its run; where the phone's own value is not a fixed default, `read` takes it first (its last word) and a reset's {was} puts it back. run-flows.sh runs them (e2e/variants.mjs); variants.test.ts holds every one to a setup, a reset and a reason.",
+  "why": "The phone as each variant run has it (WORKLIST P0.86): each name's adb shell commands set before the run touches the phone and put back once it ends, so nothing outlives its run. Where the phone's own value is not a fixed default, `read` takes it first (the last word of its answer, which must match `answer`) and a reset's {was} puts it back. `ready`, for a setting the system takes a while to apply, is asked until it answers yes (exit 0). `flows`: the run takes every flow before the route walk, on three machines; every other variant walks the routes alone, on one. run-flows.sh runs them (e2e/variants.mjs); variants.test.ts holds every one to a setup, a reset and a reason.",
   "variants": {
     "plain": {
       "why": "The phone as every run has it: the walk's captures every other variant is read against.",
@@ -13,6 +13,7 @@
     },
     "largest-text": {
       "why": "The largest text Android offers a member (font scale 2).",
+      "flows": true,
       "setup": ["settings put system font_scale 2.0"],
       "reset": ["settings put system font_scale 1.0"]
     },
@@ -23,6 +24,7 @@
     },
     "narrowest": {
       "why": "The narrowest width a member's phone can be, under 320 dp: the emulator's 1080 px at density 560 is 308 dp.",
+      "flows": true,
       "setup": ["wm density 560"],
       "reset": ["wm density reset"]
     },
@@ -32,14 +34,18 @@
       "reset": ["cmd overlay disable com.android.internal.systemui.navbar.threebutton"]
     },
     "right-to-left": {
-      "why": "Every screen laid out right to left, as a member reading Arabic or Hebrew has the system.",
-      "setup": ["settings put global debug.force_rtl 1"],
-      "reset": ["settings put global debug.force_rtl 0"]
+      "why": "The phone in Arabic (Iraq), as a member who reads Arabic has it: Android lays every app out right to left. The language is the system's own, set as root with the system restarted, and the language the phone had is put back the same way.",
+      "flows": true,
+      "read": "l=$(getprop persist.sys.locale); echo ${l:-$(getprop ro.product.locale)}",
+      "answer": "^[a-z]{2,3}(-[A-Z][a-z]{3})?(-[A-Z]{2})?$",
+      "setup": ["setprop persist.sys.locale ar-IQ; stop; start"],
+      "ready": ["am get-config | grep -q ldrtl", "test \"$(getprop sys.boot_completed)\" = 1"],
+      "reset": ["setprop persist.sys.locale {was}; stop; start"]
     },
     "light": {
       "why": "The system in light mode: the app keeps its own grounds, and what the system draws over it (an alert, the keyboard, the date picker) must still read. The mode the phone had is read first and put back.",
       "read": "cmd uimode night",
-      "answers": ["no", "yes", "auto", "custom_schedule", "custom_bedtime"],
+      "answer": "^(no|yes|auto|custom_schedule|custom_bedtime)$",
       "setup": ["cmd uimode night no"],
       "reset": ["cmd uimode night {was}"]
     }

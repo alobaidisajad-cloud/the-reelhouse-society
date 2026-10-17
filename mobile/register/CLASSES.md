@@ -23,6 +23,7 @@ production shows only its id, area, seriousness and count here.
 | E2E-route-never-opened | tests | behaviour | OPEN | 0 | A route no flow opens is never seen by any run, so a screen that crashes, freezes or cannot read when opened by its link passes every run |
 | E2E-wait-without-end | tests | behaviour | OPEN | 0 | A screen's wait (its spinner) never ends, or outlasts its limit, under a broken network, and the run passes because the flow waited and went on |
 | E2E-phone-only-as-the-runner-has-it | tests | behaviour | OPEN | 0 | Every run's phone has the default text, width, navigation bar, direction and mode, with animations off, so a screen that breaks for a member who set any of them passes every run |
+| E2E-record-not-kept | tests | behaviour | OPEN | 0 | The E2E run writes a record (a probe's result, a judge's words, the phone's settings) that is never kept with its logs, or kept with the member's password in it |
 | RN-react-destroyed-on-mount | navigation | serious | OPEN | 0 | React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed |
 | SEC-secret-committed | security | serious | OPEN | 21 | open in production |
 | BUILD-upload-carries-ignored-files | release | serious | OPEN | 0 | An EAS build's upload carries files git keeps out |
@@ -60,5 +61,5 @@ production shows only its id, area, seriousness and count here.
 | DB-standing-stands-in-the-way-out | database | behaviour | OPEN | 1 | open in production |
 | DB-applied-bytes-differ | database | code | OPEN | 0 | The train applied a migration with the line ends of the checkout it ran from, so production held other bytes than CI rehearsed |
 | CODE-promise-not-awaited | code | behaviour | OPEN | 310 | A promise nobody waits for, so its failure goes unheard and what follows may run first |
-| CODE-index-read-unchecked | code | behaviour | OPEN | 1472 | A value read by index or key used as if it is always there |
+| CODE-index-read-unchecked | code | behaviour | OPEN | 1469 | A value read by index or key used as if it is always there |
 | EDGE-function-static-fault | server | code | OPEN | 4 | An edge function's type error or lint finding, where no gate read the functions |

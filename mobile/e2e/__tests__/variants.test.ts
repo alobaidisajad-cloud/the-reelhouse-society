@@ -1,9 +1,10 @@
 /**
- * variants.test.ts — the phone's variants for the route walk (e2e/variants.json, e2e/variants.mjs,
- * WORKLIST P0.86): every one says why it is run, sets something and puts it back (plain alone sets
- * nothing), a reset that puts back what was read has a read and the words it may answer; and the
- * commands are refused, never guessed, for an unknown variant or a read that gave nothing usable.
- * runFlows.rehearsal.test.ts holds run-flows.sh to running them in order around the walk.
+ * variants.test.ts — the phone's variants (e2e/variants.json, e2e/variants.mjs, WORKLIST P0.86):
+ * every one says why it is run, sets something and puts it back (plain alone sets nothing); a reset
+ * that puts back what was read has a read and the pattern its answer must match; a variant that
+ * runs every flow leaves the animation scales alone (run-flows.sh sets them to 0 before each flow);
+ * and the commands are refused, never guessed, for an unknown variant or a read that gave nothing
+ * usable. runFlows.rehearsal.test.ts holds run-flows.sh to running them around the whole run.
  */
 import { spawnSync } from 'child_process';
 import { readFileSync } from 'fs';
@@ -11,7 +12,7 @@ import { join } from 'path';
 import { pathToFileURL } from 'url';
 
 const SCRIPT = join(__dirname, '..', 'variants.mjs');
-interface Variant { why: string; read?: string; answers?: string[]; setup: string[]; reset: string[] }
+interface Variant { why: string; flows?: boolean; read?: string; answer?: string; ready?: string[]; setup: string[]; reset: string[] }
 const VARIANTS = (JSON.parse(readFileSync(join(__dirname, '..', 'variants.json'), 'utf8')) as { variants: Record<string, Variant> }).variants;
 const E2E_YML = readFileSync(join(__dirname, '..', '..', '..', '.github', 'workflows', 'e2e.yml'), 'utf8');
 const NIGHTLY = readFileSync(join(__dirname, '..', '..', '..', '.github', 'workflows', 'nightly.yml'), 'utf8');
@@ -28,6 +29,8 @@ const commandsFor = (name: string, step: string, was?: string) =>
   ask(`m.commandsFor(${LIST}, ${JSON.stringify(name)}, ${JSON.stringify(step)}, ${was === undefined ? 'undefined' : JSON.stringify(was)})`);
 /** The variants the workflow's input names, in its own words. */
 const NAMED = /The variants \(mobile\/e2e\/variants\.json\): (.+)$/m.exec(E2E_YML)?.[1]?.trim().split(', ');
+/** The commands a variant may send: a setting, the density, an overlay, the night mode, or the system's language. */
+const COMMAND = /^(settings put (global|system|secure) \S+ \S+|wm density (\d+|reset)|cmd overlay (enable|disable) \S+|cmd uimode night \S+|setprop persist\.sys\.locale \S+; stop; start)$/;
 
 describe.each(Object.entries(VARIANTS))('%s', (name, v) => {
   it('says why it is run, in words', () => {
@@ -36,19 +39,24 @@ describe.each(Object.entries(VARIANTS))('%s', (name, v) => {
 
   it('sets something and puts it back, one command for each it set; plain alone is the phone as it is', () => {
     if (name === 'plain') {
-      expect([v.setup, v.reset, v.read]).toEqual([[], [], undefined]);
+      expect([v.setup, v.reset, v.read, v.flows]).toEqual([[], [], undefined, undefined]);
       return;
     }
     expect(v.setup.length).toBeGreaterThan(0);
     expect(v.reset.length).toBe(v.setup.length);
-    for (const c of [...v.setup, ...v.reset]) expect(c).toMatch(/^(settings put (global|system|secure) \S+ \S+|wm density (\d+|reset)|cmd overlay (enable|disable) \S+|cmd uimode night \S+)$/);
+    for (const c of [...v.setup, ...v.reset]) expect(c).toMatch(COMMAND);
   });
 
-  it('puts back what it read only with a read and the words that read may answer', () => {
+  it('puts back what it read only with a read and the pattern its answer must match', () => {
     const putsBackTheRead = v.reset.some((c) => c.includes('{was}'));
-    expect({ read: Boolean(v.read), answers: Boolean(v.answers?.length) }).toEqual({ read: putsBackTheRead, answers: putsBackTheRead });
+    expect({ read: Boolean(v.read), answer: Boolean(v.answer) }).toEqual({ read: putsBackTheRead, answer: putsBackTheRead });
   });
+});
 
+describe.each(Object.entries(VARIANTS).filter(([, v]) => v.flows))('%s, which runs every flow', (_name, v) => {
+  it('leaves the animation scales alone: run-flows.sh sets them to 0 before each flow', () => {
+    expect(v.setup.filter((c) => /\b(window_animation|transition_animation|animator_duration)_scale\b/.test(c))).toEqual([]);
+  });
 });
 
 it('is the list the workflow says a variant run may be given, and the night walks every one', () => {
@@ -61,15 +69,31 @@ it('gives each step its commands, and fills in what was read', () => {
   expect(commandsFor('light', 'setup')).toEqual({ commands: ['cmd uimode night no'] });
   expect(commandsFor('light', 'reset', 'auto')).toEqual({ commands: ['cmd uimode night auto'] });
   expect(commandsFor('narrowest', 'read')).toEqual({ commands: [] });
+  expect(commandsFor('narrowest', 'ready')).toEqual({ commands: [] });
   expect(commandsFor('narrowest', 'reset')).toEqual({ commands: ['wm density reset'] });
+  expect(commandsFor('right-to-left', 'reset', 'en-US')).toEqual({ commands: ['setprop persist.sys.locale en-US; stop; start'] });
+  expect(commandsFor('right-to-left', 'ready')).toEqual({ commands: ['am get-config | grep -q ldrtl', 'test "$(getprop sys.boot_completed)" = 1'] });
+});
+
+it('says which run each variant is: every flow and the walk, or the walk alone', () => {
+  const runs = Object.fromEntries(Object.keys(VARIANTS).map((n) => [n, (commandsFor(n, 'runs') as { commands: string[] }).commands]));
+  expect(runs).toEqual({
+    plain: ['walk'], 'motion-on': ['walk'], 'largest-text': ['flows'], 'bold-text': ['walk'],
+    narrowest: ['flows'], 'three-button': ['walk'], 'right-to-left': ['flows'], light: ['walk'],
+  });
+});
+
+it('takes back the language only as a language, with or without its script', () => {
+  for (const was of ['en-US', 'ar-IQ', 'zh-Hant-TW', 'fil']) expect(commandsFor('right-to-left', 'reset', was)).toHaveProperty('commands');
+  for (const was of ['closed', 'en_US', 'en-US; reboot']) expect(commandsFor('right-to-left', 'reset', was)).toHaveProperty('refused');
 });
 
 it('refuses, rather than guesses, an unknown variant or step, and a reset with nothing usable to put back', () => {
   expect(commandsFor('sideways', 'setup')).toEqual({ refused: `no variant named sideways (the variants: ${Object.keys(VARIANTS).join(', ')})` });
-  expect(commandsFor('light', 'undo')).toEqual({ refused: 'a step is read, setup or reset, not undo' });
+  expect(commandsFor('light', 'undo')).toEqual({ refused: 'a step is read, setup, ready, reset or runs, not undo' });
   expect(commandsFor('light', 'reset')).toEqual({ refused: "light's reset puts back what was read, and was given nothing" });
   expect(commandsFor('light', 'reset', 'closed')).toEqual({
-    refused: "light's read answered closed, which is none of no, yes, auto, custom_schedule, custom_bedtime: nothing is put back",
+    refused: "light's read answered closed, which ^(no|yes|auto|custom_schedule|custom_bedtime)$ does not match: nothing is put back",
   });
 });
 

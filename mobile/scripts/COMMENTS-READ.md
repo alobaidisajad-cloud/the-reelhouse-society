@@ -163,11 +163,12 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/screenTimes.test.ts | 2026-10-16 | edited: its files come from the shared file list (test-utils/universe.js); edited: the ceilings file is what ceilingsFrom derives from the history |
 | e2e/__tests__/shardVerdict.test.ts | 2026-10-15 | new: says no to a ceiling no shard reported, a missing or unfinished shard, a flow run twice or never; the verdict job fails with a failed shard |
 | e2e/__tests__/shards.test.ts | 2026-10-16 | edited: a shard's minutes are a whole number above 0, and printed for run-flows.sh |
-| e2e/__tests__/seed.rehearsal.test.ts | 2026-10-15 | new: the real seed against a fake Supabase that keeps the filing's door |
+| e2e/__tests__/seed.rehearsal.test.ts | 2026-10-17 | edited: the walk's world too: two people with their own sessions, the rank grant, the Lounge read by a signed-in member alone |
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | edited: the ports reserved and waited for, against a fake kernel |
-| e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | edited: one shard's list of flows is what is checked, every flow without one |
+| e2e/__tests__/theRunKeepsWhatItWrites.test.ts | 2026-10-17 | new |
 | e2e/__tests__/variants.test.ts | 2026-10-17 | new |
+| e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | edited: one shard's list of flows is what is checked, every flow without one |
 | e2e/__tests__/walkRoutes.test.ts | 2026-10-17 | new |
 | e2e/__tests__/whatTheAppAsked.test.ts | 2026-10-16 | new |
 | e2e/__tests__/fixtures/judges/shard-verdict/flows/a_flow.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
@@ -186,7 +187,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/old-clients.mjs | 2026-10-15 | new; edited: only its schema tests can say a client breaks; one not set up is unchecked, by step; its install tried twice |
 | e2e/db/rehearsals.mjs | 2026-10-16 | edited: --without, each pending migration's rehearsal run with its migration taken away, and every one applied again |
 | e2e/db/seal.sh | 2026-10-03 | Written in the tooling audit: the seal e2e.yml and load.yml each carried, in one place for three workflows. |
-| e2e/db/seed.mjs | 2026-10-17 | edited: with E2E_SEED_WALK, a writer at the Auteur rank (grant_entitlement) whose open Lounge and essay in a series give the walk's rooms an id |
+| e2e/db/seed.mjs | 2026-10-17 | edited: with E2E_SEED_WALK, a writer at the Auteur rank (grant_entitlement) whose open Lounge and essay in a series give the walk's rooms an id; edited: each read back as the member the walk opens it as |
 | e2e/db/up-down-up.mjs | 2026-10-16 | edited: apply exported, so the rehearsals take a migration away and give it back as the train applies it |
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
@@ -211,7 +212,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/old-clients.cjs | 2026-10-16 | edited: waitsIn reads each waiting command's target and time; raiseWaits gives a shipped client's flow at least this checkout's time for the same wait, never less |
 | e2e/prefetch-download-only.mjs | 2026-10-15 | new: the APK's prefetch on CachePolicy.DISK calls downloadOnly; not run for a shipped client |
 | e2e/route-judges.mjs | 2026-10-17 | new: every route the walk planned, captured as a picture; a plan of no route is unread |
-| e2e/run-flows.sh | 2026-10-17 | edited: a fault run clears the fault before each flow and is judged by fault-judges.mjs; E2E_FLOWS=none runs no flows; with E2E_WALK, the route walk after the flows, judged by route-judges.mjs, its screens not held to the flows' ceilings |
+| e2e/run-flows.sh | 2026-10-17 | edited: a fault run clears the fault before each flow and is judged by fault-judges.mjs; E2E_FLOWS=none runs no flows; with E2E_WALK, the route walk after the flows, judged by route-judges.mjs, its screens not held to the flows' ceilings; edited: the whole run on the phone as E2E_VARIANT has it, set before the run's log begins, waited for, put back at its end |
 | e2e/runtime-dump.mjs | 2026-10-15 | new: the phone's runtime from the device log, held to the committed copy |
 | e2e/screen-times.mjs | 2026-10-16 | edited: --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs; edited: two ceilings a screen, derived by ceilingsFrom from e2e/screen-history.json |
 | e2e/shard-verdict.mjs | 2026-10-15 | new: every shard finished, every flow ran once, every ceiling's screen reported somewhere |
@@ -219,7 +220,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/fault-proxy.mjs | 2026-10-16 | new: the network between the app and the house, a fault on command, a part stopped, the DNS blocked, every request logged; a slow link holds every piece in flight at once, one latency per reply |
 | e2e/shards.mjs | 2026-10-16 | edited: a shard's minutes, checked and printed for run-flows.sh |
 | e2e/start-stack.sh | 2026-10-15 | edited: the stack's ports reserved from the machine's own connections, and waited for |
-| e2e/variants.mjs | 2026-10-17 | new: each variant's commands to read, set and put back the phone; an unknown variant, a reset with nothing, or a read that answered no word the variant allows, refused |
+| e2e/variants.mjs | 2026-10-17 | new: each variant's commands to read, set, wait for and put back the phone, and whether it runs every flow; an unknown variant, a reset with nothing, or a read that answered no word the variant allows, refused |
 | e2e/walk-routes.mjs | 2026-10-17 | new: the route walk's plan and flow: every route of routes.json, its ids read from the seeded world by name, guests first, each opened cold and captured |
 | plugins/__tests__/withoutDevLauncherScanner.test.ts | 2026-10-15 | new: through withAndroidManifest, read back as XML; the entry read from the installed expo-dev-launcher's manifest |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it; its files come from the shared file list (test-utils/universe.js) |

@@ -51,12 +51,21 @@ case "$1" in
   exec-out) cat "$T/fixtures/dump.xml" ;;
   shell)
     shift; cmd="$*"
+    # adb hands the device what it reads on its own input, as the real one does: a loop that
+    # reads its lines from the same input loses the rest of them to the first command.
+    cat > /dev/null
     # Every command, in the order the phone was asked, with Maestro's flows among them.
     echo "adb: $cmd" >> "$T/state/order"
     case "$cmd" in
       # The system's dark mode, as Android answers it; a phone whose read fails, as one that went away.
       "cmd uimode night") [ -f "$T/state/night-unread" ] && { echo "error: closed"; exit 1; }; echo "Night mode: yes" ;;
       "cmd uimode night "*) echo "Night mode: \${cmd##* }" ;;
+      # The system's language: read, then set with the system restarted, which takes it a while.
+      "l="*) echo "en-US" ;;
+      "setprop persist.sys.locale "*) echo 0 > "$T/state/config-asked" ;;
+      "am get-config | grep -q ldrtl")
+        [ -f "$T/state/never-rtl" ] && exit 1
+        n=$(( $(cat "$T/state/config-asked") + 1 )); echo $n > "$T/state/config-asked"; [ $n -ge 3 ] || exit 1 ;;
       "ime list -a -s") echo "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME" ;;
       "pm disable"*) echo "Package x new state: disabled" ;;
       "settings get global "*_scale) cat "$T/state/\${cmd##* }" 2>/dev/null || echo 0.0 ;;
@@ -225,7 +234,8 @@ function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { e
     ...opts.env,
   };
   return new Promise((resolve, reject) => {
-    const child = spawn(BASH, [posix(SCRIPT)], { env });
+    // No input, as on CI: the fake adb reads its input to the end, as the real one does.
+    const child = spawn(BASH, [posix(SCRIPT)], { env, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (d) => { stdout += d; });
@@ -483,7 +493,7 @@ it('an emulator that goes away is reported as gone: its flow is not run again, a
   always(r);
 });
 
-describe('a variant run (E2E_WALK, E2E_VARIANT): the phone set before the walk and put back after it', () => {
+describe('a variant run (E2E_VARIANT): the phone set before the run touches it, and put back at its end', () => {
   // The sealed world's rows, as the walk reads them back by name (walkRoutes.test.ts holds the reads).
   let world: Server;
   let API = '';
@@ -508,9 +518,13 @@ describe('a variant run (E2E_WALK, E2E_VARIANT): the phone set before the walk a
     map: WALK_MAP, state,
     env: { E2E_SHARD: '1/1', E2E_FLOWS: 'none', E2E_WALK: '1', E2E_VARIANT: variant, API_URL: API, SERVICE_ROLE_KEY: 'rehearsal-key' },
   });
-  /** What the phone was asked about the variant, and the walk among it, in order. */
-  const order = (r: Run) => (existsSync(join(r.T, 'state', 'order')) ? readFileSync(join(r.T, 'state', 'order'), 'utf8') : '')
-    .split('\n').filter((l) => /uimode|font_scale|^maestro: walk$/.test(l));
+  /** One machine of the flows of a variant that runs them: its flows, no walk. */
+  const flows = (variant: string, scenario: Record<string, string[]>, state: Record<string, string> = {}, env: Record<string, string> = {}) =>
+    rehearse(['a_flow'], scenario, { state, env: { E2E_VARIANT: variant, ...env } });
+  /** What the phone was asked about the variant, and every Maestro run among it, in order. */
+  const VARIANT_SAID = /uimode|font_scale|persist\.sys\.locale|ldrtl|^adb: l=|^maestro: /;
+  const order = (r: Run, said = VARIANT_SAID) => (existsSync(join(r.T, 'state', 'order')) ? readFileSync(join(r.T, 'state', 'order'), 'utf8') : '')
+    .split('\n').filter((l) => said.test(l));
 
   it('reads the mode the phone had, sets the variant, walks, and puts back exactly what it read', async () => {
     const r = await walk('light', { walk: ['captures'] });
@@ -518,8 +532,18 @@ describe('a variant run (E2E_WALK, E2E_VARIANT): the phone set before the walk a
     expect(order(r)).toEqual(['adb: cmd uimode night', 'adb: cmd uimode night no', 'maestro: walk', 'adb: cmd uimode night yes']);
     expect(file(r, 'variant.txt')).toBe(
       'read: cmd uimode night -> yes\nset: cmd uimode night no -> Night mode: no\nput back: cmd uimode night yes -> Night mode: yes\n');
-    expect(titled(r, 'notice', 'The phone as the light walk had it')).toContain('put back: cmd uimode night yes');
+    expect(titled(r, 'notice', 'The phone as the light run had it')).toContain('put back: cmd uimode night yes');
     expect(titled(r, 'notice', 'Every route  opened cold and captured')).toMatch(/every route captured: \d+/);
+    always(r);
+  });
+
+  it('sends every one of a variant\'s commands, though adb reads its input as each is sent', async () => {
+    const r = await walk('motion-on', { walk: ['captures'] });
+    expect(order(r, /_animation_scale|animator_duration_scale|^maestro: /)).toEqual([
+      'adb: settings put global transition_animation_scale 1', 'adb: settings put global animator_duration_scale 1', 'adb: settings put global window_animation_scale 0',
+      'maestro: walk',
+      'adb: settings put global transition_animation_scale 0', 'adb: settings put global animator_duration_scale 0', 'adb: settings put global window_animation_scale 0',
+    ]);
     always(r);
   });
 
@@ -531,10 +555,47 @@ describe('a variant run (E2E_WALK, E2E_VARIANT): the phone set before the walk a
     always(r);
   });
 
+  it('runs every flow, the probes among them, on the phone as the variant has it, and puts it back after them all', async () => {
+    const r = await flows('largest-text', { a_flow: ['step-failed', 'pass'] });
+    // A flow that fails at the largest text is a finding: the run fails, by its own report.
+    expect(r.status).toBe(1);
+    expect(order(r)).toEqual(['adb: settings put system font_scale 2.0', 'maestro: stack', 'maestro: log', 'maestro: a_flow', 'adb: settings put system font_scale 1.0']);
+    // Not held to the plain phone's ceilings: a variant's times are reported.
+    expect(titled(r, 'error', 'A screen could not read or is slower than its ceiling')).toBe('');
+    always(r);
+  });
+
+  it('waits for the system to restart in the variant\'s language, then puts back the one it had', async () => {
+    const r = await flows('right-to-left', {});
+    expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
+    expect(order(r)).toEqual([
+      'adb: l=$(getprop persist.sys.locale); echo ${l:-$(getprop ro.product.locale)}',
+      'adb: setprop persist.sys.locale ar-IQ; stop; start',
+      'adb: am get-config | grep -q ldrtl', 'adb: am get-config | grep -q ldrtl', 'adb: am get-config | grep -q ldrtl',
+      'maestro: stack', 'maestro: log', 'maestro: a_flow',
+      'adb: setprop persist.sys.locale en-US; stop; start',
+    ]);
+    expect(file(r, 'variant.txt')).toMatch(/^read: .* -> en-US\nset: setprop persist\.sys\.locale ar-IQ; stop; start -> \nready: am get-config \| grep -q ldrtl\nready: test /);
+    always(r);
+  });
+
+  it('runs nothing on a phone that never became the variant, and puts it back', async () => {
+    const r = await flows('right-to-left', {}, { 'never-rtl': '' }, { E2E_READY_TRIES: '2' });
+    expect(r.status).toBe(1);
+    expect(order(r)).toEqual([
+      'adb: l=$(getprop persist.sys.locale); echo ${l:-$(getprop ro.product.locale)}',
+      'adb: setprop persist.sys.locale ar-IQ; stop; start',
+      'adb: am get-config | grep -q ldrtl', 'adb: am get-config | grep -q ldrtl',
+      'adb: setprop persist.sys.locale en-US; stop; start',
+    ]);
+    expect(titled(r, 'error', 'The phone never became the right-to-left variant')).toContain('never ready: am get-config | grep -q ldrtl');
+    always(r);
+  });
+
   it('puts back nothing it could not read, and says so, rather than a word of an error', async () => {
     const r = await walk('light', { walk: ['captures'] }, { 'night-unread': '' });
     expect(order(r)).toEqual(['adb: cmd uimode night', 'adb: cmd uimode night no', 'maestro: walk']);
-    expect(file(r, 'variant.txt')).toContain("light's read answered closed, which is none of no, yes, auto, custom_schedule, custom_bedtime: nothing is put back");
+    expect(file(r, 'variant.txt')).toContain("light's read answered closed, which ^(no|yes|auto|custom_schedule|custom_bedtime)$ does not match: nothing is put back");
     always(r);
   });
 

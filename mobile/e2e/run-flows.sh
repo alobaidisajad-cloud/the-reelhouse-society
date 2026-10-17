@@ -23,8 +23,8 @@
 # N for what no one machine can judge. With none, it runs everything.
 # A fault run (E2E_FAULTS) clears the fault before each flow and is judged by
 # e2e/fault-judges.mjs; with E2E_WALK, every route is then opened cold by its
-# link and captured (e2e/walk-routes.mjs, judged by e2e/route-judges.mjs), on the
-# phone as E2E_VARIANT has it (e2e/variants.json, put back after the walk).
+# link and captured (e2e/walk-routes.mjs, judged by e2e/route-judges.mjs). The whole
+# run is on the phone as E2E_VARIANT has it (e2e/variants.json), put back at its end.
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 # Maestro sends usage analytics unless told not to; nothing leaves the sealed world.
@@ -96,6 +96,49 @@ if [ -n "${left// /}" ]; then
   echo "::error title=A keyboard app is still on the device::left: ${left} | enabled setting: ${enabled} | root: ${rooted} | Android said:${answers} — every flow that types would fail behind it."
   exit 1
 fi
+# ── THE PHONE AS THE VARIANT HAS IT ───────────────────────────────────────────
+# E2E_VARIANT (e2e/variants.json, WORKLIST P0.86), plain when unset: what the phone had is read
+# first, each command and its answer kept in variant.txt, and the setting waited for where the
+# system takes a while (ready); put back at the very end (put_back, below), whatever the run
+# said. Before the run's log begins, so a system restarted for the variant is no crash of the
+# run's. A variant not in the list, or one the phone never became, runs nothing.
+variant=${E2E_VARIANT:-plain}
+: > "$OUT/variant.txt"
+if ! node mobile/e2e/variants.mjs "$variant" setup > "$OUT/variant-setup.txt" 2>&1; then
+  node mobile/e2e/annotate.mjs "No variant named ${variant}" "$OUT/variant-setup.txt"
+  exit 1
+fi
+read_cmd=$(node mobile/e2e/variants.mjs "$variant" read)
+was=""
+if [ -n "$read_cmd" ]; then
+  was=$(timeout 20 adb shell "$read_cmd" < /dev/null 2>&1 | tr -d '\r' | awk 'NF { last = $NF } END { print last }')
+  echo "read: $read_cmd -> $was" >> "$OUT/variant.txt"
+fi
+while IFS= read -r cmd; do
+  [ -n "$cmd" ] && echo "set: $cmd -> $(timeout 20 adb shell "$cmd" < /dev/null 2>&1 | tr -d '\r' | head -n 3)" >> "$OUT/variant.txt"
+done < "$OUT/variant-setup.txt"
+put_back() {
+  while IFS= read -r cmd; do
+    [ -n "$cmd" ] && echo "put back: $cmd -> $(timeout 20 adb shell "$cmd" < /dev/null 2>&1 | tr -d '\r' | head -n 3)" >> "$OUT/variant.txt"
+  done < <(node mobile/e2e/variants.mjs "$variant" reset "$was" 2>> "$OUT/variant.txt")
+}
+not_ready=""
+while IFS= read -r cmd; do
+  [ -n "$cmd" ] || continue
+  for _ in $(seq 1 "${E2E_READY_TRIES:-90}"); do
+    timeout 20 adb shell "$cmd" < /dev/null > /dev/null 2>&1 && { echo "ready: $cmd" >> "$OUT/variant.txt"; continue 2; }
+    sleep 2
+  done
+  not_ready="$cmd"; break
+done < <(node mobile/e2e/variants.mjs "$variant" ready)
+if [ -n "$not_ready" ]; then
+  echo "never ready: $not_ready" >> "$OUT/variant.txt"
+  put_back
+  node mobile/e2e/annotate.mjs "The phone never became the ${variant} variant" "$OUT/variant.txt"
+  exit 1
+fi
+adb wait-for-device
+
 adb logcat -c   # this run's log only, so a crash below is this run's crash
 
 # The runner's memory every 30 seconds, so a device that vanishes mid-run can be
@@ -488,28 +531,7 @@ done
 # app-crashes.mjs's to name below; route-judges.mjs holds every route to its capture.
 if [ -n "${E2E_WALK:-}" ] && [ $gone -eq 0 ]; then
   mkdir -p "$OUT/walk"
-  # The phone as the variant has it (e2e/variants.json): what it had read first, each command
-  # and its answer kept in variant.txt, and put back once the walk ends, whatever it said. A
-  # variant with no name in the list walks nothing: its refusal is never sent to the phone.
-  variant=${E2E_VARIANT:-plain}
-  : > "$OUT/variant.txt"
-  variant_known=1
-  if ! node mobile/e2e/variants.mjs "$variant" setup > "$OUT/variant-setup.txt" 2>&1; then
-    variant_known=0; rc=1
-    node mobile/e2e/annotate.mjs "No variant named ${variant}" "$OUT/variant-setup.txt"
-  fi
-  read_cmd=$(node mobile/e2e/variants.mjs "$variant" read 2>/dev/null)
-  was=""
-  if [ $variant_known -eq 1 ] && [ -n "$read_cmd" ]; then
-    was=$(timeout 20 adb shell "$read_cmd" 2>&1 | tr -d '\r' | awk 'NF { last = $NF } END { print last }')
-    echo "read: $read_cmd -> $was" >> "$OUT/variant.txt"
-  fi
-  [ $variant_known -eq 1 ] && while IFS= read -r cmd; do
-    [ -n "$cmd" ] && echo "set: $cmd -> $(timeout 20 adb shell "$cmd" 2>&1 | tr -d '\r' | head -n 3)" >> "$OUT/variant.txt"
-  done < "$OUT/variant-setup.txt"
-  if [ $variant_known -eq 0 ]; then
-    :
-  elif node mobile/e2e/walk-routes.mjs "$OUT/walk" > "$OUT/walk-plan.txt" 2>&1; then
+  if node mobile/e2e/walk-routes.mjs "$OUT/walk" > "$OUT/walk-plan.txt" 2>&1; then
     printf 'walk\t1\t%s\n' "$(device_clock)" >> "$OUT/flow-times.txt"
     timeout --signal=INT --kill-after=30 900s "$MAESTRO" test "$OUT/walk/walk.yaml" \
       -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
@@ -528,10 +550,6 @@ if [ -n "${E2E_WALK:-}" ] && [ $gone -eq 0 ]; then
     rc=1
     node mobile/e2e/annotate.mjs "The route walk could not be planned" "$OUT/walk-plan.txt"
   fi
-  [ $variant_known -eq 1 ] && while IFS= read -r cmd; do
-    [ -n "$cmd" ] && echo "put back: $cmd -> $(timeout 20 adb shell "$cmd" 2>&1 | tr -d '\r' | head -n 3)" >> "$OUT/variant.txt"
-  done < <(node mobile/e2e/variants.mjs "$variant" reset "$was" 2>> "$OUT/variant.txt")
-  [ $variant_known -eq 1 ] && note "The phone as the ${variant} walk had it" "$OUT/variant.txt"
 fi
 
 
@@ -622,9 +640,10 @@ not_judged=$(grep -c . "$OUT/not-judged.txt")
 # it skipped. A shard leaves a ceiling no flow of its reached to shard-verdict.mjs.
 slow=0
 times_args=(--flow-times "$OUT/flow-times.txt")
-# The ceilings are the flows' warm openings: a walk opens every screen cold, so its times are
-# reported, and a screen that could not read still fails it.
-[ -f mobile/e2e/screen-ceilings.json ] && [ -z "${E2E_WALK:-}" ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
+# The ceilings are the flows' warm openings on the plain phone: a walk opens every screen cold,
+# and a variant's phone is not the one they were measured on, so their times are reported, and a
+# screen that could not read still fails them.
+[ -f mobile/e2e/screen-ceilings.json ] && [ -z "${E2E_WALK:-}" ] && [ -z "${E2E_VARIANT:-}" ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
 [ $flows_failed -eq 0 ] && [ $gone -eq 0 ] && [ "$not_judged" -eq 0 ] && times_args+=(--complete)
 [ -n "${E2E_SHARD:-}" ] && times_args+=(--record "$OUT/screen-record.json")
 if [ -n "${E2E_FAULTS:-}" ]; then
@@ -710,4 +729,7 @@ if [ $rc -ne 0 ]; then
 fi
 # A slow screen fails the run, after the flows' own report (which it is not part of).
 [ $slow -eq 0 ] || rc=1
+# The phone put back as it was before the variant, last: nothing after this reads it.
+if [ $gone -eq 0 ]; then put_back; else echo "not put back: the emulator went away" >> "$OUT/variant.txt"; fi
+[ -s "$OUT/variant.txt" ] && note "The phone as the ${variant} run had it" "$OUT/variant.txt"
 exit $rc

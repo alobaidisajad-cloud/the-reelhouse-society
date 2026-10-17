@@ -227,8 +227,23 @@ classes:
       - { kind: static, file: e2e/__tests__/variants.test.ts, test: "is the list the workflow says a variant run may be given, and the night walks every one" }
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "reads the mode the phone had, sets the variant, walks, and puts back exactly what it read" }
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "walks nothing for a variant with no name in the list, and sends the phone nothing of it" }
-    fix: "e2e/variants.json names each setting a member may choose (largest text, bold text, the narrowest width, three-button navigation, right to left, light mode, motion on), with its commands to set and to put back; run-flows.sh sets one before the route walk and puts it back after, a variant not in the list sent nothing (mutant shape-variant-refusal-sent); every night walks every variant. Each variant's own pass rules are P0.86's next part"
+      - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "sends every one of a variant's commands, though adb reads its input as each is sent" }
+      - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "runs every flow, the probes among them, on the phone as the variant has it, and puts it back after them all" }
+    fix: "e2e/variants.json names each setting a member may choose (largest text, bold text, the narrowest width, three-button navigation, the phone in Arabic, light mode, motion on), with its commands to set, to wait for and to put back; run-flows.sh sets one before the run touches the phone and puts it back at its end, every command sent (mutant shape-variant-input-swallowed), a variant not in the list running nothing (mutant shape-variant-refusal-sent); largest text, the narrowest width and Arabic run every flow on three machines and the walk on a fourth; every night runs every variant. Each variant's own pass rules are P0.86's next part"
     places: [emulator]
+
+  - id: E2E-record-not-kept
+    title: The E2E run writes a record (a probe's result, a judge's words, the phone's settings) that is never kept with its logs, or kept with the member's password in it
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.86" }
+    methods:
+      - { kind: static, file: e2e/__tests__/theRunKeepsWhatItWrites.test.ts, test: "keeps every file the runner writes, or names it as scratch with why" }
+      - { kind: static, file: e2e/__tests__/theRunKeepsWhatItWrites.test.ts, test: "scrubs the password from exactly the files it keeps, each once, before it keeps them" }
+    fix: "every file run-flows.sh writes into its run's folder is kept (e2e.yml's Keep the run's logs) or named as scratch with why, and the step before scrubs exactly the files kept; twelve were never kept (the launch with animations on among them) and the route walk's log was kept unscrubbed (mutant shape-variant-record-not-kept)"
+    places: [none]
 
   - id: RN-react-destroyed-on-mount
     title: React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed
@@ -614,7 +629,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 1472
+    count: 1469
     source: { kind: reviewer, ref: P0.65 }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }

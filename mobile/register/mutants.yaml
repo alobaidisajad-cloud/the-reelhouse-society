@@ -513,6 +513,24 @@ mutants:
     source: shape
     edits:
       - file: e2e/run-flows.sh
-        find: "  [ $variant_known -eq 1 ] && while IFS= read -r cmd; do\n    [ -n \"$cmd\" ] && echo \"set: "
-        replace: "  while IFS= read -r cmd; do\n    [ -n \"$cmd\" ] && echo \"set: "
+        find: "  node mobile/e2e/annotate.mjs \"No variant named ${variant}\" \"$OUT/variant-setup.txt\"\n  exit 1\n"
+        replace: "  node mobile/e2e/annotate.mjs \"No variant named ${variant}\" \"$OUT/variant-setup.txt\"\n"
     proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "walks nothing for a variant with no name in the list, and sends the phone nothing of it" }
+
+  - id: shape-variant-input-swallowed
+    class: E2E-phone-only-as-the-runner-has-it
+    source: shape
+    edits:
+      - file: e2e/run-flows.sh
+        find: "echo \"set: $cmd -> $(timeout 20 adb shell \"$cmd\" < /dev/null 2>&1"
+        replace: "echo \"set: $cmd -> $(timeout 20 adb shell \"$cmd\" 2>&1"
+    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "sends every one of a variant's commands, though adb reads its input as each is sent" }
+
+  - id: shape-variant-record-not-kept
+    class: E2E-record-not-kept
+    source: shape
+    edits:
+      - file: ../.github/workflows/e2e.yml
+        find: "            ${{ runner.temp }}/variant-setup.txt\n            ${{ runner.temp }}/variant.txt\n"
+        replace: "            ${{ runner.temp }}/variant-setup.txt\n"
+    proof: { file: e2e/__tests__/theRunKeepsWhatItWrites.test.ts, test: "keeps every file the runner writes, or names it as scratch with why" }
