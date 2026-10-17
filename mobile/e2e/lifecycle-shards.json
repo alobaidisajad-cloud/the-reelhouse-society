@@ -8,7 +8,8 @@
         "dont_keep_activities",
         "killed_in_background",
         "killed_mid_write",
-        "live_config"
+        "live_config",
+        "upgrade"
       ],
       "minutes": 20
     }

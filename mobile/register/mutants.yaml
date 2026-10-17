@@ -608,3 +608,12 @@ mutants:
         find: "  return cmd === 'adb' && sdk ? join(sdk, 'platform-tools', 'adb') : cmd;"
         replace: "  return sdk ? cmd : cmd;"
     proof: { file: e2e/__tests__/faultProxy.test.ts, test: "runs adb from the Android SDK the runner keeps, since the proxy starts before adb is on the PATH (run 39004287263)" }
+
+  - id: shape-upgrade-without-old
+    class: E2E-phone-change-unseen
+    source: shape
+    edits:
+      - file: e2e/fault-proxy.mjs
+        find: "  if (!oldApk) return 'no old build to upgrade from: the proxy was started without --old-apk';\n"
+        replace: ""
+    proof: { file: e2e/__tests__/faultProxy.test.ts, test: "installs the build in members' hands afresh, then this one over it keeping its data, and fails with no old build to install" }

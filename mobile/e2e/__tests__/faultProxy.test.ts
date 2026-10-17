@@ -163,6 +163,21 @@ out.backup = [
 ].map((r) => ({ status: r.status, ...r.body }));
 markerBack = false;
 out.markerGone = await control('POST', '/backup', { step: 'marker' }).then((r) => ({ status: r.status, ...r.body }));
+out.ranBackup = ran.length;
+// This proxy was started with no old build: the upgrade's first step says so.
+out.upgradeAlone = await control('POST', '/upgrade', { step: 'old' }).then((r) => ({ status: r.status, ...r.body }));
+// A second proxy, given the build in members' hands.
+const q = await startProxy({ to: '127.0.0.1:' + house.address().port, run, oldApk: '/runner/old/app-release.apk' });
+const askQ = (body) => new Promise((resolve) => {
+  const req = http.request({ host: '127.0.0.1', port: q.controlPort, path: '/upgrade', method: 'POST', agent: false }, (res) => {
+    let text = '';
+    res.on('data', (c) => { text += c; });
+    res.on('end', () => resolve({ status: res.statusCode, ...JSON.parse(text) }));
+  });
+  req.end(JSON.stringify(body));
+});
+out.appUpgrade = [await askQ({ step: 'old' }), await askQ({ step: 'new' }), await askQ({ step: 'sideways' })];
+await q.close();
 out.ran = ran;
 
 out.log = (await control('GET', '/log')).body.map(({ method, path, status, fault }) => ({ method, path, status, fault }));
@@ -296,7 +311,7 @@ it('backs the app up, reinstalls it and restores it by the plan\'s steps, each h
     { status: 200, done: { step: 'marker' } },
     { status: 400, refused: 'step, one of save, reinstall, restore, marker' },
   ]);
-  expect(out.ran.slice(out.ranPhone)).toEqual([
+  expect(out.ran.slice(out.ranPhone, out.ranBackup)).toEqual([
     'adb shell bmgr enable true',
     'adb shell bmgr transport com.android.localtransport/.LocalTransport',
     'adb shell bmgr backupnow com.reelhouse.society',
@@ -306,6 +321,20 @@ it('backs the app up, reinstalls it and restores it by the plan\'s steps, each h
     'adb shell bmgr restore 1 com.reelhouse.society',
     'adb shell ls /data/data/com.reelhouse.society/files/e2e-backup-marker',
     'adb shell ls /data/data/com.reelhouse.society/files/e2e-backup-marker',
+  ]);
+});
+
+it('installs the build in members\' hands afresh, then this one over it keeping its data, and fails with no old build to install', () => {
+  expect(out.upgradeAlone).toEqual({ status: 500, failed: 'no old build to upgrade from: the proxy was started without --old-apk' });
+  expect(out.appUpgrade).toEqual([
+    { status: 200, done: { step: 'old' } },
+    { status: 200, done: { step: 'new' } },
+    { status: 400, refused: 'step, one of old, new' },
+  ]);
+  expect(out.ran.slice(out.ranBackup)).toEqual([
+    'adb uninstall com.reelhouse.society',
+    'adb install /runner/old/app-release.apk',
+    'adb install -r mobile/android/app/build/outputs/apk/release/app-release.apk',
   ]);
 });
 

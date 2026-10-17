@@ -3,7 +3,7 @@
  * fault-proxy.mjs — the network between the app and the sealed house, with a fault on command
  * (WORKLIST P0.73), and the record of every request that crossed it (P0.75's gateway log).
  *
- *   node e2e/fault-proxy.mjs [--listen 54330] [--to 127.0.0.1:54321] [--control 54331] [--log <file>] [--apk <app>]
+ *   node e2e/fault-proxy.mjs [--listen 54330] [--to 127.0.0.1:54321] [--control 54331] [--log <file>] [--apk <app>] [--old-apk <app>]
  *
  * Every connection is piped as bytes both ways, so with no fault set the app meets the house as it
  * would without it: keep-alive, chunked answers and the live channels' upgrade pass untouched. Only
@@ -25,6 +25,8 @@
  *                  by the system in the background, or stopped dead in the foreground
  *   POST   /backup {"step": …}   the backup-and-restore run's steps, in order (BACKUP_STEPS): save,
  *                  reinstall (the app at --apk), restore, marker; each held to what Android must say
+ *   POST   /upgrade {"step": "old"|"new"}   the upgrade run's steps (UPGRADE_STEPS): the build in
+ *                  members' hands (--old-apk) installed afresh, then this one over it, data kept
  *   GET    /alive
  *
  * Both listen on the runner's loopback alone; the emulator reaches it as 10.0.2.2.
@@ -158,6 +160,24 @@ const backupStep = (step, run, apk) => {
     'the marker is not back, so the backup or the restore never happened and this run proves nothing (a mis-set fault)');
 };
 
+/**
+ * The upgrade run's steps (.maestro/lifecycle/upgrade.yaml, WORKLIST P0.86): old (the app removed
+ * and the build already in members' hands installed afresh, from --old-apk) and new (this build
+ * installed over it, its saved data kept, as a store update does). A run with no old build to
+ * install fails saying so, never passing on the new build alone.
+ */
+export const UPGRADE_STEPS = ['old', 'new'];
+const upgradeStep = (step, run, apk, oldApk) => {
+  const must = (cmd, args, fault) => {
+    const r = run(cmd, args);
+    return r.status === 0 && /Success/.test(r.said) ? null : `${fault}: ${cmd} ${args.join(' ')} said ${r.said || `nothing (exit ${r.status})`}`;
+  };
+  if (step === 'new') return must('adb', ['install', '-r', apk], 'this build was not installed over the old one');
+  if (!oldApk) return 'no old build to upgrade from: the proxy was started without --old-apk';
+  return must('adb', ['uninstall', PKG], 'the app was not uninstalled')
+    ?? must('adb', ['install', oldApk], 'the old build was not installed');
+};
+
 const refusalOfDns = (b) => (typeof b?.blocked === 'boolean' && Object.keys(b).length === 1 ? null : 'blocked, true or false');
 
 /**
@@ -177,7 +197,7 @@ const runCommand = (cmd, args) => {
 };
 
 /** The proxy and its control server; resolves once both listen, with their ports, the log and close(). */
-export function startProxy({ listen = 0, to, control = 0, logFile = null, run = runCommand, apk = APK } = {}) {
+export function startProxy({ listen = 0, to, control = 0, logFile = null, run = runCommand, apk = APK, oldApk = null } = {}) {
   const [toHost, toPort] = to.split(':');
   let fault = null;
   let left = 0;
@@ -307,6 +327,13 @@ export function startProxy({ listen = 0, to, control = 0, logFile = null, run = 
       if (req.url === '/log' && req.method === 'GET') return answer(res, 200, log);
       if (req.url === '/log' && req.method === 'DELETE') { log.length = 0; return answer(res, 200, { log: 'emptied' }); }
       if (req.url === '/fault' && req.method === 'DELETE') { fault = null; left = 0; return answer(res, 200, { fault: null }); }
+      if (req.url === '/upgrade' && req.method === 'POST') {
+        let asked;
+        try { asked = JSON.parse(body); } catch { return answer(res, 400, { refused: 'the body is not JSON' }); }
+        if (!UPGRADE_STEPS.includes(asked?.step) || Object.keys(asked).length !== 1) return answer(res, 400, { refused: `step, one of ${UPGRADE_STEPS.join(', ')}` });
+        const failed = upgradeStep(asked.step, run, apk, oldApk);
+        return failed ? answer(res, 500, { failed }) : answer(res, 200, { done: asked });
+      }
       if (req.url === '/backup' && req.method === 'POST') {
         let asked;
         try { asked = JSON.parse(body); } catch { return answer(res, 400, { refused: 'the body is not JSON' }); }
@@ -358,6 +385,6 @@ export function startProxy({ listen = 0, to, control = 0, logFile = null, run = 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const argv = process.argv.slice(2);
   const arg = (name, fallback) => { const i = argv.indexOf(name); return i < 0 ? fallback : argv[i + 1]; };
-  const p = await startProxy({ listen: Number(arg('--listen', '54330')), to: arg('--to', '127.0.0.1:54321'), control: Number(arg('--control', '54331')), logFile: arg('--log', null), apk: arg('--apk', APK) });
+  const p = await startProxy({ listen: Number(arg('--listen', '54330')), to: arg('--to', '127.0.0.1:54321'), control: Number(arg('--control', '54331')), logFile: arg('--log', null), apk: arg('--apk', APK), oldApk: arg('--old-apk', null) });
   console.log(`fault proxy: :${p.port} → ${arg('--to', '127.0.0.1:54321')}, control on :${p.controlPort}`);
 }

@@ -25,6 +25,8 @@ on:
 
 permissions:
   contents: read
+  # What e2e.yml asks of its callers: the lifecycle run reads the shipped-clients run's app.
+  actions: read
 
 jobs:
   testflight-build-41:

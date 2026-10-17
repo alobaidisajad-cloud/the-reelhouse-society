@@ -81,6 +81,8 @@ concurrency:
 
 permissions:
   contents: read
+  # The lifecycle run's upgrade reads the shipped-clients run's app (its runs and artifacts, read only).
+  actions: read
 
 env:
   # Which flows run, for run-flows.sh, verify-writes.mjs and the verdict alike:
@@ -555,9 +557,28 @@ jobs:
       # Between the app and the house, for the rest of the job: every byte passed
       # untouched until a flow sets a fault on its control port (10.0.2.2:54331),
       # and every request kept in the gateway's log.
+      # The lifecycle run's upgrade (.maestro/lifecycle/upgrade.yaml) installs this build over the
+      # one already in members' hands: that build's E2E app, from the last shipped-clients run
+      # that made it (kept three days). None to be had leaves the proxy without it, and the
+      # upgrade flow fails saying so.
+      - name: The build in members' hands, to upgrade from
+        if: ${{ inputs.lifecycle }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/old-app"
+          # The client the shipped-clients run builds: the one mobile/e2e/old-clients.json checks.
+          client=$(node -e "console.log(require('./mobile/e2e/old-clients.json').clients.find((c) => c.checked).name)")
+          for id in $(gh run list --repo "$GITHUB_REPOSITORY" --workflow e2e-old-clients.yml --status success --limit 5 --json databaseId --jq '.[].databaseId'); do
+            gh run download "$id" --repo "$GITHUB_REPOSITORY" --name "e2e-app - $client" --dir "$RUNNER_TEMP/old-app" && break
+          done
+          ls -l "$RUNNER_TEMP/old-app" || true
+
       - name: The network between the app and the house
         run: |
-          nohup node mobile/e2e/fault-proxy.mjs --listen 54330 --to 127.0.0.1:54321 --control 54331 --log "$RUNNER_TEMP/gateway.jsonl" > "$RUNNER_TEMP/fault-proxy.txt" 2>&1 &
+          old=""; [ -f "$RUNNER_TEMP/old-app/app-release.apk" ] && old="--old-apk $RUNNER_TEMP/old-app/app-release.apk"
+          # shellcheck disable=SC2086
+          nohup node mobile/e2e/fault-proxy.mjs --listen 54330 --to 127.0.0.1:54321 --control 54331 --log "$RUNNER_TEMP/gateway.jsonl" $old > "$RUNNER_TEMP/fault-proxy.txt" 2>&1 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:54331/alive > /dev/null && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/fault-proxy.txt"; echo "::error title=Fault proxy::it never answered on 54331"; exit 1
 

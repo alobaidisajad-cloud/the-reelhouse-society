@@ -515,7 +515,7 @@ it('lets a step fail only when it is a download tried once more by the step afte
 const LIVES_FOR_THE_JOB: Record<string, string> = {
   'db-integration.yml functions: node mobile/e2e/functions/stand-ins.mjs':
     'the stand-ins answer every later step of the functions world; the runner stops them with the job, and their log is shown if a step fails',
-  'e2e.yml flows: node mobile/e2e/fault-proxy.mjs --listen 54330 --to 127.0.0.1:54321 --control 54331 --log "$RUNNER_TEMP/gateway.jsonl"':
+  'e2e.yml flows: node mobile/e2e/fault-proxy.mjs --listen 54330 --to 127.0.0.1:54321 --control 54331 --log "$RUNNER_TEMP/gateway.jsonl" $old':
     'the app reaches the house through it for every flow; the runner stops it with the job, and its log is kept with the run\'s',
 };
 

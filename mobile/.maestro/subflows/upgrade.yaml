@@ -1,0 +1,10 @@
+appId: com.reelhouse.society
+---
+# One step of the upgrade, STEP: old (the build already in members' hands
+# installed afresh) or new (this build installed over it, its data kept),
+# through upgrade.js and e2e/fault-proxy.mjs's /upgrade. For the lifecycle
+# flows alone.
+- runScript:
+    file: upgrade.js
+    env:
+      STEP: ${STEP}

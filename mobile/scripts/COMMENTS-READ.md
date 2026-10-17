@@ -70,6 +70,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/lifecycle/killed_in_background.yaml | 2026-10-17 | new: Edit Profile half-edited, home, the app killed by the system: back where they were, the words kept |
 | .maestro/lifecycle/killed_mid_write.yaml | 2026-10-17 | new: the app stopped dead while a log is on its way over a slow link; reopened, the log is the member's, exactly once |
 | .maestro/lifecycle/live_config.yaml | 2026-10-17 | new: the text size, then the density, changed under a half-edited Edit Profile: the same screen, the words kept |
+| .maestro/lifecycle/upgrade.yaml | 2026-10-17 | new: the build in members' hands queues a write offline; this build installed over it sends it, exactly once; the member still signed in |
 | .maestro/log_film_flow.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/login_flow.yaml | 2026-09-29 | true as written |
 | .maestro/lounge_flow.yaml | 2026-09-29 | true as written |
@@ -86,6 +87,8 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/subflows/phone.js | 2026-10-17 | new: the phone changed through the fault proxy's /phone; a refusal stops the flow |
 | .maestro/subflows/phone.yaml | 2026-10-17 | new: the phone changed mid-flow, for the lifecycle flows alone |
 | .maestro/subflows/sign_in.yaml | 2026-10-15 | edited: the account is new, only its profile dated back |
+| .maestro/subflows/upgrade.js | 2026-10-17 | new: one step of the upgrade through the fault proxy's /upgrade; a step not taken stops the flow |
+| .maestro/subflows/upgrade.yaml | 2026-10-17 | new: one step of the upgrade, for the lifecycle flows alone |
 | ANDROID_LAUNCH.md | 2026-10-04 | the splash leaving as Android's own added to the device checks, with the system exit's real timings |
 | app.config.js | 2026-10-15 | edited: the development profile gets back the dev client's scheme and iOS local networking; every other build is app.json |
 | app/__tests__/boot-structure.test.tsx | — |  |

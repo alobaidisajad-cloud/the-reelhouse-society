@@ -27,6 +27,8 @@ const EXPECT = {
   'film_log.yaml': { what: 'The Matrix, abandoned as Too Slow', where: "l.status = 'abandoned' AND l.abandoned_reason = 'Too Slow' AND l.film_title ILIKE 'The Matrix%'" },
   'offline_resilience.yaml': { what: 'Casablanca, logged offline and sent on reconnect', where: "l.review = 'E2E offline: we''ll always have the queue.' AND l.film_title ILIKE 'Casablanca%'" },
   // A lifecycle flow (.maestro/lifecycle): the app force-stopped while the write was on its way.
+  // A lifecycle flow: logged offline by the build in members' hands, sent by this one after the upgrade.
+  'upgrade.yaml': { what: 'Casablanca, queued by the old build and sent by the new one', where: "l.review = 'E2E upgrade: the queue crosses the versions.' AND l.film_title ILIKE 'Casablanca%'" },
   'killed_mid_write.yaml': { what: 'The Godfather, logged as the app was stopped dead mid-write', where: "l.review = 'E2E killed mid-write: the write lands once.' AND l.film_title ILIKE 'The Godfather%'" },
 };
 

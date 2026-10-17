@@ -1,0 +1,88 @@
+appId: com.reelhouse.society
+env:
+  WORDS: "E2E upgrade: the queue crosses the versions."
+---
+# The upgrade (WORKLIST P0.86, P4.14's pass rule): the build already in
+# members' hands, signed in, logs a film with no connection, so the write
+# waits in its queue. This build is installed over it, its data kept, as a
+# store update does. Back online, the new build sends what the old one
+# queued: the film offers to EDIT the log, and after the run
+# e2e/db/verify-writes.mjs finds exactly one row. The member is still
+# signed in, and each tab loads.
+- runFlow:
+    file: ../subflows/upgrade.yaml
+    env:
+      STEP: old
+- launchApp:
+    clearState: true
+- runFlow: ../subflows/sign_in.yaml
+- runFlow:
+    file: ../subflows/open_a_film.yaml
+    env:
+      FILM: "Casablanca"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - toggleAirplaneMode
+- extendedWaitUntil:
+    visible: ".*OPERATING IN ISOLATION.*"
+    timeout: 15000
+- runFlow: ../subflows/open_the_stub.yaml
+- tapOn:
+    id: "film-act-log"
+- extendedWaitUntil:
+    visible:
+      id: "review-input"
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: "review-input"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
+- tapOn:
+    id: "review-input"
+- inputText: ${WORDS}
+- tapOn:
+    id: "submit-log-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "submit-log-button"
+    timeout: 15000
+- stopApp
+
+- runFlow:
+    file: ../subflows/upgrade.yaml
+    env:
+      STEP: new
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - toggleAirplaneMode
+- launchApp
+- runFlow:
+    file: ../subflows/open_a_film.yaml
+    env:
+      FILM: "Casablanca"
+- runFlow: ../subflows/open_the_stub.yaml
+- extendedWaitUntil:
+    visible: "EDIT YOUR LOG"
+    timeout: 45000
+- tapOn:
+    id: "profile-tab"
+- scrollUntilVisible:
+    element:
+      id: "collection-card-watchlist"
+    direction: DOWN
+    timeout: 60000
+    centerElement: true
+- assertNotVisible:
+    id: "profile-sign-in-prompt"
+- tapOn:
+    id: "dispatch-tab"
+- extendedWaitUntil:
+    visible:
+      id: "dispatch-filing"
+    timeout: 20000
