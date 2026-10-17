@@ -268,7 +268,7 @@ classes:
     methods:
       - { kind: static, file: e2e/__tests__/faultProxy.test.ts, test: "changes the phone mid-flow by fixed commands of checked values alone, and refuses anything else" }
       - { kind: static, file: e2e/__tests__/shards.test.ts, test: "gives the lifecycle runs' one machine every flow in .maestro/lifecycle, and no other" }
-    fix: "the fault proxy's control changes the phone mid-flow by fixed commands (/phone, mutant shape-phone-unchecked); .maestro/lifecycle's flows change it under a half-edited Edit Profile and hold the screen and the words to it; run-flows.sh puts the phone back before each; every night runs them (e2e.yml lifecycle). Their failures are discovery for P2.8's list until P4.14 and P4.33 land"
+    fix: "the fault proxy's control changes the phone mid-flow by fixed commands (/phone, mutant shape-phone-unchecked); .maestro/lifecycle's flows change it under a half-edited Edit Profile and hold the screen and the words to it, and stop the app dead mid-write, whose log verify-writes.mjs holds to exactly one row; run-flows.sh puts the phone back before each; every night runs them (e2e.yml lifecycle). Their failures are discovery for P2.8's list until P4.14 and P4.33 land"
     places: [emulator]
 
   - id: E2E-record-not-kept

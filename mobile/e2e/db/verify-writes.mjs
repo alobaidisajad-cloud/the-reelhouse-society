@@ -26,6 +26,8 @@ const EXPECT = {
   'log_film_flow.yaml': { what: 'Blade Runner, logged from the full results', where: "l.review = 'E2E results path: more human than human.' AND l.film_title ILIKE 'Blade Runner%'" },
   'film_log.yaml': { what: 'The Matrix, abandoned as Too Slow', where: "l.status = 'abandoned' AND l.abandoned_reason = 'Too Slow' AND l.film_title ILIKE 'The Matrix%'" },
   'offline_resilience.yaml': { what: 'Casablanca, logged offline and sent on reconnect', where: "l.review = 'E2E offline: we''ll always have the queue.' AND l.film_title ILIKE 'Casablanca%'" },
+  // A lifecycle flow (.maestro/lifecycle): the app force-stopped while the write was on its way.
+  'killed_mid_write.yaml': { what: 'The Godfather, logged as the app was stopped dead mid-write', where: "l.review = 'E2E killed mid-write: the write lands once.' AND l.film_title ILIKE 'The Godfather%'" },
 };
 
 /** run-flows.sh's list: flow name → "retried" or "not-judged". Empty when no file. */

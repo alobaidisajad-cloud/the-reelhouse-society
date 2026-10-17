@@ -93,9 +93,9 @@ export const commandsFor = {
 };
 /**
  * What a lifecycle flow may change on the phone mid-flow (.maestro/lifecycle, WORKLIST P0.86): the
- * text size and the display density live, Android's "don't keep activities", and the system killing
- * the app in the background. Each a fixed command of a checked value; run-flows.sh puts all of them
- * back before every lifecycle flow.
+ * text size and the display density live, Android's "don't keep activities", the system killing
+ * the app in the background, and the app stopped dead in the foreground (mid-write). Each a fixed
+ * command of a checked value; run-flows.sh puts the settings back before every lifecycle flow.
  */
 export const PHONE = {
   font_scale: { says: 'a number from 0.85 to 2', valid: (v) => typeof v === 'number' && v >= 0.85 && v <= 2,
@@ -106,6 +106,9 @@ export const PHONE = {
     commands: (v) => [['adb', ['shell', 'settings', 'put', 'global', 'always_finish_activities', v ? '1' : '0']]] },
   killed_in_background: { says: 'true', valid: (v) => v === true,
     commands: () => [['adb', ['shell', 'am', 'kill', 'com.reelhouse.society']]] },
+  // In the foreground, mid-write: am kill reaches only an app in the background.
+  force_stopped: { says: 'true', valid: (v) => v === true,
+    commands: () => [['adb', ['shell', 'am', 'force-stop', 'com.reelhouse.society']]] },
 };
 commandsFor.phone = ({ set, to }) => PHONE[set].commands(to);
 const refusalOfPhone = (b) => {

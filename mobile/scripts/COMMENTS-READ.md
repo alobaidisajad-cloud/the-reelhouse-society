@@ -67,6 +67,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/keyboard/stack.yaml | 2026-10-15 | edited: the Reel's log and the seed's stack waited for |
 | .maestro/lifecycle/dont_keep_activities.yaml | 2026-10-17 | new: "don't keep activities" on, Edit Profile half-edited, home and back: the words kept |
 | .maestro/lifecycle/killed_in_background.yaml | 2026-10-17 | new: Edit Profile half-edited, home, the app killed by the system: back where they were, the words kept |
+| .maestro/lifecycle/killed_mid_write.yaml | 2026-10-17 | new: the app stopped dead while a log is on its way over a slow link; reopened, the log is the member's, exactly once |
 | .maestro/lifecycle/live_config.yaml | 2026-10-17 | new: the text size, then the density, changed under a half-edited Edit Profile: the same screen, the words kept |
 | .maestro/log_film_flow.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/login_flow.yaml | 2026-09-29 | true as written |
@@ -199,7 +200,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/up-down-up.mjs | 2026-10-16 | edited: apply exported, so the rehearsals take a migration away and give it back as the train applies it |
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
-| e2e/db/verify-writes.mjs | 2026-10-15 | edited: on one shard, only the flows run-flows.sh listed |
+| e2e/db/verify-writes.mjs | 2026-10-17 | edited: on one shard, only the flows run-flows.sh listed; edited: the lifecycle flow killed mid-write, its log exactly once |
 | e2e/fault-judges.mjs | 2026-10-16 | new: the fault runs' judges (P0.76): no failure drawn empty, a fault that failed nothing proves nothing, no false failure on a slow link, no wait past 20 s or left at a flow's end |
 | e2e/flow-screens.mjs | 2026-10-04 | Maestro's JUnit reason, a report for a flow with no step record, the decision line, the named animation; QueryController dropped (logged on every key of fast runs) |
 | e2e/functions/mail.mjs | 2026-10-16 | new: every email the House's Auth sends, caught by the stack's Mailpit and used: the sign-up link confirms, the reset link opens a session, the code is the House's letter with 6 digits and no link, accepted once, a wrong one refused |

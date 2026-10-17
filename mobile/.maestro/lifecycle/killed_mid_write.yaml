@@ -1,0 +1,57 @@
+appId: com.reelhouse.society
+env:
+  WORDS: "E2E killed mid-write: the write lands once."
+---
+# The app stopped dead while it saves a log (WORKLIST P0.86): the link is
+# slow, so the write is still on its way when the app is force-stopped.
+# Reopened on a good link, the log is the member's: the film offers to
+# EDIT it, and after the run e2e/db/verify-writes.mjs finds exactly one
+# row, never none and never two.
+- launchApp:
+    clearState: true
+- runFlow: ../subflows/sign_in.yaml
+- runFlow:
+    file: ../subflows/open_a_film.yaml
+    env:
+      FILM: "The Godfather"
+- runFlow: ../subflows/open_the_stub.yaml
+- tapOn:
+    id: "film-act-log"
+- extendedWaitUntil:
+    visible:
+      id: "review-input"
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: "review-input"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
+- tapOn:
+    id: "review-input"
+- inputText: ${WORDS}
+- runFlow:
+    file: ../subflows/fault.yaml
+    env:
+      FAULT: edge
+- tapOn:
+    id: "submit-log-button"
+- runFlow:
+    file: ../subflows/phone.yaml
+    env:
+      SET: force_stopped
+      TO: "true"
+- runFlow:
+    file: ../subflows/fault.yaml
+    env:
+      FAULT: none
+
+- launchApp
+- runFlow:
+    file: ../subflows/open_a_film.yaml
+    env:
+      FILM: "The Godfather"
+- runFlow: ../subflows/open_the_stub.yaml
+- extendedWaitUntil:
+    visible: "EDIT YOUR LOG"
+    timeout: 45000

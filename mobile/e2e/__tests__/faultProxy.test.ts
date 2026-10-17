@@ -130,6 +130,7 @@ out.phone = [
   await control('POST', '/phone', { set: 'density', to: 'reset' }),
   await control('POST', '/phone', { set: 'dont_keep_activities', to: true }),
   await control('POST', '/phone', { set: 'killed_in_background', to: true }),
+  await control('POST', '/phone', { set: 'force_stopped', to: true }),
   await control('POST', '/phone', { set: 'font_scale', to: 9 }),
   await control('POST', '/phone', { set: 'density', to: '560; reboot' }),
   await control('POST', '/phone', { set: 'airplane', to: true }),
@@ -236,10 +237,11 @@ it('changes the phone mid-flow by fixed commands of checked values alone, and re
     { status: 200, done: { set: 'density', to: 'reset' } },
     { status: 200, done: { set: 'dont_keep_activities', to: true } },
     { status: 200, done: { set: 'killed_in_background', to: true } },
+    { status: 200, done: { set: 'force_stopped', to: true } },
     { status: 400, refused: 'font_scale to a number from 0.85 to 2' },
     { status: 400, refused: 'density to a whole number from 240 to 640, or "reset"' },
-    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, and to' },
-    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, and to' },
+    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, and to' },
+    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, and to' },
   ]);
   expect(out.ran.slice(out.ranParts.length)).toEqual([
     'adb shell settings put system font_scale 1.3',
@@ -247,6 +249,7 @@ it('changes the phone mid-flow by fixed commands of checked values alone, and re
     'adb shell wm density reset',
     'adb shell settings put global always_finish_activities 1',
     'adb shell am kill com.reelhouse.society',
+    'adb shell am force-stop com.reelhouse.society',
   ]);
 });
 
