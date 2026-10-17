@@ -119,7 +119,7 @@ jobs:
     outputs:
       runs: ${{ steps.variant.outputs.runs }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # First, so a variant not in the list stops the run before anything is built.
       - name: What the variant runs
@@ -335,7 +335,7 @@ jobs:
       E2E_WALK: ${{ (inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == 4)) && '1' || '' }}
       E2E_SEED_WALK: ${{ (inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == 4)) && '1' || '' }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Its flows (mobile/.maestro); the harness stays this checkout's.
       - name: The shipped client's app, over this harness
@@ -723,7 +723,7 @@ jobs:
           echo "::error title=E2E::the app was not built (${{ needs.build.result }}), so no shard ran"
           exit 1
 
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Its flows are the ones every shard must have run between them.
       - name: The shipped client's app, over this harness
