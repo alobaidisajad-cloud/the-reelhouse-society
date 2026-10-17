@@ -3,7 +3,7 @@
  * cut-text-judges.mjs — the cut-text judge of the variant runs that ask for it (e2e/variants.json,
  * `judges`; WORKLIST P0.86): every Text the app said it cut (`text.cut`, src/components/text)
  * fails the run, unless e2e/cut-text-judged.json names its words and its cut, for this variant,
- * with why the cut is the design. cutTextJudged.test.ts holds every judged cut's words to the
+ * with why the cut is the design. cutTextJudges.test.ts holds every judged cut's words to the
  * code or the seeded world that still draws them, so no judgement outlives its label.
  *
  *   node e2e/cut-text-judges.mjs <device log> --judged <json> --variant <name>
