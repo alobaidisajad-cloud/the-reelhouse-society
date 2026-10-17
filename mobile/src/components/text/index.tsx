@@ -23,8 +23,9 @@
  * could not see it, because the test renderer's Text is a class, and a class
  * DOES read defaultProps. An explicit component cannot be skipped.
  */
-import React, { forwardRef, useRef } from 'react';
+import React, { forwardRef, useContext, useRef, useState } from 'react';
 import {
+  PixelRatio,
   Platform,
   StyleSheet,
   // The one place these may come from 'react-native' (eslint.config.js).
@@ -35,7 +36,10 @@ import {
   type TextInputProps,
   type TextLayoutEventData,
   type TextProps,
+  type TextStyle,
 } from 'react-native';
+// React Native's own: whether a Text stands inside another (its own Text reads the same).
+import TextAncestorContext from 'react-native/Libraries/Text/TextAncestorContext';
 import { scaledTextProps, TYPE_FLOOR } from '@/src/constants/textScaling';
 import { useFontScale } from '@/src/hooks/useTextScale';
 import { androidTracking } from '@/src/providers/androidTracking';
@@ -129,33 +133,65 @@ export function flooredMinimumScale(props: TextProps, scale: number): number | u
  *    shrinking to fit) says so when it does (`text.cut`, src/utils/cutText.ts): the bold-text and
  *    largest-text runs fail on a cut no one has judged (e2e/cut-text-judges.mjs). Its own
  *    onLayout and onTextLayout still run; any other build adds nothing.
+ *
+ *    Android lays the lines it reports out again at the box's width in points, turned to pixels
+ *    and rounded down (React Native's TextLayoutManager): a label sized to its own words can lose
+ *    a pixel there and report a letter it never wraps on screen (run 39004285239: "E2E_WRITER",
+ *    drawn whole, reported 56 times). So a Text that seems to have ended early is laid out once
+ *    more, unseen, a pixel wider (its twin), and the cut is said only if the twin ends early too.
+ *    A Text inside another has no box of its own and no twin: it is the outer Text's to say.
  */
-function useCutSaid(props: TextProps): Partial<TextProps> | null {
+const TWIN: TextStyle = { position: 'absolute', left: -10000, top: 0, opacity: 0 };
+
+function useCutSaid(props: TextProps, drawn: TextProps): { handlers: Partial<TextProps> | null; twin: React.ReactNode } {
   const box = useRef<Box | null>(null);
   const lines = useRef<LaidLine[] | null>(null);
   const said = useRef('');
-  const mayCut = E2E_BUILD && (props.numberOfLines != null || props.adjustsFontSizeToFit === true);
-  if (!mayCut) return null;
-  const words = wordsOf(props.children);
-  if (!words) return null;
-  const judge = () => {
-    if (!lines.current) return;
-    const cut = cutOf(words, lines.current, box.current);
+  const [doubted, setDoubted] = useState<Box | null>(null);
+  const nested = useContext(TextAncestorContext) === true;
+  const mayCut = E2E_BUILD && !nested && (props.numberOfLines != null || props.adjustsFontSizeToFit === true);
+  const words = mayCut ? wordsOf(props.children) : null;
+  if (!words) return { handlers: null, twin: null };
+  const say = (cut: string | null, count: number) => {
     const key = cut ? `${cut}:${words}` : '';
     if (key === said.current) return;
     said.current = key;
-    if (cut) e2eTrace('text.cut', { words: words.slice(0, 80), cut, lines: lines.current.length, numberOfLines: props.numberOfLines ?? null });
+    if (cut) e2eTrace('text.cut', { words: words.slice(0, 80), cut, lines: count, numberOfLines: props.numberOfLines ?? null });
   };
+  const judge = () => {
+    if (!lines.current) return;
+    const cut = cutOf(words, lines.current, box.current);
+    if (cut === 'ended early' && box.current) {
+      const b = box.current;
+      if (doubted?.width !== b.width || doubted.height !== b.height) setDoubted(b);
+      return;
+    }
+    say(cut, lines.current.length);
+  };
+  const { onLayout: _l, onTextLayout: _t, testID: _id, onPress: _p, onLongPress: _lp, ...look } = drawn;
+  const twin = doubted ? (
+    <RNText
+      {...look}
+      style={[drawn.style, TWIN, { width: doubted.width + 1 / PixelRatio.get() }]}
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      onTextLayout={(e) => say(cutOf(words, e.nativeEvent.lines, null), e.nativeEvent.lines.length)}
+    />
+  ) : null;
   return {
-    onLayout: (e: LayoutChangeEvent) => {
-      box.current = { width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height };
-      judge();
-      props.onLayout?.(e);
-    },
-    onTextLayout: (e: NativeSyntheticEvent<TextLayoutEventData>) => {
-      lines.current = e.nativeEvent.lines;
-      judge();
-      props.onTextLayout?.(e);
+    twin,
+    handlers: {
+      onLayout: (e: LayoutChangeEvent) => {
+        box.current = { width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height };
+        judge();
+        props.onLayout?.(e);
+      },
+      onTextLayout: (e: NativeSyntheticEvent<TextLayoutEventData>) => {
+        lines.current = e.nativeEvent.lines;
+        judge();
+        props.onTextLayout?.(e);
+      },
     },
   };
 }
@@ -168,10 +204,12 @@ export type Text = React.ComponentRef<typeof RNText>;
 export const Text = forwardRef<Text, TextProps>(function Text(props, ref) {
   const scale = useFontScale();
   const said = spoken(props);
-  const cutSaid = useCutSaid(props);
   const housedProps = housed(said ? { ...props, ...said } : props, scale);
   const minimumFontScale = flooredMinimumScale(housedProps, scale);
-  return <RNText ref={ref} {...housedProps} {...(minimumFontScale !== undefined ? { minimumFontScale } : null)} {...cutSaid} />;
+  const drawn = minimumFontScale !== undefined ? { ...housedProps, minimumFontScale } : housedProps;
+  const cut = useCutSaid(props, drawn);
+  const text = <RNText ref={ref} {...drawn} {...cut.handlers} />;
+  return cut.twin ? <>{text}{cut.twin}</> : text;
 });
 
 export type TextInput = React.ComponentRef<typeof RNTextInput>;

@@ -3,7 +3,7 @@
  * fault-proxy.mjs — the network between the app and the sealed house, with a fault on command
  * (WORKLIST P0.73), and the record of every request that crossed it (P0.75's gateway log).
  *
- *   node e2e/fault-proxy.mjs [--listen 54330] [--to 127.0.0.1:54321] [--control 54331] [--log <file>]
+ *   node e2e/fault-proxy.mjs [--listen 54330] [--to 127.0.0.1:54321] [--control 54331] [--log <file>] [--apk <app>]
  *
  * Every connection is piped as bytes both ways, so with no fault set the app meets the house as it
  * would without it: keep-alive, chunked answers and the live channels' upgrade pass untouched. Only
@@ -21,8 +21,10 @@
  *                  private DNS pointed at a name that resolves nowhere, so every host name fails and
  *                  10.0.2.2 still answers
  *   POST   /phone  {"set": …, "to": …}   the phone changed mid-flow for a lifecycle flow (PHONE): the
- *                  text size or the display density live, "don't keep activities", or the app killed
- *                  by the system in the background
+ *                  text size or the display density live, "don't keep activities", the app killed
+ *                  by the system in the background, or stopped dead in the foreground
+ *   POST   /backup {"step": …}   the backup-and-restore run's steps, in order (BACKUP_STEPS): save,
+ *                  reinstall (the app at --apk), restore, marker; each held to what Android must say
  *   GET    /alive
  *
  * Both listen on the runner's loopback alone; the emulator reaches it as 10.0.2.2.
@@ -46,6 +48,7 @@ import { spawnSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { createServer as createHttpServer } from 'node:http';
 import { connect, createServer } from 'node:net';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const METHODS = /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) (\S+) HTTP\/1\.[01]\r\n/;
@@ -118,16 +121,63 @@ const refusalOfPhone = (b) => {
 };
 const refusalOfPart = (b) => (PARTS.includes(b?.part) && ['stopped', 'started'].includes(b?.state) && Object.keys(b).length === 2
   ? null : `a part from ${PARTS.join(', ')}, and a state, stopped or started`);
+/** The app run-flows.sh installs, from the repository's root, where e2e.yml starts the proxy. */
+export const APK = 'mobile/android/app/build/outputs/apk/release/app-release.apk';
+const PKG = 'com.reelhouse.society';
+
+/**
+ * The backup-and-restore run's steps (.maestro/lifecycle/backup_restore.yaml, WORKLIST P0.86), in
+ * the plan's order: save (Android's backup on, to its local transport, and taken now), reinstall
+ * (the app uninstalled and installed afresh), restore (the transport's set put back), marker (the
+ * file the E2E build wrote, src/utils/e2eBackupMarker.ts, back in the app's files). Each runs fixed
+ * commands and holds Android's answer to what the step must say: a backup that never happened makes
+ * a run that proves nothing, so it fails as a mis-set fault and never passes.
+ */
+export const BACKUP_STEPS = ['save', 'reinstall', 'restore', 'marker'];
+const backupStep = (step, run, apk) => {
+  const must = (cmd, args, says, fault) => {
+    const r = run(cmd, args);
+    return r.status === 0 && says.test(r.said) ? null : `${fault}: ${cmd} ${args.join(' ')} said ${r.said || `nothing (exit ${r.status})`}`;
+  };
+  if (step === 'save') {
+    return must('adb', ['shell', 'bmgr', 'enable', 'true'], /enabled/i, 'the backup could not be turned on')
+      ?? must('adb', ['shell', 'bmgr', 'transport', 'com.android.localtransport/.LocalTransport'], /LocalTransport/, 'the local transport could not be chosen')
+      ?? must('adb', ['shell', 'bmgr', 'backupnow', PKG], /Backup finished with result: Success/, 'the backup was not taken');
+  }
+  if (step === 'reinstall') {
+    return must('adb', ['uninstall', PKG], /Success/, 'the app was not uninstalled')
+      ?? must('adb', ['install', apk], /Success/, 'the app was not installed again');
+  }
+  if (step === 'restore') {
+    const sets = run('adb', ['shell', 'bmgr', 'list', 'sets']);
+    const token = /^\s*([0-9a-f]+)\s*:/m.exec(sets.said)?.[1];
+    if (sets.status !== 0 || !token) return `no backup set to restore from: bmgr list sets said ${sets.said || 'nothing'}`;
+    return must('adb', ['shell', 'bmgr', 'restore', token, PKG], /restoreFinished: 0/, 'the restore did not finish');
+  }
+  return must('adb', ['shell', 'ls', `/data/data/${PKG}/files/e2e-backup-marker`], /e2e-backup-marker/,
+    'the marker is not back, so the backup or the restore never happened and this run proves nothing (a mis-set fault)');
+};
+
 const refusalOfDns = (b) => (typeof b?.blocked === 'boolean' && Object.keys(b).length === 1 ? null : 'blocked, true or false');
+
+/**
+ * Where a command is on the runner. e2e.yml starts the proxy before the emulator's step puts adb
+ * on the PATH, so adb is taken from the Android SDK the runner keeps (ANDROID_HOME, or the older
+ * ANDROID_SDK_ROOT): run 39004287263's every phone change failed as "spawnSync adb ENOENT".
+ */
+export function toolOf(cmd, env = process.env) {
+  const sdk = env.ANDROID_HOME || env.ANDROID_SDK_ROOT;
+  return cmd === 'adb' && sdk ? join(sdk, 'platform-tools', 'adb') : cmd;
+}
 
 /** Runs one runner command; its exit and its own words. */
 const runCommand = (cmd, args) => {
-  const r = spawnSync(cmd, args, { encoding: 'utf8', timeout: 60_000 });
+  const r = spawnSync(toolOf(cmd), args, { encoding: 'utf8', timeout: 60_000 });
   return { status: r.status, said: `${r.stdout ?? ''}${r.stderr ?? ''}`.trim() || (r.error?.message ?? '') };
 };
 
 /** The proxy and its control server; resolves once both listen, with their ports, the log and close(). */
-export function startProxy({ listen = 0, to, control = 0, logFile = null, run = runCommand } = {}) {
+export function startProxy({ listen = 0, to, control = 0, logFile = null, run = runCommand, apk = APK } = {}) {
   const [toHost, toPort] = to.split(':');
   let fault = null;
   let left = 0;
@@ -257,6 +307,13 @@ export function startProxy({ listen = 0, to, control = 0, logFile = null, run = 
       if (req.url === '/log' && req.method === 'GET') return answer(res, 200, log);
       if (req.url === '/log' && req.method === 'DELETE') { log.length = 0; return answer(res, 200, { log: 'emptied' }); }
       if (req.url === '/fault' && req.method === 'DELETE') { fault = null; left = 0; return answer(res, 200, { fault: null }); }
+      if (req.url === '/backup' && req.method === 'POST') {
+        let asked;
+        try { asked = JSON.parse(body); } catch { return answer(res, 400, { refused: 'the body is not JSON' }); }
+        if (!BACKUP_STEPS.includes(asked?.step) || Object.keys(asked).length !== 1) return answer(res, 400, { refused: `step, one of ${BACKUP_STEPS.join(', ')}` });
+        const failed = backupStep(asked.step, run, apk);
+        return failed ? answer(res, 500, { failed }) : answer(res, 200, { done: asked });
+      }
       for (const [path, refusal, commands] of [['/part', refusalOfPart, commandsFor.part], ['/dns', refusalOfDns, commandsFor.dns], ['/phone', refusalOfPhone, commandsFor.phone]]) {
         if (req.url !== path || req.method !== 'POST') continue;
         let asked;
@@ -301,6 +358,6 @@ export function startProxy({ listen = 0, to, control = 0, logFile = null, run = 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const argv = process.argv.slice(2);
   const arg = (name, fallback) => { const i = argv.indexOf(name); return i < 0 ? fallback : argv[i + 1]; };
-  const p = await startProxy({ listen: Number(arg('--listen', '54330')), to: arg('--to', '127.0.0.1:54321'), control: Number(arg('--control', '54331')), logFile: arg('--log', null) });
+  const p = await startProxy({ listen: Number(arg('--listen', '54330')), to: arg('--to', '127.0.0.1:54321'), control: Number(arg('--control', '54331')), logFile: arg('--log', null), apk: arg('--apk', APK) });
   console.log(`fault proxy: :${p.port} → ${arg('--to', '127.0.0.1:54321')}, control on :${p.controlPort}`);
 }

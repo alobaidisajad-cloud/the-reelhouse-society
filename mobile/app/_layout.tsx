@@ -31,6 +31,7 @@ import { KeyboardRoom } from '@/src/components/KeyboardRoom';
 import { captureError, initSentry, markAppLoaded } from '@/src/lib/sentry';
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
 import { PathTracker } from '@/src/components/layout/PathTracker';
+import { E2ERouteMark } from '@/src/components/layout/E2ERouteMark';
 export { RouterErrorBoundary as ErrorBoundary };
 
 // Before the first render: the app's start and any error in it are measured,
@@ -188,6 +189,7 @@ export default function RootLayout() {
 
       {showPreloader && <Preloader onComplete={() => setShowPreloader(false)} />}
       <PathTracker />
+      {!showPreloader && <E2ERouteMark />}
       <ToastHost layer="root" />
       <OfflineBanner />
       <StandingNotice />

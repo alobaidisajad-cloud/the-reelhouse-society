@@ -8,6 +8,7 @@ import { spawnSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
+import { routeMarkOf } from '@/src/components/layout/E2ERouteMark';
 
 const SCRIPT = join(__dirname, '..', 'walk-routes.mjs');
 const ROUTES = (JSON.parse(readFileSync(join(__dirname, '..', 'routes.json'), 'utf8')) as { routes: Record<string, unknown> }).routes;
@@ -47,7 +48,11 @@ it('plans every route once, an alias with it, its ids filled in, the guests firs
   const steps = ask(`m.plan(${JSON.stringify(ROUTES)}, ${JSON.stringify(ids)})`) as { file: string; link: string; as: string }[];
   expect(steps).toHaveLength(Object.keys(ROUTES).length - 1);
   expect(steps.filter((s) => s.link === '/lounge')).toHaveLength(1);
-  expect(steps[0]).toEqual({ file: 'app/(modals)/login.tsx', link: '/login', as: 'guest' });
+  expect(steps[0]).toEqual({ file: 'app/(modals)/login.tsx', link: '/login', lands: '/login', as: 'guest' });
+  // Where a route lands: its own path without its query, or the path its `lands` names.
+  expect(steps.find((s) => s.file === 'app/(modals)/cover-picker.tsx')).toMatchObject({ lands: '/cover-picker' });
+  const sent = ask(`m.plan({ 'app/a.tsx': { link: '/a/{film}', lands: '/b/{film}' } }, { film: '9' })`);
+  expect(sent).toEqual([{ file: 'app/a.tsx', link: '/a/9', lands: '/b/9', as: 'member' }]);
   expect(steps.slice(1).every((s) => s.as === 'member')).toBe(true);
   expect(steps.find((s) => s.file === 'app/dispatch/series/[id].tsx')?.link).toBe('/dispatch/series/s-1');
   expect(steps.find((s) => s.file === 'app/(modals)/cover-picker.tsx')?.link).toBe('/cover-picker?loungeId=lo-1');
@@ -59,12 +64,20 @@ it('writes a flow that clears the app, signs in once before the member\'s first 
   const flow = ask(`m.flowOf([{ file: 'app/(modals)/login.tsx', link: '/login', as: 'guest' }, { file: 'app/film/[id].tsx', link: '/film/129', as: 'member' }, { file: 'app/(tabs)/index.tsx', link: '/', as: 'member' }], '/x/sign_in.yaml')`) as string;
   expect(flow.split('\n').filter(Boolean)).toEqual([
     'appId: com.reelhouse.society', '---', '- launchApp:', '    clearState: true',
-    '# app/(modals)/login.tsx', '- stopApp', '- openLink: "reelhouse://login"', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "01-modals-login"',
+    '# app/(modals)/login.tsx', '- stopApp', '- openLink: "reelhouse://login"', '- extendedWaitUntil:', '    visible:', '      id: "e2e-route-login"', '    timeout: 30000', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "01-modals-login"',
     // From the app's own start: the login modal the guest's last route opened covers the tabs.
     '- stopApp', '- launchApp', '- runFlow: "/x/sign_in.yaml"',
-    '# app/film/[id].tsx', '- stopApp', '- openLink: "reelhouse://film/129"', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "02-film-id"',
-    '# app/(tabs)/index.tsx', '- stopApp', '- openLink: "reelhouse://"', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "03-tabs-index"',
+    '# app/film/[id].tsx', '- stopApp', '- openLink: "reelhouse://film/129"', '- extendedWaitUntil:', '    visible:', '      id: "e2e-route-film-129"', '    timeout: 30000', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "02-film-id"',
+    '# app/(tabs)/index.tsx', '- stopApp', '- openLink: "reelhouse://"', '- extendedWaitUntil:', '    visible:', '      id: "e2e-route"', '    timeout: 30000', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "03-tabs-index"',
   ]);
+});
+
+it("waits for the very mark the app draws for each path (src/components/layout/E2ERouteMark.tsx)", () => {
+  const paths = ['/', '/login', '/film/129', '/dispatch/room/e2e_member', '/cover-picker?loungeId=lo-1', '/user/a.b-c'];
+  const walk = ask(`${JSON.stringify(paths)}.map(m.markOf)`);
+  const app = paths.map((path) => routeMarkOf(path.split('?')[0] ?? ''));
+  expect(walk).toEqual(app);
+  expect(app).toEqual(['e2e-route', 'e2e-route-login', 'e2e-route-film-129', 'e2e-route-dispatch-room-e2e-member', 'e2e-route-cover-picker', 'e2e-route-user-a-b-c']);
 });
 
 it('refuses to walk anything but a local stack, and says what it needs', () => {

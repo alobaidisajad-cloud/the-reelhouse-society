@@ -16,6 +16,8 @@ jest.mock('@/src/utils/e2eTrace', () => ({
 
 // eslint-disable-next-line import/first -- after the mock it reads
 import { Text } from '../index';
+// eslint-disable-next-line import/first -- after the mock, with the module it reads
+import TextAncestorContext from 'react-native/Libraries/Text/TextAncestorContext';
 
 const laid = (lines: { text: string; width?: number; height?: number }[]) => ({
   nativeEvent: { lines: lines.map((l) => ({ x: 0, y: 0, ascender: 0, descender: 0, capHeight: 0, xHeight: 0, width: l.width ?? 100, height: l.height ?? 20, text: l.text })) },
@@ -25,13 +27,37 @@ const LABEL = 'FOUNDING MEMBER OF THE SOCIETY';
 
 beforeEach(() => { mockTrace.mockClear(); mockE2E = true; });
 
-it('says a label cut to one line, once, with its words and how it was cut', async () => {
-  const { getByText } = render(<Text numberOfLines={1}>{LABEL}</Text>);
+it('says a label cut to one line, once, with its words and how it was cut, when its twin a pixel wider is cut too', async () => {
+  const { getByText, getAllByText } = render(<Text numberOfLines={1}>{LABEL}</Text>);
   const t = getByText(LABEL);
   await fireEvent(t, 'layout', boxed(100, 20));
   await fireEvent(t, 'textLayout', laid([{ text: 'FOUNDING MEMBER OF' }]));
-  await fireEvent(t, 'textLayout', laid([{ text: 'FOUNDING MEMBER OF' }]));
+  // Not yet said: the twin, unseen and a pixel wider, is drawn to be asked.
+  expect(mockTrace).not.toHaveBeenCalled();
+  const twin = getAllByText(LABEL, { includeHiddenElements: true })[1];
+  if (!twin) throw new Error('no twin was drawn');
+  expect(twin.props.style).toEqual(expect.arrayContaining([expect.objectContaining({ position: 'absolute', opacity: 0 })]));
+  await fireEvent(twin, 'textLayout', laid([{ text: 'FOUNDING MEMBER OF' }]));
+  await fireEvent(twin, 'textLayout', laid([{ text: 'FOUNDING MEMBER OF' }]));
   expect(mockTrace.mock.calls).toEqual([['text.cut', { words: LABEL, cut: 'ended early', lines: 1, numberOfLines: 1 }]]);
+});
+
+it('says nothing of a label that ended early only for want of the pixel Android rounds away (run 39004285239)', async () => {
+  const { getByText, getAllByText } = render(<Text numberOfLines={1}>{LABEL}</Text>);
+  const t = getByText(LABEL);
+  await fireEvent(t, 'layout', boxed(100, 20));
+  await fireEvent(t, 'textLayout', laid([{ text: 'FOUNDING MEMBER OF THE' }]));
+  const twin = getAllByText(LABEL, { includeHiddenElements: true })[1];
+  if (!twin) throw new Error('no twin was drawn');
+  await fireEvent(twin, 'textLayout', laid([{ text: LABEL }]));
+  expect(mockTrace).not.toHaveBeenCalled();
+});
+
+it('watches no Text inside another, which has no box of its own', () => {
+  // React Native's own Text says so through this context; jest's stand-in for it does not, so it is said here.
+  const { getByText } = render(<TextAncestorContext value><Text numberOfLines={1}>{LABEL}</Text></TextAncestorContext>);
+  const inner = getByText(LABEL);
+  expect([inner.props.onTextLayout, inner.props.onLayout]).toEqual([undefined, undefined]);
 });
 
 it('says nothing of a label that shows every word, and says it again once it is cut anew', async () => {

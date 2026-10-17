@@ -51,18 +51,29 @@ export async function readIds(ask) {
   };
 }
 
+/**
+ * The id of the mark the E2E build draws for a path (routeMarkOf in
+ * src/components/layout/E2ERouteMark.tsx, which walkRoutes.test.ts holds this to).
+ */
+export const markOf = (path) => {
+  const words = path.split('?')[0].replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return words ? `e2e-route-${words}` : 'e2e-route';
+};
+
 /** Each route with its link filled in, guests first, in the list's order. */
 export function plan(routes, ids) {
   const seen = new Set();
   const out = [];
   for (const [file, r] of Object.entries(routes)) {
-    const link = r.link.replace(/\{([a-z]+)\}/g, (_, k) => {
+    const fill = (text) => text.replace(/\{([a-z]+)\}/g, (_, k) => {
       if (!(k in ids)) throw new Error(`${file}: no id for {${k}}`);
       return encodeURIComponent(ids[k]);
     });
+    const link = fill(r.link);
     if (seen.has(link)) continue;   // an alias that redirects: its link is opened once
     seen.add(link);
-    out.push({ file, link, as: r.as ?? 'member' });
+    // Where it lands: its own path, or the path its `lands` says it is sent on to.
+    out.push({ file, link, lands: fill(r.lands ?? r.link).split('?')[0], as: r.as ?? 'member' });
   }
   return [...out.filter((r) => r.as === 'guest'), ...out.filter((r) => r.as !== 'guest')];
 }
@@ -78,6 +89,11 @@ export function flowOf(steps, signIn) {
       `# ${s.file}`,
       '- stopApp',
       `- openLink: ${JSON.stringify(SCHEME + s.link.replace(/^\//, ''))}`,
+      // Its mark, drawn once the preloader has gone, says the app stands on where it lands.
+      '- extendedWaitUntil:',
+      '    visible:',
+      `      id: ${JSON.stringify(markOf(s.lands ?? s.link))}`,
+      '    timeout: 30000',
       '- waitForAnimationToEnd:',
       '    timeout: 8000',
       `- takeScreenshot: ${JSON.stringify(`${String(i + 1).padStart(2, '0')}-${nameOf(s.file)}`)}`,

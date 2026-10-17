@@ -4,6 +4,7 @@
   "shards": [
     {
       "flows": [
+        "backup_restore",
         "dont_keep_activities",
         "killed_in_background",
         "killed_mid_write",

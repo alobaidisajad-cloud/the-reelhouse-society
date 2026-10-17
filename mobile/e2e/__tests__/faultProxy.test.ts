@@ -37,7 +37,24 @@ house.on('upgrade', (req, socket) => {
 });
 await new Promise((r) => house.listen(0, '127.0.0.1', r));
 const ran = [];
-const run = (cmd, args) => { ran.push([cmd, ...args].join(' ')); return args.includes('supabase_storage_reelhouse-e2e') ? { status: 1, said: 'No such container' } : { status: 0, said: '' }; };
+// What Android's tools answer, as the emulator's do; the marker is back unless a scenario says not.
+let markerBack = true;
+const ANSWERS = [
+  [/bmgr enable true$/, 'Backup Manager now enabled'],
+  [/bmgr transport /, 'Selected transport com.android.localtransport/.LocalTransport (formerly com.android.localtransport/.LocalTransport)'],
+  [/bmgr backupnow /, 'Running incremental backup for 1 requested packages.\\nPackage com.reelhouse.society with result: Success\\nBackup finished with result: Success'],
+  [/^adb (uninstall|install) /, 'Success'],
+  [/bmgr list sets$/, '  1 : Local disk image'],
+  [/bmgr restore 1 com.reelhouse.society$/, 'restoreStarting: 1 packages\\nonUpdate: 0 = com.reelhouse.society\\nrestoreFinished: 0\\ndone'],
+];
+const run = (cmd, args) => {
+  const line = [cmd, ...args].join(' ');
+  ran.push(line);
+  if (args.includes('supabase_storage_reelhouse-e2e')) return { status: 1, said: 'No such container' };
+  if (line.includes('e2e-backup-marker')) return markerBack ? { status: 0, said: args.at(-1) } : { status: 1, said: 'ls: ' + args.at(-1) + ': No such file or directory' };
+  const known = ANSWERS.find(([re]) => re.test(line));
+  return { status: 0, said: known ? known[1] : '' };
+};
 const p = await startProxy({ to: '127.0.0.1:' + house.address().port, run });
 const ask = (method, path, body, timeout = 3000) => new Promise((resolve) => {
   const t0 = Date.now();
@@ -136,6 +153,16 @@ out.phone = [
   await control('POST', '/phone', { set: 'airplane', to: true }),
   await control('POST', '/phone', { set: 'font_scale', to: 1, also: 'x' }),
 ].map((r) => ({ status: r.status, ...r.body }));
+out.ranPhone = ran.length;
+out.backup = [
+  await control('POST', '/backup', { step: 'save' }),
+  await control('POST', '/backup', { step: 'reinstall' }),
+  await control('POST', '/backup', { step: 'restore' }),
+  await control('POST', '/backup', { step: 'marker' }),
+  await control('POST', '/backup', { step: 'wipe' }),
+].map((r) => ({ status: r.status, ...r.body }));
+markerBack = false;
+out.markerGone = await control('POST', '/backup', { step: 'marker' }).then((r) => ({ status: r.status, ...r.body }));
 out.ran = ran;
 
 out.log = (await control('GET', '/log')).body.map(({ method, path, status, fault }) => ({ method, path, status, fault }));
@@ -243,7 +270,7 @@ it('changes the phone mid-flow by fixed commands of checked values alone, and re
     { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, and to' },
     { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, and to' },
   ]);
-  expect(out.ran.slice(out.ranParts.length)).toEqual([
+  expect(out.ran.slice(out.ranParts.length, out.ranPhone)).toEqual([
     'adb shell settings put system font_scale 1.3',
     'adb shell wm density 560',
     'adb shell wm density reset',
@@ -251,6 +278,40 @@ it('changes the phone mid-flow by fixed commands of checked values alone, and re
     'adb shell am kill com.reelhouse.society',
     'adb shell am force-stop com.reelhouse.society',
   ]);
+});
+
+it('runs adb from the Android SDK the runner keeps, since the proxy starts before adb is on the PATH (run 39004287263)', () => {
+  const code = `const m = await import(${JSON.stringify(SCRIPT)}); console.log(JSON.stringify([
+    m.toolOf('adb', { ANDROID_HOME: '/sdk' }), m.toolOf('adb', { ANDROID_SDK_ROOT: '/old' }), m.toolOf('adb', {}), m.toolOf('docker', { ANDROID_HOME: '/sdk' }),
+  ]));`;
+  const r = spawnSync(process.execPath, ['--input-type=module', '-e', code], { encoding: 'utf8' });
+  expect(JSON.parse(r.stdout)).toEqual([join('/sdk', 'platform-tools', 'adb'), join('/old', 'platform-tools', 'adb'), 'adb', 'docker']);
+});
+
+it('backs the app up, reinstalls it and restores it by the plan\'s steps, each held to what Android must say', () => {
+  expect(out.backup).toEqual([
+    { status: 200, done: { step: 'save' } },
+    { status: 200, done: { step: 'reinstall' } },
+    { status: 200, done: { step: 'restore' } },
+    { status: 200, done: { step: 'marker' } },
+    { status: 400, refused: 'step, one of save, reinstall, restore, marker' },
+  ]);
+  expect(out.ran.slice(out.ranPhone)).toEqual([
+    'adb shell bmgr enable true',
+    'adb shell bmgr transport com.android.localtransport/.LocalTransport',
+    'adb shell bmgr backupnow com.reelhouse.society',
+    'adb uninstall com.reelhouse.society',
+    'adb install mobile/android/app/build/outputs/apk/release/app-release.apk',
+    'adb shell bmgr list sets',
+    'adb shell bmgr restore 1 com.reelhouse.society',
+    'adb shell ls /data/data/com.reelhouse.society/files/e2e-backup-marker',
+    'adb shell ls /data/data/com.reelhouse.society/files/e2e-backup-marker',
+  ]);
+});
+
+it('fails a backup whose marker is not back as a mis-set run, never a pass', () => {
+  expect(out.markerGone.status).toBe(500);
+  expect(out.markerGone.failed).toMatch(/^the marker is not back, so the backup or the restore never happened and this run proves nothing \(a mis-set fault\): adb shell ls .* said ls: .*No such file or directory$/);
 });
 
 it('logs every request with the house\'s status and what a fault did to it', () => {

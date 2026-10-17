@@ -65,6 +65,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/keyboard/log.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/keyboard/stack.tap.yaml | 2026-10-01 | written with the keyboard probe: the stack form, reachable by a new member |
 | .maestro/keyboard/stack.yaml | 2026-10-15 | edited: the Reel's log and the seed's stack waited for |
+| .maestro/lifecycle/backup_restore.yaml | 2026-10-17 | new: signed in, backed up, uninstalled, installed afresh, restored: the marker back, the member still signed in, every tab opening |
 | .maestro/lifecycle/dont_keep_activities.yaml | 2026-10-17 | new: "don't keep activities" on, Edit Profile half-edited, home and back: the words kept |
 | .maestro/lifecycle/killed_in_background.yaml | 2026-10-17 | new: Edit Profile half-edited, home, the app killed by the system: back where they were, the words kept |
 | .maestro/lifecycle/killed_mid_write.yaml | 2026-10-17 | new: the app stopped dead while a log is on its way over a slow link; reopened, the log is the member's, exactly once |
@@ -76,6 +77,8 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/README.md | 2026-10-15 | edited: auth_deep_link also opens reelhouse://_sitemap cold, to not-found |
 | .maestro/lobby_wall_flow.yaml | 2026-10-16 | edited: the wall the house read is scrolled to before the sign-off; the sign-off is scrolled to for as long as the wall above it |
 | .maestro/session_survives_restart.yaml | 2026-10-01 | written with the session kept on the device |
+| .maestro/subflows/backup.js | 2026-10-17 | new: one step of the backup through the fault proxy's /backup; a step not taken stops the flow |
+| .maestro/subflows/backup.yaml | 2026-10-17 | new: one step of the backup and restore, for the lifecycle flows alone |
 | .maestro/subflows/fault.js | 2026-10-16 | new: the faults by name, set or cleared on the proxy's control port at localhost (Maestro runs it on the runner) |
 | .maestro/subflows/fault.yaml | 2026-10-16 | new |
 | .maestro/subflows/open_a_film.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
@@ -548,6 +551,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/__tests__/flashListKeyboard.test.tsx | 2026-09-29 | anchor tests |
 | src/components/layout/__tests__/memberFileFixture.ts | 2026-10-15 | new: a loaded member file |
 | src/components/layout/__tests__/navMetrics.test.tsx | 2026-10-15 | new: helper values; the measure's redraws |
+| src/components/layout/__tests__/theRouteIsMarkedForTheWalk.test.tsx | 2026-10-17 | new |
 | src/components/layout/__tests__/theThumbStaysInItsTrack.test.ts | 2026-10-01 | runs the real maths |
 | src/components/layout/__tests__/TopNavBar.test.tsx | — |  |
 | src/components/layout/CentredCard.tsx | 2026-10-15 | new: a card centred in a Modal, the same room above and below, scrolled when taller |
@@ -556,6 +560,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/CinematicScrollbar.tsx | 2026-10-01 | the thumb maths in one place |
 | src/components/layout/CinematicScrollView.tsx | 2026-10-15 | edited: each scroll traced (useScrollTraceOf) |
 | src/components/layout/ConciergeButton.tsx | 2026-10-02 | door through nav; the hint names all three doors |
+| src/components/layout/E2ERouteMark.tsx | 2026-10-17 | new: the path the app stands on, as an unseen mark for the route walk, in the E2E build alone |
 | src/components/layout/FrozenTab.tsx | 2026-10-01 | says it passes through; freezing carried to performance |
 | src/components/layout/navMetrics.ts | 2026-10-15 | every page's top and foot: the bar's measure and the helpers; a centred card's room and its keyboard clearance |
 | src/components/layout/PathTracker.tsx | 2026-10-02 | tells openSociety and nav the screen on every navigation |
@@ -1258,6 +1263,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/searchWiring.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
 | src/utils/__tests__/strykerFilesAreListed.guard.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/theBackupMarkerIsWrittenOnce.test.ts | 2026-10-17 | new |
 | src/utils/__tests__/theCharacterRuleHoldsForEveryShortString.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-16 | edited: the search stops at twenty disagreements |
 | src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts | 2026-10-03 | Written with 20261003_05: the corpus holds every character the cleaning acts on, with cleanForStorage's answer. |
@@ -1290,6 +1296,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/cutText.ts | 2026-10-17 | new: whether a Text's laid-out lines lost its words, ran out of its box or were clipped by it |
 | src/utils/deviceRegion.ts | 2026-10-01 | new |
 | src/utils/draftSync.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/utils/e2eBackupMarker.ts | 2026-10-17 | new: the E2E build's marker in the app's own files, for the backup run; written once a launch, traced |
 | src/utils/e2eRuntime.ts | 2026-10-15 | new: the phone's runtime written once a launch, in parts, by the E2E build |
 | src/utils/e2eTrace.ts | 2026-10-15 | edited: e2eTraceAt, where a view sits on screen, in the E2E build alone |
 | src/utils/endorsementGroupKey.ts | 2026-10-02 | Read whole (launch audit). A certified-log group opened the FILM, on the belief that no log page existed (app/log/[id] does), and went nowhere without a film id: it opens the log. |

@@ -551,9 +551,9 @@ mutants:
     source: shape
     edits:
       - file: src/components/text/index.tsx
-        find: "      lines.current = e.nativeEvent.lines;\n      judge();\n"
-        replace: "      lines.current = e.nativeEvent.lines;\n"
-    proof: { file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says a label cut to one line, once, with its words and how it was cut" }
+        find: "        lines.current = e.nativeEvent.lines;\n        judge();\n"
+        replace: "        lines.current = e.nativeEvent.lines;\n"
+    proof: { file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says a label cut to one line, once, with its words and how it was cut, when its twin a pixel wider is cut too" }
 
   - id: shape-icons-unread
     class: E2E-light-mode-unseen
@@ -572,3 +572,39 @@ mutants:
         find: "  density: { says: 'a whole number from 240 to 640, or \"reset\"', valid: (v) => v === 'reset' || (Number.isInteger(v) && v >= 240 && v <= 640),"
         replace: "  density: { says: 'a whole number from 240 to 640, or \"reset\"', valid: () => true,"
     proof: { file: e2e/__tests__/faultProxy.test.ts, test: "changes the phone mid-flow by fixed commands of checked values alone, and refuses anything else" }
+
+  - id: shape-backup-marker-unread
+    class: E2E-phone-change-unseen
+    source: shape
+    edits:
+      - file: e2e/fault-proxy.mjs
+        find: "  return must('adb', ['shell', 'ls',"
+        replace: "  return null; must('adb', ['shell', 'ls',"
+    proof: { file: e2e/__tests__/faultProxy.test.ts, test: "fails a backup whose marker is not back as a mis-set run, never a pass" }
+
+  - id: shape-cut-unconfirmed
+    class: E2E-text-cut-unseen
+    source: shape
+    edits:
+      - file: src/components/text/index.tsx
+        find: "    if (cut === 'ended early' && box.current) {"
+        replace: "    if (cut === 'never' && box.current) {"
+    proof: { file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says nothing of a label that ended early only for want of the pixel Android rounds away (run 39004285239)" }
+
+  - id: shape-walk-captures-unwaited
+    class: E2E-route-never-opened
+    source: shape
+    edits:
+      - file: e2e/walk-routes.mjs
+        find: "      `      id: ${JSON.stringify(markOf(s.lands ?? s.link))}`,"
+        replace: "      `      id: ${JSON.stringify('e2e-route')}`,"
+    proof: { file: e2e/__tests__/walkRoutes.test.ts, test: "writes a flow that clears the app, signs in once before the member's first route, and opens each cold and captures it" }
+
+  - id: shape-adb-off-the-path
+    class: E2E-phone-change-unseen
+    source: shape
+    edits:
+      - file: e2e/fault-proxy.mjs
+        find: "  return cmd === 'adb' && sdk ? join(sdk, 'platform-tools', 'adb') : cmd;"
+        replace: "  return sdk ? cmd : cmd;"
+    proof: { file: e2e/__tests__/faultProxy.test.ts, test: "runs adb from the Android SDK the runner keeps, since the proxy starts before adb is on the PATH (run 39004287263)" }

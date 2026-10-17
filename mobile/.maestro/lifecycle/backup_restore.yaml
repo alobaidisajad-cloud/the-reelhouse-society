@@ -1,0 +1,55 @@
+appId: com.reelhouse.society
+---
+# Android's backup and restore (WORKLIST P0.86, P4.14's pass rule): the
+# member signed in, the app backed up to the emulator's own transport,
+# uninstalled, installed afresh and restored. The marker the E2E build
+# wrote (src/utils/e2eBackupMarker.ts) must be back before the app opens,
+# or nothing was restored and the run proves nothing. Then the app opens
+# on what came back: the member still signed in, every tab opening.
+- launchApp:
+    clearState: true
+- runFlow: ../subflows/sign_in.yaml
+- runFlow:
+    file: ../subflows/backup.yaml
+    env:
+      STEP: save
+- runFlow:
+    file: ../subflows/backup.yaml
+    env:
+      STEP: reinstall
+- runFlow:
+    file: ../subflows/backup.yaml
+    env:
+      STEP: restore
+- runFlow:
+    file: ../subflows/backup.yaml
+    env:
+      STEP: marker
+
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "profile-tab"
+    timeout: 30000
+- tapOn:
+    id: "profile-tab"
+- scrollUntilVisible:
+    element:
+      id: "collection-card-watchlist"
+    direction: DOWN
+    timeout: 60000
+    centerElement: true
+- assertNotVisible:
+    id: "profile-sign-in-prompt"
+- tapOn:
+    id: "dispatch-tab"
+- extendedWaitUntil:
+    visible:
+      id: "dispatch-filing"
+    timeout: 20000
+- tapOn:
+    id: "darkroom-tab"
+- extendedWaitUntil:
+    visible:
+      id: "film-card"
+    timeout: 20000

@@ -8,7 +8,8 @@
  * writes each wait's start to the device log as screen.reading, and its end as
  * screen.ready, or as screen.failed, so a screen that could not read is never
  * counted as loaded (e2e/screen-times.mjs) and one that never settles is seen.
- * The first screen also writes the phone's runtime (e2eRuntime).
+ * The first screen also writes the phone's runtime (e2eRuntime), and the backup run's
+ * marker (e2eBackupMarker).
  *
  * Called at the top of a screen, before any early return; the mark it returns
  * goes in every tree the screen can return, so the clock survives a loading
@@ -20,6 +21,7 @@ import { useFocusEffect } from 'expo-router';
 // The SDK itself, not src/lib/sentry: screens' tests replace that module whole.
 import * as Sentry from '@sentry/react-native';
 import { e2eTrace } from '@/src/utils/e2eTrace';
+import { writeBackupMarkerOnce } from '@/src/utils/e2eBackupMarker';
 import { traceRuntimeOnce } from '@/src/utils/e2eRuntime';
 
 /** Where a screen's read stands. */
@@ -48,7 +50,11 @@ export function useScreenReady(name: string, read: ScreenRead): React.ReactEleme
     if (mounted.current) startedAt.current = Date.now();
     mounted.current = true;
   }, []));
-  useEffect(() => { traceRuntimeOnce(); }, []);
+  useEffect(() => {
+    traceRuntimeOnce();
+    // Its own failure is traced, and the backup-and-restore run says when its marker is not back.
+    void writeBackupMarkerOnce();
+  }, []);
   useEffect(() => {
     // A wait begun is written too, so one that never settles (a spinner with no way out) is seen.
     if (read === 'reading') { e2eTrace('screen.reading', { name }); return; }

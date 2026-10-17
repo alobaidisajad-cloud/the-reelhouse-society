@@ -201,7 +201,8 @@ classes:
     methods:
       - { kind: static, file: e2e/__tests__/routes.test.ts, test: "lists every route file, and nothing that is not one" }
       - { kind: running, file: e2e/__tests__/routeJudges.test.ts, test: "names a route never captured, one captured empty, and one captured as no picture" }
-    fix: "e2e/routes.json lists every route file with its deep link (held whole against app/); the variant runs walk them all cold by link (e2e/walk-routes.mjs, seeded ids read back by name) and route-judges.mjs fails a route never captured (mutant shape-route-capture-unchecked); app-crashes.mjs judges the walk's crashes and freezes"
+      - { kind: static, file: e2e/__tests__/walkRoutes.test.ts, test: "writes a flow that clears the app, signs in once before the member's first route, and opens each cold and captures it" }
+    fix: "e2e/routes.json lists every route file with its deep link (held whole against app/); the variant runs walk them all cold by link (e2e/walk-routes.mjs, seeded ids read back by name) and route-judges.mjs fails a route never captured (mutant shape-route-capture-unchecked); the walk captures a route only once the E2E build's mark says the app stands on it, drawn past the preloader (src/components/layout/E2ERouteMark.tsx; run 39004285239 captured the loading mark and another route's screen; mutant shape-walk-captures-unwaited); app-crashes.mjs judges the walk's crashes and freezes"
     places: [emulator]
 
   - id: E2E-wait-without-end
@@ -240,10 +241,11 @@ classes:
     count: 0
     source: { kind: reviewer, ref: "P0.86" }
     methods:
-      - { kind: running, file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says a label cut to one line, once, with its words and how it was cut" }
+      - { kind: running, file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says a label cut to one line, once, with its words and how it was cut, when its twin a pixel wider is cut too" }
+      - { kind: running, file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says nothing of a label that ended early only for want of the pixel Android rounds away (run 39004285239)" }
       - { kind: running, file: e2e/__tests__/cutTextJudges.test.ts, test: "passes the judged log and fails it for a variant it is not judged in, by exit code" }
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "fails a bold-text run on a label the app cut, and a variant that does not judge cut text, not" }
-    fix: "the app's one Text, in the E2E build, says each cut of a Text that may cut itself (src/utils/cutText.ts, mutant shape-cut-unsaid); the bold-text and largest-text runs fail on any cut e2e/cut-text-judged.json does not judge for them (mutant judge-cut-unjudged), and no judgement outlives the words it names"
+    fix: "the app's one Text, in the E2E build, says each cut of a Text that may cut itself (src/utils/cutText.ts, mutant shape-cut-unsaid), an early end only once a twin a pixel wider ends early too, since Android re-lays a Text's lines at its box width rounded down (run 39004285239, mutant shape-cut-unconfirmed); the bold-text and largest-text runs fail on any cut e2e/cut-text-judged.json does not judge for them (mutant judge-cut-unjudged), and no judgement outlives the words it names"
     places: [emulator]
 
   - id: E2E-light-mode-unseen
@@ -268,7 +270,9 @@ classes:
     methods:
       - { kind: static, file: e2e/__tests__/faultProxy.test.ts, test: "changes the phone mid-flow by fixed commands of checked values alone, and refuses anything else" }
       - { kind: static, file: e2e/__tests__/shards.test.ts, test: "gives the lifecycle runs' one machine every flow in .maestro/lifecycle, and no other" }
-    fix: "the fault proxy's control changes the phone mid-flow by fixed commands (/phone, mutant shape-phone-unchecked); .maestro/lifecycle's flows change it under a half-edited Edit Profile and hold the screen and the words to it, and stop the app dead mid-write, whose log verify-writes.mjs holds to exactly one row; run-flows.sh puts the phone back before each; every night runs them (e2e.yml lifecycle). Their failures are discovery for P2.8's list until P4.14 and P4.33 land"
+      - { kind: running, file: e2e/__tests__/faultProxy.test.ts, test: "fails a backup whose marker is not back as a mis-set run, never a pass" }
+      - { kind: running, file: e2e/__tests__/faultProxy.test.ts, test: "runs adb from the Android SDK the runner keeps, since the proxy starts before adb is on the PATH (run 39004287263)" }
+    fix: "the fault proxy's control changes the phone mid-flow by fixed commands (/phone, mutant shape-phone-unchecked); .maestro/lifecycle's flows change it under a half-edited Edit Profile and hold the screen and the words to it, and stop the app dead mid-write, whose log verify-writes.mjs holds to exactly one row; backup_restore backs the app up, reinstalls and restores it by /backup's steps, each held to what Android must say, a marker not back failing the run as mis-set (mutant shape-backup-marker-unread), then holds the restored app to the member still signed in and every tab opening; run-flows.sh puts the phone back before each; every night runs them (e2e.yml lifecycle). Their failures are discovery for P2.8's list until P4.14 and P4.33 land"
     places: [emulator]
 
   - id: E2E-record-not-kept

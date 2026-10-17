@@ -1,0 +1,9 @@
+appId: com.reelhouse.society
+---
+# One step of Android's backup and restore, STEP (save, reinstall,
+# restore, marker), through backup.js and e2e/fault-proxy.mjs's /backup,
+# which holds each to what Android must say. For the lifecycle flows alone.
+- runScript:
+    file: backup.js
+    env:
+      STEP: ${STEP}
