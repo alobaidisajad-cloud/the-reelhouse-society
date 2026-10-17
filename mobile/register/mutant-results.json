@@ -390,5 +390,12 @@
     "proof": "m1",
     "commit": "b2d843256be29d4d4101ae262dfa5d2342fead5c",
     "verdict": "caught"
+  },
+  {
+    "class": "E2E-phone-change-unseen",
+    "mutant": "shape-phone-unchecked",
+    "proof": "m1",
+    "commit": "85e8596908002ed0ae9a0e309907f4ca7c9ec6ed",
+    "verdict": "caught"
   }
 ]
