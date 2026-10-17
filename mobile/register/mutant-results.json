@@ -353,7 +353,21 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-refusal-sent",
     "proof": "m3",
-    "commit": "eaed6acb519e64926dda5fbaaf3ac0cc97753f24",
+    "commit": "b7e6b365c0f8fb14289afa3f5d1eb7ae40dba1cf",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-phone-only-as-the-runner-has-it",
+    "mutant": "shape-variant-input-swallowed",
+    "proof": "m4",
+    "commit": "b7e6b365c0f8fb14289afa3f5d1eb7ae40dba1cf",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-record-not-kept",
+    "mutant": "shape-variant-record-not-kept",
+    "proof": "m1",
+    "commit": "b7e6b365c0f8fb14289afa3f5d1eb7ae40dba1cf",
     "verdict": "caught"
   }
 ]
