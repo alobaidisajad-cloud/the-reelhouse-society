@@ -27,7 +27,7 @@ const LIST = JSON.stringify(VARIANTS);
 const commandsFor = (name: string, step: string, was?: string) =>
   ask(`m.commandsFor(${LIST}, ${JSON.stringify(name)}, ${JSON.stringify(step)}, ${was === undefined ? 'undefined' : JSON.stringify(was)})`);
 /** The variants the workflow's input names, in its own words. */
-const NAMED = /The variants \(mobile\/e2e\/variants\.json\): (.+)$/m.exec(E2E_YML)?.[1].trim().split(', ');
+const NAMED = /The variants \(mobile\/e2e\/variants\.json\): (.+)$/m.exec(E2E_YML)?.[1]?.trim().split(', ');
 
 describe.each(Object.entries(VARIANTS))('%s', (name, v) => {
   it('says why it is run, in words', () => {
@@ -53,7 +53,7 @@ describe.each(Object.entries(VARIANTS))('%s', (name, v) => {
 
 it('is the list the workflow says a variant run may be given, and the night walks every one', () => {
   expect(NAMED).toEqual(Object.keys(VARIANTS));
-  expect(/^\s+variant: \[(.+)\]$/m.exec(NIGHTLY)?.[1].split(', ')).toEqual(Object.keys(VARIANTS));
+  expect(/^\s+variant: \[(.+)\]$/m.exec(NIGHTLY)?.[1]?.split(', ')).toEqual(Object.keys(VARIANTS));
 });
 
 it('gives each step its commands, and fills in what was read', () => {
@@ -78,5 +78,5 @@ it('refuses on its command line with exit 2 and nothing on its output, for run-f
   expect({ status: r.status, stdout: r.stdout }).toEqual({ status: 2, stdout: '' });
   expect(r.stderr).toContain('no variant named sideways');
   const ok = spawnSync(process.execPath, [SCRIPT, 'motion-on', 'setup'], { encoding: 'utf8' });
-  expect({ status: ok.status, stdout: ok.stdout }).toEqual({ status: 0, stdout: `${VARIANTS['motion-on'].setup.join('\n')}\n` });
+  expect({ status: ok.status, stdout: ok.stdout }).toEqual({ status: 0, stdout: `${VARIANTS['motion-on']?.setup.join('\n')}\n` });
 });

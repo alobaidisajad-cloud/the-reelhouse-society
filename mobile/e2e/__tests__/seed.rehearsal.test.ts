@@ -24,12 +24,13 @@ const SEED = process.env.SEED_SCRIPT ?? join(__dirname, '..', 'db', 'seed.mjs');
 const SERVICE = 'service-key';
 const ANON = 'anon-key';
 /** Each person the seed may make: their id, and the session the fake signs them in with. */
-const PEOPLE: Record<string, { id: string; token: string }> = {
-  e2e_member: { id: '00000000-0000-4000-8000-000000000001', token: 'member-session' },
-  e2e_writer: { id: '00000000-0000-4000-8000-000000000002', token: 'writer-session' },
-};
-const TOKEN = PEOPLE.e2e_member.token;
-const WRITER = PEOPLE.e2e_writer.token;
+const MEMBER = { id: '00000000-0000-4000-8000-000000000001', token: 'member-session' };
+const WRITER_PERSON = { id: '00000000-0000-4000-8000-000000000002', token: 'writer-session' };
+const PEOPLE = { e2e_member: MEMBER, e2e_writer: WRITER_PERSON };
+/** The person of a username, or no one: a name the seed was never meant to make. */
+const personNamed = (name: string | undefined) => Object.entries(PEOPLE).find(([n]) => n === name)?.[1];
+const TOKEN = MEMBER.token;
+const WRITER = WRITER_PERSON.token;
 
 interface Asked { method: string; path: string; key: string; bearer: string; body: unknown }
 interface World {
@@ -57,10 +58,13 @@ function fakeSupabase(world: World, opts: { datesProfiles?: boolean } = {}): Pro
     const mayFile = () => new Set(mine().map((l) => l.film_id)).size >= 5 && Date.now() - world.created >= 2 * 86400 * 1000;
     const idIn = (path: string) => /[?&]id=eq\.([^&]+)/.exec(path)?.[1];
     if (url.startsWith('/auth/v1/admin/users')) {
-      const person = PEOPLE[(b as { user_metadata: { username: string } }).user_metadata.username];
+      const person = personNamed((b as { user_metadata: { username: string } }).user_metadata.username);
       return key === SERVICE && person ? send(200, { id: person.id }) : send(401, {});
     }
-    if (url.startsWith('/auth/v1/token')) return send(200, { access_token: PEOPLE[(b as { email: string }).email.split('@')[0]].token });
+    if (url.startsWith('/auth/v1/token')) {
+      const person = personNamed((b as { email: string }).email.split('@')[0]);
+      return person ? send(200, { access_token: person.token }) : send(400, { error: 'invalid_grant' });
+    }
     if (url.startsWith('/rest/v1/profiles') && req.method === 'GET') {
       return send(200, Object.entries(PEOPLE).filter(([, p]) => p.id === idIn(url)).map(([username]) => ({ username })));
     }
@@ -183,8 +187,8 @@ describe('the route walk\'s world (E2E_SEED_WALK)', () => {
     const { code, text, world } = await seed({ walk: true });
     expect(text).toContain('✓ e2e_writer: made, signs in, reads their own profile, files, and is read back');
     expect(code).toBe(0);
-    expect([world.ranked, world.lounges]).toEqual([[PEOPLE.e2e_writer.id], ['lounge-1']]);
-    expect(world.posts.filter((p) => p.series_id).map((p) => [p.kind, p.user_id, p.part_number])).toEqual([['dossier', PEOPLE.e2e_writer.id, 1]]);
+    expect([world.ranked, world.lounges]).toEqual([[WRITER_PERSON.id], ['lounge-1']]);
+    expect(world.posts.filter((p) => p.series_id).map((p) => [p.kind, p.user_id, p.part_number])).toEqual([['dossier', WRITER_PERSON.id, 1]]);
     const byService = world.asked.filter((a) => a.key === SERVICE).map((a) => `${a.method} ${a.path.split('?')[0]}`);
     expect(byService).toEqual(['POST /auth/v1/admin/users', 'PATCH /rest/v1/profiles', 'POST /auth/v1/admin/users', 'POST /rest/v1/rpc/grant_entitlement', 'PATCH /rest/v1/profiles']);
     const founded = world.asked.filter((a) => /\/rpc\/create_lounge$|dispatch_posts\?select=id,series_id/.test(a.path));

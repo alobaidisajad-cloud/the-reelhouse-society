@@ -167,6 +167,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | edited: the ports reserved and waited for, against a fake kernel |
 | e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | edited: one shard's list of flows is what is checked, every flow without one |
+| e2e/__tests__/variants.test.ts | 2026-10-17 | new |
 | e2e/__tests__/walkRoutes.test.ts | 2026-10-17 | new |
 | e2e/__tests__/whatTheAppAsked.test.ts | 2026-10-16 | new |
 | e2e/__tests__/fixtures/judges/shard-verdict/flows/a_flow.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
@@ -218,6 +219,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/fault-proxy.mjs | 2026-10-16 | new: the network between the app and the house, a fault on command, a part stopped, the DNS blocked, every request logged; a slow link holds every piece in flight at once, one latency per reply |
 | e2e/shards.mjs | 2026-10-16 | edited: a shard's minutes, checked and printed for run-flows.sh |
 | e2e/start-stack.sh | 2026-10-15 | edited: the stack's ports reserved from the machine's own connections, and waited for |
+| e2e/variants.mjs | 2026-10-17 | new: each variant's commands to read, set and put back the phone; an unknown variant, a reset with nothing, or a read that answered no word the variant allows, refused |
 | e2e/walk-routes.mjs | 2026-10-17 | new: the route walk's plan and flow: every route of routes.json, its ids read from the seeded world by name, guests first, each opened cold and captured |
 | plugins/__tests__/withoutDevLauncherScanner.test.ts | 2026-10-15 | new: through withAndroidManifest, read back as XML; the entry read from the installed expo-dev-launcher's manifest |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it; its files come from the shared file list (test-utils/universe.js) |
