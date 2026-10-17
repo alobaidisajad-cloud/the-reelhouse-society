@@ -26,6 +26,11 @@ RUNNER_FAULT='failed to set up container networking|driver failed programming ex
 PORT_WAIT="${STACK_PORT_WAIT:-90}"
 
 PORTS="$(grep -E '^[a-z_]*port = [0-9]+' "$HERE/supabase/config.toml" | grep -oE '[0-9]+$' | sort -n | paste -sd, -)"
+# Ports the workflow needs beside the stack's own, kept the same way (e2e.yml: the fault proxy's
+# 54330 and 54331, which run 39016138220 found lent to another connection as the proxy started).
+if [ -n "${STACK_EXTRA_PORTS:-}" ]; then
+  PORTS="$(printf '%s,%s' "$PORTS" "$STACK_EXTRA_PORTS" | tr ',' '\n' | grep -E '^[0-9]+$' | sort -nu | paste -sd, -)"
+fi
 
 reserve() {
   local had all

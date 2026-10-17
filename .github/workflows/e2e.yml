@@ -399,6 +399,9 @@ jobs:
       # sign-in-with-username is production's own function, copied in BEFORE the
       # stack starts: config.toml names it, and the CLI checks what it names.
       - name: Start the local stack
+        env:
+          # The fault proxy's own (below): kept from the machine's connections with the stack's.
+          STACK_EXTRA_PORTS: 54330,54331
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
           bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta "E2E local stack"

@@ -20,6 +20,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, useSyncE
 import { View, StyleSheet, useWindowDimensions, Platform, AccessibilityInfo, Pressable } from 'react-native';
 import { Text } from '@/src/components/text';
 import { InIosSheet, useOverlayTop } from '@/src/components/layout/navMetrics';
+import { E2ERouteMark } from '@/src/components/layout/E2ERouteMark';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -107,7 +108,12 @@ type ScreenLayout = NonNullable<React.ComponentProps<typeof Stack>['screenLayout
  * root, so this is what puts its toasts in front of it instead of behind.
  */
 export const toastScreenLayout: ScreenLayout = ({ children, navigation, options }) => (
-  <ToastScreen navigation={navigation} presentation={options.presentation}>{children}</ToastScreen>
+  <ToastScreen navigation={navigation} presentation={options.presentation}>
+    {children}
+    {/* The E2E build's mark of the route (nothing in any other build), drawn inside each route
+        for the reason its toasts are: a modal is a window of its own. */}
+    <E2ERouteMark />
+  </ToastScreen>
 );
 
 const PRESENTED = new Set(['modal', 'transparentModal', 'containedModal', 'containedTransparentModal', 'fullScreenModal', 'formSheet', 'pageSheet']);

@@ -31,7 +31,7 @@ import { KeyboardRoom } from '@/src/components/KeyboardRoom';
 import { captureError, initSentry, markAppLoaded } from '@/src/lib/sentry';
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
 import { PathTracker } from '@/src/components/layout/PathTracker';
-import { E2ERouteMark } from '@/src/components/layout/E2ERouteMark';
+import { PreloaderGone } from '@/src/components/layout/E2ERouteMark';
 export { RouterErrorBoundary as ErrorBoundary };
 
 // Before the first render: the app's start and any error in it are measured,
@@ -143,6 +143,8 @@ export default function RootLayout() {
           persistOptions={{ persister: mmkvPersister, maxAge: 24 * 60 * 60 * 1000 }}
         >
         <AppBootstrapper>
+          {/* Whether the preloader has gone, for the E2E build's route marks (each screen's, drawn by toastScreenLayout). */}
+          <PreloaderGone value={!showPreloader}>
           {/* Every route hosts its own toasts — a route presented as a modal
               draws them above itself on iOS, not behind (ToastHost). */}
           <Stack
@@ -184,12 +186,12 @@ export default function RootLayout() {
             <Stack.Screen name="edit-profile" options={{ animation: 'none' }} />
             <Stack.Screen name="dispatch/compose" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
           </Stack>
+          </PreloaderGone>
         </AppBootstrapper>
       </PersistQueryClientProvider>
 
       {showPreloader && <Preloader onComplete={() => setShowPreloader(false)} />}
       <PathTracker />
-      {!showPreloader && <E2ERouteMark />}
       <ToastHost layer="root" />
       <OfflineBanner />
       <StandingNotice />

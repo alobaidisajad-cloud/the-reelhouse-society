@@ -51,7 +51,7 @@ if [ "$n" -gt 0 ]; then
 fi
 `;
 
-type Machine = { holds?: number; reserved?: string; sudoRefuses?: boolean; wait?: number };
+type Machine = { holds?: number; reserved?: string; sudoRefuses?: boolean; wait?: number; extra?: string };
 
 function start(starts: string[], o: Machine = {}) {
   const T = posix(mkdtempSync(join(tmpdir(), 'start-stack-')));
@@ -69,6 +69,7 @@ function start(starts: string[], o: Machine = {}) {
       ...process.env,
       PATH: `${join(T, 'bin')}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}`,
       RUNNER_TEMP: T, GITHUB_STEP_SUMMARY: `${T}/summary.md`, STACK_PORT_WAIT: String(o.wait ?? 5),
+      ...(o.extra ? { STACK_EXTRA_PORTS: o.extra } : {}),
     },
   });
   const read = (f: string) => (existsSync(join(T, f)) ? readFileSync(join(T, f), 'utf8').trim() : '');
@@ -86,6 +87,12 @@ describe('the stack’s ports are kept from the machine’s own connections', ()
     expect(PORTS).toContain('54321');
     expect(start(['ok']).reserved).toBe(PORTS);
     expect(start(['ok'], { reserved: '8125' }).reserved).toBe(`8125,${PORTS}`);
+  });
+
+  it('reserves the ports the workflow names beside them, once each, in order (run 39016138220)', () => {
+    const all = [...PORTS.split(','), '54330', '54331'].map(Number).sort((a, b) => a - b).join(',');
+    expect(start(['ok'], { extra: '54331,54330' }).reserved).toBe(all);
+    expect(start(['ok'], { extra: `${PORTS.split(',')[0]},54330,54331` }).reserved).toBe(all);
   });
 
   it('waits for a connection that holds one of them to let it go, then starts', () => {
@@ -147,5 +154,13 @@ describe('the stack starts once, or once more only when the runner was at fault'
       expect(text).toContain('bash mobile/e2e/start-stack.sh ');
       expect(text).not.toMatch(/supabase start -x/);
     }
+  });
+
+  it('keeps for the E2E stack the very ports e2e.yml starts the fault proxy on', () => {
+    const text = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'e2e.yml'), 'utf8');
+    const extra = /STACK_EXTRA_PORTS: ([\d,]+)/.exec(text)?.[1]?.split(',').sort();
+    const proxy = /fault-proxy\.mjs --listen (\d+) --to \S+ --control (\d+)/.exec(text)?.slice(1).sort();
+    expect(proxy).toHaveLength(2);
+    expect(extra).toEqual(proxy);
   });
 });
