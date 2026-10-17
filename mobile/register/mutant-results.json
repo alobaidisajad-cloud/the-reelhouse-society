@@ -425,5 +425,12 @@
     "proof": "m4",
     "commit": "dd6c08e6164c3e22c13830374adf27c8171f9b57",
     "verdict": "caught"
+  },
+  {
+    "class": "E2E-phone-change-unseen",
+    "mutant": "shape-upgrade-without-old",
+    "proof": "m5",
+    "commit": "320b07e8ff534e067f4640e49e9ed7b8b8a75cf8",
+    "verdict": "caught"
   }
 ]
