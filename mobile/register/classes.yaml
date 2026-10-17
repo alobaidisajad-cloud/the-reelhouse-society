@@ -246,6 +246,18 @@ classes:
     fix: "the app's one Text, in the E2E build, says each cut of a Text that may cut itself (src/utils/cutText.ts, mutant shape-cut-unsaid); the bold-text and largest-text runs fail on any cut e2e/cut-text-judged.json does not judge for them (mutant judge-cut-unjudged), and no judgement outlives the words it names"
     places: [emulator]
 
+  - id: E2E-light-mode-unseen
+    title: The system in light mode changes what the app draws (a ground, an ink, the status bar's icons), and every run passes because every run's system is dark
+    seriousness: layout
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.86" }
+    methods:
+      - { kind: running, file: e2e/__tests__/groundsJudges.test.ts, test: "fails a route whose ground the system turned light, and one whose status icons it turned dark" }
+    fix: "the nightly light walk is read against the plain walk, route by route (e2e/grounds-judges.mjs over e2e/png.mjs): the body's lightness and its near-white share, and the status bar's icons, each printed (mutant shape-icons-unread)"
+    places: [emulator]
+
   - id: E2E-record-not-kept
     title: The E2E run writes a record (a probe's result, a judge's words, the phone's settings) that is never kept with its logs, or kept with the member's password in it
     seriousness: behaviour

@@ -152,6 +152,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/attack.test.ts | 2026-10-16 | edited: the mutants' run passes only on a green baseline, with none living unjudged, none unmade and no judgement stale |
 | e2e/__tests__/functionsWorld.test.ts | 2026-10-16 | edited: every function deployed or written is served or named with why not; every host a function could call is sealed; the payments replay's coverage; the House's emails sent as production does, the code's letter holding the code and no link |
 | e2e/__tests__/glideLogLevel.test.ts | 2026-10-08 | written with glide-log-level.mjs, on dexdump lines in the shape of runs 37628665206 and 37674283540 |
+| e2e/__tests__/groundsJudges.test.ts | 2026-10-17 | new |
 | e2e/__tests__/iosLaunch.test.ts | 2026-10-15 | the iPhone launch verdict shown saying no to each way a launch fails |
 | e2e/__tests__/keyboardRoom.test.ts | 2026-10-01 | written with the keyboard probe; its files come from the shared file list (test-utils/universe.js) |
 | e2e/__tests__/oldClients.test.ts | 2026-10-15 | new |
@@ -205,6 +206,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/functions/warm.mjs | 2026-10-16 | edited: send-email loaded too; the CDN named as e2e.yml names it |
 | e2e/functions/world.mjs | 2026-10-16 | new: the means suites.mjs and payments.mjs share: a call as callers make it, a statement as the house, the stand-ins steered and read back, a member made, each check said and the verdict |
 | e2e/glide-log-level.mjs | 2026-10-08 | written: the APK hands Glide level 6 (ERROR), once, as a constant |
+| e2e/grounds-judges.mjs | 2026-10-17 | new: every route of the light walk read against the plain walk: its body and its status bar |
 | e2e/ios-crash.mjs | 2026-10-15 | new |
 | e2e/ios-launch.cjs | 2026-10-15 | true as written |
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
@@ -212,6 +214,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
 | e2e/old-client-tree.mjs | 2026-10-16 | edited: after the patches, each of the client's flows waits at least as long as this checkout's same flow |
 | e2e/old-clients.cjs | 2026-10-16 | edited: waitsIn reads each waiting command's target and time; raiseWaits gives a shipped client's flow at least this checkout's time for the same wait, never less |
+| e2e/png.mjs | 2026-10-17 | new: a capture's pixels, Node's zlib alone; what it cannot read, refused by name |
 | e2e/prefetch-download-only.mjs | 2026-10-15 | new: the APK's prefetch on CachePolicy.DISK calls downloadOnly; not run for a shipped client |
 | e2e/route-judges.mjs | 2026-10-17 | new: every route the walk planned, captured as a picture; a plan of no route is unread; edited: a capture found at any depth of Maestro's output folder |
 | e2e/run-flows.sh | 2026-10-17 | edited: a fault run clears the fault before each flow and is judged by fault-judges.mjs; E2E_FLOWS=none runs no flows; with E2E_WALK, the route walk after the flows, judged by route-judges.mjs, its screens not held to the flows' ceilings; edited: the whole run on the phone as E2E_VARIANT has it, set before the run's log begins, waited for, put back at its end |

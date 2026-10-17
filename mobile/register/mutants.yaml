@@ -554,3 +554,12 @@ mutants:
         find: "      lines.current = e.nativeEvent.lines;\n      judge();\n"
         replace: "      lines.current = e.nativeEvent.lines;\n"
     proof: { file: src/components/text/__tests__/aCutLabelIsHeard.test.tsx, test: "says a label cut to one line, once, with its words and how it was cut" }
+
+  - id: shape-icons-unread
+    class: E2E-light-mode-unseen
+    source: shape
+    edits:
+      - file: e2e/grounds-judges.mjs
+        find: "  if (s0.light > 0.005 && s1.light < s0.light * LIMITS.iconsKept) why.push("
+        replace: "  if (s0.light < 0) why.push("
+    proof: { file: e2e/__tests__/groundsJudges.test.ts, test: "fails a route whose ground the system turned light, and one whose status icons it turned dark" }
