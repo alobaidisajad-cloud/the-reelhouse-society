@@ -1,0 +1,47 @@
+appId: com.reelhouse.society
+env:
+  WORDS: Half a dispatch, not yet saved
+---
+# The phone's text size, then its display density, changed while Edit
+# Profile is half-edited (WORKLIST P0.86, the running method of M22's
+# class): after each, the same screen, with the member's unsaved words
+# still in the field. Android remakes the screen for each change; the
+# words live in the app, which must keep them. run-flows.sh puts the
+# text size and the density back before every lifecycle flow.
+- launchApp:
+    clearState: true
+- runFlow: ../subflows/sign_in.yaml
+- openLink: "reelhouse://edit-profile"
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile-bio"
+    timeout: 20000
+- tapOn:
+    id: "edit-profile-bio"
+- inputText: ${WORDS}
+
+- runFlow:
+    file: ../subflows/phone.yaml
+    env:
+      SET: font_scale
+      TO: "1.3"
+- waitForAnimationToEnd:
+    timeout: 8000
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile-bio"
+      text: ${WORDS}
+    timeout: 20000
+
+- runFlow:
+    file: ../subflows/phone.yaml
+    env:
+      SET: density
+      TO: "560"
+- waitForAnimationToEnd:
+    timeout: 8000
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile-bio"
+      text: ${WORDS}
+    timeout: 20000

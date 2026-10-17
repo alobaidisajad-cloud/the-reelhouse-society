@@ -563,3 +563,12 @@ mutants:
         find: "  if (s0.light > 0.005 && s1.light < s0.light * LIMITS.iconsKept) why.push("
         replace: "  if (s0.light < 0) why.push("
     proof: { file: e2e/__tests__/groundsJudges.test.ts, test: "fails a route whose ground the system turned light, and one whose status icons it turned dark" }
+
+  - id: shape-phone-unchecked
+    class: E2E-phone-change-unseen
+    source: shape
+    edits:
+      - file: e2e/fault-proxy.mjs
+        find: "  density: { says: 'a whole number from 240 to 640, or \"reset\"', valid: (v) => v === 'reset' || (Number.isInteger(v) && v >= 240 && v <= 640),"
+        replace: "  density: { says: 'a whole number from 240 to 640, or \"reset\"', valid: () => true,"
+    proof: { file: e2e/__tests__/faultProxy.test.ts, test: "changes the phone mid-flow by fixed commands of checked values alone, and refuses anything else" }

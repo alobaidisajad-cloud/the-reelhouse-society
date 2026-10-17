@@ -258,6 +258,19 @@ classes:
     fix: "the nightly light walk is read against the plain walk, route by route (e2e/grounds-judges.mjs over e2e/png.mjs): the body's lightness and its near-white share, and the status bar's icons, each printed (mutant shape-icons-unread)"
     places: [emulator]
 
+  - id: E2E-phone-change-unseen
+    title: The phone changed under a half-edited screen (the text size or density live, the app killed in the background, "don't keep activities") loses the screen or the member's unsaved words, and no run ever changes the phone mid-flow
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.86" }
+    methods:
+      - { kind: static, file: e2e/__tests__/faultProxy.test.ts, test: "changes the phone mid-flow by fixed commands of checked values alone, and refuses anything else" }
+      - { kind: static, file: e2e/__tests__/shards.test.ts, test: "gives the lifecycle runs' one machine every flow in .maestro/lifecycle, and no other" }
+    fix: "the fault proxy's control changes the phone mid-flow by fixed commands (/phone, mutant shape-phone-unchecked); .maestro/lifecycle's flows change it under a half-edited Edit Profile and hold the screen and the words to it; run-flows.sh puts the phone back before each; every night runs them (e2e.yml lifecycle). Their failures are discovery for P2.8's list until P4.14 and P4.33 land"
+    places: [emulator]
+
   - id: E2E-record-not-kept
     title: The E2E run writes a record (a probe's result, a judge's words, the phone's settings) that is never kept with its logs, or kept with the member's password in it
     seriousness: behaviour

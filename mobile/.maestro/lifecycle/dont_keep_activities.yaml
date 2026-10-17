@@ -1,0 +1,33 @@
+appId: com.reelhouse.society
+env:
+  WORDS: Words a destroyed screen must keep
+---
+# Android's "don't keep activities" on: every screen the member leaves
+# is destroyed at once, as a phone short of memory does (WORKLIST
+# P0.86, P4.14's pass rule). Edit Profile half-edited, the member goes
+# home and comes back: the same screen, their unsaved words still in
+# the field. run-flows.sh turns the setting off again before every
+# lifecycle flow.
+- launchApp:
+    clearState: true
+- runFlow: ../subflows/sign_in.yaml
+- runFlow:
+    file: ../subflows/phone.yaml
+    env:
+      SET: dont_keep_activities
+      TO: "true"
+- openLink: "reelhouse://edit-profile"
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile-bio"
+    timeout: 20000
+- tapOn:
+    id: "edit-profile-bio"
+- inputText: ${WORDS}
+- pressKey: Home
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile-bio"
+      text: ${WORDS}
+    timeout: 30000

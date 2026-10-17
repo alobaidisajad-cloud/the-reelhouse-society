@@ -24,7 +24,8 @@
 # A fault run (E2E_FAULTS) clears the fault before each flow and is judged by
 # e2e/fault-judges.mjs; with E2E_WALK, every route is then opened cold by its
 # link and captured (e2e/walk-routes.mjs, judged by e2e/route-judges.mjs). The whole
-# run is on the phone as E2E_VARIANT has it (e2e/variants.json), put back at its end.
+# run is on the phone as E2E_VARIANT has it (e2e/variants.json), put back at its end. A
+# lifecycle run (E2E_LIFECYCLE) puts the phone back before each of its flows, which change it.
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 # Maestro sends usage analytics unless told not to; nothing leaves the sealed world.
@@ -454,6 +455,13 @@ for flow in $FLOW_LIST; do
     if [ -n "${E2E_FAULTS:-}" ]; then
       curl -s -X DELETE http://127.0.0.1:54331/fault > /dev/null || echo "[fault proxy] could not clear the fault before $name" >> "$OUT/maestro.log"
     fi
+    # A lifecycle run's flows change the phone mid-flow (.maestro/subflows/phone.yaml): each
+    # begins on the phone as the run has it, whatever the one before left.
+    if [ -n "${E2E_LIFECYCLE:-}" ]; then
+      for cmd in "settings put system font_scale 1.0" "wm density reset" "settings put global always_finish_activities 0"; do
+        timeout 20 adb shell "$cmd" < /dev/null > /dev/null 2>&1 || echo "[phone] could not put back before $name: $cmd" >> "$OUT/maestro.log"
+      done
+    fi
     left=$(( DEADLINE - $(date +%s) ))
     if [ $left -le 60 ]; then
       echo "[Skipped] $name (the flows' ${MINUTES} minutes ran out)" >> "$OUT/maestro.log"; rc=1; flows_failed=1; break
@@ -642,9 +650,9 @@ not_judged=$(grep -c . "$OUT/not-judged.txt")
 slow=0
 times_args=(--flow-times "$OUT/flow-times.txt")
 # The ceilings are the flows' warm openings on the plain phone: a walk opens every screen cold,
-# and a variant's phone is not the one they were measured on, so their times are reported, and a
-# screen that could not read still fails them.
-[ -f mobile/e2e/screen-ceilings.json ] && [ -z "${E2E_WALK:-}" ] && [ -z "${E2E_VARIANT:-}" ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
+# and a variant's phone, or a lifecycle flow's changed one, is not the one they were measured on, so
+# their times are reported, and a screen that could not read still fails them.
+[ -f mobile/e2e/screen-ceilings.json ] && [ -z "${E2E_WALK:-}" ] && [ -z "${E2E_VARIANT:-}" ] && [ -z "${E2E_LIFECYCLE:-}" ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
 [ $flows_failed -eq 0 ] && [ $gone -eq 0 ] && [ "$not_judged" -eq 0 ] && times_args+=(--complete)
 [ -n "${E2E_SHARD:-}" ] && times_args+=(--record "$OUT/screen-record.json")
 if [ -n "${E2E_FAULTS:-}" ]; then

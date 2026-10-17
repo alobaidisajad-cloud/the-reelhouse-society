@@ -123,6 +123,18 @@ out.parts = [
   await control('POST', '/dns', { blocked: false }),
   await control('POST', '/dns', { blocked: 'yes' }),
 ].map((r) => ({ status: r.status, ...r.body }));
+out.ranParts = [...ran];
+out.phone = [
+  await control('POST', '/phone', { set: 'font_scale', to: 1.3 }),
+  await control('POST', '/phone', { set: 'density', to: 560 }),
+  await control('POST', '/phone', { set: 'density', to: 'reset' }),
+  await control('POST', '/phone', { set: 'dont_keep_activities', to: true }),
+  await control('POST', '/phone', { set: 'killed_in_background', to: true }),
+  await control('POST', '/phone', { set: 'font_scale', to: 9 }),
+  await control('POST', '/phone', { set: 'density', to: '560; reboot' }),
+  await control('POST', '/phone', { set: 'airplane', to: true }),
+  await control('POST', '/phone', { set: 'font_scale', to: 1, also: 'x' }),
+].map((r) => ({ status: r.status, ...r.body }));
 out.ran = ran;
 
 out.log = (await control('GET', '/log')).body.map(({ method, path, status, fault }) => ({ method, path, status, fault }));
@@ -207,13 +219,34 @@ it('stops and starts one of the house\'s services, and blocks the emulator\'s DN
     { status: 200, done: { blocked: false } },
     { status: 400, refused: 'blocked, true or false' },
   ]);
-  expect(out.ran).toEqual([
+  expect(out.ranParts).toEqual([
     'docker stop supabase_realtime_reelhouse-e2e',
     'docker start supabase_realtime_reelhouse-e2e',
     'docker stop supabase_storage_reelhouse-e2e',
     'adb shell settings put global private_dns_specifier dns.blocked.invalid',
     'adb shell settings put global private_dns_mode hostname',
     'adb shell settings put global private_dns_mode off',
+  ]);
+});
+
+it('changes the phone mid-flow by fixed commands of checked values alone, and refuses anything else', () => {
+  expect(out.phone).toEqual([
+    { status: 200, done: { set: 'font_scale', to: 1.3 } },
+    { status: 200, done: { set: 'density', to: 560 } },
+    { status: 200, done: { set: 'density', to: 'reset' } },
+    { status: 200, done: { set: 'dont_keep_activities', to: true } },
+    { status: 200, done: { set: 'killed_in_background', to: true } },
+    { status: 400, refused: 'font_scale to a number from 0.85 to 2' },
+    { status: 400, refused: 'density to a whole number from 240 to 640, or "reset"' },
+    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, and to' },
+    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, and to' },
+  ]);
+  expect(out.ran.slice(out.ranParts.length)).toEqual([
+    'adb shell settings put system font_scale 1.3',
+    'adb shell wm density 560',
+    'adb shell wm density reset',
+    'adb shell settings put global always_finish_activities 1',
+    'adb shell am kill com.reelhouse.society',
   ]);
 });
 

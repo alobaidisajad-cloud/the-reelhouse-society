@@ -65,6 +65,9 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/keyboard/log.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/keyboard/stack.tap.yaml | 2026-10-01 | written with the keyboard probe: the stack form, reachable by a new member |
 | .maestro/keyboard/stack.yaml | 2026-10-15 | edited: the Reel's log and the seed's stack waited for |
+| .maestro/lifecycle/dont_keep_activities.yaml | 2026-10-17 | new: "don't keep activities" on, Edit Profile half-edited, home and back: the words kept |
+| .maestro/lifecycle/killed_in_background.yaml | 2026-10-17 | new: Edit Profile half-edited, home, the app killed by the system: back where they were, the words kept |
+| .maestro/lifecycle/live_config.yaml | 2026-10-17 | new: the text size, then the density, changed under a half-edited Edit Profile: the same screen, the words kept |
 | .maestro/log_film_flow.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/login_flow.yaml | 2026-09-29 | true as written |
 | .maestro/lounge_flow.yaml | 2026-09-29 | true as written |
@@ -76,6 +79,8 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/subflows/fault.yaml | 2026-10-16 | new |
 | .maestro/subflows/open_a_film.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/subflows/open_the_stub.yaml | 2026-09-30 | written with the stub's single tap |
+| .maestro/subflows/phone.js | 2026-10-17 | new: the phone changed through the fault proxy's /phone; a refusal stops the flow |
+| .maestro/subflows/phone.yaml | 2026-10-17 | new: the phone changed mid-flow, for the lifecycle flows alone |
 | .maestro/subflows/sign_in.yaml | 2026-10-15 | edited: the account is new, only its profile dated back |
 | ANDROID_LAUNCH.md | 2026-10-04 | the splash leaving as Android's own added to the device checks, with the system exit's real timings |
 | app.config.js | 2026-10-15 | edited: the development profile gets back the dev client's scheme and iOS local networking; every other build is app.json |

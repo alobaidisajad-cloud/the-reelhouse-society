@@ -25,6 +25,7 @@ production shows only its id, area, seriousness and count here.
 | E2E-phone-only-as-the-runner-has-it | tests | behaviour | OPEN | 0 | Every run's phone has the default text, width, navigation bar, direction and mode, with animations off, so a screen that breaks for a member who set any of them passes every run |
 | E2E-text-cut-unseen | tests | layout | OPEN | 0 | A label cut at bold or the largest text (an ellipsis, lines past its limit, a word out of its box) passes every run, because a cut label draws without an error |
 | E2E-light-mode-unseen | tests | layout | OPEN | 0 | The system in light mode changes what the app draws (a ground, an ink, the status bar's icons), and every run passes because every run's system is dark |
+| E2E-phone-change-unseen | tests | behaviour | OPEN | 0 | The phone changed under a half-edited screen (the text size or density live, the app killed in the background, "don't keep activities") loses the screen or the member's unsaved words, and no run ever changes the phone mid-flow |
 | E2E-record-not-kept | tests | behaviour | OPEN | 0 | The E2E run writes a record (a probe's result, a judge's words, the phone's settings) that is never kept with its logs, or kept with the member's password in it |
 | RN-react-destroyed-on-mount | navigation | serious | OPEN | 0 | React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed |
 | SEC-secret-committed | security | serious | OPEN | 21 | open in production |

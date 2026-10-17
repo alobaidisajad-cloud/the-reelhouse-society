@@ -63,23 +63,30 @@ describe('the committed map', () => {
       return j;
     };
     const n = map.shards.length;
-    // The fault runs and a variant's route walk each have one machine, of their own map.
-    const one = ['fault-shards.json', 'walk-shards.json'].map((m) => (JSON.parse(readFileSync(join(E2E, m), 'utf8')) as { shards: unknown[] }).shards.length);
-    expect(one).toEqual([1, 1]);
+    // The fault runs, the lifecycle runs and a variant's route walk each have one machine, of their own map.
+    const one = ['fault-shards.json', 'lifecycle-shards.json', 'walk-shards.json'].map((m) => (JSON.parse(readFileSync(join(E2E, m), 'utf8')) as { shards: unknown[] }).shards.length);
+    expect(one).toEqual([1, 1, 1]);
     const list = (k: number) => `[${Array.from({ length: k }, (_, i) => i + 1).join(', ')}]`;
     // A variant that runs every flow has the flows' n machines and the walk's one beside them.
     expect(job('flows').strategy?.matrix?.shard).toBe(
-      `\${{ fromJSON((inputs.faults || needs.build.outputs.runs == 'walk') && '${list(1)}' || needs.build.outputs.runs == 'flows' && '${list(n + 1)}' || '${list(n)}') }}`);
+      `\${{ fromJSON((inputs.faults || inputs.lifecycle || needs.build.outputs.runs == 'walk') && '${list(1)}' || needs.build.outputs.runs == 'flows' && '${list(n + 1)}' || '${list(n)}') }}`);
     const walks = `(inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == ${n + 1}))`;
     expect(job('flows').env?.E2E_WALK).toBe(`\${{ ${walks} && '1' || '' }}`);
     expect(job('flows').env?.E2E_SEED_WALK).toBe(`\${{ ${walks} && '1' || '' }}`);
-    expect(job('flows').env?.E2E_FLOWS).toBe(`\${{ inputs.faults && 'mobile/.maestro/faults' || ${walks} && 'none' || 'mobile/.maestro' }}`);
+    expect(job('flows').env?.E2E_FLOWS).toBe(`\${{ inputs.faults && 'mobile/.maestro/faults' || inputs.lifecycle && 'mobile/.maestro/lifecycle' || ${walks} && 'none' || 'mobile/.maestro' }}`);
     const flowsStep = job('flows').steps!.find((s) => s.env?.E2E_SHARD);
-    expect(flowsStep?.env?.E2E_SHARD).toBe(`\${{ (inputs.faults || env.E2E_WALK) && '1/1' || format('{0}/${n}', matrix.shard) }}`);
+    expect(flowsStep?.env?.E2E_SHARD).toBe(`\${{ (inputs.faults || inputs.lifecycle || env.E2E_WALK) && '1/1' || format('{0}/${n}', matrix.shard) }}`);
     expect(flowsStep?.env?.E2E_SHARD_MAP)
-      .toBe("${{ inputs.faults && 'mobile/e2e/fault-shards.json' || env.E2E_WALK && 'mobile/e2e/walk-shards.json' || 'mobile/e2e/shards.json' }}");
+      .toBe("${{ inputs.faults && 'mobile/e2e/fault-shards.json' || inputs.lifecycle && 'mobile/e2e/lifecycle-shards.json' || env.E2E_WALK && 'mobile/e2e/walk-shards.json' || 'mobile/e2e/shards.json' }}");
     expect(job('verdict').steps!.some((s) => s.run?.includes(`shard-verdict.mjs "$RUNNER_TEMP/shards" --shards ${n} `))).toBe(true);
   });
+});
+
+it("gives the lifecycle runs' one machine every flow in .maestro/lifecycle, and no other", () => {
+  const folder = universe('flows', { under: ['.maestro/lifecycle'] }).map((f) => basename(f, '.yaml')).sort();
+  expect(folder.length).toBeGreaterThan(0);
+  const lifecycle = JSON.parse(readFileSync(join(E2E, 'lifecycle-shards.json'), 'utf8')) as { shards: { flows: string[] }[] };
+  expect(lifecycle.shards.flatMap((s) => s.flows).sort()).toEqual(folder);
 });
 
 describe('a map that is wrong says so', () => {

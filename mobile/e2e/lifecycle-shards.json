@@ -1,0 +1,14 @@
+{
+  "why": "The lifecycle runs' one machine (e2e.yml with lifecycle on, WORKLIST P0.86): every flow in .maestro/lifecycle, each changing the phone mid-flow, which run-flows.sh puts back before the next. Read by e2e/shards.mjs and run-flows.sh; shards.test.ts holds it to the folder.",
+  "probesElsewhere": "The keyboard probes and the launch with animations run in the normal rounds (e2e/shards.json); a lifecycle run tests what the phone does to the app, not them.",
+  "shards": [
+    {
+      "flows": [
+        "dont_keep_activities",
+        "killed_in_background",
+        "live_config"
+      ],
+      "minutes": 20
+    }
+  ]
+}

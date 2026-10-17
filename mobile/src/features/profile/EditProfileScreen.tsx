@@ -273,6 +273,7 @@ export function EditProfileScreen() {
               <Text {...scaledTextProps} style={st.fieldLabel}>BIO</Text>
               <ControlledBioInput
                 name="bio"
+                testID="edit-profile-bio"
                 maxLength={MAX_LENGTHS.bio}
                 placeholderTextColor={colors.fog} placeholder="A brief dispatch about your cinematic journey..." keyboardAppearance="dark" accessibilityLabel="Bio" selectionColor={colors.sepia} returnKeyType="done" blurOnSubmit={true}
               />

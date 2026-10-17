@@ -15,18 +15,22 @@ import { existsSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 const LINE = /\[e2e\] text\.cut (\{.*\})\s*$/;
+const READY = /\[e2e\] screen\.ready \{"name":"([^"]+)"/;
 
-/** Every cut the log says, once each, with how often it was said. */
+/** Every cut the log says, once each: how often it was said, and the screen last ready when it first was. */
 export function readCuts(text) {
   const seen = new Map();
+  let screen = null;
   for (const l of text.split(/\r?\n/)) {
+    const ready = READY.exec(l);
+    if (ready) { screen = ready[1] ?? null; continue; }
     const m = LINE.exec(l);
     if (!m) continue;
     let c;
     try { c = JSON.parse(m[1] ?? ''); } catch { continue; }
     if (typeof c?.words !== 'string' || typeof c?.cut !== 'string') continue;
     const key = `${c.cut}\t${c.words}`;
-    seen.set(key, { words: c.words, cut: c.cut, times: (seen.get(key)?.times ?? 0) + 1 });
+    seen.set(key, { words: c.words, cut: c.cut, on: seen.get(key)?.on ?? screen, times: (seen.get(key)?.times ?? 0) + 1 });
   }
   return [...seen.values()];
 }
@@ -34,7 +38,7 @@ export function readCuts(text) {
 /** Each cut no judgement for this variant names, in words. */
 export function judge(cuts, judged, variant) {
   const ok = (c) => judged.some((j) => j.words === c.words && j.cut === c.cut && j.variants.includes(variant));
-  return cuts.filter((c) => !ok(c)).map((c) => `"${c.words}" ${c.cut} (said ${c.times} time${c.times === 1 ? '' : 's'})`);
+  return cuts.filter((c) => !ok(c)).map((c) => `"${c.words}" ${c.cut}${c.on ? ` on ${c.on}` : ''} (said ${c.times} time${c.times === 1 ? '' : 's'})`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

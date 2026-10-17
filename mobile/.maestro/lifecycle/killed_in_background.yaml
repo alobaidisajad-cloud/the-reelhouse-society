@@ -1,0 +1,32 @@
+appId: com.reelhouse.society
+env:
+  WORDS: Words the system must not lose
+---
+# Edit Profile half-edited, the member goes home, and the system kills
+# the app in the background to free its memory, as Android does
+# (WORKLIST P0.86, P4.14's pass rule): when they come back, the app
+# opens where they were, the session kept and their unsaved words
+# still in the field.
+- launchApp:
+    clearState: true
+- runFlow: ../subflows/sign_in.yaml
+- openLink: "reelhouse://edit-profile"
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile-bio"
+    timeout: 20000
+- tapOn:
+    id: "edit-profile-bio"
+- inputText: ${WORDS}
+- pressKey: Home
+- runFlow:
+    file: ../subflows/phone.yaml
+    env:
+      SET: killed_in_background
+      TO: "true"
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile-bio"
+      text: ${WORDS}
+    timeout: 30000

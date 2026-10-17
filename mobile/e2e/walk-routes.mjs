@@ -72,7 +72,8 @@ export function flowOf(steps, signIn) {
   const lines = ['appId: com.reelhouse.society', '---', '- launchApp:', '    clearState: true'];
   let signedIn = false;
   steps.forEach((s, i) => {
-    if (s.as !== 'guest' && !signedIn) { lines.push(`- runFlow: ${JSON.stringify(signIn)}`); signedIn = true; }
+    // Signed in from the app's own start: a guest's last route (the login modal, say) covers the tabs it signs in through.
+    if (s.as !== 'guest' && !signedIn) { lines.push('- stopApp', '- launchApp', `- runFlow: ${JSON.stringify(signIn)}`); signedIn = true; }
     lines.push(
       `# ${s.file}`,
       '- stopApp',

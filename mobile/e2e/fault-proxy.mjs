@@ -20,6 +20,9 @@
  *   POST   /dns    {"blocked": true|false}   the emulator's Wi-Fi left up with its DNS blocked: Android's
  *                  private DNS pointed at a name that resolves nowhere, so every host name fails and
  *                  10.0.2.2 still answers
+ *   POST   /phone  {"set": …, "to": …}   the phone changed mid-flow for a lifecycle flow (PHONE): the
+ *                  text size or the display density live, "don't keep activities", or the app killed
+ *                  by the system in the background
  *   GET    /alive
  *
  * Both listen on the runner's loopback alone; the emulator reaches it as 10.0.2.2.
@@ -87,6 +90,28 @@ export const commandsFor = {
     ? [['adb', ['shell', 'settings', 'put', 'global', 'private_dns_specifier', 'dns.blocked.invalid']],
       ['adb', ['shell', 'settings', 'put', 'global', 'private_dns_mode', 'hostname']]]
     : [['adb', ['shell', 'settings', 'put', 'global', 'private_dns_mode', 'off']]]),
+};
+/**
+ * What a lifecycle flow may change on the phone mid-flow (.maestro/lifecycle, WORKLIST P0.86): the
+ * text size and the display density live, Android's "don't keep activities", and the system killing
+ * the app in the background. Each a fixed command of a checked value; run-flows.sh puts all of them
+ * back before every lifecycle flow.
+ */
+export const PHONE = {
+  font_scale: { says: 'a number from 0.85 to 2', valid: (v) => typeof v === 'number' && v >= 0.85 && v <= 2,
+    commands: (v) => [['adb', ['shell', 'settings', 'put', 'system', 'font_scale', String(v)]]] },
+  density: { says: 'a whole number from 240 to 640, or "reset"', valid: (v) => v === 'reset' || (Number.isInteger(v) && v >= 240 && v <= 640),
+    commands: (v) => [['adb', ['shell', 'wm', 'density', String(v)]]] },
+  dont_keep_activities: { says: 'true or false', valid: (v) => typeof v === 'boolean',
+    commands: (v) => [['adb', ['shell', 'settings', 'put', 'global', 'always_finish_activities', v ? '1' : '0']]] },
+  killed_in_background: { says: 'true', valid: (v) => v === true,
+    commands: () => [['adb', ['shell', 'am', 'kill', 'com.reelhouse.society']]] },
+};
+commandsFor.phone = ({ set, to }) => PHONE[set].commands(to);
+const refusalOfPhone = (b) => {
+  const p = PHONE[b?.set];
+  if (!p || Object.keys(b).length !== 2) return `set, one of ${Object.keys(PHONE).join(', ')}, and to`;
+  return p.valid(b.to) ? null : `${b.set} to ${p.says}`;
 };
 const refusalOfPart = (b) => (PARTS.includes(b?.part) && ['stopped', 'started'].includes(b?.state) && Object.keys(b).length === 2
   ? null : `a part from ${PARTS.join(', ')}, and a state, stopped or started`);
@@ -229,7 +254,7 @@ export function startProxy({ listen = 0, to, control = 0, logFile = null, run = 
       if (req.url === '/log' && req.method === 'GET') return answer(res, 200, log);
       if (req.url === '/log' && req.method === 'DELETE') { log.length = 0; return answer(res, 200, { log: 'emptied' }); }
       if (req.url === '/fault' && req.method === 'DELETE') { fault = null; left = 0; return answer(res, 200, { fault: null }); }
-      for (const [path, refusal, commands] of [['/part', refusalOfPart, commandsFor.part], ['/dns', refusalOfDns, commandsFor.dns]]) {
+      for (const [path, refusal, commands] of [['/part', refusalOfPart, commandsFor.part], ['/dns', refusalOfDns, commandsFor.dns], ['/phone', refusalOfPhone, commandsFor.phone]]) {
         if (req.url !== path || req.method !== 'POST') continue;
         let asked;
         try { asked = JSON.parse(body); } catch { return answer(res, 400, { refused: 'the body is not JSON' }); }

@@ -350,7 +350,9 @@ it('every night runs each flow three times and the suite in a random order, and 
   // matrix of e2e/variants.json's names (variants.test.ts holds the list to the file).
   const walks = calls.filter((j) => j.with?.variant !== undefined) as (Job & { strategy?: { matrix?: { variant?: string[] }; 'fail-fast'?: boolean } })[];
   expect(walks.map((j) => [j.with?.variant, j.strategy?.['fail-fast'], j.strategy?.matrix?.variant?.length])).toEqual([['${{ matrix.variant }}', false, 8]]);
-  expect(calls).toHaveLength(5);
+  // And the lifecycle runs (P0.86), once, in a group of their own.
+  expect(calls.filter((j) => j.with?.lifecycle === true && j.with?.round === undefined)).toHaveLength(1);
+  expect(calls).toHaveLength(6);
   const steps = (job: string) => ((jobs[job]?.steps ?? []) as RunStep[]);
   expect(steps('jest-random').some((s) => /npx jest\b.*--randomize --showSeed/.test(s.run ?? ''))).toBe(true);
   const history = jobs['flake-history'] as Job & { needs?: string[] };
@@ -360,7 +362,7 @@ it('every night runs each flow three times and the suite in a random order, and 
   // Each round's artifacts carry its round, so three in one run never share a name.
   const e2e = workflows.find((w) => w.file === 'e2e.yml')!;
   expect(e2e.text).toContain("inputs.round && format(' - round {0}', inputs.round)");
-  expect(e2e.text).toContain("group: ${{ github.workflow }}-${{ github.sha }}${{ inputs.round }}${{ inputs.faults && '-faults' || '' }}${{ inputs.variant && format('-{0}', inputs.variant) || '' }}");
+  expect(e2e.text).toContain("group: ${{ github.workflow }}-${{ github.sha }}${{ inputs.round }}${{ inputs.faults && '-faults' || '' }}${{ inputs.lifecycle && '-lifecycle' || '' }}${{ inputs.variant && format('-{0}', inputs.variant) || '' }}");
   expect(e2e.text).toContain("inputs.variant && format(' - {0}', inputs.variant)");
 });
 

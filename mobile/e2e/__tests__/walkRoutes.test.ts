@@ -60,7 +60,8 @@ it('writes a flow that clears the app, signs in once before the member\'s first 
   expect(flow.split('\n').filter(Boolean)).toEqual([
     'appId: com.reelhouse.society', '---', '- launchApp:', '    clearState: true',
     '# app/(modals)/login.tsx', '- stopApp', '- openLink: "reelhouse://login"', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "01-modals-login"',
-    '- runFlow: "/x/sign_in.yaml"',
+    // From the app's own start: the login modal the guest's last route opened covers the tabs.
+    '- stopApp', '- launchApp', '- runFlow: "/x/sign_in.yaml"',
     '# app/film/[id].tsx', '- stopApp', '- openLink: "reelhouse://film/129"', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "02-film-id"',
     '# app/(tabs)/index.tsx', '- stopApp', '- openLink: "reelhouse://"', '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "03-tabs-index"',
   ]);

@@ -149,6 +149,15 @@ jobs:
     with:
       faults: true
 
+  # The lifecycle runs (P0.86): the phone changed under a half-edited screen (the text size and
+  # the density live, the app killed in the background, "don't keep activities"), once, in a
+  # group of their own.
+  e2e-lifecycle:
+    name: 🎬 The lifecycle runs
+    uses: ./.github/workflows/e2e.yml
+    with:
+      lifecycle: true
+
   # Every route opened cold and captured on the phone as each variant has it (mobile/e2e/variants.json,
   # WORKLIST P0.86): four at a time, each its own machine and its own build.
   e2e-variants:

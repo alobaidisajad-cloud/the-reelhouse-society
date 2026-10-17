@@ -25,27 +25,29 @@ const ask = (expression: string): unknown => {
 const run = (...args: string[]) => spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8' });
 
 const LOG = [
+  '10-17 09:00:01.100  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":400}',
   '10-17 09:00:01.200  4321  4377 W ReactNativeJS: [e2e] text.cut {"words":"FOUNDING MEMBER","cut":"ended early","lines":1,"numberOfLines":1}',
+  '10-17 09:00:01.250  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"member","ms":400}',
   '10-17 09:00:01.300  4321  4377 W ReactNativeJS: [e2e] text.cut {"words":"FOUNDING MEMBER","cut":"ended early","lines":1,"numberOfLines":1}',
   '10-17 09:00:01.400  4321  4377 W ReactNativeJS: [e2e] text.cut {"words":"A {braced} review","cut":"taller than its box","lines":3,"numberOfLines":null}',
   '10-17 09:00:01.500  4321  4377 W ReactNativeJS: [e2e] text.cut {not json}',
   '10-17 09:00:01.600  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"film","ms":900}',
 ].join('\r\n');
 
-it('reads every cut the log says once, with how often, through Windows line ends and braces in the words', () => {
+it('reads every cut the log says once, with how often and the screen it was first said on, through Windows line ends and braces in the words', () => {
   expect(ask(`m.readCuts(${JSON.stringify(LOG)})`)).toEqual([
-    { words: 'FOUNDING MEMBER', cut: 'ended early', times: 2 },
-    { words: 'A {braced} review', cut: 'taller than its box', times: 1 },
+    { words: 'FOUNDING MEMBER', cut: 'ended early', on: 'lobby', times: 2 },
+    { words: 'A {braced} review', cut: 'taller than its box', on: 'member', times: 1 },
   ]);
 });
 
 it('passes a cut judged for this variant alone, by its words and its cut', () => {
-  const cuts = [{ words: 'A review', cut: 'ended early', times: 1 }];
+  const cuts = [{ words: 'A review', cut: 'ended early', on: null, times: 1 }];
   const judged = [{ words: 'A review', cut: 'ended early', variants: ['largest-text'], why: 'x' }];
   expect(ask(`m.judge(${JSON.stringify(cuts)}, ${JSON.stringify(judged)}, 'largest-text')`)).toEqual([]);
   expect(ask(`m.judge(${JSON.stringify(cuts)}, ${JSON.stringify(judged)}, 'bold-text')`)).toEqual(['"A review" ended early (said 1 time)']);
-  const otherCut = [{ words: 'A review', cut: 'wider than its box', times: 3 }];
-  expect(ask(`m.judge(${JSON.stringify(otherCut)}, ${JSON.stringify(judged)}, 'largest-text')`)).toEqual(['"A review" wider than its box (said 3 times)']);
+  const otherCut = [{ words: 'A review', cut: 'wider than its box', on: 'film', times: 3 }];
+  expect(ask(`m.judge(${JSON.stringify(otherCut)}, ${JSON.stringify(judged)}, 'largest-text')`)).toEqual(['"A review" wider than its box on film (said 3 times)']);
 });
 
 it('passes the judged log and fails it for a variant it is not judged in, by exit code', () => {
@@ -53,7 +55,7 @@ it('passes the judged log and fails it for a variant it is not judged in, by exi
   expect(at('largest-text').status).toBe(0);
   const bold = at('bold-text');
   expect(bold.status).toBe(1);
-  expect(bold.stdout).toContain('✗ "Spirited Away: the whole of a long review the member wrote" ended early (said 2 times)');
+  expect(bold.stdout).toContain('✗ "Spirited Away: the whole of a long review the member wrote" ended early on film (said 2 times)');
 });
 
 it('cannot be run on nothing: no log, no judged list, or no variant is exit 2', () => {
