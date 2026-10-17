@@ -383,5 +383,12 @@
     "proof": "m1",
     "commit": "60ca23519e8f93d22a0fdf49cfc2a6346aaba271",
     "verdict": "caught"
+  },
+  {
+    "class": "E2E-light-mode-unseen",
+    "mutant": "shape-icons-unread",
+    "proof": "m1",
+    "commit": "b2d843256be29d4d4101ae262dfa5d2342fead5c",
+    "verdict": "caught"
   }
 ]
