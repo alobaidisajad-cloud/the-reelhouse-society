@@ -122,6 +122,9 @@ describe('Offline Queue — Integration Tests', () => {
     mockExecuteMutation.mockReset();
     mockApplyIdMapToPayload.mockClear();
     jest.clearAllMocks();
+    // The member u1 signed in, every test: the ownership tests sign in another, and in a
+    // random order the next test's writes were held back as that member's (nightly 2026-10-21).
+    (supabase.auth.getSession as jest.Mock).mockResolvedValue({ data: { session: { user: { id: 'u1' }, access_token: 'mock-token' } }, error: null });
   });
 
   describe('Invariant 8: a send asked for during a send is not lost', () => {
@@ -141,12 +144,17 @@ describe('Offline Queue — Integration Tests', () => {
       const first = flushOfflineQueue();
       await new Promise((r) => setTimeout(r, 0));
       enqueueMutation({ type: 'endorse_log', payload: { user_id: 'u1', type: 'endorse_log', target_log_id: 'log-1' } });
-      await flushOfflineQueue();
-      expect(sent).toEqual([]);
+      // The second ask waits with the running send: it is handed the same promise.
+      const second = flushOfflineQueue();
+      expect(second).toBe(first);
+      let secondSettled = false;
+      void second.then(() => { secondSettled = true; });
+      await new Promise((r) => setTimeout(r, 0));
+      expect([sent, secondSettled]).toEqual([[], false]);
 
       answerFirst();
-      await first;
-      await new Promise((r) => setTimeout(r, 0));
+      // Settled only once what was queued meanwhile has gone too (signing out waits on this).
+      await second;
       expect(sent).toEqual(['create_list', 'endorse_log']);
       expect(getOfflineQueue()).toEqual([]);
     });

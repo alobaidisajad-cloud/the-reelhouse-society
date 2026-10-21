@@ -88,6 +88,8 @@ beforeEach(() => {
   for (const k of [...storage.getAllKeys()]) storage.delete(k);
   jest.clearAllMocks();
   executeMutation.mockResolvedValue({});
+  // Each test's own questions: the house's record of what was asked starts empty.
+  mockHouse.asked.length = 0;
 });
 afterEach(() => jest.useRealTimers());
 
@@ -370,11 +372,11 @@ it('runs once more when a send is asked for during one, so the ask is not lost',
   const first = flushOfflineQueue();
   await Promise.resolve();
   await Promise.resolve();
-  await flushOfflineQueue();
-  expect(e2eTrace).toHaveBeenCalledWith('queue.flush.again');
+  // Asked during the send: the same promise, settled when the send and its follow-up have gone.
+  const again = flushOfflineQueue();
+  expect([again === first, e2eTrace.mock.calls.some(([what]: [string]) => what === 'queue.flush.again')]).toEqual([true, true]);
   enqueueMutation(follow(ME));
   release();
-  await first;
-  for (let i = 0; i < 20 && executeMutation.mock.calls.length < 2; i += 1) await Promise.resolve();
+  await again;
   expect(executeMutation).toHaveBeenCalledTimes(2);
 });

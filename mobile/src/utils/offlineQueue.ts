@@ -211,20 +211,42 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
     logger.debug(`[OfflineSync] Queued ${mutation.type} for background sync.`);
 }
 
-let isFlushing = false;
+/** The send running now, with any asked for while it ran; null when none runs. */
+let running: Promise<void> | null = null;
 /** A send asked for while one was running: run once more when it ends, so the ask is not lost. */
 let flushAgain = false;
 
-export async function flushOfflineQueue() {
-    if (isFlushing) {
+/**
+ * Sends what the queue holds. A send asked for while one runs is never run beside it
+ * and never lost: the running one goes once more when it ends, and every caller is
+ * handed the same promise, settled only when both have gone. So a caller that waits
+ * (signing out sends what is queued first) waits for what it asked to be sent, not
+ * for nothing; it once returned at once while the other send was still out.
+ */
+export function flushOfflineQueue(): Promise<void> {
+    if (running) {
         // The network may have come back while the running send waited on the old one.
         flushAgain = true;
         e2eTrace('queue.flush.again');
-        return;
+        return running;
     }
-    isFlushing = true;
+    running = (async () => {
+        try {
+            do {
+                flushAgain = false;
+                await sendOnce();
+            } while (flushAgain);
+        } finally {
+            running = null;
+        }
+    })();
+    return running;
+}
+
+/** One pass over the queue, as the signed-in member: what it can send, sent in order. */
+async function sendOnce(): Promise<void> {
     e2eTrace('queue.flush', { queued: readQueue().length });
-    try {
+    {
     // Nothing queued: no session read (SecureStore) at all.
     if (readQueue().length === 0) return;
 
@@ -446,11 +468,5 @@ export async function flushOfflineQueue() {
             logger.warn('[OfflineSync] post-flush feed invalidation failed:', e);
         }
     }
-    } finally {
-        isFlushing = false;
-        if (flushAgain) {
-            flushAgain = false;
-            void flushOfflineQueue();
-        }
     }
 }
