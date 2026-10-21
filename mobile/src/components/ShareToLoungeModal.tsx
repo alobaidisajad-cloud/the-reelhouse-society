@@ -222,10 +222,10 @@ function ShareSheet({
                             <TryAgainLine onPress={() => { void useLoungeStore.getState().fetchLounges(); }} accessibilityLabel="Ask for the salons again" />
                         </View>
                     ) : lounges.length === 0 ? (
-                        <Text style={s.emptyText}>You haven&apos;t joined any lounges yet.</Text>
+                        <Text style={s.emptyText}>No seat yet. Take a seat in a salon in the Lounge, and you can carry this to it.</Text>
                     ) : (
                         <>
-                            <Text style={s.selectLabel}>SELECT LOUNGE</Text>
+                            <Text style={s.selectLabel}>SELECT A SALON</Text>
                             <FlashList
                                 maintainVisibleContentPosition={NOT_ANCHORED}
                                 data={lounges}

@@ -226,7 +226,7 @@ const s = StyleSheet.create({
 
   emptyBox: { padding: 40, alignItems: 'center' },
   moreFailed: { alignItems: 'center', paddingVertical: 20, gap: 4 },
-  moreFailedText: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, fontStyle: 'italic' },
+  moreFailedText: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog },
   moreRetry: { paddingVertical: 10, paddingHorizontal: 16 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.sepia },
 });

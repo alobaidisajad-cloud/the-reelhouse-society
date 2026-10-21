@@ -317,8 +317,8 @@ const s = StyleSheet.create({
     padding: 20, margin: -20,
   },
   welcomeTagline: {
-    fontFamily: fonts.sub, fontSize: 12, color: colors.fog, textAlign: 'center',
-    lineHeight: 22, fontStyle: 'italic', marginTop: 16, letterSpacing: 0.3,
+    fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog, textAlign: 'center',
+    lineHeight: 22, marginTop: 16, letterSpacing: 0.3,
   },
   societyRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24, opacity: 0.4, paddingHorizontal: 4 },
   societyRuleLine: { flex: 1, height: 1 },

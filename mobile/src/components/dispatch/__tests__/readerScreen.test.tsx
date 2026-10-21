@@ -662,20 +662,23 @@ describe('the reader', () => {
     expect(mockPushed).toContain('/film/42');
   });
 
-  it('carries the same four marks on a ballot and on a short filing', async () => {
-    // Each kind's component mounts its own copy of the marks; all must work.
+  it('carries the four marks once, in the dock, on a ballot and on a short filing', async () => {
+    // Each kind's card has its own row of marks; on the reader they stand in the dock alone,
+    // one row of them (the route walk, 2026-10-21: a take showed both at once).
     for (const over of [
       { kind: 'ballot', options: [{ film_id: 1, title: 'Tokyo Story', poster_path: null }, { film_id: 2, title: 'Late Spring', poster_path: null }], closes_at: new Date(Date.now() + 86_400_000).toISOString() },
       { kind: 'take', title: null, full_content: null, body: 'A take.' },
     ]) {
       useDispatch.setState({ certifiedIds: new Set(), savedIds: new Set(), opened: {} } as never);
       mockRow = row(over as Record<string, unknown>);
-      const { getByLabelText, unmount } = await mount();
+      const { getAllByLabelText, queryAllByLabelText, getByLabelText, unmount } = await mount();
 
-      // The page's own control (the dock's says "this filing").
-      await act(async () => { await fireEvent.press(getByLabelText(/^Certify this($|\. \d)/)); });
+      expect(queryAllByLabelText(/^Certify this($|\. \d)/)).toHaveLength(0);
+      expect(queryAllByLabelText('Save this')).toHaveLength(0);
+      expect(getAllByLabelText(/^Certify this filing/)).toHaveLength(1);
+      await act(async () => { await fireEvent.press(getByLabelText(/^Certify this filing/)); });
       expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
-      await act(async () => { await fireEvent.press(getByLabelText('Save this')); });
+      await act(async () => { await fireEvent.press(getByLabelText('Save')); });
       expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
 
       await act(async () => { unmount(); }); // before the next tree mounts

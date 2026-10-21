@@ -42,7 +42,7 @@ beforeEach(() => fetchLounges.mockClear());
 it('salons it could not read are not "you have joined none" — and it asks again', async () => {
   useLoungeStore.setState({ lounges: [], loungesFailed: true, loading: false, fetchLounges } as never);
   const r = await open();
-  expect(r.queryByText(/haven.t joined any lounges/)).toBeNull();
+  expect(r.queryByText(/^No seat yet. Take a seat/)).toBeNull();
   expect(r.getByText('The salons could not be reached.')).toBeTruthy();
   fetchLounges.mockClear();
   await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the salons again')); });
@@ -52,7 +52,7 @@ it('salons it could not read are not "you have joined none" — and it asks agai
 it('a member of none is still told so', async () => {
   useLoungeStore.setState({ lounges: [], loungesFailed: false, loading: false, fetchLounges } as never);
   const r = await open();
-  expect(r.getByText(/haven.t joined any lounges/)).toBeTruthy();
+  expect(r.getByText('No seat yet. Take a seat in a salon in the Lounge, and you can carry this to it.')).toBeTruthy();
 });
 
 const room = (id: string, over: Record<string, unknown>) =>

@@ -108,7 +108,8 @@ export default function AuthCallbackScreen() {
       }
 
       // Anyone can open this link: a session already here verifies nothing.
-      throw new Error('No valid authentication token found. The link may have expired.');
+      // In the words Supabase uses for a spent link, so mapAuthError says it in the house's.
+      throw new Error('Email link is invalid or has expired');
     } catch (err: unknown) {
       // A failed link must not leave the recovery flag armed — it would sign
       // the user out of a legitimate session on next launch.

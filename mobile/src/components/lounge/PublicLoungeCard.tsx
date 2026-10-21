@@ -16,6 +16,7 @@ import { LoungeRoom } from '@/src/stores/lounge';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
+import { counted } from '@/src/utils/counted';
 
 export const PublicLoungeCard = React.memo(({ lounge, index: _index, onReport }: { lounge: LoungeRoom; index: number; onReport?: (lounge: LoungeRoom) => void }) => {
   const coverUrl = lounge.cover_image
@@ -70,7 +71,7 @@ export const PublicLoungeCard = React.memo(({ lounge, index: _index, onReport }:
           <View style={s.publicFooter}>
             <View style={s.publicMetaRow}>
               <Users size={11} color={colors.fog} strokeWidth={1.5} />
-              <Text style={s.publicMetaText} numberOfLines={1}>{lounge.member_count || 0} SEATS TAKEN</Text>
+              <Text style={s.publicMetaText} numberOfLines={1}>{counted(lounge.member_count || 0, 'SEAT', 'SEATS')} TAKEN</Text>
             </View>
             <View style={s.publicEnterTag}>
               <Text style={s.publicEnterText} numberOfLines={1}>

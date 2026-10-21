@@ -77,7 +77,7 @@ export const s = StyleSheet.create({
   // ── Empty State ──
   emptyState: { alignItems: 'center' as const, paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderStyle: 'dashed' as const, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, backgroundColor: 'rgba(30,25,20,0.7)' },
   emptyTitle: { fontFamily: fonts.display, fontSize: 15, color: colors.parchment, marginBottom: 8 },
-  emptyDesc: { fontFamily: fonts.body, fontSize: 10, color: colors.fog, textAlign: 'center' as const, lineHeight: 16, fontStyle: 'italic' as const },
+  emptyDesc: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, textAlign: 'center' as const, lineHeight: 16 },
 
   // ── Projector Tab ──
   card: { ...EDGE_LIT, backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, padding: 16, gap: 10 },
@@ -92,7 +92,7 @@ export const s = StyleSheet.create({
   loadingText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia },
   notFoundBuster: { marginBottom: 12 },
   notFoundTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 8 },
-  notFoundBody: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, fontStyle: 'italic' as const, textAlign: 'center' as const, marginBottom: 24 },
+  notFoundBody: { fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.fog, textAlign: 'center' as const, marginBottom: 24 },
   ghostBtnRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
 
   // ── A room ──

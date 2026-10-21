@@ -27,6 +27,7 @@ import { readAllRows } from '@/src/features/settings/readAllRows';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { escapeCsvCell } from '@/src/utils/csv';
+import { counted } from '@/src/utils/counted';
 
 export default function DataVault() {
   const user = useAuthStore(s => s.user);
@@ -57,7 +58,7 @@ export default function DataVault() {
 
     Alert.alert(
       'Undo this transfer?',
-      `This removes the ${receiptSize(receipt)} entries the transfer added. Anything you logged yourself, and any stack you already had, stays exactly as it is.`,
+      `This removes the ${counted(receiptSize(receipt), 'entry', 'entries')} the transfer added. Anything you logged yourself, and any stack you already had, stays exactly as it is.`,
       [
         { text: 'Keep it', style: 'cancel' },
         {
@@ -89,7 +90,7 @@ export default function DataVault() {
                 setUndoableRows(0);
                 setImportResult(null);
                 TactileEngine.success();
-                reelToast.success(`Transfer undone. ${removed} entries removed.`);
+                reelToast.success(`Transfer undone. ${counted(removed, 'entry', 'entries')} removed.`);
               }
             } catch (e: unknown) {
               if (!isMounted.current) return;
@@ -448,7 +449,7 @@ export default function DataVault() {
             {importResult.skipped > 0 && (
               <View style={s.skippedRow}>
                 <AlertCircle size={10} color={colors.fog} />
-                <Text style={s.skippedText}>{importResult.skipped} films could not be matched</Text>
+                <Text style={s.skippedText}>{counted(importResult.skipped, 'film', 'films')} could not be matched</Text>
               </View>
             )}
 
@@ -487,7 +488,7 @@ export default function DataVault() {
             style={[s.undoBtn, undoing && { opacity: 0.5 }]}
             onPress={handleUndoImport}
             disabled={undoing}
-            accessibilityLabel={`Undo the last transfer, removing ${undoableRows} entries`}
+            accessibilityLabel={`Undo the last transfer, removing ${counted(undoableRows, 'entry', 'entries')}`}
             accessibilityRole="button"
             haptic="heavy"
             pressedScale={0.97}
@@ -530,8 +531,8 @@ const s = StyleSheet.create({
     color: colors.sepia, marginBottom: 10,
   },
   importDesc: {
-    fontFamily: fonts.body, fontSize: 12, color: colors.fog,
-    lineHeight: 19, marginBottom: 14, fontStyle: 'italic',
+    fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog,
+    lineHeight: 19, marginBottom: 14, 
   },
 
   // ── Upload Zone ──
@@ -571,8 +572,8 @@ const s = StyleSheet.create({
     backgroundColor: colors.sepia,
   },
   progressDetail: {
-    fontFamily: fonts.body, fontSize: 11, color: colors.fogQuiet,
-    marginTop: 8, fontStyle: 'italic',
+    fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.fogQuiet,
+    marginTop: 8, 
   },
 
   // ── Result Card ──
@@ -613,8 +614,8 @@ const s = StyleSheet.create({
   },
   errorScroll: { marginTop: 8 },
   errorLine: {
-    fontFamily: fonts.body, fontSize: 10, color: colors.crimsonInk,
-    fontStyle: 'italic', marginBottom: 3,
+    fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.crimsonInk,
+    marginBottom: 3,
   },
 
   // ── Import Another ──

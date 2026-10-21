@@ -20,6 +20,7 @@ import { tally } from './profileComputed';
 import { tasteReadiness, coverageNote, type TasteProfile } from '@/src/constants/taste';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomRetrieving, RoomUnreachable } from './RoomParts';
+import { counted } from '@/src/utils/counted';
 
 // Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
 // TactileEngine.navigate would lose its `this` binding).
@@ -76,7 +77,7 @@ export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo, isSe
         return plain(<Text {...scaledTextProps} style={s.subtitle}>{isSelf ? 'Log at least 3 films to draw your fingerprint.' : 'Too few films logged to draw a fingerprint.'}</Text>);
     }
     if (!ready.ready) {
-        return plain(<Text {...scaledTextProps} style={s.subtitle}>{`${tally(ready.known)} of ${tally(ready.total)} films catalogued so far.`}</Text>);
+        return plain(<Text {...scaledTextProps} style={s.subtitle}>{`${tally(ready.known)} of ${counted(ready.total, 'film', 'films', tally)} catalogued so far.`}</Text>);
     }
     if (computedGenres.length === 0) return null;
 
@@ -161,7 +162,7 @@ const s = StyleSheet.create({
     headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
     shareBtn: { padding: 4, opacity: 0.8 },
     title: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.sepia, marginBottom: 4 },
-    subtitle: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, fontStyle: 'italic', marginBottom: 16 },
+    subtitle: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog, marginBottom: 16 },
     dnaStrip: { gap: 10 },
     row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     genreLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, minWidth: 70 },

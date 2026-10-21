@@ -74,12 +74,15 @@ case "$1" in
       date*) case "$cmd" in *S.%3N*) date +'%m-%d %H:%M:%S.%3N' ;; *S.000*) date +'%m-%d %H:%M:%S.000' ;; *) date +'%m-%d %H:%M:%S' ;; esac ;;
       "dumpsys input_method") echo "mInputShown=true" ;;
       "dumpsys window windows") cat "$T/fixtures/windows.txt" ;;
-      "pidof com.reelhouse.society") echo 16631 ;;
+      # The app's process, as the phone has it: a launch starts it, a stop or a clear ends it.
+      "pidof com.reelhouse.society") cat "$T/state/pid" 2>/dev/null ;;
+      "am force-stop "*|"pm clear "*) rm -f "$T/state/pid" ;;
       # The phone's load: each ask takes the next of a scenario's (state/loads), then a quiet phone's.
       "cat /proc/loadavg") l=0.42; if [ -s "$T/state/loads" ]; then l=$(head -n 1 "$T/state/loads"); sed -i 1d "$T/state/loads"; fi; echo "$l 0.50 0.60 1/300 4242" ;;
       "dumpsys meminfo 16631") printf '** MEMINFO in pid 16631 [com.reelhouse.society] **\\n App Summary\\n           Native Heap:    41984\\n' ;;
       # A launch, as Android logs it: the process, then the first screen ready, or React destroyed.
       "am start-activity"*)
+        echo 16631 > "$T/state/pid"
         now=$(date +'%m-%d %H:%M:%S.%3N')
         echo "$now  523  543 I ActivityManager: Start proc 16631:com.reelhouse.society/u0a192 for next-top-activity" >> "$T/device.log"
         echo "$now  523  560 I ActivityTaskManager: Displayed com.reelhouse.society/.MainActivity for user 0: +1s234ms" >> "$T/device.log"
@@ -109,6 +112,7 @@ flow="$2"; name=$(basename "$flow" .yaml); out=""; dbg=""; shots=""
 while [ $# -gt 0 ]; do case "$1" in --output) out="$2"; shift ;; --debug-output) dbg="$2"; shift ;; --test-output-dir) shots="$2"; shift ;; esac; shift; done
 case "$flow" in *.tap.yaml) exit 0 ;; esac
 echo "maestro: $name" >> "$T/state/order"
+echo 16631 > "$T/state/pid"   # every flow opens with launchApp
 n=$(( $(cat "$T/state/count-$name" 2>/dev/null || echo 0) + 1 )); echo $n > "$T/state/count-$name"
 behaviour=$(sed -n "\${n}p" "$T/scenario/$name" 2>/dev/null); [ -z "$behaviour" ] && behaviour=pass
 tests="$dbg/.maestro/tests/2026-10-04_0000$n"; mkdir -p "$tests/$name"

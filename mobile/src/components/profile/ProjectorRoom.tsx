@@ -10,6 +10,7 @@ import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScalin
 import { standingFor } from '@/src/constants/standing';
 import { tally } from './profileComputed';
 import { EDGE_LIT } from '@/src/theme/light';
+import { counted } from '@/src/utils/counted';
 
 /**
  * THE PROJECTOR ROOM — the member's standing on the one ladder (the ring and the
@@ -247,7 +248,7 @@ export function ProjectorRoom({ stats, user, isSelf = false, record, streak }: {
                     <Text {...scaledTextProps} style={s.certSociety}>REELHOUSE PRESERVATION SOCIETY</Text>
                     <Text {...scaledTextProps} style={s.certTitle}>Certificate of Obsession</Text>
                     <Text {...scaledTextProps} style={s.certBody}>
-                        This document certifies that the bearer has witnessed {tally(stats.count)} films and contributed to the archival history of The ReelHouse Society.
+                        This document certifies that the bearer has witnessed {counted(stats.count, 'film', 'films', tally)} and contributed to the archival history of The ReelHouse Society.
                     </Text>
                     <View style={[s.certBadge, { borderColor: standing.color }]}>
                         <Text {...scaledTextProps} style={[s.certBadgeText, { color: standing.color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>

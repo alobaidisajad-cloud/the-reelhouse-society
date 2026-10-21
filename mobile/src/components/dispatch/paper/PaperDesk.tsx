@@ -37,6 +37,7 @@ import { DeskDoc } from './PaperDeskDoc';
 import { EDGE_LIT } from '@/src/theme/light';
 import { PaperEmpty } from './PaperFrame';
 import { useModalTop } from '@/src/components/layout/navMetrics';
+import { counted } from '@/src/utils/counted';
 
 /**
  * The head every desk wears, one component so the desks cannot drift. BACK and
@@ -343,7 +344,7 @@ export const DossierDesk = memo(function DossierDesk({
         {/* Words, and the read time it implies — the two facts a writer of a
             long piece actually watches. */}
         <Text style={p.rl} {...scaledTextProps}>
-          {groupDigits(words)} WORDS · {readMinutes(words)} MIN
+          {counted(words, 'WORD', 'WORDS', groupDigits)} · {readMinutes(words)} MIN
         </Text>
       </View>
       <View style={p.kbd}><Text style={p.kbdLabel} {...decorativeTextProps}>KEYBOARD</Text></View>

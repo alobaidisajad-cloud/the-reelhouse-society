@@ -410,9 +410,9 @@ export default function SocialModal() {
                             ? <Users size={28} color={colors.sepia} strokeWidth={1} />
                             : <Users size={28} color={colors.sepia} strokeWidth={1} />
                         }
-                        title={isShareMode ? 'No Lounges Found' : 'The Circle Is Empty'}
+                        title={isShareMode ? 'No Seat Yet' : 'The Circle Is Empty'}
                         subtitle={isShareMode
-                            ? 'You haven\'t joined any lounges yet. Join a lounge to share content with fellow cinephiles.'
+                            ? 'Take a seat in a salon in the Lounge, and you can carry this to it.'
                             : mode === 'followers'
                                 ? (isOwnCircle ? 'No one follows you yet.' : 'No one follows this member yet.')
                                 : (isOwnCircle ? 'You haven\'t followed anyone yet.' : 'This member hasn\'t followed anyone yet.')

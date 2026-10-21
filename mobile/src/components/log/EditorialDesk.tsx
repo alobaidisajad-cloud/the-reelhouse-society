@@ -105,7 +105,7 @@ const st = StyleSheet.create({
     editRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     editLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.bone, marginBottom: 8, includeFontPadding: false },
     editToggleText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, includeFontPadding: false },
-    pullQuoteInput: { backgroundColor: colors.well, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sepia, borderRadius: 4, padding: 12, fontFamily: fonts.sub, fontSize: 14, fontStyle: 'italic', color: colors.parchment },
+    pullQuoteInput: { backgroundColor: colors.well, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sepia, borderRadius: 4, padding: 12, fontFamily: fonts.bodyItalic, fontSize: 14, color: colors.parchment },
     // The drop-cap toggle: 48 tall by its own box, as every control on the
     // composer is (this file's `spoilerRow` shadows LogModalStyles', so it
     // carries the floor itself; a halo is invisible to accessibility).

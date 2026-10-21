@@ -514,6 +514,7 @@ export default function FilingReader() {
               // page announced NO BALLOTS WERE CAST under a question members had
               // marked — see PaperBallot's own note.
               sealed={!!live.frozenTotals}
+              docked={!!me && open}
               certifyCount={live.certifyCount}
               commentCount={live.commentCount}
               certified={certified}
@@ -549,6 +550,8 @@ export default function FilingReader() {
               ended={live.endedBy ?? undefined}
               edited={!!live.editedAt}
               pending={pending}
+              // The dock below holds the marks wherever it is drawn: one row of them, never two.
+              docked={!!me && open}
               // Gated on a member, for the reason given on the ballot above.
               onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : undefined}
               // The tombstone's one mark leads to the critiques that survive it,

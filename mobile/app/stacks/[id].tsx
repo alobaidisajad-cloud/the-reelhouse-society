@@ -1163,7 +1163,7 @@ const s = StyleSheet.create({
   metaChipText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 0.9, color: colors.sepia, includeFontPadding: false },
   // The epigraph — prose wears Courier italic, folded past four lines.
   descWrap: { marginBottom: 24 },
-  desc: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.bone, lineHeight: 21 },
+  desc: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, lineHeight: 21 },
   descToggle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginTop: 8 },
   // The epigraph's width and none of its height, invisible.
   descMeasure: { position: 'absolute', left: 0, right: 0, top: 0, opacity: 0 },
@@ -1181,7 +1181,7 @@ const s = StyleSheet.create({
   actionDivider: { width: 1, height: 16, backgroundColor: 'rgba(184,137,26,0.2)' },
 
   // ── Critiques Panel ──
-  commentEmpty: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 12, color: colors.fogQuiet, textAlign: 'center', paddingVertical: 8 },
+  commentEmpty: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fogQuiet, textAlign: 'center', paddingVertical: 8 },
   critiqueEarlier: { alignSelf: 'center', minHeight: 48, justifyContent: 'center', paddingHorizontal: 16 },
   critiqueEarlierText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
   critiquesUnread: { alignItems: 'center', gap: 4 },
@@ -1251,7 +1251,7 @@ const s = StyleSheet.create({
 
   emptyState: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, marginBottom: 8 },
-  emptySubtitle: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.fog, textAlign: 'center' },
+  emptySubtitle: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.fog, textAlign: 'center' },
 
   loadingCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   classifiedBuster: { marginBottom: 12 },

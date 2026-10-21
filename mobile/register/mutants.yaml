@@ -528,6 +528,41 @@ mutants:
         find: "Start proc 6028:com.reelhouse.society/u0a192"
         replace: "Start proc 6028:com.google.android.gms/u0a192"
 
+  - id: shape-italic-asked
+    class: TYPE-italic-faked
+    source: shape
+    plant:
+      - path: src/components/MutantItalic.tsx
+        text: "import { fonts } from '@/src/theme/theme';\n\nexport const s = { line: { fontFamily: fonts.body, fontStyle: 'italic' as const } };\n"
+    proof: { file: src/utils/__tests__/anItalicIsTheHouseItalic.guard.test.ts, test: "asks for no slant anywhere: an italic is a face of its own" }
+
+  - id: shape-seats-uncounted
+    class: COPY-count-before-plural
+    source: shape
+    edits:
+      - file: src/components/lounge/PublicLoungeCard.tsx
+        find: "{counted(lounge.member_count || 0, 'SEAT', 'SEATS')} TAKEN"
+        replace: "{lounge.member_count || 0} SEATS TAKEN"
+    proof: { file: src/utils/__tests__/aCountSaysItsWord.guard.test.ts, test: "prints no count before its word but through counted(), or one that can never be one" }
+
+  - id: shape-reader-undocked
+    class: UI-actions-twice
+    source: shape
+    edits:
+      - file: app/dispatch/[id].tsx
+        find: "              docked={!!me && open}\n              // Gated on a member"
+        replace: "              // Gated on a member"
+    proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "carries the four marks once, in the dock, on a ballot and on a short filing" }
+
+  - id: shape-dialog-theme-unset
+    class: ANDROID-dialog-off-house
+    source: shape
+    edits:
+      - file: plugins/withHouseDialogs.js
+        find: "  setItem(app, 'alertDialogTheme', `@style/${DIALOG}`);\n"
+        replace: ""
+    proof: { file: plugins/__tests__/withHouseDialogs.test.ts, test: "gives the app’s theme the house’s accent and its dialog theme, keeping what it had" }
+
   - id: shape-android-svg-root-unknown
     class: MOCKUP-android-svg-lost
     source: shape

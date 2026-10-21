@@ -231,7 +231,7 @@ export const s = StyleSheet.create({
   },
   emptyLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.9, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.bone, marginBottom: 4 },
-  emptyBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, fontStyle: 'italic', textAlign: 'center' },
+  emptyBody: { fontFamily: fonts.bodyItalic, fontSize: 14, color: colors.fog, textAlign: 'center' },
 
   // ── Back Button ──
   backBtnBottom: { marginTop: 24, paddingVertical: 14, paddingHorizontal: 24, borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2 },

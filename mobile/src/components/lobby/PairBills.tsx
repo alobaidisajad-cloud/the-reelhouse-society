@@ -30,6 +30,7 @@ import { balancedWidth, filmLine, nameLines, quoteSize, WALL, wholeName, type Wa
 import { LOG_BILL, STACK_BILL } from './words';
 import type { WallLog, WallStack } from './wallRead';
 import { KeepOff } from './KeepOff';
+import { counted } from '@/src/utils/counted';
 
 /** Between the credit's name and its mark's line. */
 const CREDIT_GAP = 6;
@@ -188,7 +189,7 @@ export const StackBill = memo(function StackBill({ stack, plan, scale, admin }: 
         pressedScale={0.985}
         haptic="selection"
         accessibilityRole="link"
-        accessibilityLabel={`Featured stack: ${stack.title}, by @${stack.author.username}, ${stack.films} films. Open the stack.`}
+        accessibilityLabel={`Featured stack: ${stack.title}, by @${stack.author.username}, ${counted(stack.films, 'film', 'films')}. Open the stack.`}
       >
         {FAN.map((f, i) => {
           const p = order[i];
@@ -205,7 +206,7 @@ export const StackBill = memo(function StackBill({ stack, plan, scale, admin }: 
         })}
       </PressableScale>
       <PressableScale style={s.stackWords} onPress={open} haptic="selection" accessibilityRole="link"
-        accessibilityLabel={`${stack.title}. See all ${stack.films} films.`}>
+        accessibilityLabel={`${stack.title}. See all ${counted(stack.films, 'film', 'films')}.`}>
         <Text numberOfLines={lines} maxFontSizeMultiplier={name.cap}
           style={[s.stackName, { fontSize: name.size, lineHeight: Math.round(name.size * 1.12) }]}>
           {stack.title}

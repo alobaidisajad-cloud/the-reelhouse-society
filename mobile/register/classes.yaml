@@ -539,6 +539,55 @@ classes:
     fix: "frozen-counts guard-only-through-a-caller counts, per app module no test names, each guard of its own: 19 modules (34 guards) found; tierRefusal (a privacy 42501 is never a rank's door) and keptOnThisPhone (the words of what a phone holds) now asked directly and found right; the rest frozen per file, to fall as each gets a test of its own"
     places: [none]
 
+  - id: TYPE-italic-faked
+    title: An italic asked of a face that has none (fontStyle on a loaded face), which Android draws in its own system font, Roboto, and iOS slants by machine
+    seriousness: layout
+    area: type
+    status: OPEN
+    count: 36
+    source: { kind: history, ref: "the route walk's screens, 2026-10-21: the empty states, the notices, Edit Profile in Roboto Italic" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/anItalicIsTheHouseItalic.guard.test.ts, test: "asks for no slant anywhere: an italic is a face of its own" }
+      - { kind: static, file: src/utils/__tests__/anItalicIsTheHouseItalic.guard.test.ts, test: "loads every italic face the theme names, before the first screen" }
+    fix: "every italic is a face of its own: Courier Prime's and Special Elite's slants are fonts.bodyItalic, Rye's (which has none) fonts.serifItalic, the house's quote face; the guard refuses any fontStyle italic in the app's code and holds the italic faces to the fonts loaded before the first screen (mutant shape-italic-asked)"
+    places: [emulator]
+
+  - id: COPY-count-before-plural
+    title: A number printed straight before a plural word, so one reads "1 SEATS TAKEN", "1 FILMS", "1 entries removed", on screen and aloud
+    seriousness: layout
+    area: copy
+    status: OPEN
+    count: 11
+    source: { kind: history, ref: "the route walk's Lounge, 2026-10-21: 1 SEATS TAKEN; the sweep found ten more" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aCountSaysItsWord.guard.test.ts, test: "prints no count before its word but through counted(), or one that can never be one" }
+    fix: "the Dispatch's counted() (one count, its singular and its plural named, decided on the raw number) moved to src/utils/counted.ts for the whole app, and every count goes through it; the guard reads the app's code for a count before a plural word, letting stand only a line that decides on its own or one listed with why it can never be one (mutant shape-seats-uncounted)"
+    places: [none]
+
+  - id: UI-actions-twice
+    title: The same controls drawn twice on one screen, the card's own row and the screen's dock, so a member meets two CERTIFY and two SAVE
+    seriousness: layout
+    area: dispatch
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "the route walk's filing, 2026-10-21: a take's row and its dock together" }
+    methods:
+      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "carries the four marks once, in the dock, on a ballot and on a short filing" }
+    fix: "the reader passes docked wherever it draws its dock (a member, an open filing): the post and the ballot then leave their own row of marks off (mutant shape-reader-undocked)"
+    places: [emulator]
+
+  - id: ANDROID-dialog-off-house
+    title: Android's own dialogs (every Alert) drawn in the platform's stock grey and teal, the one place the house looks like any app
+    seriousness: layout
+    area: android
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "the route walk's sign-out alert, 2026-10-21" }
+    methods:
+      - { kind: static, file: plugins/__tests__/withHouseDialogs.test.ts, test: "gives the app’s theme the house’s accent and its dialog theme, keeping what it had" }
+    fix: "plugins/withHouseDialogs.js gives the app's theme the house's brass accent and an AppCompat dialog theme on the house's card, its words in parchment and bone, its buttons in brass (mutant shape-dialog-theme-unset); the route walk's sign-out alert is its picture"
+    places: [emulator]
+
   - id: MOCKUP-android-svg-lost
     title: Every Android drawing of a screen lost its SVG art (the house's logo, the bills' sunbursts, icons drawn in SVG), so the renders and the checks that read them judged screens without their art
     seriousness: code

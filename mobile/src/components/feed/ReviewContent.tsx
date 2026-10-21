@@ -168,7 +168,7 @@ const s = StyleSheet.create({
   },
   pullQuote: {
     includeFontPadding: false, textAlignVertical: 'center',
-    fontFamily: fonts.display, fontSize: 15, fontStyle: 'italic',
+    fontFamily: fonts.serifItalic, fontSize: 15, 
     color: colors.sepia, lineHeight: 22,
     textShadowColor: colors.sepiaSubtle, textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8,
   },

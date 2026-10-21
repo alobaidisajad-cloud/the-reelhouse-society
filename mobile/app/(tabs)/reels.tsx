@@ -530,7 +530,7 @@ const st = StyleSheet.create({
   emptyWrap: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 32 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, textAlign: 'center', marginBottom: 8 },
   // Solid fogQuiet: the line that says what to do with an empty feed reads on any ground.
-  emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.fogQuiet, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, marginBottom: 24 },
+  emptySub: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fogQuiet, textAlign: 'center', lineHeight: 18, marginBottom: 24 },
   emptyBtn: { ...EDGE_LIT,
     backgroundColor: colors.soot, borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, borderStyle: 'dashed',

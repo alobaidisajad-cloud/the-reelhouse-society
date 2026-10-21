@@ -334,7 +334,7 @@ export const PaperArchive = memo(function PaperArchive({
               {[film.year, film.director?.toUpperCase()].filter(Boolean).join(' · ')}
             </Text>
             {count !== undefined && span ? (
-              <Text style={m.foundCount} {...scaledTextProps}>{count} FILINGS · {span}</Text>
+              <Text style={m.foundCount} {...scaledTextProps}>{counted(count, 'FILING', 'FILINGS')} · {span}</Text>
             ) : null}
           </View>
         </View>
@@ -1118,8 +1118,8 @@ const m = StyleSheet.create({
     marginTop: 6, includeFontPadding: false,
   },
   loungeGone: {
-    fontFamily: fonts.body, fontSize: 12.5, lineHeight: 19,
-    color: colors.fog, fontStyle: 'italic',
+    fontFamily: fonts.bodyItalic, fontSize: 12.5, lineHeight: 19,
+    color: colors.fog, 
   },
   loungeSource: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
   loungeByRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 9 },

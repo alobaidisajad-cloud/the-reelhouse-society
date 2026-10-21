@@ -441,15 +441,14 @@ const s = StyleSheet.create({
     letterSpacing: 1,
   },
   emptySub: {
-    fontFamily: fonts.body,
+    fontFamily: fonts.bodyItalic,
     fontSize: 12,
+    // The line that tells a member what to do with an empty room: solid
+    // fogQuiet, and a word never borrows its contrast from the ground behind it.
     color: colors.fogQuiet,
     textAlign: 'center',
     marginTop: 12,
     lineHeight: 18,
-    // The line that tells a member what to do with an empty room: solid
-    // fogQuiet, and a word never borrows its contrast from the ground behind it.
-    fontStyle: 'italic',
   },
   emptyBtn: { ...EDGE_LIT,
     backgroundColor: colors.soot,

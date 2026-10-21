@@ -15,6 +15,7 @@ import { tally } from './profileComputed';
 import { tasteReadiness, type TasteProfile } from '@/src/constants/taste';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomRetrieving, RoomUnreachable } from './RoomParts';
+import { counted } from '@/src/utils/counted';
 
 export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
     taste?: TasteProfile | null;
@@ -73,7 +74,7 @@ export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
                 {/* An archive of 0, 1 or 2 films is handled above, so `total`
                     is at least 3 by here and the count always says something. */}
                 <Text {...scaledTextProps} style={s.emptyText}>
-                    {`${tally(ready.known)} of ${tally(ready.total)} films catalogued so far.`}
+                    {`${tally(ready.known)} of ${counted(ready.total, 'film', 'films', tally)} catalogued so far.`}
                 </Text>
             </View>
         );
@@ -91,7 +92,7 @@ export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
                 line goes away rather than restating what is simply true. */}
             {!ready.complete && (
                 <Text {...scaledTextProps} style={s.metaNote}>
-                    BASED ON {tally(ready.known)} OF {tally(ready.total)} FILMS
+                    BASED ON {tally(ready.known)} OF {counted(ready.total, 'FILM', 'FILMS', tally)}
                 </Text>
             )}
 
@@ -194,7 +195,7 @@ const s = StyleSheet.create({
         borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4,
     },
     sectionTitle: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.sepia, marginBottom: 16 },
-    emptyText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, fontStyle: 'italic', textAlign: 'center' },
+    emptyText: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.fog, textAlign: 'center' },
     // Person rows
     personRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
     rankCircle: {

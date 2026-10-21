@@ -54,6 +54,7 @@ import { raceDeadline } from '@/src/utils/raceDeadline';
 import NetInfo from '@react-native-community/netinfo';
 import { flushOfflineQueue, getQueueLength } from '@/src/utils/offlineQueue';
 import { erasedBySigningOut, keptFor } from '@/src/utils/keptOnThisPhone';
+import { counted } from '@/src/utils/counted';
 
 /** The phone's answer about its lock, or no lock: a check that hangs or fails is a no. */
 const lockAnswer = (asked: Promise<boolean>): Promise<boolean> => raceDeadline(asked, 2000).catch(() => false);
@@ -649,7 +650,7 @@ export function SettingsScreen() {
                 haptic="selection"
                 accessibilityRole="button"
                 accessibilityState={{ disabled: otpSending || otpVerifying || resendIn > 0 }}
-                accessibilityLabel={resendIn > 0 ? `Send a new code. Available in ${resendIn} seconds.` : 'Send a new code'}
+                accessibilityLabel={resendIn > 0 ? `Send a new code. Available in ${counted(resendIn, 'second', 'seconds')}.` : 'Send a new code'}
               >
                 <Text style={[st.modalResendText, (otpSending || resendIn > 0) && st.modalResendTextDim]} {...scaledTextProps}>
                   {otpSending ? 'SENDING…' : resendIn > 0 ? `SEND A NEW CODE IN ${resendIn}s` : 'SEND A NEW CODE'}

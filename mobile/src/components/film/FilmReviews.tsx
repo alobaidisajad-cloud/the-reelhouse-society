@@ -241,7 +241,7 @@ const s = StyleSheet.create({
   emptyReviewTitle: { fontFamily: fonts.display, fontSize: 16, letterSpacing: 1, color: colors.sepia, marginBottom: 8 },
   // Left, and solid fog: the one line inviting a member to be the first voice
   // is never the faintest text on the page.
-  emptyReviewBody: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, fontStyle: 'italic', lineHeight: 20 },
+  emptyReviewBody: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog, lineHeight: 20 },
   retry: { alignSelf: 'flex-start', paddingVertical: 10 },
 
   readAllBtn: { ...EDGE_LIT,

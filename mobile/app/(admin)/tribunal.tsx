@@ -1228,7 +1228,7 @@ const s = StyleSheet.create({
   accusedInfo: { flex: 1 },
   accusedLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog },
   accusedName: { fontFamily: fonts.sub, fontSize: 13, color: colors.sepia, marginTop: 1 },
-  accusedUnknown: { fontFamily: fonts.body, fontSize: 12, fontStyle: 'italic', color: colors.fog, marginTop: 2 },
+  accusedUnknown: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog, marginTop: 2 },
 
   // ── The Evidence ───────────────────────────────────────────────────────
   detailsBox: {
@@ -1249,7 +1249,7 @@ const s = StyleSheet.create({
   contextValue: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 19 },
   evidenceTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, marginBottom: 4 },
   evidenceOpen: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginTop: 8 },
-  evidenceDestroyed: { fontFamily: fonts.body, fontSize: 12, fontStyle: 'italic', color: colors.fog },
+  evidenceDestroyed: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog },
   summonBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderStyle: 'dashed',

@@ -309,7 +309,7 @@ const s = StyleSheet.create({
     centerContent: { alignItems: 'center', zIndex: 1 },
     reelGlyph: { fontFamily: fonts.display, fontSize: 22, color: colors.sepiaSubtle, marginBottom: 12, letterSpacing: 4 },
     title: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 8, textAlign: 'center' },
-    subtitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.fog, fontStyle: 'italic', marginBottom: 24, textAlign: 'center' },
+    subtitle: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.fog, marginBottom: 24, textAlign: 'center' },
     spinBtn: {
         paddingVertical: 12, paddingHorizontal: 32,
         backgroundColor: colors.sepia, borderRadius: 4,
@@ -344,7 +344,7 @@ const s = StyleSheet.create({
         elevation: 12,
     },
     resultTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginTop: 16, textAlign: 'center' },
-    resultReason: { fontFamily: fonts.sub, fontSize: 13, color: colors.fog, fontStyle: 'italic', marginTop: 8, textAlign: 'center' },
+    resultReason: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.fog, marginTop: 8, textAlign: 'center' },
     verdictActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 20 },
     seeFilmBtn: {
         paddingVertical: 9, paddingHorizontal: 18,

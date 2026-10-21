@@ -1,10 +1,9 @@
-import { FlashList } from '@shopify/flash-list';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Film, X } from 'lucide-react-native';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
@@ -252,12 +251,12 @@ export default function YearInCinemaScreen() {
   return (
     <View style={s.container}>
       <RoomLight room="member" />
-      <FlashList
-        data={slides}
-        keyExtractor={(item, i) => `${item}-${i}`}
+      {/* Six pages at most, each exactly the phone's width: a plain pager. A recycling list
+          laid its pages out wider than the phone, and each page's words stood off it
+          (the route walk, 2026-10-21: a blank year). */}
+      <ScrollView
         horizontal
         pagingEnabled
-        estimatedItemSize={width}
         showsHorizontalScrollIndicator={false}
         bounces={false}
         onMomentumScrollEnd={(e) => {
@@ -267,8 +266,9 @@ export default function YearInCinemaScreen() {
             setCurrentIndex(index);
           }
         }}
-        renderItem={renderSlide}
-      />
+      >
+        {slides.map((item, index) => <Fragment key={`${item}-${index}`}>{renderSlide({ item, index })}</Fragment>)}
+      </ScrollView>
       <PressableScale style={[s.closeBtn, { top: closeTop }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
         <X size={24} color={colors.bone} />
       </PressableScale>

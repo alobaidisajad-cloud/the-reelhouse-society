@@ -70,7 +70,7 @@ const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.'];
  */
 export const PaperBallot = memo(function PaperBallot({
   question, author, options, myVote, closed, closesLabel, sealed = true,
-  certifyCount, commentCount, certified, saved, showKind = true, pending,
+  certifyCount, commentCount, certified, saved, showKind = true, pending, docked,
   onVote, onCertify, onCritique, onShare, onSave, onAuthor,
 }: {
   /**
@@ -84,6 +84,8 @@ export const PaperBallot = memo(function PaperBallot({
    * numbers, is unchanged; the app passes the real thing.
    */
   sealed?: boolean;
+  /** The reader docks its marks at the screen's foot (PostDock): the ballot draws no second row of them. */
+  docked?: boolean;
   /**
    * A vote is cast once and never changed — the database enforces it with
    * UNIQUE (post_id, user_id). So the options stop being controls the moment
@@ -332,12 +334,14 @@ export const PaperBallot = memo(function PaperBallot({
 
       {closed && <View style={{ alignItems: 'center', marginTop: 8 }}><Byline author={author} onPress={onAuthor} /></View>}
 
-      <PaperActions
-        certifyCount={certifyCount} commentCount={commentCount}
-        certified={certified} saved={saved} dimmed={pending}
-        onCertify={onCertify} onCritique={onCritique}
-        onShare={onShare} onSave={onSave}
-      />
+      {docked ? null : (
+        <PaperActions
+          certifyCount={certifyCount} commentCount={commentCount}
+          certified={certified} saved={saved} dimmed={pending}
+          onCertify={onCertify} onCritique={onCritique}
+          onShare={onShare} onSave={onSave}
+        />
+      )}
     </View>
   );
 });

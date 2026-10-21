@@ -148,14 +148,13 @@ const s = StyleSheet.create({
         marginTop: 12,
     },
     subtitle: {
-        fontFamily: fonts.body,
+        fontFamily: fonts.bodyItalic,
         fontSize: 13,
         color: colors.fog,
         textAlign: 'center',
         lineHeight: 20,
         maxWidth: 280,
         letterSpacing: 0.2,
-        fontStyle: 'italic',
     },
     divider: {
         flexDirection: 'row',

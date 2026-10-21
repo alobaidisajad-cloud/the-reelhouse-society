@@ -26,6 +26,7 @@ import { HouseLine, typeStyle } from './parts';
 import { BILL_ALL_H, BILL_GAP, BILL_HEAD_LINE, SHEET_FOOT, SNIPE_H, SNIPE_REACH, WALL, type WallPlan } from './measure';
 import { BILL, ONE_SHEET, STATES } from './words';
 import type { FeatureSheet } from './wallRead';
+import { counted } from '@/src/utils/counted';
 
 const SHADE = 'rgba(6,5,4,';
 /**
@@ -117,7 +118,7 @@ const OneSheet = memo(function OneSheet({ sheet, width, height, plan }: {
   const title = plan.titleSize(sheet.title);
   const credits = [sheet.year, sheet.runtime ? `${sheet.runtime} MIN` : null].filter(Boolean).join(' · ');
   const label = [
-    sheet.title, sheet.director ? `directed by ${sheet.director}` : null, sheet.year, sheet.runtime ? `${sheet.runtime} minutes` : null,
+    sheet.title, sheet.director ? `directed by ${sheet.director}` : null, sheet.year, sheet.runtime ? counted(sheet.runtime, 'minute', 'minutes') : null,
   ].filter(Boolean).join(', ');
   const titled = sheet.art.titled;
   // over wordless art the house's line stands at the sheet's foot, under the billing, and the snipe takes its corner

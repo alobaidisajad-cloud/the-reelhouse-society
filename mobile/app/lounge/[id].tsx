@@ -55,6 +55,7 @@ import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import { authorName, isDepartedHandle, quotedName } from '@/src/constants/departed';
 import { useScrollTrace } from '@/src/hooks/useScrollTrace';
+import { counted } from '@/src/utils/counted';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -154,7 +155,7 @@ const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
       : msg.type === 'log_share' && typeof meta.owner_username === 'string'
       ? `FILED BY @${meta.owner_username.toUpperCase()}`
       : msg.type === 'list_share' && typeof meta.curator === 'string'
-      ? `${typeof meta.filmCount === 'number' ? `${meta.filmCount} REELS · ` : ''}@${meta.curator.toUpperCase()}`
+      ? `${typeof meta.filmCount === 'number' ? `${counted(meta.filmCount, 'REEL', 'REELS')} · ` : ''}@${meta.curator.toUpperCase()}`
       : null;
 
   return (

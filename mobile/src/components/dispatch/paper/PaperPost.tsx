@@ -303,7 +303,7 @@ const Stamp = memo(function Stamp({
 export const PaperPost = memo(function PaperPost({
   kind, author, body, headline, source, film, still, order, orderIs, measureWidth,
   certifyCount, commentCount, certified, saved,
-  answer, answered, spoiler, withheld, ended, edited, series, readTime, noByline, pending,
+  answer, answered, spoiler, withheld, ended, edited, series, readTime, noByline, pending, docked,
   onOpen, onCertify, onCritique, onShare, onSave, onFilm, onAuthor,
 }: {
   kind: PaperKind;
@@ -334,6 +334,8 @@ export const PaperPost = memo(function PaperPost({
   noByline?: boolean;
   /** Filed offline, not yet sent: says so under the words, and nothing can be done to it yet. */
   pending?: boolean;
+  /** The reader docks its marks at the screen's foot (PostDock): the card draws no second row of them. */
+  docked?: boolean;
   /** The whole card opens the filing; optional for the harness, required in the app by a test. */
   onOpen?: () => void;
   onCertify?: (next: boolean) => void;
@@ -555,8 +557,8 @@ export const PaperPost = memo(function PaperPost({
         </View>
       </View>
 
-      {/* A spoilered post keeps its marks. */}
-      {!withheld && (
+      {/* A spoilered post keeps its marks; in the reader they stand in its dock, once. */}
+      {!withheld && !docked && (
         <PaperActions
           certifyCount={certifyCount} commentCount={commentCount}
           certified={certified} saved={saved} dimmed={pending}

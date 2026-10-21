@@ -232,7 +232,7 @@ const s = StyleSheet.create({
   beatContent: { alignItems: 'center', minHeight: 208, justifyContent: 'center' },
   eyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.sepia, marginBottom: 10 },
   title: { fontFamily: fonts.display, fontSize: 23, color: colors.parchment, textAlign: 'center', lineHeight: 30, marginBottom: 12 },
-  body: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.bone, textAlign: 'center', lineHeight: 21, maxWidth: 300 },
+  body: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, textAlign: 'center', lineHeight: 21, maxWidth: 300 },
 
   stamp: {
     borderWidth: 1.5, borderColor: colors.bloodReel, borderRadius: 4,

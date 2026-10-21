@@ -231,6 +231,7 @@ Decisions, as of 2026-09-28:
 | `plugins/__tests__/withoutDevLauncherScanner.test.ts` | The installed expo-dev-launcher's manifest, for the entry the plugin removes, and app.json's plugins. |
 | `plugins/__tests__/withSplashWithoutHandoff.test.ts` | The generated MainActivity fixture, app.json's plugins and the app's code, for who imports the splash screen. |
 | `plugins/__tests__/withLinkDuringLaunch.test.ts` | The generated MainActivity fixture and app.json's plugins. |
+| `plugins/__tests__/withHouseDialogs.test.ts` | app.json's plugins: the dialog plugin is listed, so the build runs it. |
 
 ## Mounted
 
@@ -303,6 +304,8 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts` | Every route file exports the house crash net (Expo Router reads the export, not a render). |
 | `src/utils/__tests__/everyBackHasAWayOut.guard.test.ts` | Every back goes through `nav.back()` or checks `canGoBack()` first (a dead back shows only on a cold-opened screen, which no render reaches). |
 | `src/utils/__tests__/aLetterIsTakenWhole.guard.test.ts` | No file takes a first letter by hand: each comes from `initialOf` / `firstCharacter` (a cut letter shows only for a name in another script, which few renders hold). |
+| `src/utils/__tests__/anItalicIsTheHouseItalic.guard.test.ts` | No style asks a face for a slant, and the italic faces are the fonts `app/_layout.tsx` loads (Android draws a faked italic in Roboto, which no jest render draws). |
+| `src/utils/__tests__/aCountSaysItsWord.guard.test.ts` | Every count printed before a plural word goes through `counted()` (a "1 SEATS" shows only when the count is one, which few renders hold). |
 
 ## Fixtures
 

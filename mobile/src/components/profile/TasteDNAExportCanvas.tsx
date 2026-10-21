@@ -155,10 +155,9 @@ const s = StyleSheet.create({
         textAlign: 'center',
     },
     subtitle: {
-        fontFamily: fonts.body,
+        fontFamily: fonts.bodyItalic,
         fontSize: 24,
         color: colors.fog,
-        fontStyle: 'italic',
         marginBottom: 60,
         textAlign: 'center',
         opacity: 0.7,

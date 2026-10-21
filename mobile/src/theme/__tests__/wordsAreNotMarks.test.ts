@@ -146,11 +146,11 @@ function exprAfter(ln: string, from: number): string {
  * ground must be paper (lighter than a card), and the word clear 4.5:1 there.
  */
 const WORDS_ON_PAPER: Record<string, keyof typeof colors> = {
-  // the Lobby's Featured Log is printed on parchment
-  'src/components/lobby/PairBills.tsx · readOnText': 'parchment',
-  'src/components/lobby/PairBills.tsx · filmLine': 'parchment',
-  'src/components/lobby/PairBills.tsx · sloganPaper': 'parchment',
-  'src/components/lobby/PairBills.tsx · doorPaperText': 'parchment',
+  // the Lobby's Featured Log is printed on its vellum paper, and so is the Dispatch's plate on the banner
+  'src/components/lobby/PairBills.tsx · readOnText': 'paper',
+  'src/components/lobby/PairBills.tsx · filmLine': 'paper',
+  'src/components/lobby/PairBills.tsx · sloganPaper': 'paper',
+  'src/components/lobby/FilingsBill.tsx · bannerDoorText': 'paper',
 };
 
 /** The pigments an expression names, by token or by any spelling of the value. */

@@ -13,7 +13,7 @@ import { useRouter, type Href } from 'expo-router';
 import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
 import { MasterLogo } from '@/src/components/MasterLogo';
-import { colors } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import { openSociety } from '@/src/utils/openSociety';
 import type { Rank } from '@/src/components/RankBadge';
 import { Halftone, HouseLine, Rays } from './parts';
@@ -48,7 +48,7 @@ const Ticket = memo(function Ticket({ rank, room, beside }: { rank: 'archivist' 
         </View>
         <View style={[s.ticketDoor, aut && s.ticketDoorAut]}>
           <HouseLine type="ticketDoor" text={RANK_BILL.privileges} room={room - 16} style={[s.ticketDoorText, aut && s.ticketDoorTextAut]} spoken={false} />
-          <Text style={[s.ticketDoorText, aut && s.ticketDoorTextAut]} maxFontSizeMultiplier={1.2}>›</Text>
+          <Text style={[s.ticketArrow, s.ticketDoorText, aut && s.ticketDoorTextAut]} maxFontSizeMultiplier={1.2}>›</Text>
         </View>
       </View>
       <Stub auteur={aut} />
@@ -111,7 +111,7 @@ export const RankBill = memo(function RankBill({ plan, viewer }: { plan: WallPla
           <View style={[s.ticketBody, s.ticketBodyOnly]}>
             <View style={[s.ticketDoor, s.ticketDoorAut, s.ticketDoorOnly]}>
               <HouseLine type="ticketDoor" text={RANK_BILL.yourFile} room={plan.wallW - 60} style={[s.ticketDoorText, s.ticketDoorTextAut]} spoken={false} />
-              <Text style={[s.ticketDoorText, s.ticketDoorTextAut]} maxFontSizeMultiplier={1.2}>›</Text>
+              <Text style={[s.ticketArrow, s.ticketDoorText, s.ticketDoorTextAut]} maxFontSizeMultiplier={1.2}>›</Text>
             </View>
           </View>
           <Stub auteur />
@@ -171,6 +171,8 @@ const s = StyleSheet.create({
   ticketDoorAut: { borderTopColor: colors.crimsonBorder },
   ticketDoorOnly: { marginTop: 0, borderTopWidth: 0, minHeight: 44 },
   ticketDoorText: { color: colors.sepia },
+  // the door's arrow in the ticket's own typewriter, as its words are
+  ticketArrow: { fontFamily: fonts.sub },
   ticketDoorTextAut: { color: colors.crimsonInk },
   stub: { width: WALL.ticketStub, alignItems: 'center', justifyContent: 'center' },
   perforation: { position: 'absolute', left: -1, top: 0, bottom: 0 },

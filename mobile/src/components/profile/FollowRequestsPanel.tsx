@@ -207,7 +207,7 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   title: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment },
-  subtitle: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.fog, marginTop: 6 },
+  subtitle: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.fog, marginTop: 6 },
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16,
@@ -218,7 +218,7 @@ const s = StyleSheet.create({
 
   listArea: { flexGrow: 1, flexShrink: 1, minHeight: 140, marginTop: 12 },
   center: { flex: 1, minHeight: 140, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 14, color: colors.fog },
+  emptyText: { fontFamily: fonts.bodyItalic, fontSize: 14, color: colors.fog },
   footerLoad: { paddingVertical: 16, alignItems: 'center' },
   retry: { marginTop: 12 },
 

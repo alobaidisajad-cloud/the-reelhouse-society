@@ -122,7 +122,7 @@ export const s = StyleSheet.create({
   ornamentalLine: { flex: 1, maxWidth: 80, height: 1, backgroundColor: colors.sepiaBorderStrong },
   ornamentalStar: { opacity: 0.7 },
   featuredQuoteWrap: { paddingVertical: 24, alignItems: 'center' },
-  featuredQuote: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, fontStyle: 'italic', lineHeight: 27, textAlign: 'center', textShadowColor: colors.sepiaSubtle, textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12,
+  featuredQuote: { fontFamily: fonts.serifItalic, fontSize: 20, color: colors.sepia, lineHeight: 27, textAlign: 'center', textShadowColor: colors.sepiaSubtle, textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12,
     // The glow's room inside the box a phone cuts it at; the margins keep the layout.
     paddingTop: 10, paddingBottom: 14, paddingHorizontal: 12, marginTop: -10, marginBottom: -14, marginHorizontal: -12 },
   featuredQuoteAuteur: { color: colors.crimsonInk, textShadowColor: 'rgba(107,26,10,0.15)' },
@@ -158,7 +158,7 @@ export const s = StyleSheet.create({
   chronicleRatingWrap: { marginBottom: 6 },
   chronicleReviewText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, lineHeight: 20 },
   chronicleReviewTextCurrent: { color: colors.bone, fontSize: 14, lineHeight: 22, fontStyle: 'normal' },
-  chronicleReviewTextPast: { fontStyle: 'italic' },
+  chronicleReviewTextPast: { fontFamily: fonts.bodyItalic },
   chronicleWatchedWith: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.5, color: colors.fog, marginTop: 6, includeFontPadding: false },
   chronicleDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingBottom: 10, paddingTop: 4 },
   chronicleDotIndicator: { width: 6, height: 2, borderRadius: 1, backgroundColor: colors.sepiaBorder },
@@ -183,7 +183,7 @@ export const s = StyleSheet.create({
 
   // ── Critiques ──
   commentsSection: { paddingHorizontal: SPINE, marginTop: 16, paddingBottom: 40 },
-  emptyComments: { fontFamily: fonts.body, fontSize: 12, fontStyle: 'italic', color: colors.fog, textAlign: 'center', marginTop: 20 },
+  emptyComments: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog, textAlign: 'center', marginTop: 20 },
   critiquesUnread: { alignItems: 'center', gap: 4 },
   listDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.sepiaBorder, marginTop: 20, marginBottom: 2 },
 

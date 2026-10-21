@@ -147,8 +147,8 @@ const st = StyleSheet.create({
   rowSub: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia },
   rowExtra: { fontFamily: fonts.sub, fontSize: 10, color: colors.fogQuiet },
   rowExcerpt: {
-    fontFamily: fonts.body, fontSize: 11, color: colors.fogQuiet,
-    fontStyle: 'italic', marginTop: 2, lineHeight: 14,
+    fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.fogQuiet,
+    marginTop: 2, lineHeight: 14,
   },
   /** The badge brings its own box; this only places it in the row. */
   rolePillWrap: { alignSelf: 'flex-start', marginTop: 3 },

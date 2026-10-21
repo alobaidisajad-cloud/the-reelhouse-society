@@ -12,6 +12,7 @@
  * lines: nothing here quotes a film, a programme or another poster.
  */
 import { type PaidRankId, rankById } from '@/src/constants/membership';
+import { counted } from '@/src/utils/counted';
 
 export const MASTHEAD = {
   kick: 'NOW ENTERING',
@@ -42,7 +43,7 @@ export const LOG_BILL = {
 
 export const STACK_BILL = {
   slab: ['Featured', 'Stack'],
-  films: (n: number) => `${n} FILMS`,
+  films: (n: number) => counted(n, 'FILM', 'FILMS'),
   seeAll: 'SEE ALL ›',
   slogan: ['Every stack', 'is a confession.'],
   vacant: ['No stack yet.', 'The first one', 'hangs here.'],

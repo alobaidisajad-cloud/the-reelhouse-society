@@ -112,15 +112,15 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/search-modal.tsx | 2026-10-15 | header top from useModalTop; foot from useContentBottom |
 | app/(modals)/social-modal.tsx | 2026-10-15 | handle's top from useModalTop; foot from useContentBottom |
 | app/(tabs)/_layout.tsx | 2026-10-15 | edited: each tab's own button draws its icon; no tabBarIcon; the icon's animated views stay native |
-| app/(tabs)/darkroom.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
+| app/(tabs)/darkroom.tsx | 2026-10-22 | edited: the empty room's line in the house italic face, its note above the colour it explains |
 | app/(tabs)/dispatch.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/(tabs)/index.tsx | 2026-10-15 | edited: the Lobby's read; the wall and the welcome end above the tab bar (useTabContentBottom); the welcome's scroll begins at the screen's top |
 | app/(tabs)/lounge.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/(tabs)/profile.tsx | 2026-10-15 | centred states in a CentredRoom: between the bars, and scrolled when taller; the bar clear on arrival before the file |
 | app/(tabs)/reels.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/+not-found.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
-| app/auth-callback.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
-| app/dispatch/[id].tsx | 2026-10-15 | edited: the reader's read; the docked bar on the edge, the page above it (useAboveDockedBar); each scroll traced |
+| app/auth-callback.tsx | 2026-10-22 | edited: a spent link raised in Supabase's own words, so the member reads the house's sentence |
+| app/dispatch/[id].tsx | 2026-10-22 | edited: the post and the ballot told the dock holds their marks |
 | app/dispatch/archive.tsx | 2026-10-15 | foot from useContentBottom |
 | app/dispatch/compose.tsx | 2026-10-15 | header and door from useModalTop; feet from navMetrics; the essay's footer never on the edge |
 | app/dispatch/room/[username].tsx | 2026-10-15 | foot from useContentBottom, scrollbar from useBottomEdge |
@@ -148,7 +148,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
 | app/stacks/[id].tsx | 2026-10-15 | chrome, hero and critiques from usePushedHeaderTop; foot from navMetrics; the critique field off the edge |
 | app/user/[username].tsx | 2026-10-15 | edited: the read; centred states in a CentredRoom; foot a tab's or a pushed page's |
-| app/year-in-cinema.tsx | 2026-10-15 | close from useOverlayTop; slides from safeAreaHeight; footer on the edge (FOOTER_GAP) |
+| app/year-in-cinema.tsx | 2026-10-22 | edited: a plain paging ScrollView for the six slides, the note saying why not a list |
 | ARCHITECTURE.md | 2026-10-15 | edited: Image Caching is true now that every picture states memory-disk, and names the guard that holds it |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
@@ -174,7 +174,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/prefetchDownloadOnly.test.ts | 2026-10-15 | new: written with prefetch-download-only.mjs, on dexdump lines in the glide check's shape |
 | e2e/__tests__/routeJudges.test.ts | 2026-10-17 | new |
 | e2e/__tests__/routes.test.ts | 2026-10-17 | new |
-| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-15 | edited: one shard runs only its flows, the probes and the launch where the map puts them, an unmapped flow in the last; no shard, the whole run |
+| e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-22 | edited: the fake phone's app process starts with a launch or a flow and ends with a stop or a clear, as a phone's does |
 | e2e/__tests__/runtimeDump.test.ts | 2026-10-15 | new: the runtime's parts joined per launch, held to the copy, and every way it says no |
 | e2e/__tests__/screenTimes.test.ts | 2026-10-16 | edited: its files come from the shared file list (test-utils/universe.js); edited: the ceilings file is what ceilingsFrom derives from the history |
 | e2e/__tests__/shardVerdict.test.ts | 2026-10-15 | new: says no to a ceiling no shard reported, a missing or unfinished shard, a flow run twice or never; the verdict job fails with a failed shard |
@@ -442,7 +442,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/oneCapNotThree.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/paperTextLogic.test.ts | 2026-10-03 | edited: hidden characters written as escapes |
-| src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-10-16 | edited: each event waited for; the second press of an order waits out the debounce, so "not re-read" is the screen's refusal |
+| src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-10-22 | edited: the marks once, in the dock, on a ballot and a short filing |
 | src/components/dispatch/__tests__/roomScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/rulesScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/seriesScreen.test.tsx | — |  |
@@ -477,7 +477,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/EssayBody.tsx | 2026-10-04 | edited: no letter is raised from a right-to-left opening |
 | src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
 | src/components/dispatch/FilingRow.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/dispatch/paper/PaperBallot.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/paper/PaperBallot.tsx | 2026-10-22 | edited: docked, the ballot draws no row of marks of its own |
 | src/components/dispatch/paper/PaperComposer.tsx | 2026-10-15 | head top from useModalTop |
 | src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-15 | spine top from usePushedHeaderTop |
 | src/components/dispatch/paper/PaperDesk.tsx | 2026-10-15 | DeskHead top from useModalTop |
@@ -490,10 +490,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperMore.tsx | 2026-10-15 | PaperBack starts at a pushed or modal top |
 | src/components/dispatch/paper/paperMotion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperPerf.ts | 2026-10-15 | edited: memory-disk on every image, held by its guard; no image sets a priority, so the backdrop rule is gone |
-| src/components/dispatch/paper/PaperPost.tsx | 2026-10-04 | edited: its own initialOf gone; the one in utils/text |
+| src/components/dispatch/paper/PaperPost.tsx | 2026-10-22 | edited: docked, the card draws no row of marks of its own |
 | src/components/dispatch/paper/PaperStrike.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperStyles.ts | 2026-10-15 | the masthead title's glow has room inside the box a phone cuts it at |
-| src/components/dispatch/paper/paperText.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/components/dispatch/paper/paperText.ts | 2026-10-22 | edited: counted() now lives in src/utils/counted.ts; this file passes it on |
 | src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
 | src/components/dispatch/roomLink.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/SeriesPicker.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -1408,3 +1408,8 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/topEdge.ts | 2026-10-15 | new: where a drawn page puts its top |
 | test-utils/universe.js | 2026-10-16 | new: the one list of the files each sweep reads, the route closure, and what each supabase/ file is; the scripts a flow runs (flowScripts) |
 | types/react-test-renderer.d.ts | 2026-09-29 | history reduced to the reason |
+| plugins/__tests__/withHouseDialogs.test.ts | 2026-10-22 | written: on a real styles.xml and colors.xml, the dialog theme and accents set beside what the app theme had |
+| plugins/withHouseDialogs.js | 2026-10-22 | written: Android's own dialogs in the house's card, parchment and brass; read against AppCompat's AlertDialog theme attributes |
+| src/utils/__tests__/aCountSaysItsWord.guard.test.ts | 2026-10-22 | written: every count before a plural word goes through counted() or is listed with why it is never one |
+| src/utils/__tests__/anItalicIsTheHouseItalic.guard.test.ts | 2026-10-22 | written: no slant asked of a face; the italic faces the theme names are the ones loaded before the first screen |
+| src/utils/counted.ts | 2026-10-22 | written: the Dispatch's counter, moved for the whole app with its note |
