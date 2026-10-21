@@ -478,8 +478,8 @@
   {
     "class": "NAV-launch-link-overridden",
     "mutant": "shape-every-link-names-nothing",
-    "proof": "m1",
-    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
+    "proof": "m2",
+    "commit": "8b35a365025648f3d773ae650cb7362213f6cf17",
     "verdict": "caught"
   },
   {
