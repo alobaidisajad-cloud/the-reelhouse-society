@@ -187,7 +187,7 @@ function Register({ stale, enrol, give }: {
         <Text style={s.secondaryText}>OPEN IN YOUR AUTHENTICATOR</Text>
       </PressableScale>
       <Text style={s.small}>Or type it by hand, as a time-based key:</Text>
-      <Text style={s.secret} selectable accessibilityLabel={`The key: ${key.secret.split('').join(' ')}`}>{groupedSecret(key.secret)}</Text>
+      <Text testID="second-key-secret" style={s.secret} selectable accessibilityLabel={`The key: ${key.secret.split('').join(' ')}`}>{groupedSecret(key.secret)}</Text>
       <PressableScale testID="second-key-copy" style={s.secondary} onPress={() => { void copy(); }} haptic="selection" accessibilityRole="button" accessibilityLabel="Copy the key">
         <Text style={s.secondaryText}>COPY THE KEY</Text>
       </PressableScale>

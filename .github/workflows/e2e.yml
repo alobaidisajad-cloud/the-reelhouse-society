@@ -594,7 +594,7 @@ jobs:
         # mobile/e2e/shards.json, made from every run's measured times
         # (flow-history.mjs); this outlasts the longest and what follows the
         # flows (flowHistory.test.ts holds it).
-        timeout-minutes: 32
+        timeout-minutes: 33
         env:
           E2E_SHARD: ${{ (inputs.faults || inputs.lifecycle || env.E2E_WALK) && '1/1' || format('{0}/3', matrix.shard) }}
           E2E_SHARD_MAP: ${{ inputs.faults && 'mobile/e2e/fault-shards.json' || inputs.lifecycle && 'mobile/e2e/lifecycle-shards.json' || env.E2E_WALK && 'mobile/e2e/walk-shards.json' || 'mobile/e2e/shards.json' }}

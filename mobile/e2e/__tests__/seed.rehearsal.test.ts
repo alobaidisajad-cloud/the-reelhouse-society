@@ -26,7 +26,8 @@ const ANON = 'anon-key';
 /** Each person the seed may make: their id, and the session the fake signs them in with. */
 const MEMBER = { id: '00000000-0000-4000-8000-000000000001', token: 'member-session' };
 const WRITER_PERSON = { id: '00000000-0000-4000-8000-000000000002', token: 'writer-session' };
-const PEOPLE = { e2e_member: MEMBER, e2e_writer: WRITER_PERSON };
+const ADMIN = { id: '00000000-0000-4000-8000-000000000003', token: 'admin-session' };
+const PEOPLE = { e2e_member: MEMBER, e2e_writer: WRITER_PERSON, e2e_admin: ADMIN };
 /** The person of a username, or no one: a name the seed was never meant to make. */
 const personNamed = (name: string | undefined) => Object.entries(PEOPLE).find(([n]) => n === name)?.[1];
 const TOKEN = MEMBER.token;
@@ -35,7 +36,7 @@ const WRITER = WRITER_PERSON.token;
 interface Asked { method: string; path: string; key: string; bearer: string; body: unknown }
 interface World {
   asked: Asked[]; created: number; logs: { user_id: string; film_id: number; film_title: string; review?: string }[];
-  posts: Record<string, unknown>[]; stacks: string[]; ranked: string[]; lounges: string[];
+  posts: Record<string, unknown>[]; stacks: string[]; ranked: string[]; lounges: string[]; roles: Record<string, string>;
 }
 
 /** A fake Supabase; `datesProfiles: false` is a database that ignores the age set-up. */
@@ -70,6 +71,11 @@ function fakeSupabase(world: World, opts: { datesProfiles?: boolean } = {}): Pro
     }
     if (url.startsWith('/rest/v1/profiles') && req.method === 'PATCH') {
       if (key !== SERVICE) return send(403, { message: 'protect_privileged_profile_fields' });
+      // A role, given by the service role alone (the guard keeps a member's own write from it).
+      if ((b as { role?: string }).role) {
+        world.roles[idIn(url) ?? ''] = (b as { role: string }).role;
+        return send(200, [{ role: (b as { role: string }).role }]);
+      }
       // Answered as written either way: the door, not the answer, says whether it held.
       if (opts.datesProfiles !== false) world.created = Date.parse((b as { created_at: string }).created_at);
       return send(200, [{ created_at: (b as { created_at: string }).created_at }]);
@@ -125,7 +131,7 @@ function fakeSupabase(world: World, opts: { datesProfiles?: boolean } = {}): Pro
 }
 
 async function seed(opts: { datesProfiles?: boolean; walk?: boolean } = {}) {
-  const world: World = { asked: [], created: Date.now(), logs: [], posts: [], stacks: [], ranked: [], lounges: [] };
+  const world: World = { asked: [], created: Date.now(), logs: [], posts: [], stacks: [], ranked: [], lounges: [], roles: {} };
   const server = await fakeSupabase(world, opts);
   const { port } = server.address() as AddressInfo;
   // No GITHUB_ENV: the rehearsal hands no password to a workflow.
@@ -164,10 +170,13 @@ it('makes the member able to file, then files, logs and stacks as the member, an
   expect([world.ranked, world.lounges]).toEqual([[], []]);
 });
 
-it('the service role only makes the member and dates their profile; every act is the member\'s own, with RLS on', async () => {
-  const { world } = await seed();
+it('the service role only makes the people, dates the member\'s profile and gives the admin their role; every act is the member\'s own, with RLS on', async () => {
+  const { world, text } = await seed();
   const byService = world.asked.filter((a) => a.key === SERVICE).map((a) => `${a.method} ${a.path.split('?')[0]}`);
-  expect(byService).toEqual(['POST /auth/v1/admin/users', 'PATCH /rest/v1/profiles']);
+  expect(byService).toEqual(['POST /auth/v1/admin/users', 'PATCH /rest/v1/profiles', 'POST /auth/v1/admin/users', 'PATCH /rest/v1/profiles']);
+  // The admin is made, given the role, and nothing more: no films, no filing, no rank.
+  expect([world.roles, world.ranked]).toEqual([{ [ADMIN.id]: 'admin' }, []]);
+  expect(text).toContain('✓ e2e_admin: made, signs in, reads their own profile, is admin\n');
   const acts = world.asked.filter((a) => a.method === 'POST' && /\/rest\/v1\/(logs|dispatch_posts|rpc\/save_stack)/.test(a.path));
   expect(acts.length).toBe(5 + 1 + 1);
   expect(acts.filter((a) => a.key !== ANON || a.bearer !== TOKEN)).toEqual([]);
@@ -190,7 +199,7 @@ describe('the route walk\'s world (E2E_SEED_WALK)', () => {
     expect([world.ranked, world.lounges]).toEqual([[WRITER_PERSON.id], ['lounge-1']]);
     expect(world.posts.filter((p) => p.series_id).map((p) => [p.kind, p.user_id, p.part_number])).toEqual([['dossier', WRITER_PERSON.id, 1]]);
     const byService = world.asked.filter((a) => a.key === SERVICE).map((a) => `${a.method} ${a.path.split('?')[0]}`);
-    expect(byService).toEqual(['POST /auth/v1/admin/users', 'PATCH /rest/v1/profiles', 'POST /auth/v1/admin/users', 'POST /rest/v1/rpc/grant_entitlement', 'PATCH /rest/v1/profiles']);
+    expect(byService).toEqual(['POST /auth/v1/admin/users', 'PATCH /rest/v1/profiles', 'POST /auth/v1/admin/users', 'PATCH /rest/v1/profiles', 'POST /auth/v1/admin/users', 'POST /rest/v1/rpc/grant_entitlement', 'PATCH /rest/v1/profiles']);
     const founded = world.asked.filter((a) => /\/rpc\/create_lounge$|dispatch_posts\?select=id,series_id/.test(a.path));
     expect(founded.map((a) => [a.key, a.bearer])).toEqual([[ANON, WRITER], [ANON, WRITER]]);
   });

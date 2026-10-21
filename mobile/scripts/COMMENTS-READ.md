@@ -71,6 +71,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/lifecycle/killed_mid_write.yaml | 2026-10-17 | new: the app stopped dead while a log is on its way over a slow link; reopened, the log is the member's, exactly once |
 | .maestro/lifecycle/live_config.yaml | 2026-10-17 | new: the text size, then the density, changed under a half-edited Edit Profile: the same screen, the words kept |
 | .maestro/lifecycle/upgrade.yaml | 2026-10-17 | new: the build in members' hands queues a write offline; this build installed over it sends it, exactly once; the member still signed in |
+| .maestro/admin_second_key.yaml | 2026-10-21 | new: the seeded admin registers a key, gives its code, and the Tribunal opens; relaunched, it opens with no code |
 | .maestro/log_film_flow.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/login_flow.yaml | 2026-09-29 | true as written |
 | .maestro/lounge_flow.yaml | 2026-09-29 | true as written |
@@ -88,6 +89,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/subflows/phone.yaml | 2026-10-17 | new: the phone changed mid-flow, for the lifecycle flows alone |
 | .maestro/subflows/sign_in.yaml | 2026-10-15 | edited: the account is new, only its profile dated back |
 | .maestro/subflows/upgrade.js | 2026-10-17 | new: one step of the upgrade through the fault proxy's /upgrade; a step not taken stops the flow |
+| .maestro/subflows/totp.js | 2026-10-21 | new: the code the key on the screen shows now, from the fault proxy's /totp |
 | .maestro/subflows/upgrade.yaml | 2026-10-17 | new: one step of the upgrade, for the lifecycle flows alone |
 | ANDROID_LAUNCH.md | 2026-10-04 | the splash leaving as Android's own added to the device checks, with the system exit's real timings |
 | app.config.js | 2026-10-15 | edited: the development profile gets back the dev client's scheme and iOS local networking; every other build is app.json |

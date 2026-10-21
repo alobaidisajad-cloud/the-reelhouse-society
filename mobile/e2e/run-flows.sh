@@ -476,6 +476,8 @@ for flow in $FLOW_LIST; do
       -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" \
       -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
       -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" \
+      -e E2E_ADMIN_EMAIL="${E2E_ADMIN_EMAIL:-}" \
+      -e E2E_ADMIN_PASSWORD="${E2E_ADMIN_PASSWORD:-}" \
       --format junit --output "$OUT/flow-reports/$name.xml" \
       --debug-output "$OUT/maestro-debug/$name" \
       > "$OUT/attempt.out" 2>&1

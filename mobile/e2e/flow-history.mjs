@@ -18,7 +18,9 @@
  * percentile of its runs, nearest rank), shard 1 keeps the launch and the
  * keyboard probes, each flow goes to the lightest shard (heaviest first), and
  * each shard's minutes are its weight and a quarter more, so a slow runner's
- * day is inside it.
+ * day is inside it. A flow too new to have runs is weighed by an estimate
+ * (UNMEASURED_SECONDS) and named in the map's firstRuns, with why, until its
+ * first runs are added.
  *
  *   node mobile/e2e/flow-history.mjs --add <run id>...   the runs' parts, added to the history
  *   node mobile/e2e/flow-history.mjs --map               the map the history makes

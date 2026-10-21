@@ -1,0 +1,48 @@
+appId: com.reelhouse.society
+---
+# The Tribunal's second key (WORKLIST P0.94), against the sealed world's own
+# auth server, its authenticator codes on (e2e/supabase/config.toml). The
+# seeded admin (e2e/db/seed.mjs), with no key yet, opens the Tribunal,
+# registers a key, reads it off the screen as a member types it into an
+# authenticator, gives the code that key shows now (subflows/totp.js), and the
+# Tribunal opens. Relaunched, the session still holds the key: the Tribunal
+# opens with no code asked for.
+- launchApp:
+    clearState: true
+- runFlow:
+    file: subflows/sign_in.yaml
+    env:
+      E2E_MEMBER_EMAIL: ${E2E_ADMIN_EMAIL}
+      E2E_MEMBER_PASSWORD: ${E2E_ADMIN_PASSWORD}
+- openLink: "reelhouse://tribunal"
+- extendedWaitUntil:
+    visible: "The Second Key"
+    timeout: 30000
+- tapOn:
+    id: "second-key-register"
+    retryTapIfNoChange: false
+- extendedWaitUntil:
+    visible:
+      id: "second-key-secret"
+    timeout: 20000
+- copyTextFrom:
+    id: "second-key-secret"
+- runScript:
+    file: subflows/totp.js
+- tapOn:
+    id: "second-key-code"
+- inputText: ${output.code}
+- tapOn:
+    id: "second-key-give"
+    retryTapIfNoChange: false
+- extendedWaitUntil:
+    visible: "The Tribunal"
+    timeout: 30000
+- assertNotVisible: "The Second Key"
+- stopApp
+- launchApp
+- openLink: "reelhouse://tribunal"
+- extendedWaitUntil:
+    visible: "The Tribunal"
+    timeout: 30000
+- assertNotVisible: "The Second Key"

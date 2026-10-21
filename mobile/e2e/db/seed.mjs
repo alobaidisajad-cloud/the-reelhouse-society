@@ -36,6 +36,8 @@ export const E2E_DOMAIN = 'e2e.test';
 const PEOPLE = [
   // A member with no rank: the ordinary path through the app. Able to file.
   { env: 'E2E_MEMBER', username: 'e2e_member', files: true },
+  // An admin, for the Tribunal's door (.maestro/admin_second_key.yaml, WORKLIST P0.94): no key yet.
+  { env: 'E2E_ADMIN', username: 'e2e_admin', role: 'admin' },
   // For the route walk alone (E2E_SEED_WALK, WORKLIST P0.86), so the flows' world is as it was: a
   // writer at the Auteur rank whose open Lounge and essay in a series give the walk's rooms an id,
   // each read back as the member the walk opens it as.
@@ -115,6 +117,14 @@ async function seedPerson(p) {
     const g = Array.isArray(granted.body) ? granted.body[0] : granted.body;
     if (granted.status !== 200 || g?.out_tier !== p.rank) fail(p.username, `could not be given the ${p.rank} rank: HTTP ${granted.status} ${JSON.stringify(granted.body).slice(0, 200)}`);
   }
+  // A house role is given as the house gives one: by the service role, past the guard that keeps a
+  // member's own write from it (protect_privileged_profile_fields), and read back from the row.
+  if (p.role) {
+    const given = await call(`/rest/v1/profiles?id=eq.${made.body.id}&select=role`, {
+      key: SERVICE, method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ role: p.role }),
+    });
+    if (given.status !== 200 || given.body?.[0]?.role !== p.role) fail(p.username, `could not be made ${p.role}: HTTP ${given.status} ${JSON.stringify(given.body).slice(0, 200)}`);
+  }
   if (p.files) await becomeAbleToFile(p.username, made.body.id, session.body.access_token);
   if (p.writes) await makeTheWalksRooms(p.username, made.body.id, session.body.access_token, p.readBy, sessions[p.readBy]);
 
@@ -122,7 +132,7 @@ async function seedPerson(p) {
     console.log(`::add-mask::${password}`);
     appendFileSync(process.env.GITHUB_ENV, `${p.env}_EMAIL=${email}\n${p.env}_PASSWORD=${password}\n${p.env}_USERNAME=${p.username}\n`);
   }
-  console.log(`✓ ${p.username}: made, signs in, reads their own profile${p.files ? ', files, and is read back' : ''}`);
+  console.log(`✓ ${p.username}: made, signs in, reads their own profile${p.role ? `, is ${p.role}` : ''}${p.files ? ', files, and is read back' : ''}`);
   return session.body.access_token;
 }
 

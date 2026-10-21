@@ -1,36 +1,40 @@
 {
   "why": "Each shard is one machine of e2e.yml flows job: what e2e/flow-history.mjs makes of e2e/flow-history.json (each part weighed by its 90th-percentile time over the measured runs; the launch and the keyboard probes on shard 1; each flow to the lightest shard, heaviest first; minutes = weight and a quarter). Read by e2e/shards.mjs and run-flows.sh; shards.test.ts and flowHistory.test.ts hold it.",
+  "firstRuns": {
+    "admin_second_key": "New on 2026-10-21 (WORKLIST P0.94): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list."
+  },
   "shards": [
     {
       "keyboardProbes": true,
       "launchWithAnimations": true,
       "flows": [
-        "auth_deep_link",
-        "auth_flow",
         "boot_verification",
-        "lobby_wall_flow"
-      ],
-      "minutes": 25
-    },
-    {
-      "flows": [
         "browse_vault",
         "darkroom_search",
-        "film_log",
-        "flow_critical_path",
-        "login_flow"
+        "lounge_flow"
       ],
-      "minutes": 24
+      "minutes": 27
     },
     {
       "flows": [
-        "error_recovery",
+        "admin_second_key",
+        "auth_flow",
+        "lobby_wall_flow",
         "log_film_flow",
-        "lounge_flow",
-        "offline_resilience",
         "session_survives_restart"
       ],
-      "minutes": 24
+      "minutes": 27
+    },
+    {
+      "flows": [
+        "auth_deep_link",
+        "error_recovery",
+        "film_log",
+        "flow_critical_path",
+        "login_flow",
+        "offline_resilience"
+      ],
+      "minutes": 27
     }
   ]
 }

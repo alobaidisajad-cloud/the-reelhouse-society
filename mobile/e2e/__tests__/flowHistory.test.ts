@@ -108,14 +108,17 @@ describe('the committed map', () => {
     expect(committed).toEqual(made);
   });
 
-  it("measures every flow it places, and keeps no run's samples twice", () => {
+  it("measures every flow it places, but a new one it names with why until its first runs are in, and keeps no run's samples twice", () => {
     const { unmeasured, twice } = answer<{ unmeasured: string[]; twice: string[] }>(`
       const history = JSON.parse(fs.readFileSync(${JSON.stringify(join(E2E, 'flow-history.json'))}, 'utf8'));
       const w = h.weightsFrom(history);
       const seen = new Set(); const twice = [];
       for (const s of history.samples) { const k = s.run + '/' + s.shard + '/' + s.part; if (seen.has(k)) twice.push(k); seen.add(k); }
       return { unmeasured: [...h.flowNames(), ...h.FIRST_SHARD_PARTS].filter((p) => !(p in w)), twice };`);
-    expect({ unmeasured, twice }).toEqual({ unmeasured: [], twice: [] });
+    // A flow too new to have runs is named, with why; once measured it leaves the list (a stale name fails here).
+    const firstRuns = (JSON.parse(readFileSync(join(E2E, 'shards.json'), 'utf8')) as { firstRuns?: Record<string, string> }).firstRuns ?? {};
+    expect({ unmeasured, twice }).toEqual({ unmeasured: Object.keys(firstRuns).sort(), twice: [] });
+    expect(Object.entries(firstRuns).filter(([, why]) => why.length < 30)).toEqual([]);
   });
 
   it("fits inside the workflow: the flows step outlasts the longest shard's minutes and what follows the flows, the job outlasts the step and the emulator's start", () => {

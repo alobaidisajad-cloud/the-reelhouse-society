@@ -47,6 +47,7 @@
  */
 import { Buffer } from 'node:buffer';
 import { spawnSync } from 'node:child_process';
+import { createHmac } from 'node:crypto';
 import { appendFileSync } from 'node:fs';
 import { createServer as createHttpServer } from 'node:http';
 import { connect, createServer } from 'node:net';
@@ -96,6 +97,26 @@ export const commandsFor = {
       ['adb', ['shell', 'settings', 'put', 'global', 'private_dns_mode', 'hostname']]]
     : [['adb', ['shell', 'settings', 'put', 'global', 'private_dns_mode', 'off']]]),
 };
+/**
+ * The code an authenticator shows for a key, now (RFC 6238 as Supabase's factors use it: SHA-1,
+ * 30-second steps, 6 digits), for the admin flow's second key (WORKLIST P0.94): the key is read off
+ * the app's screen as a member reads it, and this is the authenticator app the runner has none of.
+ * Null for anything that is not a base32 key.
+ */
+export function totpOf(secret, now = Date.now()) {
+  const letters = String(secret ?? '').replace(/[\s=]/g, '').toUpperCase();
+  if (!/^[A-Z2-7]{16,64}$/.test(letters)) return null;
+  let bits = '';
+  for (const ch of letters) bits += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.indexOf(ch).toString(2).padStart(5, '0');
+  const key = Buffer.from((bits.match(/.{8}/g) ?? []).map((b) => parseInt(b, 2)));
+  const step = Buffer.alloc(8);
+  step.writeBigUInt64BE(BigInt(Math.floor(now / 30_000)));
+  const mac = createHmac('sha1', key).update(step).digest();
+  const at = mac[mac.length - 1] & 0x0f;
+  const n = ((mac[at] & 0x7f) << 24) | (mac[at + 1] << 16) | (mac[at + 2] << 8) | mac[at + 3];
+  return String(n % 1_000_000).padStart(6, '0');
+}
+
 /** The emulator image's keyboard (Gboard), as `ime list -a -s` names it. */
 export const GBOARD = 'com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME';
 /**
@@ -344,6 +365,12 @@ export function startProxy({ listen = 0, to, control = 0, logFile = null, run = 
       if (req.url === '/log' && req.method === 'GET') return answer(res, 200, log);
       if (req.url === '/log' && req.method === 'DELETE') { log.length = 0; return answer(res, 200, { log: 'emptied' }); }
       if (req.url === '/fault' && req.method === 'DELETE') { fault = null; left = 0; return answer(res, 200, { fault: null }); }
+      if (req.url === '/totp' && req.method === 'POST') {
+        let asked;
+        try { asked = JSON.parse(body); } catch { return answer(res, 400, { refused: 'the body is not JSON' }); }
+        const code = Object.keys(asked ?? {}).length === 1 ? totpOf(asked.secret) : null;
+        return code ? answer(res, 200, { code }) : answer(res, 400, { refused: 'secret, a base32 key alone' });
+      }
       if (req.url === '/upgrade' && req.method === 'POST') {
         let asked;
         try { asked = JSON.parse(body); } catch { return answer(res, 400, { refused: 'the body is not JSON' }); }

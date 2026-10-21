@@ -158,6 +158,13 @@ out.phone = [
   await control('POST', '/phone', { set: 'font_scale', to: 1, also: 'x' }),
 ].map((r) => ({ status: r.status, ...r.body }));
 out.ranPhone = ran.length;
+// RFC 6238's example key: the text "12345678901234567890", in the base32 an authenticator takes.
+const rfcKey = [...Buffer.from('12345678901234567890')].map((b) => b.toString(2).padStart(8, '0')).join('').match(/.{1,5}/g).map((b) => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'[parseInt(b.padEnd(5, '0'), 2)]).join('');
+out.totp = [
+  await control('POST', '/totp', { secret: rfcKey.match(/.{4}/g).join(' ') }),
+  await control('POST', '/totp', { secret: 'not a key' }),
+  await control('POST', '/totp', { secret: rfcKey, also: 'x' }),
+].map((r) => ({ status: r.status, ...r.body }));
 out.backup = [
   await control('POST', '/backup', { step: 'save' }),
   await control('POST', '/backup', { step: 'reinstall' }),
@@ -306,6 +313,20 @@ it('changes the phone mid-flow by fixed commands of checked values alone, and re
     'adb shell settings delete secure enabled_input_methods',
     'adb shell settings delete secure default_input_method',
   ]);
+});
+
+it('gives the code an authenticator shows for a key, by RFC 6238\'s own vectors, and nothing for what is no key', () => {
+  // The RFC's key (the text "12345678901234567890", in base32) at its listed times: the last six of its eight
+  // digits; spaced, lower-cased and padded it is the same key; cut short, or with a 1 in it, it is none.
+  const code = `const m = await import(${JSON.stringify(SCRIPT)}); const k = [...Buffer.from("12345678901234567890")].map((b) => b.toString(2).padStart(8, "0")).join("").match(/.{1,5}/g).map((b) => "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"[parseInt(b.padEnd(5, "0"), 2)]).join(""); console.log(JSON.stringify([
+    m.totpOf(k, 59_000), m.totpOf(k, 1_111_111_109_000), m.totpOf(k, 1_234_567_890_000), m.totpOf(k, 2_000_000_000_000),
+    m.totpOf(k.match(/.{4}/g).join(' ').toLowerCase() + '==', 59_000), m.totpOf(k.slice(0, 4)), m.totpOf(k.slice(0, 15) + '1'), m.totpOf(null),
+  ]));`;
+  const r = spawnSync(process.execPath, ['--input-type=module', '-e', code], { encoding: 'utf8' });
+  expect(JSON.parse(r.stdout)).toEqual(['287082', '081804', '005924', '279037', '287082', null, null, null]);
+  // As a flow asks it: a code now, six digits; a refusal for anything but a key alone.
+  expect(out.totp[0]).toEqual({ status: 200, code: expect.stringMatching(/^\d{6}$/) });
+  expect(out.totp.slice(1)).toEqual([{ status: 400, refused: 'secret, a base32 key alone' }, { status: 400, refused: 'secret, a base32 key alone' }]);
 });
 
 it('runs adb from the Android SDK the runner keeps, since the proxy starts before adb is on the PATH (run 39004287263)', () => {

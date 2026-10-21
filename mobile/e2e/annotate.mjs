@@ -13,8 +13,8 @@
  * ten annotations of each kind per step, and run-flows.sh sends the rest there
  * rather than lose them.
  *
- * Everything leaving the run passes through here, so the seeded member's
- * password (E2E_MEMBER_PASSWORD, new on every run) is replaced with ••• in
+ * Everything leaving the run passes through here, so every seeded account's
+ * password (each E2E_<WHO>_PASSWORD, new on every run) is replaced with ••• in
  * both — whichever report carried it. GitHub masks it too; this does not lean
  * on that.
  */
@@ -28,8 +28,8 @@ if (!title || !file || !['error', 'warning', 'notice', 'summary'].includes(level
   console.error('usage: node e2e/annotate.mjs "<title>" <file> [error|warning|notice|summary] [--drop <regex>]');
   process.exit(2);
 }
-const secret = process.env.E2E_MEMBER_PASSWORD;
-const redact = (s) => (secret ? s.split(secret).join('•••') : s);
+const secrets = Object.entries(process.env).filter(([k, v]) => /^E2E_[A-Z]+_PASSWORD$/.test(k) && v).map(([, v]) => v);
+const redact = (s) => secrets.reduce((t, secret) => t.split(secret).join('•••'), s);
 const text = redact(existsSync(file) ? readFileSync(file, 'utf8').replace(/\r\n/g, '\n').trim() : '(no output was written)');
 const lines = text.split('\n').filter((l) => !drop || !drop.test(l));
 
