@@ -37,6 +37,18 @@
       "reason": "The slowdown needs a pattern longer than 50,000 characters. The one mount, EssayBody, renders only text cut by capMarkdownForRender to 25,000."
     },
     {
+      "package": "markdown-it",
+      "version": "10.0.0",
+      "advisory": "GHSA-r7fv-28h4-cvq7",
+      "reason": "Smart quotes with unmatched closers grow with the length of the text. Measured on this markdown-it 10.0.0 built as the library builds it (typographer on): 56 ms at the 25,000 characters capMarkdownForRender cuts EssayBody's text to (34 ms with the quotes reversed), 2.3 s only at 100,000, which the cap never lets through. That is under the smart-quotes case GHSA-6v5v-wf23-fmfq already measured at the cap."
+    },
+    {
+      "package": "markdown-it",
+      "version": "10.0.0",
+      "advisory": "GHSA-vfgh-jcmw-g37q",
+      "reason": "The slowdown is in inline HTML, which runs only with html on. react-native-markdown-display builds markdown-it with typographer alone (html off by default), and no mount passes a parser of its own; measured with html off, the payload stays linear (7 ms at 25,000 characters)."
+    },
+    {
       "package": "nanoid",
       "version": "3.3.13",
       "advisory": "GHSA-28wg-ghj8-5hjv",
