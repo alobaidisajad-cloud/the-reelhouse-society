@@ -87,7 +87,7 @@
     "class": "CI-background-job-left-running",
     "mutant": "shape-log-stream-left-running",
     "proof": "m1",
-    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
     "verdict": "caught"
   },
   {
@@ -101,14 +101,14 @@
     "class": "BUILD-identity-drifts",
     "mutant": "shape-update-feed-elsewhere",
     "proof": "m1",
-    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
     "verdict": "caught"
   },
   {
     "class": "BUILD-identity-drifts",
     "mutant": "shape-sentry-project-unread",
     "proof": "m2",
-    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
     "verdict": "caught"
   },
   {
@@ -353,28 +353,63 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-refusal-sent",
     "proof": "m3",
-    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-launch-unmeasured",
+    "mutant": "judge-no-launch-to-measure",
+    "proof": "judge",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-launch-unmeasured",
+    "mutant": "shape-cold-cell-left-empty",
+    "proof": "m1",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-launch-unmeasured",
+    "mutant": "shape-cold-table-unwritten",
+    "proof": "m3",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
     "verdict": "caught"
   },
   {
     "class": "E2E-ceiling-not-measured",
     "mutant": "shape-shard-starts-cold",
     "proof": "m1",
-    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-phone-change-unseen",
+    "mutant": "shape-keyboard-unwaited",
+    "proof": "m1",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-phone-only-as-the-runner-has-it",
+    "mutant": "shape-variant-phone-unsettled",
+    "proof": "m6",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
     "verdict": "caught"
   },
   {
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-input-swallowed",
     "proof": "m4",
-    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
     "verdict": "caught"
   },
   {
     "class": "E2E-record-not-kept",
     "mutant": "shape-variant-record-not-kept",
     "proof": "m1",
-    "commit": "34c06369b834a3fa37d12bf85df04edbd02e99ec",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
     "verdict": "caught"
   },
   {
@@ -402,14 +437,14 @@
     "class": "E2E-phone-change-unseen",
     "mutant": "shape-phone-unchecked",
     "proof": "m1",
-    "commit": "34c06369b834a3fa37d12bf85df04edbd02e99ec",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
     "verdict": "caught"
   },
   {
     "class": "E2E-phone-change-unseen",
     "mutant": "shape-backup-marker-unread",
     "proof": "m3",
-    "commit": "34c06369b834a3fa37d12bf85df04edbd02e99ec",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
     "verdict": "caught"
   },
   {
@@ -431,6 +466,13 @@
     "mutant": "shape-moment-taps-dropped",
     "proof": "m2",
     "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-launch-link-overridden",
+    "mutant": "shape-new-intent-not-kept",
+    "proof": "m1",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
     "verdict": "caught"
   },
   {
@@ -465,14 +507,14 @@
     "class": "E2E-phone-change-unseen",
     "mutant": "shape-adb-off-the-path",
     "proof": "m4",
-    "commit": "34c06369b834a3fa37d12bf85df04edbd02e99ec",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
     "verdict": "caught"
   },
   {
     "class": "E2E-phone-change-unseen",
     "mutant": "shape-upgrade-without-old",
     "proof": "m5",
-    "commit": "34c06369b834a3fa37d12bf85df04edbd02e99ec",
+    "commit": "027af8818fda2e1bf9408b2e932af0e0ae80c379",
     "verdict": "caught"
   }
 ]
