@@ -46,10 +46,13 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
 const auth = supabase.auth as unknown as Record<string, jest.Mock>;
 const RATE = 'For security purposes, you can only request this after 42 seconds.';
 
+/** The store as the app builds it, its own acts among it: tests that stand in for one (adoptSession) are undone. */
+const AS_BUILT = useAuthStore.getState();
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockStore.clear();
-  useAuthStore.setState({ user: null, isAuthenticated: false, loading: false } as never);
+  useAuthStore.setState({ ...AS_BUILT, user: null, isAuthenticated: false, loading: false } as never, true);
 });
 
 describe('the house says what went wrong', () => {

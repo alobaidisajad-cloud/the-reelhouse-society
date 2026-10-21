@@ -36,6 +36,8 @@ jest.mock('@/src/lib/tmdb', () => ({
 import DarkroomScreen from '@/app/(tabs)/darkroom';
 // eslint-disable-next-line import/first
 import { useDiscoverStore } from '@/src/stores/discover';
+// eslint-disable-next-line import/first
+import { storage } from '@/src/stores/mmkv-storage';
 
 const { tmdb: mockTmdb } = jest.requireMock('@/src/lib/tmdb');
 const away = () => Promise.reject(Object.assign(new Error('offline'), { name: 'TmdbUnreachable' }));
@@ -44,6 +46,9 @@ const settle = async () => { for (let i = 0; i < 5; i++) await new Promise((res)
 beforeEach(() => {
   mockTmdb.discover.mockReset();
   useDiscoverStore.setState({ page: 1, query: '', inputVal: '', mood: null, accumulatedFilms: [] } as never);
+  // The tray keeps the films it developed on the phone, by its filters: a test that developed
+  // some left them for the next, which drew them instead of the failure (nightly 2026-10-21).
+  storage.clearAll();
 });
 
 it('says the catalogue could not be reached — not "nothing surfaced", not RESET FILTERS', async () => {

@@ -142,15 +142,23 @@ const filing = (over: Partial<Filing> = {}): Filing => ({
   ...over,
 });
 
+/**
+ * The store as the app builds it, its acts among it, put back before every test: a stand-in for
+ * one act (end, checkForNew) is copied into every state the store makes after it, so undoing it
+ * on the state it was put on undid nothing (nightly 2026-10-21, in a random order).
+ */
+const AS_BUILT = useDispatch.getState();
+
 const put = (over: Record<string, unknown>) => {
   useDispatch.setState({
+    ...AS_BUILT,
     filings: [], loading: false, pageState: 'read', loadingMore: false, hasMore: false, droppedRows: 0,
     section: 'ALL', sort: 'LATEST', savedOnly: false, newCount: 0,
     certifiedIds: new Set(), savedIds: new Set(), myVotes: {},
     critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},
     critiquesHasMore: {}, critiquesOrder: {}, certifiedCritiqueIds: new Set(),
     ...over,
-  } as never);
+  } as never, true);
 };
 
 const mount = async () => {
@@ -649,10 +657,9 @@ describe('the page keeps itself current', () => {
     // the suite simply hangs until the runner kills it, which is exactly what
     // the first version of this test did. So the mount is done here and the
     // clock is advanced deliberately instead.
-    const spy = jest.spyOn(useDispatch.getState(), 'checkForNew')
-      .mockImplementation(async () => {});
+    const spy = jest.fn(async () => {});
     jest.useFakeTimers({ doNotFake: ['nextTick'] });
-    put({ filings: [filing()] });
+    put({ filings: [filing()], checkForNew: spy });
 
     render(<FeedScreen />);
     await act(async () => { jest.advanceTimersByTime(0); });
@@ -667,7 +674,6 @@ describe('the page keeps itself current', () => {
     expect(spy).toHaveBeenCalledTimes(4);
 
     jest.useRealTimers();
-    spy.mockRestore();
   });
 });
 

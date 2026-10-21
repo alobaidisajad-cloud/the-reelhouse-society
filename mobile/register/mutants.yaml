@@ -609,6 +609,15 @@ mutants:
         replace: "      ...[].flatMap((t) => ["
     proof: { file: e2e/__tests__/walkRoutes.test.ts, test: "plans each moment after every route, as the member, its link filled in, and walks it: its mark, each tap once, what shows, then the capture" }
 
+  - id: shape-second-ask-returns-at-once
+    class: TEST-order-dependent
+    source: shape
+    edits:
+      - file: src/utils/offlineQueue.ts
+        find: "        e2eTrace('queue.flush.again');\n        return running;"
+        replace: "        e2eTrace('queue.flush.again');\n        return Promise.resolve();"
+    proof: { file: src/utils/__tests__/offlineQueue.integration.test.ts, test: "runs once more when the running send ends, sending what was queued meanwhile" }
+
   - id: shape-keyboard-never-on
     class: E2E-system-mode-unseen
     source: shape

@@ -42,7 +42,10 @@ beforeEach(() => {
   useAuthStore.setState({ user: { ...MEMBER, preferences: { ...MEMBER.preferences } }, isAuthenticated: true, loading: false } as never);
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // Each test ends with its window closed: one left open held its opening snapshot for
+  // the next test, which then reverted to it (nightly 2026-10-20, in a random order).
+  await jest.runOnlyPendingTimersAsync();
   jest.useRealTimers();
   jest.restoreAllMocks();
 });

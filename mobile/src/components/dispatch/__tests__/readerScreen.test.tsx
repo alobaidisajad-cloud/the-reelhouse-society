@@ -169,6 +169,13 @@ const mount = async () => {
   return r;
 };
 
+/**
+ * The store as the app builds it, its acts among it, put back before every test: a stand-in for
+ * one act (end, checkForNew) is copied into every state the store makes after it, so undoing it
+ * on the state it was put on undid nothing (nightly 2026-10-21, in a random order).
+ */
+const AS_BUILT = useDispatch.getState();
+
 beforeEach(() => {
   mockUser = { id: 'u1', username: 'me' };
   mockRow = row();
@@ -185,11 +192,12 @@ beforeEach(() => {
   mockBack.mockClear();
   at({ id: 'f1' });
   useDispatch.setState({
+    ...AS_BUILT,
     filings: [], opened: {}, critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},
     critiquesHasMore: {}, critiquesOrder: {},
     certifiedIds: new Set(), savedIds: new Set(), certifiedCritiqueIds: new Set(),
     myVotes: {},
-  } as never);
+  } as never, true);
 });
 
 describe('the reader', () => {
@@ -407,7 +415,7 @@ describe('the reader', () => {
     // "Delete?" would be a lie about a row that is not deleted.
     expect(alerts[1][1]).toMatch(/critiques underneath it stay/);
 
-    await act(async () => { alerts[1][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
+    await act(async () => { await (alerts[1][2].find((b) => b.text === 'Withdraw')?.onPress?.() as unknown as Promise<void>); });
     // On `opened`: reached by its address, the filing is not in the feed.
     expect(useDispatch.getState().opened.f1?.endedBy).toBe('author');
     expect(useDispatch.getState().filings).toHaveLength(0);
@@ -528,7 +536,7 @@ describe('the reader', () => {
     await act(async () => { await fireEvent.press(getByLabelText('More, for this filing')); });
     // Through both sheets: which act, then the confirmation.
     await act(async () => { alerts[0][2].find((b) => b.text === 'Withdraw it')?.onPress?.(); });
-    await act(async () => { alerts[1][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
+    await act(async () => { await (alerts[1][2].find((b) => b.text === 'Withdraw')?.onPress?.() as unknown as Promise<void>); });
 
     // Gone from the page the member is on, not only from the feed: the tombstone stands.
     expect(queryByText('The Empty Room')).toBeNull();
@@ -636,7 +644,7 @@ describe('the reader', () => {
     await act(async () => { await fireEvent.press(getByLabelText('Withdraw this critique')); });
     expect(alerts[0][0]).toBe('Withdraw this critique?');
 
-    await act(async () => { alerts[0][2].find((b) => b.text === 'Withdraw')?.onPress?.(); });
+    await act(async () => { await (alerts[0][2].find((b) => b.text === 'Withdraw')?.onPress?.() as unknown as Promise<void>); });
     await act(async () => { await Promise.resolve(); });
     expect(useDispatch.getState().critiques.f1).toHaveLength(0);
     spy.mockRestore();
@@ -1132,14 +1140,13 @@ describe('the ways out, and the ways it fails', () => {
       const withdraw = (buttons ?? []).find((b) => b.text === 'Withdraw it' || b.text === 'Withdraw');
       void withdraw?.onPress?.();
     });
-    const end = jest.spyOn(useDispatch.getState(), 'end')
-      .mockRejectedValue(new Error('refused'));
+    useDispatch.setState({ end: jest.fn().mockRejectedValue(new Error('refused')) } as never);
 
     const { getByLabelText } = await mount();
     await act(async () => { await fireEvent.press(getByLabelText(/More/i)); });
     await act(async () => { await Promise.resolve(); });
 
     expect(mockToastError).toHaveBeenCalledWith('It could not be withdrawn.');
-    alert.mockRestore(); end.mockRestore();
+    alert.mockRestore();
   });
 });

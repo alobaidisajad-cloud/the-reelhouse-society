@@ -44,6 +44,11 @@ const endorsement = (targetId: string, type: 'endorse' | 'endorse_list' = 'endor
 
 describe('interactionSlice', () => {
     beforeEach(() => {
+        // The service answers yes, every test: the count's tests make it refuse, and in a
+        // random order the next test's endorsement met their refusal (nightly 2026-10-21).
+        const { InteractionService } = jest.requireMock('../../services/InteractionService');
+        InteractionService.addEndorsement.mockReset().mockResolvedValue(undefined);
+        InteractionService.removeEndorsement.mockReset().mockResolvedValue(undefined);
         useLogStore.setState({
             logs: [],
             watchlist: [],

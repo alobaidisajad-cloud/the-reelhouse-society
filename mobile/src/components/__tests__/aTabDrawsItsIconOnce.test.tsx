@@ -42,6 +42,10 @@ const copies = (r: ReturnType<typeof render>, name: string) =>
   r.queryAllByTestId(`icon-${name}`, { includeHiddenElements: true }).map((n) => n.props.children);
 
 describe('a tab draws its icon once', () => {
+  // A bar draws its first frames on the frame clock's 16 ms timers: each test lets them land,
+  // or the file's last test left them waiting at its end (nightly 2026-10-21, in a random order).
+  afterEach(async () => { await act(async () => { await new Promise((res) => setTimeout(res, 50)); }); });
+
   it('tabBarIcon would draw each icon twice, chosen and not, stacked (the danger, shown)', () => {
     const r = render(<Bar how="tabBarIcon" />);
     expect(copies(r, 'lobby').sort()).toEqual(['chosen', 'not']);

@@ -108,7 +108,11 @@ const reset = () => {
 };
 const on = (table: string) => recorded.filter((r) => r.table === table);
 
-beforeEach(reset);
+// The store's own forgetting first, as a sign-out does: its memories outside the state (the
+// last send in each room, which throttles the next) went from one test into the next (nightly 2026-10-20).
+const RESETS = (jest.requireMock('../resetAllStores') as { registerStoreReset: jest.Mock }).registerStoreReset.mock.calls
+  .map(([handler]) => handler as (previous: string | null) => void);
+beforeEach(() => { for (const forget of RESETS) forget(null); reset(); });
 
 // ════════════════════════════════════════════════════════════════════════════
 describe('may this member speak in this room', () => {

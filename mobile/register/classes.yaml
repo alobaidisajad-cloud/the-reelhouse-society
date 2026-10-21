@@ -487,6 +487,21 @@ classes:
     fix: "test-utils/supabaseFake: the house as the client meets it, from the schema snapshot (test-utils/schema, now the one reader the query check uses too): refuses a table, column or rpc argument production lacks, a fixture row out of its table's shape, a read of a table the test never filled; answers .single()/.maybeSingle() with PGRST116 as PostgREST does, caps a read at 1,000 rows, filters, orders, ranges and keeps writes. The hand-made mocks are frozen per file (frozen-counts hand-supabase-mock) and only fall as tests move to it; the first (theHonourStays) now proves its query picks the right row from decoys"
     places: [none]
 
+  - id: TEST-order-dependent
+    title: A test passes only in the order its file was written, because a test before it left state behind (a store's act stood in for, a mock left refusing, another member signed in, a cache, a throttle, a window or a timer left open), so the nightly's random order fails it and its pass in order proves less than it says (P0.37)
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "the nightly's jest --randomize, runs 39390507427 and 39566918888: 10 files" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aStoreActIsStoodInForThroughItsStore.guard.test.ts, test: "finds no spy on a store act through its state, in any test" }
+      - { kind: static, file: src/utils/__tests__/aStoreActIsStoodInForThroughItsStore.guard.test.ts, test: "can say NO: the spy is found, and standing in through the store is not" }
+      - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every night runs each flow three times and the suite in a random order, and keeps every test's history (P0.37)" }
+      - { kind: running, file: src/utils/__tests__/offlineQueue.integration.test.ts, test: "runs once more when the running send ends, sending what was queued meanwhile" }
+    fix: "each file reproduced with the nights' seeds and fixed at its cause, then held under eight orders: the reader's and the feed's stand-ins for a store act put on the state of the moment, which zustand carried into every later state (a guard now refuses the shape; the store as built is put back before every test); the offline queue's tests, where an ownership test left another member signed in and the house's record of questions was never emptied, and the queue itself, whose second ask returned at once while a send was still out and left its follow-up unawaited (now one promise for the send and its follow-up, so signing out waits for what it asked to send); the sign-in test's stand-in for adoptSession; the endorsement service left refusing; the tray's films cached by its filters; the Lounge's per-room throttle, now forgotten by the store's own reset; a settings window left open; a tab bar's frames left on their timers"
+    places: [none]
+
   - id: TEST-guard-only-through-a-caller
     title: A module's own guard (an early return or throw) reached only through its callers' tests, which never hand it what it turns away, so the guard is never shown to hold (TST-27)
     seriousness: code

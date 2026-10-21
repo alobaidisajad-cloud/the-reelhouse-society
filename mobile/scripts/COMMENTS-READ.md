@@ -1174,6 +1174,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aReviewIsCutAtAWord.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aReviewReadsInItsOwnDirection.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aSecondPressWaitsOutTheDebounce.guard.test.ts | 2026-10-16 | new: no test presses a control again inside its debounce, but those judged; each shape found or not as it should be |
+| src/utils/__tests__/aStoreActIsStoodInForThroughItsStore.guard.test.ts | 2026-10-21 | new: no test spies on a store act through the state it reads |
 | src/utils/__tests__/aTestNeverShipsAsAScreen.guard.test.ts | 2026-10-16 | new: every test file under app/ is one Metro leaves out of the bundle, and no route file is |
 | src/utils/__tests__/e2eRuntime.test.ts | 2026-10-15 | new: the runtime written once a launch by the E2E build alone, in lines the run can join |
 | src/utils/__tests__/everyCheckRuns.guard.test.ts | 2026-10-16 | edited: every script file is run by a workflow, a hook, an npm script, another script or a test, or named as run by hand with why; every store build runs the preflight before it asks EAS |
