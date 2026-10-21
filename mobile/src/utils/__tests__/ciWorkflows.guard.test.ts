@@ -366,6 +366,28 @@ it('every night runs each flow three times and the suite in a random order, and 
   expect(e2e.text).toContain("inputs.variant && format(' - {0}', inputs.variant)");
 });
 
+/** Whether a step runs jest over the whole suite (no pattern of files, no list alone). */
+const runsWholeSuite = (run: string) => /\bnpx jest\b(?![^\n]*(--testPathPattern|--listTests|\s["'][^-]))/.test(run);
+/** The jobs, by file and name, that run the whole suite on a checkout without the whole history. */
+const shallowSuites = (list: { file: string; wf: Workflow }[]) => list.flatMap(({ file, wf }) =>
+  Object.entries(wf.jobs).filter(([, job]) => (job.steps ?? []).some((s) => runsWholeSuite(s.run ?? ''))
+    && !(job.steps ?? []).some((s) => s.uses && actionOf(s.uses) === 'actions/checkout' && (s as RunStep).with?.['fetch-depth'] === 0))
+    .map(([name]) => `${file}: ${name}`));
+
+it('runs the whole suite only on the whole history: its tests read commits by name (nightly 2026-10-21)', () => {
+  expect(workflows.filter(({ wf }) => Object.values(wf.jobs).some((j) => (j.steps ?? []).some((s) => runsWholeSuite(s.run ?? '')))).length).toBeGreaterThanOrEqual(2);
+  expect(shallowSuites(workflows)).toEqual([]);
+});
+
+it('says no to a whole suite on a checkout of one commit, and not to a pattern of files', () => {
+  const wf = (steps: string) => ({ file: 'x.yml', wf: parse(`name: x\non: push\njobs:\n  j:\n    steps:\n${steps}`) as Workflow });
+  const checkout = (depth: string) => `      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0\n${depth}`;
+  expect(shallowSuites([wf(`${checkout('')}      - run: npx jest --ci --randomize\n`)])).toEqual(['x.yml: j']);
+  expect(shallowSuites([wf(`${checkout('        with:\n          fetch-depth: 0\n')}      - run: npx jest --ci --randomize\n`)])).toEqual([]);
+  expect(shallowSuites([wf(`${checkout('')}      - run: npx jest --ci --testPathPattern 'x'\n`)])).toEqual([]);
+  expect(shallowSuites([wf(`${checkout('')}      - run: npx jest "zz-.*gen" --ci\n`)])).toEqual([]);
+});
+
 it('a TMDB request the E2E world has no recording for fails the run, by name', () => {
   const e2e = workflows.find((w) => w.file === 'e2e.yml')!;
   const step = Object.values(e2e.wf.jobs).flatMap((j) => (j.steps ?? []) as RunStep[]).find((s) => s.name === 'TMDB requests with no recording');
