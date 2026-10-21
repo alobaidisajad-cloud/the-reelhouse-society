@@ -303,7 +303,7 @@ classes:
       - { kind: running, file: src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts, test: "reopens the tab only for a launch that names no page" }
       - { kind: running, file: src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts, test: "names the page a launch link names, and none for the app or the site alone" }
       - { kind: static, file: src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts, test: "the tab bar remembers each tab as it is shown, stamps the time as the app leaves, and reopens only a launch that began at the Lobby, by no link that names a page" }
-    fix: "the tab bar reads the launch link itself (Linking.getInitialURL) and reopens the last tab only when that link names no page (lastTab.ts pageOfLaunch, tabToReopenAfter); each reopen or its absence is said to the E2E log (tabs.reopen) so the route walk shows which it was (mutant shape-every-link-names-nothing)"
+    fix: "the tab bar reads the launch link itself (Linking.getInitialURL) and reopens the last tab only when that link names no page (lastTab.ts pageOfLaunch, tabToReopenAfter), and only a member still on the Lobby once it is read (the admin flow's relaunch, 2026-10-21: a link opened just after launch was pulled back to the last tab); each reopen or its absence is said to the E2E log (tabs.reopen) so the route walk shows which it was (mutant shape-every-link-names-nothing)"
     places: [emulator]
 
   - id: RN-react-destroyed-on-mount

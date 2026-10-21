@@ -176,13 +176,17 @@ export default function TabLayout() {
   // link opened within the half hour landed on the last tab (route walk, 2026-10-21).
   const pathname = usePathname();
   const launchedAt = React.useRef(pathname);
+  // Where the member stands now: the reopen moves only one still on the Lobby, never one a link
+  // or their own tap has taken elsewhere while the launch link was read (admin flow, 2026-10-21).
+  const here = React.useRef(pathname);
+  here.current = pathname;
   React.useEffect(() => {
     let gone = false;
     if (launchedAt.current === '/') {
       void Linking.getInitialURL().catch(() => null).then((url) => {
         const tab = tabToReopenAfter(url);
-        e2eTrace('tabs.reopen', { tab, link: pageOfLaunch(url) || null });
-        if (tab && !gone) router.navigate(`/${tab}` as Href);
+        e2eTrace('tabs.reopen', { tab, link: pageOfLaunch(url) || null, moved: here.current !== '/' });
+        if (tab && !gone && here.current === '/') router.navigate(`/${tab}` as Href);
       });
     }
     const sub = AppState.addEventListener('change', (next) => { if (next !== 'active') stampTab(); });

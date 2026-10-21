@@ -120,9 +120,10 @@ export function flowOf(steps, signIn) {
       `      id: ${JSON.stringify(markOf(s.lands ?? s.link))}`,
       '    timeout: 30000',
       // A moment's taps, each control scrolled to when it is below and tapped once (a second tap
-      // would close what the first opened); then what shows once the moment is there.
+      // would close what the first opened); then what shows once the moment is there. A minute to
+      // scroll: the settings' sign-out sits a long page down (20 s ran out, run 39625319621).
       ...(s.taps ?? []).flatMap((t) => [
-        '- scrollUntilVisible:', '    element:', pick(t, 6), '    direction: DOWN', '    timeout: 20000',
+        '- scrollUntilVisible:', '    element:', pick(t, 6), '    direction: DOWN', '    timeout: 60000',
         '- tapOn:', pick(t, 4), '    retryTapIfNoChange: false',
       ]),
       ...(s.shows ? ['- extendedWaitUntil:', '    visible:', pick(s.shows, 6), '    timeout: 15000'] : []),

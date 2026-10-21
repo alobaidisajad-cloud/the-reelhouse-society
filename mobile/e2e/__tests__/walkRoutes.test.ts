@@ -91,9 +91,9 @@ it('plans each moment after every route, as the member, its link filled in, and 
   expect(flow.split('\n').filter(Boolean).slice(7)).toEqual([
     '# moment: the calendar', '- stopApp', '- openLink: "reelhouse://film/129"',
     '- extendedWaitUntil:', '    visible:', '      id: "e2e-route-film-129"', '    timeout: 30000',
-    '- scrollUntilVisible:', '    element:', '      id: "film-stub"', '    direction: DOWN', '    timeout: 20000',
+    '- scrollUntilVisible:', '    element:', '      id: "film-stub"', '    direction: DOWN', '    timeout: 60000',
     '- tapOn:', '    id: "film-stub"', '    retryTapIfNoChange: false',
-    '- scrollUntilVisible:', '    element:', '      text: "FILED.*"', '    direction: DOWN', '    timeout: 20000',
+    '- scrollUntilVisible:', '    element:', '      text: "FILED.*"', '    direction: DOWN', '    timeout: 60000',
     '- tapOn:', '    text: "FILED.*"', '    retryTapIfNoChange: false',
     '- extendedWaitUntil:', '    visible:', '      text: "CLOSE"', '    timeout: 15000',
     '- waitForAnimationToEnd:', '    timeout: 8000', '- takeScreenshot: "01-moment-the-calendar"',

@@ -56,7 +56,9 @@ it('the tab bar remembers each tab as it is shown, stamps the time as the app le
   expect(layout).toMatch(/screenListeners=\{\(\{ route \}\) => \(\{ focus: \(\) => rememberTab\(route\.name\) \}\)\}/);
   expect(layout).toMatch(/if \(next !== 'active'\) stampTab\(\)/);
   expect(layout).toMatch(/if \(launchedAt\.current === '\/'\) \{\s+void Linking\.getInitialURL\(\)\.catch\(\(\) => null\)\.then\(\(url\) => \{\s+const tab = tabToReopenAfter\(url\);/);
-  expect(layout).toMatch(/if \(tab && !gone\) router\.navigate/);
+  // Only a member still on the Lobby once the link is read: one a link or a tap took on stays there.
+  expect(layout).toMatch(/here\.current = pathname;/);
+  expect(layout).toMatch(/if \(tab && !gone && here\.current === '\/'\) router\.navigate/);
   expect(layout).not.toMatch(/\btabToReopen\(\)/);
 });
 
