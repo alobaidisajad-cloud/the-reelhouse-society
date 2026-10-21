@@ -427,6 +427,13 @@
     "verdict": "caught"
   },
   {
+    "class": "NAV-launch-link-overridden",
+    "mutant": "shape-every-link-names-nothing",
+    "proof": "m1",
+    "commit": "d40bc9592fa2e73b8e735cd79b05652010b297b4",
+    "verdict": "caught"
+  },
+  {
     "class": "TEST-order-dependent",
     "mutant": "shape-second-ask-returns-at-once",
     "proof": "m4",
