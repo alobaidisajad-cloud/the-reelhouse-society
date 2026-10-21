@@ -539,6 +539,30 @@ classes:
     fix: "frozen-counts guard-only-through-a-caller counts, per app module no test names, each guard of its own: 19 modules (34 guards) found; tierRefusal (a privacy 42501 is never a rank's door) and keptOnThisPhone (the words of what a phone holds) now asked directly and found right; the rest frozen per file, to fall as each gets a test of its own"
     places: [none]
 
+  - id: MOCKUP-android-svg-lost
+    title: Every Android drawing of a screen lost its SVG art (the house's logo, the bills' sunbursts, icons drawn in SVG), so the renders and the checks that read them judged screens without their art
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "the Lobby's largest-text drawing, 2026-10-21: the Take Your Rank banner drawn with no logo" }
+    methods:
+      - { kind: running, file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "draws its root as an svg whichever host the platform renders it as, the same on both" }
+    fix: "react-native-svg's root is RNSVGSvgViewAndroid on Android and RNSVGSvgView on iOS; the renderer (zz-render.lib) draws both as an svg, by one root test (isSvgRoot), so an Android render paints its art as the iOS one does (mutant shape-android-svg-root-unknown)"
+    places: [none]
+
+  - id: LAYOUT-ornament-over-words
+    title: An ornament pasted over a bill (the one-sheet's snipe) stands over its words where a long name or a large text size raises them, on a small phone
+    seriousness: layout
+    area: lobby
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "the Lobby's printed evolution, 2026-10-21" }
+    methods:
+      - { kind: static, file: src/components/lobby/__tests__/theWallIsMeasured.test.ts, test: "pastes the snipe only where the one-sheet’s foot stands clear of it, measured as the phone grows the words" }
+    fix: "planWall decides before anything is drawn whether the snipe is pasted: the one-sheet's foot, line by line at the member's size (SHEET_FOOT, the numbers FeatureRow's styles read), must stand below the snipe's depth, or none is pasted; layout.cjs finds no clash on any Lobby state at any size (mutant shape-snipe-always-pasted)"
+    places: [none]
+
   - id: E2E-launch-unmeasured
     title: A launch of the app the run makes and never measures, so a slower start (its first screen later, more frames dropped, more native memory) passes unseen
     seriousness: code

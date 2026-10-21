@@ -144,7 +144,9 @@ export const FilingsBill = memo(function FilingsBill({ filings, plan, admin }: {
           accessibilityRole="link"
           accessibilityLabel="Open the Dispatch"
         >
-          <HouseLine type="cta" text={FILINGS_BILL.door} room={plan.bannerDoorRoom} style={s.bannerDoorText} spoken={false} />
+          <View style={s.bannerPlate}>
+            <HouseLine type="cta" text={FILINGS_BILL.door} room={plan.bannerDoorRoom} style={s.bannerDoorText} spoken={false} />
+          </View>
         </PressableScale>
       </View>
       {lead ? <Filing filing={lead} place={1} lead room={leadRoom} switchRoom={plan.switchRoom.lead} admin={admin} /> : null}
@@ -177,8 +179,14 @@ const s = StyleSheet.create({
   bannerWords: { flexShrink: 1, minWidth: 0 },
   bannerKick: { color: colors.parchment },
   bannerName: { color: colors.silverScreen, lineHeight: 23 },
-  bannerDoor: { minHeight: 44, borderWidth: 1, borderColor: colors.parchmentDim, paddingHorizontal: WALL.doorPadX, justifyContent: 'center' },
-  bannerDoorText: { color: colors.silverScreen },
+  // a full finger tall; in it, a plate printed at the slab's slant, its paper and its crimson the Featured Log's own
+  // (the slant is the plate's: PressableScale's own transform is the press)
+  bannerDoor: { minHeight: 44, justifyContent: 'center' },
+  bannerPlate: {
+    backgroundColor: colors.paper, paddingHorizontal: WALL.doorPadX, paddingTop: 7, paddingBottom: 6,
+    transform: [{ rotate: '-3deg' }],
+  },
+  bannerDoorText: { color: colors.bloodReel },
   filing: { flexDirection: 'row', gap: NUM_GAP, paddingHorizontal: WALL.filingPad, paddingTop: 12, paddingBottom: 0 },
   runner: { flexDirection: 'column', gap: 4 },
   num: { fontFamily: fonts.display, fontSize: 34, lineHeight: 34, color: colors.crimsonInk, minWidth: NUM_W, textAlign: 'center' },

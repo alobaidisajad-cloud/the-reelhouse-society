@@ -21,6 +21,8 @@ export const MASTHEAD = {
 export const ONE_SHEET = {
   tagline: ['Attendance is voluntary.', 'Enthusiasm is expected.'],
   now: 'NOW SHOWING',
+  /** the snipe pasted across the sheet's corner: the programme is the week's */
+  snipe: 'THIS WEEK',
   directedBy: (director: string) => `DIRECTED BY ${director.toUpperCase()}`,
 } as const;
 

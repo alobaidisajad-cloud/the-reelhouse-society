@@ -101,6 +101,8 @@ export const colors = {
   // drift outside this file fails the suite. Artwork files (logo, Buster,
   // the Darkroom mood table, share-card canvases) are exempt — art is art.
   silverScreen: '#F2ECD8',  // projection-screen cream — display titles on dark chrome
+  /** A printed bill's stock in the Lobby: vellum, a step deeper than the parchment the house's words are set in. */
+  paper: '#E6D7B8',
   parchmentDim: '#E4DFCC',  // parchment half a stop down — secondary display text
   champagne: '#C4961A',     // polished brass highlight — glows, active accents
   marqueeGold: '#DCA63A',   // marquee-bulb gold — the brightest brass, sparing use

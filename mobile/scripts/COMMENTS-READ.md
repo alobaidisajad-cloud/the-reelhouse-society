@@ -584,16 +584,16 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-10-15 | the pair side by side on every phone and text size; setLines, wholeName, filmLine |
 | src/components/lobby/__tests__/theWallIsRead.test.ts | 2026-09-30 | new |
 | src/components/lobby/__tests__/theWallKeepsTheDay.test.tsx | 2026-10-03 | new: the clock reads on the hour and on return; a wall behind the day is asked again |
-| src/components/lobby/FeatureRow.tsx | 2026-10-15 | the one-sheet title's shadow has room inside the box a phone cuts it at |
-| src/components/lobby/FilingsBill.tsx | 2026-09-30 | new; the byline moved out of the filing's door |
+| src/components/lobby/FeatureRow.tsx | 2026-10-21 | edited: the snipe pasted over a wordless one-sheet's corner where planWall finds it clear; the house's line at the foot; the director in two lines; ALL a brass plate |
+| src/components/lobby/FilingsBill.tsx | 2026-10-21 | edited: THE DISPATCH a paper plate at the slab's slant, inside its full-finger door |
 | src/components/lobby/KeepOff.tsx | 2026-10-15 | draws its words in the lines planWall sets (two on a narrow credit strip) |
 | src/components/lobby/LobbyHonour.tsx | 2026-09-30 | new |
 | src/components/lobby/LobbyWall.tsx | 2026-10-15 | the log and the stack always side by side; lobby-wall-hung on a read wall |
 | src/components/lobby/Masthead.tsx | 2026-10-15 | the Lobby's name: its glow has room inside the box a phone cuts it at |
 | src/components/lobby/measure.ts | 2026-10-15 | the pair never stacks: planWall's pair, setLines, wholeName, filmLine |
-| src/components/lobby/PairBills.tsx | 2026-10-15 | each half set to its width: broken phrases, facts and film under, fan drawn in |
+| src/components/lobby/PairBills.tsx | 2026-10-21 | edited: vellum paper; the credit an ink block inside each bill; the vacant doors slanted plates |
 | src/components/lobby/parts.tsx | 2026-10-15 | edited: the letter is initialOf, whole; QUOTE_MARKS exported for its test |
-| src/components/lobby/RankBill.tsx | 2026-10-15 | edited: the banner draws the house's logo, its rays in brass |
+| src/components/lobby/RankBill.tsx | 2026-10-21 | edited: the banner on vellum paper |
 | src/components/lobby/wallRead.ts | 2026-09-30 | new |
 | src/components/lobby/words.ts | 2026-09-30 | new; named a test that did not exist |
 | src/components/log/__tests__/editorialDesk.test.tsx | — |  |

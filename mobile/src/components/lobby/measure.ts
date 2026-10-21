@@ -28,7 +28,7 @@ import {
   RYE, RYE_WIDEST, ELITE, ELITE_WIDEST, COURIER_ITALIC, COURIER_ITALIC_WIDEST, SPECTRAL_ITALIC, SPECTRAL_ITALIC_WIDEST,
 } from '@/src/theme/faceAdvances';
 import { TYPE_FLOOR } from '@/src/constants/textScaling';
-import { FILINGS_BILL, KEEP_OFF, LOG_BILL, RANK_BILL, STACK_BILL, STATES, rankTicket } from './words';
+import { FILINGS_BILL, KEEP_OFF, LOG_BILL, ONE_SHEET, RANK_BILL, STACK_BILL, STATES, rankTicket } from './words';
 
 export type Face = 'rye' | 'elite' | 'courierItalic' | 'spectralItalic';
 
@@ -167,13 +167,14 @@ export const WALL = {
   rim: 3,           // the brass case round the one-sheet
   besideCase: 8,    // between the case and the bill column
   halfPad: 12,      // a half bill's inset
-  halfDoorPad: 12,  // a vacant half's door: its inset, each side, inside its 1pt border
+  halfDoorPad: 12,  // a vacant half's door plate: its inset, each side
   fanEdge: 10,      // the stack's fan stands at least this far in from its half's edges
   filmThumb: 40,    // the log's film: its poster's width
   filmGap: 10,      // between the poster and the film's name
   factsGap: 6,      // between the stack's count and SEE ALL, on one line
   slabPadX: 9,      // a slab's inset, each side
-  creditInset: 2,   // a credit strip's second line (the mark, an admin's switch) stands in this far
+  creditPad: 8,     // the credit block's inset, each side, inside the half's own
+  creditInset: 2,   // a credit block's second line (the mark, an admin's switch) stands in this far
   filingPad: 14,    // a filing's inset
   filingNum: 22,    // a filing's number column
   filingNumGap: 10, // between the number and the words
@@ -187,7 +188,7 @@ export const WALL = {
   recruitGap: 12,
   bannerPad: 14,
   bannerGap: 10,
-  doorPadX: 10,     // a bordered door's inset, each side
+  doorPadX: 10,     // a door plate's inset, each side
   refreshGap: 10,   // a failed refresh: between its words and TRY AGAIN
   refreshDoorPad: 4, // TRY AGAIN's inset, each side
 } as const;
@@ -287,6 +288,17 @@ export const BILL_HEAD_LINE = 13.5;
 export const BILL_ALL_H = 48;
 export const BILL_GAP = 6;
 
+/**
+ * The snipe pasted across the one-sheet's top corner: its middle stands SNIPE_REACH in from the
+ * corner along each edge, and it is SNIPE_H tall. It reaches down the sheet's right edge to
+ * SNIPE_DEPTH; the sheet's words must stand clear of it, or it is not pasted (planWall's `snipe`).
+ */
+export const SNIPE_REACH = 52;
+export const SNIPE_H = 24;
+export const SNIPE_DEPTH = SNIPE_REACH * 2 + SNIPE_H + 8;
+/** The one-sheet's foot, in its own lines and gaps (FeatureRow's styles), at the default text size. */
+export const SHEET_FOOT = { bottom: 18, titleLine: 1.04, billingGap: 7, billingLine: 14, quietGap: 2, tagGap: 9, tagLine: 15.5, nowGap: 9, nowLine: 15 } as const;
+
 export interface WallPlan {
   wallW: number;
   /** the bill column beside the one-sheet */
@@ -296,6 +308,8 @@ export interface WallPlan {
   billCount: number;
   /** the one-sheet's title, at the size it is whole */
   titleSize: (title: string) => { size: number; whole: boolean };
+  /** whether the snipe is pasted on a wordless one-sheet: only where its foot's words stand clear of it */
+  snipe: (title: string, director: string | null, credits: boolean) => boolean;
   /** the Featured Log and the Featured Stack: side by side on every phone, each set to its half */
   pair: PairPlan;
   /** the second and third filings side by side */
@@ -316,7 +330,7 @@ export interface WallPlan {
   refreshWordsRoom: number;
   /** TRY AGAIN's words */
   refreshDoorRoom: number;
-  /** an admin's KEEP OFF THE LOBBY, on its own line: on a credit strip, under the lead filing, under a runner */
+  /** an admin's KEEP OFF THE LOBBY, on its own line: in a credit block, under the lead filing, under a runner */
   switchRoom: { credit: number; lead: number; runner: number };
 }
 
@@ -345,7 +359,7 @@ export interface PairPlan {
   seeAllRoom: number;
   /** the most lines a quote is set in before it ends in … */
   quoteLines: number;
-  /** an admin's KEEP OFF THE LOBBY on a half's credit strip, in its lines */
+  /** an admin's KEEP OFF THE LOBBY in a half's credit block, in its lines */
   keepOff: string[];
 }
 
@@ -384,6 +398,20 @@ export function planWall({ width: windowW, visible, scale, lineScale, admin = fa
     const start = title.length <= 14 ? titleBase : title.length <= 24 ? titleBase - 6 : titleBase - 10;
     return wholeSize(title, 'rye', start, 16, 5, titleRoom, s);
   };
+  // The foot rises from the sheet's floor: the title in its lines, the director in theirs, the year,
+  // the house's two lines and NOW SHOWING, each line grown as the phone grows it. The snipe is
+  // pasted only where all of that stays below it.
+  const drawn = Math.min(s, HOUSE_CEILING);
+  const footRoom = sheetW - 24;
+  const snipe = (title: string, director: string | null, credits: boolean) => {
+    const t = titleSize(title).size;
+    const F = SHEET_FOOT;
+    const words = linesAt(title, 'rye', t, drawn, 0, titleRoom) * Math.round(t * F.titleLine)
+      + (director ? F.billingGap + linesAt(ONE_SHEET.directedBy(director), 'elite', TYPE.billing.size, drawn, TYPE.billing.spacing, footRoom) * F.billingLine : 0)
+      + (credits ? F.quietGap + F.billingLine : 0)
+      + F.tagGap + 2 * F.tagLine + F.nowGap + F.nowLine;
+    return sheetH - F.bottom - words * lineScale >= SNIPE_DEPTH;
+  };
 
   // THE PAIR stands side by side on every phone, at every text size. Each half
   // sets its own words to its width at the member's size: a phrase too wide for
@@ -392,7 +420,9 @@ export function planWall({ width: windowW, visible, scale, lineScale, admin = fa
   // is given more lines in a narrower half, so its excerpt holds as many words.
   const half = (wallW - WALL.gap) / 2;
   const halfRoom = half - WALL.halfPad * 2;
+  // a plate set at a slant paints wider than its box: 2 of the half kept for it
   const doorRoom = halfRoom - WALL.halfDoorPad * 2 - 2;
+  const creditRoom = halfRoom - WALL.creditPad * 2;
   const halfWords = (bill: typeof LOG_BILL | typeof STACK_BILL): HalfWords => ({
     slogan: setBlock(bill.slogan.map((t) => t.toUpperCase()), 'slogan', halfRoom, s),
     vacant: setBlock(bill.vacant, 'vacant', halfRoom, s),
@@ -411,7 +441,7 @@ export function planWall({ width: windowW, visible, scale, lineScale, admin = fa
     seeAllRoom: factsStacked ? halfRoom : halfRoom - WALL.factsGap - filmsW,
     // six lines in a half of 150 or more, as many more as keep the excerpt's words
     quoteLines: Math.max(6, Math.ceil((6 * 150) / halfRoom)),
-    keepOff: setLines(KEEP_OFF, 'cta', halfRoom - WALL.creditInset, s),
+    keepOff: setLines(KEEP_OFF, 'cta', creditRoom - WALL.creditInset, s),
   };
 
   // The runners: the second and third filings in two columns, where a column
@@ -424,7 +454,7 @@ export function planWall({ width: windowW, visible, scale, lineScale, admin = fa
     && (!admin || fits('cta', KEEP_OFF, runnerByline, s));
   const fullByline = wallW - 2 - WALL.filingPad * 2 - WALL.bylineInset;
   const switchRoom = {
-    credit: halfRoom - WALL.creditInset,
+    credit: creditRoom - WALL.creditInset,
     lead: fullByline - WALL.filingNum - WALL.filingNumGap,
     runner: runners ? runnerByline : fullByline,
   };
@@ -441,6 +471,7 @@ export function planWall({ width: windowW, visible, scale, lineScale, admin = fa
 
   // The banner's door drops under its name when the two cannot share a line.
   const bannerRoom = wallW - 2 - WALL.bannerPad * 2;
+  // and 2 for the width its slant paints past its box
   const doorW = width('cta', FILINGS_BILL.door, s) + WALL.doorPadX * 2 + 2;
   const bannerWords = Math.max(width('bannerKick', FILINGS_BILL.kick, s), width('bannerName', FILINGS_BILL.name, s));
   const bannerStacked = bannerWords + WALL.bannerGap + doorW > bannerRoom;
@@ -462,7 +493,7 @@ export function planWall({ width: windowW, visible, scale, lineScale, admin = fa
   const refreshDoorRoom = (refreshStacked ? refreshRoom : refreshDoorW) - WALL.refreshDoorPad * 2;
 
   return {
-    wallW, col, sheetW, sheetH, billCount, titleSize, pair, runners, tickets,
+    wallW, col, sheetW, sheetH, billCount, titleSize, snipe, pair, runners, tickets,
     bannerStacked, bannerWordsRoom, bannerDoorRoom, recruitStacked, refreshStacked, refreshWordsRoom, refreshDoorRoom,
     switchRoom,
   };

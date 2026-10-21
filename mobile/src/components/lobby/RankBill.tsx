@@ -141,7 +141,7 @@ const s = StyleSheet.create({
   rank: { gap: WALL.gap },
   recruit: {
     marginHorizontal: WALL.recruitMargin, paddingHorizontal: WALL.recruitPad, paddingVertical: 12,
-    backgroundColor: colors.parchment, flexDirection: 'row', alignItems: 'center', gap: WALL.recruitGap,
+    backgroundColor: colors.paper, flexDirection: 'row', alignItems: 'center', gap: WALL.recruitGap,
     transform: [{ rotate: '-1deg' }], overflow: 'hidden',
   },
   recruitStacked: { flexDirection: 'column' },

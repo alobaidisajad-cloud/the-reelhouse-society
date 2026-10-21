@@ -282,8 +282,13 @@ const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 // ── svg ─────────────────────────────────────────────────────────────────────
+/**
+ * An Svg's own root, by the host each platform renders it as: on Android react-native-svg's
+ * root is `RNSVGSvgViewAndroid`, and drawn as a box every Android render lost its art.
+ */
+const isSvgRoot = (type: string) => type === 'RNSVGSvgView' || type === 'RNSVGSvgViewAndroid';
 const SVG_TAG: Record<string, string> = {
-  RNSVGSvgView: 'svg', RNSVGGroup: 'g', RNSVGPath: 'path', RNSVGCircle: 'circle',
+  RNSVGSvgView: 'svg', RNSVGSvgViewAndroid: 'svg', RNSVGGroup: 'g', RNSVGPath: 'path', RNSVGCircle: 'circle',
   RNSVGRect: 'rect', RNSVGLine: 'line', RNSVGEllipse: 'ellipse',
   RNSVGDefs: 'defs', RNSVGLinearGradient: 'linearGradient',
   RNSVGRadialGradient: 'radialGradient', RNSVGStop: 'stop', RNSVGText: 'text',
@@ -294,7 +299,7 @@ function svgAttrs(type: string, p: Record<string, unknown>): string {
   const a: string[] = [];
   const put = (k: string, v: unknown) => { if (v !== undefined && v !== null && v !== '') a.push(`${k}="${esc(String(v))}"`); };
 
-  if (type === 'RNSVGSvgView') {
+  if (isSvgRoot(type)) {
     put('xmlns', 'http://www.w3.org/2000/svg');
     put('width', p.width); put('height', p.height);
     // react-native-svg splits viewBox into minX/minY/vbWidth/vbHeight; without it, a
@@ -551,7 +556,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
       }).join('')
       : (n.children || []).map((c) => toHtml(c, opts, true)).join('');
     const attrs = svgAttrs(t, p);
-    if (t === 'RNSVGSvgView') {
+    if (isSvgRoot(t)) {
       // Style carries position/size for absolutely-placed art like the dial ring.
       const style = css(st, false).replace(/display:flex;flex-direction:\w+;?/, '');
       // As a flex item an svg's attribute size collapses on the main axis (a 16pt icon

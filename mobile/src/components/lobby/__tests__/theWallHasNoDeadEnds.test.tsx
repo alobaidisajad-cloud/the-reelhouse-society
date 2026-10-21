@@ -28,7 +28,7 @@ import { supabase } from '@/src/lib/supabase';
 import { tmdb } from '@/src/lib/tmdb';
 import { LobbyWall } from '../LobbyWall';
 import { lineLedger } from '../parts';
-import { lineWidth, TYPE, WALL } from '../measure';
+import { lineWidth, setLines, TYPE, WALL } from '../measure';
 import { KEEP_OFF, SIGNOFF } from '../words';
 import { featureKey, PROGRAMME_KEY, WALL_KEY, type Wall } from '../wallRead';
 import { honourDay, honourLine } from '../LobbyHonour';
@@ -448,12 +448,18 @@ describe('every line fits its room', () => {
       const lines = lineLedger.lines;
       const wallW = 375 - WALL.gutter * 2;
       expect(lines.filter((l) => l.text === SIGNOFF).map((l) => l.room)).toEqual([wallW]);
-      // the log and the stack stand side by side here: each strip is a half bill, less its insets
-      const strip = (wallW - WALL.gap) / 2 - WALL.halfPad * 2 - WALL.creditInset;
-      const switches = lines.filter((l) => l.text === KEEP_OFF).map((l) => l.room);
-      expect(switches).toHaveLength(5);
-      expect(switches.slice(0, 2)).toEqual([strip, strip]);
-      for (const room of switches) expect(lineWidth(KEEP_OFF, TYPE.cta.face, TYPE.cta.size, 1, TYPE.cta.spacing)).toBeLessThanOrEqual(room + 0.5);
+      // the log and the stack stand side by side here: each credit block is a half bill, less its
+      // insets and its own, and its switch is set in the lines that block needs
+      const block = (wallW - WALL.gap) / 2 - WALL.halfPad * 2 - WALL.creditPad * 2 - WALL.creditInset;
+      const inBlock = lines.filter((l) => l.type === 'cta' && l.room === block).map((l) => l.text);
+      const set = setLines(KEEP_OFF, 'cta', block, 1);
+      expect(inBlock).toEqual([...set, ...set]);
+      // the filings' three, each on a line of its own
+      const filings = lines.filter((l) => l.text === KEEP_OFF && l.room !== block);
+      expect(filings).toHaveLength(3);
+      for (const l of [...lines.filter((x) => x.room === block && x.type === 'cta'), ...filings]) {
+        expect(lineWidth(l.text, TYPE.cta.face, TYPE.cta.size, 1, TYPE.cta.spacing)).toBeLessThanOrEqual(l.room + 0.5);
+      }
     } finally {
       lineLedger.lines = null;
       screen.unmount();

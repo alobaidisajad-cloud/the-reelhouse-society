@@ -5,11 +5,11 @@
  * too wide for a line breaks between its words, the stack's count stands over
  * SEE ALL, and a film's name too wide beside its poster goes under it.
  * ─────────────────────────────────────────────────────────────────────────────
- * The member's name, portrait and rank mark stand on a CREDIT STRIP at each
- * bill's foot, on the card's own dark ground: the rank mark (RankBadge) is made
- * for a dark ground — the Auteur's plate is a wash over near-black, the
- * Archivist's a hairline with no ground at all — and on paper or brass it
- * could not be read.
+ * The member's name, portrait and rank mark stand in a CREDIT BLOCK at each
+ * bill's foot, printed in the bill's own ink with the stock round it: the rank
+ * mark (RankBadge) is made for a dark ground — the Auteur's plate is a wash over
+ * near-black, the Archivist's a hairline with no ground at all — and on paper or
+ * brass it could not be read.
  *
  * No counts: the Lobby names the honoured; the log's own page counts them.
  */
@@ -21,7 +21,6 @@ import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
 import { ReelRating, reelsWidth } from '@/src/components/Decorative';
 import { colors, fonts } from '@/src/theme/theme';
-import { EDGE_LIT } from '@/src/theme/light';
 import { tmdb } from '@/src/lib/tmdb';
 import { nav } from '@/src/utils/typedRouter';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
@@ -35,7 +34,7 @@ import { KeepOff } from './KeepOff';
 /** Between the credit's name and its mark's line. */
 const CREDIT_GAP = 6;
 
-/** The credit strip: a member's portrait, name and rank mark, on the card's own ground. */
+/** The credit block: a member's portrait, name and rank mark, printed in ink on the bill. */
 const Credit = memo(function Credit({ author, keepOff }: { author: WallLog['author']; keepOff?: React.ReactNode }) {
   return (
     <View style={s.credit}>
@@ -237,9 +236,11 @@ export const VacantLogBill = memo(function VacantLogBill({ plan }: { plan: WallP
       <Rays color={colors.crimson} strength={0.10} cx={pair.room * 0.35} cy={140} radius={210} />
       <Slab lines={LOG_BILL.slab} ground={colors.crimson} ink={colors.silverScreen} room={pair.slabRoom} />
       <Lines lines={pair.log.vacant} said={LOG_BILL.vacant} type="vacant" room={pair.room} style={s.sayPaper} box={s.say} />
-      <PressableScale style={[s.door, s.doorPaper]} onPress={() => nav.push('/log-modal')} haptic="selection"
+      <PressableScale style={s.door} onPress={() => nav.push('/log-modal')} haptic="selection"
         accessibilityRole="button" accessibilityLabel="Log a film">
-        <Door lines={pair.log.door} room={pair.doorRoom} style={s.doorPaperText} />
+        <View style={[s.doorPlate, s.doorPaper]}>
+          <Door lines={pair.log.door} room={pair.doorRoom} style={s.doorPaperText} />
+        </View>
       </PressableScale>
     </View>
   );
@@ -253,9 +254,11 @@ export const VacantStackBill = memo(function VacantStackBill({ plan }: { plan: W
       <Halftone opacity={0.10} />
       <Slab lines={STACK_BILL.slab} ground={colors.ink} ink={colors.marqueeGold} room={pair.slabRoom} />
       <Lines lines={pair.stack.vacant} said={STACK_BILL.vacant} type="vacant" room={pair.room} style={s.sayInk} box={s.say} />
-      <PressableScale style={[s.door, s.doorInk]} onPress={() => nav.push('/list-modal')} haptic="selection"
+      <PressableScale style={s.door} onPress={() => nav.push('/list-modal')} haptic="selection"
         accessibilityRole="button" accessibilityLabel="Start a stack">
-        <Door lines={pair.stack.door} room={pair.doorRoom} style={s.doorInkText} />
+        <View style={[s.doorPlate, s.doorInk]}>
+          <Door lines={pair.stack.door} room={pair.doorRoom} style={s.doorInkText} />
+        </View>
       </PressableScale>
     </View>
   );
@@ -264,7 +267,7 @@ export const VacantStackBill = memo(function VacantStackBill({ plan }: { plan: W
 const s = StyleSheet.create({
   // the two share the row, half each (flex: 1 in a row: an equal share, never its words' width)
   half: { flex: 1, minWidth: 0, paddingHorizontal: WALL.halfPad, paddingTop: WALL.halfPad, overflow: 'hidden' },
-  paper: { backgroundColor: colors.parchment },
+  paper: { backgroundColor: colors.paper },
   brassStock: { backgroundColor: colors.sepia },
   vacant: { paddingBottom: WALL.halfPad },
   words: { marginTop: 10 },
@@ -296,10 +299,10 @@ const s = StyleSheet.create({
   slogan: { marginTop: 'auto', paddingTop: 10 },
   sloganPaper: { color: colors.bloodReel, lineHeight: 15 },
   sloganInk: { color: colors.ink, lineHeight: 15 },
+  // a block printed in the bill's own ink, the stock round it: the mark keeps the dark ground it is made for
   credit: {
-    ...EDGE_LIT,
-    marginTop: 10, marginHorizontal: -WALL.halfPad, paddingHorizontal: WALL.halfPad, paddingTop: 8, paddingBottom: 9,
-    backgroundColor: colors.soot,
+    marginTop: 10, marginBottom: WALL.halfPad, paddingHorizontal: WALL.creditPad, paddingTop: 7, paddingBottom: 8,
+    backgroundColor: colors.ink,
   },
   creditLine: { flexDirection: 'row', alignItems: 'center', minHeight: 24 },
   creditLine2: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: CREDIT_GAP, minHeight: 18, paddingLeft: WALL.creditInset },
@@ -320,13 +323,15 @@ const s = StyleSheet.create({
   say: { marginTop: 16 },
   sayPaper: { color: colors.ink, lineHeight: 21 },
   sayInk: { color: colors.ink, lineHeight: 21 },
-  // two lines, where its words need them, centred on one another
-  door: {
-    marginTop: 'auto', alignSelf: 'flex-start', minHeight: 44, borderWidth: 1, paddingHorizontal: WALL.halfDoorPad,
-    paddingVertical: 4, justifyContent: 'center', alignItems: 'center', maxWidth: '100%',
+  // a full finger tall; in it, a plate printed at the slab's slant, as the bill's name is: two lines where its
+  // words need them, centred on one another (the slant is the plate's: PressableScale's own transform is the press)
+  door: { marginTop: 'auto', alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', maxWidth: '100%' },
+  doorPlate: {
+    paddingHorizontal: WALL.halfDoorPad, paddingTop: 6, paddingBottom: 5, alignItems: 'center',
+    transform: [{ rotate: '-3deg' }],
   },
-  doorPaper: { borderColor: colors.bloodReel },
-  doorPaperText: { color: colors.bloodReel },
-  doorInk: { borderColor: colors.ink },
-  doorInkText: { color: colors.ink },
+  doorPaper: { backgroundColor: colors.bloodReel },
+  doorPaperText: { color: colors.paper },
+  doorInk: { backgroundColor: colors.ink },
+  doorInkText: { color: colors.marqueeGold },
 });

@@ -20,7 +20,7 @@
  */
 import {
   balancedWidth, ceilingFor, emOf, filmLine, fitsAt, HOUSE_CEILING, lineWidth, linesAt, MAST_GAPS, MAST_LINES, nameLines,
-  planWall, setLines, TYPE, WALL, wholeName, wholeSize, type TypeKey, type WallPlan,
+  planWall, setLines, SHEET_FOOT, SNIPE_DEPTH, TYPE, WALL, wholeName, wholeSize, type TypeKey, type WallPlan,
 } from '../measure';
 import { KEEP_OFF, LOG_BILL, STACK_BILL } from '../words';
 
@@ -123,10 +123,40 @@ describe('the wall gives way where its words do not fit side by side', () => {
     expect(p).toMatchObject({ runners: true, tickets: true, bannerStacked: false, recruitStacked: false });
   });
 
+  it('pastes the snipe only where the one-sheet’s foot stands clear of it, measured as the phone grows the words', () => {
+    const LONG = 'Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb';
+    const clear = (ph: keyof typeof PHONES, scale: number, lineScale: number, title: string) => {
+      const p = planWall({ ...PHONES[ph], scale, lineScale });
+      const t = p.titleSize(title).size;
+      // the foot, line by line, as FeatureRow lays it (measure.ts SHEET_FOOT), against the snipe's depth
+      const foot = linesAt(title, 'rye', t, Math.min(scale, HOUSE_CEILING), 0, p.sheetW - 24) * Math.round(t * SHEET_FOOT.titleLine)
+        + SHEET_FOOT.billingGap + SHEET_FOOT.billingLine + SHEET_FOOT.quietGap + SHEET_FOOT.billingLine
+        + SHEET_FOOT.tagGap + 2 * SHEET_FOOT.tagLine + SHEET_FOOT.nowGap + SHEET_FOOT.nowLine;
+      return { said: p.snipe(title, 'Hal Ashby', true), clear: p.sheetH - SHEET_FOOT.bottom - foot * lineScale >= SNIPE_DEPTH };
+    };
+    // a short name on the common phones: the corner is clear, and the snipe is pasted
+    for (const ph of ['iphone14', 'iphone15', 'pixel7', 'proMax'] as const) expect(clear(ph, 1, 1, 'Jaws')).toEqual({ said: true, clear: true });
+    // a long name, grown, on the smallest phone: the foot reaches the corner, and none is pasted
+    expect(clear('se1', HOUSE_CEILING, 2, LONG)).toEqual({ said: false, clear: false });
+    // and it never says clear where the foot is not
+    for (const ph of Object.keys(PHONES) as (keyof typeof PHONES)[]) {
+      for (const [scale, lineScale] of [[1, 1], [HOUSE_CEILING, HOUSE_CEILING], [HOUSE_CEILING, 2]] as const) {
+        for (const title of ['Jaws', 'The End of Oak Street', LONG]) {
+          const c = clear(ph, scale, lineScale, title);
+          expect([ph, scale, lineScale, title, c.said]).toEqual([ph, scale, lineScale, title, c.clear]);
+        }
+      }
+    }
+  });
+
   it('a member’s text size past the ceiling is read as the ceiling (the Text wrapper caps it)', () => {
-    expect(planWall({ ...PHONES.pixel7, scale: 2, lineScale: 2 })).toMatchObject(
-      (({ titleSize, ...rest }) => rest)(planWall({ ...PHONES.pixel7, scale: HOUSE_CEILING, lineScale: 2 })),
-    );
+    const past = planWall({ ...PHONES.pixel7, scale: 2, lineScale: 2 });
+    const ceiling = planWall({ ...PHONES.pixel7, scale: HOUSE_CEILING, lineScale: 2 });
+    expect(past).toMatchObject((({ titleSize, snipe, ...rest }) => rest)(ceiling));
+    // the rules it measures with read the ceiling too
+    for (const t of ['Jaws', 'The End of Oak Street', 'Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb']) {
+      expect([past.titleSize(t), past.snipe(t, 'David Robert Mitchell', true)]).toEqual([ceiling.titleSize(t), ceiling.snipe(t, 'David Robert Mitchell', true)]);
+    }
   });
 
   it('on a tablet the wall stands as one centred column, no wider than 560', () => {
@@ -182,7 +212,8 @@ describe('the Featured Log and the Featured Stack stand side by side on every ph
     // side by side: the two halves and the gap between fill the wall's row
     expect(pair.width * 2 + WALL.gap).toBeCloseTo(p.wallW, 6);
     expect(pair.room).toBeCloseTo(pair.width - WALL.halfPad * 2, 6);
-    expect(p.switchRoom.credit).toBeCloseTo(pair.room - WALL.creditInset, 6);
+    // the credit block stands inside the half's inset, and its words inside its own
+    expect(p.switchRoom.credit).toBeCloseTo(pair.room - WALL.creditPad * 2 - WALL.creditInset, 6);
     expect(misfitsOf(p, room.scale, room.admin)).toEqual([]);
     // an admin's switch on a filing is drawn on one line, so its room must hold it whole
     if (room.admin) {

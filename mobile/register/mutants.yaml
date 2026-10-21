@@ -528,6 +528,27 @@ mutants:
         find: "Start proc 6028:com.reelhouse.society/u0a192"
         replace: "Start proc 6028:com.google.android.gms/u0a192"
 
+  - id: shape-android-svg-root-unknown
+    class: MOCKUP-android-svg-lost
+    source: shape
+    edits:
+      - file: src/components/profile/__tests__/zz-render.lib.ts
+        find: "const isSvgRoot = (type: string) => type === 'RNSVGSvgView' || type === 'RNSVGSvgViewAndroid';"
+        replace: "const isSvgRoot = (type: string) => type === 'RNSVGSvgView';"
+      - file: src/components/profile/__tests__/zz-render.lib.ts
+        find: "RNSVGSvgView: 'svg', RNSVGSvgViewAndroid: 'svg', "
+        replace: "RNSVGSvgView: 'svg', "
+    proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "draws its root as an svg whichever host the platform renders it as, the same on both" }
+
+  - id: shape-snipe-always-pasted
+    class: LAYOUT-ornament-over-words
+    source: shape
+    edits:
+      - file: src/components/lobby/measure.ts
+        find: "    return sheetH - F.bottom - words * lineScale >= SNIPE_DEPTH;"
+        replace: "    return words >= 0;"
+    proof: { file: src/components/lobby/__tests__/theWallIsMeasured.test.ts, test: "pastes the snipe only where the one-sheet’s foot stands clear of it, measured as the phone grows the words" }
+
   - id: shape-cold-cell-left-empty
     class: E2E-launch-unmeasured
     source: shape

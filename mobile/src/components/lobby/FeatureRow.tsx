@@ -2,10 +2,11 @@
  * I · NOW SHOWING — this week's film as a one-sheet in a brass display case,
  * and the rest of the bill pinned in a column beside it.
  * ─────────────────────────────────────────────────────────────────────────────
- * THE ONE-SHEET is the film's own art with NO words on it (tmdb.keyArt), and the
- * house's type laid over it: its line at the head, the film's name, the billing
- * and NOW SHOWING at the foot, each on a shade that travels with the words, so
- * a name that grows never leaves its shade. Where the catalogue has no wordless
+ * THE ONE-SHEET is the film's own art with NO words on it (tmdb.keyArt), a
+ * crimson snipe pasted across its top corner saying THIS WEEK, and the house's
+ * type laid over its foot: the film's name, the billing, the house's line and
+ * NOW SHOWING, on a shade that travels with the words, so a name that grows
+ * never leaves its shade. Where the catalogue has no wordless
  * art, the film's own printed poster hangs whole instead, and the house lays NO
  * words over it — they stand above and below — because words printed inside a
  * picture cannot be seen, only collided with.
@@ -22,7 +23,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { nav } from '@/src/utils/typedRouter';
 import type { TMDBFilm } from '@/src/components/home/types';
 import { HouseLine, typeStyle } from './parts';
-import { BILL_ALL_H, BILL_GAP, BILL_HEAD_LINE, WALL, type WallPlan } from './measure';
+import { BILL_ALL_H, BILL_GAP, BILL_HEAD_LINE, SHEET_FOOT, SNIPE_H, SNIPE_REACH, WALL, type WallPlan } from './measure';
 import { BILL, ONE_SHEET, STATES } from './words';
 import type { FeatureSheet } from './wallRead';
 
@@ -35,6 +36,14 @@ const SHADE = 'rgba(6,5,4,';
 const BILL_HALO = { top: BILL_GAP / 2, bottom: BILL_GAP / 2, left: WALL.besideCase / 2, right: WALL.gutter } as const;
 const SHEET_INSET = 16;
 const FOOT_INSET = 12;
+/**
+ * The snipe: a strip of crimson pasted across the sheet's top corner, as a house pasted its
+ * notices over its bills (SNIPE_REACH and SNIPE_H, measure.ts). It runs past both edges,
+ * where the sheet ends it.
+ */
+const SNIPE_LEN = SNIPE_REACH * 2 * Math.SQRT2 + 40;
+/** Its words' room: the strip's shorter, outer edge inside the corner, less its own height at the ends. */
+const SNIPE_ROOM = SNIPE_REACH * 2 * Math.SQRT2 - SNIPE_H - 8;
 
 export const FeatureRow = memo(function FeatureRow({ plan, sheet, bill, dark, onRetry }: {
   plan: WallPlan;
@@ -110,36 +119,45 @@ const OneSheet = memo(function OneSheet({ sheet, width, height, plan }: {
   const label = [
     sheet.title, sheet.director ? `directed by ${sheet.director}` : null, sheet.year, sheet.runtime ? `${sheet.runtime} minutes` : null,
   ].filter(Boolean).join(', ');
-  const tagline = (
-    <View style={sheet.art.titled ? s.tagStatic : s.tag}>
-      {!sheet.art.titled ? <LinearGradient colors={[`${SHADE}0.88)`, `${SHADE}0.7)`, `${SHADE}0)`]} locations={[0, 0.55, 1]} style={s.tagShade} /> : null}
-      <HouseLine type="tagline" text={ONE_SHEET.tagline[0].toUpperCase()} room={room} style={[s.tagLine, s.tagFirst]} spoken={false} />
-      <HouseLine type="tagline" text={ONE_SHEET.tagline[1].toUpperCase()} room={room} style={s.tagLine} spoken={false} />
-    </View>
+  const titled = sheet.art.titled;
+  // over wordless art the house's line stands at the sheet's foot, under the billing, and the snipe takes its corner
+  const tagLines = (
+    <>
+      <HouseLine type="tagline" text={ONE_SHEET.tagline[0].toUpperCase()} room={titled ? room : footRoom} style={[s.tagLine, s.tagFirst, !titled && s.tagAtFoot]} spoken={false} />
+      <HouseLine type="tagline" text={ONE_SHEET.tagline[1].toUpperCase()} room={titled ? room : footRoom} style={[s.tagLine, !titled && s.tagAtFoot]} spoken={false} />
+    </>
   );
+  const tagline = titled ? <View style={s.tagStatic}>{tagLines}</View> : null;
   const foot = (
-    <View style={sheet.art.titled ? s.footStatic : s.foot}>
-      {!sheet.art.titled ? <LinearGradient colors={[`${SHADE}0)`, `${SHADE}0.8)`, `${SHADE}0.95)`]} locations={[0, 0.42, 1]} style={s.footShade} /> : null}
+    <View style={titled ? s.footStatic : s.foot}>
+      {!titled ? <LinearGradient colors={[`${SHADE}0)`, `${SHADE}0.8)`, `${SHADE}0.95)`]} locations={[0, 0.42, 1]} style={s.footShade} /> : null}
       {!sheet.art.titled ? (
         <Text
           numberOfLines={5}
           // the size is chosen so the name is whole at the member's text size; it grows no further
           maxFontSizeMultiplier={1.35}
-          style={[s.title, { fontSize: title.size, lineHeight: Math.round(title.size * 1.04) }]}
+          style={[s.title, { fontSize: title.size, lineHeight: Math.round(title.size * SHEET_FOOT.titleLine) }]}
           accessibilityRole="header"
         >
           {sheet.title}
         </Text>
       ) : null}
       {sheet.director ? (
-        <Text numberOfLines={1} style={[typeStyle('billing'), s.billing]}>{ONE_SHEET.directedBy(sheet.director)}</Text>
+        // two lines where the member's text size needs them: a director's name is never cut short
+        <Text numberOfLines={2} style={[typeStyle('billing'), s.billing]}>{ONE_SHEET.directedBy(sheet.director)}</Text>
       ) : null}
       {credits ? <Text numberOfLines={1} style={[typeStyle('billing'), s.billing, s.billingQuiet]}>{credits}</Text> : null}
+      {titled ? null : <View style={s.tagFoot}>{tagLines}</View>}
       <View style={s.nowRow}>
         <View style={s.nowRule} />
         <HouseLine type="now" text={ONE_SHEET.now} room={footRoom - 40} style={s.now} spoken={false} />
         <View style={s.nowRule} />
       </View>
+    </View>
+  );
+  const snipe = titled || !plan.snipe(sheet.title, sheet.director ?? null, Boolean(credits)) ? null : (
+    <View style={[s.snipe, { left: width - SNIPE_REACH - SNIPE_LEN / 2 }]} pointerEvents="none">
+      <HouseLine type="now" text={ONE_SHEET.snipe} room={SNIPE_ROOM} style={s.snipeWords} spoken={false} />
     </View>
   );
   return (
@@ -157,6 +175,7 @@ const OneSheet = memo(function OneSheet({ sheet, width, height, plan }: {
       ) : null}
       <View style={s.border} pointerEvents="none" />
       {tagline}
+      {snipe}
       {sheet.art.titled && sheet.art.path ? (
         <Image source={{ uri: tmdb.poster(sheet.art.path, 'w500') ?? undefined }} style={s.titledArt}
           contentFit="contain" cachePolicy="memory-disk" transition={200} accessible={false} />
@@ -194,12 +213,17 @@ const s = StyleSheet.create({
   sheet: { overflow: 'hidden', backgroundColor: colors.inkwell },
   sheetTitled: { paddingHorizontal: SHEET_INSET, paddingTop: 16, paddingBottom: 18 },
   border: { position: 'absolute', top: 7, left: 7, right: 7, bottom: 7, borderWidth: 1, borderColor: colors.sepiaBorderStrong },
-  tag: { position: 'absolute', left: SHEET_INSET, right: SHEET_INSET, top: 18 },
   tagStatic: {},
-  tagShade: { position: 'absolute', left: -SHEET_INSET, right: -SHEET_INSET, top: -18, bottom: -34 },
-  tagLine: { color: colors.parchment, lineHeight: 15.5, textAlign: 'left' },
+  tagLine: { color: colors.parchment, lineHeight: SHEET_FOOT.tagLine, textAlign: 'left' },
   tagFirst: { color: colors.marqueeGold },
-  foot: { position: 'absolute', left: FOOT_INSET, right: FOOT_INSET, bottom: 18, alignItems: 'center' },
+  tagFoot: { marginTop: SHEET_FOOT.tagGap, alignSelf: 'stretch', alignItems: 'center' },
+  tagAtFoot: { textAlign: 'center' },
+  snipe: {
+    position: 'absolute', top: SNIPE_REACH - SNIPE_H / 2, width: SNIPE_LEN, height: SNIPE_H,
+    backgroundColor: colors.crimson, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '45deg' }],
+  },
+  snipeWords: { color: colors.silverScreen },
+  foot: { position: 'absolute', left: FOOT_INSET, right: FOOT_INSET, bottom: SHEET_FOOT.bottom, alignItems: 'center' },
   footStatic: { alignItems: 'center' },
   footShade: { position: 'absolute', left: -FOOT_INSET, right: -FOOT_INSET, top: -70, bottom: -18 },
   title: {
@@ -208,11 +232,11 @@ const s = StyleSheet.create({
     // The shadow's room inside the box a phone cuts it at; the margins keep the layout.
     paddingTop: 12, paddingBottom: 16, paddingHorizontal: 14, marginTop: -12, marginBottom: -16, marginHorizontal: -14,
   },
-  billing: { color: colors.bone, marginTop: 7, textAlign: 'center' },
-  billingQuiet: { color: colors.fog, marginTop: 2 },
-  nowRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 9, alignSelf: 'stretch' },
+  billing: { color: colors.bone, marginTop: SHEET_FOOT.billingGap, lineHeight: SHEET_FOOT.billingLine, textAlign: 'center' },
+  billingQuiet: { color: colors.fog, marginTop: SHEET_FOOT.quietGap },
+  nowRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: SHEET_FOOT.nowGap, alignSelf: 'stretch' },
   nowRule: { flex: 1, minWidth: 0, height: 1, backgroundColor: colors.sepiaBorderStrong },
-  now: { color: colors.marqueeGold, paddingLeft: 4 },
+  now: { color: colors.marqueeGold, lineHeight: SHEET_FOOT.nowLine, paddingLeft: 4 },
   titledArt: { flex: 1, minHeight: 0, marginTop: 10, marginBottom: 2 },
   dark: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 20 },
   darkName: { color: colors.silverScreen, textAlign: 'center' },
@@ -222,6 +246,7 @@ const s = StyleSheet.create({
   billCol: { flex: 1, minWidth: 0, gap: BILL_GAP },
   billHead: { color: colors.bone, lineHeight: BILL_HEAD_LINE },
   billPoster: { flex: 1, minHeight: 0, width: '100%', borderWidth: 1, borderColor: colors.sepiaBorderStrong, backgroundColor: colors.inkwell, overflow: 'hidden' },
-  all: { minHeight: BILL_ALL_H, height: BILL_ALL_H, borderWidth: 1, borderColor: colors.sepiaBorderStrong, alignItems: 'center', justifyContent: 'center' },
-  allText: { color: colors.sepia },
+  // a plate printed in the case's brass, its words in ink
+  all: { minHeight: BILL_ALL_H, height: BILL_ALL_H, backgroundColor: colors.sepia, alignItems: 'center', justifyContent: 'center' },
+  allText: { color: colors.ink },
 });

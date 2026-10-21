@@ -391,6 +391,19 @@ describe('9 — numberOfLines, which is how the app stops overflow', () => {
   });
 });
 
+describe('an Svg on each platform', () => {
+  it('draws its root as an svg whichever host the platform renders it as, the same on both', () => {
+    // On Android react-native-svg's root is RNSVGSvgViewAndroid; drawn as a box it painted nothing.
+    const art = (root: string) => toHtml({ type: root, props: { width: 44, height: 44, vbWidth: 300, vbHeight: 299.3 }, children: [
+      { type: 'RNSVGPath', props: { d: 'M0 0L10 10' }, children: [] },
+    ] });
+    const ios = art('RNSVGSvgView');
+    expect(ios).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" width="44" height="44" viewBox="0 0 300 299\.3"/);
+    expect(ios).toContain('<path');
+    expect(art('RNSVGSvgViewAndroid')).toBe(ios);
+  });
+});
+
 describe('the colour decoder', () => {
   it('reads react-native-svg\'s packed ARGB integers', () => {
     // Inner svg nodes carry {type:0, payload:<int>}, not colour strings.

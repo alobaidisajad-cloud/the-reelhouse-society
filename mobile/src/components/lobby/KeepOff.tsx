@@ -26,7 +26,7 @@ export const KeepOff = memo(function KeepOff({ kind, id, what, room, lines = [KE
   what: string;
   /** the width of the row it stands in, where it takes a line of its own (planWall's switchRoom) */
   room: number;
-  /** its words in the lines planWall set them in (a half bill's credit strip may need two) */
+  /** its words in the lines planWall set them in (a half bill's credit block may need two) */
   lines?: readonly string[];
 }) {
   const queryClient = useQueryClient();
