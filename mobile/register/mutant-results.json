@@ -364,6 +364,34 @@
     "verdict": "caught"
   },
   {
+    "class": "TYPE-italic-faked",
+    "mutant": "shape-italic-asked",
+    "proof": "m1",
+    "commit": "b9cc8784849544f1b9238e0e00b050937ad2de99",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-count-before-plural",
+    "mutant": "shape-seats-uncounted",
+    "proof": "m1",
+    "commit": "b9cc8784849544f1b9238e0e00b050937ad2de99",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-actions-twice",
+    "mutant": "shape-reader-undocked",
+    "proof": "m1",
+    "commit": "b9cc8784849544f1b9238e0e00b050937ad2de99",
+    "verdict": "caught"
+  },
+  {
+    "class": "ANDROID-dialog-off-house",
+    "mutant": "shape-dialog-theme-unset",
+    "proof": "m1",
+    "commit": "b9cc8784849544f1b9238e0e00b050937ad2de99",
+    "verdict": "caught"
+  },
+  {
     "class": "MOCKUP-android-svg-lost",
     "mutant": "shape-android-svg-root-unknown",
     "proof": "m1",
