@@ -609,6 +609,15 @@ mutants:
         replace: "      ...[].flatMap((t) => ["
     proof: { file: e2e/__tests__/walkRoutes.test.ts, test: "plans each moment after every route, as the member, its link filled in, and walks it: its mark, each tap once, what shows, then the capture" }
 
+  - id: shape-keyboard-never-on
+    class: E2E-system-mode-unseen
+    source: shape
+    edits:
+      - file: e2e/walk-routes.mjs
+        find: "      ...(s.keyboard ? keyboard(true) : []),"
+        replace: "      ...[],"
+    proof: { file: e2e/__tests__/walkRoutes.test.ts, test: "turns the keyboard on for a moment that asks for it, before its link, and off after its capture" }
+
   - id: shape-keyboard-read-as-the-app
     class: E2E-system-mode-unseen
     source: shape

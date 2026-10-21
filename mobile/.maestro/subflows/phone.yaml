@@ -2,9 +2,10 @@ appId: com.reelhouse.society
 ---
 # Changes the phone mid-flow, SET to TO (e2e/fault-proxy.mjs's /phone,
 # through phone.js): the text size, the display density, "don't keep
-# activities", the app killed by the system in the background, or stopped
-# dead in the foreground. For the lifecycle flows alone; run-flows.sh puts
-# the phone back before every one of them.
+# activities", the app killed by the system in the background, stopped dead
+# in the foreground, or the keyboard on or off. For the lifecycle flows, which
+# run-flows.sh puts back before every one, and the route walk's keyboard
+# moment (e2e/walk-routes.mjs), which turns it off again itself.
 - runScript:
     file: phone.js
     env:

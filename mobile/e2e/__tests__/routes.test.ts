@@ -12,7 +12,7 @@ const MOBILE = join(__dirname, '..', '..');
 type Route = { link: string; as?: 'guest' | 'member'; why?: string; lands?: string; then?: string };
 /** A control a moment taps, or what shows once it is there: by its id, or by the words it shows or is labelled. */
 type Control = { id?: string; text?: string };
-type Moment = { link: string; taps: Control[]; shows?: Control; part?: string; why?: string };
+type Moment = { link: string; taps: Control[]; shows?: Control; part?: string; keyboard?: boolean; why?: string };
 const LIST = JSON.parse(readFileSync(join(__dirname, '..', 'routes.json'), 'utf8')) as { routes: Record<string, Route>; moments: Record<string, Moment> };
 
 /** The ids the walk reads back from the seeded world (e2e/walk-routes). */
@@ -84,6 +84,8 @@ it('gives each moment a link of the walk\'s placeholders, its taps, what shows, 
       else if (!drawn(c)) faults.push(`${name}: ${c.id ?? c.text} is drawn nowhere in the app`);
     }
     if (m.part !== undefined && !PARTS.includes(m.part)) faults.push(`${name}: no part named ${m.part}`);
+    // The keyboard is on only where the screen is read above it, and read above it only where it is on.
+    if ((m.keyboard === true) !== (m.part === 'above-keyboard')) faults.push(`${name}: the keyboard on, and read above it, together or neither`);
     if ((m.why ?? '').length < 30) faults.push(`${name}: says why, in words`);
     return faults;
   });

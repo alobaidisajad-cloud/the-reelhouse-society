@@ -96,11 +96,14 @@ export const commandsFor = {
       ['adb', ['shell', 'settings', 'put', 'global', 'private_dns_mode', 'hostname']]]
     : [['adb', ['shell', 'settings', 'put', 'global', 'private_dns_mode', 'off']]]),
 };
+/** The emulator image's keyboard (Gboard), as `ime list -a -s` names it. */
+export const GBOARD = 'com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME';
 /**
- * What a lifecycle flow may change on the phone mid-flow (.maestro/lifecycle, WORKLIST P0.86): the
- * text size and the display density live, Android's "don't keep activities", the system killing
- * the app in the background, and the app stopped dead in the foreground (mid-write). Each a fixed
- * command of a checked value; run-flows.sh puts the settings back before every lifecycle flow.
+ * What a flow may change on the phone mid-flow (.maestro/lifecycle, and the route walk's keyboard
+ * moment; WORKLIST P0.86): the text size and the display density live, Android's "don't keep
+ * activities", the system killing the app in the background, the app stopped dead in the foreground
+ * (mid-write), and the keyboard on or off. Each a fixed command of a checked value; run-flows.sh puts
+ * the settings back before every lifecycle flow.
  */
 export const PHONE = {
   font_scale: { says: 'a number from 0.85 to 2', valid: (v) => typeof v === 'number' && v >= 0.85 && v <= 2,
@@ -114,6 +117,12 @@ export const PHONE = {
   // In the foreground, mid-write: am kill reaches only an app in the background.
   force_stopped: { says: 'true', valid: (v) => v === true,
     commands: () => [['adb', ['shell', 'am', 'force-stop', 'com.reelhouse.society']]] },
+  // The image's keyboard, on for a moment of the route walk and off again: run-flows.sh turns every
+  // keyboard off, because the flows type without one (its keyboard-room probes turn it on the same way).
+  keyboard: { says: 'true or false', valid: (v) => typeof v === 'boolean',
+    commands: (v) => (v
+      ? [['adb', ['shell', 'pm', 'enable', GBOARD.split('/')[0]]], ['adb', ['shell', 'ime', 'enable', GBOARD]], ['adb', ['shell', 'ime', 'set', GBOARD]]]
+      : [['adb', ['shell', 'pm', 'disable', GBOARD.split('/')[0]]], ['adb', ['shell', 'settings', 'delete', 'secure', 'enabled_input_methods']], ['adb', ['shell', 'settings', 'delete', 'secure', 'default_input_method']]]) },
 };
 commandsFor.phone = ({ set, to }) => PHONE[set].commands(to);
 const refusalOfPhone = (b) => {

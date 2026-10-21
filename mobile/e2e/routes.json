@@ -15,8 +15,8 @@
     "app/(modals)/membership.tsx": { "link": "/membership" },
     "app/(modals)/notifications-modal.tsx": { "link": "/notifications-modal" },
     "app/(modals)/search-modal.tsx": { "link": "/search-modal" },
-    "app/(modals)/social-modal.tsx": { "link": "/social-modal" },
-    "app/(admin)/tribunal.tsx": { "link": "/tribunal", "why": "as the member: the door's refusal; the admin's own room is P0.86's admin pass" },
+    "app/(modals)/social-modal.tsx": { "link": "/social-modal?personId={person}", "why": "a link that names nothing to show closes the modal (resolveMode: not valid; run 39566918888 saw it close), so the walk opens it as a person's page does, to share the person" },
+    "app/(admin)/tribunal.tsx": { "link": "/tribunal", "lands": "/profile", "why": "as the member: the admin layout sends one who is no admin to the profile; the admin's own room is P0.86's admin pass" },
     "app/auth-callback.tsx": { "link": "/auth-callback", "why": "with no link's tokens: its own say that the link is spent" },
     "app/reset-password.tsx": { "link": "/reset-password", "why": "with no recovery session: its own say" },
     "app/dispatch/[id].tsx": { "link": "/dispatch/{filing}" },
@@ -25,7 +25,7 @@
     "app/dispatch/room/[username].tsx": { "link": "/dispatch/room/{member}" },
     "app/dispatch/rules.tsx": { "link": "/dispatch/rules" },
     "app/dispatch/series/[id].tsx": { "link": "/dispatch/series/{series}" },
-    "app/dossier/[id].tsx": { "link": "/dossier/{dossier}" },
+    "app/dossier/[id].tsx": { "link": "/dossier/{dossier}", "lands": "/dispatch/{dossier}", "why": "the old dossier link forwards to the Dispatch reader, which reads every kind of filing" },
     "app/edit-profile.tsx": { "link": "/edit-profile" },
     "app/film-reviews/[id].tsx": { "link": "/film-reviews/{film}" },
     "app/film/[id].tsx": { "link": "/film/{film}" },
@@ -39,7 +39,7 @@
   },
   "moments": {
     "the sign-out alert": { "link": "/settings", "taps": [{ "text": "SIGN OUT" }], "shows": { "text": "Depart the Society" }, "why": "A system alert the app raises (Alert.alert): Android draws it, in the theme the app sets, so the dark walk holds it to the plain walk's, whose system is light. Nothing is signed out: the walk stops the app on the alert." },
-    "the keyboard": { "link": "/darkroom", "taps": [{ "id": "darkroom-search-input" }], "part": "above-keyboard", "why": "The keyboard over the app: Android's keyboard follows the system's mode (keyboardAppearance is iOS's alone), so the keyboard is the system's to draw and the screen above it the app's." },
+    "the keyboard": { "link": "/darkroom", "taps": [{ "id": "darkroom-search-input" }], "part": "above-keyboard", "keyboard": true, "why": "The keyboard over the app: Android's keyboard follows the system's mode (keyboardAppearance is iOS's alone), so the keyboard is the system's to draw and the screen above it the app's. The flows run with no keyboard; it is on for this moment alone." },
     "the calendar": { "link": "/film/{film}", "taps": [{ "id": "film-stub" }, { "id": "film-act-log" }, { "text": "FILED.*" }, { "text": "CHANGE" }], "shows": { "text": "CLOSE" }, "why": "The date picker a log is filed by: the app's own calendar (src/components/NitrateCalendar.tsx), never a native picker, so it must look the same whatever the system's mode." }
   }
 }

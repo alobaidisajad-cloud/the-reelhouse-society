@@ -100,6 +100,16 @@ it('plans each moment after every route, as the member, its link filled in, and 
   ]);
 });
 
+it('turns the keyboard on for a moment that asks for it, before its link, and off after its capture', () => {
+  const step = { file: 'moment: the keyboard', link: '/darkroom', lands: '/darkroom', as: 'member', taps: [{ id: 'k' }], part: 'above-keyboard', keyboard: true };
+  expect(ask(`m.plan({}, {}, { 'the keyboard': { link: '/darkroom', taps: [{ id: 'k' }], part: 'above-keyboard', keyboard: true } })`)).toEqual([step]);
+  const lines = (ask(`m.flowOf([${JSON.stringify(step)}], '/x/subflows/sign_in.yaml')`) as string).split('\n').filter(Boolean).slice(7);
+  const on = ['- runFlow:', '    file: "/x/subflows/phone.yaml"', '    env:', '      SET: keyboard', '      TO: "true"'];
+  const off = ['- runFlow:', '    file: "/x/subflows/phone.yaml"', '    env:', '      SET: keyboard', '      TO: "false"'];
+  expect(lines.slice(0, 7)).toEqual(['# moment: the keyboard', ...on, '- stopApp']);
+  expect(lines.slice(-6)).toEqual(['- takeScreenshot: "01-moment-the-keyboard"', ...off]);
+});
+
 it("waits for the very mark the app draws for each path (src/components/layout/E2ERouteMark.tsx)", () => {
   const paths = ['/', '/login', '/film/129', '/dispatch/room/e2e_member', '/cover-picker?loungeId=lo-1', '/user/a.b-c'];
   const walk = ask(`${JSON.stringify(paths)}.map(m.markOf)`);

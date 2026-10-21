@@ -88,7 +88,8 @@ export function plan(routes, ids, moments = {}) {
   const shown = Object.entries(moments).map(([name, m]) => {
     const link = fillIn(`moment: ${name}`, m.link, ids);
     // `part`: what of the screen is the app's to draw, when the system draws the rest (the keyboard).
-    return { file: `moment: ${name}`, link, lands: link.split('?')[0], as: 'member', taps: m.taps, ...(m.shows ? { shows: m.shows } : {}), ...(m.part ? { part: m.part } : {}) };
+    // `keyboard`: the phone's keyboard on for this moment alone (the flows run with none).
+    return { file: `moment: ${name}`, link, lands: link.split('?')[0], as: 'member', taps: m.taps, ...(m.shows ? { shows: m.shows } : {}), ...(m.part ? { part: m.part } : {}), ...(m.keyboard ? { keyboard: true } : {}) };
   });
   return [...out.filter((r) => r.as === 'guest'), ...out.filter((r) => r.as !== 'guest'), ...shown];
 }
@@ -99,12 +100,15 @@ const pick = (t, indent) => `${' '.repeat(indent)}${t.id !== undefined ? 'id' : 
 /** The Maestro flow that walks the plan, capturing each route by a name in Maestro's output folder. */
 export function flowOf(steps, signIn) {
   const lines = ['appId: com.reelhouse.society', '---', '- launchApp:', '    clearState: true'];
+  // The keyboard on or off through the proxy's phone controls (subflows/phone.yaml, beside sign_in.yaml).
+  const keyboard = (on) => ['- runFlow:', `    file: ${JSON.stringify(signIn.replace(/sign_in\.yaml$/, 'phone.yaml'))}`, '    env:', '      SET: keyboard', `      TO: "${on}"`];
   let signedIn = false;
   steps.forEach((s, i) => {
     // Signed in from the app's own start: a guest's last route (the login modal, say) covers the tabs it signs in through.
     if (s.as !== 'guest' && !signedIn) { lines.push('- stopApp', '- launchApp', `- runFlow: ${JSON.stringify(signIn)}`); signedIn = true; }
     lines.push(
       `# ${s.file}`,
+      ...(s.keyboard ? keyboard(true) : []),
       '- stopApp',
       `- openLink: ${JSON.stringify(SCHEME + s.link.replace(/^\//, ''))}`,
       // A tap after the link waits for any route's mark first (Maestro reads an id as a pattern): the
@@ -125,6 +129,7 @@ export function flowOf(steps, signIn) {
       '- waitForAnimationToEnd:',
       '    timeout: 8000',
       `- takeScreenshot: ${JSON.stringify(`${String(i + 1).padStart(2, '0')}-${nameOf(s.file)}`)}`,
+      ...(s.keyboard ? keyboard(false) : []),
     );
   });
   return `${lines.join('\n')}\n`;
