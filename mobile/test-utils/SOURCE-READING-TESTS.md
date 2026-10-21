@@ -230,6 +230,7 @@ Decisions, as of 2026-09-28:
 | `e2e/__tests__/startStack.test.ts` | The stack's start script, its workflows and the sealed world's config.toml. |
 | `plugins/__tests__/withoutDevLauncherScanner.test.ts` | The installed expo-dev-launcher's manifest, for the entry the plugin removes, and app.json's plugins. |
 | `plugins/__tests__/withSplashWithoutHandoff.test.ts` | The generated MainActivity fixture, app.json's plugins and the app's code, for who imports the splash screen. |
+| `plugins/__tests__/withLinkDuringLaunch.test.ts` | The generated MainActivity fixture and app.json's plugins. |
 
 ## Mounted
 

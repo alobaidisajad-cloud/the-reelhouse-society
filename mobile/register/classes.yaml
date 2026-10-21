@@ -230,7 +230,8 @@ classes:
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "walks nothing for a variant with no name in the list, and sends the phone nothing of it" }
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "sends every one of a variant's commands, though adb reads its input as each is sent" }
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "runs every flow, the probes among them, on the phone as the variant has it, and puts it back after them all" }
-    fix: "e2e/variants.json names each setting a member may choose (largest text, bold text, the narrowest width, three-button navigation, the phone in Arabic, dark mode, motion on), with its commands to set, to wait for and to put back; run-flows.sh sets one before the run touches the phone and puts it back at its end, every command sent (mutant shape-variant-input-swallowed), a variant not in the list running nothing (mutant shape-variant-refusal-sent); largest text, the narrowest width and Arabic run every flow on three machines and the walk on a fourth; every night runs every variant. Each variant's own pass rules are P0.86's next part"
+      - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "waits for a phone the variant changed to settle before the walk, and goes on, saying so, when it does not" }
+    fix: "e2e/variants.json names each setting a member may choose (largest text, bold text, the narrowest width, three-button navigation, the phone in Arabic, dark mode, motion on), with its commands to set, to wait for and to put back; run-flows.sh sets one before the run touches the phone and puts it back at its end, every command sent (mutant shape-variant-input-swallowed), a variant not in the list running nothing (mutant shape-variant-refusal-sent), and a variant that set anything waiting for the phone to settle, its load under 1.0 for up to three minutes, said either way (the dark mode's switch kept the launcher, System UI and the Google app busy, and the dark walk ran at half the plain one's speed: 39614969442, 39642887150; mutant shape-variant-phone-unsettled); largest text, the narrowest width and Arabic run every flow on three machines and the walk on a fourth; every night runs every variant. Each variant's own pass rules are P0.86's next part"
     places: [emulator]
 
   - id: E2E-text-cut-unseen
@@ -276,7 +277,7 @@ classes:
       - { kind: running, file: e2e/__tests__/faultProxy.test.ts, test: "fails a backup whose marker is not back as a mis-set run, never a pass" }
       - { kind: running, file: e2e/__tests__/faultProxy.test.ts, test: "runs adb from the Android SDK the runner keeps, since the proxy starts before adb is on the PATH (run 39004287263)" }
       - { kind: running, file: e2e/__tests__/faultProxy.test.ts, test: "installs the build in members' hands afresh, then this one over it keeping its data, and fails with no old build to install" }
-    fix: "the fault proxy's control changes the phone mid-flow by fixed commands (/phone, mutant shape-phone-unchecked); .maestro/lifecycle's flows change it under a half-edited Edit Profile and hold the screen and the words to it, and stop the app dead mid-write, whose log verify-writes.mjs holds to exactly one row; backup_restore backs the app up, reinstalls and restores it by /backup's steps, each held to what Android must say, a marker laid in the shared preferences (the one place expo-secure-store's rules let the backup take) not back failing the run as mis-set (mutant shape-backup-marker-unread), then holds the restored app to P4.14's rule: open signed out, never a crash, sign-in working, the tabs loading; upgrade installs the build in members' hands (the shipped-clients run's app), queues a write on it offline, installs this build over it, and holds the write to exactly one row and the member still signed in (mutant shape-upgrade-without-old); run-flows.sh puts the phone back before each; every night runs them (e2e.yml lifecycle). Their failures are discovery for P2.8's list until P4.14 and P4.33 land"
+    fix: "the fault proxy's control changes the phone mid-flow by fixed commands (/phone, mutant shape-phone-unchecked), each change Android makes after its command returns asked again until Android says it took (the keyboard: listed once its package is enabled, then the phone's own; route walk 39642880903 met \"Unknown input method\"; mutant shape-keyboard-unwaited); .maestro/lifecycle's flows change it under a half-edited Edit Profile and hold the screen and the words to it, and stop the app dead mid-write, whose log verify-writes.mjs holds to exactly one row; backup_restore backs the app up, reinstalls and restores it by /backup's steps, each held to what Android must say, a marker laid in the shared preferences (the one place expo-secure-store's rules let the backup take) not back failing the run as mis-set (mutant shape-backup-marker-unread), then holds the restored app to P4.14's rule: open signed out, never a crash, sign-in working, the tabs loading; upgrade installs the build in members' hands (the shipped-clients run's app), queues a write on it offline, installs this build over it, and holds the write to exactly one row and the member still signed in (mutant shape-upgrade-without-old); run-flows.sh puts the phone back before each; every night runs them (e2e.yml lifecycle). Their failures are discovery for P2.8's list until P4.14 and P4.33 land"
     places: [emulator]
 
   - id: E2E-record-not-kept
@@ -297,13 +298,14 @@ classes:
     seriousness: behaviour
     area: navigation
     status: OPEN
-    count: 0
-    source: { kind: history, ref: "the route walk, runs 39614962131 and 39614969442: /auth-callback opened on the profile" }
+    count: 1
+    source: { kind: history, ref: "the route walk, runs 39614962131 and 39614969442: /auth-callback opened on the profile; Sealed E2E 39642840944: the Tribunal's link, 118 ms after a relaunch, lost and the profile reopened" }
     methods:
+      - { kind: static, file: plugins/__tests__/withLinkDuringLaunch.test.ts, test: "keeps each new intent as the activity's own, then hands it on, first in the class" }
       - { kind: running, file: src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts, test: "reopens the tab only for a launch that names no page" }
       - { kind: running, file: src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts, test: "names the page a launch link names, and none for the app or the site alone" }
       - { kind: static, file: src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts, test: "the tab bar remembers each tab as it is shown, stamps the time as the app leaves, and reopens only a launch that began at the Lobby, by no link that names a page" }
-    fix: "the tab bar reads the launch link itself (Linking.getInitialURL) and reopens the last tab only when that link names no page (lastTab.ts pageOfLaunch, tabToReopenAfter), and only a member still on the Lobby once it is read (the admin flow's relaunch, 2026-10-21: a link opened just after launch was pulled back to the last tab); each reopen or its absence is said to the E2E log (tabs.reopen) so the route walk shows which it was (mutant shape-every-link-names-nothing)"
+    fix: "the tab bar reads the launch link itself (Linking.getInitialURL) and reopens the last tab only when that link names no page (lastTab.ts pageOfLaunch, tabToReopenAfter), and only a member still on the Lobby once it is read (the admin flow's relaunch, 2026-10-21: a link opened just after launch was pulled back to the last tab); each reopen or its absence is said to the E2E log (tabs.reopen) so the route walk shows which it was (mutant shape-every-link-names-nothing); and a link that reaches the app before React is up, which React Native drops, is the link the app opens: MainActivity keeps each new intent as its own (plugins/withLinkDuringLaunch.js), so Linking.getInitialURL reads the latest (mutant shape-new-intent-not-kept)"
     places: [emulator]
 
   - id: RN-react-destroyed-on-mount
@@ -313,6 +315,15 @@ classes:
     status: OPEN
     count: 0
     source: { kind: history, ref: 10a39fa3 }
+    places: [emulator]
+
+  - id: RN-props-before-mount
+    title: Under load, Reanimated sends a new screen's animated props to Android before Fabric has made the views (an image's load event runs its pending updates at once), so the update names a view that does not exist yet and React is destroyed
+    seriousness: serious
+    area: navigation
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "Sealed E2E 39642840944, shard 1, the log probe: a change to the member tab a second after launch; UPDATE PROPS for tags 2644, 2672 and 2690 while the highest view made was 2638, from expo-image's onLoad through Reanimated's NodesManager.onEventDispatch; once in the 60 E2E runs since 2026-10-15. Reanimated 4.1.7; the closest upstream fixes (software-mansion/react-native-reanimated 10794 and 10795, merged 2026-10-05) are for removals" }
     places: [emulator]
 
   - id: SEC-secret-committed
@@ -528,6 +539,19 @@ classes:
     fix: "frozen-counts guard-only-through-a-caller counts, per app module no test names, each guard of its own: 19 modules (34 guards) found; tierRefusal (a privacy 42501 is never a rank's door) and keptOnThisPhone (the words of what a phone holds) now asked directly and found right; the rest frozen per file, to fall as each gets a test of its own"
     places: [none]
 
+  - id: E2E-launch-unmeasured
+    title: A launch of the app the run makes and never measures, so a slower start (its first screen later, more frames dropped, more native memory) passes unseen
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P0.104 (COLD-START-PLAN B6)" }
+    methods:
+      - { kind: running, file: e2e/__tests__/coldStart.test.ts, test: "says why, in every cell it cannot fill" }
+      - { kind: running, file: e2e/__tests__/coldStart.test.ts, test: "takes am's time and the native heap for the measured launch alone, found by its line though the pid comes again" }
+      - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "runs only its own flows, in order, with no probe and no launch with animations on, its app launched once before them, and lists them" }
+    fix: "every run makes one measured launch before its flows (run-flows.sh: on the phone as the run has it, the old process gone and 3 s, am start-activity -W, dumpsys meminfo once its first screen is ready) and puts a table on its summary of every launch in the device log (e2e/cold-start.mjs): Displayed, the first screen ready, skipped and Davey frames to it, and am's time and the native heap for the measured launch; every cell a value or why not, a log with no launch a failure (mutants judge-no-launch-to-measure, shape-cold-cell-left-empty, shape-cold-table-unwritten)"
+
   - id: E2E-ceiling-not-measured
     title: A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's
     seriousness: code
@@ -537,7 +561,7 @@ classes:
     source: { kind: history, ref: "Sealed E2E 38812556019 and 38780996970 (ceilings, 12 runs in e2e/screen-history.json); 38837073968 (shard 2's flows past their 20 minutes, the map balanced by one run); 39625257830 (the Dispatch at 3908 ms in shard 3's first flow, the app's first run after its install)" }
     methods:
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "runs only its own flows, in order, with no probe and no launch with animations on, its app launched once before them, and lists them" }
-    fix: "each screen's two ceilings derived by ceilingsFrom from the recorded history, held by screenTimes.test; the shard map and each shard's minutes derived by shardsFrom from every run's measured part times (e2e/flow-history.json, 19 runs), held by flowHistory.test with the workflow's limits around them. A shipped client's own flows kept the limits of their day: build 41's Lobby scroll ran out of 20 s four swipes in (38867137811), as this checkout's had (38824884948) before it was given 60; now old-client-tree.mjs gives each of a client's flows at least this checkout's time for the same wait (raiseWaits, held by migrationSafety.guard.test): 4 of build 41's 47 waits raised. The Darkroom's 5.7 s at the start of auth_deep_link (run 38780996970, 71 skipped frames) and the Dispatch's 3908 ms there (39625257830, 73 skipped frames) were each the first flow of a shard with no launch before it: the app's first run after its install fell on a measured screen. Every shard now launches the app once before its flows (run-flows.sh: the launch with animations on where the map puts it, a plain cold launch on the others), held by the rehearsal"
+    fix: "each screen's two ceilings derived by ceilingsFrom from the recorded history, held by screenTimes.test; the shard map and each shard's minutes derived by shardsFrom from every run's measured part times (e2e/flow-history.json, 19 runs), held by flowHistory.test with the workflow's limits around them. A shipped client's own flows kept the limits of their day: build 41's Lobby scroll ran out of 20 s four swipes in (38867137811), as this checkout's had (38824884948) before it was given 60; now old-client-tree.mjs gives each of a client's flows at least this checkout's time for the same wait (raiseWaits, held by migrationSafety.guard.test): 4 of build 41's 47 waits raised. The Darkroom's 5.7 s at the start of auth_deep_link (run 38780996970, 71 skipped frames) and the Dispatch's 3908 ms there (39625257830, 73 skipped frames) were each the first flow of a shard with no launch before it: the app's first run after its install fell on a measured screen. Every shard now launches the app before its flows (run-flows.sh: the measured launch, E2E-launch-unmeasured, after the launch with animations on where the map puts one), held by the rehearsal (mutant shape-shard-starts-cold)"
 
   - id: CI-check-only-in-ci
     title: A check CI runs that no local gate runs, so a push meets it only in red

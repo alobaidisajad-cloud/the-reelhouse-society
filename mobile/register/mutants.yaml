@@ -517,14 +517,61 @@ mutants:
         replace: "  node mobile/e2e/annotate.mjs \"No variant named ${variant}\" \"$OUT/variant-setup.txt\"\n"
     proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "walks nothing for a variant with no name in the list, and sends the phone nothing of it" }
 
+  - id: judge-no-launch-to-measure
+    class: E2E-launch-unmeasured
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/splash-handoff
+      run: [node, e2e/cold-start.mjs, "{dir}/stream.txt", --flow-times, "{dir}/times.txt"]
+    edits:
+      - file: stream.txt
+        find: "Start proc 6028:com.reelhouse.society/u0a192"
+        replace: "Start proc 6028:com.google.android.gms/u0a192"
+
+  - id: shape-cold-cell-left-empty
+    class: E2E-launch-unmeasured
+    source: shape
+    edits:
+      - file: e2e/cold-start.mjs
+        find: "      l.displayed !== null ? `${l.displayed} ms` : 'not measured: Android logged no \"Displayed\" for it',"
+        replace: "      l.displayed !== null ? `${l.displayed} ms` : '',"
+    proof: { file: e2e/__tests__/coldStart.test.ts, test: "says why, in every cell it cannot fill" }
+
+  - id: shape-cold-table-unwritten
+    class: E2E-launch-unmeasured
+    source: shape
+    edits:
+      - file: e2e/run-flows.sh
+        find: "  node mobile/e2e/annotate.mjs \"How each launch went\" \"$OUT/cold-start.txt\" table\n"
+        replace: "  :\n"
+    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "runs only its own flows, in order, with no probe and no launch with animations on, its app launched once before them, and lists them" }
+
   - id: shape-shard-starts-cold
     class: E2E-ceiling-not-measured
     source: shape
     edits:
       - file: e2e/run-flows.sh
-        find: "  timeout 90 adb shell am start-activity -W -n \"$PKG/.MainActivity\" > /dev/null 2>&1\n"
+        find: "timeout 90 adb shell am start-activity -W -n \"$PKG/.MainActivity\" > \"$OUT/motion/cold-am.txt\" 2>&1\n"
         replace: ""
     proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "runs only its own flows, in order, with no probe and no launch with animations on, its app launched once before them, and lists them" }
+
+  - id: shape-keyboard-unwaited
+    class: E2E-phone-change-unseen
+    source: shape
+    edits:
+      - file: e2e/fault-proxy.mjs
+        find: "        ['adb', ['shell', 'ime', 'list', '-a', '-s'], { until: (said) => said.split(/\\s+/).includes(GBOARD), what: 'listed the keyboard once its package was enabled' }],\n"
+        replace: ""
+    proof: { file: e2e/__tests__/faultProxy.test.ts, test: "changes the phone mid-flow by fixed commands of checked values alone, and refuses anything else" }
+
+  - id: shape-variant-phone-unsettled
+    class: E2E-phone-only-as-the-runner-has-it
+    source: shape
+    edits:
+      - file: e2e/run-flows.sh
+        find: "if [ -s \"$OUT/variant-setup.txt\" ]; then\n  settle_from=$SECONDS\n"
+        replace: "if false; then\n  settle_from=$SECONDS\n"
+    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "waits for a phone the variant changed to settle before the walk, and goes on, saying so, when it does not" }
 
   - id: shape-variant-input-swallowed
     class: E2E-phone-only-as-the-runner-has-it
@@ -617,6 +664,15 @@ mutants:
         find: "      ...(s.taps ?? []).flatMap((t) => ["
         replace: "      ...[].flatMap((t) => ["
     proof: { file: e2e/__tests__/walkRoutes.test.ts, test: "plans each moment after every route, as the member, its link filled in, and walks it: its mark, each tap once, what shows, then the capture" }
+
+  - id: shape-new-intent-not-kept
+    class: NAV-launch-link-overridden
+    source: shape
+    edits:
+      - file: plugins/withLinkDuringLaunch.js
+        find: "['  override fun onNewIntent(intent: android.content.Intent) {', '    setIntent(intent)', '    super.onNewIntent(intent)', '  }']"
+        replace: "['  override fun onNewIntent(intent: android.content.Intent) {', '    super.onNewIntent(intent)', '  }']"
+    proof: { file: plugins/__tests__/withLinkDuringLaunch.test.ts, test: "keeps each new intent as the activity's own, then hands it on, first in the class" }
 
   - id: shape-every-link-names-nothing
     class: NAV-launch-link-overridden

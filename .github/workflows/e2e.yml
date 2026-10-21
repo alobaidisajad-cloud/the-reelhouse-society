@@ -672,7 +672,7 @@ jobs:
             "$RUNNER_TEMP/maestro-summary.txt" "$RUNNER_TEMP/motion" "$RUNNER_TEMP/own-crashes.json" \
             "$RUNNER_TEMP/device-gone.txt" "$RUNNER_TEMP/crash.txt" "$RUNNER_TEMP/screen.json" \
             "$RUNNER_TEMP/debug-listing.txt" "$RUNNER_TEMP/route-walk-failed.txt" "$RUNNER_TEMP/variant-setup.txt" \
-            "$RUNNER_TEMP/variant.txt" "$RUNNER_TEMP/cut-text.txt"
+            "$RUNNER_TEMP/variant.txt" "$RUNNER_TEMP/cut-text.txt" "$RUNNER_TEMP/cold-start.txt"
 
       # Every run, not only a failed one: a run that passed only on a second
       # attempt keeps its first, and the device's whole log names any animation
@@ -734,6 +734,7 @@ jobs:
             ${{ runner.temp }}/variant-setup.txt
             ${{ runner.temp }}/variant.txt
             ${{ runner.temp }}/cut-text.txt
+            ${{ runner.temp }}/cold-start.txt
           if-no-files-found: ignore
 
   verdict:

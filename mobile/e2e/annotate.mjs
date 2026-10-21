@@ -2,7 +2,7 @@
 /**
  * annotate.mjs — put a failed step's own words where they can be read.
  *
- *   node e2e/annotate.mjs "<title>" <file> [error|warning|notice|summary] [--drop <regex>]
+ *   node e2e/annotate.mjs "<title>" <file> [error|warning|notice|summary|table] [--drop <regex>]
  *
  * A run's logs need a signed-in GitHub account; its annotations and summary
  * do not. So a failing step's report is raised as an error annotation (the
@@ -11,7 +11,8 @@
  * nothing (a layout report's "clean" screens) out of the annotation, so its
  * forty lines are the findings. `summary` writes the summary only: GitHub keeps
  * ten annotations of each kind per step, and run-flows.sh sends the rest there
- * rather than lose them.
+ * rather than lose them. `table` writes the summary alone too, the file as the
+ * markdown it is (a table, not a block of text).
  *
  * Everything leaving the run passes through here, so every seeded account's
  * password (each E2E_<WHO>_PASSWORD, new on every run) is replaced with ••• in
@@ -24,8 +25,8 @@ const args = process.argv.slice(2);
 const at = args.indexOf('--drop');
 const drop = at === -1 ? null : new RegExp(args.splice(at, 2)[1]);
 const [title, file, level = 'error'] = args;
-if (!title || !file || !['error', 'warning', 'notice', 'summary'].includes(level)) {
-  console.error('usage: node e2e/annotate.mjs "<title>" <file> [error|warning|notice|summary] [--drop <regex>]');
+if (!title || !file || !['error', 'warning', 'notice', 'summary', 'table'].includes(level)) {
+  console.error('usage: node e2e/annotate.mjs "<title>" <file> [error|warning|notice|summary|table] [--drop <regex>]');
   process.exit(2);
 }
 const secrets = Object.entries(process.env).filter(([k, v]) => /^E2E_[A-Z]+_PASSWORD$/.test(k) && v).map(([, v]) => v);
@@ -33,7 +34,7 @@ const redact = (s) => secrets.reduce((t, secret) => t.split(secret).join('••
 const text = redact(existsSync(file) ? readFileSync(file, 'utf8').replace(/\r\n/g, '\n').trim() : '(no output was written)');
 const lines = text.split('\n').filter((l) => !drop || !drop.test(l));
 
-if (level !== 'summary') {
+if (level !== 'summary' && level !== 'table') {
   // An annotation holds one message; GitHub encodes its line breaks as %0A.
   const escape = (s) => s.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
   const head = lines.slice(0, 40).join('\n').slice(0, 3500);
@@ -41,5 +42,6 @@ if (level !== 'summary') {
 }
 
 if (process.env.GITHUB_STEP_SUMMARY) {
-  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### ${title}\n\n\`\`\`\n${text.slice(0, 60000)}\n\`\`\`\n`);
+  const body = level === 'table' ? `${text.slice(0, 60000)}\n` : `\`\`\`\n${text.slice(0, 60000)}\n\`\`\`\n`;
+  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### ${title}\n\n${body}`);
 }

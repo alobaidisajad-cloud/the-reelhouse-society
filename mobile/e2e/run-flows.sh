@@ -138,6 +138,26 @@ if [ -n "$not_ready" ]; then
   node mobile/e2e/annotate.mjs "The phone never became the ${variant} variant" "$OUT/variant.txt"
   exit 1
 fi
+# A phone just changed is busy answering the change: after the dark mode's, the launcher, System UI
+# and the Google app re-read themselves for minutes on the emulator's two cores, and the dark walk
+# opened the Dispatch in twice the plain walk's time (runs 39614969442 and 39642887150) and ran out
+# of its minute to scroll the settings. So a variant that set anything waits for the phone's load
+# over the last minute to fall under 1.0 (the cold-start study's settle step), up to three
+# minutes, and says which.
+if [ -s "$OUT/variant-setup.txt" ]; then
+  settle_from=$SECONDS
+  load=""
+  for _ in $(seq 1 "${E2E_SETTLE_TRIES:-36}"); do
+    load=$(timeout 20 adb shell cat /proc/loadavg < /dev/null 2>/dev/null | tr -d '\r' | awk '{ print $1 }')
+    awk -v l="${load:-x}" 'BEGIN { exit !(l ~ /^[0-9.]+$/ && l + 0 < 1.0) }' && break
+    sleep 5
+  done
+  if awk -v l="${load:-x}" 'BEGIN { exit !(l ~ /^[0-9.]+$/ && l + 0 < 1.0) }'; then
+    echo "settled: load ${load} after $((SECONDS - settle_from)) s" >> "$OUT/variant.txt"
+  else
+    echo "not settled: load ${load:-unread} after $((SECONDS - settle_from)) s; the run goes on, its times not the plain phone's" >> "$OUT/variant.txt"
+  fi
+fi
 adb wait-for-device
 
 adb logcat -c   # this run's log only, so a crash below is this run's crash
@@ -312,17 +332,34 @@ if [ "$LAUNCH" = yes ]; then
     echo "A launch with animations on: alive at ${MOTION_SECONDS} s (pid $motion_pid), no crash, the first screen ready." > "$OUT/motion/result.txt"
   fi
 else
-  # Where no launch with animations runs, the app is still launched once before the flows: the
-  # app's first run after an install is its slowest, and that cost fell on a measured flow
-  # (run 39625257830: the Dispatch's first opening at 3908 ms, over its ceiling, in the
-  # shard's first flow). A cold start to its first screen, then stopped; its screens are judged
-  # as every screen is, here as on the shard whose launch has its animations on.
-  warm_from=$(( $(wc -l < "$OUT/logcat-stream.txt") + 1 ))
-  timeout 90 adb shell am start-activity -W -n "$PKG/.MainActivity" > /dev/null 2>&1
-  for _ in $(seq 1 60); do tail -n +"$warm_from" "$OUT/logcat-stream.txt" | grep -q '\[e2e\] screen\.ready' && break; sleep 0.5; done
-  timeout 20 adb shell am force-stop "$PKG" > /dev/null 2>&1
   echo "The launch with animations on runs in another shard (e2e/shards.json); this shard launched the app once before its flows." > "$OUT/motion/result.txt"
 fi
+
+# ── ONE MEASURED LAUNCH ───────────────────────────────────────────────────────
+# Every run launches the app once more before the flows, on the phone as the run has it (its
+# animations off but in the motion-on variant's), and measures it for the
+# cold-start table (e2e/cold-start.mjs, WORKLIST P0.104): the old process gone and 3 s more (a
+# launch right after a stop races the old task's removal), `am start-activity -W` for its
+# TotalTime, and once its first screen says it is ready, `dumpsys meminfo` for its native heap.
+# Where no launch with animations ran, this is the app's first run after its install, the
+# slowest, which otherwise fell on a measured flow (run 39625257830: the Dispatch's first opening
+# at 3908 ms, over its ceiling, in the shard's first flow). Its screens are judged as every
+# screen is.
+timeout 20 adb shell am force-stop "$PKG" > /dev/null 2>&1
+for _ in $(seq 1 20); do [ -z "$(timeout 20 adb shell pidof "$PKG" | tr -d '\r')" ] && break; sleep 0.5; done
+sleep 3
+measured_from=$(( $(wc -l < "$OUT/logcat-stream.txt") + 1 ))
+echo "$measured_from" > "$OUT/motion/cold-from.txt"
+timeout 90 adb shell am start-activity -W -n "$PKG/.MainActivity" > "$OUT/motion/cold-am.txt" 2>&1
+measured_ready=no
+for _ in $(seq 1 60); do
+  tail -n +"$measured_from" "$OUT/logcat-stream.txt" | grep -q '\[e2e\] screen\.ready' && { measured_ready=yes; break; }
+  sleep 0.5
+done
+measured_pid="$(timeout 20 adb shell pidof "$PKG" | tr -d '\r')"
+[ $measured_ready = yes ] && [ -n "$measured_pid" ] &&
+  timeout 30 adb shell dumpsys meminfo "$measured_pid" > "$OUT/motion/cold-meminfo.txt" 2>&1
+timeout 20 adb shell am force-stop "$PKG" > /dev/null 2>&1
 
 # ── THE KEYBOARD'S ROOM ───────────────────────────────────────────────────────
 # The flows type with no keyboard on the device, so none of them can see
@@ -639,6 +676,14 @@ if node mobile/e2e/splash-handoff.mjs "$OUT/logcat-stream.txt" --flow-times "$OU
 else
   rc=1
   node mobile/e2e/annotate.mjs "The app took Android's splash over" "$OUT/splash-handoff.txt"
+fi
+# How each launch of the app went, from the same log and the measured launch's records
+# (e2e/cold-start.mjs, WORKLIST P0.104): a table on the run's summary, every cell a value or why not.
+if node mobile/e2e/cold-start.mjs "$OUT/logcat-stream.txt" --measured "$OUT/motion" --flow-times "$OUT/flow-times.txt" > "$OUT/cold-start.txt"; then
+  node mobile/e2e/annotate.mjs "How each launch went" "$OUT/cold-start.txt" table
+else
+  rc=1
+  node mobile/e2e/annotate.mjs "No launch of the app to measure" "$OUT/cold-start.txt"
 fi
 # Every animation Android held the test's keys and taps on, named, in passed
 # flows too: slow is not failed, but a stuck animation is never left unseen.

@@ -38,7 +38,7 @@
     "app/year-in-cinema.tsx": { "link": "/year-in-cinema" }
   },
   "moments": {
-    "the sign-out alert": { "link": "/settings", "taps": [{ "text": "SIGN OUT" }], "shows": { "text": "Depart the Society" }, "why": "A system alert the app raises (Alert.alert): Android draws it, in the theme the app sets, so the dark walk holds it to the plain walk's, whose system is light. Nothing is signed out: the walk stops the app on the alert." },
+    "the sign-out alert": { "link": "/settings?section=import", "taps": [{ "text": "SIGN OUT" }], "shows": { "text": "Depart the Society" }, "why": "A system alert the app raises (Alert.alert): Android draws it, in the theme the app sets, so the dark walk holds it to the plain walk's, whose system is light. Nothing is signed out: the walk stops the app on the alert. Opened at the settings' import section, a few screens above SIGN OUT: from the top, the dark walk ran out of its minute to scroll there (39642887150)." },
     "the keyboard": { "link": "/darkroom", "taps": [{ "id": "darkroom-search-input" }], "part": "above-keyboard", "keyboard": true, "why": "The keyboard over the app: Android's keyboard follows the system's mode (keyboardAppearance is iOS's alone), so the keyboard is the system's to draw and the screen above it the app's. The flows run with no keyboard; it is on for this moment alone." },
     "the calendar": { "link": "/film/{film}", "taps": [{ "id": "film-stub" }, { "id": "film-act-log" }, { "text": "FILED.*" }, { "text": "CHANGE" }], "shows": { "text": "CLOSE" }, "why": "The date picker a log is filed by: the app's own calendar (src/components/NitrateCalendar.tsx), never a native picker, so it must look the same whatever the system's mode." }
   }

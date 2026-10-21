@@ -181,6 +181,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/shards.test.ts | 2026-10-16 | edited: a shard's minutes are a whole number above 0, and printed for run-flows.sh |
 | e2e/__tests__/seed.rehearsal.test.ts | 2026-10-17 | edited: the walk's world too: two people with their own sessions, the rank grant, the Lounge read by a signed-in member alone |
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
+| e2e/__tests__/coldStart.test.ts | 2026-10-21 | written with cold-start.mjs, on run 39625257830's admin shard's own lines |
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | edited: the ports reserved and waited for, against a fake kernel |
 | e2e/__tests__/theRunKeepsWhatItWrites.test.ts | 2026-10-17 | new |
 | e2e/__tests__/variants.test.ts | 2026-10-17 | new |
@@ -243,10 +244,13 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/walk-routes.mjs | 2026-10-17 | new: the route walk's plan and flow: every route of routes.json, its ids read from the seeded world by name, guests first, each opened cold and captured; edited: each capture a name inside Maestro's output folder, which refuses any other |
 | plugins/__tests__/withoutDevLauncherScanner.test.ts | 2026-10-15 | new: through withAndroidManifest, read back as XML; the entry read from the installed expo-dev-launcher's manifest |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it; its files come from the shared file list (test-utils/universe.js) |
+| plugins/__tests__/withLinkDuringLaunch.test.ts | 2026-10-21 | written: on the real generated MainActivity, through withMainActivity, with the splash plugin either side of it |
 | plugins/withoutDevLauncherScanner.js | 2026-10-15 | new: read against expo-dev-launcher 6.0's main and debug manifests and ML Kit's install-time model download |
 | plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |
+| plugins/withLinkDuringLaunch.js | 2026-10-21 | written: a link that reaches the app as it starts is the one it opens; read against React Native 0.81.5's ReactHostImpl.onNewIntent and IntentModule.getInitialURL |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |
 | e2e/splash-handoff.mjs | 2026-10-04 | written: no launch takes the splash over, scoped to the app's own processes; no launch, no pass |
+| e2e/cold-start.mjs | 2026-10-21 | written: a row for every launch of the app in the log, every cell a value or why not; the measured launch found by its line; no launch, no table |
 | e2e/scrub.mjs | 2026-10-04 | written: the password out of the kept logs, byte for byte |
 | e2e/what-the-app-asked.mjs | 2026-10-16 | new: every request the gateway saw, held to the list the reading of the code made |
 | e2e/supabase/functions/tmdb-proxy/index.ts | 2026-09-29 | history reduced to the rule |

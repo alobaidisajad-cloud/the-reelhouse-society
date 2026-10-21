@@ -75,10 +75,15 @@ case "$1" in
       "dumpsys input_method") echo "mInputShown=true" ;;
       "dumpsys window windows") cat "$T/fixtures/windows.txt" ;;
       "pidof com.reelhouse.society") echo 16631 ;;
+      # The phone's load: each ask takes the next of a scenario's (state/loads), then a quiet phone's.
+      "cat /proc/loadavg") l=0.42; if [ -s "$T/state/loads" ]; then l=$(head -n 1 "$T/state/loads"); sed -i 1d "$T/state/loads"; fi; echo "$l 0.50 0.60 1/300 4242" ;;
+      "dumpsys meminfo 16631") printf '** MEMINFO in pid 16631 [com.reelhouse.society] **\\n App Summary\\n           Native Heap:    41984\\n' ;;
       # A launch, as Android logs it: the process, then the first screen ready, or React destroyed.
       "am start-activity"*)
         now=$(date +'%m-%d %H:%M:%S.%3N')
         echo "$now  523  543 I ActivityManager: Start proc 16631:com.reelhouse.society/u0a192 for next-top-activity" >> "$T/device.log"
+        echo "$now  523  560 I ActivityTaskManager: Displayed com.reelhouse.society/.MainActivity for user 0: +1s234ms" >> "$T/device.log"
+        printf 'Status: ok\\nLaunchState: COLD\\nTotalTime: 1312\\nWaitTime: 1320\\nComplete\\n'
         if [ -f "$T/state/motion-crash" ]; then
           echo "$now  16631  16631 W unknown:BridgelessReact: ReactHost{0}.handleHostException(message = \\"undefined is not a function\\")" >> "$T/device.log"
         else
@@ -443,10 +448,17 @@ describe('one shard of the flows (E2E_SHARD, with a map of the scenario\'s flows
     expect(file(r, 'maestro-summary.txt')).toBe('[Passed] b_flow (1s)\n[Passed] c_flow (1s)\n');
     expect(existsSync(join(r.out, 'motion', 'am.txt'))).toBe(false);
     expect(file(r, 'motion', 'result.txt')).toBe('The launch with animations on runs in another shard (e2e/shards.json); this shard launched the app once before its flows.\n');
-    // That launch, then the app stopped, before the shard's first flow (run 39625257830).
+    // That launch measured, then the app stopped, before the shard's first flow (run 39625257830).
     const asked = readFileSync(join(r.T, 'state', 'order'), 'utf8').split('\n');
     const launch = asked.findIndex((l) => l.startsWith('adb: am start-activity'));
-    expect([launch >= 0, asked.findIndex((l, i) => i > launch && l.startsWith('adb: am force-stop')) > launch, asked.findIndex((l) => l.startsWith('maestro: ')) > launch]).toEqual([true, true, true]);
+    const heap = asked.indexOf('adb: dumpsys meminfo 16631');
+    const stop = asked.findIndex((l, i) => i > heap && l.startsWith('adb: am force-stop'));
+    expect([launch >= 0, heap > launch, stop > heap, asked.findIndex((l) => l.startsWith('maestro: ')) > stop]).toEqual([true, true, true, true]);
+    // Its row in the cold-start table, each of its cells measured, and the table on the summary as one.
+    const rows = file(r, 'cold-start.txt').split('\n').filter((l) => l.startsWith('| '));
+    expect(rows[0]).toBe('| # | launch | Displayed | first screen ready (after start) | skipped frames | Davey frames | am TotalTime | native heap at ready |');
+    expect(rows.find((l) => l.includes('the measured launch'))).toMatch(/^\| 1 \| the measured launch \(run-flows\.sh\) \| 1234 ms \| welcome, \d+ ms \| 0 \| 0 \| 1312 ms \| 41\.0 MB \|$/);
+    expect(readFileSync(join(r.T, 'summary.md'), 'utf8')).toContain('### How each launch went\n\n| # | launch |');
     expect(file(r, 'keyboard-room.txt')).toBe("The keyboard's probes run in another shard (e2e/shards.json).\n");
     expect(file(r, 'flows-run.txt')).toBe('b_flow\nc_flow\n');
     // Its screens, for the verdict: every flow ran to its end.
@@ -459,6 +471,8 @@ describe('one shard of the flows (E2E_SHARD, with a map of the scenario\'s flows
     expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
     expect([ran(r), calls(r, 'stack'), calls(r, 'log')]).toEqual([['a_flow'], 1, 1]);
     expect(file(r, 'motion', 'result.txt')).toBe('A launch with animations on: alive at 1 s (pid 16631), no crash, the first screen ready.\n');
+    // The measured launch comes after the one with animations on, the same pid read again by its line.
+    expect(file(r, 'cold-start.txt')).toMatch(/^\| 1 \| before the first flow \| 1234 ms \|.*\| not measured: am's time is taken at the measured launch alone \|.*\n\| 2 \| the measured launch \(run-flows\.sh\) \| 1234 ms \|.*\| 1312 ms \| 41\.0 MB \|$/m);
     expect(file(r, 'keyboard-room.txt')).toMatch(/^stack: "FILE THE STACK" clear/m);
     expect(file(r, 'flows-run.txt')).toBe('a_flow\n');
     always(r);
@@ -544,11 +558,32 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
     const r = await walk('dark', { walk: ['captures'] });
     expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
     expect(order(r)).toEqual(['adb: cmd uimode night', 'adb: cmd uimode night yes', 'maestro: walk', 'adb: cmd uimode night no']);
-    expect(file(r, 'variant.txt')).toBe(
-      'read: cmd uimode night -> no\nset: cmd uimode night yes -> Night mode: yes\nput back: cmd uimode night no -> Night mode: no\n');
+    expect(file(r, 'variant.txt')).toMatch(
+      /^read: cmd uimode night -> no\nset: cmd uimode night yes -> Night mode: yes\nsettled: load 0\.42 after [01] s\nput back: cmd uimode night no -> Night mode: no\n$/);
     expect(titled(r, 'notice', 'The phone as the dark run had it')).toContain('put back: cmd uimode night no');
     expect(titled(r, 'notice', 'Every route  opened cold and captured')).toMatch(/every route captured: \d+/);
     always(r);
+  });
+
+  it('waits for a phone the variant changed to settle before the walk, and goes on, saying so, when it does not', async () => {
+    // Busy, then quiet: asked until its load falls under 1.0, five seconds apart, before the walk.
+    const busy = await walk('dark', { walk: ['captures'] }, { loads: '2.31\n1.06\n0.74\n' });
+    expect({ status: busy.status, errors: annotations(busy, 'error') }).toEqual({ status: 0, errors: [] });
+    expect(file(busy, 'variant.txt')).toMatch(/\nsettled: load 0\.74 after 1\d s\n/);
+    const asked = readFileSync(join(busy.T, 'state', 'order'), 'utf8').split('\n');
+    expect(asked.filter((l) => l === 'adb: cat /proc/loadavg')).toHaveLength(3);
+    expect(asked.lastIndexOf('adb: cat /proc/loadavg')).toBeLessThan(asked.indexOf('maestro: walk'));
+    // Never quiet in its tries: said, and walked all the same.
+    const never = await rehearse([], { walk: ['captures'] }, {
+      map: WALK_MAP, state: { loads: '3.10\n2.90\n' },
+      env: { E2E_SHARD: '1/1', E2E_FLOWS: 'none', E2E_WALK: '1', E2E_VARIANT: 'dark', E2E_SETTLE_TRIES: '2', API_URL: API, SERVICE_ROLE_KEY: 'rehearsal-key' },
+    });
+    expect({ status: never.status, errors: annotations(never, 'error') }).toEqual({ status: 0, errors: [] });
+    expect(file(never, 'variant.txt')).toMatch(/\nnot settled: load 2\.90 after \d+ s; the run goes on, its times not the plain phone's\n/);
+    // The plain phone was changed by nothing, so it is not waited on.
+    const plain = await walk('plain', { walk: ['captures'] });
+    expect(readFileSync(join(plain.T, 'state', 'order'), 'utf8')).not.toContain('loadavg');
+    for (const r of [busy, never, plain]) always(r);
   });
 
   it('sends every one of a variant\'s commands, though adb reads its input as each is sent', async () => {

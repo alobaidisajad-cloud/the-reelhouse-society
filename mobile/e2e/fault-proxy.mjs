@@ -140,9 +140,14 @@ export const PHONE = {
     commands: () => [['adb', ['shell', 'am', 'force-stop', 'com.reelhouse.society']]] },
   // The image's keyboard, on for a moment of the route walk and off again: run-flows.sh turns every
   // keyboard off, because the flows type without one (its keyboard-room probes turn it on the same way).
+  // Android lists a keyboard again only once it has read the package's enabling, after `pm enable`
+  // returns: asked at once, `ime enable` said "Unknown input method" (route walk 39642880903).
   keyboard: { says: 'true or false', valid: (v) => typeof v === 'boolean',
     commands: (v) => (v
-      ? [['adb', ['shell', 'pm', 'enable', GBOARD.split('/')[0]]], ['adb', ['shell', 'ime', 'enable', GBOARD]], ['adb', ['shell', 'ime', 'set', GBOARD]]]
+      ? [['adb', ['shell', 'pm', 'enable', GBOARD.split('/')[0]]],
+        ['adb', ['shell', 'ime', 'list', '-a', '-s'], { until: (said) => said.split(/\s+/).includes(GBOARD), what: 'listed the keyboard once its package was enabled' }],
+        ['adb', ['shell', 'ime', 'enable', GBOARD]], ['adb', ['shell', 'ime', 'set', GBOARD]],
+        ['adb', ['shell', 'settings', 'get', 'secure', 'default_input_method'], { until: (said) => said.trim() === GBOARD, what: 'made it the phone\'s keyboard' }]]
       : [['adb', ['shell', 'pm', 'disable', GBOARD.split('/')[0]]], ['adb', ['shell', 'settings', 'delete', 'secure', 'enabled_input_methods']], ['adb', ['shell', 'settings', 'delete', 'secure', 'default_input_method']]]) },
 };
 commandsFor.phone = ({ set, to }) => PHONE[set].commands(to);
@@ -234,8 +239,12 @@ const runCommand = (cmd, args) => {
   return { status: r.status, said: `${r.stdout ?? ''}${r.stderr ?? ''}`.trim() || (r.error?.message ?? '') };
 };
 
+/** How long a phone change is waited on to take: 40 asks a quarter second apart, ten seconds. */
+export const WAIT = { tries: 40, pauseMs: 250 };
+const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
 /** The proxy and its control server; resolves once both listen, with their ports, the log and close(). */
-export function startProxy({ listen = 0, to, control = 0, logFile = null, run = runCommand, apk = APK, oldApk = null } = {}) {
+export function startProxy({ listen = 0, to, control = 0, logFile = null, run = runCommand, apk = APK, oldApk = null, waitFor = WAIT } = {}) {
   const [toHost, toPort] = to.split(':');
   let fault = null;
   let left = 0;
@@ -391,9 +400,12 @@ export function startProxy({ listen = 0, to, control = 0, logFile = null, run = 
         try { asked = JSON.parse(body); } catch { return answer(res, 400, { refused: 'the body is not JSON' }); }
         const why = refusal(asked);
         if (why) return answer(res, 400, { refused: why });
-        for (const [cmd, args] of commands(asked)) {
-          const r = run(cmd, args);
+        // A command with `until` is asked again, a pause between, until Android's answer shows the change took.
+        for (const [cmd, args, wait] of commands(asked)) {
+          let r = run(cmd, args);
+          for (let n = 1; wait && n < waitFor.tries && !(r.status === 0 && wait.until(r.said)); n++) { pause(waitFor.pauseMs); r = run(cmd, args); }
           if (r.status !== 0) return answer(res, 500, { failed: `${cmd} ${args.join(' ')}: ${r.said}` });
+          if (wait && !wait.until(r.said)) return answer(res, 500, { failed: `Android never ${wait.what}: ${cmd} ${args.join(' ')} said ${JSON.stringify(r.said)}` });
         }
         return answer(res, 200, { done: asked });
       }

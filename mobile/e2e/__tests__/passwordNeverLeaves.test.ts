@@ -40,6 +40,12 @@ describe('annotate.mjs', () => {
     expect(r.stdout).toBe('');
     expect(readFileSync(join(dir, 'summary.md'), 'utf8')).toContain('### Past ten notices');
   });
+
+  it('writes a table as the markdown it is at the "table" level, hidden there too', () => {
+    const r = node('annotate.mjs', ['The launches', join(dir, 'report.txt'), 'table']);
+    expect([r.status, r.stdout]).toEqual([0, '']);
+    expect(readFileSync(join(dir, 'summary.md'), 'utf8')).toBe('### The launches\n\nMaestro said: Input text ••• FAILED\nand again •••\nthe admin typed •••\n');
+  });
 });
 
 describe('scrub.mjs', () => {

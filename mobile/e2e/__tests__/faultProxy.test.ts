@@ -47,16 +47,24 @@ const ANSWERS = [
   [/bmgr list sets$/, '  1 : Local disk image'],
   [/bmgr restore 1 com.reelhouse.society$/, 'restoreStarting: 1 packages\\nonUpdate: 0 = com.reelhouse.society\\nrestoreFinished: 0\\ndone'],
 ];
+// The keyboard, listed by Android from the n-th time it is asked after its package is enabled (route
+// walk 39642880903: not at once), and the phone's own once set.
+const GB = 'com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME';
+let listedFrom = 2;
+let listAsks = 0;
 const run = (cmd, args) => {
   const line = [cmd, ...args].join(' ');
   ran.push(line);
+  if (line.startsWith('adb shell pm enable ')) listAsks = 0;
+  if (line === 'adb shell ime list -a -s') { listAsks += 1; return { status: 0, said: listAsks >= listedFrom ? 'com.android.other/.Ime\\n' + GB : 'com.android.other/.Ime' }; }
+  if (line === 'adb shell settings get secure default_input_method') return { status: 0, said: GB };
   if (args.includes('supabase_storage_reelhouse-e2e')) return { status: 1, said: 'No such container' };
   if (line.endsWith('echo laid')) return { status: 0, said: 'laid' };
   if (line.startsWith('adb shell ls ') && line.includes('e2e_backup_marker')) return markerBack ? { status: 0, said: args.at(-1) } : { status: 1, said: 'ls: ' + args.at(-1) + ': No such file or directory' };
   const known = ANSWERS.find(([re]) => re.test(line));
   return { status: 0, said: known ? known[1] : '' };
 };
-const p = await startProxy({ to: '127.0.0.1:' + house.address().port, run });
+const p = await startProxy({ to: '127.0.0.1:' + house.address().port, run, waitFor: { tries: 3, pauseMs: 5 } });
 const ask = (method, path, body, timeout = 3000) => new Promise((resolve) => {
   const t0 = Date.now();
   const req = http.request({ host: '127.0.0.1', port: p.port, method, path, agent: false,
@@ -156,6 +164,8 @@ out.phone = [
   await control('POST', '/phone', { set: 'density', to: '560; reboot' }),
   await control('POST', '/phone', { set: 'airplane', to: true }),
   await control('POST', '/phone', { set: 'font_scale', to: 1, also: 'x' }),
+  // A keyboard Android never lists: asked as often as the proxy waits, then said.
+  (listedFrom = Infinity, await control('POST', '/phone', { set: 'keyboard', to: true })),
 ].map((r) => ({ status: r.status, ...r.body }));
 out.ranPhone = ran.length;
 // RFC 6238's example key: the text "12345678901234567890", in the base32 an authenticator takes.
@@ -298,6 +308,7 @@ it('changes the phone mid-flow by fixed commands of checked values alone, and re
     { status: 400, refused: 'density to a whole number from 240 to 640, or "reset"' },
     { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, keyboard, and to' },
     { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, keyboard, and to' },
+    { status: 500, failed: 'Android never listed the keyboard once its package was enabled: adb shell ime list -a -s said "com.android.other/.Ime"' },
   ]);
   expect(out.ran.slice(out.ranParts.length, out.ranPhone)).toEqual([
     'adb shell settings put system font_scale 1.3',
@@ -306,12 +317,21 @@ it('changes the phone mid-flow by fixed commands of checked values alone, and re
     'adb shell settings put global always_finish_activities 1',
     'adb shell am kill com.reelhouse.society',
     'adb shell am force-stop com.reelhouse.society',
+    // On: enabled, asked until Android lists it (the second time here), set, and read back as the phone's.
     'adb shell pm enable com.google.android.inputmethod.latin',
+    'adb shell ime list -a -s',
+    'adb shell ime list -a -s',
     'adb shell ime enable com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME',
     'adb shell ime set com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME',
+    'adb shell settings get secure default_input_method',
     'adb shell pm disable com.google.android.inputmethod.latin',
     'adb shell settings delete secure enabled_input_methods',
     'adb shell settings delete secure default_input_method',
+    // Never listed: asked as often as the proxy waits (three times here), and nothing set.
+    'adb shell pm enable com.google.android.inputmethod.latin',
+    'adb shell ime list -a -s',
+    'adb shell ime list -a -s',
+    'adb shell ime list -a -s',
   ]);
 });
 
