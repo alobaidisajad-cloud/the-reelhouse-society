@@ -436,8 +436,8 @@
   {
     "class": "E2E-system-mode-unseen",
     "mutant": "shape-keyboard-read-as-the-app",
-    "proof": "m3",
-    "commit": "13c26f50e4cbb7ecfd94155e5c131ee8d0d3fae8",
+    "proof": "m4",
+    "commit": "0639dd874a64c2919310fa42745f3ea100064df3",
     "verdict": "caught"
   },
   {
