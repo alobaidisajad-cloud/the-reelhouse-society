@@ -1,7 +1,8 @@
 import { router, Tabs, usePathname, type Href } from 'expo-router';
 import React from 'react';
-import { AppState, View, StyleSheet, Platform } from 'react-native';
-import { rememberTab, stampTab, tabToReopen } from '@/src/utils/lastTab';
+import { AppState, Linking, View, StyleSheet, Platform } from 'react-native';
+import { pageOfLaunch, rememberTab, stampTab, tabToReopenAfter } from '@/src/utils/lastTab';
+import { e2eTrace } from '@/src/utils/e2eTrace';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import Animated, {
@@ -170,13 +171,22 @@ export default function TabLayout() {
   // A member back within the half hour is back on their tab (lastTab.ts) — behind
   // the launch curtain, so the Lobby is never glimpsed first. Only a launch that
   // opened at the Lobby: one that opened a notice or a link is going there instead.
+  // Whether a link opened it is read from the link itself: on a phone the first
+  // path drawn can still be the Lobby's while the link is being read, and an email
+  // link opened within the half hour landed on the last tab (route walk, 2026-10-21).
   const pathname = usePathname();
   const launchedAt = React.useRef(pathname);
   React.useEffect(() => {
-    const tab = tabToReopen();
-    if (tab && launchedAt.current === '/') router.navigate(`/${tab}` as Href);
+    let gone = false;
+    if (launchedAt.current === '/') {
+      void Linking.getInitialURL().catch(() => null).then((url) => {
+        const tab = tabToReopenAfter(url);
+        e2eTrace('tabs.reopen', { tab, link: pageOfLaunch(url) || null });
+        if (tab && !gone) router.navigate(`/${tab}` as Href);
+      });
+    }
     const sub = AppState.addEventListener('change', (next) => { if (next !== 'active') stampTab(); });
-    return () => sub.remove();
+    return () => { gone = true; sub.remove(); };
   }, []);
 
   return (

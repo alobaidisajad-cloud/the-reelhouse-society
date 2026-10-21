@@ -292,6 +292,20 @@ classes:
     fix: "every file run-flows.sh writes into its run's folder is kept (e2e.yml's Keep the run's logs) or named as scratch with why, and the step before scrubs exactly the files kept; twelve were never kept (the launch with animations on among them) and the route walk's log was kept unscrubbed (mutant shape-variant-record-not-kept)"
     places: [none]
 
+  - id: NAV-launch-link-overridden
+    title: A launch by a link (a sign-up or password email's, a shared one) lands on the tab the member last used instead of the page the link names, because the half-hour return to the last tab judged the launch by the first path drawn, which on a phone can be the Lobby's while the link is still being read
+    seriousness: behaviour
+    area: navigation
+    status: OPEN
+    count: 0
+    source: { kind: history, ref: "the route walk, runs 39614962131 and 39614969442: /auth-callback opened on the profile" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts, test: "reopens the tab only for a launch that names no page" }
+      - { kind: running, file: src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts, test: "names the page a launch link names, and none for the app or the site alone" }
+      - { kind: static, file: src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts, test: "the tab bar remembers each tab as it is shown, stamps the time as the app leaves, and reopens only a launch that began at the Lobby, by no link that names a page" }
+    fix: "the tab bar reads the launch link itself (Linking.getInitialURL) and reopens the last tab only when that link names no page (lastTab.ts pageOfLaunch, tabToReopenAfter); each reopen or its absence is said to the E2E log (tabs.reopen) so the route walk shows which it was (mutant shape-every-link-names-nothing)"
+    places: [emulator]
+
   - id: RN-react-destroyed-on-mount
     title: React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed
     seriousness: serious

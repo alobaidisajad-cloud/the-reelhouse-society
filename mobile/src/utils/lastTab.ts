@@ -46,6 +46,24 @@ export function stampTab(now: number = Date.now()): void {
   if (last) storage.set(LAST_TAB_KEY, JSON.stringify({ tab: last.tab, at: now }));
 }
 
+/**
+ * The page a launch's link names, '' for none: the app's own address alone
+ * (reelhouse://), or the website's front page. A launch by any other link (an
+ * email's, a shared one) goes where it says, never to a tab the member left.
+ */
+export function pageOfLaunch(url: string | null | undefined): string {
+  const parts = /^([a-z][a-z0-9+.-]*):\/\/([^/?#]*)([^?#]*)/i.exec(url ?? '');
+  if (!parts) return '';
+  const [, scheme = '', host = '', path = ''] = parts;
+  // A site's address names its page by its path; the app's own, by all that follows the scheme.
+  return (/^https?$/i.test(scheme) ? path : `${host}${path}`).replace(/^\/+|\/+$/g, '');
+}
+
+/** The tab to reopen for a launch by this link (none for a link that names a page). */
+export function tabToReopenAfter(launchUrl: string | null | undefined, now: number = Date.now()): TabName | null {
+  return pageOfLaunch(launchUrl) ? null : tabToReopen(now);
+}
+
 /** The tab to reopen at launch, if the member was here within the half hour; else none (the Lobby). */
 export function tabToReopen(now: number = Date.now()): TabName | null {
   const last = read();

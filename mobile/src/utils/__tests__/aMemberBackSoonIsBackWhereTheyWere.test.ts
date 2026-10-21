@@ -8,7 +8,7 @@
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { LAST_TAB_KEY, rememberTab, RETURN_WITHIN_MS, stampTab, tabToReopen } from '../lastTab';
+import { LAST_TAB_KEY, pageOfLaunch, rememberTab, RETURN_WITHIN_MS, stampTab, tabToReopen, tabToReopenAfter } from '../lastTab';
 
 const mockStore = new Map<string, string>();
 jest.mock('@/src/stores/mmkv-storage', () => ({
@@ -51,9 +51,29 @@ it('the Lobby itself, a page that is not a tab, a clock gone backwards, or a val
   expect(tabToReopen(T)).toBeNull();
 });
 
-it('the tab bar remembers each tab as it is shown, stamps the time as the app leaves, and reopens only a launch that began at the Lobby', () => {
+it('the tab bar remembers each tab as it is shown, stamps the time as the app leaves, and reopens only a launch that began at the Lobby, by no link that names a page', () => {
   const layout = readFileSync(join(__dirname, '..', '..', '..', 'app', '(tabs)', '_layout.tsx'), 'utf8');
   expect(layout).toMatch(/screenListeners=\{\(\{ route \}\) => \(\{ focus: \(\) => rememberTab\(route\.name\) \}\)\}/);
   expect(layout).toMatch(/if \(next !== 'active'\) stampTab\(\)/);
-  expect(layout).toMatch(/if \(tab && launchedAt\.current === '\/'\) router\.navigate/);
+  expect(layout).toMatch(/if \(launchedAt\.current === '\/'\) \{\s+void Linking\.getInitialURL\(\)\.catch\(\(\) => null\)\.then\(\(url\) => \{\s+const tab = tabToReopenAfter\(url\);/);
+  expect(layout).toMatch(/if \(tab && !gone\) router\.navigate/);
+  expect(layout).not.toMatch(/\btabToReopen\(\)/);
+});
+
+describe('a launch by a link goes where the link goes (route walk, 2026-10-21)', () => {
+  it('names the page a launch link names, and none for the app or the site alone', () => {
+    expect(pageOfLaunch('reelhouse://auth-callback?type=recovery&code=x')).toBe('auth-callback');
+    expect(pageOfLaunch('reelhouse://film/129')).toBe('film/129');
+    expect(pageOfLaunch('https://www.thereelhousesociety.com/film/129?ref=share')).toBe('film/129');
+    for (const none of ['reelhouse://', 'reelhouse:///', 'https://www.thereelhousesociety.com/', 'https://www.thereelhousesociety.com', null, undefined, '', 'not a link']) {
+      expect([none, pageOfLaunch(none)]).toEqual([none, '']);
+    }
+  });
+
+  it('reopens the tab only for a launch that names no page', () => {
+    rememberTab('profile', T);
+    const soon = T + 60_000;
+    expect([tabToReopenAfter(null, soon), tabToReopenAfter('reelhouse://', soon)]).toEqual(['profile', 'profile']);
+    expect(['reelhouse://auth-callback', 'reelhouse://reset-password', 'https://www.thereelhousesociety.com/log/1'].map((url) => tabToReopenAfter(url, soon))).toEqual([null, null, null]);
+  });
 });
