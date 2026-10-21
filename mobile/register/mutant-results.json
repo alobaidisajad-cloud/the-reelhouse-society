@@ -87,7 +87,7 @@
     "class": "CI-background-job-left-running",
     "mutant": "shape-log-stream-left-running",
     "proof": "m1",
-    "commit": "34c06369b834a3fa37d12bf85df04edbd02e99ec",
+    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
     "verdict": "caught"
   },
   {
@@ -353,14 +353,21 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-refusal-sent",
     "proof": "m3",
-    "commit": "34c06369b834a3fa37d12bf85df04edbd02e99ec",
+    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-ceiling-not-measured",
+    "mutant": "shape-shard-starts-cold",
+    "proof": "m1",
+    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
     "verdict": "caught"
   },
   {
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-input-swallowed",
     "proof": "m4",
-    "commit": "34c06369b834a3fa37d12bf85df04edbd02e99ec",
+    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
     "verdict": "caught"
   },
   {
@@ -416,21 +423,21 @@
     "class": "E2E-route-never-opened",
     "mutant": "shape-walk-captures-unwaited",
     "proof": "m3",
-    "commit": "75991d98d81ff2c87de6c01a97e3930c6ce6cfea",
+    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
     "verdict": "caught"
   },
   {
     "class": "E2E-system-mode-unseen",
     "mutant": "shape-moment-taps-dropped",
     "proof": "m2",
-    "commit": "75991d98d81ff2c87de6c01a97e3930c6ce6cfea",
+    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
     "verdict": "caught"
   },
   {
     "class": "NAV-launch-link-overridden",
     "mutant": "shape-every-link-names-nothing",
     "proof": "m1",
-    "commit": "75991d98d81ff2c87de6c01a97e3930c6ce6cfea",
+    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
     "verdict": "caught"
   },
   {
@@ -444,7 +451,7 @@
     "class": "E2E-system-mode-unseen",
     "mutant": "shape-keyboard-never-on",
     "proof": "m3",
-    "commit": "75991d98d81ff2c87de6c01a97e3930c6ce6cfea",
+    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
     "verdict": "caught"
   },
   {
