@@ -64,6 +64,12 @@ enable_signup = true
 enable_anonymous_sign_ins = false
 minimum_password_length = 6
 
+# The admins' second key at the Tribunal's door (WORKLIST P0.94): an authenticator's code, as a
+# hosted project takes one (TOTP is on in every hosted project; the local stack's default is off).
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [auth.email]
 enable_signup = true
 double_confirm_changes = true

@@ -9,6 +9,7 @@
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { testQueryClient } from '@/test-utils/testQueryClient';
+import { supabaseFake } from '@/test-utils/supabaseFake';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import TribunalScreen from '../tribunal';
@@ -32,6 +33,12 @@ jest.mock('@/src/services/ModerationService', () => ({
     getPendingCount: jest.fn().mockResolvedValue(0),
   },
 }));
+
+// The admin gave the second key this session (P0.94): the Tribunal is drawn behind its door.
+const mockHouse = supabaseFake({
+  mfa: { level: 'aal2', code: '246810', factors: [{ id: '00000000-0000-4000-8000-000000000001', factor_type: 'totp', status: 'verified', friendly_name: 'Tribunal key' }] },
+});
+jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.client; } }));
 
 const mockAuthStore: { user: any } = { user: null };
 jest.mock('@/src/stores/auth', () => ({
@@ -621,11 +628,12 @@ describe('TribunalScreen Integration', () => {
     });
 
     it('calls getPriorityQueue with the compound keyset cursor when pressing LOAD MORE', async () => {
-      const { getByLabelText, getByText } = renderTribunal();
+      const { getByLabelText, findByLabelText, getByText } = renderTribunal();
 
-      // Switch to priority view
+      // Switch to priority view, once the door has checked the second key
+      const priority = await findByLabelText('Priority queue view');
       await act(async () => {
-        await fireEvent.press(getByLabelText('Priority queue view'));
+        await fireEvent.press(priority);
       });
 
       // Wait for data to load

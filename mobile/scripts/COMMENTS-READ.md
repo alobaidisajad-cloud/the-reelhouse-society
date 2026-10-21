@@ -350,6 +350,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/theInitiationLeavesAfterItsFade.test.tsx | 2026-10-15 | new: a beat and the door leave after their fade |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
+| src/components/admin/SecondKeyDoor.tsx | 2026-10-17 | new: the Tribunal's door: checking, failed, register a key, give its code |
+| src/components/admin/__tests__/theTribunalAsksForASecondKey.test.tsx | 2026-10-17 | new: each room of the door against the strict second factors |
 | src/components/__tests__/ActionDeck.test.tsx | 2026-10-01 | rendered: owner, certify, save, stranger |
 | src/components/__tests__/animation-parking.test.ts | 2026-10-15 | edited: the whole app, its hooks included; a focus flag handed to a hook parks a loop |
 | src/components/__tests__/aRatingCanBeGivenWithoutSight.test.tsx | — |  |
@@ -914,6 +916,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useScrollTrace.ts | 2026-10-15 | new: a scroll is one Sentry transaction, begin to rest |
 | src/hooks/useSheetPresence.ts | 2026-10-01 | written: five sheets' rise and fall, once |
 | src/hooks/useStateSaid.ts | 2026-10-16 | new: which state a room drew, empty or failed, to the E2E log |
+| src/hooks/useSecondKey.ts | 2026-10-17 | new: the door read from the session each time; register; give a code |
+| src/hooks/__tests__/theSecondKeyIsReadAsItIs.test.tsx | 2026-10-17 | new: each refusal the hook meets, handed back as what it is |
 | src/hooks/useTextScale.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
 | src/hooks/useUpdateUser.ts | 2026-10-02 | read; sound |
@@ -1264,6 +1268,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/searchFieldsDoNotAutocorrect.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/searchPattern.test.ts | — |  |
 | src/utils/__tests__/searchWiring.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/secondKey.test.ts | 2026-10-17 | new: the door's stages and a code's digits |
 | src/utils/__tests__/stackFilmCount.test.ts | — |  |
 | src/utils/__tests__/strykerFilesAreListed.guard.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/theCharacterRuleHoldsForEveryShortString.test.ts | 2026-10-16 | new |
@@ -1336,6 +1341,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/requestReview.ts | 2026-10-01 | never more than 3 in any 365 days, as it claimed |
 | src/utils/roomFilters.ts | 2026-10-01 | new |
 | src/utils/sanitizeInput.ts | 2026-10-03 | read whole: U+2028/U+2029 kept as the breaks they are, not stripped |
+| src/utils/secondKey.ts | 2026-10-17 | new: where the door stands; a code's digits; a secret in fours |
 | src/utils/searchPattern.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/softBreak.ts | 2026-10-04 | edited: one place asked per character, the flag count stopping at the run’s start; a joint breaks only between characters |
 | src/utils/standing.ts | 2026-10-16 | edited: its two sentences come from refusedForStanding |

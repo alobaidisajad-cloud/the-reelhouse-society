@@ -106,3 +106,37 @@ describe('it answers as PostgREST answers', () => {
     expect(() => supabaseFake({ silent: { profilez: true } })).toThrow('production has no table or view "profilez"');
   });
 });
+
+describe('its second factors (auth.mfa) refuse what the auth server refuses', () => {
+  const KEY = { id: '00000000-0000-4000-8000-000000000009', factor_type: 'totp', status: 'verified', friendly_name: 'Tribunal key' } as const;
+
+  it('cannot be asked by a test that never said what factors the account holds', () => {
+    expect(() => supabaseFake().client.auth.mfa.listFactors()).toThrow('the test never said what second factors the account holds');
+  });
+
+  it('a second key of one name, a factor it does not hold, and a confirmed key removed without the second key', async () => {
+    const { client } = supabaseFake({ mfa: { code: '123456', factors: [KEY] } });
+    await expect(client.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Tribunal key' })).resolves.toMatchObject({ data: null, error: { code: 'mfa_factor_name_conflict' } });
+    await expect(client.auth.mfa.unenroll({ factorId: 'nope' })).resolves.toMatchObject({ error: { code: 'mfa_factor_not_found' } });
+    await expect(client.auth.mfa.unenroll({ factorId: KEY.id })).resolves.toMatchObject({ error: { code: 'insufficient_aal' } });
+  });
+
+  it('a code that is not the authenticator\'s; the one that is confirms the key and lifts the session to aal2', async () => {
+    const fake = supabaseFake({ mfa: { code: '123456' } });
+    const mfa = fake.client.auth.mfa;
+    await expect(mfa.getAuthenticatorAssuranceLevel()).resolves.toMatchObject({ data: { currentLevel: 'aal1', nextLevel: 'aal1' } });
+    const made = await mfa.enroll({ factorType: 'totp', friendlyName: 'Tribunal key', issuer: 'The ReelHouse Society' });
+    expect(made.data.totp.uri).toBe('otpauth://totp/The%20ReelHouse%20Society:member?secret=JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP&issuer=The%20ReelHouse%20Society');
+    await expect(mfa.listFactors()).resolves.toMatchObject({ data: { all: [{ id: made.data.id, status: 'unverified' }], totp: [] } });
+    await expect(mfa.challengeAndVerify({ factorId: made.data.id, code: '654321' })).resolves.toMatchObject({ error: { code: 'mfa_verification_failed' } });
+    expect(fake.mfa.level()).toBe('aal1');
+    await expect(mfa.challengeAndVerify({ factorId: made.data.id, code: '123456' })).resolves.toMatchObject({ error: null });
+    expect([fake.mfa.level(), fake.mfa.factors().map((f) => f.status)]).toEqual(['aal2', ['verified']]);
+    expect(fake.mfa.asked.map((a) => a.call)).toEqual(['level', 'enroll', 'list', 'verify', 'verify']);
+  });
+
+  it('fails a call the test makes fail, with the error it gave, handed back as supabase-js hands it', async () => {
+    const { client } = supabaseFake({ mfa: { code: '1', fail: { list: { code: 'unexpected_failure', message: 'Failed to fetch' } } } });
+    await expect(client.auth.mfa.listFactors()).resolves.toEqual({ data: null, error: { code: 'unexpected_failure', message: 'Failed to fetch' } });
+  });
+});

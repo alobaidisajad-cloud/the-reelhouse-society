@@ -26,6 +26,9 @@
  *
  * What it cannot read (an `or()` filter, a `contains`) it refuses too, unless
  * the test answers that table itself with `answer: { table: (ask) => rows }`.
+ *
+ * Its `auth.mfa` is the account's second factors (`mfa: { code, factors, level }`),
+ * refusing what the auth server refuses (mfaFake, below).
  */
 import { fitsAnOverload, readColumns, readFunctions, SNAPSHOT_SQL, topLevel, type Column } from './schema';
 
@@ -72,7 +75,89 @@ type Options = {
   answer?: Record<string, (ask: Ask) => Row[] | Failure>;
   /** Each rpc's answer: a value, or a function of its arguments; `{ error }` fails it. */
   rpc?: Record<string, unknown>;
+  /** The account's second factors (supabase.auth.mfa). A test that never says cannot ask. */
+  mfa?: MfaWorld;
 };
+
+/** One second factor, as the auth server lists it. */
+export interface FakeFactor { id: string; factor_type: 'totp'; status: 'verified' | 'unverified'; friendly_name: string }
+type MfaCall = 'level' | 'list' | 'enroll' | 'unenroll' | 'verify';
+/**
+ * The account's second factors, as the auth server holds them (WORKLIST P0.94): the session's
+ * level, its factors, the code the authenticator shows now, and any call that fails (its error,
+ * handed back as supabase-js hands it, never thrown).
+ */
+export interface MfaWorld {
+  level?: 'aal1' | 'aal2';
+  factors?: FakeFactor[];
+  code: string;
+  fail?: Partial<Record<MfaCall, Failure>>;
+}
+
+/** The secret every key the fake registers holds (a base32 key, as the server sends one). */
+export const FAKE_SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+
+/**
+ * supabase.auth.mfa, as strict as the auth server: a second key of one name is refused
+ * (mfa_factor_name_conflict); a factor it does not hold is mfa_factor_not_found; a confirmed key
+ * is removed only by a session that gave it (insufficient_aal); a code that is not the
+ * authenticator's is mfa_verification_failed. A code taken confirms its key and lifts the
+ * session to aal2.
+ */
+function mfaFake(world: MfaWorld | undefined) {
+  let level = world?.level ?? 'aal1';
+  const factors = (world?.factors ?? []).map((f) => ({ ...f }));
+  let made = 0;
+  const asked: { call: MfaCall; args: Row }[] = [];
+  const fault = (code: string, message: string): Failure => ({ code, message });
+  const isFailure = (v: unknown): v is Failure => typeof v === 'object' && v !== null && 'code' in v && 'message' in v && Object.keys(v).length === 2;
+  const answer = (call: MfaCall, args: Row, data: () => unknown): Promise<{ data: any; error: Failure | null }> => {
+    if (!world) throw new Error('supabaseFake: the test never said what second factors the account holds (mfa)');
+    asked.push({ call, args });
+    const failed = world.fail?.[call];
+    if (failed) return Promise.resolve({ data: null, error: failed });
+    const out = data();
+    return Promise.resolve(isFailure(out) ? { data: null, error: out } : { data: out, error: null });
+  };
+  const mfa = {
+    getAuthenticatorAssuranceLevel: () => answer('level', {}, () => ({
+      currentLevel: level,
+      nextLevel: factors.some((f) => f.status === 'verified') ? 'aal2' : level,
+      currentAuthenticationMethods: [],
+    })),
+    listFactors: () => answer('list', {}, () => ({
+      all: factors.map((f) => ({ ...f })),
+      totp: factors.filter((f) => f.status === 'verified').map((f) => ({ ...f })),
+      phone: [],
+    })),
+    enroll: (args: { factorType: string; friendlyName?: string; issuer?: string }) => answer('enroll', args, () => {
+      if (args.factorType !== 'totp') return fault('validation_failed', `the fake registers totp keys, not ${args.factorType}`);
+      const name = args.friendlyName ?? '';
+      if (factors.some((f) => f.friendly_name === name)) return fault('mfa_factor_name_conflict', `A factor with the friendly name "${name}" for this user already exists`);
+      made += 1;
+      const id = `00000000-0000-4000-8000-${String(made).padStart(12, '0')}`;
+      factors.push({ id, factor_type: 'totp', status: 'unverified', friendly_name: name });
+      const issuer = encodeURIComponent(args.issuer ?? 'house');
+      return { id, type: 'totp', friendly_name: name, totp: { qr_code: '<svg/>', secret: FAKE_SECRET, uri: `otpauth://totp/${issuer}:member?secret=${FAKE_SECRET}&issuer=${issuer}` } };
+    }),
+    unenroll: (args: { factorId: string }) => answer('unenroll', args, () => {
+      const i = factors.findIndex((f) => f.id === args.factorId);
+      if (i < 0) return fault('mfa_factor_not_found', 'Factor not found');
+      if (factors[i]?.status === 'verified' && level !== 'aal2') return fault('insufficient_aal', 'AAL2 required to unenroll verified factor');
+      factors.splice(i, 1);
+      return { id: args.factorId };
+    }),
+    challengeAndVerify: (args: { factorId: string; code: string }) => answer('verify', args, () => {
+      const f = factors.find((x) => x.id === args.factorId);
+      if (!f) return fault('mfa_factor_not_found', 'Factor not found');
+      if (args.code !== world?.code) return fault('mfa_verification_failed', 'Invalid TOTP code entered');
+      f.status = 'verified';
+      level = 'aal2';
+      return { access_token: 'aal2', token_type: 'bearer', expires_in: 3600, refresh_token: 'refresh', user: null };
+    }),
+  };
+  return { mfa, asked, factors: () => factors.map((f) => ({ ...f })), level: () => level };
+}
 
 /** The project's max-rows: PostgREST never sends more in one answer. */
 export const MAX_ROWS = 1000;
@@ -250,5 +335,12 @@ export function supabaseFake(options: Options = {}) {
     return Promise.resolve({ data: out ?? null, error: null });
   };
 
-  return { client: { from, rpc }, asked, rows: (table: string) => tables.get(table) ?? [] };
+  const second = mfaFake(options.mfa);
+  return {
+    client: { from, rpc, auth: { mfa: second.mfa } },
+    asked,
+    rows: (table: string) => tables.get(table) ?? [],
+    /** The second factors as the calls left them: every call asked, the factors, the session's level. */
+    mfa: { asked: second.asked, factors: second.factors, level: second.level },
+  };
 }

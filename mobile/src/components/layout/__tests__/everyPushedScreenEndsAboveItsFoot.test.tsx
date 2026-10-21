@@ -18,6 +18,7 @@ import { placesHoldingFoot } from '@/test-utils/bottomEdge';
 import { aboveDockedBar, bottomEdge, contentBottom } from '@/src/components/layout/navMetrics';
 import { scrollReserve } from '@/src/components/film/filmStubMetrics';
 import { supabase } from '@/src/lib/supabase';
+import { supabaseFake } from '@/test-utils/supabaseFake';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { useDispatch } from '@/src/stores/dispatch';
 import { toFiling } from '@/src/stores/dispatchTypes';
@@ -184,7 +185,7 @@ const ROUTES: Route[] = [
       (supabase.auth.getSession as jest.Mock).mockResolvedValue({ data: { session: { user: { id: 'me' } } }, error: null });
     } },
   { file: 'app/(admin)/tribunal.tsx', draw: () => { const C = require('@/app/(admin)/tribunal').default; return <C />; },
-    arrange: () => { mockRole = 'admin'; } },
+    arrange: () => { mockRole = 'admin'; secondKey(true); } },
   { file: 'app/stacks/[id].tsx', params: { id: 'stack' }, draw: () => { const C = require('@/app/stacks/[id]').default; return <C />; } },
   { file: 'app/film-reviews/[id].tsx', params: { id: '550', title: 'Fight Club' }, draw: () => { const C = require('@/app/film-reviews/[id]').default; return <C />; } },
   { file: 'app/dispatch/[id].tsx', params: { id: 'gone' }, draw: () => { const C = require('@/app/dispatch/[id]').default; return <C />; } },
@@ -196,7 +197,15 @@ const ROUTES: Route[] = [
 ];
 
 /** A second state of a route whose header is drawn by other code. */
+/** The admin's second factors, as the Tribunal's door reads them (P0.94): the key given this session, or none registered. */
+const KEY = { id: '00000000-0000-4000-8000-000000000001', factor_type: 'totp', status: 'verified', friendly_name: 'Tribunal key' } as const;
+const secondKey = (held: boolean) => Object.assign(supabase.auth, {
+  mfa: supabaseFake({ mfa: held ? { level: 'aal2', code: '246810', factors: [KEY] } : { code: '246810' } }).client.auth.mfa,
+});
+
 const STATES: (Route & { name: string })[] = [
+  { name: 'the Tribunal\'s door, a key to register', file: 'app/(admin)/tribunal.tsx', draw: () => { const C = require('@/app/(admin)/tribunal').default; return <C />; },
+    arrange: () => { mockRole = 'admin'; secondKey(false); } },
   { name: 'a film arrived (the floating back and the scroll header)', file: 'app/film/[id].tsx', params: { id: '550' },
     draw: () => { const C = require('@/app/film/[id]').default; return <C />; },
     arrange: () => {
@@ -253,6 +262,8 @@ const FOOT: Record<string, ((b: number) => number)[]> = {
   // The stub on the edge, and the scroll above it.
   'a film arrived (the floating back and the scroll header)': [scrollReserve, bottomEdge],
   'a room of a member’s file': [contentBottom],
+  // The door's page scrolls to the content's foot, as the Tribunal behind it does.
+  'the Tribunal\'s door, a key to register': [contentBottom],
 };
 
 const { useLocalSearchParams } = jest.requireMock('expo-router') as { useLocalSearchParams: jest.Mock };
@@ -288,6 +299,7 @@ afterEach(() => {
   mockRoom = null;
   useLocalSearchParams.mockReturnValue({});
   (supabase.from as jest.Mock).mockImplementation(houseFrom);
+  delete (supabase.auth as { mfa?: unknown }).mfa;
   useDispatch.setState({ filings: [] } as never);
 });
 

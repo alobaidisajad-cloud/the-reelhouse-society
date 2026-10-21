@@ -37,6 +37,7 @@ import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { formatDate } from '@/src/utils/timeAgo';
 import { TryAgainLine } from '@/src/components/TryAgain';
+import { SecondKeyDoor } from '@/src/components/admin/SecondKeyDoor';
 import { nav } from '@/src/utils/typedRouter';
 import { initialOf } from '@/src/utils/text';
 import { MAX_LENGTHS, sanitizeInput } from '@/src/utils/sanitizeInput';
@@ -314,7 +315,22 @@ function ActionModal({
 
 // ── Main Tribunal Screen ───────────────────────────────────────────────────
 
-export default function TribunalScreen() {
+/**
+ * The Tribunal behind its door (P0.94): nothing of it is read or drawn until this
+ * session has given the second key (src/components/admin/SecondKeyDoor.tsx).
+ */
+export default function Tribunal() {
+  const { user } = useAuthStore();
+  // A member who is no admin never meets the door: there is nothing behind it for them.
+  if (!user || user.role !== 'admin') return <View style={s.container}><RoomLight room="default" /></View>;
+  return (
+    <SecondKeyDoor userId={user.id}>
+      <TribunalScreen />
+    </SecondKeyDoor>
+  );
+}
+
+function TribunalScreen() {
   const { user } = useAuthStore();
   const headerTop = usePushedHeaderTop();
   const end = useContentBottom();
