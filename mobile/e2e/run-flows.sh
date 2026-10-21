@@ -312,7 +312,16 @@ if [ "$LAUNCH" = yes ]; then
     echo "A launch with animations on: alive at ${MOTION_SECONDS} s (pid $motion_pid), no crash, the first screen ready." > "$OUT/motion/result.txt"
   fi
 else
-  echo "The launch with animations on runs in another shard (e2e/shards.json)." > "$OUT/motion/result.txt"
+  # Where no launch with animations runs, the app is still launched once before the flows: the
+  # app's first run after an install is its slowest, and that cost fell on a measured flow
+  # (run 39625257830: the Dispatch's first opening at 3908 ms, over its ceiling, in the
+  # shard's first flow). A cold start to its first screen, then stopped; its screens are judged
+  # as every screen is, here as on the shard whose launch has its animations on.
+  warm_from=$(( $(wc -l < "$OUT/logcat-stream.txt") + 1 ))
+  timeout 90 adb shell am start-activity -W -n "$PKG/.MainActivity" > /dev/null 2>&1
+  for _ in $(seq 1 60); do tail -n +"$warm_from" "$OUT/logcat-stream.txt" | grep -q '\[e2e\] screen\.ready' && break; sleep 0.5; done
+  timeout 20 adb shell am force-stop "$PKG" > /dev/null 2>&1
+  echo "The launch with animations on runs in another shard (e2e/shards.json); this shard launched the app once before its flows." > "$OUT/motion/result.txt"
 fi
 
 # ── THE KEYBOARD'S ROOM ───────────────────────────────────────────────────────

@@ -436,13 +436,17 @@ describe('one shard of the flows (E2E_SHARD, with a map of the scenario\'s flows
   ] };
   const ran = (r: Run) => FLOWS.filter((f) => calls(r, f) > 0);
 
-  it('runs only its own flows, in order, with no probe and no launch with animations on, and lists them', async () => {
+  it('runs only its own flows, in order, with no probe and no launch with animations on, its app launched once before them, and lists them', async () => {
     const r = await rehearse(FLOWS, {}, { map: MAP, env: { E2E_SHARD: '2/3' } });
     expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
     expect([ran(r), calls(r, 'stack'), calls(r, 'log')]).toEqual([['b_flow', 'c_flow'], 0, 0]);
     expect(file(r, 'maestro-summary.txt')).toBe('[Passed] b_flow (1s)\n[Passed] c_flow (1s)\n');
     expect(existsSync(join(r.out, 'motion', 'am.txt'))).toBe(false);
-    expect(file(r, 'motion', 'result.txt')).toBe('The launch with animations on runs in another shard (e2e/shards.json).\n');
+    expect(file(r, 'motion', 'result.txt')).toBe('The launch with animations on runs in another shard (e2e/shards.json); this shard launched the app once before its flows.\n');
+    // That launch, then the app stopped, before the shard's first flow (run 39625257830).
+    const asked = readFileSync(join(r.T, 'state', 'order'), 'utf8').split('\n');
+    const launch = asked.findIndex((l) => l.startsWith('adb: am start-activity'));
+    expect([launch >= 0, asked.findIndex((l, i) => i > launch && l.startsWith('adb: am force-stop')) > launch, asked.findIndex((l) => l.startsWith('maestro: ')) > launch]).toEqual([true, true, true]);
     expect(file(r, 'keyboard-room.txt')).toBe("The keyboard's probes run in another shard (e2e/shards.json).\n");
     expect(file(r, 'flows-run.txt')).toBe('b_flow\nc_flow\n');
     // Its screens, for the verdict: every flow ran to its end.
@@ -605,7 +609,8 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
   it('fails a largest-text run on a label the app cut, and a variant that does not judge cut text, not', async () => {
     const bold = await walk('largest-text', { walk: ['captures-and-a-cut'] });
     expect(bold.status).toBe(1);
-    expect(titled(bold, 'error', 'Text cut on the largest-text phone')).toContain('✗ "FOUNDING MEMBER" ended early (said 1 time)');
+    // Named by the last screen ready before it: the fake walk says none, so the launch before the walk's.
+    expect(titled(bold, 'error', 'Text cut on the largest-text phone')).toContain('✗ "FOUNDING MEMBER" ended early on welcome (said 1 time)');
     always(bold);
     const dark = await walk('dark', { walk: ['captures-and-a-cut'] });
     expect({ status: dark.status, errors: annotations(dark, 'error') }).toEqual({ status: 0, errors: [] });

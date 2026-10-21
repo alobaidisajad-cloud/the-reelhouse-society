@@ -517,6 +517,15 @@ mutants:
         replace: "  node mobile/e2e/annotate.mjs \"No variant named ${variant}\" \"$OUT/variant-setup.txt\"\n"
     proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "walks nothing for a variant with no name in the list, and sends the phone nothing of it" }
 
+  - id: shape-shard-starts-cold
+    class: E2E-ceiling-not-measured
+    source: shape
+    edits:
+      - file: e2e/run-flows.sh
+        find: "  timeout 90 adb shell am start-activity -W -n \"$PKG/.MainActivity\" > /dev/null 2>&1\n"
+        replace: ""
+    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "runs only its own flows, in order, with no probe and no launch with animations on, its app launched once before them, and lists them" }
+
   - id: shape-variant-input-swallowed
     class: E2E-phone-only-as-the-runner-has-it
     source: shape
