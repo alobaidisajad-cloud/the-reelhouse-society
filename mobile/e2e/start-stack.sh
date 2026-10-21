@@ -2,13 +2,18 @@
 # Starts the local Supabase stack for a sealed workflow, from mobile/e2e.
 #
 #   bash mobile/e2e/start-stack.sh "<services to leave out, comma-separated>" "<what is starting>"
+#   bash mobile/e2e/start-stack.sh --reserve "<what is starting>"
 #
 # The stack's ports (every `port = N` in supabase/config.toml) lie inside
 # Linux's range for the machine's own outgoing connections (32768-60999): any
 # download on the runner can be lent one, and the container that needs it then
 # cannot bind it ("address already in use"). So the ports are first reserved,
 # which stops the kernel lending them from then on, and the start waits for any
-# connection already holding one to let it go.
+# connection already holding one to let it go. A connection lent one before the
+# reservation can hold it all the job (run 39249504168: 54324, held through both
+# tries), so every job that starts the stack reserves its ports with --reserve
+# as its first step after its checkout; the start reserves them again, and a port
+# still held is said with the process that holds it.
 #
 # The runner's Docker can also fail to wire a container's network as the stack
 # starts ("failed to set up container networking"), a fault of the machine,
@@ -49,12 +54,18 @@ wait_free() {
   local waited=0
   while [ -n "$(held)" ] && [ "$waited" -lt "$PORT_WAIT" ]; do sleep 1; waited=$((waited + 1)); done
   if [ -n "$(held)" ]; then
-    held | sed 's/^/still held: /' > "${LOG}.held"
+    { held | sed 's/^/still held: /'
+      # Who holds each: its connection, and the process when the runner will say.
+      sudo -n ss -Htanp 2>/dev/null | awk -v re="^(${PORTS//,/|})$" '{ n = split($4, a, ":"); if (a[n] ~ re) print "held by: " $0 }'
+    } > "${LOG}.held"
     node "$HERE/annotate.mjs" "$WHAT — a port it needs was still held after ${PORT_WAIT} s" "${LOG}.held" warning
   fi
 }
 
 start() { (cd "$HERE" && supabase start -x "$EXCLUDE") > "$LOG" 2>&1; }
+
+# The job's first step: the ports kept from every connection it makes from here on, nothing started.
+if [ "$EXCLUDE" = "--reserve" ]; then reserve; exit 0; fi
 
 reserve
 wait_free

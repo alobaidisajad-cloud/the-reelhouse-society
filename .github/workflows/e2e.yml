@@ -331,6 +331,8 @@ jobs:
         # flows' three of a variant that runs them.
         shard: ${{ fromJSON((inputs.faults || inputs.lifecycle || needs.build.outputs.runs == 'walk') && '[1]' || needs.build.outputs.runs == 'flows' && '[1, 2, 3, 4]' || '[1, 2, 3]') }}
     env:
+      # The fault proxy's ports (below), kept with the stack's from the job's first step.
+      STACK_EXTRA_PORTS: 54330,54331
       # The walk's machine: no flows, the walk, and the writer the seed makes for it, so every
       # flow's world is as every other run has it.
       E2E_FLOWS: ${{ inputs.faults && 'mobile/.maestro/faults' || inputs.lifecycle && 'mobile/.maestro/lifecycle' || (inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == 4)) && 'none' || 'mobile/.maestro' }}
@@ -338,6 +340,10 @@ jobs:
       E2E_SEED_WALK: ${{ (inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == 4)) && '1' || '' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      # The stack's ports kept before the job makes any connection that could be lent one: lent
+      # before, a port was held all the job (mobile/e2e/start-stack.sh; run 39249504168).
+      - name: The stack's ports, kept first
+        run: bash mobile/e2e/start-stack.sh --reserve "E2E local stack"
 
       # Its flows (mobile/.maestro); the harness stays this checkout's.
       - name: The shipped client's app, over this harness
@@ -399,9 +405,6 @@ jobs:
       # sign-in-with-username is production's own function, copied in BEFORE the
       # stack starts: config.toml names it, and the CLI checks what it names.
       - name: Start the local stack
-        env:
-          # The fault proxy's own (below): kept from the machine's connections with the stack's.
-          STACK_EXTRA_PORTS: 54330,54331
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
           bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta "E2E local stack"

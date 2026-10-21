@@ -39,6 +39,10 @@ jobs:
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      # The stack's ports kept before the job makes any connection that could be lent one: lent
+      # before, a port was held all the job (mobile/e2e/start-stack.sh; run 39249504168).
+      - name: The stack's ports, kept first
+        run: bash mobile/e2e/start-stack.sh --reserve "The load test's database"
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:

@@ -51,7 +51,7 @@ if [ "$n" -gt 0 ]; then
 fi
 `;
 
-type Machine = { holds?: number; reserved?: string; sudoRefuses?: boolean; wait?: number; extra?: string };
+type Machine = { holds?: number; reserved?: string; sudoRefuses?: boolean; wait?: number; extra?: string; args?: string[] };
 
 function start(starts: string[], o: Machine = {}) {
   const T = posix(mkdtempSync(join(tmpdir(), 'start-stack-')));
@@ -63,7 +63,7 @@ function start(starts: string[], o: Machine = {}) {
   if (o.holds) writeFileSync(join(T, 'holds'), String(o.holds));
   if (o.reserved) writeFileSync(join(T, 'reserved'), o.reserved);
   if (o.sudoRefuses) writeFileSync(join(T, 'sudo-refuses'), '');
-  const r = spawnSync(BASH, [posix(SCRIPT), 'studio,imgproxy', 'The rehearsal stack'], {
+  const r = spawnSync(BASH, [posix(SCRIPT), ...(o.args ?? ['studio,imgproxy', 'The rehearsal stack'])], {
     encoding: 'utf8',
     env: {
       ...process.env,
@@ -101,10 +101,15 @@ describe('the stack’s ports are kept from the machine’s own connections', ()
     expect(r.stdout).not.toMatch(/^::/m);
   });
 
-  it('a port still held when the wait ends is said, and the start is tried', () => {
+  it('a port still held when the wait ends is said, with the connection that holds it, and the start is tried', () => {
     const r = start(['ok'], { holds: 99, wait: 1 });
     expect([r.status, r.calls]).toEqual([0, ['start -x studio,imgproxy']]);
-    expect(r.stdout).toMatch(/^::warning title=The rehearsal stack — a port it needs was still held after 1 s::still held: 54324/m);
+    expect(r.stdout).toMatch(/^::warning title=The rehearsal stack — a port it needs was still held after 1 s::still held: 54324%0Aheld by: ESTAB 0 0 10\.1\.0\.4:54324 140\.82\.112\.4:443/m);
+  });
+
+  it('--reserve keeps the ports and starts nothing: the job\'s first step (run 39249504168)', () => {
+    const r = start([], { args: ['--reserve', 'The rehearsal stack'], extra: '54330' });
+    expect([r.status, r.calls, r.reserved]).toEqual([0, [''], [...PORTS.split(','), '54330'].map(Number).sort((a, b) => a - b).join(',')]);
   });
 
   it('a kernel that will not reserve them is said, and the start goes on', () => {
@@ -154,6 +159,24 @@ describe('the stack starts once, or once more only when the runner was at fault'
       expect(text).toContain('bash mobile/e2e/start-stack.sh ');
       expect(text).not.toMatch(/supabase start -x/);
     }
+  });
+
+  it('keeps the ports first in every job that starts the stack: the step after its checkout', () => {
+    const late: string[] = [];
+    for (const wf of ['db-integration.yml', 'e2e.yml', 'load.yml']) {
+      const lines = readFileSync(join(MOBILE, '..', '.github', 'workflows', wf), 'utf8').split(/\r?\n/);
+      const starts = lines.flatMap((l, i) => (/bash mobile\/e2e\/start-stack\.sh (?!--reserve)/.test(l) ? [i] : []));
+      expect(starts.length).toBeGreaterThan(0);
+      for (const at of starts) {
+        // The job this start is in: its checkout, then the next step's run.
+        const job = lines.slice(0, at).map((l, i) => [l, i] as const).filter(([l]) => /^  [a-z-]+:$/.test(l)).at(-1)?.[1] ?? 0;
+        const checkout = lines.findIndex((l, i) => i > job && /- uses: actions\/checkout@/.test(l));
+        const next = lines.findIndex((l, i) => i > checkout && /^      - /.test(l));
+        const run = lines.slice(next, next + 3).find((l) => l.includes('run:')) ?? '';
+        if (!/run: bash mobile\/e2e\/start-stack\.sh --reserve /.test(run)) late.push(`${wf}: ${lines[job]?.trim()}`);
+      }
+    }
+    expect(late).toEqual([]);
   });
 
   it('keeps for the E2E stack the very ports e2e.yml starts the fault proxy on', () => {

@@ -233,7 +233,8 @@ describe('the job', () => {
   it('places, starts, stands in, warms, seals, builds, migrates, then asks — in that order', () => {
     const order = [
       'node mobile/e2e/functions/place.mjs',
-      'bash mobile/e2e/start-stack.sh',
+      // The start, not the job's first step that only keeps its ports (start-stack.sh --reserve).
+      'bash mobile/e2e/start-stack.sh studio',
       'node mobile/e2e/functions/stand-ins.mjs',
       'node mobile/e2e/functions/warm.mjs',
       'bash mobile/e2e/functions/seal-vendors.sh',
