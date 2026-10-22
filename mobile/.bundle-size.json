@@ -1,10 +1,10 @@
 {
   "ios": {
-    "bytes": 11624877,
-    "why": "the phone bundle trimmed (15.0 MB before): only the icons the app imports, no RevenueCat web mode, no Sentry web replay or feedback, one copy of zod and react-hook-form"
+    "bytes": 11744818,
+    "why": "CI's measure at bbf81e25 (2026-10-22): Reanimated 4.3.4 for the mount-order crash fix (~88 KB), and the country names, the failure family and the review's words (~29 KB); before it, the phone bundle trimmed from 15.0 MB"
   },
   "android": {
-    "bytes": 11626517,
-    "why": "the phone bundle trimmed (15.0 MB before): only the icons the app imports, no RevenueCat web mode, no Sentry web replay or feedback, one copy of zod and react-hook-form"
+    "bytes": 11747870,
+    "why": "CI's measure at bbf81e25 (2026-10-22): Reanimated 4.3.4 for the mount-order crash fix (~88 KB), and the country names, the failure family and the review's words (~29 KB); before it, the phone bundle trimmed from 15.0 MB"
   }
 }
