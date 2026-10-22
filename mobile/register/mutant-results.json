@@ -420,6 +420,13 @@
     "verdict": "caught"
   },
   {
+    "class": "CI-schedule-stops-unheard",
+    "mutant": "shape-heartbeat-silent",
+    "proof": "m1",
+    "commit": "4ca1b42436cfcc17ebcdcd8bf067a32695f0e5ab",
+    "verdict": "caught"
+  },
+  {
     "class": "TYPE-italic-faked",
     "mutant": "shape-italic-asked",
     "proof": "m1",
