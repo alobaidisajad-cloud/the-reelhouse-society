@@ -364,6 +364,13 @@
     "verdict": "caught"
   },
   {
+    "class": "LAYOUT-fitted-by-width-alone",
+    "mutant": "shape-foot-never-gives-way",
+    "proof": "m1",
+    "commit": "e8aee3bb1031f48e64b7c8d04a9d3771cca79acb",
+    "verdict": "caught"
+  },
+  {
     "class": "UI-unready-faded",
     "mutant": "shape-share-faded",
     "proof": "m1",
