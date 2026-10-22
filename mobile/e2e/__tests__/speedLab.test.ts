@@ -189,6 +189,51 @@ describe('the signed-in scrolls, judged', () => {
   });
 });
 
+/**
+ * A screens folder with a reel/ folder: each build's rounds of the Reel, each scrolled far, its
+ * opening and its frames as given (ready ms, frames drawn, p90 ms per round; every frame janky, as on the lab's GPU).
+ */
+function reelRounds(name: string, builds: Record<string, { ready: number[]; frames: number[]; p90: number[] }>) {
+  const d = scrolled(name, Array.from({ length: 11 }, (_, i) => hash(i)));
+  const reel = join(d, 'reel');
+  mkdirSync(reel);
+  for (const [b, r] of Object.entries(builds)) {
+    r.ready.forEach((ms, i) => {
+      const f = join(reel, `${b}-${i + 1}`);
+      writeFileSync(`${f}.moves`, Array.from({ length: 11 }, (_, k) => `${hash(k)}  -`).join('\n'));
+      writeFileSync(`${f}.gfx`, `Total frames rendered: ${r.frames[i] ?? 0}\nJanky frames: ${r.frames[i] ?? 0} (100.00%)\n50th percentile: 800ms\n90th percentile: ${r.p90[i] ?? 0}ms\n99th percentile: 2000ms\n`);
+      writeFileSync(`${f}.log`, `10-22 16:00:32.537 W/ReactNativeJS( 5765): [e2e] screen.ready {"name":"reel","ms":${ms}}\n`);
+    });
+  }
+  return d;
+}
+// Fourteen rounds, as scrolls.sh runs: the fewest at which a clear shift is called (scrolls.sh says why).
+const around = (base: number) => [0, 3, -2, 5, -4, 1, -1, 2, 4, -3, 6, -5, -6, 7].map((n) => base + n);
+
+describe("the Reel's layers, costed", () => {
+  it('names a layer whose removal opens the Reel faster, against A, and calls nothing on noise', () => {
+    const r = run('scrolls.mjs', [reelRounds('reel-costs', {
+      A: { ready: around(3000), frames: around(50), p90: around(20) },
+      Rb: { ready: around(2000), frames: around(50), p90: around(20) },
+    })]);
+    expect(r.status).toBe(0);
+    const row = (b: string) => r.stdout.split('\n').find((l) => l.startsWith(`${b} `)) ?? '';
+    expect(row('A')).toMatch(/^A\s+14\s+3000\.5\s+50\.5\s+800\s+20\.5$/);
+    expect(row('Rb')).toMatch(/^Rb\s+14\s+2000\.5 -1000\*\s+50\.5 \+0 \s+800 \+0 \s+20\.5 \+0 $/);
+  });
+
+  it('fails when A was never scrolled, or a round of an arm ran out, by name', () => {
+    const r = run('scrolls.mjs', [reelRounds('reel-no-a', { Rb: { ready: around(2000), frames: around(50), p90: around(20) } })]);
+    expect(r.status).toBe(1);
+    expect(r.stdout).toContain('reel: A, the app as it is, was never scrolled: nothing to compare');
+    const short = reelRounds('reel-short', { A: { ready: around(3000), frames: around(50), p90: around(20) } });
+    writeFileSync(join(short, 'reel', 'A-3.moves'), [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1].map((i) => `${hash(i)}  -`).join('\n'));
+    const s = run('scrolls.mjs', [short]);
+    expect(s.status).toBe(1);
+    expect(s.stdout).toContain('reel A-3: the list stopped after 1 of 5 swipes');
+  });
+});
+
 describe('the house the lab scrolls', () => {
   const seed = (args: string[]) => spawnSync(process.execPath, [join(MOBILE, 'e2e', 'db', 'lab-seed.mjs'), ...args], { cwd: MOBILE, encoding: 'utf8' });
 

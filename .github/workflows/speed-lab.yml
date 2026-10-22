@@ -31,6 +31,10 @@ on:
         description: 'the signed-in busy screens, each scrolled and timed, on a seeded house'
         type: boolean
         default: true
+      reel_arms:
+        description: "the Reel's arms of arm.mjs (P0.111), each opened and scrolled against A with the scrolls, space-separated"
+        type: string
+        default: 'Rb Rw Rl Rt Rs Rp R0'
 
 permissions:
   contents: read
@@ -267,12 +271,15 @@ jobs:
 
   # Signed in, on the sealed world as the Sealed E2E builds it, filled by e2e/db/lab-seed.mjs: each
   # busy screen opened cold, shot, and scrolled ten swipes with its frames counted (scrolls.sh). The
-  # app is built before the seal, which firewalls addresses the build's downloads share.
+  # app is built before the seal, which firewalls addresses the build's downloads share. The Reel's
+  # arms (P0.111) are built beside it, and the Reel opened and scrolled on each, rounds turned.
   scrolls:
     name: 🔬 Android — the busy screens, signed in and scrolled
     if: ${{ inputs.scrolls }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 150
+    timeout-minutes: 240
+    env:
+      LAB_REEL_ARMS: ${{ inputs.reel_arms }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: The stack's ports, kept first
@@ -340,14 +347,22 @@ jobs:
           set -u
           B="$RUNNER_TEMP/build.log"
           mkdir -p "$RUNNER_TEMP/apks"
-          if ! { npx expo prebuild --platform android --no-install --clean \
-              && (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
-                    "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g"); } > "$B" 2>&1; then
-            { grep -n -A 20 'What went wrong' "$B" | head -n 40; tail -n 30 "$B"; } > "$RUNNER_TEMP/build-errors.txt"
+          fail() {
+            { echo "$1"; grep -n -A 20 'What went wrong' "$B" | head -n 40; grep -nE '^e: |error:|arm: ' "$B" | head -n 20; tail -n 30 "$B"; } > "$RUNNER_TEMP/build-errors.txt"
             node e2e/annotate.mjs "The lab's signed-in build failed" "$RUNNER_TEMP/build-errors.txt"
             exit 1
-          fi
-          cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/A.apk"
+          }
+          build() {
+            git checkout -- src app
+            if [ "$1" != A ]; then node e2e/lab/arm.mjs "$1" >> "$B" 2>&1 || fail "arm $1 does not apply"; fi
+            (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+                "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build $1"
+            cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/$1.apk"
+            echo "built $1: $(stat -c %s "$RUNNER_TEMP/apks/$1.apk") bytes"
+          }
+          npx expo prebuild --platform android --no-install --clean > "$B" 2>&1 || fail "prebuild"
+          for arm in A $LAB_REEL_ARMS; do build "$arm"; done
+          git checkout -- src app
           pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
 
       - name: Supabase CLI
@@ -470,7 +485,7 @@ jobs:
           node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64'
 
       - name: Signed in, every busy screen scrolled
-        timeout-minutes: 60
+        timeout-minutes: 160
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34

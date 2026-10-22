@@ -20,6 +20,13 @@
  *   N       no light
  *   STILL   the welcome's endless loops stilled: for the iOS simulator, whose Reduce Motion
  *           cannot be set; every iOS build carries it, so only the light differs between them
+ *
+ * The Reel's layers (WORKLIST P0.111), each switched off alone, signed in (scrolls.sh opens and
+ * scrolls the Reel on each build, against A):
+ *   Rb      no projector beam        Rw  no page wash           Rl  no room lamp
+ *   Rt      the top bar as scrolled, moved by nothing          Rs  no scroll bar
+ *   Rp      the pulses at rest and the curate button's sheen gone
+ *   R0      all of them: the floor
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -163,6 +170,53 @@ const still = [
   edit('src/components/auth/SocietySeal.tsx', '    if (isFocused) {', '    if (isFocused && !globalThis) {'),
 ];
 
+// The Reel's layers, each switched off alone, so its opening and its scroll name what each costs.
+const REEL_FILE = 'app/(tabs)/reels.tsx';
+const TOPBAR_FILE = 'src/components/layout/TopNavBar.tsx';
+const SCROLL_PROGRESS = '    const scrollProgress = Math.min(1, Math.max(0, globalScrollY.value / 100));\n';
+
+const reelNoBeam = [edit(REEL_FILE, '      <ReelProjectorBeam scrollY={activeScrollY} />\n', '')];
+const reelNoWash = [edit(REEL_FILE, [
+  "      {/* The page's own fade, thinned so the projector's light shows through. */}",
+  '      <LinearGradient',
+  "        colors={[colors.ink, 'rgba(13,11,9,1)', colors.soot]}",
+  '        locations={[0, 0.4, 1]}',
+  '        style={[StyleSheet.absoluteFillObject, WASH]}',
+  '      />',
+  '',
+].join('\n'), '')];
+const reelNoLamp = [edit(REEL_FILE, '      <RoomLight room="reel" />\n      {readyMark}\n', '      {readyMark}\n')];
+// The top bar drawn as it is once scrolled, and moved by nothing.
+const reelBarStill = [
+  edit(TOPBAR_FILE, '  const animatedProps = useAnimatedProps(() => {\n' + SCROLL_PROGRESS,
+    '  const animatedProps = useAnimatedProps(() => {\n    const scrollProgress = 1;\n'),
+  edit(TOPBAR_FILE, '  const animatedBlurStyle = useAnimatedStyle(() => {\n' + SCROLL_PROGRESS,
+    '  const animatedBlurStyle = useAnimatedStyle(() => {\n    const scrollProgress = 1;\n'),
+];
+const reelNoScrollbar = [
+  edit('src/components/reels/ReelsFeedList.tsx', '      <CinematicScrollbar scrollY={overallLogsScrollY} scrollHeight={scrollHeight} viewHeight={viewHeight} isScrolling={isScrolling} topInset={topPad} bottomInset={bottomInset} />\n', ''),
+  edit('src/components/reels/ReelsStackList.tsx', '      <CinematicScrollbar scrollY={stacksScrollY} scrollHeight={scrollHeight} viewHeight={viewHeight} isScrolling={isScrolling} topInset={topPad} bottomInset={bottomInset} />\n', ''),
+];
+// The active filter's pulse and the header's live pulse at their resting light; the curate button's sheen gone.
+const reelPulsesStill = [
+  edit('src/components/reels/ReelsCards.tsx', '      pulse.value = withRepeat(withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }), -1, true);\n',
+    '      pulse.value = 0.75;\n'),
+  edit('src/components/reels/ReelsHeader.tsx', [
+    '      livePulse.value = withRepeat(',
+    '        withSequence(withTiming(1, { duration: 1000 }), withTiming(0.4, { duration: 1000 })),',
+    '        -1,',
+    '        true',
+    '      );',
+    '',
+  ].join('\n'), '      livePulse.value = 0.8;\n'),
+  edit('src/components/theme/BrassSheen.tsx',
+    'export const BrassSheen = memo(function BrassSheen() {\n',
+    'export const BrassSheen = memo(function BrassSheen() {\n  if (globalThis) return null;\n'),
+];
+
+/** The Reel's arms: each layer alone, and all of them (R0, the floor). */
+export const REEL_ARMS = ['Rb', 'Rw', 'Rl', 'Rt', 'Rs', 'Rp', 'R0'];
+
 export const ARMS = {
   Ws: [...svgRoom, ...svgVignette, ...svgHalo],
   Dm: [...lampDispatch, ...noVignette, ...noHalo],
@@ -175,6 +229,13 @@ export const ARMS = {
   Ps: [...spotlightOnWelcome, ...noVignette, ...noHalo, ...svgSpotlight],
   N: [...noRoom, ...noVignette, ...noHalo],
   STILL: still,
+  Rb: reelNoBeam,
+  Rw: reelNoWash,
+  Rl: reelNoLamp,
+  Rt: reelBarStill,
+  Rs: reelNoScrollbar,
+  Rp: reelPulsesStill,
+  R0: [...reelNoBeam, ...reelNoWash, ...reelNoLamp, ...reelBarStill, ...reelNoScrollbar, ...reelPulsesStill],
 };
 
 /** The scenes the shots compare: each one's main build, its SVG build, and what it shows. */
