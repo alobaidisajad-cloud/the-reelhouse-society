@@ -413,6 +413,13 @@
     "verdict": "caught"
   },
   {
+    "class": "UI-entrance-left-unseen",
+    "mutant": "shape-entrance-written-by-hand",
+    "proof": "m1",
+    "commit": "7c4a2475b473612040e4a6fa6ea65d5cd9a7ed52",
+    "verdict": "caught"
+  },
+  {
     "class": "TYPE-italic-faked",
     "mutant": "shape-italic-asked",
     "proof": "m1",
