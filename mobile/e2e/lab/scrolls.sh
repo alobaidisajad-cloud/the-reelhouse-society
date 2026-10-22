@@ -9,14 +9,18 @@
 # counters reset, then ten swipes of 60% of the screen in ONE adb shell call, a hash of the screen
 # after each, then its frame counters read. scrolls.mjs judges them: a list that stopped moving
 # before three screen heights fails by name. With LAB_REEL_ARMS, the Reel is then opened and
-# scrolled on A and on each of those arms, in rounds (below), into reel/. Everything lands in
-# $RUNNER_TEMP/lab/scrolls.
+# scrolled on A and on each of those arms, in blocks (below), into reel/. LAB_PART says which half
+# this boot runs (screens, reel; both when unset): the lab runs each on its own boot, and keeps the
+# first's files before the second starts, so a runner lost in one cannot lose the other. Everything
+# lands in $RUNNER_TEMP/lab/scrolls.
 set -u
 PKG=com.reelhouse.society
 OUT="$RUNNER_TEMP/lab/scrolls"
 MAESTRO=${MAESTRO_BIN:-$HOME/.maestro/bin/maestro}
+PART=${LAB_PART:-all}
 mkdir -p "$OUT"
-: > "$OUT/anomalies.txt"
+# The Reel's half adds to the screens' record; it never empties it.
+[ "$PART" = reel ] || { : > "$OUT/anomalies.txt"; : > "$OUT/device.txt"; }
 
 adb root > /dev/null 2>&1
 sleep 3
@@ -29,12 +33,16 @@ done
 . "$(dirname "$0")/../no-keyboard.sh"
 load1() { adb shell cat /proc/loadavg | cut -d' ' -f1 | tr -d '\r'; }
 for i in $(seq 1 96); do awk -v l="$(load1)" 'BEGIN { exit !(l < 1.0) }' && break; sleep 5; done
-echo "settled at load $(load1); screen $(adb shell wm size | tr -d '\r')" > "$OUT/device.txt"
+echo "$PART: settled at load $(load1); screen $(adb shell wm size | tr -d '\r')" >> "$OUT/device.txt"
 
 adb install -r "$RUNNER_TEMP/apks/A.apk" > "$OUT/install.txt" 2>&1 || { echo "install failed: $(tail -n 2 "$OUT/install.txt")" >> "$OUT/anomalies.txt"; exit 0; }
 adb shell cmd package compile -f -m verify "$PKG" > /dev/null 2>&1
-if ! "$MAESTRO" test -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
-    mobile/e2e/lab/sign-in.yaml > "$OUT/sign-in.txt" 2>&1 < /dev/null; then
+"$MAESTRO" test -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
+  mobile/e2e/lab/sign-in.yaml > "$OUT/sign-in.txt" 2>&1 < /dev/null
+signed=$?
+# Maestro's record holds the password as typed: out at once, so each half's files are kept clean.
+node mobile/e2e/scrub.mjs "$OUT/sign-in.txt" > /dev/null
+if [ $signed -ne 0 ]; then
   { echo "the member could not be signed in:"; tail -n 20 "$OUT/sign-in.txt"; } >> "$OUT/anomalies.txt"
   # What the phone showed, and what the app said, so the cause is read, not guessed.
   adb exec-out screencap -p > "$OUT/sign-in-failed.png"
@@ -66,36 +74,42 @@ scroll_one() {
   adb logcat -d -v threadtime > "$f.log"
 }
 
-for round in 1 2; do
-  order=$SCREENS
-  [ $round = 2 ] && order=$(echo "$SCREENS" | tr ' ' '\n' | tac | tr '\n' ' ')
-  for entry in $order; do
-    name=${entry%%|*}; rest=${entry#*|}; link=${rest%|*}; way=${rest##*|}
-    scroll_one "$link" "$way" "$OUT/$name-$round"
+if [ "$PART" != reel ]; then
+  for round in 1 2; do
+    order=$SCREENS
+    [ $round = 2 ] && order=$(echo "$SCREENS" | tr ' ' '\n' | tac | tr '\n' ' ')
+    for entry in $order; do
+      name=${entry%%|*}; rest=${entry#*|}; link=${rest%|*}; way=${rest##*|}
+      scroll_one "$link" "$way" "$OUT/$name-$round"
+    done
   done
-done
+fi
 
 # The Reel on A and on each of its arms (WORKLIST P0.111, arm.mjs): each build installed over the
-# signed-in member, who stays signed in, the Reel opened cold and scrolled; REEL_ROUNDS rounds, the
-# order turned each round, so a slow minute of the runner falls on every build alike. Fourteen a
-# side: on rounds as noisy as ±10%, the rank-sum test (scrolls.mjs) gives a 10% shift p ≈ 1.5e-4,
-# under Holm's bar for seven arms by five measures (2.9e-4); eight gave 4e-3.
-REEL_ROUNDS=14
-if [ -n "${LAB_REEL_ARMS:-}" ]; then
+# signed-in member, who stays signed in, then the Reel opened cold and scrolled ROUNDS_EACH times;
+# two blocks, the builds' order turned in the second, so a slow stretch of the runner falls on every
+# build alike. One install a build a block: installing before every round (speed lab 39820804347)
+# took the run past its runner. Fourteen rounds a build: on rounds as noisy as ±10%, the rank-sum
+# test (scrolls.mjs) gives a 10% shift p ≈ 1.5e-4, under Holm's bar for seven arms by five measures
+# (2.9e-4); eight gave 4e-3.
+ROUNDS_EACH=7
+if [ "$PART" != screens ] && [ -n "${LAB_REEL_ARMS:-}" ]; then
   mkdir -p "$OUT/reel"
   builds="A $LAB_REEL_ARMS"
-  for round in $(seq 1 $REEL_ROUNDS); do
+  for block in 1 2; do
     order=$builds
-    [ $((round % 2)) = 0 ] && order=$(echo "$builds" | tr ' ' '\n' | grep -v '^$' | tac | tr '\n' ' ')
+    [ $block = 2 ] && order=$(echo "$builds" | tr ' ' '\n' | grep -v '^$' | tac | tr '\n' ' ')
     for b in $order; do
       if ! adb install -r "$RUNNER_TEMP/apks/$b.apk" > "$OUT/reel/install.txt" 2>&1; then
         echo "the Reel's build $b did not install: $(tail -n 1 "$OUT/reel/install.txt")" >> "$OUT/anomalies.txt"
         continue
       fi
       adb shell cmd package compile -f -m verify "$PKG" > /dev/null 2>&1
-      scroll_one reels down "$OUT/reel/$b-$round"
+      for r in $(seq 1 $ROUNDS_EACH); do
+        scroll_one reels down "$OUT/reel/$b-$(( (block - 1) * ROUNDS_EACH + r ))"
+      done
     done
   done
 fi
-echo "done at load $(load1)" >> "$OUT/device.txt"
+echo "$PART: done at load $(load1)" >> "$OUT/device.txt"
 exit 0

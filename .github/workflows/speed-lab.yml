@@ -487,7 +487,7 @@ jobs:
           node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64'
 
       - name: Signed in, every busy screen scrolled
-        timeout-minutes: 160
+        timeout-minutes: 60
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34
@@ -498,12 +498,37 @@ jobs:
           heap-size: 576M
           disable-animations: true
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
-          script: LAB_IDS="$RUNNER_TEMP/lab-ids.json" bash mobile/e2e/lab/scrolls.sh
+          script: LAB_PART=screens LAB_IDS="$RUNNER_TEMP/lab-ids.json" bash mobile/e2e/lab/scrolls.sh
 
       # Maestro's record holds the member's password as typed: out of every kept file first.
       - name: The member's password, out of the lab's files
         if: always()
         run: node mobile/e2e/scrub.mjs "$RUNNER_TEMP/lab"
+
+      # Kept before the Reel's half begins: a runner lost there (speed lab 39820804347 kept nothing)
+      # cannot take these with it.
+      - name: Keep the busy screens
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: speed-lab-screens
+          path: ${{ runner.temp }}/lab/scrolls
+          if-no-files-found: ignore
+
+      - name: The Reel, on A and each of its arms
+        if: ${{ !cancelled() && inputs.reel_arms != '' }}
+        timeout-minutes: 120
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 4096M
+          heap-size: 576M
+          disable-animations: true
+          emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          script: LAB_PART=reel LAB_IDS="$RUNNER_TEMP/lab-ids.json" bash mobile/e2e/lab/scrolls.sh
 
       - name: The scrolls, judged
         if: ${{ !cancelled() }}
