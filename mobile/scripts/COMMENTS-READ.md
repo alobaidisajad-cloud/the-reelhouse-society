@@ -1436,3 +1436,4 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/lab/sign-in.yaml | 2026-10-22 | written: the seeded member signed in once from a cleared app, by the flows' own subflow |
 | e2e/__tests__/iosFlows.test.ts | 2026-10-22 | written: the iPhone's flows are flows of .maestro that need no server, and the launch check runs each on its own simulator (P0.89) |
 | e2e/no-keyboard.sh | 2026-10-22 | moved whole from run-flows.sh: the phone with no keyboard apps, no input method and no autofill, sourced by run-flows.sh and the speed lab's scrolls.sh; a keyboard left stops the run |
+| .maestro/subflows/open_link_on_ios.yaml | 2026-10-22 | written: iOS's own "Open in ...?" before a link opens the app, answered as a member does; nothing if it never came |

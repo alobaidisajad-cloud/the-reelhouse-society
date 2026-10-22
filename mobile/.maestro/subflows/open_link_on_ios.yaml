@@ -1,0 +1,11 @@
+appId: com.reelhouse.society
+---
+# iOS's own alert before a link opens the app by its scheme ("Open in
+# ...?"), answered as a member answers it; nothing if it never came.
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true

@@ -10,6 +10,11 @@ appId: com.reelhouse.society
       id: "home-tab"
     timeout: 20000
 - openLink: "reelhouse://reset-password"
+# iOS asks before a link opens an app by its own scheme ("Open in ...?").
+- runFlow:
+    when:
+      platform: iOS
+    file: subflows/open_link_on_ios.yaml
 - extendedWaitUntil:
     visible: "No Active Session"
     timeout: 10000
@@ -25,6 +30,10 @@ appId: com.reelhouse.society
 # one the app does not have, so it lands on +not-found.
 - stopApp
 - openLink: "reelhouse://_sitemap"
+- runFlow:
+    when:
+      platform: iOS
+    file: subflows/open_link_on_ios.yaml
 - extendedWaitUntil:
     visible: "ROUTE NOT IN THE ARCHIVE"
     timeout: 30000
