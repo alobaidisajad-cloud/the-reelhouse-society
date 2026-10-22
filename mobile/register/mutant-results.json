@@ -621,5 +621,26 @@
     "proof": "m5",
     "commit": "9b535e9dfacda92e5929c483b196e23b83cef3be",
     "verdict": "caught"
+  },
+  {
+    "class": "LIGHT-unproven-on-device",
+    "mutant": "shape-lab-arm-drifted",
+    "proof": "m1",
+    "commit": "ddb79777c686ed7dddbcef792b009bf0a0288f8f",
+    "verdict": "caught"
+  },
+  {
+    "class": "LIGHT-unproven-on-device",
+    "mutant": "shape-blank-light-passes",
+    "proof": "m2",
+    "commit": "ddb79777c686ed7dddbcef792b009bf0a0288f8f",
+    "verdict": "caught"
+  },
+  {
+    "class": "LIGHT-unproven-on-device",
+    "mutant": "shape-aa-pair-unheard",
+    "proof": "m3",
+    "commit": "ddb79777c686ed7dddbcef792b009bf0a0288f8f",
+    "verdict": "caught"
   }
 ]
