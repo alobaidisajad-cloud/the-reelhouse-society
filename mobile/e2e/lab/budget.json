@@ -1,0 +1,26 @@
+{
+  "about": "The frame budget of WORKLIST P0.112, written 2026-10-23 before its first measured run, no number taken from a measure of the screens it judges. The lab draws with a software GPU on which every frame is slow, so each line is stated against the control page measured in the same run (absolute where a principle gives one), with margins from published guidance. e2e/lab/scrolls.mjs (budgetOf) holds each busy screen to it; a screen over a line is over budget, its cause named by a lab arm and fixed. P2.5's budget file takes these over when it is made.",
+  "control": "settings",
+  "lines": {
+    "ready": {
+      "overControlMs": 1000,
+      "reason": "RAIL (web.dev): content within a second keeps the person's flow; the control carries the runner's own floor"
+    },
+    "jsOpen": {
+      "max": 2,
+      "reason": "an opening reads and lays out a page; two tasks over 50 ms keep the first touch within RAIL's 100 ms response"
+    },
+    "jsScroll": {
+      "max": 0,
+      "reason": "RAIL: a task over 50 ms delays the response to the next touch, and a scroll is a run of touches"
+    },
+    "slowUi": {
+      "overControlPoints": 10,
+      "reason": "a busy screen may cost more of the UI thread than plain rows, but not a tenth more of its frames"
+    },
+    "p90": {
+      "timesControl": 1.25,
+      "reason": "pictures and light cost something to draw, a quarter over the plain page, never a doubling"
+    }
+  }
+}

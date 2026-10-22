@@ -244,6 +244,59 @@ describe("the Reel's layers, costed", () => {
   });
 });
 
+/** A screens folder: each screen's two rounds, scrolled far, opened in `ready` ms, its frames and long JS tasks as given. */
+function budgetRounds(name: string, screens: Record<string, { ready: number; slowUi: number; p90: number; jsOpen?: number; jsScroll?: number; ready2?: number }>) {
+  const d = fresh(name);
+  const said = (event: string, detail: object) => `10-23 10:00:00.000 W/ReactNativeJS( 1): [e2e] ${event} ${JSON.stringify(detail)}\n`;
+  const READY: Record<string, string> = { settings: 'settings', reel: 'reel', log: 'log' };
+  for (const [screen, r] of Object.entries(screens)) {
+    for (const round of [1, 2]) {
+      const f = join(d, `${screen}-${round}`);
+      writeFileSync(`${f}.moves`, Array.from({ length: 11 }, (_, k) => `${hash(k)}  -`).join('\n'));
+      writeFileSync(`${f}.gfx`, `Total frames rendered: 100\nJanky frames: 100 (100.00%)\n50th percentile: 700ms\n90th percentile: ${r.p90}ms\n99th percentile: 2000ms\nNumber Slow UI thread: ${r.slowUi}\n`);
+      writeFileSync(`${f}.log`, said('lab.frames.on', { path: '/' }) + said('screen.ready', { name: READY[screen], ms: round === 2 && r.ready2 != null ? r.ready2 : r.ready })
+        + said('lab.frames', { path: '/', js: { long: r.jsOpen ?? 0, longest: 80 }, ui: { frames: 40, slow: 5, worst: 900 } })
+        + '10-23 10:00:09.000 I/ReelLab( 2): lab.scroll.begin\n'
+        + said('lab.frames', { path: '/', js: { long: r.jsScroll ?? 0, longest: 80 }, ui: { frames: 40, slow: 5, worst: 900 } }));
+    }
+  }
+  return d;
+}
+
+describe('the frame budget (P0.112)', () => {
+  const budget = JSON.parse(readFileSync(join(LAB, 'budget.json'), 'utf8')) as { control: string; lines: Record<string, { reason: string } & Record<string, number | string>> };
+
+  it('gives every line a reason, and is read whole: no line the judge does not hold a screen to', () => {
+    expect(Object.keys(budget.lines).sort()).toEqual(['jsOpen', 'jsScroll', 'p90', 'ready', 'slowUi']);
+    expect(Object.entries(budget.lines).filter(([, l]) => (l.reason ?? '').length < 40).map(([k]) => k)).toEqual([]);
+    // The control is scrolled in every lab run, so the budget is never silently unjudged.
+    expect(readFileSync(join(LAB, 'scrolls.sh'), 'utf8')).toMatch(new RegExp(`SCREENS="[^"]* ${budget.control}\\|${budget.control}\\|down"`));
+  });
+
+  it('holds each screen to the control: over a line, named with the line and its reason; within, not', () => {
+    const r = run('scrolls.mjs', [budgetRounds('budget', {
+      settings: { ready: 400, slowUi: 30, p90: 800 },
+      reel: { ready: 1600, slowUi: 45, p90: 1100, jsOpen: 3, jsScroll: 1 },
+      log: { ready: 1300, slowUi: 38, p90: 990 },
+    })]);
+    expect(r.status).toBe(1);
+    const over = r.stdout.split('\n').filter((l) => l.startsWith('over budget: '));
+    expect(over).toEqual([
+      `over budget: reel: ready 1600 over its budget of 1400 (${budget.lines.ready.reason})`,
+      `over budget: reel: jsOpen 3 over its budget of 2 (${budget.lines.jsOpen.reason})`,
+      `over budget: reel: jsScroll 1 over its budget of 0 (${budget.lines.jsScroll.reason})`,
+      `over budget: reel: slowUi 45 over its budget of 40 (${budget.lines.slowUi.reason})`,
+      `over budget: reel: p90 1100 over its budget of 1000 (${budget.lines.p90.reason})`,
+    ]);
+  });
+
+  it('judges nothing without the control, and says so', () => {
+    const r = run('scrolls.mjs', [budgetRounds('no-control', { log: { ready: 9000, slowUi: 90, p90: 5000, jsScroll: 4 } })]);
+    expect(r.stdout).toContain('(no settings in this folder: the frame budget is not judged)');
+    expect(r.stdout).not.toContain('over budget:');
+  });
+});
+
 describe('the house the lab scrolls', () => {
   const seed = (args: string[]) => spawnSync(process.execPath, [join(MOBILE, 'e2e', 'db', 'lab-seed.mjs'), ...args], { cwd: MOBILE, encoding: 'utf8' });
 

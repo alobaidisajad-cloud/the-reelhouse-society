@@ -15,12 +15,15 @@
  * (costs): named, not judged, so the fix can follow the numbers.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { holm, P_CALL } from './analyze.mjs';
 
 export const FAR = 5;
+
+/** The page the frame budget measures the busy screens against (e2e/lab/budget.json). */
+export const CONTROL = 'settings';
 
 /** How many of the first FAR swipes moved the screen, from the hashes taken before and after each. */
 export function moved(text) {
@@ -38,7 +41,7 @@ export function framesOf(text) {
   const n = (re) => { const m = re.exec(text); return m ? +m[1] : null; };
   const frames = n(/Total frames rendered: (\d+)/);
   if (!frames) return null;
-  return { frames, janky: n(/Janky frames: (\d+)/), p50: n(/50th percentile: (\d+)ms/), p90: n(/90th percentile: (\d+)ms/), p99: n(/99th percentile: (\d+)ms/) };
+  return { frames, janky: n(/Janky frames: (\d+)/), p50: n(/50th percentile: (\d+)ms/), p90: n(/90th percentile: (\d+)ms/), p99: n(/99th percentile: (\d+)ms/), slowUi: n(/Number Slow UI thread: (\d+)/) };
 }
 
 /** Every screen-round in the folder, judged: { lines, failed }. */
@@ -52,7 +55,8 @@ export function judge(dir) {
     const f = framesOf(read(`${run}.gfx`));
     const cell = (v) => String(v ?? '—').padStart(5);
     lines.push(`${run.padEnd(12)} ${cell(f?.frames).padStart(6)} ${cell(f?.janky).padStart(6)} ${cell(f?.p50)} ${cell(f?.p90)} ${cell(f?.p99)}  ${m.moved}/${FAR}`);
-    if (m.moved < FAR) failed.push(`${run}: the list stopped after ${m.moved} of ${FAR} swipes: it holds less than three screen heights`);
+    // The control is scrolled as far as it goes: it is measured for being the same in every build, not long.
+    if (m.moved < FAR && !run.startsWith(`${CONTROL}-`)) failed.push(`${run}: the list stopped after ${m.moved} of ${FAR} swipes: it holds less than three screen heights`);
     if (!f) failed.push(`${run}: no frames were measured for its scroll`);
   }
   if (runs.length === 0) failed.push('no screen was scrolled');
@@ -170,13 +174,86 @@ export function costs(dir) {
   return { lines, failed };
 }
 
+/**
+ * The long JavaScript tasks of a run, split where scrolls.sh marked the scroll's beginning
+ * (`lab.scroll.begin`): { open, scroll }; null when the frame record never ran. A second's line
+ * counts where it was written, so a second astride the mark counts with the scroll.
+ */
+export function jsLongSplitOf(text) {
+  if (!text.includes('[e2e] lab.frames.on ')) return null;
+  const mark = text.indexOf('lab.scroll.begin');
+  const sum = (part) => [...part.matchAll(/\[e2e\] lab\.frames (\{.*\})/g)]
+    .reduce((n, m) => { try { return n + (JSON.parse(m[1]).js?.long ?? 0); } catch { return n; } }, 0);
+  return mark < 0 ? { open: sum(text), scroll: null } : { open: sum(text.slice(0, mark)), scroll: sum(text.slice(mark)) };
+}
+
+/** Each busy screen's name in the lab, and the name its ready mark (useScreenReady) gives. */
+export const READY_NAMES = { reel: 'reel', salon: 'room', stack: 'stack', log: 'log', dispatch: 'dispatch', archive: 'member', settings: 'settings' };
+
+/**
+ * Each busy screen held to the frame budget (WORKLIST P0.112, e2e/lab/budget.json) against the
+ * control measured in the same run: per screen, the median over its rounds of its opening, its long
+ * JavaScript tasks opening and scrolling, its slow-UI-thread share and its p90 frame. A screen over
+ * any line is named with the line and the budget's reason: { lines, over }.
+ */
+export function budgetOf(dir, budget) {
+  const read = (f) => (existsSync(join(dir, f)) ? readFileSync(join(dir, f), 'utf8') : '');
+  const runs = readdirSync(dir).filter((f) => f.endsWith('.moves')).map((f) => f.replace(/\.moves$/, ''));
+  const screens = new Map();
+  for (const run of runs) {
+    const name = run.replace(/-\d+$/, '');
+    const f = framesOf(read(`${run}.gfx`));
+    const log = read(`${run}.log`);
+    const js = jsLongSplitOf(log);
+    screens.set(name, [...(screens.get(name) ?? []), {
+      ready: readyOf(log, READY_NAMES[name] ?? name),
+      jsOpen: js?.open ?? null,
+      jsScroll: js?.scroll ?? null,
+      slowUi: f?.frames && f.slowUi != null ? Math.round((1000 * f.slowUi) / f.frames) / 10 : null,
+      p90: f?.p90 ?? null,
+    }]);
+  }
+  const mid = (rows, key) => { const xs = rows.map((r) => r[key]).filter((v) => v != null); return xs.length ? median(xs) : null; };
+  const control = screens.get(budget.control) ?? [];
+  const c = { ready: mid(control, 'ready'), slowUi: mid(control, 'slowUi'), p90: mid(control, 'p90') };
+  const L = budget.lines;
+  const limits = {
+    ready: c.ready == null ? null : c.ready + L.ready.overControlMs,
+    jsOpen: L.jsOpen.max,
+    jsScroll: L.jsScroll.max,
+    slowUi: c.slowUi == null ? null : c.slowUi + L.slowUi.overControlPoints,
+    p90: c.p90 == null ? null : c.p90 * L.p90.timesControl,
+  };
+  const keys = ['ready', 'jsOpen', 'jsScroll', 'slowUi', 'p90'];
+  const cell = (v) => String(v == null ? '—' : Math.round(v * 10) / 10).padStart(10);
+  const lines = [
+    `The frame budget against ${budget.control} (e2e/lab/budget.json): each a median over its rounds`,
+    `screen    ${keys.map((k) => k.padStart(10)).join('')}`,
+    `budget    ${keys.map((k) => cell(limits[k])).join('')}`,
+  ];
+  const over = [];
+  // scrolls.sh always scrolls the control (speedLab.test.ts holds it): a folder without it is not a lab run's.
+  if (control.length === 0) return { lines: [`(no ${budget.control} in this folder: the frame budget is not judged)`], over };
+  for (const [name, rows] of [...screens.entries()].sort()) {
+    if (name === budget.control) { lines.push(`${name.padEnd(10)}${keys.map((k) => cell(mid(rows, k))).join('')}  (the control)`); continue; }
+    const got = Object.fromEntries(keys.map((k) => [k, mid(rows, k)]));
+    lines.push(`${name.padEnd(10)}${keys.map((k) => cell(got[k])).join('')}`);
+    for (const k of keys) {
+      if (limits[k] != null && got[k] != null && got[k] > limits[k]) over.push(`${name}: ${k} ${Math.round(got[k] * 10) / 10} over its budget of ${Math.round(limits[k] * 10) / 10} (${L[k].reason})`);
+    }
+  }
+  return { lines, over };
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const dir = process.argv[2];
   if (!dir || !existsSync(dir)) { console.error('usage: node e2e/lab/scrolls.mjs <scrolls-dir>'); process.exit(2); }
   const judged = judge(dir);
   const reel = existsSync(join(dir, 'reel')) ? costs(join(dir, 'reel')) : { lines: [], failed: [] };
-  const lines = [...judged.lines, ...(reel.lines.length ? ['', ...reel.lines] : [])];
-  const failed = [...judged.failed, ...reel.failed];
+  const budgetFile = join(dirname(fileURLToPath(import.meta.url)), 'budget.json');
+  const budget = budgetOf(dir, JSON.parse(readFileSync(budgetFile, 'utf8')));
+  const lines = [...judged.lines, '', ...budget.lines, ...(reel.lines.length ? ['', ...reel.lines] : [])];
+  const failed = [...judged.failed, ...budget.over.map((o) => `over budget: ${o}`), ...reel.failed];
   console.log([...lines, '', ...(failed.length ? ['FAILED:', ...failed] : ['every list held three screen heights, and every scroll was measured'])].join('\n'));
   process.exit(failed.length ? 1 : 0);
 }

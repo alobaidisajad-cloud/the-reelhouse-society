@@ -53,7 +53,8 @@ fi
 
 ids() { node -e "process.stdout.write(String(require(process.argv[1])[process.argv[2]]))" "$LAB_IDS" "$1"; }
 # Each screen: its name, its link, and the way its list reads on (a salon is read upward, to its older words).
-SCREENS="reel|reels|down salon|lounge/$(ids salon)|up stack|stacks/$(ids stack)|down log|log/$(ids log)|down dispatch|dispatch|down archive|user/$(ids member)?tab=archive|down"
+# Settings is the control the frame budget measures the others against (e2e/lab/budget.json).
+SCREENS="reel|reels|down salon|lounge/$(ids salon)|up stack|stacks/$(ids stack)|down log|log/$(ids log)|down dispatch|dispatch|down archive|user/$(ids member)?tab=archive|down settings|settings|down"
 read -r W H <<< "$(adb shell wm size | tr -d '\r' | grep -oE '[0-9]+x[0-9]+' | tail -n 1 | tr 'x' ' ')"
 X=$((W / 2)); Y1=$((H * 80 / 100)); Y2=$((H * 20 / 100))
 
@@ -69,6 +70,8 @@ scroll_one() {
   sleep 8
   adb exec-out screencap -p > "$f.png"
   adb shell dumpsys gfxinfo "$PKG" reset > /dev/null 2>&1
+  # Where the opening ends and the scroll begins, in the device log the judge splits (scrolls.mjs).
+  adb shell log -t ReelLab lab.scroll.begin
   adb shell "screencap | md5sum; for i in 1 2 3 4 5 6 7 8 9 10; do input swipe $X $from $X $to 350; sleep 1; screencap | md5sum; done" > "$f.moves" 2>&1
   adb shell dumpsys gfxinfo "$PKG" > "$f.gfx" 2>&1
   adb logcat -d -v threadtime > "$f.log"
