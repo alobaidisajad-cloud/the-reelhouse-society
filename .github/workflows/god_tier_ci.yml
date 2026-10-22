@@ -512,11 +512,15 @@ jobs:
         id: install-5
         timeout-minutes: 5
         continue-on-error: true
-        run: npx playwright install --with-deps chromium
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          npx playwright install --with-deps chromium
       - name: Chromium for the measuring tools, once more
         if: steps.install-5.outcome == 'failure'
         timeout-minutes: 5
-        run: npx playwright install --with-deps chromium
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          npx playwright install --with-deps chromium
       - name: Install Mobile Dependencies
         id: install-6
         timeout-minutes: 5
@@ -645,11 +649,15 @@ jobs:
         id: install-8
         timeout-minutes: 5
         continue-on-error: true
-        run: npx playwright install --with-deps chromium
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          npx playwright install --with-deps chromium
       - name: Chromium for the measuring tools, once more
         if: steps.install-8.outcome == 'failure'
         timeout-minutes: 5
-        run: npx playwright install --with-deps chromium
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          npx playwright install --with-deps chromium
       - name: Install Mobile Dependencies
         id: install-9
         timeout-minutes: 5
@@ -1024,11 +1032,15 @@ jobs:
         id: install-13
         timeout-minutes: 5
         continue-on-error: true
-        run: npx playwright install --with-deps
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          npx playwright install --with-deps
       - name: Playwright's browsers and their system libraries, once more
         if: steps.install-13.outcome == 'failure'
         timeout-minutes: 5
-        run: npx playwright install --with-deps
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          npx playwright install --with-deps
       
       # A path outside playwright.config.ts's testDir (./tests) silently finds nothing.
       - name: Run E2E Feed Tests

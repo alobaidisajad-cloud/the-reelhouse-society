@@ -314,6 +314,21 @@ it('every Gradle run finds its Android packages installed by a step tried once m
   expect(gradleFaults(wf(install + build('-Pandroid.builder.sdkDownload=false')))).toEqual([]);
 });
 
+/** Whether a command installs through apt, and whether it waits for the lock a try cut short leaves. */
+const installsByApt = (run: string) => /\bapt(-get)? install\b|--with-deps\b/.test(run);
+const waitsForTheLock = (run: string) => /DPkg::Lock::Timeout/.test(run);
+
+it('every apt install waits for the lock a try cut short at its limit leaves held', () => {
+  // God-Tier 39763330037: both first tries ran out of their five minutes, apt-get ran on, and each
+  // retry failed in a second on "Could not get lock /var/lib/dpkg/lock-frontend".
+  const steps = workflows.flatMap((w) => Object.entries(w.wf.jobs).flatMap(([job, j]) => ((j.steps ?? []) as RunStep[])
+    .filter((s) => s.run && installsByApt(s.run)).map((s) => ({ at: `${w.file} › ${job} › ${s.name}`, run: s.run! }))));
+  expect(steps.length).toBeGreaterThanOrEqual(10);
+  expect(steps.filter((s) => !waitsForTheLock(s.run)).map((s) => s.at)).toEqual([]);
+  expect(waitsForTheLock('npx playwright install --with-deps chromium')).toBe(false);
+  expect(installsByApt('npx playwright install chromium')).toBe(false);
+});
+
 it('every Android install asks the disk, not sdkmanager\'s exit code, whether its packages arrived', () => {
   // sdkmanager reports a broken download as a warning (Sealed E2E runs 38796451028, 38804362075).
   const asksTheDisk = (run: string) => /android-packages\.cjs --installed\b/.test(run);
