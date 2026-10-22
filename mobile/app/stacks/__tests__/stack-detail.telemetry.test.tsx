@@ -32,6 +32,8 @@ jest.mock('expo-router', () => ({
     router: { back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() },
     useLocalSearchParams: () => ({ id: STACK_ID }),
     useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
+    // As jest.setup.ts's own: the page's ready mark (useScreenReady) waits on its focus.
+    useFocusEffect: (cb: () => void) => require('react').useEffect(cb, [cb]),
 }));
 jest.mock('@tanstack/react-query', () => ({
     // Must be constructible: src/lib/queryClient.ts instantiates a QueryClient at

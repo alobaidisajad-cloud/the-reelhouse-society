@@ -135,7 +135,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
 | app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-08 | the share captured only once the card is whole; the 20 s limit |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
-| app/log/[id].tsx | 2026-10-15 | header and badge from usePushedHeaderTop; foot from useContentBottom |
+| app/log/[id].tsx | 2026-10-22 | edited: its ready mark (log) in all four trees; header and badge from usePushedHeaderTop; foot from useContentBottom |
 | app/lounge.tsx | 2026-10-01 | true as written |
 | app/lounge/[id].tsx | 2026-10-15 | edited: the room's read; the composer and its bars stand on the edge (BAR_FOOT_GAP); each scroll traced |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-04 | edited: a portrait without a photograph carries the whole first letter, unspoken |
@@ -143,10 +143,10 @@ without one). "Read" is the day its comments were last read against its code.
 | app/person/[id].tsx | 2026-10-15 | back, veil and scrollbar from usePushedHeaderTop; foot from useContentBottom |
 | app/reset-password.tsx | 2026-10-15 | back and form from usePushedHeaderTop; foot from useContentBottom |
 | app/settings.tsx | 2026-10-02 | read; sound |
-| app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-10-16 | edited: each event waited for; the close inside the keyboard's moment is the sheet's own, each press shown to land |
-| app/stacks/__tests__/stack-detail.telemetry.test.tsx | — |  |
+| app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-10-22 | edited: the router mock answers useFocusEffect as jest.setup.ts's does; each event waited for; the close inside the keyboard's moment is the sheet's own, each press shown to land |
+| app/stacks/__tests__/stack-detail.telemetry.test.tsx | 2026-10-22 | edited: the router mock answers useFocusEffect as jest.setup.ts's does;  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
-| app/stacks/[id].tsx | 2026-10-15 | chrome, hero and critiques from usePushedHeaderTop; foot from navMetrics; the critique field off the edge |
+| app/stacks/[id].tsx | 2026-10-22 | edited: its ready mark (stack) in all four trees; chrome, hero and critiques from usePushedHeaderTop; foot from navMetrics; the critique field off the edge |
 | app/user/[username].tsx | 2026-10-15 | edited: the read; centred states in a CentredRoom; foot a tab's or a pushed page's |
 | app/year-in-cinema.tsx | 2026-10-22 | edited: a plain paging ScrollView for the six slides, the note saying why not a list |
 | ARCHITECTURE.md | 2026-10-15 | edited: Image Caching is true now that every picture states memory-disk, and names the guard that holds it |
@@ -176,7 +176,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/routes.test.ts | 2026-10-17 | new |
 | e2e/__tests__/runFlows.rehearsal.test.ts | 2026-10-22 | edited: the fake phone's app process starts with a launch or a flow and ends with a stop or a clear, as a phone's does |
 | e2e/__tests__/runtimeDump.test.ts | 2026-10-15 | new: the runtime's parts joined per launch, held to the copy, and every way it says no |
-| e2e/__tests__/screenTimes.test.ts | 2026-10-16 | edited: its files come from the shared file list (test-utils/universe.js); edited: the ceilings file is what ceilingsFrom derives from the history |
+| e2e/__tests__/screenTimes.test.ts | 2026-10-22 | edited: a learning screen reported, not judged; a stale or ceilinged entry fails; the committed list holds; its files come from the shared file list (test-utils/universe.js); edited: the ceilings file is what ceilingsFrom derives from the history |
 | e2e/__tests__/shardVerdict.test.ts | 2026-10-15 | new: says no to a ceiling no shard reported, a missing or unfinished shard, a flow run twice or never; the verdict job fails with a failed shard |
 | e2e/__tests__/shards.test.ts | 2026-10-16 | edited: a shard's minutes are a whole number above 0, and printed for run-flows.sh |
 | e2e/__tests__/seed.rehearsal.test.ts | 2026-10-17 | edited: the walk's world too: two people with their own sessions, the rank grant, the Lounge read by a signed-in member alone |
@@ -232,9 +232,9 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/png.mjs | 2026-10-17 | new: a capture's pixels, Node's zlib alone; what it cannot read, refused by name |
 | e2e/prefetch-download-only.mjs | 2026-10-15 | new: the APK's prefetch on CachePolicy.DISK calls downloadOnly; not run for a shipped client |
 | e2e/route-judges.mjs | 2026-10-17 | new: every route the walk planned, captured as a picture; a plan of no route is unread; edited: a capture found at any depth of Maestro's output folder |
-| e2e/run-flows.sh | 2026-10-17 | edited: a fault run clears the fault before each flow and is judged by fault-judges.mjs; E2E_FLOWS=none runs no flows; with E2E_WALK, the route walk after the flows, judged by route-judges.mjs, its screens not held to the flows' ceilings; edited: the whole run on the phone as E2E_VARIANT has it, set before the run's log begins, waited for, put back at its end |
+| e2e/run-flows.sh | 2026-10-22 | edited: the speed gate reads the learning file beside the ceilings; a fault run clears the fault before each flow and is judged by fault-judges.mjs; E2E_FLOWS=none runs no flows; with E2E_WALK, the route walk after the flows, judged by route-judges.mjs, its screens not held to the flows' ceilings; edited: the whole run on the phone as E2E_VARIANT has it, set before the run's log begins, waited for, put back at its end |
 | e2e/runtime-dump.mjs | 2026-10-15 | new: the phone's runtime from the device log, held to the committed copy |
-| e2e/screen-times.mjs | 2026-10-16 | edited: --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs; edited: two ceilings a screen, derived by ceilingsFrom from e2e/screen-history.json |
+| e2e/screen-times.mjs | 2026-10-22 | edited: --learning: a new screen reported for LEARNING_DAYS, its entry failing past them or beside a ceiling; --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs; edited: two ceilings a screen, derived by ceilingsFrom from e2e/screen-history.json |
 | e2e/shard-verdict.mjs | 2026-10-15 | new: every shard finished, every flow ran once, every ceiling's screen reported somewhere |
 | e2e/flow-history.mjs | 2026-10-16 | edited: a shard with no logs is said; any other download failure ends the run in gh's words |
 | e2e/fault-proxy.mjs | 2026-10-16 | new: the network between the app and the house, a fault on command, a part stopped, the DNS blocked, every request logged; a slow link holds every piece in flight at once, one latency per reply |
@@ -852,7 +852,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/settings/DataVault.tsx | 2026-10-02 | no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
 | src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
 | src/features/settings/settings.styles.ts | 2026-10-02 | read; sound |
-| src/features/settings/SettingsScreen.tsx | 2026-10-15 | nav top from usePushedHeaderTop; foot from useContentBottom; the code window in a CentredCard |
+| src/features/settings/SettingsScreen.tsx | 2026-10-22 | edited: its ready mark (settings), ready at once: the lab's control page; nav top from usePushedHeaderTop; foot from useContentBottom; the code window in a CentredCard |
 | src/features/settings/SettingsSections.tsx | 2026-10-03 | edited: a new password is judged by passwordIsAccepted |
 | src/generated/lucideIcons.js | 2026-10-03 | generated by scripts/lucide-icons.js; its --check guard holds it |
 | src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx | 2026-10-01 | written: a follow that throws is said and rolled back |

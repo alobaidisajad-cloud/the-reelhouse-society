@@ -1,0 +1,8 @@
+{
+  "about": "Screens new to the speed gate (e2e/screen-times.mjs --learning): reported, not judged, from the date given, until their runs reach e2e/screen-history.json and ceilingsFrom derives their ceilings; then each comes off this list. An entry past LEARNING_DAYS, or one whose screen has a ceiling, fails the run. Added for WORKLIST P0.112's main screens.",
+  "learning": {
+    "log": "2026-10-22",
+    "settings": "2026-10-22",
+    "stack": "2026-10-22"
+  }
+}

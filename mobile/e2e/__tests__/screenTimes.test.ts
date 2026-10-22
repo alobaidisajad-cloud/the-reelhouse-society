@@ -87,6 +87,39 @@ describe('screen-times.mjs', () => {
     expect(out).toContain('✗ film has no ceiling');
   });
 
+  it('reports a screen the learning file names without judging it, and judges every other', () => {
+    const today = new Date().toISOString().slice(0, 10);
+    writeFileSync(join(dir, 'learning.json'), JSON.stringify({ learning: { film: today } }));
+    const { code, out } = run(LOG, { lobby: c(3000, 3000) }, '--learning', join(dir, 'learning.json'));
+    expect(code).toBe(0);
+    expect(out).toMatch(new RegExp(`film\\s+2\\s+1100 ms\\s+1400 ms\\s+learning since ${today}`));
+    const slow = run(LOG, { lobby: c(500, 500) }, '--learning', join(dir, 'learning.json'));
+    expect(slow.code).toBe(1);
+    expect(slow.out).toContain('✗ lobby took 2600 ms once');
+  });
+
+  it('fails a learning entry past its days, or one whose screen has a ceiling', () => {
+    const old = new Date(Date.now() - 15 * 86400000).toISOString().slice(0, 10);
+    writeFileSync(join(dir, 'learning.json'), JSON.stringify({ learning: { film: old } }));
+    const stale = run(LOG, { lobby: c(3000, 3000) }, '--learning', join(dir, 'learning.json'));
+    expect(stale.code).toBe(1);
+    expect(stale.out).toContain('✗ film has been learning 15 days, over 14');
+    const today = new Date().toISOString().slice(0, 10);
+    writeFileSync(join(dir, 'learning.json'), JSON.stringify({ learning: { lobby: today } }));
+    const both = run(LOG, { lobby: c(3000, 3000), film: c(3000, 3000) }, '--learning', join(dir, 'learning.json'));
+    expect(both.code).toBe(1);
+    expect(both.out).toContain('✗ lobby is learning but has a ceiling');
+  });
+
+  it('the committed learning file names only screens with no ceiling, none past its days, and run-flows.sh reads it', () => {
+    const { learning } = JSON.parse(readFileSync(join(__dirname, '..', 'screen-learning.json'), 'utf8')) as { learning: Record<string, string> };
+    const ceilings = JSON.parse(readFileSync(join(__dirname, '..', 'screen-ceilings.json'), 'utf8')) as Ceilings;
+    expect(Object.keys(learning).filter((name) => ceilings[name])).toEqual([]);
+    const days = (since: string) => (Date.now() - Date.parse(`${since}T00:00:00Z`)) / 86400000;
+    expect(Object.entries(learning).filter(([, since]) => !(days(since) >= 0 && days(since) <= 14))).toEqual([]);
+    expect(readFileSync(join(__dirname, '..', 'run-flows.sh'), 'utf8')).toContain('--learning mobile/e2e/screen-learning.json');
+  });
+
   it('fails a ceiling that measured nothing — but only when every flow ran', () => {
     const ceilings = { lobby: c(3000, 3000), film: c(1500, 1500), reader: c(2000, 2000) };
     expect(run(LOG, ceilings).code).toBe(0);

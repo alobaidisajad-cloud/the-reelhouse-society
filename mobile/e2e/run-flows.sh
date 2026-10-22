@@ -669,6 +669,8 @@ times_args=(--flow-times "$OUT/flow-times.txt")
 # and a variant's phone, or a lifecycle flow's changed one, is not the one they were measured on, so
 # their times are reported, and a screen that could not read still fails them.
 [ -f mobile/e2e/screen-ceilings.json ] && [ -z "${E2E_WALK:-}" ] && [ -z "${E2E_VARIANT:-}" ] && [ -z "${E2E_LIFECYCLE:-}" ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
+# A screen new to the gate is reported, not judged, while the learning file names it (screen-times.mjs).
+[ -f mobile/e2e/screen-ceilings.json ] && [ -f mobile/e2e/screen-learning.json ] && [ -z "${E2E_WALK:-}" ] && [ -z "${E2E_VARIANT:-}" ] && [ -z "${E2E_LIFECYCLE:-}" ] && times_args+=(--learning mobile/e2e/screen-learning.json)
 [ $flows_failed -eq 0 ] && [ $gone -eq 0 ] && [ "$not_judged" -eq 0 ] && times_args+=(--complete)
 [ -n "${E2E_SHARD:-}" ] && times_args+=(--record "$OUT/screen-record.json")
 if [ -n "${E2E_FAULTS:-}" ]; then

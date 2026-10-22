@@ -52,6 +52,7 @@ import Buster, { BusterEyes } from '@/src/components/Buster';
 import { nav } from '@/src/utils/typedRouter';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { Arrive } from '@/src/components/Arrive';
+import { useScreenReady } from '@/src/hooks/useScreenReady';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
@@ -341,6 +342,8 @@ export default function StackDetailScreen() {
 
   const list = stackQueryData?.list ?? null;
   const loading = stackQueryLoading;
+  // The stack in, or said out of reach: its mark goes in every tree below.
+  const readyMark = useScreenReady('stack', loading ? 'reading' : isError && !list ? 'failed' : 'ready');
 
   /**
    * A long title is SET SMALLER, as a catalogue sets one: three fixed steps
@@ -754,6 +757,7 @@ export default function StackDetailScreen() {
         <View style={s.loadingCenter}>
           <BusterEyes label="Loading stack" />
         </View>
+        {readyMark}
       </View>
     );
   }
@@ -769,6 +773,7 @@ export default function StackDetailScreen() {
         <View style={s.loadingCenter}>
           <EmptyOffline onRetry={() => { void rereadStack(); }} />
         </View>
+        {readyMark}
       </View>
     );
   }
@@ -785,6 +790,7 @@ export default function StackDetailScreen() {
           <Text style={s.title}>CLASSIFIED</Text>
           <Text style={[s.desc, { textAlign: 'center', marginTop: 12 }]}>This stack could not be retrieved.{'\n'}It may be sealed or incinerated.</Text>
         </View>
+        {readyMark}
       </View>
     );
   }
@@ -805,6 +811,7 @@ export default function StackDetailScreen() {
     <Animated.View style={[s.container, animatedContainerStyle]}>
       {/* The room's light hangs from where the hero ends, and blooms from it. */}
       <RoomLight room="default" hem={heroPoster ? HEADER_HEIGHT : undefined} art={heroPoster} />
+      {readyMark}
       {/* Absolute Dynamic Nav Bar */}
       <StackNav top={headerTop} onBack={() => nav.back()} blurStyle={navBlurStyle}>
         {isOwner ? (

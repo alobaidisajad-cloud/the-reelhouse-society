@@ -26,7 +26,9 @@
  *     emulator is the machine: the same code's slowest Darkroom ran 634 to 2242 ms
  *     in a day);
  *   - any one opening is above its once ceiling: a stall, however rare;
- *   - a screen reported and has no ceiling (a new screen gets one as it lands);
+ *   - a screen reported and has no ceiling, unless --learning's file names it: a new screen has
+ *     no history to derive one from, so it is reported, not judged, for LEARNING_DAYS from the
+ *     date the file gives; past that, or with a ceiling of its own, the entry itself fails;
  *   - with --complete (every flow ran to its end), a ceiling's screen never
  *     reported: it was renamed, or no flow reaches it any more, so the list
  *     cannot rot into ceilings that measure nothing.
@@ -50,6 +52,9 @@ export const PLANTS_FAILURES = ['offline_resilience'];
 
 /** A screen opened this often is judged by its median; fewer, by its one-opening ceiling alone. */
 export const MEDIAN_OPENS = 3;
+
+/** How long a new screen may be reported without a ceiling: time for its runs to reach the history. */
+export const LEARNING_DAYS = 14;
 
 /**
  * Each screen's two ceilings, from the recorded history (e2e/screen-history.json:
@@ -103,12 +108,13 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     return at === -1 ? null : args.splice(at, 2)[1];
   };
   const ceilingsFile = flag('--ceilings');
+  const learningFile = flag('--learning');
   const flowTimes = readFlowTimes(flag('--flow-times'));
   const record = flag('--record');
   const complete = args.includes('--complete');
   const file = args.find((a) => !a.startsWith('--'));
   if (!file) {
-    console.error('usage: node e2e/screen-times.mjs <device log> [--ceilings <json>] [--complete]'
+    console.error('usage: node e2e/screen-times.mjs <device log> [--ceilings <json>] [--learning <json>] [--complete]'
       + ' [--flow-times <file>] [--record <file>]');
     process.exit(2);
   }
@@ -122,7 +128,14 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   }
 
   const ceilings = ceilingsFile ? JSON.parse(readFileSync(ceilingsFile, 'utf8')) : null;
+  const learning = learningFile ? JSON.parse(readFileSync(learningFile, 'utf8')).learning ?? {} : {};
   const problems = [];
+  for (const [name, since] of Object.entries(learning).sort()) {
+    const days = Math.floor((Date.now() - Date.parse(`${since}T00:00:00Z`)) / 86400000);
+    if (!(days >= 0)) problems.push(`${name} is learning since "${since}", which is no date in the past`);
+    else if (days > LEARNING_DAYS) problems.push(`${name} has been learning ${days} days, over ${LEARNING_DAYS}: add its runs to e2e/screen-history.json and take it off the learning list`);
+    if (ceilings?.[name]) problems.push(`${name} is learning but has a ceiling: take it off the learning list`);
+  }
   const pad = (s, n) => String(s).padStart(n);
   const rows = [`${'screen'.padEnd(12)} ${pad('opened', 6)} ${pad('median', 9)} ${pad('slowest', 9)} ${pad('ceilings', 15)}`];
 
@@ -134,8 +147,9 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     const median = ms[Math.floor((ms.length - 1) / 2)];
     const slowest = ms[ms.length - 1];
     const ceiling = ceilings ? ceilings[name] : undefined;
-    rows.push(`${name.padEnd(12)} ${pad(ms.length, 6)} ${pad(`${median} ms`, 9)} ${pad(`${slowest} ms`, 9)} ${pad(ceiling === undefined ? '—' : `${ceiling.median} / ${ceiling.once}`, 15)}`);
-    if (!ceilings) continue;
+    const learns = ceiling === undefined && learning[name] !== undefined;
+    rows.push(`${name.padEnd(12)} ${pad(ms.length, 6)} ${pad(`${median} ms`, 9)} ${pad(`${slowest} ms`, 9)} ${pad(learns ? `learning since ${learning[name]}` : ceiling === undefined ? '—' : `${ceiling.median} / ${ceiling.once}`, 15)}`);
+    if (!ceilings || learns) continue;
     if (ceiling === undefined) problems.push(`${name} has no ceiling: add it to the ceilings file`);
     else {
       if (ms.length >= MEDIAN_OPENS && median > ceiling.median) {

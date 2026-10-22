@@ -55,6 +55,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { EmptyOffline, EmptyState, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { BusterEyes } from '@/src/components/Buster';
 import { Arrive } from '@/src/components/Arrive';
+import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { offerWord } from '@/src/lib/pushPrimer';
 
@@ -301,6 +302,8 @@ export default function LogDetailScreen() {
   // records each post as a tap, so the cards follow it.
   const certifyShown = useMarkCount('certify', id, logQueryData?.certifyCount ?? null);
   const loading = logQueryLoading;
+  // The record in, or said out of reach: its mark goes in every tree below.
+  const readyMark = useScreenReady('log', loading ? 'reading' : !log && logQueryFailed ? 'failed' : 'ready');
 
   /**
    * THE VAULT. Asked for only when this member owns the log — a visitor's
@@ -636,6 +639,7 @@ export default function LogDetailScreen() {
         {/* Labelled because the eyes are the ONLY thing on screen, so a
             screen-reader member hears it too. */}
         <BusterEyes label="Loading record" />
+        {readyMark}
       </View>
     );
   }
@@ -651,6 +655,7 @@ export default function LogDetailScreen() {
       <View style={[s.container, s.centerFull]}>
         <RoomLight room="film" />
         <EmptyOffline onRetry={() => { void rereadLog(); }} wayOut={{ label: wayOut, onPress: () => { nav.back(); } }} />
+        {readyMark}
       </View>
     );
   }
@@ -666,6 +671,7 @@ export default function LogDetailScreen() {
             <ChevronLeft size={12} color={colors.bone} strokeWidth={1.5} />
             <Text style={s.backBtnText}>{wayOut.toUpperCase()}</Text>
         </PressableScale>
+        {readyMark}
       </View>
     );
   }
@@ -689,6 +695,7 @@ export default function LogDetailScreen() {
     <Animated.View style={[s.container, animatedContainerStyle]}>
       {/* The room's light hangs from where the backdrop ends, and blooms from it. */}
       <RoomLight room="film" hem={backdropUri ? BACKDROP_H : undefined} art={backdropUri} />
+      {readyMark}
       {/* ── IMMERSIVE FULL-BLEED BACKDROP (BEHIND SCROLLVIEW) ── */}
       {backdropUri && (
           <View style={[StyleSheet.absoluteFillObject, s.backdropContainer]}>

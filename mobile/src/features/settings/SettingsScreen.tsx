@@ -57,6 +57,7 @@ import { flushOfflineQueue, getQueueLength } from '@/src/utils/offlineQueue';
 import { erasedBySigningOut, keptFor } from '@/src/utils/keptOnThisPhone';
 import { counted } from '@/src/utils/counted';
 import { Arrive } from '@/src/components/Arrive';
+import { useScreenReady } from '@/src/hooks/useScreenReady';
 
 /** The phone's answer about its lock, or no lock: a check that hangs or fails is a no. */
 const lockAnswer = (asked: Promise<boolean>): Promise<boolean> => raceDeadline(asked, 2000).catch(() => false);
@@ -446,6 +447,9 @@ export function SettingsScreen() {
     opacity: interpolate(scrollY.value, [TITLE_FADE_FROM, TITLE_FADE_TO], [0, 1], Extrapolation.CLAMP),
   }));
 
+  // Drawn from what this phone holds, so ready at once: the lab's control page (WORKLIST P0.112).
+  const readyMark = useScreenReady('settings', 'ready');
+
   if (!user) return null;
 
   const appVersion = Constants.expoConfig?.version ?? '';
@@ -455,6 +459,7 @@ export function SettingsScreen() {
   return (
     <View style={st.container}>
       <RoomLight room="default" />
+      {readyMark}
       <Animated.View style={[st.ambientGlow, glowStyle]} pointerEvents="none">
         <LinearGradient colors={['rgba(184,137,26,0.15)', 'transparent', 'transparent']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
       </Animated.View>
