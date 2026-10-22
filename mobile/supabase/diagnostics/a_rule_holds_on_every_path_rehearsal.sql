@@ -122,7 +122,7 @@ GRANT EXECUTE ON FUNCTION pg_temp.rh_as(text), pg_temp.rh_row(text), pg_temp.rh_
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.rh_as('rehearsal.a') AS done \gset rh_
 SELECT pg_temp.rh_writes('no block') AS done \gset rh_
-SELECT set_config('rh.salon_open', (SELECT count(*) FROM public.lounge_messages WHERE id = pg_temp.rh_row('b''s message'))::text, true) AS done \gset rh_
+SELECT set_config('rh.salon_open', (SELECT count(*) FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_row('b''s message')))::text, true) AS done \gset rh_
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
@@ -132,7 +132,7 @@ VALUES (current_setting('rehearsal.b')::uuid, current_setting('rehearsal.a')::uu
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.rh_as('rehearsal.a') AS done \gset rh_
 SELECT pg_temp.rh_writes('blocked') AS done \gset rh_
-SELECT set_config('rh.salon_blocked', (SELECT count(*) FROM public.lounge_messages WHERE id = pg_temp.rh_row('b''s message'))::text, true) AS done \gset rh_
+SELECT set_config('rh.salon_blocked', (SELECT count(*) FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_row('b''s message')))::text, true) AS done \gset rh_
 -- The member who blocked is refused too.
 SELECT pg_temp.rh_as('rehearsal.b') AS done \gset rh_
 INSERT INTO rh_got VALUES ('blocked: b comments on a''s log', pg_temp.rh_write(format(
@@ -251,7 +251,7 @@ DO $$ BEGIN
     ((SELECT got FROM rh_got WHERE what = 'a suspended member certifies by the old function') LIKE '42501: Your account is suspended until %')::text);
   PERFORM pg_temp.rh_case('a report whose reporter has left is resolved, and its member told', 'ok|resolved|1',
     (SELECT got FROM rh_got WHERE what = 'a report whose reporter has left, resolved') || '|'
-    || (SELECT status FROM public.reports WHERE id = pg_temp.rh_row('report')) || '|'
+    || (SELECT status FROM public.reports WHERE id = (SELECT pg_temp.rh_row('report'))) || '|'
     || (SELECT count(*)::text FROM public.notifications WHERE user_id = current_setting('rehearsal.b')::uuid
           AND title = 'A Notice from the House' AND created_at >= now()));
   PERFORM pg_temp.rh_case('every member''s private choice is the one the house keeps', '0',

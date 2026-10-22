@@ -12,7 +12,9 @@
  *     -0000-4000-8000-, which no generated id has (odds of 1 in 2^42);
  *   - every case is recorded through the kit, never printed alone;
  *   - no migration applied that production already holds (it would run old
- *     code over the new).
+ *     code over the new);
+ *   - no row picked by a pg_temp helper's call itself, which is read on every
+ *     row: the rehearsal holds its migration's locks while it reads.
  * The rules are checked on planted text first, so each is seen to say no.
  */
 import { spawnSync } from 'child_process';
@@ -61,6 +63,11 @@ const faultsOf = (sql: string, applied: Set<string>) => {
   for (const m of sql.matchAll(/^\\i[r]?\s+\S*migrations\/(\S+\.sql)/gm)) {
     if (applied.has(m[1])) faults.push(`applies ${m[1]}, which production already holds`);
   }
+  // A helper is volatile and never leakproof: as a filter's value it is called once per row, the
+  // index unused and the row rules run on every row (30 s on 100,000 members, P0.6's lock lab).
+  for (const m of sql.matchAll(/\b(?:where|and|or|on)\s+[\w.]+\s*(?:=|<>|!=)\s*(pg_temp\.\w+)\(/gi)) {
+    faults.push(`a row picked by ${m[1]}() itself, read on every row: pick it by (SELECT ${m[1]}(…))`);
+  }
   return faults;
 };
 
@@ -85,6 +92,8 @@ describe('the rules say no', () => {
       'a case printed, not recorded through pg_temp.rh_case'],
     ['a migration production holds', GOOD.replace('SAVEPOINT c;', `\\ir ../../../supabase/migrations/${[...applied].pop()}\nSAVEPOINT c;`),
       `applies ${[...applied].pop()}, which production already holds`],
+    ['a row picked by a helper read on every row', GOOD.replace('SAVEPOINT c;', "SELECT body FROM public.lounge_messages WHERE id = pg_temp.rh_row('m');\nSAVEPOINT c;"),
+      'a row picked by pg_temp.rh_row() itself, read on every row: pick it by (SELECT pg_temp.rh_row(…))'],
   ])('says NO to %s', (_name, sql, fault) => {
     expect(faultsOf(sql, applied)).toContain(fault);
   });
@@ -102,6 +111,14 @@ describe('every rehearsal', () => {
 
   it.each(rehearsals)('%s keeps the rules', (file) => {
     expect(faultsOf(read(join(DIAGNOSTICS, file)), applied)).toEqual([]);
+  });
+
+  it('picks no row by a helper\'s call itself, which would be read on every row', () => {
+    const planted = GOOD.replace('SAVEPOINT c;', "UPDATE public.logs SET review = 'x' WHERE id = pg_temp.c('L1');\nSAVEPOINT c;");
+    const reads = (sql: string) => faultsOf(sql, applied).filter((f) => f.startsWith('a row picked by'));
+    expect(reads(planted)).toEqual(['a row picked by pg_temp.c() itself, read on every row: pick it by (SELECT pg_temp.c(…))']);
+    expect(reads(planted.replace("pg_temp.c('L1')", "(SELECT pg_temp.c('L1'))"))).toEqual([]);
+    expect(rehearsals.flatMap((f) => reads(read(join(DIAGNOSTICS, f))).map((x) => `${f}: ${x}`))).toEqual([]);
   });
 
   it('includes only files that hold no transaction control of their own', () => {

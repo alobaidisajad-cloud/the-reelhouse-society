@@ -87,7 +87,7 @@ SET LOCAL ROLE authenticated;
 -- ── the owner ─────────────────────────────────────────────────────────
 DO $$ BEGIN PERFORM pg_temp.as_member(pg_temp.c('victim')); END $$;
 DO $$ DECLARE vid uuid; BEGIN
-  SELECT viewing_id INTO vid FROM logs WHERE id = pg_temp.c('L1');
+  SELECT viewing_id INTO vid FROM logs WHERE id = (SELECT pg_temp.c('L1'));
   INSERT INTO ctx VALUES ('V1', vid::text);
   PERFORM viewing_note_set(pg_temp.c('L1'), vid, '  first viewing note  ');
   PERFORM pg_temp.ok((SELECT notes FROM log_private_notes WHERE viewing_id = vid) = 'first viewing note', '01 the owner writes a note on the current viewing (trimmed)');
@@ -96,13 +96,13 @@ END $$;
 DO $$ BEGIN
   PERFORM log_viewing_add(pg_temp.c('L1'), 'aaaaaaaa-0000-4000-8000-000000000001', '{"rating": 4, "review": "second look"}');
   PERFORM log_viewing_add(pg_temp.c('L1'), 'aaaaaaaa-0000-4000-8000-000000000001', '{"rating": 1}');
-  PERFORM pg_temp.ok((SELECT viewing_id FROM logs WHERE id = pg_temp.c('L1')) = 'aaaaaaaa-0000-4000-8000-000000000001', '02 a rewatch makes the new viewing current');
-  PERFORM pg_temp.ok((SELECT viewing_history->0->>'viewingId' FROM logs WHERE id = pg_temp.c('L1')) = pg_temp.c('V1')::text, '03 the old viewing goes into history with its identity');
-  PERFORM pg_temp.ok((SELECT rating FROM logs WHERE id = pg_temp.c('L1')) = 4, '04 a retried rewatch does nothing twice');
-  PERFORM pg_temp.ok((SELECT NOT (viewing_history::text ILIKE '%first viewing note%') FROM logs WHERE id = pg_temp.c('L1')), '05 the note is never copied into the public history');
-  PERFORM pg_temp.ok((SELECT view_count = jsonb_array_length(viewing_history) + 1 FROM logs WHERE id = pg_temp.c('L1')), '06 the count follows the history');
-  PERFORM pg_temp.ok(EXISTS (SELECT 1 FROM log_private_notes WHERE viewing_id = pg_temp.c('V1')), '07 the old viewing keeps its note');
-  PERFORM pg_temp.ok((SELECT status FROM logs WHERE id = pg_temp.c('L1')) = 'rewatched', '08 a rewatch is marked rewatched');
+  PERFORM pg_temp.ok((SELECT viewing_id FROM logs WHERE id = (SELECT pg_temp.c('L1'))) = 'aaaaaaaa-0000-4000-8000-000000000001', '02 a rewatch makes the new viewing current');
+  PERFORM pg_temp.ok((SELECT viewing_history->0->>'viewingId' FROM logs WHERE id = (SELECT pg_temp.c('L1'))) = pg_temp.c('V1')::text, '03 the old viewing goes into history with its identity');
+  PERFORM pg_temp.ok((SELECT rating FROM logs WHERE id = (SELECT pg_temp.c('L1'))) = 4, '04 a retried rewatch does nothing twice');
+  PERFORM pg_temp.ok((SELECT NOT (viewing_history::text ILIKE '%first viewing note%') FROM logs WHERE id = (SELECT pg_temp.c('L1'))), '05 the note is never copied into the public history');
+  PERFORM pg_temp.ok((SELECT view_count = jsonb_array_length(viewing_history) + 1 FROM logs WHERE id = (SELECT pg_temp.c('L1'))), '06 the count follows the history');
+  PERFORM pg_temp.ok(EXISTS (SELECT 1 FROM log_private_notes WHERE viewing_id = (SELECT pg_temp.c('V1'))), '07 the old viewing keeps its note');
+  PERFORM pg_temp.ok((SELECT status FROM logs WHERE id = (SELECT pg_temp.c('L1'))) = 'rewatched', '08 a rewatch is marked rewatched');
 END $$;
 
 DO $$ BEGIN
@@ -110,16 +110,16 @@ DO $$ BEGIN
   PERFORM log_viewing_remove(pg_temp.c('L1'), 'aaaaaaaa-0000-4000-8000-000000000001');
   PERFORM log_viewing_remove(pg_temp.c('L1'), 'aaaaaaaa-0000-4000-8000-000000000001');  -- reaching the next line proves the retry did not throw
   PERFORM pg_temp.ok(true, '09 a retried removal does nothing, without an error');
-  PERFORM pg_temp.ok((SELECT viewing_id FROM logs WHERE id = pg_temp.c('L1')) = pg_temp.c('V1'), '10 removing the rewatch brings the old viewing back');
+  PERFORM pg_temp.ok((SELECT viewing_id FROM logs WHERE id = (SELECT pg_temp.c('L1'))) = pg_temp.c('V1'), '10 removing the rewatch brings the old viewing back');
   PERFORM pg_temp.ok(NOT EXISTS (SELECT 1 FROM log_private_notes WHERE viewing_id = 'aaaaaaaa-0000-4000-8000-000000000001'), '11 the removed viewing takes its note with it');
-  PERFORM pg_temp.ok((SELECT notes FROM log_private_notes WHERE viewing_id = pg_temp.c('V1')) = 'first viewing note', '12 the older note survives, untouched');
+  PERFORM pg_temp.ok((SELECT notes FROM log_private_notes WHERE viewing_id = (SELECT pg_temp.c('V1'))) = 'first viewing note', '12 the older note survives, untouched');
 END $$;
 
 DO $$ BEGIN
-  BEGIN UPDATE logs SET viewing_history = '[]' WHERE id = pg_temp.c('L1');
+  BEGIN UPDATE logs SET viewing_history = '[]' WHERE id = (SELECT pg_temp.c('L1'));
         PERFORM pg_temp.ok(false, '13 a plain save cannot erase past viewings');
   EXCEPTION WHEN others THEN PERFORM pg_temp.ok(SQLERRM ILIKE '%past viewing%', '13 a plain save cannot erase past viewings'); END;
-  BEGIN UPDATE logs SET viewing_id = gen_random_uuid() WHERE id = pg_temp.c('L1');
+  BEGIN UPDATE logs SET viewing_id = gen_random_uuid() WHERE id = (SELECT pg_temp.c('L1'));
         PERFORM pg_temp.ok(false, '14 a plain save cannot swap the viewing');
   EXCEPTION WHEN others THEN PERFORM pg_temp.ok(SQLERRM ILIKE '%adding one or removing one%', '14 a plain save cannot swap the viewing'); END;
   BEGIN PERFORM viewing_note_set(pg_temp.c('L1'), pg_temp.c('V1'), repeat('x', 1001));
@@ -129,17 +129,17 @@ END $$;
 
 -- the old build's path: a note arrives on the log column
 DO $$ BEGIN
-  UPDATE logs SET private_notes = 'from the old build' WHERE id = pg_temp.c('L2');
-  PERFORM pg_temp.ok((SELECT notes FROM log_private_notes n JOIN logs l ON l.viewing_id = n.viewing_id WHERE l.id = pg_temp.c('L2')) = 'from the old build', '16 old build: a note on the column lands on the current viewing');
-  PERFORM pg_temp.ok((SELECT private_notes FROM logs WHERE id = pg_temp.c('L2')) IS NULL, '17 old build: the column is blank again');
-  UPDATE logs SET private_notes = '', rating = rating WHERE id = pg_temp.c('L2');
-  PERFORM pg_temp.ok(EXISTS (SELECT 1 FROM log_private_notes n JOIN logs l ON l.viewing_id = n.viewing_id WHERE l.id = pg_temp.c('L2')), '18 old build: an ordinary save with a blank note does NOT erase it');
+  UPDATE logs SET private_notes = 'from the old build' WHERE id = (SELECT pg_temp.c('L2'));
+  PERFORM pg_temp.ok((SELECT notes FROM log_private_notes n JOIN logs l ON l.viewing_id = n.viewing_id WHERE l.id = (SELECT pg_temp.c('L2'))) = 'from the old build', '16 old build: a note on the column lands on the current viewing');
+  PERFORM pg_temp.ok((SELECT private_notes FROM logs WHERE id = (SELECT pg_temp.c('L2'))) IS NULL, '17 old build: the column is blank again');
+  UPDATE logs SET private_notes = '', rating = rating WHERE id = (SELECT pg_temp.c('L2'));
+  PERFORM pg_temp.ok(EXISTS (SELECT 1 FROM log_private_notes n JOIN logs l ON l.viewing_id = n.viewing_id WHERE l.id = (SELECT pg_temp.c('L2'))), '18 old build: an ordinary save with a blank note does NOT erase it');
 END $$;
 
 -- ── a stranger ────────────────────────────────────────────────────────
 DO $$ BEGIN PERFORM pg_temp.as_member(pg_temp.c('stranger')); END $$;
 DO $$ BEGIN
-  PERFORM pg_temp.ok((SELECT count(*) FROM log_private_notes WHERE user_id = pg_temp.c('victim')) = 0, '19 a stranger reads none of the owner''s notes');
+  PERFORM pg_temp.ok((SELECT count(*) FROM log_private_notes WHERE user_id = (SELECT pg_temp.c('victim'))) = 0, '19 a stranger reads none of the owner''s notes');
   BEGIN PERFORM viewing_note_set(pg_temp.c('L1'), pg_temp.c('V1'), 'overwrite'); EXCEPTION WHEN others THEN NULL; END;
   PERFORM viewing_note_remove(pg_temp.c('V1'));
   BEGIN PERFORM log_viewing_add(pg_temp.c('L1'), gen_random_uuid(), '{}'); EXCEPTION WHEN others THEN NULL; END;
@@ -147,14 +147,14 @@ DO $$ BEGIN
 END $$;
 DO $$ BEGIN PERFORM pg_temp.as_member(pg_temp.c('victim')); END $$;
 DO $$ BEGIN
-  PERFORM pg_temp.ok((SELECT notes FROM log_private_notes WHERE viewing_id = pg_temp.c('V1')) = 'first viewing note', '20 a stranger can neither change nor remove the owner''s note');
-  PERFORM pg_temp.ok((SELECT viewing_id FROM logs WHERE id = pg_temp.c('L1')) = pg_temp.c('V1'), '21 a stranger can neither add nor remove the owner''s viewings');
+  PERFORM pg_temp.ok((SELECT notes FROM log_private_notes WHERE viewing_id = (SELECT pg_temp.c('V1'))) = 'first viewing note', '20 a stranger can neither change nor remove the owner''s note');
+  PERFORM pg_temp.ok((SELECT viewing_id FROM logs WHERE id = (SELECT pg_temp.c('L1'))) = pg_temp.c('V1'), '21 a stranger can neither add nor remove the owner''s viewings');
 END $$;
 
 -- ── a lapsed member ───────────────────────────────────────────────────
 DO $$ BEGIN PERFORM pg_temp.as_member(pg_temp.c('lapsed')); END $$;
 DO $$ DECLARE vid uuid; BEGIN
-  SELECT viewing_id INTO vid FROM logs WHERE id = pg_temp.c('LL');
+  SELECT viewing_id INTO vid FROM logs WHERE id = (SELECT pg_temp.c('LL'));
   PERFORM pg_temp.ok((SELECT notes FROM log_private_notes WHERE viewing_id = vid) = 'written while paid', '22 a lapsed member still reads their note');
   BEGIN PERFORM viewing_note_set(pg_temp.c('LL'), vid, 'changed');
         PERFORM pg_temp.ok(false, '23 a lapsed member cannot change it');
@@ -168,7 +168,7 @@ END $$;
 -- own and writes a note on it first; then the owner writes theirs.
 DO $$ BEGIN PERFORM pg_temp.as_member(pg_temp.c('stranger')); END $$;
 DO $$ DECLARE y uuid; lid uuid; BEGIN
-  SELECT viewing_id INTO y FROM logs WHERE id = pg_temp.c('L3');
+  SELECT viewing_id INTO y FROM logs WHERE id = (SELECT pg_temp.c('L3'));
   INSERT INTO ctx VALUES ('Y', y::text);
   BEGIN
     INSERT INTO logs (user_id, film_id, film_title, watched_date, viewing_history)
@@ -182,7 +182,7 @@ DO $$ BEGIN PERFORM pg_temp.as_member(pg_temp.c('victim')); END $$;
 DO $$ DECLARE err text := 'no error'; BEGIN
   BEGIN PERFORM viewing_note_set(pg_temp.c('L3'), pg_temp.c('Y'), 'my own note');
   EXCEPTION WHEN others THEN err := SQLERRM; END;
-  PERFORM pg_temp.ok(EXISTS (SELECT 1 FROM log_private_notes WHERE viewing_id = pg_temp.c('Y') AND notes = 'my own note'),
+  PERFORM pg_temp.ok(EXISTS (SELECT 1 FROM log_private_notes WHERE viewing_id = (SELECT pg_temp.c('Y')) AND notes = 'my own note'),
     '25 nobody can take the owner''s viewing first and swallow their note — ' || (SELECT v FROM ctx WHERE k='att25') || '; owner saw: ' || err);
 END $$;
 
@@ -190,7 +190,7 @@ END $$;
 -- one; then the owner removes their rewatch, which makes that viewing current.
 DO $$ BEGIN PERFORM pg_temp.as_member(pg_temp.c('stranger')); END $$;
 DO $$ DECLARE x uuid; BEGIN
-  SELECT (viewing_history->0->>'viewingId')::uuid INTO x FROM logs WHERE id = pg_temp.c('L2');
+  SELECT (viewing_history->0->>'viewingId')::uuid INTO x FROM logs WHERE id = (SELECT pg_temp.c('L2'));
   INSERT INTO ctx VALUES ('X', x::text);
   BEGIN
     INSERT INTO logs (user_id, film_id, film_title, watched_date, viewing_id)
@@ -200,10 +200,10 @@ DO $$ DECLARE x uuid; BEGIN
 END $$;
 DO $$ BEGIN PERFORM pg_temp.as_member(pg_temp.c('victim')); END $$;
 DO $$ DECLARE cur uuid; err text := 'no error'; BEGIN
-  SELECT viewing_id INTO cur FROM logs WHERE id = pg_temp.c('L2');
+  SELECT viewing_id INTO cur FROM logs WHERE id = (SELECT pg_temp.c('L2'));
   BEGIN PERFORM log_viewing_remove(pg_temp.c('L2'), cur);
   EXCEPTION WHEN others THEN err := SQLERRM; END;
-  PERFORM pg_temp.ok((SELECT viewing_id FROM logs WHERE id = pg_temp.c('L2')) = pg_temp.c('X'),
+  PERFORM pg_temp.ok((SELECT viewing_id FROM logs WHERE id = (SELECT pg_temp.c('L2'))) = pg_temp.c('X'),
     '26 nobody can stop the owner removing their rewatch — ' || (SELECT v FROM ctx WHERE k='att26') || '; owner saw: ' || err);
 END $$;
 
@@ -219,13 +219,13 @@ END $$;
 -- names the owner's viewing while writing on a log of THEIR OWN — no history
 -- involved, so only the note's own check can stop it. Then the owner writes.
 DO $$ DECLARE err text := 'no error'; BEGIN
-  BEGIN PERFORM viewing_note_set(pg_temp.c('SL'), (SELECT viewing_id FROM logs WHERE id = pg_temp.c('L4')), 'on your viewing');
+  BEGIN PERFORM viewing_note_set(pg_temp.c('SL'), (SELECT viewing_id FROM logs WHERE id = (SELECT pg_temp.c('L4'))), 'on your viewing');
   EXCEPTION WHEN others THEN err := SQLERRM; END;
   INSERT INTO ctx VALUES ('att31', CASE WHEN err = 'no error' THEN 'the attack got through' ELSE 'the attack was refused: ' || err END);
 END $$;
 DO $$ BEGIN PERFORM pg_temp.as_member(pg_temp.c('victim')); END $$;
 DO $$ DECLARE err text := 'no error'; vid uuid; BEGIN
-  SELECT viewing_id INTO vid FROM logs WHERE id = pg_temp.c('L4');
+  SELECT viewing_id INTO vid FROM logs WHERE id = (SELECT pg_temp.c('L4'));
   BEGIN PERFORM viewing_note_set(pg_temp.c('L4'), vid, 'mine, on my viewing');
   EXCEPTION WHEN others THEN err := SQLERRM; END;
   INSERT INTO ctx VALUES ('own31', err);
@@ -244,15 +244,15 @@ END $$;
 -- 29 (destructive, so last): deleting a log takes its viewings and notes.
 DO $$ BEGIN PERFORM pg_temp.as_member(pg_temp.c('victim')); END $$;
 DO $$ BEGIN
-  DELETE FROM logs WHERE id = pg_temp.c('L1');
-  PERFORM pg_temp.ok(NOT EXISTS (SELECT 1 FROM log_private_notes WHERE log_id = pg_temp.c('L1')), '29 deleting a log takes its notes with it');
+  DELETE FROM logs WHERE id = (SELECT pg_temp.c('L1'));
+  PERFORM pg_temp.ok(NOT EXISTS (SELECT 1 FROM log_private_notes WHERE log_id = (SELECT pg_temp.c('L1'))), '29 deleting a log takes its notes with it');
 END $$;
 
 RESET ROLE;
 
 DO $$ BEGIN
   PERFORM pg_temp.ok(
-    (SELECT notes FROM log_private_notes WHERE viewing_id = (SELECT viewing_id FROM logs WHERE id = pg_temp.c('L4'))) = 'mine, on my viewing',
+    (SELECT notes FROM log_private_notes WHERE viewing_id = (SELECT viewing_id FROM logs WHERE id = (SELECT pg_temp.c('L4')))) = 'mine, on my viewing',
     '31 a note can only be written on a viewing of the writer''s own log — ' || (SELECT v FROM ctx WHERE k='att31') || '; owner saw: ' || (SELECT v FROM ctx WHERE k='own31'));
 END $$;
 

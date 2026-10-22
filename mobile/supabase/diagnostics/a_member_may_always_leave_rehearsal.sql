@@ -40,8 +40,8 @@ SELECT 'seated', pg_temp.rh_found('a fourth member', (SELECT id FROM public.prof
 CREATE FUNCTION pg_temp.rh_member(member text) RETURNS uuid LANGUAGE sql AS $$ SELECT id FROM rh_who WHERE what = member $$;
 
 UPDATE public.profiles SET is_banned = false, suspended_until = NULL WHERE id IN (SELECT id FROM rh_who);
-UPDATE public.profiles SET is_banned = true, banned_at = now() WHERE id = pg_temp.rh_member('silenced');
-UPDATE public.profiles SET suspended_until = now() + interval '1 day' WHERE id = pg_temp.rh_member('suspended');
+UPDATE public.profiles SET is_banned = true, banned_at = now() WHERE id = (SELECT pg_temp.rh_member('silenced'));
+UPDATE public.profiles SET suspended_until = now() + interval '1 day' WHERE id = (SELECT pg_temp.rh_member('suspended'));
 
 -- The fourth's log and stack, and for each leaving member a critique, a note and a salon the fourth sits in.
 CREATE TEMP TABLE rh_rows (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
@@ -95,7 +95,7 @@ END $$;
 -- ── the verdict ──────────────────────────────────────────────────────────────
 CREATE FUNCTION pg_temp.rh_left(what text) RETURNS text LANGUAGE sql AS $$
   SELECT (SELECT got FROM rh_got WHERE rh_got.what = rh_left.what)
-    || '|' || (NOT EXISTS (SELECT 1 FROM auth.users WHERE id = pg_temp.rh_member(what)))::text
+    || '|' || (NOT EXISTS (SELECT 1 FROM auth.users WHERE id = (SELECT pg_temp.rh_member(what))))::text
     || '|' || coalesce((SELECT string_agg(username, ',') FROM public.log_comments
                          WHERE body = 'rh critique of ' || what), 'none')
     || '|' || coalesce((SELECT (user_id IS NULL)::text FROM public.list_comments
@@ -110,7 +110,7 @@ BEGIN
   PERFORM pg_temp.rh_case('so does a suspended member', 'ok|true|[deleted]|true|true', pg_temp.rh_left('suspended'));
   PERFORM pg_temp.rh_case('and one in good standing, as before', 'ok|true|[deleted]|true|true', pg_temp.rh_left('in good standing'));
   PERFORM pg_temp.rh_case('the member who sat with them is untouched', 'true|true',
-    (EXISTS (SELECT 1 FROM auth.users WHERE id = pg_temp.rh_member('seated')))::text || '|'
+    (EXISTS (SELECT 1 FROM auth.users WHERE id = (SELECT pg_temp.rh_member('seated'))))::text || '|'
     || (EXISTS (SELECT 1 FROM public.logs WHERE id = (SELECT id FROM rh_rows WHERE what = 'the log')))::text);
   PERFORM pg_temp.rh_case('the three functions nothing calls are gone', 'true|true|true',
     (to_regprocedure('public.get_profile_metrics(uuid)') IS NULL)::text || '|'

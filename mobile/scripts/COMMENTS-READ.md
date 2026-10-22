@@ -46,7 +46,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/e2e.yml | 2026-10-22 | read whole: four jobs; the seal's name refused in every container with a shell, its addresses to all; the proxy's and the renderer's reasons beside their own lines; the verdict reads any run's three flow machines; a heartbeat when the schedule ran |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-22 | read whole: the alert proved by the fire drill, not by the nightly; every frozen count named; the mutants' job and the add-only job each under its own head; every measuring tool named; a heartbeat when the schedule ran |
 | ../.github/workflows/ios-launch.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind |
-| ../.github/workflows/load.yml | 2026-10-22 | read whole: the pending train run on the full house, its locks timed, its report kept; a heartbeat when the schedule ran |
+| ../.github/workflows/load.yml | 2026-10-22 | read whole: the pending train run on the full house, its locks timed, its report kept, the train left applied for the reads; the change under measurement and the reads timed whatever the locks said; a heartbeat when the schedule ran |
 | ../.github/workflows/nightly.yml | 2026-10-22 | read whole: a variant's machines as it runs them; a heartbeat when the schedule ran |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
@@ -1261,7 +1261,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/queueErrorClassification.test.ts | — |  |
 | src/utils/__tests__/raceDeadline.test.ts | 2026-10-04 | written whole |
 | src/utils/__tests__/recommendations.test.ts | — |  |
-| src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-16 | edited: the rehearsals are shown failing without their migrations in CI, and every pending migration is paired with the rehearsal of its name |
+| src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-22 | read whole: no row picked by a helper's call itself, said no to on a planted case and held for every rehearsal; the rules said no to first; the kit, the seed and CI's order |
 | src/utils/__tests__/releaseGuard.guard.test.ts | 2026-10-15 | new: each rule says no in each format; the input is never the E2E app; the sitemap flow |
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/resumeSaysWhereTheWorkStands.test.ts | 2026-10-16 | new: the next class is the one that matters most, a journal keeps what was written in it, every worktree finds the same journals, the next train is the pending migrations |
@@ -1418,8 +1418,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/countryName.ts | 2026-10-22 | written: a country's name from its code; the house's own list (Hermes has no region names), the code where it has none |
 | src/utils/__tests__/countryName.test.ts | 2026-10-22 | written: in a sentence and as a label; an unknown code said as it came; every TMDB region named |
 | src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts | 2026-10-22 | written: the installed Reanimated keeps only mounted views and does not throw on one being made; the manifest is past the SDK pin |
-| e2e/load/train-locks.mjs | 2026-10-22 | written: the pending train run twice on the 100,000-member house as production runs it, every lock timed by a second connection; a blocking lock on a member's relation held over a second fails (P0.6) |
-| e2e/__tests__/trainLocks.test.ts | 2026-10-22 | written: on saved samples, a lock timed first sight to last, blamed on the statement that took it; which holds fail |
+| e2e/load/train-locks.mjs | 2026-10-22 | written: the pending train run twice on the 100,000-member house as production runs it, every lock timed by a second connection and every statement by psql itself; a blocking lock on a member's relation held over a second fails; each run's three slowest statements named (P0.6) |
+| e2e/__tests__/trainLocks.test.ts | 2026-10-22 | written: on saved samples, a lock timed first sight to last, blamed on the statement that took it; which holds fail; each statement timed from psql's own output |
 | scripts/heartbeat.mjs | 2026-10-22 | written: a scheduled workflow checks in with a Sentry cron monitor; without its address, a warning that lets the checks run; the address never printed (P0.38) |
 | src/utils/__tests__/heartbeatsAreKept.test.ts | 2026-10-22 | written: every scheduled workflow has its heartbeat on its own schedule, checking in only when the schedule fired; the check-in's refusals |
 | scripts/batch-report.cjs | 2026-10-22 | written: a batch's report from the register, a line to answer for every class closed by a process; never written over (P0.58) |

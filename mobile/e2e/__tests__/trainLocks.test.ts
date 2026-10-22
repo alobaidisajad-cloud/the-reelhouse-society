@@ -71,3 +71,25 @@ describe('a hold fails the run', () => {
       .toMatchObject({ fault: false });
   });
 });
+
+describe('each statement is timed', () => {
+  // psql's own output, as the run asks for it (-e and its timing switch): a rehearsal's quiet run.
+  const PSQL = ['BEGIN;', 'Time: 0.221 ms', 'SELECT pg_sleep(0.2);', '', 'Time: 206.840 ms',
+    'SELECT count(*)', '  FROM t;', '0', 'Time: 1.120 ms', 'Timing is on.', 'CREATE TABLE u (id int);', 'CREATE TABLE', 'Time: 3.49 ms'].join('\n');
+  const timed = () => {
+    const file = join(dir, 'psql.txt');
+    writeFileSync(file, PSQL);
+    const r = spawnSync(process.execPath, [SCRIPT, '--statements', file], { encoding: 'utf8' });
+    if (r.status !== 0) throw new Error(r.stderr);
+    return JSON.parse(r.stdout) as { ms: number; text: string }[];
+  };
+
+  it('by its own time, named by its first line, slowest first', () => {
+    expect(timed()).toEqual([
+      { ms: 207, text: 'SELECT pg_sleep(0.2);' },
+      { ms: 3, text: 'CREATE TABLE u (id int);' },
+      { ms: 1, text: 'SELECT count(*)' },
+      { ms: 0, text: 'BEGIN;' },
+    ]);
+  });
+});

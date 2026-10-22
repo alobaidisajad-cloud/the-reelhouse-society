@@ -18,7 +18,9 @@
  * Exclusive, Access Exclusive) on a relation the app reads or writes (anything in public, and
  * storage.objects) is held for over HELD_MS, in either run; and when a migration does not apply.
  * A rehearsal that fails on the load house is said, not failed on: its cases are P0.7's to make
- * house-agnostic. The report goes to the step summary and lock-report.txt.
+ * house-agnostic. Each statement is timed by psql itself (echoed, with its timing switch on), and
+ * the report names each run's three slowest. The report goes to the step summary and
+ * lock-report.txt.
  */
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
@@ -70,6 +72,22 @@ FROM pg_locks l JOIN pg_stat_activity a ON a.pid = l.pid
 LEFT JOIN pg_class c ON c.oid = l.relation LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE a.application_name = '${APP}' AND l.locktype = 'relation'`;
 
+/**
+ * Each statement's time from psql's own output (echoed with -e, timed with its timing switch):
+ * the lines since the last time are the statement, and its first line names it. Slowest first.
+ */
+export function statementsIn(text) {
+  const out = [];
+  let since = [];
+  for (const line of text.split('\n')) {
+    const t = /^Time: ([\d.]+) ms/.exec(line);
+    if (!t) { if (line.trim() && line.trim() !== 'Timing is on.') since.push(line.trim()); continue; }
+    out.push({ ms: Math.round(+t[1]), text: (since[0] ?? '').slice(0, 160) });
+    since = [];
+  }
+  return out.sort((a, b) => b.ms - a.ms);
+}
+
 /** A sampler's lines, as samples. */
 export const samplesIn = (text) => text.split('\n').flatMap((line) => {
   const [t, relation, schema, mode, granted, query, pid] = line.split('\t');
@@ -93,13 +111,14 @@ function measure(label, args, dir, n) {
     'RC=$?',
     'kill "$S" 2>/dev/null; wait "$S" 2>/dev/null',
     'exit $RC',
-  ].join('\n'), 'measure', ...args], {
+  ].join('\n'), 'measure', '-e', '-c', '\\timing on', ...args], {
     env: { ...process.env, DB, TAB: '\t', SAMPLE_SQL: files.sample, SAMPLES: files.samples, OUT: files.out, LIMITS, APP },
     // what bash itself says (psql not found, an address refused) goes straight to the log
     stdio: 'inherit',
   });
   const read = (f) => (existsSync(f) ? readFileSync(f, 'utf8') : '');
-  return { label, ok: r.status === 0, out: read(files.out), ms: Date.now() - began, holds: holds(samplesIn(read(files.samples))) };
+  const out = read(files.out);
+  return { label, ok: r.status === 0, out, ms: Date.now() - began, statements: statementsIn(out), holds: holds(samplesIn(read(files.samples))) };
 }
 
 function main() {
@@ -131,9 +150,10 @@ function main() {
     const apply = r.label.startsWith('B');
     lines.push(`${r.ok ? 'ran' : apply ? 'FAILED' : 'did not finish'}  ${r.label}  (${r.ms} ms)`);
     if (!r.ok) {
-      lines.push(...r.out.split('\n').filter((l) => /ERROR|DETAIL|CONTEXT/.test(l)).slice(0, 6).map((l) => `    ${l}`));
+      lines.push(...r.out.split('\n').filter((l) => /^(psql:.*ERROR|ERROR:|DETAIL:|CONTEXT:)/.test(l)).slice(0, 6).map((l) => `    ${l}`));
       if (apply) failed = true;
     }
+    for (const s of r.statements.slice(0, 3)) lines.push(`    took     ${String(s.ms).padStart(6)} ms  ${s.text}`);
     for (const h of r.holds.filter((x) => BLOCKING.has(x.mode))) {
       lines.push(`    ${h.fault ? 'TOO LONG' : 'held    '}  ${String(h.ms).padStart(6)} ms  ${h.mode.padEnd(22)} ${h.relation}  ← ${h.query}`);
       if (h.fault) failed = true;
@@ -146,7 +166,9 @@ function main() {
   if (failed) process.exit(1);
 }
 
-// `--holds` and a file of saved samples: the judgement alone, for its test.
+// `--holds` and a file of saved samples, or `--statements` and psql's saved output: the reading alone.
 const at = process.argv.indexOf('--holds');
+const timed = process.argv.indexOf('--statements');
 if (at >= 0) console.log(JSON.stringify(holds(JSON.parse(readFileSync(process.argv[at + 1], 'utf8')))));
+else if (timed >= 0) console.log(JSON.stringify(statementsIn(readFileSync(process.argv[timed + 1], 'utf8'))));
 else main();

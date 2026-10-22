@@ -890,3 +890,12 @@ mutants:
         find: "    if (arm === 'Z' && called.length) quiet = false;\n"
         replace: ""
     proof: { file: e2e/__tests__/speedLab.test.ts, test: "fails the run when Z, the same APK, differs from A: no call can then be trusted" }
+
+  - id: shape-rehearsal-reads-every-row
+    class: DB-rehearsal-reads-every-row
+    source: shape
+    edits:
+      - file: supabase/diagnostics/a_rule_holds_on_every_path_rehearsal.sql
+        find: "'rh.salon_open', (SELECT count(*) FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_row('b''s message')))"
+        replace: "'rh.salon_open', (SELECT count(*) FROM public.lounge_messages WHERE id = pg_temp.rh_row('b''s message'))"
+    proof: { file: src/utils/__tests__/rehearsalsRunInCi.guard.test.ts, test: "picks no row by a helper's call itself, which would be read on every row" }

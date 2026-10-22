@@ -82,7 +82,7 @@ DO $$ DECLARE got text; BEGIN
   BEGIN SELECT public.my_entitlement_source() INTO got;
   EXCEPTION WHEN OTHERS THEN got := SQLSTATE; END;
   PERFORM pg_temp.rh_case('a lapsed member is told who last ranked them', 'revenuecat', got);
-  BEGIN SELECT entitlement_source INTO got FROM public.profiles WHERE id = pg_temp.m(3); got := 'read';
+  BEGIN SELECT entitlement_source INTO got FROM public.profiles WHERE id = (SELECT pg_temp.m(3)); got := 'read';
   EXCEPTION WHEN OTHERS THEN got := SQLSTATE; END;
   PERFORM pg_temp.rh_case('nobody reads the column itself', '42501', got);
 END $$;
@@ -106,7 +106,7 @@ DO $$ BEGIN
   PERFORM pg_temp.give(pg_temp.m(4), 'cinephile', 'revenuecat');
   PERFORM pg_temp.rh_case('when the store''s record empties, the seat and its Auteur go back', 'cinephile/cinephile/revenuecat',
     pg_temp.held(pg_temp.m(4)));
-  UPDATE public.profiles SET role = 'admin' WHERE id = pg_temp.m(3);
+  UPDATE public.profiles SET role = 'admin' WHERE id = (SELECT pg_temp.m(3));
   PERFORM pg_temp.give(pg_temp.m(3), 'auteur', 'manual');
   PERFORM pg_temp.rh_case('an admin given a rank is still an admin', 'auteur/admin/manual', pg_temp.held(pg_temp.m(3)));
 END $$;

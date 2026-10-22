@@ -111,7 +111,7 @@ END $$;
 -- A reply as it is kept: its quote, the name it shows, and its own words.
 CREATE FUNCTION pg_temp.rh_quote(what text) RETURNS text LANGUAGE sql AS $$
   SELECT coalesce(reply_to_content, 'no words') || '|' || coalesce(reply_to_username, 'no name') || '|' || content
-    FROM public.lounge_messages WHERE id = pg_temp.rh_row(what) $$;
+    FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_row(what)) $$;
 GRANT EXECUTE ON FUNCTION pg_temp.rh_as(text), pg_temp.rh_row(text), pg_temp.rh_name(text), pg_temp.rh_try(text, boolean),
   pg_temp.rh_reply(text, uuid, text, text), pg_temp.rh_quote(text) TO authenticated;
 GRANT INSERT ON rh_rows TO authenticated;

@@ -123,7 +123,8 @@ jobs:
 
       # The pending train, as production will run it (each rehearsal in one rolled-back
       # transaction, then file by file), every lock it takes timed on the full house: a lock
-      # that blocks members' reads or writes held over a second fails (WORKLIST P0.6).
+      # that blocks members' reads or writes held over a second fails (WORKLIST P0.6). Its file-by-
+      # file run leaves the train applied, so the reads below are timed on production as it will be.
       - name: The pending train on the full house, its locks timed
         env:
           LOAD_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
@@ -136,8 +137,10 @@ jobs:
 
       # A change waiting to be applied to production is measured here first, on
       # the full house: in one transaction, as postgres (who owns production's
-      # objects), then vacuumed so its new index and table are read as they will be.
+      # objects), then vacuumed so its new index and table are read as they will be. It and the
+      # reads' times run whatever the locks said, so one verdict never hides the other.
       - name: Apply the change under measurement (e2e/load/proposed.sql)
+        if: ${{ !cancelled() }}
         run: |
           if grep -qvE '^\s*(--.*)?$' mobile/e2e/load/proposed.sql; then
             set +e
@@ -158,6 +161,7 @@ jobs:
       # As supabase_admin, so a read over budget can show the plan INSIDE a
       # function as well as its call (auto_explain needs a superuser to load).
       - name: Time every busy screen's reads
+        if: ${{ !cancelled() }}
         env:
           LOAD_DB_URL: postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres
         run: node mobile/e2e/load/probe.mjs

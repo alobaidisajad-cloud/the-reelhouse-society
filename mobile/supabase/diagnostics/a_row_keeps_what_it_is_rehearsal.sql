@@ -74,43 +74,43 @@ GRANT EXECUTE ON FUNCTION pg_temp.rh_as(text), pg_temp.rh_row(text) TO authentic
 -- ── as the member: each edit of what a row is ────────────────────────────────
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.rh_as('rehearsal.a') AS done \gset rh_
-UPDATE public.interactions SET type = 'follow' WHERE id = pg_temp.rh_row('request');
-UPDATE public.interactions SET target_user_id = current_setting('rehearsal.a')::uuid WHERE id = pg_temp.rh_row('request');
+UPDATE public.interactions SET type = 'follow' WHERE id = (SELECT pg_temp.rh_row('request'));
+UPDATE public.interactions SET target_user_id = current_setting('rehearsal.a')::uuid WHERE id = (SELECT pg_temp.rh_row('request'));
 SELECT set_config('rh.sees', public.can_view_user_data(current_setting('rehearsal.b')::uuid)::text, true) AS done \gset rh_
 UPDATE public.lounge_members SET lounge_id = pg_temp.rh_row('private salon'), joined_at = '2000-01-01'
- WHERE id = pg_temp.rh_row('seat');
-UPDATE public.lounge_members SET last_read_at = '2001-01-01' WHERE id = pg_temp.rh_row('seat');
+ WHERE id = (SELECT pg_temp.rh_row('seat'));
+UPDATE public.lounge_members SET last_read_at = '2001-01-01' WHERE id = (SELECT pg_temp.rh_row('seat'));
 UPDATE public.lounge_messages SET lounge_id = pg_temp.rh_row('private salon'), content = 'rh changed',
-       created_at = '2000-01-01', reply_to_content = 'rh never said' WHERE id = pg_temp.rh_row('message');
-UPDATE public.log_comments SET log_id = pg_temp.rh_row('b''s log'), body = 'rh words, amended' WHERE id = pg_temp.rh_row('comment');
-UPDATE public.logs SET created_at = '2000-01-01', review = 'rh review' WHERE id = pg_temp.rh_row('a''s log');
-UPDATE public.notifications SET title = 'rh forged', is_read = true WHERE id = pg_temp.rh_row('notice');
-UPDATE public.warnings SET reason = 'rh rewritten', acknowledged = true WHERE id = pg_temp.rh_row('warning');
-UPDATE public.lounges SET member_count = 9999, name = 'rh renamed' WHERE id = pg_temp.rh_row('open salon');
+       created_at = '2000-01-01', reply_to_content = 'rh never said' WHERE id = (SELECT pg_temp.rh_row('message'));
+UPDATE public.log_comments SET log_id = pg_temp.rh_row('b''s log'), body = 'rh words, amended' WHERE id = (SELECT pg_temp.rh_row('comment'));
+UPDATE public.logs SET created_at = '2000-01-01', review = 'rh review' WHERE id = (SELECT pg_temp.rh_row('a''s log'));
+UPDATE public.notifications SET title = 'rh forged', is_read = true WHERE id = (SELECT pg_temp.rh_row('notice'));
+UPDATE public.warnings SET reason = 'rh rewritten', acknowledged = true WHERE id = (SELECT pg_temp.rh_row('warning'));
+UPDATE public.lounges SET member_count = 9999, name = 'rh renamed' WHERE id = (SELECT pg_temp.rh_row('open salon'));
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
 DO $$ BEGIN
   PERFORM pg_temp.rh_case('an interaction keeps its kind and its parties', 'follow_request|' || current_setting('rehearsal.b'),
-    (SELECT type || '|' || target_user_id FROM public.interactions WHERE id = pg_temp.rh_row('request')));
+    (SELECT type || '|' || target_user_id FROM public.interactions WHERE id = (SELECT pg_temp.rh_row('request'))));
   PERFORM pg_temp.rh_case('a private member''s file opens as the house decides', 'false', current_setting('rh.sees', true));
   PERFORM pg_temp.rh_case('a seat keeps its salon and the day it was taken', pg_temp.rh_row('open salon')::text || '|true',
-    (SELECT lounge_id || '|' || (joined_at > '2000-01-02')::text FROM public.lounge_members WHERE id = pg_temp.rh_row('seat')));
+    (SELECT lounge_id || '|' || (joined_at > '2000-01-02')::text FROM public.lounge_members WHERE id = (SELECT pg_temp.rh_row('seat'))));
   PERFORM pg_temp.rh_case('a seat''s reading place is the member''s to move', '2001-01-01',
-    (SELECT last_read_at::date::text FROM public.lounge_members WHERE id = pg_temp.rh_row('seat')));
+    (SELECT last_read_at::date::text FROM public.lounge_members WHERE id = (SELECT pg_temp.rh_row('seat'))));
   PERFORM pg_temp.rh_case('a message keeps its salon, its words, its quote and its time', pg_temp.rh_row('open salon')::text || '|rh said|true|',
     (SELECT lounge_id || '|' || content || '|' || (created_at > '2000-01-02')::text || '|' || coalesce(reply_to_content, '')
-       FROM public.lounge_messages WHERE id = pg_temp.rh_row('message')));
+       FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_row('message'))));
   PERFORM pg_temp.rh_case('a comment keeps its log; its words are its writer''s', pg_temp.rh_row('a''s log')::text || '|rh words, amended',
-    (SELECT log_id || '|' || body FROM public.log_comments WHERE id = pg_temp.rh_row('comment')));
+    (SELECT log_id || '|' || body FROM public.log_comments WHERE id = (SELECT pg_temp.rh_row('comment'))));
   PERFORM pg_temp.rh_case('a log keeps the day it was made; its review is its member''s', 'true|rh review',
-    (SELECT (created_at > '2000-01-02')::text || '|' || review FROM public.logs WHERE id = pg_temp.rh_row('a''s log')));
+    (SELECT (created_at > '2000-01-02')::text || '|' || review FROM public.logs WHERE id = (SELECT pg_temp.rh_row('a''s log'))));
   PERFORM pg_temp.rh_case('a notice keeps what it says; its reading is the member''s', 'rh title|true',
-    (SELECT title || '|' || is_read FROM public.notifications WHERE id = pg_temp.rh_row('notice')));
+    (SELECT title || '|' || is_read FROM public.notifications WHERE id = (SELECT pg_temp.rh_row('notice'))));
   PERFORM pg_temp.rh_case('a warning keeps the house''s word; its member says it was read', 'rh reason|true',
-    (SELECT reason || '|' || acknowledged FROM public.warnings WHERE id = pg_temp.rh_row('warning')));
+    (SELECT reason || '|' || acknowledged FROM public.warnings WHERE id = (SELECT pg_temp.rh_row('warning'))));
   PERFORM pg_temp.rh_case('a salon''s count is its seats''; its name is its host''s', current_setting('rh.count', true) || '|rh renamed',
-    (SELECT member_count || '|' || name FROM public.lounges WHERE id = pg_temp.rh_row('open salon')));
+    (SELECT member_count || '|' || name FROM public.lounges WHERE id = (SELECT pg_temp.rh_row('open salon'))));
 END $$;
 
 -- ── as the private member: the house's own function still accepts the request ─

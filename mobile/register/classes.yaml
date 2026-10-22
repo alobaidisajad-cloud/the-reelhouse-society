@@ -712,6 +712,18 @@ classes:
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "runs only its own flows, in order, with no probe and no launch with animations on, its app launched once before them, and lists them" }
     fix: "every run makes one measured launch before its flows (run-flows.sh: on the phone as the run has it, the old process gone and 3 s, am start-activity -W, dumpsys meminfo once its first screen is ready) and puts a table on its summary of every launch in the device log (e2e/cold-start.mjs): Displayed, the first screen ready, skipped and Davey frames to it, and am's time and the native heap for the measured launch; every cell a value or why not, a log with no launch a failure (mutants judge-no-launch-to-measure, shape-cold-cell-left-empty, shape-cold-table-unwritten)"
 
+  - id: DB-rehearsal-reads-every-row
+    title: "A rehearsal picks its row by a temporary helper's call, which Postgres runs on every row of the table (the index unused, the row rules run on each), so on a full house a rehearsal holds its migration's locks for half a minute"
+    seriousness: code
+    area: database
+    status: OPEN
+    count: 60
+    source: { kind: history, ref: "Load 39736309440, the lock lab's first run: two rehearsals stopped at 30 s in is_lounge_member_or_host" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/rehearsalsRunInCi.guard.test.ts, test: "picks no row by a helper's call itself, which would be read on every row" }
+    fix: "every filter on a pg_temp helper's result in the six rehearsals that had one is a sub-select, (SELECT pg_temp.rh_row(...)), computed once and matched by the index under the row rules too (a plan read on Postgres: Seq Scan with the policy on every row before, Index Scan after); the rehearsal guard refuses the bare call; the lock lab names each run's three slowest statements (mutant shape-rehearsal-reads-every-row)"
+    places: [none]
+
   - id: LIGHT-unproven-on-device
     title: "The light drawn on no device as main writes it: the study proved its own gradient strings, main's light.ts writes them otherwise, and the member page's spotlight was never drawn on a phone"
     seriousness: code
