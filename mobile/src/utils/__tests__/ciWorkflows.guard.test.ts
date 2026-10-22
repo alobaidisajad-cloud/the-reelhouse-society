@@ -325,9 +325,11 @@ it('every apt install waits for the lock a try cut short at its limit leaves hel
     .filter((s) => s.run && installsByApt(s.run)).map((s) => ({ at: `${w.file} › ${job} › ${s.name}`, run: s.run! }))));
   expect(steps.length).toBeGreaterThanOrEqual(10);
   expect(steps.filter((s) => !waitsForTheLock(s.run)).map((s) => s.at)).toEqual([]);
-  // And Playwright's system packages are read from the copies a run before kept (God-Tier
-  // 39774848287: a slow mirror outlived the lock's wait too).
-  expect(steps.filter((s) => /--with-deps/.test(s.run) && !s.run.includes('sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/'))
+  // And Playwright's system packages go in from the copies a run before kept, by dpkg, before apt is
+  // asked at all (God-Tier 39774848287: a slow mirror outlived the lock's wait; 39806861456: apt-get
+  // update alone outlived the try).
+  const KEPT = 'if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then';
+  expect(steps.filter((s) => /--with-deps/.test(s.run) && !(s.run.includes(KEPT) && s.run.indexOf(KEPT) < s.run.indexOf('--with-deps')))
     .map((s) => s.at)).toEqual([]);
   expect(waitsForTheLock('npx playwright install --with-deps chromium')).toBe(false);
   expect(installsByApt('npx playwright install chromium')).toBe(false);

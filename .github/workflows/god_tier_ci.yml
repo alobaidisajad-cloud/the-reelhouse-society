@@ -508,8 +508,9 @@ jobs:
         if: steps.install-4.outcome == 'failure'
         timeout-minutes: 5
         run: npm ci
-      # Its system packages kept between runs: on a slow Ubuntu mirror (30-60 KB/s, God-Tier
-      # 39774848287) their 26 MB outlived a five-minute try, and apt reads the copies on disk instead.
+      # Its system packages kept between runs: on a slow Ubuntu mirror their 26 MB outlived a
+      # five-minute try (God-Tier 39774848287), and apt-get update alone another (39806861456), so
+      # the kept ones go in by dpkg (mobile/scripts/kept-debs.sh) and apt runs only when they cannot.
       - name: Chromium for the measuring tools — its system packages, from the cache
         id: debs-install-5
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -523,18 +524,24 @@ jobs:
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
-          [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
-          npx playwright install --with-deps chromium
-          mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+            mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          fi
       - name: Chromium for the measuring tools, once more
         if: steps.install-5.outcome == 'failure'
         timeout-minutes: 5
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
-          [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
-          npx playwright install --with-deps chromium
-          mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+            mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          fi
       - name: Chromium for the measuring tools — its system packages, kept in the cache
         if: steps.debs-install-5.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -665,8 +672,9 @@ jobs:
         if: steps.install-7.outcome == 'failure'
         timeout-minutes: 5
         run: npm ci
-      # Its system packages kept between runs: on a slow Ubuntu mirror (30-60 KB/s, God-Tier
-      # 39774848287) their 26 MB outlived a five-minute try, and apt reads the copies on disk instead.
+      # Its system packages kept between runs: on a slow Ubuntu mirror their 26 MB outlived a
+      # five-minute try (God-Tier 39774848287), and apt-get update alone another (39806861456), so
+      # the kept ones go in by dpkg (mobile/scripts/kept-debs.sh) and apt runs only when they cannot.
       - name: Chromium for the measuring tools — its system packages, from the cache
         id: debs-install-8
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -680,18 +688,24 @@ jobs:
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
-          [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
-          npx playwright install --with-deps chromium
-          mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+            mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          fi
       - name: Chromium for the measuring tools, once more
         if: steps.install-8.outcome == 'failure'
         timeout-minutes: 5
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
-          [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
-          npx playwright install --with-deps chromium
-          mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+            mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          fi
       - name: Chromium for the measuring tools — its system packages, kept in the cache
         if: steps.debs-install-8.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -1068,8 +1082,9 @@ jobs:
         if: steps.install-12.outcome == 'failure'
         timeout-minutes: 5
         run: npm ci
-      # Its system packages kept between runs: on a slow Ubuntu mirror (30-60 KB/s, God-Tier
-      # 39774848287) their 26 MB outlived a five-minute try, and apt reads the copies on disk instead.
+      # Its system packages kept between runs: on a slow Ubuntu mirror their 26 MB outlived a
+      # five-minute try (God-Tier 39774848287), and apt-get update alone another (39806861456), so
+      # the kept ones go in by dpkg (mobile/scripts/kept-debs.sh) and apt runs only when they cannot.
       - name: Playwright's system libraries, from the cache
         id: debs-install-13
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -1083,18 +1098,24 @@ jobs:
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
-          [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
-          npx playwright install --with-deps
-          mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
+            npx playwright install
+          else
+            npx playwright install --with-deps
+            mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          fi
       - name: Playwright's browsers and their system libraries, once more
         if: steps.install-13.outcome == 'failure'
         timeout-minutes: 5
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
-          [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
-          npx playwright install --with-deps
-          mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
+            npx playwright install
+          else
+            npx playwright install --with-deps
+            mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          fi
       - name: Playwright's system libraries, kept in the cache
         if: steps.debs-install-13.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
