@@ -1418,3 +1418,5 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/countryName.ts | 2026-10-22 | written: a country's name from its code; the house's own list (Hermes has no region names), the code where it has none |
 | src/utils/__tests__/countryName.test.ts | 2026-10-22 | written: in a sentence and as a label; an unknown code said as it came; every TMDB region named |
 | src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts | 2026-10-22 | written: the installed Reanimated keeps only mounted views and does not throw on one being made; the manifest is past the SDK pin |
+| e2e/load/train-locks.mjs | 2026-10-22 | written: the pending train run twice on the 100,000-member house as production runs it, every lock timed by a second connection; a blocking lock on a member's relation held over a second fails (P0.6) |
+| e2e/__tests__/trainLocks.test.ts | 2026-10-22 | written: on saved samples, a lock timed first sight to last, blamed on the statement that took it; which holds fail |

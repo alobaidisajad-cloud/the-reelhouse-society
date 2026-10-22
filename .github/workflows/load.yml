@@ -17,6 +17,10 @@ on:
     paths:
       - 'mobile/supabase/schema/**'
       - 'supabase/migrations/**'
+      # both migration trees, the rehearsals and the train itself: what the lock lab runs
+      - 'mobile/supabase/migrations/**'
+      - 'mobile/supabase/diagnostics/**'
+      - 'mobile/supabase/APPLIED.txt'
       - 'mobile/e2e/load/**'
       - 'mobile/e2e/db/bootstrap.mjs'
       - 'mobile/e2e/db/seal.sh'
@@ -117,6 +121,19 @@ jobs:
           fi
           exit $rc
 
+      # The pending train, as production will run it (each rehearsal in one rolled-back
+      # transaction, then file by file), every lock it takes timed on the full house: a lock
+      # that blocks members' reads or writes held over a second fails (WORKLIST P0.6).
+      - name: The pending train on the full house, its locks timed
+        env:
+          LOAD_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          set +e
+          node mobile/e2e/load/train-locks.mjs
+          rc=$?
+          [ $rc -eq 0 ] || node mobile/e2e/annotate.mjs "The train holds a lock members wait on" "$RUNNER_TEMP/lock-report.txt" error
+          exit $rc
+
       # A change waiting to be applied to production is measured here first, on
       # the full house: in one transaction, as postgres (who owns production's
       # objects), then vacuumed so its new index and table are read as they will be.
@@ -144,3 +161,13 @@ jobs:
         env:
           LOAD_DB_URL: postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres
         run: node mobile/e2e/load/probe.mjs
+
+      # The lock report goes with the train: the user reads it before applying.
+      - name: Keep the train's lock report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: train-lock-report
+          path: ${{ runner.temp }}/lock-report.txt
+          if-no-files-found: ignore
+          retention-days: 30
