@@ -37,4 +37,14 @@ describe('the flows the iPhone runs', () => {
     // Maestro's screenshots sit under a hidden .maestro folder: the records are kept with them.
     expect(wf).toMatch(/name: ios-flows\s+path: \$\{\{ runner\.temp \}\}\/ios-flows\s+include-hidden-files: true/);
   });
+
+  it('open a link as a member who once answered iOS\'s "Open": the app\'s scheme is approved before any flow runs', () => {
+    // iPhone launch 39795157842: the check behind iOS's "Open in ...?" neither asked nor opened the link.
+    const wf = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'ios-launch.yml'), 'utf8');
+    const app = (JSON.parse(readFileSync(join(MOBILE, 'app.json'), 'utf8')) as { expo: { scheme: string; ios: { bundleIdentifier: string } } }).expo;
+    const approve = `defaults write com.apple.launchservices.schemeapproval \\\n            'com.apple.CoreSimulator.CoreSimulatorBridge-->${app.scheme}' -string ${app.ios.bundleIdentifier}`;
+    const at = wf.replace(/\r\n/g, '\n').indexOf(approve);
+    expect(at).toBeGreaterThan(0);
+    expect(at).toBeLessThan(wf.replace(/\r\n/g, '\n').indexOf('"$MAESTRO_BIN" --device "$SIM_DEVICE" test'));
+  });
 });

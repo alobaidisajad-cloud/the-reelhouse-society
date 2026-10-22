@@ -156,6 +156,11 @@ jobs:
           S="$RUNNER_TEMP/ios-flows"
           mkdir -p "$S"
           rc=0
+          # A member who once answered iOS's "Open in ...?" for this app is not asked again, and the
+          # simulator starts as one: the check behind that question once neither asked nor opened the
+          # link (iPhone launch 39795157842), so it is answered before any flow runs.
+          xcrun simctl spawn "$SIM_DEVICE" defaults write com.apple.launchservices.schemeapproval \
+            'com.apple.CoreSimulator.CoreSimulatorBridge-->reelhouse' -string com.reelhouse.society
           for f in $(node -e "process.stdout.write(require('./e2e/ios-flows.json').flows.join(' '))"); do
             if "$MAESTRO_BIN" --device "$SIM_DEVICE" test ".maestro/$f" --debug-output "$S/${f%.yaml}" > "$S/${f%.yaml}.txt" 2>&1 < /dev/null; then
               echo "$f: passed"

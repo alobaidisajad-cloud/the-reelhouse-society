@@ -788,6 +788,18 @@ classes:
     fix: "every step that installs through apt (the Postgres client, Playwright's --with-deps) first sets DPkg::Lock::Timeout to 240 s, so a retry waits for the try before it to let go of the lock; and Playwright's system packages are kept between runs in GitHub's cache and copied into apt's own archive first, since a mirror at 30-60 KB/s outlived the wait too (God-Tier 39774848287) (mutant shape-retry-blocked-by-lock)"
     places: [none]
 
+  - id: E2E-ios-link-question-unanswered
+    title: "A link opened on the iPhone simulator went nowhere: iOS's check behind \"Open in ...?\" neither asked nor opened it, so the flow failed for the simulator, not the app"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "iPhone launch 39795157842, auth_deep_link: lsd ran its scheme approval for reelhouse://reset-password, SpringBoard showed no question, and the app logged nothing; the iPhone launch one push before showed the question for the same link" }
+    methods:
+      - { kind: static, file: e2e/__tests__/iosFlows.test.ts, test: "open a link as a member who once answered iOS's \"Open\": the app's scheme is approved before any flow runs" }
+    fix: "the iPhone launch check writes, through the simulator's own preferences, the answer a member gives once (the app's scheme from app.json, approved for its bundle id) before any flow runs; open_link_on_ios.yaml still answers the question should iOS ask it (mutant shape-ios-link-question-unanswered)"
+    places: [simulator]
+
   - id: CI-install-fails-on-a-source-it-never-uses
     title: "An install failed for a package source no step installs from: the runner comes with packages.microsoft.com in apt's list, it answered 403, and apt-get update failed the Postgres client's install, both tries"
     seriousness: code

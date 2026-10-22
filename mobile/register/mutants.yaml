@@ -945,6 +945,15 @@ mutants:
         replace: "        continue-on-error: true\n        run: |\n"
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }
 
+  - id: shape-ios-link-question-unanswered
+    class: E2E-ios-link-question-unanswered
+    source: shape
+    edits:
+      - file: ../.github/workflows/ios-launch.yml
+        find: "          xcrun simctl spawn \"$SIM_DEVICE\" defaults write com.apple.launchservices.schemeapproval \\\n            'com.apple.CoreSimulator.CoreSimulatorBridge-->reelhouse' -string com.reelhouse.society\n"
+        replace: ""
+    proof: { file: e2e/__tests__/iosFlows.test.ts, test: "open a link as a member who once answered iOS's \"Open\": the app's scheme is approved before any flow runs" }
+
   - id: shape-install-reads-every-source
     class: CI-install-fails-on-a-source-it-never-uses
     source: shape
