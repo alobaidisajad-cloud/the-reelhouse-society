@@ -686,6 +686,13 @@
     "verdict": "caught"
   },
   {
+    "class": "E2E-ios-link-question-unanswered",
+    "mutant": "shape-ios-link-question-unanswered",
+    "proof": "m1",
+    "commit": "7d13a895bf529c431573250fd092431150f27c9e",
+    "verdict": "caught"
+  },
+  {
     "class": "CI-install-fails-on-a-source-it-never-uses",
     "mutant": "shape-install-reads-every-source",
     "proof": "m1",
