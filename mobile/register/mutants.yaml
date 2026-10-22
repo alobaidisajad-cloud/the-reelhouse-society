@@ -945,6 +945,24 @@ mutants:
         replace: "        continue-on-error: true\n        run: |\n"
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }
 
+  - id: shape-router-mock-from-scratch
+    class: TEST-mock-written-from-scratch
+    source: shape
+    edits:
+      - file: app/stacks/__tests__/zz-stacks.gen.test.tsx
+        find: "  ...require('@/test-utils/expoRouterMock').expoRouterMock(),\n"
+        replace: ""
+    proof: { file: test-utils/__tests__/theRouterMockHasOneBase.guard.test.ts, test: "every mock of expo-router spreads the one base, or the real module, first" }
+
+  - id: shape-ios-cold-link-once
+    class: E2E-ios-cold-link-launch-hang
+    source: shape
+    edits:
+      - file: .maestro/auth_deep_link.yaml
+        find: "          maxRetries: 1\n"
+        replace: "          maxRetries: 0\n"
+    proof: { file: e2e/__tests__/iosFlows.test.ts, test: "open a link with the app closed once more on iOS, where the simulator may hang the launch" }
+
   - id: shape-parchment-as-paper
     class: LOOK-text-colour-laid-as-paper
     source: shape

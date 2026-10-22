@@ -29,6 +29,7 @@ jest.mock('@/src/stores/auth', () => {
   return { useAuthStore: Object.assign((sel: (s: typeof state) => unknown) => sel(state), { getState: () => state }) };
 });
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useLocalSearchParams: () => ({ username: 'ana' }),
   useNavigation: () => ({ setParams: jest.fn(), addListener: () => () => {} }),
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => true },

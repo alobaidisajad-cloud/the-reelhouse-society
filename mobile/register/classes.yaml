@@ -788,6 +788,30 @@ classes:
     fix: "every step that installs through apt (the Postgres client, Playwright's --with-deps) first sets DPkg::Lock::Timeout to 240 s, so a retry waits for the try before it to let go of the lock; and Playwright's system packages are kept between runs in GitHub's cache and installed from there by dpkg alone (scripts/kept-debs.sh) before apt is asked, since a mirror at 30-60 KB/s outlived the wait too (God-Tier 39774848287) and apt-get update alone outlived a try (God-Tier 39806861456, its retry then refused on the package lists' lock) (mutants shape-retry-blocked-by-lock, shape-install-waits-on-the-mirror)"
     places: [none]
 
+  - id: TEST-mock-written-from-scratch
+    title: "A test's own mock of expo-router, written from scratch, replaced the shared one whole and lacked what its screen came to call: the stack page's ready mark threw in its tests and its generator"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 65
+    source: { kind: history, ref: "God-Tier 39836999393: zz-stacks.gen threw 'useFocusEffect is not a function' at every width, after the stack page gained its ready mark" }
+    methods:
+      - { kind: static, file: test-utils/__tests__/theRouterMockHasOneBase.guard.test.ts, test: "every mock of expo-router spreads the one base, or the real module, first" }
+    fix: "jest.setup.ts mocks expo-router with test-utils/expoRouterMock.ts, and every test's own mock (65) spreads that base first, or the real module, and changes only what it means to (mutant shape-router-mock-from-scratch)"
+    places: [none]
+
+  - id: E2E-ios-cold-link-launch-hang
+    title: "A link opened with the app closed on the iPhone simulator was given up at ten seconds: the simulator hung the app's launch after a stop, and no line from the app ever came"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "iPhone launch 39836999452, auth_deep_link: simctl openurl reelhouse://_sitemap, NSPOSIXErrorDomain 60 at ten seconds, the launch begun and nothing from the app" }
+    methods:
+      - { kind: static, file: e2e/__tests__/iosFlows.test.ts, test: "open a link with the app closed once more on iOS, where the simulator may hang the launch" }
+    fix: "on iOS alone the cold link is opened once more (Maestro's retry, once); an app that mishandled it still fails the wait for the not-found screen; release guard reads the per-platform link as the cold open (mutant shape-ios-cold-link-once)"
+    places: [simulator]
+
   - id: LOOK-text-colour-laid-as-paper
     title: "The Lobby's boxes laid the house's text colour (parchment) down as their paper, and read too white"
     seriousness: code

@@ -18,7 +18,7 @@ import { RankBill } from '../lobby/RankBill';
 import { planWall } from '../lobby/measure';
 import { MOBILE } from '@/test-utils/readCode';
 
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
+jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useRouter: () => ({ push: jest.fn() }) }));
 // Each drawn as a marked stand-in, so the banner's render can be counted.
 jest.mock('../MasterLogo', () => ({ MasterLogo: () => require('react').createElement(require('react-native').View, { testID: 'master-logo' }) }));
 jest.mock('../ReelEyeIcon', () => ({ ReelEyeIcon: () => require('react').createElement(require('react-native').View, { testID: 'reel-eye' }) }));

@@ -521,7 +521,7 @@ jest.mock('@/src/stores/auth', () => {
     () => ({ user: { id: 'u1', preferences: mockStorePrefs }, updateUser: mockUpdateUser });
   return { useAuthStore };
 });
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
+jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useRouter: () => ({ push: jest.fn() }) }));
 jest.mock('@/src/utils/reelToast', () => ({ __esModule: true, default: Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn() }) }));
 
 

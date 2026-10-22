@@ -11,7 +11,7 @@ import { render, fireEvent, act } from '@testing-library/react-native';
 import { DarkroomHeader } from '../DarkroomHeader';
 import { useDiscoverStore } from '@/src/stores/discover';
 
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
+jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useRouter: () => ({ push: jest.fn() }) }));
 jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));
 const mockSearch = jest.fn();
 jest.mock('@/src/lib/tmdb', () => ({ tmdb: { search: (...a: unknown[]) => mockSearch(...a), detail: jest.fn() } }));

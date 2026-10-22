@@ -20,6 +20,7 @@ import { PROGRAMME_KEY, WALL_KEY, featureKey } from '../wallRead';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn(), navigate: jest.fn() }),
   // The app travels through `nav`, which drives the module's router.
   router: { push: (...a: unknown[]) => mockPush(...a), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(), canGoBack: () => true },

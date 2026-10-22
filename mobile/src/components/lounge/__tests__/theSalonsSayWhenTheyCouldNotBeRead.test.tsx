@@ -22,6 +22,7 @@ jest.mock('@/src/stores/auth', () => {
 /** Where the rope sent the member (openSociety travels by the module router). */
 const mockPushed: string[] = [];
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   router: { push: (h: string) => { mockPushed.push(h); }, canGoBack: () => false, back: () => {} },
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useLocalSearchParams: () => ({}), useFocusEffect: () => {},

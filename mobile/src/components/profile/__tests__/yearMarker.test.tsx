@@ -17,6 +17,7 @@ import { RoomRail } from '../RoomParts';
 import { type as t } from '@/src/theme/theme';
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useLocalSearchParams: () => ({}),
   useFocusEffect: () => {},

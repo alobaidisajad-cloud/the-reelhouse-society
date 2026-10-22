@@ -31,7 +31,7 @@ let mockCachedStack: unknown;
 const mockCreateList = jest.fn();
 const mockUpdateList = jest.fn();
 
-jest.mock('expo-router', () => ({ useLocalSearchParams: () => mockParams }));
+jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useLocalSearchParams: () => mockParams }));
 jest.mock('@/src/utils/typedRouter', () => ({
   nav: { back: jest.fn(), push: jest.fn(), replace: jest.fn() },
 }));

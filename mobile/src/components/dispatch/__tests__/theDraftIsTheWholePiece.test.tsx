@@ -31,6 +31,7 @@ let mockUser: Record<string, unknown> | null = {
 let mockPartsOnServer: number[] = [];
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), setParams: jest.fn() },
   useLocalSearchParams: () => mockParams,
   Stack: { Screen: () => null },

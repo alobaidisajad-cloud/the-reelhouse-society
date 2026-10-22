@@ -23,6 +23,7 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 
 let mockStackData: Record<string, unknown>;
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   router: { back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() },
   useLocalSearchParams: () => ({ id: '11111111-1111-4111-8111-111111111111' }),
   useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),

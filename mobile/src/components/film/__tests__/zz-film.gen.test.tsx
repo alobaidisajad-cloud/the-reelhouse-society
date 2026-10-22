@@ -14,6 +14,7 @@ import { FilmDetailLayout } from '../FilmDetailLayout';
 import { FilmDetailProvider } from '@/src/providers/FilmDetailProvider';
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   // The module's router, as the real one has it (the failed page names its way out).
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true },

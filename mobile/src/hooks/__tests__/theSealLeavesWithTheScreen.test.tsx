@@ -28,6 +28,7 @@ let mockUpdateLog: jest.Mock;
 let mockParams: Record<string, string> = {};
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useLocalSearchParams: () => mockParams,
   useRouter: () => ({ back: mockBack, push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() }),
   // The app leaves through nav.back(), which asks the router whether there is a back.

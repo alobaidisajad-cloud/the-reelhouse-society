@@ -38,6 +38,7 @@ jest.mock('@tanstack/react-query', () => ({
   }),
 }));
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   router: { back: jest.fn(), push: jest.fn(), replace: jest.fn() },
   useLocalSearchParams: () => ({ id: '22222222-2222-4222-8222-222222222222' }),
   useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),

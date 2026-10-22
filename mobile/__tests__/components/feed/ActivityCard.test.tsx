@@ -5,6 +5,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useRouter: () => ({ push: jest.fn() }),
   useLocalSearchParams: () => ({}),
 }));

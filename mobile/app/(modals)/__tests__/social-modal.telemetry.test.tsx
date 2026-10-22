@@ -27,6 +27,7 @@ afterEach(async () => { await act(async () => { await Promise.resolve(); }); });
 let mockParams: Record<string, string | undefined> = {};
 
 jest.mock('expo-router', () => ({
+    ...require('@/test-utils/expoRouterMock').expoRouterMock(),
     router: { dismiss: jest.fn(), back: jest.fn(), push: jest.fn(), replace: jest.fn() },
     useLocalSearchParams: () => mockParams,
     useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn() }),

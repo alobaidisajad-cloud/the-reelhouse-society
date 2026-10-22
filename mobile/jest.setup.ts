@@ -254,31 +254,8 @@ jest.mock('@supabase/supabase-js', () => ({
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock expo-router — prevents navigation context errors
 // ─────────────────────────────────────────────────────────────────────────────
-jest.mock('expo-router', () => {
-  const React = require('react');
-  const { Text } = require('react-native');
-  return {
-    // canGoBack/canDismiss as the real router has them: nav.back() and
-    // nav.dismiss() ask before they go (a raw back with no history does nothing).
-    router: {
-      push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(),
-      canGoBack: jest.fn(() => true), canDismiss: jest.fn(() => true), dismiss: jest.fn(), dismissAll: jest.fn(),
-    },
-    useRouter: jest.fn(() => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() })),
-    useLocalSearchParams: jest.fn(() => ({})),
-    useGlobalSearchParams: jest.fn(() => ({})),
-    useSegments: jest.fn(() => []),
-    usePathname: jest.fn(() => '/'),
-    useNavigation: jest.fn(() => ({ navigate: jest.fn(), goBack: jest.fn(), setOptions: jest.fn() })),
-    Link: ({ children, ...props }: any) => React.createElement(Text, props, children),
-    Redirect: ({ href }: any) => React.createElement(Text, { testID: 'redirect' }, `Redirect:${href}`),
-    Stack: { Screen: ({ children }: any) => children || null },
-    Tabs: { Screen: ({ children }: any) => children || null },
-    Slot: () => null,
-    // An effect WITH its cleanup, as the real hook is; a memoised callback runs once.
-    useFocusEffect: (cb: any) => React.useEffect(cb, [cb]),
-  };
-});
+// The base every test's own mock of expo-router spreads too (test-utils/expoRouterMock.ts).
+jest.mock('expo-router', () => require('./test-utils/expoRouterMock').expoRouterMock());
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock expo-secure-store — native module

@@ -32,6 +32,7 @@ import { BRASS_STOPS, BRASS_WIDE_START, BRASS_WIDE_END, CROWN_HEIGHT } from '@/s
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useFocusEffect: () => {},
 }));

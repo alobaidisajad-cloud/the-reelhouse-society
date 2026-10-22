@@ -28,6 +28,7 @@ import ComposeScreen from '@/app/dispatch/compose';
 
 /** The room is reached with `?kind=dossier`, and only by an Auteur. */
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   router: { back: jest.fn(), replace: jest.fn(), setParams: jest.fn() },
   useLocalSearchParams: () => ({ kind: 'dossier' }),
   Stack: { Screen: () => null },

@@ -56,6 +56,7 @@ jest.mock('@/src/utils/typedRouter', () => ({
   nav: { push: (p: string) => { mockWent.push(p); }, replace: jest.fn(), back: jest.fn() },
 }));
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: (p: string) => { mockWent.push(p); } }),
 }));
 jest.mock('@/src/utils/openSociety', () => ({ openSociety: (p: string) => { mockWent.push(`society:${p}`); } }));

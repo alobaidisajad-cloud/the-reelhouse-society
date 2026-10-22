@@ -26,6 +26,7 @@ jest.mock('@/src/lib/queryClient', () => ({
 }));
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   router: { replace: jest.fn(), push: jest.fn(), back: jest.fn() },
 }));
 

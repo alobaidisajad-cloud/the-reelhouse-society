@@ -38,6 +38,14 @@ describe('the flows the iPhone runs', () => {
     expect(wf).toMatch(/name: ios-flows\s+path: \$\{\{ runner\.temp \}\}\/ios-flows\s+include-hidden-files: true/);
   });
 
+  it('open a link with the app closed once more on iOS, where the simulator may hang the launch', () => {
+    // iPhone launch 39836999452: after a stop, the simulator hung the app's launch (no line from the
+    // app at all) and gave up the link at ten seconds.
+    const flowText = flow('auth_deep_link.yaml');
+    const iosCold = /- stopApp\n(?:[\s\S]*?)- runFlow:\n {4}when:\n {6}platform: iOS\n {4}commands:\n {6}- retry:\n {10}maxRetries: 1\n {10}commands:\n {12}- openLink: "reelhouse:\/\/_sitemap"/;
+    expect(flowText.replace(/\r\n/g, '\n')).toMatch(iosCold);
+  });
+
   it('open a link as a member who once answered iOS\'s "Open": the app\'s scheme is approved before any flow runs', () => {
     // iPhone launch 39795157842: the check behind iOS's "Open in ...?" neither asked nor opened the link.
     const wf = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'ios-launch.yml'), 'utf8');

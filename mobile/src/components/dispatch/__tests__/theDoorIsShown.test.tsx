@@ -45,6 +45,7 @@ const mockPushed: string[] = [];
 const mockBack = jest.fn();
 let mockParams: Record<string, string | undefined> = {};
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   router: {
     back: () => mockBack(),
     canGoBack: () => true,

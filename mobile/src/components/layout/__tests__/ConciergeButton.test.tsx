@@ -70,6 +70,7 @@ jest.mock('react-native-reanimated', () => {
 
 // The door goes through nav, which travels by expo-router's `router`.
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   router: { push: (...a: unknown[]) => mockPush(...a), replace: jest.fn(), back: jest.fn(), canGoBack: () => true },
 }));
 

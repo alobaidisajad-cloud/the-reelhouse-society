@@ -22,6 +22,7 @@ for (const [p, data] of Object.entries(RAW)) if (data) posters[p] = { title: '',
 let mockViewer: Record<string, unknown> = { id: 'me', username: 'kane', role: 'user', tier: null, preferences: {} };
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() }),
   useLocalSearchParams: () => ({}),
   useFocusEffect: () => {},

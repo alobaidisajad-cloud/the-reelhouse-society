@@ -30,7 +30,7 @@ const mockFilms = {
 jest.mock('@/src/stores/films', () => ({
   useWatchlistStore: (sel: (s: unknown) => unknown) => sel(mockFilms),
 }));
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn() }) }));
+jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useRouter: () => ({ push: jest.fn() }) }));
 jest.mock('@/src/utils/gateTelemetry', () => ({ recordGateEvent: jest.fn() }));
 jest.mock('@/src/utils/TactileEngine', () => ({
   __esModule: true,

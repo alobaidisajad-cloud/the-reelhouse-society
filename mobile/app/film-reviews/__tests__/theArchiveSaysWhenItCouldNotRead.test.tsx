@@ -28,6 +28,7 @@ jest.mock('@/src/lib/supabase', () => {
 // As the router hands it over: decoded (useLocalSearchParams decodes each param).
 let mockTitle = 'The Film';
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useLocalSearchParams: () => ({ id: '631', title: mockTitle }),
   useRouter: () => ({ back: jest.fn(), canGoBack: () => true, push: jest.fn(), replace: jest.fn() }),
   Stack: { Screen: () => null },

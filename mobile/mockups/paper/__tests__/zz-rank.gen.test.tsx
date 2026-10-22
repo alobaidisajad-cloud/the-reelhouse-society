@@ -22,6 +22,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useFocusEffect: () => {},
 }));

@@ -21,6 +21,7 @@ const mockBack = jest.fn();
 const mockPush = jest.fn();
 const mockCanGoBack = jest.fn();
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   router: {
     back: (...a: unknown[]) => mockBack(...a),
     push: (...a: unknown[]) => mockPush(...a),

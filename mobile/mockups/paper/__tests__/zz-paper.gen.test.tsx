@@ -65,6 +65,7 @@ const PostDock = (props: React.ComponentProps<typeof RawPostDock>) => (
 const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'out');
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useFocusEffect: () => {},
 }));

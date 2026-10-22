@@ -373,13 +373,32 @@ it('an E2E flow opens reelhouse://_sitemap with the app closed, and waits for th
   });
   // Between the link and the wait, only iOS's answer to its own "Open in ...?" (an iPhone asks first).
   const iosAnswer = (x: unknown) => (x as { runFlow?: { file?: string } })?.runFlow?.file === 'subflows/open_link_on_ios.yaml';
+  const SITEMAP = 'reelhouse://_sitemap';
+  type Flow = { runFlow?: { when?: { platform?: string }; commands?: unknown[] } };
+  /** Whether a step list is the link alone: openLink, or openLink inside one retry. */
+  const linkAlone = (cs: unknown[] | undefined): boolean => cs?.length === 1 && (
+    (cs[0] as { openLink?: string })?.openLink === SITEMAP
+    || linkAlone((cs[0] as { retry?: { commands?: unknown[] } })?.retry?.commands));
+  /** The steps after the link: the link itself, or one per platform (Android's and iOS's), each the link alone. */
+  const afterLink = (s: unknown[], at: number): number | null => {
+    if ((s[at] as { openLink?: string })?.openLink === SITEMAP) return at + 1;
+    const pair = [s[at], s[at + 1]] as Flow[];
+    const platforms = pair.map((x) => x?.runFlow?.when?.platform).sort().join(',');
+    return platforms === 'Android,iOS' && pair.every((x) => linkAlone(x.runFlow?.commands)) ? at + 2 : null;
+  };
   const found = steps.filter(({ steps: s }) => s.some((step, i) => {
-    const wait = iosAnswer(s[i + 2]) ? s[i + 3] : s[i + 2];
-    return step === 'stopApp'
-      && (s[i + 1] as { openLink?: string })?.openLink === 'reelhouse://_sitemap'
-      && (wait as { extendedWaitUntil?: { visible?: string } })?.extendedWaitUntil?.visible === 'ROUTE NOT IN THE ARCHIVE';
+    const next = step === 'stopApp' ? afterLink(s, i + 1) : null;
+    if (next === null) return false;
+    const wait = iosAnswer(s[next]) ? s[next + 1] : s[next];
+    return (wait as { extendedWaitUntil?: { visible?: string } })?.extendedWaitUntil?.visible === 'ROUTE NOT IN THE ARCHIVE';
   }));
   expect(found.map((x) => x.f)).toEqual(['auth_deep_link.yaml']);
+  // A platform's link left out, or anything but the link (or its one retry) in its place, is no cold open.
+  const android = { runFlow: { when: { platform: 'Android' }, commands: [{ openLink: SITEMAP }] } };
+  const ios = { runFlow: { when: { platform: 'iOS' }, commands: [{ retry: { maxRetries: 1, commands: [{ openLink: SITEMAP }] } }] } };
+  expect(afterLink([android, ios], 0)).toBe(2);
+  expect(afterLink([android, android], 0)).toBeNull();
+  expect(afterLink([android, { runFlow: { when: { platform: 'iOS' }, commands: [{ launchApp: null }, { openLink: SITEMAP }] } }], 0)).toBeNull();
   // Its title is the one app/+not-found.tsx draws.
   expect(readCode('app/+not-found.tsx')).toContain('ROUTE NOT IN THE ARCHIVE');
 });

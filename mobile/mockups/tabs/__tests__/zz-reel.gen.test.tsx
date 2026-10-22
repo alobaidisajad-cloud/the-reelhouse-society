@@ -17,6 +17,7 @@ const posters: Record<string, { title: string; data: string }> = {};
 for (const [p, data] of Object.entries(RAW)) if (data) posters[p] = { title: '', data };
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useLocalSearchParams: () => ({}),
   useFocusEffect: () => {},

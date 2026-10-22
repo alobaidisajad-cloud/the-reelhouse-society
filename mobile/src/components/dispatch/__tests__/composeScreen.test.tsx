@@ -33,6 +33,7 @@ const mockParams: Record<string, string>[] = [];
 jest.mock('expo-router', () => {
   const React = require('react');
   return {
+    ...require('@/test-utils/expoRouterMock').expoRouterMock(),
     router: {
       push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(), canGoBack: () => true,
       setParams: (p: Record<string, string>) => { mockParams.push(p); },

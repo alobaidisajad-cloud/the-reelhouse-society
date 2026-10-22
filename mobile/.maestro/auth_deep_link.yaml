@@ -29,7 +29,23 @@ appId: com.reelhouse.society
 # route unless app.json turns its sitemap off, and with it off the path is
 # one the app does not have, so it lands on +not-found.
 - stopApp
-- openLink: "reelhouse://_sitemap"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - openLink: "reelhouse://_sitemap"
+# iOS's simulator once hung the app's launch after a stop, no line from
+# the app at all, and gave up the link at ten seconds (iPhone launch
+# 39836999452): the link is opened once more. An app that mishandled it
+# fails the wait below either way.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - retry:
+          maxRetries: 1
+          commands:
+            - openLink: "reelhouse://_sitemap"
 - runFlow:
     when:
       platform: iOS

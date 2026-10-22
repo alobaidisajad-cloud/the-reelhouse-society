@@ -50,7 +50,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/nightly.yml | 2026-10-22 | read whole: a variant's machines as it runs them; a heartbeat when the schedule ran |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
-| .maestro/auth_deep_link.yaml | 2026-10-22 | edited: the Back check also opens the Darkroom, not the Reel (the Reel's cold open is the lab's to measure); Back from the screen a cold link opened lands on the Lobby, on Android; reelhouse://_sitemap, opened with the app closed, lands on +not-found |
+| .maestro/auth_deep_link.yaml | 2026-10-22 | edited: the cold sitemap link per platform, opened once more on iOS; the Back check also opens the Darkroom, not the Reel (the Reel's cold open is the lab's to measure); Back from the screen a cold link opened lands on the Lobby, on Android; reelhouse://_sitemap, opened with the app closed, lands on +not-found |
 | .maestro/auth_flow.yaml | 2026-09-29 | true as written |
 | .maestro/boot_verification.yaml | 2026-10-01 | header narrowed to what it proves; wrapped to 80 |
 | .maestro/browse_vault.yaml | 2026-09-29 | true as written |
@@ -259,7 +259,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-16 | edited: Stryker's sandbox (.stryker-tmp) is never read as tests or modules |
-| jest.setup.ts | 2026-10-22 | edited: useFrameCallback kept, not run, for a test to hand it frames; expo-image's getCachePathAsync answers null, as native does for a picture not on disk |
+| jest.setup.ts | 2026-10-22 | edited: expo-router mocked with the one base every test's own mock spreads; useFrameCallback kept, not run, for a test to hand it frames; expo-image's getCachePathAsync answers null, as native does for a picture not on disk |
 | jest.stryker.config.js | 2026-10-16 | new: the tests' config in Stryker's own process, its environment by its whole path |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
@@ -1262,7 +1262,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/raceDeadline.test.ts | 2026-10-04 | written whole |
 | src/utils/__tests__/recommendations.test.ts | — |  |
 | src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-22 | read whole: no row picked by a helper's call itself, said no to on a planted case and held for every rehearsal; the rules said no to first; the kit, the seed and CI's order |
-| src/utils/__tests__/releaseGuard.guard.test.ts | 2026-10-15 | new: each rule says no in each format; the input is never the E2E app; the sitemap flow |
+| src/utils/__tests__/releaseGuard.guard.test.ts | 2026-10-22 | edited: the cold sitemap link may be one per platform, iOS's inside its one retry; each rule says no in each format; the input is never the E2E app; the sitemap flow |
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/resumeSaysWhereTheWorkStands.test.ts | 2026-10-16 | new: the next class is the one that matters most, a journal keeps what was written in it, every worktree finds the same journals, the next train is the pending migrations |
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-16 | edited: the store is asked at the address the settings name, always with a time limit, and gives up before the app does |
@@ -1435,7 +1435,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/lab/scrolls.mjs | 2026-10-22 | edited: rankDiff (ranks decide p: the lab's values tie); jsLongOf, the frame record's long JavaScript tasks; costs(): the Reel per build and arm against A (opened, frames, p50, p90; not the janky share, 100% on the lab's GPU), Holm; each screen's scroll judged: moved on each of the first five swipes (three screen heights) or failed by name; Android's own frame counts, this runner's, never a phone's (P0.104) |
 | e2e/lab/scrolls.sh | 2026-10-22 | edited: the rank-sum test's power, re-measured, says why fourteen rounds; scroll_one(); the Reel on A and each LAB_REEL_ARMS build, installed over the signed-in member, fourteen rounds turned; the phone with no keyboard as the flows have it (no-keyboard.sh); signed in once with Maestro; each busy screen opened cold by its link, shot, ten swipes in one shell call with a hash after each, its frames counted; two rounds of opposite order (P0.104) |
 | e2e/lab/sign-in.yaml | 2026-10-22 | written: the seeded member signed in once from a cleared app, by the flows' own subflow |
-| e2e/__tests__/iosFlows.test.ts | 2026-10-22 | edited: the iPhone's flows are flows of .maestro that need no server, the launch check runs each on its own simulator (P0.89), and the app's scheme is approved before the first |
+| e2e/__tests__/iosFlows.test.ts | 2026-10-22 | edited: the cold link opened once more on iOS, where the simulator may hang the launch; the iPhone's flows are flows of .maestro that need no server, the launch check runs each on its own simulator (P0.89), and the app's scheme is approved before the first |
 | e2e/no-keyboard.sh | 2026-10-22 | moved whole from run-flows.sh: the phone with no keyboard apps, no input method and no autofill, sourced by run-flows.sh and the speed lab's scrolls.sh; a keyboard left stops the run |
 | .maestro/subflows/open_link_on_ios.yaml | 2026-10-22 | written: iOS's own "Open in ...?" before a link opens the app, answered as a member does; nothing if it never came |
 | scripts/kept-debs.sh | 2026-10-22 | new: the kept packages by dpkg alone, those installed left, its exit tells the caller to let apt fetch |
@@ -1443,3 +1443,5 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/__tests__/theBillsArePrintedOnPaper.guard.test.ts | 2026-10-22 | new: no parchment ground in the Lobby; the three bills on the paper token |
 | src/components/layout/LabFrameLog.tsx | 2026-10-22 | new: the lab's frame record: long JavaScript tasks, the UI thread's slow frames, per page, in the lab's builds alone |
 | src/components/layout/__tests__/labFrameLog.test.tsx | 2026-10-22 | new: a task long only past a frame and 50 ms, a frame slow past 25 ms, a quiet second unsaid, each page counted from its start |
+| test-utils/expoRouterMock.ts | 2026-10-22 | new: expo-router as every test meets it, the base of every mock of it |
+| test-utils/__tests__/theRouterMockHasOneBase.guard.test.ts | 2026-10-22 | new: every mock of expo-router spreads the base or the real module; jest.setup.ts uses the base |

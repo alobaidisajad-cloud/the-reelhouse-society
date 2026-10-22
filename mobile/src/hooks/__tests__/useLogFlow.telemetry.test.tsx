@@ -18,6 +18,7 @@ const GENUINE = Object.assign(new Error('permission denied'), { code: '42501' })
 let mockAddLog: jest.Mock;
 
 jest.mock('expo-router', () => ({
+    ...require('@/test-utils/expoRouterMock').expoRouterMock(),
     useLocalSearchParams: () => ({ filmId: '550', filmTitle: 'Fight Club', filmPoster: '/p.jpg', filmYear: '1999' }),
     useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() }),
     router: { back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() },

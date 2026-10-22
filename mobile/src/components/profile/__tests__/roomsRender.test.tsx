@@ -17,6 +17,7 @@ import ProfileListsTab from '../ProfileListsTab';
 import ProfilePhysicalTab from '../ProfilePhysicalTab';
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useLocalSearchParams: () => ({}),
   Router: class {},

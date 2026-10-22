@@ -29,7 +29,7 @@ jest.mock('@/src/stores/auth', () => {
   return { useAuthStore: Object.assign((sel?: (s: unknown) => unknown) => (sel ? sel(state) : state), { getState: () => state }) };
 });
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), replace: jest.fn(), back: jest.fn() } }));
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() }) }));
+jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() }) }));
 jest.mock('@/src/utils/openSociety', () => ({ openSociety: jest.fn() }));
 jest.mock('@/src/utils/reelToast', () => ({ __esModule: true, default: { success: jest.fn(), error: jest.fn() } }));
 jest.mock('@/src/lib/supabase', () => ({ supabase: { rpc: jest.fn() } }));

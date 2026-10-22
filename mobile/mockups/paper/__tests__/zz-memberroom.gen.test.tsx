@@ -39,6 +39,7 @@ import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib'
 import RoomScreen from '@/app/dispatch/room/[username]';
 
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   router: { back: jest.fn(), replace: jest.fn(), setParams: jest.fn() },
   useLocalSearchParams: () => ({ username: 'tomasreyes' }),
   Stack: { Screen: () => null },

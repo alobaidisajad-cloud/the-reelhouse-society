@@ -19,6 +19,7 @@ jest.mock('@/src/hooks/useProfileData', () => ({
   }),
 }));
 jest.mock('expo-router', () => ({
+  ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   useLocalSearchParams: () => ({ username: 'tomas', tab: 'archive' }),
   useNavigation: () => ({ setParams: jest.fn(), addListener: () => () => {} }),
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => true },

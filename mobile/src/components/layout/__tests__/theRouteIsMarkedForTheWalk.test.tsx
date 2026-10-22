@@ -10,7 +10,7 @@ import { render } from '@testing-library/react-native';
 let mockE2E = true;
 let mockPath = '/film/129';
 jest.mock('@/src/utils/e2eTrace', () => ({ get E2E_BUILD() { return mockE2E; }, e2eTrace: jest.fn() }));
-jest.mock('expo-router', () => ({ usePathname: () => mockPath }));
+jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), usePathname: () => mockPath }));
 
 // eslint-disable-next-line import/first -- after the mocks it reads
 import { E2ERouteMark, PreloaderGone, routeMarkOf } from '../E2ERouteMark';

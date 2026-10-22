@@ -70,7 +70,7 @@ jest.mock('@/src/utils/gateTelemetry', () => ({ recordGateEvent: jest.fn() }));
 const mockPush = jest.fn();
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { back: jest.fn(), push: (...a: unknown[]) => mockPush(...a) } }));
 let mockParams: Record<string, string> = {};
-jest.mock('expo-router', () => ({ useLocalSearchParams: () => mockParams }));
+jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useLocalSearchParams: () => mockParams }));
 let mockUser: Record<string, unknown> | null = null;
 // ONE of each, held for the whole file: a fresh jest.fn per read would make
 // "was never called" true of every function, whatever the page did.
