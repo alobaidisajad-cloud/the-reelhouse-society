@@ -10,13 +10,16 @@ appId: com.reelhouse.society
     visible:
       id: "film-card"
     timeout: 20000
-- tapOn:
-    id: "darkroom-search-input"
 # The Darkroom keeps its search across a restart (src/stores/discover.ts): a
 # flow that searched before its app was stopped would type after the old
 # words (run 39021480535: "the godfatherThe Godfather"), so the field is
-# emptied first.
-- eraseText: 60
+# emptied first, by its own clear mark, there only when it holds words.
+# Erased key by key it took 61 to 91 s (Sealed E2E 39836999529).
+- tapOn:
+    text: "Clear search"
+    optional: true
+- tapOn:
+    id: "darkroom-search-input"
 - inputText: ${FILM || 'The Godfather'}
 - extendedWaitUntil:
     visible:

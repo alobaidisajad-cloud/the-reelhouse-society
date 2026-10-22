@@ -83,7 +83,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/subflows/backup.yaml | 2026-10-17 | new: one step of the backup and restore, for the lifecycle flows alone |
 | .maestro/subflows/fault.js | 2026-10-16 | new: the faults by name, set or cleared on the proxy's control port at localhost (Maestro runs it on the runner) |
 | .maestro/subflows/fault.yaml | 2026-10-16 | new |
-| .maestro/subflows/open_a_film.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
+| .maestro/subflows/open_a_film.yaml | 2026-10-23 | edited: the search emptied by its own clear mark; edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/subflows/open_the_stub.yaml | 2026-09-30 | written with the stub's single tap |
 | .maestro/subflows/phone.js | 2026-10-17 | new: the phone changed through the fault proxy's /phone; a refusal stops the flow |
 | .maestro/subflows/phone.yaml | 2026-10-17 | new: the phone changed mid-flow, for the lifecycle flows alone |
