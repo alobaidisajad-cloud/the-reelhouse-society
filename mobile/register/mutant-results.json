@@ -642,5 +642,12 @@
     "proof": "m3",
     "commit": "ddb79777c686ed7dddbcef792b009bf0a0288f8f",
     "verdict": "caught"
+  },
+  {
+    "class": "DB-rehearsal-reads-every-row",
+    "mutant": "shape-rehearsal-reads-every-row",
+    "proof": "m1",
+    "commit": "faf029f3b805dc01fe3b56c95bf536f377dc4030",
+    "verdict": "caught"
   }
 ]
