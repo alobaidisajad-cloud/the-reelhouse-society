@@ -45,7 +45,7 @@
     "class": "CI-gate-never-runs",
     "mutant": "past-nightly-cancels-push",
     "proof": "m2",
-    "commit": "a14da415dc2a3268919e221ea7487a1140723753",
+    "commit": "7c101c601a0fdd51dd4a17ec83cb61fc47c8bd9b",
     "verdict": "caught"
   },
   {
@@ -59,7 +59,7 @@
     "class": "CI-gate-never-runs",
     "mutant": "shape-gate-on-pull-requests-alone",
     "proof": "m1",
-    "commit": "a14da415dc2a3268919e221ea7487a1140723753",
+    "commit": "7c101c601a0fdd51dd4a17ec83cb61fc47c8bd9b",
     "verdict": "caught"
   },
   {
@@ -136,7 +136,7 @@
     "class": "TEST-rehearsal-holds-without-its-migration",
     "mutant": "shape-rehearsals-never-without",
     "proof": "m2",
-    "commit": "a14da415dc2a3268919e221ea7487a1140723753",
+    "commit": "7c101c601a0fdd51dd4a17ec83cb61fc47c8bd9b",
     "verdict": "caught"
   },
   {
@@ -423,7 +423,7 @@
     "class": "CI-schedule-stops-unheard",
     "mutant": "shape-heartbeat-silent",
     "proof": "m1",
-    "commit": "4ca1b42436cfcc17ebcdcd8bf067a32695f0e5ab",
+    "commit": "7c101c601a0fdd51dd4a17ec83cb61fc47c8bd9b",
     "verdict": "caught"
   },
   {
@@ -514,7 +514,7 @@
     "class": "E2E-record-not-kept",
     "mutant": "shape-variant-record-not-kept",
     "proof": "m1",
-    "commit": "9b535e9dfacda92e5929c483b196e23b83cef3be",
+    "commit": "7c101c601a0fdd51dd4a17ec83cb61fc47c8bd9b",
     "verdict": "caught"
   },
   {
