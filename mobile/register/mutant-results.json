@@ -682,7 +682,7 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-retry-blocked-by-lock",
     "proof": "m1",
-    "commit": "730b1b4a6895884179379f7bd0e0af039e5167d0",
+    "commit": "7c2c8235a636bd165ed19d1929a23f45c9bd7bfc",
     "verdict": "caught"
   },
   {
@@ -690,6 +690,13 @@
     "mutant": "shape-ios-link-question-unanswered",
     "proof": "m1",
     "commit": "7d13a895bf529c431573250fd092431150f27c9e",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-retry-blocked-by-its-first-try",
+    "mutant": "shape-install-waits-on-the-mirror",
+    "proof": "m1",
+    "commit": "7c2c8235a636bd165ed19d1929a23f45c9bd7bfc",
     "verdict": "caught"
   },
   {
