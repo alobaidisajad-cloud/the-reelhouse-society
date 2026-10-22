@@ -564,6 +564,15 @@ mutants:
         replace: "  actionLabelKey: {\n    color: colors.sepia,\n    opacity: 0.75,\n  },"
     proof: { file: src/theme/__tests__/wordsAreSolid.test.ts, test: "draws no WORD see-through — every one is a named mark, picture or inactive control" }
 
+  - id: shape-crash-words-apart
+    class: UI-failure-three-looks
+    source: shape
+    edits:
+      - file: src/components/ErrorBoundary.tsx
+        find: "              title=\"The Projector Stopped\""
+        replace: "              title=\"PROJECTION FAILURE\""
+    proof: { file: src/components/__tests__/ErrorBoundary.test.tsx, test: "renders the room the projector stopped in, on a crash" }
+
   - id: shape-italic-asked
     class: TYPE-italic-faked
     source: shape

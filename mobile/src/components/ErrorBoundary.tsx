@@ -13,7 +13,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { captureError } from '../lib/sentry';
 import { colors, fonts } from '../theme/theme';
-import PressableScale from './PressableScale';
+import TryAgain from '@/src/components/TryAgain';
+import { StateWords } from '@/src/components/EmptyStates';
+import { counted } from '@/src/utils/counted';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { BusterStill } from '@/src/components/Buster';
 
@@ -129,11 +131,13 @@ export default class ErrorBoundary extends Component<Props, State> {
         <View style={styles.container}>
           <RoomLight room="default" />
           <View style={styles.content}>
-            <View style={styles.buster}><BusterStill mood="moved" size={80} /></View>
-            <Text style={styles.title}>PROJECTION FAILURE</Text>
-            <Text style={styles.subtitle}>
-              Something went wrong in the screening room.
-            </Text>
+            <BusterStill mood="moved" size={80} />
+            <StateWords
+              title="The Projector Stopped"
+              subtitle={this.state.restartFailed
+                ? 'Something went wrong in the screening room. Close the app and open it again.'
+                : 'Something went wrong in the screening room.'}
+            />
 
             {__DEV__ && this.state.error && (
               <ScrollView style={styles.errorBox} contentContainerStyle={styles.errorBoxContent} showsVerticalScrollIndicator={false}>
@@ -143,37 +147,17 @@ export default class ErrorBoundary extends Component<Props, State> {
               </ScrollView>
             )}
 
-            {this.state.errorId && (
-              <Text style={styles.errorIdText}>
-                REF: {this.state.errorId}
-              </Text>
-            )}
-
-            {!retriesExhausted ? (
-              <PressableScale
-                style={styles.retryButton}
-                onPress={this.handleRetry}
-                pressedScale={0.97}
-                accessibilityRole="button"
-                accessibilityLabel="Retry loading the screen"
-              >
-                <Text style={styles.retryText}>
-                  {`◆ RETRY SCREENING (${MAX_RETRIES - this.state.retryCount} LEFT)`}
-                </Text>
-              </PressableScale>
-            ) : this.state.restartFailed ? (
-              <Text style={styles.subtitle}>Close the app and open it again.</Text>
-            ) : (
-              <PressableScale
-                style={styles.retryButton}
-                onPress={this.handleRestart}
-                pressedScale={0.97}
-                accessibilityRole="button"
-                accessibilityLabel="Restart the app"
-              >
-                <Text style={styles.retryText}>◆ RESTART THE APP</Text>
-              </PressableScale>
-            )}
+            <View style={styles.acts}>
+              {!retriesExhausted ? (
+                <>
+                  <TryAgain onPress={this.handleRetry} accessibilityLabel="Try loading the screen again" />
+                  <Text style={styles.factText}>{`${counted(MAX_RETRIES - this.state.retryCount, 'TRY', 'TRIES')} LEFT`}</Text>
+                </>
+              ) : this.state.restartFailed ? null : (
+                <TryAgain onPress={this.handleRestart} label="RESTART THE APP" accessibilityLabel="Restart the app" />
+              )}
+              {this.state.errorId && <Text style={styles.factText}>{`REF ${this.state.errorId}`}</Text>}
+            </View>
           </View>
         </View>
       );
@@ -195,23 +179,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     maxWidth: 320,
   },
-  buster: { marginBottom: 14 },
-  title: {
-    fontSize: 18,
-    fontFamily: fonts.sub,
-    color: colors.parchment,
-    letterSpacing: 3,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontFamily: fonts.body,
-    color: colors.fog,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-  },
   errorBox: {
     // As tall as the error, up to 120, and scrolls past that. A ScrollView
     // GROWS by default (flexGrow 1), and inside this centred column React
@@ -222,7 +189,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 8,
-    marginBottom: 24,
+    marginTop: 16,
   },
   errorBoxContent: {
     padding: 12,
@@ -233,25 +200,14 @@ const styles = StyleSheet.create({
     color: colors.crimsonInk,
     lineHeight: 16,
   },
-  retryButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    borderWidth: 1,
-    borderColor: colors.bloodReel,
-    borderRadius: 4,
-  },
-  retryText: {
-    fontSize: 13,
-    fontFamily: fonts.sub,
-    color: colors.parchment,
-    letterSpacing: 2,
-    textAlign: 'center',
-  },
-  errorIdText: {
+  // the acts stand clear of the rule above them, as on every failed room
+  acts: { alignItems: 'center', gap: 12, marginTop: 24 },
+  /** The tries left and the reference: facts, quiet, in the house's small capitals. */
+  factText: {
     fontSize: 10,
-    fontFamily: fonts.body,
+    fontFamily: fonts.sub,
     color: colors.fogQuiet,
-    letterSpacing: 0.8,
-    marginBottom: 16,
+    letterSpacing: 1.4,
+    textAlign: 'center',
   },
 });

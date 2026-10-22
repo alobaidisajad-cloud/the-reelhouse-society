@@ -26,4 +26,4 @@ appId: com.reelhouse.society
     timeout: 60000
     # The page's last line, only reached, never tapped: it cannot come to
     # the middle.
-- assertNotVisible: "PROJECTION FAILURE"
+- assertNotVisible: "The Projector Stopped"

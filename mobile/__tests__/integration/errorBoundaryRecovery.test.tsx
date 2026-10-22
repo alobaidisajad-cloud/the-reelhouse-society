@@ -121,11 +121,11 @@ describe('ErrorBoundary Recovery Integration', () => {
     const root = renderer.root;
 
     // Verify: fallback screen is shown
-    expect(hasText(root, 'PROJECTION FAILURE')).toBe(true);
+    expect(hasText(root, 'The Projector Stopped')).toBe(true);
     expect(findByTestId(root, 'child-content')).toBeNull();
 
     // Verify: retry button shows correct count
-    expect(hasText(root, /RETRY SCREENING \(3 LEFT\)/)).toBe(true);
+    expect(hasText(root, '3 TRIES LEFT')).toBe(true);
 
     // 2. Fix the error condition
     shouldThrow = false;
@@ -156,7 +156,7 @@ describe('ErrorBoundary Recovery Integration', () => {
     const root = renderer.root;
 
     // Verify error state
-    expect(hasText(root, 'PROJECTION FAILURE')).toBe(true);
+    expect(hasText(root, 'The Projector Stopped')).toBe(true);
 
     // 2. Fix error and retry
     shouldThrow = false;
@@ -189,7 +189,7 @@ describe('ErrorBoundary Recovery Integration', () => {
     // After stability timer fires, retryCount resets to 0.
     // getDerivedStateFromError sets hasError=true but doesn't touch retryCount.
     // display = MAX_RETRIES - retryCount = 3 - 0 = 3 LEFT
-    expect(hasText(root, /RETRY SCREENING \(3 LEFT\)/)).toBe(true);
+    expect(hasText(root, '3 TRIES LEFT')).toBe(true);
 
     // 6. Fix and retry again — should still work (not exhausted)
     shouldThrow = false;

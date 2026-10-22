@@ -13,8 +13,10 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { EDGE_LIT } from '@/src/theme/light';
 
-export default function TryAgain({ onPress, accessibilityLabel = 'Try again', hitSlop, style }: {
+export default function TryAgain({ onPress, label = 'TRY AGAIN', accessibilityLabel = 'Try again', hitSlop, style }: {
   onPress: () => void;
+  /** The act in capitals, where it is more than asking again: RESTART THE APP. */
+  label?: string;
   /** What is asked for again, when the screen can say it better than "try again". */
   accessibilityLabel?: string;
   hitSlop?: Insets;
@@ -29,7 +31,7 @@ export default function TryAgain({ onPress, accessibilityLabel = 'Try again', hi
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
     >
-      <Text style={s.text}>TRY AGAIN</Text>
+      <Text style={s.text}>{label}</Text>
     </PressableScale>
   );
 }

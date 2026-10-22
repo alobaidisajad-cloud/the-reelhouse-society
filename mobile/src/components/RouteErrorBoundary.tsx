@@ -23,7 +23,8 @@ import { BusterStill } from '@/src/components/Buster';
 import { colors, fonts } from '@/src/theme/theme';
 import { captureError } from '@/src/lib/sentry';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
-import TryAgain, { TRY_AGAIN_ABOVE_A_WAY_OUT, WayOut } from '@/src/components/TryAgain';
+import TryAgain, { ACTS_GAP, TRY_AGAIN_ABOVE_A_WAY_OUT, WayOut } from '@/src/components/TryAgain';
+import { StateWords } from '@/src/components/EmptyStates';
 
 export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   // Over the whole screen, or a sheet's top in a modal route (navMetrics asks the route).
@@ -45,11 +46,10 @@ export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
     <View style={[s.container, { paddingTop: top }]}>
       <RoomLight room="default" />
       <BusterStill mood="moved" size={80} />
-      <Text style={s.title} accessibilityRole="header">This reel jammed.</Text>
-      <Text style={s.body}>
-        Something in this room failed to develop. The rest of the house is fine —
-        try again, or step back and return.
-      </Text>
+      <StateWords
+        title="This Reel Jammed"
+        subtitle="Something in this room failed to develop. The rest of the house is fine: try again, or step back."
+      />
 
       {__DEV__ && !!error?.message && (
         <Text style={s.debug} numberOfLines={4}>
@@ -57,16 +57,16 @@ export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         </Text>
       )}
 
-      <TryAgain
-        onPress={retry}
-        style={s.retrySpace}
-        // Half the 14pt gap to the way out below, each side of it.
-        hitSlop={TRY_AGAIN_ABOVE_A_WAY_OUT}
-        accessibilityLabel="Try loading this screen again"
-      />
-
-      {/* The way out the words promise: back, or to the Lobby when there is no back. */}
-      <WayOut onPress={leave} label={canGoBack ? 'Go back' : 'Return to the Lobby'} />
+      <View style={s.acts}>
+        <TryAgain
+          onPress={retry}
+          // Half the 14pt gap to the way out below, each side of it.
+          hitSlop={TRY_AGAIN_ABOVE_A_WAY_OUT}
+          accessibilityLabel="Try loading this screen again"
+        />
+        {/* The way out the words promise: back, or to the Lobby when there is no back. */}
+        <WayOut onPress={leave} label={canGoBack ? 'Go back' : 'Return to the Lobby'} />
+      </View>
     </View>
   );
 }
@@ -78,20 +78,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 40,
-    gap: 14,
-  },
-  title: {
-    fontFamily: fonts.display,
-    fontSize: 20,
-    color: colors.parchment,
-    textAlign: 'center',
-  },
-  body: {
-    fontFamily: fonts.body,
-    fontSize: 12,
-    lineHeight: 19,
-    color: colors.fogQuiet,
-    textAlign: 'center',
   },
   debug: {
     fontFamily: fonts.body,
@@ -100,5 +86,6 @@ const s = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
   },
-  retrySpace: { marginTop: 12 },
+  // the acts stand clear of the rule above them, as on every failed room
+  acts: { alignItems: 'center', gap: ACTS_GAP, marginTop: 24 },
 });

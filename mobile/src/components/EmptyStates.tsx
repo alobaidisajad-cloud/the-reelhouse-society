@@ -79,14 +79,27 @@ function StateCard({ icon, glyph = '◈', title, subtitle, compact, buster }: Em
             ) : (
                 <BreathingIcon><Text style={s.glyph}>{glyph}</Text></BreathingIcon>
             )}
-            <Text style={s.title}>{title}</Text>
+            <StateWords title={title} subtitle={subtitle} />
+        </Arrive>
+    );
+}
+
+/**
+ * A state's words: its title in the display face, its line in italics, the house's rule
+ * beneath. Still, so the crash nets draw them too: a screen shown because something broke
+ * must not lean on an entrance to be seen.
+ */
+export function StateWords({ title, subtitle }: { title: string; subtitle?: string }) {
+    return (
+        <>
+            <Text style={s.title} accessibilityRole="header">{title}</Text>
             {subtitle && <Text style={s.subtitle}>{subtitle}</Text>}
             <View style={s.divider}>
                 <View style={s.dividerLine} />
                 <Text style={s.dividerGlyph} {...UNSPOKEN}>✦</Text>
                 <View style={s.dividerLine} />
             </View>
-        </Arrive>
+        </>
     );
 }
 

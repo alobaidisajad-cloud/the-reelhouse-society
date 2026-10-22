@@ -1,6 +1,6 @@
 appId: com.reelhouse.society
 ---
-# Rapid tab switching never trips the ErrorBoundary ("PROJECTION FAILURE",
+# Rapid tab switching never trips the ErrorBoundary ("The Projector Stopped",
 # src/components/ErrorBoundary.tsx). Tabs by their testIDs: no tab prints a
 # title.
 
@@ -51,4 +51,4 @@ appId: com.reelhouse.society
 # Verify app is still alive and the ErrorBoundary never tripped.
 - assertVisible:
     id: "profile-sign-in-prompt"
-- assertNotVisible: "PROJECTION FAILURE"
+- assertNotVisible: "The Projector Stopped"

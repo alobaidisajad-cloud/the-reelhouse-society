@@ -56,7 +56,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/browse_vault.yaml | 2026-09-29 | true as written |
 | .maestro/config.yaml | 2026-09-29 | true as written |
 | .maestro/darkroom_search.yaml | 2026-09-29 | true as written |
-| .maestro/error_recovery.yaml | 2026-10-15 | edited: each tab asked for what only its loaded content carries; the Dispatch's is the seed's filing |
+| .maestro/error_recovery.yaml | 2026-10-22 | edited: the crash screen asserted absent by its new title, The Projector Stopped |
 | .maestro/faults/house_unreachable.yaml | 2026-10-16 | new: the house unreachable after sign-in, each room's failure in its words, then TRY AGAIN |
 | .maestro/faults/slow_link.yaml | 2026-10-16 | new: the plan's EDGE after sign-in, each room's content, never a failure |
 | .maestro/film_log.yaml | 2026-09-29 | true as written |
@@ -497,8 +497,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
 | src/components/dispatch/roomLink.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/SeriesPicker.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/EmptyStates.tsx | 2026-10-16 | edited: one card both states draw; the empty one says empty, the failure says failed (useStateSaid) |
-| src/components/ErrorBoundary.tsx | 2026-10-02 | Read whole (launch audit). Retries spent left a disabled PLEASE RESTART APP: the button now restarts the app (expo-updates reloadAsync), and says how only when it cannot. |
+| src/components/EmptyStates.tsx | 2026-10-22 | edited: StateWords, the state's words still, shared with the crash nets; its title a header |
+| src/components/ErrorBoundary.tsx | 2026-10-22 | edited: the whole app's crash in the failure family (StateWords, the house TRY AGAIN, RESTART THE APP in its plate); the tries left and the reference as quiet facts |
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/feed/ActionDeck.tsx | 2026-10-04 | edited: the certify lock lifts through useLater, gone with the item and the card |
 | src/components/feed/ActivityCard.tsx | 2026-10-15 | the film title's glow has room inside the box a phone cuts it at |
@@ -777,7 +777,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/ReelsHeader.tsx | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
 | src/components/reels/ReelsStackList.tsx | 2026-10-15 | edited: each stack cell carries reel-stack; each scroll traced |
 | src/components/reels/types.ts | 2026-10-01 | true as written |
-| src/components/RouteErrorBoundary.tsx | 2026-10-15 | top from useOverlayTop |
+| src/components/RouteErrorBoundary.tsx | 2026-10-22 | edited: a room's crash in the failure family; its acts grouped as on every failed room |
 | src/components/search/SearchResultRow.tsx | 2026-10-02 | ReelRating draws halves; resultLabel says what the row is |
 | src/components/search/SearchUnreachable.tsx | 2026-10-16 | edited: says failed (useStateSaid) |
 | src/components/SectionErrorBoundary.tsx | 2026-10-01 | retries; comments made true |
@@ -806,7 +806,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/theme/OrnamentalRule.tsx | 2026-10-01 | no comments |
 | src/components/ToastHost.tsx | 2026-10-15 | pill from useOverlayTop; screens say if a sheet |
 | src/components/Toggle.tsx | 2026-10-01 | comments say what is true now |
-| src/components/TryAgain.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/components/TryAgain.tsx | 2026-10-22 | edited: a label for the act where it is more than asking again (RESTART THE APP) |
 | src/components/__tests__/aLabelIsSpoken.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/theKeyboardHasRoom.test.tsx | 2026-10-01 | written with the keyboard's room |
 | src/components/reels/__tests__/theReelSaysWhatEachControlIs.test.tsx | 2026-10-01 | written with the Reel's controls |

@@ -28,7 +28,7 @@ describe('the net under a screen that crashed', () => {
   it('reports the crash once, and lets the member try again', async () => {
     const retry = jest.fn();
     const { getByText, getByLabelText } = render(<RouteErrorBoundary error={fail} retry={retry as never} />);
-    expect(getByText('This reel jammed.')).toBeTruthy();
+    expect(getByText('This Reel Jammed')).toBeTruthy();
     expect(mockCapture).toHaveBeenCalledTimes(1);
     expect(mockCapture.mock.calls[0][0]).toBe(fail);
     await fireEvent.press(getByLabelText('Try loading this screen again'));

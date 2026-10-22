@@ -551,6 +551,18 @@ classes:
     fix: "planWall's foot fits the one-sheet's words to the sheet's height as the phone grows them: the house's two lines give way first, then the title steps down to TITLE_FLOOR, then the year; the title, the director and NOW SHOWING always stand; FeatureRow draws what it kept and the snipe reads the same numbers (mutant shape-foot-never-gives-way)"
     places: [none]
 
+  - id: UI-failure-three-looks
+    title: The house's failures in three unrelated looks (PROJECTION FAILURE in typewriter capitals with a crimson ◆ button; "This reel jammed." in the display face; Transmission Interrupted on the state card), so a member could not tell one family of trouble from another
+    seriousness: layout
+    area: states
+    status: OPEN
+    count: 2
+    source: { kind: history, ref: "the full screen review, 2026-10-22" }
+    methods:
+      - { kind: running, file: src/components/__tests__/ErrorBoundary.test.tsx, test: "renders the room the projector stopped in, on a crash" }
+    fix: "StateWords (src/components/EmptyStates.tsx), still, is what every failure says: the display-face title, the italic line, the house's rule; both crash nets draw it with a still Buster and the house's TRY AGAIN (RESTART THE APP in the same plate), facts in quiet small capitals; the E2E flows assert the new title absent (mutant shape-crash-words-apart)"
+    places: [none]
+
   - id: TYPE-word-see-through-unseen
     title: A word drawn see-through by a style that sets only colour or opacity, which the words-are-solid census skipped because it read a style as text only when it set type (the feed's LOUNGE at 3.9:1, a calendar's coming days at 0.2, an honour's locked name at 0.5)
     seriousness: layout

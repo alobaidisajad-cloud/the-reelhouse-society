@@ -44,13 +44,13 @@ describe('ErrorBoundary', () => {
     expect(getByText('App content')).toBeTruthy();
   });
 
-  it('renders fallback screen with PROJECTION FAILURE on crash', () => {
+  it('renders the room the projector stopped in, on a crash', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <Bomb shouldThrow={true} />
       </ErrorBoundary>
     );
-    expect(getByText('PROJECTION FAILURE')).toBeTruthy();
+    expect(getByText('The Projector Stopped')).toBeTruthy();
   });
 
   it('shows the error message in development', () => {
@@ -71,7 +71,7 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
     expect(getByText('Custom fallback')).toBeTruthy();
-    expect(queryByText('PROJECTION FAILURE')).toBeNull();
+    expect(queryByText('The Projector Stopped')).toBeNull();
   });
 
   it('shows retry button with correct count', () => {
@@ -80,7 +80,7 @@ describe('ErrorBoundary', () => {
         <Bomb shouldThrow={true} />
       </ErrorBoundary>
     );
-    expect(getByText(/RETRY SCREENING \(3 LEFT\)/)).toBeTruthy();
+    expect(getByText('3 TRIES LEFT')).toBeTruthy();
   });
 
   it('shows error reference ID', () => {
@@ -89,7 +89,7 @@ describe('ErrorBoundary', () => {
         <Bomb shouldThrow={true} />
       </ErrorBoundary>
     );
-    expect(getByText(/REF: ERR-/)).toBeTruthy();
+    expect(getByText(/REF ERR-/)).toBeTruthy();
   });
 
 
@@ -103,7 +103,7 @@ describe('ErrorBoundary', () => {
     // presses, which are debounced against it.
     const spend = async (r: ReturnType<typeof render>) => {
       for (let i = 0; i < 3; i++) {
-        await act(async () => { await fireEvent.press(r.getByLabelText('Retry loading the screen')); });
+        await act(async () => { await fireEvent.press(r.getByLabelText('Try loading the screen again')); });
         await act(async () => { jest.advanceTimersByTime(1000); });
       }
     };
@@ -112,7 +112,7 @@ describe('ErrorBoundary', () => {
       mockReload.mockResolvedValue(undefined);
       const r = render(<ErrorBoundary><Bomb shouldThrow={true} /></ErrorBoundary>);
       await spend(r);
-      expect(r.queryByLabelText('Retry loading the screen')).toBeNull();
+      expect(r.queryByLabelText('Try loading the screen again')).toBeNull();
       await act(async () => { await fireEvent.press(r.getByLabelText('Restart the app')); });
       expect(mockReload).toHaveBeenCalledTimes(1);
     });
@@ -122,7 +122,7 @@ describe('ErrorBoundary', () => {
       const r = render(<ErrorBoundary><Bomb shouldThrow={true} /></ErrorBoundary>);
       await spend(r);
       await act(async () => { await fireEvent.press(r.getByLabelText('Restart the app')); });
-      expect(r.getByText('Close the app and open it again.')).toBeTruthy();
+      expect(r.getByText(/Close the app and open it again\./)).toBeTruthy();
       expect(r.queryByLabelText('Restart the app')).toBeNull();
     });
   });
@@ -133,6 +133,6 @@ describe('ErrorBoundary', () => {
         <Bomb shouldThrow={true} />
       </ErrorBoundary>
     );
-    expect(getByLabelText('Retry loading the screen')).toBeTruthy();
+    expect(getByLabelText('Try loading the screen again')).toBeTruthy();
   });
 });
