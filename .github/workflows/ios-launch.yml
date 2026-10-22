@@ -162,17 +162,20 @@ jobs:
             else
               rc=1
               echo "$f: FAILED"
+              xcrun simctl io "$SIM_DEVICE" screenshot "$S/after-${f%.yaml}.png" > /dev/null 2>&1 || true
               tail -n 40 "$S/${f%.yaml}.txt" > "$S/why-${f%.yaml}.txt"
               node e2e/annotate.mjs "The flow $f failed on the iPhone simulator" "$S/why-${f%.yaml}.txt"
             fi
           done
           exit $rc
 
+      # Maestro writes its screenshots under a hidden .maestro folder, which the upload skips unless asked.
       - name: Keep the flows' records
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ios-flows
           path: ${{ runner.temp }}/ios-flows
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7

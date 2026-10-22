@@ -34,5 +34,7 @@ describe('the flows the iPhone runs', () => {
     expect(wf).toContain("require('./e2e/ios-flows.json').flows");
     expect(wf).toMatch(/"\$MAESTRO_BIN" --device "\$SIM_DEVICE" test "\.maestro\/\$f"/);
     expect(wf).toContain('echo "SIM_DEVICE=$DEV" >> "$GITHUB_ENV"');
+    // Maestro's screenshots sit under a hidden .maestro folder: the records are kept with them.
+    expect(wf).toMatch(/name: ios-flows\s+path: \$\{\{ runner\.temp \}\}\/ios-flows\s+include-hidden-files: true/);
   });
 });
