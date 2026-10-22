@@ -12,6 +12,9 @@
  *     with and never asks Expo's servers for anything
  *   · extra.e2e is true, which turns on e2eTrace (src/utils/e2eTrace.ts): lines
  *     in the device log that the run's report reads
+ *   · with LAB=1 as well (set by speed-lab.yml alone), extra.lab is true, which mounts the
+ *     lab's frame record (src/components/layout/LabFrameLog.tsx); the other E2E builds are
+ *     measured without it
  *
  * The development build (EAS's `development` profile, which EAS names in
  * EAS_BUILD_PROFILE) gets back the two things a development client lives by and
@@ -38,6 +41,6 @@ module.exports = ({ config }) => {
     ...config,
     updates: { ...config.updates, enabled: false },
     plugins: [...(config.plugins ?? []), './e2e/plugins/withCleartextTraffic'],
-    extra: { ...config.extra, e2e: true },
+    extra: { ...config.extra, e2e: true, ...(process.env.LAB === '1' ? { lab: true } : {}) },
   };
 };

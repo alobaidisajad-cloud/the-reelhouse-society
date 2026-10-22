@@ -18,7 +18,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { diff, holm, P_CALL } from './analyze.mjs';
+import { holm, P_CALL } from './analyze.mjs';
 
 export const FAR = 5;
 
@@ -68,6 +68,19 @@ export function readyOf(text, name = 'reel') {
 }
 
 /**
+ * The JavaScript tasks over 50 ms a run's device log counts (LabFrameLog's lines, in the lab's
+ * builds); null when the record never ran (no `lab.frames.on`), so a build without it reads blank.
+ */
+export function jsLongOf(text) {
+  if (!text.includes('[e2e] lab.frames.on ')) return null;
+  let long = 0;
+  for (const m of text.matchAll(/\[e2e\] lab\.frames (\{.*\})/g)) {
+    try { long += JSON.parse(m[1]).js?.long ?? 0; } catch { /* a line cut short by the log is not a count */ }
+  }
+  return long;
+}
+
+/**
  * The Reel's measures, each read from one round: its opening, the frames its ten swipes drew (more
  * is smoother), and its middle and slow frame times. Not the janky share: on the lab's software GPU
  * every frame is janky (speed lab 39810996153: janky = frames on every screen), so it tells no build
@@ -78,14 +91,47 @@ export const REEL_MEASURES = [
   { key: 'frames', head: 'frames', of: (r) => r.frames },
   { key: 'p50', head: 'p50 ms', of: (r) => r.p50 },
   { key: 'p90', head: 'p90 ms', of: (r) => r.p90 },
+  { key: 'js', head: 'JS over 50 ms', of: (r) => r.jsLong },
 ];
 
 const median = (xs) => { const s = [...xs].sort((a, b) => a - b); const i = (s.length - 1) / 2; return (s[Math.floor(i)] + s[Math.ceil(i)]) / 2; };
 
 /**
+ * b against a: the difference of their medians, and a rank-sum permutation test's two-sided p.
+ * Ranks, not medians, decide p: the lab's values tie often (gfxinfo's frame times come in 50 ms
+ * steps; the counts are small whole numbers), and a test of medians loses its power to ties (two
+ * groups apart by every value gave p 0.0015 on medians, under 0.0001 on ranks). Null with fewer
+ * than three values on a side.
+ */
+export function rankDiff(a, b, seed = 20261022) {
+  if (a.length < 3 || b.length < 3) return null;
+  const pool = [...a, ...b];
+  const order = pool.map((v, i) => ({ v, i })).sort((x, y) => x.v - y.v);
+  const rank = new Array(pool.length);
+  for (let s = 0; s < order.length;) {
+    let e = s;
+    while (e + 1 < order.length && order[e + 1].v === order[s].v) e++;
+    for (let k = s; k <= e; k++) rank[order[k].i] = (s + e) / 2 + 1;
+    s = e + 1;
+  }
+  const gap = (ranks) => ranks.slice(a.length).reduce((t, r) => t + r, 0) / b.length - ranks.slice(0, a.length).reduce((t, r) => t + r, 0) / a.length;
+  const seen = Math.abs(gap(rank));
+  let state = seed;
+  const rand = () => { state = (state * 1103515245 + 12345) % 2147483648; return state / 2147483648; };
+  const shuffled = [...rank];
+  let hits = 0;
+  const TRIES = 20000;
+  for (let t = 0; t < TRIES; t++) {
+    for (let j = shuffled.length - 1; j > 0; j--) { const k = Math.floor(rand() * (j + 1)); [shuffled[j], shuffled[k]] = [shuffled[k], shuffled[j]]; }
+    if (Math.abs(gap(shuffled)) >= seen - 1e-9) hits++;
+  }
+  return { mid: median(b) - median(a), p: (hits + 1) / (TRIES + 1) };
+}
+
+/**
  * What each of the Reel's layers costs (WORKLIST P0.111), from scrolls.sh's reel/ folder
  * (<build>-<round>): per build, each measure's median over its rounds, and each arm against A, its
- * difference called (*) when its Holm-adjusted permutation p is under P_CALL. A round that did not
+ * difference called (*) when its Holm-adjusted rank-sum p (rankDiff) is under P_CALL. A round that did not
  * scroll three screen heights, or measured no frames, is left out and named: { lines, failed }.
  */
 export function costs(dir) {
@@ -98,13 +144,14 @@ export function costs(dir) {
     if (!f) { failed.push(`reel ${run}: no frames were measured for its scroll`); continue; }
     if (m.moved < FAR) { failed.push(`reel ${run}: the list stopped after ${m.moved} of ${FAR} swipes`); continue; }
     const build = run.replace(/-\d+$/, '');
-    builds.set(build, [...(builds.get(build) ?? []), { ...f, ready: readyOf(read(`${run}.log`)) }]);
+    const log = read(`${run}.log`);
+    builds.set(build, [...(builds.get(build) ?? []), { ...f, ready: readyOf(log), jsLong: jsLongOf(log) }]);
   }
   const base = builds.get('A') ?? [];
   if (base.length === 0) failed.push('reel: A, the app as it is, was never scrolled: nothing to compare');
   const values = (rows, m) => rows.map(m.of).filter((v) => v != null);
   const arms = [...builds.keys()].filter((b) => b !== 'A').sort();
-  const tests = arms.flatMap((arm) => REEL_MEASURES.map((m) => ({ arm, key: m.key, d: diff(values(base, m), values(builds.get(arm), m)) })));
+  const tests = arms.flatMap((arm) => REEL_MEASURES.map((m) => ({ arm, key: m.key, d: rankDiff(values(base, m), values(builds.get(arm), m)) })));
   const adjusted = holm(tests.map((t) => t.d?.p ?? 1));
   const called = new Map(tests.map((t, i) => [`${t.arm} ${t.key}`, { ...t, p: adjusted[i] }]));
   const cell = (rows, m, arm) => {

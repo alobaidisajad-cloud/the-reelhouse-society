@@ -131,6 +131,7 @@ jobs:
         working-directory: mobile
         env:
           E2E: '1'
+          LAB: '1'
           EXPO_PUBLIC_SUPABASE_URL: http://10.0.2.2:54321
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
           SENTRY_DISABLE_AUTO_UPLOAD: 'true'
@@ -339,6 +340,7 @@ jobs:
         working-directory: mobile
         env:
           E2E: '1'
+          LAB: '1'
           EXPO_PUBLIC_SUPABASE_URL: http://10.0.2.2:54321
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.anon.outputs.key }}
           SENTRY_DISABLE_AUTO_UPLOAD: 'true'
@@ -558,6 +560,7 @@ jobs:
         working-directory: mobile
         env:
           E2E: '1'
+          LAB: '1'
           EXPO_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
           EXPO_PUBLIC_SUPABASE_ANON_KEY: speed-lab-placeholder
           SENTRY_DISABLE_AUTO_UPLOAD: 'true'

@@ -22,6 +22,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { files } from '../test-utils/universe';
+import { readCode } from '../test-utils/readCode';
 
 const ROOT = join(__dirname, '..');
 
@@ -65,6 +66,23 @@ describe('every animation the app uses can be rendered by a test', () => {
     // Pinned by name because it is the case that proved the list was wrong.
     expect(mock.FadeInRight).toBeDefined();
     expect(typeof mock.FadeInRight.delay).toBe('function');
+  });
+
+  it('holds every name the app imports from Reanimated, hooks and all', () => {
+    // A hook the mock lacks throws in every test that renders its component, as a missing
+    // builder did; useFrameCallback (the lab's frame record) was the first hook to find it so.
+    const imported = new Set<string>();
+    for (const file of files('appCode').filter((f) => !f.endsWith('.d.ts'))) {
+      const src = readCode(file);
+      for (const m of src.matchAll(/import\s+(?:\w+\s*,\s*)?\{([^}]*)\}\s*from\s*'react-native-reanimated'/g)) {
+        for (const part of (m[1] ?? '').split(',')) {
+          const name = part.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0]?.trim();
+          if (name && !part.trim().startsWith('type ')) imported.add(name);
+        }
+      }
+    }
+    expect(imported.has('useFrameCallback')).toBe(true);
+    expect([...imported].filter((name) => /^[a-z]/.test(name) && (mock as Record<string, unknown>)[name] === undefined).sort()).toEqual([]);
   });
 
   it.each([...buildersUsed().keys()].sort())('%s is chainable in the mock', (name) => {

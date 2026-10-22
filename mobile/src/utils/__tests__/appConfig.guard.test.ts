@@ -42,6 +42,29 @@ it('with E2E=1, only updates, the cleartext plugin and the trace switch change',
   expect(extra).toEqual({ ...x0, e2e: true });
 });
 
+const withLab = <T,>(fn: () => T): T => {
+  const before = process.env.LAB;
+  process.env.LAB = '1';
+  try { return fn(); } finally {
+    if (before === undefined) delete process.env.LAB;
+    else process.env.LAB = before;
+  }
+};
+
+it('with LAB=1 beside E2E=1, extra.lab too (the lab\'s frame record); LAB=1 alone changes nothing', () => {
+  const lab = withLab(() => withE2E('1', () => appConfig({ config: structuredClone(appJson) })));
+  const e2e = withE2E('1', () => appConfig({ config: structuredClone(appJson) }));
+  expect(lab).toEqual({ ...e2e, extra: { ...(e2e.extra as object), lab: true } });
+  expect((e2e.extra as Record<string, unknown>).lab).toBeUndefined();
+  expect(withLab(() => withE2E(undefined, () => appConfig({ config: structuredClone(appJson) })))).toEqual(appJson);
+});
+
+it('only the speed lab builds with LAB=1, and the root mounts the frame record behind it alone', () => {
+  const setting = universe('workflows').filter((p) => /^\s*LAB: '1'\s*$/m.test(readFileSync(p, 'utf8'))).map((p) => basename(p));
+  expect(setting).toEqual(['speed-lab.yml']);
+  expect(readFileSync(join(MOBILE, 'app', '_layout.tsx'), 'utf8')).toContain('{LAB_BUILD ? <LabFrameLog /> : null}');
+});
+
 const withProfile = <T,>(value: string | undefined, fn: () => T): T => {
   const before = process.env.EAS_BUILD_PROFILE;
   if (value === undefined) delete process.env.EAS_BUILD_PROFILE;

@@ -78,8 +78,8 @@ done
 # The Reel on A and on each of its arms (WORKLIST P0.111, arm.mjs): each build installed over the
 # signed-in member, who stays signed in, the Reel opened cold and scrolled; REEL_ROUNDS rounds, the
 # order turned each round, so a slow minute of the runner falls on every build alike. Fourteen a
-# side: on rounds as noisy as ±10%, the medians' permutation test (scrolls.mjs) gives a 15% shift
-# p ≈ 1e-4, under Holm's bar for seven arms by four measures (3.6e-4); eight gave only 3e-3.
+# side: on rounds as noisy as ±10%, the rank-sum test (scrolls.mjs) gives a 10% shift p ≈ 1.5e-4,
+# under Holm's bar for seven arms by five measures (2.9e-4); eight gave 4e-3.
 REEL_ROUNDS=14
 if [ -n "${LAB_REEL_ARMS:-}" ]; then
   mkdir -p "$OUT/reel"

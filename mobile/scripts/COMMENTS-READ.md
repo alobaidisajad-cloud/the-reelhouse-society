@@ -11,7 +11,7 @@ without one). "Read" is the day its comments were last read against its code.
 
 | File | Read | What changed |
 |---|---|---|
-| __tests__/animationMockCoverage.test.ts | 2026-10-22 | edited: the entrances are Arrive's own values; the layout transitions remain |
+| __tests__/animationMockCoverage.test.ts | 2026-10-22 | edited: every name the app imports from Reanimated is in the mock, hooks and all; the entrances are Arrive's own values; the layout transitions remain |
 | __tests__/backendContract.test.ts | 2026-10-16 | edited: the tables and buckets read from the code, those passed through the export's and the import's helpers included |
 | __tests__/colorLock.test.ts | 2026-10-15 | edited: the app universe (test-utils/universe.js), its .js files included |
 | __tests__/components/feed/ActivityCard.test.tsx | 2026-10-01 | the poster says its film; the card lies flat |
@@ -92,10 +92,10 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/subflows/totp.js | 2026-10-21 | new: the code the key on the screen shows now, from the fault proxy's /totp |
 | .maestro/subflows/upgrade.yaml | 2026-10-17 | new: one step of the upgrade, for the lifecycle flows alone |
 | ANDROID_LAUNCH.md | 2026-10-04 | the splash leaving as Android's own added to the device checks, with the system exit's real timings |
-| app.config.js | 2026-10-22 | edited: names every workflow that builds with E2E=1; the development profile gets back the dev client's scheme and iOS local networking; every other build is app.json |
+| app.config.js | 2026-10-22 | edited: LAB=1 beside E2E=1: extra.lab, the lab's frame record; names every workflow that builds with E2E=1; the development profile gets back the dev client's scheme and iOS local networking; every other build is app.json |
 | app/__tests__/boot-structure.test.tsx | — |  |
 | app/__tests__/yourFileWaitsForYourHandle.test.tsx | 2026-10-03 | new: the Profile tab never calls you a stranger |
-| app/_layout.tsx | 2026-10-02 | PathTracker moved out, and now tells nav too |
+| app/_layout.tsx | 2026-10-22 | edited: the lab's frame record mounted behind LAB_BUILD alone; PathTracker moved out, and now tells nav too |
 | app/(admin)/__tests__/tribunal.test.tsx | — |  |
 | app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | app/(admin)/_layout.tsx | 2026-10-02 | read; sound |
@@ -259,7 +259,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-16 | edited: Stryker's sandbox (.stryker-tmp) is never read as tests or modules |
-| jest.setup.ts | 2026-10-15 | edited: expo-image's getCachePathAsync answers null, as native does for a picture not on disk |
+| jest.setup.ts | 2026-10-22 | edited: useFrameCallback kept, not run, for a test to hand it frames; expo-image's getCachePathAsync answers null, as native does for a picture not on disk |
 | jest.stryker.config.js | 2026-10-16 | new: the tests' config in Stryker's own process, its environment by its whole path |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
@@ -1190,7 +1190,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everySecretIsInventoried.test.ts | 2026-10-16 | new: every secret and setting the code reads is in register/secrets.json, with its holders and a secret's rotation; nothing listed that no code reads but the dashboard-held ones; never a value |
 | src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |
 | src/utils/__tests__/fixtures/imageCache.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
-| src/utils/__tests__/appConfig.guard.test.ts | 2026-10-22 | edited: the workflows that build with E2E=1 are those app.config.js names; the project, update feed, store ids and Sentry project as the services hold them; the maps written and their upload left on |
+| src/utils/__tests__/appConfig.guard.test.ts | 2026-10-22 | edited: LAB=1 adds extra.lab beside E2E=1 and nothing alone; only the speed lab sets it; the root mounts the record behind it; the workflows that build with E2E=1 are those app.config.js names; the project, update feed, store ids and Sentry project as the services hold them; the maps written and their upload left on |
 | src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
 | src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-10-16 | edited: a write refused for a suspension waits, the standing read failed or the suspension begun mid-send; a silenced one is given up |
 | src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | — |  |
@@ -1312,7 +1312,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/deviceRegion.ts | 2026-10-01 | new |
 | src/utils/draftSync.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/e2eRuntime.ts | 2026-10-15 | new: the phone's runtime written once a launch, in parts, by the E2E build |
-| src/utils/e2eTrace.ts | 2026-10-15 | edited: e2eTraceAt, where a view sits on screen, in the E2E build alone |
+| src/utils/e2eTrace.ts | 2026-10-22 | edited: LAB_BUILD, the speed lab's builds alone; e2eTraceAt, where a view sits on screen, in the E2E build alone |
 | src/utils/endorsementGroupKey.ts | 2026-10-02 | Read whole (launch audit). A certified-log group opened the FILM, on the belief that no log page existed (app/log/[id] does), and went nowhere without a film id: it opens the log. |
 | src/utils/enter.ts | 2026-10-02 | read; sound |
 | src/utils/filterContentByBlocks.ts | 2026-10-01 | true as written |
@@ -1430,10 +1430,10 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/lab/analyze.mjs | 2026-10-22 | written: the timed starts per build; each against A by a permutation test, called at Holm's p under 0.01; the A/A pair must call nothing; the log read by cold-start.mjs (P0.104) |
 | e2e/lab/lab.sh | 2026-10-22 | written: one emulator boot, settled; the shots in two rounds of opposite order; the timed starts, each measured by one shell call; a trace per timed build (P0.104) |
 | ../.github/workflows/speed-lab.yml | 2026-10-22 | written: by hand; a signed-in job on the sealed world, the lab seed laid on it, every busy screen scrolled and timed, the password scrubbed before anything is kept; every arm built as the Sealed E2E builds; the shots and the timed starts on one emulator boot; the shots on the iOS simulator, every build stilled; every answer on the run's summary (P0.103, P0.104) |
-| e2e/__tests__/speedLab.test.ts | 2026-10-22 | edited: the Reel's costs: a clear shift called against A, noise not; A missing or a round run out fails by name; every build the lab makes applies to the tree; an arm whose text is gone refused, nothing written; the light judged on drawn shots; the A/A pair's failure fails the run; a scroll that ran out or went unmeasured fails by name; the lab seed's film pool and its counts judged |
+| e2e/__tests__/speedLab.test.ts | 2026-10-22 | edited: the long JavaScript tasks counted from the record, blank without it; the Reel's costs: a clear shift called against A, noise not; A missing or a round run out fails by name; every build the lab makes applies to the tree; an arm whose text is gone refused, nothing written; the light judged on drawn shots; the A/A pair's failure fails the run; a scroll that ran out or went unmeasured fails by name; the lab seed's film pool and its counts judged |
 | e2e/db/lab-seed.mjs | 2026-10-22 | written: the speed lab's signed-in house: the member given the Archivist rank by grant_entitlement; 60 members' logs with words, a 320-message salon, a 61-film stack, a log with 25 comments, 30 filings, the member's own shelf and portrait, laid down as the load seed lays rows and what triggers make made after; its own count fails by name (P0.104) |
-| e2e/lab/scrolls.mjs | 2026-10-22 | edited: costs(): the Reel per build and arm against A (opened, frames, p50, p90; not the janky share, 100% on the lab's GPU), Holm; each screen's scroll judged: moved on each of the first five swipes (three screen heights) or failed by name; Android's own frame counts, this runner's, never a phone's (P0.104) |
-| e2e/lab/scrolls.sh | 2026-10-22 | edited: scroll_one(); the Reel on A and each LAB_REEL_ARMS build, installed over the signed-in member, fourteen rounds turned; the phone with no keyboard as the flows have it (no-keyboard.sh); signed in once with Maestro; each busy screen opened cold by its link, shot, ten swipes in one shell call with a hash after each, its frames counted; two rounds of opposite order (P0.104) |
+| e2e/lab/scrolls.mjs | 2026-10-22 | edited: rankDiff (ranks decide p: the lab's values tie); jsLongOf, the frame record's long JavaScript tasks; costs(): the Reel per build and arm against A (opened, frames, p50, p90; not the janky share, 100% on the lab's GPU), Holm; each screen's scroll judged: moved on each of the first five swipes (three screen heights) or failed by name; Android's own frame counts, this runner's, never a phone's (P0.104) |
+| e2e/lab/scrolls.sh | 2026-10-22 | edited: the rank-sum test's power, re-measured, says why fourteen rounds; scroll_one(); the Reel on A and each LAB_REEL_ARMS build, installed over the signed-in member, fourteen rounds turned; the phone with no keyboard as the flows have it (no-keyboard.sh); signed in once with Maestro; each busy screen opened cold by its link, shot, ten swipes in one shell call with a hash after each, its frames counted; two rounds of opposite order (P0.104) |
 | e2e/lab/sign-in.yaml | 2026-10-22 | written: the seeded member signed in once from a cleared app, by the flows' own subflow |
 | e2e/__tests__/iosFlows.test.ts | 2026-10-22 | edited: the iPhone's flows are flows of .maestro that need no server, the launch check runs each on its own simulator (P0.89), and the app's scheme is approved before the first |
 | e2e/no-keyboard.sh | 2026-10-22 | moved whole from run-flows.sh: the phone with no keyboard apps, no input method and no autofill, sourced by run-flows.sh and the speed lab's scrolls.sh; a keyboard left stops the run |
@@ -1441,3 +1441,5 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/kept-debs.sh | 2026-10-22 | new: the kept packages by dpkg alone, those installed left, its exit tells the caller to let apt fetch |
 | scripts/__tests__/keptDebs.test.ts | 2026-10-22 | new: run against stand-in dpkg tools |
 | src/components/lobby/__tests__/theBillsArePrintedOnPaper.guard.test.ts | 2026-10-22 | new: no parchment ground in the Lobby; the three bills on the paper token |
+| src/components/layout/LabFrameLog.tsx | 2026-10-22 | new: the lab's frame record: long JavaScript tasks, the UI thread's slow frames, per page, in the lab's builds alone |
+| src/components/layout/__tests__/labFrameLog.test.tsx | 2026-10-22 | new: a task long only past a frame and 50 ms, a frame slow past 25 ms, a quiet second unsaid, each page counted from its start |

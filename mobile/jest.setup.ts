@@ -495,6 +495,8 @@ jest.mock('react-native-reanimated', () => {
     KeyboardState: { UNKNOWN: 0, OPENING: 1, OPEN: 2, CLOSING: 3, CLOSED: 4 },
     useAnimatedProps: jest.fn((fn: any) => fn()),
     useAnimatedReaction: jest.fn(),
+    // The worklet is kept, not run: a test hands it frames itself (labFrameLog.test.tsx).
+    useFrameCallback: jest.fn((callback: unknown) => ({ setActive: jest.fn(), isActive: true, callbackId: 0, callback })),
     withDecay: jest.fn((config: any, cb?: any) => { strictConfig('withDecay', config); if (cb) cb(true); return 0; }),
   };
 });

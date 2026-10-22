@@ -191,9 +191,10 @@ describe('the signed-in scrolls, judged', () => {
 
 /**
  * A screens folder with a reel/ folder: each build's rounds of the Reel, each scrolled far, its
- * opening and its frames as given (ready ms, frames drawn, p90 ms per round; every frame janky, as on the lab's GPU).
+ * opening and its frames as given (ready ms, frames drawn, p90 ms per round; every frame janky, as on the lab's GPU),
+ * and, where given, the frame record's long JavaScript tasks (LabFrameLog's lines, split over two seconds).
  */
-function reelRounds(name: string, builds: Record<string, { ready: number[]; frames: number[]; p90: number[] }>) {
+function reelRounds(name: string, builds: Record<string, { ready: number[]; frames: number[]; p90: number[]; js?: number[] }>) {
   const d = scrolled(name, Array.from({ length: 11 }, (_, i) => hash(i)));
   const reel = join(d, 'reel');
   mkdirSync(reel);
@@ -202,24 +203,33 @@ function reelRounds(name: string, builds: Record<string, { ready: number[]; fram
       const f = join(reel, `${b}-${i + 1}`);
       writeFileSync(`${f}.moves`, Array.from({ length: 11 }, (_, k) => `${hash(k)}  -`).join('\n'));
       writeFileSync(`${f}.gfx`, `Total frames rendered: ${r.frames[i] ?? 0}\nJanky frames: ${r.frames[i] ?? 0} (100.00%)\n50th percentile: 800ms\n90th percentile: ${r.p90[i] ?? 0}ms\n99th percentile: 2000ms\n`);
-      writeFileSync(`${f}.log`, `10-22 16:00:32.537 W/ReactNativeJS( 5765): [e2e] screen.ready {"name":"reel","ms":${ms}}\n`);
+      const said = (event: string, detail: object) => `10-22 16:00:32.537 W/ReactNativeJS( 5765): [e2e] ${event} ${JSON.stringify(detail)}\n`;
+      const js = r.js?.[i];
+      writeFileSync(`${f}.log`, said('screen.ready', { name: 'reel', ms }) + (js == null ? '' : [
+        said('lab.frames.on', { path: '/reels' }),
+        said('lab.frames', { path: '/reels', js: { long: Math.ceil(js / 2), longest: 90 }, ui: { frames: 40, slow: 30, worst: 900 } }),
+        said('lab.frames', { path: '/reels', js: { long: Math.floor(js / 2), longest: 70 }, ui: { frames: 40, slow: 30, worst: 900 } }),
+      ].join('')));
     });
   }
   return d;
 }
-// Fourteen rounds, as scrolls.sh runs: the fewest at which a clear shift is called (scrolls.sh says why).
+// Fourteen rounds, as scrolls.sh runs (it says why).
 const around = (base: number) => [0, 3, -2, 5, -4, 1, -1, 2, 4, -3, 6, -5, -6, 7].map((n) => base + n);
 
 describe("the Reel's layers, costed", () => {
   it('names a layer whose removal opens the Reel faster, against A, and calls nothing on noise', () => {
     const r = run('scrolls.mjs', [reelRounds('reel-costs', {
-      A: { ready: around(3000), frames: around(50), p90: around(20) },
-      Rb: { ready: around(2000), frames: around(50), p90: around(20) },
+      A: { ready: around(3000), frames: around(50), p90: around(20), js: around(40) },
+      Rb: { ready: around(2000), frames: around(50), p90: around(20), js: [0, 1, 0, 2, 1, 0, 1, 1, 0, 2, 0, 1, 0, 1] },
+      Rw: { ready: around(3000), frames: around(50), p90: around(20) },
     })]);
     expect(r.status).toBe(0);
     const row = (b: string) => r.stdout.split('\n').find((l) => l.startsWith(`${b} `)) ?? '';
-    expect(row('A')).toMatch(/^A\s+14\s+3000\.5\s+50\.5\s+800\s+20\.5$/);
-    expect(row('Rb')).toMatch(/^Rb\s+14\s+2000\.5 -1000\*\s+50\.5 \+0 \s+800 \+0 \s+20\.5 \+0 $/);
+    // The long JavaScript tasks are each round's sum over its seconds; a build without the record reads blank.
+    expect(row('A')).toMatch(/^A\s+14\s+3000\.5\s+50\.5\s+800\s+20\.5\s+40\.5$/);
+    expect(row('Rb')).toMatch(/^Rb\s+14\s+2000\.5 -1000\*\s+50\.5 \+0 \s+800 \+0 \s+20\.5 \+0 \s+1 -39\.5\*$/);
+    expect(row('Rw')).toMatch(/^Rw\s+14\s+3000\.5 \+0 \s+50\.5 \+0 \s+800 \+0 \s+20\.5 \+0 \s+—$/);
   });
 
   it('fails when A was never scrolled, or a round of an arm ran out, by name', () => {
