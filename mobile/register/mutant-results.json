@@ -661,7 +661,7 @@
     "class": "E2E-scroll-untimed-on-a-full-house",
     "mutant": "shape-scroll-ran-out-unseen",
     "proof": "m1",
-    "commit": "890ea2757c2938758435bdec83b253bca7f334c5",
+    "commit": "539600d1376e80ef7f78303c5b4efb7f8114b0df",
     "verdict": "caught"
   },
   {
@@ -683,6 +683,13 @@
     "mutant": "shape-retry-blocked-by-lock",
     "proof": "m1",
     "commit": "7c2c8235a636bd165ed19d1929a23f45c9bd7bfc",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-lab-phone-unlike-the-flows",
+    "mutant": "shape-lab-shows-error-dialogs",
+    "proof": "m1",
+    "commit": "539600d1376e80ef7f78303c5b4efb7f8114b0df",
     "verdict": "caught"
   },
   {
