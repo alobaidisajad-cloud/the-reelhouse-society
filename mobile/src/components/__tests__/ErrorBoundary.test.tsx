@@ -80,7 +80,7 @@ describe('ErrorBoundary', () => {
         <Bomb shouldThrow={true} />
       </ErrorBoundary>
     );
-    expect(getByText(/RETRY SCREENING \(3 left\)/)).toBeTruthy();
+    expect(getByText(/RETRY SCREENING \(3 LEFT\)/)).toBeTruthy();
   });
 
   it('shows error reference ID', () => {

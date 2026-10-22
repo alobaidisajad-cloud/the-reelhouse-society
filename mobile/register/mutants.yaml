@@ -546,6 +546,24 @@ mutants:
         replace: "style={[s.sendBtn, !selectedLounge && { opacity: 0.4 }]}"
     proof: { file: src/theme/__tests__/anUnreadyControlIsHollow.guard.test.ts, test: "fades no control that waits on its member: an unready one is hollow" }
 
+  - id: shape-resend-faded-over-lines
+    class: UI-unready-faded
+    source: shape
+    edits:
+      - file: src/components/auth/EmailConfirmationScreen.tsx
+        find: "  submitLoading: {\n"
+        replace: "  submitDisabled: {\n    opacity: 0.5,\n  },\n  submitLoading: {\n"
+    proof: { file: src/theme/__tests__/anUnreadyControlIsHollow.guard.test.ts, test: "fades no control that waits on its member: an unready one is hollow" }
+
+  - id: shape-lounge-label-faded
+    class: TYPE-word-see-through-unseen
+    source: shape
+    edits:
+      - file: src/components/feed/ActionDeck.tsx
+        find: "  actionLabelKey: {\n    color: colors.sepia,\n  },"
+        replace: "  actionLabelKey: {\n    color: colors.sepia,\n    opacity: 0.75,\n  },"
+    proof: { file: src/theme/__tests__/wordsAreSolid.test.ts, test: "draws no WORD see-through — every one is a named mark, picture or inactive control" }
+
   - id: shape-italic-asked
     class: TYPE-italic-faked
     source: shape

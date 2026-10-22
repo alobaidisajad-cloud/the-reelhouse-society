@@ -60,6 +60,9 @@ async function measure(browser, file, pass) {
     }
     return out;
   });
+  // A screen that drew no words (a capture taken as it navigated away) has nothing to measure,
+  // and no height to photograph.
+  if (!words.length || h < 1) { await page.close(); return { count: 0, worst: 99, faults: [] }; }
   await page.addStyleTag({ content: '* { color: transparent !important; text-shadow: none !important; }' });
   const png = (await page.screenshot({ fullPage: true })).toString('base64');
   const verdict = await page.evaluate(async ({ png, words }) => {

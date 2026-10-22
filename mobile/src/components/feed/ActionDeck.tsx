@@ -262,6 +262,5 @@ const s = StyleSheet.create({
   },
   actionLabelKey: {
     color: colors.sepia,
-    opacity: 0.75,
   },
 });

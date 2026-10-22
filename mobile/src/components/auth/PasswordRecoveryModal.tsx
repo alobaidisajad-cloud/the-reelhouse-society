@@ -133,7 +133,7 @@ export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmai
                 </View>
                 <PressableScale
                   testID="recovery-submit-button"
-                  style={[s.modalSubmitBtn, forgotLoading && s.submitDisabled]}
+                  style={s.modalSubmitBtn}
                   onPress={onSubmit}
                   disabled={forgotLoading}
                   hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
@@ -259,10 +259,6 @@ const s = StyleSheet.create({
   },
   inputFocused: {
     borderColor: colors.sepiaBorderStrong,
-  },
-  submitDisabled: {
-    opacity: 0.5,
-    shadowOpacity: 0,
   },
   submitLoading: {
     flexDirection: 'row',

@@ -189,5 +189,5 @@ const s = StyleSheet.create({
   },
   stampDone: { borderStyle: 'solid', borderColor: 'rgba(184,137,26,0.3)', backgroundColor: 'rgba(184,137,26,0.12)' },
   stampText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia },
-  stampTextDone: { color: colors.sepia, opacity: 0.9 },
+  stampTextDone: { color: colors.sepia },
 });

@@ -52,8 +52,8 @@ import { z } from 'zod';
 import { WASH } from '@/src/theme/light';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { nav } from '@/src/utils/typedRouter';
-import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
-import Buster, { BusterEyes } from '@/src/components/Buster';
+import { EmptyOffline, EmptyState, REFRESH_FAILED } from '@/src/components/EmptyStates';
+import { BusterEyes } from '@/src/components/Buster';
 import { Arrive } from '@/src/components/Arrive';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { offerWord } from '@/src/lib/pushPrimer';
@@ -660,8 +660,7 @@ export default function LogDetailScreen() {
     return (
       <View style={[s.container, s.centerFull]}>
         <RoomLight room="film" />
-        <Buster size={80} mood="suspicious" />
-        <Text style={s.notFoundText}>Log not found.</Text>
+        <EmptyState buster="suspicious" title="No Such Record" subtitle="Its member withdrew it, or it was never filed." compact />
         <PressableScale style={s.backBtnRow} onPress={() => { nav.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="selection" pressedScale={0.92}
           accessibilityRole="button" accessibilityLabel={wayOut}>
             <ChevronLeft size={12} color={colors.bone} strokeWidth={1.5} />

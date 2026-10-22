@@ -101,7 +101,7 @@ const WalkoutRow = React.memo(function WalkoutRow({ log, onPress }: { log: Profi
           ? <Text {...scaledTextProps} style={[s.walkWords, rtl && rtlText]} numberOfLines={2}>{reason}</Text>
           // Said plainly rather than left blank — a row with nothing under the
           // mark reads as a rendering fault.
-          : <Text {...scaledTextProps} style={[s.walkWords, s.walkSilent]} numberOfLines={1}>no reason given</Text>}
+          : <Text {...scaledTextProps} style={s.walkWords} numberOfLines={1}>no reason given</Text>}
       </View>
     </PressableScale>
   );
@@ -498,7 +498,6 @@ const s = StyleSheet.create({
   walkMark: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 5 },
   walkMarkText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.crimsonInk },
   walkWords: { fontFamily: fonts.bodyItalic, fontSize: 11.5, lineHeight: 17, color: colors.fogQuiet, marginTop: 6 },
-  walkSilent: { opacity: 0.4 },
   searchIcon: { opacity: 0.6 },
   emptyStateSelf: { ...EDGE_LIT, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: colors.soot, borderWidth: 1, borderRadius: 4, marginTop: 12 },
   importDividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'stretch', marginTop: 20, marginBottom: 12, paddingHorizontal: 10 },

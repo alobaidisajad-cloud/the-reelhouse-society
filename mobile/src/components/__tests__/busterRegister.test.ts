@@ -36,7 +36,7 @@ const REGISTER: Record<string, Count> = {
   'app/film-reviews/[id].tsx': { offline: 1, why: 'a film’s critiques could not be reached' },
   'app/person/[id].tsx': { buster: 1, offline: 1, why: 'a person with no record, or not reached' },
   'app/stacks/[id].tsx': { buster: 1, eyes: 1, offline: 1, why: 'a stack classified or gone; being read, or not reached' },
-  'app/log/[id].tsx': { buster: 1, eyes: 1, offline: 1, why: 'a log not found; being read, or not reached' },
+  'app/log/[id].tsx': { empty: 1, eyes: 1, offline: 1, why: 'a log not found (the empty state carries Buster); being read, or not reached' },
   'app/(modals)/notifications-modal.tsx': { offline: 1, why: 'the notices could not be reached' },
   'src/components/lobby/LobbyWall.tsx': { offline: 1, why: 'the Lobby wall could not be reached' },
   'app/+not-found.tsx': { buster: 1, why: 'a link to nowhere' },

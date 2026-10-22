@@ -142,13 +142,13 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
             {results.length > 0 && searchType === 'person' && (
                 <View style={st.searchBadgeRow}>
                     <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} />
-                    <Text style={[st.searchBadge, st.searchBadgeSepia]}>ACTOR/DIRECTOR MATCH: {searchContext.toUpperCase()}</Text>
+                    <Text style={[st.searchBadge, st.searchBadgeSepia]}>THE FILMS OF {searchContext.toUpperCase()}</Text>
                 </View>
             )}
             {results.length > 0 && searchType === 'typo' && (
                 <View style={st.searchBadgeRow}>
                     <Sparkles size={8} color={colors.flicker} strokeWidth={1.5} />
-                    <Text style={[st.searchBadge, st.searchBadgeFlicker]}>FUZZY RESCUE: {searchContext.toUpperCase()}</Text>
+                    <Text style={[st.searchBadge, st.searchBadgeFlicker]}>THE CLOSEST TITLE: {searchContext.toUpperCase()}</Text>
                 </View>
             )}
             <FlashList
@@ -167,8 +167,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
             {unreachable && <SearchUnreachable onRetry={search.retry} />}
             {!searching && !unreachable && query.trim().length > 0 && results.length === 0 && (
                 <View style={st.noResultsWrap}>
-                    {/* eslint-disable-next-line react/no-unescaped-entities */}
-                    <Text style={st.noResultsText}>No films found for "{query.trim()}"</Text>
+                    <Text style={st.noResultsText}>No films found for “{query.trim()}”</Text>
                 </View>
             )}
         </Arrive>

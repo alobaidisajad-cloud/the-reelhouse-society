@@ -104,7 +104,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx | 2026-10-03 | new: your own circle is said to you |
 | app/(modals)/cover-picker.tsx | 2026-10-15 | top from useModalTop |
-| app/(modals)/list-modal.tsx | 2026-10-22 | edited: the unready bar is hollow (UNREADY); its reason still in the label |
+| app/(modals)/list-modal.tsx | 2026-10-22 | edited: the unready bar is hollow (UNREADY); CLOSE centred on the title's first line; the large-stack notice in sentences |
 | app/(modals)/log-modal.tsx | 2026-10-15 | edited: each step and each Back to search said in the E2E log; the header says where it sits |
 | app/(modals)/login.tsx | 2026-10-15 | header top from useModalTop; the page stops at the edge (useBottomEdge) |
 | app/(modals)/membership.tsx | 2026-10-15 | nav top from useModalTop; ends above the window and its fade, or at useContentBottom |
@@ -286,7 +286,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/face-advances.cjs | 2026-10-03 | edited: writes a hidden key as its escape |
 | mockups/tools/harness.cjs | 2026-09-28 | 5 findings; the header's middle sentence was garbled by an insertion; open() said 1.35 was the most a word grows (uncapped grows to 3.1) |
 | mockups/tools/layout.cjs | 2026-10-16 | edited: a one-line text is measured by its box less its padding: a title's glow room holds no letters; the --require promise kept by required.cjs, which the split capture run's verdict shares |
-| mockups/tools/contrast.cjs | 2026-09-30 | new: every word against the pixels under it |
+| mockups/tools/contrast.cjs | 2026-10-22 | edited: a screen that drew no words is passed over, not photographed at no height |
 | mockups/tools/quote-ink.cjs | 2026-10-15 | new: the quote marks' outline, read from the font file; exports its marks; theQuoteMarkIsTheFontsOwn holds the Lobby's copy to them |
 | mockups/tools/required.cjs | 2026-10-15 | new: the --require promise, one definition for layout.cjs and jest-shards.cjs |
 | mockups/tools/selftest.cjs | 2026-10-16 | edited: layout.cjs writing no report ends the self-test in its own words |
@@ -519,7 +519,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/pickCertificate.test.ts | — |  |
 | src/components/film/__tests__/stubFits.test.ts | — |  |
 | src/components/film/__tests__/trayActsFire.test.tsx | — |  |
-| src/components/film/__tests__/whatAFilmPageNames.test.tsx | 2026-10-08 | the file is drawn before it is shared |
+| src/components/film/__tests__/whatAFilmPageNames.test.tsx | 2026-10-22 | edited: a country by its name; a right-to-left critique whole after its mark |
 | src/components/film/__tests__/zz-film.gen.test.tsx | — |  |
 | src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-01 | written: the critiques' failure reaches the page; an unread verdict is unknown |
 | src/components/film/CastCarousel.tsx | 2026-10-04 | edited: an actor without a photograph is drawn by initialOf |
@@ -846,7 +846,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/EditProfileScreen.tsx | 2026-10-15 | nav top from usePushedHeaderTop; foot from useContentBottom |
 | src/features/profile/LinksEditor.tsx | 2026-10-03 | edited: the link title and address name their caps |
 | src/features/profile/profile.styles.ts | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
-| src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-15 | edited: the storage mock lists its keys; the code window makes its room in a CentredCard |
+| src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-22 | edited: the Auteur manages a membership, not a rank to choose |
 | src/features/settings/__tests__/anExportIsWhole.test.ts | 2026-10-01 | written: an export holds every row once |
 | src/features/settings/__tests__/theSignOutNamesWhatItErases.test.tsx | 2026-10-15 | written: the sign-out confirm counts unsent changes, drafts and failed words; online, the queue goes first |
 | src/features/settings/DataVault.tsx | 2026-10-02 | no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
@@ -1131,7 +1131,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/theTypeFloor.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/theVeilMeetsTheLight.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/wordsAreNotMarks.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/theme/__tests__/wordsAreSolid.test.ts | 2026-10-22 | edited: no dimmed-control exception left; an unready control takes UNREADY |
+| src/theme/__tests__/wordsAreSolid.test.ts | 2026-10-22 | edited: a style a <Text> wears is read as text though it sets no type; no dimmed-control exception left |
 | src/theme/authStyles.ts | 2026-10-01 | comments short and true |
 | src/theme/brass.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/faceAdvances.ts | 2026-10-03 | edited: the soft hyphen's key written as an escape |
@@ -1414,4 +1414,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/anItalicIsTheHouseItalic.guard.test.ts | 2026-10-22 | written: no slant asked of a face; the italic faces the theme names are the ones loaded before the first screen |
 | src/utils/counted.ts | 2026-10-22 | written: the Dispatch's counter, moved for the whole app with its note |
 | src/theme/unready.ts | 2026-10-22 | written: a control that cannot act yet, hollow with its words in fog; a control at work stays filled |
-| src/theme/__tests__/anUnreadyControlIsHollow.guard.test.ts | 2026-10-22 | written: no fade under 0.7 given on a condition but those named with why |
+| src/theme/__tests__/anUnreadyControlIsHollow.guard.test.ts | 2026-10-22 | edited: reads whole style objects across lines; a state style that recolours is refused too |
+| src/utils/countryName.ts | 2026-10-22 | written: a country's name from its code; the house's own list (Hermes has no region names), the code where it has none |
+| src/utils/__tests__/countryName.test.ts | 2026-10-22 | written: in a sentence and as a label; an unknown code said as it came; every TMDB region named |

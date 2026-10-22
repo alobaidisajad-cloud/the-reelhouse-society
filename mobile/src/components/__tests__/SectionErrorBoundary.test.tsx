@@ -54,7 +54,7 @@ describe('SectionErrorBoundary', () => {
         <Bomb shouldThrow={true} />
       </SectionErrorBoundary>
     );
-    expect(getByText(/RETRY \(2 left\)/)).toBeTruthy();
+    expect(getByText(/RETRY \(2 LEFT\)/)).toBeTruthy();
   });
 
   it('shows exhaustion message after max retries', async () => {
@@ -66,7 +66,7 @@ describe('SectionErrorBoundary', () => {
       </SectionErrorBoundary>
     );
     await act(async () => { await fireEvent.press(getByLabelText('Retry loading the reels')); });
-    expect(getByText(/RETRY \(1 left\)/)).toBeTruthy();
+    expect(getByText(/RETRY \(1 LEFT\)/)).toBeTruthy();
     await act(async () => { await fireEvent.press(getByLabelText('Retry loading the reels')); });
 
     expect(getByText('This section could not recover. Try restarting the app.')).toBeTruthy();

@@ -227,7 +227,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     ) : flow.imagesLoaded ? (
                         // Said only once TMDB has actually answered — never while
                         // the request is still out, and never after it failed.
-                        <Text style={st.noData}>No alternative posters found on TMDB.</Text>
+                        <Text style={st.noData}>The archive holds no other poster for this film.</Text>
                     ) : flow.imagesFailed ? (
                         <View>
                             <Text style={st.noData}>The posters could not be reached.</Text>

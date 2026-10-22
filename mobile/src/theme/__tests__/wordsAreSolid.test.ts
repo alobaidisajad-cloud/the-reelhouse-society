@@ -52,6 +52,9 @@ const ALLOWED: Record<string, string> = {
   'src/components/profile/roomStyles.ts · retrieveMark': 'the mark beside RETRIEVING',
   'src/components/profile/WatchlistRoulette.tsx · reelGlyph': 'a reel glyph',
   'app/year-in-cinema.tsx · blankGlyph': 'a glyph in an empty cell',
+  'src/components/profile/Achievements.tsx · glyphLocked': 'a locked honour’s glyph; its name is solid',
+  'src/components/log/AuteurToolkit.tsx · axisValueUnrated': 'the — standing for an axis not yet rated',
+  'app/stacks/[id].tsx · descMeasure': 'an unseen copy, at 0, that measures the description; never drawn',
   // ── PICTURES — exported images, never seen on this ground ───────────────
   'src/components/profile/TasteDNAExportCanvas.tsx · societyLabel': 'the Taste DNA export',
   'src/components/profile/TasteDNAExportCanvas.tsx · subtitle': 'the Taste DNA export',
@@ -102,9 +105,12 @@ function census(): string[] {
       // Comments blanked by the parser: a brace or a `color:` in a comment is not a style.
       const src = stripComments(readFileSync(join(ROOT, file), 'utf8'), file);
 
-      // 1 · text styles in a sheet
+      // 1 · text styles in a sheet: a style that sets type, or one a <Text> in this file wears
+      // (a state style that only recolours, like a locked honour's name, sets no type of its own)
+      const worn = new Set([...src.matchAll(/<(?:Animated\.)?Text\b[^>]*?style=\{([^}]*(?:\{[^}]*\}[^}]*)*)\}/g)]
+        .flatMap(([, style = '']) => [...style.matchAll(/\b\w+\.(\w+)/g)].map(([, key = '']) => key)));
       for (const b of blocks(src)) {
-        if (!TYPE.test(b.body)) continue;
+        if (!TYPE.test(b.body) && !worn.has(b.key)) continue;
         const col = /(?:^|[^A-Za-z])color\s*:\s*(colors\.\w+|'[^']*'|"[^"]*")/.exec(b.body);
         const op = /(?:^|[^A-Za-z])opacity\s*:\s*(0?\.\d+|0)\b/.exec(b.body);
         if ((col ? alphaOf(col[1]) : 1) < 1 || op) found.push(`${file} · ${b.key}`);

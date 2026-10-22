@@ -551,16 +551,28 @@ classes:
     fix: "planWall's foot fits the one-sheet's words to the sheet's height as the phone grows them: the house's two lines give way first, then the title steps down to TITLE_FLOOR, then the year; the title, the director and NOW SHOWING always stand; FeatureRow draws what it kept and the snipe reads the same numbers (mutant shape-foot-never-gives-way)"
     places: [none]
 
-  - id: UI-unready-faded
-    title: A control that cannot act yet faded to 0.3-0.6 of itself, so its own words (SHARE TO LOUNGE, FILE REPORT, RESET PASSWORD) fell to about 1.5:1 and could not be read
+  - id: TYPE-word-see-through-unseen
+    title: A word drawn see-through by a style that sets only colour or opacity, which the words-are-solid census skipped because it read a style as text only when it set type (the feed's LOUNGE at 3.9:1, a calendar's coming days at 0.2, an honour's locked name at 0.5)
     seriousness: layout
     area: type
     status: OPEN
-    count: 17
-    source: { kind: history, ref: "the polish pass, 2026-10-22: the share sheet's SHARE TO LOUNGE, drawn from the real code" }
+    count: 8
+    source: { kind: history, ref: "the full screen review and the contrast sweep over 1,740 captures, 2026-10-22" }
+    methods:
+      - { kind: static, file: src/theme/__tests__/wordsAreSolid.test.ts, test: "draws no WORD see-through — every one is a named mark, picture or inactive control" }
+    fix: "wordsAreSolid also reads, as a text style, any style a <Text> in the same file wears; the words it found set solid (LOUNGE, the calendar's coming days, the series picker, no reason given, three at 0.9), the marks named (a locked glyph, the unrated —, an unseen measuring copy) (mutant shape-lounge-label-faded)"
+    places: [none]
+
+  - id: UI-unready-faded
+    title: A control that cannot act yet faded to 0.3-0.6 of itself, or its brass swapped for the card's dark, so its own words (SHARE TO LOUNGE, FILE REPORT, FILE THE ESSAY) fell to about 1.5:1 and could not be read
+    seriousness: layout
+    area: type
+    status: OPEN
+    count: 21
+    source: { kind: history, ref: "the polish pass, 2026-10-22: the share sheet's SHARE TO LOUNGE, drawn from the real code; four more found by the full screen review (the essay's FILE, the salon's send, the email resend, password recovery)" }
     methods:
       - { kind: static, file: src/theme/__tests__/anUnreadyControlIsHollow.guard.test.ts, test: "fades no control that waits on its member: an unready one is hollow" }
-    fix: "src/theme/unready.ts: an unready control is hollow (its fill taken away, a brass frame left) with its words in fog, 6.7:1; a control at work stays filled; the guard reads the app's code for a fade under 0.7 given on a condition, letting stand only one at work for a moment or a picture, named with why; wordsAreSolid's dimmed-control exception removed (mutant shape-share-faded)"
+    fix: "src/theme/unready.ts: an unready control is hollow (its fill taken away, a brass frame left) with its words in fog, 6.7:1; a control at work stays filled; the guard reads whole style objects across their lines for a fade under 0.7 given on a condition, and for a style named for the state (…Disabled, …Dim, …Busy, …Blocked) that fades or recolours, letting stand only one at work for a moment or a picture, named with why; wordsAreSolid's dimmed-control exception removed (mutants shape-share-faded, shape-resend-faded-over-lines)"
     places: [none]
 
   - id: TYPE-italic-faked

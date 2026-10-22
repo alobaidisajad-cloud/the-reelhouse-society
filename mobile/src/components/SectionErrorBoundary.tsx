@@ -88,7 +88,7 @@ export class SectionErrorBoundary extends Component<Props, State> {
               accessibilityLabel={`Retry loading the ${this.props.section ?? 'section'}`}
             >
               <Text style={styles.retryText}>
-                ◆ RETRY ({MAX_SECTION_RETRIES - this.state.retryCount} left)
+                ◆ RETRY ({MAX_SECTION_RETRIES - this.state.retryCount} LEFT)
               </Text>
             </Pressable>
           )}

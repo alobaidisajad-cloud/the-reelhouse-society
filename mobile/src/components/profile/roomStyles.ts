@@ -155,9 +155,9 @@ export const r = StyleSheet.create({
   // Rye is wide unspaced; railFits.test.ts proves the rail at every size.
   railYear: { fontFamily: fonts.sub, fontSize: type.label, letterSpacing: 1.4, color: colors.fog },
   railLine: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.15)' },
-  railLabel: { fontFamily: fonts.display, fontSize: type.rail, color: colors.sepia },
+  railLabel: { flexShrink: 1, fontFamily: fonts.display, fontSize: type.rail, color: colors.sepia },
   /** A solid ink, not see-through fog (3.75:1 at 0.7 on this ground). */
-  railCount: { fontFamily: fonts.body, fontSize: 9, color: colors.fogQuiet },
+  railCount: { flexShrink: 0, fontFamily: fonts.body, fontSize: 9, color: colors.fogQuiet },
 
   // The rhythm bar — see RoomRail. Indented past the year so the bars line up
   // with each other rather than with the varying width of "2026".

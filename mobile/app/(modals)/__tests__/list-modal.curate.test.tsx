@@ -189,9 +189,9 @@ describe('the form can never destroy a stack', () => {
     mockParams = { editId: STACK_ID };
     mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: 620 } };
     const r = mount();
-    await waitFor(() => expect(r.getByText(/LARGER THAN THIS SHEET CAN HOLD/)).toBeTruthy());
-    expect(r.getByText(/620 REELS\./)).toBeTruthy();          // the notice's own count
-    expect(r.getByText(/KEPT EXACTLY AS THEY STAND/)).toBeTruthy();
+    await waitFor(() => expect(r.getByText(/larger than this sheet can hold/)).toBeTruthy());
+    expect(r.getByText(/620 reels\./)).toBeTruthy();          // the notice's own count
+    expect(r.getByText(/kept exactly as they stand/)).toBeTruthy();
   });
 
   it('and the bar reports the stack’s true size, not the part it is holding', async () => {
@@ -333,7 +333,7 @@ describe('the act, docked', () => {
     await waitFor(() => expect(r.getByText('0 REELS  ·  UNRANKED  ·  PUBLIC')).toBeTruthy());
     await act(async () => { await fireEvent.press(r.getByLabelText('Set stack to ranked')); });
     await act(async () => { await fireEvent.press(r.getByLabelText('Set stack to private')); });
-    await waitFor(() => expect(r.getByText('0 REELS  ·  RANKED  ·  SEALED')).toBeTruthy());
+    await waitFor(() => expect(r.getByText('0 REELS  ·  RANKED  ·  PRIVATE')).toBeTruthy());
   });
 
   it('counts one reel in the singular', async () => {
@@ -597,7 +597,7 @@ describe('the search says what happened', () => {
   it('a search that found nothing says so, rather than looking like one still out', async () => {
     const r = mount();
     await typeIn(r, 'zzqxv');
-    await waitFor(() => expect(r.getByText('No films found for "zzqxv"')).toBeTruthy(), { timeout: 2000 });
+    await waitFor(() => expect(r.getByText('No films found for “zzqxv”')).toBeTruthy(), { timeout: 2000 });
   });
 
   it('and one that found only films already in the stack says that', async () => {

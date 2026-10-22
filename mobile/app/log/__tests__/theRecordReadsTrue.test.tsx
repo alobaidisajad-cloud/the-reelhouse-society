@@ -449,7 +449,7 @@ describe('a record that could not be read', () => {
 
   it('says it could not be reached, never "Log not found", and asks again', async () => {
     const { r, refetch } = await unread();
-    expect(r.queryByText('Log not found.')).toBeNull();
+    expect(r.queryByText('No Such Record')).toBeNull();
     expect(r.getByText('Transmission Interrupted')).toBeTruthy();
     await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     expect(refetch).toHaveBeenCalled();
@@ -469,7 +469,8 @@ describe('a record that could not be read', () => {
     mockQuery = { data: { log: null, profile: null, comments: [], commentTotal: 0 }, isLoading: false, isError: false };
     let r!: R;
     await act(async () => { r = render(<LogDetailScreen />); });
-    expect(r.getByText('Log not found.')).toBeTruthy();
+    expect(r.getByText('No Such Record')).toBeTruthy();
+    expect(r.getByText('Its member withdrew it, or it was never filed.')).toBeTruthy();
     expect(r.getByLabelText('Go back')).toBeTruthy();
   });
 });

@@ -701,7 +701,7 @@ const s = StyleSheet.create({
         paddingHorizontal: 16,
     },
     searchIcon: { marginRight: 12 },
-    searchInput: { flex: 1, height: 50, fontFamily: fonts.display, fontSize: 18, color: colors.parchment },
+    searchInput: { flex: 1, height: 50, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
     modalScroll: { flex: 1, padding: 16 },
     spinner: { marginTop: 40 },
     resultItem: {

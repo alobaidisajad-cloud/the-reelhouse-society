@@ -183,7 +183,7 @@ describe('when there is nothing to show', () => {
     search.mockResolvedValue({ results: [], searchType: 'exact', matchedContext: '' });
     const r = render(<LogSearchEngine onSelectFilm={jest.fn()} />);
     await type(r, 'zzzzzz');
-    expect(r.getByText(/No films found for "zzzzzz"/)).toBeTruthy();
+    expect(r.getByText(/No films found for “zzzzzz”/)).toBeTruthy();
   });
 
   it('does not report failure over a query nobody made', async () => {
@@ -217,14 +217,14 @@ describe('what the search says about itself', () => {
     search.mockResolvedValue({ results: RESULTS, searchType: 'person', matchedContext: 'roman polanski' });
     const r = render(<LogSearchEngine onSelectFilm={jest.fn()} />);
     await type(r, 'polanski');
-    expect(r.getByText(/ACTOR\/DIRECTOR MATCH: ROMAN POLANSKI/)).toBeTruthy();
+    expect(r.getByText(/THE FILMS OF ROMAN POLANSKI/)).toBeTruthy();
   });
 
   it('admits when it rescued a typo', async () => {
     search.mockResolvedValue({ results: RESULTS, searchType: 'typo', matchedContext: 'chinatown' });
     const r = render(<LogSearchEngine onSelectFilm={jest.fn()} />);
     await type(r, 'chinatwon');
-    expect(r.getByText(/FUZZY RESCUE: CHINATOWN/)).toBeTruthy();
+    expect(r.getByText(/THE CLOSEST TITLE: CHINATOWN/)).toBeTruthy();
   });
 
   it('shows no badge when the title simply matched', async () => {
@@ -232,7 +232,7 @@ describe('what the search says about itself', () => {
     await type(r, 'chinatown');
     expect(r.getByText('Chinatown')).toBeTruthy(); // the match is drawn, with no badge
     expect(r.queryByText(/MATCH:/)).toBeNull();
-    expect(r.queryByText(/FUZZY RESCUE/)).toBeNull();
+    expect(r.queryByText(/THE CLOSEST TITLE/)).toBeNull();
   });
 
   it('a search that could not reach the catalogue says so — never "no films found", never the last room', async () => {

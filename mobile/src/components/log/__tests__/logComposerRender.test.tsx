@@ -244,7 +244,7 @@ describe('the log’s ropes are the house’s ropes', () => {
       const r = mount('cinephile');
       await fireEvent.press(r.getByLabelText(POSTER));
       await waitFor(() => expect(r.getByText('CURATORIAL CONTROL')).toBeTruthy());
-      expect(r.queryByText('No alternative posters found on TMDB.', { includeHiddenElements: true })).toBeNull();
+      expect(r.queryByText('The archive holds no other poster for this film.', { includeHiddenElements: true })).toBeNull();
     });
 
     it('nor after the request FAILED — a failure is not "none found"', async () => {
@@ -255,7 +255,7 @@ describe('the log’s ropes are the house’s ropes', () => {
       // Let the rejection settle before asking.
       await waitFor(() => expect(tmdb.movieImages).toHaveBeenCalled());
       await new Promise((res) => setTimeout(res, 20));
-      expect(r.queryByText('No alternative posters found on TMDB.', { includeHiddenElements: true })).toBeNull();
+      expect(r.queryByText('The archive holds no other poster for this film.', { includeHiddenElements: true })).toBeNull();
     });
 
     it('says the posters could not be reached, and asks again when told', async () => {
@@ -272,7 +272,7 @@ describe('the log’s ropes are the house’s ropes', () => {
       images.mockResolvedValueOnce({ posters: [], backdrops: [] });
       await fireEvent.press(r.getByLabelText('Ask for the posters again', { includeHiddenElements: true }));
       await waitFor(() =>
-        expect(r.getByText('No alternative posters found on TMDB.', { includeHiddenElements: true })).toBeTruthy());
+        expect(r.getByText('The archive holds no other poster for this film.', { includeHiddenElements: true })).toBeTruthy());
       expect(r.queryByText('The posters could not be reached.', { includeHiddenElements: true })).toBeNull();
     });
 
@@ -281,7 +281,7 @@ describe('the log’s ropes are the house’s ropes', () => {
       const r = mount('cinephile');
       await fireEvent.press(r.getByLabelText(POSTER));
       await waitFor(() =>
-        expect(r.getByText('No alternative posters found on TMDB.', { includeHiddenElements: true })).toBeTruthy());
+        expect(r.getByText('The archive holds no other poster for this film.', { includeHiddenElements: true })).toBeTruthy());
     });
 
     it('the next film never shows the last film’s posters', async () => {

@@ -28,7 +28,7 @@ import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { UserAttributionRow } from '@/src/components/feed/UserAttributionRow';
 import { stripHtml } from '@/src/utils/html';
-import { extractDropCap, isRTLText } from '@/src/utils/text';
+import { extractDropCap, isRTLText, RTL_MARK } from '@/src/utils/text';
 import { timeAgo } from '@/src/utils/timeAgo';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
@@ -70,7 +70,8 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
   const { first: dropCapFirst, rest: dropCapRest } = extractDropCap(strippedReview);
   // No drop cap on a joined script: lifting the first letter out of an Arabic
   // word leaves an isolated form and breaks the word behind it.
-  const dropCap = review.drop_cap && !isRTLText(strippedReview) && !!dropCapFirst;
+  const rtl = isRTLText(strippedReview);
+  const dropCap = review.drop_cap && !rtl && !!dropCapFirst;
 
   const isAuteur = isAuteurPlusTier(review.role);
   const isArchivist = isArchivistPlusTier(review.role) && !isAuteur;
@@ -131,8 +132,8 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
                 </Text>
               </View>
             ) : (
-              <Text style={s.reviewText} numberOfLines={7} ellipsizeMode="tail">
-                {strippedReview}
+              <Text style={[s.reviewText, rtl && s.rtlText]} numberOfLines={7} ellipsizeMode="tail">
+                {rtl ? RTL_MARK : null}{strippedReview}
               </Text>
             )
           ) : null}
@@ -214,6 +215,7 @@ const s = StyleSheet.create({
     marginTop: 8, marginBottom: 6, minHeight: 14,
   },
   reviewText: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, lineHeight: 20 },
+  rtlText: { writingDirection: 'rtl', textAlign: 'right' },
 
   pullQuoteWrap: { marginTop: 2, marginBottom: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: 'rgba(184,137,26,0.4)', paddingVertical: 2 },
   pullQuoteWrapAuteur: { borderLeftColor: colors.crimson, backgroundColor: colors.crimsonFaint, paddingVertical: 6, borderRadius: 2 },

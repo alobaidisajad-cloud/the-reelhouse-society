@@ -316,7 +316,7 @@ const s = StyleSheet.create({
     exportWrap: { alignItems: 'center', marginTop: 16 },
     exportBtn: {
         minHeight: 46, justifyContent: 'center', paddingHorizontal: 32, borderWidth: 1,
-        borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, backgroundColor: 'rgba(13,11,9,0.5)',
+        borderColor: colors.sepia, borderRadius: 2, backgroundColor: 'rgba(13,11,9,0.5)',
     },
-    exportText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fog },
+    exportText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia },
 });

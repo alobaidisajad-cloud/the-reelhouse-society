@@ -210,7 +210,9 @@ describe('membership & billing — the card that had no billing', () => {
     const r = await settle(mount());
     expect(r.getByText('Auteur')).toBeTruthy();
     expect(r.getByText(/highest rank/)).toBeTruthy();
-    expect(r.getByText('CHOOSE YOUR RANK')).toBeTruthy();
+    // the top rank is managed, not chosen: no rank is left above it
+    expect(r.getByText('MANAGE YOUR MEMBERSHIP')).toBeTruthy();
+    expect(r.queryByText('CHOOSE YOUR RANK')).toBeNull();
   });
 
   it('still tells a paying member their membership is live', async () => {

@@ -16,6 +16,7 @@ import { useBlockStore } from '@/src/stores/blockStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 import { LoungeMessage, LoungeRoom, ReactionSummary, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
+import { UNREADY, UNREADY_INK } from '@/src/theme/unready';
 import { LoungeMember, LoungeMemberStatus } from '@/src/types/social.types';
 import { knownStanding, roomGate, type RoomGate, type RoomStanding } from '@/src/components/lounge/roomGate';
 import { offerWord } from '@/src/lib/pushPrimer';
@@ -775,14 +776,14 @@ export default function LoungeRoomScreen() {
               accessibilityLabel="Compose a dispatch"
             />
             <PressableScale
-              style={[s.sendBtn, (!input.trim() || sending) && s.sendBtnDisabled]}
+              style={[s.sendBtn, !input.trim() && UNREADY.plate]}
               onPress={handleSend}
               disabled={!input.trim() || sending}
               haptic="medium"
               accessibilityRole="button"
               accessibilityLabel="Send the dispatch"
             >
-              <Send size={16} color={colors.ink} strokeWidth={2} />
+              <Send size={16} color={input.trim() ? colors.ink : UNREADY_INK} strokeWidth={2} />
             </PressableScale>
           </View>
         </View>
@@ -1086,7 +1087,6 @@ const s = StyleSheet.create({
     width: 42, height: 42, borderRadius: 21, backgroundColor: colors.sepia, alignItems: 'center', justifyContent: 'center',
     shadowColor: colors.sepia, shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
   },
-  sendBtnDisabled: { backgroundColor: colors.ash, shadowOpacity: 0 },
 
   // ── Muted bar ──
   mutedBar: {

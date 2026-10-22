@@ -232,7 +232,7 @@ const s = StyleSheet.create({
   },
   badgeLocked: {
     backgroundColor: 'transparent',
-    borderColor: 'rgba(255,255,255,0.03)',
+    borderColor: colors.sepiaFaint,
   },
   badgeGlyph: {
     fontSize: 24,
@@ -246,8 +246,8 @@ const s = StyleSheet.create({
     textShadowRadius: 8,
   },
   glyphLocked: {
-    color: colors.ash,
-    opacity: 0.5,
+    color: colors.fogQuiet,
+    opacity: 0.45,
   },
   badgeTitle: {
     fontFamily: fonts.sub,
@@ -260,6 +260,5 @@ const s = StyleSheet.create({
   },
   titleLocked: {
     color: colors.fogQuiet,
-    opacity: 0.5,
   },
 });

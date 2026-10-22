@@ -222,7 +222,7 @@ export default function ListModal() {
         : [
             `${markCount} ${reelWord}`,
             isRanked ? 'RANKED' : 'UNRANKED',
-            isPrivate ? 'SEALED' : 'PUBLIC',
+            isPrivate ? 'PRIVATE' : 'PUBLIC',
           ].join('  ·  ');
 
     const [query, setQuery] = useState('');
@@ -416,8 +416,8 @@ export default function ListModal() {
                     // In the search field's place: the label, then what may be done here.
                     <View style={s.lockNote}>
                         <Text style={s.lockNoteText} {...scaledTextProps}>
-                            THIS INDEX IS LARGER THAN THIS SHEET CAN HOLD{typeof trueFilmCount === 'number' ? ` — ${trueFilmCount} REELS` : ''}.{'\n'}
-                            THE NAME, NOTE AND TERMS CAN BE AMENDED HERE; THE HOLDINGS ARE KEPT EXACTLY AS THEY STAND.
+                            This stack is larger than this sheet can hold{typeof trueFilmCount === 'number' ? ` — ${trueFilmCount} reels` : ''}.{'\n'}
+                            Its name, note and terms can be amended here; its films are kept exactly as they stand.
                         </Text>
                     </View>
                 ) : (
@@ -458,7 +458,7 @@ export default function ListModal() {
                             films already in the stack, looked exactly like one still out. */}
                         {!searching && !unreachable && query.trim().length > 0 && results.length === 0 && (
                             <Text style={s.dropNone}>
-                                {allAlreadyIn ? 'Already in this stack.' : `No films found for "${query.trim()}"`}
+                                {allAlreadyIn ? 'Already in this stack.' : `No films found for “${query.trim()}”`}
                             </Text>
                         )}
                     </>
@@ -622,7 +622,8 @@ const s = StyleSheet.create({
     },
     headerTitleWrap: { flex: 1, paddingRight: 12 },
     headerTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, color: colors.parchment },
-    closeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, minHeight: 48, marginRight: -8 },
+    // 48 tall, centred on the title's first line (26): its words stand level with the title's
+    closeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, minHeight: 48, marginRight: -8, marginTop: -11 },
     closeBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog, includeFontPadding: false },
 
     sec: { paddingHorizontal: 20, marginTop: 20 },

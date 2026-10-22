@@ -61,7 +61,7 @@ describe('#24 · a docket that failed can never render as a docket that is clear
   it('says plainly that nothing loaded, and offers a way back', () => {
     // "Failed to load" invites the reading that the queue is fine and the screen
     // is fussy. The wording has to close that door.
-    expect(screen).toMatch(/The docket could not be reached\./);
+    expect(screen).toMatch(/The docket could not be read\./);
     expect(screen).toMatch(/This is not an empty queue/);
     expect(code).toMatch(/onPress=\{\(\) => \{ void retryQueue\(\); \}\}/);
   });

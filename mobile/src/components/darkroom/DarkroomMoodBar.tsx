@@ -140,7 +140,6 @@ const s = StyleSheet.create({
     // is solid fogQuiet: a word never borrows its contrast from the ground behind it.
     },
   moodSubActive: {
-    opacity: 0.9,
     color: colors.flicker,
   },
 });

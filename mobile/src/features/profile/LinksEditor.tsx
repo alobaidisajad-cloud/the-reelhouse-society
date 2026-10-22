@@ -40,7 +40,7 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
                       Placed before the fields so that where the box grazes the
                       TITLE input, the input wins — a later sibling always does. */}
                   <PressableScale onPress={() => handleRemoveLink(index)} style={st.linkRemoveBtn} hitSlop={null} haptic="light" accessibilityLabel="Remove link">
-                      <X size={14} color={colors.ash} />
+                      <X size={14} color={colors.fog} />
                   </PressableScale>
 
                   <View style={st.fieldWrap}>

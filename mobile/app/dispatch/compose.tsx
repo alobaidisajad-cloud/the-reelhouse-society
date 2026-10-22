@@ -14,6 +14,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useClearance } from '@/src/hooks/useClearance';
 import { showTierDoor } from '@/src/utils/tierDoor';
 import { colors, fonts } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import reelToast from '@/src/utils/reelToast';
 // The fence an essay is filed against (see `limit`).
 import { isOverLimit, remainingChars, MAX_LENGTHS } from '@/src/utils/sanitizeInput';
@@ -914,7 +915,7 @@ function ComposeDossierScreen() {
                             ) : null}
                         </View>
                         <PressableScale
-                            style={[styles.publishBtn, (!ready || isPublishing) && styles.publishBtnDisabled]}
+                            style={[styles.publishBtn, !ready && UNREADY.plate]}
                             disabled={!ready || isPublishing}
                             onPress={handlePublish}
                             haptic="medium"
@@ -928,7 +929,7 @@ function ComposeDossierScreen() {
                             }
                         >
                             {/* The screen's longest label: shrink-to-fit, under the ceiling. */}
-                            <Text style={styles.publishBtnText} {...scaledTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{isPublishing ? 'FILING…' : (edit ? 'RE-FILE ESSAY' : 'FILE THE ESSAY')}</Text>
+                            <Text style={[styles.publishBtnText, !ready && UNREADY.words]} {...scaledTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{isPublishing ? 'FILING…' : (edit ? 'RE-FILE ESSAY' : 'FILE THE ESSAY')}</Text>
                         </PressableScale>
                     </BlurView>
                 </Animated.View>
@@ -1089,12 +1090,11 @@ const styles = StyleSheet.create({
     },
     publishBtn: {
         backgroundColor: colors.sepia,
+        borderWidth: 1,
+        borderColor: 'transparent',
         paddingVertical: 12,
         paddingHorizontal: 22,
         borderRadius: 4,
-    },
-    publishBtnDisabled: {
-        backgroundColor: colors.ash,
     },
     publishBtnText: {
         fontFamily: fonts.sub,
@@ -1132,7 +1132,7 @@ const styles = StyleSheet.create({
      */
     restoredRow: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, marginBottom: 14, paddingBottom: 10,
+        gap: 12, marginBottom: 14, paddingBottom: 10, paddingHorizontal: 24,
         borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.16)',
     },
     restoredText: {
@@ -1151,7 +1151,7 @@ const styles = StyleSheet.create({
      */
     elsewhereBox: {
         borderWidth: 1, borderColor: 'rgba(184,137,26,0.30)', borderRadius: 2,
-        paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16,
+        paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16, marginHorizontal: 24,
     },
     elsewhereHead: {
         fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
@@ -1182,7 +1182,7 @@ const styles = StyleSheet.create({
     slots: {
         borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.16)',
         borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.16)',
-        paddingVertical: 4, marginBottom: 14,
+        paddingVertical: 4, marginBottom: 14, paddingHorizontal: 24,
     },
     slot: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
     /** A fixed 54pt column: actionLabelProps' shrink-to-fit keeps a longer word inside it. */

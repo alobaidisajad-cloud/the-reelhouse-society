@@ -235,7 +235,7 @@ export function RoomRail({ lead, label, count, tint, weight }: {
             member can author is the one that could push the count off screen.
             A header row should never wrap regardless of what reaches it. */}
         <Text {...scaledTextProps} style={[r.railLabel, tint ? { color: tint } : null]} numberOfLines={1}>{label}</Text>
-        {!!count && <Text {...scaledTextProps} style={r.railCount}>{count}</Text>}
+        {!!count && <Text {...scaledTextProps} style={r.railCount} numberOfLines={1}>{count}</Text>}
       </View>
       {hasWeight && (
         // Decorative only — the count beside it already says the number, so a

@@ -250,13 +250,13 @@ export function PatronageSection({ userRole, onUpgrade }: { userRole: string; on
           haptic="medium"
           pressedScale={0.96}
           accessibilityRole="button"
-          accessibilityLabel="Choose your rank. Opens The Society, where you can change or manage your membership."
+          accessibilityLabel={isAuteur ? 'Manage your membership. Opens The Society.' : 'Choose your rank. Opens The Society, where you can change or manage your membership.'}
         >
           {/* deckLabelProps, not a hand-rolled shrink: a label in a fixed
               control that must hold one line. It carries the 1.35 cap AND the
               shrink together, which is the app's existing answer to this exact
               shape — the card and record decks both read from it. */}
-          <Text style={st.primaryBtnText} {...deckLabelProps}>CHOOSE YOUR RANK</Text>
+          <Text style={st.primaryBtnText} {...deckLabelProps}>{isAuteur ? 'MANAGE YOUR MEMBERSHIP' : 'CHOOSE YOUR RANK'}</Text>
         </PressableScale>
         <Text style={st.microNote} {...scaledTextProps}>IN-APP PURCHASE · {STORE.name.replace(/^the /, '').toUpperCase()}</Text>
       </SectionCard>

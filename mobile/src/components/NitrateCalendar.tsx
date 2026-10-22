@@ -252,7 +252,7 @@ const s = StyleSheet.create({
         includeFontPadding: false,
     },
     dayTextFuture: {
-        color: 'rgba(196,184,152,0.2)',
+        color: colors.fogQuiet,
     },
     dayTextToday: {
         color: colors.flicker,

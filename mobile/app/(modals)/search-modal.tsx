@@ -237,7 +237,7 @@ export default function SearchModal() {
           )}
         </View>
         <PressableScale onPress={() => nav.back()} style={st.cancelWrap} hitSlop={12} haptic="light" accessibilityRole="button" accessibilityLabel="Close search">
-          <Text style={st.cancelText}>Cancel</Text>
+          <Text style={st.cancelText}>CANCEL</Text>
         </PressableScale>
       </View>
 

@@ -125,7 +125,7 @@ describe('ErrorBoundary Recovery Integration', () => {
     expect(findByTestId(root, 'child-content')).toBeNull();
 
     // Verify: retry button shows correct count
-    expect(hasText(root, /RETRY SCREENING \(3 left\)/)).toBe(true);
+    expect(hasText(root, /RETRY SCREENING \(3 LEFT\)/)).toBe(true);
 
     // 2. Fix the error condition
     shouldThrow = false;
@@ -188,8 +188,8 @@ describe('ErrorBoundary Recovery Integration', () => {
     // 5. Verify: retryCount was reset — shows full 3 retries
     // After stability timer fires, retryCount resets to 0.
     // getDerivedStateFromError sets hasError=true but doesn't touch retryCount.
-    // display = MAX_RETRIES - retryCount = 3 - 0 = 3 left
-    expect(hasText(root, /RETRY SCREENING \(3 left\)/)).toBe(true);
+    // display = MAX_RETRIES - retryCount = 3 - 0 = 3 LEFT
+    expect(hasText(root, /RETRY SCREENING \(3 LEFT\)/)).toBe(true);
 
     // 6. Fix and retry again — should still work (not exhausted)
     shouldThrow = false;

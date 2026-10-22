@@ -235,7 +235,7 @@ describe('the film page', () => {
   it('rates and lists for the member’s own country, and says which', () => {
     const r = page();
     expect(r.getByText('PG  ·  GB')).toBeTruthy();
-    expect(r.getByText('LISTED FOR GB')).toBeTruthy();
+    expect(r.getByText('LISTED FOR UNITED KINGDOM')).toBeTruthy();
     expect(r.getByText('RENT')).toBeTruthy();
     expect(r.getByText('BUY')).toBeTruthy();
     expect(r.queryByText('STREAM FREE')).toBeNull();

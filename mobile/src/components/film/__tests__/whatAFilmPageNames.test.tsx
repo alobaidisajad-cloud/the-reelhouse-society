@@ -63,7 +63,7 @@ describe('WHERE IT PLAYS', () => {
     expect(r.queryByText('STREAM FREE')).toBeNull();
     expect(r.getByText('FREE')).toBeTruthy();
     expect(r.getByText('WITH A SUBSCRIPTION')).toBeTruthy();
-    expect(r.getByText('LISTED FOR US')).toBeTruthy();
+    expect(r.getByText('LISTED FOR UNITED STATES')).toBeTruthy();
     const order = ['FREE', 'WITH A SUBSCRIPTION', 'RENT', 'BUY']
       .map((l) => JSON.stringify(r.toJSON()).indexOf(`"${l}"`));
     expect([...order].sort((a, b) => a - b)).toEqual(order);
@@ -72,7 +72,7 @@ describe('WHERE IT PLAYS', () => {
   it('lists the member’s own country, never another’s as theirs', () => {
     mockRegion = 'GB';
     const r = render(<WatchProviders providers={PROVIDERS} />);
-    expect(r.getByText('LISTED FOR GB')).toBeTruthy();
+    expect(r.getByText('LISTED FOR UNITED KINGDOM')).toBeTruthy();
     // Britain rents and sells it; the US's free and subscription services are not Britain's.
     expect(r.queryByText('FREE')).toBeNull();
     expect(r.queryByText('WITH A SUBSCRIPTION')).toBeNull();
@@ -82,7 +82,7 @@ describe('WHERE IT PLAYS', () => {
   it('says nothing is listed in the member’s country, not on "any platform"', () => {
     mockRegion = 'IQ';
     const r = render(<WatchProviders providers={PROVIDERS} />);
-    expect(r.getByText('Nothing is listed to stream, rent or buy in IQ right now.')).toBeTruthy();
+    expect(r.getByText('Nothing is listed to stream, rent or buy in Iraq right now.')).toBeTruthy();
     expect(r.queryByText(/any streaming platform/)).toBeNull();
   });
 
@@ -92,7 +92,7 @@ describe('WHERE IT PLAYS', () => {
     expect(pickRegion({ FR: {}, BE: {} }, null)).toBe('BE');
     expect(pickRegion(null, null)).toBeNull();
     const r = render(<WatchProviders providers={PROVIDERS} />);
-    expect(r.getByText('LISTED FOR US')).toBeTruthy();
+    expect(r.getByText('LISTED FOR UNITED STATES')).toBeTruthy();
   });
 
   it('names every service for a screen reader, and opens JustWatch only where it can', () => {
@@ -141,14 +141,15 @@ describe('WHERE IT PLAYS', () => {
     it('raises no letter from Arabic, and sets the critique whole', () => {
       const arabic = 'لا شيء في السينما يضاهي تلك اللحظة.';
       const r = page(arabic);
-      expect(words(r)).toContain(arabic);
+      // whole, after the mark that sets its line from the right
+      expect(words(r)).toContain(`\u200F${arabic}`);
       expect(words(r)).not.toContain('ل');
     });
 
     it('nor from Adlam, a right-to-left script beyond the first plane', () => {
       const adlam = String.fromCodePoint(0x1e900, 0x1e901, 0x1e902, 0x20, 0x1e903, 0x1e904);
       const r = page(adlam);
-      expect(words(r)).toContain(adlam);
+      expect(words(r)).toContain(`\u200F${adlam}`);
       expect(words(r)).not.toContain(String.fromCodePoint(0x1e900));
     });
   });

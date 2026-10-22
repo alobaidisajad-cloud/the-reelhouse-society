@@ -12,6 +12,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
+import { countryLabel, countryName } from '@/src/utils/countryName';
 import PressableScale from '@/src/components/PressableScale';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { tmdb } from '@/src/lib/tmdb';
@@ -112,13 +113,13 @@ export const WatchProviders = React.memo(function WatchProviders({ providers }: 
           <Text style={s.emptyDisplay}>Not Currently Streaming</Text>
           <Text style={s.emptyBody}>
             {region
-              ? `Nothing is listed to stream, rent or buy in ${region} right now.`
+              ? `Nothing is listed to stream, rent or buy in ${countryName(region)} right now.`
               : 'Nothing is listed to stream, rent or buy right now.'}
           </Text>
         </View>
       ) : (
         <>
-          <Text style={s.regionLine} numberOfLines={1}>{`LISTED FOR ${region}`}</Text>
+          {region ? <Text style={s.regionLine} numberOfLines={1}>{`LISTED FOR ${countryLabel(region).toUpperCase()}`}</Text> : null}
           {kinds.map((k) => (
             <View key={k.kind} style={s.section}>
               <Text style={s.sectionLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{k.label}</Text>

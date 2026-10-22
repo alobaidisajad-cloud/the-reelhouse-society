@@ -8,6 +8,7 @@ import { dateParts, formatDate } from '@/src/utils/timeAgo';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { s, SPINE } from '@/src/components/log/logDetailStyles';
 import VaultNote from '@/src/components/log/VaultNote';
+import { counted } from '@/src/utils/counted';
 
 interface ViewingHistoryEntry {
   /** This viewing's own identity — how its private note is found. */
@@ -183,7 +184,7 @@ export default function LogChronicle({
       <View style={s.chronicleHeader}>
         <View style={s.chronicleDot} />
         <Text style={s.chronicleTitle}>
-          VIEWING CHRONICLE — {allViewings.length} viewings
+          VIEWING CHRONICLE — {counted(allViewings.length, 'VIEWING', 'VIEWINGS')}
         </Text>
       </View>
 

@@ -825,7 +825,7 @@ function TribunalScreen() {
           // one of them means there is nothing to do.
           <View style={s.emptyState}>
             <Scale size={48} color={colors.crimson} style={{ opacity: 0.6, marginBottom: 16 }} />
-            <Text style={s.emptyText}>The docket could not be reached.</Text>
+            <Text style={s.emptyText}>The docket could not be read.</Text>
             <Text style={[s.emptyText, { fontSize: 12, color: colors.fogQuiet, marginTop: 6 }]}>
               This is not an empty queue — nothing was loaded.
             </Text>

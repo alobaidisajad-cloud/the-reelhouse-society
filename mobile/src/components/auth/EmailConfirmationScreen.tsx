@@ -5,6 +5,8 @@ import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useModalTop } from '@/src/components/layout/navMetrics';
 import { Mail, X } from 'lucide-react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
+import { counted } from '@/src/utils/counted';
 import { displayTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { AuthBackdrop, SocietyEyebrow, HaloIcon, Est1924 } from './AuthChrome';
@@ -63,7 +65,7 @@ export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, o
 
           {/* Manual Confirm Button */}
           <PressableScale
-            style={[s.manualConfirmBtn, submitting && s.submitDisabled]}
+            style={s.manualConfirmBtn}
             onPress={onManualConfirm}
             disabled={submitting}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
@@ -81,7 +83,7 @@ export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, o
 
           {/* Resend button */}
           <PressableScale
-            style={[s.confirmResendBtn, (resending || resendCooldown > 0 || submitting) && s.submitDisabled]}
+            style={s.confirmResendBtn}
             onPress={onResend}
             disabled={resending || resendCooldown > 0 || submitting}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
@@ -93,7 +95,7 @@ export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, o
                 <Text style={s.confirmResendText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SENDING...</Text>
               </View>
             ) : resendCooldown > 0 ? (
-              <Text style={s.confirmResendText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>RESEND IN {resendCooldown}s</Text>
+              <Text style={[s.confirmResendText, UNREADY.words]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>RESEND IN {counted(resendCooldown, 'SECOND', 'SECONDS')}</Text>
             ) : (
               <Text style={s.confirmResendText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>↻  RESEND LINK</Text>
             )}
@@ -182,9 +184,6 @@ const s = StyleSheet.create({
   },
   estMark: {
     marginTop: 4,
-  },
-  submitDisabled: {
-    opacity: 0.5,
   },
   submitLoading: {
     flexDirection: 'row',

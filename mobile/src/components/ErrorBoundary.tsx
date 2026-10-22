@@ -158,7 +158,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 accessibilityLabel="Retry loading the screen"
               >
                 <Text style={styles.retryText}>
-                  {`◆ RETRY SCREENING (${MAX_RETRIES - this.state.retryCount} left)`}
+                  {`◆ RETRY SCREENING (${MAX_RETRIES - this.state.retryCount} LEFT)`}
                 </Text>
               </PressableScale>
             ) : this.state.restartFailed ? (

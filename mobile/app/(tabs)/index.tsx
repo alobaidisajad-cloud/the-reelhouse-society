@@ -320,8 +320,8 @@ const s = StyleSheet.create({
     fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog, textAlign: 'center',
     lineHeight: 22, marginTop: 16, letterSpacing: 0.3,
   },
-  societyRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24, opacity: 0.4, paddingHorizontal: 4 },
-  societyRuleLine: { flex: 1, height: 1 },
+  societyRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24, paddingHorizontal: 4 },
+  societyRuleLine: { flex: 1, height: 1, opacity: 0.4 },
   societyRuleText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 4, color: colors.sepia },
   
   welcomeCtaContainer: { width: '100%', maxWidth: 360, alignItems: 'center', gap: CTA_GAP },

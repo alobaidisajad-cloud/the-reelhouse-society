@@ -354,5 +354,5 @@ const x = StyleSheet.create({
   set: { borderWidth: 1, borderColor: colors.sepia, paddingVertical: 10, alignItems: 'center', marginTop: 14 },
   setOff: { borderColor: colors.ash },
   setText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.sepia, includeFontPadding: false },
-  setTextOff: { color: colors.fog, opacity: 0.6 },
+  setTextOff: { color: colors.fog },
 });
