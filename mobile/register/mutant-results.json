@@ -663,5 +663,12 @@
     "proof": "m1",
     "commit": "890ea2757c2938758435bdec83b253bca7f334c5",
     "verdict": "caught"
+  },
+  {
+    "class": "DB-lookup-without-index",
+    "mutant": "shape-index-never-built-first",
+    "proof": "m1",
+    "commit": "3bacf81d3bc435ef8e88b59ab200ed5849b2f373",
+    "verdict": "caught"
   }
 ]
