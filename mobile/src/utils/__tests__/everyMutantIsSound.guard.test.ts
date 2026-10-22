@@ -26,6 +26,7 @@ const mutantsCjs = require('../../../scripts/mutants.cjs') as {
   partOf: (mutants: Mutant[], spec: string) => Mutant[];
   privateDir: () => string | null;
   argumentsFault: (argv: string[]) => string | null;
+  compileFaults: (changes: { file: string; path: string; after: string }[]) => string[];
   putBackLeftover: (placed?: string) => string[];
   proofId: (m: Mutant, classes: Klass[]) => string | null;
   really: (c: { before: string | null; after: string }) => boolean;
@@ -251,6 +252,13 @@ describe('the runner\'s own rules say NO', () => {
     const hunks = [{ before: ['x', 'old', 'y'], after: ['x', 'new', 'y'] }];
     expect(mutantsCjs.reverse('top\nmoved\nx\nnew\ny\n', hunks)).toEqual({ text: 'top\nmoved\nx\nold\ny\n' });
     expect(mutantsCjs.reverse('x\nnewer\ny\n', hunks).notApplied).toMatch(/^not found/);
+  });
+
+  it('a flow of two YAML documents parses as one change, and a broken document of it does not', () => {
+    // The runner read a flow as one document, and called every mutant in .maestro/ invalid unrun.
+    const flow = (steps: string) => ({ file: '.maestro/x.yaml', path: '.maestro/x.yaml', after: `appId: a\n---\n${steps}` });
+    expect(mutantsCjs.compileFaults([flow('- back\n')])).toEqual([]);
+    expect(mutantsCjs.compileFaults([flow('- tapOn: [\n')])).toHaveLength(1);
   });
 
   it('a change of line endings alone is no change', () => {

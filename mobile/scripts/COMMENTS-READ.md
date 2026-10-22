@@ -332,7 +332,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/lucide-icons.js | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | scripts/merge-coverage.cjs | 2026-10-15 | new: read against @jest/reporters 29.7's CoverageReporter (onTestResult, onRunComplete, _checkThreshold) and jest-config's readConfig |
 | scripts/migration-lint.cjs | 2026-10-15 | edited: reads a file by its kind (test-utils/universe.js); the archive is not read; SQL no rule names is refused |
-| scripts/mutants.cjs | 2026-10-16 | new: each mutant applied by the code around it and judged by the kill rules; a judge fed a bad log; those a change stands on, a part of all, the parts read together; the mutant in place recorded first and put back by the next run; an unknown option refused |
+| scripts/mutants.cjs | 2026-10-22 | edited: a YAML change parses document by document (a flow is two); each mutant applied by the code around it and judged by the kill rules; a judge fed a bad log; those a change stands on, a part of all, the parts read together; the mutant in place recorded first and put back by the next run; an unknown option refused |
 | scripts/press-again.cjs | 2026-10-16 | new: the finder of TST-14, a second press of the same control in a test with no timer advanced and no real wait between |
 | scripts/private-settings.cjs | 2026-10-16 | edited: once a value is read, an error nobody catches is printed with every value read hidden; a rejection reaches the same handler |
 | scripts/register.cjs | 2026-10-15 | new |
@@ -1213,7 +1213,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyCapAnswersToItsColumn.test.ts | 2026-10-03 | read whole: every new cap answers to its column or says why it is smaller |
 | src/utils/__tests__/everyChannelIsPrivate.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyClassIsAccountedFor.test.ts | 2026-10-15 | new |
-| src/utils/__tests__/everyMutantIsSound.guard.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/everyMutantIsSound.guard.test.ts | 2026-10-22 | edited: a two-document flow parses; a broken document of it does not; new |
 | src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | 2026-10-15 | edited: everything a person edits, from the shared file list: flows, workflows and both supabase/ trees included |
 | src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |

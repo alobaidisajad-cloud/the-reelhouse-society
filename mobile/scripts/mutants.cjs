@@ -151,7 +151,9 @@ const compileFaults = (changes) => {
     } else if (ext === '.json') {
       try { JSON.parse(c.after); } catch (e) { faults.push(`${c.file}: ${e.message}`); }
     } else if (['.yml', '.yaml'].includes(ext)) {
-      try { yaml.parse(c.after); } catch (e) { faults.push(`${c.file}: ${e.message.split('\n')[0]}`); }
+      // Each document must parse: a Maestro flow is two (its config, then its steps).
+      const errors = yaml.parseAllDocuments(c.after).flatMap((d) => d.errors ?? []);
+      if (errors.length) faults.push(`${c.file}: ${errors[0].message.split('\n')[0]}`);
     }
   }
   return faults;
@@ -446,5 +448,5 @@ if (require.main === module) {
 
 module.exports = {
   applyEdits, argumentsFault, changesOf, gather, hunksOf, lf, partOf, pathsOf, PLACED, privateDir, proofId, putBackLeftover,
-  readMutants, really, reverse, runOne, standsOn, statusIn, touchedSince,
+  compileFaults, readMutants, really, reverse, runOne, standsOn, statusIn, touchedSince,
 };
