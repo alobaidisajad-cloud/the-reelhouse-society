@@ -367,14 +367,28 @@
     "class": "LAYOUT-fitted-by-width-alone",
     "mutant": "shape-foot-never-gives-way",
     "proof": "m1",
-    "commit": "e8aee3bb1031f48e64b7c8d04a9d3771cca79acb",
+    "commit": "483b94e2611b26ea1156a39a60fb3e4a3d4f5a52",
     "verdict": "caught"
   },
   {
     "class": "UI-unready-faded",
     "mutant": "shape-share-faded",
     "proof": "m1",
-    "commit": "257f2f9e7f3a3cf78c7b9796b38974133d6a7904",
+    "commit": "483b94e2611b26ea1156a39a60fb3e4a3d4f5a52",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-unready-faded",
+    "mutant": "shape-resend-faded-over-lines",
+    "proof": "m1",
+    "commit": "483b94e2611b26ea1156a39a60fb3e4a3d4f5a52",
+    "verdict": "caught"
+  },
+  {
+    "class": "TYPE-word-see-through-unseen",
+    "mutant": "shape-lounge-label-faded",
+    "proof": "m1",
+    "commit": "483b94e2611b26ea1156a39a60fb3e4a3d4f5a52",
     "verdict": "caught"
   },
   {
@@ -388,7 +402,7 @@
     "class": "COPY-count-before-plural",
     "mutant": "shape-seats-uncounted",
     "proof": "m1",
-    "commit": "b9cc8784849544f1b9238e0e00b050937ad2de99",
+    "commit": "483b94e2611b26ea1156a39a60fb3e4a3d4f5a52",
     "verdict": "caught"
   },
   {
@@ -416,7 +430,7 @@
     "class": "LAYOUT-ornament-over-words",
     "mutant": "shape-snipe-always-pasted",
     "proof": "m1",
-    "commit": "4a713b5c63a88d452afd17c0e3ee49e518cd7619",
+    "commit": "483b94e2611b26ea1156a39a60fb3e4a3d4f5a52",
     "verdict": "caught"
   },
   {
