@@ -686,6 +686,13 @@
     "verdict": "caught"
   },
   {
+    "class": "LOOK-text-colour-laid-as-paper",
+    "mutant": "shape-parchment-as-paper",
+    "proof": "m1",
+    "commit": "51ac0406fc57038b06e500d48d166ad8de9681aa",
+    "verdict": "caught"
+  },
+  {
     "class": "E2E-ios-link-question-unanswered",
     "mutant": "shape-ios-link-question-unanswered",
     "proof": "m1",
