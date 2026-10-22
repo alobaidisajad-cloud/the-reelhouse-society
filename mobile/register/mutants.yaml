@@ -598,8 +598,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/lobby/measure.ts
-        find: "    return sheetH - F.bottom - words * lineScale >= SNIPE_DEPTH;"
-        replace: "    return words >= 0;"
+        find: "    sheetH - F.bottom - foot(title, director, credits).rise >= SNIPE_DEPTH;"
+        replace: "    foot(title, director, credits).rise >= 0;"
     proof: { file: src/components/lobby/__tests__/theWallIsMeasured.test.ts, test: "pastes the snipe only where the one-sheet’s foot stands clear of it, measured as the phone grows the words" }
 
   - id: shape-cold-cell-left-empty
