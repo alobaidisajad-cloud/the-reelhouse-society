@@ -393,6 +393,7 @@ jobs:
         continue-on-error: true
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           sudo apt-get install -y -q postgresql-common
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y -q postgresql-client-18
@@ -402,6 +403,7 @@ jobs:
         timeout-minutes: 5
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           sudo apt-get install -y -q postgresql-common
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y -q postgresql-client-18

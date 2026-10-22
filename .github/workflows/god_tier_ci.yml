@@ -522,6 +522,7 @@ jobs:
         continue-on-error: true
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
           npx playwright install --with-deps chromium
           mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
@@ -530,6 +531,7 @@ jobs:
         timeout-minutes: 5
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
           npx playwright install --with-deps chromium
           mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
@@ -677,6 +679,7 @@ jobs:
         continue-on-error: true
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
           npx playwright install --with-deps chromium
           mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
@@ -685,6 +688,7 @@ jobs:
         timeout-minutes: 5
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
           npx playwright install --with-deps chromium
           mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
@@ -1078,6 +1082,7 @@ jobs:
         continue-on-error: true
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
           npx playwright install --with-deps
           mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
@@ -1086,6 +1091,7 @@ jobs:
         timeout-minutes: 5
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
           npx playwright install --with-deps
           mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true

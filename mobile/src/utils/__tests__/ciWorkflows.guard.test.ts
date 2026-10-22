@@ -333,6 +333,22 @@ it('every apt install waits for the lock a try cut short at its limit leaves hel
   expect(installsByApt('npx playwright install chromium')).toBe(false);
 });
 
+/** The line that leaves apt only Ubuntu's own sources (its archive, or the runner's list of its mirrors). */
+const ONLY_UBUNTU = 'grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f';
+
+it('every apt install reads only Ubuntu\'s own sources, so a source it never uses cannot fail it', () => {
+  // DB integration 39795157805: packages.microsoft.com, a source the runner comes with and no step
+  // installs from, answered 403, and apt-get update failed the Postgres client's install, both tries.
+  const steps = workflows.flatMap((w) => Object.entries(w.wf.jobs).flatMap(([job, j]) => ((j.steps ?? []) as RunStep[])
+    .filter((s) => s.run && installsByApt(s.run)).map((s) => ({ at: `${w.file} › ${job} › ${s.name}`, run: s.run! }))));
+  expect(steps.length).toBeGreaterThanOrEqual(10);
+  // Before anything that updates apt: the Postgres script, an install, Playwright's.
+  const first = (run: string) => Math.min(...[/apt\.postgresql\.org\.sh/, /\bapt(-get)? (install|update)\b/, /--with-deps\b/]
+    .map((re) => run.search(re)).filter((at) => at >= 0));
+  expect(steps.filter((s) => !(s.run.includes(ONLY_UBUNTU) && s.run.indexOf(ONLY_UBUNTU) < first(s.run))).map((s) => s.at)).toEqual([]);
+  expect(first(`${ONLY_UBUNTU}\nsudo apt-get install -y x`)).toBeGreaterThan(0);
+});
+
 it('every Android install asks the disk, not sdkmanager\'s exit code, whether its packages arrived', () => {
   // sdkmanager reports a broken download as a warning (Sealed E2E runs 38796451028, 38804362075).
   const asksTheDisk = (run: string) => /android-packages\.cjs --installed\b/.test(run);

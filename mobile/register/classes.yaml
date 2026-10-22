@@ -788,6 +788,18 @@ classes:
     fix: "every step that installs through apt (the Postgres client, Playwright's --with-deps) first sets DPkg::Lock::Timeout to 240 s, so a retry waits for the try before it to let go of the lock; and Playwright's system packages are kept between runs in GitHub's cache and copied into apt's own archive first, since a mirror at 30-60 KB/s outlived the wait too (God-Tier 39774848287) (mutant shape-retry-blocked-by-lock)"
     places: [none]
 
+  - id: CI-install-fails-on-a-source-it-never-uses
+    title: "An install failed for a package source no step installs from: the runner comes with packages.microsoft.com in apt's list, it answered 403, and apt-get update failed the Postgres client's install, both tries"
+    seriousness: code
+    area: ci
+    status: OPEN
+    count: 18
+    source: { kind: history, ref: "DB Security Integration Tests 39795157805, db-security: packages.microsoft.com noble InRelease 403 Forbidden, on the first try and on the once-more" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install reads only Ubuntu's own sources, so a source it never uses cannot fail it" }
+    fix: "every step that installs through apt first removes each source in /etc/apt/sources.list.d that names neither Ubuntu's archive nor the runner's list of its mirrors, before the Postgres script adds its own or anything updates apt (mutant shape-install-reads-every-source)"
+    places: [none]
+
   - id: NAV-cold-link-wrong-tab-beneath
     title: "A screen opened cold by a link (a notice, a shared log, the reset link) had the Dispatch beneath it, the first tab the bar lists: Back landed there instead of the Lobby, and the Dispatch loaded unseen during the start; and Back from the Lobby itself went to the Dispatch before it left the app"
     seriousness: serious
