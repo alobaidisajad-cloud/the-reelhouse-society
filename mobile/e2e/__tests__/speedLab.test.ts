@@ -199,7 +199,7 @@ describe('the house the lab scrolls', () => {
   });
 
   it('names every list it filled too thinly', () => {
-    const counts = { reel: 480, salon: 320, stack: 61, comments: 25, filings: 30, own_logs: 50, portrait: 1 };
+    const counts = { reel: 480, salon: 320, stack: 61, comments: 25, filings: 30, own_logs: 61, portrait: 1 };
     expect(JSON.parse(seed(['--short', JSON.stringify(counts)]).stdout)).toEqual([]);
     expect(JSON.parse(seed(['--short', JSON.stringify({ ...counts, salon: 12, portrait: 0 })]).stdout))
       .toEqual(['salon: 12, at least 300 needed', 'portrait: 0, at least 1 needed']);

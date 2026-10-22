@@ -747,7 +747,7 @@ classes:
     methods:
       - { kind: running, file: e2e/__tests__/speedLab.test.ts, test: "fails a list that ran out before three screen heights, by name" }
       - { kind: running, file: e2e/__tests__/speedLab.test.ts, test: "names every list it filled too thinly" }
-    fix: "the speed lab's signed-in job: the sealed world as the Sealed E2E builds it, filled by e2e/db/lab-seed.mjs (each list's least held by its own count), the member signed in once, and the Reel, a salon, a stack, a log's comments, the Dispatch and the profile each opened cold, shot and scrolled ten swipes with Android's frame counts; a list that ran out before three screen heights, or a scroll never measured, fails by name (mutant shape-scroll-ran-out-unseen)"
+    fix: "the speed lab's signed-in job: the sealed world as the Sealed E2E builds it, filled by e2e/db/lab-seed.mjs (each list's least held by its own count), the member signed in once, and the Reel, a salon, a stack, a log's comments, the Dispatch and the member's archive room each opened cold, shot and scrolled ten swipes with Android's frame counts; a list that ran out before three screen heights, or a scroll never measured, fails by name (mutant shape-scroll-ran-out-unseen)"
     places: [emulator]
 
   - id: DB-lookup-without-index

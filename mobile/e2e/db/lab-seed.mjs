@@ -14,7 +14,7 @@
  *   · the member's own stack of every recorded film (61);
  *   · the member's first log with 25 comments;
  *   · 30 Dispatch filings;
- *   · the member's own profile: 40 more films logged, and a portrait.
+ *   · the member's own profile: every recorded film logged (its archive room), and a portrait.
  * Every film is one the sealed world holds a recording of, with its real poster, so a scroll
  * decodes the pictures a member's would. The seed's own check counts each and fails below its
  * number, naming it; the ids the lab opens (the salon, the stack, the log) go to <ids file>.
@@ -28,7 +28,7 @@ const HERE = fileURLToPath(new URL('.', import.meta.url));
 const FIXTURES = join(HERE, '..', 'supabase', 'functions', 'tmdb-proxy', 'fixtures');
 
 /** The least of each list the lab scrolls; the check fails below any. */
-export const AT_LEAST = { reel: 300, salon: 300, stack: 60, comments: 20, filings: 20, own_logs: 40, portrait: 1 };
+export const AT_LEAST = { reel: 300, salon: 300, stack: 60, comments: 20, filings: 20, own_logs: 60, portrait: 1 };
 const MEMBERS = 60;
 
 /** Every recorded film with a poster: [id, title, year, poster], in id order. */
@@ -83,12 +83,12 @@ SELECT pg_temp.lid(m), f.id, f.title, (1 + (m + k) % 10) / 2.0,
   FROM generate_series(1, ${MEMBERS}) m, generate_series(1, 8) k,
        LATERAL (SELECT * FROM lab_films WHERE lab_films.n = 1 + (m * 7 + k * 11) % (SELECT count(*) FROM lab_films)) f
 ON CONFLICT (user_id, film_id) DO NOTHING;
--- The member's own shelf: forty more.
+-- The member's own shelf: every recorded film.
 INSERT INTO public.logs (user_id, film_id, film_title, rating, review, watched_date, created_at, poster_path, year, status, view_count, viewing_history)
 SELECT (SELECT id FROM lab_me), f.id, f.title, (1 + f.n % 10) / 2.0,
        CASE WHEN f.n % 3 = 0 THEN 'My own word on ' || f.title || '.' END,
        current_date - f.n, now() - f.n * interval '5 hours', f.poster, f.year, 'watched', 1, '[]'::jsonb
-  FROM lab_films f WHERE f.n <= 45
+  FROM lab_films f
 ON CONFLICT (user_id, film_id) DO NOTHING;
 INSERT INTO public.viewings (viewing_id, log_id)
 SELECT l.viewing_id, l.id FROM public.logs l WHERE NOT EXISTS (SELECT 1 FROM public.viewings v WHERE v.log_id = l.id);
