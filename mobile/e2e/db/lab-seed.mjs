@@ -110,8 +110,8 @@ SELECT '00000000-0000-4000-b100-000000000001', id, title, n, poster FROM lab_fil
 INSERT INTO public.lounges (id, name, description, creator_id, is_private, member_count, max_members)
 VALUES ('00000000-0000-4000-b200-000000000001', 'The Lab Salon', 'Where the speed lab talks.', pg_temp.lid(1), false, 0, 500);
 INSERT INTO public.lounge_members (lounge_id, user_id, status, last_read_at)
-SELECT '00000000-0000-4000-b200-000000000001', pg_temp.lid(n), 'approved', now() - interval '1 day' FROM generate_series(1, ${MEMBERS}) n
-UNION ALL SELECT '00000000-0000-4000-b200-000000000001', (SELECT id FROM lab_me), 'approved', now() - interval '1 day';
+SELECT '00000000-0000-4000-b200-000000000001'::uuid, pg_temp.lid(n), 'approved', now() - interval '1 day' FROM generate_series(1, ${MEMBERS}) n
+UNION ALL SELECT '00000000-0000-4000-b200-000000000001'::uuid, (SELECT id FROM lab_me), 'approved', now() - interval '1 day';
 INSERT INTO public.lounge_messages (lounge_id, user_id, content, created_at)
 SELECT '00000000-0000-4000-b200-000000000001', pg_temp.lid(1 + i % ${MEMBERS}),
        'Message ' || i || ' in the salon. ' || repeat('Words about the picture. ', 1 + i % 4), now() - (320 - i) * interval '3 minutes'

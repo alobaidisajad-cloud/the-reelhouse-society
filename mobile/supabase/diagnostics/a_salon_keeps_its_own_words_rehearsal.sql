@@ -23,20 +23,22 @@ BEGIN;
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 -- a and b hold a rank that may speak in a salon; c is a third member who sits nowhere.
+-- Ordered by the key, which its index walks in order to the first that fits: ordered by the
+-- day they joined, every pick sorted the whole house (0.45 s each on 100,000 members).
 SELECT set_config('rehearsal.a', pg_temp.rh_found('a ranked member',
   (SELECT id FROM public.profiles WHERE (lower(tier) IN ('archivist', 'auteur', 'founding') OR lower(role) IN ('archivist', 'auteur', 'founding') OR is_founding)
       AND public.profile_tier_weight(tier, role, is_founding) >= 1 AND role <> 'admin'
-    ORDER BY created_at LIMIT 1))::text, true) AS done \gset rh_
+    ORDER BY id LIMIT 1))::text, true) AS done \gset rh_
 SELECT set_config('rehearsal.b', pg_temp.rh_found('a second ranked member',
   (SELECT id FROM public.profiles WHERE (lower(tier) IN ('archivist', 'auteur', 'founding') OR lower(role) IN ('archivist', 'auteur', 'founding') OR is_founding)
       AND public.profile_tier_weight(tier, role, is_founding) >= 1
-      AND id <> current_setting('rehearsal.a')::uuid ORDER BY created_at LIMIT 1))::text, true) AS done \gset rh_
+      AND id <> current_setting('rehearsal.a')::uuid ORDER BY id LIMIT 1))::text, true) AS done \gset rh_
 SELECT set_config('rehearsal.c', pg_temp.rh_found('a third member',
   (SELECT id FROM public.profiles WHERE id NOT IN (current_setting('rehearsal.a')::uuid, current_setting('rehearsal.b')::uuid)
-    ORDER BY created_at LIMIT 1))::text, true) AS done \gset rh_
+    ORDER BY id LIMIT 1))::text, true) AS done \gset rh_
 SELECT set_config('rehearsal.p', pg_temp.rh_found('a fourth member',
   (SELECT id FROM public.profiles WHERE id NOT IN (current_setting('rehearsal.a')::uuid, current_setting('rehearsal.b')::uuid,
-      current_setting('rehearsal.c')::uuid) ORDER BY created_at LIMIT 1))::text, true) AS done \gset rh_
+      current_setting('rehearsal.c')::uuid) ORDER BY id LIMIT 1))::text, true) AS done \gset rh_
 -- All in good standing, none blocking another; p's file private, a's open, and no follow among them.
 UPDATE public.profiles SET is_banned = false, suspended_until = NULL,
        is_social_private = (id = current_setting('rehearsal.p')::uuid)

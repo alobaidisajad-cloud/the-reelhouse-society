@@ -370,7 +370,8 @@ describe('the train: every pending migration in one command', () => {
     const steps = p.steps ?? [];
     // No rehearsal holds the index file: it cannot run inside their transaction.
     expect(steps.filter((s) => s.kind === 'rehearse').map((s) => s.before?.map((c) => c.name))).toEqual([[], [A.name]]);
-    expect(train.psqlArgs(steps[4], null)).toEqual(['-X', '-v', 'ON_ERROR_STOP=1', '-f', `/m/${idx.name}`]);
+    const build = steps.find((s) => s.kind === 'build') as Step;
+    expect(train.psqlArgs(build, null)).toEqual(['-X', '-v', 'ON_ERROR_STOP=1', '-f', `/m/${idx.name}`]);
   });
 
   it('drops an index left not whole and builds it once more, and fails one still not whole', () => {
