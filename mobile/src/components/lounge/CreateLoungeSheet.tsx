@@ -14,6 +14,7 @@ import { Lock, Globe } from 'lucide-react-native';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { useClearance } from '@/src/hooks/useClearance';
 import { colors, fonts } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import PressableScale from '@/src/components/PressableScale';
 import { ToastHost } from '@/src/components/ToastHost';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
@@ -239,7 +240,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
               <Text style={s.sheetBtnGhostText} numberOfLines={1}>[ CANCEL ]</Text>
             </PressableScale>
             <PressableScale
-              style={[s.sheetBtnPrimary, (!name.trim() || creating) && s.sheetBtnDisabled]}
+              style={[s.sheetBtnPrimary, !name.trim() && UNREADY.plate]}
               onPress={handleCreate}
               disabled={!name.trim() || creating}
               haptic="medium"
@@ -247,7 +248,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
             >
               {creating
                 ? <ActivityIndicator size="small" color={colors.ink} />
-                : <Text style={s.sheetBtnPrimaryText} numberOfLines={1}>[ ESTABLISH ]</Text>
+                : <Text style={[s.sheetBtnPrimaryText, !name.trim() && UNREADY.words]} numberOfLines={1}>[ ESTABLISH ]</Text>
               }
             </PressableScale>
           </View>
@@ -392,5 +393,4 @@ const s = StyleSheet.create({
     color: colors.ink,
     includeFontPadding: false,
   },
-  sheetBtnDisabled: { opacity: 0.35 },
 });

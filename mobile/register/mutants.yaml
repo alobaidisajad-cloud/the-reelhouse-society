@@ -528,6 +528,15 @@ mutants:
         find: "Start proc 6028:com.reelhouse.society/u0a192"
         replace: "Start proc 6028:com.google.android.gms/u0a192"
 
+  - id: shape-share-faded
+    class: UI-unready-faded
+    source: shape
+    edits:
+      - file: src/components/ShareToLoungeModal.tsx
+        find: "style={[s.sendBtn, !selectedLounge && UNREADY.plate]}"
+        replace: "style={[s.sendBtn, !selectedLounge && { opacity: 0.4 }]}"
+    proof: { file: src/theme/__tests__/anUnreadyControlIsHollow.guard.test.ts, test: "fades no control that waits on its member: an unready one is hollow" }
+
   - id: shape-italic-asked
     class: TYPE-italic-faked
     source: shape

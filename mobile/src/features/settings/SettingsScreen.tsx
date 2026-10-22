@@ -29,6 +29,7 @@ import { AuthService } from '@/src/services/AuthService';
 import { ModerationService } from '@/src/services/ModerationService';
 import { useAmbientGlow } from '@/src/hooks/useAmbientGlow';
 import { colors } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import DataVault from '@/src/features/settings/DataVault';
 import { storage } from '@/src/stores/mmkv-storage';
@@ -652,7 +653,7 @@ export function SettingsScreen() {
                 accessibilityState={{ disabled: otpSending || otpVerifying || resendIn > 0 }}
                 accessibilityLabel={resendIn > 0 ? `Send a new code. Available in ${counted(resendIn, 'second', 'seconds')}.` : 'Send a new code'}
               >
-                <Text style={[st.modalResendText, (otpSending || resendIn > 0) && st.modalResendTextDim]} {...scaledTextProps}>
+                <Text style={[st.modalResendText, (otpSending || resendIn > 0) && UNREADY.words]} {...scaledTextProps}>
                   {otpSending ? 'SENDING…' : resendIn > 0 ? `SEND A NEW CODE IN ${resendIn}s` : 'SEND A NEW CODE'}
                 </Text>
               </PressableScale>

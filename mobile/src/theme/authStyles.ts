@@ -201,15 +201,13 @@ export const loginStyles = StyleSheet.create({
   // ── Submit ──
   submitBtn: {
     backgroundColor: colors.sepia,
+    borderWidth: 1,
+    borderColor: 'transparent',
     borderRadius: 3,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 4,
     ...effects.glowSepia,
-  },
-  submitDisabled: {
-    opacity: 0.5,
-    shadowOpacity: 0,
   },
   submitText: {
     // Typewriter CTA — reads like a stamped clearance on the admission slip

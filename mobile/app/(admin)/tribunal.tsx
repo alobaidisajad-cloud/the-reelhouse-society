@@ -26,6 +26,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { ModerationService, PriorityCursor, ReportEvidence } from '@/src/services/ModerationService';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts, radii, spacing } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import { REPORT_REASON_LABELS, type ModAction, type ModActionRecord, type ReportReason } from '@/src/types/moderation';
 import reelToast from '@/src/utils/reelToast';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
@@ -296,7 +297,7 @@ function ActionModal({
           </View>
 
           <PressableScale
-            style={[s.submitBtn, { backgroundColor: config.color, opacity: reason.trim() ? 1 : 0.4 }]}
+            style={[s.submitBtn, { backgroundColor: config.color }, !reason.trim() && UNREADY.plate]}
             onPress={handleSubmit}
             disabled={!reason.trim()}
             haptic="medium"
@@ -304,7 +305,7 @@ function ActionModal({
             accessibilityRole="button"
             accessibilityLabel={`Execute ${config.title}`}
           >
-            <Text style={s.submitBtnText}>RENDER VERDICT</Text>
+            <Text style={[s.submitBtnText, !reason.trim() && UNREADY.words]}>RENDER VERDICT</Text>
           </PressableScale>
         </View>
       </KeyboardAvoidingView>
@@ -1416,6 +1417,8 @@ const s = StyleSheet.create({
   submitBtn: {
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
     paddingVertical: 16,
     borderRadius: radii.sm,
     marginTop: spacing.md,

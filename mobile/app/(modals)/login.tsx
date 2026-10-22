@@ -24,6 +24,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { pickAny } from '@/src/lore/fragments';
 import { useAuthFlow } from '@/src/hooks/useAuthFlow';
 import { loginStyles as s } from '@/src/theme/authStyles';
+import { UNREADY } from '@/src/theme/unready';
 
 import { AuthBackdrop, SocietyEyebrow, RegistrationBrackets, Est1924 } from '@/src/components/auth/AuthChrome';
 import { SocietySeal } from '@/src/components/auth/SocietySeal';
@@ -411,7 +412,7 @@ export default function LoginScreen() {
           {/* Submit */}
           <PressableScale
             testID="sign-in-submit"
-            style={[s.submitBtn, (submitting || (!isLogin && usernameStatus === 'taken') || (isLogin && !canAttempt)) && s.submitDisabled]}
+            style={[s.submitBtn, ((!isLogin && usernameStatus === 'taken') || (isLogin && !canAttempt)) && UNREADY.plate]}
             onPress={handleLoginSubmit}
             disabled={submitting || (!isLogin && usernameStatus === 'taken') || (isLogin && !canAttempt)}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
@@ -426,7 +427,7 @@ export default function LoginScreen() {
                 </Text>
               </View>
             ) : (
-              <Text style={[s.submitText, (!isLogin && usernameStatus === 'taken') && { opacity: 0.5 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              <Text style={[s.submitText, ((!isLogin && usernameStatus === 'taken') || (isLogin && !canAttempt)) && UNREADY.words]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 {isLogin ? (!canAttempt ? `✦  RETRY IN ${secondsRemaining}S` : '✦  IDENTIFY & ENTER') : '✦  REQUEST ADMISSION'}
               </Text>
             )}

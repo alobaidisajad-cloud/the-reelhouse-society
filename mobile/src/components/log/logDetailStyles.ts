@@ -227,11 +227,10 @@ export const s = StyleSheet.create({
   },
   critiqueSubmitBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: colors.sepia, borderRadius: 2,
+    backgroundColor: colors.sepia, borderWidth: 1, borderColor: 'transparent', borderRadius: 2,
     paddingVertical: 14, marginTop: 12,
   },
   critiqueSubmitText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.ink, includeFontPadding: false },
-  critiqueSubmitDisabled: { opacity: 0.4 },
 
   backBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 24, paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: colors.ash, borderRadius: 2 },
   backBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.bone, includeFontPadding: false },

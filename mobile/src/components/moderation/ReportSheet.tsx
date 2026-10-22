@@ -30,6 +30,7 @@ import { Arrive } from '@/src/components/Arrive';
 import { useAuthStore } from '@/src/stores/auth';
 import { useReportStore } from '@/src/stores/reportStore';
 import { colors, effects, fonts, radii, spacing } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import {
     REPORT_REASON_LABELS,
     type ReportableContentType,
@@ -347,7 +348,7 @@ function ReportSheet({
               <PressableScale
                 style={[
                   styles.submitButton,
-                  isSubmitDisabled && styles.submitButtonDisabled,
+                  !selectedReason && UNREADY.plate,
                 ]}
                 onPress={handleSubmit}
                 disabled={isSubmitDisabled}
@@ -356,7 +357,7 @@ function ReportSheet({
                 accessibilityLabel="File report"
                 accessibilityState={{ disabled: isSubmitDisabled }}
               >
-                <Text style={styles.submitText}>FILE REPORT</Text>
+                <Text style={[styles.submitText, !selectedReason && UNREADY.words]}>FILE REPORT</Text>
               </PressableScale>
 
               {/* Dismiss Link */}
@@ -506,6 +507,8 @@ const styles = StyleSheet.create({
   // ── Submit Button ──
   submitButton: {
     backgroundColor: colors.bloodReel,
+    borderWidth: 1,
+    borderColor: 'transparent',
     borderRadius: radii.sm,
     // Its own 48pt, so it needs no halo reaching over DISMISS below it.
     minHeight: 48,
@@ -517,9 +520,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-  },
-  submitButtonDisabled: {
-    opacity: 0.4,
   },
   submitText: {
     fontFamily: fonts.sub,

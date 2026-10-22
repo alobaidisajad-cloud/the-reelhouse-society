@@ -32,6 +32,7 @@ import { useListStore } from '@/src/stores/films';
 import { tellMarks } from '@/src/stores/tellMarks';
 import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { colors, fonts } from '@/src/theme/theme';
+import { UNREADY, UNREADY_INK } from '@/src/theme/unready';
 import { logger } from '@/src/utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
 import { isForbiddenError, isNetworkError } from '@/src/utils/networkError';
@@ -1064,8 +1065,8 @@ export default function StackDetailScreen() {
                   keyboardAppearance="dark"
                   accessibilityLabel="Stack critique"
                 />
-                <PressableScale onPress={handleSubmitComment} disabled={submittingComment || !commentText.trim()} style={[s.critiqueSend, (!commentText.trim()) && s.sendBtnDisabled]} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Submit critique">
-                  <Send size={15} color={colors.ink} />
+                <PressableScale onPress={handleSubmitComment} disabled={submittingComment || !commentText.trim()} style={[s.critiqueSend, !commentText.trim() && UNREADY.plate]} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Submit critique">
+                  <Send size={15} color={commentText.trim() ? colors.ink : UNREADY_INK} />
                 </PressableScale>
               </Animated.View>
             )}
@@ -1257,7 +1258,6 @@ const s = StyleSheet.create({
   classifiedBuster: { marginBottom: 12 },
   actionLabelActive: { color: colors.crimsonInk },
   actionLabelOpen: { color: colors.sepia },
-  sendBtnDisabled: { opacity: 0.3 },
 });
 
 

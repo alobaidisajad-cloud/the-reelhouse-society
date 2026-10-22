@@ -6,6 +6,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { formatCount } from '@/src/components/dispatch/paper/paperMetrics';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { colors } from '@/src/theme/theme';
+import { UNREADY, UNREADY_INK } from '@/src/theme/unready';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Sparkles, ChevronDown } from 'lucide-react-native';
 import React, { RefObject, useMemo, useState } from 'react';
@@ -108,15 +109,15 @@ export default function LogComments({
             accessibilityLabel="Write a critique on this log"
           />
           <PressableScale
-            style={[s.critiqueSubmitBtn, !newComment.trim() && s.critiqueSubmitDisabled]}
+            style={[s.critiqueSubmitBtn, !newComment.trim() && UNREADY.plate]}
             onPress={onPostComment}
             disabled={!newComment.trim() || posting}
             hitSlop={HITSLOP}
             pressedScale={0.95}
             haptic="medium"
           >
-            <Text style={s.critiqueSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{posting ? 'FILING…' : 'FILE CRITIQUE'}</Text>
-            <Sparkles size={10} color={colors.ink} strokeWidth={1.5} />
+            <Text style={[s.critiqueSubmitText, !newComment.trim() && UNREADY.words]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{posting ? 'FILING…' : 'FILE CRITIQUE'}</Text>
+            <Sparkles size={10} color={newComment.trim() ? colors.ink : UNREADY_INK} strokeWidth={1.5} />
           </PressableScale>
         </View>
 

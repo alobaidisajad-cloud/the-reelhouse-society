@@ -6,6 +6,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { supabase } from '@/src/lib/supabase';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import reelToast from '@/src/utils/reelToast';
 import { useAuthStore, storage } from '@/src/stores/auth';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -279,7 +280,7 @@ export default function ResetPasswordScreen() {
 
           {/* Submit */}
           <PressableScale
-            style={[s.submitBtn, (!strong || password !== confirm || loading) && s.submitDisabled]}
+            style={[s.submitBtn, (!strong || password !== confirm) && UNREADY.plate]}
             onPress={handleReset}
             disabled={loading || !strong || password !== confirm}
             pressedScale={0.97}
@@ -292,7 +293,7 @@ export default function ResetPasswordScreen() {
                 <Text style={s.submitText}>RESETTING...</Text>
               </View>
             ) : (
-              <Text style={s.submitText}>RESET PASSWORD</Text>
+              <Text style={[s.submitText, (!strong || password !== confirm) && UNREADY.words]}>RESET PASSWORD</Text>
             )}
           </PressableScale>
         </AnimatedView>
@@ -364,11 +365,10 @@ const s = StyleSheet.create({
 
   // Submit
   submitBtn: {
-    backgroundColor: colors.sepia, borderRadius: 3, paddingVertical: 16,
+    backgroundColor: colors.sepia, borderWidth: 1, borderColor: 'transparent', borderRadius: 3, paddingVertical: 16,
     alignItems: 'center', marginTop: 4,
     ...effects.glowSepia,
   },
-  submitDisabled: { opacity: 0.4, shadowOpacity: 0 },
   submitText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2.5, color: colors.ink },
   submitLoading: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 

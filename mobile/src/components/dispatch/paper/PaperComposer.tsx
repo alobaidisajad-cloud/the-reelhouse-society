@@ -117,7 +117,7 @@ export const PaperComposer = memo(function PaperComposer({
           {/* The control says what it will actually do. A desk opened on a
               filing that already exists is not filing anything, and a button
               reading FILE IT there promises a second copy of it. */}
-          <Text style={[p.chs, canFile && p.chsGo, blocked && { opacity: 0.4 }]} {...scaledTextProps}>
+          <Text style={[p.chs, canFile && p.chsGo]} {...scaledTextProps}>
             {sending
               ? (amending ? 'AMENDING…' : 'FILING…')
               : (amending ? 'AMEND IT' : 'FILE IT')}

@@ -13,10 +13,10 @@
  *
  *   a MARK      a glyph, an ornament, a corner flourish, a ghost initial
  *   a PICTURE   an exported image, which is never seen on this ground
- *   INACTIVE    a control that cannot be used right now — WCAG exempts it,
- *               and the dimming is the message
  *
  * A quiet WORD wears a quieter solid ink instead: fogQuiet, fog, bone, sepia.
+ * So does a control that cannot act yet: WCAG exempts it, but a member still
+ * has to read what it will do, so it takes UNREADY (src/theme/unready.ts).
  */
 import { readFileSync } from 'fs';
 import { stripComments } from '@/test-utils/readCode';
@@ -55,12 +55,6 @@ const ALLOWED: Record<string, string> = {
   // ── PICTURES — exported images, never seen on this ground ───────────────
   'src/components/profile/TasteDNAExportCanvas.tsx · societyLabel': 'the Taste DNA export',
   'src/components/profile/TasteDNAExportCanvas.tsx · subtitle': 'the Taste DNA export',
-  // ── INACTIVE CONTROLS — the dimming is the message ──────────────────────
-  'src/features/settings/settings.styles.ts · navSaveText': 'SAVE while nothing has changed',
-  'src/components/dispatch/paper/PaperComposer.tsx · inline:chs': 'FILE while the filing is blocked',
-  'src/components/dispatch/paper/PaperDesk.tsx · inline:chs': 'FILE IT before the filing is ready',
-  'app/(modals)/login.tsx · inline:submitText': 'the submit while the name is taken',
-  'app/(modals)/notifications-modal.tsx · inline:markReadText': 'READ ALL when all are read',
 };
 
 const TYPE = /\b(fontFamily|fontSize|letterSpacing|lineHeight|fontStyle|textTransform|textDecorationLine)\s*:/;

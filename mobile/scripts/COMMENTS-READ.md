@@ -104,7 +104,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx | 2026-10-03 | new: your own circle is said to you |
 | app/(modals)/cover-picker.tsx | 2026-10-15 | top from useModalTop |
-| app/(modals)/list-modal.tsx | 2026-10-15 | handle's top from useModalTop; the bar on the edge, the list above it (useAboveDockedBar) |
+| app/(modals)/list-modal.tsx | 2026-10-22 | edited: the unready bar is hollow (UNREADY); its reason still in the label |
 | app/(modals)/log-modal.tsx | 2026-10-15 | edited: each step and each Back to search said in the E2E log; the header says where it sits |
 | app/(modals)/login.tsx | 2026-10-15 | header top from useModalTop; the page stops at the edge (useBottomEdge) |
 | app/(modals)/membership.tsx | 2026-10-15 | nav top from useModalTop; ends above the window and its fade, or at useContentBottom |
@@ -629,7 +629,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogModalStyles.ts | 2026-10-15 | handle's top set where drawn |
 | src/components/log/logRecord.ts | 2026-10-01 | histories to the present |
 | src/components/log/LogReviewBody.tsx | 2026-10-01 | a Vault that could not open says so |
-| src/components/log/LogSealBar.tsx | 2026-10-15 | the bar on the edge (DOCKED_BAR_GAP); it slides away by its whole height |
+| src/components/log/LogSealBar.tsx | 2026-10-22 | edited: the unready seal is hollow (UNREADY); the note on why it still answers moved beside the press |
 | src/components/log/LogSearchEngine.tsx | 2026-10-15 | foot from useContentBottom |
 | src/components/log/LogVerdict.tsx | 2026-10-15 | edited: the word's lit box spans the slot, so Yoga and the browser measure it alike |
 | src/components/log/NoteSheet.tsx | 2026-10-15 | foot from useSheetBottom |
@@ -1131,7 +1131,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/theTypeFloor.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/theVeilMeetsTheLight.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/wordsAreNotMarks.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/theme/__tests__/wordsAreSolid.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/wordsAreSolid.test.ts | 2026-10-22 | edited: no dimmed-control exception left; an unready control takes UNREADY |
 | src/theme/authStyles.ts | 2026-10-01 | comments short and true |
 | src/theme/brass.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/faceAdvances.ts | 2026-10-03 | edited: the soft hyphen's key written as an escape |
@@ -1413,3 +1413,5 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aCountSaysItsWord.guard.test.ts | 2026-10-22 | written: every count before a plural word goes through counted() or is listed with why it is never one |
 | src/utils/__tests__/anItalicIsTheHouseItalic.guard.test.ts | 2026-10-22 | written: no slant asked of a face; the italic faces the theme names are the ones loaded before the first screen |
 | src/utils/counted.ts | 2026-10-22 | written: the Dispatch's counter, moved for the whole app with its note |
+| src/theme/unready.ts | 2026-10-22 | written: a control that cannot act yet, hollow with its words in fog; a control at work stays filled |
+| src/theme/__tests__/anUnreadyControlIsHollow.guard.test.ts | 2026-10-22 | written: no fade under 0.7 given on a condition but those named with why |

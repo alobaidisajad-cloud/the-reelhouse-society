@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronUp, Heart, MessageSquare, MoreHorizontal, Share2, Boo
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import { scaledTextProps, decorativeTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
 import { usePushedHeaderTop } from '@/src/components/layout/navMetrics';
@@ -389,7 +390,7 @@ export const CritiqueComposer = memo(function CritiqueComposer({
         </Text>
       ) : null}
       <PressableScale
-        style={[p.btn, { paddingVertical: 8, paddingHorizontal: 12 }, blocked && { opacity: 0.4 }]}
+        style={[p.btn, { paddingVertical: 8, paddingHorizontal: 12 }, empty && UNREADY.plate]}
         haptic="medium"
         hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
         onPress={blocked ? undefined : onFile}
@@ -398,7 +399,7 @@ export const CritiqueComposer = memo(function CritiqueComposer({
         accessibilityState={{ disabled: blocked }}
         accessibilityLabel={empty ? 'File this critique. Write something first.' : 'File this critique'}
       >
-        <Text style={p.btnText} {...scaledTextProps}>{sending ? '…' : 'FILE'}</Text>
+        <Text style={[p.btnText, empty && UNREADY.words]} {...scaledTextProps}>{sending ? '…' : 'FILE'}</Text>
       </PressableScale>
     </View>
   );

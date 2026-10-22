@@ -16,7 +16,7 @@ export const st = StyleSheet.create({
   // plate — pending work should look pending, not merely brighter. This page's
   // whole model is "change it, then file it", and the old 10pt text going from
   // 50% to 100% opacity was not signal enough to carry that.
-  navSaveText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.fog, opacity: 0.55, includeFontPadding: false },
+  navSaveText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
   navSavePill: { minHeight: 34, justifyContent: 'center', paddingHorizontal: 13, borderWidth: 1, borderColor: colors.sepia, borderRadius: 2, ...effects.glowSepia },
   navSavePillText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
   // The page is eight cards tall; past the first screen it had no name at all.
@@ -70,7 +70,6 @@ export const st = StyleSheet.create({
   otpInput: { backgroundColor: colors.well, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.body, fontSize: 24, padding: 16, borderRadius: 4, textAlign: 'center', marginBottom: 16, letterSpacing: 8 },
   modalResend: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   modalResendText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
-  modalResendTextDim: { color: colors.fog, opacity: 0.6 },
   modalActions: { flexDirection: 'row', gap: 12 },
   // 48 by geometry. These two sat 12pt apart carrying 15pt halos each, so the
   // right edge of CANCEL pressed VERIFY — on the box that authorises deleting

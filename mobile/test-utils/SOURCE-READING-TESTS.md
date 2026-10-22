@@ -305,6 +305,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/everyBackHasAWayOut.guard.test.ts` | Every back goes through `nav.back()` or checks `canGoBack()` first (a dead back shows only on a cold-opened screen, which no render reaches). |
 | `src/utils/__tests__/aLetterIsTakenWhole.guard.test.ts` | No file takes a first letter by hand: each comes from `initialOf` / `firstCharacter` (a cut letter shows only for a name in another script, which few renders hold). |
 | `src/utils/__tests__/anItalicIsTheHouseItalic.guard.test.ts` | No style asks a face for a slant, and the italic faces are the fonts `app/_layout.tsx` loads (Android draws a faked italic in Roboto, which no jest render draws). |
+| `src/theme/__tests__/anUnreadyControlIsHollow.guard.test.ts` | No control fades on a condition below 0.7: an unready one is hollow (a faded label shows only in the state before a form is filled, which few renders hold). |
 | `src/utils/__tests__/aCountSaysItsWord.guard.test.ts` | Every count printed before a plural word goes through `counted()` (a "1 SEATS" shows only when the count is one, which few renders hold). |
 
 ## Fixtures

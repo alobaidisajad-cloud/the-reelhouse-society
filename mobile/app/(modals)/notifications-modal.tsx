@@ -9,6 +9,7 @@ import { Text } from '@/src/components/text';
 import { AppNotification, useNotificationStore } from '@/src/stores/notificationStore';
 import { useSocialStore } from '@/src/stores/followStore';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import { DisplayItem, GroupedDisplayItem, groupNotifications } from '@/src/utils/groupNotifications';
 import { groupRoute, parseGroupKey } from '@/src/utils/endorsementGroupKey';
 import { noticeRoute } from '@/src/utils/noticeRoute';
@@ -259,7 +260,7 @@ export default function NotificationsModal() {
            accessibilityLabel="Mark all as read"
            pressedScale={0.95}
         >
-          <Text style={[s.markReadText, allRead && { opacity: 0.3 }]} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>READ ALL</Text>
+          <Text style={[s.markReadText, allRead && UNREADY.words]} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>READ ALL</Text>
         </PressableScale>
       </View>
 

@@ -4,6 +4,7 @@ import { Text } from '@/src/components/text';
 import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
 
 import { colors, fonts } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import PressableScale from '@/src/components/PressableScale';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { scaledTextProps } from '@/src/constants/textScaling';
@@ -103,8 +104,10 @@ export default React.memo(function LogSealBar({
             </Text>
             <PressableScale
                 testID="submit-log-button"
-                style={[s.press, !ready && s.pressDim, sealed && s.pressSealed]}
+                style={[s.press, !ready && UNREADY.plate, sealed && s.pressSealed]}
                 onPress={() => { TactileEngine.mutate(); onSeal(); }}
+                // Unready, not disabled: the line above says what is wanted, and the
+                // press still answers, so nobody taps a control that ignores them.
                 disabled={submitting}
                 hitSlop={null}
                 pressedScale={0.97}
@@ -117,7 +120,7 @@ export default React.memo(function LogSealBar({
                 accessibilityState={{ disabled: submitting }}
             >
                 <Image source={MARK} style={s.mark} resizeMode="contain" />
-                <Text style={s.pressText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{label}</Text>
+                <Text style={[s.pressText, !ready && UNREADY.words]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{label}</Text>
             </PressableScale>
         </Animated.View>
     );
@@ -139,11 +142,8 @@ const s = StyleSheet.create({
     // of clipping it.
     press: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9,
-        backgroundColor: colors.sepia, borderRadius: 4, paddingVertical: 15, minHeight: 48,
+        backgroundColor: colors.sepia, borderWidth: 1, borderColor: 'transparent', borderRadius: 4, paddingVertical: 15, minHeight: 48,
     },
-    // Dim, not disabled — the line above says what is wanted, and the press
-    // still answers so nobody is left tapping a control that ignores them.
-    pressDim: { opacity: 0.38 },
     pressSealed: { backgroundColor: colors.flicker },
     mark: { width: 16, height: 16 },
     pressText: {

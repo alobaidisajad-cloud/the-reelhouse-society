@@ -24,6 +24,7 @@ import { useBanCheck } from '@/src/hooks/useBanCheck';
 import { tmdb } from '@/src/lib/tmdb';
 import { useListStore } from '@/src/stores/films';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import reelToast from '@/src/utils/reelToast';
 import { Globe, GripVertical, List, ListOrdered, Lock, Plus, Search, X } from 'lucide-react-native';
 import { EDGE_LIT } from '@/src/theme/light';
@@ -591,7 +592,7 @@ export default function ListModal() {
             <View style={[s.bar, { paddingBottom: edge + DOCKED_BAR_GAP }]}>
                 <Text style={s.barLine} numberOfLines={1} {...scaledTextProps}>{barLine}</Text>
                 <PressableScale
-                    style={[s.barPress, !canFile && s.barDim]}
+                    style={[s.barPress, !canFile && UNREADY.plate]}
                     onPress={handleSave}
                     disabled={saving}
                     hitSlop={null}
@@ -599,10 +600,10 @@ export default function ListModal() {
                     haptic="medium"
                     accessibilityRole="button"
                     accessibilityState={{ disabled: saving }}
-                    // The reason is in the label: a dimmed button cannot be heard.
+                    // The reason is in the label: a hollow button cannot be heard.
                     accessibilityLabel={canFile ? fileLabel : `${fileLabel}. ${barLine}`}
                 >
-                    <Text style={s.barPressText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{fileLabel}</Text>
+                    <Text style={[s.barPressText, !canFile && UNREADY.words]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{fileLabel}</Text>
                 </PressableScale>
                 {/* No CANCEL: the way out is CLOSE, top right, or pulling the sheet down. */}
             </View>
@@ -721,7 +722,6 @@ const s = StyleSheet.create({
         backgroundColor: colors.sepia, borderRadius: 4, minHeight: 48,
     },
     barPressText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.ink, includeFontPadding: false },
-    barDim: { opacity: 0.42 },
 
     searchIcon: { position: 'absolute', left: 12, top: 13, zIndex: 1 },
     dropFlex: { flex: 1 },

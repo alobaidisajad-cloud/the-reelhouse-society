@@ -14,6 +14,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { useAuthStore } from '@/src/stores/auth';
 import { canPostIn, LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 
 import reelToast from '@/src/utils/reelToast';
 import { captureError } from '@/src/lib/sentry';
@@ -252,13 +253,13 @@ function ShareSheet({
                             />
 
                             <PressableScale
-                                style={[s.sendBtn, (!selectedLounge || sending) && s.sendBtnDisabled]}
+                                style={[s.sendBtn, !selectedLounge && UNREADY.plate]}
                                 onPress={handleSend}
                                 disabled={!selectedLounge || sending}
                                 haptic="medium"
                                 pressedScale={0.95}
                             >
-                                <Text style={s.sendText}>{sending ? 'SENDING...' : 'SHARE TO LOUNGE'}</Text>
+                                <Text style={[s.sendText, !selectedLounge && UNREADY.words]}>{sending ? 'SENDING...' : 'SHARE TO LOUNGE'}</Text>
                             </PressableScale>
                         </>
                     )}
@@ -294,7 +295,6 @@ const s = StyleSheet.create({
         paddingHorizontal: 12, paddingVertical: 10, minHeight: 60, borderRadius: 4,
         textAlignVertical: 'top', marginTop: 12,
     },
-    sendBtn: { backgroundColor: colors.sepia, paddingVertical: 14, alignItems: 'center', borderRadius: 4, marginTop: 16 },
-    sendBtnDisabled: { opacity: 0.4 },
+    sendBtn: { backgroundColor: colors.sepia, borderWidth: 1, borderColor: 'transparent', paddingVertical: 14, alignItems: 'center', borderRadius: 4, marginTop: 16 },
     sendText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.ink },
 });

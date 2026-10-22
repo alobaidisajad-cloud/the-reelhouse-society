@@ -21,6 +21,7 @@ import { useStateSaid } from '@/src/hooks/useStateSaid';
 import { useSecondKey, type CodeRefusal, type NewKey } from '@/src/hooks/useSecondKey';
 import { SUPPORT_EMAIL } from '@/src/constants/support';
 import { colors, fonts } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import { WASH } from '@/src/theme/light';
 import { digitsOf, groupedSecret, isWhole, KEY_DIGITS } from '@/src/utils/secondKey';
 import { nav } from '@/src/utils/typedRouter';
@@ -122,7 +123,7 @@ function CodeField({ act, label, give, factorId }: {
       />
       <PressableScale
         testID="second-key-give"
-        style={[s.primary, (!isWhole(code) || giving) && s.primaryDim]}
+        style={[s.primary, !isWhole(code) && UNREADY.plate]}
         onPress={() => { void submit(); }}
         disabled={!isWhole(code) || giving}
         haptic="medium"
@@ -130,7 +131,7 @@ function CodeField({ act, label, give, factorId }: {
         accessibilityState={{ disabled: !isWhole(code) || giving, busy: giving }}
         accessibilityLabel={act}
       >
-        <Text style={s.primaryText}>{giving ? 'CHECKING…' : act.toUpperCase()}</Text>
+        <Text style={[s.primaryText, !isWhole(code) && UNREADY.words]}>{giving ? 'CHECKING…' : act.toUpperCase()}</Text>
       </PressableScale>
     </View>
   );
@@ -166,7 +167,7 @@ function Register({ stale, enrol, give }: {
       <>
         <Text style={s.body}>The Tribunal acts on other members’ words and accounts, so it asks for a second key: a code from an authenticator app, on top of your password. Register one now; you will give its code each time you sign in.</Text>
         {refused && <Text style={s.fail} accessibilityLiveRegion="polite">The house could not register a key. Nothing was kept: try again.</Text>}
-        <PressableScale testID="second-key-register" style={[s.primary, making && s.primaryDim]} onPress={() => { void make(); }} disabled={making} haptic="medium" accessibilityRole="button" accessibilityState={{ disabled: making, busy: making }} accessibilityLabel="Register a key">
+        <PressableScale testID="second-key-register" style={s.primary} onPress={() => { void make(); }} disabled={making} haptic="medium" accessibilityRole="button" accessibilityState={{ disabled: making, busy: making }} accessibilityLabel="Register a key">
           <Text style={s.primaryText}>{making ? 'REGISTERING…' : 'REGISTER A KEY'}</Text>
         </PressableScale>
       </>
@@ -210,8 +211,7 @@ const s = StyleSheet.create({
   retry: { alignSelf: 'flex-start' },
   code: { backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, color: colors.parchment, fontFamily: fonts.body, fontSize: 24, padding: 16, borderRadius: 4, textAlign: 'center', letterSpacing: 8 },
   secret: { fontFamily: fonts.body, fontSize: 17, lineHeight: 26, letterSpacing: 2, color: colors.parchment },
-  primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bloodReel, borderRadius: 4, paddingHorizontal: 16 },
-  primaryDim: { opacity: 0.5 },
+  primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bloodReel, borderWidth: 1, borderColor: 'transparent', borderRadius: 4, paddingHorizontal: 16 },
   primaryText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.bone },
   secondary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.sepia, borderRadius: 4, paddingHorizontal: 16 },
   secondaryText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.sepia },

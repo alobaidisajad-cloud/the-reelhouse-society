@@ -62,7 +62,7 @@ export const DeskHead = memo(function DeskHead({
         accessibilityRole="button"
         accessibilityLabel={ready ? 'File it' : 'File it. Not ready yet'}
         accessibilityState={{ disabled: !ready }}>
-        <Text style={[p.chs, ready && p.chsGo, !ready && { opacity: 0.4 }]} {...scaledTextProps}>
+        <Text style={[p.chs, ready && p.chsGo]} {...scaledTextProps}>
           FILE IT
         </Text>
       </PressableScale>
