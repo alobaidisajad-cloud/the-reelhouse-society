@@ -649,5 +649,12 @@
     "proof": "m1",
     "commit": "faf029f3b805dc01fe3b56c95bf536f377dc4030",
     "verdict": "caught"
+  },
+  {
+    "class": "DB-train-before-ci",
+    "mutant": "shape-train-before-ci",
+    "proof": "m1",
+    "commit": "a11362dfd5e63fccbbe5f329fffbd8f8c639682e",
+    "verdict": "caught"
   }
 ]
