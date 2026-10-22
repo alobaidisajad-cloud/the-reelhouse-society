@@ -691,5 +691,26 @@
     "proof": "m2",
     "commit": "c089278cc1eb8d84a14f61366bb005d31a7f2ae7",
     "verdict": "caught"
+  },
+  {
+    "class": "NAV-cold-link-wrong-tab-beneath",
+    "mutant": "shape-first-tab-beneath",
+    "proof": "m1",
+    "commit": "e1cc08c01220e6be3df15af2e91757137b911a78",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-cold-link-wrong-tab-beneath",
+    "mutant": "shape-back-to-first-tab",
+    "proof": "m1",
+    "commit": "e1cc08c01220e6be3df15af2e91757137b911a78",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-cold-link-wrong-tab-beneath",
+    "mutant": "shape-tabs-home-unhanded",
+    "proof": "m2",
+    "commit": "e1cc08c01220e6be3df15af2e91757137b911a78",
+    "verdict": "caught"
   }
 ]
