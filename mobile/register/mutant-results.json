@@ -682,7 +682,14 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-retry-blocked-by-lock",
     "proof": "m1",
-    "commit": "c089278cc1eb8d84a14f61366bb005d31a7f2ae7",
+    "commit": "730b1b4a6895884179379f7bd0e0af039e5167d0",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-install-fails-on-a-source-it-never-uses",
+    "mutant": "shape-install-reads-every-source",
+    "proof": "m1",
+    "commit": "730b1b4a6895884179379f7bd0e0af039e5167d0",
     "verdict": "caught"
   },
   {
