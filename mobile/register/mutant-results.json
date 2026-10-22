@@ -416,7 +416,7 @@
     "class": "LAYOUT-ornament-over-words",
     "mutant": "shape-snipe-always-pasted",
     "proof": "m1",
-    "commit": "9b535e9dfacda92e5929c483b196e23b83cef3be",
+    "commit": "4a713b5c63a88d452afd17c0e3ee49e518cd7619",
     "verdict": "caught"
   },
   {
