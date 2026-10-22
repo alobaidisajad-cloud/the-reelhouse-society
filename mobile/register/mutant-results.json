@@ -73,7 +73,7 @@
     "class": "CI-gate-never-runs",
     "mutant": "shape-build-without-preflight",
     "proof": "m4",
-    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "commit": "330fc24696df2bdb31a145fd93841c0f376b3ba2",
     "verdict": "caught"
   },
   {
@@ -381,7 +381,7 @@
     "class": "UI-unready-faded",
     "mutant": "shape-resend-faded-over-lines",
     "proof": "m1",
-    "commit": "483b94e2611b26ea1156a39a60fb3e4a3d4f5a52",
+    "commit": "330fc24696df2bdb31a145fd93841c0f376b3ba2",
     "verdict": "caught"
   },
   {
@@ -395,28 +395,28 @@
     "class": "UI-failure-three-looks",
     "mutant": "shape-crash-words-apart",
     "proof": "m1",
-    "commit": "156588189bf15063727fe859e4ddf1004246b8bf",
+    "commit": "330fc24696df2bdb31a145fd93841c0f376b3ba2",
     "verdict": "caught"
   },
   {
     "class": "TYPE-under-the-floor-where-exempt",
     "mutant": "shape-radar-labels-small",
     "proof": "m1",
-    "commit": "5e934054b7bac4d6d31fe84202c549f8c7981e02",
+    "commit": "330fc24696df2bdb31a145fd93841c0f376b3ba2",
     "verdict": "caught"
   },
   {
     "class": "RN-props-before-mount",
     "mutant": "shape-reanimated-back-to-the-pin",
     "proof": "m1",
-    "commit": "383c4ff595f0bfe29f3b92b74b66001089c8c23c",
+    "commit": "330fc24696df2bdb31a145fd93841c0f376b3ba2",
     "verdict": "caught"
   },
   {
     "class": "UI-entrance-left-unseen",
     "mutant": "shape-entrance-written-by-hand",
     "proof": "m1",
-    "commit": "7c4a2475b473612040e4a6fa6ea65d5cd9a7ed52",
+    "commit": "330fc24696df2bdb31a145fd93841c0f376b3ba2",
     "verdict": "caught"
   },
   {
