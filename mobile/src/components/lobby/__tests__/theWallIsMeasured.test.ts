@@ -20,9 +20,9 @@
  */
 import {
   balancedWidth, ceilingFor, emOf, filmLine, fitsAt, HOUSE_CEILING, lineWidth, linesAt, MAST_GAPS, MAST_LINES, nameLines,
-  planWall, setLines, SHEET_FOOT, SNIPE_DEPTH, TYPE, WALL, wholeName, wholeSize, type TypeKey, type WallPlan,
+  planWall, setLines, SHEET_FOOT, SNIPE_DEPTH, TYPE, WALL, wholeName, wholeSize, FOOT_TOP, TITLE_FLOOR, type TypeKey, type WallPlan,
 } from '../measure';
-import { KEEP_OFF, LOG_BILL, STACK_BILL } from '../words';
+import { KEEP_OFF, LOG_BILL, ONE_SHEET, STACK_BILL } from '../words';
 
 // The phones the house is drawn for: width, and the room between the bars.
 const PHONES = {
@@ -37,6 +37,16 @@ const PHONES = {
   proMax: { width: 430, visible: 729 },
   ipadMini: { width: 744, visible: 979 },
 } as const;
+
+/** The one-sheet's foot in points before the phone grows its lines, as FeatureRow lays it (SHEET_FOOT). */
+function footOf(p: WallPlan, scale: number, title: string, director: string | null, t: number, credits: boolean, tags: boolean): number {
+  const drawn = Math.min(scale, HOUSE_CEILING);
+  return linesAt(title, 'rye', t, drawn, 0, p.sheetW - 24) * Math.round(t * SHEET_FOOT.titleLine)
+    + (director ? SHEET_FOOT.billingGap + linesAt(ONE_SHEET.directedBy(director), 'elite', TYPE.billing.size, drawn, TYPE.billing.spacing, p.sheetW - 24) * SHEET_FOOT.billingLine : 0)
+    + (credits ? SHEET_FOOT.quietGap + SHEET_FOOT.billingLine : 0)
+    + (tags ? SHEET_FOOT.tagGap + 2 * SHEET_FOOT.tagLine : 0)
+    + SHEET_FOOT.nowGap + SHEET_FOOT.nowLine;
+}
 
 describe('a line is measured letter by letter', () => {
   it('from the font, not a count: a W is wider than an i, and ten Ws than ten is', () => {
@@ -127,11 +137,9 @@ describe('the wall gives way where its words do not fit side by side', () => {
     const LONG = 'Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb';
     const clear = (ph: keyof typeof PHONES, scale: number, lineScale: number, title: string) => {
       const p = planWall({ ...PHONES[ph], scale, lineScale });
-      const t = p.titleSize(title).size;
-      // the foot, line by line, as FeatureRow lays it (measure.ts SHEET_FOOT), against the snipe's depth
-      const foot = linesAt(title, 'rye', t, Math.min(scale, HOUSE_CEILING), 0, p.sheetW - 24) * Math.round(t * SHEET_FOOT.titleLine)
-        + SHEET_FOOT.billingGap + SHEET_FOOT.billingLine + SHEET_FOOT.quietGap + SHEET_FOOT.billingLine
-        + SHEET_FOOT.tagGap + 2 * SHEET_FOOT.tagLine + SHEET_FOOT.nowGap + SHEET_FOOT.nowLine;
+      const f = p.foot(title, 'Hal Ashby', true);
+      // the foot, line by line, as FeatureRow lays what the plan kept (measure.ts SHEET_FOOT), against the snipe's depth
+      const foot = footOf(p, scale, title, 'Hal Ashby', f.size, f.credits, f.tags);
       return { said: p.snipe(title, 'Hal Ashby', true), clear: p.sheetH - SHEET_FOOT.bottom - foot * lineScale >= SNIPE_DEPTH };
     };
     // a short name on the common phones: the corner is clear, and the snipe is pasted
@@ -149,13 +157,44 @@ describe('the wall gives way where its words do not fit side by side', () => {
     }
   });
 
+  it('the one-sheet’s foot never rises off its sheet: the house’s lines give way first, then the title, then the year', () => {
+    // Android grows a line's height past the ceiling while its letters stop there (CI, 2026-10-21: at 375pt and
+    // Android's largest text, "The End of Oak Street" stood three lines high, off the sheet and over the masthead)
+    const LONG = 'Teenage Sex and Death at Camp Miasma';
+    for (const ph of Object.keys(PHONES) as (keyof typeof PHONES)[]) {
+      for (const [scale, lineScale] of [[1, 1], [HOUSE_CEILING, HOUSE_CEILING], [HOUSE_CEILING, 2]] as const) {
+        const p = planWall({ ...PHONES[ph], scale, lineScale });
+        for (const title of ['Jaws', 'The End of Oak Street', 'Spider-Man: Brand New Day', LONG]) {
+          for (const director of ['Hal Ashby', 'David Robert Mitchell', null]) {
+            const f = p.foot(title, director, true);
+            const rise = footOf(p, scale, title, director, f.size, f.credits, f.tags) * lineScale;
+            const at = [ph, scale, lineScale, title, director];
+            expect([...at, rise <= p.sheetH - SHEET_FOOT.bottom - FOOT_TOP]).toEqual([...at, true]);
+            expect([...at, f.size >= TITLE_FLOOR, f.size <= p.titleSize(title).size]).toEqual([...at, true, true]);
+            // the year goes only after the house's lines, and the title shrinks only once those are gone
+            if (!f.credits) expect([...at, f.tags]).toEqual([...at, false]);
+            if (f.size < p.titleSize(title).size) expect([...at, f.tags]).toEqual([...at, false]);
+          }
+        }
+      }
+    }
+    // at the member's own size on the common phones, the whole foot stands
+    for (const ph of ['iphone14', 'iphone15', 'pixel7', 'proMax'] as const) {
+      expect(planWall({ ...PHONES[ph], scale: 1, lineScale: 1 }).foot(LONG, 'David Robert Mitchell', true))
+        .toMatchObject({ credits: true, tags: true });
+    }
+    // and on the smallest phone at Android's largest text, the house's lines give way
+    expect(planWall({ ...PHONES.se1, scale: HOUSE_CEILING, lineScale: 2 }).foot('Jaws', 'Hal Ashby', true)).toMatchObject({ tags: false });
+  });
+
   it('a member’s text size past the ceiling is read as the ceiling (the Text wrapper caps it)', () => {
     const past = planWall({ ...PHONES.pixel7, scale: 2, lineScale: 2 });
     const ceiling = planWall({ ...PHONES.pixel7, scale: HOUSE_CEILING, lineScale: 2 });
-    expect(past).toMatchObject((({ titleSize, snipe, ...rest }) => rest)(ceiling));
+    expect(past).toMatchObject((({ titleSize, foot, snipe, ...rest }) => rest)(ceiling));
     // the rules it measures with read the ceiling too
     for (const t of ['Jaws', 'The End of Oak Street', 'Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb']) {
-      expect([past.titleSize(t), past.snipe(t, 'David Robert Mitchell', true)]).toEqual([ceiling.titleSize(t), ceiling.snipe(t, 'David Robert Mitchell', true)]);
+      expect([past.titleSize(t), past.foot(t, 'David Robert Mitchell', true), past.snipe(t, 'David Robert Mitchell', true)])
+        .toEqual([ceiling.titleSize(t), ceiling.foot(t, 'David Robert Mitchell', true), ceiling.snipe(t, 'David Robert Mitchell', true)]);
     }
   });
 

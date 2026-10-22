@@ -539,6 +539,18 @@ classes:
     fix: "frozen-counts guard-only-through-a-caller counts, per app module no test names, each guard of its own: 19 modules (34 guards) found; tierRefusal (a privacy 42501 is never a rank's door) and keptOnThisPhone (the words of what a phone holds) now asked directly and found right; the rest frozen per file, to fall as each gets a test of its own"
     places: [none]
 
+  - id: LAYOUT-fitted-by-width-alone
+    title: A block of words fitted to its width but not to the height it is given, so where a phone grows its lines (Android past the house's ceiling) it stands taller than its box and over what is above it
+    seriousness: layout
+    area: lobby
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "CI's every-screen layout job at 320, 375 and 430pt, 2026-10-21: the one-sheet's title off its sheet and over the masthead at Android's largest text" }
+    methods:
+      - { kind: static, file: src/components/lobby/__tests__/theWallIsMeasured.test.ts, test: "the one-sheet’s foot never rises off its sheet: the house’s lines give way first, then the title, then the year" }
+    fix: "planWall's foot fits the one-sheet's words to the sheet's height as the phone grows them: the house's two lines give way first, then the title steps down to TITLE_FLOOR, then the year; the title, the director and NOW SHOWING always stand; FeatureRow draws what it kept and the snipe reads the same numbers (mutant shape-foot-never-gives-way)"
+    places: [none]
+
   - id: UI-unready-faded
     title: A control that cannot act yet faded to 0.3-0.6 of itself, so its own words (SHARE TO LOUNGE, FILE REPORT, RESET PASSWORD) fell to about 1.5:1 and could not be read
     seriousness: layout

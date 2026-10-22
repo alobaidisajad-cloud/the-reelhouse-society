@@ -581,16 +581,16 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-10-15 | edited: lobby-wall-hung only on a wall the house read, vacant too; its files come from the shared file list (test-utils/universe.js) |
 | src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-10-16 | edited: the record of editions is the strict fake's, rows in the table's shape: the query is shown picking the right day from decoys |
 | src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-01 | both doors, every pull |
-| src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-10-15 | the pair side by side on every phone and text size; setLines, wholeName, filmLine |
+| src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-10-22 | edited: the foot never rises off its sheet, in the order it gives way; the snipe measured as the plan chose |
 | src/components/lobby/__tests__/theWallIsRead.test.ts | 2026-09-30 | new |
 | src/components/lobby/__tests__/theWallKeepsTheDay.test.tsx | 2026-10-03 | new: the clock reads on the hour and on return; a wall behind the day is asked again |
-| src/components/lobby/FeatureRow.tsx | 2026-10-21 | edited: the snipe pasted over a wordless one-sheet's corner where planWall finds it clear; the house's line at the foot; the director in two lines; ALL a brass plate |
+| src/components/lobby/FeatureRow.tsx | 2026-10-22 | edited: the one-sheet draws what the plan's foot kept |
 | src/components/lobby/FilingsBill.tsx | 2026-10-21 | edited: THE DISPATCH a paper plate at the slab's slant, inside its full-finger door |
 | src/components/lobby/KeepOff.tsx | 2026-10-15 | draws its words in the lines planWall sets (two on a narrow credit strip) |
 | src/components/lobby/LobbyHonour.tsx | 2026-09-30 | new |
 | src/components/lobby/LobbyWall.tsx | 2026-10-15 | the log and the stack always side by side; lobby-wall-hung on a read wall |
 | src/components/lobby/Masthead.tsx | 2026-10-15 | the Lobby's name: its glow has room inside the box a phone cuts it at |
-| src/components/lobby/measure.ts | 2026-10-15 | the pair never stacks: planWall's pair, setLines, wholeName, filmLine |
+| src/components/lobby/measure.ts | 2026-10-22 | edited: the one-sheet's foot fitted to the sheet's height as the phone grows its lines (foot, TITLE_FLOOR, FOOT_TOP); the snipe reads it |
 | src/components/lobby/PairBills.tsx | 2026-10-21 | edited: vellum paper; the credit an ink block inside each bill; the vacant doors slanted plates |
 | src/components/lobby/parts.tsx | 2026-10-15 | edited: the letter is initialOf, whole; QUOTE_MARKS exported for its test |
 | src/components/lobby/RankBill.tsx | 2026-10-21 | edited: the banner on vellum paper |

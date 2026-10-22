@@ -115,8 +115,9 @@ const OneSheet = memo(function OneSheet({ sheet, width, height, plan }: {
 }) {
   const room = width - SHEET_INSET * 2;
   const footRoom = width - FOOT_INSET * 2;
-  const title = plan.titleSize(sheet.title);
   const credits = [sheet.year, sheet.runtime ? `${sheet.runtime} MIN` : null].filter(Boolean).join(' · ');
+  // what of the foot stands on this sheet at this text size: it never rises off the sheet
+  const fit = plan.foot(sheet.title, sheet.director ?? null, Boolean(credits));
   const label = [
     sheet.title, sheet.director ? `directed by ${sheet.director}` : null, sheet.year, sheet.runtime ? counted(sheet.runtime, 'minute', 'minutes') : null,
   ].filter(Boolean).join(', ');
@@ -137,7 +138,7 @@ const OneSheet = memo(function OneSheet({ sheet, width, height, plan }: {
           numberOfLines={5}
           // the size is chosen so the name is whole at the member's text size; it grows no further
           maxFontSizeMultiplier={1.35}
-          style={[s.title, { fontSize: title.size, lineHeight: Math.round(title.size * SHEET_FOOT.titleLine) }]}
+          style={[s.title, { fontSize: fit.size, lineHeight: Math.round(fit.size * SHEET_FOOT.titleLine) }]}
           accessibilityRole="header"
         >
           {sheet.title}
@@ -147,8 +148,8 @@ const OneSheet = memo(function OneSheet({ sheet, width, height, plan }: {
         // two lines where the member's text size needs them: a director's name is never cut short
         <Text numberOfLines={2} style={[typeStyle('billing'), s.billing]}>{ONE_SHEET.directedBy(sheet.director)}</Text>
       ) : null}
-      {credits ? <Text numberOfLines={1} style={[typeStyle('billing'), s.billing, s.billingQuiet]}>{credits}</Text> : null}
-      {titled ? null : <View style={s.tagFoot}>{tagLines}</View>}
+      {credits && (titled || fit.credits) ? <Text numberOfLines={1} style={[typeStyle('billing'), s.billing, s.billingQuiet]}>{credits}</Text> : null}
+      {titled || !fit.tags ? null : <View style={s.tagFoot}>{tagLines}</View>}
       <View style={s.nowRow}>
         <View style={s.nowRule} />
         <HouseLine type="now" text={ONE_SHEET.now} room={footRoom - 40} style={s.now} spoken={false} />

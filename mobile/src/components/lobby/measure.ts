@@ -298,6 +298,24 @@ export const SNIPE_H = 24;
 export const SNIPE_DEPTH = SNIPE_REACH * 2 + SNIPE_H + 8;
 /** The one-sheet's foot, in its own lines and gaps (FeatureRow's styles), at the default text size. */
 export const SHEET_FOOT = { bottom: 18, titleLine: 1.04, billingGap: 7, billingLine: 14, quietGap: 2, tagGap: 9, tagLine: 15.5, nowGap: 9, nowLine: 15 } as const;
+/** The one-sheet's title never sets smaller than this. */
+export const TITLE_FLOOR = 16;
+/** The foot's highest word stands at least this far below the sheet's top edge. */
+export const FOOT_TOP = 12;
+
+/** The one-sheet's foot over wordless art, as it fits its sheet. */
+export interface SheetFoot {
+  /** the title's size */
+  size: number;
+  /** the title is whole in its five lines */
+  whole: boolean;
+  /** the year and running time stand under the director */
+  credits: boolean;
+  /** the house's two lines stand above NOW SHOWING */
+  tags: boolean;
+  /** how far the foot's words rise above its floor, each line grown as the phone grows it */
+  rise: number;
+}
 
 export interface WallPlan {
   wallW: number;
@@ -308,6 +326,8 @@ export interface WallPlan {
   billCount: number;
   /** the one-sheet's title, at the size it is whole */
   titleSize: (title: string) => { size: number; whole: boolean };
+  /** the one-sheet's foot over wordless art: the title's size and which quieter lines stand, so it never rises off the sheet */
+  foot: (title: string, director: string | null, credits: boolean) => SheetFoot;
   /** whether the snipe is pasted on a wordless one-sheet: only where its foot's words stand clear of it */
   snipe: (title: string, director: string | null, credits: boolean) => boolean;
   /** the Featured Log and the Featured Stack: side by side on every phone, each set to its half */
@@ -396,22 +416,39 @@ export function planWall({ width: windowW, visible, scale, lineScale, admin = fa
   const titleRoom = sheetW - 24;
   const titleSize = (title: string) => {
     const start = title.length <= 14 ? titleBase : title.length <= 24 ? titleBase - 6 : titleBase - 10;
-    return wholeSize(title, 'rye', start, 16, 5, titleRoom, s);
+    return wholeSize(title, 'rye', start, TITLE_FLOOR, 5, titleRoom, s);
   };
   // The foot rises from the sheet's floor: the title in its lines, the director in theirs, the year,
-  // the house's two lines and NOW SHOWING, each line grown as the phone grows it. The snipe is
-  // pasted only where all of that stays below it.
+  // the house's two lines and NOW SHOWING, each line grown as the phone grows it. Android grows a
+  // line's height past the house's ceiling while its letters stop there, so on a short sheet the
+  // whole foot can stand taller than the sheet. It never rises past FOOT_TOP: the house's two lines
+  // give way first, then the title steps down to its floor, then the year. The title, the director
+  // and NOW SHOWING always stand. The snipe is pasted only where the foot stays below it.
   const drawn = Math.min(s, HOUSE_CEILING);
   const footRoom = sheetW - 24;
-  const snipe = (title: string, director: string | null, credits: boolean) => {
-    const t = titleSize(title).size;
-    const F = SHEET_FOOT;
-    const words = linesAt(title, 'rye', t, drawn, 0, titleRoom) * Math.round(t * F.titleLine)
-      + (director ? F.billingGap + linesAt(ONE_SHEET.directedBy(director), 'elite', TYPE.billing.size, drawn, TYPE.billing.spacing, footRoom) * F.billingLine : 0)
-      + (credits ? F.quietGap + F.billingLine : 0)
-      + F.tagGap + 2 * F.tagLine + F.nowGap + F.nowLine;
-    return sheetH - F.bottom - words * lineScale >= SNIPE_DEPTH;
+  const F = SHEET_FOOT;
+  const footWords = (title: string, t: number, director: string | null, credits: boolean, tags: boolean) =>
+    linesAt(title, 'rye', t, drawn, 0, titleRoom) * Math.round(t * F.titleLine)
+    + (director ? F.billingGap + linesAt(ONE_SHEET.directedBy(director), 'elite', TYPE.billing.size, drawn, TYPE.billing.spacing, footRoom) * F.billingLine : 0)
+    + (credits ? F.quietGap + F.billingLine : 0)
+    + (tags ? F.tagGap + 2 * F.tagLine : 0)
+    + F.nowGap + F.nowLine;
+  const footRise = sheetH - F.bottom - FOOT_TOP;
+  const foot = (title: string, director: string | null, credits: boolean): SheetFoot => {
+    const { size: widest, whole } = titleSize(title);
+    const sizes: number[] = [];
+    for (let t = widest; t >= TITLE_FLOOR - 1e-9; t -= 0.5) sizes.push(t);
+    const tries: [boolean, boolean, number[]][] = [[credits, true, [widest]], [credits, false, sizes], [false, false, sizes]];
+    for (const [keepCredits, tags, list] of tries) {
+      for (const t of list) {
+        const rise = footWords(title, t, director, keepCredits, tags) * lineScale;
+        if (rise <= footRise) return { size: t, whole, credits: keepCredits, tags, rise };
+      }
+    }
+    return { size: TITLE_FLOOR, whole, credits: false, tags: false, rise: footWords(title, TITLE_FLOOR, director, false, false) * lineScale };
   };
+  const snipe = (title: string, director: string | null, credits: boolean) =>
+    sheetH - F.bottom - foot(title, director, credits).rise >= SNIPE_DEPTH;
 
   // THE PAIR stands side by side on every phone, at every text size. Each half
   // sets its own words to its width at the member's size: a phrase too wide for
@@ -493,7 +530,7 @@ export function planWall({ width: windowW, visible, scale, lineScale, admin = fa
   const refreshDoorRoom = (refreshStacked ? refreshRoom : refreshDoorW) - WALL.refreshDoorPad * 2;
 
   return {
-    wallW, col, sheetW, sheetH, billCount, titleSize, snipe, pair, runners, tickets,
+    wallW, col, sheetW, sheetH, billCount, titleSize, foot, snipe, pair, runners, tickets,
     bannerStacked, bannerWordsRoom, bannerDoorRoom, recruitStacked, refreshStacked, refreshWordsRoom, refreshDoorRoom,
     switchRoom,
   };

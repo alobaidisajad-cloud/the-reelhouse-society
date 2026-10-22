@@ -528,6 +528,15 @@ mutants:
         find: "Start proc 6028:com.reelhouse.society/u0a192"
         replace: "Start proc 6028:com.google.android.gms/u0a192"
 
+  - id: shape-foot-never-gives-way
+    class: LAYOUT-fitted-by-width-alone
+    source: shape
+    edits:
+      - file: src/components/lobby/measure.ts
+        find: "        if (rise <= footRise) return { size: t, whole, credits: keepCredits, tags, rise };"
+        replace: "        return { size: t, whole, credits: keepCredits, tags, rise };"
+    proof: { file: src/components/lobby/__tests__/theWallIsMeasured.test.ts, test: "the one-sheet’s foot never rises off its sheet: the house’s lines give way first, then the title, then the year" }
+
   - id: shape-share-faded
     class: UI-unready-faded
     source: shape
