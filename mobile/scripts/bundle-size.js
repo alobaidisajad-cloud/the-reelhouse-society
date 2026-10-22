@@ -62,7 +62,8 @@ function main() {
   for (const p of PLATFORMS) {
     const was = base[p].bytes;
     const change = now[p] - was;
-    const line = `${p.padEnd(8)} ${kb(now[p]).padStart(9)}  (was ${kb(was)}, ${change >= 0 ? '+' : ''}${kb(change)})`;
+    // the exact bytes too: CI's machine is the record's, and a record copied from CI must be exact
+    const line = `${p.padEnd(8)} ${kb(now[p]).padStart(9)}  (was ${kb(was)}, ${change >= 0 ? '+' : ''}${kb(change)}; ${now[p]} bytes)`;
     if (now[p] > was * (1 + TOLERANCE)) { grew = true; console.log(`GREW    ${line}`); }
     else if (now[p] < was * (1 - TOLERANCE)) { shrank = true; console.log(`SHRANK  ${line}`); }
     else console.log(`same    ${line}`);

@@ -132,7 +132,10 @@ const OneSheet = memo(function OneSheet({ sheet, width, height, plan }: {
   const tagline = titled ? <View style={s.tagStatic}>{tagLines}</View> : null;
   const foot = (
     <View style={titled ? s.footStatic : s.foot}>
-      {!titled ? <LinearGradient colors={[`${SHADE}0)`, `${SHADE}0.8)`, `${SHADE}0.95)`]} locations={[0, 0.42, 1]} style={s.footShade} /> : null}
+      {/* The shade rises over a fixed 70pt above the words, then holds at 0.8 or more behind every
+          line: a proportional ramp left a tall foot's title (the largest text) on the faint part. */}
+      {!titled ? <LinearGradient colors={[`${SHADE}0)`, `${SHADE}0.8)`]} style={s.footRamp} /> : null}
+      {!titled ? <LinearGradient colors={[`${SHADE}0.8)`, `${SHADE}0.95)`]} style={s.footShade} /> : null}
       {!sheet.art.titled ? (
         <Text
           numberOfLines={5}
@@ -227,7 +230,8 @@ const s = StyleSheet.create({
   snipeWords: { color: colors.silverScreen },
   foot: { position: 'absolute', left: FOOT_INSET, right: FOOT_INSET, bottom: SHEET_FOOT.bottom, alignItems: 'center' },
   footStatic: { alignItems: 'center' },
-  footShade: { position: 'absolute', left: -FOOT_INSET, right: -FOOT_INSET, top: -70, bottom: -18 },
+  footRamp: { position: 'absolute', left: -FOOT_INSET, right: -FOOT_INSET, top: -70, height: 70 },
+  footShade: { position: 'absolute', left: -FOOT_INSET, right: -FOOT_INSET, top: 0, bottom: -18 },
   title: {
     fontFamily: fonts.display, color: colors.silverScreen, textAlign: 'center',
     textShadowColor: 'rgba(0,0,0,0.65)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 14,

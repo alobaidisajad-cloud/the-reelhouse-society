@@ -308,7 +308,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/add-only.cjs | 2026-10-15 | new; a migration by its kind (test-utils/universe.js); SQL no rule names is refused |
 | scripts/android-packages.cjs | 2026-10-16 | new: read against React Native's libs.versions.toml, Expo's root project plugin and the Reanimated and Worklets build files; --installed asks the disk for each package's package.xml, as sdkmanager does |
 | scripts/await-events.cjs | 2026-10-16 | new: the finder of TST-08, a fireEvent, act or renderHook nobody waits for, in every test file; --fix waits for each where the code can, making the function async |
-| scripts/bundle-size.js | 2026-10-15 | edited: --keep leaves the export for release-guard.cjs; read whole: sound |
+| scripts/bundle-size.js | 2026-10-22 | edited: each line says its exact bytes, so a record copied from CI is exact |
 | scripts/check-app-routes.js | 2026-09-29 | claimed to fail CI, but no workflow ran it: CI now runs it (proved to fail on a planted non-route); its files come from the shared file list (test-utils/universe.js) |
 | scripts/check-backend-live.mjs | 2026-10-16 | edited: the supabase CLI's failure told by its own reason (why), a failed fetch by its cause |
 | scripts/comment-truth.js | 2026-09-29 | 8 fixed (its own examples tripped it); TODO now exempt in backticks; npm run comments:check added; its files come from the shared file list (test-utils/universe.js) |
@@ -584,7 +584,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-10-22 | edited: the foot never rises off its sheet, in the order it gives way; the snipe measured as the plan chose |
 | src/components/lobby/__tests__/theWallIsRead.test.ts | 2026-09-30 | new |
 | src/components/lobby/__tests__/theWallKeepsTheDay.test.tsx | 2026-10-03 | new: the clock reads on the hour and on return; a wall behind the day is asked again |
-| src/components/lobby/FeatureRow.tsx | 2026-10-22 | edited: the one-sheet draws what the plan's foot kept |
+| src/components/lobby/FeatureRow.tsx | 2026-10-22 | edited: the one-sheet draws what the plan's foot kept; its shade a fixed ramp above the words, then 0.8 or more behind every line |
 | src/components/lobby/FilingsBill.tsx | 2026-10-21 | edited: THE DISPATCH a paper plate at the slab's slant, inside its full-finger door |
 | src/components/lobby/KeepOff.tsx | 2026-10-15 | draws its words in the lines planWall sets (two on a narrow credit strip) |
 | src/components/lobby/LobbyHonour.tsx | 2026-09-30 | new |
