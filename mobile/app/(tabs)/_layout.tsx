@@ -25,6 +25,13 @@ import { nav } from '@/src/utils/typedRouter';
 import { EDGE_LIT } from '@/src/theme/light';
 import { tabBarBottomPadding, tabBarHeight } from '@/src/components/layout/navMetrics';
 
+/**
+ * The tab beneath a screen opened cold by a link (a notice, a shared log, the reset link) is the
+ * Lobby, the member's home, where Back from it lands; without this it was the first tab the bar
+ * lists, the Dispatch, which loaded unseen behind the linked screen at every such start.
+ */
+export const unstable_settings = { initialRouteName: 'index' };
+
 // ════════════════════════════════════════════════════════════════
 //  TAB ICON: icons only, no labels. The chosen one grows a little, lights, and
 //  wears a dot beneath it; the Lobby's is the flicker-lit reel eye.

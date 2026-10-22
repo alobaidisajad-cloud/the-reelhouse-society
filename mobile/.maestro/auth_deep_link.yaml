@@ -28,3 +28,16 @@ appId: com.reelhouse.society
 - extendedWaitUntil:
     visible: "ROUTE NOT IN THE ARCHIVE"
     timeout: 30000
+
+# Back from a screen opened cold by a link lands on the Lobby, the
+# member's home, not on the first tab the bar lists; the tab layout,
+# app/(tabs)/_layout.tsx, names it. On Android: an iPhone has no Back key.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+      - extendedWaitUntil:
+          visible:
+            id: "welcome-seek-admission"
+          timeout: 15000

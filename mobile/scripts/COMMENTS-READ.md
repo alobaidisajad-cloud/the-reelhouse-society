@@ -50,7 +50,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/nightly.yml | 2026-10-22 | read whole: a variant's machines as it runs them; a heartbeat when the schedule ran |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
-| .maestro/auth_deep_link.yaml | 2026-10-15 | edited: reelhouse://_sitemap, opened with the app closed, lands on not-found |
+| .maestro/auth_deep_link.yaml | 2026-10-22 | read whole: Back from the screen a cold link opened lands on the Lobby, on Android; reelhouse://_sitemap, opened with the app closed, lands on +not-found |
 | .maestro/auth_flow.yaml | 2026-09-29 | true as written |
 | .maestro/boot_verification.yaml | 2026-10-01 | header narrowed to what it proves; wrapped to 80 |
 | .maestro/browse_vault.yaml | 2026-09-29 | true as written |
@@ -111,7 +111,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/notifications-modal.tsx | 2026-10-15 | handle's top from useModalTop; foot from useContentBottom |
 | app/(modals)/search-modal.tsx | 2026-10-15 | header top from useModalTop; foot from useContentBottom |
 | app/(modals)/social-modal.tsx | 2026-10-15 | handle's top from useModalTop; foot from useContentBottom |
-| app/(tabs)/_layout.tsx | 2026-10-15 | edited: each tab's own button draws its icon; no tabBarIcon; the icon's animated views stay native |
+| app/(tabs)/_layout.tsx | 2026-10-22 | read whole: the Lobby is the first route a cold link builds beneath its screen (unstable_settings); each tab's own button draws its icon; no tabBarIcon |
 | app/(tabs)/darkroom.tsx | 2026-10-22 | edited: the empty room's line in the house italic face, its note above the colour it explains |
 | app/(tabs)/dispatch.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/(tabs)/index.tsx | 2026-10-15 | edited: the Lobby's read; the wall and the welcome end above the tab bar (useTabContentBottom); the welcome's scroll begins at the screen's top |
@@ -1209,7 +1209,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/e2eTrace.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/edgeFunctions.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/endorsementGrouping.test.ts | — |  |
-| src/utils/__tests__/everyBackHasAWayOut.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/everyBackHasAWayOut.guard.test.ts | 2026-10-22 | read whole: a cold link has the Lobby beneath it; every back through nav.back() or behind canGoBack(); its files come from the shared file list |
 | src/utils/__tests__/everyCapAnswersToItsColumn.test.ts | 2026-10-03 | read whole: every new cap answers to its column or says why it is smaller |
 | src/utils/__tests__/everyChannelIsPrivate.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyClassIsAccountedFor.test.ts | 2026-10-15 | new |

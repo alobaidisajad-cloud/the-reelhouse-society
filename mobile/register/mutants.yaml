@@ -953,3 +953,12 @@ mutants:
         find: "      \"ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS\": true\n"
         replace: "      \"ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS\": false\n"
     proof: { file: src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts, test: "Android writes a frame's opacity and transform straight to the view, where a removed view is skipped" }
+
+  - id: shape-first-tab-beneath
+    class: NAV-cold-link-wrong-tab-beneath
+    source: shape
+    edits:
+      - file: app/(tabs)/_layout.tsx
+        find: "export const unstable_settings = { initialRouteName: 'index' };\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/everyBackHasAWayOut.guard.test.ts, test: "a screen opened cold by a link has the Lobby beneath it, where Back lands, never the first tab listed" }

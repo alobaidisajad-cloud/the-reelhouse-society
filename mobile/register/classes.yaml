@@ -788,6 +788,18 @@ classes:
     fix: "every step that installs through apt (the Postgres client, Playwright's --with-deps) first sets DPkg::Lock::Timeout to 240 s, so a retry waits for the try before it to let go of the lock; and Playwright's system packages are kept between runs in GitHub's cache and copied into apt's own archive first, since a mirror at 30-60 KB/s outlived the wait too (God-Tier 39774848287) (mutant shape-retry-blocked-by-lock)"
     places: [none]
 
+  - id: NAV-cold-link-wrong-tab-beneath
+    title: "A screen opened cold by a link (a notice, a shared log, the reset link) had the Dispatch beneath it, the first tab the bar lists: Back landed there instead of the Lobby, and the Dispatch loaded unseen during the start"
+    seriousness: serious
+    area: navigation
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "Sealed E2E 39774848305 and 39763329848, shard 3, auth_deep_link: the Dispatch read 5.0 s and 4.5 s behind the linked screen, over its stall ceiling; 2.3 to 3.2 s in the runs before" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/everyBackHasAWayOut.guard.test.ts, test: "a screen opened cold by a link has the Lobby beneath it, where Back lands, never the first tab listed" }
+    fix: "app/(tabs)/_layout.tsx names the Lobby (index) its first route (unstable_settings.initialRouteName), so a cold link builds the Lobby beneath its screen; auth_deep_link presses Back after its cold link and waits for the Lobby, on Android, where a phone has the key (mutant shape-first-tab-beneath)"
+    places: [emulator]
+
   - id: LIGHT-unproven-on-device
     title: "The light drawn on no device as main writes it: the study proved its own gradient strings, main's light.ts writes them otherwise, and the member page's spotlight was never drawn on a phone"
     seriousness: code
