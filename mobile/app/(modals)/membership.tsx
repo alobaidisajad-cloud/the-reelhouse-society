@@ -14,7 +14,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, AppState, useWindowDimensions, Platform } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -53,6 +52,7 @@ import { purchaseStop } from '@/src/components/society/purchaseStop';
 import { PurchaseDock, DOCK_REACH } from '@/src/components/society/PurchaseDock';
 import { ticketPrice, savePercent, foundingPitch, type Billing } from '@/src/components/society/societyPricing';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { Arrive } from '@/src/components/Arrive';
 
 /**
  * The store's answer held no active rank though the purchase went through:
@@ -469,9 +469,9 @@ export default function MembershipScreen() {
         contentContainerStyle={{ paddingBottom: showDock ? aboveDock : end }}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeIn.duration(500)}>
+        <Arrive name="membership-1" duration={500} rise={0}>
           <SocietyPoster reachedFor={reachedFor} compact={height < SHORT_SCREEN} />
-        </Animated.View>
+        </Arrive>
 
         {!monthlyKnownAbsent && offered.length > 0 ? (
           <BillingSwitch billing={billing as Billing} save={save} onChange={(b) => { TactileEngine.selection(); setBilling(b); }} />

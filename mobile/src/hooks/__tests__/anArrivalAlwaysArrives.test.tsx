@@ -65,12 +65,14 @@ describe('an arrival', () => {
 });
 
 describe('mount-time entering animations', () => {
-  /** Each can strand what it holds at opacity 0; they move to useArrival feature by feature. */
-  // Exact: one converted is MOST lowered here, so the slack cannot let another back in.
-  const MOST = 91;
-  it(`are exactly ${MOST}, and only fewer from here`, () => {
-    let count = 0;
-    for (const p of universe('appCode', { ext: ['.tsx'] })) count += (readCode(p).match(/\bentering=\{/g) ?? []).length;
-    expect(count).toBe(MOST);
+  /**
+   * Each could strand what it holds at opacity 0 (the film's tray; the Tribunal's header, Sealed
+   * E2E 39714110216). All 91 moved to Arrive (2026-10-22): none is left, and none may come back.
+   */
+  it('are none: every arrival is Arrive, certain to arrive', () => {
+    const left = universe('appCode', { ext: ['.tsx'] }).flatMap((p) => readCode(p).split(/\r?\n/)
+      .map((line, i) => (/\bentering=\{/.test(line) ? `${p.split(/[\\/]/).slice(-2).join('/')}:${i + 1}` : null))
+      .filter((x): x is string => x !== null));
+    expect(left).toEqual([]);
   });
 });

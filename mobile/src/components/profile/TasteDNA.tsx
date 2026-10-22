@@ -4,10 +4,9 @@
  * reads one number set and draws it. Until that set is read, or while too
  * little of the archive is catalogued to rank honestly, it says so.
  */
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeIn, FadeInRight, runOnJS } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
 import * as Sharing from 'expo-sharing';
 import { Share2 } from 'lucide-react-native';
@@ -21,10 +20,14 @@ import { tasteReadiness, coverageNote, type TasteProfile } from '@/src/constants
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomRetrieving, RoomUnreachable } from './RoomParts';
 import { counted } from '@/src/utils/counted';
+import { Arrive } from '@/src/components/Arrive';
 
 // Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
 // TactileEngine.navigate would lose its `this` binding).
 function hapticLight() { TactileEngine.navigate(); }
+/** A bar's arrival, and the gap between one bar's and the next's. */
+const BAR_MS = 300;
+const BAR_BEAT = 60;
 
 interface TasteDNAProps {
     /** The server's answer, over every film. Null = not read yet. */
@@ -59,6 +62,14 @@ export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo, isSe
      * percentage comes out too small.
      */
     const denominator = Math.max(ready.known, 1);
+
+    // Each bar gives a light tick as it lands, on the beat it arrives on.
+    const barsDrawn = !!taste && ready.total >= 3 && ready.ready && computedGenres.length > 0;
+    useEffect(() => {
+        if (!barsDrawn) return;
+        const ticks = computedGenres.map((_, i) => setTimeout(hapticLight, i * BAR_BEAT + BAR_MS));
+        return () => ticks.forEach(clearTimeout);
+    }, [barsDrawn, computedGenres]);
 
     // Not read, too few films, or too little catalogued: said in the card's
     // own place, never a heading left over nothing.
@@ -103,7 +114,7 @@ export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo, isSe
     };
 
     return (
-        <Animated.View entering={FadeIn.duration(500)} style={s.container}>
+        <Arrive name="tastedna-1" duration={500} rise={0} style={s.container}>
             <View style={s.headerRow}>
                 <View>
                     <Text {...scaledTextProps} style={s.title}>TASTE DNA</Text>
@@ -124,19 +135,14 @@ export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo, isSe
                 {computedGenres.map(([genre, count], i) => {
                     const pct = Math.round((count / denominator) * 100);
                     const barWidth = `${(count / maxCount) * 100}%`;
-                    const anim = FadeInRight.delay(i * 60).duration(300).withCallback((finished) => {
-                        if (finished) {
-                            runOnJS(hapticLight)();
-                        }
-                    });
                     return (
-                        <Animated.View key={genre} entering={anim} style={s.row}>
+                        <Arrive key={genre} name="taste-bar" delay={i * BAR_BEAT} duration={BAR_MS} rise={0} style={s.row}>
                             <Text {...scaledTextProps} style={s.genreLabel} numberOfLines={1} adjustsFontSizeToFit>{genre.toUpperCase()}</Text>
                             <View style={s.barTrack}>
                                 <View style={[s.barFill, { width: barWidth as import('react-native').DimensionValue, backgroundColor: dnaColors[i] ?? colors.sepia }]} />
                             </View>
                             <Text {...scaledTextProps} style={s.pctLabel}>{pct}%</Text>
-                        </Animated.View>
+                        </Arrive>
                     );
                 })}
             </View>
@@ -149,7 +155,7 @@ export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo, isSe
 
             {/* Offscreen High-Fidelity Canvas for Lumière Export */}
             <TasteDNAExportCanvas ref={viewShotRef} genres={computedGenres} username={username} memberNo={memberNo} />
-        </Animated.View>
+        </Arrive>
     );
 });
 

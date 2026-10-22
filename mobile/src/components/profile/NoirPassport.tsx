@@ -2,10 +2,10 @@ import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import React, { useMemo, memo } from 'react';
 import Svg, { Circle, Text as SvgText, Line } from 'react-native-svg';
-import Animated, { FadeIn } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { RoomRetrieving, RoomUnreachable } from './RoomParts';
+import { Arrive } from '@/src/components/Arrive';
 
 /** get_public_profile_analytics: the member's record over the WHOLE history. */
 export interface ProfileAnalyticsPayload {
@@ -65,8 +65,8 @@ const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }
     const innerR = center * 0.8;
 
     return (
-        <Animated.View
-            entering={FadeIn.delay(index * 80).duration(400)}
+        <Arrive
+            name="noirpassport-1" duration={400} delay={index * 80} rise={0}
             style={[
                 s.stampWrap,
                 {
@@ -130,7 +130,7 @@ const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }
                 <Line x1={center * 0.33} y1={center * 0.92} x2={center * 0.47} y2={center * 0.97} stroke={colors.sepia} strokeWidth={0.8} opacity={0.2} />
                 <Line x1={center * 1.53} y1={center * 1.05} x2={center * 1.67} y2={center} stroke={colors.sepia} strokeWidth={0.8} opacity={0.15} />
             </Svg>
-        </Animated.View>
+        </Arrive>
     );
 });
 
@@ -167,7 +167,7 @@ export const NoirPassport = memo(function NoirPassport({ analytics, failed, onRe
     }
 
     return (
-        <Animated.View entering={FadeIn.duration(600)} style={s.container}>
+        <Arrive name="noirpassport-2" duration={600} rise={0} style={s.container}>
             <View style={s.passport}>
                 {/* Corner brackets */}
                 {(['topLeft', 'topRight', 'bottomLeft', 'bottomRight'] as const).map(corner => (
@@ -193,7 +193,7 @@ export const NoirPassport = memo(function NoirPassport({ analytics, failed, onRe
                     <Text {...scaledTextProps} style={s.footerText}>STAMPS ARE ISSUED BY THE SOCIETY ARCHIVIST · NOT TRANSFERABLE · REELHOUSE ARCHIVE DEPT</Text>
                 </View>
             </View>
-        </Animated.View>
+        </Arrive>
     );
 });
 

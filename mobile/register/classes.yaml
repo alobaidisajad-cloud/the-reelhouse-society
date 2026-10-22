@@ -566,6 +566,18 @@ classes:
     fix: "every word raised to 10pt, its tracking × (old/new)² and its set line height with it (the first floor pass's method); the marks named; a wing's poster title gives up just enough size to stay whole at the largest sizes, never under 10; the floor guard has no settled exemption and reads a size written as an attribute (mutant shape-radar-labels-small)"
     places: [none]
 
+  - id: UI-entrance-left-unseen
+    title: "A view entering on Reanimated's mount-time animation (entering=) starts at opacity 0, and when the animation misses the view just mounted it stays there, unseen: the film's tray (E2E 38790116312), the Tribunal's whole header (E2E 39714110216)"
+    seriousness: serious
+    area: motion
+    status: OPEN
+    count: 91
+    source: { kind: history, ref: "Sealed E2E 39714110216, shard 2, admin_second_key: The Tribunal never visible over a drawn docket" }
+    methods:
+      - { kind: static, file: src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx, test: "are none: every arrival is Arrive, certain to arrive" }
+    fix: "all 91 moved to Arrive (useArrival: its own value, a plain resting style once its time is up), by a syntax-aware codemod with each preset's distance and default duration kept, nine by hand (a sheet's slide, a list's stagger, a card's own curve, the Taste DNA bars' ticks on their beats); Arrive passes a view's props and takes an animated style; the ratchet that counted them down is at none (mutant shape-entrance-written-by-hand)"
+    places: [emulator]
+
   - id: UI-failure-three-looks
     title: The house's failures in three unrelated looks (PROJECTION FAILURE in typewriter capitals with a crimson ◆ button; "This reel jammed." in the display face; Transmission Interrupted on the state card), so a member could not tell one family of trouble from another
     seriousness: layout

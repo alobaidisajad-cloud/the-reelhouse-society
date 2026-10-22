@@ -55,8 +55,10 @@ describe('every animation the app uses can be rendered by a test', () => {
 
   it('finds the builders by reading the app, not a list kept by hand', () => {
     // If this ever reads zero, the regex broke and every assertion below became
-    // vacuous — the failure mode this whole file exists to prevent.
-    expect(used.size).toBeGreaterThan(5);
+    // vacuous — the failure mode this whole file exists to prevent. The entrances
+    // moved to Arrive (its own values, no builder); the layout transitions remain.
+    expect(used.size).toBeGreaterThan(0);
+    expect(used.has('LinearTransition')).toBe(true);
   });
 
   it('covers FadeInRight, the one that was missing', () => {

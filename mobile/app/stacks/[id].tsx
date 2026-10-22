@@ -10,8 +10,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MessageSquare, MoreHorizontal, Send, Trash2, X } from 'lucide-react-native';
 import { Alert, BackHandler, Platform, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import { AnimatedText } from '@/src/components/text/AnimatedText';
-import Animated, { FadeInDown, FadeInUp, ReduceMotion, interpolate, useAnimatedKeyboard, useAnimatedStyle, useDerivedValue, useSharedValue } from 'react-native-reanimated';
+import Animated, { interpolate, useAnimatedKeyboard, useAnimatedStyle, useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import {
   useBottomEdge, useContentBottom, usePushedHeaderTop,
 } from '@/src/components/layout/navMetrics';
@@ -52,6 +51,7 @@ import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import Buster, { BusterEyes } from '@/src/components/Buster';
 import { nav } from '@/src/utils/typedRouter';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
+import { Arrive } from '@/src/components/Arrive';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
@@ -125,7 +125,7 @@ const StackDetailFilmCard = React.memo(({
   // Two caption lines at the size the phone draws them, so rows share a baseline.
   const titleBox = { minHeight: FILM_TITLE_LINE * 2 * useLineScale() };
   return (
-    <Animated.View entering={index < 15 ? FadeInUp.duration(400).delay(index * 30).reduceMotion(ReduceMotion.System) : undefined} style={[s.filmItem, { width: itemWidth }]}>
+    <Arrive name="stacks-film" duration={index < 15 ? 400 : 0} delay={index < 15 ? index * 30 : 0} rise={-25} style={[s.filmItem, { width: itemWidth }]}>
       <PressableScale
         style={[s.filmCard, { width: itemWidth, height: itemHeight }, isFirst && s.filmCardFirst]}
         onPress={() => onPress(item.id)}
@@ -162,7 +162,7 @@ const StackDetailFilmCard = React.memo(({
       ) : (
         <Text style={[s.filmTitle, titleBox]} numberOfLines={2}>{item.title}</Text>
       )}
-    </Animated.View>
+    </Arrive>
   );
 });
 
@@ -859,18 +859,19 @@ export default function StackDetailScreen() {
             {/* Content Overlaid on Header */}
             <View style={[s.headerContentWrap, { marginTop: HEADER_HEIGHT - 120 }]}>
               {/* No eyebrow: a catalogue does not print its category above its title. */}
-              <AnimatedText
-                entering={FadeInDown.duration(600).delay(100).reduceMotion(ReduceMotion.System)}
+              <Arrive name="stacks-title" duration={600} delay={100}>
+              <Text
                 style={[s.title, { fontSize: titleType.fontSize, lineHeight: titleType.lineHeight }]}
                 numberOfLines={titleType.numberOfLines}
               >
                 {list.title.toUpperCase()}
-              </AnimatedText>
+              </Text>
+              </Arrive>
 
               {/* The colophon: ONE line of type (curator, count, date), so it
                   wraps as prose and no line begins with a separator; the chips
                   are objects, so they wrap below as their own elements. */}
-              <Animated.View entering={FadeInDown.duration(600).delay(200).reduceMotion(ReduceMotion.System)} style={s.metaRow}>
+              <Arrive name="stacks-1" duration={600} delay={200} style={s.metaRow}>
                 <View style={s.metaDiamond} />
                 <Text style={s.metaText} numberOfLines={2}>
                   <Text style={s.metaCurator} onPress={() => handlePressProfile(list.user)} suppressHighlighting accessibilityRole="link" accessibilityLabel={`View curator @${list.user}`}>@{list.user.toUpperCase()}</Text>
@@ -887,13 +888,13 @@ export default function StackDetailScreen() {
                     <Text style={s.metaChipText}>SEALED</Text>
                   </View>
                 )}
-              </Animated.View>
+              </Arrive>
 
               {/* The honour stays: the day this stack hung in the Lobby, if it did. */}
               <LobbyHonour kind="list" id={id} style={s.lobbyHonour} />
 
               {list.description ? (
-                <Animated.View entering={FadeInDown.duration(600).delay(300).reduceMotion(ReduceMotion.System)} style={s.descWrap}>
+                <Arrive name="stacks-2" duration={600} delay={300} style={s.descWrap}>
                   {/* THE MEASURER: an unclamped copy (a clamped Text reports the
                       clamp), invisible, out of flow, unspoken, at the same width,
                       and unmounted once it has answered. */}
@@ -919,11 +920,11 @@ export default function StackDetailScreen() {
                       <Text style={s.descToggle}>{descExpanded ? 'FOLD ▴' : 'READ MORE ▾'}</Text>
                     </PressableScale>
                   )}
-                </Animated.View>
+                </Arrive>
               ) : null}
 
               {/* ── ACTION BAR: Certify · Critic · Share to Lounge ── */}
-              <Animated.View entering={FadeInDown.duration(600).delay(350).reduceMotion(ReduceMotion.System)} style={s.actionBar}>
+              <Arrive name="stacks-3" duration={600} delay={350} style={s.actionBar}>
                 {/* The house's one bar anatomy (MarkFigure): icon over word, the
                     count beside the icon, the log bar's icons for the same acts. */}
                 <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isCertified }} accessibilityLabel={certifyLabel(certifyCount, isCertified, 'this stack')}>
@@ -955,7 +956,7 @@ export default function StackDetailScreen() {
                   <MessageCircle size={15} strokeWidth={2} color={colors.fog} />
                   <Text style={s.actionLabel} pointerEvents="none" {...deckLabelProps}>LOUNGE</Text>
                 </PressableScale>
-              </Animated.View>
+              </Arrive>
 
               {/* The critiques open in an overlay, never between here and the films. */}
               <View style={s.trackRow}>
@@ -989,8 +990,8 @@ export default function StackDetailScreen() {
             accessibilityRole="button"
             accessibilityLabel="Close critiques"
           />
-          <Animated.View
-            entering={FadeInUp.duration(260).reduceMotion(ReduceMotion.System)}
+          <Arrive
+            name="stacks-4" duration={260} rise={-25}
             style={[s.critiqueSheet, { top: navBottom }, critiqueSheetStyle]}
           >
             <View style={s.critiqueHandleWrap}><View style={s.critiqueHandle} /></View>
@@ -1070,7 +1071,7 @@ export default function StackDetailScreen() {
                 </PressableScale>
               </Animated.View>
             )}
-          </Animated.View>
+          </Arrive>
         </View>
       )}
 

@@ -20,10 +20,10 @@ import { isNetworkError } from '@/src/utils/networkError';
 import reelToast from '@/src/utils/reelToast';
 import { BlurView } from 'expo-blur';
 import { Check, Film as FilmIcon, Send, User, UserCircle2, Users, X } from 'lucide-react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
 import TryAgain, { TryAgainLine } from '@/src/components/TryAgain';
+import { Arrive } from '@/src/components/Arrive';
 
 interface SocialProfile {
     id: string;
@@ -310,7 +310,7 @@ export default function SocialModal() {
 
     // ── Render helpers ────────────────────────────────────────────────────────
     const renderSocialItem = useCallback(({ item, index }: { item: SocialProfile; index: number }) => (
-        <Animated.View entering={FadeInUp.duration(300).delay(Math.min(index * 40, 400))}>
+        <Arrive name="social-modal-1" duration={300} delay={Math.min(index * 40, 400)} rise={-25}>
             <PressableScale onPress={() => handleProfilePress(item.username)} hitSlop={null} accessibilityRole="button" accessibilityLabel={`View ${item.username}'s profile`}>
                 <View style={styles.userRow}>
                     {item.avatar_url && item.avatar_url.startsWith('http') ? (
@@ -324,13 +324,13 @@ export default function SocialModal() {
                     </View>
                 </View>
             </PressableScale>
-        </Animated.View>
+        </Arrive>
     ), [handleProfilePress]);
 
     const renderLoungeItem = useCallback(({ item, index }: { item: { id: string; name: string }; index: number }) => (
-        <Animated.View entering={FadeInUp.duration(300).delay(Math.min(index * 40, 400))}>
+        <Arrive name="social-modal-2" duration={300} delay={Math.min(index * 40, 400)} rise={-25}>
             <LoungeRow lounge={item} onShare={handleShareToLounge} sharing={sharingTo} shared={sharedTo} />
-        </Animated.View>
+        </Arrive>
     ), [handleShareToLounge, sharingTo, sharedTo]);
 
     // ── Share context banner ──────────────────────────────────────────────────

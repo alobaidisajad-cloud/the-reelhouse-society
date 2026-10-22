@@ -173,7 +173,13 @@ const ROOMS: [string, () => React.ReactElement][] = [
 
 describe.each(ROOMS)('%s stays readable', (name, build) => {
   const findings: Finding[] = [];
-  audit(render(build()).toJSON(), INK, 1, findings);
+  // read once it has arrived: an Arrive starts at 0 and rests at a plain 1 when its time is up
+  jest.useFakeTimers();
+  const r = render(build());
+  React.act(() => { jest.advanceTimersByTime(5000); });
+  r.rerender(build());
+  audit(r.toJSON(), INK, 1, findings);
+  jest.useRealTimers();
 
   it('has text to check at all', () => {
     // Without this, a room that silently rendered nothing would "pass".

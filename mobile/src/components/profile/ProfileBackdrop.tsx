@@ -1,12 +1,13 @@
 import { View, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { FadeIn, type SharedValue } from 'react-native-reanimated';
+import { type SharedValue } from 'react-native-reanimated';
 import { RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { LinearGradient } from 'expo-linear-gradient';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors } from '@/src/theme/theme';
 import { isAuteurPlusTier } from '@/src/utils/tier';
 import { pickBackdropFilm } from './favourites';
+import { Arrive } from '@/src/components/Arrive';
 
 /**
  * The backdrop is a privilege, not an imposition.
@@ -64,7 +65,7 @@ export function ProfileBackdrop({ user, hem, scrollY }: {
     if (!posterSrc) return null;
 
     return (
-        <Animated.View testID="profile-backdrop" entering={FadeIn.duration(1200)} style={s.container}>
+        <Arrive testID="profile-backdrop" name="profilebackdrop-1" duration={1200} rise={0} style={s.container}>
             {/* Poster image */}
             <Image
                 source={{ uri: posterSrc }}
@@ -111,7 +112,7 @@ export function ProfileBackdrop({ user, hem, scrollY }: {
                     style={StyleSheet.absoluteFillObject}
                 />
             )}
-        </Animated.View>
+        </Arrive>
     );
 }
 

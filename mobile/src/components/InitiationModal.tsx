@@ -19,7 +19,7 @@ import { Text } from '@/src/components/text';
 import { BlurView } from 'expo-blur';
 // Reanimated's: it knows the setting on the first frame, so a member who asked
 // for less motion never sees the entrance begin.
-import Animated, { FadeIn, Easing, useSharedValue, useAnimatedStyle, useReducedMotion, withDelay, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useSharedValue, useAnimatedStyle, useReducedMotion, withDelay, withTiming } from 'react-native-reanimated';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 
 import PressableScale from '@/src/components/PressableScale';
@@ -27,6 +27,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { ToastHost } from '@/src/components/ToastHost';
 import { CentredCard } from '@/src/components/layout/CentredCard';
+import { Arrive } from '@/src/components/Arrive';
 
 const CURVE = Easing.bezier(0.33, 0, 0.15, 1);
 
@@ -139,7 +140,7 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
         <View style={s.dim} />
 
         <CentredCard style={s.room}>
-          <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(420).easing(CURVE)} style={s.card}>
+          <Arrive name="initiation-card" duration={420} easing={CURVE} rise={0} style={s.card}>
             {/* Certificate corner brackets — the Register's language. */}
             <View style={[s.bracket, s.bracketTL]} />
             <View style={[s.bracket, s.bracketTR]} />
@@ -198,7 +199,7 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
             </View>
 
             <Text style={s.societyTag}>THE REELHOUSE SOCIETY · EST. 1924</Text>
-          </Animated.View>
+          </Arrive>
         </CentredCard>
         <ToastHost />
       </PresenceView>

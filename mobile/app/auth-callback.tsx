@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, InteractionManager } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeIn, FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { nav } from '@/src/utils/typedRouter';
 import { supabase } from '@/src/lib/supabase';
@@ -15,8 +14,8 @@ import type { EmailOtpType, Session } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { CentredRoom } from '@/src/components/layout/CentredRoom';
+import { Arrive } from '@/src/components/Arrive';
 
-const AnimatedView = Animated.createAnimatedComponent(View);
 
 // Where an email's link lands (authLink): a sign-up confirmed, or a password reset begun.
 export default function AuthCallbackScreen() {
@@ -126,17 +125,17 @@ export default function AuthCallbackScreen() {
       <CentredRoom kind="pushed" style={s.content}>
           {/* ── Verifying ── */}
           {status === 'verifying' && (
-            <AnimatedView entering={FadeIn.duration(500).reduceMotion(ReduceMotion.Never)} style={s.stateWrap}>
+            <Arrive name="auth-callback-1" duration={500} rise={0} style={s.stateWrap}>
               <ActivityIndicator size="large" color={colors.sepia} style={{ marginBottom: 24 }} />
               <Text style={s.eyebrow}>ONE MOMENT</Text>
               <Text style={s.title}>Verifying your link</Text>
               <Text style={s.body}>This should only take a few seconds.</Text>
-            </AnimatedView>
+            </Arrive>
           )}
 
           {/* ── Success ── */}
           {status === 'success' && (
-            <AnimatedView entering={FadeInDown.duration(600).reduceMotion(ReduceMotion.Never)} style={s.stateWrap}>
+            <Arrive name="auth-callback-2" duration={600} style={s.stateWrap}>
               <View style={s.successIconWrap}>
                 <Text style={s.successIcon} {...UNSPOKEN}>✓</Text>
               </View>
@@ -151,12 +150,12 @@ export default function AuthCallbackScreen() {
                   ? 'Taking you to set a new password...'
                   : 'Your identity has been verified. Initiating access...'}
               </Text>
-            </AnimatedView>
+            </Arrive>
           )}
 
           {/* ── Error ── */}
           {status === 'error' && (
-            <AnimatedView entering={FadeInDown.duration(600).reduceMotion(ReduceMotion.Never)} style={s.stateWrap}>
+            <Arrive name="auth-callback-3" duration={600} style={s.stateWrap}>
               <View style={s.errorIconWrap}>
                 <Text style={s.errorIcon} {...UNSPOKEN}>✕</Text>
               </View>
@@ -219,7 +218,7 @@ export default function AuthCallbackScreen() {
                   </PressableScale>
                 )}
               </View>
-            </AnimatedView>
+            </Arrive>
           )}
       </CentredRoom>
     </View>

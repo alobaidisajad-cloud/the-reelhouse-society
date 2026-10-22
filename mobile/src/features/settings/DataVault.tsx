@@ -7,7 +7,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeIn } from 'react-native-reanimated';
 import {
   Upload, Download, CheckCircle, AlertCircle, Undo2,
 } from 'lucide-react-native';
@@ -28,6 +27,7 @@ import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { escapeCsvCell } from '@/src/utils/csv';
 import { counted } from '@/src/utils/counted';
+import { Arrive } from '@/src/components/Arrive';
 
 export default function DataVault() {
   const user = useAuthStore(s => s.user);
@@ -375,7 +375,7 @@ export default function DataVault() {
     ? (importProgress.current / importProgress.total) * 100 : 0;
 
   return (
-    <Animated.View entering={FadeIn.duration(600)}>
+    <Arrive name="datavault-1" duration={600} rise={0}>
 
       {/* ── Import ── */}
       <View style={s.importSection}>
@@ -519,7 +519,7 @@ export default function DataVault() {
         <Text style={s.actionBtnText}>{exporting === 'json' ? 'EXPORTING…' : 'EXPORT FULL ARCHIVE (JSON)'}</Text>
       </PressableScale>
 
-    </Animated.View>
+    </Arrive>
   );
 }
 

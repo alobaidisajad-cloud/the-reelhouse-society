@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
+import { Arrive } from '@/src/components/Arrive';
 
 export function getPasswordChecks(pw: string) {
   return {
@@ -66,7 +66,7 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
   const { label: pwStrengthLabel, color: pwStrengthColor, ink: pwStrengthInk } = getStrengthInfo(pwPassed);
 
   return (
-    <Animated.View entering={FadeInDown.duration(300)} style={s.strengthWrap}>
+    <Arrive name="passwordstrengthmeter-1" duration={300} style={s.strengthWrap}>
       <View style={s.strengthBarRow}>
         {[1, 2, 3, 4, 5].map(i => (
           <View
@@ -95,7 +95,7 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
       {!passwordFits(password) && (
         <Text style={[s.checkLabel, { color: colors.crimsonInk }]} accessibilityLiveRegion="polite">{PASSWORD_TOO_LONG}</Text>
       )}
-    </Animated.View>
+    </Arrive>
   );
 }
 

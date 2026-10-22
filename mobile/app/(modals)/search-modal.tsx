@@ -23,7 +23,7 @@ import {
     Users,
     X,
 } from 'lucide-react-native';
-import Animated, { FadeIn, useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated';
 import { useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
 
 import PressableScale from '@/src/components/PressableScale';
@@ -32,6 +32,7 @@ import { SR, useUniversalSearch } from '@/src/hooks/useUniversalSearch';
 import { colors, fonts } from '@/src/theme/theme';
 import SearchUnreachable, { SearchPartly } from '@/src/components/search/SearchUnreachable';
 import Buster from '@/src/components/Buster';
+import { Arrive } from '@/src/components/Arrive';
 
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
@@ -243,7 +244,7 @@ export default function SearchModal() {
 
       {/* ── FILTER TABS ── */}
       {searched && (
-        <Animated.View entering={FadeIn.duration(250)}>
+        <Arrive name="search-modal-1" duration={250} rise={0}>
           <View style={st.tabsWrap} accessibilityRole="tablist">
             <FlashList
               horizontal
@@ -262,45 +263,45 @@ export default function SearchModal() {
               {searching ? 'SCANNING ARCHIVES…' : `${filtered.length} RESULT${filtered.length !== 1 ? 'S' : ''}`}
             </Text>
           </View>
-        </Animated.View>
+        </Arrive>
       )}
 
       {/* ── RESULTS ── */}
       <View style={st.resultsWrap}>
         {/* Pre-search */}
         {!searched && !searching && (
-          <Animated.View entering={FadeIn} style={st.center}>
+          <Arrive name="search-modal-2" duration={300} rise={0} style={st.center}>
             <Search size={30} color={colors.ash} />
             <Text style={st.emptyTitle}>The Archive Awaits</Text>
             <Text style={st.emptySub}>
               Search for films, actors, directors,{'\n'}members, written logs, and curated stacks.
             </Text>
-          </Animated.View>
+          </Arrive>
         )}
 
         {/* Searching spinner */}
         {searching && filtered.length === 0 && !silence && (
-          <Animated.View entering={FadeIn} style={st.center}>
+          <Arrive name="search-modal-3" duration={300} rise={0} style={st.center}>
             <ActivityIndicator size="small" color={colors.sepia} />
             <Text style={st.centerLabel}>SCANNING ARCHIVES…</Text>
-          </Animated.View>
+          </Arrive>
         )}
 
         {/* Could not be asked: every source, or the one this tab reads from.
             An empty tab whose source was down is unknown, not empty. */}
         {searched && !searching && filtered.length === 0 && (isError || tabSourceDown) && (
-          <Animated.View entering={FadeIn} style={st.center}>
+          <Arrive name="search-modal-4" duration={300} rise={0} style={st.center}>
             <SearchUnreachable onRetry={retrySearch} />
-          </Animated.View>
+          </Arrive>
         )}
 
         {/* No results; through the next letter's search it stays, and only its line changes */}
         {silence && (
-          <Animated.View entering={FadeIn} style={st.center}>
+          <Arrive name="search-modal-5" duration={300} rise={0} style={st.center}>
             <Buster size={48} mood="suspicious" />
             <Text style={st.centerLabel}>{searching ? 'SCANNING ARCHIVES…' : 'THE ARCHIVE RETURNS SILENCE'}</Text>
             <Text style={st.emptySub}>Adjust your query or consult a different catalogue.</Text>
-          </Animated.View>
+          </Arrive>
         )}
 
         {/* Results */}

@@ -1,9 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import Animated, {
-  FadeInDown, FadeIn, ReduceMotion,
-} from 'react-native-reanimated';
 import { supabase } from '@/src/lib/supabase';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
@@ -18,8 +15,8 @@ import { passwordIsAccepted, passwordFits, PASSWORD_TOO_LONG, PASSWORD_MAX_BYTES
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { nav } from '@/src/utils/typedRouter';
+import { Arrive } from '@/src/components/Arrive';
 
-const AnimatedView = Animated.createAnimatedComponent(View);
 
 /** The back button's row and the gap under it: the form starts this far below the header's top. */
 const BACK_ROW = 54;
@@ -100,7 +97,7 @@ export default function ResetPasswordScreen() {
       <View style={s.container}>
         <RoomLight room="default" />
         <View style={s.successWrap}>
-          <AnimatedView entering={FadeIn.duration(600).reduceMotion(ReduceMotion.Never)} style={s.successContent}>
+          <Arrive name="reset-password-1" duration={600} rise={0} style={s.successContent}>
             <View style={s.successIconWrap}>
               <Text style={s.successIcon} {...UNSPOKEN}>✓</Text>
             </View>
@@ -110,7 +107,7 @@ export default function ResetPasswordScreen() {
               Your new credentials have been secured.{'\n'}Redirecting you to the House...
             </Text>
             <Text style={s.successRedirect}>REDIRECTING IN 3 SECONDS...</Text>
-          </AnimatedView>
+          </Arrive>
         </View>
       </View>
     );
@@ -133,7 +130,7 @@ export default function ResetPasswordScreen() {
       <View style={s.container}>
         <RoomLight room="default" />
         <View style={s.successWrap}>
-          <Animated.View entering={FadeIn.duration(600).reduceMotion(ReduceMotion.Never)} style={s.successContent}>
+          <Arrive name="reset-password-2" duration={600} rise={0} style={s.successContent}>
             <View style={[s.successIconWrap, { backgroundColor: 'rgba(107, 26, 10, 0.15)', borderColor: colors.bloodReel }]}>
               <Text style={[s.successIcon, { color: colors.bloodReel }]} {...UNSPOKEN}>✕</Text>
             </View>
@@ -161,7 +158,7 @@ export default function ResetPasswordScreen() {
             >
               <Text style={[s.submitText, { color: colors.fog }]}>RETURN TO LOBBY</Text>
             </PressableScale>
-          </Animated.View>
+          </Arrive>
         </View>
       </View>
     );
@@ -199,7 +196,7 @@ export default function ResetPasswordScreen() {
         </PressableScale>
 
         {/* Header */}
-        <AnimatedView entering={FadeInDown.duration(800).reduceMotion(ReduceMotion.Never)} style={s.header}>
+        <Arrive name="reset-password-3" duration={800} style={s.header}>
           <View style={s.iconWrap}>
             <Lock size={24} color={colors.sepia} strokeWidth={1.5} />
           </View>
@@ -209,10 +206,10 @@ export default function ResetPasswordScreen() {
           <Text style={s.subtitle}>
             Enter your new password below.{'\n'}Make it strong — the archives demand it.
           </Text>
-        </AnimatedView>
+        </Arrive>
 
         {/* Form Card */}
-        <AnimatedView entering={FadeInDown.duration(600).delay(200).reduceMotion(ReduceMotion.Never)} style={s.formCard}>
+        <Arrive name="reset-password-4" duration={600} delay={200} style={s.formCard}>
           <View style={s.formCardGlow} />
 
           {/* New Password */}
@@ -296,7 +293,7 @@ export default function ResetPasswordScreen() {
               <Text style={[s.submitText, (!strong || password !== confirm) && UNREADY.words]}>RESET PASSWORD</Text>
             )}
           </PressableScale>
-        </AnimatedView>
+        </Arrive>
       </ScrollView>
     </View>
   );

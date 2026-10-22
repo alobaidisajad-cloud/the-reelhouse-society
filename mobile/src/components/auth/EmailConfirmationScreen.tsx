@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useModalTop } from '@/src/components/layout/navMetrics';
 import { Mail, X } from 'lucide-react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
@@ -11,6 +10,7 @@ import { displayTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
 import { AuthBackdrop, SocietyEyebrow, HaloIcon, Est1924 } from './AuthChrome';
 import { EDGE_LIT } from '@/src/theme/light';
+import { Arrive } from '@/src/components/Arrive';
 
 interface Props {
   confirmedEmail: string;
@@ -41,7 +41,7 @@ export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, o
       </PressableScale>
 
       <View style={s.confirmationWrap}>
-        <Animated.View entering={FadeIn.duration(600).reduceMotion(ReduceMotion.Never)} style={s.confirmationContent}>
+        <Arrive name="emailconfirmationscreen-1" duration={600} rise={0} style={s.confirmationContent}>
           {/* The sealed letter, waiting in candlelight — unframed */}
           <HaloIcon icon={Mail} iconSize={30} haloSize={130} style={s.iconWrap} />
 
@@ -102,7 +102,7 @@ export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, o
           </PressableScale>
 
           <Est1924 style={s.estMark} />
-        </Animated.View>
+        </Arrive>
       </View>
     </View>
   );

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Modal, ScrollView, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { Image } from 'expo-image';
-import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, Plus, ArrowLeftRight, Trash2, Replace } from 'lucide-react-native';
@@ -26,6 +26,7 @@ import { EDGE_LIT } from '@/src/theme/light';
 import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
 import { useBottomEdge, useSheetBottom } from '@/src/components/layout/navMetrics';
+import { Arrive } from '@/src/components/Arrive';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 // Module-scoped: prevents remount on every render cycle
@@ -471,7 +472,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                     />
 
                     {sheet?.mode === 'plate' && sheetFilm ? (
-                        <Animated.View entering={FadeIn.duration(180)} style={[s.sheet, s.plateSheet, { paddingBottom: sheetFoot }]}>
+                        <Arrive name="profiletriptych-1" duration={180} rise={0} style={[s.sheet, s.plateSheet, { paddingBottom: sheetFoot }]}>
                             <View style={s.grabber} />
                             <Text {...scaledTextProps} style={s.plateEyebrow}>{MOUNT_NAME[sheet.index].toUpperCase()}</Text>
                             <Text {...scaledTextProps} style={s.plateTitle} numberOfLines={2}>{sheetFilm.title}</Text>
@@ -495,9 +496,9 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                 destructive
                                 onPress={() => handleRemove(sheet.index)}
                             />
-                        </Animated.View>
+                        </Arrive>
                     ) : sheet ? (
-                        <Animated.View entering={FadeIn.duration(180)} style={[s.sheet, s.searchSheet]}>
+                        <Arrive name="profiletriptych-2" duration={180} rise={0} style={[s.sheet, s.searchSheet]}>
                             <View style={s.modalHeader}>
                                 <View style={s.grabber} />
                                 <Text {...scaledTextProps} style={s.modalEyebrow}>{sheetFilm ? 'REPLACE' : 'CURATE'} {MOUNT_NAME[sheet.index].toUpperCase()}</Text>
@@ -533,7 +534,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                     <Text {...scaledTextProps} style={s.noResults}>NO MATCHES FOUND</Text>
                                 ) : null}
                             </ScrollView>
-                        </Animated.View>
+                        </Arrive>
                     ) : null}
                 </Animated.View>
                 <ToastHost />

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator, InteractionManager, Platform, AccessibilityInfo } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useContentBottom, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FormProvider } from 'react-hook-form';
 import { ControlledInput, ControlledBioInput, ControlledUsernameInput } from '@/src/components/ControlledInput';
@@ -38,6 +38,7 @@ import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScalin
 import reelToast from '@/src/utils/reelToast';
 import { logger } from '@/src/utils/logger';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { Arrive } from '@/src/components/Arrive';
 
 /**
  * THE BACKDROP — an Auteur privilege, and now a choice.
@@ -188,15 +189,15 @@ export function EditProfileScreen() {
         <ScrollView contentContainerStyle={[st.scrollContent, { paddingBottom: end }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
 
         {!!submitError && (
-          <Animated.View entering={FadeInDown} style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder, borderRadius: 4, marginBottom: 16, marginHorizontal: 16 }}>
+          <Arrive name="editprofilescreen-1" duration={300} style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder, borderRadius: 4, marginBottom: 16, marginHorizontal: 16 }}>
             {/* Type-guard submitError to prevent invariant violation on object errors */}
             <Text {...scaledTextProps} style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimsonInk, textAlign: 'center', letterSpacing: 1 }}>
               {typeof submitError === 'string' ? submitError : (submitError instanceof Error ? submitError.message : (submitError as any)?.message || 'An unexpected error occurred while saving your dossier.')}
             </Text>
-          </Animated.View>
+          </Arrive>
         )}
 
-        <Animated.View entering={FadeInDown.duration(600)} style={st.hero}>
+        <Arrive name="editprofilescreen-2" duration={600} style={st.hero}>
           <View style={st.heroRuleTop} />
           <View style={st.heroEyebrowRow}>
             <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
@@ -206,11 +207,11 @@ export function EditProfileScreen() {
           <Text {...scaledTextProps} style={st.heroTitle}>Edit Profile</Text>
           <Text {...scaledTextProps} style={st.heroDesc}>Shape how the society sees you.</Text>
           <View style={st.heroRuleBottom} />
-        </Animated.View>
+        </Arrive>
 
 
         {/* ════ PROFILE PICTURE ════ */}
-        <Animated.View entering={FadeInDown.duration(500).delay(50)}>
+        <Arrive name="editprofilescreen-3" duration={500} delay={50}>
           <BureauCard>
             <BureauHead icon={Camera} label="PROFILE PICTURE" />
             <View style={st.avatarSection}>
@@ -240,12 +241,12 @@ export function EditProfileScreen() {
               )}
             </View>
           </BureauCard>
-        </Animated.View>
+        </Arrive>
 
         <DiamondDivider />
 
         {/* ════ IDENTITY ════ */}
-        <Animated.View entering={FadeInDown.duration(500).delay(100)}>
+        <Arrive name="editprofilescreen-4" duration={500} delay={100}>
           <BureauCard>
             <BureauHead icon={User} label="IDENTITY" />
 
@@ -280,13 +281,13 @@ export function EditProfileScreen() {
               {!!errors.bio && <Text {...scaledTextProps} style={st.errorText}>{errors.bio.message}</Text>}
             </View>
           </BureauCard>
-        </Animated.View>
+        </Arrive>
 
         <DiamondDivider />
 
         {/* ════ FAVORITE FILMS ════ */}
         {isReady && (
-          <Animated.View entering={FadeInDown.duration(500).delay(150)}>
+          <Arrive name="editprofilescreen-5" duration={500} delay={150}>
               <BureauCard>
                   <BureauHead icon={Film} label="FAVORITE FILMS" />
                   <Text {...scaledTextProps} style={st.fieldBody}>Choose 3 films that define your cinematic identity. Tap a slot to search and select.</Text>
@@ -299,7 +300,7 @@ export function EditProfileScreen() {
                     userRole={resolveTier(user)}
                   />
               </BureauCard>
-          </Animated.View>
+          </Arrive>
         )}
 
         {/* ════ THE BACKDROP — Auteur only ════
@@ -311,7 +312,7 @@ export function EditProfileScreen() {
         {isReady && (
           <>
             <DiamondDivider />
-            <Animated.View entering={FadeInDown.duration(500).delay(175)}>
+            <Arrive name="editprofilescreen-6" duration={500} delay={175}>
               {backdrop.held ? (
                 <BackdropSetting user={user as { id: string; preferences?: Record<string, unknown> | null }} />
               ) : (
@@ -328,7 +329,7 @@ export function EditProfileScreen() {
                   />
                 </>
               )}
-            </Animated.View>
+            </Arrive>
           </>
         )}
 
@@ -336,7 +337,7 @@ export function EditProfileScreen() {
 
         {/* ════ LINKS ════ */}
         {isReady && (
-          <Animated.View entering={FadeInDown.duration(500).delay(200)}>
+          <Arrive name="editprofilescreen-7" duration={500} delay={200}>
               <BureauCard>
                   <BureauHead icon={Link2} label="LINKS" />
                   <LinksEditor
@@ -346,12 +347,12 @@ export function EditProfileScreen() {
                     errors={errors as unknown as import('@/src/features/profile/LinksEditor').LinksEditorProps['errors']}
                   />
               </BureauCard>
-          </Animated.View>
+          </Arrive>
         )}
 
 
         {/* ── Heritage Footer ── */}
-        <Animated.View entering={FadeInDown.duration(500).delay(250)} style={st.heritageFooter}>
+        <Arrive name="editprofilescreen-8" duration={500} delay={250} style={st.heritageFooter}>
           <DiamondDivider />
 
           <Text {...scaledTextProps} style={st.memberSince}>
@@ -363,7 +364,7 @@ export function EditProfileScreen() {
             <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} />
             <View style={st.endMarkLine} />
           </View>
-        </Animated.View>
+        </Arrive>
 
           </ScrollView>
         </FormProvider>
@@ -372,13 +373,13 @@ export function EditProfileScreen() {
       {/* The save-seal ceremony — one stamped beat before returning to the dossier. */}
       {sealed && (
         <View style={st.sealOverlay} accessibilityLiveRegion="polite">
-          <Animated.View entering={FadeIn.duration(220)} style={st.sealStamp}>
+          <Arrive name="editprofilescreen-9" duration={220} rise={0} style={st.sealStamp}>
             <View style={st.sealRing}>
               <Stamp size={24} color={colors.crimson} strokeWidth={1.5} />
             </View>
             <Text {...scaledTextProps} style={st.sealTitle}>DOSSIER AMENDED</Text>
             <Text {...scaledTextProps} style={st.sealSub}>the record now reflects your hand</Text>
-          </Animated.View>
+          </Arrive>
         </View>
       )}
 

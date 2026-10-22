@@ -15,7 +15,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Modal } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
-import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts } from '@/src/theme/theme';
@@ -25,6 +25,7 @@ import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScalin
 import { ToastHost } from '@/src/components/ToastHost';
 import { CentredCard } from '@/src/components/layout/CentredCard';
 import { EDGE_LIT } from '@/src/theme/light';
+import { Arrive } from '@/src/components/Arrive';
 
 interface RouletteFilm {
     id?: number;
@@ -218,7 +219,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
 
                         {/* IDLE — Summon */}
                         {!picking && !result && (
-                            <Animated.View entering={FadeIn.duration(400)} style={s.centerContent}>
+                            <Arrive name="watchlistroulette-1" duration={400} rise={0} style={s.centerContent}>
                                 <Text {...decorativeTextProps} style={s.reelGlyph}>{'◉ ◉ ◉'}</Text>
                                 {/* eslint-disable-next-line react/no-unescaped-entities */}
                                 <Text {...scaledTextProps} style={s.title}>The Oracle's Choice</Text>
@@ -227,7 +228,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                                 <PressableScale style={s.spinBtn} onPress={spin} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium" accessibilityRole="button" accessibilityLabel="Consult the oracle — pick a film from your watchlist">
                                     <Text {...scaledTextProps} style={s.spinBtnText}>{'✦ CONSULT THE ORACLE'}</Text>
                                 </PressableScale>
-                            </Animated.View>
+                            </Arrive>
                         )}
 
                         {/* PICKING — the film gate */}
@@ -256,7 +257,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
 
                         {/* RESULT — the verdict */}
                         {!picking && result && (
-                            <Animated.View entering={FadeIn.duration(400)} style={s.centerContent}>
+                            <Arrive name="watchlistroulette-2" duration={400} rise={0} style={s.centerContent}>
                                 <Text {...scaledTextProps} style={s.oracleSpoken}>THE ORACLE HAS SPOKEN</Text>
                                 <View style={s.gate}>
                                     <Perforations />
@@ -282,7 +283,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                                         <Text {...scaledTextProps} style={s.rerollText}>{'↻ RE-ROLL'}</Text>
                                     </PressableScale>
                                 </View>
-                            </Animated.View>
+                            </Arrive>
                         )}
 
                         {/* Close button */}

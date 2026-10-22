@@ -6,7 +6,6 @@ import { useMemo } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
-import Animated, { FadeIn, FadeInRight } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 // The URL builder only — the fetching half of this module is no longer used here.
 import { tmdb } from '@/src/lib/tmdb';
@@ -16,6 +15,7 @@ import { tasteReadiness, type TasteProfile } from '@/src/constants/taste';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomRetrieving, RoomUnreachable } from './RoomParts';
 import { counted } from '@/src/utils/counted';
+import { Arrive } from '@/src/components/Arrive';
 
 export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
     taste?: TasteProfile | null;
@@ -98,10 +98,10 @@ export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
 
             {/* Top Actors */}
             {topActors.length > 0 && (
-                <Animated.View entering={FadeIn.duration(500)} style={s.card}>
+                <Arrive name="cinematicinsights-1" duration={500} rise={0} style={s.card}>
                     <Text {...scaledTextProps} style={s.sectionTitle}>✦ MOST WATCHED ACTORS</Text>
                     {topActors.map((actor, i) => (
-                        <Animated.View key={actor.id} entering={FadeInRight.delay(i * 80).duration(400)} style={s.personRow}>
+                        <Arrive key={actor.id} name="cinematicinsights-2" duration={400} delay={i * 80} rise={0} style={s.personRow}>
                             {/* Rank */}
                             <View style={[s.rankCircle, i === 0 && { backgroundColor: colors.sepia }]}>
                                 <Text {...scaledTextProps} style={[s.rankText, i === 0 && { color: colors.ink }]}>{i + 1}</Text>
@@ -123,17 +123,17 @@ export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
                             </View>
                             {/* Count */}
                             <Text {...scaledTextProps} style={[s.countText, i === 0 && { color: colors.sepia }]}>{actor.count}</Text>
-                        </Animated.View>
+                        </Arrive>
                     ))}
-                </Animated.View>
+                </Arrive>
             )}
 
             {/* Top Directors */}
             {topDirectors.length > 0 && (
-                <Animated.View entering={FadeIn.delay(200).duration(500)} style={s.card}>
+                <Arrive name="cinematicinsights-3" duration={500} delay={200} rise={0} style={s.card}>
                     <Text {...scaledTextProps} style={s.sectionTitle}>✦ MOST WATCHED DIRECTORS</Text>
                     {topDirectors.map((director, i) => (
-                        <Animated.View key={director.id} entering={FadeInRight.delay(i * 80).duration(400)} style={s.personRow}>
+                        <Arrive key={director.id} name="cinematicinsights-4" duration={400} delay={i * 80} rise={0} style={s.personRow}>
                             <View style={[s.rankCircle, i === 0 && { backgroundColor: colors.sepia }]}>
                                 <Text {...scaledTextProps} style={[s.rankText, i === 0 && { color: colors.ink }]}>{i + 1}</Text>
                             </View>
@@ -151,14 +151,14 @@ export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
                                 </View>
                             </View>
                             <Text {...scaledTextProps} style={[s.countText, i === 0 && { color: colors.sepia }]}>{director.count}</Text>
-                        </Animated.View>
+                        </Arrive>
                     ))}
-                </Animated.View>
+                </Arrive>
             )}
 
             {/* Genre Breakdown */}
             {topGenres.length > 0 && (
-                <Animated.View entering={FadeIn.delay(400).duration(500)} style={s.card}>
+                <Arrive name="cinematicinsights-5" duration={500} delay={400} rise={0} style={s.card}>
                     <Text {...scaledTextProps} style={s.sectionTitle}>✦ GENRE BREAKDOWN</Text>
                     {topGenres.map((genre, i) => {
                         // Films READ, not films logged. A film carries two or
@@ -167,7 +167,7 @@ export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
                         // every one of them.
                         const pct = Math.round((genre.count / Math.max(ready.known, 1)) * 100);
                         return (
-                            <Animated.View key={genre.name} entering={FadeInRight.delay(i * 50).duration(300)} style={s.genreRow}>
+                            <Arrive key={genre.name} name="cinematicinsights-6" duration={300} delay={i * 50} rise={0} style={s.genreRow}>
                                 <View style={s.genreHeader}>
                                     <Text {...scaledTextProps} style={[s.genreName, i === 0 && { color: colors.parchment }]} numberOfLines={1}>{genre.name}</Text>
                                     <View style={s.genreCountWrap}>
@@ -178,10 +178,10 @@ export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
                                 <View style={s.barTrack}>
                                     <View style={[s.barFill, { width: `${(genre.count / maxGenreCount) * 100}%`, opacity: 1 - i * 0.08 }, i === 0 && { backgroundColor: colors.flicker }]} />
                                 </View>
-                            </Animated.View>
+                            </Arrive>
                         );
                     })}
-                </Animated.View>
+                </Arrive>
             )}
         </View>
     );

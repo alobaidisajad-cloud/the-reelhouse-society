@@ -5,7 +5,6 @@ import { Film, X } from 'lucide-react-native';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
@@ -21,6 +20,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { BusterEyes } from '@/src/components/Buster';
 import TryAgain from '@/src/components/TryAgain';
 import { nav } from '@/src/utils/typedRouter';
+import { Arrive } from '@/src/components/Arrive';
 
 type SlideType = 'intro' | 'total' | 'verdict' | 'rhythm' | 'top' | 'outro';
 
@@ -116,15 +116,15 @@ export default function YearInCinemaScreen() {
         {/* Content region — flex:1, centred, can never reach the footer */}
         <View style={s.contentRegion}>
           {isActive && item === 'intro' && (
-            <Animated.View entering={FadeInDown.duration(700)} style={s.centerBox}>
+            <Arrive name="year-in-cinema-1" duration={700} style={s.centerBox}>
               <Text style={s.eyebrow}>YOUR RHYTHM IN</Text>
               <Text style={s.hugeYear} numberOfLines={1} adjustsFontSizeToFit>{stats.year}</Text>
               <Text style={s.sub}>An analysis of your cinematic footprint over the last cycle.</Text>
-            </Animated.View>
+            </Arrive>
           )}
 
           {isActive && item === 'total' && (
-            <Animated.View entering={FadeInDown.duration(700)} style={s.centerBox}>
+            <Arrive name="year-in-cinema-2" duration={700} style={s.centerBox}>
               <Text style={s.number} numberOfLines={1} adjustsFontSizeToFit>{stats.total}</Text>
               <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit>Films Logged</Text>
               <Text style={s.sub}>
@@ -132,41 +132,41 @@ export default function YearInCinemaScreen() {
                   ? 'A single reel so far this year.'
                   : `That is roughly ${stats.perMonth.toFixed(1)} entries a month.`}
               </Text>
-            </Animated.View>
+            </Arrive>
           )}
 
           {isActive && item === 'verdict' && (
-            <Animated.View entering={FadeInDown.duration(700)} style={s.centerBox}>
+            <Arrive name="year-in-cinema-3" duration={700} style={s.centerBox}>
               <Text style={s.number} numberOfLines={1} adjustsFontSizeToFit>{stats.avgRating?.toFixed(1)}</Text>
               <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit>Your Verdict</Text>
               <View style={s.verdictStars}><ReelRating rating={stats.avgRating ?? 0} size={20} /></View>
               <Text style={s.sub}>Your average mark across {stats.ratedCount} rated {stats.ratedCount === 1 ? 'film' : 'films'}.</Text>
-            </Animated.View>
+            </Arrive>
           )}
 
           {isActive && item === 'rhythm' && (
-            <Animated.View entering={FadeInDown.duration(700)} style={s.leftBox}>
+            <Arrive name="year-in-cinema-4" duration={700} style={s.leftBox}>
               <Text style={s.title}>Your Rhythm</Text>
               <Text style={s.subLeft}>Your most active viewing months.</Text>
               <View style={s.rankingWrap}>
                 {stats.topMonths.map((d, i) => (
-                  <Animated.View key={d.month} entering={FadeInDown.duration(600).delay(i * 140)} style={s.rankingRow}>
+                  <Arrive key={d.month} name="year-in-cinema-5" duration={600} delay={i * 140} style={s.rankingRow}>
                     <Text style={s.rankNum}>{i + 1}</Text>
                     <Text style={s.rankName} numberOfLines={1}>{d.month}</Text>
                     <Text style={s.rankCount}>{d.count} {d.count === 1 ? 'FILM' : 'FILMS'}</Text>
-                  </Animated.View>
+                  </Arrive>
                 ))}
               </View>
-            </Animated.View>
+            </Arrive>
           )}
 
           {isActive && item === 'top' && (
-            <Animated.View entering={FadeInDown.duration(700)} style={s.leftBox}>
+            <Arrive name="year-in-cinema-6" duration={700} style={s.leftBox}>
               <Text style={s.title}>Highest Rated</Text>
               <Text style={s.subLeft}>The masterworks you marked highest.</Text>
               <View style={s.topWrap}>
                 {stats.topFilms.map((f, i) => (
-                  <Animated.View key={f.id} entering={FadeInDown.duration(600).delay(i * 140)} style={s.topCard}>
+                  <Arrive key={f.id} name="year-in-cinema-7" duration={600} delay={i * 140} style={s.topCard}>
                     {f.poster ? (
                       <Image source={{ uri: tmdb.poster(f.poster, 'w342') }} style={s.topPoster} cachePolicy="memory-disk" transition={150} />
                     ) : (
@@ -178,30 +178,30 @@ export default function YearInCinemaScreen() {
                       <Text style={s.topTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{f.title}</Text>
                       <ReelRating rating={f.rating} size={13} />
                     </View>
-                  </Animated.View>
+                  </Arrive>
                 ))}
               </View>
-            </Animated.View>
+            </Arrive>
           )}
 
           {isActive && item === 'outro' && (
-            <Animated.View entering={FadeInDown.duration(700)} style={s.centerBox}>
+            <Arrive name="year-in-cinema-8" duration={700} style={s.centerBox}>
               <View style={s.badge}><Text style={s.badgeText}>PROJECTION COMPLETED</Text></View>
               <Text style={s.title} numberOfLines={2} adjustsFontSizeToFit>The Archive Awaits</Text>
               <Text style={s.sub}>Keep feeding the projector, @{user?.username}.</Text>
-            </Animated.View>
+            </Arrive>
           )}
         </View>
 
         {/* Footer — its own region; the film-strip paginator can never overlap content */}
         {isActive && (
-          <Animated.View entering={FadeIn} style={[s.footer, { paddingBottom: edge + FOOTER_GAP }]}>
+          <Arrive name="year-in-cinema-9" duration={300} rise={0} style={[s.footer, { paddingBottom: edge + FOOTER_GAP }]}>
             <View style={s.paginator}>
               {slides.map((_, i) => (
                 <View key={i} style={[s.frame, i === currentIndex && s.frameActive]} />
               ))}
             </View>
-          </Animated.View>
+          </Arrive>
         )}
       </View>
     );

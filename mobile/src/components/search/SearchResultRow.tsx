@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeInDown, runOnJS } from 'react-native-reanimated';
+import { Arrive } from '@/src/components/Arrive';
 import { Image } from 'expo-image';
 import { Bookmark, ScrollText, User, Clapperboard, ArrowRight } from 'lucide-react-native';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
@@ -45,19 +45,10 @@ export function resultLabel(item: SR): string {
 export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR; index: number; onPress: (r: SR) => void }) => {
   const tc = TYPE_COLOR[item.type] || TYPE_COLOR.film;
   const isPerson = item.type === 'actor' || item.type === 'director' || item.type === 'user';
-  // Track if this row has already animated to prevent
-  // FlashList recycling from re-triggering the FadeInDown on every scroll
-  const hasAnimated = React.useRef(false);
-  const setHasAnimated = React.useCallback(() => { hasAnimated.current = true; }, []);
-  const entering = hasAnimated.current
-    ? undefined
-    : FadeInDown.duration(250).delay(Math.min(index * 25, 150)).withCallback(() => {
-        'worklet';
-        runOnJS(setHasAnimated)();
-      });
-
+  // Arrives once, when the row is first made: a recycled row keeps its arrival, so a scroll
+  // never replays it.
   return (
-    <Animated.View entering={entering}>
+    <Arrive name="search-row" duration={250} delay={Math.min(index * 25, 150)}>
       <PressableScale
         style={st.row}
         onPress={() => onPress(item)}
@@ -111,7 +102,7 @@ export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR;
 
         <ArrowRight size={12} color={colors.ash} style={st.rowArrow} />
       </PressableScale>
-    </Animated.View>
+    </Arrive>
   );
 });
 

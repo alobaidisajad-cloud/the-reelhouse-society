@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { AnimatedText } from '@/src/components/text/AnimatedText';
-import Animated, { FadeInDown, useSharedValue, withTiming, withRepeat, Easing, cancelAnimation } from 'react-native-reanimated';
+import { useSharedValue, withTiming, withRepeat, Easing, cancelAnimation } from 'react-native-reanimated';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useFocusEffect } from 'expo-router';
 import { useScrollToTop, useIsFocused } from '@react-navigation/native';
@@ -27,6 +26,7 @@ import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
+import { Arrive } from '@/src/components/Arrive';
 
 // === MAIN SCREEN ===
 export default function DarkRoomScreen() {
@@ -281,9 +281,9 @@ export default function DarkRoomScreen() {
     if (loading && page > 1) {
       return (
         <View style={s.footerLoading}>
-           <AnimatedText entering={FadeInDown} style={s.paginationRetrieving}>
-             [ DEVELOPING THE NEXT BATCH... ]
-           </AnimatedText>
+           <Arrive name="darkroom-next-batch" duration={300}>
+             <Text style={s.paginationRetrieving}>[ DEVELOPING THE NEXT BATCH... ]</Text>
+           </Arrive>
         </View>
       );
     }
@@ -321,14 +321,14 @@ export default function DarkRoomScreen() {
     // hears it); reached but refused, the member asks.
     if (network.isConnected === false || unreachable) {
       return (
-        <Animated.View entering={FadeInDown.duration(600)} style={[s.emptyWrap, s.offlineWrap]}>
+        <Arrive name="darkroom-1" duration={600} style={[s.emptyWrap, s.offlineWrap]}>
            <EmptyOffline onRetry={network.isConnected === false ? undefined : askAgain} />
-        </Animated.View>
+        </Arrive>
       );
     }
 
     return (
-      <Animated.View entering={FadeInDown.duration(600)} style={s.emptyWrap}>
+      <Arrive name="darkroom-2" duration={600} style={s.emptyWrap}>
         <View style={{ alignItems: 'center' }}>
           <Buster size={56} mood="suspicious" />
         </View>
@@ -356,7 +356,7 @@ export default function DarkRoomScreen() {
             {isSearching ? 'CLEAR SEARCH' : 'RESET FILTERS'}
           </Text>
         </PressableScale>
-      </Animated.View>
+      </Arrive>
     );
   }, [showSkeleton, network.isConnected, unreachable, askAgain, isSearching, clearAllFilters, clearAllSearch, setPage, skeletonOpacity]);
 

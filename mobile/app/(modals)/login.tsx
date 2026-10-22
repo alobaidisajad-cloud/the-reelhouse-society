@@ -4,11 +4,7 @@ import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
 import { X, Sparkles, Check } from 'lucide-react-native';
 import TactileEngine from '@/src/utils/TactileEngine';
-import Animated, {
-  FadeInDown, FadeInUp, FadeIn, LinearTransition,
-  useSharedValue, useAnimatedStyle, withTiming, withRepeat,
-  Easing, interpolate, ReduceMotion,
-} from 'react-native-reanimated';
+import Animated, { LinearTransition, useSharedValue, useAnimatedStyle, withTiming, withRepeat, Easing, interpolate } from 'react-native-reanimated';
 import { useBottomEdge, useModalTop } from '@/src/components/layout/navMetrics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -35,6 +31,7 @@ import { arrive, MS } from '@/src/theme/motion';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 import { EMAIL_MAX } from '@/src/constants/inputLimits';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { Arrive } from '@/src/components/Arrive';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 /** The pinned header's row, below the modal's top: the close button's 56pt. */
@@ -222,7 +219,7 @@ export default function LoginScreen() {
           automaticallyAdjustKeyboardInsets={true}
         >
           {/* ── Titles ── */}
-          <AnimatedView entering={FadeInDown.duration(900).reduceMotion(ReduceMotion.Never)} style={s.header}>
+          <Arrive name="login-1" duration={900} style={s.header}>
           {/* The Society's mark — unframed, ignited by candlelight */}
           <View style={s.sealWrap}>
             <SocietySeal size={92} />
@@ -247,10 +244,11 @@ export default function LoginScreen() {
               ? 'The House remembers its own.'
               : 'Every great collection begins with a single frame.'}
           </Text>
-        </AnimatedView>
+        </Arrive>
 
         {/* ── Form ── */}
-        <AnimatedView layout={LinearTransition.duration(MS.base).easing(arrive())} entering={FadeInDown.duration(700).delay(250).reduceMotion(ReduceMotion.Never)} style={s.formCard}>
+        <Arrive name="login-form" duration={700} delay={250}>
+        <AnimatedView layout={LinearTransition.duration(MS.base).easing(arrive())} style={s.formCard}>
           {/* Subtle top border glow */}
           <View style={s.formCardGlow} />
           {/* Archival registration marks in the card corners */}
@@ -298,7 +296,7 @@ export default function LoginScreen() {
 
           {/* Username (signup only) */}
           {!isLogin && (
-            <AnimatedView entering={FadeInDown.duration(400)} style={s.fieldGroup}>
+            <Arrive name="login-2" duration={400} style={s.fieldGroup}>
               <Text style={[s.inputLabel, focusedField === 'username' && s.inputLabelFocused]}>USERNAME / HANDLE</Text>
               <View style={s.inputWrap}>
                 <Text style={s.inputPrefix}>@</Text>
@@ -341,7 +339,7 @@ export default function LoginScreen() {
               {usernameStatus === 'taken' && (
                 <Text style={[s.fieldHint, { color: colors.crimsonInk }]}>USERNAME ALREADY TAKEN</Text>
               )}
-            </AnimatedView>
+            </Arrive>
           )}
 
           {/* Password */}
@@ -433,9 +431,10 @@ export default function LoginScreen() {
             )}
           </PressableScale>
         </AnimatedView>
+        </Arrive>
 
         {/* ── Toggle Login/Signup ── */}
-        <AnimatedView entering={FadeInUp.duration(600).delay(450).reduceMotion(ReduceMotion.Never)} style={s.toggleWrap}>
+        <Arrive name="login-3" duration={600} delay={450} rise={-25} style={s.toggleWrap}>
           <PressableScale onPress={toggleMode} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityLabel={isLogin ? 'Switch to sign up' : 'Switch to sign in'}>
             <Text style={s.toggleText}>
               {isLogin ? 'No membership? ' : 'Already admitted? '}
@@ -444,10 +443,10 @@ export default function LoginScreen() {
               </Text>
             </Text>
           </PressableScale>
-        </AnimatedView>
+        </Arrive>
 
         {/* Footer — founding mark + legal note */}
-        <AnimatedView entering={FadeIn.duration(500).delay(700).reduceMotion(ReduceMotion.Never)} style={s.footerNote}>
+        <Arrive name="login-4" duration={500} delay={700} rise={0} style={s.footerNote}>
           <Est1924 style={s.estMark} />
           {/* Relocated from above the form. Beneath the founding mark it reads
               as the house having the last word, which is what a lore fragment
@@ -465,7 +464,7 @@ export default function LoginScreen() {
             <SmallPrintLink label="Terms of Use" spoken="Terms of Use" role="link" onPress={() => { void openHousePage(TERMS_URL); }} />
             <SmallPrintLink label="Privacy Policy" spoken="Privacy Policy" role="link" onPress={() => { void openHousePage(PRIVACY_URL); }} />
           </View>
-        </AnimatedView>
+        </Arrive>
       </ScrollView>
 
       {/* ── Forgot Password Modal ── */}

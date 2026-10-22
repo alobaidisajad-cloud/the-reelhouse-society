@@ -11,7 +11,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AccessibilityInfo, InteractionManager, Keyboard, Platform, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
-import Animated, { cancelAnimation, FadeIn, ReduceMotion, useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, { cancelAnimation, ReduceMotion, useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import TactileEngine from '@/src/utils/TactileEngine';
 import {
@@ -31,6 +31,7 @@ import { EDGE_LIT } from '@/src/theme/light';
 import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { Arrive } from '@/src/components/Arrive';
 
 // At module scope: made inside the component, it would be a new type, and remount, each render.
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -447,11 +448,11 @@ export default function ListModal() {
                         </View>
 
                         {results.length > 0 && (
-                            <Animated.View entering={FadeIn.duration(150)} style={s.dropdown}>
+                            <Arrive name="list-modal-1" duration={150} rise={0} style={s.dropdown}>
                                 {results.map(r => (
                                     <DropdownResultRow key={r.id} r={r} onAdd={addFilm} />
                                 ))}
-                            </Animated.View>
+                            </Arrive>
                         )}
                         {unreachable && <SearchUnreachable onRetry={search.retry} />}
                         {/* Said, not left blank: a search that found nothing, or found only

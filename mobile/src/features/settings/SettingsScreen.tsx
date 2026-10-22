@@ -37,7 +37,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { isArchivistPlusTier, resolveTier } from '@/src/utils/tier';
 import { STORE } from '@/src/components/society/SmallPrint';
 import { formatDateMonthYear } from '@/src/utils/timeAgo';
-import { enterDown } from '@/src/utils/enter';
+import { DEFAULT_DURATION } from '@/src/utils/enter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SettingsSchema, type SettingsFormData } from '@/src/schemas/settings';
@@ -56,11 +56,11 @@ import NetInfo from '@react-native-community/netinfo';
 import { flushOfflineQueue, getQueueLength } from '@/src/utils/offlineQueue';
 import { erasedBySigningOut, keptFor } from '@/src/utils/keptOnThisPhone';
 import { counted } from '@/src/utils/counted';
+import { Arrive } from '@/src/components/Arrive';
 
 /** The phone's answer about its lock, or no lock: a check that hangs or fails is a no. */
 const lockAnswer = (asked: Promise<boolean>): Promise<boolean> => raceDeadline(asked, 2000).catch(() => false);
 
-const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
 
 /** The phone's own lock was put away (by the member, the system or the app): not a failure. */
@@ -517,7 +517,7 @@ export function SettingsScreen() {
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
-        <AnimatedView entering={enterDown(0, 600)} style={st.hero}>
+        <Arrive name="settingsscreen-1" duration={600} style={st.hero}>
           <View style={st.heroRuleTop} />
           <View style={st.heroEyebrowRow}>
             <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
@@ -527,7 +527,7 @@ export function SettingsScreen() {
           <Text style={st.heroTitle} accessibilityRole="header" {...displayTextProps}>Settings</Text>
           <Text style={st.heroDesc} {...scaledTextProps}>Configure your presence within The Society.</Text>
           <View style={st.heroRuleBottom} />
-        </AnimatedView>
+        </Arrive>
 
         {/* ── Your standing ── */}
         <PatronageSection userRole={userRole} onUpgrade={() => nav.push('/membership')} />
@@ -544,26 +544,26 @@ export function SettingsScreen() {
 
         <ExperienceSection />
 
-        <AnimatedView entering={enterDown(300)} onLayout={landOn('import')}>
+        <Arrive name="settingsscreen-2" duration={DEFAULT_DURATION} delay={300} onLayout={landOn('import')}>
           <SectionCard>
             <SectionHead icon={ArrowDownUp} label="IMPORT & EXPORT" />
             <DataVault />
           </SectionCard>
-        </AnimatedView>
+        </Arrive>
 
         {/* ── Chapter: the house ── */}
         <View style={st.ornRule}><View style={st.ornLine} /><View style={st.ornDiamond} /><View style={st.ornLine} /></View>
 
-        <AnimatedView entering={enterDown(325)}>
+        <Arrive name="settingsscreen-3" duration={DEFAULT_DURATION} delay={325}>
           <FrontDeskSection
             memberId={user?.id ?? null}
             onWrite={(id) => { void writeToFrontDesk(id); }}
             onHelp={() => { void openHousePage(SUPPORT_URL); }}
             onCopy={() => { void copySupportAddress(); }}
           />
-        </AnimatedView>
+        </Arrive>
 
-        <AnimatedView entering={enterDown(350)}>
+        <Arrive name="settingsscreen-4" duration={DEFAULT_DURATION} delay={350}>
           <SectionCard>
             <SectionHead icon={Scroll} label="LEGAL" />
             <View style={st.legalActions}>
@@ -571,10 +571,10 @@ export function SettingsScreen() {
               <ActionBtn icon={FileText} label="TERMS OF SERVICE" onPress={() => { void openHousePage(TERMS_URL); }} />
             </View>
           </SectionCard>
-        </AnimatedView>
+        </Arrive>
 
         {isAdmin && (
-          <AnimatedView entering={enterDown(375)}>
+          <Arrive name="settingsscreen-5" duration={DEFAULT_DURATION} delay={375}>
             <SectionCard>
               <SectionHead icon={Scale} label="ADMINISTRATION" />
               <View style={st.legalActions}>
@@ -585,13 +585,13 @@ export function SettingsScreen() {
                 />
               </View>
             </SectionCard>
-          </AnimatedView>
+          </Arrive>
         )}
 
         {/* ── Chapter: the way out ── */}
         <View style={st.ornRule}><View style={st.ornLine} /><View style={st.ornDiamond} /><View style={st.ornLine} /></View>
 
-        <AnimatedView entering={enterDown(400)}>
+        <Arrive name="settingsscreen-6" duration={DEFAULT_DURATION} delay={400}>
           <SectionCard danger>
             <SectionHead icon={DoorOpen} label="ACCOUNT ACTIONS" danger />
             <View style={st.legalActions}>
@@ -600,16 +600,16 @@ export function SettingsScreen() {
               <ActionBtn icon={Trash2} label="DELETE ACCOUNT" onPress={handleDeleteAccount} danger />
             </View>
           </SectionCard>
-        </AnimatedView>
+        </Arrive>
 
-        <AnimatedView entering={enterDown(450)} style={st.heritageFooter}>
+        <Arrive name="settingsscreen-7" duration={DEFAULT_DURATION} delay={450} style={st.heritageFooter}>
           <Text style={st.memberSince} {...scaledTextProps}>MEMBER SINCE {user.created_at ? formatDateMonthYear(user.created_at) : 'THE BEGINNING'}</Text>
           <View style={st.endMarkRow}>
             <View style={st.endMarkLine} /><Sparkles size={8} color={colors.sepia} strokeWidth={1.5} /><View style={st.endMarkLine} />
           </View>
           <Text style={st.heritageCopyright} {...scaledTextProps}>© 1924–{new Date().getFullYear()} The ReelHouse Society. All dossiers are classified.</Text>
           {!!appVersion && <Text style={st.edition} {...scaledTextProps}>EDITION {appVersion}</Text>}
-        </AnimatedView>
+        </Arrive>
       </Animated.ScrollView>
 
       <Modal statusBarTranslucent visible={otpModalVisible} animationType="fade" transparent onRequestClose={closeOtp}>

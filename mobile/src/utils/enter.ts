@@ -15,7 +15,7 @@
 import { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 
 /** Duration used when a caller does not care; matches what the page already had. */
-const DEFAULT_DURATION = 500;
+export const DEFAULT_DURATION = 500;
 
 /**
  * A downward fade that respects the reader's motion setting.

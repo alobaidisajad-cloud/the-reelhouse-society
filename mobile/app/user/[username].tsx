@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import AnimatedRN, { Easing, Extrapolation, FadeIn, cancelAnimation, interpolate, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import AnimatedRN, { Easing, Extrapolation, cancelAnimation, interpolate, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { useFilmStore } from '@/src/stores/films';
 import { useShallow } from 'zustand/react/shallow';
@@ -1141,13 +1141,13 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   accessibilityRole="button"
                   accessibilityLabel={isFollowing ? 'Unfollow this member' : isRequested ? 'Follow request sent' : 'Follow this member'}
                 >
-                  <AnimatedRN.Text
-                    entering={FadeIn.duration(300)}
+                  <Text
+                    {...scaledTextProps}
                     style={[s.actText, !isFollowing && !isRequested && s.actTextSolid]}
                     adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}
                   >
                     {followLoading ? '...' : isFollowing ? 'FOLLOWING' : isRequested ? 'REQUESTED' : targetUser.is_social_private ? '+ REQUEST' : '+ FOLLOW'}
-                  </AnimatedRN.Text>
+                  </Text>
                 </PressableScale>
                 <PressableScale
                   style={[s.act, s.actGhost]}

@@ -3,8 +3,7 @@ import { View, StyleSheet, Linking, Platform } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
-import Animated from 'react-native-reanimated';
-import { enterDown } from '@/src/utils/enter';
+import { DEFAULT_DURATION } from '@/src/utils/enter';
 import {
   Crown, Lock, Eye, Bell, ChevronDown, ChevronUp, Star, Sparkles,
   UserRound, AudioLines, BellOff, TriangleAlert, Mail, LifeBuoy, Copy,
@@ -30,8 +29,8 @@ import { passwordIsAccepted, passwordFits, PASSWORD_TOO_LONG, PASSWORD_MAX_BYTES
 import { STORE } from '@/src/components/society/SmallPrint';
 import { Toggle } from '@/src/components/Toggle';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
+import { Arrive } from '@/src/components/Arrive';
 
-const AnimatedView = Animated.createAnimatedComponent(View);
 
 // No hitSlop constants. Every control on this page reaches 48 by its own
 // geometry now. A halo lives inside React Native's touch dispatch and is
@@ -182,7 +181,7 @@ export function PatronageSection({ userRole, onUpgrade }: { userRole: string; on
       : 'You hold the highest rank in The Society. Every room is open to you.';
 
   return (
-    <AnimatedView entering={enterDown(100)}>
+    <Arrive name="settingssections-1" duration={DEFAULT_DURATION} delay={100}>
       <SectionCard>
         <SectionHead icon={Crown} label="MEMBERSHIP & BILLING" />
         <View style={st.fieldWrap}>
@@ -260,7 +259,7 @@ export function PatronageSection({ userRole, onUpgrade }: { userRole: string; on
         </PressableScale>
         <Text style={st.microNote} {...scaledTextProps}>IN-APP PURCHASE · {STORE.name.replace(/^the /, '').toUpperCase()}</Text>
       </SectionCard>
-    </AnimatedView>
+    </Arrive>
   );
 }
 
@@ -400,7 +399,7 @@ export function PasswordChangePanel() {
 export function AccountSection(props: AccountSectionProps) {
   const { user, control, saving } = props;
   return (
-    <AnimatedView entering={enterDown(150)}>
+    <Arrive name="settingssections-2" duration={DEFAULT_DURATION} delay={150}>
       <SectionCard>
         <SectionHead icon={UserRound} label="ACCOUNT" />
 
@@ -441,13 +440,13 @@ export function AccountSection(props: AccountSectionProps) {
 
         <PasswordChangePanel />
       </SectionCard>
-    </AnimatedView>
+    </Arrive>
   );
 }
 
 export function PrivacySection({ control, saving }: { control: Control<SettingsFormData>; saving: boolean }) {
   return (
-    <AnimatedView entering={enterDown(200)}>
+    <Arrive name="settingssections-3" duration={DEFAULT_DURATION} delay={200}>
       <SectionCard>
         <SectionHead icon={Eye} label="PRIVACY" />
         <View style={st.privacyGroup} accessibilityRole="radiogroup">
@@ -504,7 +503,7 @@ export function PrivacySection({ control, saving }: { control: Control<SettingsF
           />
         </View>
       </SectionCard>
-    </AnimatedView>
+    </Arrive>
   );
 }
 
@@ -590,7 +589,7 @@ function PushPermissionNotice() {
 
 export function NotificationsSection({ control, saving }: { control: Control<SettingsFormData>; saving: boolean }) {
   return (
-    <AnimatedView entering={enterDown(250)}>
+    <Arrive name="settingssections-4" duration={DEFAULT_DURATION} delay={250}>
       <SectionCard>
         <SectionHead icon={Bell} label="NOTIFICATIONS" />
         {/* ABOVE the switches, not below them. If the phone will not deliver
@@ -623,7 +622,7 @@ export function NotificationsSection({ control, saving }: { control: Control<Set
           These govern what reaches your lock screen. Your notification list keeps everything either way.
         </Text>
       </SectionCard>
-    </AnimatedView>
+    </Arrive>
   );
 }
 
@@ -649,7 +648,7 @@ export function ExperienceSection() {
   };
 
   return (
-    <AnimatedView entering={enterDown(275)}>
+    <Arrive name="settingssections-5" duration={DEFAULT_DURATION} delay={275}>
       <SectionCard>
         <SectionHead icon={AudioLines} label="THIS DEVICE" />
         <View style={[st.notifRow, st.notifRowLast]}>
@@ -660,7 +659,7 @@ export function ExperienceSection() {
           <Toggle active={tactileAudioEnabled} onToggle={() => handleTactileToggle(!tactileAudioEnabled)} label="Tactile feedback" />
         </View>
       </SectionCard>
-    </AnimatedView>
+    </Arrive>
   );
 }
 

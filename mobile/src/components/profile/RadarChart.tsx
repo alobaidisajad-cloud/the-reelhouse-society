@@ -2,11 +2,10 @@ import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import Svg, { Polygon, Circle, Line, Text as SvgText } from 'react-native-svg';
-import Animated, { FadeIn } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { Arrive } from '@/src/components/Arrive';
 
-const AnimatedView = Animated.createAnimatedComponent(View);
 
 export function RadarChart({ autopsy, size = 120 }: { autopsy: Record<string, number> | null; size?: number }) {
     const data = useMemo(() => {
@@ -54,7 +53,7 @@ export function RadarChart({ autopsy, size = 120 }: { autopsy: Record<string, nu
     const gridLevels = [0.33, 0.66, 1];
 
     return (
-        <AnimatedView entering={FadeIn.duration(800)} style={{ width: size, height: size }}>
+        <Arrive name="radarchart-1" duration={800} rise={0} style={{ width: size, height: size }}>
             <Svg width={size} height={size}>
                 {/* Background Grid Circles */}
                 {gridLevels.map(level => (
@@ -126,7 +125,7 @@ export function RadarChart({ autopsy, size = 120 }: { autopsy: Record<string, nu
                     );
                 })}
             </Svg>
-        </AnimatedView>
+        </Arrive>
     );
 }
 

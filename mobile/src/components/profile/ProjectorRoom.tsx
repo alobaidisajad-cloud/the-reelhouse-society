@@ -1,6 +1,5 @@
 import { View, StyleSheet, Share } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts, type } from '@/src/theme/theme';
@@ -11,6 +10,7 @@ import { standingFor } from '@/src/constants/standing';
 import { tally } from './profileComputed';
 import { EDGE_LIT } from '@/src/theme/light';
 import { counted } from '@/src/utils/counted';
+import { Arrive } from '@/src/components/Arrive';
 
 /**
  * THE PROJECTOR ROOM — the member's standing on the one ladder (the ring and the
@@ -47,7 +47,6 @@ export function standingShare(count: number, standingName: string, isSelf: boole
     return `${whose} ReelHouse archive:\n\n${tally(count)} ${count === 1 ? 'film' : 'films'} on file\nStanding: ${standingName}\n\nThe ReelHouse Society`;
 }
 
-const AnimatedView = Animated.createAnimatedComponent(View);
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
@@ -172,7 +171,7 @@ export function ProjectorRoom({ stats, user, isSelf = false, record, streak }: {
 
     return (
         <View style={s.container}>
-            <AnimatedView entering={FadeIn.duration(800)} style={s.dialWrap}>
+            <Arrive name="projectorroom-1" duration={800} rise={0} style={s.dialWrap}>
                 <View style={s.dialCard}>
                     <View style={ds.dialCenter}>
                         <StatDial count={stats.count} color={standing.color} progress={standing.progress} isHighest={standing.isHighest} />
@@ -238,10 +237,10 @@ export function ProjectorRoom({ stats, user, isSelf = false, record, streak }: {
                         </View>
                     )}
                 </View>
-            </AnimatedView>
+            </Arrive>
 
             {stats.count > 0 && (
-                <AnimatedView entering={FadeInDown.delay(200).duration(600)} style={s.certCard}>
+                <Arrive name="projectorroom-2" duration={600} delay={200} style={s.certCard}>
                     <Text {...decorativeTextProps} style={s.certCornerTL}>✦</Text>
                     <Text {...decorativeTextProps} style={s.certCornerBR}>✦</Text>
 
@@ -255,14 +254,14 @@ export function ProjectorRoom({ stats, user, isSelf = false, record, streak }: {
                             {standing.name}
                         </Text>
                     </View>
-                </AnimatedView>
+                </Arrive>
             )}
 
-            <AnimatedView entering={FadeInDown.delay(400).duration(600)} style={s.exportWrap}>
+            <Arrive name="projectorroom-3" duration={600} delay={400} style={s.exportWrap}>
                 <PressableScale style={s.exportBtn} onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic accessibilityRole="button" accessibilityLabel={isSelf ? 'Share your standing' : 'Share this standing'}>
                     <Text {...scaledTextProps} style={s.exportText}>{isSelf ? 'SHARE YOUR STANDING' : 'SHARE THIS STANDING'}</Text>
                 </PressableScale>
-            </AnimatedView>
+            </Arrive>
         </View>
     );
 }

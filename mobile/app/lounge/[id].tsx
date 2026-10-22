@@ -44,7 +44,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import Animated, { FadeInDown, SlideInDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { useBottomEdge, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import { nav } from '@/src/utils/typedRouter';
@@ -57,8 +57,8 @@ import { EmptyOffline } from '@/src/components/EmptyStates';
 import { authorName, isDepartedHandle, quotedName } from '@/src/constants/departed';
 import { useScrollTrace } from '@/src/hooks/useScrollTrace';
 import { counted } from '@/src/utils/counted';
+import { Arrive } from '@/src/components/Arrive';
 
-const AnimatedView = Animated.createAnimatedComponent(View);
 
 // ════════════════════════════════════════════════════════════
 // LINKIFY — auto-detect URLs → safe, tappable sepia links
@@ -808,7 +808,7 @@ export default function LoungeRoomScreen() {
       {/* A public salon reads for any member; the rope sits on the one act that
           needs the rank, taking a seat. */}
       {gate === 'preview' && (
-        <AnimatedView entering={SlideInDown.duration(300)} style={[s.previewBar, { paddingBottom: barFoot }]}>
+        <Arrive name="salon-preview-bar" duration={300} rise={80} style={[s.previewBar, { paddingBottom: barFoot }]}>
           <Text style={s.previewText}>
             {seat.held
               ? "You're previewing this salon."
@@ -829,7 +829,7 @@ export default function LoungeRoomScreen() {
               {seat.held ? 'TAKE A SEAT' : '✦ ASCEND THE RANKS'}
             </Text>
           </PressableScale>
-        </AnimatedView>
+        </Arrive>
       )}
 
       {/* A public room is readable while the roster is out; if it cannot be read,
@@ -895,7 +895,7 @@ export function GateView({ gate, lounge, memberCount, onRequest, onRetry, pendin
   lounge: LoungeRoom; memberCount: number; onRequest: () => void; onRetry: () => void; pending: boolean;
 }) {
   return (
-    <AnimatedView entering={FadeInDown.duration(400)} style={s.gate}>
+    <Arrive name="lounge-1" duration={400} style={s.gate}>
       <View style={s.gateCrest}><MasterLogo size={52} /></View>
       <Text style={s.gateName}>{lounge.name}</Text>
       <View style={s.gatePrivateRow}>
@@ -938,7 +938,7 @@ export function GateView({ gate, lounge, memberCount, onRequest, onRetry, pendin
           </PressableScale>
         </>
       )}
-    </AnimatedView>
+    </Arrive>
   );
 }
 

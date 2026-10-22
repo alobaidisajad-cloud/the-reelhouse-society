@@ -23,10 +23,10 @@ import { refreshFollowRequestCount } from '@/src/hooks/useFollowRequests';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { timeAgo } from '@/src/utils/timeAgo';
 import { Award, Bell, ChevronRight, Heart, KeyRound, MessageCircle, Star, UserPlus, X } from 'lucide-react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
 import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
+import { Arrive } from '@/src/components/Arrive';
 
 const HITSLOP_15 = { top: 15, bottom: 15, left: 15, right: 15 } as const;
 /**
@@ -75,7 +75,7 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
   const posterUri = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : null;
 
   return (
-    <Animated.View entering={FadeInUp.duration(300).delay(Math.min(index * 50, 400))}>
+    <Arrive name="notifications-modal-1" duration={300} delay={Math.min(index * 50, 400)} rise={-25}>
       <PressableScale
         style={[s.itemWrap, !isRead && s.itemUnread]}
         onPress={handlePress}
@@ -118,7 +118,7 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
           <X size={12} color={colors.fog} />
         </PressableScale>
       </PressableScale>
-    </Animated.View>
+    </Arrive>
   );
 });
 
@@ -143,7 +143,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
   };
 
   return (
-    <Animated.View entering={FadeInUp.duration(300).delay(Math.min(index * 50, 400))}>
+    <Arrive name="notifications-modal-2" duration={300} delay={Math.min(index * 50, 400)} rise={-25}>
       <PressableScale
         style={[s.itemWrap, item.hasUnread && s.itemUnread]}
         onPress={handlePress}
@@ -176,7 +176,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
           <X size={12} color={colors.fog} />
         </PressableScale>
       </PressableScale>
-    </Animated.View>
+    </Arrive>
   );
 });
 

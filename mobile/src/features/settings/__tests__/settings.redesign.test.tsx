@@ -704,7 +704,7 @@ describe('motion and type answer to the reader', () => {
     // invites the fourteenth to forget.
     expect(CODE_SCREEN).not.toMatch(/FadeInDown/);
     expect(CODE_SECTIONS).not.toMatch(/FadeInDown/);
-    expect(SCREEN).toMatch(/enterDown\(/);
+    expect(SCREEN).toMatch(/<Arrive\b/);
   });
 
   it('the shared entrance defers to the system setting', () => {

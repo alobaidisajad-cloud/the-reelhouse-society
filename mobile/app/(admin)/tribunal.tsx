@@ -19,7 +19,6 @@ import { Image } from 'expo-image';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 
 import PressableScale from '@/src/components/PressableScale';
@@ -42,6 +41,7 @@ import { SecondKeyDoor } from '@/src/components/admin/SecondKeyDoor';
 import { nav } from '@/src/utils/typedRouter';
 import { initialOf } from '@/src/utils/text';
 import { MAX_LENGTHS, sanitizeInput } from '@/src/utils/sanitizeInput';
+import { Arrive } from '@/src/components/Arrive';
 
 interface TribunalTarget {
   id: string;
@@ -704,7 +704,7 @@ function TribunalScreen() {
         style={[StyleSheet.absoluteFillObject, WASH]}
       />
 
-      <Animated.View entering={FadeInDown.duration(600)} style={[s.header, { paddingTop: headerTop }]}>
+      <Arrive name="tribunal-1" duration={600} style={[s.header, { paddingTop: headerTop }]}>
         <PressableScale
           onPress={() => nav.back()}
           style={s.backBtn}
@@ -807,7 +807,7 @@ function TribunalScreen() {
             )}
           </View>
         )}
-      </Animated.View>
+      </Arrive>
 
       <ScrollView
         contentContainerStyle={[s.listContent, { paddingBottom: end }]}

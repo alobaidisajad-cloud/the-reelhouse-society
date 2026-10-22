@@ -11,7 +11,7 @@ without one). "Read" is the day its comments were last read against its code.
 
 | File | Read | What changed |
 |---|---|---|
-| __tests__/animationMockCoverage.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| __tests__/animationMockCoverage.test.ts | 2026-10-22 | edited: the entrances are Arrive's own values; the layout transitions remain |
 | __tests__/backendContract.test.ts | 2026-10-16 | edited: the tables and buckets read from the code, those passed through the export's and the import's helpers included |
 | __tests__/colorLock.test.ts | 2026-10-15 | edited: the app universe (test-utils/universe.js), its .js files included |
 | __tests__/components/feed/ActivityCard.test.tsx | 2026-10-01 | the poster says its film; the card lies flat |
@@ -355,7 +355,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/theHouseSignsWithItsLogo.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/theInitiationLeavesAfterItsFade.test.tsx | 2026-10-15 | new: a beat and the door leave after their fade |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
-| src/components/Arrive.tsx | 2026-10-01 | written: useArrival as a view |
+| src/components/Arrive.tsx | 2026-10-22 | edited: passes a view's own props; its style may move too; rise's sign said |
 | src/components/admin/SecondKeyDoor.tsx | 2026-10-17 | new: the Tribunal's door: checking, failed, register a key, give its code |
 | src/components/admin/__tests__/theTribunalAsksForASecondKey.test.tsx | 2026-10-17 | new: each room of the door against the strict second factors |
 | src/components/__tests__/ActionDeck.test.tsx | 2026-10-01 | rendered: owner, certify, save, stranger |
@@ -708,7 +708,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/projectorRoom.test.tsx | — |  |
 | src/components/profile/__tests__/railFits.test.ts | — |  |
 | src/components/profile/__tests__/reconcileCount.test.ts | — |  |
-| src/components/profile/__tests__/roomContrast.test.tsx | — |  |
+| src/components/profile/__tests__/roomContrast.test.tsx | 2026-10-22 | edited: each room read once it has arrived, as a member sees it |
 | src/components/profile/__tests__/roomInset.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/roomRail.test.tsx | — |  |
 | src/components/profile/__tests__/rooms.test.tsx | 2026-10-03 | read whole: the repeat count is read past a nested call |
@@ -760,7 +760,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/RadarChart.tsx | 2026-10-01 |  |
 | src/components/profile/RoomParts.tsx | 2026-10-01 | RoomMoreFailed; comments say what is true now |
 | src/components/profile/roomStyles.ts | 2026-10-02 | Read whole in the launch audit: sound. |
-| src/components/profile/TasteDNA.tsx | 2026-10-01 | says retrieving, failed, too few or still reading — never a heading over nothing; whose-words |
+| src/components/profile/TasteDNA.tsx | 2026-10-22 | edited: each bar an Arrive on its beat; its tick on landing kept, on that beat |
 | src/components/profile/TasteDNAExportCanvas.tsx | 2026-10-02 | unspoken; words fixed-size (it is a picture); history comments trimmed |
 | src/components/profile/TasteMatch.tsx | 2026-10-15 | the percentage's glow has room inside the box a phone cuts it at |
 | src/components/profile/tasteMatchRead.ts | 2026-10-03 | Written with the Taste Match client: the read of both members' whole-record shapes, and the comparison the card shows. |
@@ -778,7 +778,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/ReelsStackList.tsx | 2026-10-15 | edited: each stack cell carries reel-stack; each scroll traced |
 | src/components/reels/types.ts | 2026-10-01 | true as written |
 | src/components/RouteErrorBoundary.tsx | 2026-10-22 | edited: a room's crash in the failure family; its acts grouped as on every failed room |
-| src/components/search/SearchResultRow.tsx | 2026-10-02 | ReelRating draws halves; resultLabel says what the row is |
+| src/components/search/SearchResultRow.tsx | 2026-10-22 | edited: arrives once, when the row is first made; a recycled row keeps its arrival |
 | src/components/search/SearchUnreachable.tsx | 2026-10-16 | edited: says failed (useStateSaid) |
 | src/components/SectionErrorBoundary.tsx | 2026-10-01 | retries; comments made true |
 | src/components/ShareToLoungeModal.tsx | 2026-10-15 | the sheet's foot clears the home indicator (useSheetBottom) |
@@ -864,7 +864,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aScrollIsOneTransaction.test.tsx | 2026-10-15 | new |
 | src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-22 | edited: the mock's plain style read through unknown (Reanimated 4.3 types an animated style as a handle) |
-| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-22 | edited: the ratchet at its end: no mount-time entrance left |
 | src/hooks/__tests__/aSlowPhoneIsKnownAtOnce.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a throttled phone is known on the first render. |
 | src/hooks/__tests__/everyMainScreenTracesItsScroll.guard.test.ts | 2026-10-15 | new |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | — |  |

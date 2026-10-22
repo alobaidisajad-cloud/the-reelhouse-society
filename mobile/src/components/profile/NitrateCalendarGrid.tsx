@@ -2,13 +2,14 @@ import React, { useMemo, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text } from '@/src/components/text';
 import Svg, { Rect, G, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
-import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { Flame } from 'lucide-react-native';
 import PressableScale from '../PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { nav } from '@/src/utils/typedRouter';
 import { calendarDateString } from '@/src/utils/timeAgo';
+import { Arrive } from '@/src/components/Arrive';
 
 interface CalendarGridLog {
   watchedDate?: string;
@@ -99,7 +100,7 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
   };
 
   return (
-    <Animated.View entering={FadeInUp.duration(600).delay(300)} style={s.container}>
+    <Arrive name="nitratecalendargrid-1" duration={600} delay={300} rise={-25} style={s.container}>
       <View style={s.header}>
         <Text {...scaledTextProps} style={s.title}>CINEMATIC RHYTHM</Text>
         <Text {...scaledTextProps} style={s.subtitle}>{drawn} {drawn === 1 ? 'FILM' : 'FILMS'} IN THE PAST YEAR</Text>
@@ -157,7 +158,7 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
           </PressableScale>
         </Animated.View>
       )}
-    </Animated.View>
+    </Arrive>
   );
 }
 

@@ -591,6 +591,14 @@ mutants:
         replace: "\"react-native-reanimated\": \"~4.1.1\","
     proof: { file: src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts, test: "the manifest asks for a Reanimated with both, not the SDK pin" }
 
+  - id: shape-entrance-written-by-hand
+    class: UI-entrance-left-unseen
+    source: shape
+    plant:
+      - path: src/components/MutantEntrance.tsx
+        text: "import React from 'react';\nimport Animated, { FadeIn } from 'react-native-reanimated';\n\nexport const Entrance = () => <Animated.View entering={FadeIn} />;\n"
+    proof: { file: src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx, test: "are none: every arrival is Arrive, certain to arrive" }
+
   - id: shape-italic-asked
     class: TYPE-italic-faked
     source: shape
