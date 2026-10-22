@@ -119,7 +119,7 @@ export const r = StyleSheet.create({
   plateBack: { width: 34, height: 34, alignItems: 'center' as const, justifyContent: 'center' as const, marginLeft: -8 },
   plateText: { flex: 1, minWidth: 0, paddingTop: 2 },
   plateName: { fontFamily: fonts.display, fontSize: 18, lineHeight: 22, color: colors.parchment, letterSpacing: 0.6 },
-  plateSub: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.9, color: colors.fog, marginTop: 5 },
+  plateSub: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.fog, marginTop: 5 },
   plateCount: { color: colors.sepia },
 
   // The rail the plate stands on — the altarpiece's, and it takes the tier.
@@ -141,7 +141,7 @@ export const r = StyleSheet.create({
   chipOn: { borderColor: 'rgba(184,137,26,0.30)' },
   chipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
   chipTextOn: { color: colors.sepia },
-  chipCount: { fontFamily: fonts.body, fontSize: 9, color: colors.fogQuiet },
+  chipCount: { fontFamily: fonts.body, fontSize: 10, color: colors.fogQuiet },
   /** Underlined like a ledger's tab, INSIDE the chip (Android clips overhangs). */
   chipUnderline: { position: 'absolute' as const, left: 8, right: 8, bottom: 0, height: 2, backgroundColor: colors.sepia },
   /** Separates two GROUPS of chips sharing one scroller — see RoomChipDivider. */
@@ -157,7 +157,7 @@ export const r = StyleSheet.create({
   railLine: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.15)' },
   railLabel: { flexShrink: 1, fontFamily: fonts.display, fontSize: type.rail, color: colors.sepia },
   /** A solid ink, not see-through fog (3.75:1 at 0.7 on this ground). */
-  railCount: { flexShrink: 0, fontFamily: fonts.body, fontSize: 9, color: colors.fogQuiet },
+  railCount: { flexShrink: 0, fontFamily: fonts.body, fontSize: 10, color: colors.fogQuiet },
 
   // The rhythm bar — see RoomRail. Indented past the year so the bars line up
   // with each other rather than with the varying width of "2026".
@@ -204,8 +204,8 @@ export const r = StyleSheet.create({
   stateBody: { fontFamily: fonts.bodyItalic, fontSize: 11, lineHeight: 17, color: colors.fogQuiet, marginTop: 8, textAlign: 'center' as const },
   stateRetry: { marginTop: 10, alignSelf: 'center' as const },
   stateAct: { marginTop: 16, minHeight: 44, justifyContent: 'center' as const, paddingHorizontal: 22, borderWidth: 1, borderColor: colors.sepia, borderRadius: 2, backgroundColor: 'rgba(184,137,26,0.06)' },
-  stateActText: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2.4, color: colors.sepia },
-  stateSeal: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.6, color: colors.sepia },
+  stateActText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.2, color: colors.sepia },
+  stateSeal: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.1, color: colors.sepia },
 
   /** YOUR OWN empty room's type; each room keeps its own staging. */
   ownTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, marginBottom: 24, textAlign: 'center' as const, letterSpacing: 1 },
@@ -215,7 +215,7 @@ export const r = StyleSheet.create({
 
   /** Before the data lands, RETRIEVING DOSSIER, never "empty" too soon. */
   retrieve: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 9, paddingVertical: 74 },
-  retrieveText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia },
+  retrieveText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.sepia },
   retrieveMark: { fontSize: 8, color: colors.sepia, opacity: 0.5 },
 
   // ══════════════════════════════════════════════════════════════════════════

@@ -46,13 +46,13 @@ export const s = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 5,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 3,
   },
-  socialLinkText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
+  socialLinkText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog },
 
   // ── Buttons ──
   ghostBtn: { paddingVertical: 14, paddingHorizontal: 28, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 4, backgroundColor: 'rgba(13,11,9,0.8)' },
-  ghostBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen },
+  ghostBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.silverScreen },
   ctaBtn: { ...EDGE_LIT, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: colors.soot, paddingVertical: 14, alignItems: 'center' as const, borderRadius: 4, marginBottom: 16, ...effects.shadowSurface, ...effects.flat, },
-  ctaBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.silverScreen, ...effects.textGlowSepia },
+  ctaBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.silverScreen, ...effects.textGlowSepia },
   ctaBtnRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
 
   // ── The Sealed Dossier (private accounts) ──
@@ -72,7 +72,7 @@ export const s = StyleSheet.create({
   // rooms in even rows.
   roomKeyDim: { opacity: 0.75 },
   ascendBtn: { marginTop: 18, backgroundColor: colors.sepia, borderRadius: 2, paddingVertical: 11, paddingHorizontal: 24 },
-  ascendBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.ink },
+  ascendBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.ink },
 
   // ── Empty State ──
   emptyState: { alignItems: 'center' as const, paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderStyle: 'dashed' as const, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, backgroundColor: 'rgba(30,25,20,0.7)' },
@@ -89,7 +89,7 @@ export const s = StyleSheet.create({
   centeredPadded: { alignItems: 'center' as const, paddingHorizontal: 40 },
   loadingEyes: { marginBottom: 14 },
   loadingRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
-  loadingText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia },
+  loadingText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.sepia },
   notFoundBuster: { marginBottom: 12 },
   notFoundTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 8 },
   notFoundBody: { fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.fog, textAlign: 'center' as const, marginBottom: 24 },
@@ -110,7 +110,7 @@ export const s = StyleSheet.create({
   // ── Favourites ──
   favPosterThumb: { width: 28, height: 42, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(232,223,208,0.14)' },
   favPosterEmpty: { backgroundColor: colors.inkwell },
-  favYear: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.fog },
+  favYear: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog },
   favTextWrap: { flex: 1, minWidth: 0 },
   favTitle: { fontFamily: fonts.sub, fontSize: 11, color: colors.parchment, lineHeight: 14 },
   favRatingRow: { flexDirection: 'row' as const, gap: 2, marginTop: 2 },
@@ -183,9 +183,9 @@ export const s = StyleSheet.create({
   // A hairline that starts at the name and fades out — a letterhead rule, not a
   // box. It ends the name without enclosing it.
   nameRule: { height: 1, marginTop: 11 },
-  heroHandle: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2, color: colors.fog, marginTop: 9 },
-  heroStand: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.2, marginTop: 11 },
-  heroSerial: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.9, color: colors.fogQuiet, marginTop: 6 },
+  heroHandle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.8, color: colors.fog, marginTop: 9 },
+  heroStand: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, marginTop: 11 },
+  heroSerial: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.fogQuiet, marginTop: 6 },
 
   // ── the bio, in the house's own quotation marks ──
   heroBio: { position: 'relative' as const, zIndex: 5, fontFamily: fonts.bodyItalic, color: colors.bone, textAlign: 'center' as const, paddingHorizontal: 22, paddingTop: 20 },
@@ -202,13 +202,13 @@ export const s = StyleSheet.create({
   statCell: { flex: 1, minHeight: 56, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 4, paddingHorizontal: 2 },
   statCellRule: { borderLeftWidth: 1, borderLeftColor: 'rgba(184,137,26,0.10)' },
   statNum: { fontFamily: fonts.display, fontSize: 17, lineHeight: 20, color: colors.silverScreen, textShadowColor: 'rgba(184,137,26,0.35)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 },
-  statCap: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.4, color: colors.fogQuiet },
+  statCap: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.7, color: colors.fogQuiet },
 
   // ── the two acts ──
   actsRow: { position: 'relative' as const, zIndex: 5, flexDirection: 'row' as const, gap: 10, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 24 },
   act: { flex: 1, minHeight: 48, alignItems: 'center' as const, justifyContent: 'center' as const, borderWidth: 1, borderColor: colors.sepia, borderRadius: 2, backgroundColor: 'rgba(184,137,26,0.06)' },
   actSolid: { backgroundColor: colors.sepia, shadowColor: 'rgba(184,137,26,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.22, shadowRadius: 20, elevation: 4 },
-  actText: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2.4, color: colors.sepia },
+  actText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.2, color: colors.sepia },
   actTextSolid: { color: colors.ink },
   actGhost: { flex: 0, width: 48, borderColor: colors.ash, backgroundColor: 'transparent' },
 
@@ -227,8 +227,8 @@ export const s = StyleSheet.create({
   latelyTitle: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1.2, color: colors.bone },
   latelyYear: { fontFamily: fonts.body, fontSize: 10, color: colors.fogQuiet, marginTop: 4 },
   latelyRight: { flexShrink: 0, alignItems: 'flex-end' as const },
-  latelyWhen: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 0.9, color: colors.fogQuiet, marginTop: 4 },
-  latelyRewatch: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 0.9, color: colors.sepia, marginTop: 4 },
+  latelyWhen: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.4, color: colors.fogQuiet, marginTop: 4 },
+  latelyRewatch: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.4, color: colors.sepia, marginTop: 4 },
 
   // ══ THE HOLDINGS ══
   // Three rows in two columns say the six rooms' numbers in 156pt, a dotted
@@ -255,7 +255,7 @@ export const s = StyleSheet.create({
    * so it is solid `fogQuiet`: a word never borrows its contrast from the
    * ground behind it.
    */
-  holdSub: { fontFamily: fonts.body, fontSize: 9.5, color: colors.fogQuiet, flexShrink: 1, minWidth: 0 },
+  holdSub: { fontFamily: fonts.body, fontSize: 10, color: colors.fogQuiet, flexShrink: 1, minWidth: 0 },
   holdLeader: { flex: 1, minWidth: 8, marginBottom: 4, borderBottomWidth: 1, borderStyle: 'dotted' as const, borderBottomColor: 'rgba(184,137,26,0.30)' },
   holdCount: { fontFamily: fonts.display, fontSize: 14, lineHeight: 17, color: colors.sepia, flexShrink: 0, textShadowColor: 'rgba(184,137,26,0.3)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 },
   holdCountLock: { fontFamily: fonts.sub, fontSize: 11, color: colors.sepia, textShadowRadius: 0 },
@@ -267,7 +267,7 @@ export const s = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.20)', borderRadius: 6,
     backgroundColor: 'rgba(13,11,9,0.85)',
   },
-  doorText: { flex: 1, fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2.2, color: colors.sepia },
+  doorText: { flex: 1, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
 
   // ══ THE DESK — your own file only ══
   deskWrap: { paddingHorizontal: 20 },
@@ -294,7 +294,7 @@ export const s = StyleSheet.create({
     shadowColor: 'rgba(184,137,26,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.22, shadowRadius: 20, elevation: 4,
   },
   ranksBtnQuiet: { backgroundColor: 'transparent', borderWidth: 1, borderColor: 'rgba(184,137,26,0.30)', shadowOpacity: 0, elevation: 0 },
-  ranksBtnText: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2.6, color: colors.ink },
+  ranksBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.3, color: colors.ink },
   ranksBtnTextQuiet: { color: colors.sepia },
 
   // ── the foot of the file ──

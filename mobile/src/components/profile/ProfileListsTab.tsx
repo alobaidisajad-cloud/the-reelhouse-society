@@ -302,7 +302,7 @@ const s = StyleSheet.create({
   // A clasp hung from the top edge, square-cornered: nothing here is round.
   clasp: { position: 'absolute', top: 0, right: 10, paddingHorizontal: 5, paddingTop: 4, paddingBottom: 5, backgroundColor: colors.sepia, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 },
   stackContent: { paddingTop: 9 },
-  stackBadge: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.8, color: colors.sepia },
+  stackBadge: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia },
   // Two lines and an ellipsis, at one size, always: shrunk to fit, a wall of
   // stacks would be set in a different size per card.
   stackTitle: { fontFamily: fonts.display, fontSize: 13, lineHeight: 17, color: colors.parchment, marginTop: 5 },
@@ -311,7 +311,7 @@ const s = StyleSheet.create({
   stackDesc: { fontFamily: fonts.bodyItalic, fontSize: 10.5, lineHeight: 15, color: colors.fogQuiet, marginTop: 4 },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   rankedBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(184,137,26,0.1)', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.3)' },
-  rankedText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1, color: colors.sepia },
+  rankedText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.sepia },
 
   /**
    * Anything in this room that is NOT a card — the footer, the empty panels,

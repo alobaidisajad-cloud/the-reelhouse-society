@@ -473,7 +473,7 @@ const s = StyleSheet.create({
   caseFace: { width: '100%', height: '100%' },
   caseEmpty: { backgroundColor: 'rgba(30,25,20,0.7)', justifyContent: 'center', alignItems: 'center' },
   caseBadge: { position: 'absolute', bottom: 4, right: 4, backgroundColor: colors.inkwell, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 2, borderWidth: 1 },
-  caseBadgeText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1 },
+  caseBadgeText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.5 },
 
   // ── your own empty shelves ──
   emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, borderWidth: 2, borderRadius: 4, marginTop: 12, overflow: 'hidden' },

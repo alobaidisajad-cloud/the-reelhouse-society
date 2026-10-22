@@ -416,7 +416,9 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                         <View key={index} style={{ width: isCentre ? m.centreW : m.wingW }}>
                             {film ? (
                                 <>
-                                    <Text {...scaledTextProps} style={[s.gallLabel, isCentre && s.gallLabelCentre]} numberOfLines={2}>
+                                    {/* A word as wide as a wing at the largest sizes (GODFATHER at 13.5pt on a
+                                        320pt phone) gives up just enough size to stay whole, never under 10pt. */}
+                                    <Text {...scaledTextProps} style={[s.gallLabel, isCentre && s.gallLabelCentre]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
                                         {film.title.toUpperCase()}
                                     </Text>
                                     {/* Newly chosen favourites carry their year;
@@ -590,22 +592,22 @@ const s = StyleSheet.create({
     labelRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 10, minHeight: 26 },
     gallLabel: {
         fontFamily: fonts.sub,
-        fontSize: 7.5,
-        letterSpacing: 1.1,
-        lineHeight: 10,
+        fontSize: 10,
+        letterSpacing: 0.6,
+        lineHeight: 13.5,
         color: colors.bone,
         textAlign: 'center',
     },
     gallLabelCentre: {
-        fontSize: 9,
-        letterSpacing: 1.4,
-        lineHeight: 12,
+        fontSize: 10,
+        letterSpacing: 1.1,
+        lineHeight: 13.5,
         color: colors.silverScreen,
     },
-    gallYear: { fontFamily: fonts.body, fontSize: 7.5, lineHeight: 10, color: colors.fogQuiet, textAlign: 'center', marginTop: 3 },
+    gallYear: { fontFamily: fonts.body, fontSize: 10, lineHeight: 13.5, color: colors.fogQuiet, textAlign: 'center', marginTop: 3 },
     // Same pixels, two voices: a fact for a visitor, an invitation on your own file.
-    gallEmpty: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.2, lineHeight: 10, color: colors.fogQuiet, textAlign: 'center' },
-    gallInvite: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.2, lineHeight: 10, color: colors.sepia, textAlign: 'center' },
+    gallEmpty: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, lineHeight: 14.5, color: colors.fogQuiet, textAlign: 'center' },
+    gallInvite: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, lineHeight: 14.5, color: colors.sepia, textAlign: 'center' },
 
     // ── the rail ──
     railRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14 },
@@ -673,7 +675,7 @@ const s = StyleSheet.create({
         marginBottom: 14,
     },
 
-    plateEyebrow: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, textAlign: 'center' },
+    plateEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.9, color: colors.sepia, textAlign: 'center' },
     plateTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, color: colors.parchment, textAlign: 'center', marginTop: 6, marginBottom: 16 },
     plateAction: {
         flexDirection: 'row',

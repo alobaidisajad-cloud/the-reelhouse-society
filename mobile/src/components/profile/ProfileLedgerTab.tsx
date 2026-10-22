@@ -580,11 +580,11 @@ const s = StyleSheet.create({
   rowBody: { flex: 1, minWidth: 0, justifyContent: 'center' },
   rowHead: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   rowTitle: { flex: 1, fontFamily: fonts.display, fontSize: type.title, lineHeight: 20, color: colors.parchment },
-  rowYear: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.fog },
+  rowYear: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog },
   rowMeta: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 5, flexWrap: 'wrap' },
-  rowUnrated: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.8, color: colors.fogQuiet },
+  rowUnrated: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fogQuiet },
   markRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  markText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.sepia },
+  markText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia },
   /**
    * ── THE POINT OF THIS ROOM ── the member's own words, never set like a
    * footnote. `type.voice` sits ONE point under `type.title`: the title reads
@@ -593,8 +593,8 @@ const s = StyleSheet.create({
    */
   rowWords: { fontFamily: fonts.bodyItalic, fontSize: type.voice, lineHeight: 20, color: colors.bone, marginTop: 6 },
   /** The editorial desk's headline — champagne, so it reads as a title. */
-  rowHeadline: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.champagne, marginTop: 6 },
-  rowWith: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.6, color: colors.fog, marginTop: 5 },
+  rowHeadline: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.champagne, marginTop: 6 },
+  rowWith: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog, marginTop: 5 },
   rowWithName: { color: colors.bone },
 
   // ── your own blank ledger ──

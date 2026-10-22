@@ -207,8 +207,8 @@ const s = StyleSheet.create({
   },
   countText: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 2,
+    fontSize: 10,
+    letterSpacing: 1.3,
     color: colors.sepia,
   },
   grid: {
@@ -251,8 +251,8 @@ const s = StyleSheet.create({
   },
   badgeTitle: {
     fontFamily: fonts.sub,
-    fontSize: 8,
-    letterSpacing: 1.5,
+    fontSize: 10,
+    letterSpacing: 1,
     textAlign: 'center',
   },
   titleUnlocked: {

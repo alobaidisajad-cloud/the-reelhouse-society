@@ -165,10 +165,10 @@ const s = StyleSheet.create({
     subtitle: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog, marginBottom: 16 },
     dnaStrip: { gap: 10 },
     row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    genreLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, minWidth: 70 },
+    genreLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, minWidth: 70 },
     barTrack: { flex: 1, height: 6, backgroundColor: 'rgba(184,137,26,0.15)', borderRadius: 3, overflow: 'hidden' },
     barFill: { height: '100%', borderRadius: 3 },
-    pctLabel: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, minWidth: 28, textAlign: 'right' },
+    pctLabel: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, minWidth: 28, textAlign: 'right' },
     helixDecor: { position: 'absolute', bottom: 6, left: 0, right: 0, height: 4, flexDirection: 'row' },
     helixDot: { position: 'absolute', width: 3, height: 3, borderRadius: 1.5, backgroundColor: colors.sepia },
 });

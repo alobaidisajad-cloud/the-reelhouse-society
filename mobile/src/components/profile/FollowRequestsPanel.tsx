@@ -233,7 +233,7 @@ const s = StyleSheet.create({
   btnBusy: { opacity: 0.4 },
   declineBtn: { width: 38, height: 34, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.crimsonBorder },
   admitBtn: { backgroundColor: colors.sepia, paddingHorizontal: 14, height: 34 },
-  admitText: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 1.5, color: colors.ink, includeFontPadding: false },
+  admitText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.ink, includeFontPadding: false },
 
   declineAll: { marginTop: 12, alignItems: 'center', paddingVertical: 12, borderWidth: 1, borderColor: colors.crimsonBorder, borderRadius: 8 },
   declineAllText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.crimsonInk },

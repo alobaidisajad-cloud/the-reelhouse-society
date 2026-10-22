@@ -116,7 +116,7 @@ export function RadarChart({ autopsy, size = 120 }: { autopsy: Record<string, nu
                             x={x}
                             y={y}
                             fill={colors.fog}
-                            fontSize="8"
+                            fontSize="10"
                             fontFamily={fonts.sub}
                             textAnchor="middle"
                             alignmentBaseline="middle"
@@ -140,8 +140,8 @@ const styles = StyleSheet.create({
     },
     fallbackText: {
         fontFamily: fonts.sub,
-        fontSize: 8,
+        fontSize: 10,
         color: colors.fog,
-        letterSpacing: 1
+        letterSpacing: 0.6
     }
 });

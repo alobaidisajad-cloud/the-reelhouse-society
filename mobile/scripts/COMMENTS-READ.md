@@ -754,7 +754,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/ProfilePhysicalTab.tsx | 2026-10-15 | ends above its foot (scrollEndAbove) |
 | src/components/profile/ProfilePosterCard.tsx | 2026-10-01 | three modes no caller used, removed; nav; comments say what is true now |
 | src/components/profile/profileStyles.ts | 2026-10-15 | edited: the name's shadow has room above and below; its sides are kept, the column whole |
-| src/components/profile/ProfileTriptych.tsx | 2026-10-15 | the sheet stands on the edge; the plate's foot from useSheetBottom |
+| src/components/profile/ProfileTriptych.tsx | 2026-10-22 | edited: a wing's title gives up just enough size to stay whole, never under 10pt |
 | src/components/profile/ProfileWatchlistTab.tsx | 2026-10-15 | ends above its foot (scrollEndAbove) |
 | src/components/profile/ProjectorRoom.tsx | 2026-10-01 | a visitor shares the standing as the member's; a failed share said plainly; comments say what is true now |
 | src/components/profile/RadarChart.tsx | 2026-10-01 |  |
@@ -1128,7 +1128,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/theLightIsReadable.test.ts | 2026-10-08 | written: every light gradient read back through React Native's own parser |
 | src/theme/__tests__/theRoomIsLit.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/theme/__tests__/theTypeFloor.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/theTypeFloor.test.ts | 2026-10-22 | edited: no settled exemption; the profile's marks named; a size written as an attribute read |
 | src/theme/__tests__/theVeilMeetsTheLight.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/wordsAreNotMarks.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/wordsAreSolid.test.ts | 2026-10-22 | edited: a style a <Text> wears is read as text though it sets no type; no dimmed-control exception left |

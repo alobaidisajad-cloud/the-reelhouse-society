@@ -110,7 +110,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: colors.sepia, borderRadius: 2,
     backgroundColor: 'rgba(184,137,26,0.1)',
   },
-  ctaBtnText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia },
+  ctaBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia },
   retrievingEyes: { marginBottom: 14 },
   retrieving: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia },
 });

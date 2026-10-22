@@ -272,7 +272,7 @@ const ds = StyleSheet.create({
     dialSvg: { position: 'absolute', top: 0, left: 0 },
     dialCenter: { alignItems: 'center', marginBottom: 20 },
     dialValue: { fontFamily: fonts.display, fontSize: 32, lineHeight: 38, maxWidth: 118, textAlign: 'center' },
-    dialLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog, marginTop: 2 },
+    dialLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog, marginTop: 2 },
 });
 
 const s = StyleSheet.create({
@@ -290,13 +290,13 @@ const s = StyleSheet.create({
     runNote: { fontFamily: fonts.sub, fontSize: type.meta, letterSpacing: 2.4, color: colors.sepia, marginTop: 9, textAlign: 'center' },
     progressTrack: { width: '100%', height: 4, backgroundColor: 'rgba(184,137,26,0.15)', borderRadius: 2, overflow: 'hidden', marginTop: 18 },
     progressFill: { height: '100%', borderRadius: 2 },
-    trackNote: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.6, color: colors.fog, marginTop: 9 },
+    trackNote: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog, marginTop: 9 },
 
     record: { flexDirection: 'row', alignSelf: 'stretch', marginTop: 20, paddingTop: 18, borderTopWidth: 1, borderTopColor: 'rgba(232,223,208,0.08)' },
     recordCell: { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
     recordDivided: { borderLeftWidth: 1, borderLeftColor: 'rgba(232,223,208,0.08)' },
     recV: { fontFamily: fonts.display, fontSize: 18, lineHeight: 23, color: colors.parchment, textAlign: 'center' },
-    recL: { fontFamily: fonts.sub, fontSize: 7.5, lineHeight: 11, letterSpacing: 1.5, color: colors.fog, marginTop: 4, textAlign: 'center' },
+    recL: { fontFamily: fonts.sub, fontSize: 10, lineHeight: 14.5, letterSpacing: 0.8, color: colors.fog, marginTop: 4, textAlign: 'center' },
 
     certCard: { ...EDGE_LIT,
         padding: 32, alignItems: 'center', backgroundColor: colors.soot,

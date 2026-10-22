@@ -551,6 +551,18 @@ classes:
     fix: "planWall's foot fits the one-sheet's words to the sheet's height as the phone grows them: the house's two lines give way first, then the title steps down to TITLE_FLOOR, then the year; the title, the director and NOW SHOWING always stand; FeatureRow draws what it kept and the snipe reads the same numbers (mutant shape-foot-never-gives-way)"
     places: [none]
 
+  - id: TYPE-under-the-floor-where-exempt
+    title: "Words under the 10pt floor where the floor did not reach: the profile, the member's page and the front door (exempt as settled) set 7 to 9.5pt ('BASED ON 95 OF 100 FILMS' at 7, the passport's footer at 7, honour names at 8), and a size written as an attribute (the radar chart's 8) was read by no guard"
+    seriousness: layout
+    area: type
+    status: OPEN
+    count: 65
+    source: { kind: history, ref: "the full screen review, 2026-10-22; the owner left the call to the audit" }
+    methods:
+      - { kind: static, file: src/theme/__tests__/theTypeFloor.test.ts, test: "every word a member reads is at least 10pt" }
+    fix: "every word raised to 10pt, its tracking × (old/new)² and its set line height with it (the first floor pass's method); the marks named; a wing's poster title gives up just enough size to stay whole at the largest sizes, never under 10; the floor guard has no settled exemption and reads a size written as an attribute (mutant shape-radar-labels-small)"
+    places: [none]
+
   - id: UI-failure-three-looks
     title: The house's failures in three unrelated looks (PROJECTION FAILURE in typewriter capitals with a crimson ◆ button; "This reel jammed." in the display face; Transmission Interrupted on the state card), so a member could not tell one family of trouble from another
     seriousness: layout

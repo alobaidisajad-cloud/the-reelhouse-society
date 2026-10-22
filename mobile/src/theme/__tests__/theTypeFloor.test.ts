@@ -16,9 +16,9 @@
  *   KEEP     not a word to read: a MARK (a glyph standing for a thing), a STAMP
  *            (a printed seal, part of a picture), an ORDINAL (a numeral in the
  *            ordering margin), or a PICTURE (an image exported to share).
- *   SETTLED  the Lobby and the member's profile, which were approved as they
- *            are ("nothing moves on the profile or the Lobby except colour and
- *            light"). Not exempt from being right — only from this floor.
+ *
+ * The profile, the member's page and the front door were once exempt as settled; they
+ * were raised in their own pass (2026-10-22), so no part of the app is.
  *
  * An exemption that no longer matches anything small FAILS: an entry for a
  * label that has since grown is a door left open for the next one to shrink.
@@ -31,11 +31,6 @@ import { files as universe } from '@/test-utils/universe';
 const ROOT = join(__dirname, '..', '..', '..');
 const FLOOR = 10;
 const BADGE_FLOOR = 9;
-
-const SETTLED = [
-  /^app\/\(tabs\)\/index\.tsx$/, /^src\/components\/home\//,
-  /^app\/user\//, /^app\/\(tabs\)\/profile\.tsx$/, /^src\/components\/profile\//,
-];
 
 const KEEP: Record<string, 'mark' | 'stamp' | 'ordinal' | 'picture'> = {
   'src/components/EmptyStates.tsx · dividerGlyph': 'mark',
@@ -50,6 +45,11 @@ const KEEP: Record<string, 'mark' | 'stamp' | 'ordinal' | 'picture'> = {
   'src/components/RankBadge.tsx · word': 'stamp',
   'src/components/dispatch/paper/paperStyles.ts · optionNo': 'ordinal',
   'src/components/dispatch/paper/PaperDesk.tsx · slotNo': 'ordinal',
+  'src/components/profile/profileStyles.ts · latelyIndex': 'ordinal',
+  'src/components/profile/profileStyles.ts · footMark': 'mark',
+  'src/components/profile/roomStyles.ts · retrieveMark': 'mark',
+  'src/components/profile/roomStyles.ts · footMark': 'mark',
+  'src/components/profile/ProfileArchiveTab.tsx · importDividerMark': 'mark',
 };
 /** A whole file that is an exported picture: the share card is an image. */
 const KEEP_FILES: Record<string, 'picture'> = { 'src/components/film/NitrateFileCard.tsx': 'picture' };
@@ -115,12 +115,15 @@ function sizes(): Size[] {
       if (size === undefined) continue;
       out.push({ key: `${file} · ${styleName(s, m.index!)}`, file, size, line: s.slice(0, m.index).split('\n').length });
     }
+    // a size written as an attribute (an SVG <Text fontSize="8">) is a size all the same
+    for (const m of s.matchAll(/\bfontSize=\{?["']?([\d.]+)["']?\}?/g)) {
+      out.push({ key: `${file} · (attribute)`, file, size: +(m[1] ?? 0), line: s.slice(0, m.index).split('\n').length });
+    }
   }
   return out;
 }
 
 const ALL = sizes();
-const settled = (f: string) => SETTLED.some((r) => r.test(f));
 
 describe('the type floor', () => {
   it('reads the app at all, so a silent zero cannot pass for a clean sweep', () => {
@@ -131,7 +134,7 @@ describe('the type floor', () => {
 
   it(`every word a member reads is at least ${FLOOR}pt`, () => {
     const under = ALL
-      .filter((x) => x.size < FLOOR && !settled(x.file) && !KEEP_FILES[x.file] && !KEEP[x.key] && !BADGE.has(x.key))
+      .filter((x) => x.size < FLOOR && !KEEP_FILES[x.file] && !KEEP[x.key] && !BADGE.has(x.key))
       .map((x) => `${x.file}:${x.line}  ${x.key.split(' · ')[1]}  ${x.size}pt`);
     expect(under).toEqual([]);
   });

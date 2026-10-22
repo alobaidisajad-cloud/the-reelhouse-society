@@ -573,6 +573,15 @@ mutants:
         replace: "              title=\"PROJECTION FAILURE\""
     proof: { file: src/components/__tests__/ErrorBoundary.test.tsx, test: "renders the room the projector stopped in, on a crash" }
 
+  - id: shape-radar-labels-small
+    class: TYPE-under-the-floor-where-exempt
+    source: shape
+    edits:
+      - file: src/components/profile/RadarChart.tsx
+        find: "                            fontSize=\"10\""
+        replace: "                            fontSize=\"8\""
+    proof: { file: src/theme/__tests__/theTypeFloor.test.ts, test: "every word a member reads is at least 10pt" }
+
   - id: shape-italic-asked
     class: TYPE-italic-faked
     source: shape

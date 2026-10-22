@@ -494,9 +494,9 @@ const s = StyleSheet.create({
   walkBody: { flex: 1, minWidth: 0, justifyContent: 'center' },
   walkHead: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   walkTitle: { flex: 1, fontFamily: fonts.display, fontSize: 14.5, lineHeight: 19, color: colors.parchment },
-  walkYear: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.fog },
+  walkYear: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog },
   walkMark: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 5 },
-  walkMarkText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.4, color: colors.crimsonInk },
+  walkMarkText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.crimsonInk },
   walkWords: { fontFamily: fonts.bodyItalic, fontSize: 11.5, lineHeight: 17, color: colors.fogQuiet, marginTop: 6 },
   searchIcon: { opacity: 0.6 },
   emptyStateSelf: { ...EDGE_LIT, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: colors.soot, borderWidth: 1, borderRadius: 4, marginTop: 12 },
@@ -505,5 +505,5 @@ const s = StyleSheet.create({
   importDividerMark: { fontFamily: fonts.sub, fontSize: 7, color: colors.sepia, opacity: 0.7 },
   importLine: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fogQuiet, textAlign: 'center', lineHeight: 18, marginBottom: 12 },
   importBtn: { paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(184,137,26,0.45)', borderRadius: 2 },
-  importBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
+  importBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
 });

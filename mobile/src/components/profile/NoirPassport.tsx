@@ -211,13 +211,13 @@ const s = StyleSheet.create({
     bottomRight: { bottom: 12, right: 12, borderBottomWidth: 1, borderRightWidth: 1, borderBottomColor: 'rgba(184,137,26,0.4)', borderRightColor: 'rgba(184,137,26,0.4)' },
     // Header
     header: { alignItems: 'center', marginBottom: 24, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.2)', paddingBottom: 20 },
-    societyLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 4, color: colors.sepia, marginBottom: 8 },
+    societyLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.6, color: colors.sepia, marginBottom: 8 },
     title: { fontFamily: fonts.display, fontSize: 28, color: colors.parchment, lineHeight: 32, marginBottom: 10 },
-    counter: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.fog },
+    counter: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.fog },
     // Stamps
     stampsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, paddingVertical: 8 },
     stampWrap: { alignItems: 'center', justifyContent: 'center' },
     // Footer
     footer: { alignItems: 'center', marginTop: 24, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.2)' },
-    footerText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 3, color: colors.fogQuiet, textAlign: 'center' },
+    footerText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.fogQuiet, textAlign: 'center' },
 });
