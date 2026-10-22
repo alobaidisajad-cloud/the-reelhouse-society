@@ -23,6 +23,8 @@ adb shell settings put global airplane_mode_on 0
 for s in window_animation_scale transition_animation_scale animator_duration_scale; do
   adb shell settings put global "$s" 0
 done
+# No keyboard and no autofill, as the flows type (the sign-in's fields lay under a keyboard).
+. "$(dirname "$0")/../no-keyboard.sh"
 load1() { adb shell cat /proc/loadavg | cut -d' ' -f1 | tr -d '\r'; }
 for i in $(seq 1 96); do awk -v l="$(load1)" 'BEGIN { exit !(l < 1.0) }' && break; sleep 5; done
 echo "settled at load $(load1); screen $(adb shell wm size | tr -d '\r')" > "$OUT/device.txt"
