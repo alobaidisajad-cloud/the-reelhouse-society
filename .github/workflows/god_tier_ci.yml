@@ -6,9 +6,9 @@ on:
   pull_request:
     branches: [ "main" ]
   # Every night, push or none: tools and services change under a repo that does
-  # not, the suite meets that day's date in all six time zones (a date bug can
-  # wait for a day, not a commit), and the failure alert (ci-alert.yml) is proved
-  # to still fire.
+  # not, and the suite meets that day's date in all six time zones (a date bug can
+  # wait for a day, not a commit). The alert's own proof is db-integration.yml's
+  # fire drill, which fails on purpose and must open an issue.
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
@@ -88,9 +88,11 @@ jobs:
         working-directory: ./mobile
         run: npm run check:routes
 
-      # A promise nobody waits for (typed lint), an index read used as if it is always
-      # there (tsc with noUncheckedIndexedAccess), and the edge functions' type errors
-      # and lint (Deno, both trees): each an exact count in every file, held by
+      # Each finder of scripts/frozen-counts.cjs: a promise nobody waits for or one handed
+      # where nothing waits (typed lint), an index read used as if it is always there (tsc
+      # with noUncheckedIndexedAccess), the edge functions' type errors and lint (Deno,
+      # both trees), a Supabase mock made by hand, and a guard reached only through its
+      # callers: each an exact count in every file, held by
       # mobile/register/frozen-counts.json, that may only fall. One that fell is
       # lowered in the same commit: `node scripts/frozen-counts.cjs --lower`.
       - name: Every frozen count holds, file by file
@@ -166,7 +168,7 @@ jobs:
           gitleaks git . --log-opts="$range" --config .gitleaks.toml --gitleaks-ignore-path .gitleaksignore \
             --redact=100 --no-banner --log-level warn
 
-  # ── A DATABASE CHANGE NEVER QUIETLY BREAKS A SHIPPED CLIENT ──────────────────
+  # ── EVERY MUTANT THIS PUSH STANDS ON, STILL CAUGHT ───────────────────────────
   # A guard this push changes, or the code a mutant puts a mistake back into, is
   # proven again here: each mutant standing on what the push changed must still be
   # caught by its class's own test (register/mutants.yaml; every one runs nightly).
@@ -206,6 +208,7 @@ jobs:
           fi
           node scripts/mutants.cjs --changed "$BEFORE"
 
+  # ── A DATABASE CHANGE NEVER QUIETLY BREAKS A SHIPPED CLIENT ──────────────────
   # The TestFlight build and the live website keep calling the database as they
   # were built to. Every migration this push brings is read statement by
   # statement; a drop, rename, revoke, tighter rule or new body for an existing
@@ -471,7 +474,10 @@ jobs:
   # browser at every width and every text size:
   #   · yoga-parity — every box laid out AGAIN by Yoga, with RN's settings, must land
   #     where the browser put it (which is what makes the next check true);
-  #   · layout — every word fits where it is set.
+  #   · layout — every word fits where it is set;
+  #   · and the Lobby's words read against what is behind them (contrast), the
+  #     composer's controls each drawn at 48 points, the measuring rules' own
+  #     check (selftest) and the faces' letter widths against the font files.
   mockups:
     name: 🖼️ Every screen, as the phone lays it out
     runs-on: ubuntu-24.04

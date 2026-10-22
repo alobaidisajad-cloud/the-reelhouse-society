@@ -1,0 +1,9 @@
+-- RenderThread's sections: the GPU side of every frame.
+WITH app AS (SELECT upid, pid FROM process WHERE name = 'com.reelhouse.society' ORDER BY upid DESC LIMIT 1),
+main AS (SELECT utid FROM thread JOIN app USING (upid) WHERE thread.tid = app.pid),
+t0 AS (SELECT MIN(ts) AS ts FROM thread_state WHERE utid = (SELECT utid FROM main))
+SELECT RTRIM(s.name, ' 0123456789') AS section, COUNT(*) AS n,
+       ROUND(SUM(s.dur) / 1e6, 1) AS total_ms, ROUND(MAX(s.dur) / 1e6, 1) AS max_ms
+FROM slice s JOIN thread_track tt ON s.track_id = tt.id JOIN thread t USING (utid)
+WHERE t.upid = (SELECT upid FROM app) AND t.name = 'RenderThread' AND s.depth = 0
+GROUP BY section ORDER BY total_ms DESC LIMIT 15;

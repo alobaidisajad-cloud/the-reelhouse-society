@@ -39,15 +39,15 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/utils/mappers.test.ts | — |  |
 | __tests__/utils/mutationExecutor.test.ts | 2026-10-03 | edited: the duplicate merge is a server rewatch under the device viewing id; the insert keeps it |
 | __tests__/utils/offlineQueue.test.ts | 2026-10-15 | edited: a member is signed in; the clear names who leaves |
-| ../.github/workflows/ci-alert.yml | 2026-10-15 | edited: watches the nightly too |
+| ../.github/workflows/ci-alert.yml | 2026-10-22 | edited: watches the nightly and the speed lab too |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
-| ../.github/workflows/db-integration.yml | 2026-10-16 | edited: the undo proven, then every pending migration up, down and up; the shipped clients held to the result; Realtime started for the salon channels' rules; each package install let fail once and tried once more, 5 minutes each; Supabase's advisers on production as it will be, held to their allowlist, names and counts only; first proven able to fail; a contracts job asks the app's questions of production's sealed shape through its API |
+| ../.github/workflows/db-integration.yml | 2026-10-22 | read whole: its time and the mutants' time as the runs take them; the weekly run's reason; a heartbeat when the schedule ran |
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
-| ../.github/workflows/e2e.yml | 2026-10-16 | edited: the app reaches the house through the fault proxy, which runs for the flows and keeps the gateway's log; every request the app made held to the list its code names |
-| ../.github/workflows/god_tier_ci.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind; the mutants standing on what a push changed, run on it |
+| ../.github/workflows/e2e.yml | 2026-10-22 | read whole: four jobs; the seal's name refused in every container with a shell, its addresses to all; the proxy's and the renderer's reasons beside their own lines; the verdict reads any run's three flow machines; a heartbeat when the schedule ran |
+| ../.github/workflows/god_tier_ci.yml | 2026-10-22 | read whole: the alert proved by the fire drill, not by the nightly; every frozen count named; the mutants' job and the add-only job each under its own head; every measuring tool named; a heartbeat when the schedule ran |
 | ../.github/workflows/ios-launch.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind |
-| ../.github/workflows/load.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind |
-| ../.github/workflows/nightly.yml | 2026-10-16 | edited: every mutant each night in three parts, read together: each run once, by one part, and caught; ids and verdicts only |
+| ../.github/workflows/load.yml | 2026-10-22 | read whole: the pending train run on the full house, its locks timed, its report kept; a heartbeat when the schedule ran |
+| ../.github/workflows/nightly.yml | 2026-10-22 | read whole: a variant's machines as it runs them; a heartbeat when the schedule ran |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
 | .maestro/auth_deep_link.yaml | 2026-10-15 | edited: reelhouse://_sitemap, opened with the app closed, lands on not-found |
@@ -92,7 +92,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/subflows/totp.js | 2026-10-21 | new: the code the key on the screen shows now, from the fault proxy's /totp |
 | .maestro/subflows/upgrade.yaml | 2026-10-17 | new: one step of the upgrade, for the lifecycle flows alone |
 | ANDROID_LAUNCH.md | 2026-10-04 | the splash leaving as Android's own added to the device checks, with the system exit's real timings |
-| app.config.js | 2026-10-15 | edited: the development profile gets back the dev client's scheme and iOS local networking; every other build is app.json |
+| app.config.js | 2026-10-22 | edited: names every workflow that builds with E2E=1; the development profile gets back the dev client's scheme and iOS local networking; every other build is app.json |
 | app/__tests__/boot-structure.test.tsx | — |  |
 | app/__tests__/yourFileWaitsForYourHandle.test.tsx | 2026-10-03 | new: the Profile tab never calls you a stranger |
 | app/_layout.tsx | 2026-10-02 | PathTracker moved out, and now tells nav too |
@@ -1190,14 +1190,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everySecretIsInventoried.test.ts | 2026-10-16 | new: every secret and setting the code reads is in register/secrets.json, with its holders and a secret's rotation; nothing listed that no code reads but the dashboard-held ones; never a value |
 | src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |
 | src/utils/__tests__/fixtures/imageCache.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
-| src/utils/__tests__/appConfig.guard.test.ts | 2026-10-16 | edited: the project, update feed, store ids and Sentry project as the services hold them; the maps written and their upload left on |
+| src/utils/__tests__/appConfig.guard.test.ts | 2026-10-22 | edited: the workflows that build with E2E=1 are those app.config.js names; the project, update feed, store ids and Sentry project as the services hold them; the maps written and their upload left on |
 | src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
 | src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-10-16 | edited: a write refused for a suspension waits, the standing read failed or the suspension begun mid-send; a silenced one is given up |
 | src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | — |  |
 | src/utils/__tests__/boundedCounts.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
 | src/utils/__tests__/ciAlert.behaviour.test.ts | — |  |
-| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-16 | edited: every workflow watched and started by hand; no E2E run cancelled by a later push; a scheduled install has its limit and one retry of that step alone; the advisers run on every push in their count-only mode; the push judges the phone's packages, the nightly the website's and the functions' too; an E2E group shared across commits counts as cancelling; its files come from the shared file list (test-utils/universe.js); every action a scheduled workflow uses is judged, one that downloads is an install, and the emulator's packages are installed before it; jest and the captures run in parts that their read-together jobs count alike, and jest in every zone of test-timezones.js; no job runs one command twice; every Gradle run finds its Android packages installed and downloads none; every Android install asks the disk; a TMDB miss fails the E2E run; the other zones leave the tooling's tests out; production is asked by the nightly contracts alone; the cache actions judged; the night's rounds, random order and history held; every gate runs on a push to main or on a schedule, or is named with why; a step let fail is a download tried once more by the step after it |
+| src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-10-22 | edited: the speed lab named as run by hand, with why; every workflow watched and started by hand; no E2E run cancelled by a later push; a scheduled install has its limit and one retry of that step alone; the advisers run on every push in their count-only mode; the push judges the phone's packages, the nightly the website's and the functions' too; an E2E group shared across commits counts as cancelling; its files come from the shared file list (test-utils/universe.js); every action a scheduled workflow uses is judged, one that downloads is an install, and the emulator's packages are installed before it; jest and the captures run in parts that their read-together jobs count alike, and jest in every zone of test-timezones.js; no job runs one command twice; every Gradle run finds its Android packages installed and downloads none; every Android install asks the disk; a TMDB miss fails the E2E run; the other zones leave the tooling's tests out; production is asked by the nightly contracts alone; the cache actions judged; the night's rounds, random order and history held; every gate runs on a push to main or on a schedule, or is named with why; a step let fail is a download tried once more by the step after it |
 | src/utils/__tests__/csv.test.ts | — |  |
 | src/utils/__tests__/dispatchExecutors.test.ts | — |  |
 | src/utils/__tests__/dispatchFieldCaps.test.ts | 2026-09-28 | Claimed to reconcile every live ceiling but read three old migrations, so subject_backdrop_ceiling had no cap. Reads the live snapshot now, and fails on any ceiling without an app cap or a stated reason. |
@@ -1424,3 +1424,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/heartbeatsAreKept.test.ts | 2026-10-22 | written: every scheduled workflow has its heartbeat on its own schedule, checking in only when the schedule fired; the check-in's refusals |
 | scripts/batch-report.cjs | 2026-10-22 | written: a batch's report from the register, a line to answer for every class closed by a process; never written over (P0.58) |
 | src/utils/__tests__/theBatchReportIsAnswered.test.ts | 2026-10-22 | written: the report's lines, only those classes; the latest here leaves no answer empty |
+| e2e/lab/arm.mjs | 2026-10-22 | written: the speed lab's arms, ported from the study and rewritten for main: five scenes of the light on the welcome, each as main draws it, as the SVG of 4ab40542^ and with none; STILL for the simulator; every edit found once or nothing written; --check for every build the lab makes (P0.103, P0.104) |
+| e2e/lab/proofs.mjs | 2026-10-22 | written: each scene's shots judged: still, present against no light, main against SVG within the study's bar; a signed luma grid against none (P0.103) |
+| e2e/lab/analyze.mjs | 2026-10-22 | written: the timed starts per build; each against A by a permutation test, called at Holm's p under 0.01; the A/A pair must call nothing; the log read by cold-start.mjs (P0.104) |
+| e2e/lab/lab.sh | 2026-10-22 | written: one emulator boot, settled; the shots in two rounds of opposite order; the timed starts, each measured by one shell call; a trace per timed build (P0.104) |
+| ../.github/workflows/speed-lab.yml | 2026-10-22 | written: by hand; every arm built as the Sealed E2E builds; the shots and the timed starts on one emulator boot; the shots on the iOS simulator, every build stilled; every answer on the run's summary (P0.103, P0.104) |
+| e2e/__tests__/speedLab.test.ts | 2026-10-22 | written: every build the lab makes applies to the tree; an arm whose text is gone refused, nothing written; the light judged on drawn shots; the A/A pair's failure fails the run |

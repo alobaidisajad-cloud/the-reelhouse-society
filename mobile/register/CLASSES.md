@@ -64,6 +64,7 @@ production shows only its id, area, seriousness and count here.
 | MOCKUP-android-svg-lost | tests | code | OPEN | 1 | Every Android drawing of a screen lost its SVG art (the house's logo, the bills' sunbursts, icons drawn in SVG), so the renders and the checks that read them judged screens without their art |
 | LAYOUT-ornament-over-words | lobby | layout | OPEN | 0 | An ornament pasted over a bill (the one-sheet's snipe) stands over its words where a long name or a large text size raises them, on a small phone |
 | E2E-launch-unmeasured | tests | code | OPEN | 0 | A launch of the app the run makes and never measures, so a slower start (its first screen later, more frames dropped, more native memory) passes unseen |
+| LIGHT-unproven-on-device | tests | code | OPEN | 5 | The light drawn on no device as main writes it: the study proved its own gradient strings, main's light.ts writes them otherwise, and the member page's spotlight was never drawn on a phone |
 | E2E-ceiling-not-measured | tests | code | OPEN | 2 | A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's |
 | CI-check-only-in-ci | tooling | code | OPEN | 1 | A check CI runs that no local gate runs, so a push meets it only in red |
 | CI-gate-never-runs | tooling | code | OPEN | 0 | A gate that never runs reads as coverage, whether it runs on pull requests alone, is a script nothing runs, or is cancelled by a run of another kind (CI-02) |

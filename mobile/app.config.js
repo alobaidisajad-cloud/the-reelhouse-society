@@ -4,7 +4,8 @@
  * Every real build (EAS, TestFlight, the stores) runs without E2E, and gets
  * app.json exactly: appConfig.guard.test.ts proves the two are equal.
  *
- * With E2E=1 (only e2e.yml sets it, for an APK that never leaves the runner):
+ * With E2E=1 (set only by e2e.yml for its APK, ios-launch.yml for its simulator app and
+ * speed-lab.yml for its builds; none leaves its runner):
  *   · plain http is allowed, because the local backend on the runner is
  *     http://10.0.2.2:54321 (the emulator's name for the runner)
  *   · over-the-air updates are off, so the build runs the code it was built

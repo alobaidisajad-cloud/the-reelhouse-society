@@ -1,0 +1,373 @@
+name: 🔬 Speed lab
+
+# ── WHAT A START COSTS, AND THE LIGHT PROVEN ON A DEVICE (WORKLIST P0.103, P0.104) ──────────────
+# Started by hand. Builds of the app, each changed by an arm of mobile/e2e/lab/arm.mjs (an arm
+# whose text is not found exactly once stops the build), on the Sealed E2E's runner, emulator
+# and options:
+#   shots  the light, five scenes on the signed-out welcome, each built with main's light and
+#          with the light as SVG (as it was before 4ab40542), and once with no light; shot on
+#          the emulator and on the iOS simulator, and judged by mobile/e2e/lab/proofs.mjs
+#   timed  A (the app as it is), Z (A's own APK again: the A/A pair) and the arms named, timed
+#          start by start on one boot, and judged by mobile/e2e/lab/analyze.mjs
+# Every answer goes on the run's summary, readable without signing in; the files are kept too.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'shots, timed, or all'
+        type: choice
+        options: [all, shots, timed]
+        default: all
+      arms:
+        description: 'arms of arm.mjs timed against A and Z, space-separated'
+        type: string
+        default: 'N'
+      ios:
+        description: 'the shots on the iOS simulator too'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: 🔬 Android — the builds, one emulator boot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    env:
+      LAB_MODE: ${{ inputs.mode }}
+      LAB_ARMS: ${{ inputs.arms }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: The stack's ports, kept first
+        run: bash mobile/e2e/start-stack.sh --reserve "The lab's stack"
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Supabase CLI
+        id: supabase-cli
+        timeout-minutes: 5
+        continue-on-error: true
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+      - name: Supabase CLI, once more
+        if: steps.supabase-cli.outcome == 'failure'
+        timeout-minutes: 5
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+
+      # The signed-out welcome asks tmdb-proxy for the week's films: the recorded stand-in
+      # answers, as in the Sealed E2E. Nothing else on the welcome needs the house.
+      - name: Start the local stack
+        run: |
+          cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta "The lab's stack"
+
+      - name: Keys for the local stack
+        working-directory: mobile/e2e
+        run: |
+          set -o pipefail
+          keys=$(supabase status -o env | grep -E '^(API_URL|ANON_KEY)=' | sed 's/"//g') || keys=''
+          for k in API_URL ANON_KEY; do
+            grep -qE "^$k=.+" <<< "$keys" || { echo "::error title=Lab keys::supabase status gave no $k"; exit 1; }
+          done
+          echo "$keys" >> "$GITHUB_ENV"
+
+      - name: Install the app's packages
+        id: install-1
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: mobile
+        run: npm ci
+      - name: Install the app's packages, once more
+        if: steps.install-1.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: mobile
+        run: npm ci
+
+      - name: The Android packages the build needs
+        id: android-packages
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: mobile
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+          node scripts/android-packages.cjs --installed
+      - name: The Android packages the build needs, once more
+        if: steps.android-packages.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: mobile
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+          node scripts/android-packages.cjs --installed
+
+      # Release APKs as the Sealed E2E builds them; src/ and app/ are reset before each arm.
+      - name: Build every arm
+        working-directory: mobile
+        env:
+          E2E: '1'
+          EXPO_PUBLIC_SUPABASE_URL: http://10.0.2.2:54321
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          set -u
+          B="$RUNNER_TEMP/build.log"
+          mkdir -p "$RUNNER_TEMP/apks"
+          fail() {
+            { echo "$1"; grep -n -A 20 'What went wrong' "$B" | head -n 40; grep -nE '^e: |error:|arm: ' "$B" | head -n 20; tail -n 30 "$B"; } > "$RUNNER_TEMP/build-errors.txt"
+            node e2e/annotate.mjs "A lab build failed" "$RUNNER_TEMP/build-errors.txt"
+            exit 1
+          }
+          build() {
+            git checkout -- src app
+            if [ "$1" != A ]; then node e2e/lab/arm.mjs "$1" >> "$B" 2>&1 || fail "arm $1 does not apply"; fi
+            (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+                "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build $1"
+            cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/$1.apk"
+            echo "built $1: $(stat -c %s "$RUNNER_TEMP/apks/$1.apk") bytes"
+          }
+          npx expo prebuild --platform android --no-install --clean >> "$B" 2>&1 || fail "prebuild"
+          arms="A"
+          [ "$LAB_MODE" != timed ] && arms="$arms Ws Dm Ds Hm Hs Gm Gs Pm Ps N"
+          [ "$LAB_MODE" != shots ] && arms="$arms $LAB_ARMS"
+          for arm in $(echo "$arms" | tr ' ' '\n' | grep -v '^$' | awk '!seen[$0]++'); do build "$arm"; done
+          cp "$RUNNER_TEMP/apks/A.apk" "$RUNNER_TEMP/apks/Z.apk"
+          git checkout -- src app
+          pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
+
+      - name: The functions, warmed
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' \
+              -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" -d '{"path":"/trending/movie/week"}' "$API_URL/functions/v1/tmdb-proxy")
+            [ "$code" = "200" ] && { echo "tmdb-proxy 200"; exit 0; }
+            sleep 2
+          done
+          echo "::error title=Lab functions::tmdb-proxy never answered"; exit 1
+
+      - name: Let the emulator use the runner's KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # As in the Sealed E2E: everything the emulator action would download, installed first.
+      - name: The system image, from the cache
+        id: image-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /usr/local/lib/android/sdk/system-images/android-34/google_apis/x86_64
+          key: android-system-image-34-google_apis-x86_64
+      - name: The emulator and its system image
+        id: android-sdk
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          rm -rf "$ANDROID_HOME/.temp" "$HOME/.android/cache"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64' --channel=0 > /dev/null
+          node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64'
+      - name: The emulator and its system image, once more
+        if: steps.android-sdk.outcome == 'failure'
+        timeout-minutes: 5
+        run: |
+          rm -rf "$ANDROID_HOME/.temp" "$HOME/.android/cache"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64' --channel=0 > /dev/null
+          node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64'
+
+      - name: Shots and timed starts, on one emulator boot
+        timeout-minutes: 170
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 4096M
+          heap-size: 576M
+          disable-animations: true
+          emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          script: bash mobile/e2e/lab/lab.sh
+
+      - name: The light, judged
+        if: ${{ !cancelled() && inputs.mode != 'timed' }}
+        working-directory: mobile
+        run: |
+          set +e
+          L="$RUNNER_TEMP/lab"
+          node e2e/lab/proofs.mjs "$L/shots" > "$L/proofs.txt" 2>&1
+          rc=$?
+          cat "$L/device.txt" "$L/proofs.txt"
+          { echo "### The light on Android"; echo '```'; cat "$L/device.txt" "$L/proofs.txt" "$L/anomalies.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
+
+      - name: The timed starts, judged
+        if: ${{ !cancelled() && inputs.mode != 'shots' }}
+        working-directory: mobile
+        run: |
+          set +e
+          L="$RUNNER_TEMP/lab"
+          node e2e/lab/analyze.mjs "$L" > "$L/numbers.txt" 2>&1
+          rc=$?
+          cat "$L/numbers.txt"
+          { echo "### The timed starts"; echo '```'; cat "$L/device.txt" "$L/numbers.txt" "$L/anomalies.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
+
+      # Perfetto's trace processor, fetched by its own launcher, which checks what it downloads.
+      - name: The traces, queried
+        if: ${{ !cancelled() && inputs.mode != 'shots' }}
+        run: |
+          set +e
+          T="$RUNNER_TEMP/lab/traces"
+          curl -sSL -o "$T/tp" https://get.perfetto.dev/trace_processor && chmod +x "$T/tp"
+          for f in "$T"/*.pftrace; do
+            [ -s "$f" ] || continue
+            arm=$(basename "$f" .pftrace)
+            for q in mobile/e2e/lab/sql/*.pfsql; do
+              echo "── $(basename "$q" .pfsql)"
+              "$T/tp" --query-file "$q" "$f" 2>&1 | grep -v -E '^\s*$|Loading trace|Trace loaded|^\[' | head -n 32
+            done > "$T/$arm.sql.txt"
+            { echo "### The trace of $arm"; echo '```'; awk '/^── 8-/{ exit } { print }' "$T/$arm.sql.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          done
+          true
+
+      - name: Keep the lab's files
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: speed-lab-android
+          path: |
+            ${{ runner.temp }}/lab
+            ${{ runner.temp }}/build.log
+            ${{ runner.temp }}/build-errors.txt
+          if-no-files-found: ignore
+
+  ios:
+    name: 🔬 iOS — the light on the simulator
+    if: ${{ inputs.ios && inputs.mode != 'timed' }}
+    runs-on: macos-15
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install the app's packages
+        id: install-1
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: mobile
+        run: npm ci
+      - name: Install the app's packages, once more
+        if: steps.install-1.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: mobile
+        run: npm ci
+
+      # As the iPhone launch check builds its app (ios-launch.yml): Release, for the simulator,
+      # signed to run locally. Every build carries STILL: the simulator's Reduce Motion cannot
+      # be set, so the welcome's endless loops are stilled in all of them alike.
+      - name: Build every scene for the simulator
+        working-directory: mobile
+        env:
+          E2E: '1'
+          EXPO_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: speed-lab-placeholder
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          set -u
+          L="$RUNNER_TEMP/ios-build.log"
+          mkdir -p "$RUNNER_TEMP/ios"
+          fail() {
+            { echo "$1"; grep -nE 'error:|\*\* BUILD FAILED|[Ss]igning|arm: ' "$L" | head -n 30; tail -n 30 "$L"; } > "$RUNNER_TEMP/build-errors.txt"
+            node e2e/annotate.mjs "A lab build for the simulator failed" "$RUNNER_TEMP/build-errors.txt"
+            exit 1
+          }
+          xcodebuild -version
+          npx expo prebuild --platform ios --clean > "$L" 2>&1 || fail "prebuild"
+          WS=$(ls -d ios/*.xcworkspace | head -n 1)
+          SCHEME=$(basename "$WS" .xcworkspace)
+          for arm in A Ws Dm Ds Hm Hs Gm Gs Pm Ps N; do
+            git checkout -- src app
+            if [ "$arm" = A ]; then set -- STILL; else set -- STILL "$arm"; fi
+            node e2e/lab/arm.mjs "$@" >> "$L" 2>&1 || fail "arm $arm does not apply"
+            xcodebuild -workspace "$WS" -scheme "$SCHEME" -configuration Release -sdk iphonesimulator \
+              -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/build \
+              ONLY_ACTIVE_ARCH=YES ARCHS=arm64 >> "$L" 2>&1 || fail "build $arm"
+            rm -rf "$RUNNER_TEMP/ios/$arm.app"
+            cp -R "$(ls -d ios/build/Build/Products/Release-iphonesimulator/*.app | head -n 1)" "$RUNNER_TEMP/ios/$arm.app"
+            echo "built $arm"
+          done
+          git checkout -- src app
+
+      # Each shot a fresh install (no data kept), 20 s after the launch, the clock held at 9:41.
+      - name: Shots on the simulator
+        run: |
+          set -u
+          S="$RUNNER_TEMP/lab/shots-ios"
+          mkdir -p "$S"
+          DEV=$(xcrun simctl list devices available | grep -E 'iPhone 16 Pro \(' | head -n 1 | grep -oE '[0-9A-F-]{36}')
+          [ -n "$DEV" ] || DEV=$(xcrun simctl list devices available | grep -E 'iPhone' | head -n 1 | grep -oE '[0-9A-F-]{36}')
+          echo "device $DEV" > "$S/device.txt"
+          xcrun simctl boot "$DEV"
+          xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl status_bar "$DEV" override --time 9:41 --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularBars 4
+          sleep 20
+          shot() {
+            xcrun simctl install "$DEV" "$RUNNER_TEMP/ios/$1.app"
+            xcrun simctl launch "$DEV" com.reelhouse.society > /dev/null 2>&1 || echo "$1-$2: did not launch" >> "$S/device.txt"
+            sleep 20
+            xcrun simctl io "$DEV" screenshot "$S/$1-$2.png" > /dev/null 2>&1 || echo "$1-$2: no screenshot" >> "$S/device.txt"
+            xcrun simctl terminate "$DEV" com.reelhouse.society > /dev/null 2>&1 || true
+            xcrun simctl uninstall "$DEV" com.reelhouse.society
+          }
+          shot N 1
+          for arm in A Ws Dm Ds Hm Hs Gm Gs Pm Ps; do shot "$arm" 1; done
+          for arm in Ps Pm Gs Gm Hs Hm Ds Dm Ws A; do shot "$arm" 2; done
+
+      - name: The light on iOS, judged
+        if: ${{ !cancelled() }}
+        working-directory: mobile
+        run: |
+          set +e
+          S="$RUNNER_TEMP/lab/shots-ios"
+          node e2e/lab/proofs.mjs "$S" > "$S/proofs.txt" 2>&1
+          rc=$?
+          cat "$S/device.txt" "$S/proofs.txt"
+          { echo "### The light on iOS"; echo '```'; cat "$S/device.txt" "$S/proofs.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
+
+      - name: Keep the iOS shots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: speed-lab-ios
+          path: |
+            ${{ runner.temp }}/lab
+            ${{ runner.temp }}/ios-build.log
+            ${{ runner.temp }}/build-errors.txt
+          if-no-files-found: ignore

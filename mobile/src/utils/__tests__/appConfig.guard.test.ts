@@ -1,12 +1,13 @@
 /**
  * A real build is app.json exactly; only the E2E build differs, and only as it says.
  * ─────────────────────────────────────────────────────────────────────────────
- * app.config.js exists for the sealed E2E build (e2e.yml sets E2E=1). The risk
+ * app.config.js exists for the builds that never leave a runner (E2E=1: the sealed E2E's APK,
+ * the iPhone check's simulator app, the speed lab's builds; a test below holds the list). The risk
  * it brings is a store build that quietly allows plain http or turns updates
  * off — so both halves are proved here, along with the one place the E2E
  * backend address may appear.
  */
-import { readFileSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 const MOBILE = join(__dirname, '..', '..', '..');
@@ -138,4 +139,12 @@ it('no real build profile sets E2E, or points at a local backend', () => {
   const eas = readFileSync(join(MOBILE, 'eas.json'), 'utf8');
   expect(eas).not.toMatch(/"E2E"/);
   expect(eas).not.toMatch(/10\.0\.2\.2|127\.0\.0\.1|localhost|\.test\b/);
+});
+
+it('the workflows that build with E2E=1 are the ones app.config.js names, and no other', () => {
+  const dir = join(MOBILE, '..', '.github', 'workflows');
+  const setting = readdirSync(dir).filter((f) => /^\s*E2E: '1'\s*$/m.test(readFileSync(join(dir, f), 'utf8'))).sort();
+  expect(setting).toEqual(['e2e.yml', 'ios-launch.yml', 'speed-lab.yml']);
+  const header = readFileSync(join(MOBILE, 'app.config.js'), 'utf8').split('*/')[0] ?? '';
+  expect(setting.filter((f) => !header.includes(f))).toEqual([]);
 });

@@ -161,7 +161,8 @@ jobs:
       lifecycle: true
 
   # Every route opened cold and captured on the phone as each variant has it (mobile/e2e/variants.json,
-  # WORKLIST P0.86): four at a time, each its own machine and its own build.
+  # WORKLIST P0.86): four at a time, each its own build, on one machine for a walk alone and
+  # four for a variant that runs every flow first.
   e2e-variants:
     name: 🎬 The route walk, ${{ matrix.variant }}
     strategy:

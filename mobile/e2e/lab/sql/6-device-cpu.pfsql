@@ -1,0 +1,8 @@
+-- Who else had the CPUs during those 9 s.
+WITH app AS (SELECT upid, pid FROM process WHERE name = 'com.reelhouse.society' ORDER BY upid DESC LIMIT 1),
+main AS (SELECT utid FROM thread JOIN app USING (upid) WHERE thread.tid = app.pid),
+t0 AS (SELECT MIN(ts) AS ts FROM thread_state WHERE utid = (SELECT utid FROM main))
+SELECT COALESCE(p.name, t.name) AS who, ROUND(SUM(s.dur) / 1e6) AS cpu_ms
+FROM sched s JOIN thread t USING (utid) LEFT JOIN process p USING (upid)
+WHERE s.utid != 0 AND s.ts >= (SELECT ts FROM t0) AND s.ts < (SELECT ts FROM t0) + 9000000000
+GROUP BY who ORDER BY cpu_ms DESC LIMIT 15;

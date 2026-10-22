@@ -500,6 +500,7 @@ it('known-vulnerable packages: every push judges the phone, and the nightly judg
 const NOT_ON_MAIN: Record<string, string> = {
   'ci.yml': "the website's Lighthouse gate, by hand since the owner stopped it emailing on every push (its own comment); the website is becoming a landing page (PLAN §3c-6)",
   'ci-alert.yml': 'it is the alert: it runs when any other workflow ends',
+  'speed-lab.yml': 'a measurement started by hand (WORKLIST P0.104): its runs take hours, and the arms it builds are checked on every push by e2e/__tests__/speedLab.test.ts',
 };
 
 it('runs every gate on a push to main or on a schedule, or names why not (CI-02)', () => {

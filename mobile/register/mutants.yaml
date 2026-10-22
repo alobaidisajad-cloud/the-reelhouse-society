@@ -863,3 +863,30 @@ mutants:
         find: "  if (!oldApk) return 'no old build to upgrade from: the proxy was started without --old-apk';\n"
         replace: ""
     proof: { file: e2e/__tests__/faultProxy.test.ts, test: "installs the build in members' hands afresh, then this one over it keeping its data, and fails with no old build to install" }
+
+  - id: shape-lab-arm-drifted
+    class: LIGHT-unproven-on-device
+    source: shape
+    edits:
+      - file: src/components/atmosphere/RoomLight.tsx
+        find: "width: W, height: H, experimental_backgroundImage: roomLightImage(g, H) }} />"
+        replace: "width: W, height: H, experimental_backgroundImage: roomLightImage(g, H), opacity: 1 }} />"
+    proof: { file: e2e/__tests__/speedLab.test.ts, test: "every build the lab makes applies to the tree as committed, each text found exactly once" }
+
+  - id: shape-blank-light-passes
+    class: LIGHT-unproven-on-device
+    source: shape
+    edits:
+      - file: e2e/lab/proofs.mjs
+        find: "    [litM.over2 >= PRESENT_SHARE && litS.over2 >= PRESENT_SHARE, "
+        replace: "    [true, "
+    proof: { file: e2e/__tests__/speedLab.test.ts, test: "says no to \"the same\" when both are blank: the light must be there" }
+
+  - id: shape-aa-pair-unheard
+    class: LIGHT-unproven-on-device
+    source: shape
+    edits:
+      - file: e2e/lab/analyze.mjs
+        find: "    if (arm === 'Z' && called.length) quiet = false;\n"
+        replace: ""
+    proof: { file: e2e/__tests__/speedLab.test.ts, test: "fails the run when Z, the same APK, differs from A: no call can then be trusted" }

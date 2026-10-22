@@ -1,0 +1,2 @@
+INCLUDE PERFETTO MODULE android.startup.startups;
+SELECT package, startup_type, ROUND(dur / 1e6) AS ms FROM android_startups;

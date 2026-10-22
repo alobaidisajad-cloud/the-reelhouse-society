@@ -21,10 +21,10 @@ on:
         type: boolean
         default: false
       mutants:
-        description: 'Also weaken each rule in turn, as the nightly run does (about twenty minutes more)'
+        description: 'Also weaken each rule in turn, as the nightly run does (about ten minutes more)'
         type: boolean
         default: false
-  # Weekly, with no push behind it — the same rot check as god_tier_ci.yml.
+  # Weekly, with no push behind it: the tools and services change under a repository that does not.
   schedule:
     - cron: '0 6 * * 1'
   # Called by nightly.yml with mutants on: the same sealed copy, then each rule weakened in turn.
@@ -40,7 +40,7 @@ permissions:
 jobs:
   db-security:
     runs-on: ubuntu-24.04
-    # About twelve minutes; the nightly mutants' run adds about twenty.
+    # About four minutes; the nightly's mutants add five to ten.
     timeout-minutes: 60
     steps:
       - name: Fire drill — fail on purpose

@@ -712,6 +712,19 @@ classes:
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "runs only its own flows, in order, with no probe and no launch with animations on, its app launched once before them, and lists them" }
     fix: "every run makes one measured launch before its flows (run-flows.sh: on the phone as the run has it, the old process gone and 3 s, am start-activity -W, dumpsys meminfo once its first screen is ready) and puts a table on its summary of every launch in the device log (e2e/cold-start.mjs): Displayed, the first screen ready, skipped and Davey frames to it, and am's time and the native heap for the measured launch; every cell a value or why not, a log with no launch a failure (mutants judge-no-launch-to-measure, shape-cold-cell-left-empty, shape-cold-table-unwritten)"
 
+  - id: LIGHT-unproven-on-device
+    title: "The light drawn on no device as main writes it: the study proved its own gradient strings, main's light.ts writes them otherwise, and the member page's spotlight was never drawn on a phone"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 5
+    source: { kind: reviewer, ref: "P0.103 (COLD-START-PLAN B5)" }
+    methods:
+      - { kind: running, file: e2e/__tests__/speedLab.test.ts, test: "every build the lab makes applies to the tree as committed, each text found exactly once" }
+      - { kind: running, file: e2e/__tests__/speedLab.test.ts, test: "says no to \"the same\" when both are blank: the light must be there" }
+      - { kind: running, file: e2e/__tests__/speedLab.test.ts, test: "fails the run when Z, the same APK, differs from A: no call can then be trusted" }
+    fix: "the speed lab (.github/workflows/speed-lab.yml, by hand): five scenes on the signed-out welcome (the welcome's own light, the Dispatch's lamp, a lamp hung from a hero's hem, the seal's halo, a member's spotlight), each built with main's light, with the SVG of 4ab40542^ and with no light (e2e/lab/arm.mjs, every build checked against the tree on every push), shot on the emulator and the iOS simulator and judged by e2e/lab/proofs.mjs: still, present against none, the same within the study's bar; and timed starts with an A/A pair that must call nothing (e2e/lab/analyze.mjs) (mutants shape-lab-arm-drifted, shape-blank-light-passes, shape-aa-pair-unheard)"
+
   - id: E2E-ceiling-not-measured
     title: A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's
     seriousness: code

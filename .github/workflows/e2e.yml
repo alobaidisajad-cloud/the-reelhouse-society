@@ -6,7 +6,8 @@ name: 🎬 Sealed E2E
 #     snapshot (mobile/supabase/schema/*.sql), and CHECKED against it with
 #     schema:check — a copy that differs proves nothing about production
 #   · production's host pointed at 0.0.0.0, on the runner and inside every
-#     container, and proved: the database's one outbound call cannot connect
+#     container with a shell, its addresses refused to every container by the
+#     firewall, and proved: the database's one outbound call cannot connect
 #   · members made through the auth API, with a fresh password each run
 #   · TMDB answered from recordings (e2e/supabase/functions/tmdb-proxy), and
 #     every request with no recording named on the run's summary, failing it
@@ -104,13 +105,15 @@ env:
   # run never share one.
   E2E_TAG: ${{ inputs.client && format(' - {0}', inputs.client) || inputs.round && format(' - round {0}', inputs.round) || inputs.faults && ' - faults' || inputs.lifecycle && ' - lifecycle' || inputs.variant && format(' - {0}', inputs.variant) || '' }}
 
-# Three jobs. The app is built once (build), and its flows run on three
-# machines at once (flows), each its part of mobile/e2e/shards.json: a machine
+# Four jobs. The app is built once (build), and its flows run on three
+# machines at once (flows; one for a fault or lifecycle run, four for a variant
+# that runs every flow and then the walk), each its part of mobile/e2e/shards.json: a machine
 # runs a whole sealed world of its own, since the emulator reaches the backend
 # at 10.0.2.2, its own runner. The app is built away from any seal, because the
 # build downloads packages and the seal firewalls addresses that production
 # shares with other Cloudflare sites. Then the verdict reads every shard's logs
-# for what no one machine can judge (e2e/shard-verdict.mjs).
+# for what no one machine can judge (e2e/shard-verdict.mjs). On a schedule, the
+# heartbeat says the schedule ran.
 jobs:
   build:
     name: 🎬 The app, built once for every shard
@@ -560,9 +563,6 @@ jobs:
           path: /usr/local/lib/android/sdk/system-images/android-34/google_apis/x86_64
           key: android-system-image-34-google_apis-x86_64
 
-      # Between the app and the house, for the rest of the job: every byte passed
-      # untouched until a flow sets a fault on its control port (10.0.2.2:54331),
-      # and every request kept in the gateway's log.
       # The lifecycle run's upgrade (.maestro/lifecycle/upgrade.yaml) installs this build over the
       # one already in members' hands: that build's E2E app, from the last shipped-clients run
       # that made it (kept three days). None to be had leaves the proxy without it, and the
@@ -580,6 +580,9 @@ jobs:
           done
           ls -l "$RUNNER_TEMP/old-app" || true
 
+      # Between the app and the house, for the rest of the job: every byte passed
+      # untouched until a flow sets a fault on its control port (10.0.2.2:54331),
+      # and every request kept in the gateway's log.
       - name: The network between the app and the house
         run: |
           old=""; [ -f "$RUNNER_TEMP/old-app/app-release.apk" ] && old="--old-apk $RUNNER_TEMP/old-app/app-release.apk"
@@ -604,6 +607,9 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
+          ram-size: 4096M
+          heap-size: 576M
+          disable-animations: true
           # The renderer. The emulator died a second after the film page opened, in
           # every run that reached it, with `swiftshader_indirect` and then with
           # `swiftshader`: run 36708544965 caught how — the emulator process
@@ -615,9 +621,6 @@ jobs:
           # the same way under swiftshader_indirect and guest, and has survived
           # every run under `swangle_indirect`: ANGLE's GLES over SwiftShader's
           # Vulkan (omnesis-dev/Omnesis#200).
-          ram-size: 4096M
-          heap-size: 576M
-          disable-animations: true
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: bash mobile/e2e/run-flows.sh
 
@@ -678,7 +681,7 @@ jobs:
       # attempt keeps its first, and the device's whole log names any animation
       # Android held the test on (e2e/animation-waits.mjs). Hidden files too —
       # Maestro writes its records under a `.maestro` folder, which the upload
-      # skips by default, so no run before this one ever kept them. The verdict
+      # skips unless hidden files are asked for. The verdict
       # reads the shard's list of flows and its record of screens from here.
       - name: Keep the run's logs
         if: always()
@@ -790,8 +793,8 @@ jobs:
           pattern: e2e-logs-*${{ env.E2E_TAG }}
           path: ${{ runner.temp }}/shards
 
-      # The fault runs', the lifecycle runs' and a walk-alone variant's one machine judged itself (fault-judges.mjs,
-      # route-judges.mjs); a variant that runs every flow is three machines, read together here.
+      # A fault run, a lifecycle run and a walk-alone variant have one machine, judged there; the
+      # three flow machines of any other run are read together here (a variant's walk judged itself).
       - name: What no one shard can judge
         if: ${{ !inputs.faults && !inputs.lifecycle && needs.build.outputs.runs != 'walk' }}
         run: |

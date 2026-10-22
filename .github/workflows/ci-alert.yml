@@ -28,6 +28,7 @@ on:
       - "🎞️ Shipped clients, end to end"
       - "📱 iPhone launch"
       - "🏋️ Load — 100,000 members"
+      - "🔬 Speed lab"
       - "CI — Lighthouse Performance Gate"
       - "🌙 Nightly"
     types: [completed]
