@@ -691,5 +691,12 @@
     "proof": "m2",
     "commit": "c089278cc1eb8d84a14f61366bb005d31a7f2ae7",
     "verdict": "caught"
+  },
+  {
+    "class": "NAV-cold-link-wrong-tab-beneath",
+    "mutant": "shape-first-tab-beneath",
+    "proof": "m1",
+    "commit": "f51f073eb2417077bc5f7d3f0248dbbf156c779a",
+    "verdict": "caught"
   }
 ]
