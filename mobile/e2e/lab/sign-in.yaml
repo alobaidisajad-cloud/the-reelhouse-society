@@ -1,0 +1,7 @@
+appId: com.reelhouse.society
+---
+# The speed lab signs the seeded member in once, from a cleared app, as the flows do; the session
+# then lasts through every cold start the lab makes (e2e/lab/scrolls.sh).
+- launchApp:
+    clearState: true
+- runFlow: ../../.maestro/subflows/sign_in.yaml

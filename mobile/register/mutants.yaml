@@ -908,3 +908,12 @@ mutants:
         find: "  return shas.some((sha) => same(sha, w.paths)) ? [] : ["
         replace: "  return true ? [] : ["
     proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "touches production only once the shipped builds, the database checks, the E2E and the lock lab passed on these files" }
+
+  - id: shape-scroll-ran-out-unseen
+    class: E2E-scroll-untimed-on-a-full-house
+    source: shape
+    edits:
+      - file: e2e/lab/scrolls.mjs
+        find: "    if (m.moved < FAR) failed.push("
+        replace: "    if (m.moved < 0) failed.push("
+    proof: { file: e2e/__tests__/speedLab.test.ts, test: "fails a list that ran out before three screen heights, by name" }

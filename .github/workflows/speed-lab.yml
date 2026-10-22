@@ -27,6 +27,10 @@ on:
         description: 'the shots on the iOS simulator too'
         type: boolean
         default: true
+      scrolls:
+        description: 'the signed-in busy screens, each scrolled and timed, on a seeded house'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -259,6 +263,247 @@ jobs:
             ${{ runner.temp }}/lab
             ${{ runner.temp }}/build.log
             ${{ runner.temp }}/build-errors.txt
+          if-no-files-found: ignore
+
+  # Signed in, on the sealed world as the Sealed E2E builds it, filled by e2e/db/lab-seed.mjs: each
+  # busy screen opened cold, shot, and scrolled ten swipes with its frames counted (scrolls.sh). The
+  # app is built before the seal, which firewalls addresses the build's downloads share.
+  scrolls:
+    name: 🔬 Android — the busy screens, signed in and scrolled
+    if: ${{ inputs.scrolls }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: The stack's ports, kept first
+        run: bash mobile/e2e/start-stack.sh --reserve "The lab's sealed world"
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+          cache-dependency-path: mobile/package-lock.json
+
+      # The CLI makes the key from its config alone (e2e/anon-key.mjs); the stack's is checked below.
+      - name: The local stack's anon key
+        id: anon
+        run: |
+          key=$(node mobile/e2e/anon-key.mjs) || { echo "$key"; exit 1; }
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Install the app's packages
+        id: install-1
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: mobile
+        run: npm ci
+      - name: Install the app's packages, once more
+        if: steps.install-1.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: mobile
+        run: npm ci
+
+      - name: The Android packages the build needs
+        id: android-packages
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: mobile
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+          node scripts/android-packages.cjs --installed
+      - name: The Android packages the build needs, once more
+        if: steps.android-packages.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: mobile
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
+          node scripts/android-packages.cjs --installed
+
+      - name: Build the app as it is
+        working-directory: mobile
+        env:
+          E2E: '1'
+          EXPO_PUBLIC_SUPABASE_URL: http://10.0.2.2:54321
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.anon.outputs.key }}
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          set -u
+          B="$RUNNER_TEMP/build.log"
+          mkdir -p "$RUNNER_TEMP/apks"
+          if ! { npx expo prebuild --platform android --no-install --clean \
+              && (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+                    "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g"); } > "$B" 2>&1; then
+            { grep -n -A 20 'What went wrong' "$B" | head -n 40; tail -n 30 "$B"; } > "$RUNNER_TEMP/build-errors.txt"
+            node e2e/annotate.mjs "The lab's signed-in build failed" "$RUNNER_TEMP/build-errors.txt"
+            exit 1
+          fi
+          cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/A.apk"
+          pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
+
+      - name: Supabase CLI
+        id: supabase-cli
+        timeout-minutes: 5
+        continue-on-error: true
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+      - name: Supabase CLI, once more
+        if: steps.supabase-cli.outcome == 'failure'
+        timeout-minutes: 5
+        uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.118.0
+
+      - name: Postgres 18 client tools
+        id: install-2
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+      - name: Postgres 18 client tools, once more
+        if: steps.install-2.outcome == 'failure'
+        timeout-minutes: 5
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-18
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+
+      - name: Start the local stack
+        run: |
+          cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta "The lab's sealed world"
+
+      - name: Keys for the local stack, the app's among them
+        working-directory: mobile/e2e
+        env:
+          BUILT: ${{ steps.anon.outputs.key }}
+        run: |
+          set -o pipefail
+          keys=$(supabase status -o env | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' | sed 's/"//g') || keys=''
+          for k in API_URL ANON_KEY SERVICE_ROLE_KEY; do
+            grep -qE "^$k=.+" <<< "$keys" || { echo "::error title=Lab keys::supabase status gave no $k"; exit 1; }
+          done
+          grep -qxF "ANON_KEY=$BUILT" <<< "$keys" || { echo "::error title=Lab keys::the app was built with another anon key than this stack's"; exit 1; }
+          echo "$keys" >> "$GITHUB_ENV"
+
+      - name: Install Maestro 2.10.0
+        run: |
+          curl -sSL -o "$RUNNER_TEMP/maestro.zip" https://github.com/mobile-dev-inc/maestro/releases/download/cli-2.10.0/maestro.zip
+          echo "29b675e10cc12080e445e9bfb2e2b4e4dfb9c0f2e30d5884120d258b5e1cd991  $RUNNER_TEMP/maestro.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/maestro.zip" -d "$HOME/.maestro-dist"
+          echo "MAESTRO_BIN=$HOME/.maestro-dist/maestro/bin/maestro" >> "$GITHUB_ENV"
+
+      - name: The functions, warmed before the seal
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' \
+              -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" -d '{"path":"/trending/movie/week"}' "$API_URL/functions/v1/tmdb-proxy")
+            [ "$code" = "200" ] && break
+            sleep 2
+          done
+          signin=$(curl -s -o /dev/null -w '%{http_code}' -X GET -H "apikey: $ANON_KEY" "$API_URL/functions/v1/sign-in-with-username" || true)
+          [ "$code" = "200" ] && [ "$signin" = "405" ] || { echo "::error title=Lab functions::tmdb-proxy $code, sign-in-with-username $signin"; exit 1; }
+
+      - name: Seal it — production's host goes nowhere
+        run: bash mobile/e2e/db/seal.sh "Lab seal"
+
+      - name: Build production's shape from the snapshot
+        run: node mobile/e2e/db/bootstrap.mjs
+
+      - name: Every pending migration, applied
+        run: node mobile/e2e/db/up-down-up.mjs
+
+      - name: Seed the members
+        run: node mobile/e2e/db/seed.mjs
+
+      - name: Fill the house the lab scrolls
+        env:
+          LAB_DB_URL: postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres
+        run: node mobile/e2e/db/lab-seed.mjs "$RUNNER_TEMP/lab-ids.json"
+
+      - name: Let the emulator use the runner's KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: The system image, from the cache
+        id: image-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /usr/local/lib/android/sdk/system-images/android-34/google_apis/x86_64
+          key: android-system-image-34-google_apis-x86_64
+      - name: The emulator and its system image
+        id: android-sdk
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          rm -rf "$ANDROID_HOME/.temp" "$HOME/.android/cache"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64' --channel=0 > /dev/null
+          node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64'
+      - name: The emulator and its system image, once more
+        if: steps.android-sdk.outcome == 'failure'
+        timeout-minutes: 5
+        run: |
+          rm -rf "$ANDROID_HOME/.temp" "$HOME/.android/cache"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64' --channel=0 > /dev/null
+          node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64'
+
+      - name: Signed in, every busy screen scrolled
+        timeout-minutes: 60
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 4096M
+          heap-size: 576M
+          disable-animations: true
+          emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          script: LAB_IDS="$RUNNER_TEMP/lab-ids.json" bash mobile/e2e/lab/scrolls.sh
+
+      # Maestro's record holds the member's password as typed: out of every kept file first.
+      - name: The member's password, out of the lab's files
+        if: always()
+        run: node mobile/e2e/scrub.mjs "$RUNNER_TEMP/lab"
+
+      - name: The scrolls, judged
+        if: ${{ !cancelled() }}
+        working-directory: mobile
+        run: |
+          set +e
+          S="$RUNNER_TEMP/lab/scrolls"
+          node e2e/lab/scrolls.mjs "$S" > "$S/judged.txt" 2>&1
+          rc=$?
+          cat "$S/device.txt" "$S/judged.txt" "$S/anomalies.txt"
+          { echo "### The busy screens, signed in and scrolled"; echo '```'; cat "$S/device.txt" "$S/judged.txt" "$S/anomalies.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
+
+      - name: Keep the scrolls
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: speed-lab-scrolls
+          path: |
+            ${{ runner.temp }}/lab/scrolls
+            ${{ runner.temp }}/build.log
           if-no-files-found: ignore
 
   ios:

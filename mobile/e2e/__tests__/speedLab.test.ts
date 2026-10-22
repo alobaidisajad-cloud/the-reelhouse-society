@@ -159,3 +159,49 @@ describe('the timed starts, judged', () => {
     expect(diff(steady, steady.map((t) => t + 50)).p).toBeLessThan(0.01);
   });
 });
+
+/** A folder of one screen's scroll: its hashes before and after each swipe, and gfxinfo's counts. */
+function scrolled(name: string, hashes: string[], gfx = 'Total frames rendered: 412\nJanky frames: 9 (2.18%)\n50th percentile: 8ms\n90th percentile: 14ms\n99th percentile: 40ms\n') {
+  const d = fresh(name);
+  writeFileSync(join(d, 'reel-1.moves'), hashes.map((h) => `${h}  -`).join('\n'));
+  writeFileSync(join(d, 'reel-1.gfx'), gfx);
+  return d;
+}
+const hash = (i: number) => i.toString(16).padStart(32, '0');
+
+describe('the signed-in scrolls, judged', () => {
+  it('passes a list that moved on every swipe of three screen heights, with its frames counted', () => {
+    const r = run('scrolls.mjs', [scrolled('far', Array.from({ length: 11 }, (_, i) => hash(i)))]);
+    expect(r.stdout).toMatch(/reel-1\s+412\s+9\s+8\s+14\s+40\s+5\/5/);
+    expect(r.status).toBe(0);
+  });
+
+  it('fails a list that ran out before three screen heights, by name', () => {
+    const r = run('scrolls.mjs', [scrolled('short', [0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2].map(hash))]);
+    expect(r.stdout).toContain('reel-1: the list stopped after 2 of 5 swipes: it holds less than three screen heights');
+    expect(r.status).toBe(1);
+  });
+
+  it('fails a scroll whose frames were never counted', () => {
+    const r = run('scrolls.mjs', [scrolled('unmeasured', Array.from({ length: 11 }, (_, i) => hash(i)), 'Total frames rendered: 0\n')]);
+    expect(r.stdout).toContain('reel-1: no frames were measured for its scroll');
+    expect(r.status).toBe(1);
+  });
+});
+
+describe('the house the lab scrolls', () => {
+  const seed = (args: string[]) => spawnSync(process.execPath, [join(MOBILE, 'e2e', 'db', 'lab-seed.mjs'), ...args], { cwd: MOBILE, encoding: 'utf8' });
+
+  it('draws on enough recorded films, each with its poster, for its longest stack', () => {
+    const films = JSON.parse(seed(['--films']).stdout) as [number, string, string, string][];
+    expect(films.length).toBeGreaterThanOrEqual(60);
+    expect(films.filter(([, , , poster]) => !/^\/\w+\.jpg$/.test(poster))).toEqual([]);
+  });
+
+  it('names every list it filled too thinly', () => {
+    const counts = { reel: 480, salon: 320, stack: 61, comments: 25, filings: 30, own_logs: 50, portrait: 1 };
+    expect(JSON.parse(seed(['--short', JSON.stringify(counts)]).stdout)).toEqual([]);
+    expect(JSON.parse(seed(['--short', JSON.stringify({ ...counts, salon: 12, portrait: 0 })]).stdout))
+      .toEqual(['salon: 12, at least 300 needed', 'portrait: 0, at least 1 needed']);
+  });
+});

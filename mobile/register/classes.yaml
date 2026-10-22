@@ -736,6 +736,19 @@ classes:
     fix: "train.cjs's second step reads, with gh, each of e2e-old-clients.yml, db-integration.yml, e2e.yml and load.yml for a green run on main whose migrations, functions and rehearsals are HEAD's, and refuses by name before production is read (mutant shape-train-before-ci)"
     places: [none]
 
+  - id: E2E-scroll-untimed-on-a-full-house
+    title: "No busy screen's scroll was timed signed in on a house full enough to scroll, so a member's lag (build 41's findings) had no measure to be judged by"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 6
+    source: { kind: reviewer, ref: "P0.104 (2), the signed-in mode, for WORKLIST 0.19" }
+    methods:
+      - { kind: running, file: e2e/__tests__/speedLab.test.ts, test: "fails a list that ran out before three screen heights, by name" }
+      - { kind: running, file: e2e/__tests__/speedLab.test.ts, test: "names every list it filled too thinly" }
+    fix: "the speed lab's signed-in job: the sealed world as the Sealed E2E builds it, filled by e2e/db/lab-seed.mjs (each list's least held by its own count), the member signed in once, and the Reel, a salon, a stack, a log's comments, the Dispatch and the profile each opened cold, shot and scrolled ten swipes with Android's frame counts; a list that ran out before three screen heights, or a scroll never measured, fails by name (mutant shape-scroll-ran-out-unseen)"
+    places: [emulator]
+
   - id: LIGHT-unproven-on-device
     title: "The light drawn on no device as main writes it: the study proved its own gradient strings, main's light.ts writes them otherwise, and the member page's spotlight was never drawn on a phone"
     seriousness: code
