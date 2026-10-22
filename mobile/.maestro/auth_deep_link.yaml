@@ -39,12 +39,24 @@ appId: com.reelhouse.society
     timeout: 30000
 
 # Back from a screen opened cold by a link lands on the Lobby, the
-# member's home, not on the first tab the bar lists; the tab layout,
-# app/(tabs)/_layout.tsx, names it. On Android: an iPhone has no Back key.
+# member's home, not on the first tab the bar lists; and Back from any
+# other tab lands there too. The tab layout, app/(tabs)/_layout.tsx,
+# hands its navigator TABS_HOME. On Android: an iPhone has no Back key.
 - runFlow:
     when:
       platform: Android
     commands:
+      - back
+      - extendedWaitUntil:
+          visible:
+            id: "welcome-seek-admission"
+          timeout: 15000
+      - tapOn:
+          id: "reels-tab"
+      - extendedWaitUntil:
+          visible:
+            id: "reel-log"
+          timeout: 20000
       - back
       - extendedWaitUntil:
           visible:

@@ -1,7 +1,7 @@
 import { router, Tabs, usePathname, type Href } from 'expo-router';
 import React from 'react';
 import { AppState, Linking, View, StyleSheet, Platform } from 'react-native';
-import { pageOfLaunch, rememberTab, stampTab, tabToReopenAfter } from '@/src/utils/lastTab';
+import { pageOfLaunch, rememberTab, stampTab, TABS_HOME, tabToReopenAfter } from '@/src/utils/lastTab';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -24,13 +24,6 @@ import { useLater } from '@/src/hooks/useLater';
 import { nav } from '@/src/utils/typedRouter';
 import { EDGE_LIT } from '@/src/theme/light';
 import { tabBarBottomPadding, tabBarHeight } from '@/src/components/layout/navMetrics';
-
-/**
- * The tab beneath a screen opened cold by a link (a notice, a shared log, the reset link) is the
- * Lobby, the member's home, where Back from it lands; without this it was the first tab the bar
- * lists, the Dispatch, which loaded unseen behind the linked screen at every such start.
- */
-export const unstable_settings = { initialRouteName: 'index' };
 
 // ════════════════════════════════════════════════════════════════
 //  TAB ICON: icons only, no labels. The chosen one grows a little, lights, and
@@ -203,6 +196,7 @@ export default function TabLayout() {
   return (
     <>
     <Tabs
+      {...TABS_HOME}
       screenListeners={({ route }) => ({ focus: () => rememberTab(route.name) })}
       screenOptions={{
         header: renderHeader,

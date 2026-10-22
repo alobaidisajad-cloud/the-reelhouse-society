@@ -307,6 +307,7 @@ Decisions, as of 2026-09-28:
 | `src/lib/__tests__/sentryMeasures.test.ts` | No file mounts Sentry's touch recorder, which reads accessibility labels. |
 | `src/theme/__tests__/nothingOvershoots.guard.test.ts` | Nothing in the app springs or bounces (the law of motion is a property of all source). |
 | `src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts` | Every route file exports the house crash net (Expo Router reads the export, not a render). |
+| `src/utils/__tests__/theLobbyIsTheTabsHome.test.tsx` | The tab layout hands its navigator `TABS_HOME`, and the tabs it renders are the layout's own, in its order (read from source; the render then proves Back). |
 | `src/utils/__tests__/everyBackHasAWayOut.guard.test.ts` | Every back goes through `nav.back()` or checks `canGoBack()` first (a dead back shows only on a cold-opened screen, which no render reaches). |
 | `src/utils/__tests__/aLetterIsTakenWhole.guard.test.ts` | No file takes a first letter by hand: each comes from `initialOf` / `firstCharacter` (a cut letter shows only for a name in another script, which few renders hold). |
 | `src/utils/__tests__/anItalicIsTheHouseItalic.guard.test.ts` | No style asks a face for a slant, and the italic faces are the fonts `app/_layout.tsx` loads (Android draws a faked italic in Roboto, which no jest render draws). |

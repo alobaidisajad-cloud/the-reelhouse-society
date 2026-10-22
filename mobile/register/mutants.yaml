@@ -958,7 +958,25 @@ mutants:
     class: NAV-cold-link-wrong-tab-beneath
     source: shape
     edits:
+      - file: src/utils/lastTab.ts
+        find: "{ initialRouteName: 'index', backBehavior: 'initialRoute' }"
+        replace: "{ backBehavior: 'initialRoute' }"
+    proof: { file: src/utils/__tests__/theLobbyIsTheTabsHome.test.tsx, test: "a screen opened cold by a link has the Lobby beneath it, where Back lands, never the first tab listed; Back from any other tab lands there too, and from the Lobby leaves the app" }
+
+  - id: shape-back-to-first-tab
+    class: NAV-cold-link-wrong-tab-beneath
+    source: shape
+    edits:
+      - file: src/utils/lastTab.ts
+        find: "{ initialRouteName: 'index', backBehavior: 'initialRoute' }"
+        replace: "{ initialRouteName: 'index' }"
+    proof: { file: src/utils/__tests__/theLobbyIsTheTabsHome.test.tsx, test: "a screen opened cold by a link has the Lobby beneath it, where Back lands, never the first tab listed; Back from any other tab lands there too, and from the Lobby leaves the app" }
+
+  - id: shape-tabs-home-unhanded
+    class: NAV-cold-link-wrong-tab-beneath
+    source: shape
+    edits:
       - file: app/(tabs)/_layout.tsx
-        find: "export const unstable_settings = { initialRouteName: 'index' };\n"
+        find: "      {...TABS_HOME}\n"
         replace: ""
-    proof: { file: src/utils/__tests__/everyBackHasAWayOut.guard.test.ts, test: "a screen opened cold by a link has the Lobby beneath it, where Back lands, never the first tab listed" }
+    proof: { file: src/utils/__tests__/theLobbyIsTheTabsHome.test.tsx, test: "the tab layout hands its navigator the Lobby as its home" }

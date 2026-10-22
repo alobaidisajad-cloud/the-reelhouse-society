@@ -24,6 +24,13 @@ export const RETURN_WITHIN_MS = 30 * 60 * 1000;
 export const TABS = ['index', 'dispatch', 'reels', 'darkroom', 'profile'] as const;
 export type TabName = (typeof TABS)[number];
 
+/**
+ * The Lobby is the tabs' home, given to the tab navigator itself: the tab built beneath a page
+ * opened cold by a link, and where Back from any other tab lands before it leaves the app.
+ * Unnamed, both were the first tab the bar lists, the Dispatch.
+ */
+export const TABS_HOME = { initialRouteName: 'index', backBehavior: 'initialRoute' } as const;
+
 const isTab = (v: unknown): v is TabName => typeof v === 'string' && (TABS as readonly string[]).includes(v);
 
 function read(): { tab: TabName; at: number } | null {

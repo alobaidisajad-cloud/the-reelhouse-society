@@ -32,10 +32,3 @@ it('every back goes through nav.back(), or checks canGoBack() first', () => {
       .map((line) => `${f.rel}: ${line.trim()}`));
   expect(raw).toEqual([]);
 });
-
-it('a screen opened cold by a link has the Lobby beneath it, where Back lands, never the first tab listed', () => {
-  // The tabs' first route is the one a cold link builds beneath its screen; unnamed, it was the first
-  // tab the bar lists, the Dispatch (Sealed E2E 39774848305: loaded unseen behind the link, 5 s).
-  const tabs = FILES.find((f) => f.rel === 'app/(tabs)/_layout.tsx');
-  expect(tabs?.src).toMatch(/export const unstable_settings = \{ initialRouteName: 'index' \}/);
-});

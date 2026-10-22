@@ -111,7 +111,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/notifications-modal.tsx | 2026-10-15 | handle's top from useModalTop; foot from useContentBottom |
 | app/(modals)/search-modal.tsx | 2026-10-15 | header top from useModalTop; foot from useContentBottom |
 | app/(modals)/social-modal.tsx | 2026-10-15 | handle's top from useModalTop; foot from useContentBottom |
-| app/(tabs)/_layout.tsx | 2026-10-22 | read whole: the Lobby is the first route a cold link builds beneath its screen (unstable_settings); each tab's own button draws its icon; no tabBarIcon |
+| app/(tabs)/_layout.tsx | 2026-10-22 | read whole: the navigator is handed TABS_HOME, the Lobby its first tab and where Back lands (the unstable_settings line reached only the link parser); each tab's own button draws its icon; no tabBarIcon |
 | app/(tabs)/darkroom.tsx | 2026-10-22 | edited: the empty room's line in the house italic face, its note above the colour it explains |
 | app/(tabs)/dispatch.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/(tabs)/index.tsx | 2026-10-15 | edited: the Lobby's read; the wall and the welcome end above the tab bar (useTabContentBottom); the welcome's scroll begins at the screen's top |
@@ -1209,7 +1209,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/e2eTrace.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/edgeFunctions.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/endorsementGrouping.test.ts | — |  |
-| src/utils/__tests__/everyBackHasAWayOut.guard.test.ts | 2026-10-22 | read whole: a cold link has the Lobby beneath it; every back through nav.back() or behind canGoBack(); its files come from the shared file list |
+| src/utils/__tests__/everyBackHasAWayOut.guard.test.ts | 2026-10-22 | read whole: every back through nav.back() or behind canGoBack(); its files come from the shared file list; the cold-link check moved to theLobbyIsTheTabsHome.test.tsx, which renders it |
 | src/utils/__tests__/everyCapAnswersToItsColumn.test.ts | 2026-10-03 | read whole: every new cap answers to its column or says why it is smaller |
 | src/utils/__tests__/everyChannelIsPrivate.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyClassIsAccountedFor.test.ts | 2026-10-15 | new |
@@ -1281,6 +1281,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/theCharacterRuleHoldsForEveryShortString.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/theCharacterRuleIsUnicodes.test.ts | 2026-10-16 | edited: the search stops at twenty disagreements |
 | src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts | 2026-10-03 | Written with 20261003_05: the corpus holds every character the cleaning acts on, with cleanForStorage's answer. |
+| src/utils/__tests__/theLobbyIsTheTabsHome.test.tsx | 2026-10-22 | new: the real tabs in their order, rendered through expo-router; a cold link, then every other tab, then Back |
 | src/utils/__tests__/theLineEndsChangeNoFunction.guard.test.ts | 2026-10-16 | new: read against the snapshot's 144 bodies (96 with CRLF, one JSON literal holding it) and up-down-up.mjs's comparison |
 | src/utils/__tests__/theDeadLetterIsNobodyElsesToKeep.test.ts | 2026-10-15 | edited: another member's held and failed writes stay at this one's sign-out |
 | src/utils/__tests__/theDraftIsYours.test.ts | — |  |
@@ -1325,7 +1326,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/html.ts | 2026-10-01 | ticket numbers out of the header |
 | src/utils/keptOnThisPhone.ts | 2026-10-15 | written: what the phone holds for a member, and the words for it |
 | src/utils/keysetCursor.ts | 2026-10-02 | quotes escaped with a backslash, as PostgREST reads them (measured 2026-10-02) |
-| src/utils/lastTab.ts | 2026-10-01 | new: back within the half hour, back on the tab |
+| src/utils/lastTab.ts | 2026-10-22 | edited: TABS_HOME, the Lobby as the tab navigator's first tab and its Back |
 | src/utils/linking.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/logger.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/mappers.ts | 2026-10-02 | dead mappers removed (dossier, lounge message, watchlist, archive) |

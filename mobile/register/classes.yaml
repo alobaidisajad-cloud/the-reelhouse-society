@@ -789,15 +789,16 @@ classes:
     places: [none]
 
   - id: NAV-cold-link-wrong-tab-beneath
-    title: "A screen opened cold by a link (a notice, a shared log, the reset link) had the Dispatch beneath it, the first tab the bar lists: Back landed there instead of the Lobby, and the Dispatch loaded unseen during the start"
+    title: "A screen opened cold by a link (a notice, a shared log, the reset link) had the Dispatch beneath it, the first tab the bar lists: Back landed there instead of the Lobby, and the Dispatch loaded unseen during the start; and Back from the Lobby itself went to the Dispatch before it left the app"
     seriousness: serious
     area: navigation
     status: OPEN
-    count: 1
-    source: { kind: history, ref: "Sealed E2E 39774848305 and 39763329848, shard 3, auth_deep_link: the Dispatch read 5.0 s and 4.5 s behind the linked screen, over its stall ceiling; 2.3 to 3.2 s in the runs before" }
+    count: 2
+    source: { kind: history, ref: "Sealed E2E 39774848305 and 39763329848, shard 3, auth_deep_link: the Dispatch read 5.0 s and 4.5 s behind the linked screen, over its stall ceiling; 2.3 to 3.2 s in the runs before. The first fix, expo-router's unstable_settings, never reached the tab navigator: Sealed E2E 39787831762, Back still landed on the Dispatch" }
     methods:
-      - { kind: static, file: src/utils/__tests__/everyBackHasAWayOut.guard.test.ts, test: "a screen opened cold by a link has the Lobby beneath it, where Back lands, never the first tab listed" }
-    fix: "app/(tabs)/_layout.tsx names the Lobby (index) its first route (unstable_settings.initialRouteName), so a cold link builds the Lobby beneath its screen; auth_deep_link presses Back after its cold link and waits for the Lobby, on Android, where a phone has the key (mutant shape-first-tab-beneath)"
+      - { kind: running, file: src/utils/__tests__/theLobbyIsTheTabsHome.test.tsx, test: "a screen opened cold by a link has the Lobby beneath it, where Back lands, never the first tab listed; Back from any other tab lands there too, and from the Lobby leaves the app" }
+      - { kind: static, file: src/utils/__tests__/theLobbyIsTheTabsHome.test.tsx, test: "the tab layout hands its navigator the Lobby as its home" }
+    fix: "app/(tabs)/_layout.tsx hands its tab navigator TABS_HOME (src/utils/lastTab.ts): the Lobby, index, is its initialRouteName, the tab a cold link builds beneath its screen, and its backBehavior is initialRoute, so Back from any tab lands on the Lobby and Back from the Lobby leaves; proven by rendering the real tab order through expo-router itself, not by reading a setting; auth_deep_link presses Back after its cold link, and after opening The Reel, and waits for the Lobby, on Android, where a phone has the key (mutants shape-first-tab-beneath, shape-back-to-first-tab, shape-tabs-home-unhanded)"
     places: [emulator]
 
   - id: LIGHT-unproven-on-device
