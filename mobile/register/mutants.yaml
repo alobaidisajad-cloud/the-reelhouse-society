@@ -935,3 +935,21 @@ mutants:
         find: "            if \"$MAESTRO_BIN\" --device \"$SIM_DEVICE\" test \".maestro/$f\""
         replace: "            if true"
     proof: { file: e2e/__tests__/iosFlows.test.ts, test: "are run by the iPhone launch check, each, on the simulator it launched" }
+
+  - id: shape-retry-blocked-by-lock
+    class: CI-retry-blocked-by-its-first-try
+    source: shape
+    edits:
+      - file: ../.github/workflows/load.yml
+        find: "        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n"
+        replace: "        continue-on-error: true\n        run: |\n"
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }
+
+  - id: shape-frames-commit-again
+    class: RN-props-before-mount
+    source: shape
+    edits:
+      - file: package.json
+        find: "      \"ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS\": true\n"
+        replace: "      \"ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS\": false\n"
+    proof: { file: src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts, test: "Android writes a frame's opacity and transform straight to the view, where a removed view is skipped" }

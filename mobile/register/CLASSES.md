@@ -29,7 +29,7 @@ production shows only its id, area, seriousness and count here.
 | E2E-record-not-kept | tests | behaviour | OPEN | 0 | The E2E run writes a record (a probe's result, a judge's words, the phone's settings) that is never kept with its logs, or kept with the member's password in it |
 | NAV-launch-link-overridden | navigation | behaviour | OPEN | 1 | A launch by a link (a sign-up or password email's, a shared one) lands on the tab the member last used instead of the page the link names, because the half-hour return to the last tab judged the launch by the first path drawn, which on a phone can be the Lobby's while the link is still being read |
 | RN-react-destroyed-on-mount | navigation | serious | OPEN | 0 | React Navigation's tab icon is drawn twice and its wrappers' flattening swapped; Android's Fabric loses a re-make and React is destroyed |
-| RN-props-before-mount | navigation | serious | OPEN | 1 | Under load, Reanimated sends a new screen's animated props to Android before Fabric has made the views (an image's load event runs its pending updates at once), so the update names a view that does not exist yet and React is destroyed |
+| RN-props-before-mount | navigation | serious | OPEN | 2 | Under load, Reanimated sends a new screen's animated props to Android before Fabric has made the views (an image's load event runs its pending updates at once), so the update names a view that does not exist yet and React is destroyed |
 | SEC-secret-committed | security | serious | OPEN | 21 | open in production |
 | BUILD-upload-carries-ignored-files | release | serious | OPEN | 0 | An EAS build's upload carries files git keeps out |
 | DB-breaking-change-unexplained | database | serious | OPEN | 0 | A database change narrows what a shipped client relies on, with no reason why it is safe |
@@ -69,6 +69,7 @@ production shows only its id, area, seriousness and count here.
 | E2E-scroll-untimed-on-a-full-house | tests | code | OPEN | 6 | No busy screen's scroll was timed signed in on a house full enough to scroll, so a member's lag (build 41's findings) had no measure to be judged by |
 | DB-lookup-without-index | database | serious | OPEN | 3 | A row found by a column with no index, in a trigger or a member's own act, reads the whole table: every withdrawn salon message and every closing account read every message of every salon |
 | E2E-no-flow-on-ios | tests | code | OPEN | 2 | No flow ran on an iPhone: every Maestro flow ran on Android alone, so a step only iOS draws differently was never walked |
+| CI-retry-blocked-by-its-first-try | ci | code | OPEN | 18 | An install's retry that could not run: the first try, cut short at its time limit, left apt-get holding the package lock, and the retry failed in a second on it, so the 'once more' never was |
 | LIGHT-unproven-on-device | tests | code | OPEN | 5 | The light drawn on no device as main writes it: the study proved its own gradient strings, main's light.ts writes them otherwise, and the member page's spotlight was never drawn on a phone |
 | E2E-ceiling-not-measured | tests | code | OPEN | 2 | A time limit of the sealed E2E (a screen's ceiling, a shard's flows) set from too few runs, so the shared emulator's spread reads as the app's |
 | CI-check-only-in-ci | tooling | code | OPEN | 1 | A check CI runs that no local gate runs, so a push meets it only in red |

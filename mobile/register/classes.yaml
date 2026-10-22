@@ -322,11 +322,12 @@ classes:
     seriousness: serious
     area: navigation
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: history, ref: "Sealed E2E 39642840944, shard 1, the log probe: a change to the member tab a second after launch; UPDATE PROPS for tags 2644, 2672 and 2690 while the highest view made was 2638, from expo-image's onLoad through Reanimated's NodesManager.onEventDispatch; once in the 60 E2E runs since 2026-10-15. Reanimated 4.1.7; the closest upstream fixes (software-mansion/react-native-reanimated 10794 and 10795, merged 2026-10-05) are for removals" }
     methods:
       - { kind: static, file: src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts, test: "the manifest asks for a Reanimated with both, not the SDK pin" }
-    fix: "Reanimated 4.3.4 (the newest for React Native 0.81 and worklets 0.8): a UI-thread pass keeps only the views that are mounted (preserveMountedTags) and treats a view still being made as not mounted (the fix to software-mansion/react-native-reanimated#9636); four props that carry an animated style typed as AnimatedStyle; theMountOrderGuardIsInstalled reads the installed library and the manifest, so expo install --fix cannot take it back to the SDK's 4.1 pin (mutant shape-reanimated-back-to-the-pin). Proven on a phone by the Sealed E2E runs from here on: the crash was once in 60."
+      - { kind: static, file: src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts, test: "Android writes a frame's opacity and transform straight to the view, where a removed view is skipped" }
+    fix: "Reanimated 4.3.4 (the newest for React Native 0.81 and worklets 0.8): a UI-thread pass keeps only the views that are mounted (preserveMountedTags) and treats a view still being made as not mounted (the fix to software-mansion/react-native-reanimated#9636); four props that carry an animated style typed as AnimatedStyle; theMountOrderGuardIsInstalled reads the installed library and the manifest, so expo install --fix cannot take it back to the SDK's 4.1 pin (mutant shape-reanimated-back-to-the-pin). Then the other side (Sealed E2E 39763329848, shard 1, lounge_flow, on 4.3.4): an animation frame (NodesManager.onAnimationFrame) committed view 538's props while React's commit removed it; Android's push model orders neither, and React Native 0.81 throws (0.86 logs, react-native 56147; upstream reanimated 7493 and 8592). ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS (package.json) sends opacity, transform, colours and radii straight to the view by React Native's own path, which skips a view already gone; 17 animated styles of layout props (keyboard paddings, the scrollbar) still commit until React Native 0.86 (mutant shape-frames-commit-again)."
     places: [emulator]
 
   - id: SEC-secret-committed
@@ -774,6 +775,18 @@ classes:
       - { kind: static, file: e2e/__tests__/iosFlows.test.ts, test: "each need no server: no seeded account, no sign-in, no Android-only step" }
     fix: "the iPhone launch check runs, after its launch, on the same simulator, by Maestro 2.10.0, every flow e2e/ios-flows.json lists (the boot and the deep links, the flows that need no server); the flows that read the house join with the iOS world (P0.92) (mutant shape-ios-flows-unrun)"
     places: [simulator]
+
+  - id: CI-retry-blocked-by-its-first-try
+    title: "An install's retry that could not run: the first try, cut short at its time limit, left apt-get holding the package lock, and the retry failed in a second on it, so the 'once more' never was"
+    seriousness: code
+    area: ci
+    status: OPEN
+    count: 18
+    source: { kind: history, ref: "God-Tier 39763330037: Could not get lock /var/lib/dpkg/lock-frontend, both retries" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }
+    fix: "every step that installs through apt (the Postgres client, Playwright's --with-deps) first sets DPkg::Lock::Timeout to 240 s, so a retry waits for the try before it to let go of the lock (mutant shape-retry-blocked-by-lock)"
+    places: [none]
 
   - id: LIGHT-unproven-on-device
     title: "The light drawn on no device as main writes it: the study proved its own gradient strings, main's light.ts writes them otherwise, and the member page's spotlight was never drawn on a phone"

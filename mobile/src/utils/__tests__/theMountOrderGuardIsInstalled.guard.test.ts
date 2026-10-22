@@ -39,3 +39,18 @@ it('the manifest asks for a Reanimated with both, not the SDK pin', () => {
   expect([asked, atLeast(asked, [4, 3, 4])]).toEqual([asked, true]);
   expect([installed, atLeast(installed, [4, 3, 4])]).toEqual([installed, true]);
 });
+
+/*
+ * And the same crash from the other side (Sealed E2E 39763329848, shard 1, lounge_flow): an animation
+ * frame committed view 538's props from the UI thread while React's own commit removed it, on
+ * Android's push model nothing orders the two, and React Native 0.81 throws on the update (it logs
+ * instead from 0.86, react-native 56147). With ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS the props a
+ * frame most often animates (opacity, transform, colours, radii) go straight to the view by
+ * React Native's own path, which skips a view already gone; only layout props still commit.
+ */
+it('Android writes a frame\'s opacity and transform straight to the view, where a removed view is skipped', () => {
+  const flags = (JSON.parse(readFileSync(join(MOBILE, 'package.json'), 'utf8')).reanimated ?? {}).staticFeatureFlags ?? {};
+  expect(flags.ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS).toBe(true);
+  const gradle = readFileSync(join(LIB, 'android', 'build.gradle'), 'utf8');
+  expect(gradle).toMatch(/packageJson\.reanimated\?\.staticFeatureFlags/);
+});

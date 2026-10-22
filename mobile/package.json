@@ -118,6 +118,11 @@
     "yoga-layout": "3.2.1"
   },
   "private": true,
+  "reanimated": {
+    "staticFeatureFlags": {
+      "ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS": true
+    }
+  },
   "expo": {
     "autolinking": {
       "android": {
