@@ -677,5 +677,19 @@
     "proof": "m1",
     "commit": "ced511e2cf3eb59f495697fb5c8faae3b6ca9fc8",
     "verdict": "caught"
+  },
+  {
+    "class": "CI-retry-blocked-by-its-first-try",
+    "mutant": "shape-retry-blocked-by-lock",
+    "proof": "m1",
+    "commit": "c089278cc1eb8d84a14f61366bb005d31a7f2ae7",
+    "verdict": "caught"
+  },
+  {
+    "class": "RN-props-before-mount",
+    "mutant": "shape-frames-commit-again",
+    "proof": "m2",
+    "commit": "c089278cc1eb8d84a14f61366bb005d31a7f2ae7",
+    "verdict": "caught"
   }
 ]
