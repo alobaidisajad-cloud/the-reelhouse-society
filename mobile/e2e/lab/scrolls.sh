@@ -34,6 +34,10 @@ adb shell cmd package compile -f -m verify "$PKG" > /dev/null 2>&1
 if ! "$MAESTRO" test -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
     mobile/e2e/lab/sign-in.yaml > "$OUT/sign-in.txt" 2>&1 < /dev/null; then
   { echo "the member could not be signed in:"; tail -n 20 "$OUT/sign-in.txt"; } >> "$OUT/anomalies.txt"
+  # What the phone showed, and what the app said, so the cause is read, not guessed.
+  adb exec-out screencap -p > "$OUT/sign-in-failed.png"
+  adb logcat -d -v threadtime > "$OUT/sign-in-failed.log"
+  grep -E "FATAL|AndroidRuntime|viewState|React instance|ReactNativeJS.*Error" "$OUT/sign-in-failed.log" | head -n 15 >> "$OUT/anomalies.txt"
   exit 0
 fi
 
