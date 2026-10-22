@@ -656,5 +656,12 @@
     "proof": "m1",
     "commit": "a11362dfd5e63fccbbe5f329fffbd8f8c639682e",
     "verdict": "caught"
+  },
+  {
+    "class": "E2E-scroll-untimed-on-a-full-house",
+    "mutant": "shape-scroll-ran-out-unseen",
+    "proof": "m1",
+    "commit": "890ea2757c2938758435bdec83b253bca7f334c5",
+    "verdict": "caught"
   }
 ]
