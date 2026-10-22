@@ -53,32 +53,33 @@ it('the tab layout hands its navigator the Lobby as its home', () => {
 
 /** The router settles its state on timers (renderRouter turns them fake): run them out. */
 const settle = () => act(() => { jest.runOnlyPendingTimers(); });
-const go = (move: () => void) => { act(move); settle(); };
+const go = async (move: () => void) => { await act(move); await settle(); };
 
-afterEach(() => { cleanup(); jest.useRealTimers(); });
+afterEach(async () => { await cleanup(); jest.useRealTimers(); });
 
 // The page beneath the open one is hidden from the reader; it is there all the same.
 const BENEATH = { includeHiddenElements: true };
 
 // One render, one journey: expo-router keeps its router in one store for the whole file, and a
 // second render here was steered by the first's.
-it('a screen opened cold by a link has the Lobby beneath it, where Back lands, never the first tab listed; Back from any other tab lands there too, and from the Lobby leaves the app', () => {
+it('a screen opened cold by a link has the Lobby beneath it, where Back lands, never the first tab listed; Back from any other tab lands there too, and from the Lobby leaves the app', async () => {
   const app = renderRouter(house(), { initialUrl: '/no-such-room' });
-  settle();
+  await settle();
   expect(app.getByText('not in the archive')).toBeTruthy();
   // A tab is drawn once opened: beneath the page, the Lobby is, and the Dispatch never was.
   expect(app.getByText('tab index', BENEATH)).toBeTruthy();
   expect(app.queryByText('tab dispatch', BENEATH)).toBeNull();
   expect(router.canGoBack()).toBe(true);
-  go(() => router.back());
+  await go(() => router.back());
   expect(app.getPathname()).toBe('/');
 
-  const landed = (['/dispatch', '/reels', '/darkroom', '/profile'] as const).map((tab) => {
-    go(() => router.navigate(tab));
+  const landed: string[] = [];
+  for (const tab of ['/dispatch', '/reels', '/darkroom', '/profile'] as const) {
+    await go(() => router.navigate(tab));
     expect(app.getPathname()).toBe(tab);
-    go(() => router.back());
-    return app.getPathname();
-  });
+    await go(() => router.back());
+    landed.push(app.getPathname());
+  }
   expect(landed).toEqual(['/', '/', '/', '/']);
   expect(router.canGoBack()).toBe(false);
 });
