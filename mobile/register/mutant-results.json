@@ -406,6 +406,13 @@
     "verdict": "caught"
   },
   {
+    "class": "RN-props-before-mount",
+    "mutant": "shape-reanimated-back-to-the-pin",
+    "proof": "m1",
+    "commit": "383c4ff595f0bfe29f3b92b74b66001089c8c23c",
+    "verdict": "caught"
+  },
+  {
     "class": "TYPE-italic-faked",
     "mutant": "shape-italic-asked",
     "proof": "m1",
