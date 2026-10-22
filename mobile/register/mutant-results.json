@@ -686,6 +686,20 @@
     "verdict": "caught"
   },
   {
+    "class": "TEST-mock-written-from-scratch",
+    "mutant": "shape-router-mock-from-scratch",
+    "proof": "m1",
+    "commit": "5dc07fbeca46332adf1fe4a0fea3801d302b69ff",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-ios-cold-link-launch-hang",
+    "mutant": "shape-ios-cold-link-once",
+    "proof": "m1",
+    "commit": "5dc07fbeca46332adf1fe4a0fea3801d302b69ff",
+    "verdict": "invalid"
+  },
+  {
     "class": "LOOK-text-colour-laid-as-paper",
     "mutant": "shape-parchment-as-paper",
     "proof": "m1",
