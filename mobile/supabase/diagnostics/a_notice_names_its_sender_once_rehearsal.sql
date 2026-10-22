@@ -21,7 +21,8 @@ SELECT set_config('rehearsal.host', pg_temp.rh_found('a member to host the salon
 SELECT set_config('rehearsal.guest', pg_temp.rh_found('a member of Archivist rank or above, in good standing, besides the host', (
   SELECT id FROM public.profiles
    WHERE id::text <> current_setting('rehearsal.host')
-     AND public.profile_tier_weight(tier, role, is_founding) >= 1
+     AND (lower(tier) IN ('archivist', 'auteur', 'founding') OR lower(role) IN ('archivist', 'auteur', 'founding') OR is_founding)
+      AND public.profile_tier_weight(tier, role, is_founding) >= 1
      AND NOT coalesce(is_banned, false)
      AND (suspended_until IS NULL OR suspended_until <= now())
    ORDER BY created_at LIMIT 1))::text, true) AS done \gset rh_

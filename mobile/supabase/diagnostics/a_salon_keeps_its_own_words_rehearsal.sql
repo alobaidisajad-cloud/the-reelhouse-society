@@ -24,10 +24,12 @@ BEGIN;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 -- a and b hold a rank that may speak in a salon; c is a third member who sits nowhere.
 SELECT set_config('rehearsal.a', pg_temp.rh_found('a ranked member',
-  (SELECT id FROM public.profiles WHERE public.profile_tier_weight(tier, role, is_founding) >= 1 AND role <> 'admin'
+  (SELECT id FROM public.profiles WHERE (lower(tier) IN ('archivist', 'auteur', 'founding') OR lower(role) IN ('archivist', 'auteur', 'founding') OR is_founding)
+      AND public.profile_tier_weight(tier, role, is_founding) >= 1 AND role <> 'admin'
     ORDER BY created_at LIMIT 1))::text, true) AS done \gset rh_
 SELECT set_config('rehearsal.b', pg_temp.rh_found('a second ranked member',
-  (SELECT id FROM public.profiles WHERE public.profile_tier_weight(tier, role, is_founding) >= 1
+  (SELECT id FROM public.profiles WHERE (lower(tier) IN ('archivist', 'auteur', 'founding') OR lower(role) IN ('archivist', 'auteur', 'founding') OR is_founding)
+      AND public.profile_tier_weight(tier, role, is_founding) >= 1
       AND id <> current_setting('rehearsal.a')::uuid ORDER BY created_at LIMIT 1))::text, true) AS done \gset rh_
 SELECT set_config('rehearsal.c', pg_temp.rh_found('a third member',
   (SELECT id FROM public.profiles WHERE id NOT IN (current_setting('rehearsal.a')::uuid, current_setting('rehearsal.b')::uuid)
