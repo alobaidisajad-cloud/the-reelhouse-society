@@ -132,7 +132,8 @@ describe('the type floor', () => {
     expect(ALL.some((x) => x.key === 'src/components/film/CastCarousel.tsx · castRole' && x.size === 10)).toBe(true);
   });
 
-  it(`every word a member reads is at least ${FLOOR}pt`, () => {
+  // a title the register can name a proof by (FLOOR is 10)
+  it('every word a member reads is at least 10pt', () => {
     const under = ALL
       .filter((x) => x.size < FLOOR && !KEEP_FILES[x.file] && !KEEP[x.key] && !BADGE.has(x.key))
       .map((x) => `${x.file}:${x.line}  ${x.key.split(' · ')[1]}  ${x.size}pt`);

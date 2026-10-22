@@ -19,7 +19,7 @@ import React, {
 import type { LayoutChangeEvent, LayoutRectangle, StyleProp, ViewProps, ViewStyle } from 'react-native';
 import Animated, {
   cancelAnimation, ReduceMotion, runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue,
-  withDelay, withTiming, type SharedValue, type WithTimingConfig,
+  withDelay, withTiming, type AnimatedStyle, type SharedValue, type WithTimingConfig,
 } from 'react-native-reanimated';
 import { useSafeAreaFrame } from 'react-native-safe-area-context';
 import { ARRIVAL_GRACE_MS, ARRIVAL_RISE } from '@/src/hooks/useArrival';
@@ -206,7 +206,7 @@ export interface PresenceViewProps extends Omit<ViewProps, 'style'> {
   enter?: Motion<Entrance>;
   /** Without one, it is removed at once. */
   exit?: Motion<Exit>;
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<AnimatedStyle<ViewStyle>>;
 }
 
 /** A frame a removed view keeps while it leaves: out of the layout, where it last stood. */

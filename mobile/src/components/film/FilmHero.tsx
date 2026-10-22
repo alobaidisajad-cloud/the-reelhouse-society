@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
+import type { AnimatedStyle } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Film as FilmIcon } from 'lucide-react-native';
@@ -31,7 +32,7 @@ interface FilmHeroProps {
    * (not yet read, or the read failed): the hero then claims nothing.
    */
   verdict: FilmVerdict | null;
-  posterGlowStyle: StyleProp<ViewStyle>;
+  posterGlowStyle: StyleProp<AnimatedStyle<ViewStyle>>;
   statusConfig: Record<string, { text: string; Icon: React.ComponentType<{ size: number; color: string; strokeWidth: number }> }>;
 }
 

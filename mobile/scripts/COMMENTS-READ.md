@@ -863,7 +863,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
 | src/hooks/__tests__/aScrollIsOneTransaction.test.tsx | 2026-10-15 | new |
 | src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-01 | written with useKeyboardLift |
+| src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-22 | edited: the mock's plain style read through unknown (Reanimated 4.3 types an animated style as a handle) |
 | src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/hooks/__tests__/aSlowPhoneIsKnownAtOnce.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a throttled phone is known on the first render. |
 | src/hooks/__tests__/everyMainScreenTracesItsScroll.guard.test.ts | 2026-10-15 | new |
@@ -1128,7 +1128,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/theLightIsReadable.test.ts | 2026-10-08 | written: every light gradient read back through React Native's own parser |
 | src/theme/__tests__/theRoomIsLit.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/theme/__tests__/theTypeFloor.test.ts | 2026-10-22 | edited: no settled exemption; the profile's marks named; a size written as an attribute read |
+| src/theme/__tests__/theTypeFloor.test.ts | 2026-10-22 | edited: no settled exemption; the profile's marks named; a size written as an attribute read; its floor test titled literally, so a proof can name it |
 | src/theme/__tests__/theVeilMeetsTheLight.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/wordsAreNotMarks.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/wordsAreSolid.test.ts | 2026-10-22 | edited: a style a <Text> wears is read as text though it sets no type; no dimmed-control exception left |
@@ -1417,3 +1417,4 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/anUnreadyControlIsHollow.guard.test.ts | 2026-10-22 | edited: reads whole style objects across lines; a state style that recolours is refused too |
 | src/utils/countryName.ts | 2026-10-22 | written: a country's name from its code; the house's own list (Hermes has no region names), the code where it has none |
 | src/utils/__tests__/countryName.test.ts | 2026-10-22 | written: in a sentence and as a label; an unknown code said as it came; every TMDB region named |
+| src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts | 2026-10-22 | written: the installed Reanimated keeps only mounted views and does not throw on one being made; the manifest is past the SDK pin |

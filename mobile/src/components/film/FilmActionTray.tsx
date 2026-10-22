@@ -32,6 +32,7 @@ import { View, StyleSheet, BackHandler, Pressable, ScrollView } from 'react-nati
 import { Text } from '@/src/components/text';
 import type { StyleProp, ViewStyle } from 'react-native';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import type { AnimatedStyle } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import {
@@ -81,7 +82,7 @@ export interface TrayAct {
    * springs under the member's finger; without this the toggle would change a
    * label and a chip and nothing would move.
    */
-  iconStyle?: StyleProp<ViewStyle>;
+  iconStyle?: StyleProp<AnimatedStyle<ViewStyle>>;
 }
 
 interface FilmActionTrayProps {

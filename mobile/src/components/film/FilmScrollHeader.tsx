@@ -18,6 +18,7 @@ import React, { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
+import type { AnimatedStyle } from 'react-native-reanimated';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 
@@ -36,7 +37,7 @@ interface FilmScrollHeaderProps {
   /** Where the bar's back button starts: the pushed header's top (navMetrics). */
   top: number;
   /** Drives the cross-fade with the floating back button. */
-  animatedStyle: StyleProp<ViewStyle>;
+  animatedStyle: StyleProp<AnimatedStyle<ViewStyle>>;
   /**
    * True while the action tray is open. The tray sets
    * `accessibilityViewIsModal`, which is iOS-only — on Android a screen reader

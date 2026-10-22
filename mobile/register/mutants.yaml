@@ -582,6 +582,15 @@ mutants:
         replace: "                            fontSize=\"8\""
     proof: { file: src/theme/__tests__/theTypeFloor.test.ts, test: "every word a member reads is at least 10pt" }
 
+  - id: shape-reanimated-back-to-the-pin
+    class: RN-props-before-mount
+    source: shape
+    edits:
+      - file: package.json
+        find: "\"react-native-reanimated\": \"~4.3.4\","
+        replace: "\"react-native-reanimated\": \"~4.1.1\","
+    proof: { file: src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts, test: "the manifest asks for a Reanimated with both, not the SDK pin" }
+
   - id: shape-italic-asked
     class: TYPE-italic-faked
     source: shape

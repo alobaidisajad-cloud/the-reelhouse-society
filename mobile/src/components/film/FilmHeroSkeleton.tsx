@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
+import type { AnimatedStyle } from 'react-native-reanimated';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { colors, metrics } from '@/src/theme/theme';
 import { STUB_HEIGHT, STUB_PAD_TOP } from './filmStubMetrics';
@@ -11,7 +12,7 @@ import { RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight'
 const PLACEHOLDER_VEIL: VeilStops = [[0, 0.1], [0.7, 0.6], [1, 1]];
 
 interface FilmHeroSkeletonProps {
-  skeletonAnimStyle: StyleProp<ViewStyle>;
+  skeletonAnimStyle: StyleProp<AnimatedStyle<ViewStyle>>;
   backdropHeight: number;
   /** So the waiting dock stands off the glass exactly as the real one does. */
   bottomInset: number;

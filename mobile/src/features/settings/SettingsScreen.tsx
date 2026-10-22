@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Alert, Modal, type LayoutChangeEvent } from 'react-native';
+import { View, StyleSheet, Alert, Modal, type LayoutChangeEvent, type ScrollView } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
 import { BlurView } from 'expo-blur';
@@ -83,7 +83,7 @@ export function SettingsScreen() {
   const headerTop = usePushedHeaderTop();
   // A door to one section (`/settings?section=import`) lands on it, once.
   const { section } = useLocalSearchParams<{ section?: string }>();
-  const scrollRef = useRef<React.ComponentRef<typeof Animated.ScrollView>>(null);
+  const scrollRef = useRef<ScrollView>(null);
   const landedRef = useRef(false);
   const landOn = (name: string) => (e: LayoutChangeEvent) => {
     if (section !== name || landedRef.current) return;

@@ -26,7 +26,8 @@ afterEach(() => {
 
 const padding = async (rest: number, above?: number) => {
   const { result } = await renderHook(() => useKeyboardLift(rest, above));
-  return (result.current as { paddingBottom: number }).paddingBottom;
+  // the jest mock hands back the plain style the worklet computes
+  return (result.current as unknown as { paddingBottom: number }).paddingBottom;
 };
 
 describe('on iOS', () => {
