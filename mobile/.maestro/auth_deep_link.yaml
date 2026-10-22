@@ -52,10 +52,10 @@ appId: com.reelhouse.society
             id: "welcome-seek-admission"
           timeout: 15000
       - tapOn:
-          id: "reels-tab"
+          id: "darkroom-tab"
       - extendedWaitUntil:
           visible:
-            id: "reel-log"
+            id: "film-card"
           timeout: 20000
       - back
       - extendedWaitUntil:

@@ -822,7 +822,7 @@ classes:
     methods:
       - { kind: running, file: src/utils/__tests__/theLobbyIsTheTabsHome.test.tsx, test: "a screen opened cold by a link has the Lobby beneath it, where Back lands, never the first tab listed; Back from any other tab lands there too, and from the Lobby leaves the app" }
       - { kind: static, file: src/utils/__tests__/theLobbyIsTheTabsHome.test.tsx, test: "the tab layout hands its navigator the Lobby as its home" }
-    fix: "app/(tabs)/_layout.tsx hands its tab navigator TABS_HOME (src/utils/lastTab.ts): the Lobby, index, is its initialRouteName, the tab a cold link builds beneath its screen, and its backBehavior is initialRoute, so Back from any tab lands on the Lobby and Back from the Lobby leaves; proven by rendering the real tab order through expo-router itself, not by reading a setting; auth_deep_link presses Back after its cold link, and after opening The Reel, and waits for the Lobby, on Android, where a phone has the key (mutants shape-first-tab-beneath, shape-back-to-first-tab, shape-tabs-home-unhanded)"
+    fix: "app/(tabs)/_layout.tsx hands its tab navigator TABS_HOME (src/utils/lastTab.ts): the Lobby, index, is its initialRouteName, the tab a cold link builds beneath its screen, and its backBehavior is initialRoute, so Back from any tab lands on the Lobby and Back from the Lobby leaves; proven by rendering the real tab order through expo-router itself, not by reading a setting; auth_deep_link presses Back after its cold link, and after opening the Darkroom, and waits for the Lobby, on Android, where a phone has the key (mutants shape-first-tab-beneath, shape-back-to-first-tab, shape-tabs-home-unhanded)"
     places: [emulator]
 
   - id: LIGHT-unproven-on-device
