@@ -785,7 +785,7 @@ classes:
     source: { kind: history, ref: "God-Tier 39763330037: Could not get lock /var/lib/dpkg/lock-frontend, both retries" }
     methods:
       - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }
-    fix: "every step that installs through apt (the Postgres client, Playwright's --with-deps) first sets DPkg::Lock::Timeout to 240 s, so a retry waits for the try before it to let go of the lock (mutant shape-retry-blocked-by-lock)"
+    fix: "every step that installs through apt (the Postgres client, Playwright's --with-deps) first sets DPkg::Lock::Timeout to 240 s, so a retry waits for the try before it to let go of the lock; and Playwright's system packages are kept between runs in GitHub's cache and copied into apt's own archive first, since a mirror at 30-60 KB/s outlived the wait too (God-Tier 39774848287) (mutant shape-retry-blocked-by-lock)"
     places: [none]
 
   - id: LIGHT-unproven-on-device

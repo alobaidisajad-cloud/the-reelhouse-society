@@ -508,19 +508,37 @@ jobs:
         if: steps.install-4.outcome == 'failure'
         timeout-minutes: 5
         run: npm ci
+      # Its system packages kept between runs: on a slow Ubuntu mirror (30-60 KB/s, God-Tier
+      # 39774848287) their 26 MB outlived a five-minute try, and apt reads the copies on disk instead.
+      - name: Chromium for the measuring tools — its system packages, from the cache
+        id: debs-install-5
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs
+          key: apt-debs-ubuntu-24.04-playwright-chromium
       - name: Chromium for the measuring tools
         id: install-5
         timeout-minutes: 5
         continue-on-error: true
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
           npx playwright install --with-deps chromium
+          mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
       - name: Chromium for the measuring tools, once more
         if: steps.install-5.outcome == 'failure'
         timeout-minutes: 5
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
           npx playwright install --with-deps chromium
+          mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+      - name: Chromium for the measuring tools — its system packages, kept in the cache
+        if: steps.debs-install-5.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs
+          key: apt-debs-ubuntu-24.04-playwright-chromium
       - name: Install Mobile Dependencies
         id: install-6
         timeout-minutes: 5
@@ -645,19 +663,37 @@ jobs:
         if: steps.install-7.outcome == 'failure'
         timeout-minutes: 5
         run: npm ci
+      # Its system packages kept between runs: on a slow Ubuntu mirror (30-60 KB/s, God-Tier
+      # 39774848287) their 26 MB outlived a five-minute try, and apt reads the copies on disk instead.
+      - name: Chromium for the measuring tools — its system packages, from the cache
+        id: debs-install-8
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs
+          key: apt-debs-ubuntu-24.04-playwright-chromium
       - name: Chromium for the measuring tools
         id: install-8
         timeout-minutes: 5
         continue-on-error: true
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
           npx playwright install --with-deps chromium
+          mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
       - name: Chromium for the measuring tools, once more
         if: steps.install-8.outcome == 'failure'
         timeout-minutes: 5
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
           npx playwright install --with-deps chromium
+          mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+      - name: Chromium for the measuring tools — its system packages, kept in the cache
+        if: steps.debs-install-8.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs
+          key: apt-debs-ubuntu-24.04-playwright-chromium
       - name: Install Mobile Dependencies
         id: install-9
         timeout-minutes: 5
@@ -1028,19 +1064,37 @@ jobs:
         if: steps.install-12.outcome == 'failure'
         timeout-minutes: 5
         run: npm ci
+      # Its system packages kept between runs: on a slow Ubuntu mirror (30-60 KB/s, God-Tier
+      # 39774848287) their 26 MB outlived a five-minute try, and apt reads the copies on disk instead.
+      - name: Playwright's system libraries, from the cache
+        id: debs-install-13
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs
+          key: apt-debs-ubuntu-24.04-playwright-all
       - name: Playwright's browsers and their system libraries
         id: install-13
         timeout-minutes: 5
         continue-on-error: true
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
           npx playwright install --with-deps
+          mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
       - name: Playwright's browsers and their system libraries, once more
         if: steps.install-13.outcome == 'failure'
         timeout-minutes: 5
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          [ -d ~/apt-debs ] && sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null; true
           npx playwright install --with-deps
+          mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+      - name: Playwright's system libraries, kept in the cache
+        if: steps.debs-install-13.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs
+          key: apt-debs-ubuntu-24.04-playwright-all
       
       # A path outside playwright.config.ts's testDir (./tests) silently finds nothing.
       - name: Run E2E Feed Tests

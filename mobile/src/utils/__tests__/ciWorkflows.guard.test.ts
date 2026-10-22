@@ -325,6 +325,10 @@ it('every apt install waits for the lock a try cut short at its limit leaves hel
     .filter((s) => s.run && installsByApt(s.run)).map((s) => ({ at: `${w.file} › ${job} › ${s.name}`, run: s.run! }))));
   expect(steps.length).toBeGreaterThanOrEqual(10);
   expect(steps.filter((s) => !waitsForTheLock(s.run)).map((s) => s.at)).toEqual([]);
+  // And Playwright's system packages are read from the copies a run before kept (God-Tier
+  // 39774848287: a slow mirror outlived the lock's wait too).
+  expect(steps.filter((s) => /--with-deps/.test(s.run) && !s.run.includes('sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/'))
+    .map((s) => s.at)).toEqual([]);
   expect(waitsForTheLock('npx playwright install --with-deps chromium')).toBe(false);
   expect(installsByApt('npx playwright install chromium')).toBe(false);
 });
