@@ -670,5 +670,12 @@
     "proof": "m1",
     "commit": "3bacf81d3bc435ef8e88b59ab200ed5849b2f373",
     "verdict": "caught"
+  },
+  {
+    "class": "E2E-no-flow-on-ios",
+    "mutant": "shape-ios-flows-unrun",
+    "proof": "m1",
+    "commit": "ced511e2cf3eb59f495697fb5c8faae3b6ca9fc8",
+    "verdict": "caught"
   }
 ]
