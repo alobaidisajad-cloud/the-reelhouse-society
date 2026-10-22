@@ -1440,3 +1440,4 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/subflows/open_link_on_ios.yaml | 2026-10-22 | written: iOS's own "Open in ...?" before a link opens the app, answered as a member does; nothing if it never came |
 | scripts/kept-debs.sh | 2026-10-22 | new: the kept packages by dpkg alone, those installed left, its exit tells the caller to let apt fetch |
 | scripts/__tests__/keptDebs.test.ts | 2026-10-22 | new: run against stand-in dpkg tools |
+| src/components/lobby/__tests__/theBillsArePrintedOnPaper.guard.test.ts | 2026-10-22 | new: no parchment ground in the Lobby; the three bills on the paper token |

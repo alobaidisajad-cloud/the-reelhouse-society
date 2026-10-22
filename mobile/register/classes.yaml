@@ -788,6 +788,19 @@ classes:
     fix: "every step that installs through apt (the Postgres client, Playwright's --with-deps) first sets DPkg::Lock::Timeout to 240 s, so a retry waits for the try before it to let go of the lock; and Playwright's system packages are kept between runs in GitHub's cache and installed from there by dpkg alone (scripts/kept-debs.sh) before apt is asked, since a mirror at 30-60 KB/s outlived the wait too (God-Tier 39774848287) and apt-get update alone outlived a try (God-Tier 39806861456, its retry then refused on the package lists' lock) (mutants shape-retry-blocked-by-lock, shape-install-waits-on-the-mirror)"
     places: [none]
 
+  - id: LOOK-text-colour-laid-as-paper
+    title: "The Lobby's boxes laid the house's text colour (parchment) down as their paper, and read too white"
+    seriousness: code
+    area: lobby
+    status: OPEN
+    count: 3
+    source: { kind: history, ref: "build 41 (UF8)" }
+    methods:
+      - { kind: static, file: src/components/lobby/__tests__/theBillsArePrintedOnPaper.guard.test.ts, test: "lays no parchment down as a background anywhere in the Lobby" }
+      - { kind: static, file: src/components/lobby/__tests__/theBillsArePrintedOnPaper.guard.test.ts, test: "prints the featured log, the rank banner and the filings on the paper token" }
+    fix: "the bills take colors.paper, a vellum a step deeper than the parchment the words are set in, chosen with the owner (9b535e9d); the finder refuses parchment as a background anywhere under src/components/lobby/ (mutant shape-parchment-as-paper)"
+    places: [none]
+
   - id: E2E-ios-link-question-unanswered
     title: "A link opened on the iPhone simulator went nowhere: iOS's check behind \"Open in ...?\" neither asked nor opened it, so the flow failed for the simulator, not the app"
     seriousness: code
