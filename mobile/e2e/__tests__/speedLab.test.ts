@@ -264,7 +264,10 @@ function budgetRounds(name: string, screens: Record<string, { ready: number; slo
 }
 
 describe('the frame budget (P0.112)', () => {
-  const budget = JSON.parse(readFileSync(join(LAB, 'budget.json'), 'utf8')) as { control: string; lines: Record<string, { reason: string } & Record<string, number | string>> };
+  type Line = { reason: string } & Record<string, number | string>;
+  const budget = JSON.parse(readFileSync(join(LAB, 'budget.json'), 'utf8')) as {
+    control: string; lines: { ready: Line; jsOpen: Line; jsScroll: Line; slowUi: Line; p90: Line };
+  };
 
   it('gives every line a reason, and is read whole: no line the judge does not hold a screen to', () => {
     expect(Object.keys(budget.lines).sort()).toEqual(['jsOpen', 'jsScroll', 'p90', 'ready', 'slowUi']);
