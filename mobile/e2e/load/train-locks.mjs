@@ -95,7 +95,8 @@ function measure(label, args, dir, n) {
     'exit $RC',
   ].join('\n'), 'measure', ...args], {
     env: { ...process.env, DB, TAB: '\t', SAMPLE_SQL: files.sample, SAMPLES: files.samples, OUT: files.out, LIMITS, APP },
-    encoding: 'utf8',
+    // what bash itself says (psql not found, an address refused) goes straight to the log
+    stdio: 'inherit',
   });
   const read = (f) => (existsSync(f) ? readFileSync(f, 'utf8') : '');
   return { label, ok: r.status === 0, out: read(files.out), ms: Date.now() - began, holds: holds(samplesIn(read(files.samples))) };
