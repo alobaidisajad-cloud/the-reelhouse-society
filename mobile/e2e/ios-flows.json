@@ -1,0 +1,4 @@
+{
+  "why": "The flows the iPhone launch check runs on the simulator after the launch (ios-launch.yml, WORKLIST P0.89): only those that need no server, since the iOS world has none until the tailnet trial (P0.92). Each is a flow of mobile/.maestro that signs no member in and reads nothing from the house; iosFlows.test.ts holds the list to that.",
+  "flows": ["boot_verification.yaml", "auth_deep_link.yaml"]
+}

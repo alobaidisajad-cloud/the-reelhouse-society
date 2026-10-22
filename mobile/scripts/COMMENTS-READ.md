@@ -45,7 +45,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-22 | read whole: the train refuses until this run is green on its files |
 | ../.github/workflows/e2e.yml | 2026-10-22 | read whole: four jobs; the seal's name refused in every container with a shell, its addresses to all; the proxy's and the renderer's reasons beside their own lines; the verdict reads any run's three flow machines; a heartbeat when the schedule ran |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-22 | read whole: the alert proved by the fire drill, not by the nightly; every frozen count named; the mutants' job and the add-only job each under its own head; every measuring tool named; a heartbeat when the schedule ran |
-| ../.github/workflows/ios-launch.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind |
+| ../.github/workflows/ios-launch.yml | 2026-10-22 | read whole: then, on the same simulator, the flows that need no server (e2e/ios-flows.json) by Maestro, their records kept (P0.89); a run is cancelled only by a newer run of its own kind |
 | ../.github/workflows/load.yml | 2026-10-22 | read whole: the pending train run on the full house, its locks timed, its report kept, the train left applied for the reads; the change under measurement and the reads timed whatever the locks said; a heartbeat when the schedule ran |
 | ../.github/workflows/nightly.yml | 2026-10-22 | read whole: a variant's machines as it runs them; a heartbeat when the schedule ran |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
@@ -1434,3 +1434,4 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/lab/scrolls.mjs | 2026-10-22 | written: each screen's scroll judged: moved on each of the first five swipes (three screen heights) or failed by name; Android's own frame counts, this runner's, never a phone's (P0.104) |
 | e2e/lab/scrolls.sh | 2026-10-22 | written: signed in once with Maestro; each busy screen opened cold by its link, shot, ten swipes in one shell call with a hash after each, its frames counted; two rounds of opposite order (P0.104) |
 | e2e/lab/sign-in.yaml | 2026-10-22 | written: the seeded member signed in once from a cleared app, by the flows' own subflow |
+| e2e/__tests__/iosFlows.test.ts | 2026-10-22 | written: the iPhone's flows are flows of .maestro that need no server, and the launch check runs each on its own simulator (P0.89) |

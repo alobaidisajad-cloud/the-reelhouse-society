@@ -8,7 +8,8 @@ name: 📱 iPhone launch
 # fails the job), launched on a freshly booted simulator, whose animations are
 # on. It must be alive at 5 s and at 25 s, and its first screen must say it is
 # ready by 25 s in the app's own log stream (a launch that never drew fails). No
-# backend: the first screen needs none.
+# backend: the first screen needs none. Then, on the same simulator, the flows
+# that need no server (mobile/e2e/ios-flows.json), by Maestro.
 
 on:
   push:
@@ -73,6 +74,7 @@ jobs:
           S="$RUNNER_TEMP/launch"; mkdir -p "$S"
           DEV=$(xcrun simctl list devices available | grep -E 'iPhone 16 Pro \(' | head -n 1 | grep -oE '[0-9A-F-]{36}')
           [ -n "$DEV" ] || DEV=$(xcrun simctl list devices available | grep -E 'iPhone' | head -n 1 | grep -oE '[0-9A-F-]{36}')
+          echo "SIM_DEVICE=$DEV" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEV"
           xcrun simctl bootstatus "$DEV" -b
           xcrun simctl install "$DEV" "$RUNNER_TEMP/ios/app.app"
@@ -131,3 +133,46 @@ jobs:
             node e2e/annotate.mjs "The app did not open on an iPhone" "$S/why.txt"
             exit 1
           fi
+
+      # The first iOS flow runner (WORKLIST P0.89): on the same simulator, with the app installed,
+      # the flows that need no server (mobile/e2e/ios-flows.json). The flows that read the house join
+      # once the iOS world reaches one (P0.92).
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Maestro 2.10.0
+        run: |
+          curl -sSL -o "$RUNNER_TEMP/maestro.zip" https://github.com/mobile-dev-inc/maestro/releases/download/cli-2.10.0/maestro.zip
+          echo "29b675e10cc12080e445e9bfb2e2b4e4dfb9c0f2e30d5884120d258b5e1cd991  $RUNNER_TEMP/maestro.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/maestro.zip" -d "$HOME/.maestro-dist"
+          echo "MAESTRO_BIN=$HOME/.maestro-dist/maestro/bin/maestro" >> "$GITHUB_ENV"
+
+      - name: The flows that need no server, on the simulator
+        working-directory: mobile
+        run: |
+          set +e
+          S="$RUNNER_TEMP/ios-flows"
+          mkdir -p "$S"
+          rc=0
+          for f in $(node -e "process.stdout.write(require('./e2e/ios-flows.json').flows.join(' '))"); do
+            if "$MAESTRO_BIN" --device "$SIM_DEVICE" test ".maestro/$f" --debug-output "$S/${f%.yaml}" > "$S/${f%.yaml}.txt" 2>&1 < /dev/null; then
+              echo "$f: passed"
+            else
+              rc=1
+              echo "$f: FAILED"
+              tail -n 40 "$S/${f%.yaml}.txt" > "$S/why-${f%.yaml}.txt"
+              node e2e/annotate.mjs "The flow $f failed on the iPhone simulator" "$S/why-${f%.yaml}.txt"
+            fi
+          done
+          exit $rc
+
+      - name: Keep the flows' records
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ios-flows
+          path: ${{ runner.temp }}/ios-flows
+          if-no-files-found: ignore
+          retention-days: 7

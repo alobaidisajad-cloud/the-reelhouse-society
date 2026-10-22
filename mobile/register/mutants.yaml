@@ -926,3 +926,12 @@ mutants:
         find: "  const built = cars.filter((m) => m.concurrent);"
         replace: "  const built = cars.filter((m) => m.concurrent && false);"
     proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "builds an index CONCURRENTLY first, alone and outside any transaction, and probes it before any rehearsal" }
+
+  - id: shape-ios-flows-unrun
+    class: E2E-no-flow-on-ios
+    source: shape
+    edits:
+      - file: ../.github/workflows/ios-launch.yml
+        find: "            if \"$MAESTRO_BIN\" --device \"$SIM_DEVICE\" test \".maestro/$f\""
+        replace: "            if true"
+    proof: { file: e2e/__tests__/iosFlows.test.ts, test: "are run by the iPhone launch check, each, on the simulator it launched" }
