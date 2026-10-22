@@ -7,8 +7,9 @@
  * off — so both halves are proved here, along with the one place the E2E
  * backend address may appear.
  */
-import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
+import { basename, join } from 'path';
+import { files as universe } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const appConfig = require('../../../app.config.js') as (ctx: { config: Record<string, unknown> }) => Record<string, unknown>;
@@ -142,8 +143,7 @@ it('no real build profile sets E2E, or points at a local backend', () => {
 });
 
 it('the workflows that build with E2E=1 are the ones app.config.js names, and no other', () => {
-  const dir = join(MOBILE, '..', '.github', 'workflows');
-  const setting = readdirSync(dir).filter((f) => /^\s*E2E: '1'\s*$/m.test(readFileSync(join(dir, f), 'utf8'))).sort();
+  const setting = universe('workflows').filter((p) => /^\s*E2E: '1'\s*$/m.test(readFileSync(p, 'utf8'))).map((p) => basename(p)).sort();
   expect(setting).toEqual(['e2e.yml', 'ios-launch.yml', 'speed-lab.yml']);
   const header = readFileSync(join(MOBILE, 'app.config.js'), 'utf8').split('*/')[0] ?? '';
   expect(setting.filter((f) => !header.includes(f))).toEqual([]);

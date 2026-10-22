@@ -724,6 +724,18 @@ classes:
     fix: "every filter on a pg_temp helper's result in the six rehearsals that had one is a sub-select, (SELECT pg_temp.rh_row(...)), computed once and matched by the index under the row rules too (a plan read on Postgres: Seq Scan with the policy on every row before, Index Scan after); the rehearsal guard refuses the bare call; the lock lab names each run's three slowest statements (mutant shape-rehearsal-reads-every-row)"
     places: [none]
 
+  - id: DB-train-before-ci
+    title: "The train could touch production before CI had passed on its migrations: the shipped builds, the database checks, the E2E and the lock lab were read by a person, or not at all"
+    seriousness: serious
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "the comment read of 2026-10-22: e2e-old-clients.yml promised what nothing enforced" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "touches production only once the shipped builds, the database checks, the E2E and the lock lab passed on these files" }
+    fix: "train.cjs's second step reads, with gh, each of e2e-old-clients.yml, db-integration.yml, e2e.yml and load.yml for a green run on main whose migrations, functions and rehearsals are HEAD's, and refuses by name before production is read (mutant shape-train-before-ci)"
+    places: [none]
+
   - id: LIGHT-unproven-on-device
     title: "The light drawn on no device as main writes it: the study proved its own gradient strings, main's light.ts writes them otherwise, and the member page's spotlight was never drawn on a phone"
     seriousness: code

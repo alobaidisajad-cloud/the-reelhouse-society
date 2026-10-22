@@ -2,11 +2,14 @@
  * A migration reaches production only as one safe unit, and the address it
  * reaches it by stays outside the repo and OneDrive.
  * ─────────────────────────────────────────────────────────────────────────────
- * Three pieces, each held here:
+ * The pieces, each held here (with every change's undo, the shipped clients'
+ * harness, the rehearsal and read-only commands, and the copy taken first):
  *   - scripts/migration-lint.cjs: no transaction control in a file, the time
  *     limits set first, a CONCURRENTLY index alone with plain SETs;
  *   - supabase/diagnostics/apply.cjs: lints before it runs, always runs under
  *     the time limits, and takes --no-transaction for a CONCURRENTLY file only;
+ *   - supabase/diagnostics/train.cjs: every pending migration in one command,
+ *     production touched only once CI passed on its files;
  *   - scripts/private-settings.cjs: the one reader of the address, refusing a
  *     folder inside OneDrive or the repo; no other script reads it from a
  *     `.env` file or writes it anywhere.
@@ -295,6 +298,8 @@ describe('the train: every pending migration in one command', () => {
     psqlArgs: (step: Step, prior: string | null) => string[] | null;
     run: (steps: Step[], exec: (s: Step) => { ok: boolean; out: string }) => { done: Step[]; failed: { step: Step; out: string } | null; left: Step[] };
     verdict: (r: ReturnType<typeof train.run>) => string[];
+    MUST_PASS: { file: string; what: string; paths: string[] }[];
+    unproven: (greens: (file: string) => string[] | null, same: (sha: string, paths: string[]) => boolean) => string[];
   };
   const SQL = "SET LOCAL lock_timeout = '2s';\nSET LOCAL statement_timeout = '30s';\nCREATE TABLE public.x (id int);\n";
   const car = (name: string, sql = SQL): Car => ({ name, path: `/m/${name}`, sql });
@@ -305,7 +310,8 @@ describe('the train: every pending migration in one command', () => {
 
   it('checks the tree, production and a copy first, rehearses every car before applying any, then applies and probes each', () => {
     expect(both.steps?.map((s) => s.what)).toEqual([
-      'the checkout is what CI ran', 'production matches the committed snapshot', 'a full copy of production, read back',
+      'the checkout is what CI ran', 'CI passed on these migrations, functions and rehearsals',
+      'production matches the committed snapshot', 'a full copy of production, read back',
       `rehearse ${A.name}`, `rehearse ${B.name}`,
       `apply ${A.name}`, `probe ${A.name} on production as it now is`,
       `apply ${B.name}`, `probe ${B.name} on production as it now is`,
@@ -347,6 +353,22 @@ describe('the train: every pending migration in one command', () => {
       `TRAIN STOPPED at: apply ${B.name}`, `Applied before it stopped: ${A.name}`, `Not applied: ${B.name} (the failed one was undone whole)`,
     ]);
     expect(train.verdict(train.run(steps, () => ({ ok: true, out: '' })))[0]).toBe(`TRAIN DONE: 2 applied (${A.name}, ${B.name}), each probed.`);
+  });
+
+  it('touches production only once the shipped builds, the database checks, the E2E and the lock lab passed on these files', () => {
+    expect(train.MUST_PASS.map((w) => w.file)).toEqual(['e2e-old-clients.yml', 'db-integration.yml', 'e2e.yml', 'load.yml']);
+    const all = (sha: string) => () => [sha];
+    const sameAs = (good: string) => (sha: string) => sha === good;
+    expect(train.unproven(all('a'.repeat(40)), sameAs('a'.repeat(40)))).toEqual([]);
+    // Green only on a commit whose database files differ from HEAD's: every workflow is unproven.
+    expect(train.unproven(all('b'.repeat(40)), sameAs('a'.repeat(40)))).toHaveLength(4);
+    const shipped = train.unproven((file) => (file === 'e2e-old-clients.yml' ? [] : ['a'.repeat(40)]), sameAs('a'.repeat(40)));
+    expect(shipped).toEqual(["the builds in members' hands, against the train (e2e-old-clients.yml) has passed on no commit with these files"]);
+    expect(train.unproven((file) => (file === 'load.yml' ? null : ['a'.repeat(40)]), sameAs('a'.repeat(40))))
+      .toEqual(["the train's locks on 100,000 members (load.yml): its runs could not be read (is gh installed and signed in?)"]);
+    // Each workflow named is one that runs on main.
+    const workflows = universe('workflows').map((p) => basename(p));
+    expect(train.MUST_PASS.filter((w) => !workflows.includes(w.file))).toEqual([]);
   });
 
   it('can run on the repo as it is: every pending migration has its one rehearsal and passes the lint', () => {

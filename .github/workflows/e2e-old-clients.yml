@@ -5,7 +5,8 @@ name: 🎞️ Shipped clients, end to end
 # E2E (e2e.yml): its own app, from its own commit with only its recorded
 # patches, over the harness of the run, on a database with every pending
 # migration applied. Nightly, and on every push that changes a migration or an
-# edge function, so no train reaches production unless the shipped builds pass.
+# edge function, so no train reaches production unless the shipped builds pass
+# (mobile/supabase/diagnostics/train.cjs refuses until this run is green on its files).
 
 on:
   schedule:

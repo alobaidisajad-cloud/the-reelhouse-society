@@ -3,11 +3,13 @@
 //   node mobile/supabase/diagnostics/train.cjs
 //
 //   1. the checkout is what CI ran: nothing tracked changed, and HEAD is on origin/main;
-//   2. production matches the committed snapshot (schema-snapshot.mjs --check);
-//   3. a full copy of production is taken and read back (dump-production.cjs full);
-//   4. every pending migration is rehearsed before any is applied, each with the ones before it
+//   2. CI passed on these exact database files: each workflow of MUST_PASS has a green run on main
+//      whose migrations, functions and rehearsals are HEAD's (read with gh);
+//   3. production matches the committed snapshot (schema-snapshot.mjs --check);
+//   4. a full copy of production is taken and read back (dump-production.cjs full);
+//   5. every pending migration is rehearsed before any is applied, each with the ones before it
 //      applied first, in one transaction that is always rolled back;
-//   5. each is applied, in name order, as apply.cjs applies one; then its rehearsal runs again,
+//   6. each is applied, in name order, as apply.cjs applies one; then its rehearsal runs again,
 //      rolled back, on production as it now is (the live probe).
 // It stops at the first step that fails and says what was done and what was not. "Pending" is a
 // migration in either tree not named in mobile/supabase/APPLIED.txt; each must have exactly one
@@ -42,6 +44,34 @@ const rehearsalsIn = () => universe.files('rehearsals')
   .map((path) => ({ name: relative(__dirname, path).split(sep).join('/'), path,
     includes: [...readFileSync(path, 'utf8').matchAll(/^\\ir\s+\S*\/([^/\s]+\.sql)\s*$/gm)].map((m) => m[1]) }));
 
+/** What production is made of, as the repository holds it. */
+const DATABASE = ['supabase/migrations', 'mobile/supabase/migrations', 'mobile/supabase/migrations-down',
+  'supabase/functions', 'mobile/supabase/functions', 'mobile/supabase/diagnostics', 'mobile/supabase/APPLIED.txt'];
+/**
+ * The workflows that must have passed on main before production is touched, each on a commit whose
+ * files under `paths` are HEAD's: the builds in members' hands against the train (that workflow
+ * runs when a migration or a function changes), the database's own checks and the rehearsals, the
+ * app end to end on production as the train leaves it, and the train's locks on 100,000 members.
+ */
+const MUST_PASS = [
+  { file: 'e2e-old-clients.yml', what: 'the builds in members\' hands, against the train',
+    paths: ['supabase/migrations', 'mobile/supabase/migrations', 'mobile/supabase/migrations-down', 'supabase/functions', 'mobile/supabase/functions'] },
+  { file: 'db-integration.yml', what: 'the database\'s own checks and the rehearsals', paths: DATABASE },
+  { file: 'e2e.yml', what: 'the app end to end, on production as the train leaves it', paths: DATABASE },
+  { file: 'load.yml', what: 'the train\'s locks on 100,000 members', paths: DATABASE },
+];
+
+/**
+ * Each workflow of MUST_PASS with no green run that can stand for HEAD, said in words: `greens(file)`
+ * gives the commits of its green runs on main, newest first, or null when they cannot be read;
+ * `same(sha, paths)` says whether that commit's files under the paths are HEAD's.
+ */
+const unproven = (greens, same) => MUST_PASS.flatMap((w) => {
+  const shas = greens(w.file);
+  if (shas === null) return [`${w.what} (${w.file}): its runs could not be read (is gh installed and signed in?)`];
+  return shas.some((sha) => same(sha, w.paths)) ? [] : [`${w.what} (${w.file}) has passed on no commit with these files`];
+});
+
 /** The steps of the train, or why it cannot run. */
 const plan = (pending, rehearsals) => {
   if (!pending.length) return { refuse: 'nothing is pending: every migration is in APPLIED.txt' };
@@ -58,6 +88,7 @@ const plan = (pending, rehearsals) => {
   return {
     steps: [
       { kind: 'tree', what: 'the checkout is what CI ran' },
+      { kind: 'ci', what: 'CI passed on these migrations, functions and rehearsals' },
       { kind: 'check', what: 'production matches the committed snapshot' },
       { kind: 'dump', what: 'a full copy of production, read back' },
       ...cars.map((m, i) => ({ kind: 'rehearse', what: `rehearse ${m.name}`, car: m, before: cars.slice(0, i) })),
@@ -140,6 +171,17 @@ if (require.main === module) {
       const on = shell('git', ['merge-base', '--is-ancestor', 'HEAD', 'origin/main']);
       return on.status === 0 ? { ok: true, out: '' } : { ok: false, out: 'HEAD is not on origin/main: pull first' };
     }
+    if (step.kind === 'ci') {
+      const repo = shell('git', ['remote', 'get-url', 'origin']).out.trim().replace(/^.*github\.com[:/]/, '').replace(/\.git$/, '');
+      const greens = (file) => {
+        const r = shell('gh', ['run', 'list', '--repo', repo, '--workflow', file, '--branch', 'main', '--status', 'success',
+          '--limit', '40', '--json', 'headSha', '--jq', '.[].headSha']);
+        return r.status === 0 ? r.out.split('\n').map((l) => l.trim()).filter((l) => /^[0-9a-f]{40}$/.test(l)) : null;
+      };
+      const same = (sha, paths) => shell('git', ['diff', '--quiet', sha, 'HEAD', '--', ...paths]).status === 0;
+      const missing = unproven(greens, same);
+      return missing.length ? { ok: false, out: `CI has not passed on this train:\n${missing.join('\n')}` } : { ok: true, out: '' };
+    }
     if (step.kind === 'check') {
       const r = shell('node', [join(MOBILE, 'scripts', 'schema-snapshot.mjs'), '--check']);
       return { ok: r.status === 0, out: r.out };
@@ -163,4 +205,4 @@ if (require.main === module) {
   process.exit(result.failed ? 1 : 0);
 }
 
-module.exports = { pendingIn, plan, priorSql, psqlArgs, rehearsalsIn, run, verdict };
+module.exports = { MUST_PASS, pendingIn, plan, priorSql, psqlArgs, rehearsalsIn, run, unproven, verdict };

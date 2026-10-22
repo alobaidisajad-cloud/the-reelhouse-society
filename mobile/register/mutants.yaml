@@ -899,3 +899,12 @@ mutants:
         find: "'rh.salon_open', (SELECT count(*) FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_row('b''s message')))"
         replace: "'rh.salon_open', (SELECT count(*) FROM public.lounge_messages WHERE id = pg_temp.rh_row('b''s message'))"
     proof: { file: src/utils/__tests__/rehearsalsRunInCi.guard.test.ts, test: "picks no row by a helper's call itself, which would be read on every row" }
+
+  - id: shape-train-before-ci
+    class: DB-train-before-ci
+    source: shape
+    edits:
+      - file: supabase/diagnostics/train.cjs
+        find: "  return shas.some((sha) => same(sha, w.paths)) ? [] : ["
+        replace: "  return true ? [] : ["
+    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "touches production only once the shipped builds, the database checks, the E2E and the lock lab passed on these files" }

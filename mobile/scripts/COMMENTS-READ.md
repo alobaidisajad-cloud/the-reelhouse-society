@@ -42,7 +42,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/ci-alert.yml | 2026-10-22 | edited: watches the nightly and the speed lab too |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-10-22 | read whole: its time and the mutants' time as the runs take them; the weekly run's reason; a heartbeat when the schedule ran |
-| ../.github/workflows/e2e-old-clients.yml | 2026-10-15 | new |
+| ../.github/workflows/e2e-old-clients.yml | 2026-10-22 | read whole: the train refuses until this run is green on its files |
 | ../.github/workflows/e2e.yml | 2026-10-22 | read whole: four jobs; the seal's name refused in every container with a shell, its addresses to all; the proxy's and the renderer's reasons beside their own lines; the verdict reads any run's three flow machines; a heartbeat when the schedule ran |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-22 | read whole: the alert proved by the fire drill, not by the nightly; every frozen count named; the mutants' job and the add-only job each under its own head; every measuring tool named; a heartbeat when the schedule ran |
 | ../.github/workflows/ios-launch.yml | 2026-10-16 | edited: a run is cancelled only by a newer run of its own kind |
@@ -1241,7 +1241,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
-| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-16 | edited: a shipped client's flows wait as long as this checkout's: build 41's Lobby scroll raised, matched by command and target, never lowered, applied after the patches |
+| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-22 | read whole: its pieces named, the train among them; the train touches production only once its four workflows passed on its files, each refusal said; a shipped client's flows wait as long as this checkout's |
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
 | src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | payments pass: a failed rank sync carries its status |
 | src/utils/__tests__/networkError.test.ts | — |  |
@@ -1373,7 +1373,7 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/diagnostics/apply.cjs | 2026-10-15 | rewritten: lints first, runs under the time limits, --no-transaction for a CONCURRENTLY file alone; the address from the private settings file |
 | supabase/diagnostics/read-only.cjs | 2026-10-15 | true as written |
 | supabase/diagnostics/rehearse.cjs | 2026-10-15 | new |
-| supabase/diagnostics/train.cjs | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| supabase/diagnostics/train.cjs | 2026-10-22 | edited: CI passed on these exact database files before production is read (MUST_PASS, read with gh); its files come from the shared file list (test-utils/universe.js) |
 | supabase/functions/fetch-rss/index.ts | 2026-10-16 | edited: the limit holds until the body is read; the house named as it is; the per-address count bounded; the stand-in's address can be named by the settings |
 | supabase/functions/notify-push/index.ts | 2026-10-16 | edited: Expo's address can be named by the settings; each chunk sent within a time limit; a prune that failed is said, not counted |
 | supabase/functions/_shared/storeRecord.ts | 2026-10-16 | edited: the store's address can be named by the settings (RevenueCat's own by default); its whole answer read within a time limit |
