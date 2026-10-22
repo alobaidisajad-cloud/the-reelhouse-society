@@ -371,9 +371,14 @@ it('an E2E flow opens reelhouse://_sitemap with the app closed, and waits for th
     const docs = parseAllDocuments(readFileSync(join(MOBILE, '.maestro', f), 'utf8')).map((d) => d.toJS());
     return Array.isArray(docs[1]) ? [{ f, steps: docs[1] as unknown[] }] : [];
   });
-  const found = steps.filter(({ steps: s }) => s.some((step, i) => step === 'stopApp'
-    && (s[i + 1] as { openLink?: string })?.openLink === 'reelhouse://_sitemap'
-    && (s[i + 2] as { extendedWaitUntil?: { visible?: string } })?.extendedWaitUntil?.visible === 'ROUTE NOT IN THE ARCHIVE'));
+  // Between the link and the wait, only iOS's answer to its own "Open in ...?" (an iPhone asks first).
+  const iosAnswer = (x: unknown) => (x as { runFlow?: { file?: string } })?.runFlow?.file === 'subflows/open_link_on_ios.yaml';
+  const found = steps.filter(({ steps: s }) => s.some((step, i) => {
+    const wait = iosAnswer(s[i + 2]) ? s[i + 3] : s[i + 2];
+    return step === 'stopApp'
+      && (s[i + 1] as { openLink?: string })?.openLink === 'reelhouse://_sitemap'
+      && (wait as { extendedWaitUntil?: { visible?: string } })?.extendedWaitUntil?.visible === 'ROUTE NOT IN THE ARCHIVE';
+  }));
   expect(found.map((x) => x.f)).toEqual(['auth_deep_link.yaml']);
   // Its title is the one app/+not-found.tsx draws.
   expect(readCode('app/+not-found.tsx')).toContain('ROUTE NOT IN THE ARCHIVE');
