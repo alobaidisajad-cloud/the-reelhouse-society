@@ -749,6 +749,19 @@ classes:
     fix: "the speed lab's signed-in job: the sealed world as the Sealed E2E builds it, filled by e2e/db/lab-seed.mjs (each list's least held by its own count), the member signed in once, and the Reel, a salon, a stack, a log's comments, the Dispatch and the profile each opened cold, shot and scrolled ten swipes with Android's frame counts; a list that ran out before three screen heights, or a scroll never measured, fails by name (mutant shape-scroll-ran-out-unseen)"
     places: [emulator]
 
+  - id: DB-lookup-without-index
+    title: "A row found by a column with no index, in a trigger or a member's own act, reads the whole table: every withdrawn salon message and every closing account read every message of every salon"
+    seriousness: serious
+    area: database
+    status: OPEN
+    count: 3
+    source: { kind: history, ref: "Load 39747386418, the lock lab's second run: a closing account held the train's locks a second on 100,000 members" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "builds an index CONCURRENTLY first, alone and outside any transaction, and probes it before any rehearsal" }
+      - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "drops an index left not whole and builds it once more, and fails one still not whole" }
+    fix: "two indexes built CONCURRENTLY (20261022_01 lounge_messages(reply_to_id), 20261022_02 a GIN index of the cards' metadata), each with its undo and a rehearsal that the index is whole and the reads are planned through it (db-integration.yml shows each failing without its index); request_account_deletion (20261016_02, pending) asks for a departed member's cards by containment, which that index answers. The train builds such a file first, alone, outside any transaction, drops one left not whole and builds it once more, then probes it; up-down-up.mjs and the lock lab run it alone too (P0.8) (mutant shape-index-never-built-first)"
+    places: [none]
+
   - id: LIGHT-unproven-on-device
     title: "The light drawn on no device as main writes it: the study proved its own gradient strings, main's light.ts writes them otherwise, and the member page's spotlight was never drawn on a phone"
     seriousness: code

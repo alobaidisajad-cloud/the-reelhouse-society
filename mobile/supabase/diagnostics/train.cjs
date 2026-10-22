@@ -7,13 +7,16 @@
 //      whose migrations, functions and rehearsals are HEAD's (read with gh);
 //   3. production matches the committed snapshot (schema-snapshot.mjs --check);
 //   4. a full copy of production is taken and read back (dump-production.cjs full);
-//   5. every pending migration is rehearsed before any is applied, each with the ones before it
-//      applied first, in one transaction that is always rolled back;
-//   6. each is applied, in name order, as apply.cjs applies one; then its rehearsal runs again,
+//   5. each index built CONCURRENTLY (a file of one statement, P0.8) is built alone, outside any
+//      transaction, while members write; one left not whole is dropped and built once more; then
+//      its rehearsal of its name, which only reads, probes it whole and read through;
+//   6. every other pending migration is rehearsed before any is applied, each with the ones before
+//      it applied first, in one transaction that is always rolled back;
+//   7. each is applied, in name order, as apply.cjs applies one; then its rehearsal runs again,
 //      rolled back, on production as it now is (the live probe).
 // It stops at the first step that fails and says what was done and what was not. "Pending" is a
 // migration in either tree not named in mobile/supabase/APPLIED.txt; each must have exactly one
-// rehearsal (a *_rehearsal.sql here that includes it under with_train). The address comes from
+// rehearsal (a *_rehearsal.sql here that includes it under with_train; an index's, of its name). The address comes from
 // the private settings file and is never printed; the whole run is kept in <private>/trains/.
 const { spawnSync } = require('child_process');
 const { appendFileSync, mkdirSync, readFileSync, writeFileSync } = require('fs');
@@ -79,20 +82,37 @@ const plan = (pending, rehearsals) => {
   const cars = pending.map((m) => {
     const { kind, faults: lintFaults } = lint(m.sql);
     if (lintFaults.length) faults.push(`${m.name}: the migration lint refuses it: ${lintFaults.join('; ')}`);
-    if (kind === 'concurrently') faults.push(`${m.name}: a CONCURRENTLY file is applied alone, with apply.cjs --no-transaction`);
+    if (kind === 'concurrently') {
+      // Built outside any transaction, so no rehearsal can hold it: its rehearsal (of its name)
+      // only reads, and is the probe after the build.
+      const name = `${m.name.replace(/^\d{8}_\d{2}_/, '').replace(/\.sql$/, '')}_rehearsal.sql`;
+      const own = rehearsals.filter((r) => r.name === name);
+      if (own.length !== 1) faults.push(`${m.name}: a CONCURRENTLY file needs its rehearsal of its name, ${name}, found ${own.length}`);
+      else if (own[0].includes.includes(m.name)) faults.push(`${m.name}: its rehearsal includes it, but a CONCURRENTLY file cannot run in a transaction`);
+      const index = /INDEX CONCURRENTLY (?:IF NOT EXISTS )?(?:public\.)?(\w+)/i.exec(m.sql)?.[1];
+      if (!index) faults.push(`${m.name}: no index named in it`);
+      return { ...m, concurrent: true, index, rehearsal: own[0] };
+    }
     const own = rehearsals.filter((r) => r.includes.includes(m.name));
     if (own.length !== 1) faults.push(`${m.name}: needs exactly one rehearsal that includes it, found ${own.length}`);
     return { ...m, rehearsal: own[0] };
   });
   if (faults.length) return { refuse: faults.join('\n  ') };
+  // The indexes first, each alone while members write: the rehearsals after them read through them.
+  const built = cars.filter((m) => m.concurrent);
+  const rest = cars.filter((m) => !m.concurrent);
   return {
     steps: [
       { kind: 'tree', what: 'the checkout is what CI ran' },
       { kind: 'ci', what: 'CI passed on these migrations, functions and rehearsals' },
       { kind: 'check', what: 'production matches the committed snapshot' },
       { kind: 'dump', what: 'a full copy of production, read back' },
-      ...cars.map((m, i) => ({ kind: 'rehearse', what: `rehearse ${m.name}`, car: m, before: cars.slice(0, i) })),
-      ...cars.flatMap((m) => [
+      ...built.flatMap((m) => [
+        { kind: 'build', what: `build ${m.name} alone, as members write`, car: m },
+        { kind: 'probe', what: `probe ${m.name}: the index whole, and read through`, car: m },
+      ]),
+      ...rest.map((m, i) => ({ kind: 'rehearse', what: `rehearse ${m.name}`, car: m, before: rest.slice(0, i) })),
+      ...rest.flatMap((m) => [
         { kind: 'apply', what: `apply ${m.name}`, car: m },
         { kind: 'probe', what: `probe ${m.name} on production as it now is`, car: m },
       ]),
@@ -106,7 +126,26 @@ const psqlArgs = (step, prior) => {
   if (step.kind === 'rehearse') return [...quiet, '-v', 'with_train=1', ...(prior ? ['-f', prior] : []), '-f', step.car.rehearsal.path];
   if (step.kind === 'probe') return [...quiet, '-f', step.car.rehearsal.path];
   if (step.kind === 'apply') return ['-X', '-1', '-v', 'ON_ERROR_STOP=1', '-f', step.car.path];
+  if (step.kind === 'build') return ['-X', '-v', 'ON_ERROR_STOP=1', '-f', step.car.path];
   return null;
+};
+
+/** The question that says whether a built index is whole: 't', 'f', or nothing when it is not there. */
+const validSql = (index) => `SELECT i.indisvalid FROM pg_index i WHERE i.indexrelid = to_regclass('public.${index}')`;
+
+/**
+ * An index built CONCURRENTLY: `run(args)` runs psql and `ask(sql)` reads one value. A build that
+ * failed half-way leaves an index that is not whole, which IF NOT EXISTS would then keep: it is
+ * dropped, CONCURRENTLY, and built once more. Returns { ok, out }.
+ */
+const buildIndex = (step, run, ask) => {
+  const first = run(psqlArgs(step, null));
+  if (first.status === 0 && ask(validSql(step.car.index)) === 't') return { ok: true, out: first.out };
+  const drop = run(['-X', '-v', 'ON_ERROR_STOP=1', '-c', `DROP INDEX CONCURRENTLY IF EXISTS public.${step.car.index}`]);
+  const again = run(psqlArgs(step, null));
+  const whole = ask(validSql(step.car.index)) === 't';
+  return { ok: drop.status === 0 && again.status === 0 && whole,
+    out: `${first.out}\n(the index was not whole: dropped and built once more)\n${drop.out}\n${again.out}${whole ? '' : `\n${step.car.index} is still not whole`}` };
 };
 
 /** The SQL that opens a rehearsal's transaction with the cars before it applied (none: no file). */
@@ -190,6 +229,11 @@ if (require.main === module) {
       const r = shell('node', [join(MOBILE, 'scripts', 'dump-production.cjs'), 'full']);
       return { ok: r.status === 0, out: r.out };
     }
+    if (step.kind === 'build') {
+      const run = (args) => shell('psql', [url, ...args], { env: { ...process.env, PGOPTIONS: LIMITS } });
+      const ask = (sql) => run(['-X', '-q', '-t', '-A', '-c', sql]).out.trim();
+      return buildIndex(step, run, ask);
+    }
     let prior = null;
     if (step.kind === 'rehearse' && step.before.length) {
       prior = join(tmpdir(), `train-${stamp}-${step.car.name}`);
@@ -205,4 +249,4 @@ if (require.main === module) {
   process.exit(result.failed ? 1 : 0);
 }
 
-module.exports = { MUST_PASS, pendingIn, plan, priorSql, psqlArgs, rehearsalsIn, run, unproven, verdict };
+module.exports = { MUST_PASS, buildIndex, pendingIn, plan, priorSql, psqlArgs, rehearsalsIn, run, unproven, validSql, verdict };

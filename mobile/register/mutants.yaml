@@ -917,3 +917,12 @@ mutants:
         find: "    if (m.moved < FAR) failed.push("
         replace: "    if (m.moved < 0) failed.push("
     proof: { file: e2e/__tests__/speedLab.test.ts, test: "fails a list that ran out before three screen heights, by name" }
+
+  - id: shape-index-never-built-first
+    class: DB-lookup-without-index
+    source: shape
+    edits:
+      - file: supabase/diagnostics/train.cjs
+        find: "  const built = cars.filter((m) => m.concurrent);"
+        replace: "  const built = cars.filter((m) => m.concurrent && false);"
+    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "builds an index CONCURRENTLY first, alone and outside any transaction, and probes it before any rehearsal" }

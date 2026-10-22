@@ -69,10 +69,12 @@ BEGIN
   DELETE FROM public.notifications WHERE from_user_id = uid;
 
   IF v_handle IS NOT NULL THEN
+    -- Asked as containment, so the cards' own index (lounge_messages_card_names, 20261022_02) finds them.
     UPDATE public.lounge_messages
        SET metadata = (metadata - 'owner_username') - 'author_username'
-     WHERE metadata->>'owner_username' = v_handle
-        OR metadata->>'author_username' = v_handle;
+     WHERE metadata <> '{}'::jsonb
+       AND (metadata @> jsonb_build_object('owner_username', v_handle)
+         OR metadata @> jsonb_build_object('author_username', v_handle));
   END IF;
 
   UPDATE public.list_comments   SET user_id = NULL WHERE user_id = uid;

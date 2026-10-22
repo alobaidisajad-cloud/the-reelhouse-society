@@ -299,6 +299,8 @@ describe('the train: every pending migration in one command', () => {
     run: (steps: Step[], exec: (s: Step) => { ok: boolean; out: string }) => { done: Step[]; failed: { step: Step; out: string } | null; left: Step[] };
     verdict: (r: ReturnType<typeof train.run>) => string[];
     MUST_PASS: { file: string; what: string; paths: string[] }[];
+    buildIndex: (step: Step, run: (args: string[]) => { status: number; out: string }, ask: (sql: string) => string) => { ok: boolean; out: string };
+    validSql: (index: string) => string;
     unproven: (greens: (file: string) => string[] | null, same: (sha: string, paths: string[]) => boolean) => string[];
   };
   const SQL = "SET LOCAL lock_timeout = '2s';\nSET LOCAL statement_timeout = '30s';\nCREATE TABLE public.x (id int);\n";
@@ -335,7 +337,8 @@ describe('the train: every pending migration in one command', () => {
     expect(train.plan([A], []).refuse).toMatch(/needs exactly one rehearsal that includes it, found 0/);
     expect(train.plan([A], [reh('x_rehearsal.sql', A.name), reh('y_rehearsal.sql', A.name)]).refuse).toMatch(/found 2/);
     const conc = car('20990101_03_c.sql', "SET lock_timeout = '2s';\nSET statement_timeout = '30min';\nCREATE INDEX CONCURRENTLY i ON public.x (id);\n");
-    expect(train.plan([conc], [reh('c_rehearsal.sql', conc.name)]).refuse).toMatch(/CONCURRENTLY file is applied alone/);
+    expect(train.plan([conc], [reh('c_rehearsal.sql', conc.name)]).refuse).toMatch(/its rehearsal includes it, but a CONCURRENTLY file cannot run in a transaction/);
+    expect(train.plan([conc], []).refuse).toMatch(/a CONCURRENTLY file needs its rehearsal of its name, c_rehearsal\.sql, found 0/);
     expect(train.plan([car('20990101_04_d.sql', 'BEGIN;\nCREATE TABLE public.y (id int);\nCOMMIT;\n')],
       [reh('d_rehearsal.sql', '20990101_04_d.sql')]).refuse).toMatch(/the migration lint refuses it/);
     expect(train.plan([], []).refuse).toMatch(/nothing is pending/);
@@ -353,6 +356,36 @@ describe('the train: every pending migration in one command', () => {
       `TRAIN STOPPED at: apply ${B.name}`, `Applied before it stopped: ${A.name}`, `Not applied: ${B.name} (the failed one was undone whole)`,
     ]);
     expect(train.verdict(train.run(steps, () => ({ ok: true, out: '' })))[0]).toBe(`TRAIN DONE: 2 applied (${A.name}, ${B.name}), each probed.`);
+  });
+
+  it('builds an index CONCURRENTLY first, alone and outside any transaction, and probes it before any rehearsal', () => {
+    const idx = car('20990101_03_c.sql', "SET lock_timeout = '2s';\nSET statement_timeout = '10min';\nCREATE INDEX CONCURRENTLY IF NOT EXISTS x_id ON public.x (id);\n");
+    const p = train.plan([A, idx, B], [reh('a_rehearsal.sql', A.name), reh('b_rehearsal.sql', B.name), reh('c_rehearsal.sql')]);
+    expect(p.steps?.slice(4).map((s) => s.what)).toEqual([
+      `build ${idx.name} alone, as members write`, `probe ${idx.name}: the index whole, and read through`,
+      `rehearse ${A.name}`, `rehearse ${B.name}`,
+      `apply ${A.name}`, `probe ${A.name} on production as it now is`,
+      `apply ${B.name}`, `probe ${B.name} on production as it now is`,
+    ]);
+    const steps = p.steps ?? [];
+    // No rehearsal holds the index file: it cannot run inside their transaction.
+    expect(steps.filter((s) => s.kind === 'rehearse').map((s) => s.before?.map((c) => c.name))).toEqual([[], [A.name]]);
+    expect(train.psqlArgs(steps[4], null)).toEqual(['-X', '-v', 'ON_ERROR_STOP=1', '-f', `/m/${idx.name}`]);
+  });
+
+  it('drops an index left not whole and builds it once more, and fails one still not whole', () => {
+    const idx = car('20990101_03_c.sql', "SET lock_timeout = '2s';\nSET statement_timeout = '10min';\nCREATE INDEX CONCURRENTLY IF NOT EXISTS x_id ON public.x (id);\n");
+    const build = train.plan([idx], [reh('c_rehearsal.sql')]).steps!.find((s) => s.kind === 'build')!;
+    const as = (answers: string[]) => {
+      const ran: string[] = [];
+      const r = train.buildIndex(build, (args) => { ran.push(args.join(' ')); return { status: 0, out: '' }; }, () => answers.shift() ?? '');
+      return { ok: r.ok, ran };
+    };
+    expect(as(['t'])).toEqual({ ok: true, ran: [`-X -v ON_ERROR_STOP=1 -f /m/${idx.name}`] });
+    expect(as(['f', 't'])).toEqual({ ok: true, ran: [`-X -v ON_ERROR_STOP=1 -f /m/${idx.name}`,
+      '-X -v ON_ERROR_STOP=1 -c DROP INDEX CONCURRENTLY IF EXISTS public.x_id', `-X -v ON_ERROR_STOP=1 -f /m/${idx.name}`] });
+    expect(as(['f', 'f']).ok).toBe(false);
+    expect(train.validSql('x_id')).toBe("SELECT i.indisvalid FROM pg_index i WHERE i.indexrelid = to_regclass('public.x_id')");
   });
 
   it('touches production only once the shipped builds, the database checks, the E2E and the lock lab passed on these files', () => {

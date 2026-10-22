@@ -206,7 +206,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/rehearsals.mjs | 2026-10-16 | edited: --without, each pending migration's rehearsal run with its migration taken away, and every one applied again |
 | e2e/db/seal.sh | 2026-10-03 | Written in the tooling audit: the seal e2e.yml and load.yml each carried, in one place for three workflows. |
 | e2e/db/seed.mjs | 2026-10-17 | edited: with E2E_SEED_WALK, a writer at the Auteur rank (grant_entitlement) whose open Lounge and essay in a series give the walk's rooms an id; edited: each read back as the member the walk opens it as |
-| e2e/db/up-down-up.mjs | 2026-10-16 | edited: apply exported, so the rehearsals take a migration away and give it back as the train applies it |
+| e2e/db/up-down-up.mjs | 2026-10-22 | read whole: a CONCURRENTLY file and its undo run alone, outside any transaction, as the migration lint names their kind; apply exported, so the rehearsals take it |
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
 | e2e/db/verify-writes.mjs | 2026-10-17 | edited: on one shard, only the flows run-flows.sh listed; edited: the lifecycle flow killed mid-write, its log exactly once |
@@ -1241,7 +1241,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
-| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-22 | read whole: its pieces named, the train among them; the train touches production only once its four workflows passed on its files, each refusal said; a shipped client's flows wait as long as this checkout's |
+| src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-22 | read whole: its pieces named, the train among them; the train builds an index first, alone, drops and rebuilds one not whole, and touches production only once its four workflows passed on its files; a shipped client's flows wait as long as this checkout's |
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
 | src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | payments pass: a failed rank sync carries its status |
 | src/utils/__tests__/networkError.test.ts | — |  |
@@ -1373,7 +1373,7 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/diagnostics/apply.cjs | 2026-10-15 | rewritten: lints first, runs under the time limits, --no-transaction for a CONCURRENTLY file alone; the address from the private settings file |
 | supabase/diagnostics/read-only.cjs | 2026-10-15 | true as written |
 | supabase/diagnostics/rehearse.cjs | 2026-10-15 | new |
-| supabase/diagnostics/train.cjs | 2026-10-22 | edited: CI passed on these exact database files before production is read (MUST_PASS, read with gh); its files come from the shared file list (test-utils/universe.js) |
+| supabase/diagnostics/train.cjs | 2026-10-22 | edited: each index built CONCURRENTLY first, alone, outside any transaction; one left not whole dropped and built once more; probed by its rehearsal of its name before any rehearsal; CI passed on these exact database files first (MUST_PASS, read with gh) |
 | supabase/functions/fetch-rss/index.ts | 2026-10-16 | edited: the limit holds until the body is read; the house named as it is; the per-address count bounded; the stand-in's address can be named by the settings |
 | supabase/functions/notify-push/index.ts | 2026-10-16 | edited: Expo's address can be named by the settings; each chunk sent within a time limit; a prune that failed is said, not counted |
 | supabase/functions/_shared/storeRecord.ts | 2026-10-16 | edited: the store's address can be named by the settings (RevenueCat's own by default); its whole answer read within a time limit |
@@ -1418,7 +1418,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/countryName.ts | 2026-10-22 | written: a country's name from its code; the house's own list (Hermes has no region names), the code where it has none |
 | src/utils/__tests__/countryName.test.ts | 2026-10-22 | written: in a sentence and as a label; an unknown code said as it came; every TMDB region named |
 | src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts | 2026-10-22 | written: the installed Reanimated keeps only mounted views and does not throw on one being made; the manifest is past the SDK pin |
-| e2e/load/train-locks.mjs | 2026-10-22 | written: the pending train run twice on the 100,000-member house as production runs it, every lock timed by a second connection and every statement by psql itself; a blocking lock on a member's relation held over a second fails; each run's three slowest statements named (P0.6) |
+| e2e/load/train-locks.mjs | 2026-10-22 | written: the pending train run as production runs it on 100,000 members: each index built alone first, each rehearsal, each file applied; every lock timed by a second connection and every statement by psql; a blocking lock on a member's relation held over a second fails; each run's three slowest statements named (P0.6) |
 | e2e/__tests__/trainLocks.test.ts | 2026-10-22 | written: on saved samples, a lock timed first sight to last, blamed on the statement that took it; which holds fail; each statement timed from psql's own output |
 | scripts/heartbeat.mjs | 2026-10-22 | written: a scheduled workflow checks in with a Sentry cron monitor; without its address, a warning that lets the checks run; the address never printed (P0.38) |
 | src/utils/__tests__/heartbeatsAreKept.test.ts | 2026-10-22 | written: every scheduled workflow has its heartbeat on its own schedule, checking in only when the schedule fired; the check-in's refusals |

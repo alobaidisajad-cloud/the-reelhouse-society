@@ -9,6 +9,8 @@
  *   A. each rehearsal as the train rehearses it: the cars before it applied first, its own
  *      migration, its cases, all in one transaction that is rolled back;
  *   B. each migration applied file by file, one transaction each, as apply.cjs applies it.
+ * Each index built CONCURRENTLY comes first, alone and outside any transaction, as the train
+ * builds it, so the rehearsals after it read through it.
  * Meanwhile a second connection reads pg_locks every SAMPLE_MS. A lock is timed from the first
  * sample that sees it granted to the last (a lock is held to the end of the transaction that took
  * it, so in A a migration's lock is held through every case after it), and blamed on the
@@ -134,6 +136,11 @@ function main() {
   }
   const dir = mkdtempSync(join(tmpdir(), 'train-locks-'));
   const runs = [];
+  // In the train's own order: each index built alone first (as production builds it, the
+  // rehearsals then read through it), then the rehearsals, then the applies.
+  for (const step of p.steps.filter((x) => x.kind === 'build')) {
+    runs.push(measure(`B · ${step.what}`, train.psqlArgs(step, null), dir, runs.length));
+  }
   for (const step of p.steps.filter((x) => x.kind === 'rehearse')) {
     const prior = train.priorSql(step.before);
     let priorPath = null;

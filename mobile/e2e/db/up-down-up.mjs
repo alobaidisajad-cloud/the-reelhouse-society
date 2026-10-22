@@ -8,7 +8,8 @@
  * mobile/supabase/migrations-down/. For each pending migration, in name order:
  *   the schema is dumped (A); the migration is applied (B); its undo (C must
  *   equal A); the migration again (D must equal B).
- * Each runs as apply.cjs runs it: one transaction, under the time limits. The
+ * Each runs as apply.cjs runs it, under the time limits: one transaction, or alone for a
+ * CONCURRENTLY file (an index built while members write) and its undo. The
  * database is left with every pending migration applied, so the checks that
  * follow test production as it will be.
  *
@@ -21,7 +22,10 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import universe from '../../test-utils/universe.js';
+
+const { lint } = createRequire(import.meta.url)('../../scripts/migration-lint.cjs');
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MOBILE = join(HERE, '..', '..');
@@ -38,9 +42,15 @@ export const applied = () => new Set(readFileSync(join(MOBILE, 'supabase', 'APPL
 
 export const undoOf = (name) => join(MOBILE, 'supabase', 'migrations-down', name);
 
-/** One file applied as apply.cjs applies it: one transaction, under the time limits. */
-export const apply = (url, file) => execFileSync('psql', [url, '-X', '-q', '-1', '-v', 'ON_ERROR_STOP=1', '-f', file],
-  { encoding: 'utf8', env: { ...process.env, PGOPTIONS: LIMITS }, stdio: ['ignore', 'pipe', 'pipe'] });
+/**
+ * One file applied as apply.cjs applies it, under the time limits: one transaction, or, for a
+ * CONCURRENTLY file or its undo (the migration lint's kind), alone, outside any transaction.
+ */
+export const apply = (url, file) => {
+  const { kind } = lint(readFileSync(file, 'utf8'), { undo: /[\\/]migrations-down[\\/]/.test(file) });
+  return execFileSync('psql', [url, '-X', '-q', ...(kind === 'concurrently' ? [] : ['-1']), '-v', 'ON_ERROR_STOP=1', '-f', file],
+    { encoding: 'utf8', env: { ...process.env, PGOPTIONS: LIMITS }, stdio: ['ignore', 'pipe', 'pipe'] });
+};
 
 /**
  * Each run of GRANT and REVOKE lines, sorted. pg_dump writes an object's grants in the order they
