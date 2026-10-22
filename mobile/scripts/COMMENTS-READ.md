@@ -1422,3 +1422,5 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/trainLocks.test.ts | 2026-10-22 | written: on saved samples, a lock timed first sight to last, blamed on the statement that took it; which holds fail |
 | scripts/heartbeat.mjs | 2026-10-22 | written: a scheduled workflow checks in with a Sentry cron monitor; without its address, a warning that lets the checks run; the address never printed (P0.38) |
 | src/utils/__tests__/heartbeatsAreKept.test.ts | 2026-10-22 | written: every scheduled workflow has its heartbeat on its own schedule, checking in only when the schedule fired; the check-in's refusals |
+| scripts/batch-report.cjs | 2026-10-22 | written: a batch's report from the register, a line to answer for every class closed by a process; never written over (P0.58) |
+| src/utils/__tests__/theBatchReportIsAnswered.test.ts | 2026-10-22 | written: the report's lines, only those classes; the latest here leaves no answer empty |

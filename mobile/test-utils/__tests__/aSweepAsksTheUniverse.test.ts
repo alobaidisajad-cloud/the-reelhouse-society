@@ -31,6 +31,7 @@ const MAY_LIST: Record<string, string> = {
   'src/utils/__tests__/everyCheckRuns.guard.test.ts': 'a workflow GitHub never reads can sit in any folder: git’s list of every file in the repo, outside any universe',
   'scripts/commit.cjs': 'asks git whether each path it is given is tracked; it lists no folder',
   'scripts/mutants.cjs': "a judge's fixture folder is its logs, every file of them; and the folder of parts a night's runs downloaded",
+  'src/utils/__tests__/theBatchReportIsAnswered.test.ts': 'the batch reports in the private folder, outside the repository and so outside any universe',
   'src/utils/__tests__/everyMutantIsSound.guard.test.ts': "asks git which files in the judges' fixture folders it ignores: a log no other checkout would have",
   // The output of a run.
   'e2e/app-crashes.mjs': "the device logs a run wrote",
