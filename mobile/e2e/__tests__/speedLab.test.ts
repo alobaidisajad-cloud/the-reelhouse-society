@@ -263,6 +263,20 @@ function budgetRounds(name: string, screens: Record<string, { ready: number; slo
   return d;
 }
 
+describe('the lab\'s phone is the flows\' phone', () => {
+  it('both prepare it with the same pieces: error dialogs hidden, no keyboard', () => {
+    // Speed lab 39857275319: "Pixel Launcher isn't responding" over the sign-in, both halves; the
+    // flows had hidden such dialogs for months, the lab had not.
+    const flows = readFileSync(join(MOBILE, 'e2e', 'run-flows.sh'), 'utf8');
+    const lab = readFileSync(join(LAB, 'scrolls.sh'), 'utf8');
+    for (const piece of ['no-error-dialogs.sh', 'no-keyboard.sh']) {
+      expect(flows).toContain(`. "$(dirname "$0")/${piece}"`);
+      expect(lab).toContain(`. "$(dirname "$0")/../${piece}"`);
+    }
+    expect(readFileSync(join(MOBILE, 'e2e', 'no-error-dialogs.sh'), 'utf8')).toContain('settings put global hide_error_dialogs 1');
+  });
+});
+
 describe('the frame budget (P0.112)', () => {
   type Line = { reason: string } & Record<string, number | string>;
   const budget = JSON.parse(readFileSync(join(LAB, 'budget.json'), 'utf8')) as {

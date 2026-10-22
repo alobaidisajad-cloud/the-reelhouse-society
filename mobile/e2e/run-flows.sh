@@ -49,13 +49,7 @@ if [ -n "${E2E_OLD_CLIENT:-}" ]; then
 fi
 
 adb install -r "$APK" || { echo "::error title=E2E::the app would not install"; exit 1; }
-# A freshly booted emulator on a software GPU is slow enough that its own
-# launcher misses a deadline, and Android puts "Pixel Launcher isn't
-# responding" over everything — the flows then look for the app under a system
-# dialog. Such dialogs are hidden (the app's own crash still reaches the log
-# below), and any already showing is closed.
-adb shell settings put global hide_error_dialogs 1
-adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null 2>&1 || true
+. "$(dirname "$0")/no-error-dialogs.sh"
 . "$(dirname "$0")/no-keyboard.sh"
 # ── THE PHONE AS THE VARIANT HAS IT ───────────────────────────────────────────
 # E2E_VARIANT (e2e/variants.json, WORKLIST P0.86), plain when unset: what the phone had is read

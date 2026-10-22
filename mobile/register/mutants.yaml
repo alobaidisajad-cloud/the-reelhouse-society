@@ -914,8 +914,8 @@ mutants:
     source: shape
     edits:
       - file: e2e/lab/scrolls.mjs
-        find: "    if (m.moved < FAR) failed.push("
-        replace: "    if (m.moved < 0) failed.push("
+        find: "    if (m.moved < FAR && !run.startsWith("
+        replace: "    if (m.moved < 0 && !run.startsWith("
     proof: { file: e2e/__tests__/speedLab.test.ts, test: "fails a list that ran out before three screen heights, by name" }
 
   - id: shape-index-never-built-first
@@ -944,6 +944,15 @@ mutants:
         find: "        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n"
         replace: "        continue-on-error: true\n        run: |\n"
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }
+
+  - id: shape-lab-shows-error-dialogs
+    class: E2E-lab-phone-unlike-the-flows
+    source: shape
+    edits:
+      - file: e2e/lab/scrolls.sh
+        find: ". \"$(dirname \"$0\")/../no-error-dialogs.sh\"\n"
+        replace: ""
+    proof: { file: e2e/__tests__/speedLab.test.ts, test: "both prepare it with the same pieces: error dialogs hidden, no keyboard" }
 
   - id: shape-router-mock-from-scratch
     class: TEST-mock-written-from-scratch

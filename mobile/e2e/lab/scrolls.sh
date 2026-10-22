@@ -29,7 +29,8 @@ adb shell settings put global airplane_mode_on 0
 for s in window_animation_scale transition_animation_scale animator_duration_scale; do
   adb shell settings put global "$s" 0
 done
-# No keyboard and no autofill, as the flows type (the sign-in's fields lay under a keyboard).
+# Android's error dialogs hidden, no keyboard and no autofill: the phone as the flows have it.
+. "$(dirname "$0")/../no-error-dialogs.sh"
 . "$(dirname "$0")/../no-keyboard.sh"
 load1() { adb shell cat /proc/loadavg | cut -d' ' -f1 | tr -d '\r'; }
 for i in $(seq 1 96); do awk -v l="$(load1)" 'BEGIN { exit !(l < 1.0) }' && break; sleep 5; done
