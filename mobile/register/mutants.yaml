@@ -599,6 +599,15 @@ mutants:
         text: "import React from 'react';\nimport Animated, { FadeIn } from 'react-native-reanimated';\n\nexport const Entrance = () => <Animated.View entering={FadeIn} />;\n"
     proof: { file: src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx, test: "are none: every arrival is Arrive, certain to arrive" }
 
+  - id: shape-heartbeat-silent
+    class: CI-schedule-stops-unheard
+    source: shape
+    edits:
+      - file: ../.github/workflows/load.yml
+        find: "        run: node mobile/scripts/heartbeat.mjs load\n"
+        replace: "        run: echo the schedule ran\n"
+    proof: { file: src/utils/__tests__/heartbeatsAreKept.test.ts, test: "and each checks in, only when the schedule fired, by the monitor the rules name" }
+
   - id: shape-italic-asked
     class: TYPE-italic-faked
     source: shape

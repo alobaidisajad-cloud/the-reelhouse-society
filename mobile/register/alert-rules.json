@@ -1,0 +1,11 @@
+{
+  "about": "What watches the House from outside GitHub (WORKLIST P0.38; P3.7 adds the production checks). Each heartbeat is a Sentry cron monitor named by its slug, on the workflow's own schedule, which emails the owner when a check-in is late by margin_minutes. heartbeatsAreKept.test.ts holds every scheduled workflow to one heartbeat here, with the same schedule and a job that checks in.",
+  "heartbeats": [
+    { "monitor": "nightly", "workflow": "nightly.yml", "cron": "0 3 * * *", "margin_minutes": 2880 },
+    { "monitor": "god-tier", "workflow": "god_tier_ci.yml", "cron": "0 6 * * *", "margin_minutes": 2880 },
+    { "monitor": "old-clients", "workflow": "e2e-old-clients.yml", "cron": "30 2 * * *", "margin_minutes": 2880 },
+    { "monitor": "db-integration", "workflow": "db-integration.yml", "cron": "0 6 * * 1", "margin_minutes": 2880 },
+    { "monitor": "sealed-e2e", "workflow": "e2e.yml", "cron": "0 6 * * 1", "margin_minutes": 2880 },
+    { "monitor": "load", "workflow": "load.yml", "cron": "0 7 * * 1", "margin_minutes": 2880 }
+  ]
+}

@@ -566,6 +566,18 @@ classes:
     fix: "every word raised to 10pt, its tracking × (old/new)² and its set line height with it (the first floor pass's method); the marks named; a wing's poster title gives up just enough size to stay whole at the largest sizes, never under 10; the floor guard has no settled exemption and reads a size written as an attribute (mutant shape-radar-labels-small)"
     places: [none]
 
+  - id: CI-schedule-stops-unheard
+    title: "A scheduled workflow GitHub stopped (after 60 days without activity) sends no failure, so the nightly and weekly checks could end in silence"
+    seriousness: code
+    area: ci
+    status: OPEN
+    count: 6
+    source: { kind: history, ref: "WORKLIST P0.38" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/heartbeatsAreKept.test.ts, test: "and each checks in, only when the schedule fired, by the monitor the rules name" }
+    fix: "each of the six scheduled workflows ends in a heartbeat job that checks in (scripts/heartbeat.mjs) with a Sentry cron monitor named in register/alert-rules.json, on its own schedule, late by two days at most; the address is the secret HEARTBEAT_CHECKIN_URL, inventoried; the owner creates the monitors and the secret (the end list) (mutant shape-heartbeat-silent)"
+    places: [none]
+
   - id: UI-entrance-left-unseen
     title: "A view entering on Reanimated's mount-time animation (entering=) starts at opacity 0, and when the animation misses the view just mounted it stays there, unseen: the film's tray (E2E 38790116312), the Tribunal's whole header (E2E 39714110216)"
     seriousness: serious

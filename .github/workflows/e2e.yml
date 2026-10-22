@@ -795,3 +795,23 @@ jobs:
             echo "::error title=E2E::a shard failed on its own device (${{ needs.flows.result }}): its job says why"
             exit 1
           fi
+
+  # The schedule's heartbeat (WORKLIST P0.38): GitHub stops a schedule after 60 days without
+  # activity and says nothing; a monitor outside GitHub (register/alert-rules.json) emails the
+  # owner when this check-in is late.
+  heartbeat:
+    name: 💓 The schedule ran
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          sparse-checkout: |
+            mobile/scripts/heartbeat.mjs
+            mobile/register/alert-rules.json
+          sparse-checkout-cone-mode: false
+      - name: Check in
+        env:
+          HEARTBEAT_CHECKIN_URL: ${{ secrets.HEARTBEAT_CHECKIN_URL }}
+        run: node mobile/scripts/heartbeat.mjs sealed-e2e

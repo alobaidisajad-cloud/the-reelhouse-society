@@ -1420,3 +1420,5 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts | 2026-10-22 | written: the installed Reanimated keeps only mounted views and does not throw on one being made; the manifest is past the SDK pin |
 | e2e/load/train-locks.mjs | 2026-10-22 | written: the pending train run twice on the 100,000-member house as production runs it, every lock timed by a second connection; a blocking lock on a member's relation held over a second fails (P0.6) |
 | e2e/__tests__/trainLocks.test.ts | 2026-10-22 | written: on saved samples, a lock timed first sight to last, blamed on the statement that took it; which holds fail |
+| scripts/heartbeat.mjs | 2026-10-22 | written: a scheduled workflow checks in with a Sentry cron monitor; without its address, a warning that lets the checks run; the address never printed (P0.38) |
+| src/utils/__tests__/heartbeatsAreKept.test.ts | 2026-10-22 | written: every scheduled workflow has its heartbeat on its own schedule, checking in only when the schedule fired; the check-in's refusals |

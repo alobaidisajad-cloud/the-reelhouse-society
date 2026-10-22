@@ -231,6 +231,7 @@ Decisions, as of 2026-09-28:
 | `plugins/__tests__/withoutDevLauncherScanner.test.ts` | The installed expo-dev-launcher's manifest, for the entry the plugin removes, and app.json's plugins. |
 | `plugins/__tests__/withSplashWithoutHandoff.test.ts` | The generated MainActivity fixture, app.json's plugins and the app's code, for who imports the splash screen. |
 | `plugins/__tests__/withLinkDuringLaunch.test.ts` | The generated MainActivity fixture and app.json's plugins. |
+| `src/utils/__tests__/heartbeatsAreKept.test.ts` | The workflows' schedules and heartbeat jobs, and register/alert-rules.json: what GitHub runs, which no render reaches. |
 | `src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts` | The installed Reanimated's Android NativeProxy and the manifest's range: native code and a version no render reaches. |
 | `plugins/__tests__/withHouseDialogs.test.ts` | app.json's plugins: the dialog plugin is listed, so the build runs it. |
 
