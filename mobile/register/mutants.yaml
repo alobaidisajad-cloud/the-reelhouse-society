@@ -1619,3 +1619,21 @@ mutants:
         find: " && marksKnown === 'held';"
         replace: ";"
     proof: { file: app/person/__tests__/thePersonFileReadsTrue.test.tsx, test: "while the ledger is read, or could not be, draws no count: a short one is a wrong one" }
+
+  - id: shape-stack-heart-filed-blind
+    class: UI-unknown-mark-drawn-as-off
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "    if (!certifyKnown) { void rereadStack(); return; }\n"
+        replace: ""
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a stack drawn from the phone says it is reading the mark, and a press asks the house — never files one blind" }
+
+  - id: shape-log-heart-filed-blind
+    class: UI-unknown-mark-drawn-as-off
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "if (!certifyKnown) { void rereadLog(); return; } "
+        replace: ""
+    proof: { file: app/log/__tests__/theLogPageMovesEveryCard.test.tsx, test: "a log whose own mark the house did not answer draws the heart unknown, and a press asks again" }

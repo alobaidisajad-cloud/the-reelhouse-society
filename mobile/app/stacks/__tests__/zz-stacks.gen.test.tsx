@@ -42,7 +42,7 @@ jest.mock('@tanstack/react-query', () => ({
   },
 }));
 jest.mock('@/src/stores/films', () => {
-  const state = { logs: [], lists: [], _listEndorsedIndex: {}, toggleListEndorse: jest.fn(), deleteList: jest.fn() };
+  const state = { logs: [], _loggedIndex: {}, lists: [], _listEndorsedIndex: {}, toggleListEndorse: jest.fn(), deleteList: jest.fn() };
   const useListStore = (sel?: (s: unknown) => unknown) => (sel ? sel(state) : state);
   (useListStore as unknown as { getState: () => unknown }).getState = () => state;
   return { useListStore };

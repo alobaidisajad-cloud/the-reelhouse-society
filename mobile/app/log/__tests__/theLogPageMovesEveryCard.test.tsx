@@ -78,8 +78,33 @@ beforeEach(() => {
   resetMarkCounts();
   jest.requireActual('@/src/stores/films').useFilmStore.setState({ _endorsedIndex: {}, interactions: [] });
   jest.clearAllMocks();
-  mockCache = { log: LOG, profile: PROFILE, comments: [], commentTotal: 3, certifyCount: 7 };
+  // The house's answer, with the member's own certification in it.
+  mockCache = { log: LOG, profile: PROFILE, comments: [], commentTotal: 3, certifyCount: 7, certifiedKnown: true };
   mockQuery = { data: mockCache, isLoading: false };
+});
+
+it('a log whose own mark the house did not answer draws the heart unknown, and a press asks again', async () => {
+  const reread = jest.fn();
+  mockQuery = { data: { ...mockCache, certifyCount: null, certifiedKnown: false }, isLoading: false, refetch: reread };
+  let r!: ReturnType<typeof render>;
+  await act(async () => { r = render(<LogDetailScreen />); });
+  const heart = r.getByLabelText('Certify this critique. Reading your mark');
+  await act(async () => { await fireEvent.press(heart); });
+  expect(reread).toHaveBeenCalled();
+  expect(jest.requireActual('@/src/stores/films').useFilmStore.getState()._endorsedIndex).toEqual({});
+});
+
+it('the house\'s answer says whether the mark is known; the phone\'s stand-in never does', async () => {
+  const details = mockLogService.getLogDetails as jest.Mock;
+  (mockLogService.getLogComments as jest.Mock).mockResolvedValue({ comments: [], total: 3 });
+  details.mockResolvedValue({ ...LOG, profiles: PROFILE, certify_count: [{ count: 7 }], certified: [{ count: 0 }] });
+  await act(async () => { render(<LogDetailScreen />); });
+  let data: Record<string, unknown> = {};
+  await act(async () => { data = await mockOptions.queryFn({}); });
+  expect(data).toMatchObject({ certifiedKnown: true });
+  details.mockResolvedValue({ ...LOG, profiles: PROFILE, certify_count: [{ count: 7 }] });
+  await act(async () => { data = await mockOptions.queryFn({}); });
+  expect(data).toMatchObject({ certifiedKnown: false });
 });
 
 it('tells the store both numbers it fetched', async () => {

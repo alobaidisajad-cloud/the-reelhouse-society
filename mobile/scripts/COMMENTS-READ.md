@@ -135,7 +135,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
 | app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-08 | the share captured only once the card is whole; the 20 s limit |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
-| app/log/[id].tsx | 2026-10-22 | edited: its ready mark (log) in all four trees; header and badge from usePushedHeaderTop; foot from useContentBottom |
+| app/log/[id].tsx | 2026-10-23 | edited: certifiedKnown from the log's read; drawn from the phone, the heart is uninked and a press asks again |
 | app/lounge.tsx | 2026-10-01 | true as written |
 | app/lounge/[id].tsx | 2026-10-23 | edited: only this room's words and its read's flags (never the last room's, still held); the transcript says reading, or the house's failure with TRY AGAIN, before "be the first"; the ready mark fails when its words could not come; its reads keyed on who reads (userId), not the object a session restore replaces; the room's read; the composer and its bars stand on the edge (BAR_FOOT_GAP); each scroll traced |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); a portrait without a photograph carries the whole first letter, unspoken |
@@ -146,7 +146,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-10-23 | edited: the critiques sheet reading, then empty only once read; the router mock answers useFocusEffect as jest.setup.ts's does; each event waited for; the close inside the keyboard's moment is the sheet's own, each press shown to land |
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | 2026-10-22 | edited: the router mock answers useFocusEffect as jest.setup.ts's does;  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
-| app/stacks/[id].tsx | 2026-10-23 | edited: the critiques sheet says it is reading them, not "be the first", until the house answers; its ready mark (stack) in all four trees; chrome, hero and critiques from usePushedHeaderTop; foot from navMetrics; the critique field off the edge |
+| app/stacks/[id].tsx | 2026-10-23 | edited: certifiedKnown from the stack's read; drawn from the phone, the heart is uninked, its count unknown, and a press asks again; seen ticks from the ledger whole |
 | app/user/[username].tsx | 2026-10-23 | edited: a room of your own holding nothing is empty only once its read answered (tabAnswered); a narrowed room only once its read answered the filters on screen (searchAnswered), not the whole room's count; the read; centred states in a CentredRoom; foot a tab's or a pushed page's |
 | app/year-in-cinema.tsx | 2026-10-22 | edited: a plain paging ScrollView for the six slides, the note saying why not a list |
 | ARCHITECTURE.md | 2026-10-15 | edited: Image Caching is true now that every picture states memory-disk, and names the guard that holds it |
@@ -618,7 +618,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/__tests__/zz-composer.gen.test.tsx | — |  |
 | src/components/log/AuteurToolkit.tsx | 2026-10-01 | histories to the present |
 | src/components/log/EditorialDesk.tsx | 2026-10-03 | edited: the pull quote names its cap |
-| src/components/log/LogActionDeck.tsx | 2026-10-01 | the autopsy toggle named; Arrive; a dead prop gone |
+| src/components/log/LogActionDeck.tsx | 2026-10-23 | edited: certifyKnown: the heart uninked and said to be reading |
 | src/components/log/LogAtmosphere.tsx | 2026-10-01 | the film behind the composer, said as why |
 | src/components/log/LogChronicle.tsx | 2026-10-01 | the typed card, said as why |
 | src/components/log/LogClearanceGate.tsx | 2026-10-01 | the rope said as what it is |

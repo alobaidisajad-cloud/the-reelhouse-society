@@ -19,7 +19,7 @@ const JUDGED: Record<string, string> = {
     'the film page\'s context value: a new object redraws what reads it, and reads nothing',
   'app/log/[id].tsx [queryClient, id, user, updateComments]': 'a press handler (delete a critique): re-created, never run by itself',
   'app/person/[id].tsx [user, canShare, openShare, person, id]': 'a press handler (share to a salon)',
-  'app/stacks/[id].tsx [user, id, isCertified, toggleListEndorse, isCertifying, queryClient]': 'a press handler (certify)',
+  'app/stacks/[id].tsx [user, id, isCertified, certifyKnown, rereadStack, toggleListEndorse, isCertifying, queryClient]': 'a press handler (certify)',
   'app/stacks/[id].tsx [commentText, submittingComment, user, id, queryClient, bumpCritiqueCount]': 'a press handler (file a critique)',
   'app/stacks/[id].tsx [user, id, queryClient, bumpCritiqueCount]': 'a press handler (delete a critique)',
   'app/stacks/[id].tsx [user]': 'a press handler (share to a salon)',

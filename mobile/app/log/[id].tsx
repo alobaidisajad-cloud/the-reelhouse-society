@@ -209,13 +209,16 @@ export default function LogDetailScreen() {
         // queued taps in the store — telling it `total` would count them twice.
         // With the viewer's own mark, from the same request: the heart is the
         // server's answer, not the sign-in index's newest 500.
-        tellMarks('log', [{ id, certify: certifyCount, critique: commentTotal, certified: mineMark.parse(logData?.certified) }], askedAt);
+        const certified = mineMark.parse(logData?.certified);
+        tellMarks('log', [{ id, certify: certifyCount, critique: commentTotal, certified }], askedAt);
         return {
           log: logData as LogDetail | null,
           profile: profile as LogProfile | null,
           comments: finalComments as LogComment[],
           commentTotal: total,
           certifyCount,
+          // Whether the member's own certification was answered: the heart is known only then.
+          certifiedKnown: typeof certified === 'boolean',
           critiquesUnread: false,
         };
       } catch (err: unknown) {
@@ -280,6 +283,8 @@ export default function LogDetailScreen() {
             commentTotal: finalComments.length,
             // And nobody has certified a log the server has not seen yet.
             certifyCount: null,
+            // Nor is the member's own mark on it known.
+            certifiedKnown: false,
             // Said as such, never "No critiques yet".
             critiquesUnread: true,
           };
@@ -384,6 +389,8 @@ export default function LogDetailScreen() {
    * useInteractionStore are three names for one store.)
    */
   const endorsed = useInteractionStore(st => !!st._endorsedIndex[id]);
+  // A certification made here is known; otherwise only the house's answer says.
+  const certifyKnown = endorsed || !!logQueryData?.certifiedKnown;
   const toggleEndorse = useInteractionStore(st => st.toggleEndorse);
 
   // SAVE, as on the feed card: read a review properly, decide you want the
@@ -855,7 +862,9 @@ export default function LogDetailScreen() {
             onSavePress={handleToggleSave}
             // The store has already rolled back and said so; a rejection left
             // unhandled here would only reach the error tracker as noise.
-            onToggleEndorse={() => { toggleEndorse(id).catch(() => {}); }}
+            // Not known whether they certified it: the house is asked again, never a second filed blind.
+            onToggleEndorse={() => { if (!certifyKnown) { void rereadLog(); return; } toggleEndorse(id).catch(() => {}); }}
+            certifyKnown={certifyKnown}
             onToggleAutopsy={() => { setAutopsyOpen(!autopsyOpen); }}
             onCritiquePress={() => {
                // Scroll to the compose box at the top of the critiques section, then focus it.

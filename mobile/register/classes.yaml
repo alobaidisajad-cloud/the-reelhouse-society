@@ -1188,11 +1188,11 @@ classes:
     places: [emulator]
 
   - id: UI-unknown-mark-drawn-as-off
-    title: "A member's mark not yet read was drawn as off: CERTIFY and SAVE on a filing they had certified and saved, an open ballot they had marked; pressed, the house counted a second certify as a first, and moved a vote to another option. A failed read left them so for good"
+    title: "A member's mark not yet read was drawn as off: CERTIFY and SAVE on a filing they had certified and saved, an open ballot they had marked; pressed, the house counted a second certify as a first, and moved a vote to another option. A failed read left them so for good. A stack or a log drawn from the phone (offline, or while the house was asked) drew its heart as not given, and its count as nobody"
     seriousness: serious
     area: dispatch
     status: OPEN
-    count: 3
+    count: 5
     source: { kind: reviewer, ref: "study of the Dispatch's opening for P0.112: the marks collapsed unread into false (Set.has, ?? null)" }
     methods:
       - { kind: running, file: src/components/dispatch/__tests__/aMarkUnreadIsNotOff.test.tsx, test: "unread: neither pressable nor marked, each said to be reading; read: the member's, and pressable" }
@@ -1201,7 +1201,11 @@ classes:
       - { kind: static, file: src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx, test: "the reader passes whether the mark is read, never the default" }
       - { kind: running, file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "draws a mark still being read as unknown: unpressed, said so, then the member's once read" }
       - { kind: running, file: src/stores/__tests__/aMarkReadThatFailedIsHeard.test.ts, test: "knows the marks whose reads answered; the kind whose read failed stays unknown, not \"off\"" }
-    fix: "the store knows, per kind, which marks its reads answered (marksKnown); the card's stamps, the reader's dock and the ballot draw an unread mark as the stamp's outline before its ink (UNINKED, boxUnread), unpressed and said to be reading (mutants shape-stamp-unknown-pressable, shape-dock-unknown-pressable, shape-ballot-unknown-open, shape-failed-mark-known, shape-reader-unknown-default, shape-row-unknown-never)"
+      - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a stack drawn from the phone says it is reading the mark, and a press asks the house — never files one blind" }
+      - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "the house's answer says whether the mark is known; the phone's stand-in never does" }
+      - { kind: running, file: app/log/__tests__/theLogPageMovesEveryCard.test.tsx, test: "a log whose own mark the house did not answer draws the heart unknown, and a press asks again" }
+      - { kind: running, file: app/log/__tests__/theLogPageMovesEveryCard.test.tsx, test: "the house's answer says whether the mark is known; the phone's stand-in never does" }
+    fix: "the store knows, per kind, which marks its reads answered (marksKnown); the card's stamps, the reader's dock and the ballot draw an unread mark as the stamp's outline before its ink (UNINKED, boxUnread), unpressed and said to be reading (mutants shape-stamp-unknown-pressable, shape-dock-unknown-pressable, shape-ballot-unknown-open, shape-failed-mark-known, shape-reader-unknown-default, shape-row-unknown-never). A stack's and a log's read say whether the member's own certification was answered (certifiedKnown); drawn from the phone, the heart is uninked, its count unknown, and a press asks the house again instead of filing (mutants shape-stack-heart-filed-blind, shape-log-heart-filed-blind)"
     places: [none]
 
   - id: DATA-saved-page-from-held-ids

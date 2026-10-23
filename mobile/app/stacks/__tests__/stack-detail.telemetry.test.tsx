@@ -53,14 +53,14 @@ jest.mock('@tanstack/react-query', () => ({
             return { data: [] };
         }
         if (key === 'stack') {
-            return { data: { list: STACK, endorseCount: 0 }, isLoading: false, isError: false };
+            return { data: { list: STACK, endorseCount: 0, certifiedKnown: true }, isLoading: false, isError: false, refetch: jest.fn() };
         }
         return { data: undefined, isLoading: false, isError: false };
     },
 }));
 jest.mock('@/src/stores/films', () => {
     const state = {
-        logs: [],
+        logs: [], _loggedIndex: {},
         lists: [STACK],
         _listEndorsedIndex: {},
         toggleListEndorse: (...a: unknown[]) => mockToggleListEndorse(...a),

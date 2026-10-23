@@ -4,6 +4,7 @@ import { Text } from '@/src/components/text';
 import { Arrive } from '@/src/components/Arrive';
 import { Heart, MessageSquare, Edit3, MessageCircle, ChevronDown, Bookmark } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
+import { UNINKED } from '@/src/theme/unready';
 import { deckLabelProps } from '@/src/constants/textScaling';
 import AutopsyGauge from '@/src/components/AutopsyGauge';
 import { hasRatedAutopsy } from '@/src/components/feed/AutopsyView';
@@ -31,6 +32,11 @@ interface LogActionDeckProps {
   };
   isOwner: boolean;
   endorsed: boolean;
+  /**
+   * Whether the house answered the member's own certification: false for a log drawn from
+   * the phone. Then the heart is its outline before the ink, and is never drawn as not given.
+   */
+  certifyKnown?: boolean;
   /** The two counts, beside their icons. Null when not known yet. */
   certifyCount: number | null;
   critiqueCount: number | null;
@@ -49,6 +55,7 @@ export default function LogActionDeck({
   log,
   isOwner,
   endorsed,
+  certifyKnown = true,
   certifyCount,
   critiqueCount,
   filmSaved,
@@ -95,11 +102,12 @@ export default function LogActionDeck({
         <View style={s.actionDeck}>
            {/* CERTIFY — wired to toggleEndorse */}
            <PressableScale style={s.deckBtn} onPress={onToggleEndorse} hitSlop={{ top: 4, bottom: 8, left: 0, right: 0 }} haptic="light" pressedScale={0.92}
-             accessibilityRole="button" accessibilityState={{ selected: endorsed }}
-             accessibilityLabel={certifyLabel(certifyCount, endorsed, 'this critique')}>
+             accessibilityRole="button" accessibilityState={{ selected: endorsed, busy: !certifyKnown }}
+             accessibilityLabel={certifyKnown ? certifyLabel(certifyCount, endorsed, 'this critique') : 'Certify this critique. Reading your mark'}>
               {/* 15, the heart every bar in the house draws. */}
               <MarkFigure iconSize={15} count={certifyCount} style={[s.deckLabel, endorsed && s.deckLabelCertified]}>
-                <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'} />
+                <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'}
+                  strokeDasharray={certifyKnown ? undefined : UNINKED} />
               </MarkFigure>
               <Text style={[s.deckLabel, endorsed && s.deckLabelCertified]} {...deckLabelProps}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
            </PressableScale>

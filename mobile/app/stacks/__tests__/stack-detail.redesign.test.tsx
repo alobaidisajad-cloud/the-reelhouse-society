@@ -79,7 +79,7 @@ jest.mock('@tanstack/react-query', () => ({
   },
 }));
 jest.mock('@/src/stores/films', () => {
-  const state = { logs: [], lists: [], _listEndorsedIndex: {}, toggleListEndorse: jest.fn(), deleteList: jest.fn() };
+  const state = { logs: [], _loggedIndex: {}, lists: [], _listEndorsedIndex: {}, toggleListEndorse: jest.fn(), deleteList: jest.fn() };
   const useListStore = (sel?: (s: unknown) => unknown) => (sel ? sel(state) : state);
   (useListStore as unknown as { getState: () => unknown }).getState = () => state;
   return { useListStore };
@@ -90,7 +90,11 @@ jest.mock('@/src/stores/blockStore', () => {
   (useBlockStore as unknown as { getState: () => unknown }).getState = () => state;
   return { useBlockStore };
 });
-jest.mock('@/src/stores/auth', () => ({ useAuthStore: () => ({ user: { id: 'u1', username: 'morpho' } }) }));
+jest.mock('@/src/stores/auth', () => {
+  const state = { user: { id: 'u1', username: 'morpho' } };
+  // Read as a hook, and by the stack's offline stand-in with getState().
+  return { useAuthStore: Object.assign(() => state, { getState: () => state }) };
+});
 jest.mock('@/src/stores/tellMarks', () => ({ tellMarks: jest.fn() }));
 const mockAddComment = jest.fn();
 jest.mock('@/src/services/StackService', () => ({
@@ -138,7 +142,8 @@ jest.mock('expo-linear-gradient', () => {
 
 const mount = (over: Record<string, unknown> = {}) => {
   mockStackFailed = false;
-  mockStackData = { list: { ...baseStack, ...over }, endorseCount: 0 };
+  // The house's answer, with the member's own certification in it.
+  mockStackData = { list: { ...baseStack, ...over }, endorseCount: 0, certifiedKnown: true };
   return render(<StackDetailScreen />);
 };
 
@@ -295,6 +300,32 @@ describe('the index', () => {
     const r = mount({ films, filmCount: 3 });
     await waitFor(() => expect(r.getByText(/INDEXED REELS/)).toBeTruthy());
     expect(r.queryByText(/FIRST/)).toBeNull();
+  });
+});
+
+describe('the certification, when it is not known', () => {
+  it('a stack drawn from the phone says it is reading the mark, and a press asks the house — never files one blind', async () => {
+    mockStackFailed = false;
+    mockStackData = { list: baseStack, endorseCount: null, certifiedKnown: false };
+    const r = render(<StackDetailScreen />);
+    const button = await waitFor(() => r.getByLabelText('Certify this stack. Reading your mark'));
+    // Never a confident zero: how many certified it is not known either.
+    expect(r.queryByText('0', { includeHiddenElements: true })).toBeNull();
+    await fireEvent.press(button);
+    expect(mockRereadStack).toHaveBeenCalled();
+    expect(require('@/src/stores/films').useListStore.getState().toggleListEndorse).not.toHaveBeenCalled();
+  });
+
+  it('the house\'s answer says whether the mark is known; the phone\'s stand-in never does', async () => {
+    const { StackService } = require('@/src/services/StackService');
+    StackService.getStackFullPayload.mockResolvedValueOnce({ ...baseStack, endorseCount: 2, certified: false });
+    mount();
+    expect(await mockStackOpts!.queryFn()).toMatchObject({ endorseCount: 2, certifiedKnown: true });
+    const { lists } = require('@/src/stores/films').useListStore.getState();
+    lists.push({ id: baseStack.id, userId: 'u1', title: 'Mine', films: [] });
+    StackService.getStackFullPayload.mockRejectedValueOnce(new TypeError('Network request failed'));
+    expect(await mockStackOpts!.queryFn()).toMatchObject({ endorseCount: null, certifiedKnown: false });
+    lists.length = 0;
   });
 });
 
@@ -780,9 +811,10 @@ describe('the film card, actually rendered', () => {
   });
 
   it('a film that has been logged is marked, and one that has not is bare', async () => {
-    // The member has logged Perfect Blue (film 1) and nothing else in the stack.
-    const store = jest.requireMock('@/src/stores/films').useListStore.getState() as { logs: unknown[] };
-    store.logs = [{ id: 'log-1', filmId: 1 }];
+    // The member has logged Perfect Blue (film 1) and nothing else in the stack: the ledger
+    // whole, not the pages read (marksLedger).
+    const store = jest.requireMock('@/src/stores/films').useListStore.getState() as { _loggedIndex: Record<number, unknown> };
+    store._loggedIndex = { 1: { id: 'log-1', filmId: 1 } };
     try {
       const r = mount({ films: FILMS, filmCount: 3 });
       await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
@@ -802,7 +834,7 @@ describe('the film card, actually rendered', () => {
       const innermost = cards[cards.length - 1];
       expect(titles.filter(t => flatText(innermost).includes(t))).toEqual(['Perfect Blue']);
     } finally {
-      store.logs = [];
+      store._loggedIndex = {};
     }
   });
 });

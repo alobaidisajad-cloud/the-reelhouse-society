@@ -31,7 +31,7 @@ import { useListStore } from '@/src/stores/films';
 import { tellMarks } from '@/src/stores/tellMarks';
 import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { colors, fonts } from '@/src/theme/theme';
-import { UNREADY, UNREADY_INK } from '@/src/theme/unready';
+import { UNINKED, UNREADY, UNREADY_INK } from '@/src/theme/unready';
 import { logger } from '@/src/utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
 import { isForbiddenError, isNetworkError } from '@/src/utils/networkError';
@@ -246,7 +246,8 @@ export default function StackDetailScreen() {
   const critiqueFootStyle = useAnimatedStyle(() => ({
     paddingBottom: Platform.OS === 'ios' && keyboard.height.value > 0 ? ABOVE_THE_KEYBOARD : edge,
   }));
-  const logs = useListStore(s => s.logs);
+  // Every film the member has logged: the ledger whole, never the pages read (marksLedger).
+  const loggedIndex = useListStore(s => s._loggedIndex);
   const toggleListEndorse = useListStore(s => s.toggleListEndorse);
   const deleteList = useListStore(s => s.deleteList);
   const isCertified = useListStore(s => !!s._listEndorsedIndex[id]);
@@ -275,7 +276,8 @@ export default function StackDetailScreen() {
 
         // Everything else, whole: a field copied by hand can be left behind.
         const listDetail: ListDetail = stack;
-        return { list: listDetail, endorseCount };
+        // Whether the member's own certification was answered: the heart is known only then.
+        return { list: listDetail, endorseCount, certifiedKnown: typeof certified === 'boolean' };
       } catch (error) {
         // Offline fallback: intercept network failure and use local data
         const localList = useListStore.getState().lists.find(l => l.id === id);
@@ -300,7 +302,8 @@ export default function StackDetailScreen() {
             isPrivate: localList.isPrivate ?? false,
             isRanked: localList.isRanked ?? false,
           };
-          return { list: fallbackDetail, endorseCount: 0 };
+          // Drawn from the phone: how many certified it, and whether the member did, are not known.
+          return { list: fallbackDetail, endorseCount: null, certifiedKnown: false };
         }
         throw error;
       }
@@ -331,7 +334,9 @@ export default function StackDetailScreen() {
             isPrivate: localList.isPrivate ?? false,
             isRanked: localList.isRanked ?? false,
           },
-          endorseCount: 0,
+          // Drawn from the phone while the house is asked: neither the count nor the mark is known.
+          endorseCount: null,
+          certifiedKnown: false,
         };
       }
       return undefined;
@@ -411,15 +416,21 @@ export default function StackDetailScreen() {
     };
   });
 
-  const certifyCount = stackQueryData?.endorseCount ?? 0;
+  // Null while unknown (drawn from the phone): never a count of nobody.
+  const certifyCount = stackQueryData?.endorseCount ?? null;
+  // A certification made here is known; otherwise only the house's answer says.
+  const certifyKnown = isCertified || !!stackQueryData?.certifiedKnown;
 
   const isOwner = user?.id === list?.userId;
    
-  const loggedIds = React.useMemo(() => new Set(logs.map((l: any) => l.filmId)), [logs]);
+  const loggedIds = React.useMemo(() => new Set(Object.keys(loggedIndex).map(Number)), [loggedIndex]);
 
   const handleCertify = useCallback(async () => {
     // Pre-flight Zod validation
     if (!user || isCertifying || !z.string().uuid().safeParse(id).success) return;
+    // Whether they certified it is not known: a second certification is not filed blind.
+    // The house is asked again instead.
+    if (!certifyKnown) { void rereadStack(); return; }
     setIsCertifying(true);
     TactileEngine.mutate();
     const wasCertified = isCertified;
@@ -428,7 +439,7 @@ export default function StackDetailScreen() {
     // CQRS Sync with global React Query cache instantly
     queryClient.setQueryData(['stack', id], (old: any) => {
       if (!old) return old;
-      return { ...old, endorseCount: Math.max(0, old.endorseCount + delta) };
+      return { ...old, endorseCount: old.endorseCount == null ? null : Math.max(0, old.endorseCount + delta) };
     });
     
     try {
@@ -444,13 +455,13 @@ export default function StackDetailScreen() {
       const revertDelta = wasCertified ? 1 : -1;
       queryClient.setQueryData(['stack', id], (old: any) => {
         if (!old) return old;
-        return { ...old, endorseCount: Math.max(0, old.endorseCount + revertDelta) };
+        return { ...old, endorseCount: old.endorseCount == null ? null : Math.max(0, old.endorseCount + revertDelta) };
       });
       reelToast.error('Certification failed. Reverted.');
     } finally {
       setIsCertifying(false);
     }
-  }, [user, id, isCertified, toggleListEndorse, isCertifying, queryClient]);
+  }, [user, id, isCertified, certifyKnown, rereadStack, toggleListEndorse, isCertifying, queryClient]);
 
   // How many of the newest critiques the sheet reads: a page, and another each
   // time the member asks for earlier ones. A ref, so the query keeps its key.
@@ -934,9 +945,14 @@ export default function StackDetailScreen() {
               <Arrive name="stacks-3" duration={600} delay={350} style={s.actionBar}>
                 {/* The house's one bar anatomy (MarkFigure): icon over word, the
                     count beside the icon, the log bar's icons for the same acts. */}
-                <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ selected: isCertified }} accessibilityLabel={certifyLabel(certifyCount, isCertified, 'this stack')}>
+                {/* Whether they certified it not known (drawn from the phone): the heart's outline
+                    before the ink, and a press asks the house rather than filing a second. */}
+                <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={null} haptic="selection" accessibilityRole="button"
+                  accessibilityState={{ selected: isCertified, busy: !certifyKnown }}
+                  accessibilityLabel={certifyKnown ? certifyLabel(certifyCount, isCertified, 'this stack') : 'Certify this stack. Reading your mark'}>
                   <MarkFigure iconSize={15} count={certifyCount} style={[s.actionLabel, isCertified && s.actionLabelActive]}>
-                    <Heart size={15} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'} />
+                    <Heart size={15} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'}
+                      strokeDasharray={certifyKnown ? undefined : UNINKED} />
                   </MarkFigure>
                   <Text style={[s.actionLabel, isCertified && s.actionLabelActive]} pointerEvents="none" {...deckLabelProps}>
                     {isCertified ? 'CERTIFIED' : 'CERTIFY'}
