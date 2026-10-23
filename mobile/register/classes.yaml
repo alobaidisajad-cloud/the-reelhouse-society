@@ -1133,6 +1133,18 @@ classes:
     fix: "fetchMessages lets another room's words go the moment a room opens, keeping the same room's while it is read again; the screen takes only the words of the room it shows (currentLoungeId === id), so a room's words can be drawn under no other name (mutants shape-room-keeps-last-words, shape-screen-draws-held-words)"
     places: [none]
 
+  - id: DB-certification-held-twice
+    title: "Nothing refused a second certification of a log or a stack: interactions' one key holds target_user_id, which a certification leaves empty. A phone that drew a certification it did not know of as not given wrote it again: the log counted twice, the stack read it twice, its owner was told twice"
+    seriousness: serious
+    area: database
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "sweep of member state drawn before it was known (P0.112): live-schema.sql holds only UNIQUE (user_id, target_user_id, type) on interactions" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "can run on the repo as it is: every pending migration has its one rehearsal and passes the lint" }
+    fix: "20261023_01 (pending, the member applies it): the certifications already held twice keep their first (log_counts_keep_certify takes each later one from its log's count), then a unique key for each kind, in one transaction; its undo drops the keys; its rehearsal certifies a log and a stack twice as a member and expects the second refused, the count moved by one, and none held twice in the house (db-integration.yml shows it failing without the migration). The app already answers a refused second as given (interactionSlice, 23505)"
+    places: [none]
+
   - id: DATA-settings-saved-over-an-unread-profile
     title: "Settings drew its form from the auth user alone in a login's first moments, and for the whole session when the profile read gave up: a private profile read as public, and any save wrote it public"
     seriousness: serious

@@ -1134,6 +1134,15 @@ mutants:
         replace: "        .limit(100);\n\n      // supabase-js resolves"
     proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the first page is ordered as the page above it is asked for: by its time, then its id" }
 
+  - id: shape-certification-unrehearsed
+    class: DB-certification-held-twice
+    source: shape
+    edits:
+      - file: supabase/diagnostics/a_certification_is_counted_once_rehearsal.sql
+        find: "\\ir ../../../supabase/migrations/20261023_01_a_certification_is_counted_once.sql\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "can run on the repo as it is: every pending migration has its one rehearsal and passes the lint" }
+
   - id: shape-settings-form-over-unread
     class: DATA-settings-saved-over-an-unread-profile
     source: shape
