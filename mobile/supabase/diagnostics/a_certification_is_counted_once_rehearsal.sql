@@ -46,11 +46,16 @@ SELECT coalesce((SELECT certify_count FROM public.log_counts WHERE log_id = curr
 CREATE TEMP TABLE cc_out (k text, got text) ON COMMIT DROP;
 GRANT ALL ON cc_out TO authenticated;
 
--- The certifier certifies each twice, as the app does: the second as a phone that knew nothing of the first.
+-- The first of each was given an hour ago, apart: a member's interactions are kept a
+-- second apart (check_interaction_rate_limit), and inside one transaction now() stands still.
+INSERT INTO public.interactions (user_id, target_log_id, type, created_at)
+VALUES (current_setting('rehearsal.certifier')::uuid, current_setting('rehearsal.log')::uuid, 'endorse_log', now() - interval '61 minutes');
+INSERT INTO public.interactions (user_id, target_list_id, type, created_at)
+VALUES (current_setting('rehearsal.certifier')::uuid, current_setting('rehearsal.stack')::uuid, 'endorse_list', now() - interval '60 minutes');
+
+-- The second of each, as the app writes it: a phone that knew nothing of the first.
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', json_build_object('sub', current_setting('rehearsal.certifier'), 'role', 'authenticated')::text, true) AS done \gset rh_
-INSERT INTO public.interactions (user_id, target_log_id, type)
-VALUES (current_setting('rehearsal.certifier')::uuid, current_setting('rehearsal.log')::uuid, 'endorse_log');
 DO $$
 BEGIN
   INSERT INTO public.interactions (user_id, target_log_id, type)
@@ -59,8 +64,6 @@ BEGIN
 EXCEPTION WHEN unique_violation THEN
   INSERT INTO cc_out VALUES ('log again', 'refused');
 END $$;
-INSERT INTO public.interactions (user_id, target_list_id, type)
-VALUES (current_setting('rehearsal.certifier')::uuid, current_setting('rehearsal.stack')::uuid, 'endorse_list');
 DO $$
 BEGIN
   INSERT INTO public.interactions (user_id, target_list_id, type)
