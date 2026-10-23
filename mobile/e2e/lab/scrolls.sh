@@ -75,6 +75,8 @@ scroll_one() {
   adb shell log -t ReelLab lab.scroll.begin
   adb shell "screencap | md5sum; for i in 1 2 3 4 5 6 7 8 9 10; do input swipe $X $from $X $to 350; sleep 1; screencap | md5sum; done" > "$f.moves" 2>&1
   adb shell dumpsys gfxinfo "$PKG" > "$f.gfx" 2>&1
+  # What the app holds after the scroll, graphics apart: a layer kept as a texture costs memory.
+  adb shell dumpsys meminfo "$PKG" > "$f.mem" 2>&1
   adb logcat -d -v threadtime > "$f.log"
 }
 
@@ -96,8 +98,8 @@ fi
 # two blocks, the builds' order turned in the second, so a slow stretch of the runner falls on every
 # build alike. One install a build a block: installing before every round (speed lab 39820804347)
 # took the run past its runner. Fourteen rounds a build: on rounds as noisy as ±10%, the rank-sum
-# test (scrolls.mjs) gives a 10% shift p ≈ 1.5e-4, under Holm's bar for nine arms by four measures
-# (2.8e-4); eight gave 4e-3.
+# test (scrolls.mjs) gives a 10% shift p ≈ 1.5e-4, under Holm's bar for nine arms by six measures
+# (1.9e-4); eight gave 4e-3.
 ROUNDS_EACH=7
 ARM_SCREEN=${LAB_ARM_SCREEN:-reel}
 case "$ARM_SCREEN" in

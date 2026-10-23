@@ -63,6 +63,21 @@ export function judge(dir) {
   return { lines, failed };
 }
 
+/**
+ * The app's memory from `dumpsys meminfo`'s App Summary, in MB: its graphics (the textures a kept
+ * layer holds among them) and its whole proportional share; null when the summary is not there.
+ */
+export function memOf(text) {
+  const kb = (label) => { const m = new RegExp(`^\\s*${label}:\\s+(\\d+)`, 'm').exec(text); return m ? Number(m[1]) : null; };
+  const graphics = kb('Graphics');
+  // Android 12 on says TOTAL PSS; before, TOTAL alone.
+  const total = kb('TOTAL(?: PSS)?');
+  return graphics == null && total == null ? null : {
+    graphics: graphics == null ? null : Math.round(graphics / 102.4) / 10,
+    total: total == null ? null : Math.round(total / 102.4) / 10,
+  };
+}
+
 /** A screen's opening time from its device log (useScreenReady's line); null when it never said. */
 export function readyOf(text, name = 'reel') {
   const at = text.indexOf(`[e2e] screen.ready {"name":"${name}","ms":`);
@@ -88,13 +103,16 @@ export function jsLongOf(text) {
  * The arms' measures, each read from one round of their screen: its opening, the frames its ten swipes drew (more
  * is smoother), and its middle and slow frame times. Not the janky share: on the lab's software GPU
  * every frame is janky (speed lab 39810996153: janky = frames on every screen), so it tells no build
- * from another.
+ * from another. And what the app holds after the scroll: its graphics, where a layer kept as a
+ * texture lands, and its whole share, so a build that draws faster by holding more is seen to.
  */
 export const REEL_MEASURES = [
   { key: 'ready', head: 'opened ms', of: (r) => r.ready },
   { key: 'frames', head: 'frames', of: (r) => r.frames },
   { key: 'p50', head: 'p50 ms', of: (r) => r.p50 },
   { key: 'p90', head: 'p90 ms', of: (r) => r.p90 },
+  { key: 'gfxMem', head: 'graphics MB', of: (r) => r.mem?.graphics ?? null },
+  { key: 'pss', head: 'memory MB', of: (r) => r.mem?.total ?? null },
 ];
 
 const median = (xs) => { const s = [...xs].sort((a, b) => a - b); const i = (s.length - 1) / 2; return (s[Math.floor(i)] + s[Math.ceil(i)]) / 2; };
@@ -149,7 +167,7 @@ export function costs(dir) {
     if (m.moved < FAR) { failed.push(`${screen} ${run}: the list stopped after ${m.moved} of ${FAR} swipes`); continue; }
     const build = run.replace(/-\d+$/, '');
     const log = read(`${run}.log`);
-    builds.set(build, [...(builds.get(build) ?? []), { ...f, ready: readyOf(log, READY_NAMES[screen] ?? screen), jsLong: jsLongOf(log) }]);
+    builds.set(build, [...(builds.get(build) ?? []), { ...f, ready: readyOf(log, READY_NAMES[screen] ?? screen), jsLong: jsLongOf(log), mem: memOf(read(`${run}.mem`)) }]);
   }
   const base = builds.get('A') ?? [];
   if (base.length === 0) failed.push(`${screen}: A, the app as it is, was never scrolled: nothing to compare`);

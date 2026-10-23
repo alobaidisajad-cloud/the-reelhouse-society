@@ -192,9 +192,10 @@ describe('the signed-in scrolls, judged', () => {
 /**
  * A screens folder with a reel/ folder: each build's rounds of the Reel, each scrolled far, its
  * opening and its frames as given (ready ms, frames drawn, p90 ms per round; every frame janky, as on the lab's GPU),
- * and, where given, the frame record's late animation frames (LabFrameLog's lines, split over two seconds).
+ * and, where given, the frame record's late animation frames (LabFrameLog's lines, split over two seconds)
+ * and what the app held after (dumpsys meminfo's App Summary, in KB, as Android 14 prints it).
  */
-function reelRounds(name: string, builds: Record<string, { ready: number[]; frames: number[]; p90: number[]; js?: number[] }>, screen?: string) {
+function reelRounds(name: string, builds: Record<string, { ready: number[]; frames: number[]; p90: number[]; js?: number[]; mem?: { graphics: number[]; total: number[] } }>, screen?: string) {
   const d = scrolled(name, Array.from({ length: 11 }, (_, i) => hash(i)));
   const reel = join(d, 'arms');
   mkdirSync(reel);
@@ -206,6 +207,7 @@ function reelRounds(name: string, builds: Record<string, { ready: number[]; fram
       writeFileSync(`${f}.moves`, Array.from({ length: 11 }, (_, k) => `${hash(k)}  -`).join('\n'));
       writeFileSync(`${f}.gfx`, `Total frames rendered: ${r.frames[i] ?? 0}\nJanky frames: ${r.frames[i] ?? 0} (100.00%)\n50th percentile: 800ms\n90th percentile: ${r.p90[i] ?? 0}ms\n99th percentile: 2000ms\n`);
       const said = (event: string, detail: object) => `10-22 16:00:32.537 W/ReactNativeJS( 5765): [e2e] ${event} ${JSON.stringify(detail)}\n`;
+      if (r.mem) writeFileSync(`${f}.mem`, memDump(r.mem.graphics[i] ?? 0, r.mem.total[i] ?? 0));
       const js = r.js?.[i];
       writeFileSync(`${f}.log`, said('screen.ready', { name: screen ?? 'reel', ms }) + (js == null ? '' : [
         said('lab.frames.on', { path: '/reels' }),
@@ -216,6 +218,23 @@ function reelRounds(name: string, builds: Record<string, { ready: number[]; fram
   }
   return d;
 }
+/** `dumpsys meminfo <package>` as Android 14 prints it, cut to its tables' shape; KB. */
+const memDump = (graphicsKb: number, totalKb: number) => [
+  '** MEMINFO in pid 5765 [com.reelhouse.society] **',
+  '                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap',
+  '                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free',
+  '  Native Heap    30000    29900        0        0    31000    40000    35000     5000',
+  `    GL mtrack    ${graphicsKb}    ${graphicsKb}        0        0    ${graphicsKb}`,
+  `        TOTAL   ${totalKb}   100000    20000        0   200000    60000    50000    10000`,
+  '',
+  ' App Summary',
+  '                       Pss(KB)                        Rss(KB)',
+  '                        ------                         ------',
+  '           Java Heap:    12000                          30000',
+  `            Graphics:    ${graphicsKb}                          ${graphicsKb}`,
+  '',
+  `           TOTAL PSS:   ${totalKb}            TOTAL RSS:   200000       TOTAL SWAP PSS:      12`,
+].join('\n') + '\n';
 // Fourteen rounds, as scrolls.sh runs (it says why).
 const around = (base: number) => [0, 3, -2, 5, -4, 1, -1, 2, 4, -3, 6, -5, -6, 7].map((n) => base + n);
 
@@ -230,9 +249,24 @@ describe("the Reel's layers, costed", () => {
     const row = (b: string) => r.stdout.split('\n').find((l) => l.startsWith(`${b} `)) ?? '';
     // Late animation frames are not compared (UNMEASURED: on Android they count the frames): A's
     // record, however different from Rb's, makes no column and no call.
-    expect(row('A')).toMatch(/^A\s+14\s+3000\.5\s+50\.5\s+800\s+20\.5$/);
-    expect(row('Rb')).toMatch(/^Rb\s+14\s+2000\.5 -1000\*\s+50\.5 \+0 \s+800 \+0 \s+20\.5 \+0 $/);
-    expect(row('Rw')).toMatch(/^Rw\s+14\s+3000\.5 \+0 \s+50\.5 \+0 \s+800 \+0 \s+20\.5 \+0 $/);
+    // No memory record: its two columns are empty, never a zero.
+    expect(row('A')).toMatch(/^A\s+14\s+3000\.5\s+50\.5\s+800\s+20\.5\s+—\s+—$/);
+    expect(row('Rb')).toMatch(/^Rb\s+14\s+2000\.5 -1000\*\s+50\.5 \+0 \s+800 \+0 \s+20\.5 \+0 \s+—\s+—$/);
+    expect(row('Rw')).toMatch(/^Rw\s+14\s+3000\.5 \+0 \s+50\.5 \+0 \s+800 \+0 \s+20\.5 \+0 \s+—\s+—$/);
+  });
+
+  it('names a build that draws faster by holding more memory, graphics and whole, in MB', () => {
+    // P0.111: a light kept as a texture (Rh) drew faster; what it holds for that is part of its cost.
+    const r = run('scrolls.mjs', [reelRounds('reel-memory', {
+      A: { ready: around(3000), frames: around(50), p90: around(20), mem: { graphics: around(20480), total: around(204800) } },
+      Rh: { ready: around(3000), frames: around(50), p90: around(20), mem: { graphics: around(30720), total: around(215040) } },
+    })]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/graphics MB\s+memory MB/);
+    const row = (b: string) => r.stdout.split('\n').find((l) => l.startsWith(`${b} `)) ?? '';
+    // 20480.5 KB is 20 MB to a tenth; the main table's GL mtrack and TOTAL rows are not the summary's.
+    expect(row('A')).toMatch(/\s20\s+200$/);
+    expect(row('Rh')).toMatch(/\s30 \+10\*\s+210 \+10\*$/);
   });
 
   it('fails when A was never scrolled, or a round of an arm ran out, by name', () => {
