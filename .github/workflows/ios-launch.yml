@@ -151,6 +151,10 @@ jobs:
 
       - name: The flows that need no server, on the simulator
         working-directory: mobile
+        env:
+          # Maestro starts its iPhone driver for each flow; on a hosted Mac it once outlived the
+          # default wait (iPhone launch at ed79856d: "iOS driver not ready in time"). Three minutes.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: '180000'
         run: |
           set +e
           S="$RUNNER_TEMP/ios-flows"

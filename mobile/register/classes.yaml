@@ -825,6 +825,18 @@ classes:
     fix: "jest.setup.ts mocks expo-router with test-utils/expoRouterMock.ts, and every test's own mock (65) spreads that base first, or the real module, and changes only what it means to (mutant shape-router-mock-from-scratch)"
     places: [none]
 
+  - id: E2E-ios-driver-start-unwaited
+    title: "An iPhone flow failed before its first step: Maestro's iPhone driver, started again for each flow, outlived its default wait on a hosted Mac"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "iPhone launch at ed79856d, auth_deep_link: iOS driver not ready in time" }
+    methods:
+      - { kind: static, file: e2e/__tests__/iosFlows.test.ts, test: "give Maestro's iPhone driver minutes to start, not its default" }
+    fix: "the flows step gives the driver three minutes (MAESTRO_DRIVER_STARTUP_TIMEOUT, Maestro's own setting), and a test holds it at two or more (mutant shape-ios-driver-default-wait)"
+    places: [simulator]
+
   - id: E2E-ios-cold-link-launch-hang
     title: "A link opened with the app closed on the iPhone simulator was given up at ten seconds: the simulator hung the app's launch after a stop, and no line from the app ever came"
     seriousness: code

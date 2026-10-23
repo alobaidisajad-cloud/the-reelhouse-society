@@ -981,6 +981,15 @@ mutants:
         replace: ""
     proof: { file: test-utils/__tests__/theRouterMockHasOneBase.guard.test.ts, test: "every mock of expo-router spreads the one base, or the real module, first" }
 
+  - id: shape-ios-driver-default-wait
+    class: E2E-ios-driver-start-unwaited
+    source: shape
+    edits:
+      - file: ../.github/workflows/ios-launch.yml
+        find: "          MAESTRO_DRIVER_STARTUP_TIMEOUT: '180000'\n"
+        replace: ""
+    proof: { file: e2e/__tests__/iosFlows.test.ts, test: "give Maestro's iPhone driver minutes to start, not its default" }
+
   - id: shape-ios-cold-link-once
     class: E2E-ios-cold-link-launch-hang
     source: shape
