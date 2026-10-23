@@ -710,7 +710,7 @@
     "class": "TEST-mock-written-from-scratch",
     "mutant": "shape-router-mock-from-scratch",
     "proof": "m1",
-    "commit": "5dc07fbeca46332adf1fe4a0fea3801d302b69ff",
+    "commit": "d8fcad585237de34138d9041fe9b6a52b35ed8f1",
     "verdict": "caught"
   },
   {
@@ -830,6 +830,27 @@
     "mutant": "shape-first-page-unordered-by-id",
     "proof": "m1",
     "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-still-light-redrawn-under-scroll",
+    "mutant": "shape-light-never-kept",
+    "proof": "m1",
+    "commit": "d8fcad585237de34138d9041fe9b6a52b35ed8f1",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-still-light-redrawn-under-scroll",
+    "mutant": "shape-light-kept-behind",
+    "proof": "m1",
+    "commit": "d8fcad585237de34138d9041fe9b6a52b35ed8f1",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-mock-written-from-scratch",
+    "mutant": "shape-navigation-mock-from-scratch",
+    "proof": "m2",
+    "commit": "d8fcad585237de34138d9041fe9b6a52b35ed8f1",
     "verdict": "caught"
   },
   {
