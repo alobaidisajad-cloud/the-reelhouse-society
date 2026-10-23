@@ -1223,5 +1223,19 @@
     "proof": "m9",
     "commit": "86a80392c4d3adb20ee913cae3965387d8663ac4",
     "verdict": "caught"
+  },
+  {
+    "class": "UI-unknown-mark-drawn-as-off",
+    "mutant": "shape-follow-filed-blind",
+    "proof": "m11",
+    "commit": "8ccf7dd830b37f9e76c35bcbf23279a99251c9bf",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-unknown-mark-drawn-as-off",
+    "mutant": "shape-sealed-while-unknown",
+    "proof": "m12",
+    "commit": "8ccf7dd830b37f9e76c35bcbf23279a99251c9bf",
+    "verdict": "caught"
   }
 ]
