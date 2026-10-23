@@ -35,7 +35,9 @@ DELETE FROM public.interactions
        FROM public.interactions WHERE type = 'endorse_list'
    ) held WHERE held.nth > 1);
 
+-- add-only (3): it only widens or fixes: every shipped client takes a refused second certification as given — the app (stores/domain/interactionSlice.ts, 23505; utils/offlineQueue.ts, a duplicate is delivered), the website (src/stores/films.ts, a "duplicate" refusal; src/utils/offlineQueue.ts, 23505 discarded). Replayed: a member's second certification in a_certification_is_counted_once_rehearsal.sql, and the builds in members' hands against the train (e2e-old-clients.yml, which the train waits on)
 CREATE UNIQUE INDEX IF NOT EXISTS interactions_endorse_log_once
   ON public.interactions USING btree (user_id, target_log_id) WHERE (type = 'endorse_log'::text);
+-- add-only (3): it only widens or fixes: as above, for a stack's (interactionSlice.ts, 23505; the website's films.ts and offlineQueue.ts, a duplicate taken as given). Replayed: the rehearsal's second certification of a stack, and e2e-old-clients.yml
 CREATE UNIQUE INDEX IF NOT EXISTS interactions_endorse_list_once
   ON public.interactions USING btree (user_id, target_list_id) WHERE (type = 'endorse_list'::text);
