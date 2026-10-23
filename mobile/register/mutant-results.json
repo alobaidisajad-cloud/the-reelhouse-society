@@ -1237,5 +1237,26 @@
     "proof": "m12",
     "commit": "8ccf7dd830b37f9e76c35bcbf23279a99251c9bf",
     "verdict": "caught"
+  },
+  {
+    "class": "DATA-rank-sold-before-it-was-read",
+    "mutant": "shape-rank-unread-sold",
+    "proof": "m1",
+    "commit": "b511158fe591a6d4fa6708d387212ad565c40c16",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-rank-sold-before-it-was-read",
+    "mutant": "shape-rank-unread-a-stranger",
+    "proof": "m1",
+    "commit": "b511158fe591a6d4fa6708d387212ad565c40c16",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-rank-sold-before-it-was-read",
+    "mutant": "shape-rope-sells-while-reading",
+    "proof": "m2",
+    "commit": "b511158fe591a6d4fa6708d387212ad565c40c16",
+    "verdict": "caught"
   }
 ]
