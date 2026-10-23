@@ -833,6 +833,48 @@
     "verdict": "caught"
   },
   {
+    "class": "DATA-settings-saved-over-an-unread-profile",
+    "mutant": "shape-settings-form-over-unread",
+    "proof": "m1",
+    "commit": "2c627027a0da0831d125349a8629763cd9d8820f",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-settings-saved-over-an-unread-profile",
+    "mutant": "shape-profile-read-by-anyone",
+    "proof": "m3",
+    "commit": "2c627027a0da0831d125349a8629763cd9d8820f",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-settings-saved-over-an-unread-profile",
+    "mutant": "shape-reread-onto-another",
+    "proof": "m4",
+    "commit": "8fbdb92f560675c5759e1d8b0dfee8e2da55087b",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-unknown-block-offered-as-none",
+    "mutant": "shape-sign-in-reads-no-blocks",
+    "proof": "m1",
+    "commit": "2c627027a0da0831d125349a8629763cd9d8820f",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-unknown-block-offered-as-none",
+    "mutant": "shape-sheet-offers-unknown-blocks",
+    "proof": "m3",
+    "commit": "2c627027a0da0831d125349a8629763cd9d8820f",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-unknown-block-offered-as-none",
+    "mutant": "shape-blocks-known-after-sign-out",
+    "proof": "m2",
+    "commit": "2c627027a0da0831d125349a8629763cd9d8820f",
+    "verdict": "caught"
+  },
+  {
     "class": "SPEED-page-waits-for-the-members-marks",
     "mutant": "shape-page-waits-for-marks",
     "proof": "m1",
