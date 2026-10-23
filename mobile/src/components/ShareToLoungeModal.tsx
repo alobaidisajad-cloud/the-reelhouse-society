@@ -105,7 +105,8 @@ function ShareSheet({
 }: ShareToLoungeProps) {
     const signedIn = useAuthStore((s) => !!s.user);
     const allLounges = useLoungeStore(s => s.lounges);
-    const isFetching = useLoungeStore(s => s.loungesLoading);
+    // Fetching until the salons have answered once: the sheet opens before its read begins.
+    const isFetching = useLoungeStore(s => s.loungesLoading || !s.loungesRead);
     const loungesFailed = useLoungeStore(s => s.loungesFailed);
     // Only the salons the house lets this member speak in: a pending or muted seat is refused.
     const lounges = allLounges.filter(canPostIn);
@@ -215,7 +216,7 @@ function ShareSheet({
                     )}
 
                     {(isFetching && lounges.length === 0) ? (
-                        <ActivityIndicator color={colors.sepia} style={s.loadingIndicator} />
+                        <ActivityIndicator color={colors.sepia} style={s.loadingIndicator} accessibilityLabel="Reading the salons" />
                     ) : lounges.length === 0 && loungesFailed ? (
                         // Not "you have joined none": the salons could not be asked.
                         <View style={s.unreachable}>

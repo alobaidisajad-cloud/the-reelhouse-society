@@ -17,7 +17,7 @@ jest.mock('@/src/hooks/useProfileData', () => ({
     targetUser: mockTarget, loading: false, error: null, refreshing: false, setRefreshing: jest.fn(),
     fetchUserData: jest.fn(async () => undefined), loadTabData: jest.fn(async () => {}),
     refreshTabWithFilters: jest.fn(async () => {}), setTabDataLoaded: jest.fn(), setTargetUser: mockSetTargetUser,
-    tabDataLoaded: {}, tabFailed: {},
+    tabDataLoaded: {}, tabFailed: {}, tabAnswered: { archive: true, ledger: true, watchlist: true, lists: true, physical: true },
   }),
 }));
 jest.mock('@/src/stores/domain/socialSlice', () => ({

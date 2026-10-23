@@ -20,6 +20,12 @@ import { logger } from '../utils/logger';
 
 export interface SocialState {
     following: string[];
+    /**
+     * Whether `following` is the member's list: held (set whole by a read, or restored from the
+     * phone's copy of one), unread yet, or its read failed. An empty list unread or failed is
+     * not "follows nobody": the Reel said "Your orbit is quiet" to members who follow people.
+     */
+    followingKnown: 'held' | 'unread' | 'failed';
     requested: string[];
     /** O(1) lookup index — mirrors endorsement/watchlist index pattern */
     _followingIndex: Set<string>;
@@ -41,6 +47,7 @@ export interface SocialState {
 
 export const useSocialStore = create<SocialState>()((set, get) => ({
     following: [],
+    followingKnown: 'unread',
     requested: [],
     _followingIndex: new Set<string>(),
     _requestedIndex: new Set<string>(),
@@ -137,6 +144,7 @@ export const useSocialStore = create<SocialState>()((set, get) => ({
                 const parsed = JSON.parse(cachedFollowing);
                 if (Array.isArray(parsed)) {
                     updates.following = parsed;
+                    updates.followingKnown = 'held';
                     updates._followingIndex = new Set(parsed.map((u: string) => String(u || '').toLowerCase()));
                 }
             }
@@ -161,7 +169,7 @@ export const useSocialStore = create<SocialState>()((set, get) => ({
 // Register cleanup handler for centralized logout
 registerStoreReset((previousUserId) => {
     useSocialStore.setState({
-        following: [], _followingIndex: new Set(),
+        following: [], followingKnown: 'unread', _followingIndex: new Set(),
         requested: [], _requestedIndex: new Set(),
         pendingRequestCount: 0
     });

@@ -27,7 +27,7 @@ export default function FilmDetailScreen() {
   const filmId = parseInt(idString || '0', 10);
   const validFilmId = !isNaN(filmId) && filmId > 0;
 
-  const { data, isLoading: loading, isError, refetch } = useFilmDetail(filmId, validFilmId);
+  const { data, isLoading: loading, isError, refetch, isPlaceholderData } = useFilmDetail(filmId, validFilmId);
   const retry = useCallback(() => { void refetch(); }, [refetch]);
   const readyMark = useScreenReady('film', loading ? 'reading' : isError && !data?.detail ? 'failed' : 'ready');
   const { user } = useAuthStore();
@@ -141,15 +141,18 @@ export default function FilmDetailScreen() {
 
     // Unknown, not empty: a page of critiques that could not be read.
     const reviewsFailed = !!data?.reviewsError;
+    // Unread, not empty: the hero drawn from the warm catalogue, its critiques still coming.
+    const reviewsReading = isPlaceholderData;
 
-    return { film, videos, directors, cast, score, providers, studios, reviews, reviewsFailed, similarFilms, verdict };
-  }, [data, loggedIndex]);
+    return { film, videos, directors, cast, score, providers, studios, reviews, reviewsFailed, reviewsReading, similarFilms, verdict };
+  }, [data, loggedIndex, isPlaceholderData]);
 
   const providerValue = useMemo<FilmDetailContextValue>(() => {
     return {
       film: derivedData.film,
       reviews: derivedData.reviews,
       reviewsFailed: derivedData.reviewsFailed,
+      reviewsReading: derivedData.reviewsReading,
       similarFilms: derivedData.similarFilms,
       directors: derivedData.directors,
       cast: derivedData.cast,

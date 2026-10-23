@@ -349,6 +349,15 @@ export function useProfileController(usernameOverride?: string) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomFilters, activeTab, data.targetUser?.id]);
 
+  // Whether the open room's rows answer the filters on screen: its own read came back for
+  // them (your own stacks are filtered on the phone, so always).
+  const searchAnswered = useMemo(() => {
+    const room = roomOf(activeTab);
+    if (!room) return true;
+    if (isSelf && room === 'lists') return true;
+    return JSON.stringify(data.answeredFilters?.[room]) === JSON.stringify(roomFilters[room]);
+  }, [activeTab, isSelf, data.answeredFilters, roomFilters]);
+
   return {
     username,
     isSelf,
@@ -369,6 +378,7 @@ export function useProfileController(usernameOverride?: string) {
     setRouletteOpen,
     refreshing: refreshingLocal,
     onRefresh,
+    searchAnswered,
     followLoading,
     toggleFollow,
 

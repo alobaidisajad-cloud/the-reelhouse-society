@@ -77,7 +77,7 @@ const DirectorCard = memo(function DirectorCard({ director }: { director: { id: 
 
 export const FilmDetailLayout = memo(function FilmDetailLayout() {
   const {
-    film, reviews, reviewsFailed, similarFilms, directors, cast, videos, trailer, score, providers, studios, verdict,
+    film, reviews, reviewsFailed, reviewsReading, similarFilms, directors, cast, videos, trailer, score, providers, studios, verdict,
     existingLog, isAuthenticated, isArchivist, user,
     validFilmId, loading, isError, retry, isFocused,
     goBack, handleLog, handleRewatch, handleOpenTrailer,
@@ -517,8 +517,10 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
                 been here" before a member has seen a single thing about the
                 film; the same block low down says "be the first voice" and
                 reads as an invitation. In a young archive the empty case is
-                not the edge — it is most films. */}
-            {hasSociety && <TheSociety />}
+                not the edge — it is most films. Neither, while the critiques
+                are still coming: "be the first voice" would be said of a film
+                the house may have written on, then leap up the page. */}
+            {!reviewsReading && hasSociety && <TheSociety />}
 
             {/* THE CREDIT — a film credit, set as one. */}
             {directors.length > 0 && (
@@ -543,7 +545,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
 
             {/* ...and here it is when nobody has written yet: after the film
                 has been shown to you, where the invitation can land. */}
-            {!hasSociety && <TheSociety />}
+            {!reviewsReading && !hasSociety && <TheSociety />}
 
             <Animated.View style={s.section}>
               <WatchProviders providers={providers as any} />

@@ -94,12 +94,12 @@ describe('the order of the page', () => {
 
   it('puts YOURS above the house, and both above the credit', () => {
     expect(at('label="YOURS"')).toBeGreaterThan(-1);
-    expect(at('label="YOURS"')).toBeLessThan(at('{hasSociety && <TheSociety />}'));
-    expect(at('{hasSociety && <TheSociety />}')).toBeLessThan(at('DIRECTED BY'));
+    expect(at('label="YOURS"')).toBeLessThan(at('{!reviewsReading && hasSociety && <TheSociety />}'));
+    expect(at('{!reviewsReading && hasSociety && <TheSociety />}')).toBeLessThan(at('DIRECTED BY'));
   });
 
   it('puts the house above the utility sections, not below the videos', () => {
-    const spoken = at('{hasSociety && <TheSociety />}');
+    const spoken = at('{!reviewsReading && hasSociety && <TheSociety />}');
     expect(spoken).toBeLessThan(at('<WatchProviders'));
     expect(spoken).toBeLessThan(at('<FilmDossier'));
     expect(spoken).toBeLessThan(at('<FilmMediaCarousel'));
@@ -113,7 +113,7 @@ describe('the order of the page', () => {
    * that is not an edge case — it is nearly every film in the archive.
    */
   it('drops the house below the footage when it has not spoken', () => {
-    const silent = at('{!hasSociety && <TheSociety />}');
+    const silent = at('{!reviewsReading && !hasSociety && <TheSociety />}');
     expect(silent).toBeGreaterThan(-1);
     expect(silent).toBeGreaterThan(at('<FilmMediaCarousel'));
     expect(silent).toBeGreaterThan(at('label="THE PLAYERS"'));
@@ -121,8 +121,8 @@ describe('the order of the page', () => {
 
   it('renders it in one place or the other, never both', () => {
     expect((layout.match(/<TheSociety \/>/g) || []).length).toBe(2);
-    expect(layout).toMatch(/\{hasSociety && <TheSociety \/>\}/);
-    expect(layout).toMatch(/\{!hasSociety && <TheSociety \/>\}/);
+    expect(layout).toMatch(/\{!reviewsReading && hasSociety && <TheSociety \/>\}/);
+    expect(layout).toMatch(/\{!reviewsReading && !hasSociety && <TheSociety \/>\}/);
   });
 
   it('and asks the question of the same list the section renders', () => {

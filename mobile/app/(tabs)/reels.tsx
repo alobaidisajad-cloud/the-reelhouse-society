@@ -16,6 +16,7 @@ import { useScrollToTop } from '@react-navigation/native';
 import { useAuthStore } from '@/src/stores/auth';
 import { resolveTier } from '@/src/utils/tier';
 import { useSocialStore } from '@/src/stores/followStore';
+import { hydrateFollowing } from '@/src/stores/domain/socialSlice';
 import { colors, fonts } from '@/src/theme/theme';
 
 import { SectionDivider } from '@/src/components/Decorative';
@@ -184,6 +185,10 @@ export default function ReelScreen() {
   const { data: stacksData, isLoading: stacksLoading, isError: stacksFailed, refetch: refetchStacks, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks } = useStacksFeed(stackFilter, stackSearch);
 
   const followingCount = useSocialStore((s) => s.following.length);
+  // Following nobody is a fact only of a list read: one unread or failed follows someone, perhaps.
+  const followingKnown = useSocialStore((s) => s.followingKnown);
+  const followsUnread = followingCount === 0 && followingKnown === 'unread';
+  const followsLost = followingCount === 0 && followingKnown === 'failed';
 
   const communityFeed = useMemo(() => communityData?.pages.flat() || [], [communityData]);
   const followingFeed = useMemo(() => followingData?.pages.flat() || [], [followingData]);
@@ -223,7 +228,7 @@ export default function ReelScreen() {
     feedFilter === 'following' ? (followingCount > 0 ? followingFeed : []) : communityFeed, 
   [feedFilter, followingFeed, communityFeed, followingCount]);
   const logCount = activeFeed.length;
-  const feedLoading = feedFilter === 'following' ? followingLoading : communityLoading;
+  const feedLoading = feedFilter === 'following' ? followingLoading || followsUnread : communityLoading;
 
   const onLoadMoreLogs = useCallback(() => {
     if (feedFilter === 'following' && hasNextFollowing) {
@@ -320,11 +325,12 @@ export default function ReelScreen() {
 
   // A feed that could not be read is not an empty one, and does not say it is.
   const feedFailed = feedFilter === 'following'
-    ? followingFailed && followingData === undefined
+    ? (followingFailed && followingData === undefined) || followsLost
     : communityFailed && communityData === undefined;
   const rereadFeed = useCallback(() => {
+    if (feedFilter === 'following' && followsLost) void hydrateFollowing();
     void (feedFilter === 'following' ? refetchFollowing() : refetchCommunity());
-  }, [feedFilter, refetchFollowing, refetchCommunity]);
+  }, [feedFilter, followsLost, refetchFollowing, refetchCommunity]);
 
   const logsEmpty = useMemo(() => {
     if (feedLoading) return <TungstenSpooling />;
@@ -392,14 +398,18 @@ export default function ReelScreen() {
   ), [section, resolvedRole, stackSearch, stackFilter, switchSection, switchStackFilter, handleStackSearchChange, handleClearSearch, isAuthenticated, askForAName]);
 
   const logsExtraData = useMemo(() => [feedFilter, section, logCount, resolvedRole, feedLoading], [feedFilter, section, logCount, resolvedRole, feedLoading]);
-  const stacksExtraData = useMemo(() => [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading], [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading]);
+  const stacksFollowsUnread = stackFilter === 'following' && followsUnread;
+  const stacksExtraData = useMemo(() => [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading, stacksFollowsUnread], [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading, stacksFollowsUnread]);
 
 
-  const stacksLost = stacksFailed && stacksData === undefined;
-  const rereadStacks = useCallback(() => { void refetchStacks(); }, [refetchStacks]);
+  const stacksLost = (stacksFailed && stacksData === undefined) || (stackFilter === 'following' && followsLost);
+  const rereadStacks = useCallback(() => {
+    if (stackFilter === 'following' && followsLost) void hydrateFollowing();
+    void refetchStacks();
+  }, [stackFilter, followsLost, refetchStacks]);
 
   const stackEmpty = useMemo(() => {
-    if (stacksLoading) return <TungstenSpooling />;
+    if (stacksLoading || stacksFollowsUnread) return <TungstenSpooling />;
     if (stacksLost) return <EmptyOffline onRetry={rereadStacks} />;
     return (
       <Arrive name="stacks.empty" style={st.emptyWrap}>
@@ -430,7 +440,7 @@ export default function ReelScreen() {
         )}
       </Arrive>
     );
-  }, [stacksLoading, stacksLost, rereadStacks, stackSearch, stackFilter, handleClearSearch, switchStackFilter, isAuthenticated, askForAName]);
+  }, [stacksLoading, stacksFollowsUnread, stacksLost, rereadStacks, stackSearch, stackFilter, handleClearSearch, switchStackFilter, isAuthenticated, askForAName]);
 
 
 

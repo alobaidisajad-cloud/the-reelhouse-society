@@ -166,6 +166,8 @@ function commitHydratedGraph(userId: string, serverFollowing: string[], serverRe
   );
   useSocialStore.getState().setFollowing(following);
   useSocialStore.getState().setRequested(requested);
+  // Read whole: the list is the member's, however short.
+  useSocialStore.setState({ followingKnown: 'held' });
   persistFollowingToCache(userId);
 }
 
@@ -391,6 +393,11 @@ export function hydrateFollowing(): Promise<void> {
 }
 
 async function readFollowing(userId: string, current: () => boolean): Promise<void> {
+  // The list could not be read whole: a list held stays the member's; one never held is now
+  // known to be unread, not "follows nobody".
+  const unread = () => {
+    if (current()) useSocialStore.setState((s) => (s.followingKnown === 'held' ? s : { followingKnown: 'failed' }));
+  };
   try {
     const allUsernames: string[] = [];
     const allRequested: string[] = [];
@@ -403,6 +410,7 @@ async function readFollowing(userId: string, current: () => boolean): Promise<vo
       if (pageCount >= MAX_HYDRATE_PAGES) {
         logger.warn(`[socialSlice.hydrateFollowing] more than ${MAX_HYDRATE_PAGES * HYDRATE_PAGE_SIZE} follows; kept the list as it was`);
         captureError(new Error('follow list past the hydrate cap'), { scope: 'socialSlice.hydrateFollowing', pages: pageCount });
+        unread();
         return;
       }
       // The cursor is (created_at, id), never the time alone: rows sharing the
@@ -430,6 +438,7 @@ async function readFollowing(userId: string, current: () => boolean): Promise<vo
         // `error`, and saving what was read so far would unfollow the rest.
         logger.warn('[socialSlice.hydrateFollowing] could not read the follow list:', error.message);
         if (!isNetworkError(error)) captureError(error, { scope: 'socialSlice.hydrateFollowing' });
+        unread();
         return;
       }
 
@@ -468,6 +477,7 @@ async function readFollowing(userId: string, current: () => boolean): Promise<vo
     const msg = err instanceof Error ? err.message : String(err);
     logger.warn('[socialSlice.hydrateFollowing] Unexpected error:', msg);
     if (!isNetworkError(err)) captureError(err, { scope: 'socialSlice.hydrateFollowing' });
+    unread();
   }
 }
 

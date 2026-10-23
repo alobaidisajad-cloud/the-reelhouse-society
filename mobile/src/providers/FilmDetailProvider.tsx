@@ -26,6 +26,8 @@ export interface FilmDetailContextValue {
   reviews: FilmReviewItem[];
   /** The critiques could not be read: `reviews` is empty because unknown, not because nobody wrote. */
   reviewsFailed: boolean;
+  /** The page is drawn from the warm catalogue and its critiques are still on their way: `reviews` is empty because unread. */
+  reviewsReading: boolean;
   similarFilms: { id: number; title?: string; name?: string; poster_path?: string | null }[];
   directors: { id: number; name: string; profile_path?: string | null; job: string }[];
   cast: { id: number; name: string; profile_path?: string | null; character: string }[];

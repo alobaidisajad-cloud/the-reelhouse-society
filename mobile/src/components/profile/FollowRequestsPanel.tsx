@@ -150,7 +150,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
           <View style={s.listArea}>
             {loading && items.length === 0 ? (
               <View style={s.center}>
-                <ActivityIndicator size="small" color={colors.sepia} />
+                <ActivityIndicator size="small" color={colors.sepia} accessibilityLabel="Reading the door" />
               </View>
             ) : items.length === 0 && failed ? (
               <View style={s.center}>

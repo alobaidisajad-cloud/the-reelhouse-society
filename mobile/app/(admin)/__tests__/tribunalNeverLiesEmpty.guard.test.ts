@@ -70,6 +70,15 @@ describe('#24 · a docket that failed can never render as a docket that is clear
     // The point is to stop it LYING, not to remove it.
     expect(screen).toMatch(/The docket is clear\. The house rests\./);
   });
+
+  // Each docket was copied from its read in an effect: the frame between painted an answered
+  // read, neither loading nor failed, as "The docket is clear" (P0.112). Both are rebuilt during
+  // the render that brings the read, which React finishes before it paints.
+  it('rebuilds each docket from its read during the render that brings it, never an effect after', () => {
+    expect(code).toMatch(/if \(pendingPage && pendingPage !== pendingFrom\) \{\s*setPendingFrom\(pendingPage\);\s*setPendingItems\(/);
+    expect(code).toMatch(/if \(priorityData && priorityData !== priorityFrom\) \{\s*setPriorityFrom\(priorityData\);\s*setPriorityItems\(/);
+    expect(code).not.toMatch(/useEffect\(\(\) => \{\s*if \((pendingPage|priorityData)\)/);
+  });
 });
 
 describe('#24 · the client keyset still matches the RPC ordering', () => {

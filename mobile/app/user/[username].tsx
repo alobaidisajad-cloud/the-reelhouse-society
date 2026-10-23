@@ -240,7 +240,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   });
 
 
-  const { refreshing, onRefresh, dnaCardOpen, setDnaCardOpen, rouletteOpen, setRouletteOpen, followLoading, toggleFollow } = ctrl;
+  const { refreshing, onRefresh, dnaCardOpen, setDnaCardOpen, rouletteOpen, setRouletteOpen, followLoading, toggleFollow, searchAnswered } = ctrl;
   const { toEditProfile: navToEditProfile, toSettings: navToSettings, toMembership: navToMembership, toFollowers: navToFollowers, toFollowing: navToFollowing, toCalendar: navToCalendar, openSocialLink, handleBack } = doors;
   const closeDnaCard = useCallback(() => setDnaCardOpen(false), [setDnaCardOpen]);
   // The locked Physical Archive's own rope, so the Society page names what was reached for.
@@ -459,32 +459,32 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const roomUnreachable = roomFailed ? retryRoom : undefined;
   const roomNarrowed = !!activeTab && (ROOMS as readonly string[]).includes(activeTab) && narrowed[activeTab as Room];
 
+  // A room's rows on screen, and whether its read has answered.
+  const roomShows = (activeTab === 'archive' || activeTab === 'ledger') ? displayLogs.length
+    : activeTab === 'watchlist' ? displayWatchlist.length
+      : activeTab === 'lists' ? displayLists.length
+        : activeTab === 'physical' ? displayVault.length : null;
+  const roomAnswered = !!activeTab && !!data.tabAnswered[activeTab as ProfileTab];
+
   // Whether a room's data has ARRIVED, before it may call itself empty. A
-  // filtered read that failed is never shown as the last search's rows. Your own
-  // room keeps what it holds, and with nothing held after a failed read says so;
-  // a visitor's arrives once the count proves it.
+  // filtered read that failed is never shown as the last search's rows; a
+  // narrowed room with nothing to show is empty only once its read answered the
+  // filters on screen (not the whole room's count). Your own room keeps what it
+  // holds; with nothing held it is empty only once its read has answered, and
+  // after a failed read says so. A visitor's arrives once the count proves it.
   const roomReady = useMemo(() => {
+    if (roomShows === null) return true;
     if (roomFailed && roomNarrowed) return false;
-    if (isSelf) {
-      if (!roomFailed) return true;
-      switch (activeTab) {
-        case 'archive':
-        case 'ledger':    return displayLogs.length > 0;
-        case 'watchlist': return displayWatchlist.length > 0;
-        case 'lists':     return displayLists.length > 0;
-        case 'physical':  return displayVault.length > 0;
-        default:          return true;
-      }
-    }
+    if (roomNarrowed) return roomShows > 0 || searchAnswered;
+    if (isSelf) return roomShows > 0 || (!roomFailed && roomAnswered);
     switch (activeTab) {
-      case 'archive':   return displayLogs.length > 0 || counts.logs === 0;
-      case 'ledger':    return displayLogs.length > 0 || counts.ledger === 0;
-      case 'watchlist': return displayWatchlist.length > 0 || counts.watchlist === 0;
-      case 'lists':     return displayLists.length > 0 || counts.lists === 0;
-      case 'physical':  return displayVault.length > 0 || counts.vault === 0;
-      default:          return true;
+      case 'archive':   return roomShows > 0 || counts.logs === 0;
+      case 'ledger':    return roomShows > 0 || counts.ledger === 0;
+      case 'watchlist': return roomShows > 0 || counts.watchlist === 0;
+      case 'lists':     return roomShows > 0 || counts.lists === 0;
+      default:          return roomShows > 0 || counts.vault === 0;
     }
-  }, [isSelf, activeTab, displayLogs.length, displayWatchlist.length, displayLists.length, displayVault.length, counts, roomFailed, roomNarrowed]);
+  }, [isSelf, activeTab, roomShows, counts, roomFailed, roomNarrowed, searchAnswered, roomAnswered]);
 
   // The six rated highest over the whole record (the server's read), as the title says.
   const highestRated = data.highestRated;

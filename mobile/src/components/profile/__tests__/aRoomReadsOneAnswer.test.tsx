@@ -71,7 +71,7 @@ async function open(activeTab: string, over: Record<string, unknown> = {}, data:
       analyticsLogs: [], calendarData: [], serverAnalytics: null, highestRated: [], serverStreak: null, setTargetUser: jest.fn(),
       hasMoreMainLogs: true, hasMoreArchiveLogs: true, hasMoreLedgerLogs: true, hasMoreWatchlist: true, hasMoreVault: true, hasMoreLists: true,
       isLoadingMore: {}, loadMoreLogs, loadMoreLists, loadMoreVault, loadMoreWatchlist,
-      tabFailed: {}, moreFailed: {}, loadTabData: jest.fn(), retryRoom: jest.fn(),
+      tabFailed: {}, tabAnswered: { archive: true, ledger: true, watchlist: true, lists: true, physical: true }, moreFailed: {}, loadTabData: jest.fn(), retryRoom: jest.fn(),
       ...data,
     },
     username: 'tomasreyes', isSelf: true, repairingHandle: false, isFollowing: false, isRequested: false, activeTab,
@@ -144,5 +144,33 @@ describe('a room whose read failed', () => {
   it('the Archive and the Ledger can say it too', async () => {
     expect(typeof (await open('archive', {}, { tabFailed: { archive: true } })).unreachable).toBe('function');
     expect(typeof (await open('ledger', {}, { tabFailed: { ledger: true } })).unreachable).toBe('function');
+  });
+});
+
+// "The Archive Awaits… IMPORT YOUR ARCHIVE" was said to a member on a new phone while their
+// first read was out, and "Nothing under that name" while a search's rows were still coming
+// (P0.112).
+describe('a room whose read is still out', () => {
+  it('your own, holding nothing, is not ready until its read answers; then it is, and empty', async () => {
+    for (const tab of ['archive', 'ledger', 'watchlist', 'lists', 'physical']) {
+      expect([tab, (await open(tab, {}, { tabAnswered: {} }))?.ready]).toEqual([tab, false]);
+      expect([tab, (await open(tab, {}, { tabAnswered: { [tab]: true } }))?.ready]).toEqual([tab, true]);
+    }
+  });
+
+  it('your own, holding something, shows it before any answer', async () => {
+    expect((await open('watchlist', { myWatchlist: [FILM] }, { tabAnswered: {} }))?.ready).toBe(true);
+  });
+
+  it('a search whose rows are still coming, with nothing yet to show, is reading — not "nothing under that name"', async () => {
+    const searching = { isSelf: false, watchlistSearch: 'noir', searchAnswered: false };
+    expect((await open('watchlist', searching))?.ready).toBe(false);
+    // Rows it can show stay shown while the search's read is out.
+    expect((await open('watchlist', searching, { watchlist: [{ id: 1, title: 'Noir' }] }))?.ready).toBe(true);
+  });
+
+  it('a search answered with nothing says so, though the room itself holds rows (a visitor\'s read "retrieving" for good)', async () => {
+    const p = await open('watchlist', { isSelf: false, watchlistSearch: 'zzzz', searchAnswered: true });
+    expect(p?.ready).toBe(true);
   });
 });

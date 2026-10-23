@@ -31,10 +31,11 @@ jest.mock('@/src/stores/auth', () => {
   (useAuthStore as any).getState = () => s;
   return { useAuthStore };
 });
+/** Who the member follows, and whether that list was read. */
+let mockSocial: Record<string, unknown> = { following: [], followers: [], followingKnown: 'held' };
 jest.mock('@/src/stores/followStore', () => {
-  const s = { following: [], followers: [] };
-  const useSocialStore = (sel?: (x: unknown) => unknown) => (sel ? sel(s) : s);
-  (useSocialStore as any).getState = () => s;
+  const useSocialStore = (sel?: (x: unknown) => unknown) => (sel ? sel(mockSocial) : mockSocial);
+  (useSocialStore as any).getState = () => mockSocial;
   return { useSocialStore };
 });
 jest.mock('@/src/utils/reelToast', () => {
@@ -98,7 +99,41 @@ async function mount() {
 
 beforeEach(() => {
   mockFeeds = { community: arrivedEmpty(), following: arrivedEmpty(), stacks: arrivedEmpty() };
+  mockSocial = { following: [], followers: [], followingKnown: 'held' };
   toast().error.mockClear();
+});
+
+// "Your orbit is quiet. Follow other members…" was said to a member who follows people,
+// while the list of whom was still unread, or could not be read (P0.112).
+describe('the following reel, before the follow list is known', () => {
+  const following = async () => {
+    const r = await mount();
+    await act(async () => { await fireEvent.press(r.getByText('FOLLOWING')); });
+    return r;
+  };
+
+  it('a list still unread: the reel is read, not quiet', async () => {
+    mockSocial = { ...mockSocial, followingKnown: 'unread' };
+    const r = await following();
+    expect(r.queryByText('Your orbit is quiet.')).toBeNull();
+    expect(r.queryByText('Transmission Interrupted')).toBeNull();
+    expect(r.getByText('SPOOLING')).toBeTruthy();
+  });
+
+  it('a list that could not be read: the house\'s failure, whose TRY AGAIN reads the list again', async () => {
+    const hydrate = jest.spyOn(require('@/src/stores/domain/socialSlice'), 'hydrateFollowing').mockResolvedValue(undefined);
+    mockSocial = { ...mockSocial, followingKnown: 'failed' };
+    const r = await following();
+    expect(r.queryByText('Your orbit is quiet.')).toBeNull();
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
+    expect(hydrate).toHaveBeenCalledTimes(1);
+    hydrate.mockRestore();
+  });
+
+  it('a list read, of nobody: the orbit is quiet', async () => {
+    const r = await following();
+    expect(r.getByText('Your orbit is quiet.')).toBeTruthy();
+  });
 });
 
 const screenSaid = () => mockTrace.mock.calls.filter(([e]) => String(e).startsWith('screen.')).map(([e, d]) => `${e} ${d.name}`);

@@ -1169,6 +1169,37 @@ classes:
     fix: "the first page orders by created_at then id, as the cursor pages (mutant shape-first-page-unordered-by-id)"
     places: [none]
 
+  - id: UI-read-drawn-as-empty
+    title: "A list said it was empty while its read was still out, or before it began: a salon's 'be the first to break the silence', a film's 'be the first voice' over critiques on their way, 'IMPORT YOUR ARCHIVE' to a member on a new phone, 'nothing under that name' before a search's rows came (and never said of a visitor's that found none), 'no one's at the door' under a count of the waiting, 'no open salons' and 'no seat yet' before the salons were asked for, 'your orbit is quiet' to members who follow people, 'the docket is clear' for a frame"
+    seriousness: behaviour
+    area: states
+    status: OPEN
+    count: 10
+    source: { kind: reviewer, ref: "P0.112: the salon's transcript, then a sweep of every empty state in app/ and src/ (42 sites, 10 wrong)" }
+    methods:
+      - { kind: running, file: src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx, test: "while its words are on their way: reading, never \"be the first\"" }
+      - { kind: running, file: src/components/film/__tests__/zz-film.gen.test.tsx, test: "while the critiques are still coming, sets down no section at all: no invitation, nothing to leap up the page" }
+      - { kind: running, file: src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx, test: "says the critiques are unread while the page is drawn from the warm catalogue, and read once they come" }
+      - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "while the critiques are asked for, says they are being read, not that there are none; then what came" }
+      - { kind: running, file: src/components/lounge/__tests__/theSalonsSayWhenTheyCouldNotBeRead.test.tsx, test: "before the salons were ever asked for, reads; it never says the house is empty" }
+      - { kind: running, file: src/components/__tests__/theShareSheetSaysWhenTheSalonsAreAway.test.tsx, test: "salons never yet asked for are being read, not \"no seat yet\"" }
+      - { kind: running, file: src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx, test: "opens reading, before its read has begun, and says the door is empty only once answered" }
+      - { kind: running, file: src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx, test: "your own, holding nothing, is not ready until its read answers; then it is, and empty" }
+      - { kind: running, file: src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx, test: "a search whose rows are still coming, with nothing yet to show, is reading — not \"nothing under that name\"" }
+      - { kind: running, file: src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx, test: "a search answered with nothing says so, though the room itself holds rows (a visitor's read \"retrieving\" for good)" }
+      - { kind: running, file: src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx, test: "a room is answered once its read comes back, not when it is asked, and not by a failed one" }
+      - { kind: running, file: src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx, test: "a search records the filters its rows answer; a search overtaken lands neither its rows nor its filters" }
+      - { kind: running, file: src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx, test: "a new member on the screen starts with nothing answered: the last member's answers are not theirs" }
+      - { kind: running, file: src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx, test: "your own Archive and Ledger are answered once your logs are read, held or fetched" }
+      - { kind: running, file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "a list still unread: the reel is read, not quiet" }
+      - { kind: running, file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "a list that could not be read: the house's failure, whose TRY AGAIN reads the list again" }
+      - { kind: running, file: src/stores/__tests__/theFollowListSaysWhetherItIsKnown.test.ts, test: "starts unread, and a read that answers makes the list the member's, even of nobody" }
+      - { kind: running, file: src/stores/__tests__/theFollowListSaysWhetherItIsKnown.test.ts, test: "a read that fails leaves a list never held unread no longer, but failed; a read after that holds it" }
+      - { kind: running, file: src/stores/__tests__/theFollowListSaysWhetherItIsKnown.test.ts, test: "signing out makes it unread again: the next member's list is not this one's" }
+      - { kind: static, file: app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts, test: "rebuilds each docket from its read during the render that brings it, never an effect after" }
+    fix: "each empty state is said only once its read has answered: the salon's transcript reads its own flags; the film page's critiques are unread while it is drawn from the warm catalogue (isPlaceholderData) and the section is set down only once they come; the stack's critiques sheet reads while the query is pending; the corridor and the share sheet read until the salons answered once (loungesRead); the door remembers which search it answered (answeredFor); the member's file knows a room's read answered (tabAnswered) and which filters its rows answer (answeredFilters, searchAnswered), a superseded search landing nothing; the follow list says whether it is known (followingKnown); the dockets are rebuilt during the render that brings their read (mutants shape-transcript-empty-while-reading, shape-film-invites-while-reading, shape-film-reading-never, shape-stack-critiques-empty-while-reading, shape-corridor-empty-before-read, shape-share-empty-before-read, shape-door-empty-before-read, shape-own-room-empty-before-answer, shape-search-empty-before-answer, shape-search-answered-never-said, shape-room-answer-unrecorded, shape-search-overtaken-lands, shape-answers-outlive-member, shape-own-logs-never-answered, shape-orbit-quiet-unread, shape-orbit-quiet-failed, shape-follows-never-held, shape-follows-never-failed, shape-follows-held-after-sign-out, shape-docket-copied-after-paint)"
+    places: [none]
+
   - id: TEST-sweep-blind-to-a-handed-on-read
     title: "The resolved-error sweep could not see a read handed on by .catch() or .then(): Promise.resolve(supabase.rpc(…)).catch(…) rooted at Promise, so a read written that way could leave its error unread unseen"
     seriousness: code

@@ -1076,8 +1076,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "      set({ lounges: enriched, loungesFailed: false, loungesLoading: false });\n"
-        replace: "      set({ lounges: enriched, loungesFailed: false, loungesLoading: false, messagesLoading: false });\n"
+        find: "      set({ lounges: enriched, loungesFailed: false, loungesLoading: false, loungesRead: true });\n"
+        replace: "      set({ lounges: enriched, loungesFailed: false, loungesLoading: false, loungesRead: true, messagesLoading: false });\n"
     proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the salons read to the end lowers only theirs; the room read to the end lowers only its own" }
 
   - id: shape-room-keeps-last-words
@@ -1133,6 +1133,186 @@ mutants:
         find: "        .order('id', { ascending: false })\n        .limit(100);\n\n      // supabase-js resolves"
         replace: "        .limit(100);\n\n      // supabase-js resolves"
     proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the first page is ordered as the page above it is asked for: by its time, then its id" }
+
+  - id: shape-transcript-empty-while-reading
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "            ) : messagesLoading ? (\n"
+        replace: "            ) : false ? (\n"
+    proof: { file: src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx, test: "while its words are on their way: reading, never \"be the first\"" }
+
+  - id: shape-film-invites-while-reading
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/components/film/FilmDetailLayout.tsx
+        find: "            {!reviewsReading && !hasSociety && <TheSociety />}\n"
+        replace: "            {!hasSociety && <TheSociety />}\n"
+    proof: { file: src/components/film/__tests__/zz-film.gen.test.tsx, test: "while the critiques are still coming, sets down no section at all: no invitation, nothing to leap up the page" }
+
+  - id: shape-film-reading-never
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/film/[id].tsx
+        find: "    const reviewsReading = isPlaceholderData;\n"
+        replace: "    const reviewsReading = false;\n"
+    proof: { file: src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx, test: "says the critiques are unread while the page is drawn from the warm catalogue, and read once they come" }
+
+  - id: shape-stack-critiques-empty-while-reading
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "                nothingRead ? null : critiquesReading\n"
+        replace: "                nothingRead ? null : false\n"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "while the critiques are asked for, says they are being read, not that there are none; then what came" }
+
+  - id: shape-corridor-empty-before-read
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/(tabs)/lounge.tsx
+        find: "  const loading = loungesLoading || !loungesRead;\n"
+        replace: "  const loading = loungesLoading || !loungesRead && false;\n"
+    proof: { file: src/components/lounge/__tests__/theSalonsSayWhenTheyCouldNotBeRead.test.tsx, test: "before the salons were ever asked for, reads; it never says the house is empty" }
+
+  - id: shape-share-empty-before-read
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/components/ShareToLoungeModal.tsx
+        find: "    const isFetching = useLoungeStore(s => s.loungesLoading || !s.loungesRead);\n"
+        replace: "    const isFetching = useLoungeStore(s => s.loungesLoading);\n"
+    proof: { file: src/components/__tests__/theShareSheetSaysWhenTheSalonsAreAway.test.tsx, test: "salons never yet asked for are being read, not \"no seat yet\"" }
+
+  - id: shape-door-empty-before-read
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/hooks/useFollowRequests.ts
+        find: "    items, loading: loading || (enabled && answeredFor !== search), loadingMore,"
+        replace: "    items, loading, loadingMore,"
+    proof: { file: src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx, test: "opens reading, before its read has begun, and says the door is empty only once answered" }
+
+  - id: shape-own-room-empty-before-answer
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/user/[username].tsx
+        find: "    if (isSelf) return roomShows > 0 || (!roomFailed && roomAnswered);\n"
+        replace: "    if (isSelf) return roomShows > 0 || !roomFailed;\n"
+    proof: { file: src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx, test: "your own, holding nothing, is not ready until its read answers; then it is, and empty" }
+
+  - id: shape-search-empty-before-answer
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/user/[username].tsx
+        find: "    if (roomNarrowed) return roomShows > 0 || searchAnswered;\n"
+        replace: "    if (roomNarrowed) return true;\n"
+    proof: { file: src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx, test: "a search whose rows are still coming, with nothing yet to show, is reading — not \"nothing under that name\"" }
+
+  - id: shape-search-answered-never-said
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/user/[username].tsx
+        find: "    if (roomNarrowed) return roomShows > 0 || searchAnswered;\n"
+        replace: ""
+    proof: { file: src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx, test: "a search answered with nothing says so, though the room itself holds rows (a visitor's read \"retrieving\" for good)" }
+
+  - id: shape-room-answer-unrecorded
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "      if (isMounted.current && uid === targetUserIdRef.current) setTabAnswered((a) => ({ ...a, [tab]: true }));\n"
+        replace: ""
+    proof: { file: src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx, test: "a room is answered once its read comes back, not when it is asked, and not by a failed one" }
+
+  - id: shape-search-overtaken-lands
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "        if (!isMounted.current || uid !== targetUserIdRef.current || _roomAbortRef.current[tab] !== controller) return;\n        dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor, append: false });"
+        replace: "        if (!isMounted.current || uid !== targetUserIdRef.current) return;\n        dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor, append: false });"
+    proof: { file: src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx, test: "a search records the filters its rows answer; a search overtaken lands neither its rows nor its filters" }
+
+  - id: shape-answers-outlive-member
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "    setTabAnswered({});\n"
+        replace: ""
+    proof: { file: src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx, test: "a new member on the screen starts with nothing answered: the last member's answers are not theirs" }
+
+  - id: shape-own-logs-never-answered
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "        else setTabAnswered((a) => ({ ...a, archive: true, ledger: true }));\n"
+        replace: ""
+    proof: { file: src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx, test: "your own Archive and Ledger are answered once your logs are read, held or fetched" }
+
+  - id: shape-orbit-quiet-unread
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/(tabs)/reels.tsx
+        find: "  const followsUnread = followingCount === 0 && followingKnown === 'unread';\n"
+        replace: "  const followsUnread = false;\n"
+    proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "a list still unread: the reel is read, not quiet" }
+
+  - id: shape-orbit-quiet-failed
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/(tabs)/reels.tsx
+        find: "  const followsLost = followingCount === 0 && followingKnown === 'failed';\n"
+        replace: "  const followsLost = false;\n"
+    proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "a list that could not be read: the house's failure, whose TRY AGAIN reads the list again" }
+
+  - id: shape-follows-never-held
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/stores/domain/socialSlice.ts
+        find: "  useSocialStore.setState({ followingKnown: 'held' });\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/theFollowListSaysWhetherItIsKnown.test.ts, test: "starts unread, and a read that answers makes the list the member's, even of nobody" }
+
+  - id: shape-follows-never-failed
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/stores/domain/socialSlice.ts
+        find: "    if (current()) useSocialStore.setState((s) => (s.followingKnown === 'held' ? s : { followingKnown: 'failed' }));\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/theFollowListSaysWhetherItIsKnown.test.ts, test: "a read that fails leaves a list never held unread no longer, but failed; a read after that holds it" }
+
+  - id: shape-follows-held-after-sign-out
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/stores/followStore.ts
+        find: "        following: [], followingKnown: 'unread', _followingIndex: new Set(),\n"
+        replace: "        following: [], _followingIndex: new Set(),\n"
+    proof: { file: src/stores/__tests__/theFollowListSaysWhetherItIsKnown.test.ts, test: "signing out makes it unread again: the next member's list is not this one's" }
+
+  - id: shape-docket-copied-after-paint
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "  if (priorityData && priorityData !== priorityFrom) {\n    setPriorityFrom(priorityData);\n    setPriorityItems(priorityData as unknown as TribunalReport[]);\n    setHasMorePriority(priorityData.length >= 20);\n  }\n"
+        replace: "  React.useEffect(() => {\n    if (priorityData) {\n      setPriorityFrom(priorityData);\n      setPriorityItems(priorityData as unknown as TribunalReport[]);\n      setHasMorePriority(priorityData.length >= 20);\n    }\n  }, [priorityData]);\n"
+    proof: { file: app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts, test: "rebuilds each docket from its read during the render that brings it, never an effect after" }
 
   - id: shape-sweep-blind-to-handed-on
     class: TEST-sweep-blind-to-a-handed-on-read

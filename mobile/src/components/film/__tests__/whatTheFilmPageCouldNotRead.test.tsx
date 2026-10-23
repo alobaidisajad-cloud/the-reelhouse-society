@@ -91,8 +91,8 @@ describe('the film read', () => {
 });
 
 describe('the page', () => {
-  const open = (data: Record<string, unknown>) => {
-    mockResult = { data, isLoading: false, isError: false, refetch: jest.fn() };
+  const open = (data: Record<string, unknown>, isPlaceholderData = false) => {
+    mockResult = { data, isLoading: false, isError: false, refetch: jest.fn(), isPlaceholderData };
     render(<FilmDetailScreen />);
     return mockSeen!;
   };
@@ -103,5 +103,13 @@ describe('the page', () => {
 
   it('and nothing when they were read', () => {
     expect(open({ detail: FILM, reviews: [], reviewsError: null, similar: [], verdict: VERDICT }).reviewsFailed).toBe(false);
+  });
+
+  // A warm film opened from the feed was drawn from the catalogue with an empty page of
+  // critiques, and said "be the first voice" of a film the house had written on (P0.112).
+  it('says the critiques are unread while the page is drawn from the warm catalogue, and read once they come', () => {
+    const page = { detail: FILM, reviews: [], reviewsError: null, similar: [], verdict: null };
+    expect(open(page, true).reviewsReading).toBe(true);
+    expect(open(page, false).reviewsReading).toBe(false);
   });
 });

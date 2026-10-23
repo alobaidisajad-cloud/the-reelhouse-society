@@ -26,7 +26,7 @@ export function memberFile(over: { activeTab?: string | null; dnaCardOpen?: bool
       serverAnalytics: null, highestRated: [], analyticsShape: null, taste: null,
       setTargetUser: noop, hasMoreLogs: false, hasMoreWatchlist: false, hasMoreVault: false,
       hasMoreLists: false, isLoadingMore: false, loadMoreLogs: noop, loadTabData: noop,
-      tabFailed: {}, moreFailed: {}, retryRoom: noop, fetchUserData: noop, error: null,
+      tabFailed: {}, tabAnswered: { archive: true, ledger: true, watchlist: true, lists: true, physical: true }, moreFailed: {}, retryRoom: noop, fetchUserData: noop, error: null,
     },
     username: 'kane', isSelf: over.isSelf ?? true, repairingHandle: false,
     isFollowing: false, isRequested: false, activeTab: over.activeTab ?? null,

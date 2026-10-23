@@ -377,13 +377,14 @@ function TribunalScreen() {
     enabled: user?.role === 'admin',
   });
 
-  // First page (and every refetch after a verdict) resets the docket.
-  React.useEffect(() => {
-    if (pendingPage) {
-      setPendingItems(pendingPage.rows as unknown as TribunalReport[]);
-      setPendingTotal(pendingPage.total ?? pendingPage.rows.length);
-    }
-  }, [pendingPage]);
+  // First page (and every refetch after a verdict) resets the docket — during the render that
+  // brings it, not in an effect after: the frame between painted the answer as an empty docket.
+  const [pendingFrom, setPendingFrom] = useState<typeof pendingPage>(undefined);
+  if (pendingPage && pendingPage !== pendingFrom) {
+    setPendingFrom(pendingPage);
+    setPendingItems(pendingPage.rows as unknown as TribunalReport[]);
+    setPendingTotal(pendingPage.total ?? pendingPage.rows.length);
+  }
 
   // ── Load more for the pending docket (keyset on created_at) ────────────
   const loadMorePendingMutation = useMutation({
@@ -439,13 +440,14 @@ function TribunalScreen() {
   // verdict's invalidation, manual refresh) it rebuilds the docket. Load-more
   // appends via a mutation that never touches priorityData, so accumulated
   // pages survive — but a refetch (including resolving the last case → []) is
-  // always reflected, never stale.
-  React.useEffect(() => {
-    if (priorityData) {
-      setPriorityItems(priorityData as unknown as TribunalReport[]);
-      setHasMorePriority(priorityData.length >= 20);
-    }
-  }, [priorityData]);
+  // always reflected, never stale. Rebuilt during the render that brings it, as the pending
+  // docket is: never a frame of an empty docket over an answered read.
+  const [priorityFrom, setPriorityFrom] = useState<typeof priorityData>(undefined);
+  if (priorityData && priorityData !== priorityFrom) {
+    setPriorityFrom(priorityData);
+    setPriorityItems(priorityData as unknown as TribunalReport[]);
+    setHasMorePriority(priorityData.length >= 20);
+  }
 
   // ── Enforcement records for the WHOLE docket, in one query ──────────────────
   // Keyed on the accumulated ids, not on page one. The docket grows by appending

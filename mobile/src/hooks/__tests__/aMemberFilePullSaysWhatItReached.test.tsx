@@ -29,7 +29,7 @@ jest.mock('@/src/hooks/useProfileData', () => ({
     loadTabData: jest.fn(async () => {}),
     refreshTabWithFilters: jest.fn(async () => {}),
     setTabDataLoaded: jest.fn(),
-    tabDataLoaded: {}, tabFailed: {},
+    tabDataLoaded: {}, tabFailed: {}, tabAnswered: { archive: true, ledger: true, watchlist: true, lists: true, physical: true },
   }),
 }));
 jest.mock('expo-router', () => ({

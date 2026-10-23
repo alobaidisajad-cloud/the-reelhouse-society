@@ -460,7 +460,7 @@ export default function StackDetailScreen() {
   // ── COMMENTS (CQRS) ──
   // What the house holds. A failed read is a failed read: it drew the queued
   // critiques alone (or none, "No critiques yet") as though they were all.
-  const { data: queryComments, isError: critiquesUnread, refetch: rereadCritiques } = useQuery({
+  const { data: queryComments, isError: critiquesUnread, isPending: critiquesReading, refetch: rereadCritiques } = useQuery({
     queryKey: ['stackComments', id],
     queryFn: async () => {
       try {
@@ -1038,7 +1038,11 @@ export default function StackDetailScreen() {
                 </PressableScale>
               ) : null}
               {critiques.length === 0 ? (
-                nothingRead ? null : <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
+                // "Be the first" only once the house has answered: while it is asked (its one
+                // retry too), the critiques are on their way, not absent.
+                nothingRead ? null : critiquesReading
+                  ? <Text style={s.commentEmpty}>Reading the critiques…</Text>
+                  : <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
               ) : (
                 critiques.map(c => (
                   <CritiqueRow

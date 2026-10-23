@@ -120,6 +120,7 @@ jest.mock('../followStore', () => ({
             setFollowing: jest.fn(),
             setRequested: jest.fn(),
         })),
+        setState: jest.fn(),
     },
 }));
 jest.mock('expo-image', () => ({ Image: { prefetch: jest.fn(() => Promise.resolve()) } }));

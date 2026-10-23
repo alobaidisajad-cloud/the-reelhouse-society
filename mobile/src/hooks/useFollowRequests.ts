@@ -36,6 +36,12 @@ export function useFollowRequests(enabled: boolean) {
   const [failed, setFailed] = useState(false);
   /** The next page could not be read. */
   const [moreFailed, setMoreFailed] = useState(false);
+  /**
+   * The search the door last answered (or failed) for, while open; null before. A door whose
+   * shown search is not the answered one is being read: its first frame, and a search's
+   * debounce, came before any read began, and said "No one's at the door".
+   */
+  const [answeredFor, setAnsweredFor] = useState<string | null>(null);
 
   const cursorRef = useRef<string | null>(null);
   const hasMoreRef = useRef(true);
@@ -95,13 +101,15 @@ export function useFollowRequests(enabled: boolean) {
         if (isMounted.current) setLoadingMore(false);
       } else if (isMounted.current && seq === reqSeq.current) {
         setLoading(false); setRefreshing(false);
+        setAnsweredFor(searchTerm);
       }
     }
   }, [myId]);
 
   // Open / search changes → reset + reload (debounced for search).
   useEffect(() => {
-    if (!enabled) return;
+    // Shut, it answers for nothing: opened again, it reads afresh.
+    if (!enabled) { setAnsweredFor(null); return; }
     if (searchDebounce.current) clearTimeout(searchDebounce.current);
     searchDebounce.current = setTimeout(() => {
       cursorRef.current = null;
@@ -163,7 +171,7 @@ export function useFollowRequests(enabled: boolean) {
   }, [items, setCount]);
 
   return {
-    items, loading, loadingMore, refreshing, hasMore, search, busyId, failed, moreFailed,
+    items, loading: loading || (enabled && answeredFor !== search), loadingMore, refreshing, hasMore, search, busyId, failed, moreFailed,
     setSearch, loadMore, refresh, retry, accept, decline, declineAll,
   };
 }

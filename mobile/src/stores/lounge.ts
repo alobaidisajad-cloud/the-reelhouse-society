@@ -99,6 +99,11 @@ export interface LoungeState {
   loungesFailed: boolean;
   /** The salons are being read (fetchLounges). */
   loungesLoading: boolean;
+  /**
+   * The salons have been asked for and answered (or failed) since sign-in: until then an empty
+   * list is unread, not empty — the corridor's first frame came before its read began.
+   */
+  loungesRead: boolean;
   /** The words of currentLoungeId, and only of that room. */
   currentMessages: LoungeMessage[];
   currentLoungeId: string | null;
@@ -404,6 +409,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   lounges: [],
   loungesFailed: false,
   loungesLoading: false,
+  loungesRead: false,
   currentMessages: [],
   currentLoungeId: null,
   messagesLoading: false,
@@ -548,7 +554,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Left mid-flight — see sessionGuard. Writing here would repopulate a store
       // the logout reset has already cleared.
       if (!memberUnchanged(startedAs)) return;
-      set({ lounges: enriched, loungesFailed: false, loungesLoading: false });
+      set({ lounges: enriched, loungesFailed: false, loungesLoading: false, loungesRead: true });
     } catch (err) {
       if (__DEV__) console.warn('[Lounge] fetchLounges failed:', err);
       // Their failed read is not the next member's.
@@ -556,7 +562,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Said by the screen that asked, not here: the Lounge polls every thirty
       // seconds while open, and a toast here would be a toast every thirty
       // seconds for as long as the signal is gone.
-      set({ loungesFailed: true, loungesLoading: false });
+      set({ loungesFailed: true, loungesLoading: false, loungesRead: true });
     }
   },
 
@@ -1456,7 +1462,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {
-    useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, currentMessages: [], currentLoungeId: null, messagesLoading: false, messagesFailed: false, sending: false, presentCount: 0, typingUsers: [], _lastMarkReadMap: {} });
+    useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, loungesRead: false, currentMessages: [], currentLoungeId: null, messagesLoading: false, messagesFailed: false, sending: false, presentCount: 0, typingUsers: [], _lastMarkReadMap: {} });
     _lastCreateAt = 0;
     _lastTypingBroadcastAt = 0;
     // Every module-level memory, or the next member on this phone inherits it.

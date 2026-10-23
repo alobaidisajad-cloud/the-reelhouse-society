@@ -42,6 +42,8 @@ let mockQueryState: Record<string, { status: string } | undefined> = {};
 let mockComments: Record<string, unknown>[] = [];
 /** The critiques could not be read. */
 let mockCommentsFailed = false;
+/** The critiques are still being asked for. */
+let mockCommentsReading = false;
 const mockRereadCritiques = jest.fn();
 const mockDeleteComment = jest.fn();
 /** The list's pull, as the screen hands it over. */
@@ -64,7 +66,10 @@ jest.mock('@tanstack/react-query', () => ({
   useQuery: (opts: { queryKey: unknown[] }) => {
     const key = String(opts.queryKey[0]);
     if (key === 'stackComments') {
-      return { data: mockCommentsFailed ? undefined : mockComments, isError: mockCommentsFailed, refetch: mockRereadCritiques };
+      return {
+        data: mockCommentsFailed || mockCommentsReading ? undefined : mockComments,
+        isError: mockCommentsFailed, isPending: mockCommentsReading, refetch: mockRereadCritiques,
+      };
     }
     if (key === 'stack') {
       mockStackOpts = opts as never;
@@ -451,6 +456,22 @@ describe('the critiques overlay', () => {
     } finally {
       mockComments = [];
     }
+  });
+
+  // The sheet said "No critiques yet. Be the first to speak." on every first open, until the
+  // house answered (P0.112).
+  it('while the critiques are asked for, says they are being read, not that there are none; then what came', async () => {
+    mockCommentsReading = true;
+    try {
+      const r = await openIt({ critiqueCount: 3 });
+      await waitFor(() => expect(r.getByText('Reading the critiques…')).toBeTruthy());
+      expect(r.queryByText('No critiques yet. Be the first to speak.')).toBeNull();
+    } finally {
+      mockCommentsReading = false;
+    }
+    const r = await openIt({ critiqueCount: 0 });
+    await waitFor(() => expect(r.getByText('No critiques yet. Be the first to speak.')).toBeTruthy());
+    expect(r.queryByText('Reading the critiques…')).toBeNull();
   });
 
   it('a thread that fits its page offers nothing earlier', async () => {

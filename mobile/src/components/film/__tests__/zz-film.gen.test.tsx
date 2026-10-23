@@ -89,6 +89,7 @@ const value = {
   film: detail,
   reviews: [],
   reviewsFailed: false,
+  reviewsReading: false,
   retry: jest.fn(),
   similarFilms: (detail.similar?.results ?? []).slice(0, 8),
   directors: crew.filter((c: { job: string }) => c.job === 'Director').slice(0, 4),
@@ -231,6 +232,13 @@ describe('the film page', () => {
     const r = page();
     expect(r.getByText('The projection box awaits.')).toBeTruthy();
     expect(r.queryByText('The critiques could not be reached.')).toBeNull();
+  });
+
+  it('while the critiques are still coming, sets down no section at all: no invitation, nothing to leap up the page', () => {
+    const r = page({ reviewsReading: true });
+    expect(r.queryByText('The projection box awaits.')).toBeNull();
+    expect(r.queryByText('The critiques could not be reached.')).toBeNull();
+    expect(r.getByText('THE PLAYERS')).toBeTruthy();
   });
 
   it('rates and lists for the member’s own country, and says which', () => {

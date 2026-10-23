@@ -296,6 +296,18 @@ export function useProfileData({
   const [state, dispatch] = useReducer(profileReducer, initialState);
   /** A room whose read failed, until it is asked again. */
   const [tabFailed, setTabFailed] = useState<Partial<Record<ProfileTab, boolean>>>({});
+  /**
+   * A room whose read has answered: what it holds is the room, however little. Not
+   * `tabDataLoaded`, which is set as the read is ASKED; a room of your own with nothing held
+   * called itself empty ("IMPORT YOUR ARCHIVE") while its first read was still out.
+   */
+  const [tabAnswered, setTabAnswered] = useState<Partial<Record<ProfileTab, boolean>>>({});
+  /**
+   * The filters each room's rows were last answered for. A narrowed room whose filters on
+   * screen are not these is still being read: "nothing under that name" was said of a
+   * search whose rows had not come, and never said at all of a visitor's that found none.
+   */
+  const [answeredFilters, setAnsweredFilters] = useState<Partial<Record<Room, unknown>>>({});
 
   const fetchLogs = useLogStore(s => s.fetchLogs);
   const fetchWatchlist = useWatchlistStore(s => s.fetchWatchlist);
@@ -398,6 +410,7 @@ export function useProfileData({
         // With nothing held to show, a logs read that failed leaves the archive
         // and the ledger unread: said, never drawn as an empty record.
         if (logsRead === false) setTabFailed((f) => ({ ...f, archive: true, ledger: true }));
+        else setTabAnswered((a) => ({ ...a, archive: true, ledger: true }));
 
         // Heal the displayed follower/following counts with the live RPC values —
         // the profile row's denormalized columns drift (three maintainers). Optimistic
@@ -515,7 +528,10 @@ export function useProfileData({
         const calData = await ProfileDataService.fetchCalendarData(state.targetUser, roomSignal(_roomAbortRef, 'calendar'));
         if (!isMounted.current || uid !== targetUserIdRef.current) return;
         dispatch({ type: 'SET_CALENDAR_DATA', payload: calData.map(d => ({ watchedDate: d.date, rating: d.rating, status: d.status })) });
+      } else {
+        return;
       }
+      if (isMounted.current && uid === targetUserIdRef.current) setTabAnswered((a) => ({ ...a, [tab]: true }));
     } catch (err: unknown) {
         if (err instanceof Error && err.name === 'AbortError') return;
         // Log in both dev and prod — routes to Sentry breadcrumbs in production
@@ -636,6 +652,8 @@ export function useProfileData({
     // A new member starts from nothing: no row, room or failure of the last one.
     dispatch({ type: 'RESET_STATE' });
     setTabFailed({});
+    setTabAnswered({});
+    setAnsweredFilters({});
     setMoreFailed({});
 
     // Your own file opens at once from what the phone holds (the auth store's
@@ -706,57 +724,61 @@ export function useProfileData({
       dispatch({ type: 'SET_LOADING_MORE', key: lockKey, value: true });
       try {
         const result = await ProfileDataService.fetchOtherUserLogs(uid, 50, undefined, controller.signal, filters);
-        if (!isMounted.current || uid !== targetUserIdRef.current) return;
+        if (!isMounted.current || uid !== targetUserIdRef.current || _roomAbortRef.current[tab] !== controller) return;
         dispatch({ type: 'SET_LOGS_PAGE', tab: tab as 'archive' | 'ledger', items: result.items, cursor: result.nextCursor, append: false });
         setTabFailed((f) => (f[tab as ProfileTab] ? { ...f, [tab]: false } : f));
+        setAnsweredFilters((a) => ({ ...a, [tab]: filters }));
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] refreshTabWithFilters logs error:', err);
         if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, [tab]: true }));
       } finally {
-        if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: lockKey, value: false });
+        if (isMounted.current && _roomAbortRef.current[tab] === controller) dispatch({ type: 'SET_LOADING_MORE', key: lockKey, value: false });
       }
     } else if (tab === 'watchlist') {
       dispatch({ type: 'SET_LOADING_MORE', key: 'watchlist', value: true });
       try {
         const result = await ProfileDataService.fetchOtherUserWatchlist(uid, 50, undefined, controller.signal, filters);
-        if (!isMounted.current || uid !== targetUserIdRef.current) return;
+        if (!isMounted.current || uid !== targetUserIdRef.current || _roomAbortRef.current[tab] !== controller) return;
         dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor, append: false });
         setTabFailed((f) => (f['watchlist' as ProfileTab] ? { ...f, ['watchlist']: false } : f));
+        setAnsweredFilters((a) => ({ ...a, [tab]: filters }));
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] refreshTabWithFilters watchlist error:', err);
         if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, ['watchlist']: true }));
       } finally {
-        if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: 'watchlist', value: false });
+        if (isMounted.current && _roomAbortRef.current[tab] === controller) dispatch({ type: 'SET_LOADING_MORE', key: 'watchlist', value: false });
       }
     } else if (tab === 'physical') {
       dispatch({ type: 'SET_LOADING_MORE', key: 'vault', value: true });
       try {
         const result = await ProfileDataService.fetchOtherUserVault(state.targetUser, 50, undefined, controller.signal, filters);
-        if (!isMounted.current || uid !== targetUserIdRef.current) return;
+        if (!isMounted.current || uid !== targetUserIdRef.current || _roomAbortRef.current[tab] !== controller) return;
         dispatch({ type: 'SET_VAULT_PAGE', items: result.items, cursor: result.nextCursor, append: false });
         setTabFailed((f) => (f['physical' as ProfileTab] ? { ...f, ['physical']: false } : f));
+        setAnsweredFilters((a) => ({ ...a, [tab]: filters }));
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] refreshTabWithFilters vault error:', err);
         if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, ['physical']: true }));
       } finally {
-        if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: 'vault', value: false });
+        if (isMounted.current && _roomAbortRef.current[tab] === controller) dispatch({ type: 'SET_LOADING_MORE', key: 'vault', value: false });
       }
     } else if (tab === 'lists') {
       dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: true });
       try {
         const result = await ProfileDataService.fetchOtherUserLists(uid, 50, undefined, controller.signal, filters);
-        if (!isMounted.current || uid !== targetUserIdRef.current) return;
+        if (!isMounted.current || uid !== targetUserIdRef.current || _roomAbortRef.current[tab] !== controller) return;
         dispatch({ type: 'SET_LISTS_PAGE', items: result.items, cursor: result.nextCursor, append: false });
         setTabFailed((f) => (f.lists ? { ...f, lists: false } : f));
+        setAnsweredFilters((a) => ({ ...a, [tab]: filters }));
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] refreshTabWithFilters lists error:', err);
         if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, lists: true }));
       } finally {
-        if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: false });
+        if (isMounted.current && _roomAbortRef.current[tab] === controller) dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: false });
       }
     }
   }, [state.targetUser, state.activeFilters, isSelf]);
@@ -777,6 +799,7 @@ export function useProfileData({
     if (isSelf && (tab === 'archive' || tab === 'ledger')) {
       setTabFailed((f) => ({ ...f, archive: false, ledger: false }));
       if (!(await fetchLogs())) setTabFailed((f) => ({ ...f, archive: true, ledger: true }));
+      else setTabAnswered((a) => ({ ...a, archive: true, ledger: true }));
       return;
     }
     return loadTabData(tab, true);
@@ -794,7 +817,7 @@ export function useProfileData({
       const next = typeof v === 'function' ? v(state.tabDataLoaded) : v;
       dispatch({ type: 'SET_TAB_LOADED', tabs: next });
     },
-    fetchUserData, loadTabData, tabFailed, moreFailed,
+    fetchUserData, loadTabData, tabFailed, tabAnswered, answeredFilters, moreFailed,
     loadMoreLogs, loadMoreWatchlist, loadMoreVault, loadMoreLists,
     refreshTabWithFilters, retryRoom,
   };

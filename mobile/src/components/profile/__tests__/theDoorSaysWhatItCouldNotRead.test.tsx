@@ -76,6 +76,16 @@ describe('the service', () => {
 });
 
 describe('the panel', () => {
+  // It opened on "No one's at the door." for its first frames, before its read began, under a
+  // banner counting the members waiting (P0.112).
+  it('opens reading, before its read has begun, and says the door is empty only once answered', async () => {
+    const r = render(<FollowRequestsPanel visible onClose={() => {}} />);
+    expect(r.getByLabelText('Reading the door')).toBeTruthy();
+    expect(r.queryByText("No one's at the door.")).toBeNull();
+    await waitFor(() => expect(r.getByText("No one's at the door.")).toBeTruthy());
+    expect(r.queryByLabelText('Reading the door')).toBeNull();
+  });
+
   it('says the door could not be reached, never that no one is there', async () => {
     mockAnswer = down;
     let r!: ReturnType<typeof render>;

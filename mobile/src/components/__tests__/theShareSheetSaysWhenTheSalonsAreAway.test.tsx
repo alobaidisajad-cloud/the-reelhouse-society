@@ -40,7 +40,7 @@ async function open() {
 beforeEach(() => fetchLounges.mockClear());
 
 it('salons it could not read are not "you have joined none" — and it asks again', async () => {
-  useLoungeStore.setState({ lounges: [], loungesFailed: true, loungesLoading: false, fetchLounges } as never);
+  useLoungeStore.setState({ lounges: [], loungesFailed: true, loungesLoading: false, loungesRead: true, fetchLounges } as never);
   const r = await open();
   expect(r.queryByText(/^No seat yet. Take a seat/)).toBeNull();
   expect(r.getByText('The salons could not be reached.')).toBeTruthy();
@@ -49,8 +49,17 @@ it('salons it could not read are not "you have joined none" — and it asks agai
   expect(fetchLounges).toHaveBeenCalledTimes(1);
 });
 
+// The sheet opens before its read begins: "No seat yet" was said of salons never asked for (P0.112).
+it('salons never yet asked for are being read, not "no seat yet"', async () => {
+  useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, loungesRead: false, fetchLounges } as never);
+  const r = await open();
+  expect(r.getByLabelText('Reading the salons')).toBeTruthy();
+  expect(r.queryByText(/^No seat yet. Take a seat/)).toBeNull();
+  expect(r.queryByText('The salons could not be reached.')).toBeNull();
+});
+
 it('a member of none is still told so', async () => {
-  useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, fetchLounges } as never);
+  useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, loungesRead: true, fetchLounges } as never);
   const r = await open();
   expect(r.getByText('No seat yet. Take a seat in a salon in the Lounge, and you can carry this to it.')).toBeTruthy();
 });
@@ -68,7 +77,7 @@ it('offers only the salons the house lets this member speak in', async () => {
       room('JustFounded', { mine: true, membership_status: 'approved', unread_count: 0, pending_count: 0 }),
       room('Passing', { mine: false }),
     ],
-    loungesFailed: false, loungesLoading: false, fetchLounges,
+    loungesFailed: false, loungesLoading: false, loungesRead: true, fetchLounges,
   } as never);
   const r = await open();
   expect(r.getByText('Seated')).toBeTruthy();
@@ -79,7 +88,7 @@ it('offers only the salons the house lets this member speak in', async () => {
 it('says which salon is chosen, as chosen rather than unavailable', async () => {
   useLoungeStore.setState({
     lounges: [room('Seated', { membership_status: 'approved', unread_count: 0 })],
-    loungesFailed: false, loungesLoading: false, fetchLounges,
+    loungesFailed: false, loungesLoading: false, loungesRead: true, fetchLounges,
   } as never);
   const r = await open();
   await act(async () => { await fireEvent.press(r.getByText('Seated')); });
@@ -102,7 +111,7 @@ it('a share that crashes says the house\'s sentence, never the code\'s', async (
   const sendMessage = jest.fn(() => Promise.reject(new TypeError("Cannot read properties of undefined (reading 'id')")));
   useLoungeStore.setState({
     lounges: [room('Seated', { membership_status: 'approved', unread_count: 0 })],
-    loungesFailed: false, loungesLoading: false, fetchLounges, sendMessage,
+    loungesFailed: false, loungesLoading: false, loungesRead: true, fetchLounges, sendMessage,
   } as never);
   const r = await open();
   await act(async () => { await fireEvent.press(r.getByText('Seated')); });

@@ -77,7 +77,7 @@ beforeEach(() => {
 });
 
 it('salons it could not read are not "the velvet seats await" — said once, and asked again', async () => {
-  useLoungeStore.setState({ lounges: [], loungesFailed: true, loungesLoading: false, fetchLounges } as never);
+  useLoungeStore.setState({ lounges: [], loungesFailed: true, loungesLoading: false, loungesRead: true, fetchLounges } as never);
   const r = await mount();
   expect(r.getAllByText('Transmission Interrupted')).toHaveLength(1);
   expect(r.queryByText('The Velvet Seats Await')).toBeNull();
@@ -87,7 +87,7 @@ it('salons it could not read are not "the velvet seats await" — said once, and
 });
 
 it('salons that arrived empty still invite the first one', async () => {
-  useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, fetchLounges } as never);
+  useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, loungesRead: true, fetchLounges } as never);
   const r = await mount();
   expect(r.getByText('The Velvet Seats Await')).toBeTruthy();
   expect(r.queryByText('Transmission Interrupted')).toBeNull();
@@ -95,7 +95,7 @@ it('salons that arrived empty still invite the first one', async () => {
 
 it('a pull that reaches nothing keeps the salons and says so', async () => {
   fetchLounges.mockImplementation(async () => { useLoungeStore.setState({ loungesFailed: true }); });
-  useLoungeStore.setState({ lounges: [ROOM], loungesFailed: false, loungesLoading: false, fetchLounges } as never);
+  useLoungeStore.setState({ lounges: [ROOM], loungesFailed: false, loungesLoading: false, loungesRead: true, fetchLounges } as never);
   const r = await mount();
   await act(async () => { await mockListProps.refreshControl.props.onRefresh(); });
   expect(toast().error).toHaveBeenCalledWith('Could not refresh — check your connection.');
@@ -105,7 +105,7 @@ it('a pull that reaches nothing keeps the salons and says so', async () => {
 
 describe('what the corridor says when it is empty', () => {
   it('a search that matches nothing says so, not that no salon is open', async () => {
-    useLoungeStore.setState({ lounges: [{ ...ROOM, unread_count: undefined, mine: false, membership_status: undefined }], loungesFailed: false, loungesLoading: false, fetchLounges } as never);
+    useLoungeStore.setState({ lounges: [{ ...ROOM, unread_count: undefined, mine: false, membership_status: undefined }], loungesFailed: false, loungesLoading: false, loungesRead: true, fetchLounges } as never);
     const r = await mount();
     await act(async () => { await fireEvent.changeText(r.getByLabelText('Search salons'), 'zzzz'); });
     expect(r.getByText('No salon matches that.')).toBeTruthy();
@@ -113,17 +113,27 @@ describe('what the corridor says when it is empty', () => {
   });
 
   it('says nothing of open salons while the first read is still coming', async () => {
-    useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: true, fetchLounges } as never);
+    useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: true, loungesRead: true, fetchLounges } as never);
     const r = await mount();
     expect(r.getByText('RETRIEVING SALONS')).toBeTruthy();
     expect(r.queryByText('No open salons at this time.')).toBeNull();
+  });
+
+  // The corridor's first frame came before its read began: "No open salons" and "The Velvet
+  // Seats Await" were said of salons never asked for (P0.112).
+  it('before the salons were ever asked for, reads; it never says the house is empty', async () => {
+    useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, loungesRead: false, fetchLounges } as never);
+    const r = await mount();
+    expect(r.getByText('RETRIEVING SALONS')).toBeTruthy();
+    expect(r.queryByText('No open salons at this time.')).toBeNull();
+    expect(r.queryByText('The Velvet Seats Await')).toBeNull();
   });
 });
 
 describe('ESTABLISH, for a member without the rank', () => {
   it('the empty state opens the rope, never a form the house will refuse', async () => {
     mockTier = 'free';
-    useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, fetchLounges } as never);
+    useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, loungesRead: true, fetchLounges } as never);
     const r = await mount();
     mockPushed.length = 0;
     await act(async () => {
