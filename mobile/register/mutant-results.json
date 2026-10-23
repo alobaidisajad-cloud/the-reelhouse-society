@@ -836,7 +836,7 @@
     "class": "DB-certification-held-twice",
     "mutant": "shape-certification-unrehearsed",
     "proof": "m1",
-    "commit": "40695c8e2d42b63f7d0a023d4993263726534a1f",
+    "commit": "a5664a684a6d18b33476af05e85aef2ece32df8c",
     "verdict": "caught"
   },
   {
@@ -1145,6 +1145,34 @@
     "mutant": "shape-fake-or-refused-when-answered",
     "proof": "m5",
     "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-edit-sealed-over-an-unread-record",
+    "mutant": "shape-edit-unread-record",
+    "proof": "m1",
+    "commit": "a5664a684a6d18b33476af05e85aef2ece32df8c",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-edit-sealed-over-an-unread-record",
+    "mutant": "shape-edit-filled-again",
+    "proof": "m3",
+    "commit": "a5664a684a6d18b33476af05e85aef2ece32df8c",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-edit-sealed-over-an-unread-record",
+    "mutant": "shape-edit-sealed-unread",
+    "proof": "m4",
+    "commit": "a5664a684a6d18b33476af05e85aef2ece32df8c",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-edit-sealed-over-an-unread-record",
+    "mutant": "shape-delete-silent-nothing",
+    "proof": "m7",
+    "commit": "a5664a684a6d18b33476af05e85aef2ece32df8c",
     "verdict": "caught"
   }
 ]
