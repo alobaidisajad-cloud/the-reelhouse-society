@@ -194,10 +194,12 @@ describe('the signed-in scrolls, judged', () => {
  * opening and its frames as given (ready ms, frames drawn, p90 ms per round; every frame janky, as on the lab's GPU),
  * and, where given, the frame record's late animation frames (LabFrameLog's lines, split over two seconds).
  */
-function reelRounds(name: string, builds: Record<string, { ready: number[]; frames: number[]; p90: number[]; js?: number[] }>) {
+function reelRounds(name: string, builds: Record<string, { ready: number[]; frames: number[]; p90: number[]; js?: number[] }>, screen?: string) {
   const d = scrolled(name, Array.from({ length: 11 }, (_, i) => hash(i)));
-  const reel = join(d, 'reel');
+  const reel = join(d, 'arms');
   mkdirSync(reel);
+  // The screen the arms were scrolled on; the Reel when scrolls.sh names none.
+  if (screen) writeFileSync(join(reel, 'screen.txt'), `${screen}\n`);
   for (const [b, r] of Object.entries(builds)) {
     r.ready.forEach((ms, i) => {
       const f = join(reel, `${b}-${i + 1}`);
@@ -205,7 +207,7 @@ function reelRounds(name: string, builds: Record<string, { ready: number[]; fram
       writeFileSync(`${f}.gfx`, `Total frames rendered: ${r.frames[i] ?? 0}\nJanky frames: ${r.frames[i] ?? 0} (100.00%)\n50th percentile: 800ms\n90th percentile: ${r.p90[i] ?? 0}ms\n99th percentile: 2000ms\n`);
       const said = (event: string, detail: object) => `10-22 16:00:32.537 W/ReactNativeJS( 5765): [e2e] ${event} ${JSON.stringify(detail)}\n`;
       const js = r.js?.[i];
-      writeFileSync(`${f}.log`, said('screen.ready', { name: 'reel', ms }) + (js == null ? '' : [
+      writeFileSync(`${f}.log`, said('screen.ready', { name: screen ?? 'reel', ms }) + (js == null ? '' : [
         said('lab.frames.on', { path: '/reels' }),
         said('lab.frames', { path: '/reels', js: { long: Math.ceil(js / 2), longest: 90 }, ui: { frames: 40, slow: 30, worst: 900 } }),
         said('lab.frames', { path: '/reels', js: { long: Math.floor(js / 2), longest: 70 }, ui: { frames: 40, slow: 30, worst: 900 } }),
@@ -238,10 +240,19 @@ describe("the Reel's layers, costed", () => {
     expect(r.status).toBe(1);
     expect(r.stdout).toContain('reel: A, the app as it is, was never scrolled: nothing to compare');
     const short = reelRounds('reel-short', { A: { ready: around(3000), frames: around(50), p90: around(20) } });
-    writeFileSync(join(short, 'reel', 'A-3.moves'), [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1].map((i) => `${hash(i)}  -`).join('\n'));
+    writeFileSync(join(short, 'arms', 'A-3.moves'), [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1].map((i) => `${hash(i)}  -`).join('\n'));
     const s = run('scrolls.mjs', [short]);
     expect(s.status).toBe(1);
     expect(s.stdout).toContain('reel A-3: the list stopped after 1 of 5 swipes');
+  });
+
+  it('reads the Dispatch\'s arms by the Dispatch\'s own ready mark, and names it', () => {
+    const r = run('scrolls.mjs', [reelRounds('dispatch-arms', {
+      A: { ready: around(3200), frames: around(50), p90: around(20) },
+      F0: { ready: around(1200), frames: around(50), p90: around(20) },
+    }, 'dispatch')]);
+    expect(r.stdout).toContain('The dispatch, opened cold and scrolled, on A and each arm');
+    expect(r.stdout.split('\n').find((l) => l.startsWith('F0 '))).toMatch(/^F0\s+14\s+1200\.5 -2000\*/);
   });
 });
 

@@ -29,6 +29,11 @@
  *   R0      all of them: the floor
  *   Rh      the lamp and the wash as drawn, each drawn once into a texture Android keeps
  *   Rlw     the lamp and the wash gone: what Rh could at best give back
+ *
+ * The Dispatch's opening (WORKLIST P0.112), opened and scrolled as the Reel's arms are
+ * (scrolls.sh, LAB_ARM_SCREEN=dispatch):
+ *   F0      the page does not wait for the member's marks: the ceiling
+ *   Fv      the marks asked for before the filings are drawn, waited for after
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -227,6 +232,22 @@ const reelLightCached = [
     '        style={[StyleSheet.absoluteFillObject, WASH]}\n        renderToHardwareTextureAndroid\n'),
 ];
 
+// The Dispatch's opening (WORKLIST P0.112): its page waits for the member's own marks (certified,
+// saved, voted), asked for only after the page's filings are drawn (speed lab 39868403930: asked
+// 2.2 s after the filings came, behind their first drawing).
+const DISPATCH_STORE = 'src/stores/dispatch.ts';
+const FILINGS_SET = "        set({ filings, hasMore: gotFullPage(rows.length), droppedRows: dropped, newCount: 0, pageState: 'read' });\n";
+const MARKS_AWAITED = '        await loadViewerState(filings, set, startedAs);\n';
+// The ceiling: the page does not wait for the marks at all.
+const feedMarksUnawaited = [edit(DISPATCH_STORE, MARKS_AWAITED, '        void loadViewerState(filings, set, startedAs);\n')];
+// The marks asked for before the filings are drawn: on the wire while they draw.
+const feedMarksFirst = [
+  edit(DISPATCH_STORE, FILINGS_SET,
+    '        const marks = loadViewerState(filings, set, startedAs);\n'
+    + '        await new Promise((resolve) => setTimeout(resolve, 0));\n' + FILINGS_SET),
+  edit(DISPATCH_STORE, MARKS_AWAITED, '        await marks;\n'),
+];
+
 /** The Reel's arms: each layer alone, and all of them (R0, the floor); the light cached (Rh) against it gone (Rlw). */
 export const REEL_ARMS = ['Rb', 'Rw', 'Rl', 'Rt', 'Rs', 'Rp', 'R0', 'Rh', 'Rlw'];
 
@@ -251,6 +272,8 @@ export const ARMS = {
   R0: [...reelNoBeam, ...reelNoWash, ...reelNoLamp, ...reelBarStill, ...reelNoScrollbar, ...reelPulsesStill],
   Rh: reelLightCached,
   Rlw: [...reelNoLamp, ...reelNoWash],
+  F0: feedMarksUnawaited,
+  Fv: feedMarksFirst,
 };
 
 /** The scenes the shots compare: each one's main build, its SVG build, and what it shows. */

@@ -8,9 +8,9 @@
 # order: opened cold by its deep link (the old process gone and 3 s), shot 8 s later, its frame
 # counters reset, then ten swipes of 60% of the screen in ONE adb shell call, a hash of the screen
 # after each, then its frame counters read. scrolls.mjs judges them: a list that stopped moving
-# before three screen heights fails by name. With LAB_REEL_ARMS, the Reel is then opened and
-# scrolled on A and on each of those arms, in blocks (below), into reel/. LAB_PART says which half
-# this boot runs (screens, reel; both when unset): the lab runs each on its own boot, and keeps the
+# before three screen heights fails by name. With LAB_SCROLL_ARMS, one screen is then opened and
+# scrolled on A and on each of those arms, in blocks (below), into arms/. LAB_PART says which half
+# this boot runs (screens, arms; both when unset): the lab runs each on its own boot, and keeps the
 # first's files before the second starts, so a runner lost in one cannot lose the other. Everything
 # lands in $RUNNER_TEMP/lab/scrolls.
 set -u
@@ -19,8 +19,8 @@ OUT="$RUNNER_TEMP/lab/scrolls"
 MAESTRO=${MAESTRO_BIN:-$HOME/.maestro/bin/maestro}
 PART=${LAB_PART:-all}
 mkdir -p "$OUT"
-# The Reel's half adds to the screens' record; it never empties it.
-[ "$PART" = reel ] || { : > "$OUT/anomalies.txt"; : > "$OUT/device.txt"; }
+# The arms' half adds to the screens' record; it never empties it.
+[ "$PART" = arms ] || { : > "$OUT/anomalies.txt"; : > "$OUT/device.txt"; }
 
 adb root > /dev/null 2>&1
 sleep 3
@@ -78,7 +78,7 @@ scroll_one() {
   adb logcat -d -v threadtime > "$f.log"
 }
 
-if [ "$PART" != reel ]; then
+if [ "$PART" != arms ]; then
   for round in 1 2; do
     order=$SCREENS
     [ $round = 2 ] && order=$(echo "$SCREENS" | tr ' ' '\n' | tac | tr '\n' ' ')
@@ -89,28 +89,37 @@ if [ "$PART" != reel ]; then
   done
 fi
 
-# The Reel on A and on each of its arms (WORKLIST P0.111, arm.mjs): each build installed over the
-# signed-in member, who stays signed in, then the Reel opened cold and scrolled ROUNDS_EACH times;
+# One screen on A and on each of the arms LAB_SCROLL_ARMS names (arm.mjs): the Reel (WORKLIST
+# P0.111) or the Dispatch (P0.112), as LAB_ARM_SCREEN says, its name kept in arms/screen.txt for
+# the judge. Each build installed over the signed-in member, who stays signed in, then the screen
+# opened cold and scrolled ROUNDS_EACH times;
 # two blocks, the builds' order turned in the second, so a slow stretch of the runner falls on every
 # build alike. One install a build a block: installing before every round (speed lab 39820804347)
 # took the run past its runner. Fourteen rounds a build: on rounds as noisy as ±10%, the rank-sum
 # test (scrolls.mjs) gives a 10% shift p ≈ 1.5e-4, under Holm's bar for nine arms by four measures
 # (2.8e-4); eight gave 4e-3.
 ROUNDS_EACH=7
-if [ "$PART" != screens ] && [ -n "${LAB_REEL_ARMS:-}" ]; then
-  mkdir -p "$OUT/reel"
-  builds="A $LAB_REEL_ARMS"
+ARM_SCREEN=${LAB_ARM_SCREEN:-reel}
+case "$ARM_SCREEN" in
+  reel) ARM_LINK=reels ;;
+  dispatch) ARM_LINK=dispatch ;;
+  *) echo "no arms' screen called $ARM_SCREEN" >> "$OUT/anomalies.txt"; ARM_LINK= ;;
+esac
+if [ "$PART" != screens ] && [ -n "${LAB_SCROLL_ARMS:-}" ] && [ -n "$ARM_LINK" ]; then
+  mkdir -p "$OUT/arms"
+  echo "$ARM_SCREEN" > "$OUT/arms/screen.txt"
+  builds="A $LAB_SCROLL_ARMS"
   for block in 1 2; do
     order=$builds
     [ $block = 2 ] && order=$(echo "$builds" | tr ' ' '\n' | grep -v '^$' | tac | tr '\n' ' ')
     for b in $order; do
-      if ! adb install -r "$RUNNER_TEMP/apks/$b.apk" > "$OUT/reel/install.txt" 2>&1; then
-        echo "the Reel's build $b did not install: $(tail -n 1 "$OUT/reel/install.txt")" >> "$OUT/anomalies.txt"
+      if ! adb install -r "$RUNNER_TEMP/apks/$b.apk" > "$OUT/arms/install.txt" 2>&1; then
+        echo "the arms' build $b did not install: $(tail -n 1 "$OUT/arms/install.txt")" >> "$OUT/anomalies.txt"
         continue
       fi
       adb shell cmd package compile -f -m verify "$PKG" > /dev/null 2>&1
       for r in $(seq 1 $ROUNDS_EACH); do
-        scroll_one reels down "$OUT/reel/$b-$(( (block - 1) * ROUNDS_EACH + r ))"
+        scroll_one "$ARM_LINK" down "$OUT/arms/$b-$(( (block - 1) * ROUNDS_EACH + r ))"
       done
     done
   done

@@ -10,9 +10,9 @@
  * the scroll (dumpsys gfxinfo, reset just before it): frames drawn, janky frames, and the 50th, 90th
  * and 99th percentile frame times. The emulator draws with a software GPU, so frame times are this
  * runner's, compared build to build, never a phone's. A screen whose list stopped short, or whose
- * scroll was never measured, fails by name; it prints the table and exits 1 on any. With a reel/
- * folder (the Reel on A and on its arms, WORKLIST P0.111), it prints what each layer costs too
- * (costs): named, not judged, so the fix can follow the numbers.
+ * scroll was never measured, fails by name; it prints the table and exits 1 on any. With an arms/
+ * folder (one screen, the Reel or the Dispatch, on A and on its arms: WORKLIST P0.111, P0.112), it
+ * prints what each arm changes too (costs): named, not judged, so the fix can follow the numbers.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -85,7 +85,7 @@ export function jsLongOf(text) {
 }
 
 /**
- * The Reel's measures, each read from one round: its opening, the frames its ten swipes drew (more
+ * The arms' measures, each read from one round of their screen: its opening, the frames its ten swipes drew (more
  * is smoother), and its middle and slow frame times. Not the janky share: on the lab's software GPU
  * every frame is janky (speed lab 39810996153: janky = frames on every screen), so it tells no build
  * from another.
@@ -132,26 +132,27 @@ export function rankDiff(a, b, seed = 20261022) {
 }
 
 /**
- * What each of the Reel's layers costs (WORKLIST P0.111), from scrolls.sh's reel/ folder
- * (<build>-<round>): per build, each measure's median over its rounds, and each arm against A, its
+ * What each arm changes on its screen (WORKLIST P0.111, P0.112), from scrolls.sh's arms/ folder
+ * (<build>-<round>, and screen.txt naming the screen: reel when it is not there): per build, each measure's median over its rounds, and each arm against A, its
  * difference called (*) when its Holm-adjusted rank-sum p (rankDiff) is under P_CALL. A round that did not
  * scroll three screen heights, or measured no frames, is left out and named: { lines, failed }.
  */
 export function costs(dir) {
   const read = (f) => (existsSync(join(dir, f)) ? readFileSync(join(dir, f), 'utf8') : '');
+  const screen = read('screen.txt').trim() || 'reel';
   const builds = new Map();
   const failed = [];
   for (const run of readdirSync(dir).filter((f) => f.endsWith('.moves')).map((f) => f.replace(/\.moves$/, '')).sort()) {
     const f = framesOf(read(`${run}.gfx`));
     const m = moved(read(`${run}.moves`));
-    if (!f) { failed.push(`reel ${run}: no frames were measured for its scroll`); continue; }
-    if (m.moved < FAR) { failed.push(`reel ${run}: the list stopped after ${m.moved} of ${FAR} swipes`); continue; }
+    if (!f) { failed.push(`${screen} ${run}: no frames were measured for its scroll`); continue; }
+    if (m.moved < FAR) { failed.push(`${screen} ${run}: the list stopped after ${m.moved} of ${FAR} swipes`); continue; }
     const build = run.replace(/-\d+$/, '');
     const log = read(`${run}.log`);
-    builds.set(build, [...(builds.get(build) ?? []), { ...f, ready: readyOf(log), jsLong: jsLongOf(log) }]);
+    builds.set(build, [...(builds.get(build) ?? []), { ...f, ready: readyOf(log, READY_NAMES[screen] ?? screen), jsLong: jsLongOf(log) }]);
   }
   const base = builds.get('A') ?? [];
-  if (base.length === 0) failed.push('reel: A, the app as it is, was never scrolled: nothing to compare');
+  if (base.length === 0) failed.push(`${screen}: A, the app as it is, was never scrolled: nothing to compare`);
   const values = (rows, m) => rows.map(m.of).filter((v) => v != null);
   const arms = [...builds.keys()].filter((b) => b !== 'A').sort();
   const tests = arms.flatMap((arm) => REEL_MEASURES.map((m) => ({ arm, key: m.key, d: rankDiff(values(base, m), values(builds.get(arm), m)) })));
@@ -165,7 +166,7 @@ export function costs(dir) {
     return `${Math.round(median(xs) * 10) / 10}${shift}`.padStart(18);
   };
   const lines = [
-    `The Reel, opened cold and scrolled, on A and each arm (* = differs from A, Holm p < ${P_CALL})`,
+    `The ${screen}, opened cold and scrolled, on A and each arm (* = differs from A, Holm p < ${P_CALL})`,
     `build  rounds${REEL_MEASURES.map((m) => m.head.padStart(18)).join('')}`,
     ...['A', ...arms].filter((b) => builds.has(b)).map((b) =>
       `${b.padEnd(6)} ${String(builds.get(b).length).padStart(6)}${REEL_MEASURES.map((m) => cell(builds.get(b), m, b === 'A' ? null : b)).join('')}`),
@@ -260,7 +261,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const dir = process.argv[2];
   if (!dir || !existsSync(dir)) { console.error('usage: node e2e/lab/scrolls.mjs <scrolls-dir>'); process.exit(2); }
   const judged = judge(dir);
-  const reel = existsSync(join(dir, 'reel')) ? costs(join(dir, 'reel')) : { lines: [], failed: [] };
+  const reel = existsSync(join(dir, 'arms')) ? costs(join(dir, 'arms')) : { lines: [], failed: [] };
   const budgetFile = join(dirname(fileURLToPath(import.meta.url)), 'budget.json');
   const budget = budgetOf(dir, JSON.parse(readFileSync(budgetFile, 'utf8')));
   const lines = [...judged.lines, '', ...budget.lines, ...(reel.lines.length ? ['', ...reel.lines] : [])];

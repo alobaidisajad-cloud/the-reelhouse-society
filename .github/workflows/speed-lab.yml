@@ -31,10 +31,15 @@ on:
         description: 'the signed-in busy screens, each scrolled and timed, on a seeded house'
         type: boolean
         default: true
-      reel_arms:
-        description: "the Reel's arms of arm.mjs (P0.111), each opened and scrolled against A with the scrolls, space-separated"
+      scroll_arms:
+        description: "arms of arm.mjs, each built, opened and scrolled against A on the arms' screen with the scrolls, space-separated"
         type: string
         default: 'Rb Rw Rl Rt Rs Rp R0'
+      arm_screen:
+        description: "the screen the arms are opened and scrolled on: the Reel (P0.111) or the Dispatch (P0.112)"
+        type: choice
+        options: [reel, dispatch]
+        default: reel
 
 permissions:
   contents: read
@@ -273,14 +278,15 @@ jobs:
   # Signed in, on the sealed world as the Sealed E2E builds it, filled by e2e/db/lab-seed.mjs: each
   # busy screen opened cold, shot, and scrolled ten swipes with its frames counted (scrolls.sh). The
   # app is built before the seal, which firewalls addresses the build's downloads share. The Reel's
-  # arms (P0.111) are built beside it, and the Reel opened and scrolled on each, rounds turned.
+  # arms (or the Dispatch's) are built beside it, and their screen opened and scrolled on each, rounds turned.
   scrolls:
     name: 🔬 Android — the busy screens, signed in and scrolled
     if: ${{ inputs.scrolls }}
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     env:
-      LAB_REEL_ARMS: ${{ inputs.reel_arms }}
+      LAB_SCROLL_ARMS: ${{ inputs.scroll_arms }}
+      LAB_ARM_SCREEN: ${{ inputs.arm_screen }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: The stack's ports, kept first
@@ -363,7 +369,7 @@ jobs:
             echo "built $1: $(stat -c %s "$RUNNER_TEMP/apks/$1.apk") bytes"
           }
           npx expo prebuild --platform android --no-install --clean > "$B" 2>&1 || fail "prebuild"
-          for arm in A $LAB_REEL_ARMS; do build "$arm"; done
+          for arm in A $LAB_SCROLL_ARMS; do build "$arm"; done
           git checkout -- src app
           pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
 
@@ -505,7 +511,7 @@ jobs:
         if: always()
         run: node mobile/e2e/scrub.mjs "$RUNNER_TEMP/lab"
 
-      # Kept before the Reel's half begins: a runner lost there (speed lab 39820804347 kept nothing)
+      # Kept before the arms' half begins: a runner lost there (speed lab 39820804347 kept nothing)
       # cannot take these with it.
       - name: Keep the busy screens
         if: always()
@@ -515,8 +521,8 @@ jobs:
           path: ${{ runner.temp }}/lab/scrolls
           if-no-files-found: ignore
 
-      - name: The Reel, on A and each of its arms
-        if: ${{ !cancelled() && inputs.reel_arms != '' }}
+      - name: The arms' screen, on A and each arm
+        if: ${{ !cancelled() && inputs.scroll_arms != '' }}
         timeout-minutes: 150
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
@@ -528,7 +534,7 @@ jobs:
           heap-size: 576M
           disable-animations: true
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
-          script: LAB_PART=reel LAB_IDS="$RUNNER_TEMP/lab-ids.json" bash mobile/e2e/lab/scrolls.sh
+          script: LAB_PART=arms LAB_IDS="$RUNNER_TEMP/lab-ids.json" bash mobile/e2e/lab/scrolls.sh
 
       - name: The scrolls, judged
         if: ${{ !cancelled() }}
