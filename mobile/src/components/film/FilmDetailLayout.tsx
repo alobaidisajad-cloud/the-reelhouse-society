@@ -78,7 +78,7 @@ const DirectorCard = memo(function DirectorCard({ director }: { director: { id: 
 export const FilmDetailLayout = memo(function FilmDetailLayout() {
   const {
     film, reviews, reviewsFailed, reviewsReading, similarFilms, directors, cast, videos, trailer, score, providers, studios, verdict,
-    existingLog, isAuthenticated, isArchivist, user,
+    existingLog, marksUnknown, rereadMarks, isAuthenticated, isArchivist, user,
     validFilmId, loading, isError, retry, isFocused,
     goBack, handleLog, handleRewatch, handleOpenTrailer,
     handleOpenShare, handleOpenLounge, handleReadFullLog, playVideo,
@@ -209,8 +209,14 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   }, [existingLog?.watchedDate]);
 
   const trayActs = useMemo<TrayAct[]>(() => {
+    // Whether a film is logged, or saved, that the ledger does not hold is not yet known:
+    // LOG THIS FILM would file a second viewing of one already logged. Said, and asked again
+    // when the read could not be answered; never offered as if it were nothing.
+    const unknownAct = (key: string, Icon: TrayAct['Icon'], what: string, learning: string): TrayAct => (marksUnknown === 'failed'
+      ? { key, Icon, uninked: true, label: `YOUR ${what} COULD NOT BE READ`, gloss: 'Ask again.', onPress: rereadMarks }
+      : { key, Icon, uninked: true, label: `READING YOUR ${what}`, gloss: learning, onPress: rereadMarks });
     const acts: TrayAct[] = [
-      {
+      !existingLog && marksUnknown ? unknownAct('log', TrayIcons.Plus, 'LEDGER', 'Whether you have seen it, in a moment.') : {
         key: 'log',
         Icon: existingLog ? TrayIcons.Pencil : TrayIcons.Plus,
         label: existingLog ? 'EDIT YOUR LOG' : 'LOG THIS FILM',
@@ -230,7 +236,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         onPress: actThenClose(handleRewatch),
       });
     }
-    acts.push({
+    acts.push(!isWatchlisted && marksUnknown ? unknownAct('watchlist', TrayIcons.Bookmark, 'WATCHLIST', 'Whether you kept it, in a moment.') : {
       key: 'watchlist',
       Icon: TrayIcons.Bookmark,
       label: isWatchlisted ? 'ON THE WATCHLIST' : 'ADD TO THE WATCHLIST',
@@ -273,7 +279,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     });
     return acts;
   }, [
-    existingLog, isWatchlisted, trailer, isArchivist,
+    existingLog, isWatchlisted, marksUnknown, rereadMarks, trailer, isArchivist,
     actThenClose, handleLog, handleRewatch, toggleWatchlist, handleOpenTrailer, handleOpenShare, openLounge,
     bookmarkAnimStyle,
   ]);
@@ -570,6 +576,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
       <FilmStub
         existingLog={existingLog}
         isWatchlisted={isWatchlisted}
+        unknown={marksUnknown}
         watchedLabel={watchedLabel}
         open={trayOpen}
         onPress={toggleTray}

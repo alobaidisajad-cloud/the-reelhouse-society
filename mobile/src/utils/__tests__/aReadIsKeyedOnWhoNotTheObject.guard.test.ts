@@ -15,7 +15,7 @@ import { files as universe } from '@/test-utils/universe';
 /** Each hook keyed on the auth store's `user` object, by file and its dependency list, and why it may be. */
 const JUDGED: Record<string, string> = {
   'app/dispatch/compose.tsx [user]': 'an effect that only sends a signed-out reader back; it reads nothing',
-  'app/film/[id].tsx [derivedData, existingLog, isAuthenticated, isArchivist, currentUsername, user, validFilmId, loading, isError, retry, isFocused, goBack, handleLog, handleRewatch, handleOpenTrailer, handleOpenShare, handleOpenLounge, handleReadFullLog, trailer, playVideo]':
+  'app/film/[id].tsx [derivedData, existingLog, marksUnknown, rereadMarks, isAuthenticated, isArchivist, currentUsername, user, validFilmId, loading, isError, retry, isFocused, goBack, handleLog, handleRewatch, handleOpenTrailer, handleOpenShare, handleOpenLounge, handleReadFullLog, trailer, playVideo]':
     'the film page\'s context value: a new object redraws what reads it, and reads nothing',
   'app/log/[id].tsx [queryClient, id, user, updateComments]': 'a press handler (delete a critique): re-created, never run by itself',
   'app/person/[id].tsx [user, canShare, openShare, person, id]': 'a press handler (share to a salon)',

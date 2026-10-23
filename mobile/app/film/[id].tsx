@@ -1,7 +1,7 @@
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useIsFocused } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useFilmDetail } from '@/src/hooks/useFilmDetail';
@@ -9,6 +9,7 @@ import { filterUnseenFilms } from '@/src/utils/recommendations';
 import { obscurityScore } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
+import { readMarks } from '@/src/stores/domain/marksLedger';
 import { isArchivistPlusTier } from '@/src/utils/tier';
 
 import { FilmDetailLayout } from '@/src/components/film/FilmDetailLayout';
@@ -36,6 +37,12 @@ export default function FilmDetailScreen() {
   const currentUsername = user?.username ?? 'you';
 
   const existingLog = useFilmStore(state => validFilmId ? (state._loggedIndex[filmId] ?? null) : null);
+  // Until the ledger is held whole, a film it does not hold is not known to be unseen (marksLedger).
+  const marksKnown = useFilmStore(state => state.marksKnown);
+  const marksUnknown = !isAuthenticated || marksKnown === 'held' ? null : marksKnown === 'failed' ? 'failed' : 'reading';
+  const rereadMarks = useCallback(() => { void readMarks(); }, []);
+  // Never asked yet (a session restored before the launch's read began): ask, joining any read under way.
+  useEffect(() => { if (isAuthenticated && marksKnown === 'unread') void readMarks(); }, [isAuthenticated, marksKnown]);
   // Subscribe to the whole logged index so "YOU MAY ALSO LIKE" drops a film
   // the instant it's logged (render-time filter, never baked into the cache).
   const loggedIndex = useFilmStore(state => state._loggedIndex);
@@ -163,6 +170,8 @@ export default function FilmDetailScreen() {
       verdict: derivedData.verdict,
       trailer,
       existingLog,
+      marksUnknown,
+      rereadMarks,
       isAuthenticated,
       isArchivist,
       currentUsername,
@@ -182,7 +191,7 @@ export default function FilmDetailScreen() {
       playVideo,
     };
   }, [
-    derivedData, existingLog, isAuthenticated, isArchivist, currentUsername, user, validFilmId, loading, isError, retry,
+    derivedData, existingLog, marksUnknown, rereadMarks, isAuthenticated, isArchivist, currentUsername, user, validFilmId, loading, isError, retry,
     isFocused, goBack, handleLog, handleRewatch, handleOpenTrailer, handleOpenShare, handleOpenLounge, handleReadFullLog, trailer,
     playVideo,
   ]);

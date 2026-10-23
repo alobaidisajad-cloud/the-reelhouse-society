@@ -46,6 +46,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
 import { trayMaxHeight } from './filmStubMetrics';
 import { EDGE_LIT } from '@/src/theme/light';
+import { UNINKED } from '@/src/theme/unready';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 
 /** The scrim, matching the Concierge's. Not a blur — Android. */
@@ -62,7 +63,9 @@ const GLOSS_FLOOR = 1 / scaledTextProps.maxFontSizeMultiplier;
 
 export interface TrayAct {
   key: string;
-  Icon: React.ComponentType<{ size: number; color: string; strokeWidth: number }>;
+  Icon: React.ComponentType<{ size: number; color: string; strokeWidth: number; strokeDasharray?: string }>;
+  /** A mark of the member's not yet read: its glyph is the outline before the ink (UNINKED). */
+  uninked?: boolean;
   label: string;
   gloss: string;
   onPress: () => void;
@@ -138,7 +141,7 @@ const ActRow = memo(function ActRow({ act }: { act: TrayAct }) {
       {act.primary && <BrassFace />}
       <View style={s.rowIcon}>
         <Animated.View style={act.iconStyle}>
-          <act.Icon size={16} color={tint} strokeWidth={1.75} />
+          <act.Icon size={16} color={tint} strokeWidth={1.75} strokeDasharray={act.uninked ? UNINKED : undefined} />
         </Animated.View>
       </View>
       {/* The perforation, rhyming with the stub's tear so the two read as one

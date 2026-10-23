@@ -7,6 +7,7 @@ import { enqueueMutation } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
 import { useAuthStore } from '../auth';
 import { runWithMutex } from './helpers/promiseMutex';
+import { markWritten } from './marksWrites';
 import { stillSignedIn } from './helpers/sessionGuard';
 
 /** The DATA this slice owns — see the note on `LogSliceData`. */
@@ -81,7 +82,8 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
         // virtualized, so capping here only served to silently drop a power
         // user's items past 500 whenever loadMore ran.
         const nextWatchlist = loadMore ? [...state.watchlist, ...newItems] : newItems;
-        const idx: Record<number, true> = {};
+        // Laid over the ledger, never in place of it (marksLedger.ts); without it, the pages are all.
+        const idx: Record<number, true> = (get() as { marksKnown?: string }).marksKnown === 'held' ? { ...get()._watchlistIndex } : {};
         nextWatchlist.forEach(w => { idx[w.id] = true; });
 
         // Compute next cursor from last row
@@ -106,8 +108,9 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
         const user = useAuthStore.getState().user;
         if (!user) return;
         
-        const exists = get().watchlist.find((f) => f.id === film.id);
-        if (exists) return;
+        // The index, not the pages: a film saved before them is on the watchlist too.
+        if (get()._watchlistIndex[film.id]) return;
+        markWritten();
 
         const newEntry = {
             id: film.id,
@@ -195,8 +198,9 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
         if (!user) return;
 
         const previousWatchlist = [...get().watchlist];
-        const itemToRemove = previousWatchlist.find((f) => f.id === filmId);
-        if (!itemToRemove) return;
+        // The index, not the pages: a film saved before them is taken off too.
+        if (!get()._watchlistIndex[filmId]) return;
+        markWritten();
 
         set((state) => {
             const nextIdx = { ...state._watchlistIndex };

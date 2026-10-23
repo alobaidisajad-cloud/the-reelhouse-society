@@ -103,6 +103,9 @@ const value = {
   providers: detail['watch/providers']?.results ?? null,
   studios: detail.production_companies ?? [],
   existingLog: null,
+  // The ledger held whole: a film it does not hold is known to be unseen.
+  marksUnknown: null,
+  rereadMarks: jest.fn(),
   isAuthenticated: true,
   // An archivist by default, so `film-built-locked` below is genuinely a
   // different picture rather than the same one under another name.
@@ -172,6 +175,9 @@ const STATES: [string, Record<string, unknown>, boolean][] = [
   }, false],
   // Signed out: every act must route to the door rather than fail quietly.
   ['film-built-signedout', { isAuthenticated: false, isArchivist: false, existingLog: null }, true],
+  // The member's ledger still being read, and not read: whether they have seen it is not known.
+  ['film-built-tray-reading', { marksUnknown: 'reading' }, true],
+  ['film-built-tray-unread', { marksUnknown: 'failed' }, true],
 ];
 
 /**
@@ -254,6 +260,38 @@ describe('the film page', () => {
     const r = page({ verdict: null });
     expect(r.queryByText('THE HOUSE HAS NOT SPOKEN')).toBeNull();
     expect(r.getByTestId('verdict-unknown', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('a film the ledger does not hold, while it is read, is never offered as unseen: nothing files a viewing', async () => {
+    const handleLog = jest.fn();
+    const rereadMarks = jest.fn();
+    const r = page({ marksUnknown: 'reading', handleLog, rereadMarks });
+    expect(r.getByText('READING YOUR LEDGER')).toBeTruthy();
+    expect(r.queryByText('LOG THIS FILM')).toBeNull();
+    expect(r.queryByText('NOT YET SEEN')).toBeNull();
+    await fireEvent.press(r.getByTestId('film-stub'));
+    expect(r.queryByText('ADD TO THE WATCHLIST')).toBeNull();
+    expect(r.getByText('READING YOUR WATCHLIST')).toBeTruthy();
+    await fireEvent.press(r.getByTestId('film-act-log'));
+    expect(handleLog).not.toHaveBeenCalled();
+    expect(rereadMarks).toHaveBeenCalled();
+  });
+
+  it('a ledger that could not be read is said, and asked for again', async () => {
+    const rereadMarks = jest.fn();
+    const r = page({ marksUnknown: 'failed', rereadMarks });
+    expect(r.getByText('YOUR LEDGER UNREAD')).toBeTruthy();
+    await fireEvent.press(r.getByTestId('film-stub'));
+    expect(r.getByText('YOUR LEDGER COULD NOT BE READ')).toBeTruthy();
+    await fireEvent.press(r.getByTestId('film-act-watchlist'));
+    expect(rereadMarks).toHaveBeenCalled();
+  });
+
+  it('a film the ledger holds is known, read or not: its log is never hidden behind the read', async () => {
+    const r = page({ marksUnknown: 'reading', existingLog: MY_LOG });
+    expect(r.getByText('SEEN ×2')).toBeTruthy();
+    await fireEvent.press(r.getByTestId('film-stub'));
+    expect(r.getByText('EDIT YOUR LOG')).toBeTruthy();
   });
 
   it('the tray really opens — otherwise every tray shot is a shut one', async () => {

@@ -104,10 +104,11 @@ describe('#64 · a logout leaves no trace of the previous member', () => {
     const clean = pristine();
     const keys = Object.keys(clean) as (keyof ReturnType<typeof pristine>)[];
 
-    // 25 fields, and the old reset named 10 (`stubs` went with the ticket stubs
-    // of a dropped feature, which nothing read). Enumerated rather than listed,
-    // so a field added to any slice is covered here the day it is added.
-    expect(keys.length).toBe(25);
+    // 27 fields, and the old reset named 10 (`stubs` went with the ticket stubs
+    // of a dropped feature, which nothing read; marksKnown and _ledger came with the
+    // marks ledger). Enumerated rather than listed, so a field added to any slice is
+    // covered here the day it is added.
+    expect(keys.length).toBe(27);
 
     const soiled: Record<string, unknown> = {};
     for (const k of keys) soiled[k] = dirty(clean[k]);

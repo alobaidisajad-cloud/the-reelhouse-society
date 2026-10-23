@@ -8,6 +8,7 @@ import { Heart, MessageSquare, Share2, Bookmark } from 'lucide-react-native';
 import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
+import { UNINKED } from '@/src/theme/unready';
 import {
   scaledTextProps, decorativeTextProps, displayTextProps,
 } from '@/src/constants/textScaling';
@@ -160,8 +161,8 @@ export const Credit = memo(function Credit({
 
 // The stamp bar's reach: upward only, clear of the credit and the next entry.
 const SLOP = { top: 7, bottom: 0, left: 0, right: 0 };
-// A mark not yet read: the stamp's outline before the ink, its line broken (icon units, 24 wide).
-export const UNINKED = '2.4 2.2';
+// A mark not yet read is drawn UNINKED (src/theme/unready.ts); the paper's pieces take it from here.
+export { UNINKED };
 
 /**
  * The four marks under a filing: the app's stamp-bar anatomy (four equal

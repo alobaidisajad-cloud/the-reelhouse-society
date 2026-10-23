@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { DomainLog } from '../../types';
 import { FilmState } from '../films';
+import type { LedgerOnDisk } from './marksDisk';
 import {
     addLogOp,
     fetchLogsOp,
@@ -25,10 +26,20 @@ export interface LogSliceData {
     logsHasMore: boolean;
     _logsCursor: string | null;
     _loggedIndex: Record<number, DomainLog>;
+    /**
+     * Whether `_loggedIndex` and `_watchlistIndex` hold every film the member has logged and
+     * saved (marksLedger.ts): 'held', read whole; 'unread', not yet; 'failed', could not be.
+     * Until 'held', a film neither holds is not known to be unseen or unsaved.
+     */
+    marksKnown: MarksKnown;
+    /** On disk only: the ledger as last held, read back at launch and cleared (films.ts). */
+    _ledger: LedgerOnDisk | null;
     _fetchingLogs: boolean;
     _addLogMutex: boolean;
     _updateLogMutex: boolean;
 }
+
+export type MarksKnown = 'held' | 'unread' | 'failed';
 
 /**
  * A FUNCTION, deliberately — never a shared constant.
@@ -41,6 +52,8 @@ export const logSliceInitialState = (): LogSliceData => ({
     logsHasMore: true,
     _logsCursor: null,
     _loggedIndex: {},
+    marksKnown: 'unread',
+    _ledger: null,
     _fetchingLogs: false,
     _addLogMutex: false,
     _updateLogMutex: false,

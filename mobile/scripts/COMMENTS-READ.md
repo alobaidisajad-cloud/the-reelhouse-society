@@ -130,7 +130,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/edit-profile.tsx | 2026-10-01 |  |
 | app/film-reviews/__tests__/theArchiveSaysWhenItCouldNotRead.test.tsx | — |  |
 | app/film-reviews/[id].tsx | 2026-10-15 | header top from usePushedHeaderTop; foot from useContentBottom |
-| app/film/[id].tsx | 2026-10-23 | edited: reviewsReading: the critiques unread while the page is drawn from the warm catalogue; the film page says its read failed |
+| app/film/[id].tsx | 2026-10-23 | edited: marksUnknown from the ledger, and the ledger asked for when it never was |
 | app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx | 2026-09-30 | written with the log page's critiques matched to the stack's |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
 | app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-08 | the share captured only once the card is whole; the 20 s limit |
@@ -140,7 +140,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/lounge/[id].tsx | 2026-10-23 | edited: only this room's words and its read's flags (never the last room's, still held); the transcript says reading, or the house's failure with TRY AGAIN, before "be the first"; the ready mark fails when its words could not come; its reads keyed on who reads (userId), not the object a session restore replaces; the room's read; the composer and its bars stand on the edge (BAR_FOOT_GAP); each scroll traced |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); a portrait without a photograph carries the whole first letter, unspoken |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
-| app/person/[id].tsx | 2026-10-15 | back, veil and scrollbar from usePushedHeaderTop; foot from useContentBottom |
+| app/person/[id].tsx | 2026-10-23 | edited: the auteur hunt counted only over the ledger held whole |
 | app/reset-password.tsx | 2026-10-15 | back and form from usePushedHeaderTop; foot from useContentBottom |
 | app/settings.tsx | 2026-10-02 | read; sound |
 | app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-10-23 | edited: the critiques sheet reading, then empty only once read; the router mock answers useFocusEffect as jest.setup.ts's does; each event waited for; the close inside the keyboard's moment is the sheet's own, each press shown to land |
@@ -408,7 +408,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/__tests__/theSuggestionsSayWhenTheCatalogueIsAway.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); new |
 | src/components/darkroom/__tests__/theTraySaysWhenTheCatalogueIsAway.test.tsx | — |  |
 | src/components/darkroom/constants.ts | 2026-10-02 | read; sound |
-| src/components/darkroom/DarkroomCards.tsx | 2026-10-02 | doors through nav |
+| src/components/darkroom/DarkroomCards.tsx | 2026-10-23 | edited: the quick save uninked while the ledger is not held |
 | src/components/darkroom/DarkroomFilterPanel.tsx | 2026-10-15 | enters and leaves as a PresenceView |
 | src/components/darkroom/DarkroomHeader.tsx | 2026-10-15 | the filter panel is held through its exit |
 | src/components/darkroom/DarkroomHero.tsx | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
@@ -492,7 +492,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperMore.tsx | 2026-10-15 | PaperBack starts at a pushed or modal top |
 | src/components/dispatch/paper/paperMotion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperPerf.ts | 2026-10-15 | edited: memory-disk on every image, held by its guard; no image sets a priority, so the backdrop rule is gone |
-| src/components/dispatch/paper/PaperPost.tsx | 2026-10-23 | edited: certifyKnown and saveKnown: a mark not yet read is the stamp's outline before its ink (UNINKED), unpressed and said so; docked, the card draws no row of marks of its own |
+| src/components/dispatch/paper/PaperPost.tsx | 2026-10-23 | edited: UNINKED taken from the theme |
 | src/components/dispatch/paper/PaperStrike.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperStyles.ts | 2026-10-23 | edited: boxUnread: a ballot box whose mark is still being read, unlinked; the masthead title's glow has room inside the box a phone cuts it at |
 | src/components/dispatch/paper/paperText.ts | 2026-10-22 | edited: counted() now lives in src/utils/counted.ts; this file passes it on |
@@ -525,8 +525,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/zz-film.gen.test.tsx | — |  |
 | src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the critiques unread while the page is drawn from the warm catalogue; written: the critiques' failure reaches the page; an unread verdict is unknown |
 | src/components/film/CastCarousel.tsx | 2026-10-04 | edited: an actor without a photograph is drawn by initialOf |
-| src/components/film/FilmActionTray.tsx | 2026-10-16 | histories to the present; edited: risen, it is drawn with plain styles (RISEN_SCRIM, RISEN_TRAY), read against Sealed E2E run 38790116312 |
-| src/components/film/FilmDetailLayout.tsx | 2026-10-23 | edited: no critiques section while they are coming: neither "be the first voice" nor a section leaping up the page; back and scroll header from usePushedHeaderTop; the stub on the edge (useBottomEdge); each scroll traced |
+| src/components/film/FilmActionTray.tsx | 2026-10-23 | edited: an act may be uninked |
+| src/components/film/FilmDetailLayout.tsx | 2026-10-23 | edited: the log and watchlist rows of a film the ledger does not hold ask for the ledger, never file |
 | src/components/film/FilmDossier.tsx | 2026-10-01 | what it holds, not what it absorbed |
 | src/components/film/FilmHero.tsx | 2026-10-01 | an unknown verdict claims nothing; histories to the present |
 | src/components/film/FilmHeroSkeleton.tsx | 2026-10-15 | the waiting dock on the edge (bottomEdge) |
@@ -535,7 +535,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/FilmScrollHeader.tsx | 2026-10-15 | takes its top; back level with the floating one |
 | src/components/film/FilmSectionHeader.tsx | 2026-10-01 | true as written |
 | src/components/film/FilmSimilar.tsx | 2026-10-01 | nav; named for a screen reader |
-| src/components/film/FilmStub.tsx | 2026-10-15 | the dock on the edge (bottomEdge) |
+| src/components/film/FilmStub.tsx | 2026-10-23 | edited: a sixth state, not known yet (READING YOUR LEDGER, YOUR LEDGER UNREAD), the ticket uninked; never NOT YET SEEN |
 | src/components/film/filmStubMetrics.ts | 2026-10-15 | the dock on bottomEdge; the scroll ends above it (scrollEndAbove) |
 | src/components/film/LogShareCard.tsx | 2026-10-08 | passes the card's onReady through |
 | src/components/film/NitrateFileCard.tsx | 2026-10-08 | says when every picture is drawn (onReady); a failed poster turns to the no-poster face; the house's domain, not REELHOUSE.APP |
@@ -927,6 +927,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useSecondKey.ts | 2026-10-17 | new: the door read from the session each time; register; give a code |
 | src/hooks/__tests__/theSecondKeyIsReadAsItIs.test.tsx | 2026-10-17 | new: each refusal the hook meets, handed back as what it is |
 | src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx | 2026-10-23 | new: an edit over a record the phone has not paged in, against the strict fake |
+| src/stores/__tests__/theLedgerIsKnownWhole.test.ts | 2026-10-23 | new: the ledger against the strict fake |
 | src/hooks/useTextScale.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
 | src/hooks/useUpdateUser.ts | 2026-10-02 | read; sound |
@@ -966,8 +967,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/providers/__tests__/androidTracking.test.ts | — |  |
 | src/providers/__tests__/theMissingSettingsAreNamed.test.ts | 2026-10-02 | Written in the launch audit: the missing-settings message, one line each. |
 | src/providers/androidTracking.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/providers/AppBootstrapper.tsx | 2026-10-16 | edited: the E2E build traces each change of network the app hears |
-| src/providers/FilmDetailProvider.tsx | 2026-10-23 | edited: reviewsReading; reviewsFailed and playVideo, said |
+| src/providers/AppBootstrapper.tsx | 2026-10-23 | edited: launch asks for the marks ledger beside the follow list |
+| src/providers/FilmDetailProvider.tsx | 2026-10-23 | edited: marksUnknown and rereadMarks |
 | src/schemas/__tests__/aFeedRowWithANullIsStillDrawn.test.ts | 2026-10-01 | written with the null-status fix |
 | src/schemas/__tests__/schemas.test.ts | — |  |
 | src/schemas/feed.schema.ts | 2026-10-01 | film id strict; a null status is watched |
@@ -1086,7 +1087,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/watchlistSlice.test.ts | 2026-10-03 | edited: the header names what the file tests |
 | src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts | 2026-10-23 | profileRead tells a read profile from the auth user alone; rereadProfile lays a read on the member, says a failure, and lands nothing for a member gone (P0.112) |
 | src/stores/__tests__/theBlocksAreReadAtSignIn.test.ts | 2026-10-23 | a sign-in reads the member's blocks: known, and a block a block; a failed read leaves them unknown; sign-out makes them unknown (P0.112) |
-| src/stores/auth.ts | 2026-10-23 | edited: a sign-in reads the member's blocks as a cold start does; rereadProfile lays a fresh read on the member it was read for; a session ended elsewhere keeps the member's queue and drafts and tells them; their sign-in gives it back |
+| src/stores/auth.ts | 2026-10-23 | edited: a sign-in asks for the marks ledger, lazily (the film store is never loaded with the session) |
 | src/stores/authEvents.ts | 2026-10-15 | written: the auth listener's answers, out of the component |
 | src/stores/blockStore.ts | 2026-10-23 | edited: blocksKnown: the lists the member's, from a saved copy or a read; cleared at sign-out; sign-out erases the leaving member's saved list |
 | src/stores/createSelectors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -1106,11 +1107,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/helpers/sessionGuard.ts | 2026-10-01 | true as written |
 | src/stores/domain/interactionSlice.ts | 2026-10-03 | read whole: a certification made before the answer is kept (index and list) |
 | src/stores/domain/listSlice.ts | 2026-10-15 | edited: a stack's posters fetched ahead through prefetchPictures, to the disk cache; a stack write that throws is checked for its member before it queues or undoes |
-| src/stores/domain/logSlice.ts | 2026-10-23 | edited: updateLog and removeLog take the record an editor read; removeLog throws on a record not in hand |
-| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-23 | edited: heldLog (the pages, then the index of logged films); update and remove act on the record handed to them; a delete of a record not in hand throws; a rollback puts a record back where it was |
+| src/stores/domain/logSlice.ts | 2026-10-23 | edited: marksKnown and _ledger |
+| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-23 | edited: heldLog never hands over a light record; a page laid over the ledger; each log write counted as a write of marks; QueuedWrite exported |
+| src/stores/domain/marksDisk.ts | 2026-10-23 | new: the ledger as the phone keeps it, light, and read back |
+| src/stores/domain/marksLedger.ts | 2026-10-23 | new: every log and save read whole, the queue and the pages laid over, read again once a write overlapped, failed never none |
+| src/stores/domain/marksWrites.ts | 2026-10-23 | new: each write of marks counted |
 | src/stores/domain/socialSlice.ts | 2026-10-23 | edited: the follow list held once read whole; a failed read of a list never held marks it failed; follow and unfollow write, save and queue only for the member who asked |
-| src/stores/domain/watchlistSlice.ts | 2026-10-08 | no posters fetched ahead |
-| src/stores/films.ts | 2026-10-08 | nothing fetched ahead on restore |
+| src/stores/domain/watchlistSlice.ts | 2026-10-23 | edited: a page read laid over the ledger, never in its place; add and remove by the index, so a film saved before the pages comes off; each counted as a write of marks |
+| src/stores/films.ts | 2026-10-23 | edited: the marks ledger kept light once held, and read back as held at launch, beside the records kept |
 | src/stores/followStore.ts | 2026-10-23 | edited: followingKnown: held, unread or failed; the phone's copy of a read is held; sign-out makes it unread; comments cut to the why |
 | src/stores/lounge.ts | 2026-10-23 | edited: loungesRead: the salons answered once since sign-in; the salons' read and the room's keep their own flags; another room's words go when a room opens, a failed read is said by the room; a page and its reactions in one request (MESSAGE_COLUMNS, messagesOf), the page above with them too, ordered as the cursor; the salons read in two waves, not five; a salon read or send answered after its member left writes and queues nothing |
 | src/stores/markCounts.ts | 2026-10-02 | read; sound |
@@ -1147,7 +1151,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/motion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/stamp.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/theme.ts | 2026-10-02 | Read whole (launch audit). Dead tokens removed: typography, physics (springBouncy broke the no-bounce law), three metrics, three effects; type.caption 8.5 and type.badge 7.5 sat under the 10pt floor unused. theTypeFloor now reads the live scale. |
-| src/types/film.types.ts | 2026-10-02 | Read whole (launch audit). VaultItem was used nowhere: removed. |
+| src/types/film.types.ts | 2026-10-23 | edited: light, the ledger's record |
 | src/types/index.ts | 2026-10-02 | Read whole (launch audit). ui.types (UIState: a paywall and handbook modal that do not exist) removed from the barrel and deleted. |
 | src/types/moderation.ts | 2026-10-02 | Read whole (launch audit): content types match reports_content_type_check. BlockType, BlockRecordSchema and ActionMetaSchema were used nowhere: removed. |
 | src/types/mutations.ts | 2026-10-15 | edited: the ownership notes say the owner decides the session, not user_id |
@@ -1422,7 +1426,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aCountSaysItsWord.guard.test.ts | 2026-10-22 | written: every count before a plural word goes through counted() or is listed with why it is never one |
 | src/utils/__tests__/anItalicIsTheHouseItalic.guard.test.ts | 2026-10-22 | written: no slant asked of a face; the italic faces the theme names are the ones loaded before the first screen |
 | src/utils/counted.ts | 2026-10-22 | written: the Dispatch's counter, moved for the whole app with its note |
-| src/theme/unready.ts | 2026-10-22 | written: a control that cannot act yet, hollow with its words in fog; a control at work stays filled |
+| src/theme/unready.ts | 2026-10-23 | edited: UNINKED, the outline before the ink, for every mark not yet read |
 | src/theme/__tests__/anUnreadyControlIsHollow.guard.test.ts | 2026-10-22 | edited: reads whole style objects across lines; a state style that recolours is refused too |
 | src/utils/countryName.ts | 2026-10-22 | written: a country's name from its code; the house's own list (Hermes has no region names), the code where it has none |
 | src/utils/__tests__/countryName.test.ts | 2026-10-22 | written: in a sentence and as a label; an unknown code said as it came; every TMDB region named |

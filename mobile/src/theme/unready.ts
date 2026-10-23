@@ -22,3 +22,9 @@ export const UNREADY = StyleSheet.create({
 
 /** The colour an icon takes when its button is unready. */
 export const UNREADY_INK = colors.fog;
+
+/**
+ * A mark of the member's not yet read (a certification, a save, a seen film): the stamp's
+ * outline before the ink, its line broken. A strokeDasharray in icon units, 24 wide.
+ */
+export const UNINKED = '2.4 2.2';

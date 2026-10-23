@@ -16,6 +16,7 @@ import { useFilmStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import PressableScale from '@/src/components/PressableScale';
 import { EDGE_LIT } from '@/src/theme/light';
+import { UNINKED } from '@/src/theme/unready';
 
 // ══════════════════════════════════════════════════════════════
 //  DARKROOM SAFELIGHT ATMOSPHERICS
@@ -84,6 +85,9 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
   const addToWatchlist = useFilmStore((s: any) => s.addToWatchlist);
   const removeFromWatchlist = useFilmStore((s: any) => s.removeFromWatchlist);
   const isAuthenticated = useAuthStore(s => !!s.user);
+  // Not on the watchlist the phone holds, but the ledger not yet read: not known to be unsaved.
+  // Pressing it is still right (a film already saved is said as saved), so only its ink waits.
+  const saveUnknown = useFilmStore((s: any) => !isPerson && isAuthenticated && !s._watchlistIndex[item.id] && s.marksKnown !== 'held');
 
   // Every poster-less film measured against the live API carried a year, so the
   // plate can bear it the way a negative's edge marking would.
@@ -198,7 +202,8 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
           accessibilityRole="button"
           accessibilityLabel={isSaved ? `Remove ${item.title || 'film'} from watchlist` : `Add ${item.title || 'film'} to watchlist`}
         >
-          <Bookmark size={12} color={isSaved ? colors.ink : colors.parchment} fill={isSaved ? colors.ink : 'transparent'} />
+          <Bookmark size={12} color={isSaved ? colors.ink : colors.parchment} fill={isSaved ? colors.ink : 'transparent'}
+            strokeDasharray={saveUnknown ? UNINKED : undefined} />
         </PressableScale>
       )}
     </View>

@@ -48,9 +48,10 @@ jest.mock('expo-router', () => ({
 jest.mock('@/src/utils/typedRouter', () => ({
   nav: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true },
 }));
+// The member's marks: the ledger held whole unless a test says otherwise.
+let mockFilms: { _loggedIndex: Record<number, unknown>; marksKnown: string } = { _loggedIndex: {}, marksKnown: 'held' };
 jest.mock('@/src/stores/films', () => {
-  const state = { _loggedIndex: {} };
-  const useArchiveStore = (sel?: (s: unknown) => unknown) => (sel ? sel(state) : state);
+  const useArchiveStore = (sel?: (s: unknown) => unknown) => (sel ? sel(mockFilms) : mockFilms);
   return { useArchiveStore };
 });
 jest.mock('@/src/stores/auth', () => {
@@ -130,7 +131,26 @@ async function screen(q: Record<string, unknown>): Promise<R> {
   return r;
 }
 
-beforeEach(() => { jest.clearAllMocks(); });
+beforeEach(() => { jest.clearAllMocks(); mockFilms = { _loggedIndex: {}, marksKnown: 'held' }; });
+
+describe('THE AUTEUR HUNT counts the ledger whole, or not at all', () => {
+  const FILE = { data: { person: PERSON, allCredits: [credit(3, 'In the Mood for Love', '2000-09-29'), credit(4, 'Chungking Express', '1994-07-14')] } };
+
+  it('counts what the member has screened, over every film they have logged', async () => {
+    mockFilms = { _loggedIndex: { 3: { id: 'l3', filmId: 3, status: 'watched', light: true } }, marksKnown: 'held' };
+    expect(words(await screen(FILE))).toContain('1 OF 2 SCREENED');
+  });
+
+  it('while the ledger is read, or could not be, draws no count: a short one is a wrong one', async () => {
+    for (const marksKnown of ['unread', 'failed']) {
+      mockFilms = { _loggedIndex: { 3: { id: 'l3', filmId: 3, status: 'watched' } }, marksKnown };
+      const r = await screen(FILE);
+      expect(words(r).some((w) => w.includes('SCREENED') || w.includes('AUTEUR HUNT'))).toBe(false);
+      // Anchored: the file itself is drawn.
+      expect(words(r)).toContain('In the Mood for Love');
+    }
+  });
+});
 
 describe('THE CANON is ordered as a record', () => {
   const today = '2026-08-15';

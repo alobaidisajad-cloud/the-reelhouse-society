@@ -9,6 +9,7 @@ import { ListSlice, createListSlice, listSliceInitialState } from './domain/list
 import { LogSlice, createLogSlice, logSliceInitialState } from './domain/logSlice';
 import { WatchlistSlice, createWatchlistSlice, watchlistSliceInitialState } from './domain/watchlistSlice';
 import { clearAllMutexes } from './domain/helpers/promiseMutex';
+import { ledgerFromDisk, ledgerToDisk } from './domain/marksDisk';
 
 import type { DomainLog, Interaction, WatchlistItem } from '../types';
 import { createSelectors } from './createSelectors';
@@ -38,21 +39,34 @@ const useFilmStoreBase = create<FilmState>()(
                 // This window exists purely for instant cold-start display.
                 const PERSIST_WINDOW = 150;
                 const WINDOWED_KEYS = new Set(['logs', 'watchlist']);
-                return Object.fromEntries(
-                    Object.entries(state)
-                        .filter(([key]) => PERSISTED_KEYS.includes(key))
-                        .map(([key, value]) =>
-                            WINDOWED_KEYS.has(key) && Array.isArray(value)
-                                ? [key, value.slice(0, PERSIST_WINDOW)]
-                                : [key, value]
-                        )
-                );
+                return {
+                    ...Object.fromEntries(
+                        Object.entries(state)
+                            .filter(([key]) => PERSISTED_KEYS.includes(key))
+                            .map(([key, value]) =>
+                                WINDOWED_KEYS.has(key) && Array.isArray(value)
+                                    ? [key, value.slice(0, PERSIST_WINDOW)]
+                                    : [key, value]
+                            )
+                    ),
+                    // The marks ledger, light, once held whole (marksDisk.ts).
+                    _ledger: ledgerToDisk(state),
+                };
             },
             onRehydrateStorage: () => (state) => {
                 if (state) {
-                    // Rebuild derived indices from persisted logs
+                    if (state._ledger) {
+                        // The ledger as last held, the records kept beside it laid over: known from
+                        // the first frame, signal or not. The launch's own read brings it up to date.
+                        useFilmStore.setState({
+                            ...ledgerFromDisk(state._ledger, state.logs ?? [], state.watchlist ?? []),
+                            marksKnown: 'held',
+                            _ledger: null,
+                        });
+                    }
+                    // Without a ledger kept, the records kept are all there is, until the launch's read.
                     // Without this, isRewatchMode returns false on cold start until fetchLogs() completes
-                    if (state.logs && state.logs.length > 0) {
+                    if (!state._ledger && state.logs && state.logs.length > 0) {
                         const logIndex: Record<number, DomainLog> = {};
                         state.logs.forEach((log: DomainLog) => { 
                             if (log.filmId && !logIndex[log.filmId]) {
@@ -62,7 +76,7 @@ const useFilmStoreBase = create<FilmState>()(
                         useFilmStore.setState({ _loggedIndex: logIndex });
                     }
 
-                    if (state.watchlist && state.watchlist.length > 0) {
+                    if (!state._ledger && state.watchlist && state.watchlist.length > 0) {
                         const watchIndex: Record<number, true> = {};
                         state.watchlist.forEach((w: WatchlistItem) => { watchIndex[w.id] = true; });
                         useFilmStore.setState({ _watchlistIndex: watchIndex });

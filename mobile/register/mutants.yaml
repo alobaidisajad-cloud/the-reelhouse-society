@@ -1574,3 +1574,48 @@ mutants:
         find: "        if (!logToRemove) throw new Error('removeLog: the record is not in hand');\n"
         replace: "        if (!logToRemove) return;\n"
     proof: { file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "a delete of a record nobody has in hand is a failure said, never a silent nothing" }
+
+  - id: shape-ledger-one-page
+    class: DATA-marks-known-from-the-pages
+    source: shape
+    edits:
+      - file: src/stores/domain/marksLedger.ts
+        find: "    if (got.length < PAGE) return rows;\n"
+        replace: "    return rows;\n"
+    proof: { file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "reads every log and every save, past a page of a thousand, and then holds them" }
+
+  - id: shape-ledger-replaced-by-pages
+    class: DATA-marks-known-from-the-pages
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "        const idx = get().marksKnown === 'held' ? { ...get()._loggedIndex, ...fromPages } : fromPages;\n"
+        replace: "        const idx = fromPages;\n"
+    proof: { file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "lays a page read later over the ledger, never in its place" }
+
+  - id: shape-unknown-offered-as-unseen
+    class: DATA-marks-known-from-the-pages
+    source: shape
+    edits:
+      - file: src/components/film/FilmDetailLayout.tsx
+        find: "      !existingLog && marksUnknown ? unknownAct('log'"
+        replace: "      false ? unknownAct('log'"
+    proof: { file: src/components/film/__tests__/zz-film.gen.test.tsx, test: "a film the ledger does not hold, while it is read, is never offered as unseen: nothing files a viewing" }
+
+  - id: shape-light-record-edited
+    class: DATA-marks-known-from-the-pages
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "l?.id === id && !l.light"
+        replace: "l?.id === id"
+    proof: { file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "never hands its light record to the editor; a film saved before the pages comes off" }
+
+  - id: shape-hunt-counted-short
+    class: DATA-marks-known-from-the-pages
+    source: shape
+    edits:
+      - file: app/person/[id].tsx
+        find: " && marksKnown === 'held';"
+        replace: ";"
+    proof: { file: app/person/__tests__/thePersonFileReadsTrue.test.tsx, test: "while the ledger is read, or could not be, draws no count: a short one is a wrong one" }

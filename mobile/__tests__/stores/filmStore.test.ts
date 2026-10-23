@@ -219,12 +219,14 @@ describe('FilmStore Integration Tests (T2-4)', () => {
     // ─────────────────────────────────────────────────────
 
     describe('Persistence', () => {
-        it('persists the five record arrays, and no index, fetch flag or action', () => {
+        it('persists the five record arrays and the marks ledger, and no index, fetch flag or action', () => {
             const persist = (useFilmStore as unknown as {
                 persist: { getOptions: () => { partialize: (s: unknown) => Record<string, unknown> } };
             }).persist;
             const saved = persist.getOptions().partialize(useFilmStore.getState());
-            expect(Object.keys(saved).sort()).toEqual(['interactions', 'lists', 'logs', 'physicalArchive', 'watchlist']);
+            // The ledger is kept light, and only once held whole (marksDisk.ts): unread, it is null.
+            expect(Object.keys(saved).sort()).toEqual(['_ledger', 'interactions', 'lists', 'logs', 'physicalArchive', 'watchlist']);
+            expect(saved._ledger).toBeNull();
         });
 
         it('rebuilds every index from the persisted records when it rehydrates', async () => {

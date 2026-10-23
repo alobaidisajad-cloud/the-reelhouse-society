@@ -1339,3 +1339,24 @@ classes:
       - { kind: running, file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "a delete of a record nobody has in hand is a failure said, never a silent nothing" }
     fix: "heldLog finds a record in the pages or the index of logged films; the editor reads one held in neither by its id (the member's own only), keeps the form shut until it is in hand (RETRIEVING YOUR RECORD, could not be reached with TRY AGAIN, or No Such Record), fills it once per record, and hands that record to the seal and the delete; updateLogOp and removeLogOp act on it, and a delete of a record not in hand throws rather than doing nothing (mutants shape-edit-unread-record, shape-edit-filled-again, shape-edit-sealed-unread, shape-delete-silent-nothing)"
     places: [none]
+
+  - id: DATA-marks-known-from-the-pages
+    title: "A member's marks were known only from the pages the phone had read (fifty logs, and only once they opened their own file; a page of the watchlist): a film logged before them was drawn NOT YET SEEN, and LOG THIS FILM filed it a second viewing; Darkroom posters lost their marks, a director's canon was counted short, and \"you may also like\" offered films already seen; a film saved before the watchlist's pages could not be taken off"
+    seriousness: serious
+    area: states
+    status: OPEN
+    count: 5
+    source: { kind: reviewer, ref: "sweep of member state drawn before it was known (P0.112): _loggedIndex and _watchlistIndex were built from fetchLogs and fetchWatchlist alone, and fetchLogs ran only from the member's own profile" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "reads every log and every save, past a page of a thousand, and then holds them" }
+      - { kind: running, file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "says a read that failed as failed, never as \"nothing logged\", and keeps a ledger held" }
+      - { kind: running, file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "lays a page read later over the ledger, never in its place" }
+      - { kind: running, file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "lays the writes still queued offline over what it read, as they will land" }
+      - { kind: running, file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "lands nowhere when its member left while it read" }
+      - { kind: running, file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "never hands its light record to the editor; a film saved before the pages comes off" }
+      - { kind: running, file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "is kept on the phone once held, and read back as it was" }
+      - { kind: running, file: src/components/film/__tests__/zz-film.gen.test.tsx, test: "a film the ledger does not hold, while it is read, is never offered as unseen: nothing files a viewing" }
+      - { kind: running, file: src/components/film/__tests__/zz-film.gen.test.tsx, test: "a ledger that could not be read is said, and asked for again" }
+      - { kind: running, file: app/person/__tests__/thePersonFileReadsTrue.test.tsx, test: "while the ledger is read, or could not be, draws no count: a short one is a wrong one" }
+    fix: "readMarks (marksLedger.ts) reads every log (light: film, status, rating, viewings, date) and every save, by id a thousand at a time, at launch and at sign-in; lays the offline queue's writes and the pages' fuller records over it; is read again once when a write overlapped it; lands nowhere after a sign-out; says failed, never none. marksKnown says whether it is held. Page reads lay over it; the watchlist adds and removes by the index. The ledger is kept on the phone, light, once held (marksDisk.ts). The editor is never handed a light record (heldLog). The film page draws a film the ledger does not hold as READING YOUR LEDGER / YOUR LEDGER UNREAD, uninked, and its log and watchlist rows ask for the ledger instead of filing; the director's hunt waits for it; Darkroom's save is uninked until it (mutants shape-ledger-one-page, shape-ledger-replaced-by-pages, shape-unknown-offered-as-unseen, shape-light-record-edited, shape-hunt-counted-short)"
+    places: [none]

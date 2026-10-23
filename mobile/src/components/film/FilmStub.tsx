@@ -36,6 +36,7 @@ import { ReelRating } from '@/src/components/Decorative';
 import { STUB_HEIGHT, STUB_PAD_TOP, dockHeight } from './filmStubMetrics';
 import { bottomEdge } from '@/src/components/layout/navMetrics';
 import { EDGE_LIT } from '@/src/theme/light';
+import { UNINKED } from '@/src/theme/unready';
 
 export interface FilmStubProps {
   /**
@@ -44,6 +45,11 @@ export interface FilmStubProps {
    */
   existingLog: { status?: string; rating?: number; viewCount?: number } | null;
   isWatchlisted: boolean;
+  /**
+   * Whether the member's ledger is still being read, or could not be, when it does not hold
+   * this film: then the film is not known to be unseen, and the stub never says it is.
+   */
+  unknown?: 'reading' | 'failed' | null;
   /** Already formatted by the caller — this component never touches a date. */
   watchedLabel: string | null;
   open: boolean;
@@ -74,19 +80,21 @@ const BrassFace = memo(function BrassFace() {
 });
 
 export const FilmStub = memo(function FilmStub({
-  existingLog, isWatchlisted, watchedLabel, open, onPress, bottomInset,
+  existingLog, isWatchlisted, unknown, watchedLabel, open, onPress, bottomInset,
 }: FilmStubProps) {
   const Chevron = open ? ChevronDown : ChevronUp;
 
   /**
    * Five states, not two: `abandoned` is a real status, never printed as SEEN.
+   * And a sixth: not known yet, which is never "unseen".
    */
   const state = useMemo(() => {
+    if (!existingLog && unknown) return 'unknown';
     if (!existingLog) return isWatchlisted ? 'shelved' : 'unseen';
     if (existingLog.status === 'abandoned') return 'abandoned';
     if ((existingLog.viewCount ?? 1) > 1) return 'rewatched';
     return 'seen';
-  }, [existingLog, isWatchlisted]);
+  }, [existingLog, isWatchlisted, unknown]);
 
   const inviting = (state === 'unseen' || state === 'shelved') && !open;
 
@@ -97,6 +105,7 @@ export const FilmStub = memo(function FilmStub({
     : state === 'abandoned' ? 'ABANDONED'
     : state === 'seen' ? 'SEEN'
     : state === 'shelved' ? 'ON THE WATCHLIST'
+    : state === 'unknown' ? (unknown === 'failed' ? 'YOUR LEDGER UNREAD' : 'READING YOUR LEDGER')
     : 'NOT YET SEEN';
 
   const logged = state === 'seen' || state === 'rewatched' || state === 'abandoned';
@@ -149,7 +158,8 @@ export const FilmStub = memo(function FilmStub({
       />
       {state === 'shelved'
         ? <Bookmark size={15} color={colors.sepia} fill={colors.sepia} strokeWidth={1.75} />
-        : <Ticket size={15} color={colors.sepia} strokeWidth={1.75} />}
+        // Not known yet: the ticket's outline before the ink.
+        : <Ticket size={15} color={colors.sepia} strokeWidth={1.75} strokeDasharray={state === 'unknown' ? UNINKED : undefined} />}
       <View style={[s.tear, { borderLeftColor: 'rgba(184,137,26,0.4)' }]} />
       <Text {...scaledTextProps} style={s.recordLabel} numberOfLines={1}>{label}</Text>
       {logged && rating > 0 && <ReelRating rating={rating} size={13} />}

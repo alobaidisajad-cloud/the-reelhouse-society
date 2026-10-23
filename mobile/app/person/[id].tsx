@@ -123,6 +123,7 @@ export default function PersonDetailScreen() {
   const [showFullBio, setShowFullBio] = useState(false);
   const [isManualRefresh, setIsManualRefresh] = useState(false);
   const _loggedIndex = useArchiveStore(s => s._loggedIndex);
+  const marksKnown = useArchiveStore(s => s.marksKnown);
   const user = useAuthStore(s => s.user);
   const edge = useBottomEdge();
   const end = useContentBottom();
@@ -357,7 +358,9 @@ export default function PersonDetailScreen() {
   const auteurPct = huntFilms.length > 0 ? Math.round((seenCount / huntFilms.length) * 100) : 0;
   const isAuteurMastery = huntFilms.length > 0 && seenCount === huntFilms.length;
   const auteurHuntDynStyle = useMemo(() => ({ width: `${auteurPct}%` as import('react-native').DimensionValue }), [auteurPct]);
-  const showHunt = isDirectingFile && huntFilms.length > 0;
+  // Counted only over the ledger held whole: over the pages read, a member who has seen the
+  // whole canon was told a fifth of it (marksLedger).
+  const showHunt = isDirectingFile && huntFilms.length > 0 && marksKnown === 'held';
 
   // ── The grid — SCREENED ticks from the member's own log index ──
   const renderGridItem = useCallback(({ item, index }: { item: PersonCredit; index: number }) => {

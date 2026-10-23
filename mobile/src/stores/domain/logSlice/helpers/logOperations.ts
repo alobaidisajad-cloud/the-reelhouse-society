@@ -17,6 +17,7 @@ import { useAuthStore } from '../../../auth';
 import { VaultService } from '../../../../services/VaultService';
 import { useVaultStore } from '../../../vaultStore';
 import { stillSignedIn } from '../../helpers/sessionGuard';
+import { markWritten } from '../../marksWrites';
 import type { FilmState } from '../../../films';
 
 import { StoreApi } from 'zustand';
@@ -58,7 +59,9 @@ export const LOG_BUSY = 'LOG_BUSY' as const;
  * neither, and its editor reads it by its id and hands it to the write itself.
  */
 export function heldLog(state: Pick<FilmState, 'logs' | '_loggedIndex'>, id: string): DomainLog | undefined {
-    return state.logs.find((l) => l.id === id) ?? Object.values(state._loggedIndex).find((l) => l?.id === id);
+    // Never the ledger's light copy: a form filled from it, or a delete judged by it, has
+    // neither the words nor the viewings.
+    return state.logs.find((l) => l.id === id) ?? Object.values(state._loggedIndex).find((l) => l?.id === id && !l.light);
 }
 
 // A SUCCESS, spoken: it has no toast ("RECORD SEALED" is visual). A failure's toast is
@@ -78,7 +81,7 @@ export const sortLogs = (logs: DomainLog[]) => logs.sort((a, b) => {
     return dateB.localeCompare(dateA);
 });
 
-type QueuedWrite = { type: string; payload: Record<string, unknown> };
+export type QueuedWrite = { type: string; payload: Record<string, unknown> };
 
 /**
  * The page the server sent, with the member's writes still waiting in the
@@ -196,10 +199,13 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
         const nextLogs = loadMore ? [...state.logs, ...newLogs] : [...queuedAdds, ...newLogs];
         const deduplicatedLogs = oneOfEachLog(nextLogs);
 
-        const idx: Record<number, DomainLog> = {};
-        deduplicatedLogs.forEach(l => { if (l.filmId && !idx[l.filmId]) idx[l.filmId] = l as DomainLog; });
+        // A page is laid over the ledger, never in place of it: the films logged before the
+        // page are still logged (marksLedger.ts). Without the ledger, the pages are all there is.
+        const fromPages: Record<number, DomainLog> = {};
+        deduplicatedLogs.forEach(l => { if (l.filmId && !fromPages[l.filmId]) fromPages[l.filmId] = l as DomainLog; });
+        const idx = get().marksKnown === 'held' ? { ...get()._loggedIndex, ...fromPages } : fromPages;
 
-        set({ 
+        set({
             logs: deduplicatedLogs, 
             _loggedIndex: idx,
             _logsCursor: nextCursor,
@@ -325,6 +331,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
             throw Object.assign(new Error('addLog mutex locked'), { code: LOG_BUSY });
         }
         set({ _addLogMutex: true });
+        markWritten();
 
         try {
             let existingLog = log.filmId ? get()._loggedIndex[log.filmId] : undefined;
@@ -562,6 +569,7 @@ export const updateLogOp = async (
             throw Object.assign(new Error('updateLog mutex locked'), { code: LOG_BUSY });
         }
         set({ _updateLogMutex: true });
+        markWritten();
 
         try {
         const user = useAuthStore.getState().user;
@@ -852,6 +860,7 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
         // Whether it goes or a viewing does turns on the record's history, so a
         // record not in hand is a failure said, never a delete that did nothing.
         if (!logToRemove) throw new Error('removeLog: the record is not in hand');
+        markWritten();
         const wasInPages = get().logs.some((l) => l.id === id);
 
         // Pop history instead of a hard delete

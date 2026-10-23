@@ -24,7 +24,13 @@ export interface DomainLog {
     popularity?: number
     createdAt?: string
     userId?: string
-    
+    /**
+     * A record as the marks ledger holds it (stores/domain/marksLedger.ts): whether, how and
+     * when the film was seen, never its words. Not one to edit or delete from: those read
+     * the record whole.
+     */
+    light?: true
+
     // Half-life tracking
     genreIds?: number[]
     format?: string | null

@@ -45,6 +45,8 @@ jest.mock('../mmkv-storage', () => ({
   setSensitive: jest.fn(),
   isStorageEncrypted: () => true,
   zustandMMKVStorage: { getItem: jest.fn(), setItem: jest.fn(), removeItem: jest.fn() },
+  // The film store's, which a sign-in reaches through the marks ledger.
+  createAsyncMMKVStorage: () => ({ getItem: () => null, setItem: () => undefined, removeItem: () => undefined }),
   getSecureStorage: jest.fn().mockResolvedValue({ set: jest.fn(), delete: jest.fn(), getString: jest.fn() }),
 }));
 

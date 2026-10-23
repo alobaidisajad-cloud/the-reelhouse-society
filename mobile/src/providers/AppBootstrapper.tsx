@@ -15,6 +15,7 @@ import { supabase } from '../lib/supabase';
 import { storage, useAuthStore } from '../stores/auth';
 import { answerAuthEvent } from '../stores/authEvents';
 import { hydrateFollowing } from '../stores/domain/socialSlice';
+import { readMarks } from '../stores/domain/marksLedger';
 import { useNotificationStore } from '../stores/notificationStore';
 import { e2eTrace } from '../utils/e2eTrace';
 import MemoryManager from '../utils/memoryManager';
@@ -141,6 +142,8 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         // it was. Sign-in asks again as the session is confirmed, and joins this
         // read if it is still running (hydrateFollowing).
         void hydrateFollowing();
+        // The member's marks, whole: every film logged and saved, not the pages read (marksLedger).
+        void readMarks();
         addBreadcrumb('Background hydration started', 'boot');
 
         // ── Boot complete ──

@@ -44,6 +44,13 @@ export interface FilmDetailContextValue {
    */
   verdict: FilmVerdict | null;
   existingLog: DomainLog | null;
+  /**
+   * The member's ledger still being read, or not read, so a film it does not hold is not
+   * known to be unseen or unsaved (marksLedger.ts); null once it is held, or for a guest.
+   */
+  marksUnknown: 'reading' | 'failed' | null;
+  /** Ask for the member's ledger again, after a read that could not be answered. */
+  rereadMarks: () => void;
   isAuthenticated: boolean;
   isArchivist: boolean;
   currentUsername: string;

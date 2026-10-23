@@ -24,6 +24,13 @@ import { e2eTrace } from '../utils/e2eTrace';
 import { raceDeadline } from '../utils/raceDeadline';
 import { profileRead } from '../utils/profileRead';
 import { useBlockStore } from './blockStore';
+
+/**
+ * The member's marks, whole (marksLedger.ts). Asked for lazily: the ledger is the film
+ * store's, and the session is read before any store, at launch and in every test of it.
+ */
+const readMarks = (): Promise<void> =>
+  (require('./domain/marksLedger') as typeof import('./domain/marksLedger')).readMarks();
 export { storage };
 
 export interface AuthState {
@@ -256,6 +263,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           set({ user: completeUser, isAuthenticated: true, loading: false });
           // Hydrate following from DB in background (authoritative source)
           hydrateFollowing();
+          // Every film they have logged and saved, whole (marksLedger).
+          void readMarks();
           void readRankHistory(session.user.id);
           return;
         }
@@ -365,6 +374,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       });
 
     hydrateFollowing();
+    void readMarks();
   },
 
   rereadProfile: async () => {
