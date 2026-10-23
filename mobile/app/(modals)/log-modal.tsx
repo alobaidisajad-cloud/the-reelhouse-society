@@ -10,6 +10,8 @@ import { st } from '@/src/components/log/LogModalStyles';
 import LogSearchEngine from '@/src/components/log/LogSearchEngine';
 import LogSealBar, { SEAL_BAR_HEIGHT } from '@/src/components/log/LogSealBar';
 import LogAtmosphere from '@/src/components/log/LogAtmosphere';
+import { RoomRetrieving, RoomUnreachable } from '@/src/components/profile/RoomParts';
+import { EmptyState } from '@/src/components/EmptyStates';
 import PressableScale from '@/src/components/PressableScale';
 import { useLogFlow } from '@/src/hooks/useLogFlow';
 import { useAuthStore } from '@/src/stores/auth';
@@ -22,7 +24,7 @@ export default function LogModalScreen() {
 
     const { user } = useAuthStore();
     const flow = useLogFlow();
-    const { isAuthenticated, step, film, isEditing, selectFilm, submitting, setStep } = flow;
+    const { isAuthenticated, step, film, isEditing, editReady, selectFilm, submitting, setStep } = flow;
 
     // KEYBOARD LAW (router-screen form): the ScrollView's
     // automaticallyAdjustKeyboardInsets scrolls the FOCUSED field above the
@@ -56,7 +58,9 @@ export default function LogModalScreen() {
             {/* The film, behind the chrome and the document alike. Fixed, so it
                 stays put while the docket scrolls over it — the record's own
                 parallax. Arrives after the entrance settles. */}
-            {step === 1 && <LogAtmosphere posterPath={film?.poster_path} />}
+            {/* It hangs over the docket, whose sheet begins where it ends: an edit
+                still waiting for its record has no docket, and its words sit on the ground. */}
+            {editReady && step === 1 && <LogAtmosphere posterPath={film?.poster_path} />}
             <View style={st.kavFlex}>
                 {/* Drag handle */}
                 <View style={[st.dragHandleWrap, { paddingTop: handleTop }]}><View style={st.dragHandle} /></View>
@@ -82,13 +86,24 @@ export default function LogModalScreen() {
                     </PressableScale>
                 </View>
 
+                {/* ════ AN EDIT, BEFORE ITS RECORD IS IN HAND ════
+                    Never a blank form over a record that exists: its blanks
+                    would be sealed over the record. */}
+                {!editReady && (
+                    <View style={st.editWait}>
+                        {flow.editRead === 'failed' ? <RoomUnreachable room="your record" onRetry={flow.rereadEdit} />
+                            : flow.editRead === 'withdrawn' ? <EmptyState buster="suspicious" title="No Such Record" subtitle="It was withdrawn, or it is not yours to amend." compact />
+                            : <RoomRetrieving room="your record" />}
+                    </View>
+                )}
+
                 {/* ════ STEP 0: SEARCH ════ */}
-                {step === 0 && (
+                {editReady && step === 0 && (
                     <LogSearchEngine onSelectFilm={selectFilm} />
                 )}
 
                 {/* ════ STEP 1: LOG FORM ════ */}
-                {step === 1 && film && (
+                {editReady && step === 1 && film && (
                     // The scroll must END above the docked seal, or the last index
                     // entry hides behind it. One measured number: the bar's own
                     // height plus the safe area.
@@ -101,7 +116,7 @@ export default function LogModalScreen() {
             {/* The wax, on the desk from the moment you sit down. A SIBLING of
                 the scroll view, never inside it — the scroll adjusts its own
                 insets for the keyboard, and the bar answers the keyboard itself. */}
-            {step === 1 && film && (
+            {editReady && step === 1 && film && (
                 <LogSealBar
                     status={flow.status}
                     rating={flow.rating}

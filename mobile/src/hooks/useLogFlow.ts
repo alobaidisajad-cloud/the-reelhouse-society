@@ -6,7 +6,9 @@ import { useVaultStore } from '@/src/stores/vaultStore';
 import { supabase } from '@/src/lib/supabase';
 import { captureError } from '@/src/lib/sentry';
 import reelToast from '@/src/utils/reelToast';
-import { LOG_BUSY } from '@/src/stores/domain/logSlice/helpers/logOperations';
+import { LOG_BUSY, heldLog } from '@/src/stores/domain/logSlice/helpers/logOperations';
+import { LOG_SELECT_COLUMNS, mapLogRow, type LogRow } from '@/src/utils/mappers';
+import type { DomainLog } from '@/src/types';
 import { isNetworkError } from '@/src/utils/networkError';
 import { maybeRequestReview } from '@/src/utils/requestReview';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
@@ -252,10 +254,49 @@ export function useLogFlow() {
         if (isAuteur || isPremium) loadImages();
     }, [film?.id, isAuteur, isPremium, loadImages]);
 
-    // ── Populate form from existing log in edit mode ──
+    // ── The record an edit opens on ──
+    // The phone holds the member's newest pages and the index of films they have
+    // logged; a record older than both is read by its id. Until it is in hand the
+    // form stays shut: a blank form over a record that exists sealed its blanks
+    // over it — the critique, the date, the ranked fields.
+    const heldEdit = useFilmStore((s) => (editLogId ? heldLog(s, editLogId) ?? null : null));
+    const [readEdit, setReadEdit] = useState<DomainLog | null>(null);
+    const [editRead, setEditRead] = useState<'reading' | 'failed' | 'withdrawn'>('reading');
+    const [editAsked, setEditAsked] = useState(0);
+    const memberId = user?.id;
+    const holdsEdit = !!heldEdit;
+    useEffect(() => {
+        setReadEdit(null);
+        setEditRead('reading');
+        if (!editLogId || holdsEdit || !memberId) return;
+        let live = true;
+        (async () => {
+            // Theirs alone: a record of another member's is not one to amend.
+            const { data, error } = await supabase.from('logs').select(LOG_SELECT_COLUMNS)
+                .eq('id', editLogId).eq('user_id', memberId).maybeSingle();
+            if (!live) return;
+            if (error) { setEditRead('failed'); return; }
+            if (!data) { setEditRead('withdrawn'); return; }
+            setReadEdit(mapLogRow(data as unknown as LogRow));
+        })().catch(() => { if (live) setEditRead('failed'); });
+        return () => { live = false; };
+    }, [editLogId, holdsEdit, memberId, editAsked]);
+    const rereadEdit = useCallback(() => setEditAsked((n) => n + 1), []);
+    const editLog = heldEdit ?? readEdit;
+
+    // The form is filled ONCE per record. Filled again whenever the pages were
+    // read, it threw away what the member had typed under a refresh.
+    const [filledFor, setFilledFor] = useState<string | null>(null);
+    /** The record the form was filled from: what a seal or a delete acts on. */
+    const editedRef = useRef<DomainLog | null>(null);
+    const editReady = !editLogId || filledFor === editLogId;
+
+    // ── A new record, or another one: the form starts clean ──
     useEffect(() => {
         // Reset all form state first to prevent stale data flash
         // when editLogId changes without unmounting (e.g. edit log A → edit log B)
+        setFilledFor(null);
+        editedRef.current = null;
         setRating(0);
         setReview('');
         setStatus('watched');
@@ -272,10 +313,15 @@ export function useLogFlow() {
         setPullQuote('');
         setAutopsyOpen(false);
         setMoreOpen(false);
+    }, [editLogId]);
 
-        if (!editLogId) return;
-        const log = logs.find(l => l.id === editLogId);
-        if (!log) return;
+    // ── Populate form from the record, once it is in hand ──
+    useEffect(() => {
+        if (!editLogId || filledFor === editLogId) return;
+        const log = editLog;
+        if (!log || log.id !== editLogId) return;
+        editedRef.current = log;
+        setFilledFor(editLogId);
         setStatus((log.status ?? 'watched') as 'watched' | 'rewatched' | 'abandoned');
         setRating(log.rating ?? 0);
         setReview(log.review ?? '');
@@ -305,10 +351,10 @@ export function useLogFlow() {
         setMoreOpen(!!(log.watchedWith || (log.physicalMedia && log.physicalMedia !== 'None')));
         setFilm({ id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year?.toString() });
         setStep(1);
-    }, [editLogId, logs]);
+    }, [editLogId, editLog, filledFor]);
 
     // The note is the VIEWING's: read from the Vault by the viewing's id, not the log.
-    const storeViewingId = editLogId ? (logs.find(l => l.id === editLogId)?.viewingId ?? null) : null;
+    const storeViewingId = editLog?.viewingId ?? null;
 
     // A log cached without its viewing's id asks for it once and stores it, or
     // the form would open EMPTY over a note that exists.
@@ -492,6 +538,8 @@ export function useLogFlow() {
     const handleLog = async () => {
         if (!user) { reelToast.error('Identification required to file a record.'); return; }
         if (!film) { reelToast.error('No film selected.'); return; }
+        // An edit seals only over the record it was filled from (the form is shut until then).
+        if (!editReady) return;
         const blockReason = validateLogSubmission(status, rating, review, abandonedReason);
         if (blockReason) { reelToast.error(blockReason); return; }
         setSubmitting(true);
@@ -503,7 +551,7 @@ export function useLogFlow() {
                 altPoster, editorialHeader, dropCap, pullQuote,
             });
             const isNewEntry = !(isEditing && editLogId);
-            if (isEditing && editLogId) { await updateLog(editLogId, logData); }
+            if (isEditing && editLogId) { await updateLog(editLogId, logData, editedRef.current ?? undefined); }
             else { await addLog(logData); }
             clearDraft(user?.id, 'log');
             TactileEngine.success();
@@ -545,9 +593,9 @@ export function useLogFlow() {
     };
 
     const handleDelete = async () => {
-        if (!editLogId) return;
+        if (!editLogId || !editReady) return;
         try {
-            await removeLog(editLogId);
+            await removeLog(editLogId, false, editedRef.current ?? undefined);
             TactileEngine.warn();
             deferUntilIdle(() => {
                 nav.back();
@@ -634,6 +682,11 @@ export function useLogFlow() {
         availablePosters, availableBackdrops,
         imagesLoaded, imagesFailed, loadImages,
         isEditing,
+        /** An edit's record is in the form; until then the form is shut and the seal refuses. */
+        editReady,
+        /** Why an edit's record is not yet in the form: being read, unreachable, or not theirs. */
+        editRead,
+        rereadEdit,
         editLogId, // a rope's way back from an edit: the log, not an empty form
         selectFilm,
         handleLog,

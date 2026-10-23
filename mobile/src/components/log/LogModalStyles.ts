@@ -57,6 +57,8 @@ export const st = StyleSheet.create({
 
     // Form
     formScroll: { flex: 1 },
+    /** An edit whose record is still being read, or could not be: the room's own words, centred. */
+    editWait: { flex: 1, justifyContent: 'center', paddingHorizontal: 20 },
     formContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 80 },
     sec: { marginBottom: 20 },
     // No marginBottom: this sits INSIDE the bracket, whose own padding sets the

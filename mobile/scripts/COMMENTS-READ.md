@@ -105,7 +105,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx | 2026-10-03 | new: your own circle is said to you |
 | app/(modals)/cover-picker.tsx | 2026-10-15 | top from useModalTop |
 | app/(modals)/list-modal.tsx | 2026-10-22 | edited: the unready bar is hollow (UNREADY); CLOSE centred on the title's first line; the large-stack notice in sentences |
-| app/(modals)/log-modal.tsx | 2026-10-15 | edited: each step and each Back to search said in the E2E log; the header says where it sits |
+| app/(modals)/log-modal.tsx | 2026-10-23 | edited: an edit waiting for its record says so (retrieving, unreachable, No Such Record), never a blank form; the film's atmosphere hangs only over the docket |
 | app/(modals)/login.tsx | 2026-10-15 | header top from useModalTop; the page stops at the edge (useBottomEdge) |
 | app/(modals)/membership.tsx | 2026-10-15 | nav top from useModalTop; ends above the window and its fade, or at useContentBottom |
 | app/(modals)/notifications-modal.tsx | 2026-10-15 | handle's top from useModalTop; foot from useContentBottom |
@@ -628,7 +628,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogFormBody.tsx | 2026-10-01 | true as written |
 | src/components/log/LogHero.tsx | 2026-10-01 | the filing mark in the present tense |
 | src/components/log/LogIndexEntry.tsx | 2026-10-01 | a held-but-unshown entry said as holding something |
-| src/components/log/LogModalStyles.ts | 2026-10-15 | handle's top set where drawn |
+| src/components/log/LogModalStyles.ts | 2026-10-23 | edited: editWait, the waiting words centred |
 | src/components/log/logRecord.ts | 2026-10-01 | histories to the present |
 | src/components/log/LogReviewBody.tsx | 2026-10-01 | a Vault that could not open says so |
 | src/components/log/LogSealBar.tsx | 2026-10-22 | edited: the unready seal is hollow (UNREADY); the note on why it still answers moved beside the press |
@@ -912,7 +912,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useFollowRequests.ts | 2026-10-23 | edited: answeredFor: the door is reading while the search on screen is not the one it answered; failed + moreFailed + retry; the count never below 0; decline-all restores paging |
 | src/hooks/useInitiation.ts | 2026-10-02 | Read whole (launch audit). The breath was the effect's cleanup, so a user replaced inside it lost the welcome after the flag burned; a user without created_at was decided no for good. Both closed. |
 | src/hooks/useLater.ts | 2026-10-04 | written whole: a component's timer, gone with the component |
-| src/hooks/useLogFlow.ts | 2026-10-02 | Read whole (launch audit). A draft's restored private note was untouched (and the restored film reset the touch), so sealing the restored record dropped the note: it travels now. |
+| src/hooks/useLogFlow.ts | 2026-10-23 | edited: an edit reads a record the phone does not hold by its id, fills the form once per record, and hands that record to the seal and the delete; the seal refuses until it is in |
 | src/hooks/useMemberRoom.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useMembershipPricing.ts | 2026-10-02 | read; sound |
 | src/hooks/useModalKeyboardPadding.ts | 2026-10-15 | edited: the eased height is its own hook, for a centred card's scroll |
@@ -926,6 +926,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useStateSaid.ts | 2026-10-16 | new: which state a room drew, empty or failed, to the E2E log |
 | src/hooks/useSecondKey.ts | 2026-10-17 | new: the door read from the session each time; register; give a code |
 | src/hooks/__tests__/theSecondKeyIsReadAsItIs.test.tsx | 2026-10-17 | new: each refusal the hook meets, handed back as what it is |
+| src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx | 2026-10-23 | new: an edit over a record the phone has not paged in, against the strict fake |
 | src/hooks/useTextScale.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
 | src/hooks/useUpdateUser.ts | 2026-10-02 | read; sound |
@@ -1105,8 +1106,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/helpers/sessionGuard.ts | 2026-10-01 | true as written |
 | src/stores/domain/interactionSlice.ts | 2026-10-03 | read whole: a certification made before the answer is kept (index and list) |
 | src/stores/domain/listSlice.ts | 2026-10-15 | edited: a stack's posters fetched ahead through prefetchPictures, to the disk cache; a stack write that throws is checked for its member before it queues or undoes |
-| src/stores/domain/logSlice.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-15 | edited: every wait in a log write is followed by its member check; a rewatch removed is its own function |
+| src/stores/domain/logSlice.ts | 2026-10-23 | edited: updateLog and removeLog take the record an editor read; removeLog throws on a record not in hand |
+| src/stores/domain/logSlice/helpers/logOperations.ts | 2026-10-23 | edited: heldLog (the pages, then the index of logged films); update and remove act on the record handed to them; a delete of a record not in hand throws; a rollback puts a record back where it was |
 | src/stores/domain/socialSlice.ts | 2026-10-23 | edited: the follow list held once read whole; a failed read of a list never held marks it failed; follow and unfollow write, save and queue only for the member who asked |
 | src/stores/domain/watchlistSlice.ts | 2026-10-08 | no posters fetched ahead |
 | src/stores/films.ts | 2026-10-08 | nothing fetched ahead on restore |

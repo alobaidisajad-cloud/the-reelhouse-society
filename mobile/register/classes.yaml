@@ -1321,3 +1321,21 @@ classes:
       - { kind: running, file: src/components/atmosphere/__tests__/theLightRestsOutOfSight.test.ts, test: "carries its light back with the photograph, then leaves the canvas alone once the hem is out of sight" }
     fix: "heldLift rests the lift once the hem is past the top of any screen it could start on, and the veil writes its transform only when the lift changed (useAnimatedReaction), so the canvas is left alone below (mutants shape-veil-lift-unheld, shape-veil-written-each-frame); measured on the lab's stack after"
     places: [emulator]
+
+  - id: DATA-edit-sealed-over-an-unread-record
+    title: "An edit took its record from the phone's newest pages alone: a member's older record opened on a blank form, and sealing it (a rating is all a seal asks) wrote the blanks over its critique, its date and its ranked fields; deleting one closed the sheet and deleted nothing; and every refresh of the pages emptied a form mid-edit"
+    seriousness: serious
+    area: states
+    status: OPEN
+    count: 3
+    source: { kind: reviewer, ref: "sweep of member state drawn before it was known (P0.112): useLogFlow filled its form from logs.find, which holds only the newest fifty; removeLogOp returned on a record it did not hold" }
+    methods:
+      - { kind: running, file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "opens on the record as it is: its rating, its critique, its date, its company" }
+      - { kind: running, file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "seals the change over the record, never the blanks" }
+      - { kind: running, file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "keeps what the member typed when the pages are read again under it" }
+      - { kind: running, file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "says a read that failed, refuses the seal, and opens when asked again" }
+      - { kind: running, file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "says a record that is not theirs as withdrawn, and never opens on it" }
+      - { kind: running, file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "deletes the record it was opened on" }
+      - { kind: running, file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "a delete of a record nobody has in hand is a failure said, never a silent nothing" }
+    fix: "heldLog finds a record in the pages or the index of logged films; the editor reads one held in neither by its id (the member's own only), keeps the form shut until it is in hand (RETRIEVING YOUR RECORD, could not be reached with TRY AGAIN, or No Such Record), fills it once per record, and hands that record to the seal and the delete; updateLogOp and removeLogOp act on it, and a delete of a record not in hand throws rather than doing nothing (mutants shape-edit-unread-record, shape-edit-filled-again, shape-edit-sealed-unread, shape-delete-silent-nothing)"
+    places: [none]

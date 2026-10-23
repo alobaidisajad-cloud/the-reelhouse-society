@@ -131,6 +131,12 @@ const STATES: [string, Tier, Record<string, string>, (r: ReturnType<typeof rende
   // remove, not to change.
   // (It opens itself: an entry that holds something opens when it arrives.)
   ['composer-kept', 'lapsed', { editLogId: 'log-1' }, async () => {}],
+  // An edit opened on a record the house does not hold as theirs: said, never a blank form.
+  // Rendered again once the answer is in, so its words are drawn as they rest, not
+  // at their first frame's opacity 0.
+  ['composer-edit-withdrawn', 'auteur', { editLogId: 'log-far', ...FILM }, async (r) => {
+    await act(async () => { r.rerender(<LogModalScreen />); });
+  }],
   // A Cinephile who opened the tools they do not hold: instruments and gates.
   ['composer-locked', 'free', FILM, async (r) => {
     for (const entry of ['THE EDITORIAL DESK', 'THE PHYSICAL ARCHIVE', 'THE VAULT']) await fireEvent.press(r.getByText(entry));

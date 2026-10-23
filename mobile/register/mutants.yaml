@@ -1538,3 +1538,39 @@ mutants:
         find: "      if (options.answer?.[table]) return chain;\n"
         replace: ""
     proof: { file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "a filter it cannot read, unless the test answers the table itself" }
+
+  - id: shape-edit-unread-record
+    class: DATA-edit-sealed-over-an-unread-record
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "    const editLog = heldEdit ?? readEdit;\n"
+        replace: "    const editLog = heldEdit;\n"
+    proof: { file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "opens on the record as it is: its rating, its critique, its date, its company" }
+
+  - id: shape-edit-filled-again
+    class: DATA-edit-sealed-over-an-unread-record
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "        if (!editLogId || filledFor === editLogId) return;\n"
+        replace: "        if (!editLogId) return;\n"
+    proof: { file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "keeps what the member typed when the pages are read again under it" }
+
+  - id: shape-edit-sealed-unread
+    class: DATA-edit-sealed-over-an-unread-record
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "        if (!editReady) return;\n"
+        replace: ""
+    proof: { file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "says a read that failed, refuses the seal, and opens when asked again" }
+
+  - id: shape-delete-silent-nothing
+    class: DATA-edit-sealed-over-an-unread-record
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "        if (!logToRemove) throw new Error('removeLog: the record is not in hand');\n"
+        replace: "        if (!logToRemove) return;\n"
+    proof: { file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "a delete of a record nobody has in hand is a failure said, never a silent nothing" }

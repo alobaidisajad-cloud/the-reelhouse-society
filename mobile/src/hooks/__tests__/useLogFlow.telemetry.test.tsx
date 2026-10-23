@@ -36,7 +36,8 @@ jest.mock('@/src/stores/films', () => {
         updateLog: jest.fn(), removeLog: jest.fn(),
         addFilmToList: jest.fn(), removeFilmFromList: jest.fn(),
     };
-    return { useFilmStore: () => state };
+    // A selector is applied, as Zustand applies it: the editor selects its record.
+    return { useFilmStore: (pick?: (s: typeof state) => unknown) => (pick ? pick(state) : state) };
 });
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
 jest.mock('@/src/lib/tmdb', () => ({

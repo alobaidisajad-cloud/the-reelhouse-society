@@ -52,6 +52,15 @@ export function cleanLogWords(l: { review?: string | null; pullQuote?: string | 
 
 export const LOG_BUSY = 'LOG_BUSY' as const;
 
+/**
+ * A record of the member's, as the phone holds it: in the pages it has read, or
+ * in the index of films they have logged. A record older than both is in
+ * neither, and its editor reads it by its id and hands it to the write itself.
+ */
+export function heldLog(state: Pick<FilmState, 'logs' | '_loggedIndex'>, id: string): DomainLog | undefined {
+    return state.logs.find((l) => l.id === id) ?? Object.values(state._loggedIndex).find((l) => l?.id === id);
+}
+
 // A SUCCESS, spoken: it has no toast ("RECORD SEALED" is visual). A failure's toast is
 // already spoken, so a failure is not announced here too.
 const announceToScreenReader = (message: string): void => {
@@ -544,6 +553,8 @@ export const updateLogOp = async (
         silentAnnounce?: boolean;
         /** Add or remove a VIEWING (the server moves it); its id makes a repeat a no-op. */
         viewingOp?: { kind: 'add' | 'remove'; viewingId: string };
+        /** The record as its editor read it, when the phone holds it nowhere else. */
+        held?: DomainLog;
     },
 ) => {
         if (get()._updateLogMutex) {
@@ -567,10 +578,10 @@ export const updateLogOp = async (
             cleanUpdates.watchedDate = `${cleanUpdates.watchedDate}T12:00:00Z`;
         }
 
-        const originalLog = get().logs.find(l => l.id === id);
+        const originalLog = heldLog(get(), id) ?? opts?.held;
         const originalFilmId = originalLog?.filmId;
-        
-        let filmIdToUpdate: number | undefined;
+
+        const filmIdToUpdate: number | undefined = originalFilmId;
 
         Object.keys(cleanUpdates).forEach(key => {
             if ((cleanUpdates as any)[key] === undefined) {
@@ -579,16 +590,15 @@ export const updateLogOp = async (
         });
 
         set((state) => {
-            const nextLogs = sortLogs(state.logs.map((l) => {
-                if (l.id === id) {
-                    filmIdToUpdate = l.filmId;
-                    return { ...l, ...cleanUpdates } as DomainLog;
-                }
-                return l;
-            }));
+            const inPages = state.logs.some((l) => l.id === id);
+            const nextLogs = inPages
+                ? sortLogs(state.logs.map((l) => (l.id === id ? { ...l, ...cleanUpdates } as DomainLog : l)))
+                : state.logs;
             const nextIdx = { ...state._loggedIndex };
             if (filmIdToUpdate) {
-                const updated = nextLogs.find(l => l.filmId === filmIdToUpdate);
+                const indexed = state._loggedIndex[filmIdToUpdate];
+                const updated = nextLogs.find(l => l.filmId === filmIdToUpdate)
+                    ?? (indexed?.id === id ? { ...indexed, ...cleanUpdates } as DomainLog : undefined);
                 if (updated) nextIdx[filmIdToUpdate] = updated as DomainLog;
             }
             return { logs: nextLogs, _loggedIndex: nextIdx };
@@ -701,7 +711,7 @@ export const updateLogOp = async (
             // The note, if this edit carried one: undefined is untouched, '' is the
             // member clearing it (never gated). A viewing operation writes its own note.
             if (!opts?.viewingOp && updates.privateNotes !== undefined) {
-                const viewingId = (get().logs.find(l => l.id === id)?.viewingId) ?? originalLog?.viewingId ?? null;
+                const viewingId = heldLog(get(), id)?.viewingId ?? originalLog?.viewingId ?? null;
                 if (viewingId) {
                     try {
                         await useVaultStore.getState().saveNote(id, viewingId, updates.privateNotes ?? '');
@@ -716,7 +726,7 @@ export const updateLogOp = async (
 
             if (updates.physicalMedia && FORMAT_MAP[updates.physicalMedia]) {
                 const fmt = FORMAT_MAP[updates.physicalMedia];
-                const logToUpdate = get().logs.find(l => l.id === id);
+                const logToUpdate = heldLog(get(), id) ?? originalLog;
                 if (logToUpdate && logToUpdate.filmId !== undefined) {
                     try {
                         await get().addToPhysicalArchive({ id: logToUpdate.filmId, title: logToUpdate.title ?? '', poster_path: logToUpdate.poster, release_date: logToUpdate.year?.toString() }, [fmt]);
@@ -742,7 +752,8 @@ export const updateLogOp = async (
                     const revertedLogs = sortLogs(state.logs.map(l => l.id === id ? originalLog : l));
                     const nextIdx = { ...state._loggedIndex };
                     if (originalFilmId) {
-                        const updated = revertedLogs.find(l => l.filmId === originalFilmId);
+                        const updated = revertedLogs.find(l => l.filmId === originalFilmId)
+                            ?? (state._loggedIndex[originalFilmId]?.id === id ? originalLog : undefined);
                         if (updated) nextIdx[originalFilmId] = updated as DomainLog;
                     }
                     return { logs: revertedLogs, _loggedIndex: nextIdx };
@@ -823,6 +834,7 @@ const removeRewatchOp = async (
     const undone = await updateLogOp(set, get, id, updates, {
         silentAnnounce: true,
         viewingOp: { kind: 'remove', viewingId: leavingViewingId },
+        held: logToRemove,
     });
     // The next member's Vault keeps its own notes.
     if (!stillSignedIn(startedAs)) return;
@@ -833,12 +845,15 @@ const removeRewatchOp = async (
         : 'Rewatch removed. Reverted to previous viewing.');
 };
 
-export const removeLogOp = async (set: SetState, get: GetState, id: string, forceDeleteAll: boolean = false) => {
+export const removeLogOp = async (set: SetState, get: GetState, id: string, forceDeleteAll: boolean = false, held?: DomainLog) => {
         // Captured before any await, so the rollback can tell whether it is still them.
         const startedAs = useAuthStore.getState().user?.id ?? null;
-        const logToRemove = get().logs.find((l) => l.id === id);
-        if (!logToRemove) return;
-        
+        const logToRemove = heldLog(get(), id) ?? held;
+        // Whether it goes or a viewing does turns on the record's history, so a
+        // record not in hand is a failure said, never a delete that did nothing.
+        if (!logToRemove) throw new Error('removeLog: the record is not in hand');
+        const wasInPages = get().logs.some((l) => l.id === id);
+
         // Pop history instead of a hard delete
         const history = Array.isArray(logToRemove.viewingHistory) ? logToRemove.viewingHistory : [];
         if (!forceDeleteAll && history.length > 0) return removeRewatchOp(set, get, logToRemove, history, startedAs);
@@ -888,11 +903,11 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             // the next member one of theirs.
             if (stillSignedIn(startedAs)) {
                 set((state) => {
-                    const newLogs = sortLogs([logToRemove, ...state.logs]);
+                    // Back where it was: a record read on its own never joins the pages.
+                    const newLogs = wasInPages ? sortLogs([logToRemove, ...state.logs]) : state.logs;
                     const nextIdx = { ...state._loggedIndex };
                     if (logToRemove.filmId) {
-                        const updated = newLogs.find(l => l.filmId === logToRemove.filmId);
-                        if (updated) nextIdx[logToRemove.filmId] = updated as DomainLog;
+                        nextIdx[logToRemove.filmId] = (newLogs.find(l => l.filmId === logToRemove.filmId) ?? logToRemove) as DomainLog;
                     }
                     return { logs: newLogs, _loggedIndex: nextIdx };
                 });

@@ -50,8 +50,10 @@ export interface LogSlice extends LogSliceData {
     /** True when the read was answered (or there was nothing to read); false when it failed. */
     fetchLogs: (loadMore?: boolean) => Promise<boolean>;
     addLog: (log: Partial<DomainLog>) => Promise<void>;
-    updateLog: (id: string, updates: Partial<DomainLog>) => Promise<void>;
-    removeLog: (id: string, forceDeleteAll?: boolean) => Promise<void>;
+    /** `held`: the record as its editor read it, when the phone holds it nowhere else. */
+    updateLog: (id: string, updates: Partial<DomainLog>, held?: DomainLog) => Promise<void>;
+    /** Throws when the record is not in hand: whether it goes or a viewing does turns on it. */
+    removeLog: (id: string, forceDeleteAll?: boolean, held?: DomainLog) => Promise<void>;
     unmarkWatched: (filmId: number) => Promise<void>;
     getCinephileStats: (overrideCount?: number) => { count: number, level: string, color: string, progress: number };
 }
@@ -64,8 +66,8 @@ export const createLogSlice: StateCreator<FilmState, [], [], LogSlice> = (set, g
     // Awaited rather than returned: updateLogOp reports whether it queued the
     // write offline, but that is only for internal STEP callers, which call the
     // helper directly. The public action stays Promise<void>.
-    updateLog: async (id, updates) => { await updateLogOp(set, get, id, updates); },
-    removeLog: async (id, forceDeleteAll = false) => removeLogOp(set, get, id, forceDeleteAll),
+    updateLog: async (id, updates, held) => { await updateLogOp(set, get, id, updates, held ? { held } : undefined); },
+    removeLog: async (id, forceDeleteAll = false, held) => removeLogOp(set, get, id, forceDeleteAll, held),
     unmarkWatched: async (filmId) => unmarkWatchedOp(set, get, filmId),
     getCinephileStats: (overrideCount) => getCinephileStatsOp(set, get, overrideCount),
 });
