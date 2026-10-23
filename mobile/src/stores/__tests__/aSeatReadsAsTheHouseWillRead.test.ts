@@ -104,7 +104,7 @@ const standing = (r: LoungeRoom) => ({
 beforeEach(() => {
   mockHouse.rooms = [{ id: SALON, name: 'The Nitrate Circle', description: 'Silent era.', is_private: false, creator_id: HOST, created_at: '2026-06-01T00:00:00Z', cover_image: null, lastMessageAt: '2026-10-01T20:00:00Z' }];
   mockHouse.seats = [{ lounge_id: SALON, user_id: HOST, status: 'approved' }, { lounge_id: SALON, user_id: ADA, status: 'approved' }];
-  useLoungeStore.setState({ lounges: [], loungesFailed: false, loading: false });
+  useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false });
 });
 
 describe('a salon left', () => {

@@ -58,7 +58,7 @@ describe('#55 · the two message loads check the error BEFORE the success guard'
   });
 
   it('the spinner cannot be stranded — the loads BRANCH rather than return early', () => {
-    // fetchMessages clears `loading` after the try, so an early return would leave the
+    // fetchMessages clears `messagesLoading` after the try, so an early return would leave the
     // spinner up forever. This is why the fix is `if (error) … else if (data) …`.
     const f = fn('fetchMessages: async', 'loadMoreMessages: async');
     expect(f).toMatch(/\} else if \(data\) \{/);
@@ -70,16 +70,18 @@ describe('#55 · the class, not the two sites that were filed', () => {
     // The worst of the seven, and absent from the finding: on failure memberRows was
     // undefined, memberships fell back to [], and the list rendered as though the
     // member belonged to nothing — joined rooms gone, every unread count zero.
-    expect(code).toMatch(/const \{ data: memberRows, error: memberError \}/);
-    expect(code).toMatch(/if \(memberError\) throw memberError;/);
+    // The seats are asked beside the newest and the hosted rooms now; their failure still throws.
+    expect(code).toMatch(/if \(memberRes\.error\) throw memberRes\.error;/);
+    expect(code).toMatch(/const memberships = memberRes\.data \?\? \[\];/);
+    expect(code.indexOf('if (memberRes.error) throw memberRes.error;')).toBeLessThan(code.indexOf('const memberships = memberRes.data ?? [];'));
   });
 
   it('secondary reads are LOGGED but do not interrupt', () => {
-    // The salon list and the dispatches are still correct in these cases; a toast for a
-    // missing badge or a missing reaction would be noise. Silence is the bug — noise is
-    // not the remedy.
+    // The salon list is still correct in these cases; a toast for a missing badge would be
+    // noise. Silence is the bug — noise is not the remedy. (A message's reactions come in its
+    // own page now, MESSAGE_COLUMNS: no read of their own to fail alone.)
     expect(code).toMatch(/if \(pendingError\) logger\.error/);
-    expect(code).toMatch(/if \(reactionError\) logger\.error/);
+    expect(code).toMatch(/if \(unreadError\) \{\s*logger\.error/);
   });
 
   it('a failed profile lookup is NOT written into the cache', () => {

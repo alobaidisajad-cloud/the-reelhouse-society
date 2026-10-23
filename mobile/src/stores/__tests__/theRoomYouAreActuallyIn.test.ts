@@ -65,7 +65,7 @@ beforeEach(() => {
   mockFrom.mockReset();
   useLoungeStore.setState({
     lounges: [], currentMessages: [], currentLoungeId: null,
-    sending: false, members: {}, loading: false, typingUsers: {},
+    sending: false, members: {}, messagesLoading: false, typingUsers: {},
   } as never);
 });
 
@@ -74,14 +74,11 @@ describe('a slow fetch must not write into the room you left', () => {
     let releaseA: () => void = () => {};
     const aGate = new Promise<void>((r) => { releaseA = r; });
 
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'lounge_message_reactions') return makeChain({ data: [], error: null });
-      // whichever room asks first in this test is A, and it is held open
-      return makeChain(
-        { data: [row('a1', '2026-09-11T10:00:00Z', A)], error: null },
-        aGate,
-      );
-    });
+    // Room A's page (its reactions come in it) is held open.
+    mockFrom.mockImplementation(() => makeChain(
+      { data: [row('a1', '2026-09-11T10:00:00Z', A)], error: null },
+      aGate,
+    ));
 
     const slowA = useLoungeStore.getState().fetchMessages(A);
 
@@ -99,16 +96,13 @@ describe('a slow fetch must not write into the room you left', () => {
   });
 
   it('still writes when the member IS in that room', async () => {
-    mockFrom.mockImplementation((table: string) =>
-      table === 'lounge_message_reactions'
-        ? makeChain({ data: [], error: null })
-        : makeChain({ data: [row('a1', '2026-09-11T10:00:00Z', A)], error: null }));
+    mockFrom.mockImplementation(() => makeChain({ data: [row('a1', '2026-09-11T10:00:00Z', A)], error: null }));
 
     await useLoungeStore.getState().fetchMessages(A);
 
     const ids = (useLoungeStore.getState().currentMessages as unknown as { id: string }[]).map((m) => m.id);
     expect(ids).toEqual(['a1']);
-    expect(useLoungeStore.getState().loading).toBe(false);
+    expect(useLoungeStore.getState().messagesLoading).toBe(false);
   });
 });
 

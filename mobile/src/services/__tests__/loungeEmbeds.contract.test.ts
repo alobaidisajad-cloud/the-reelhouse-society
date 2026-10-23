@@ -16,9 +16,11 @@
  * Where its credentials come from, and why only from there: test-utils/contractEnv.
  */
 import { SUPABASE_URL, canRun, visitor } from '@/test-utils/contractEnv';
+import { MESSAGE_COLUMNS } from '@/src/stores/lounge';
 
 const EMBEDS: { table: string; select: string }[] = [
-  { table: 'lounge_messages', select: 'id,profiles!lounge_messages_user_id_fkey(username,avatar_url)' },
+  // The salon's own page of words, as the store asks for it: its author and its reactions.
+  { table: 'lounge_messages', select: MESSAGE_COLUMNS.replace(/\s+/g, '') },
   { table: 'lounge_members', select: 'user_id,profiles!lounge_members_user_id_fkey(username,avatar_url)' },
   { table: 'lounge_message_reactions', select: 'id,profiles!lounge_message_reactions_user_id_fkey(username)' },
 ];

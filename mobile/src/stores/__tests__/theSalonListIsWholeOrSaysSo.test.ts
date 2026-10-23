@@ -46,7 +46,7 @@ jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
 
 beforeEach(() => {
   mockFailing.clear();
-  useLoungeStore.setState({ lounges: [], loungesFailed: false, loading: false } as never);
+  useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false } as never);
 });
 
 it('draws the whole list when every read answers', async () => {

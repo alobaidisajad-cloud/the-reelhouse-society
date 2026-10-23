@@ -24,7 +24,7 @@ jest.mock('@/src/stores/lounge', () => {
   const { create: mockCreate } = jest.requireActual('zustand');
   const noop = () => {};
   const useLoungeStore = mockCreate(() => ({
-    lounges: [], currentMessages: [], loading: false, sending: false,
+    lounges: [], currentMessages: [], currentLoungeId: 'room', messagesLoading: false, messagesFailed: false, loungesLoading: false, sending: false,
     presentCount: 0, typingUsers: [],
     fetchMessages: noop, sendMessage: noop, subscribeToLounge: () => noop, markRead: noop,
     withdrawMessage: noop, retryMessage: noop, toggleReaction: noop,
@@ -71,10 +71,10 @@ const { useLocalSearchParams, useRouter } = jest.requireMock('expo-router') as {
 const { nav } = jest.requireMock('@/src/utils/typedRouter') as { nav: Record<string, jest.Mock> };
 const ROUTER = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() };
 
-async function openRoom() {
+async function openRoom(held: object = {}) {
   useRouter.mockReturnValue(ROUTER);
   useLocalSearchParams.mockReturnValue({ id: 'room' });
-  useLoungeStore.setState({ currentMessages: [], lounges: [] });
+  useLoungeStore.setState({ currentMessages: [], lounges: [], currentLoungeId: 'room', messagesLoading: false, messagesFailed: false, ...held });
   const r = render(<LoungeRoomScreen />);
   await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
   return r;
@@ -116,4 +116,41 @@ it('with somewhere to go back to, it says GO BACK', async () => {
   mockRoomAnswer = { data: null, error: null };
   const r = await openRoom();
   expect(r.getByLabelText('GO BACK')).toBeTruthy();
+});
+
+// A room's transcript said "Be the first to break the silence" while its words were still on
+// their way, and when they could not come; and drew the last room's words, still held, under
+// this room's name until its own came (P0.112).
+describe('the transcript says what it has', () => {
+  const ANOTHER_ROOMS = {
+    id: 'm1', lounge_id: 'elsewhere', user_id: 'u2', username: 'ana',
+    content: 'Said in another room.', type: 'text', created_at: '2026-10-23T00:00:00Z',
+  };
+
+  it('while its words are on their way: reading, never "be the first"', async () => {
+    const r = await openRoom({ messagesLoading: true });
+    expect(r.getByText('RETRIEVING THE CONVERSATION')).toBeTruthy();
+    expect(r.queryByText('The Conversation Begins')).toBeNull();
+  });
+
+  it('words that could not come: the house\'s failure, whose TRY AGAIN asks this room again', async () => {
+    const fetchMessages = jest.fn();
+    const r = await openRoom({ messagesFailed: true, fetchMessages });
+    expect(r.getByText('Transmission Interrupted')).toBeTruthy();
+    expect(r.queryByText('The Conversation Begins')).toBeNull();
+    fetchMessages.mockClear();
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
+    expect(fetchMessages.mock.calls).toEqual([['room']]);
+  });
+
+  it('a room read, with nothing said in it: be the first', async () => {
+    const r = await openRoom();
+    expect(r.getByText('The Conversation Begins')).toBeTruthy();
+  });
+
+  it('the last room\'s words, still held, are never drawn under this room\'s name', async () => {
+    const r = await openRoom({ currentLoungeId: 'elsewhere', currentMessages: [ANOTHER_ROOMS] });
+    expect(r.queryByText('Said in another room.')).toBeNull();
+    expect(r.getByText('RETRIEVING THE CONVERSATION')).toBeTruthy();
+  });
 });

@@ -72,7 +72,7 @@ beforeEach(() => {
   };
   useLoungeStore.setState({
     lounges: [], currentMessages: [], currentLoungeId: null, sending: false,
-    members: {}, loading: false, typingUsers: [],
+    members: {}, messagesLoading: false, typingUsers: [],
   } as never);
 });
 

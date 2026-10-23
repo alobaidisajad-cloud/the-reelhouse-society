@@ -49,7 +49,7 @@ describe('it refuses what production refuses', () => {
     const strict = supabaseFake({ rows: { logs: [] } });
     expect(() => (strict.client.from('logs').select('id')).or('rating.eq.5,rating.eq.4')).toThrow('or() is not read here');
     const answered = supabaseFake({ answer: { logs: () => [log(7)] } });
-    await expect(answered.client.from('logs').select('id')).resolves.toMatchObject({ data: [{ id: log(7).id }] });
+    await expect(answered.client.from('logs').select('id').or('rating.eq.5,rating.eq.4')).resolves.toMatchObject({ data: [{ id: log(7).id }] });
   });
 });
 
@@ -104,6 +104,51 @@ describe('it answers as PostgREST answers', () => {
     await expect(client.from('profiles').select('id').eq('id', 'x').single()).resolves.toEqual({ data: null, error: null, count: null });
     await expect(client.from('profiles').select('id')).resolves.toEqual({ data: null, error: null, count: null });
     expect(() => supabaseFake({ silent: { profilez: true } })).toThrow('production has no table or view "profilez"');
+  });
+});
+
+describe('its embeds are resolved as PostgREST resolves them', () => {
+  const ROOM = '33333333-3333-4333-8333-333333333333';
+  const M1 = '44444444-4444-4444-8444-444444444441';
+  const M2 = '44444444-4444-4444-8444-444444444442';
+  const said = (id: string, user: string) => ({ id, lounge_id: ROOM, user_id: user, content: `words ${id.slice(-1)}`, created_at: '2026-10-23T00:00:00Z' });
+  const reacted = (n: number, message: string, user: string) => ({
+    id: `55555555-5555-4555-8555-55555555555${n}`, message_id: message, lounge_id: ROOM, user_id: user, reaction: 'bravo',
+  });
+
+  it('refuses a key that does not join the two tables, and two keys it cannot choose between', () => {
+    const { client } = supabaseFake({ rows: { lounge_messages: [], user_blocks: [] } });
+    expect(() => client.from('lounge_messages').select('id, lounge_message_reactions!no_such_fkey(reaction)'))
+      .toThrow('lounge_messages has no relationship with lounge_message_reactions by "no_such_fkey" (PGRST200');
+    expect(() => client.from('user_blocks').select('id, profiles(username)')).toThrow('by more than one key');
+    expect(() => client.from('user_blocks').select('id, profiles!user_blocks_blocked_id_fkey(username)')).not.toThrow();
+  });
+
+  it('refuses a column the embedded table does not have', () => {
+    const { client } = supabaseFake({ rows: { lounge_messages: [] } });
+    expect(() => client.from('lounge_messages').select('id, profiles!lounge_messages_user_id_fkey(username, handle)'))
+      .toThrow('profiles has no column "handle" (select)');
+  });
+
+  it('answers an embed through its own key as one row, and through the other\'s as a list, from what it holds', async () => {
+    const { client } = supabaseFake({ rows: {
+      lounge_messages: [said(M1, A), said(M2, B)],
+      profiles: [{ id: A, username: 'ana' }, { id: B, username: 'bo' }],
+      lounge_message_reactions: [reacted(1, M1, B), reacted(2, M1, A)],
+    } });
+    const { data } = await client.from('lounge_messages')
+      .select('id, profiles!lounge_messages_user_id_fkey(username), lounge_message_reactions!lounge_message_reactions_message_id_fkey(user_id, reaction)')
+      .eq('lounge_id', ROOM).order('id');
+    expect(data).toEqual([
+      { id: M1, profiles: { username: 'ana' }, lounge_message_reactions: [{ user_id: B, reaction: 'bravo' }, { user_id: A, reaction: 'bravo' }] },
+      { id: M2, profiles: { username: 'bo' }, lounge_message_reactions: [] },
+    ]);
+  });
+
+  it('leaves out an embed of a table the test holds nothing of, as it always has', async () => {
+    const { client } = supabaseFake({ rows: { lounge_messages: [said(M1, A)] } });
+    const { data } = await client.from('lounge_messages').select('id, profiles!lounge_messages_user_id_fkey(username)');
+    expect(data).toEqual([{ id: M1 }]);
   });
 });
 

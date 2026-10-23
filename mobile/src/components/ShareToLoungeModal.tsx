@@ -105,7 +105,7 @@ function ShareSheet({
 }: ShareToLoungeProps) {
     const signedIn = useAuthStore((s) => !!s.user);
     const allLounges = useLoungeStore(s => s.lounges);
-    const isFetching = useLoungeStore(s => s.loading);
+    const isFetching = useLoungeStore(s => s.loungesLoading);
     const loungesFailed = useLoungeStore(s => s.loungesFailed);
     // Only the salons the house lets this member speak in: a pending or muted seat is refused.
     const lounges = allLounges.filter(canPostIn);

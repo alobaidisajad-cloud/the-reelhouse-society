@@ -72,7 +72,7 @@ beforeEach(() => {
   mockFrom.mockReset().mockImplementation(() => profileChain());
   useLoungeStore.setState({
     lounges: [], currentMessages: [], currentLoungeId: null, sending: false,
-    members: {}, loading: false, typingUsers: [], presentCount: 0,
+    members: {}, messagesLoading: false, typingUsers: [], presentCount: 0,
   } as never);
 });
 

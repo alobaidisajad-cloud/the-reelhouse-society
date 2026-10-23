@@ -64,7 +64,7 @@ describe('LoungeStore', () => {
       lounges: [],
       currentMessages: [],
       currentLoungeId: null,
-      loading: false,
+      loungesLoading: false,
       sending: false,
     });
   });
@@ -75,7 +75,7 @@ describe('LoungeStore', () => {
       expect(state.lounges).toEqual([]);
       expect(state.currentMessages).toEqual([]);
       expect(state.currentLoungeId).toBeNull();
-      expect(state.loading).toBe(false);
+      expect(state.loungesLoading).toBe(false);
       expect(state.sending).toBe(false);
     });
   });
@@ -95,12 +95,15 @@ describe('LoungeStore', () => {
     // toast every thirty seconds for as long as the signal was gone; the store
     // now records the failure and the screen that asked says it.
     it('a read that fails is recorded — and said by the screen, not toasted by the store', async () => {
-      const down = { select: () => down, eq: () => down, limit: () => Promise.resolve({ data: null, error: { message: 'Network request failed' } }) };
-      mockFrom.mockReturnValueOnce(down);
+      const unanswered = Promise.resolve({ data: null, error: { message: 'Network request failed' } });
+      const down: Record<string, unknown> = { then: (ok: never, no: never) => unanswered.then(ok, no) };
+      for (const step of ['select', 'eq', 'order', 'limit']) down[step] = () => down;
+      // The seats, the newest rooms and the rooms hosted are asked together: all three unanswered.
+      mockFrom.mockReturnValueOnce(down).mockReturnValueOnce(down).mockReturnValueOnce(down);
       useLoungeStore.setState({ loungesFailed: false });
       await useLoungeStore.getState().fetchLounges();
       expect(useLoungeStore.getState().loungesFailed).toBe(true);
-      expect(useLoungeStore.getState().loading).toBe(false);
+      expect(useLoungeStore.getState().loungesLoading).toBe(false);
       expect(jest.requireMock('../../utils/reelToast').default.error).not.toHaveBeenCalled();
     });
   });

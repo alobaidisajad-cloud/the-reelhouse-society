@@ -64,6 +64,8 @@ import { Arrive } from '@/src/components/Arrive';
 // LINKIFY — auto-detect URLs → safe, tappable sepia links
 // ════════════════════════════════════════════════════════════
 const URL_RE = /(https?:\/\/[^\s]+)/g;
+/** A room's words before the store holds them: one array, so the list is not handed a new one each render. */
+const NO_WORDS: LoungeMessage[] = [];
 function renderBody(content: string) {
   const parts = content.split(URL_RE);
   if (parts.length === 1) return content;
@@ -360,7 +362,7 @@ export default function LoungeRoomScreen() {
   const animatedContainerStyle = useAnimatedStyle(() => ({ paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0 }));
 
   const {
-    lounges, currentMessages, fetchMessages, sendMessage,
+    lounges, fetchMessages, sendMessage,
     subscribeToLounge, sending, markRead,
     withdrawMessage, retryMessage, toggleReaction,
     requestMembership, joinPublicLounge, fetchMembers,
@@ -451,11 +453,15 @@ export default function LoungeRoomScreen() {
   }, [id, refreshMembership, loadAttempt]);
 
   const activeLounge = localLounge || lounges.find(l => l.id === id);
-  const messagesLoading = useLoungeStore(s => s.loading);
+  // This room's words, and its read's flags: until the store holds this room, what it holds is
+  // another room's (left before this one opened), never to be drawn under this one's name.
+  const currentMessages = useLoungeStore((s) => (s.currentLoungeId === id ? s.currentMessages : NO_WORDS));
+  const messagesLoading = useLoungeStore((s) => s.currentLoungeId !== id || s.messagesLoading);
+  const messagesFailed = useLoungeStore((s) => s.currentLoungeId === id && s.messagesFailed);
   // Failed: the room could not be asked for, and nothing of it is held to show.
   const roomLost = !notFound && loadFailed && !lounges.some((l) => l.id === id);
   const readyMark = useScreenReady('room',
-    roomLost ? 'failed'
+    roomLost || (!notFound && messagesFailed && currentMessages.length === 0) ? 'failed'
       : notFound || loadFailed || (!!activeLounge && (currentMessages.length > 0 || !messagesLoading)) ? 'ready' : 'reading');
   const isCreator = activeLounge?.creator_id === user?.id;
   const isApproved = myStatus === 'approved' || isCreator;
@@ -705,11 +711,23 @@ export default function LoungeRoomScreen() {
             );
           }}
           ListEmptyComponent={
-            <View style={s.emptyChat}>
-              <Buster size={48} mood="seated" />
-              <Text style={s.edgeTitle}>The Conversation Begins</Text>
-              <Text style={s.edgeDesc}>Be the first to break the silence.</Text>
-            </View>
+            // Empty only once read: while its words are on their way, or could not come, the
+            // room says that, never "be the first".
+            messagesFailed ? (
+              // Not awaited: the read says how it ended in the store's flags, which draw this list.
+              <EmptyOffline onRetry={() => { if (id) void fetchMessages(id); }} />
+            ) : messagesLoading ? (
+              <View style={s.emptyChat}>
+                <BusterEyes />
+                <Text style={s.edgeLoad}>RETRIEVING THE CONVERSATION</Text>
+              </View>
+            ) : (
+              <View style={s.emptyChat}>
+                <Buster size={48} mood="seated" />
+                <Text style={s.edgeTitle}>The Conversation Begins</Text>
+                <Text style={s.edgeDesc}>Be the first to break the silence.</Text>
+              </View>
+            )
           }
         />
       ) : (

@@ -22,7 +22,7 @@
 import { memo, useMemo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient as Fade } from 'expo-linear-gradient';
-import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
+import { useAnimatedReaction, useSharedValue, type SharedValue } from 'react-native-reanimated';
 import {
   Canvas, Group, LinearGradient as SkLinear, Mask, RadialGradient as SkRadial, Rect as SkRect, vec,
 } from '@shopify/react-native-skia';
@@ -107,6 +107,16 @@ export const RoomVeil = memo(function RoomVeil({ stops, lifted, ...light }: Ligh
 });
 
 /**
+ * How far the veil's light moves back for a photograph lifted `lifted`: as far, until the hem
+ * has risen past the top of any screen it could start on (it starts no lower than a screen
+ * down), and no further. Past that nothing of it shows, and an unchanged lift draws nothing.
+ */
+export function heldLift(lifted: number, hem: number, screenHeight: number): number {
+  'worklet';
+  return Math.min(lifted, hem + screenHeight);
+}
+
+/**
  * The room's light, at the veil's strength, down to the hem and no further.
  * Drawn in Skia so the light can hold still on the UI thread while the veil
  * scrolls — a transform fed straight from the scroll position, never a render.
@@ -121,7 +131,13 @@ function VeilLight({ room, hem, art, stops, lifted }: LightProps & { hem: number
   const g = lightGeometry(room, W, H, hem);
   const image = useSharedImage(art);
   const opacity = useBloomOpacity(image);
-  const still = useDerivedValue(() => [{ translateY: lifted ? lifted.value : 0 }]);
+  // Moved back only while any of it can show: once the hem has risen past the top of any screen
+  // it could start on, the canvas is left alone, not redrawn on every frame of the scroll below.
+  const still = useSharedValue([{ translateY: 0 }]);
+  useAnimatedReaction(
+    () => (lifted ? heldLift(lifted.value, hem, H) : 0),
+    (now, before) => { if (now !== before) still.value = [{ translateY: now }]; },
+  );
   const ramp = useMemo(() => ({
     colors: stops.map(([, a]) => `rgba(0,0,0,${a})`),
     positions: stops.map(([at]) => at),

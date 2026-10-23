@@ -29,7 +29,7 @@ const REGISTER: Record<string, Count> = {
   'src/components/reels/ReelsCards.tsx': { eyes: 1, why: 'a reel being read (SPOOLING)' },
   'app/(tabs)/darkroom.tsx': { buster: 1, offline: 1, why: 'the tray developed nothing, or could not be reached' },
   'app/(tabs)/lounge.tsx': { offline: 1, why: 'the salons could not be reached' },
-  'app/lounge/[id].tsx': { buster: 2, eyes: 1, offline: 1, why: 'a salon not found, nobody has spoken in it, being reached, or not reached' },
+  'app/lounge/[id].tsx': { buster: 2, eyes: 2, offline: 2, why: 'a salon not found, nobody has spoken in it, being reached, or not reached; its words being read, or not read' },
   'app/(tabs)/profile.tsx': { buster: 1, eyes: 1, offline: 1, why: 'signed out at the archive’s door; your handle being read, or not read' },
   'app/user/[username].tsx': { buster: 1, eyes: 1, offline: 1, why: 'a member not found; a file being read, or not reached' },
   'src/components/film/FilmDetailLayout.tsx': { buster: 1, offline: 1, why: 'a film not in the archive, or not reached' },

@@ -134,7 +134,7 @@ whenRendering('rooms generator', () => {
         ...over,
       };
     };
-    useLoungeStore.setState({ lounges: [room(0), room(1), room(2), room(3)], loading: false } as never);
+    useLoungeStore.setState({ lounges: [room(0), room(1), room(2), room(3)], loungesLoading: false } as never);
     let r!: ReturnType<typeof render>;
     await act(async () => { r = render(<LoungeScreen />); await new Promise(res => setTimeout(res, 0)); });
     const html = toHtml(r.toJSON(), { posters, local: LOCAL_ART });

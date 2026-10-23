@@ -97,9 +97,17 @@ export interface LoungeState {
   lounges: LoungeRoom[];
   /** The last read of the salons could not be answered. The screens say so. */
   loungesFailed: boolean;
+  /** The salons are being read (fetchLounges). */
+  loungesLoading: boolean;
+  /** The words of currentLoungeId, and only of that room. */
   currentMessages: LoungeMessage[];
   currentLoungeId: string | null;
-  loading: boolean;
+  /**
+   * The open room's words are being read; and its last read could not be answered. Not the
+   * salons' flags: one flag for both let either read lower it for the other (P0.112).
+   */
+  messagesLoading: boolean;
+  messagesFailed: boolean;
   sending: boolean;
   /** THE HOUSE PULSE — members present on this salon's channel right now. */
   presentCount: number;
@@ -310,6 +318,42 @@ interface LoungeMessageRow {
   created_at: string;
   deleted_at?: string | null;
   profiles: { username: string; avatar_url?: string } | { username: string; avatar_url?: string }[] | null;
+  lounge_message_reactions?: ReactionRow[] | null;
+}
+
+/**
+ * A page of a room's words, each with its author and its reactions, in one request: the
+ * reactions asked for after the words cost the opening a second round trip, and a page read on
+ * scrolling up never asked for them at all.
+ */
+export const MESSAGE_COLUMNS = 'id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, metadata, created_at, deleted_at, profiles!lounge_messages_user_id_fkey(username, avatar_url), lounge_message_reactions!lounge_message_reactions_message_id_fkey(message_id, reaction, user_id)';
+
+/** A page's rows, oldest first, as messages with their reactions summed for `myId`. */
+function messagesOf(rows: LoungeMessageRow[], myId: string | undefined): LoungeMessage[] {
+  const summaries = summarizeReactions(rows.flatMap((m) => m.lounge_message_reactions ?? []), myId);
+  return [...rows].reverse().map((m) => {
+    const author = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+    const reactions = summaries.get(m.id);
+    return {
+      id: m.id,
+      lounge_id: m.lounge_id,
+      user_id: m.user_id,
+      username: authorHandle(m.user_id, author?.username),
+      avatar_url: author?.avatar_url,
+      content: m.content,
+      type: (m.type as LoungeMessage['type']) ?? 'text',
+      reply_to_id: m.reply_to_id,
+      reply_to_username: m.reply_to_username,
+      reply_to_content: m.reply_to_content,
+      film_id: m.film_id,
+      film_title: m.film_title,
+      film_poster: m.film_poster,
+      metadata: m.metadata,
+      created_at: m.created_at,
+      deleted_at: m.deleted_at,
+      ...(reactions ? { reactions } : {}),
+    };
+  });
 }
 
 /**
@@ -359,9 +403,11 @@ export function leftBehind(room: LoungeRoom): LoungeRoom {
 export const useLoungeStore = create<LoungeState>()((set, get) => ({
   lounges: [],
   loungesFailed: false,
+  loungesLoading: false,
   currentMessages: [],
   currentLoungeId: null,
-  loading: false,
+  messagesLoading: false,
+  messagesFailed: false,
   sending: false,
   presentCount: 0,
   typingUsers: [],
@@ -371,39 +417,57 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const user = useAuthStore.getState().user;
     const startedAs = user?.id ?? null;
     if (!user) return;
-    set({ loading: true });
+    set({ loungesLoading: true });
     try {
-      // Thrown, not read as []: an empty list would say the member belongs to nothing.
-      const { data: memberRows, error: memberError } = await supabase
-        .from('lounge_members')
-        .select('lounge_id, last_read_at, status')
-        .eq('user_id', user.id)
-        .limit(100);
-      if (memberError) throw memberError;
-
-      const memberships = memberRows ?? [];
-      const myLoungeIds = memberships.map(r => r.lounge_id);
-      const statusMap = new Map(memberships.map(r => [r.lounge_id, (r as { status?: string }).status]));
-
+      // Two waves, not five: what needs only the member is asked at once, and what needs
+      // their seats and their own rooms is asked together after.
       // Three sources, merged: the newest rooms (private ones too; they need admission),
       // the rooms joined, and the rooms hosted, whose door requests are counted below.
-      const browsablePromise = supabase.from('lounges')
-        .select(ROOM_COLUMNS)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      const [memberRes, browsableRes, myCreatedRes] = await Promise.all([
+        supabase.from('lounge_members')
+          .select('lounge_id, last_read_at, status')
+          .eq('user_id', user.id)
+          .limit(100),
+        supabase.from('lounges')
+          .select(ROOM_COLUMNS)
+          .order('created_at', { ascending: false })
+          .limit(50),
+        supabase.from('lounges')
+          .select(ROOM_COLUMNS)
+          .eq('creator_id', user.id),
+      ]);
+      // Thrown, not read as []: an empty list would say the member belongs to nothing.
+      if (memberRes.error) throw memberRes.error;
 
-      const myJoinedPromise = myLoungeIds.length > 0 
-        ? supabase.from('lounges')
-            .select(ROOM_COLUMNS)
-            .in('id', myLoungeIds)
-        : Promise.resolve({ data: [] as RoomRow[], error: null });
+      const memberships = memberRes.data ?? [];
+      const myLoungeIds = memberships.map(r => r.lounge_id);
+      const statusMap = new Map(memberships.map(r => [r.lounge_id, (r as { status?: string }).status]));
+      const loungeIds = myLoungeIds;
+      const ownedIds = (myCreatedRes.data ?? []).map(l => l.id);
+      // Build the combined set of IDs the user "owns or joined"
+      const ownedOrJoinedIds = new Set(myLoungeIds);
+      ownedIds.forEach((lid) => ownedOrJoinedIds.add(lid));
+      const facesIds = Array.from(ownedOrJoinedIds);
 
-      const myCreatedPromise = supabase.from('lounges')
-        .select(ROOM_COLUMNS)
-        .eq('creator_id', user.id);
-
-      const [browsableRes, myJoinedRes, myCreatedRes] = await Promise.all([
-        browsablePromise, myJoinedPromise, myCreatedPromise,
+      const [myJoinedRes, unreadRes, pendingRes, facesRes] = await Promise.all([
+        myLoungeIds.length > 0
+          ? supabase.from('lounges').select(ROOM_COLUMNS).in('id', myLoungeIds)
+          : Promise.resolve({ data: [] as RoomRow[], error: null }),
+        // Counted on the server, for auth.uid() and under row security (no id to forge,
+        // no unbounded download).
+        loungeIds.length > 0 ? supabase.rpc('get_lounge_unread_counts') : null,
+        // How many requests are at the door, per lounge you host (RLS lets the
+        // creator see pending rows). Powers the landing card "at the door" badge.
+        ownedIds.length > 0
+          ? supabase.from('lounge_members').select('lounge_id').in('lounge_id', ownedIds).eq('status', 'pending')
+          : null,
+        // Member faces (avatar stack) — ONLY for salons you host or joined, where
+        // the roster is readable. Bounded to 3 per salon by the RPC's window, so a
+        // 200-member salon costs the same as a 2-member one. Best-effort: any
+        // failure leaves the map empty and every card falls back to its count.
+        facesIds.length > 0
+          ? Promise.resolve(supabase.rpc('get_salon_member_faces', { p_lounge_ids: facesIds })).catch(() => null)
+          : null,
       ]);
       // A source that failed would draw a short list as the whole house: the read failed.
       const unread = browsableRes.error ?? myJoinedRes.error ?? myCreatedRes.error;
@@ -415,18 +479,12 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (myJoinedRes.data) myJoinedRes.data.forEach(l => allLoungesMap.set(l.id, l));
       if (myCreatedRes.data) myCreatedRes.data.forEach(l => allLoungesMap.set(l.id, l));
 
-      // Build the combined set of IDs the user "owns or joined"
-      const ownedOrJoinedIds = new Set(myLoungeIds);
-      if (myCreatedRes.data) myCreatedRes.data.forEach(l => ownedOrJoinedIds.add(l.id));
-
       const unreadCounts: Record<string, number> = {};
       const lastMessageTimestamps: Record<string, string> = {};
 
-      const loungeIds = memberships.map(m => m.lounge_id);
-      if (loungeIds.length > 0) {
-        // Counted on the server, for auth.uid() and under row security (no id to forge,
-        // no unbounded download). A failure leaves the badges at zero, not the list empty.
-        const { data: unreadRows, error: unreadError } = await supabase.rpc('get_lounge_unread_counts');
+      if (unreadRes) {
+        // A failure leaves the badges at zero, not the list empty.
+        const { data: unreadRows, error: unreadError } = unreadRes;
         if (unreadError) {
           logger.error('[LoungeStore.fetchLounges] unread counts failed:', unreadError);
         } else if (unreadRows) {
@@ -442,38 +500,23 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         }
       }
 
-      // How many requests are at the door, per lounge you host (RLS lets the
-      // creator see pending rows). Powers the landing card "at the door" badge.
       const pendingCounts: Record<string, number> = {};
-      const ownedIds = (myCreatedRes.data ?? []).map(l => l.id);
-      if (ownedIds.length > 0) {
+      if (pendingRes) {
         // Logged, not surfaced: the salon list itself is still correct, and a toast
         // for a badge would be noise. But a silent zero means a host never learns
         // somebody is waiting at their door, so it must be diagnosable.
-        const { data: pendingRows, error: pendingError } = await supabase
-          .from('lounge_members')
-          .select('lounge_id')
-          .in('lounge_id', ownedIds)
-          .eq('status', 'pending');
+        const { data: pendingRows, error: pendingError } = pendingRes;
         if (pendingError) logger.error('[LoungeStore.fetchLounges] pending-request count failed:', pendingError);
         if (pendingRows) for (const r of pendingRows) pendingCounts[r.lounge_id] = (pendingCounts[r.lounge_id] || 0) + 1;
       }
 
-      // Member faces (avatar stack) — ONLY for salons you host or joined, where
-      // the roster is readable. Bounded to 3 per salon by the RPC's window, so a
-      // 200-member salon costs the same as a 2-member one. Best-effort: any
-      // failure leaves the map empty and every card falls back to its count.
+      // Faces are decorative: an unanswered read leaves the card its plain count.
       const facesMap: Record<string, { username: string; avatar_url: string | null }[]> = {};
-      const facesIds = Array.from(ownedOrJoinedIds);
-      if (facesIds.length > 0) {
-        try {
-          const { data: faceRows } = await supabase.rpc('get_salon_member_faces', { p_lounge_ids: facesIds });
-          if (Array.isArray(faceRows)) {
-            for (const r of faceRows as { lounge_id: string; username: string; avatar_url: string | null }[]) {
-              (facesMap[r.lounge_id] ??= []).push({ username: r.username, avatar_url: r.avatar_url });
-            }
-          }
-        } catch { /* faces are decorative; the card degrades to the plain count */ }
+      const faceRows = facesRes?.data;
+      if (Array.isArray(faceRows)) {
+        for (const r of faceRows as { lounge_id: string; username: string; avatar_url: string | null }[]) {
+          (facesMap[r.lounge_id] ??= []).push({ username: r.username, avatar_url: r.avatar_url });
+        }
       }
 
       // Sort by recent activity
@@ -505,7 +548,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Left mid-flight — see sessionGuard. Writing here would repopulate a store
       // the logout reset has already cleared.
       if (!memberUnchanged(startedAs)) return;
-      set({ lounges: enriched, loungesFailed: false, loading: false });
+      set({ lounges: enriched, loungesFailed: false, loungesLoading: false });
     } catch (err) {
       if (__DEV__) console.warn('[Lounge] fetchLounges failed:', err);
       // Their failed read is not the next member's.
@@ -513,50 +556,44 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Said by the screen that asked, not here: the Lounge polls every thirty
       // seconds while open, and a toast here would be a toast every thirty
       // seconds for as long as the signal is gone.
-      set({ loungesFailed: true, loading: false });
+      set({ loungesFailed: true, loungesLoading: false });
     }
   },
 
   fetchMessages: async (loungeId: string) => {
         const startedAs = useAuthStore.getState().user?.id ?? null;
-    set({ currentLoungeId: loungeId, loading: true });
+    // Another room's words go at once: kept, they stood under this room's name until its own
+    // came, and for good when its read failed. The same room's stay while it is read again.
+    set((s) => ({
+      currentLoungeId: loungeId,
+      messagesLoading: true,
+      messagesFailed: false,
+      currentMessages: s.currentLoungeId === loungeId ? s.currentMessages : [],
+    }));
+    let failed = false;
     try {
+      // The cursor's own order (loadMoreMessages): created_at alone leaves a burst's order to
+      // chance, and the page below could then skip what this one did not hold.
       const { data, error } = await supabase
         .from('lounge_messages')
-        .select('id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, metadata, created_at, deleted_at, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
+        .select(MESSAGE_COLUMNS)
         .eq('lounge_id', loungeId)
         .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .limit(100);
 
       // supabase-js resolves on a server failure rather than throwing, so the error is read
       // here. Branch, don't return: the spinner comes down after the try.
       if (error) {
         logger.error('[LoungeStore.fetchMessages] load failed:', error);
-        reelToast.error('Could not load messages — check your connection.');
+        failed = true;
       } else if (data) {
-        const messages: LoungeMessage[] = (data as LoungeMessageRow[]).reverse().map((m) => ({
-          id: m.id,
-          lounge_id: m.lounge_id,
-          user_id: m.user_id,
-          username: authorHandle(m.user_id, Array.isArray(m.profiles) ? m.profiles[0]?.username : m.profiles?.username),
-          avatar_url: Array.isArray(m.profiles) ? m.profiles[0]?.avatar_url : m.profiles?.avatar_url,
-          content: m.content,
-          type: (m.type as LoungeMessage['type']) ?? 'text',
-          reply_to_id: m.reply_to_id,
-          reply_to_username: m.reply_to_username,
-          reply_to_content: m.reply_to_content,
-          film_id: m.film_id,
-          film_title: m.film_title,
-          film_poster: m.film_poster,
-          metadata: m.metadata,
-          created_at: m.created_at,
-          deleted_at: m.deleted_at,
-        }));
+        const messages = messagesOf(data as unknown as LoungeMessageRow[], useAuthStore.getState().user?.id);
         // Offline Queue Stitching
         const queue = getOfflineQueue();
         const pendingMessages = queue.filter(q => q.type === 'send_lounge_message' && q.payload.lounge_id === loungeId);
         
-        let finalMessages = [...messages];
+        const finalMessages = [...messages];
         for (const pa of pendingMessages) {
             const p = pa.payload;
             // Append, don't prepend. The fetch above orders created_at
@@ -580,24 +617,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
                 created_at: new Date().toISOString(),
             } as unknown as LoungeMessage);
         }
-        // Attach reactions for the loaded dispatches in one batched query.
-        const persistedIds = messages.map(m => m.id);
-        if (persistedIds.length > 0) {
-          const myId = useAuthStore.getState().user?.id;
-          // Logged, not surfaced: the dispatches themselves are correct; only their
-          // reactions are missing. Worth knowing about, not worth interrupting for.
-          const { data: reactionRows, error: reactionError } = await supabase
-            .from('lounge_message_reactions')
-            .select('message_id, reaction, user_id')
-            .in('message_id', persistedIds);
-          if (reactionError) logger.error('[LoungeStore.fetchMessages] reactions failed:', reactionError);
-          if (reactionRows && reactionRows.length > 0) {
-            const summaries = summarizeReactions(reactionRows as ReactionRow[], myId);
-            finalMessages = finalMessages.map(m =>
-              summaries.has(m.id) ? { ...m, reactions: summaries.get(m.id) } : m
-            );
-          }
-        }
         // Only for the member who asked: the queued messages stitched in are theirs.
         if (!memberUnchanged(startedAs)) return;
         // Only if this room is still the open one: a slower fetch for a room left
@@ -607,15 +626,21 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         }));
       }
     } catch {
-      reelToast.error('Could not load messages — check your connection.');
+      failed = true;
     }
     if (!memberUnchanged(startedAs)) return;
-    // A stale fetch must not lower the spinner of the room now open.
-    set(s => (s.currentLoungeId !== loungeId ? s : { loading: false }));
+    // A stale fetch must not lower the spinner of the room now open, nor say it failed.
+    if (get().currentLoungeId !== loungeId) return;
+    // A room with nothing to show says so itself (the salon's transcript, with TRY AGAIN);
+    // over words it kept, the toast says the new ones could not come.
+    if (failed && get().currentMessages.length > 0) reelToast.error('Could not load messages — check your connection.');
+    set({ messagesLoading: false, messagesFailed: failed });
   },
 
   loadMoreMessages: async (loungeId: string) => {
         const startedAs = useAuthStore.getState().user?.id ?? null;
+    // Only the open room's words are paged: another room's oldest is no cursor for this one.
+    if (get().currentLoungeId !== loungeId) return;
     const current = get().currentMessages;
     if (current.length === 0) return;
     
@@ -629,7 +654,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Both values come from a server row, so neither can carry filter syntax.
       const { data, error } = await supabase
         .from('lounge_messages')
-        .select('id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, metadata, created_at, deleted_at, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
+        .select(MESSAGE_COLUMNS)
         .eq('lounge_id', loungeId)
         .or(`created_at.lt.${oldestMessage.created_at},and(created_at.eq.${oldestMessage.created_at},id.lt.${oldestMessage.id})`)
         .order('created_at', { ascending: false })
@@ -640,25 +665,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         logger.error('[LoungeStore.loadMoreMessages] load failed:', error);
         reelToast.error('Could not load older messages.');
       } else if (data && data.length > 0) {
-        const olderMessages: LoungeMessage[] = (data as LoungeMessageRow[]).reverse().map((m) => ({
-          id: m.id,
-          lounge_id: m.lounge_id,
-          user_id: m.user_id,
-          username: authorHandle(m.user_id, Array.isArray(m.profiles) ? m.profiles[0]?.username : m.profiles?.username),
-          avatar_url: Array.isArray(m.profiles) ? m.profiles[0]?.avatar_url : m.profiles?.avatar_url,
-          content: m.content,
-          type: (m.type as LoungeMessage['type']) ?? 'text',
-          reply_to_id: m.reply_to_id,
-          reply_to_username: m.reply_to_username,
-          reply_to_content: m.reply_to_content,
-          film_id: m.film_id,
-          film_title: m.film_title,
-          film_poster: m.film_poster,
-          metadata: m.metadata,
-          created_at: m.created_at,
-          deleted_at: m.deleted_at,
-        }));
-        
+        const olderMessages = messagesOf(data as unknown as LoungeMessageRow[], useAuthStore.getState().user?.id);
+
         // Prepend older messages (filter blocked/muted)
         const filteredOlder = olderMessages.filter(m => !useBlockStore.getState().isHidden(m.user_id));
         if (!memberUnchanged(startedAs)) return;
@@ -1448,7 +1456,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {
-    useLoungeStore.setState({ lounges: [], loungesFailed: false, currentMessages: [], currentLoungeId: null, loading: false, sending: false, presentCount: 0, typingUsers: [], _lastMarkReadMap: {} });
+    useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, currentMessages: [], currentLoungeId: null, messagesLoading: false, messagesFailed: false, sending: false, presentCount: 0, typingUsers: [], _lastMarkReadMap: {} });
     _lastCreateAt = 0;
     _lastTypingBroadcastAt = 0;
     // Every module-level memory, or the next member on this phone inherits it.

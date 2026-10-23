@@ -56,7 +56,7 @@ const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 export default function LoungeScreen() {
   const user = useAuthStore(s => s.user);
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
-  const { lounges, fetchLounges, loading, loungesFailed } = useLoungeStore();
+  const { lounges, fetchLounges, loungesLoading: loading, loungesFailed } = useLoungeStore();
   // Nothing to show because nothing could be read: said, not "found no salon".
   const salonsLost = loungesFailed && lounges.length === 0;
   const readyMark = useScreenReady('lounges',

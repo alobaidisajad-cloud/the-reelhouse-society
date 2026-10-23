@@ -105,4 +105,15 @@ export function fitsAnOverload(overloads: Param[][], keys: string[]): boolean {
 }
 
 /** The snapshot's text, CR-free. */
+/** A foreign key: `from.column` holds a `to.toColumn`, under the constraint's `name`. */
+export type ForeignKey = { name: string; from: string; column: string; to: string; toColumn: string };
+
+/** The schema's single-column foreign keys between public tables: what PostgREST embeds by. */
+export function readForeignKeys(sql: string): ForeignKey[] {
+  const keys: ForeignKey[] = [];
+  const re = /ALTER TABLE ONLY public\.(\w+)\s+ADD CONSTRAINT (\w+) FOREIGN KEY \((\w+)\) REFERENCES public\.(\w+)\((\w+)\)/g;
+  for (const [, from = '', name = '', column = '', to = '', toColumn = ''] of sql.matchAll(re)) keys.push({ from, name, column, to, toColumn });
+  return keys;
+}
+
 export const SNAPSHOT_SQL = (): string => readFileSync(join(__dirname, '..', 'supabase', 'schema', 'live-schema.sql'), 'utf8').replace(/\r/g, '');

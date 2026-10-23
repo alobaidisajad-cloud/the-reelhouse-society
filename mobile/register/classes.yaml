@@ -512,8 +512,11 @@ classes:
     methods:
       - { kind: running, file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "a column the table does not have, in a select, a filter or an order" }
       - { kind: running, file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "a read of a table the test never said what it holds: no silent empty list" }
+      - { kind: running, file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "refuses a key that does not join the two tables, and two keys it cannot choose between" }
+      - { kind: running, file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "answers an embed through its own key as one row, and through the other's as a list, from what it holds" }
+      - { kind: running, file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "a filter it cannot read, unless the test answers the table itself" }
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
-    fix: "test-utils/supabaseFake: the house as the client meets it, from the schema snapshot (test-utils/schema, now the one reader the query check uses too): refuses a table, column or rpc argument production lacks, a fixture row out of its table's shape, a read of a table the test never filled; answers .single()/.maybeSingle() with PGRST116 as PostgREST does, caps a read at 1,000 rows, filters, orders, ranges and keeps writes. The hand-made mocks are frozen per file (frozen-counts hand-supabase-mock) and only fall as tests move to it; the first (theHonourStays) now proves its query picks the right row from decoys"
+    fix: "test-utils/supabaseFake: the house as the client meets it, from the schema snapshot (test-utils/schema, now the one reader the query check uses too): refuses a table, column or rpc argument production lacks, a fixture row out of its table's shape, a read of a table the test never filled; answers .single()/.maybeSingle() with PGRST116 as PostgREST does, caps a read at 1,000 rows, filters, orders, ranges and keeps writes. Embeds too (P0.112): resolved by the snapshot's foreign keys as PostgREST resolves them, a key that joins nothing (PGRST200) or two (PGRST201) and a column the embedded table lacks refused, and answered from what the test holds; and an or() on a table the test answers itself taken, as its header always said (mutants shape-fake-embed-unchecked, shape-fake-embed-dropped, shape-fake-or-refused-when-answered). The hand-made mocks are frozen per file (frozen-counts hand-supabase-mock) and only fall as tests move to it; the first (theHonourStays) now proves its query picks the right row from decoys"
     places: [none]
 
   - id: TEST-order-dependent
@@ -1103,3 +1106,77 @@ classes:
     status: OPEN
     count: 4
     source: { kind: reviewer, ref: "P0.47 (GU7.8)" }
+
+  - id: DATA-one-flag-for-two-reads
+    title: "The salons' read and the open room's read shared one loading flag: whichever ended first lowered it for the other, so a room called itself read with its words still coming, and an empty room waited out the whole salons' read (six round trips) to say so"
+    seriousness: serious
+    area: lounge
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "study of the salon's opening for P0.112: speed lab 39889250983, the salon ready 2.7 s over its budget" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the salons read to the end lowers only theirs; the room read to the end lowers only its own" }
+    fix: "the store keeps loungesLoading (the salons) apart from messagesLoading and messagesFailed (the open room); each read lowers only its own (mutant shape-room-flag-lowered-by-salons)"
+    places: [none]
+
+  - id: DATA-another-rooms-words-shown
+    title: "Opening a salon kept the last salon's words: they stood under the new salon's name until its own came, and for good when its read failed; the screen drew whatever words the store held, whichever room they were"
+    seriousness: serious
+    area: lounge
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "study of the salon's opening for P0.112: fetchMessages changed the room and kept its words" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "lets the last room's words go the moment another opens, and keeps the same room's while it is read again" }
+      - { kind: running, file: src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx, test: "the last room's words, still held, are never drawn under this room's name" }
+    fix: "fetchMessages lets another room's words go the moment a room opens, keeping the same room's while it is read again; the screen takes only the words of the room it shows (currentLoungeId === id), so a room's words can be drawn under no other name (mutants shape-room-keeps-last-words, shape-screen-draws-held-words)"
+    places: [none]
+
+  - id: SPEED-read-waits-on-a-read-it-needs-not
+    title: "A read waited for another it did not need: a salon's reactions were asked for only after its words came, a second round trip on every opening; the salons were read in five waves where two would do"
+    seriousness: behaviour
+    area: lounge
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "study of the salon's opening for P0.112: speed lab 39889250983, the salon ready 2.7 s over its budget" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the first page: each word with its reactions, counted and marked mine, and nothing else asked" }
+      - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "asks what needs only the member at once, and what needs their seats and rooms together after" }
+    fix: "a page of words and its reactions in one request (MESSAGE_COLUMNS, the reactions embedded by their key; the contract proves the embed against the house, which answers a wrong key 400); the salons' seats, newest rooms and hosted rooms asked at once, then the joined rooms, unread counts, door requests and faces together (mutants shape-reactions-asked-apart, shape-salons-read-in-turn)"
+    places: [none]
+
+  - id: DATA-older-words-without-reactions
+    title: "A salon's older words, read on scrolling up, never had their reactions asked for: every page above the first showed none, however many it had"
+    seriousness: behaviour
+    area: lounge
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "study of the salon's opening for P0.112: loadMoreMessages mapped its rows with no reactions" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "a page read on scrolling up brings its reactions too" }
+    fix: "both pages are one read, MESSAGE_COLUMNS, mapped by one messagesOf with the reactions summed (mutant shape-older-page-without-reactions)"
+    places: [none]
+
+  - id: DATA-page-order-unlike-its-cursor
+    title: "A salon's first page was ordered by its time alone while the page above it was asked for by time then id: words said in one second could fall between the two pages and never be shown"
+    seriousness: behaviour
+    area: lounge
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "study of the salon's opening for P0.112: fetchMessages ordered created_at alone; loadMoreMessages' cursor is (created_at, id)" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the first page is ordered as the page above it is asked for: by its time, then its id" }
+    fix: "the first page orders by created_at then id, as the cursor pages (mutant shape-first-page-unordered-by-id)"
+    places: [none]
+
+  - id: SPEED-canvas-drawn-out-of-sight
+    title: "A photograph's veil carried its light back on every frame of a scroll, the whole length of the page: its Skia canvas was drawn again for every frame long after the photograph had gone (the stack, the film, the person, the member's file)"
+    seriousness: behaviour
+    area: runtime
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "study of the stack's scroll for P0.112: speed lab 39889250983, the stack's slow UI frames over its budget" }
+    methods:
+      - { kind: running, file: src/components/atmosphere/__tests__/theLightRestsOutOfSight.test.ts, test: "carries its light back with the photograph, then leaves the canvas alone once the hem is out of sight" }
+    fix: "heldLift rests the lift once the hem is past the top of any screen it could start on, and the veil writes its transform only when the lift changed (useAnimatedReaction), so the canvas is left alone below (mutants shape-veil-lift-unheld, shape-veil-written-each-frame); measured on the lab's stack after"
+    places: [emulator]

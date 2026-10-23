@@ -30,7 +30,7 @@
  * Its `auth.mfa` is the account's second factors (`mfa: { code, factors, level }`),
  * refusing what the auth server refuses (mfaFake, below).
  */
-import { fitsAnOverload, readColumns, readFunctions, SNAPSHOT_SQL, topLevel, type Column } from './schema';
+import { fitsAnOverload, readColumns, readForeignKeys, readFunctions, SNAPSHOT_SQL, topLevel, type Column, type ForeignKey } from './schema';
 
 type Row = Record<string, unknown>;
 type Failure = { code: string; message: string };
@@ -60,6 +60,8 @@ export type Ask = {
   columns: string[]; filters: [string, string, unknown][]; order: [string, boolean][];
   range: [number, number] | null; limit: number | null; one: 'single' | 'maybeSingle' | null;
   values: Row[] | null; count: boolean; head: boolean; selects: boolean;
+  /** The embeds the select names, resolved by their keys (embedsOf). */
+  embeds?: Embed[];
 };
 type Options = {
   /** What each table holds: checked against its columns. A table not named here cannot be read. */
@@ -164,9 +166,9 @@ export const MAX_ROWS = 1000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NOT_ONE: Failure = { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' };
 
-let schema: { tables: Map<string, Map<string, Column>>; functions: ReturnType<typeof readFunctions> } | null = null;
+let schema: { tables: Map<string, Map<string, Column>>; functions: ReturnType<typeof readFunctions>; keys: ForeignKey[] } | null = null;
 const house = () => {
-  if (!schema) { const sql = SNAPSHOT_SQL(); schema = { tables: readColumns(sql), functions: readFunctions(sql) }; }
+  if (!schema) { const sql = SNAPSHOT_SQL(); schema = { tables: readColumns(sql), functions: readFunctions(sql), keys: readForeignKeys(sql) }; }
   return schema;
 };
 
@@ -191,7 +193,7 @@ const checkRow = (table: string, row: Row, where: string) => {
   }
 };
 
-/** The plain columns a select names (an embed's own columns are its table's business). */
+/** The plain columns a select names. */
 const selected = (table: string, text: string): string[] => topLevel(text.replace(/\s+/g, ' ')).flatMap((item) => {
   if (item === '*' || item.includes('(')) return [];
   const name = (/^(?:\w+:)?(\w+)(?:::\w+)?$/.exec(item) ?? [])[1];
@@ -199,6 +201,45 @@ const selected = (table: string, text: string): string[] => topLevel(text.replac
   mustHave(table, name, 'select');
   return [name];
 });
+
+/**
+ * An embed a select names, resolved as PostgREST resolves it: by a foreign key between the two
+ * tables, the one its hint names when it names one. One it cannot resolve is the house's 400
+ * (PGRST200), two it cannot choose between its PGRST201: each throws here, naming it. `one` is
+ * an embed through this table's own key (an object), else through the other's (a list).
+ */
+type Embed = { key: string; table: string; via: ForeignKey; one: boolean; columns: string[]; embeds: Embed[] };
+const embedsOf = (table: string, text: string): Embed[] => topLevel(text.replace(/\s+/g, ' ')).flatMap((item) => {
+  if (!item.includes('(')) return [];
+  const m = /^(?:(\w+):)?(\w+)(?:!(\w+))?(?:!(\w+))?\((.*)\)$/s.exec(item);
+  if (!m) throw new Error(`supabaseFake: cannot read the embed "${item}" in a select of ${table}`);
+  const [, alias, child = '', first, second, inner = ''] = m;
+  columnsOf(child);
+  const hint = [first, second].find((h) => h && h !== 'inner' && h !== 'left');
+  const links = house().keys.filter((k) => (k.from === table && k.to === child) || (k.from === child && k.to === table))
+    .filter((k) => !hint || k.name === hint || k.column === hint);
+  const [via, ...others] = links;
+  if (!via) throw new Error(`supabaseFake: ${table} has no relationship with ${child}${hint ? ` by "${hint}"` : ''} (PGRST200, a 400 in production)`);
+  if (others.length) throw new Error(`supabaseFake: ${table} reaches ${child} by more than one key (${links.map((k) => k.name).join(', ')}): name one (PGRST201, a 400 in production)`);
+  return [{ key: alias ?? child, table: child, via, one: via.from === table, columns: selected(child, inner), embeds: embedsOf(child, inner) }];
+});
+
+/**
+ * A row as the select shapes it: its columns, and each embed's rows from what the test holds of
+ * that table. A table it holds nothing of leaves its embed out, as before embeds were read.
+ */
+const shapeRow = (row: Row, columns: string[], embeds: Embed[], tables: Map<string, Row[]>): Row => {
+  const out: Row = columns.length ? Object.fromEntries(columns.map((c) => [c, row[c] ?? null])) : { ...row };
+  for (const e of embeds) {
+    const held = tables.get(e.table);
+    if (!held) continue;
+    const shape = (r: Row) => shapeRow(r, e.columns, e.embeds, tables);
+    out[e.key] = e.one
+      ? (() => { const hit = held.find((r) => r[e.via.toColumn] === row[e.via.column]); return hit ? shape(hit) : null; })()
+      : held.filter((r) => r[e.via.column] === row[e.via.toColumn]).map(shape);
+  }
+  return out;
+};
 
 const matches = (row: Row, [op, col, val]: [string, string, unknown]): boolean => {
   if (op.startsWith('not.')) return !matches(row, [op.slice(4), col, val]);
@@ -271,7 +312,8 @@ export function supabaseFake(options: Options = {}) {
     if (ask.range) rows = rows.slice(ask.range[0], ask.range[1] + 1);
     if (ask.limit !== null) rows = rows.slice(0, ask.limit);
     rows = rows.slice(0, MAX_ROWS);
-    const shaped = ask.columns.length ? rows.map((r) => Object.fromEntries(ask.columns.map((c) => [c, r[c] ?? null]))) : rows;
+    const embeds = ask.embeds ?? [];
+    const shaped = ask.columns.length || embeds.length ? rows.map((r) => shapeRow(r, ask.columns, embeds, tables)) : rows;
     if (ask.head) return { data: null, error: null, count };
     if (ask.one === 'single') return shaped.length === 1 ? { data: shaped[0], error: null, count } : { data: null, error: NOT_ONE, count };
     if (ask.one === 'maybeSingle') return shaped.length > 1 ? { data: null, error: NOT_ONE, count } : { data: shaped[0] ?? null, error: null, count };
@@ -291,10 +333,15 @@ export function supabaseFake(options: Options = {}) {
       ask.values = list;
       return chain;
     };
-    const refuse = (what: string) => (): Query => { throw new Error(`supabaseFake: ${what}() is not read here; answer ${table} with \`answer\``); };
+    // A filter the fake cannot read: refused, unless the test answers the table itself (it read it).
+    const refuse = (what: string) => (): Query => {
+      if (options.answer?.[table]) return chain;
+      throw new Error(`supabaseFake: ${what}() is not read here; answer ${table} with \`answer\``);
+    };
     const chain: Query = {
       select: (text = '*', opts = {}) => {
         ask.columns = selected(table, text);
+        ask.embeds = embedsOf(table, text);
         ask.selects = true;
         ask.count = opts.count === 'exact';
         ask.head = !!opts.head;
