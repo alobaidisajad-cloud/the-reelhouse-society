@@ -28,6 +28,7 @@ import {
 } from '@shopify/react-native-skia';
 
 import { lightGeometry, roomLightImage, type Room } from '@/src/theme/light';
+import { useScreenSeen } from '@/src/hooks/useScreenSeen';
 import { colors } from '@/src/theme/theme';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { BloomLayer, RoomBloom, useBloomOpacity } from './RoomBloom';
@@ -51,8 +52,13 @@ interface LightProps {
 export const RoomLight = memo(function RoomLight({ room, hem, art }: LightProps) {
   const { width: W, height: H } = useWindowDimensions();
   const g = lightGeometry(room, W, H, hem);
+  // Kept by Android as a texture while its screen is in front: the light is still, the list
+  // over it is not, and redrawn under every scrolled frame it cost the Reel a third of its
+  // middle frame time (speed lab 39901452779, Rh: p50 −550 ms, p90 −1050 ms). Let go behind,
+  // so a deep stack holds one screen's texture, not one a screen.
+  const seen = useScreenSeen();
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none" {...UNSPOKEN} testID="room-light">
+    <View style={StyleSheet.absoluteFill} pointerEvents="none" {...UNSPOKEN} testID="room-light" renderToHardwareTextureAndroid={seen}>
       {/* The pool, the floor and the corners: one view, one native background,
           no bitmap (see roomLightImage), in the same box the light always had. */}
       <View style={{ position: 'absolute', top: 0, left: 0, width: W, height: H, experimental_backgroundImage: roomLightImage(g, H) }} />

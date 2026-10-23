@@ -25,7 +25,7 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
   useLocalSearchParams: () => ({}), useFocusEffect: () => {},
 }));
-jest.mock('@react-navigation/native', () => ({ useScrollToTop: jest.fn(), useIsFocused: () => true }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn(), useIsFocused: () => true }));
 // queryClient.ts listens for the connection when it loads.
 jest.mock('@react-native-community/netinfo', () => ({
   __esModule: true,

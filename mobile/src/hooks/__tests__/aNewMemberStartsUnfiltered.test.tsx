@@ -24,7 +24,7 @@ jest.mock('expo-router', () => ({
   useNavigation: () => ({ setParams: jest.fn(), addListener: () => () => {} }),
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => true },
 }));
-jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));
 
 describe('a new member on the page', () => {
   it('starts with every filter cleared, not six of twelve', async () => {

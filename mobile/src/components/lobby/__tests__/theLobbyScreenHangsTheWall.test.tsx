@@ -27,7 +27,7 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
   useFocusEffect: () => {},
 }));
-jest.mock('@react-navigation/native', () => ({ useScrollToTop: jest.fn(), useIsFocused: () => true }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn(), useIsFocused: () => true }));
 
 /** The house: answers the wall, or cannot be reached. */
 let mockWallDown = false;

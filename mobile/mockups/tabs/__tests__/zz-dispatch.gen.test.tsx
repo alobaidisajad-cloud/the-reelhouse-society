@@ -20,7 +20,7 @@ jest.mock('@/src/stores/auth', () => ({
     { getState: () => ({ user: mockUser, isAuthenticated: true }), setState: jest.fn(), subscribe: jest.fn() },
   ),
 }));
-jest.mock('@react-navigation/native', () => ({ useScrollToTop: jest.fn(), useIsFocused: () => true }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn(), useIsFocused: () => true }));
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), replace: jest.fn(), back: jest.fn() } }));
 jest.mock('react-native-safe-area-context', () => {
   const mockReact = require('react');

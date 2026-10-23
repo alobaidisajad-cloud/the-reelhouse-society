@@ -11,7 +11,7 @@ import { DarkroomHeader } from '../DarkroomHeader';
 import { useDiscoverStore } from '@/src/stores/discover';
 
 jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useRouter: () => ({ push: jest.fn() }) }));
-jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));
 jest.mock('@/src/lib/tmdb', () => ({ tmdb: { search: jest.fn(async () => ({ results: [] })), detail: jest.fn() } }));
 
 it('the toggle is a button that says it is closed, and how many filters it holds', () => {

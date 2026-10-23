@@ -817,15 +817,16 @@ classes:
     places: [emulator]
 
   - id: TEST-mock-written-from-scratch
-    title: "A test's own mock of expo-router, written from scratch, replaced the shared one whole and lacked what its screen came to call: the stack page's ready mark threw in its tests and its generator"
+    title: "A test's own mock of a shared module, written from scratch, replaced the shared one whole and lacked what its screen came to call: the stack page's ready mark threw in its tests and its generator (expo-router); every screen with the room's light threw once it read NavigationContext (@react-navigation/native)"
     seriousness: code
     area: tests
     status: OPEN
-    count: 65
+    count: 94
     source: { kind: history, ref: "God-Tier 39836999393: zz-stacks.gen threw 'useFocusEffect is not a function' at every width, after the stack page gained its ready mark" }
     methods:
       - { kind: static, file: test-utils/__tests__/theRouterMockHasOneBase.guard.test.ts, test: "every mock of expo-router spreads the one base, or the real module, first" }
-    fix: "jest.setup.ts mocks expo-router with test-utils/expoRouterMock.ts, and every test's own mock (65) spreads that base first, or the real module, and changes only what it means to (mutant shape-router-mock-from-scratch)"
+      - { kind: static, file: test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts, test: "every mock of @react-navigation/native spreads the one base, or the real module, first" }
+    fix: "jest.setup.ts mocks expo-router with test-utils/expoRouterMock.ts, and every test's own mock (65) spreads that base first, or the real module, and changes only what it means to (mutant shape-router-mock-from-scratch); @react-navigation/native the same, with test-utils/navigationMock.ts, its 29 hand-written mocks given the base (mutant shape-navigation-mock-from-scratch)"
     places: [none]
 
   - id: E2E-ios-driver-start-unwaited
@@ -1168,6 +1169,19 @@ classes:
       - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the first page is ordered as the page above it is asked for: by its time, then its id" }
     fix: "the first page orders by created_at then id, as the cursor pages (mutant shape-first-page-unordered-by-id)"
     places: [none]
+
+  - id: SPEED-still-light-redrawn-under-scroll
+    title: "The room's light, still under a moving list, was drawn again under every scrolled frame: it cost the Reel a third of its middle frame time, and every screen with a list over the light the same in kind"
+    seriousness: behaviour
+    area: runtime
+    status: OPEN
+    count: 2
+    source: { kind: running, ref: "speed lab 39868403930: the lamp off took 500 ms off the Reel's middle frame, the wash 250; speed lab 39901452779, the two kept as textures: p50 −550 ms, p90 −1050 ms, the app's memory unchanged" }
+    methods:
+      - { kind: running, file: src/components/atmosphere/__tests__/theLightRestsOutOfSight.test.ts, test: "as a texture while its screen is in front, let go when it is behind, kept again on its return" }
+      - { kind: running, file: src/components/atmosphere/__tests__/theLightRestsOutOfSight.test.ts, test: "outside any navigator (a crash net, a test), kept: nothing is in front of it" }
+    fix: "the room's light and the Reel's wash are kept by Android as textures while their screen is in front (useScreenSeen: useIsFocused at home outside a navigator), let go behind, so a deep stack holds one screen's texture (mutants shape-light-never-kept, shape-light-kept-behind)"
+    places: [emulator]
 
   - id: UI-read-drawn-as-empty
     title: "A list said it was empty while its read was still out, or before it began: a salon's 'be the first to break the silence', a film's 'be the first voice' over critiques on their way, 'IMPORT YOUR ARCHIVE' to a member on a new phone, 'nothing under that name' before a search's rows came (and never said of a visitor's that found none), 'no one's at the door' under a count of the waiting, 'no open salons' and 'no seat yet' before the salons were asked for, 'your orbit is quiet' to members who follow people, 'the docket is clear' for a frame"

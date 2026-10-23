@@ -537,17 +537,9 @@ jest.mock('./src/lib/tmdb', () => {
 // it. Buster (in the house's failed state, EmptyOffline) pauses when his screen
 // is not focused, so every such test had to stand this in by hand. Inside a
 // navigator the real answer is given; outside one, "focused", which is what a
-// mounted screen is. A test's own mock of the module still replaces this.
+// mounted screen is. A test's own mock of the module replaces this, so it spreads the same base.
 // ─────────────────────────────────────────────────────────────────────────────
-jest.mock('@react-navigation/native', () => {
-  const actual = jest.requireActual('@react-navigation/native');
-  return {
-    ...actual,
-    useIsFocused: () => {
-      try { return actual.useIsFocused(); } catch { return true; }
-    },
-  };
-});
+jest.mock('@react-navigation/native', () => require('./test-utils/navigationMock').navigationMock());
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock expo-notifications

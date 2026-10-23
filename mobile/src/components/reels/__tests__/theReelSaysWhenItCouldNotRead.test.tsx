@@ -20,7 +20,7 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
   useFocusEffect: () => {},
 }));
-jest.mock('@react-navigation/native', () => ({ useScrollToTop: jest.fn(), useIsFocused: () => true }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn(), useIsFocused: () => true }));
 /** What the screen tells the E2E run (silent in a member's build). */
 const mockTrace = jest.fn();
 jest.mock('@/src/utils/e2eTrace', () => ({ E2E_BUILD: false, e2eTrace: (...a: unknown[]) => mockTrace(...a) }));

@@ -35,7 +35,7 @@ jest.mock('@/src/stores/auth', () => ({
 // Not `requireActual` — pulling the real navigation library in here took the
 // suite past five minutes. Nothing else in this tree imports from it, so the one
 // hook the screen uses is all that needs to exist.
-jest.mock('@react-navigation/native', () => ({ useScrollToTop: jest.fn() }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn() }));
 
 const mockPushed: string[] = [];
 jest.mock('@/src/utils/typedRouter', () => ({

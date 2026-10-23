@@ -44,7 +44,7 @@ jest.mock('@/src/components/film/FilmDetailLayout', () => ({
 jest.mock('@/src/components/film/ShareCardModal', () => ({ ShareCardModal: () => null }));
 jest.mock('@/src/components/film/TrailerModal', () => ({ TrailerModal: () => null }));
 jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useLocalSearchParams: () => ({ id: '603' }), useFocusEffect: () => {}, router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true } }));
-jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));
 
 const FILM = { id: 603, title: 'The Matrix' };
 const VERDICT = { avg_rating: 4.2, rating_count: 9, log_count: 12 };

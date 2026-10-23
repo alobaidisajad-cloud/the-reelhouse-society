@@ -11,7 +11,7 @@ import { render, fireEvent, act } from '@testing-library/react-native';
 import { DarkroomFilterPanel } from '../DarkroomFilterPanel';
 
 jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useRouter: () => ({ push: jest.fn() }) }));
-jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));
 jest.mock('@/src/lib/tmdb', () => ({ tmdb: { search: jest.fn(), detail: jest.fn() } }));
 
 type Filters = Parameters<typeof DarkroomFilterPanel>[0]['filters'];

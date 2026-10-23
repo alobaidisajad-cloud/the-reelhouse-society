@@ -41,6 +41,7 @@ import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/co
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { useScreenSeen } from '@/src/hooks/useScreenSeen';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import reelToast from '@/src/utils/reelToast';
 import { BrassSheen } from '@/src/components/theme/BrassSheen';
@@ -114,6 +115,8 @@ export default function ReelScreen() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const user = useAuthStore(s => s.user);
   const resolvedRole = resolveTier(user);
+  // The page's wash kept as a texture while the Reel is in front, as the room's light is (RoomLight).
+  const seen = useScreenSeen();
 
   // Below the top bar, as it measured itself; above the tab bar drawn over the tab.
   const topPad = useTabContentTop();
@@ -456,6 +459,7 @@ export default function ReelScreen() {
         colors={[colors.ink, 'rgba(13,11,9,1)', colors.soot]}
         locations={[0, 0.4, 1]}
         style={[StyleSheet.absoluteFillObject, WASH]}
+        renderToHardwareTextureAndroid={seen}
       />
       <ReelProjectorBeam scrollY={activeScrollY} />
 

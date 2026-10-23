@@ -51,7 +51,7 @@ jest.mock('@/src/utils/mutationExecutor', () => ({
   applyIdMapToPayload: (p: Record<string, unknown>) => p,
 }));
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { back: jest.fn(), push: jest.fn(), replace: jest.fn() } }));
-jest.mock('@react-navigation/native', () => ({
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(),
   usePreventRemove: jest.fn(),
   useNavigation: () => ({ dispatch: jest.fn() }),
   useIsFocused: () => true,

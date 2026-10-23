@@ -15,6 +15,7 @@ const mockUser = {
 };
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { back: jest.fn(), push: jest.fn(), replace: jest.fn() } }));
 jest.mock('@react-navigation/native', () => ({
+  ...require('@/test-utils/navigationMock').navigationMock(),
   usePreventRemove: () => {}, useNavigation: () => ({ dispatch: jest.fn() }), useIsFocused: () => true,
 }));
 // The state is built on each CALL: jest.mock is hoisted above `const mockUser`,

@@ -89,7 +89,7 @@ jest.mock('@/src/components/layout/CinematicFlashList', () => {
     }),
   };
 });
-jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));
 
 const PERSON = {
   name: 'Wong Kar-wai', profile_path: null, birthday: '1958-07-17', deathday: null,

@@ -35,7 +35,7 @@ jest.mock('@/src/stores/auth', () => {
   (useAuthStore as any).subscribe = () => () => {};
   return { useAuthStore };
 });
-jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), replace: jest.fn(), back: jest.fn() } }));
 jest.mock('@/src/hooks/useFollowRequests', () => ({ refreshFollowRequestCount: jest.fn() }));
 jest.mock('@/src/components/profile/FollowRequestsPanel', () => () => null);

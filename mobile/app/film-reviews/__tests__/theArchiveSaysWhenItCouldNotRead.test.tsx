@@ -33,7 +33,7 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn(), canGoBack: () => true, push: jest.fn(), replace: jest.fn() }),
   Stack: { Screen: () => null },
 }));
-jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));
 /** The list's own "reached the end", as the last render handed it over. */
 let mockEndReached: (() => void) | null = null;
 jest.mock('@/src/components/layout/CinematicFlashList', () => {

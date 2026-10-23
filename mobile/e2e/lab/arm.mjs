@@ -27,8 +27,7 @@
  *   Rt      the top bar as scrolled, moved by nothing          Rs  no scroll bar
  *   Rp      the pulses at rest and the curate button's sheen gone
  *   R0      all of them: the floor
- *   Rh      the lamp and the wash as drawn, each drawn once into a texture Android keeps
- *   Rlw     the lamp and the wash gone: what Rh could at best give back
+ * (The lamp and the wash kept as textures, once the arm Rh, ship: speed lab 39901452779.)
  *
  * The Dispatch's opening (WORKLIST P0.112), opened and scrolled as the Reel's arms are
  * (scrolls.sh, LAB_ARM_SCREEN=dispatch):
@@ -189,6 +188,7 @@ const reelNoWash = [edit(REEL_FILE, [
   "        colors={[colors.ink, 'rgba(13,11,9,1)', colors.soot]}",
   '        locations={[0, 0.4, 1]}',
   '        style={[StyleSheet.absoluteFillObject, WASH]}',
+  '        renderToHardwareTextureAndroid={seen}',
   '      />',
   '',
 ].join('\n'), '')];
@@ -221,16 +221,6 @@ const reelPulsesStill = [
     'export const BrassSheen = memo(function BrassSheen() {\n  if (globalThis) return null;\n'),
 ];
 
-// The lamp and the wash kept exactly as drawn, each drawn once into a texture Android keeps and
-// composites, in place of drawing their gradients again on every frame of a scroll (speed lab
-// 39868403930: removing the lamp took 500 ms off the Reel's middle frame, the wash 250).
-const reelLightCached = [
-  edit('src/components/atmosphere/RoomLight.tsx',
-    '    <View style={StyleSheet.absoluteFill} pointerEvents="none" {...UNSPOKEN} testID="room-light">\n',
-    '    <View style={StyleSheet.absoluteFill} pointerEvents="none" {...UNSPOKEN} testID="room-light" renderToHardwareTextureAndroid>\n'),
-  edit(REEL_FILE, '        style={[StyleSheet.absoluteFillObject, WASH]}\n',
-    '        style={[StyleSheet.absoluteFillObject, WASH]}\n        renderToHardwareTextureAndroid\n'),
-];
 
 // The Dispatch's opening (WORKLIST P0.112): its page waits for the member's own marks (certified,
 // saved, voted), asked for only after the page's filings are drawn (speed lab 39868403930: asked
@@ -248,8 +238,8 @@ const feedMarksFirst = [
   edit(DISPATCH_STORE, MARKS_AWAITED, '        await marks;\n'),
 ];
 
-/** The Reel's arms: each layer alone, and all of them (R0, the floor); the light cached (Rh) against it gone (Rlw). */
-export const REEL_ARMS = ['Rb', 'Rw', 'Rl', 'Rt', 'Rs', 'Rp', 'R0', 'Rh', 'Rlw'];
+/** The Reel's arms: each layer alone, and all of them (R0, the floor). */
+export const REEL_ARMS = ['Rb', 'Rw', 'Rl', 'Rt', 'Rs', 'Rp', 'R0'];
 
 export const ARMS = {
   Ws: [...svgRoom, ...svgVignette, ...svgHalo],
@@ -270,8 +260,6 @@ export const ARMS = {
   Rs: reelNoScrollbar,
   Rp: reelPulsesStill,
   R0: [...reelNoBeam, ...reelNoWash, ...reelNoLamp, ...reelBarStill, ...reelNoScrollbar, ...reelPulsesStill],
-  Rh: reelLightCached,
-  Rlw: [...reelNoLamp, ...reelNoWash],
   F0: feedMarksUnawaited,
   Fv: feedMarksFirst,
 };

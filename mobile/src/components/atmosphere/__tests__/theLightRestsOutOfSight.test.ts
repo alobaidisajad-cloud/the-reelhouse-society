@@ -5,12 +5,13 @@
  * scroll, the whole length of the page: on the stack, the film, the person and the member's file
  * the veil's Skia canvas was drawn again for every frame long after the photograph had gone. Its
  * lift now rests once the hem has risen past the top of any screen it could start on, and an
- * unchanged lift draws nothing.
+ * unchanged lift draws nothing. And the room's own light, still under a moving list, is kept as a
+ * texture while its screen is in front.
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { Dimensions } from 'react-native';
-import { RoomVeil, heldLift, type VeilStops } from '../RoomLight';
+import { RoomLight, RoomVeil, heldLift, type VeilStops } from '../RoomLight';
 
 const HEM = 320;
 const SCREEN = 800;
@@ -62,5 +63,60 @@ describe('the veil, drawn', () => {
     lifted.value = 6000; frame();
     lifted.value = 9000; frame();
     expect(transform().value).toBe(resting);
+  });
+});
+
+// The room's light is still and the list over it is not: redrawn under every scrolled frame, it
+// cost the Reel a third of its middle frame time. Kept by Android as a texture while its screen is
+// in front, and let go behind it, so a deep stack holds one screen's texture (speed lab 39901452779).
+describe('the room\'s light, kept', () => {
+  const { NavigationContext } = jest.requireActual('@react-navigation/native') as typeof import('@react-navigation/native');
+  const { act } = jest.requireActual('@testing-library/react-native') as typeof import('@testing-library/react-native');
+  const cached = (r: ReturnType<typeof render>) => {
+    type Node = { props: Record<string, unknown>; children: (Node | string)[] | null };
+    const find = (n: Node | string | null): Node | null => (!n || typeof n === 'string' ? null
+      : n.props.testID === 'room-light' ? n : (n.children ?? []).map(find).find(Boolean) ?? null);
+    const tree = r.toJSON() as Node | Node[] | null;
+    return (Array.isArray(tree) ? tree : [tree]).map(find).find(Boolean)?.props.renderToHardwareTextureAndroid;
+  };
+
+  it('as a texture while its screen is in front, let go when it is behind, kept again on its return', async () => {
+    const heard: Record<string, () => void> = {};
+    let focused = true;
+    const navigation = {
+      isFocused: () => focused,
+      addListener: (event: string, fn: () => void) => { heard[event] = fn; return () => { delete heard[event]; }; },
+    };
+    const r = render(React.createElement(NavigationContext.Provider, { value: navigation as never }, React.createElement(RoomLight, { room: 'default' })));
+    expect(cached(r)).toBe(true);
+    focused = false;
+    await act(async () => { heard.blur?.(); });
+    expect(cached(r)).toBe(false);
+    focused = true;
+    await act(async () => { heard.focus?.(); });
+    expect(cached(r)).toBe(true);
+  });
+
+  it('outside any navigator (a crash net, a test), kept: nothing is in front of it', () => {
+    expect(cached(render(React.createElement(RoomLight, { room: 'default' })))).toBe(true);
+  });
+});
+
+describe('whether a screen is seen', () => {
+  const { renderHook } = jest.requireActual('@testing-library/react-native') as typeof import('@testing-library/react-native');
+  const { useScreenSeen } = jest.requireActual('@/src/hooks/useScreenSeen') as typeof import('@/src/hooks/useScreenSeen');
+
+  it('with no navigator around it, seen, and it listens for nothing', async () => {
+    const { result } = await renderHook(() => useScreenSeen());
+    expect(result.current).toBe(true);
+  });
+
+  it('inside one, as the navigator says, from the first draw: a screen opened behind another is not seen', async () => {
+    const { NavigationContext } = jest.requireActual('@react-navigation/native') as typeof import('@react-navigation/native');
+    const navigation = { isFocused: () => false, addListener: () => () => {} };
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(NavigationContext.Provider, { value: navigation as never }, children);
+    const { result } = await renderHook(() => useScreenSeen(), { wrapper });
+    expect(result.current).toBe(false);
   });
 });

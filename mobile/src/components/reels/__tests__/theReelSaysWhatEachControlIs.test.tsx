@@ -7,7 +7,7 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { FilterChip, StackCard, FILTER_GAP } from '../ReelsCards';
 
-jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));
+jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));
 
 describe('a filter chip', () => {
   it('reaches at most half the gap to its neighbour, so no tap is claimed twice', () => {

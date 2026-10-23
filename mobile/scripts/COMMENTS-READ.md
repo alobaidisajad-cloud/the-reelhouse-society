@@ -117,7 +117,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/index.tsx | 2026-10-15 | edited: the Lobby's read; the wall and the welcome end above the tab bar (useTabContentBottom); the welcome's scroll begins at the screen's top |
 | app/(tabs)/lounge.tsx | 2026-10-23 | edited: reading until the salons have answered once (loungesRead): its first frame came before its read began; the corridor reads the salons' own flag (loungesLoading), not one a room's read lowered; the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/(tabs)/profile.tsx | 2026-10-15 | centred states in a CentredRoom: between the bars, and scrolled when taller; the bar clear on arrival before the file |
-| app/(tabs)/reels.tsx | 2026-10-23 | edited: following nobody only of a list read: an unread follow list spools, a failed one says so and reads it again (both reels); the screen says its read failed; ends above the tab bar (useTabContentBottom) |
+| app/(tabs)/reels.tsx | 2026-10-23 | edited: the page's wash kept as a texture while the Reel is in front; following nobody only of a list read: an unread follow list spools, a failed one says so and reads it again (both reels); the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/+not-found.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
 | app/auth-callback.tsx | 2026-10-22 | edited: a spent link raised in Supabase's own words, so the member reads the house's sentence |
 | app/dispatch/[id].tsx | 2026-10-22 | edited: the post and the ballot told the dock holds their marks |
@@ -138,7 +138,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/[id].tsx | 2026-10-22 | edited: its ready mark (log) in all four trees; header and badge from usePushedHeaderTop; foot from useContentBottom |
 | app/lounge.tsx | 2026-10-01 | true as written |
 | app/lounge/[id].tsx | 2026-10-23 | edited: only this room's words and its read's flags (never the last room's, still held); the transcript says reading, or the house's failure with TRY AGAIN, before "be the first"; the ready mark fails when its words could not come; its reads keyed on who reads (userId), not the object a session restore replaces; the room's read; the composer and its bars stand on the edge (BAR_FOOT_GAP); each scroll traced |
-| app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-04 | edited: a portrait without a photograph carries the whole first letter, unspoken |
+| app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); a portrait without a photograph carries the whole first letter, unspoken |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | 2026-10-15 | back, veil and scrollbar from usePushedHeaderTop; foot from useContentBottom |
 | app/reset-password.tsx | 2026-10-15 | back and form from usePushedHeaderTop; foot from useContentBottom |
@@ -259,7 +259,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-16 | edited: Stryker's sandbox (.stryker-tmp) is never read as tests or modules |
-| jest.setup.ts | 2026-10-22 | edited: expo-router mocked with the one base every test's own mock spreads; useFrameCallback kept, not run, for a test to hand it frames; expo-image's getCachePathAsync answers null, as native does for a picture not on disk |
+| jest.setup.ts | 2026-10-23 | edited: @react-navigation/native mocked with the one base every test's own mock spreads; expo-router mocked with the one base every test's own mock spreads; useFrameCallback kept, not run, for a test to hand it frames; expo-image's getCachePathAsync answers null, as native does for a picture not on disk |
 | jest.stryker.config.js | 2026-10-16 | new: the tests' config in Stryker's own process, its environment by its whole path |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
@@ -276,11 +276,11 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/paths.ts | 2026-09-29 | 6 findings; LARGE's JSDoc carried the layout rule, split to LAYOUTS |
 | mockups/README.md | 2026-10-15 | edited: CI splits the capture run in three, and keeps --require over the three together |
 | mockups/srcMark.ts | 2026-09-29 | an example path that names no file reworded |
-| mockups/tabs/__tests__/zz-dispatch.gen.test.tsx | 2026-09-29 | true as written |
-| mockups/tabs/__tests__/zz-lobby.gen.test.tsx | 2026-09-29 | true as written |
-| mockups/tabs/__tests__/zz-reel.gen.test.tsx | 2026-09-29 | true as written |
-| mockups/tabs/__tests__/zz-rooms.gen.test.tsx | 2026-10-23 | edited: the salons' flag by its own name; the Lounge drawn from rooms in the store's own shape, two doors side by side |
-| mockups/tabs/__tests__/zz-settings.gen.test.tsx | 2026-09-29 | true as written |
+| mockups/tabs/__tests__/zz-dispatch.gen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); true as written |
+| mockups/tabs/__tests__/zz-lobby.gen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); true as written |
+| mockups/tabs/__tests__/zz-reel.gen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); true as written |
+| mockups/tabs/__tests__/zz-rooms.gen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the salons' flag by its own name; the Lounge drawn from rooms in the store's own shape, two doors side by side |
+| mockups/tabs/__tests__/zz-settings.gen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); true as written |
 | mockups/tabs/flashListMock.tsx | 2026-10-01 | rows handed extraData, as FlashList does |
 | mockups/tools/drawn.cjs | 2026-10-03 | read whole: controls counted through stripComments.js |
 | mockups/tools/face-advances.cjs | 2026-10-03 | edited: writes a hidden key as its escape |
@@ -382,8 +382,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/theToastIsDrawnOnTop.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/atmosphere/__tests__/useSharedImage.test.tsx | — |  |
 | src/components/atmosphere/RoomBloom.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/atmosphere/RoomLight.tsx | 2026-10-23 | edited: heldLift: the veil's light moves back only while any of it can show, and an unchanged lift writes nothing, so the canvas is not drawn on every frame of the page below; the room drawn as one native background (roomLightImage); no SVG |
-| src/components/atmosphere/__tests__/theLightRestsOutOfSight.test.ts | 2026-10-23 | the veil's light rests once the hem is out of sight: heldLift, and the veil drawn with its reaction run per frame |
+| src/components/atmosphere/RoomLight.tsx | 2026-10-23 | edited: the room's light kept as a texture while its screen is in front (useScreenSeen), let go behind; heldLift: the veil's light moves back only while any of it can show, and an unchanged lift writes nothing, so the canvas is not drawn on every frame of the page below; the room drawn as one native background (roomLightImage); no SVG |
+| src/components/atmosphere/__tests__/theLightRestsOutOfSight.test.ts | 2026-10-23 | edited: the room's light kept while in front, let go behind, kept outside any navigator; whether a screen is seen, with no navigator and behind another; the veil's light rests once the hem is out of sight: heldLift, and the veil drawn with its reaction run per frame |
 | src/components/atmosphere/useSharedImage.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/auth/AuthChrome.tsx | 2026-10-08 | the candlelight halo a native gradient; written as an ellipse (RN misreads circle <r> at) |
 | src/components/auth/EmailConfirmationScreen.tsx | 2026-10-15 | close from useModalTop |
@@ -401,11 +401,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/critique/__tests__/oneCritiqueRow.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/critique/CritiqueRow.tsx | 2026-10-04 | edited: the letter is initialOf, whole |
 | src/components/critique/withdraw.ts | 2026-10-01 | new: the one question before a critique comes off the page |
-| src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx | 2026-09-29 | new |
-| src/components/darkroom/__tests__/theFiltersSayWhatTheyHold.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the filter toggle and CLEAR speak. |
-| src/components/darkroom/__tests__/theNextBatchSaysWhenItCouldNotBeDeveloped.test.tsx | 2026-10-02 | the next batch says it could not be developed; moods are buttons with state and keys |
-| src/components/darkroom/__tests__/theSuggestionsComeBack.test.tsx | 2026-09-29 | read with the Darkroom focus fix / E2E probe |
-| src/components/darkroom/__tests__/theSuggestionsSayWhenTheCatalogueIsAway.test.tsx | 2026-10-17 | new |
+| src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); new |
+| src/components/darkroom/__tests__/theFiltersSayWhatTheyHold.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); Written 2026-10-02 (launch audit): the filter toggle and CLEAR speak. |
+| src/components/darkroom/__tests__/theNextBatchSaysWhenItCouldNotBeDeveloped.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the next batch says it could not be developed; moods are buttons with state and keys |
+| src/components/darkroom/__tests__/theSuggestionsComeBack.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); read with the Darkroom focus fix / E2E probe |
+| src/components/darkroom/__tests__/theSuggestionsSayWhenTheCatalogueIsAway.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); new |
 | src/components/darkroom/__tests__/theTraySaysWhenTheCatalogueIsAway.test.tsx | — |  |
 | src/components/darkroom/constants.ts | 2026-10-02 | read; sound |
 | src/components/darkroom/DarkroomCards.tsx | 2026-10-02 | doors through nav |
@@ -435,7 +435,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/everyTextHasACeiling.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/excerpt.test.ts | — |  |
 | src/components/dispatch/__tests__/feedRowIsRecyclable.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/components/dispatch/__tests__/feedScreen.test.tsx | 2026-10-15 | edited: a failed page tells the E2E so, and shows no filing for a flow to find |
+| src/components/dispatch/__tests__/feedScreen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); a failed page tells the E2E so, and shows no filing for a flow to find |
 | src/components/dispatch/__tests__/motionLaws.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/noIntlInTheDispatch.test.ts | — |  |
 | src/components/dispatch/__tests__/nothingIsLostQuietly.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -522,7 +522,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/trayActsFire.test.tsx | — |  |
 | src/components/film/__tests__/whatAFilmPageNames.test.tsx | 2026-10-22 | edited: a country by its name; a right-to-left critique whole after its mark |
 | src/components/film/__tests__/zz-film.gen.test.tsx | — |  |
-| src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-23 | edited: the critiques unread while the page is drawn from the warm catalogue; written: the critiques' failure reaches the page; an unread verdict is unknown |
+| src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the critiques unread while the page is drawn from the warm catalogue; written: the critiques' failure reaches the page; an unread verdict is unknown |
 | src/components/film/CastCarousel.tsx | 2026-10-04 | edited: an actor without a photograph is drawn by initialOf |
 | src/components/film/FilmActionTray.tsx | 2026-10-16 | histories to the present; edited: risen, it is drawn with plain styles (RISEN_SCRIM, RISEN_TRAY), read against Sealed E2E run 38790116312 |
 | src/components/film/FilmDetailLayout.tsx | 2026-10-23 | edited: no critiques section while they are coming: neither "be the first voice" nor a section leaping up the page; back and scroll header from usePushedHeaderTop; the stub on the edge (useBottomEdge); each scroll traced |
@@ -548,7 +548,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/home/VelvetRopeCTA.tsx | 2026-10-03 | read whole: its sheen moved to theme/BrassSheen |
 | src/components/InitiationModal.tsx | 2026-10-15 | beats cross-fade and the door closes through Presence; the card in a CentredCard |
 | src/components/KeyboardRoom.tsx | 2026-10-01 | written: the keyboard's room on Android |
-| src/components/layout/__tests__/aCentredCardScrollsAtTheLargestText.test.tsx | 2026-10-15 | new: every centred card in a Modal scrolls in one room at x3.1; every Modal named with its kind; each list read through one() or firstOf(), which say what they found; its files come from the shared file list (test-utils/universe.js) |
+| src/components/layout/__tests__/aCentredCardScrollsAtTheLargestText.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); new: every centred card in a Modal scrolls in one room at x3.1; every Modal named with its kind; each list read through one() or firstOf(), which say what they found; its files come from the shared file list (test-utils/universe.js) |
 | src/components/layout/__tests__/aCentredPageScrollsAtTheLargestText.test.tsx | 2026-10-15 | new: every centred page scrolls in one room at x3.1 |
 | src/components/layout/__tests__/aSectionIsAHeading.test.tsx | 2026-10-01 | written: a section title is a heading |
 | src/components/layout/__tests__/aSwipeBackIsHeard.test.tsx | 2026-10-02 | nav's history hears the swipe back |
@@ -581,7 +581,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/__tests__/theQuoteMarkIsTheFontsOwn.test.ts | 2026-10-15 | new |
 | src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx | 2026-10-15 | edited: lobby-wall-hung only on a wall the house read, vacant too; its files come from the shared file list (test-utils/universe.js) |
 | src/components/lobby/__tests__/theHonourStays.test.tsx | 2026-10-16 | edited: the record of editions is the strict fake's, rows in the table's shape: the query is shown picking the right day from decoys |
-| src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-01 | both doors, every pull |
+| src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); both doors, every pull |
 | src/components/lobby/__tests__/theWallIsMeasured.test.ts | 2026-10-22 | edited: the foot never rises off its sheet, in the order it gives way; the snipe measured as the plan chose |
 | src/components/lobby/__tests__/theWallIsRead.test.ts | 2026-09-30 | new |
 | src/components/lobby/__tests__/theWallKeepsTheDay.test.tsx | 2026-10-03 | new: the clock reads on the hour and on return; a wall behind the day is asked again |
@@ -648,7 +648,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lounge/__tests__/thePollRunsWhileWatched.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx | 2026-10-23 | edited: the transcript: reading while its words come, the house's failure with TRY AGAIN when they cannot, "be the first" only when read; the last room's words never drawn; read whole: sound |
 | src/components/lounge/__tests__/theRopeWaitsForTheSheet.test.tsx | 2026-10-03 | read whole: sound |
-| src/components/lounge/__tests__/theSalonsSayWhenTheyCouldNotBeRead.test.tsx | 2026-10-23 | edited: before the salons were ever asked for, the corridor reads; the salons' flag by its own name; read whole: sound |
+| src/components/lounge/__tests__/theSalonsSayWhenTheyCouldNotBeRead.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); before the salons were ever asked for, the corridor reads; the salons' flag by its own name; read whole: sound |
 | src/components/lounge/__tests__/theSealSaysWhatTheCountMeans.test.tsx | 2026-10-03 | written whole: the unread seal seen and said at each count, and its limit against the SQL |
 | src/components/lounge/__tests__/theSheetOffersOnlyWhatCanWork.test.tsx | 2026-10-02 | Written in the launch audit: a departed member's message offers no report or block; a block always names who it blocks. |
 | src/components/lounge/ActionSheet.tsx | 2026-10-15 | foot from useSheetBottom |
@@ -771,7 +771,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/sectionLayers.ts | 2026-10-16 | new: read against reels.tsx's two layers and the film tray's run 38790116312 |
 | src/components/reels/__tests__/MemberRegistry.select.test.ts | 2026-10-01 | no comments |
 | src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | 2026-10-23 | edited: the following reel before the follow list is known: unread spools, failed says so and reads it again, read of nobody is quiet; the E2E is told a failed reel failed, and an empty one was read |
+| src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the following reel before the follow list is known: unread spools, failed says so and reads it again, read of nobody is quiet; the E2E is told a failed reel failed, and an empty one was read |
 | src/components/reels/MemberRegistry.tsx | 2026-10-01 | nav; comments cut to the why |
 | src/components/reels/ReelsCards.tsx | 2026-10-03 | edited: the loader is his eyes; the flicker is gone |
 | src/components/reels/ReelsFeedList.tsx | 2026-10-15 | edited: each log row carries reel-log; each scroll traced |
@@ -800,7 +800,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | — |  |
 | src/components/text/AnimatedText.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/text/index.tsx | 2026-10-17 | read whole; edited: the fifth promise, a cut said in the E2E build by a Text that may cut itself |
-| src/components/theme/__tests__/oneBrassSheen.test.tsx | 2026-10-03 | written whole: the sheen sweeps only in front, and both plates draw it |
+| src/components/theme/__tests__/oneBrassSheen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); written whole: the sheen sweeps only in front, and both plates draw it |
 | src/components/theme/BrassSheen.tsx | 2026-10-03 | written whole: the one sheen both brass plates draw; still behind another tab and under Reduce Motion |
 | src/components/theme/CrestGlow.tsx | 2026-10-01 | the leak note to what it does |
 | src/components/theme/DiamondDivider.tsx | 2026-10-01 |  |
@@ -810,7 +810,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/TryAgain.tsx | 2026-10-22 | edited: a label for the act where it is more than asking again (RESTART THE APP) |
 | src/components/__tests__/aLabelIsSpoken.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/theKeyboardHasRoom.test.tsx | 2026-10-01 | written with the keyboard's room |
-| src/components/reels/__tests__/theReelSaysWhatEachControlIs.test.tsx | 2026-10-01 | written with the Reel's controls |
+| src/components/reels/__tests__/theReelSaysWhatEachControlIs.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); written with the Reel's controls |
 | src/components/ui/NotificationBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/constants/__tests__/aMemberWhoLeftIsNamedOneWay.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/constants/__tests__/aRankIsSoldEnforcedAndExplained.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -847,18 +847,18 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/EditProfileScreen.tsx | 2026-10-15 | nav top from usePushedHeaderTop; foot from useContentBottom |
 | src/features/profile/LinksEditor.tsx | 2026-10-03 | edited: the link title and address name their caps |
 | src/features/profile/profile.styles.ts | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
-| src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-22 | edited: the Auteur manages a membership, not a rank to choose |
+| src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the Auteur manages a membership, not a rank to choose |
 | src/features/settings/__tests__/anExportIsWhole.test.ts | 2026-10-01 | written: an export holds every row once |
-| src/features/settings/__tests__/theSignOutNamesWhatItErases.test.tsx | 2026-10-15 | written: the sign-out confirm counts unsent changes, drafts and failed words; online, the queue goes first |
+| src/features/settings/__tests__/theSignOutNamesWhatItErases.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); written: the sign-out confirm counts unsent changes, drafts and failed words; online, the queue goes first |
 | src/features/settings/DataVault.tsx | 2026-10-02 | no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
 | src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
 | src/features/settings/settings.styles.ts | 2026-10-02 | read; sound |
 | src/features/settings/SettingsScreen.tsx | 2026-10-22 | edited: its ready mark (settings), ready at once: the lab's control page; nav top from usePushedHeaderTop; foot from useContentBottom; the code window in a CentredCard |
 | src/features/settings/SettingsSections.tsx | 2026-10-03 | edited: a new password is judged by passwordIsAccepted |
 | src/generated/lucideIcons.js | 2026-10-03 | generated by scripts/lucide-icons.js; its --check guard holds it |
-| src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx | 2026-10-23 | edited: the rooms answered, as the hook hands them; written: a follow that throws is said and rolled back |
+| src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the rooms answered, as the hook hands them; written: a follow that throws is said and rolled back |
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
-| src/hooks/__tests__/aNewMemberStartsUnfiltered.test.tsx | 2026-10-23 | edited: the rooms answered, as the hook hands them; written: every filter wiped for a new member |
+| src/hooks/__tests__/aNewMemberStartsUnfiltered.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the rooms answered, as the hook hands them; written: every filter wiped for a new member |
 | src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx | 2026-10-01 | written: each read cancelled only by what makes it stale |
 | src/hooks/__tests__/aRestoredNoteIsSent.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a draft's restored private note is sealed with the record. |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
@@ -929,6 +929,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
 | src/hooks/useUpdateUser.ts | 2026-10-02 | read; sound |
 | src/hooks/useVault.ts | 2026-10-01 | reload, for a Vault that could not open |
+| src/hooks/useScreenSeen.ts | 2026-10-23 | useIsFocused at home outside a navigator: seen when nothing is in front of it; changes only on focus and blur |
 | src/lib/__tests__/aRankBoughtOfflineIsKept.test.ts | 2026-10-03 | payments pass: queued for the store's account, with no network and no session |
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | 2026-10-03 | payments pass: a stand-in store drives every answer a configured one gives |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | 2026-10-03 | payments pass: the source pins went; the paths they guarded now run |
@@ -1072,7 +1073,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/theHouseSaysWhy.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/stores/__tests__/theLiveWireKnowsTheRoom.test.ts | — |  |
 | src/stores/__tests__/theLogSaysWhatHappened.test.ts | — |  |
-| src/stores/__tests__/theNoticesSayWhatTheyCouldNotReach.test.tsx | 2026-10-02 | first page ordered by time then id; older page failure said; rows say who, what, when |
+| src/stores/__tests__/theNoticesSayWhatTheyCouldNotReach.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); first page ordered by time then id; older page failure said; rows say who, what, when |
 | src/stores/__tests__/theRoomYouAreActuallyIn.test.ts | — |  |
 | src/stores/__tests__/theSalonListIsWholeOrSaysSo.test.ts | 2026-10-23 | edited: the salons' flag by its own name; written with the salon-list fix |
 | src/stores/__tests__/theSalonNameIsNotCutInSilence.test.ts | 2026-10-03 | read whole: the column's ceiling read from the snapshot |
@@ -1428,7 +1429,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/heartbeatsAreKept.test.ts | 2026-10-22 | written: every scheduled workflow has its heartbeat on its own schedule, checking in only when the schedule fired; the check-in's refusals |
 | scripts/batch-report.cjs | 2026-10-22 | written: a batch's report from the register, a line to answer for every class closed by a process; never written over (P0.58) |
 | src/utils/__tests__/theBatchReportIsAnswered.test.ts | 2026-10-22 | written: the report's lines, only those classes; the latest here leaves no answer empty |
-| e2e/lab/arm.mjs | 2026-10-23 | edited: the Dispatch's arms F0 (the marks unwaited) and Fv (asked before the filings draw); Rh (the lamp and the wash cached as textures) and Rlw (both gone); the Reel's arms (P0.111): beam, wash, lamp, top bar still, scroll bar, pulses and sheen, and all (R0); each applies, R0 type-checked; the speed lab's arms, ported from the study and rewritten for main: five scenes of the light on the welcome, each as main draws it, as the SVG of 4ab40542^ and with none; STILL for the simulator; every edit found once or nothing written; --check for every build the lab makes (P0.103, P0.104) |
+| e2e/lab/arm.mjs | 2026-10-23 | edited: Rh and Rlw retired: the lamp and the wash kept as textures ship; the wash's arm takes its new prop; the Dispatch's arms F0 (the marks unwaited) and Fv (asked before the filings draw); Rh (the lamp and the wash cached as textures) and Rlw (both gone); the Reel's arms (P0.111): beam, wash, lamp, top bar still, scroll bar, pulses and sheen, and all (R0); each applies, R0 type-checked; the speed lab's arms, ported from the study and rewritten for main: five scenes of the light on the welcome, each as main draws it, as the SVG of 4ab40542^ and with none; STILL for the simulator; every edit found once or nothing written; --check for every build the lab makes (P0.103, P0.104) |
 | e2e/lab/proofs.mjs | 2026-10-22 | written: each scene's shots judged: still, present against no light, main against SVG within the study's bar; a signed luma grid against none (P0.103) |
 | e2e/lab/analyze.mjs | 2026-10-22 | written: the timed starts per build; each against A by a permutation test, called at Holm's p under 0.01; the A/A pair must call nothing; the log read by cold-start.mjs (P0.104) |
 | e2e/lab/lab.sh | 2026-10-22 | written: one emulator boot, settled; the shots in two rounds of opposite order; the timed starts, each measured by one shell call; a trace per timed build (P0.104) |
@@ -1448,6 +1449,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/__tests__/labFrameLog.test.tsx | 2026-10-22 | new: a task long only past a frame and 50 ms, a frame slow past 25 ms, a quiet second unsaid, each page counted from its start |
 | test-utils/expoRouterMock.ts | 2026-10-22 | new: expo-router as every test meets it, the base of every mock of it |
 | test-utils/__tests__/theRouterMockHasOneBase.guard.test.ts | 2026-10-22 | new: every mock of expo-router spreads the base or the real module; jest.setup.ts uses the base |
+| test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts | 2026-10-23 | every mock of @react-navigation/native spreads the one base or the real module; jest.setup.ts uses it |
+| test-utils/navigationMock.ts | 2026-10-23 | @react-navigation/native as every test meets it: the real module, focus answered outside a navigator; the one base every mock spreads |
 | e2e/no-error-dialogs.sh | 2026-10-23 | new: Android's error dialogs hidden and closed, for the flows and the lab alike |
 | src/utils/__tests__/aReadIsKeyedOnWhoNotTheObject.guard.test.ts | 2026-10-23 | new: every hook keyed on the auth user object judged no read; a new one fails |
 | src/components/lounge/__tests__/theRoomIsAskedForOnce.test.tsx | 2026-10-23 | edited: the store as it now is: the room open, its own flags; new: the room and roster asked once while the session settles, again for another member |

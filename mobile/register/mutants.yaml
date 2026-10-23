@@ -1134,6 +1134,33 @@ mutants:
         replace: "        .limit(100);\n\n      // supabase-js resolves"
     proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the first page is ordered as the page above it is asked for: by its time, then its id" }
 
+  - id: shape-light-never-kept
+    class: SPEED-still-light-redrawn-under-scroll
+    source: shape
+    edits:
+      - file: src/components/atmosphere/RoomLight.tsx
+        find: " testID=\"room-light\" renderToHardwareTextureAndroid={seen}>"
+        replace: " testID=\"room-light\">"
+    proof: { file: src/components/atmosphere/__tests__/theLightRestsOutOfSight.test.ts, test: "as a texture while its screen is in front, let go when it is behind, kept again on its return" }
+
+  - id: shape-light-kept-behind
+    class: SPEED-still-light-redrawn-under-scroll
+    source: shape
+    edits:
+      - file: src/hooks/useScreenSeen.ts
+        find: "    const blurred = navigation.addListener('blur', () => setSeen(false));\n"
+        replace: "    const blurred = navigation.addListener('blur', () => setSeen(true));\n"
+    proof: { file: src/components/atmosphere/__tests__/theLightRestsOutOfSight.test.ts, test: "as a texture while its screen is in front, let go when it is behind, kept again on its return" }
+
+  - id: shape-navigation-mock-from-scratch
+    class: TEST-mock-written-from-scratch
+    source: shape
+    edits:
+      - file: src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx
+        find: "jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));"
+        replace: "jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));"
+    proof: { file: test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts, test: "every mock of @react-navigation/native spreads the one base, or the real module, first" }
+
   - id: shape-transcript-empty-while-reading
     class: UI-read-drawn-as-empty
     source: shape
