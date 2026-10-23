@@ -156,8 +156,8 @@
   {
     "class": "TEST-mock-accepts-anything",
     "mutant": "shape-hand-mock-finder-trusts-a-name",
-    "proof": "m3",
-    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "proof": "m6",
+    "commit": "9a4fd27684c2300133b87e4b886a6915cee2fd46",
     "verdict": "caught"
   },
   {
