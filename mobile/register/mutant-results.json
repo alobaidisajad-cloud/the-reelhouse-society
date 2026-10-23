@@ -833,6 +833,13 @@
     "verdict": "caught"
   },
   {
+    "class": "DB-certification-held-twice",
+    "mutant": "shape-certification-unrehearsed",
+    "proof": "m1",
+    "commit": "40695c8e2d42b63f7d0a023d4993263726534a1f",
+    "verdict": "caught"
+  },
+  {
     "class": "DATA-settings-saved-over-an-unread-profile",
     "mutant": "shape-settings-form-over-unread",
     "proof": "m1",
