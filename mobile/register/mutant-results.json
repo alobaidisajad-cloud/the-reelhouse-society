@@ -833,6 +833,69 @@
     "verdict": "caught"
   },
   {
+    "class": "SPEED-page-waits-for-the-members-marks",
+    "mutant": "shape-page-waits-for-marks",
+    "proof": "m1",
+    "commit": "3f523c51491c570128f0d4f7ee7ae196c6ab6993",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-page-waits-for-the-members-marks",
+    "mutant": "shape-reader-waits-for-marks",
+    "proof": "m2",
+    "commit": "3f523c51491c570128f0d4f7ee7ae196c6ab6993",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-unknown-mark-drawn-as-off",
+    "mutant": "shape-stamp-unknown-pressable",
+    "proof": "m1",
+    "commit": "3f523c51491c570128f0d4f7ee7ae196c6ab6993",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-unknown-mark-drawn-as-off",
+    "mutant": "shape-dock-unknown-pressable",
+    "proof": "m2",
+    "commit": "3f523c51491c570128f0d4f7ee7ae196c6ab6993",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-unknown-mark-drawn-as-off",
+    "mutant": "shape-ballot-unknown-open",
+    "proof": "m3",
+    "commit": "3f523c51491c570128f0d4f7ee7ae196c6ab6993",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-unknown-mark-drawn-as-off",
+    "mutant": "shape-failed-mark-known",
+    "proof": "m6",
+    "commit": "3f523c51491c570128f0d4f7ee7ae196c6ab6993",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-unknown-mark-drawn-as-off",
+    "mutant": "shape-reader-unknown-default",
+    "proof": "m4",
+    "commit": "3f523c51491c570128f0d4f7ee7ae196c6ab6993",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-unknown-mark-drawn-as-off",
+    "mutant": "shape-row-unknown-never",
+    "proof": "m5",
+    "commit": "3f523c51491c570128f0d4f7ee7ae196c6ab6993",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-saved-page-from-held-ids",
+    "mutant": "shape-saved-from-held-ids",
+    "proof": "m1",
+    "commit": "3f523c51491c570128f0d4f7ee7ae196c6ab6993",
+    "verdict": "caught"
+  },
+  {
     "class": "SPEED-still-light-redrawn-under-scroll",
     "mutant": "shape-light-never-kept",
     "proof": "m1",
