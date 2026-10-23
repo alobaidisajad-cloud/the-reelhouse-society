@@ -9,6 +9,8 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { useProfileController } from '../useProfileController';
 import reelToast from '@/src/utils/reelToast';
+import { useSocialStore } from '@/src/stores/socialStore';
+import { followUser, hydrateFollowing } from '@/src/stores/domain/socialSlice';
 
 let mockTarget = { id: 'u2', username: 'ana', followers_count: 4, is_social_private: false };
 const mockSetTargetUser = jest.fn((fn: (p: typeof mockTarget) => typeof mockTarget) => { mockTarget = fn(mockTarget); });
@@ -23,6 +25,7 @@ jest.mock('@/src/hooks/useProfileData', () => ({
 jest.mock('@/src/stores/domain/socialSlice', () => ({
   followUser: jest.fn(async () => { throw new Error('The request was refused'); }),
   unfollowUser: jest.fn(async () => true),
+  hydrateFollowing: jest.fn(async () => {}),
 }));
 jest.mock('@/src/stores/auth', () => {
   const state = { user: { id: 'me', username: 'tomas' }, isAuthenticated: true };
@@ -38,9 +41,22 @@ jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigati
 jest.mock('@/src/utils/reelToast', () => ({ __esModule: true, default: Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn() }) }));
 
 it('is said, and the count goes back to what it was', async () => {
+  // The follow list read whole: whether they follow is known.
+  useSocialStore.setState({ followingKnown: 'held' });
   const { result } = await renderHook(() => useProfileController());
   await act(async () => { await result.current.toggleFollow(); });
   expect(reelToast.error).toHaveBeenCalledWith('Could not follow @ana. Please try again.');
   expect(mockTarget.followers_count).toBe(4);
   expect(result.current.followLoading).toBe(false);
+});
+
+it('while the follow list is not yet read, files no follow: it asks for the list again', async () => {
+  useSocialStore.setState({ followingKnown: 'unread' });
+  (followUser as jest.Mock).mockClear();
+  const { result } = await renderHook(() => useProfileController());
+  expect(result.current.followKnown).toBe(false);
+  await act(async () => { await result.current.toggleFollow(); });
+  expect(followUser).not.toHaveBeenCalled();
+  expect(hydrateFollowing).toHaveBeenCalled();
+  expect(mockTarget.followers_count).toBe(4);
 });

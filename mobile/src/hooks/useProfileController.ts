@@ -8,7 +8,7 @@ import type { LedgerRating, WatchlistDecade, ShelfSort } from '@/src/types';
 import { safeOpenURL, normalizeSocialUrl } from '@/src/utils/linking';
 import { useFilmStore } from '@/src/stores/films';
 import { useSocialStore } from '@/src/stores/socialStore';
-import { followUser, unfollowUser } from '@/src/stores/domain/socialSlice';
+import { followUser, hydrateFollowing, unfollowUser } from '@/src/stores/domain/socialSlice';
 import { shouldRepairHandleRoute, wasMyHandle } from '@/src/utils/handleHistory';
 import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
@@ -96,6 +96,11 @@ export function useProfileController(usernameOverride?: string) {
   );
   const isFollowing = useSocialStore(s => s.isFollowing((username ?? '').toLowerCase()));
   const isRequested = useSocialStore(s => s.isRequested((username ?? '').toLowerCase()));
+  // Whether the member follows this one is known once the follow list is read whole, or
+  // a follow or a request is held: until then, not following is not known (followingKnown).
+  const followingKnown = useSocialStore(s => s.followingKnown);
+  const followKnown = isSelf || isFollowing || isRequested || followingKnown === 'held';
+  const rereadFollows = useCallback(() => { void hydrateFollowing(); }, []);
 
   const data = useProfileData({
     username,
@@ -304,6 +309,8 @@ export function useProfileController(usernameOverride?: string) {
   const toggleFollow = useCallback(async () => {
     if (!isAuthenticated) { nav.push('/login'); return; }
     if (followLoading) return;
+    // Not known whether they follow: the list is asked for again, never a follow filed blind.
+    if (!followKnown) { rereadFollows(); return; }
     setFollowLoading(true);
 
     const prevUser = data.targetUser;
@@ -336,7 +343,7 @@ export function useProfileController(usernameOverride?: string) {
       });
     }
     setFollowLoading(false);
-  }, [isAuthenticated, isFollowing, isRequested, username, followLoading, data]);
+  }, [isAuthenticated, isFollowing, isRequested, followKnown, rereadFollows, username, followLoading, data]);
 
   // A room's filters, sent to the server's paged read whenever they or the room
   // change (useProfileData asks nothing when they stay at rest).
@@ -364,6 +371,10 @@ export function useProfileController(usernameOverride?: string) {
     // Holds the not-found screen while the route follows your own rename.
     repairingHandle,
     isFollowing,
+    /** Whether they follow this member is read; until it is, FOLLOW and SEALED wait. */
+    followKnown,
+    followingKnown,
+    rereadFollows,
     isRequested,
     myLogs,
     myWatchlist,

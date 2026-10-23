@@ -51,6 +51,8 @@ const makeCtl = (over: Record<string, unknown> = {}, dataOver: Record<string, un
   },
   username: 'tomasreyes', isSelf: false, repairingHandle: false,
   isFollowing: false, isRequested: false, activeTab: null,
+  // The follow list read whole: whether they follow is known.
+  followKnown: true, followingKnown: 'held', rereadFollows: jest.fn(),
   myLogs: [], myWatchlist: [], myVault: [], myLists: [], setActiveTab: jest.fn(),
   archiveSieve: 'all', ledgerSearch: '', ledgerRatingFilter: 'all',
   watchlistSearch: '', watchlistSort: 'default', physicalFilter: null,
@@ -132,6 +134,30 @@ describe('the four states the page can be in', () => {
     expect(r.getByLabelText('Go back')).toBeTruthy();
     await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     expect(fetchUserData).toHaveBeenCalledTimes(1);
+  });
+
+  it('a private member, while the follow list is read, is never sealed against one who follows: retrieving, and no FOLLOW', async () => {
+    const r = await mount(
+      { isFollowing: false, isSelf: false, followKnown: false, followingKnown: 'unread' },
+      { targetUser: baseUser({ is_social_private: true }) },
+    );
+    expect(r.queryByText(/THIS DOSSIER IS SEALED/)).toBeNull();
+    expect(r.getAllByText('RETRIEVING THEIR DOSSIER').length).toBeGreaterThan(0);
+    expect(r.queryByText('+ REQUEST')).toBeNull();
+    expect(r.getByLabelText('Reading whether you follow this member')).toBeTruthy();
+    // Anchored: the member is drawn.
+    expect(r.getByText('TOMAS')).toBeTruthy();
+  });
+
+  it('a follow list that could not be read is said, and asked for again', async () => {
+    const rereadFollows = jest.fn();
+    const r = await mount(
+      { isFollowing: false, isSelf: false, followKnown: false, followingKnown: 'failed', rereadFollows },
+      { targetUser: baseUser({ is_social_private: true }) },
+    );
+    expect(r.getByText('ASK AGAIN')).toBeTruthy();
+    await fireEvent.press(r.getAllByLabelText('Ask for your follows again')[0]!);
+    expect(rereadFollows).toHaveBeenCalled();
   });
 
   it('a sealed dossier shows the seal and none of the rooms', async () => {

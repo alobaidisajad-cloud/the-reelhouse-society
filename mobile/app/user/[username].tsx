@@ -21,6 +21,7 @@ import { ReelRating, SectionDivider } from '@/src/components/Decorative';
 import { CinematicInsights } from '@/src/components/profile/CinematicInsights';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import { spotlightImage } from '@/src/theme/light';
 
 import { useProfileController } from '@/src/hooks/useProfileController';
@@ -183,7 +184,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const ctrl = useProfileController(usernameOverride);
   const { nav: doors, data } = ctrl;
   const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, analyticsShape, taste } = data;
-  const { username, isSelf, repairingHandle, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists } = ctrl;
+  const { username, isSelf, repairingHandle, isFollowing, isRequested, followKnown, followingKnown, rereadFollows, activeTab, myLogs, myWatchlist, myVault, myLists } = ctrl;
   // Failed: the file could not be read, and nothing of it is held.
   const readyMark = useScreenReady('member', loading || repairingHandle ? 'reading'
     : !targetUser && data.error ? 'failed' : 'ready');
@@ -262,7 +263,14 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const tier = resolveTier(targetUser);
   const isArchivistPlus = isArchivistPlusTier(targetUser);
   const isAuteurPlus = isAuteurPlusTier(targetUser);
-  const isPrivate = targetUser?.is_social_private && !isSelf && !isFollowing;
+  // Sealed only when the follow list says they do not follow: a private member they follow,
+  // drawn sealed while the list was still being read, told them they were shut out.
+  const isPrivate = targetUser?.is_social_private && !isSelf && followKnown && !isFollowing;
+  /** A private member whose door is not yet known to be open or shut to this one. */
+  const sealUnknown = !!targetUser?.is_social_private && !isSelf && !followKnown;
+  const sealWait = followingKnown === 'failed'
+    ? <RoomUnreachable room="your follows" onRetry={rereadFollows} />
+    : <RoomRetrieving room="their dossier" />;
 
   // The breathing gold wash: only on an Archivist's plate, the one place it is
   // painted, and still under reduce-motion.
@@ -648,7 +656,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         {/* ── THE SEALED ROOM ──
             A private member's room says it is sealed, never "no films yet":
             this branch runs before the profile's own privacy check. */}
-        {isPrivate ? (
+        {sealUnknown ? (
+          <View style={s.sealedPad}>{sealWait}</View>
+        ) : isPrivate ? (
           // Straight into the container, so it carries the room inset itself.
           <View style={s.sealedPad}>
             <RoomSealed />
@@ -1100,8 +1110,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             <View style={[s.statsBox, { borderColor: tierStatsBorder }]}>
               <StatCard label="FILMS" value={tally(totalFilms)} />
               <StatCard label="WATCHLIST" value={tally(totalWatchlist)} rule />
-              <StatCard label="FOLLOWERS" value={tally(targetUser.followers_count || 0)} onPress={isPrivate ? undefined : navToFollowers} rule />
-              <StatCard label="FOLLOWING" value={tally(targetUser.following_count || 0)} onPress={isPrivate ? undefined : navToFollowing} rule />
+              <StatCard label="FOLLOWERS" value={tally(targetUser.followers_count || 0)} onPress={isPrivate || sealUnknown ? undefined : navToFollowers} rule />
+              <StatCard label="FOLLOWING" value={tally(targetUser.following_count || 0)} onPress={isPrivate || sealUnknown ? undefined : navToFollowing} rule />
             </View>
 
             {/* ── The two acts ── */}
@@ -1131,22 +1141,27 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               </View>
             ) : (
               <View style={s.actsRow}>
+                {/* Not known whether they follow (the follow list not yet read whole): hollow,
+                    and saying so; a press asks for the list, never files a follow blind. */}
                 <PressableScale
-                  style={[s.act, !isFollowing && !isRequested && s.actSolid, followLoading && { opacity: 0.5 }]}
+                  style={[s.act, followKnown && !isFollowing && !isRequested && s.actSolid, !followKnown && UNREADY.plate, followLoading && { opacity: 0.5 }]}
                   onPress={toggleFollow}
                   disabled={followLoading || isRequested}
                   pressedScale={0.96}
                   hitSlop={{ top: 0, bottom: 0, left: 5, right: 5 }}
                   haptic="medium"
                   accessibilityRole="button"
-                  accessibilityLabel={isFollowing ? 'Unfollow this member' : isRequested ? 'Follow request sent' : 'Follow this member'}
+                  accessibilityState={{ busy: !followKnown && followingKnown !== 'failed' }}
+                  accessibilityLabel={!followKnown
+                    ? (followingKnown === 'failed' ? 'Your follows could not be read. Ask again' : 'Reading whether you follow this member')
+                    : isFollowing ? 'Unfollow this member' : isRequested ? 'Follow request sent' : 'Follow this member'}
                 >
                   <Text
                     {...scaledTextProps}
-                    style={[s.actText, !isFollowing && !isRequested && s.actTextSolid]}
+                    style={[s.actText, followKnown && !isFollowing && !isRequested && s.actTextSolid, !followKnown && UNREADY.words]}
                     adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}
                   >
-                    {followLoading ? '...' : isFollowing ? 'FOLLOWING' : isRequested ? 'REQUESTED' : targetUser.is_social_private ? '+ REQUEST' : '+ FOLLOW'}
+                    {followLoading ? '...' : !followKnown ? (followingKnown === 'failed' ? 'ASK AGAIN' : 'READING') : isFollowing ? 'FOLLOWING' : isRequested ? 'REQUESTED' : targetUser.is_social_private ? '+ REQUEST' : '+ FOLLOW'}
                   </Text>
                 </PressableScale>
                 <PressableScale
@@ -1167,7 +1182,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         </View>
 
         {/* ═══ The plate ends above; the rooms begin here, on the lit room ═══ */}
-        {isPrivate ? (
+        {sealUnknown ? (
+          <View style={s.sealedWrap}>{sealWait}</View>
+        ) : isPrivate ? (
           /* ── THE SEALED DOSSIER ── */
           <View style={s.sealedWrap}>
             <View style={s.sealedCard}>

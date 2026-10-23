@@ -1637,3 +1637,21 @@ mutants:
         find: "if (!certifyKnown) { void rereadLog(); return; } "
         replace: ""
     proof: { file: app/log/__tests__/theLogPageMovesEveryCard.test.tsx, test: "a log whose own mark the house did not answer draws the heart unknown, and a press asks again" }
+
+  - id: shape-follow-filed-blind
+    class: UI-unknown-mark-drawn-as-off
+    source: shape
+    edits:
+      - file: src/hooks/useProfileController.ts
+        find: "    if (!followKnown) { rereadFollows(); return; }\n"
+        replace: ""
+    proof: { file: src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx, test: "while the follow list is not yet read, files no follow: it asks for the list again" }
+
+  - id: shape-sealed-while-unknown
+    class: UI-unknown-mark-drawn-as-off
+    source: shape
+    edits:
+      - file: app/user/[username].tsx
+        find: "  const sealUnknown = !!targetUser?.is_social_private && !isSelf && !followKnown;\n"
+        replace: "  const sealUnknown = false;\n"
+    proof: { file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "a private member, while the follow list is read, is never sealed against one who follows: retrieving, and no FOLLOW" }
