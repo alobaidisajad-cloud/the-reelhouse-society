@@ -20,7 +20,7 @@ import { useDispatch } from '@/src/stores/dispatch';
 import type { Filing } from '@/src/stores/dispatchTypes';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 
-let mockUser: { id: string; username: string; tier?: string } | null = { id: 'u1', username: 'me' };
+let mockUser: { id: string; username: string; tier?: string; is_social_private?: boolean } | null = { id: 'u1', username: 'me', is_social_private: false };
 
 jest.mock('@/src/stores/auth', () => ({
   useAuthStore: Object.assign(
@@ -173,7 +173,7 @@ const mount = async () => {
 };
 
 beforeEach(() => {
-  mockUser = { id: 'u1', username: 'me' }; mockPushed.length = 0;
+  mockUser = { id: 'u1', username: 'me', is_social_private: false }; mockPushed.length = 0;
   mockPageAsks = 0; mockPageFails = false;
   put({});
 });
@@ -486,7 +486,7 @@ describe('an empty page, in every shape it takes', () => {
     });
 
     it(`${section} — says nothing about what an Auteur can do, to an Auteur`, async () => {
-      mockUser = { id: 'u1', username: 'me', tier: 'auteur' };
+      mockUser = { id: 'u1', username: 'me', tier: 'auteur', is_social_private: false };
       put({ filings: [], section });
       const { getByText, queryByLabelText } = await mount();
       expect(getByText(title)).toBeTruthy();

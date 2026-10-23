@@ -13,7 +13,7 @@ const RAW = readFixture<Record<string, string>>('lobby-art.json');
 const posters: Record<string, { title: string; data: string }> = {};
 for (const [p, data] of Object.entries(RAW)) if (data) posters[p] = { title: '', data };
 
-const mockUser = { id: 'u1', username: 'kane', tier: 'archivist', role: 'archivist' };
+const mockUser = { id: 'u1', username: 'kane', tier: 'archivist', role: 'archivist', is_social_private: false };
 jest.mock('@/src/stores/auth', () => ({
   useAuthStore: Object.assign(
     (sel?: (s: unknown) => unknown) => (typeof sel === 'function' ? sel({ user: mockUser, isAuthenticated: true }) : { user: mockUser, isAuthenticated: true }),

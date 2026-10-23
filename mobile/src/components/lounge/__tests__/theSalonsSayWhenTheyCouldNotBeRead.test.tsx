@@ -14,7 +14,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 /** The member's rank, for the cases that turn on it. */
 let mockTier = 'archivist';
 jest.mock('@/src/stores/auth', () => {
-  const build = () => ({ user: { id: 'me', username: 'kane', role: mockTier === 'archivist' ? 'archivist' : null, tier: mockTier, preferences: {} }, isAuthenticated: true });
+  const build = () => ({ user: { id: 'me', username: 'kane', role: mockTier === 'archivist' ? 'archivist' : null, tier: mockTier, preferences: {}, is_social_private: false }, isAuthenticated: true });
   const useAuthStore = (sel?: (s: unknown) => unknown) => (sel ? sel(build()) : build());
   (useAuthStore as any).getState = () => build();
   return { useAuthStore };

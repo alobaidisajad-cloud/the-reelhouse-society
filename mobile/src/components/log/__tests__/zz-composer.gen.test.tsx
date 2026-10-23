@@ -62,12 +62,16 @@ jest.mock('@/src/lib/tmdb', () => {
 const FILM = { filmId: '843', filmTitle: 'In the Mood for Love', filmPoster: POSTER_PATHS[1], filmYear: '2000' };
 const REVIEW = 'Every corridor is a held breath. The film is the space between two people who have decided not to touch, and it never once lets you forget the rain on the stairs.';
 
-type Tier = 'free' | 'archivist' | 'auteur' | 'out' | 'lapsed';
+type Tier = 'free' | 'archivist' | 'auteur' | 'out' | 'lapsed' | 'unread';
 const member = (tier: Tier) => useAuthStore.setState(tier === 'out'
   ? { user: null, isAuthenticated: false } as never
+  // Just signed in: the account alone, the profile (and so the rank) not yet read.
+  : tier === 'unread' ? { user: { id: '33333333-3333-4333-8333-333333333333', email: 'm@example.com' }, isAuthenticated: true } as never
   : {
     user: {
       id: '33333333-3333-4333-8333-333333333333', username: 'sajjadobaidi', role: 'cinephile',
+      // Their profile read, so their rank is known.
+      is_social_private: false,
       // A rank once granted and since ended: what the house calls lapsed.
       ...(tier === 'lapsed' ? { tier: 'free', entitlement_source: 'revenuecat' } : { tier }),
     } as never,
@@ -140,6 +144,10 @@ const STATES: [string, Tier, Record<string, string>, (r: ReturnType<typeof rende
   // A Cinephile who opened the tools they do not hold: instruments and gates.
   ['composer-locked', 'free', FILM, async (r) => {
     for (const entry of ['THE EDITORIAL DESK', 'THE PHYSICAL ARCHIVE', 'THE VAULT']) await fireEvent.press(r.getByText(entry));
+  }],
+  // The same tools while the member's rank is still being read: nothing sold, asked again.
+  ['composer-rank-reading', 'unread', FILM, async (r) => {
+    for (const entry of ['THE EDITORIAL DESK', 'THE VAULT']) await fireEvent.press(r.getByText(entry));
   }],
   // Walking out: the status row, and the reasons that wrap.
   ['composer-abandoned', 'archivist', FILM, async (r) => {

@@ -19,6 +19,7 @@ import { ChevronRight, ChevronUp, Search, ArrowLeft, Lock, ExternalLink, MoreHor
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
+import type { Standing } from '@/src/components/clearance/Clearance';
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
@@ -64,8 +65,8 @@ export const PaperPicker = memo(function PaperPicker({
   onPick?: (kind: Form['kind']) => void;
   /** A locked form was touched. The caller decides where that leads. */
   onLocked?: (kind: Form['kind']) => void;
-  /** Never held the rank, or held it and stopped — the spoken label differs. */
-  lockedStanding?: 'stranger' | 'lapsed';
+  /** Never held the rank, held it and stopped, or not yet read — the spoken label differs. */
+  lockedStanding?: Standing;
   /** The house rules, at the foot of the door every filing goes through. */
   onRules?: () => void;
 }) {
@@ -89,7 +90,9 @@ export const PaperPicker = memo(function PaperPicker({
             accessibilityState={{ disabled: !!f.locked && !onLocked }}
             accessibilityLabel={
               f.locked && onLocked
-                ? (lockedStanding === 'lapsed'
+                ? (lockedStanding === 'reading'
+                  ? `${f.name}. ${f.line} Your rank is being read. Ask again.`
+                  : lockedStanding === 'lapsed'
                   ? `${f.name}. ${f.line} Your dues have lapsed. The Auteur opens this again. Opens the Society.`
                   : `${f.name}. ${f.line} Clearance required. The Auteur opens this. Opens the Society.`)
               : f.locked ? `${f.name}. Auteurs only. ${f.line}`

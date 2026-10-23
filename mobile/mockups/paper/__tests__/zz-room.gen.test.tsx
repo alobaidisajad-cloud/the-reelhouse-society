@@ -42,12 +42,12 @@ jest.mock('@/src/stores/auth', () => ({
   useAuthStore: Object.assign(
     (sel?: (s: unknown) => unknown) => {
       const state = {
-        user: { id: 'u1', username: 'ana', member_no: 17, tier: 'auteur', role: 'auteur' },
+        user: { id: 'u1', username: 'ana', member_no: 17, tier: 'auteur', role: 'auteur', is_social_private: false },
         isAuthenticated: true,
       };
       return sel ? sel(state) : state;
     },
-    { getState: () => ({ user: { id: 'u1', tier: 'auteur' } }) },
+    { getState: () => ({ user: { id: 'u1', tier: 'auteur', is_social_private: false } }) },
   ),
 }));
 /** A draft the member has already begun, so the room is drawn at WORK. */

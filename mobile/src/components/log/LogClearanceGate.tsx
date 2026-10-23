@@ -30,11 +30,13 @@ import { st } from './LogModalStyles';
 export default React.memo(function LogClearanceGate({
   rank, standing = 'stranger', names, onPress,
 }: { rank: Rank; standing?: Standing; names: string; onPress: () => void }) {
+  const lapsed = standing === 'lapsed';
+  // Their rank not yet read: nothing is sold, and the rope asks for the rank again.
+  const reading = standing === 'reading';
   // It only ever colours WORDS (the call to action), so it is an ink: the
   // crimson pigment reads 2.78:1 as a word on a card.
-  const tint = rank === 'auteur' ? colors.crimsonInk : colors.sepia;
+  const tint = reading ? colors.fog : rank === 'auteur' ? colors.crimsonInk : colors.sepia;
   const label = rank === 'auteur' ? 'The Auteur' : 'The Archivist';
-  const lapsed = standing === 'lapsed';
 
   return (
     <PressableScale
@@ -43,16 +45,18 @@ export default React.memo(function LogClearanceGate({
       hitSlop={null}
       haptic="light"
       accessibilityRole="button"
-      accessibilityLabel={lapsed
+      accessibilityLabel={reading
+        ? `${names}. Your rank is being read. Ask again.`
+        : lapsed
         ? `${names}. Your dues have lapsed. ${label} opens this again. Opens the Society.`
         : `${names}. Clearance required. ${label} opens this. Opens the Society.`}
     >
       <View pointerEvents="none">
         <Text style={st.gateSub} {...scaledTextProps}>
-          {lapsed ? '[ YOUR DUES HAVE LAPSED ]' : '[ CLEARANCE REQUIRED ]'}
+          {reading ? '[ YOUR RANK, BEING READ ]' : lapsed ? '[ YOUR DUES HAVE LAPSED ]' : '[ CLEARANCE REQUIRED ]'}
         </Text>
         <Text style={[st.gateCta, { color: tint }]} {...scaledTextProps}>
-          {lapsed ? '✦ RESUME YOUR STANDING' : '✦ ASCEND THE RANKS'}
+          {reading ? '✦ ASK AGAIN' : lapsed ? '✦ RESUME YOUR STANDING' : '✦ ASCEND THE RANKS'}
         </Text>
       </View>
     </PressableScale>

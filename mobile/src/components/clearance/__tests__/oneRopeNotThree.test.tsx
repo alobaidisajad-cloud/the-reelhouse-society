@@ -47,6 +47,14 @@ describe('one rope, not three', () => {
       expect(JSON.stringify(lapsed.toJSON())).not.toMatch(/CLEARANCE REQUIRED/);
     });
 
+    it('sells nothing to a member whose rank is not yet read: it says so, and asks again', () => {
+      const reading = render(<ClearanceGate rank="auteur" standing="reading" names="The Vault" onPress={() => {}} />);
+      expect(reading.getByText('[ YOUR RANK, BEING READ ]')).toBeTruthy();
+      expect(reading.getByText('✦ ASK AGAIN')).toBeTruthy();
+      expect(reading.getByLabelText('The Vault. Your rank is being read. Ask again.')).toBeTruthy();
+      expect(JSON.stringify(reading.toJSON())).not.toMatch(/ASCEND|CLEARANCE REQUIRED|Opens the Society|THE AUTEUR/);
+    });
+
     it('is ONE target, so a member taps the rope and not a word in it', () => {
       const r = render(<ClearanceGate rank="auteur" names="The Autopsy" onPress={() => {}} />);
       const flat = JSON.stringify(r.toJSON());

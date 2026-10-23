@@ -160,6 +160,7 @@ export default function PersonDetailScreen() {
   const isArchivist = canShare;
   const shareLabel = canShare ? 'Share to lounge'
     : !user ? 'Share to lounge. Sign in first.'
+    : shareStanding === 'reading' ? 'Share to lounge. Your rank is being read. Ask again.'
     : shareStanding === 'lapsed' ? 'Share to lounge. Your dues have lapsed. The Archivist opens this again. Opens the Society.'
     : 'Share to lounge. Clearance required. The Archivist opens this. Opens the Society.';
 

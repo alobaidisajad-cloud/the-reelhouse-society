@@ -28,7 +28,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 import ArchiveScreen from '@/app/dispatch/archive';
 import { useDispatch } from '@/src/stores/dispatch';
 
-let mockUser: Record<string, unknown> | null = { id: 'u1', username: 'me', tier: 'archivist' };
+let mockUser: Record<string, unknown> | null = { id: 'u1', username: 'me', tier: 'archivist', is_social_private: false };
 jest.mock('@/src/stores/auth', () => ({
   useAuthStore: Object.assign(
     (sel?: (s: unknown) => unknown) =>
@@ -184,7 +184,7 @@ beforeEach(() => {
   mockHoldFilings = null;
   mockPushed.length = 0;
   mockBack.mockClear();
-  mockUser = { id: 'u1', username: 'me', tier: 'archivist' };
+  mockUser = { id: 'u1', username: 'me', tier: 'archivist', is_social_private: false };
   store();
 });
 afterEach(() => { jest.useRealTimers(); });
@@ -359,7 +359,7 @@ describe('the archive', () => {
    * The old wall also offered NO WAY TO UPGRADE. It named the key and shut.
    */
   it('lets a member below the rank search, and gates the gathering instead', async () => {
-    mockUser = { id: 'u1', username: 'me', tier: 'free' };
+    mockUser = { id: 'u1', username: 'me', tier: 'free', is_social_private: false };
     const r = render(<ArchiveScreen />);
     await act(async () => { await Promise.resolve(); });
 
@@ -370,7 +370,7 @@ describe('the archive', () => {
   });
 
   it('and a guest who finds films is offered the way in, which the wall never was', async () => {
-    mockUser = { id: 'u1', username: 'me', tier: 'free' };
+    mockUser = { id: 'u1', username: 'me', tier: 'free', is_social_private: false };
     mockSearchRows = [hit()];
     const r = render(<ArchiveScreen />);
     await act(async () => { await Promise.resolve(); });

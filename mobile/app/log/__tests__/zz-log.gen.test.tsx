@@ -37,7 +37,7 @@ jest.mock('expo-router', () => ({
   useFocusEffect: () => {},
 }));
 jest.mock('@/src/stores/auth', () => {
-  const state = { user: { id: 'me', username: 'visitor' }, isAuthenticated: true };
+  const state = { user: { id: 'me', username: 'visitor', is_social_private: false }, isAuthenticated: true };
   const useAuthStore = (sel?: (s: unknown) => unknown) => (sel ? sel(state) : state);
   (useAuthStore as unknown as { getState: () => unknown }).getState = () => state;
   return { useAuthStore };

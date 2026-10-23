@@ -22,8 +22,11 @@ import type { Rank } from '@/src/constants/gatedFeatures';
 const inkFor = (rank: Rank) => (rank === 'auteur' ? colors.crimsonInk : colors.sepia);
 const nameFor = (rank: Rank) => (rank === 'auteur' ? 'THE AUTEUR' : 'THE ARCHIVIST');
 
-/** Never held the rank, or held it and stopped (`entitlement_source` set): told differently. */
-export type Standing = 'stranger' | 'lapsed';
+/**
+ * Never held the rank, or held it and stopped (`entitlement_source` set): told differently.
+ * `reading`: the member's rank not yet read (useClearance); the rope sells nothing then.
+ */
+export type Standing = 'stranger' | 'lapsed' | 'reading';
 
 export interface ClearanceProps {
   rank: Rank;
@@ -41,14 +44,18 @@ export interface ClearanceProps {
 export const ClearanceGate = React.memo(function ClearanceGate({
   rank, standing = 'stranger', line, names, onPress,
 }: ClearanceProps) {
-  const ink = inkFor(rank);
   const lapsed = standing === 'lapsed';
+  // Their rank not yet read: nothing is sold, and the rope asks for the rank again.
+  const reading = standing === 'reading';
+  const ink = reading ? colors.fog : inkFor(rank);
 
-  const heading = lapsed ? '[ YOUR DUES HAVE LAPSED ]' : '[ CLEARANCE REQUIRED ]';
-  const cta = lapsed ? '✦ RESUME YOUR STANDING' : '✦ ASCEND THE RANKS';
+  const heading = reading ? '[ YOUR RANK, BEING READ ]' : lapsed ? '[ YOUR DUES HAVE LAPSED ]' : '[ CLEARANCE REQUIRED ]';
+  const cta = reading ? '✦ ASK AGAIN' : lapsed ? '✦ RESUME YOUR STANDING' : '✦ ASCEND THE RANKS';
   // The name comes FIRST, because it is the only place a member who cannot see
   // the locked instrument learns what is behind the rope.
-  const spoken = lapsed
+  const spoken = reading
+    ? `${names}. Your rank is being read. Ask again.`
+    : lapsed
     ? `${names}. Your dues have lapsed. ${nameFor(rank)} opens this again. Opens the Society.`
     : `${names}. Clearance required. ${nameFor(rank)} opens this. Opens the Society.`;
 

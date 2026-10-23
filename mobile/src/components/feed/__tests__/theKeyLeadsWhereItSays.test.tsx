@@ -59,7 +59,7 @@ const card = (
 const setUser = (user: Record<string, unknown> | null) =>
   act(() => { (useAuthStore as unknown as { setState: (s: object) => void }).setState({ user }); });
 
-const cinephile = { id: 'u1', username: 'wren', tier: 'free', role: 'cinephile' };
+const cinephile = { id: 'u1', username: 'wren', tier: 'free', role: 'cinephile', is_social_private: false };
 const lapsed = { ...cinephile, entitlement_source: 'revenuecat' };
 const archivist = { ...cinephile, tier: 'archivist' };
 

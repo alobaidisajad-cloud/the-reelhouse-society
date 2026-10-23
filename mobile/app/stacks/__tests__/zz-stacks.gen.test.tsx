@@ -53,7 +53,7 @@ jest.mock('@/src/stores/blockStore', () => {
   (useBlockStore as unknown as { getState: () => unknown }).getState = () => state;
   return { useBlockStore };
 });
-jest.mock('@/src/stores/auth', () => ({ useAuthStore: () => ({ user: { id: 'u2', username: 'visitor' } }) }));
+jest.mock('@/src/stores/auth', () => ({ useAuthStore: () => ({ user: { id: 'u2', username: 'visitor', is_social_private: false } }) }));
 jest.mock('@/src/services/StackService', () => ({
   STACK_COMMENT_PAGE: 50,
   StackService: { getStackFullPayload: jest.fn(), getStackComments: jest.fn(), addStackComment: jest.fn() },

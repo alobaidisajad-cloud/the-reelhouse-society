@@ -59,7 +59,8 @@ const LOG = {
 
 function member(tier: Tier, extra: Record<string, unknown> = {}) {
   useAuthStore.setState({
-    user: { id: '33333333-3333-4333-8333-333333333333', username: 'sajjadobaidi', tier, role: 'cinephile', ...extra } as never,
+    // A member whose profile is read: their rank is known.
+    user: { id: '33333333-3333-4333-8333-333333333333', username: 'sajjadobaidi', tier, role: 'cinephile', is_social_private: false, ...extra } as never,
     isAuthenticated: true,
   } as never);
 }

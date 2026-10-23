@@ -12,8 +12,12 @@ import { openSociety } from '@/src/utils/openSociety';
 import TactileEngine from '@/src/utils/TactileEngine';
 
 let mockUser: Record<string, unknown> | null = null;
+const mockReread = jest.fn();
 jest.mock('@/src/stores/auth', () => ({
-  useAuthStore: (select: (s: { user: unknown }) => unknown) => select({ user: mockUser }),
+  useAuthStore: Object.assign(
+    (select: (s: { user: unknown }) => unknown) => select({ user: mockUser }),
+    { getState: () => ({ user: mockUser, rereadProfile: mockReread }) },
+  ),
 }));
 jest.mock('@/src/utils/gateTelemetry', () => ({ recordGateEvent: jest.fn() }));
 jest.mock('@/src/utils/TactileEngine', () => ({ __esModule: true, default: { selection: jest.fn() } }));
@@ -23,7 +27,22 @@ jest.mock('@/src/utils/openSociety', () => ({ ...jest.requireActual('@/src/utils
 const ARCHIVIST = 'the-lounge';
 const AUTEUR = 'essays';
 
-const member = (tier: string, more: Record<string, unknown> = {}) => ({ id: 'u1', tier, role: 'cinephile', ...more });
+/** A member whose profile is read (its columns are in hand), so their rank is known. */
+const member = (tier: string, more: Record<string, unknown> = {}) => ({ id: 'u1', tier, role: 'cinephile', is_social_private: false, ...more });
+
+it('a member whose profile is not yet read is "reading": nothing held, and a tap asks for the profile, never the Society', async () => {
+  // As a sign-in sets them: the auth account alone, its rank unread.
+  mockUser = { id: 'u1', email: 'm@example.com' };
+  const gate = await clearance(AUTEUR);
+  expect(gate).toMatchObject({ held: false, standing: 'reading' });
+  gate.open();
+  expect(mockReread).toHaveBeenCalled();
+  expect(openSociety).not.toHaveBeenCalled();
+  expect(recordGateEvent).not.toHaveBeenCalled();
+  // Read, the same member is answered by their rank.
+  mockUser = member('auteur');
+  expect(await clearance(AUTEUR)).toMatchObject({ held: true, standing: 'stranger' });
+});
 
 beforeEach(() => {
   mockUser = null;

@@ -1655,3 +1655,30 @@ mutants:
         find: "  const sealUnknown = !!targetUser?.is_social_private && !isSelf && !followKnown;\n"
         replace: "  const sealUnknown = false;\n"
     proof: { file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "a private member, while the follow list is read, is never sealed against one who follows: retrieving, and no FOLLOW" }
+
+  - id: shape-rank-unread-sold
+    class: DATA-rank-sold-before-it-was-read
+    source: shape
+    edits:
+      - file: src/hooks/useClearance.ts
+        find: "    if (standing === 'reading') { void useAuthStore.getState().rereadProfile(); return; }\n"
+        replace: ""
+    proof: { file: src/hooks/__tests__/useClearance.test.ts, test: "a member whose profile is not yet read is \"reading\": nothing held, and a tap asks for the profile, never the Society" }
+
+  - id: shape-rank-unread-a-stranger
+    class: DATA-rank-sold-before-it-was-read
+    source: shape
+    edits:
+      - file: src/hooks/useClearance.ts
+        find: "rankUnread ? 'reading' : onceHeldARank"
+        replace: "onceHeldARank"
+    proof: { file: src/hooks/__tests__/useClearance.test.ts, test: "a member whose profile is not yet read is \"reading\": nothing held, and a tap asks for the profile, never the Society" }
+
+  - id: shape-rope-sells-while-reading
+    class: DATA-rank-sold-before-it-was-read
+    source: shape
+    edits:
+      - file: src/components/clearance/Clearance.tsx
+        find: "  const cta = reading ? '✦ ASK AGAIN' : lapsed"
+        replace: "  const cta = lapsed"
+    proof: { file: src/components/clearance/__tests__/oneRopeNotThree.test.tsx, test: "sells nothing to a member whose rank is not yet read: it says so, and asks again" }

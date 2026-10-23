@@ -110,7 +110,7 @@ const value = {
   // An archivist by default, so `film-built-locked` below is genuinely a
   // different picture rather than the same one under another name.
   isArchivist: true,
-  user: { id: 'u1' },
+  user: { id: 'u1', is_social_private: false },
   validFilmId: detail.id,
   loading: false,
   isError: false,

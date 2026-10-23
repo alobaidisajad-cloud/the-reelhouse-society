@@ -834,6 +834,8 @@ export default function LoungeRoomScreen() {
           <Text style={s.previewText}>
             {seat.held
               ? "You're previewing this salon."
+              : seat.standing === 'reading'
+                ? "You're reading as a guest while your rank is read."
               : seat.standing === 'lapsed'
                 ? "You're reading as a guest — your dues have lapsed."
                 : "You're reading as a guest."}
@@ -845,10 +847,11 @@ export default function LoungeRoomScreen() {
             accessibilityRole="button"
             accessibilityLabel={seat.held
               ? 'Take a seat in this salon'
+              : seat.standing === 'reading' ? 'Take a seat. Your rank is being read. Ask again.'
               : `Take a seat. ${seat.rank === 'auteur' ? 'The Auteur' : 'The Archivist'} opens this. Opens the Society.`}
           >
             <Text style={s.previewBtnText}>
-              {seat.held ? 'TAKE A SEAT' : '✦ ASCEND THE RANKS'}
+              {seat.held ? 'TAKE A SEAT' : seat.standing === 'reading' ? '✦ ASK AGAIN' : '✦ ASCEND THE RANKS'}
             </Text>
           </PressableScale>
         </Arrive>

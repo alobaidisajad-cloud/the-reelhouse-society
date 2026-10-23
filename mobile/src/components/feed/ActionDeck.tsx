@@ -197,6 +197,7 @@ export const ActionDeck = React.memo(function ActionDeck({
         <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleLounge} accessibilityRole="button" accessibilityLabel={
           canShare ? 'Share to a lounge'
             : !signedIn ? 'Share to a lounge. Sign in first.'
+            : shareStanding === 'reading' ? 'Share to a lounge. Your rank is being read. Ask again.'
             : shareStanding === 'lapsed' ? 'Share to a lounge. Your dues have lapsed. The Archivist opens this again. Opens the Society.'
             : 'Share to a lounge. Clearance required. The Archivist opens this. Opens the Society.'
         }>

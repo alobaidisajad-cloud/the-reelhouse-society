@@ -37,7 +37,7 @@ jest.mock('expo-haptics', () => ({
 }));
 jest.mock('@/src/stores/auth', () => ({
   useAuthStore: (sel?: (s: unknown) => unknown) => {
-    const state = { user: { id: 'u1', tier: 'auteur' }, isAuthenticated: true };
+    const state = { user: { id: 'u1', tier: 'auteur', is_social_private: false }, isAuthenticated: true };
     return sel ? sel(state) : state;
   },
 }));

@@ -25,15 +25,19 @@ import type { Standing } from '@/src/components/clearance/Clearance';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { recordGateEvent } from '@/src/utils/gateTelemetry';
 import { openSociety, societyHref } from '@/src/utils/openSociety';
+import { profileRead } from '@/src/utils/profileRead';
 
 export interface Clearance {
   /** True when the member holds the rank this feature needs. */
   held: boolean;
   /** The rank that opens it — for the rope's ink and its name. */
   rank: Rank;
-  /** Never held it, or held it and stopped. The rope says different things. */
+  /** Never held it, held it and stopped, or not yet known (`reading`). The rope says different things. */
   standing: Standing;
-  /** Opens the Society page, told why they came and where to return them (the law above). */
+  /**
+   * Opens the Society page, told why they came and where to return them (the law above);
+   * while the rank is `reading`, asks for the member's profile again instead.
+   */
   open: () => void;
 }
 
@@ -47,6 +51,9 @@ export function useClearance(featureId: string, returnTo?: string): Clearance {
   // Two primitives, never the user: this runs in every feed card. -1, signed out, opens nothing.
   const weight = useAuthStore((s) => (s.user ? getTierWeight(resolveTier(s.user)) : -1));
   const onceHeldARank = useAuthStore((s) => !!s.user?.entitlement_source);
+  // A sign-in sets the member before their profile, and so their rank, is read (and keeps
+  // them so if the read gives up): their rank is then not known, and is never sold to them.
+  const rankUnread = useAuthStore((s) => !!s.user && !profileRead(s.user));
 
   const feature = useMemo(() => {
     const f = GATED_FEATURES.find((x) => x.id === featureId);
@@ -66,10 +73,13 @@ export function useClearance(featureId: string, returnTo?: string): Clearance {
   const held = weight >= RANK_WEIGHT[rank];
 
   // Only `grant_entitlement` writes `entitlement_source`: one without the weight is "come back".
-  const standing: Standing = onceHeldARank ? 'lapsed' : 'stranger';
+  const standing: Standing = rankUnread ? 'reading' : onceHeldARank ? 'lapsed' : 'stranger';
 
   const open = useCallback(() => {
     TactileEngine.selection();
+    // A rank not yet read: the profile is asked for again, never the Society's page, which
+    // would offer a member the rank they may already hold.
+    if (standing === 'reading') { void useAuthStore.getState().rereadProfile(); return; }
     // Every rope in the app reports here, the one way through.
     recordGateEvent('gate_tapped', { featureId, rank, standing });
     // openSociety dismisses only a PRESENTED screen: a pushed one (a salon) stays behind the page.

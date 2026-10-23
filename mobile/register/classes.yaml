@@ -1367,3 +1367,16 @@ classes:
       - { kind: running, file: app/person/__tests__/thePersonFileReadsTrue.test.tsx, test: "while the ledger is read, or could not be, draws no count: a short one is a wrong one" }
     fix: "readMarks (marksLedger.ts) reads every log (light: film, status, rating, viewings, date) and every save, by id a thousand at a time, at launch and at sign-in; lays the offline queue's writes and the pages' fuller records over it; is read again once when a write overlapped it; lands nowhere after a sign-out; says failed, never none. marksKnown says whether it is held. Page reads lay over it; the watchlist adds and removes by the index. The ledger is kept on the phone, light, once held (marksDisk.ts). The editor is never handed a light record (heldLog). The film page draws a film the ledger does not hold as READING YOUR LEDGER / YOUR LEDGER UNREAD, uninked, and its log and watchlist rows ask for the ledger instead of filing; the director's hunt waits for it; Darkroom's save is uninked until it (mutants shape-ledger-one-page, shape-ledger-replaced-by-pages, shape-unknown-offered-as-unseen, shape-light-record-edited, shape-hunt-counted-short)"
     places: [none]
+
+  - id: DATA-rank-sold-before-it-was-read
+    title: "A sign-in sets the member before their profile, and so their rank, is read, and kept them so for the session when the read gave up: every rank gate counted them a stranger, its rope offered them the rank they held, and a tap opened the Society's sales page to a paying member"
+    seriousness: serious
+    area: states
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "sweep of member state drawn before it was known (P0.112): useClearance weighed resolveTier(user) of a user who may be the auth account alone (adoptSession reads the profile behind)" }
+    methods:
+      - { kind: running, file: src/hooks/__tests__/useClearance.test.ts, test: "a member whose profile is not yet read is \"reading\": nothing held, and a tap asks for the profile, never the Society" }
+      - { kind: running, file: src/components/clearance/__tests__/oneRopeNotThree.test.tsx, test: "sells nothing to a member whose rank is not yet read: it says so, and asks again" }
+    fix: "useClearance gives a third standing, reading, while a signed-in member's profile is not read (profileRead); then open() asks for the profile again (rereadProfile), never the Society, and records no gate event. Every rope says so in its own words: ClearanceGate and LogClearanceGate ([ YOUR RANK, BEING READ ] / ✦ ASK AGAIN, in fog), the Dispatch's picker, the share keys on the feed and the person page, the salon's seat. Fixtures and generators draw a member whose profile is read; composer-rank-reading draws the other, measured clean (mutants shape-rank-unread-sold, shape-rank-unread-a-stranger, shape-rope-sells-while-reading)"
+    places: [none]

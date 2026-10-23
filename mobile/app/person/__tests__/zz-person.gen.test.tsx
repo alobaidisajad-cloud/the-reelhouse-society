@@ -30,7 +30,7 @@ jest.mock('@/src/stores/films', () => {
   return { useArchiveStore };
 });
 jest.mock('@/src/stores/auth', () => {
-  const state = { user: { id: 'me', username: 'visitor' } };
+  const state = { user: { id: 'me', username: 'visitor', is_social_private: false } };
   const useAuthStore = (sel?: (s: unknown) => unknown) => (sel ? sel(state) : state);
   (useAuthStore as unknown as { getState: () => unknown }).getState = () => state;
   return { useAuthStore };

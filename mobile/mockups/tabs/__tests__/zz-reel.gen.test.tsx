@@ -46,7 +46,7 @@ jest.mock('@/src/lib/supabase', () => {
   return { supabase: { from: () => chain, rpc: () => chain, channel: () => ({ on: () => ({ subscribe: () => ({}) }) }), removeChannel: jest.fn() } };
 });
 jest.mock('@/src/stores/auth', () => {
-  const s = { isAuthenticated: true, user: { id: 'me', username: 'kane', role: 'archivist', tier: 'archivist', preferences: {} } };
+  const s = { isAuthenticated: true, user: { id: 'me', username: 'kane', role: 'archivist', tier: 'archivist', preferences: {}, is_social_private: false } };
   const useAuthStore = (sel?: (x: unknown) => unknown) => (sel ? sel(s) : s);
   (useAuthStore as any).getState = () => s;
   return { useAuthStore };

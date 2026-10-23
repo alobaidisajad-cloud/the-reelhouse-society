@@ -71,6 +71,7 @@ const mount = (
       username: 'sajjadobaidi',
       tier: tier === 'cinephile' ? 'free' : tier,
       role: 'cinephile',
+      is_social_private: false,
       ...extra,
     } as never,
   });
@@ -288,7 +289,7 @@ describe('the log’s ropes are the house’s ropes', () => {
       // The pictures live in the flow, which outlives the form. Found while
       // verifying this work: opening the tool on a second film showed the
       // first film's posters until the second's arrived.
-      useAuthStore.setState({ user: { id: '33333333-3333-4333-8333-333333333333', username: 'sajjadobaidi', tier: 'free', role: 'cinephile' } as never });
+      useAuthStore.setState({ user: { id: '33333333-3333-4333-8333-333333333333', username: 'sajjadobaidi', tier: 'free', role: 'cinephile', is_social_private: false } as never });
       (useLocalSearchParams as jest.Mock).mockReturnValue({});
       const images = tmdb.movieImages as jest.Mock;
       images.mockResolvedValueOnce({ posters: [{ file_path: '/first.jpg' }], backdrops: [] });

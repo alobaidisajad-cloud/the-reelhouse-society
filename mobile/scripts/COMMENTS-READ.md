@@ -137,10 +137,10 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | 2026-10-23 | edited: certifiedKnown from the log's read; drawn from the phone, the heart is uninked and a press asks again |
 | app/lounge.tsx | 2026-10-01 | true as written |
-| app/lounge/[id].tsx | 2026-10-23 | edited: only this room's words and its read's flags (never the last room's, still held); the transcript says reading, or the house's failure with TRY AGAIN, before "be the first"; the ready mark fails when its words could not come; its reads keyed on who reads (userId), not the object a session restore replaces; the room's read; the composer and its bars stand on the edge (BAR_FOOT_GAP); each scroll traced |
+| app/lounge/[id].tsx | 2026-10-23 | edited: the seat bar while the rank is read: a guest, asked again, nothing sold |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); a portrait without a photograph carries the whole first letter, unspoken |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
-| app/person/[id].tsx | 2026-10-23 | edited: the auteur hunt counted only over the ledger held whole |
+| app/person/[id].tsx | 2026-10-23 | edited: the auteur hunt counted only over the ledger held whole; the share label while the rank is read |
 | app/reset-password.tsx | 2026-10-15 | back and form from usePushedHeaderTop; foot from useContentBottom |
 | app/settings.tsx | 2026-10-02 | read; sound |
 | app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-10-23 | edited: the critiques sheet reading, then empty only once read; the router mock answers useFocusEffect as jest.setup.ts's does; each event waited for; the close inside the keyboard's moment is the sheet's own, each press shown to land |
@@ -395,7 +395,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/busterArt.ts | 2026-10-04 | regenerated: a picture with points carries the layer over them |
 | src/components/CinematicOverlays.tsx | 2026-10-08 | the vignette a native gradient, not a full-screen SVG bitmap |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
-| src/components/clearance/Clearance.tsx | 2026-10-01 | show it, locked; a second copy lives in the log (carried forward) |
+| src/components/clearance/Clearance.tsx | 2026-10-23 | edited: Standing gains reading; the rope says [ YOUR RANK, BEING READ ] / ASK AGAIN in fog, and sells nothing |
 | src/components/ControlledInput.tsx | 2026-10-03 | edited: the bio's default limit is the bio's cap |
 | src/components/critique/__tests__/aCritiqueIsWithdrawnOrReported.test.tsx | 2026-10-01 | new |
 | src/components/critique/__tests__/oneCritiqueRow.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -489,7 +489,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperFrame.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperKeyWell.tsx | 2026-10-15 | keeps the home indicator's edge while the keyboard is down |
 | src/components/dispatch/paper/paperMetrics.ts | 2026-10-02 | Read in the launch audit: issueOf counts calendar days (summer-time bug). |
-| src/components/dispatch/paper/PaperMore.tsx | 2026-10-15 | PaperBack starts at a pushed or modal top |
+| src/components/dispatch/paper/PaperMore.tsx | 2026-10-23 | edited: the picker's locked label, reading: said, asked again |
 | src/components/dispatch/paper/paperMotion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperPerf.ts | 2026-10-15 | edited: memory-disk on every image, held by its guard; no image sets a priority, so the backdrop rule is gone |
 | src/components/dispatch/paper/PaperPost.tsx | 2026-10-23 | edited: UNINKED taken from the theme |
@@ -502,7 +502,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/EmptyStates.tsx | 2026-10-22 | edited: StateWords, the state's words still, shared with the crash nets; its title a header |
 | src/components/ErrorBoundary.tsx | 2026-10-22 | edited: the whole app's crash in the failure family (StateWords, the house TRY AGAIN, RESTART THE APP in its plate); the tries left and the reference as quiet facts |
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/components/feed/ActionDeck.tsx | 2026-10-04 | edited: the certify lock lifts through useLater, gone with the item and the card |
+| src/components/feed/ActionDeck.tsx | 2026-10-23 | edited: the share key's label, reading: said, asked again |
 | src/components/feed/ActivityCard.tsx | 2026-10-15 | the film title's glow has room inside the box a phone cuts it at |
 | src/components/feed/AutopsyView.tsx | 2026-10-01 | each score read whole |
 | src/components/feed/PosterFrame.tsx | 2026-10-01 | the poster says its film |
@@ -621,7 +621,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogActionDeck.tsx | 2026-10-23 | edited: certifyKnown: the heart uninked and said to be reading |
 | src/components/log/LogAtmosphere.tsx | 2026-10-01 | the film behind the composer, said as why |
 | src/components/log/LogChronicle.tsx | 2026-10-01 | the typed card, said as why |
-| src/components/log/LogClearanceGate.tsx | 2026-10-01 | the rope said as what it is |
+| src/components/log/LogClearanceGate.tsx | 2026-10-23 | edited: the log's rope, reading: said, asked again, nothing sold |
 | src/components/log/LogComments.tsx | 2026-10-01 | true as written |
 | src/components/log/logDetailStyles.ts | 2026-10-15 | the record's foot is set where it is drawn |
 | src/components/log/LogForm.tsx | 2026-10-15 | edited: the review field says where it sits, in the E2E log |
@@ -901,7 +901,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useBanCheck.ts | 2026-10-02 | says what it guards, and that the server guards every write |
 | src/hooks/useCatalogueSearch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useKeyboardLift.ts | 2026-10-01 | written: a sheet over a screen rises with the keyboard |
-| src/hooks/useClearance.ts | 2026-10-03 | payments pass: the rank history is a field of the member, no cast |
+| src/hooks/useClearance.ts | 2026-10-23 | edited: a third standing, reading, while the member's profile is not read; then open() asks for the profile, never the Society |
 | src/hooks/useDeviceThrottling.ts | 2026-10-02 | Read whole (launch audit). Answered in an effect, after the preloader had decided on the first render; known synchronously now. A settings override no screen ever wrote removed. |
 | src/hooks/useDispatchArchive.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useDoor.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
