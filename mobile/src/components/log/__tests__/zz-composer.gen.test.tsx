@@ -134,7 +134,7 @@ const STATES: [string, Tier, Record<string, string>, (r: ReturnType<typeof rende
   // An edit opened on a record the house does not hold as theirs: said, never a blank form.
   // Rendered again once the answer is in, so its words are drawn as they rest, not
   // at their first frame's opacity 0.
-  ['composer-edit-withdrawn', 'auteur', { editLogId: 'log-far', ...FILM }, async (r) => {
+  ['composer-edit-withdrawn', 'auteur', { editLogId: 'log-far', filmId: FILM.filmId, filmTitle: FILM.filmTitle }, async (r) => {
     await act(async () => { r.rerender(<LogModalScreen />); });
   }],
   // A Cinephile who opened the tools they do not hold: instruments and gates.
