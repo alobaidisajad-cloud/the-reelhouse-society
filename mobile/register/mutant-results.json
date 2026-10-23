@@ -833,6 +833,13 @@
     "verdict": "caught"
   },
   {
+    "class": "TEST-sweep-blind-to-a-handed-on-read",
+    "mutant": "shape-sweep-blind-to-handed-on",
+    "proof": "m1",
+    "commit": "4ce8b60a58952a06eadb31ce6242a38628066b0d",
+    "verdict": "caught"
+  },
+  {
     "class": "SPEED-canvas-drawn-out-of-sight",
     "mutant": "shape-veil-lift-unheld",
     "proof": "m1",
