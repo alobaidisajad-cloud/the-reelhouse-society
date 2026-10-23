@@ -788,6 +788,19 @@ classes:
     fix: "every step that installs through apt (the Postgres client, Playwright's --with-deps) first sets DPkg::Lock::Timeout to 240 s, so a retry waits for the try before it to let go of the lock; and Playwright's system packages are kept between runs in GitHub's cache and installed from there by dpkg alone (scripts/kept-debs.sh) before apt is asked, since a mirror at 30-60 KB/s outlived the wait too (God-Tier 39774848287) and apt-get update alone outlived a try (God-Tier 39806861456, its retry then refused on the package lists' lock) (mutants shape-retry-blocked-by-lock, shape-install-waits-on-the-mirror)"
     places: [none]
 
+  - id: DATA-read-keyed-on-a-replaced-object
+    title: "A salon re-read its room, its roster and the Lounge list each time the session settled: the read was keyed on the auth store's user object, which a session restore replaces"
+    seriousness: serious
+    area: lounge
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "speed lab 39868403930, salon-1.log: lounges read 5 times and lounge_members 5 in one opening; the salon ready at 2.5-3 s" }
+    methods:
+      - { kind: running, file: src/components/lounge/__tests__/theRoomIsAskedForOnce.test.tsx, test: "asks for the room and its roster once while the session settles, and again for another member" }
+      - { kind: static, file: src/utils/__tests__/aReadIsKeyedOnWhoNotTheObject.guard.test.ts, test: "keys every other hook on who reads, not on the object a session restore replaces" }
+    fix: "the salon keys its reads on who reads (user?.id), not the object; every hook still keyed on the auth user object is listed with why it is no read (twelve, each a press handler, a drawer or a copy), and a new one fails until judged (mutants shape-salon-keyed-on-user, shape-read-keyed-unjudged)"
+    places: [none]
+
   - id: E2E-lab-phone-unlike-the-flows
     title: "The speed lab prepared its phone apart from the flows and missed what they had learned: Android's 'Pixel Launcher isn't responding' covered its sign-in, which the flows had hidden for months"
     seriousness: code

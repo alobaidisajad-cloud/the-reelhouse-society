@@ -945,6 +945,24 @@ mutants:
         replace: "        continue-on-error: true\n        run: |\n"
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }
 
+  - id: shape-salon-keyed-on-user
+    class: DATA-read-keyed-on-a-replaced-object
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "  }, [id, userId, fetchMembers]);\n"
+        replace: "  }, [id, user, fetchMembers]);\n"
+    proof: { file: src/components/lounge/__tests__/theRoomIsAskedForOnce.test.tsx, test: "asks for the room and its roster once while the session settles, and again for another member" }
+
+  - id: shape-read-keyed-unjudged
+    class: DATA-read-keyed-on-a-replaced-object
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "  }, [id, requestMembership, refreshMembership, userId]);\n"
+        replace: "  }, [id, requestMembership, refreshMembership, user]);\n"
+    proof: { file: src/utils/__tests__/aReadIsKeyedOnWhoNotTheObject.guard.test.ts, test: "keys every other hook on who reads, not on the object a session restore replaces" }
+
   - id: shape-lab-shows-error-dialogs
     class: E2E-lab-phone-unlike-the-flows
     source: shape

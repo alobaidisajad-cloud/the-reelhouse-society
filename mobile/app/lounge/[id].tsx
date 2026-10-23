@@ -344,6 +344,10 @@ function formatDay(iso: string): string {
 export default function LoungeRoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore(s => s.user);
+  // Who reads, by id: the store hands a new `user` object at each session restore, and a read
+  // keyed on the object asked for the room, its roster and the Lounge list again each time (three
+  // times in one opening, speed lab 39868403930).
+  const userId = user?.id ?? null;
   const router = useRouter();
   const barFoot = useBottomEdge() + BAR_FOOT_GAP;
   const headerTop = usePushedHeaderTop();
@@ -407,9 +411,9 @@ export default function LoungeRoomScreen() {
     if (!roster) { setRosterFailed(true); return; }
     setRosterFailed(false);
     setMembers(roster);
-    const mine = user ? roster.find(m => m.user_id === user.id) : undefined;
+    const mine = userId ? roster.find(m => m.user_id === userId) : undefined;
     setMyStatus((mine?.status as LoungeMemberStatus) ?? 'none');
-  }, [id, user, fetchMembers]);
+  }, [id, userId, fetchMembers]);
 
   const retryRoster = useCallback(() => {
     setRosterFailed(false);
@@ -563,8 +567,8 @@ export default function LoungeRoomScreen() {
     if (result === 'error') setPending(false);
     else refreshMembership();
     // The door promises to let them in the moment they're admitted: the moment to ask to send word.
-    if (result === 'requested' && user) void offerWord('seat', user.id);
-  }, [id, requestMembership, refreshMembership, user]);
+    if (result === 'requested' && userId) void offerWord('seat', userId);
+  }, [id, requestMembership, refreshMembership, userId]);
 
   // From the registry the Society page sells from; enforced by tr_tier_gate_lounge_*.
   const seat = useClearance('the-lounge', id ? `/lounge/${id}` : '/lounge');

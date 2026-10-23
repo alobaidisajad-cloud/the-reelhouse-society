@@ -137,7 +137,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | 2026-10-22 | edited: its ready mark (log) in all four trees; header and badge from usePushedHeaderTop; foot from useContentBottom |
 | app/lounge.tsx | 2026-10-01 | true as written |
-| app/lounge/[id].tsx | 2026-10-15 | edited: the room's read; the composer and its bars stand on the edge (BAR_FOOT_GAP); each scroll traced |
+| app/lounge/[id].tsx | 2026-10-23 | edited: its reads keyed on who reads (userId), not the object a session restore replaces; the room's read; the composer and its bars stand on the edge (BAR_FOOT_GAP); each scroll traced |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-04 | edited: a portrait without a photograph carries the whole first letter, unspoken |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | 2026-10-15 | back, veil and scrollbar from usePushedHeaderTop; foot from useContentBottom |
@@ -1446,3 +1446,5 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/expoRouterMock.ts | 2026-10-22 | new: expo-router as every test meets it, the base of every mock of it |
 | test-utils/__tests__/theRouterMockHasOneBase.guard.test.ts | 2026-10-22 | new: every mock of expo-router spreads the base or the real module; jest.setup.ts uses the base |
 | e2e/no-error-dialogs.sh | 2026-10-23 | new: Android's error dialogs hidden and closed, for the flows and the lab alike |
+| src/utils/__tests__/aReadIsKeyedOnWhoNotTheObject.guard.test.ts | 2026-10-23 | new: every hook keyed on the auth user object judged no read; a new one fails |
+| src/components/lounge/__tests__/theRoomIsAskedForOnce.test.tsx | 2026-10-23 | new: the room and roster asked once while the session settles, again for another member |
