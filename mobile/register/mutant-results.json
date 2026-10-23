@@ -782,5 +782,89 @@
     "proof": "m2",
     "commit": "e1cc08c01220e6be3df15af2e91757137b911a78",
     "verdict": "caught"
+  },
+  {
+    "class": "DATA-one-flag-for-two-reads",
+    "mutant": "shape-room-flag-lowered-by-salons",
+    "proof": "m1",
+    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-another-rooms-words-shown",
+    "mutant": "shape-room-keeps-last-words",
+    "proof": "m1",
+    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-another-rooms-words-shown",
+    "mutant": "shape-screen-draws-held-words",
+    "proof": "m2",
+    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-read-waits-on-a-read-it-needs-not",
+    "mutant": "shape-reactions-asked-apart",
+    "proof": "m1",
+    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-read-waits-on-a-read-it-needs-not",
+    "mutant": "shape-salons-read-in-turn",
+    "proof": "m2",
+    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-older-words-without-reactions",
+    "mutant": "shape-older-page-without-reactions",
+    "proof": "m1",
+    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-page-order-unlike-its-cursor",
+    "mutant": "shape-first-page-unordered-by-id",
+    "proof": "m1",
+    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-canvas-drawn-out-of-sight",
+    "mutant": "shape-veil-lift-unheld",
+    "proof": "m1",
+    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-canvas-drawn-out-of-sight",
+    "mutant": "shape-veil-written-each-frame",
+    "proof": "m1",
+    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-mock-accepts-anything",
+    "mutant": "shape-fake-embed-unchecked",
+    "proof": "m3",
+    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-mock-accepts-anything",
+    "mutant": "shape-fake-embed-dropped",
+    "proof": "m4",
+    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-mock-accepts-anything",
+    "mutant": "shape-fake-or-refused-when-answered",
+    "proof": "m5",
+    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "verdict": "caught"
   }
 ]
