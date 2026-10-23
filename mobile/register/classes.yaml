@@ -1169,6 +1169,18 @@ classes:
     fix: "the first page orders by created_at then id, as the cursor pages (mutant shape-first-page-unordered-by-id)"
     places: [none]
 
+  - id: TEST-sweep-blind-to-a-handed-on-read
+    title: "The resolved-error sweep could not see a read handed on by .catch() or .then(): Promise.resolve(supabase.rpc(…)).catch(…) rooted at Promise, so a read written that way could leave its error unread unseen"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "push gate refused at the source readers: the salon's faces read, rewritten into the salons' second wave, vanished from the sweep instead of being found" }
+    methods:
+      - { kind: static, file: src/lib/__tests__/aResolvedErrorIsRead.test.ts, test: "the scan sees both shapes, and passes over a read one" }
+    fix: "supabaseIn looks into the object a .catch()/.then() is called on; the probe holds such a read, and the salon's faces read is judged by its new name (mutant shape-sweep-blind-to-handed-on)"
+    places: [none]
+
   - id: SPEED-canvas-drawn-out-of-sight
     title: "A photograph's veil carried its light back on every frame of a scroll, the whole length of the page: its Skia canvas was drawn again for every frame long after the photograph had gone (the stack, the film, the person, the member's file)"
     seriousness: behaviour

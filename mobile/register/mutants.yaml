@@ -1134,6 +1134,15 @@ mutants:
         replace: "        .limit(100);\n\n      // supabase-js resolves"
     proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the first page is ordered as the page above it is asked for: by its time, then its id" }
 
+  - id: shape-sweep-blind-to-handed-on
+    class: TEST-sweep-blind-to-a-handed-on-read
+    source: shape
+    edits:
+      - file: src/lib/__tests__/aResolvedErrorIsRead.test.ts
+        find: "      const got = supabaseIn(expr.expression.expression, depth + 1);\n      if (got) return got;\n"
+        replace: ""
+    proof: { file: src/lib/__tests__/aResolvedErrorIsRead.test.ts, test: "the scan sees both shapes, and passes over a read one" }
+
   - id: shape-veil-lift-unheld
     class: SPEED-canvas-drawn-out-of-sight
     source: shape

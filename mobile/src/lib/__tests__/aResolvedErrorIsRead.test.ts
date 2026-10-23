@@ -43,7 +43,7 @@ const JUDGED: Record<string, { n: number; why: string }> = {
   'src/stores/domain/socialSlice.ts · [from] destructured without error (data)': {
     n: 1, why: 'the insert below answers: a follow already held is a duplicate, taken as followed',
   },
-  'src/stores/lounge.ts · [rpc] destructured without error (data)': {
+  'src/stores/lounge.ts · Promise.all · facesRes': {
     n: 1, why: 'member faces are decoration; a card without them shows its count',
   },
   ...Object.fromEntries(['logsCount', 'ledgerCount', 'watchCount', 'vaultCount', 'listsCount'].map((c) => [
@@ -90,6 +90,11 @@ function supabaseIn(expr: ts.Node | undefined, depth = 0): string | null {
     return init ? supabaseIn(init, depth + 1) : null;
   }
   if (ts.isCallExpression(expr)) {
+    // A read handed on by .catch()/.then(), as Promise.resolve(supabase.rpc(…)).catch(…).
+    if (ts.isPropertyAccessExpression(expr.expression)) {
+      const got = supabaseIn(expr.expression.expression, depth + 1);
+      if (got) return got;
+    }
     for (const a of expr.arguments) {
       const inner = ts.isArrowFunction(a) || ts.isFunctionExpression(a) ? (ts.isBlock(a.body) ? undefined : a.body) : a;
       const got = supabaseIn(inner, depth + 1);
@@ -194,6 +199,8 @@ describe('a resolved error is read', () => {
       "  let q = supabase.from('v').select('z');",
       "  const [held, maybe] = await Promise.all([withAbortSignal(q, s), on ? supabase.from('w').select('a') : skip]);",
       '  void held.data; void maybe.data;',
+      "  const [handed] = await Promise.all([Promise.resolve(supabase.rpc('r')).catch(() => null)]);",
+      '  void handed?.data;',
       "  const { data: d2, error } = await supabase.from('u').select('y');",
       "  supabase.from('t').select('x').then(({ data: d3 }) => use(d3));",
       "  supabase.from('t').select('x').then((res) => use(res.data));",
@@ -206,6 +213,7 @@ describe('a resolved error is read', () => {
       'probe.ts · Promise.all · one',
       'probe.ts · Promise.all · held',
       'probe.ts · Promise.all · maybe',
+      'probe.ts · Promise.all · handed',
       'probe.ts · [from] then without error (data)',
       'probe.ts · [from] then, res.error never read',
     ]);

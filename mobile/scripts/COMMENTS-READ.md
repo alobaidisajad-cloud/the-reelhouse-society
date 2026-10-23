@@ -934,7 +934,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | 2026-10-03 | payments pass: the source pins went; the paths they guarded now run |
 | src/lib/__tests__/aRequestEndsInItsTime.test.ts | 2026-10-16 | new: a request with no answer is given up at its limit as not reached (storage waits longer); a caller's own cancel stays the caller's; an answer in time comes back untouched with no timer left |
 | src/lib/__tests__/aRequestIsWrittenToTheE2ELog.test.ts | 2026-10-16 | new |
-| src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-16 | edited: the queue's standing read is no longer judged; it reads its error |
+| src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-23 | edited: a read handed on by .catch()/.then() is seen (Promise.resolve(supabase.rpc(…)).catch(…)), in the probe too; the salon's faces read judged by its new name; the queue's standing read is no longer judged; it reads its error |
 | src/lib/__tests__/revenueCat.selectPackage.test.ts | — |  |
 | src/lib/__tests__/sentryMeasures.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/lib/__tests__/signingOutSilencesOnlyThisDevice.test.ts | — |  |
