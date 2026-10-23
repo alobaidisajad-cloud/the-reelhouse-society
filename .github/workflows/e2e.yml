@@ -139,7 +139,7 @@ jobs:
         if: ${{ inputs.client }}
         run: node mobile/e2e/old-client-tree.mjs "$E2E_OLD_CLIENT"
 
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           cache: 'npm'
@@ -360,7 +360,7 @@ jobs:
           name: e2e-app${{ env.E2E_TAG }}
           path: mobile/android/app/build/outputs/apk/release
 
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
 
@@ -785,7 +785,7 @@ jobs:
         if: ${{ inputs.client }}
         run: node mobile/e2e/old-client-tree.mjs "$E2E_OLD_CLIENT"
 
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
 
