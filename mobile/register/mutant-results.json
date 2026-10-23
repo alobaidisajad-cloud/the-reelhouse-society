@@ -1174,5 +1174,40 @@
     "proof": "m7",
     "commit": "a5664a684a6d18b33476af05e85aef2ece32df8c",
     "verdict": "caught"
+  },
+  {
+    "class": "DATA-marks-known-from-the-pages",
+    "mutant": "shape-ledger-one-page",
+    "proof": "m1",
+    "commit": "b9d2a3040a4727a04973506e948cb729aac31223",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-marks-known-from-the-pages",
+    "mutant": "shape-ledger-replaced-by-pages",
+    "proof": "m3",
+    "commit": "b9d2a3040a4727a04973506e948cb729aac31223",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-marks-known-from-the-pages",
+    "mutant": "shape-unknown-offered-as-unseen",
+    "proof": "m8",
+    "commit": "b9d2a3040a4727a04973506e948cb729aac31223",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-marks-known-from-the-pages",
+    "mutant": "shape-light-record-edited",
+    "proof": "m6",
+    "commit": "b9d2a3040a4727a04973506e948cb729aac31223",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-marks-known-from-the-pages",
+    "mutant": "shape-hunt-counted-short",
+    "proof": "m10",
+    "commit": "b9d2a3040a4727a04973506e948cb729aac31223",
+    "verdict": "caught"
   }
 ]
