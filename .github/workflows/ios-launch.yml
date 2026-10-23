@@ -153,7 +153,7 @@ jobs:
         working-directory: mobile
         env:
           # Maestro starts its iPhone driver for each flow; on a hosted Mac it once outlived the
-          # default wait (iPhone launch at ed79856d: "iOS driver not ready in time"). Three minutes.
+          # default wait (iPhone launch 39893035439: "iOS driver not ready in time"). Three minutes.
           MAESTRO_DRIVER_STARTUP_TIMEOUT: '180000'
         run: |
           set +e

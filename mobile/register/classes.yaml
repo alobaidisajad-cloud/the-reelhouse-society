@@ -831,7 +831,7 @@ classes:
     area: tests
     status: OPEN
     count: 1
-    source: { kind: history, ref: "iPhone launch at ed79856d, auth_deep_link: iOS driver not ready in time" }
+    source: { kind: history, ref: "iPhone launch 39893035439, auth_deep_link: iOS driver not ready in time" }
     methods:
       - { kind: static, file: e2e/__tests__/iosFlows.test.ts, test: "give Maestro's iPhone driver minutes to start, not its default" }
     fix: "the flows step gives the driver three minutes (MAESTRO_DRIVER_STARTUP_TIMEOUT, Maestro's own setting), and a test holds it at two or more (mutant shape-ios-driver-default-wait)"

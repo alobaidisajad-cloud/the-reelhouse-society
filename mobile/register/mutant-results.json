@@ -714,6 +714,13 @@
     "verdict": "caught"
   },
   {
+    "class": "E2E-ios-driver-start-unwaited",
+    "mutant": "shape-ios-driver-default-wait",
+    "proof": "m1",
+    "commit": "b3897ee3a79554e4fce4d1a30bcc83a1580d773a",
+    "verdict": "caught"
+  },
+  {
     "class": "E2E-ios-cold-link-launch-hang",
     "mutant": "shape-ios-cold-link-once",
     "proof": "m1",

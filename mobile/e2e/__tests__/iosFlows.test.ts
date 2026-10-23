@@ -39,7 +39,7 @@ describe('the flows the iPhone runs', () => {
   });
 
   it('give Maestro\'s iPhone driver minutes to start, not its default', () => {
-    // iPhone launch at ed79856d: the second flow failed on "iOS driver not ready in time".
+    // iPhone launch 39893035439: the second flow failed on "iOS driver not ready in time".
     const wf = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'ios-launch.yml'), 'utf8').replace(/\r\n/g, '\n');
     const step = wf.slice(wf.indexOf('- name: The flows that need no server, on the simulator'));
     const wait = Number((/MAESTRO_DRIVER_STARTUP_TIMEOUT: '(\d+)'/.exec(step.slice(0, step.indexOf('run: |'))) ?? [])[1]);
