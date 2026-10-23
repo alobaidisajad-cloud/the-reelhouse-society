@@ -686,6 +686,20 @@
     "verdict": "caught"
   },
   {
+    "class": "DATA-read-keyed-on-a-replaced-object",
+    "mutant": "shape-salon-keyed-on-user",
+    "proof": "m1",
+    "commit": "c09b474eaf98166921cca1bc4f074c4d5b5aa447",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-read-keyed-on-a-replaced-object",
+    "mutant": "shape-read-keyed-unjudged",
+    "proof": "m2",
+    "commit": "c09b474eaf98166921cca1bc4f074c4d5b5aa447",
+    "verdict": "caught"
+  },
+  {
     "class": "E2E-lab-phone-unlike-the-flows",
     "mutant": "shape-lab-shows-error-dialogs",
     "proof": "m1",
