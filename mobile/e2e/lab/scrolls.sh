@@ -94,8 +94,8 @@ fi
 # two blocks, the builds' order turned in the second, so a slow stretch of the runner falls on every
 # build alike. One install a build a block: installing before every round (speed lab 39820804347)
 # took the run past its runner. Fourteen rounds a build: on rounds as noisy as ±10%, the rank-sum
-# test (scrolls.mjs) gives a 10% shift p ≈ 1.5e-4, under Holm's bar for seven arms by five measures
-# (2.9e-4); eight gave 4e-3.
+# test (scrolls.mjs) gives a 10% shift p ≈ 1.5e-4, under Holm's bar for nine arms by four measures
+# (2.8e-4); eight gave 4e-3.
 ROUNDS_EACH=7
 if [ "$PART" != screens ] && [ -n "${LAB_REEL_ARMS:-}" ]; then
   mkdir -p "$OUT/reel"

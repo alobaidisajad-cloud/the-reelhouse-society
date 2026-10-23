@@ -5,8 +5,10 @@
  * the Sealed E2E's among them, runs without it, so its speed gates measure the app as it ships.
  * As each page opens, `[e2e] lab.frames.on`; then each second that held any, one line,
  * `[e2e] lab.frames {...}`, for the page then open:
- *   js      JavaScript tasks over 50 ms: an animation frame the JS thread reached more than 50 ms
- *           after a frame's time had passed (it was busy all that while), and the longest
+ *   js      animation frames the JS thread reached more than 50 ms past a frame's time, and the
+ *           longest. On Android a JS timer fires only on the UI thread's frame, so a late frame
+ *           reads here as a long task: on the lab's software GPU it counts the frames (speed lab
+ *           39868403930), and the lab does not judge it (scrolls.mjs UNMEASURED)
  *   ui      the UI thread's frames, from Reanimated's frame callback: how many, how many took
  *           over 25 ms (a frame and a half), and the longest; on iOS as on Android
  * The lab's scripts read them per page (e2e/lab/scrolls.mjs).

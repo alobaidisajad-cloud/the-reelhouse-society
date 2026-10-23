@@ -95,7 +95,6 @@ export const REEL_MEASURES = [
   { key: 'frames', head: 'frames', of: (r) => r.frames },
   { key: 'p50', head: 'p50 ms', of: (r) => r.p50 },
   { key: 'p90', head: 'p90 ms', of: (r) => r.p90 },
-  { key: 'js', head: 'JS over 50 ms', of: (r) => r.jsLong },
 ];
 
 const median = (xs) => { const s = [...xs].sort((a, b) => a - b); const i = (s.length - 1) / 2; return (s[Math.floor(i)] + s[Math.ceil(i)]) / 2; };
@@ -187,6 +186,17 @@ export function jsLongSplitOf(text) {
   return mark < 0 ? { open: sum(text), scroll: null } : { open: sum(text.slice(0, mark)), scroll: sum(text.slice(mark)) };
 }
 
+/**
+ * The budget's lines this lab cannot yet measure, shown but not judged. Its long JavaScript tasks
+ * are counted from late animation frames, and on Android a JS timer fires only on the UI thread's
+ * frame (TimerManager.cpp: requestAnimationFrame is setTimeout(0); JavaTimerManager fires timers on
+ * Choreographer frames): on the lab's software GPU every frame is late, so it counted the frames
+ * (speed lab 39868403930: 49 with every layer gone or none). The JavaScript thread's own states,
+ * from Perfetto, measure them next (WORKLIST P0.112).
+ */
+export const UNMEASURED = ['jsOpen', 'jsScroll'];
+export const UNMEASURED_WHY = 'on Android a JS timer fires on the UI thread\'s frame, so late frames read as long tasks; measured from the JS thread itself next';
+
 /** Each busy screen's name in the lab, and the name its ready mark (useScreenReady) gives. */
 export const READY_NAMES = { reel: 'reel', salon: 'room', stack: 'stack', log: 'log', dispatch: 'dispatch', archive: 'member', settings: 'settings' };
 
@@ -228,6 +238,7 @@ export function budgetOf(dir, budget) {
   const cell = (v) => String(v == null ? '—' : Math.round(v * 10) / 10).padStart(10);
   const lines = [
     `The frame budget against ${budget.control} (e2e/lab/budget.json): each a median over its rounds`,
+    ...UNMEASURED.map((k) => `(${k}: shown, not judged: ${UNMEASURED_WHY})`),
     `screen    ${keys.map((k) => k.padStart(10)).join('')}`,
     `budget    ${keys.map((k) => cell(limits[k])).join('')}`,
   ];
@@ -238,7 +249,7 @@ export function budgetOf(dir, budget) {
     if (name === budget.control) { lines.push(`${name.padEnd(10)}${keys.map((k) => cell(mid(rows, k))).join('')}  (the control)`); continue; }
     const got = Object.fromEntries(keys.map((k) => [k, mid(rows, k)]));
     lines.push(`${name.padEnd(10)}${keys.map((k) => cell(got[k])).join('')}`);
-    for (const k of keys) {
+    for (const k of keys.filter((key) => !UNMEASURED.includes(key))) {
       if (limits[k] != null && got[k] != null && got[k] > limits[k]) over.push(`${name}: ${k} ${Math.round(got[k] * 10) / 10} over its budget of ${Math.round(limits[k] * 10) / 10} (${L[k].reason})`);
     }
   }

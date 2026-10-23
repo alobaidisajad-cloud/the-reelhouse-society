@@ -192,7 +192,7 @@ describe('the signed-in scrolls, judged', () => {
 /**
  * A screens folder with a reel/ folder: each build's rounds of the Reel, each scrolled far, its
  * opening and its frames as given (ready ms, frames drawn, p90 ms per round; every frame janky, as on the lab's GPU),
- * and, where given, the frame record's long JavaScript tasks (LabFrameLog's lines, split over two seconds).
+ * and, where given, the frame record's late animation frames (LabFrameLog's lines, split over two seconds).
  */
 function reelRounds(name: string, builds: Record<string, { ready: number[]; frames: number[]; p90: number[]; js?: number[] }>) {
   const d = scrolled(name, Array.from({ length: 11 }, (_, i) => hash(i)));
@@ -226,10 +226,11 @@ describe("the Reel's layers, costed", () => {
     })]);
     expect(r.status).toBe(0);
     const row = (b: string) => r.stdout.split('\n').find((l) => l.startsWith(`${b} `)) ?? '';
-    // The long JavaScript tasks are each round's sum over its seconds; a build without the record reads blank.
-    expect(row('A')).toMatch(/^A\s+14\s+3000\.5\s+50\.5\s+800\s+20\.5\s+40\.5$/);
-    expect(row('Rb')).toMatch(/^Rb\s+14\s+2000\.5 -1000\*\s+50\.5 \+0 \s+800 \+0 \s+20\.5 \+0 \s+1 -39\.5\*$/);
-    expect(row('Rw')).toMatch(/^Rw\s+14\s+3000\.5 \+0 \s+50\.5 \+0 \s+800 \+0 \s+20\.5 \+0 \s+—$/);
+    // Late animation frames are not compared (UNMEASURED: on Android they count the frames): A's
+    // record, however different from Rb's, makes no column and no call.
+    expect(row('A')).toMatch(/^A\s+14\s+3000\.5\s+50\.5\s+800\s+20\.5$/);
+    expect(row('Rb')).toMatch(/^Rb\s+14\s+2000\.5 -1000\*\s+50\.5 \+0 \s+800 \+0 \s+20\.5 \+0 $/);
+    expect(row('Rw')).toMatch(/^Rw\s+14\s+3000\.5 \+0 \s+50\.5 \+0 \s+800 \+0 \s+20\.5 \+0 $/);
   });
 
   it('fails when A was never scrolled, or a round of an arm ran out, by name', () => {
@@ -300,11 +301,12 @@ describe('the frame budget (P0.112)', () => {
     const over = r.stdout.split('\n').filter((l) => l.startsWith('over budget: '));
     expect(over).toEqual([
       `over budget: reel: ready 1600 over its budget of 1400 (${budget.lines.ready.reason})`,
-      `over budget: reel: jsOpen 3 over its budget of 2 (${budget.lines.jsOpen.reason})`,
-      `over budget: reel: jsScroll 1 over its budget of 0 (${budget.lines.jsScroll.reason})`,
       `over budget: reel: slowUi 45 over its budget of 40 (${budget.lines.slowUi.reason})`,
       `over budget: reel: p90 1100 over its budget of 1000 (${budget.lines.p90.reason})`,
     ]);
+    // The JavaScript lines are shown, said not judged, and why: the lab cannot measure them yet.
+    expect(r.stdout).toContain('(jsOpen: shown, not judged: on Android a JS timer fires on the UI thread\'s frame');
+    expect(r.stdout).toContain('(jsScroll: shown, not judged: ');
   });
 
   it('judges nothing without the control, and says so', () => {
