@@ -1408,7 +1408,7 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
 | test-utils/runtimeLacks.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | test-utils/schema.ts | 2026-10-23 | edited: readForeignKeys: the keys PostgREST embeds by; new: production's tables, columns with their types, views and functions, read from the snapshot: the one reader for the query check and the fake |
-| test-utils/SOURCE-READING-TESTS.md | 2026-10-15 | edited: every test in mobile/ is ledgered; the readers in __tests__/, e2e/ and plugins/, listed |
+| test-utils/SOURCE-READING-TESTS.md | 2026-10-23 | edited: theNavigationMockHasOneBase listed; every test in mobile/ is ledgered; the readers in __tests__/, e2e/ and plugins/, listed |
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
 | test-utils/supabaseFake.ts | 2026-10-23 | edited: embeds resolved by their keys as PostgREST does (PGRST200/201 thrown), answered from what the test holds; or()/contains() taken on a table the test answers, as its header said; silent, an answer with an empty body (no data and no error), as postgrest-js reads one |
 | test-utils/testQueryClient.ts | 2026-10-04 | written whole: the one client a test builds — the app's rules, no collection timer, errors heard |
