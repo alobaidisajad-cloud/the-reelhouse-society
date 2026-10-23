@@ -110,36 +110,37 @@ const base = {
     onBlock: jest.fn(),
 };
 
+/** The block store as built: put back before every test, so no stand-in outlives its test. */
+const BLOCKS_AS_BUILT = useBlockStore.getState();
+
 beforeEach(() => {
     jest.clearAllMocks();
     // The member's blocks read, unless a test says otherwise.
-    useBlockStore.setState({ blocksKnown: true });
+    useBlockStore.setState({ ...BLOCKS_AS_BUILT, blocksKnown: true }, true);
 });
 
 // A block unknown looked like none: MUTE was offered on a member already blocked, and the house
 // took it, turning the block into a mute (P0.112).
 describe('ContentActionSheet — the member\'s blocks not yet read', () => {
     it('offers no block or mute while they are read, says so, and asks for them', async () => {
-        useBlockStore.setState({ blocksKnown: false });
-        const sync = jest.spyOn(useBlockStore.getState(), 'syncFromServer').mockImplementation(() => new Promise(() => {}));
+        const sync = jest.fn((): Promise<void> => new Promise(() => {}));
+        useBlockStore.setState({ blocksKnown: false, syncFromServer: sync });
         useAuthStore.setState({ user: { id: 'me' } as never });
         const { queryByLabelText, getByLabelText } = render(<ContentActionSheet {...base} onMute={jest.fn()} />);
         expect(getByLabelText('Report alice to the Tribunal')).toBeTruthy();
         expect(getByLabelText('Reading your blocks').props.accessibilityState).toMatchObject({ disabled: true });
         expect([queryByLabelText('Block alice'), queryByLabelText('Mute alice'), queryByLabelText('Unblock alice')]).toEqual([null, null, null]);
         await waitFor(() => expect(sync).toHaveBeenCalledWith('me'));
-        sync.mockRestore();
     });
 
     it('a read that could not be answered says so, and asks again', async () => {
-        useBlockStore.setState({ blocksKnown: false });
-        const sync = jest.spyOn(useBlockStore.getState(), 'syncFromServer').mockResolvedValue(undefined);
+        const sync = jest.fn((): Promise<void> => Promise.resolve());
+        useBlockStore.setState({ blocksKnown: false, syncFromServer: sync });
         useAuthStore.setState({ user: { id: 'me' } as never });
         const { getByLabelText } = render(<ContentActionSheet {...base} onMute={jest.fn()} />);
         const again = await waitFor(() => getByLabelText('Your blocks could not be read. Ask for them again'));
         await fireEvent.press(again);
         await waitFor(() => expect(sync).toHaveBeenCalledTimes(2));
-        sync.mockRestore();
     });
 });
 
