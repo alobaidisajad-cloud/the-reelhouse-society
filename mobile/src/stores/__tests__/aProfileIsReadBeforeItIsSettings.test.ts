@@ -46,8 +46,13 @@ describe('rereadProfile', () => {
   });
 
   it('an answer for a member who has since gone lands nowhere', async () => {
-    mockHouse = supabaseFake({ answer: { profiles: () => { useAuthStore.setState({ user: null }); return [PROFILE]; } } });
+    // Another member signs in while the first one's profile is on its way.
+    const OTHER = '22222222-2222-4222-8222-222222222222';
+    mockHouse = supabaseFake({ answer: { profiles: () => {
+      useAuthStore.setState({ user: { id: OTHER, email: 'bo@example.com' } as never });
+      return [PROFILE];
+    } } });
     await useAuthStore.getState().rereadProfile();
-    expect(useAuthStore.getState().user).toBeNull();
+    expect(useAuthStore.getState().user).toEqual({ id: OTHER, email: 'bo@example.com' });
   });
 });
