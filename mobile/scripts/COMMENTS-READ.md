@@ -1328,7 +1328,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/endorsementGroupKey.ts | 2026-10-02 | Read whole (launch audit). A certified-log group opened the FILM, on the belief that no log page existed (app/log/[id] does), and went nowhere without a film id: it opens the log. |
 | src/utils/enter.ts | 2026-10-02 | read; sound |
 | src/utils/filterContentByBlocks.ts | 2026-10-01 | true as written |
-| src/utils/gateTelemetry.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/utils/gateTelemetry.ts | 2026-10-23 | edited: a gate event's standing is the rope's own type (a rank being read is never recorded) |
 | src/utils/graphemeTable.ts | 2026-10-04 | regenerated: names its Unicode version |
 | src/utils/groupNotifications.ts | 2026-10-02 | history comments trimmed |
 | src/utils/handleGuard.ts | 2026-10-02 | Read whole (launch audit). Still rejects both joiners in a handle (the full class). Sound. |

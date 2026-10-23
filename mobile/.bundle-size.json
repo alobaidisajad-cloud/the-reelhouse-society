@@ -1,10 +1,10 @@
 {
   "ios": {
-    "bytes": 11775175,
-    "why": "CI's measure at 0312675a (2026-10-23), 11774078, and the follow fix after it (8ccf7dd8, +1097, measured between the two here): the marks ledger (every film logged and saved, read whole and kept), an edit that reads its own record, and the unknown states of the film page, the stack, the log and the member file (~30 KB); before it, Reanimated 4.3.4 for the mount-order crash fix (~88 KB) and the country names, the failure family and the review's words (~29 KB); the phone bundle trimmed from 15.0 MB"
+    "bytes": 11776255,
+    "why": "CI's measure at 0312675a (2026-10-23), 11774078, then the follow fix (8ccf7dd8, +1097) and the rank still being read (1799c5e5, +1080), each measured between commits here: the marks ledger (every film logged and saved, read whole and kept), an edit that reads its own record, and the unknown states of the film page, the stack, the log, the member file and the ropes (~31 KB); before it, Reanimated 4.3.4 for the mount-order crash fix (~88 KB) and the country names, the failure family and the review's words (~29 KB); the phone bundle trimmed from 15.0 MB"
   },
   "android": {
-    "bytes": 11778306,
-    "why": "CI's measure at 0312675a (2026-10-23), 11777180, and the follow fix after it (8ccf7dd8, +1126, measured between the two here): the marks ledger (every film logged and saved, read whole and kept), an edit that reads its own record, and the unknown states of the film page, the stack, the log and the member file (~30 KB); before it, Reanimated 4.3.4 for the mount-order crash fix (~88 KB) and the country names, the failure family and the review's words (~29 KB); the phone bundle trimmed from 15.0 MB"
+    "bytes": 11779306,
+    "why": "CI's measure at 0312675a (2026-10-23), 11777180, then the follow fix (8ccf7dd8, +1126) and the rank still being read (1799c5e5, +1000), each measured between commits here: the marks ledger (every film logged and saved, read whole and kept), an edit that reads its own record, and the unknown states of the film page, the stack, the log, the member file and the ropes (~31 KB); before it, Reanimated 4.3.4 for the mount-order crash fix (~88 KB) and the country names, the failure family and the review's words (~29 KB); the phone bundle trimmed from 15.0 MB"
   }
 }

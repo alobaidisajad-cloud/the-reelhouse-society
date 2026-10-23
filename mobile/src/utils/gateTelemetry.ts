@@ -37,6 +37,7 @@
  */
 import { addBreadcrumb } from '@/src/lib/sentry';
 import type { Rank } from '@/src/constants/gatedFeatures';
+import type { Standing } from '@/src/components/clearance/Clearance';
 
 export type GateEvent =
   /** A member tapped a rope. The one event that means intent. */
@@ -58,8 +59,8 @@ export interface GateEventDetail {
   /** A feature id from `gatedFeatures.ts` — never free text. */
   featureId?: string;
   rank?: Rank;
-  /** Whether they had never held it, or held it and stopped. */
-  standing?: 'stranger' | 'lapsed';
+  /** Whether they had never held it, or held it and stopped (a rank still being read is never recorded). */
+  standing?: Standing;
 }
 
 /**

@@ -1670,8 +1670,8 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useClearance.ts
-        find: "rankUnread ? 'reading' : onceHeldARank"
-        replace: "onceHeldARank"
+        find: "useAuthStore((s) => !!s.user && !profileRead(s.user))"
+        replace: "useAuthStore((s) => !s.user && !profileRead(s.user))"
     proof: { file: src/hooks/__tests__/useClearance.test.ts, test: "a member whose profile is not yet read is \"reading\": nothing held, and a tap asks for the profile, never the Society" }
 
   - id: shape-rope-sells-while-reading
