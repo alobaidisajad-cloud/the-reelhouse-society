@@ -100,9 +100,12 @@ SELECT pg_temp.mid(4), pg_temp.mid(n), 'follow' FROM generate_series(10, 2009) n
 ON CONFLICT DO NOTHING;
 
 -- ── endorsements: ~2,000,000 on logs with words ───────────────────────────────
+-- Two members each, never the same one twice: the house holds a member's certification of a
+-- log once (20261023_01), so two drawn at random, which met now and then, made a house
+-- production cannot be, and its key could not be built over it.
 INSERT INTO public.interactions (user_id, target_log_id, type, created_at)
-SELECT pg_temp.mid(1 + floor(random() * 100000)::int), l.id, 'endorse_log', l.created_at + interval '1 hour'
-  FROM (SELECT id, created_at FROM public.logs WHERE review IS NOT NULL) l,
+SELECT pg_temp.mid(1 + (l.first + e * 7919) % 100000), l.id, 'endorse_log', l.created_at + interval '1 hour'
+  FROM (SELECT id, created_at, floor(random() * 100000)::int AS first FROM public.logs WHERE review IS NOT NULL) l,
        generate_series(1, 2) e;
 
 -- ── watchlists: ~15 each ──────────────────────────────────────────────────────
