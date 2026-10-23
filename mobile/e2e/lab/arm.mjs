@@ -29,10 +29,10 @@
  *   R0      all of them: the floor
  * (The lamp and the wash kept as textures, once the arm Rh, ship: speed lab 39901452779.)
  *
- * The Dispatch's opening (WORKLIST P0.112), opened and scrolled as the Reel's arms are
- * (scrolls.sh, LAB_ARM_SCREEN=dispatch):
- *   F0      the page does not wait for the member's marks: the ceiling
- *   Fv      the marks asked for before the filings are drawn, waited for after
+ * The Dispatch's opening (WORKLIST P0.112) is opened and scrolled as the Reel's arms are
+ * (scrolls.sh, LAB_ARM_SCREEN=dispatch). (Its page no longer waiting for the member's marks,
+ * once the arm F0, ships: speed lab 39898420669, 1.3 s sooner; Fv, the marks asked first, gave
+ * nothing.)
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -222,21 +222,6 @@ const reelPulsesStill = [
 ];
 
 
-// The Dispatch's opening (WORKLIST P0.112): its page waits for the member's own marks (certified,
-// saved, voted), asked for only after the page's filings are drawn (speed lab 39868403930: asked
-// 2.2 s after the filings came, behind their first drawing).
-const DISPATCH_STORE = 'src/stores/dispatch.ts';
-const FILINGS_SET = "        set({ filings, hasMore: gotFullPage(rows.length), droppedRows: dropped, newCount: 0, pageState: 'read' });\n";
-const MARKS_AWAITED = '        await loadViewerState(filings, set, startedAs);\n';
-// The ceiling: the page does not wait for the marks at all.
-const feedMarksUnawaited = [edit(DISPATCH_STORE, MARKS_AWAITED, '        void loadViewerState(filings, set, startedAs);\n')];
-// The marks asked for before the filings are drawn: on the wire while they draw.
-const feedMarksFirst = [
-  edit(DISPATCH_STORE, FILINGS_SET,
-    '        const marks = loadViewerState(filings, set, startedAs);\n'
-    + '        await new Promise((resolve) => setTimeout(resolve, 0));\n' + FILINGS_SET),
-  edit(DISPATCH_STORE, MARKS_AWAITED, '        await marks;\n'),
-];
 
 /** The Reel's arms: each layer alone, and all of them (R0, the floor). */
 export const REEL_ARMS = ['Rb', 'Rw', 'Rl', 'Rt', 'Rs', 'Rp', 'R0'];
@@ -260,8 +245,6 @@ export const ARMS = {
   Rs: reelNoScrollbar,
   Rp: reelPulsesStill,
   R0: [...reelNoBeam, ...reelNoWash, ...reelNoLamp, ...reelBarStill, ...reelNoScrollbar, ...reelPulsesStill],
-  F0: feedMarksUnawaited,
-  Fv: feedMarksFirst,
 };
 
 /** The scenes the shots compare: each one's main build, its SVG build, and what it shows. */

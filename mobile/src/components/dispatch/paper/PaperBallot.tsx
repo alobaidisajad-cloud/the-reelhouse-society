@@ -71,8 +71,18 @@ const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.'];
 export const PaperBallot = memo(function PaperBallot({
   question, author, options, myVote, closed, closesLabel, sealed = true,
   certifyCount, commentCount, certified, saved, showKind = true, pending, docked,
+  certifyKnown, saveKnown, voteKnown = true,
   onVote, onCertify, onCritique, onShare, onSave, onAuthor,
 }: {
+  /** Whether this member's certify and save have been read (PaperActions). */
+  certifyKnown?: boolean;
+  saveKnown?: boolean;
+  /**
+   * Whether this member's mark on the ballot has been read. Unread, the boxes are drawn unlinked
+   * and the options locked: drawn open, a member who had voted was invited to vote again, and the
+   * house's refusal moved the mark to another option. Known by default, for the render harness.
+   */
+  voteKnown?: boolean;
   /**
    * Has the result actually been counted?
    *
@@ -115,9 +125,11 @@ export const PaperBallot = memo(function PaperBallot({
   pending?: boolean;
 }) {
   const vote = pending ? undefined : onVote;
+  // The member's mark still being read: the ballot is neither theirs to mark nor marked.
+  const voteReading = !voteKnown && !closed && !!vote;
   const votes = options.map((o) => o.votes);
   const total = votes.reduce((a, b) => a + b, 0);
-  const revealed = closed || myVote != null;
+  const revealed = closed || (!voteReading && myVote != null);
   // One number, one source: the total is the sum of the options, never a second
   // stored column that can disagree with them.
   const showPercent = revealed && total >= BALLOT_PERCENT_FLOOR;
@@ -139,7 +151,7 @@ export const PaperBallot = memo(function PaperBallot({
   const top = leaders.length === 1 ? leaders[0] : -1;
   const tied = leaders.length > 1;
   // One expression for `disabled` and the state a reader announces.
-  const locked = !!closed || myVote != null || !vote;
+  const locked = !!closed || myVote != null || !vote || voteReading;
 
   return (
     <View style={p.post}>
@@ -243,7 +255,7 @@ export const PaperBallot = memo(function PaperBallot({
 
       {options.map((o, i) => {
         if (i === top) return null;
-        const marked = myVote === i;
+        const marked = !voteReading && myVote === i;
         return (
           <View key={i}>
             {i > 0 && !closed && <View style={[p.hair, { opacity: 0.6 }]} />}
@@ -274,12 +286,12 @@ export const PaperBallot = memo(function PaperBallot({
               accessibilityLabel={
                 showPercent
                   ? `Option ${i + 1} of ${options.length}. ${o.title}. ${pct[i]} percent, ${counted(o.votes ?? 0, 'ballot', 'ballots')}.${marked ? ' Your mark.' : ''}`
-                  : `Option ${i + 1} of ${options.length}. ${o.title}.${marked ? ' Your mark.' : locked ? '' : ' Mark this.'}`
+                  : `Option ${i + 1} of ${options.length}. ${o.title}.${marked ? ' Your mark.' : voteReading ? ' Reading your mark.' : locked ? '' : ' Mark this.'}`
               }
             >
               <Text style={p.optionNo} {...decorativeTextProps}>{ROMAN[i]}</Text>
               {!closed && (
-                <View style={p.box}>
+                <View style={[p.box, voteReading && p.boxUnread]}>
                   {marked && <Text style={p.boxMark} {...UNSPOKEN} {...decorativeTextProps}>✗</Text>}
                 </View>
               )}
@@ -338,6 +350,7 @@ export const PaperBallot = memo(function PaperBallot({
         <PaperActions
           certifyCount={certifyCount} commentCount={commentCount}
           certified={certified} saved={saved} dimmed={pending}
+          certifyKnown={certifyKnown} saveKnown={saveKnown}
           onCertify={onCertify} onCritique={onCritique}
           onShare={onShare} onSave={onSave}
         />

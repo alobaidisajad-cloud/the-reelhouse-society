@@ -160,6 +160,8 @@ export const Credit = memo(function Credit({
 
 // The stamp bar's reach: upward only, clear of the credit and the next entry.
 const SLOP = { top: 7, bottom: 0, left: 0, right: 0 };
+// A mark not yet read: the stamp's outline before the ink, its line broken (icon units, 24 wide).
+export const UNINKED = '2.4 2.2';
 
 /**
  * The four marks under a filing: the app's stamp-bar anatomy (four equal
@@ -171,10 +173,18 @@ const SLOP = { top: 7, bottom: 0, left: 0, right: 0 };
  */
 export const PaperActions = memo(function PaperActions({
   certifyCount = 0, commentCount = 0, certified, saved, dimmed,
+  certifyKnown = true, saveKnown = true,
   onCertify, onCritique, onShare, onSave,
 }: {
   certifyCount?: number; commentCount?: number;
   certified?: boolean; saved?: boolean;
+  /**
+   * Whether this member's certify and save on the filing have been read. Unread, the mark is
+   * drawn as the stamp's outline before its ink (dashed, in fog) and cannot be pressed: drawn
+   * as CERTIFY, a member who had certified would be invited to certify again. Known by default,
+   * for the render harness; the app passes the store's answer (marksKnown).
+   */
+  certifyKnown?: boolean; saveKnown?: boolean;
   /** Not sent yet: nothing can be done to this filing until the house has it. */
   dimmed?: boolean;
   onCertify?: (next: boolean) => void;
@@ -188,30 +198,35 @@ export const PaperActions = memo(function PaperActions({
   // link to nothing, a critique would hang under a filing nobody else can open.
   const waiting = !!dimmed;
   const why = waiting ? 'Not sent yet' : 'Members only';
-  const canMark = !!onCertify && !waiting;
-  const canKeep = !!onSave && !waiting;
+  // A mark still being read is not off: its outline is drawn, unpressed, until the read answers.
+  const markReading = !!onCertify && !waiting && !certifyKnown;
+  const keepReading = !!onSave && !waiting && !saveKnown;
+  const canMark = !!onCertify && !waiting && certifyKnown;
+  const canKeep = !!onSave && !waiting && saveKnown;
+  const whyNot = (reading: boolean) => (reading ? 'Reading your mark' : why);
 
   return (
     <View style={p.actions}>
-      <PressableScale style={[p.action, !canMark && p.actionOff]} hitSlop={SLOP} haptic pressedScale={0.92}
+      <PressableScale style={[p.action, !canMark && !markReading && p.actionOff]} hitSlop={SLOP} haptic pressedScale={0.92}
         onPress={canMark ? () => onCertify(!certified) : undefined}
         disabled={!canMark}
         accessibilityRole="button"
-        accessibilityState={{ selected: !!certified, disabled: !canMark }}
+        accessibilityState={{ selected: !markReading && !!certified, disabled: !canMark, busy: markReading }}
         accessibilityLabel={
           // Why it cannot be pressed comes before how many have pressed it.
-          !canMark ? `Certify this. ${why}${certifyCount > 0 ? `. ${counted(certifyCount, 'member has', 'members have')} certified this` : ''}`
+          !canMark ? `Certify this. ${whyNot(markReading)}${certifyCount > 0 ? `. ${counted(certifyCount, 'member has', 'members have')} certified this` : ''}`
             : certifyLabel(certifyCount, !!certified)
         }>
-        <MarkFigure iconSize={15} count={certifyCount} reach="open" style={[p.actionLabel, certified && p.actionLabelOn]}>
-          <PaperStrike on={certified}>
+        <MarkFigure iconSize={15} count={certifyCount} reach="open" style={[p.actionLabel, !markReading && certified && p.actionLabelOn]}>
+          <PaperStrike on={!markReading && certified}>
             <Heart size={15} strokeWidth={2}
-              color={certified ? colors.crimson : colors.fog}
-              fill={certified ? colors.crimson : 'transparent'} />
+              color={!markReading && certified ? colors.crimson : colors.fog}
+              fill={!markReading && certified ? colors.crimson : 'transparent'}
+              strokeDasharray={markReading ? UNINKED : undefined} />
           </PaperStrike>
         </MarkFigure>
-        <Text style={[p.actionLabel, certified && p.actionLabelOn]} {...actionLabelProps}>
-          {certified ? 'CERTIFIED' : 'CERTIFY'}
+        <Text style={[p.actionLabel, !markReading && certified && p.actionLabelOn]} {...actionLabelProps}>
+          {!markReading && certified ? 'CERTIFIED' : 'CERTIFY'}
         </Text>
       </PressableScale>
 
@@ -237,19 +252,20 @@ export const PaperActions = memo(function PaperActions({
         <Text style={p.actionLabel} {...actionLabelProps}>SHARE</Text>
       </PressableScale>
 
-      <PressableScale style={[p.action, !canKeep && p.actionOff]} hitSlop={SLOP} haptic pressedScale={0.92}
+      <PressableScale style={[p.action, !canKeep && !keepReading && p.actionOff]} hitSlop={SLOP} haptic pressedScale={0.92}
         onPress={canKeep ? () => onSave(!saved) : undefined}
         disabled={!canKeep}
         accessibilityRole="button"
-        accessibilityState={{ selected: !!saved, disabled: !canKeep }}
-        accessibilityLabel={!canKeep ? `Save this. ${why}` : saved ? 'Saved' : 'Save this'}>
-        <PaperStrike on={saved}>
+        accessibilityState={{ selected: !keepReading && !!saved, disabled: !canKeep, busy: keepReading }}
+        accessibilityLabel={!canKeep ? `Save this. ${whyNot(keepReading)}` : saved ? 'Saved' : 'Save this'}>
+        <PaperStrike on={!keepReading && saved}>
           <Bookmark size={15} strokeWidth={2}
-            color={saved ? colors.sepia : colors.fog}
-            fill={saved ? colors.sepia : 'transparent'} />
+            color={!keepReading && saved ? colors.sepia : colors.fog}
+            fill={!keepReading && saved ? colors.sepia : 'transparent'}
+            strokeDasharray={keepReading ? UNINKED : undefined} />
         </PaperStrike>
-        <Text style={[p.actionLabel, saved && p.actionLabelSaved]} {...actionLabelProps}>
-          {saved ? 'SAVED' : 'SAVE'}
+        <Text style={[p.actionLabel, !keepReading && saved && p.actionLabelSaved]} {...actionLabelProps}>
+          {!keepReading && saved ? 'SAVED' : 'SAVE'}
         </Text>
       </PressableScale>
     </View>
@@ -302,10 +318,13 @@ const Stamp = memo(function Stamp({
  */
 export const PaperPost = memo(function PaperPost({
   kind, author, body, headline, source, film, still, order, orderIs, measureWidth,
-  certifyCount, commentCount, certified, saved,
+  certifyCount, commentCount, certified, saved, certifyKnown, saveKnown,
   answer, answered, spoiler, withheld, ended, edited, series, readTime, noByline, pending, docked,
   onOpen, onCertify, onCritique, onShare, onSave, onFilm, onAuthor,
 }: {
+  /** Whether this member's certify and save have been read (PaperActions). */
+  certifyKnown?: boolean;
+  saveKnown?: boolean;
   kind: PaperKind;
   author: PaperAuthor | null;
   body: string;
@@ -562,6 +581,7 @@ export const PaperPost = memo(function PaperPost({
         <PaperActions
           certifyCount={certifyCount} commentCount={commentCount}
           certified={certified} saved={saved} dimmed={pending}
+          certifyKnown={certifyKnown} saveKnown={saveKnown}
           onCertify={onCertify} onCritique={onCritique}
           onShare={onShare} onSave={onSave}
         />

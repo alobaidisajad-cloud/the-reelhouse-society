@@ -150,11 +150,14 @@ const filing = (over: Partial<Filing> = {}): Filing => ({
 const AS_BUILT = useDispatch.getState();
 
 const put = (over: Record<string, unknown>) => {
+  // The member's marks on the filings put are read, unless a test says otherwise.
+  const ids = ((over.filings as { id: string }[] | undefined) ?? []).map((f) => f.id);
   useDispatch.setState({
     ...AS_BUILT,
     filings: [], loading: false, pageState: 'read', loadingMore: false, hasMore: false, droppedRows: 0,
     section: 'ALL', sort: 'LATEST', savedOnly: false, newCount: 0,
     certifiedIds: new Set(), savedIds: new Set(), myVotes: {},
+    marksKnown: { certified: new Set(ids), saved: new Set(ids), voted: new Set(ids) },
     critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},
     critiquesHasMore: {}, critiquesOrder: {}, certifiedCritiqueIds: new Set(),
     ...over,
@@ -300,6 +303,27 @@ describe('the Dispatch feed', () => {
     expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
     await act(async () => { await fireEvent.press(getByLabelText('Save this')); });
     expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
+  });
+
+  // The page no longer waits for the member's marks. Drawn as CERTIFY while unread, a member who
+  // had certified was invited to certify again, and the house counted the second as a first (P0.112).
+  it('draws a mark still being read as unknown: unpressed, said so, then the member\'s once read', async () => {
+    put({ filings: [filing()], marksKnown: { certified: new Set(), saved: new Set(), voted: new Set() } });
+    const { getByLabelText, queryByLabelText } = await mount();
+    const certify = getByLabelText(/^Certify this\. Reading your mark/);
+    expect(certify.props.accessibilityState).toMatchObject({ disabled: true, busy: true, selected: false });
+    await act(async () => { await fireEvent.press(certify); });
+    expect(useDispatch.getState().certifiedIds.has('f1')).toBe(false);
+    expect(getByLabelText('Save this. Reading your mark')).toBeTruthy();
+
+    await act(async () => {
+      useDispatch.setState({
+        certifiedIds: new Set(['f1']),
+        marksKnown: { certified: new Set(['f1']), saved: new Set(['f1']), voted: new Set(['f1']) },
+      });
+    });
+    expect(queryByLabelText(/Reading your mark/)).toBeNull();
+    expect(getByLabelText(/^Certified\. /).props.accessibilityState).toMatchObject({ selected: true, disabled: false });
   });
 
   it('changes department, order and the kept page from the chrome', async () => {

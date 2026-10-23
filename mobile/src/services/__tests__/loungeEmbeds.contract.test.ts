@@ -1,5 +1,5 @@
 /**
- * Lounge embed contract test.
+ * Embed contract test: the app's embeds, as it asks for them, resolve on the house.
  *
  * Guards the build-31 regression: the `profiles(...)` embeds on lounge_messages /
  * lounge_members / lounge_message_reactions returned 400 because the FK to
@@ -17,20 +17,24 @@
  */
 import { SUPABASE_URL, canRun, visitor } from '@/test-utils/contractEnv';
 import { MESSAGE_COLUMNS } from '@/src/stores/lounge';
+import { SAVED_CARD_COLUMNS } from '@/src/stores/dispatch';
 
 const EMBEDS: { table: string; select: string }[] = [
   // The salon's own page of words, as the store asks for it: its author and its reactions.
   { table: 'lounge_messages', select: MESSAGE_COLUMNS.replace(/\s+/g, '') },
   { table: 'lounge_members', select: 'user_id,profiles!lounge_members_user_id_fkey(username,avatar_url)' },
   { table: 'lounge_message_reactions', select: 'id,profiles!lounge_message_reactions_user_id_fkey(username)' },
+  // The Dispatch's saved page, as the store asks for it: the card, inner-joined to the member's
+  // own saves (a visitor is refused the saves: 401, after the embed resolved).
+  { table: 'dispatch_posts', select: SAVED_CARD_COLUMNS.replace(/\s+/g, '') },
 ];
 
 const describeMaybe = canRun ? describe : describe.skip;
 
-describeMaybe('Lounge profiles embeds resolve (no schema drift)', () => {
+describeMaybe('the app’s embeds resolve (no schema drift)', () => {
   jest.setTimeout(20000);
 
-  it.each(EMBEDS)('$table embeds profiles without a 400', async ({ table, select }) => {
+  it.each(EMBEDS)('$table embeds what the app asks for without a 400', async ({ table, select }) => {
     const url = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}&limit=1`;
     // Given an address, a contract that cannot reach it fails: it was asked to look.
     const res = await fetch(url, { headers: visitor() });
@@ -38,8 +42,8 @@ describeMaybe('Lounge profiles embeds resolve (no schema drift)', () => {
     if (res.status === 400) {
       const body = await res.text();
       throw new Error(
-        `Schema drift: embedding profiles on "${table}" returned 400. The ` +
-          `${table}_user_id_fkey → profiles(id) FK is missing or misnamed. Body: ${body}`
+        `Schema drift: an embed on "${table}" returned 400: a relationship it names ` +
+          `(a foreign key) is missing or misnamed. Body: ${body}`
       );
     }
 

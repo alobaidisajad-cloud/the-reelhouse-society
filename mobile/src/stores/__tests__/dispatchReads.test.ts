@@ -243,23 +243,31 @@ describe('the index and the tools', () => {
     expect(pageAsk()?.order).toEqual(['certify_count', 'id']);
   });
 
-  it('asks for nothing at all when the saved page is empty', async () => {
-    // An empty `in.()` is a request PostgREST refuses, so the empty case is
-    // answered without a round trip rather than by asking a broken question.
-    reset({ savedOnly: false, savedIds: new Set() });
-    useDispatch.getState().setSavedOnly(true);
-    await Promise.resolve(); await Promise.resolve();
-    expect(useDispatch.getState().filings).toEqual([]);
-    expect(mockAsks.every((a) => !a.in)).toBe(true);
-  });
-
-  it('asks for exactly the saved ids when there are some', async () => {
-    reset({ savedIds: new Set(['f1', 'f2']) });
+  // Saved was built from the saves this phone had read: a filing saved and not scrolled past
+  // this session was missing from it, and before the marks came it said "kept nothing".
+  it('asks the house for this member\'s saves, never the ids this phone happens to hold', async () => {
+    reset({ savedOnly: false, savedIds: new Set(['f9']) });
     mockPages = [[row(1)]];
     useDispatch.getState().setSavedOnly(true);
     await Promise.resolve(); await Promise.resolve();
-    expect(pageAsk()?.in?.[0]).toBe('id');
-    expect((pageAsk()?.in?.[1] as string[]).sort()).toEqual(['f1', 'f2']);
+    expect(pageAsk()?.eq['dispatch_saves.user_id']).toBe('u1');
+    expect(pageAsk()?.in).toBeUndefined();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(useDispatch.getState().filings.map((f) => f.id)).toEqual(['f1']);
+  });
+
+  it('a signed-out reader keeps nothing, and asks for nothing', async () => {
+    const auth = jest.requireMock('../auth').useAuthStore.getState as jest.Mock;
+    auth.mockReturnValue({ user: null });
+    try {
+      reset({ savedOnly: false });
+      useDispatch.getState().setSavedOnly(true);
+      await Promise.resolve(); await Promise.resolve();
+      expect(mockAsks.filter((a) => a.limit !== undefined && a.limit > 0)).toEqual([]);
+      expect(useDispatch.getState().filings).toEqual([]);
+    } finally {
+      auth.mockReturnValue({ user: { id: 'u1', username: 'me' } });
+    }
   });
 });
 

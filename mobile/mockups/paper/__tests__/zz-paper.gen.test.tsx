@@ -531,6 +531,22 @@ add('b4-ballot-closed', (
   </View>
 ));
 
+// The member's marks not read yet (P0.112): the stamps drawn as their outline before the ink,
+// the ballot's boxes unlinked, nothing pressable until the read answers.
+add('b4b-marks-reading', (
+  <View style={p.screen}>
+    <PaperSheet top>
+      <PaperPost kind="take" order="21:40" orderIs="hour" author={DAN} measureWidth={COL}
+        body="tbh Odyssey was bad" film={LOST} commentCount={31} certifyCount={4}
+        certifyKnown={false} saveKnown={false} onCertify={() => {}} onSave={() => {}} />
+      <PaperBallot question="Which do we project tonight?" author={ANA}
+        options={OPTS} closesLabel="closes in 2 days" certifyCount={8} commentCount={22}
+        voteKnown={false} certifyKnown={false} saveKnown={false}
+        onVote={() => {}} onCertify={() => {}} onSave={() => {}} />
+    </PaperSheet>
+  </View>
+));
+
 add('b5-dossier', (
   <View style={p.screen}>
     <PaperSheet top>

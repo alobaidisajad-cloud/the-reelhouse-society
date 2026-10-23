@@ -17,7 +17,7 @@ import { softBreak, counted } from './paperText';
 import { DEPARTED_NAME } from '@/src/constants/departed';
 import { initialOf, isRTLText } from '@/src/utils/text';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
-import { Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
+import { Credit, UNINKED, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 
 export interface Critique {
@@ -408,37 +408,46 @@ export const CritiqueComposer = memo(function CritiqueComposer({
 /** The action bar, docked. Present until the composer takes its place. */
 export const PostDock = memo(function PostDock({
   certifyCount, commentCount, certified, saved, bottomInset = 28,
+  certifyKnown = true, saveKnown = true,
   onCertify, onCritique, onShare, onSave,
 }: {
   certifyCount: number; commentCount: number;
   certified?: boolean; saved?: boolean; bottomInset?: number;
+  /** Whether this member's certify and save have been read: unread, drawn as PaperActions draws them. */
+  certifyKnown?: boolean; saveKnown?: boolean;
   onCertify?: (next: boolean) => void;
   onCritique?: () => void;
   onShare?: () => void;
   onSave?: (next: boolean) => void;
 }) {
   const SLOP = { top: 6, bottom: 6, left: 0, right: 0 };
+  const markReading = !certifyKnown;
+  const keepReading = !saveKnown;
+  const isCertified = !markReading && !!certified;
+  const isSaved = !keepReading && !!saved;
   return (
     <View style={[p.dock, { paddingBottom: bottomInset }]}>
-      <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={() => onCertify?.(!certified)}
-        accessibilityRole="button" accessibilityState={{ selected: !!certified }}
+      <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={markReading ? undefined : () => onCertify?.(!certified)}
+        disabled={markReading}
+        accessibilityRole="button" accessibilityState={{ selected: isCertified, disabled: markReading, busy: markReading }}
         // "this filing", not "this": the page above carries its own certify
         // control, and two controls with one name are one control to a
         // screen reader.
-        accessibilityLabel={certifyLabel(certifyCount, !!certified, 'this filing')}>
+        accessibilityLabel={markReading ? 'Certify this filing. Reading your mark' : certifyLabel(certifyCount, !!certified, 'this filing')}>
         {/* The same pulse as the card's. The dock and the card are two places a
             member makes one mark, and a mark that behaves differently depending
             on which of them they used is the app feeling assembled. */}
         {/* The count hangs beside the icon, as it does on every bar in the
             house (MarkFigure): the icon stays over its word, and the word is
             the card's own word. */}
-        <MarkFigure iconSize={15} count={certifyCount} reach="open" style={[p.actionLabel, certified && p.actionLabelOn]}>
-          <PaperStrike on={certified}>
-            <Heart size={15} strokeWidth={2} color={certified ? colors.crimson : colors.fog} fill={certified ? colors.crimson : 'transparent'} />
+        <MarkFigure iconSize={15} count={certifyCount} reach="open" style={[p.actionLabel, isCertified && p.actionLabelOn]}>
+          <PaperStrike on={isCertified}>
+            <Heart size={15} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'}
+              strokeDasharray={markReading ? UNINKED : undefined} />
           </PaperStrike>
         </MarkFigure>
-        <Text style={[p.actionLabel, certified && p.actionLabelOn]} {...actionLabelProps}>
-          {certified ? 'CERTIFIED' : 'CERTIFY'}
+        <Text style={[p.actionLabel, isCertified && p.actionLabelOn]} {...actionLabelProps}>
+          {isCertified ? 'CERTIFIED' : 'CERTIFY'}
         </Text>
       </PressableScale>
       <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={onCritique}
@@ -453,12 +462,15 @@ export const PostDock = memo(function PostDock({
         <Share2 size={14} strokeWidth={2} color={colors.fog} />
         <Text style={p.actionLabel} {...actionLabelProps}>SHARE</Text>
       </PressableScale>
-      <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={() => onSave?.(!saved)}
-        accessibilityRole="button" accessibilityState={{ selected: !!saved }} accessibilityLabel={saved ? 'Saved' : 'Save'}>
-        <PaperStrike on={saved}>
-          <Bookmark size={15} strokeWidth={2} color={saved ? colors.sepia : colors.fog} fill={saved ? colors.sepia : 'transparent'} />
+      <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={keepReading ? undefined : () => onSave?.(!saved)}
+        disabled={keepReading}
+        accessibilityRole="button" accessibilityState={{ selected: isSaved, disabled: keepReading, busy: keepReading }}
+        accessibilityLabel={keepReading ? 'Save. Reading your mark' : saved ? 'Saved' : 'Save'}>
+        <PaperStrike on={isSaved}>
+          <Bookmark size={15} strokeWidth={2} color={isSaved ? colors.sepia : colors.fog} fill={isSaved ? colors.sepia : 'transparent'}
+            strokeDasharray={keepReading ? UNINKED : undefined} />
         </PaperStrike>
-        <Text style={[p.actionLabel, saved && p.actionLabelSaved]} {...actionLabelProps}>{saved ? 'SAVED' : 'SAVE'}</Text>
+        <Text style={[p.actionLabel, isSaved && p.actionLabelSaved]} {...actionLabelProps}>{isSaved ? 'SAVED' : 'SAVE'}</Text>
       </PressableScale>
     </View>
   );

@@ -48,6 +48,9 @@ export const FilingRow = memo(function FilingRow({
   /** The byline opens the member's room (not on the room itself). */
   toAuthor?: boolean;
 }) {
+  // Whether this member's marks on this filing have been read: a signed-out reader has none to read.
+  const certifyKnown = useDispatch((s) => !member || s.marksKnown.certified.has(f.id));
+  const saveKnown = useDispatch((s) => !member || s.marksKnown.saved.has(f.id));
   return (
     <PaperPost
       kind={f.kind}
@@ -63,6 +66,8 @@ export const FilingRow = memo(function FilingRow({
       commentCount={f.commentCount}
       certified={certified}
       saved={saved}
+      certifyKnown={certifyKnown}
+      saveKnown={saveKnown}
       answered={!!f.answerId}
       spoiler={f.spoilerLabel}
       withheld={!!f.withheldAt}

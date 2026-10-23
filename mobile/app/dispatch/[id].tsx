@@ -99,6 +99,8 @@ export default function FilingReader() {
   const certifiedCritiqueIds = useDispatch((s) => s.certifiedCritiqueIds);
   const savedIds = useDispatch((s) => s.savedIds);
   const myVotes = useDispatch((s) => s.myVotes);
+  // Which of this member's marks have been read: until then each is drawn unknown, not off.
+  const marksKnown = useDispatch((s) => s.marksKnown);
 
   const [filing, setFiling] = useState<Filing | null>(() => filings.find((f) => f.id === id) ?? null);
   const [loading, setLoading] = useState(!filing);
@@ -386,6 +388,10 @@ export default function FilingReader() {
   const mine = !!me && live.authorId === me.id;
   const certified = certifiedIds.has(live.id);
   const saved = savedIds.has(live.id);
+  // A signed-out reader has no marks to read.
+  const certifyKnown = !me || marksKnown.certified.has(live.id);
+  const saveKnown = !me || marksKnown.saved.has(live.id);
+  const voteKnown = !me || marksKnown.voted.has(live.id);
   const width = measure(screenWidth);
 
   // A filing takes acts only while it stands and the house has it: not once
@@ -507,6 +513,9 @@ export default function FilingReader() {
                 votes: live.frozenTotals?.counts?.[String(i)] ?? 0,
               }))}
               myVote={myVotes[live.id] ?? null}
+              voteKnown={voteKnown}
+              certifyKnown={certifyKnown}
+              saveKnown={saveKnown}
               closed={!!live.closesAt && new Date(live.closesAt) <= new Date()}
               closesLabel={live.closesAt && timeUntil(live.closesAt) ? `closes ${timeUntil(live.closesAt)}` : ''}
               // Whether the result has actually been COUNTED, not merely whether
@@ -543,6 +552,8 @@ export default function FilingReader() {
               commentCount={live.commentCount}
               certified={certified}
               saved={saved}
+              certifyKnown={certifyKnown}
+              saveKnown={saveKnown}
               answered={!!live.answerId}
               spoiler={live.spoilerLabel}
               // Only its author can see a withheld filing (RLS refuses the rest).
@@ -658,6 +669,8 @@ export default function FilingReader() {
             commentCount={live.commentCount}
             certified={certified}
             saved={saved}
+            certifyKnown={certifyKnown}
+            saveKnown={saveKnown}
             bottomInset={edge + POST_DOCK_GAP}
             onCertify={(next) => useDispatch.getState().certify(live.id, next)}
             onCritique={() => setComposing(true)}

@@ -445,3 +445,34 @@ describe('a ballot closed but not yet counted', () => {
     expect(src).toContain('sealed={!!live.frozenTotals}');
   });
 });
+
+// The page no longer waits for the member's marks. Drawn open while unread, a member who had voted
+// was invited to vote again, and the house's refusal moved their mark to another option (P0.112).
+describe('a ballot whose mark is still being read', () => {
+  const ballot = (over: Record<string, unknown>) => render(
+    <PaperBallot
+      question="Which one?" author={author} closesLabel="CLOSES SUNDAY"
+      options={[{ title: 'Tokyo Story', votes: 1 }, { title: 'Late Spring', votes: 0 }]}
+      onVote={() => {}}
+      {...(over as any)}
+    />,
+  );
+
+  it('locks its options and says it is reading, marking none; once read, invites the mark', () => {
+    const reading = ballot({ myVote: null, voteKnown: false });
+    const first = reading.getByLabelText(/^Option 1 of 2\. Tokyo Story\. Reading your mark\.$/);
+    expect(first.props.accessibilityState).toMatchObject({ disabled: true, checked: false });
+    const read = ballot({ myVote: null, voteKnown: true });
+    expect(read.getByLabelText(/^Option 1 of 2\. Tokyo Story\. Mark this\.$/).props.accessibilityState).toMatchObject({ disabled: false });
+  });
+
+  it('the reader passes whether the mark is read, never the default', () => {
+    const fs = require('fs') as typeof import('fs');
+    const path = require('path') as typeof import('path');
+    const src = fs.readFileSync(
+      path.join(__dirname, '..', '..', '..', '..', 'app', 'dispatch', '[id].tsx'), 'utf8',
+    );
+    expect(src).toContain('voteKnown={voteKnown}');
+    expect(src).toContain('const voteKnown = !me || marksKnown.voted.has(live.id);');
+  });
+});

@@ -1133,6 +1133,49 @@ classes:
     fix: "fetchMessages lets another room's words go the moment a room opens, keeping the same room's while it is read again; the screen takes only the words of the room it shows (currentLoungeId === id), so a room's words can be drawn under no other name (mutants shape-room-keeps-last-words, shape-screen-draws-held-words)"
     places: [none]
 
+  - id: SPEED-page-waits-for-the-members-marks
+    title: "The Dispatch's page, its next page and its reader waited for the member's own marks (certified, saved, voted) before they were done: 1.3 s on the lab's phone for the page alone"
+    seriousness: behaviour
+    area: dispatch
+    status: OPEN
+    count: 3
+    source: { kind: running, ref: "speed lab 39898420669: arm F0, the page not waiting for the marks, opened 1.3 s sooner (Holm p < 0.01); arm Fv, the marks asked first and waited for after, gave nothing" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/dispatchGuards.test.ts, test: "the page is read, and done, before the marks come: the page waits for nothing of the member's" }
+      - { kind: running, file: src/stores/__tests__/dispatchGuards.test.ts, test: "is not waited for: the filing comes at once, its marks unknown until their read answers" }
+    fix: "the page, its next page and the reader no longer wait for the marks; each mark is drawn unknown until its read answers (UI-unknown-mark-drawn-as-off), so nothing waits on them (mutants shape-page-waits-for-marks, shape-reader-waits-for-marks)"
+    places: [emulator]
+
+  - id: UI-unknown-mark-drawn-as-off
+    title: "A member's mark not yet read was drawn as off: CERTIFY and SAVE on a filing they had certified and saved, an open ballot they had marked; pressed, the house counted a second certify as a first, and moved a vote to another option. A failed read left them so for good"
+    seriousness: serious
+    area: dispatch
+    status: OPEN
+    count: 3
+    source: { kind: reviewer, ref: "study of the Dispatch's opening for P0.112: the marks collapsed unread into false (Set.has, ?? null)" }
+    methods:
+      - { kind: running, file: src/components/dispatch/__tests__/aMarkUnreadIsNotOff.test.tsx, test: "unread: neither pressable nor marked, each said to be reading; read: the member's, and pressable" }
+      - { kind: running, file: src/components/dispatch/__tests__/aMarkUnreadIsNotOff.test.tsx, test: "unread: neither pressable nor marked, each said to be reading; read: the member's" }
+      - { kind: running, file: src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx, test: "locks its options and says it is reading, marking none; once read, invites the mark" }
+      - { kind: static, file: src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx, test: "the reader passes whether the mark is read, never the default" }
+      - { kind: running, file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "draws a mark still being read as unknown: unpressed, said so, then the member's once read" }
+      - { kind: running, file: src/stores/__tests__/aMarkReadThatFailedIsHeard.test.ts, test: "knows the marks whose reads answered; the kind whose read failed stays unknown, not \"off\"" }
+    fix: "the store knows, per kind, which marks its reads answered (marksKnown); the card's stamps, the reader's dock and the ballot draw an unread mark as the stamp's outline before its ink (UNINKED, boxUnread), unpressed and said to be reading (mutants shape-stamp-unknown-pressable, shape-dock-unknown-pressable, shape-ballot-unknown-open, shape-failed-mark-known, shape-reader-unknown-default, shape-row-unknown-never)"
+    places: [none]
+
+  - id: DATA-saved-page-from-held-ids
+    title: "The Dispatch's saved page was built from the saves this phone had already read: a filing saved and not scrolled past this session was missing from it, and before the marks came it said the member had kept nothing"
+    seriousness: serious
+    area: dispatch
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "study of the Dispatch's opening for P0.112: pageQuery asked for in('id', savedIds)" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/dispatchReads.test.ts, test: "asks the house for this member's saves, never the ids this phone happens to hold" }
+      - { kind: running, file: src/stores/__tests__/dispatchReads.test.ts, test: "a signed-out reader keeps nothing, and asks for nothing" }
+    fix: "the saved page is the house's answer: the card's columns inner-joined to the member's own saves (SAVED_CARD_COLUMNS, dispatch_saves_post_id_fkey), paged as the feed is; the embed contract proves the join against the house (mutant shape-saved-from-held-ids)"
+    places: [none]
+
   - id: SPEED-read-waits-on-a-read-it-needs-not
     title: "A read waited for another it did not need: a salon's reactions were asked for only after its words came, a second round trip on every opening; the salons were read in five waves where two would do"
     seriousness: behaviour

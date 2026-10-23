@@ -18,6 +18,10 @@ import type { Filing } from '../dispatchTypes';
 let mockOutcome: 'ok' | 'refused' | 'offline' = 'ok';
 let mockRow: Record<string, unknown> | null = null;
 let mockViewer: Record<string, unknown[]> = {};
+/** When set, the member's marks are answered only once it settles: a read still on its way. */
+let mockViewerHeld: Promise<void> | null = null;
+/** The rows a page read answers. */
+let mockPage: unknown[] = [];
 const mockSent: { table: string; op: string; row: unknown }[] = [];
 const mockQueued: { type: string; payload: Record<string, unknown> }[] = [];
 
@@ -44,14 +48,14 @@ jest.mock('../../lib/supabase', () => ({
       chain.eq = () => self();
       chain.is = () => self();
       chain.order = () => self();
-      chain.in = () => Promise.resolve({ data: mockViewer[table] ?? [], error: null });
+      chain.in = () => (mockViewerHeld ?? Promise.resolve()).then(() => ({ data: mockViewer[table] ?? [], error: null }));
       const builder = (data: unknown) => {
         const r = Promise.resolve({ data, error: null });
         const b = Object.assign(r, { abortSignal: () => b });
         return b;
       };
       chain.maybeSingle = () => builder(mockRow);
-      chain.limit = () => builder([]);
+      chain.limit = () => builder(mockPage);
       chain.range = () => builder([]);
       chain.insert = (rows: unknown[]) => { mockSent.push({ table, op: 'insert', row: rows[0] }); return answer(); };
       chain.update = (row: unknown) => {
@@ -112,6 +116,7 @@ const reset = (over: Record<string, unknown> = {}) => {
     filings: [], opened: {}, section: 'ALL', sort: 'LATEST', savedOnly: false,
     loading: false, loadingMore: false, hasMore: false, newCount: 0, droppedRows: 0,
     certifiedIds: new Set(), savedIds: new Set(), myVotes: {},
+    marksKnown: { certified: new Set(), saved: new Set(), voted: new Set() },
     critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},
     critiquesHasMore: {}, critiquesOrder: {}, certifiedCritiqueIds: new Set(),
     ...over,
@@ -165,10 +170,53 @@ describe('what this member has already done', () => {
     };
     reset({ filings: [] });
     await useDispatch.getState().hydrate('f1');
+    // Not waited for by the reader: they land after it.
+    await new Promise((r) => setTimeout(r, 0));
 
     expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
     expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
     expect(useDispatch.getState().myVotes.f1).toBe(2);
+    const known = useDispatch.getState().marksKnown;
+    expect([known.certified.has('f1'), known.saved.has('f1'), known.voted.has('f1')]).toEqual([true, true, true]);
+  });
+
+  // The page waited for the marks: 1.3 s on the lab's phone (speed lab 39898420669, F0).
+  it('is not waited for: the filing comes at once, its marks unknown until their read answers', async () => {
+    let release: () => void = () => {};
+    mockViewerHeld = new Promise((r) => { release = r; });
+    mockViewer = { dispatch_certifications: [{ post_id: 'f1' }] };
+    reset({ filings: [] });
+    try {
+      const got = await useDispatch.getState().hydrate('f1');
+      expect(got && typeof got === 'object' ? got.id : got).toBe('f1');
+      expect(useDispatch.getState().marksKnown.certified.has('f1')).toBe(false);
+      release();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(useDispatch.getState().marksKnown.certified.has('f1')).toBe(true);
+      expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
+    } finally {
+      mockViewerHeld = null;
+    }
+  });
+
+  it('the page is read, and done, before the marks come: the page waits for nothing of the member\'s', async () => {
+    let release: () => void = () => {};
+    mockViewerHeld = new Promise((r) => { release = r; });
+    mockViewer = { dispatch_saves: [{ post_id: 'f1' }] };
+    mockPage = [row()];
+    reset({ filings: [] });
+    try {
+      expect(await useDispatch.getState().fetch()).toBe(true);
+      const st = useDispatch.getState();
+      expect({ filings: st.filings.map((f) => f.id), loading: st.loading, saveKnown: st.marksKnown.saved.has('f1') })
+        .toEqual({ filings: ['f1'], loading: false, saveKnown: false });
+      release();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
+    } finally {
+      mockViewerHeld = null;
+      mockPage = [];
+    }
   });
 
   it('is not read at all for a signed-out reader', async () => {

@@ -414,6 +414,8 @@ export const p = StyleSheet.create({
   // slack for the platforms' rendering.
   optionNo: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, width: 21, includeFontPadding: false },
   box: { width: 13, height: 13, borderRadius: 1, borderWidth: 1.4, borderColor: KIND_RULE.ballot, alignItems: 'center', justifyContent: 'center' },
+  // The member's mark still being read: the box drawn unlinked, as a stamp before its ink.
+  boxUnread: { borderStyle: 'dashed', borderColor: colors.fog },
   boxMark: { fontFamily: fonts.sub, fontSize: 12.5, color: CRIMSON_INK, marginTop: -2, includeFontPadding: false },
   optionPoster: { overflow: 'hidden',
     width: 30, height: 45, borderRadius: 1,

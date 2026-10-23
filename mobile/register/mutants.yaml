@@ -1134,6 +1134,87 @@ mutants:
         replace: "        .limit(100);\n\n      // supabase-js resolves"
     proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the first page is ordered as the page above it is asked for: by its time, then its id" }
 
+  - id: shape-page-waits-for-marks
+    class: SPEED-page-waits-for-the-members-marks
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "        void loadViewerState(filings, set, startedAs);\n"
+        replace: "        await loadViewerState(filings, set, startedAs);\n"
+    proof: { file: src/stores/__tests__/dispatchGuards.test.ts, test: "the page is read, and done, before the marks come: the page waits for nothing of the member's" }
+
+  - id: shape-reader-waits-for-marks
+    class: SPEED-page-waits-for-the-members-marks
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      void loadViewerState([one], set, startedAs);\n"
+        replace: "      await loadViewerState([one], set, startedAs);\n"
+    proof: { file: src/stores/__tests__/dispatchGuards.test.ts, test: "is not waited for: the filing comes at once, its marks unknown until their read answers" }
+
+  - id: shape-stamp-unknown-pressable
+    class: UI-unknown-mark-drawn-as-off
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperPost.tsx
+        find: "  const canMark = !!onCertify && !waiting && certifyKnown;\n"
+        replace: "  const canMark = !!onCertify && !waiting;\n"
+    proof: { file: src/components/dispatch/__tests__/aMarkUnreadIsNotOff.test.tsx, test: "unread: neither pressable nor marked, each said to be reading; read: the member's, and pressable" }
+
+  - id: shape-dock-unknown-pressable
+    class: UI-unknown-mark-drawn-as-off
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperCritiques.tsx
+        find: "      <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={markReading ? undefined : () => onCertify?.(!certified)}\n        disabled={markReading}\n"
+        replace: "      <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={() => onCertify?.(!certified)}\n"
+    proof: { file: src/components/dispatch/__tests__/aMarkUnreadIsNotOff.test.tsx, test: "unread: neither pressable nor marked, each said to be reading; read: the member's" }
+
+  - id: shape-ballot-unknown-open
+    class: UI-unknown-mark-drawn-as-off
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperBallot.tsx
+        find: "  const voteReading = !voteKnown && !closed && !!vote;\n"
+        replace: "  const voteReading = false;\n"
+    proof: { file: src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx, test: "locks its options and says it is reading, marking none; once read, invites the mark" }
+
+  - id: shape-failed-mark-known
+    class: UI-unknown-mark-drawn-as-off
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "        saved: known(st.marksKnown.saved, !saves.error),\n"
+        replace: "        saved: known(st.marksKnown.saved, true),\n"
+    proof: { file: src/stores/__tests__/aMarkReadThatFailedIsHeard.test.ts, test: "knows the marks whose reads answered; the kind whose read failed stays unknown, not \"off\"" }
+
+  - id: shape-reader-unknown-default
+    class: UI-unknown-mark-drawn-as-off
+    source: shape
+    edits:
+      - file: app/dispatch/[id].tsx
+        find: "              voteKnown={voteKnown}\n"
+        replace: ""
+    proof: { file: src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx, test: "the reader passes whether the mark is read, never the default" }
+
+  - id: shape-row-unknown-never
+    class: UI-unknown-mark-drawn-as-off
+    source: shape
+    edits:
+      - file: src/components/dispatch/FilingRow.tsx
+        find: "  const certifyKnown = useDispatch((s) => !member || s.marksKnown.certified.has(f.id));\n"
+        replace: "  const certifyKnown = useDispatch((s) => !member || true);\n"
+    proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "draws a mark still being read as unknown: unpressed, said so, then the member's once read" }
+
+  - id: shape-saved-from-held-ids
+    class: DATA-saved-page-from-held-ids
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "  if (state.savedOnly) q = q.eq('dispatch_saves.user_id', me);\n"
+        replace: "  if (state.savedOnly) q = q.in('id', [...state.savedIds]);\n"
+    proof: { file: src/stores/__tests__/dispatchReads.test.ts, test: "asks the house for this member's saves, never the ids this phone happens to hold" }
+
   - id: shape-light-never-kept
     class: SPEED-still-light-redrawn-under-scroll
     source: shape

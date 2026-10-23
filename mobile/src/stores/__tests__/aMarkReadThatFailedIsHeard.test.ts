@@ -37,7 +37,10 @@ const filing = { id: 'f1' } as Filing;
 
 beforeEach(() => {
   mockCaptured.length = 0;
-  useDispatch.setState({ certifiedIds: new Set(), savedIds: new Set(), myVotes: {} } as never);
+  useDispatch.setState({
+    certifiedIds: new Set(), savedIds: new Set(), myVotes: {},
+    marksKnown: { certified: new Set(), saved: new Set(), voted: new Set() },
+  } as never);
   mockAnswer.dispatch_certifications = { data: [{ post_id: 'f1' }], error: null };
   mockAnswer.dispatch_saves = { data: null, error: { message: 'permission denied for table dispatch_saves', code: '42501' } };
   mockAnswer.dispatch_votes = { data: [{ post_id: 'f1', option_index: 2 }], error: null };
@@ -50,6 +53,15 @@ it('keeps the marks that were read, and reports the read that failed', async () 
   expect(st.myVotes.f1).toBe(2);
   expect(st.savedIds.has('f1')).toBe(false);
   expect(mockCaptured).toEqual([expect.objectContaining({ where: 'dispatch.viewerState' })]);
+});
+
+// The page no longer waits for the marks, so a mark is drawn by whether it is known: one whose
+// read failed is unknown, never "not saved" (P0.112).
+it('knows the marks whose reads answered; the kind whose read failed stays unknown, not "off"', async () => {
+  await useDispatch.getState().loadMarks([filing]);
+  const known = useDispatch.getState().marksKnown;
+  expect({ certified: known.certified.has('f1'), saved: known.saved.has('f1'), voted: known.voted.has('f1') })
+    .toEqual({ certified: true, saved: false, voted: true });
 });
 
 it('says nothing when every read answered', async () => {

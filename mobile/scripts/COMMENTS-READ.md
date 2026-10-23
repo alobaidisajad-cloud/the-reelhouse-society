@@ -120,7 +120,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/reels.tsx | 2026-10-23 | edited: the page's wash kept as a texture while the Reel is in front; following nobody only of a list read: an unread follow list spools, a failed one says so and reads it again (both reels); the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/+not-found.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
 | app/auth-callback.tsx | 2026-10-22 | edited: a spent link raised in Supabase's own words, so the member reads the house's sentence |
-| app/dispatch/[id].tsx | 2026-10-22 | edited: the post and the ballot told the dock holds their marks |
+| app/dispatch/[id].tsx | 2026-10-23 | edited: which of the member's marks are read (marksKnown), passed to the ballot, the post and the dock: unread, drawn unknown; the post and the ballot told the dock holds their marks |
 | app/dispatch/archive.tsx | 2026-10-15 | foot from useContentBottom |
 | app/dispatch/compose.tsx | 2026-10-15 | header and door from useModalTop; feet from navMetrics; the essay's footer never on the edge |
 | app/dispatch/room/[username].tsx | 2026-10-15 | foot from useContentBottom, scrollbar from useBottomEdge |
@@ -269,7 +269,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/paper/__tests__/zz-drafts.gen.test.tsx | 2026-09-29 | true as written |
 | mockups/paper/__tests__/zz-final.gen.test.tsx | 2026-09-29 | called itself 'the final look' but draws the design before it shipped (RankBadge's wash differs); the paywall line it argued against is long gone |
 | mockups/paper/__tests__/zz-memberroom.gen.test.tsx | 2026-09-29 | 1 finding |
-| mockups/paper/__tests__/zz-paper.gen.test.tsx | 2026-10-15 | edited: the bar's room is the tab's content top |
+| mockups/paper/__tests__/zz-paper.gen.test.tsx | 2026-10-23 | edited: b4b: the member's marks not read yet, the stamps uninked and the ballot's boxes unlinked; the bar's room is the tab's content top |
 | mockups/paper/__tests__/zz-proposals.gen.test.tsx | 2026-09-29 | a design record: its present-tense claims about the app were true only when drawn; now said as such |
 | mockups/paper/__tests__/zz-rank.gen.test.tsx | 2026-09-29 | a design record: its present-tense claims about the app were true only when drawn; now said as such |
 | mockups/paper/__tests__/zz-room.gen.test.tsx | 2026-09-29 | 1 finding |
@@ -414,6 +414,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/DarkroomHero.tsx | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
 | src/components/darkroom/DarkroomMoodBar.tsx | 2026-10-02 | keys; selected as a state; meaning spoken |
 | src/components/Decorative.tsx | 2026-10-15 | reelsWidth: a rating's drawn width, for the Lobby's arithmetic |
+| src/components/dispatch/__tests__/aMarkUnreadIsNotOff.test.tsx | 2026-10-23 | a member's mark not yet read: the card's stamps and the reader's dock unpressed, said to be reading, never selected; signed out, members only as before (P0.112) |
 | src/components/dispatch/__tests__/aBallotsClosingTimes.test.ts | 2026-09-29 | new |
 | src/components/dispatch/__tests__/aControlsNameCanBeRead.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/aDeskControlNeverAnswersWithNothing.test.tsx | 2026-09-29 | new |
@@ -435,7 +436,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/everyTextHasACeiling.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/excerpt.test.ts | — |  |
 | src/components/dispatch/__tests__/feedRowIsRecyclable.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/components/dispatch/__tests__/feedScreen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); a failed page tells the E2E so, and shows no filing for a flow to find |
+| src/components/dispatch/__tests__/feedScreen.test.tsx | 2026-10-23 | edited: the marks put are read unless a test says not; a mark still being read is drawn unknown, unpressed, then the member's; its navigation mock stands on the one base (test-utils/navigationMock); a failed page tells the E2E so, and shows no filing for a flow to find |
 | src/components/dispatch/__tests__/motionLaws.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/noIntlInTheDispatch.test.ts | — |  |
 | src/components/dispatch/__tests__/nothingIsLostQuietly.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -449,7 +450,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/seriesScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/signedOutHasNoInertControls.test.tsx | — |  |
 | src/components/dispatch/__tests__/spokenAloud.test.tsx | — |  |
-| src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx | 2026-10-23 | edited: a ballot whose mark is still being read: locked, said so, marking none; the reader passes whether it is read; its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/theDeskCountsAsTheReaderDoes.test.tsx | 2026-10-03 | new: the desk's minutes are readTime's |
 | src/components/dispatch/__tests__/theDispatchAtItsLimits.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
 | src/components/dispatch/__tests__/theDispatchSaysEssay.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -477,10 +478,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/dayLabel.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/EssayBody.tsx | 2026-10-04 | edited: no letter is raised from a right-to-left opening |
 | src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
-| src/components/dispatch/FilingRow.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/dispatch/paper/PaperBallot.tsx | 2026-10-22 | edited: docked, the ballot draws no row of marks of its own |
+| src/components/dispatch/FilingRow.tsx | 2026-10-23 | edited: whether the member's certify and save on its filing are read, from the store; read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/paper/PaperBallot.tsx | 2026-10-23 | edited: voteKnown: unread, its boxes unlinked and its options locked; the stamps' known passed on; docked, the ballot draws no row of marks of its own |
 | src/components/dispatch/paper/PaperComposer.tsx | 2026-10-15 | head top from useModalTop |
-| src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-15 | spine top from usePushedHeaderTop |
+| src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-23 | edited: the dock's certify and save drawn unknown while unread, as PaperActions draws them (UNINKED); spine top from usePushedHeaderTop |
 | src/components/dispatch/paper/PaperDesk.tsx | 2026-10-15 | DeskHead top from useModalTop |
 | src/components/dispatch/paper/PaperDeskDoc.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperEssay.tsx | 2026-10-04 | edited: the raised initial is extractDropCap’s |
@@ -491,9 +492,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperMore.tsx | 2026-10-15 | PaperBack starts at a pushed or modal top |
 | src/components/dispatch/paper/paperMotion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperPerf.ts | 2026-10-15 | edited: memory-disk on every image, held by its guard; no image sets a priority, so the backdrop rule is gone |
-| src/components/dispatch/paper/PaperPost.tsx | 2026-10-22 | edited: docked, the card draws no row of marks of its own |
+| src/components/dispatch/paper/PaperPost.tsx | 2026-10-23 | edited: certifyKnown and saveKnown: a mark not yet read is the stamp's outline before its ink (UNINKED), unpressed and said so; docked, the card draws no row of marks of its own |
 | src/components/dispatch/paper/PaperStrike.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/dispatch/paper/paperStyles.ts | 2026-10-15 | the masthead title's glow has room inside the box a phone cuts it at |
+| src/components/dispatch/paper/paperStyles.ts | 2026-10-23 | edited: boxUnread: a ballot box whose mark is still being read, unlinked; the masthead title's glow has room inside the box a phone cuts it at |
 | src/components/dispatch/paper/paperText.ts | 2026-10-22 | edited: counted() now lives in src/utils/counted.ts; this file passes it on |
 | src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
 | src/components/dispatch/roomLink.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -986,7 +987,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/everyNameAClientCallsExists.test.ts | 2026-10-15 | edited: the app may name what a pending migration makes; the website never |
 | src/services/__tests__/FeedService.test.ts | 2026-10-01 | cursor note made true |
 | src/services/__tests__/getFilmVerdict.test.ts | 2026-10-03 | read whole: sound |
-| src/services/__tests__/loungeEmbeds.contract.test.ts | 2026-10-23 | edited: the salon's page checked as the store asks for it (MESSAGE_COLUMNS, its reactions embedded); read whole: sound (the FK names; columns are the query guard's); edited: given an address, an unreachable one fails; only 200 or 401 is an answer |
+| src/services/__tests__/loungeEmbeds.contract.test.ts | 2026-10-23 | edited: the Dispatch's saved page joins it; the app's embeds, not the Lounge's alone; the salon's page checked as the store asks for it (MESSAGE_COLUMNS, its reactions embedded); read whole: sound (the FK names; columns are the query guard's); edited: given an address, an unreachable one fails; only 200 or 401 is an answer |
 | src/services/__tests__/loungeSharePayloads.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/ProfileDataService.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/profileRoomFilters.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -1027,7 +1028,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/aFailedSettingStaysUndone.test.ts | 2026-09-29 | new |
 | src/stores/__tests__/aFollowLandsOnlyForItsMember.test.ts | 2026-10-15 | new: a follow or unfollow answered after a sign-out or a switch writes, saves and queues nothing |
 | src/stores/__tests__/aFollowMadeOfflineIsKept.test.ts | — |  |
-| src/stores/__tests__/aMarkReadThatFailedIsHeard.test.ts | 2026-10-01 | written with the marks fix |
+| src/stores/__tests__/aMarkReadThatFailedIsHeard.test.ts | 2026-10-23 | edited: the kind whose read failed stays unknown, not "off"; written with the marks fix |
 | src/stores/__tests__/aNoticeIsNarrowedToItsOwner.test.ts | 2026-10-03 | edited: a notice type the house sends |
 | src/stores/__tests__/aProfileChangeIsNeverDropped.test.ts | — |  |
 | src/stores/__tests__/aReactionIsOneOfFive.test.ts | 2026-10-03 | read whole: the five against the CHECK in the snapshot |
@@ -1043,7 +1044,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/blockStore.pbt.test.ts | — |  |
 | src/stores/__tests__/dispatchActs.test.ts | — |  |
 | src/stores/__tests__/dispatchCritiquePaging.test.ts | — |  |
-| src/stores/__tests__/dispatchGuards.test.ts | 2026-09-28 | Shortened; a test added for the essay's cover. |
+| src/stores/__tests__/dispatchGuards.test.ts | 2026-10-23 | edited: the marks are not waited for: the filing comes at once, its marks unknown until their read answers; Shortened; a test added for the essay's cover. |
 | src/stores/__tests__/dispatchReads.test.ts | — |  |
 | src/stores/__tests__/dispatchRefusals.test.ts | — |  |
 | src/stores/__tests__/dispatchWrites.test.ts | — |  |
@@ -1087,7 +1088,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/blockStore.ts | 2026-10-02 | sign-out erases the leaving member's saved list |
 | src/stores/createSelectors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/discover.ts | 2026-10-02 | Read whole (launch audit). Its comment said the Darkroom's results survive a restart; the films found are not persisted, only the mood, filters and search. |
-| src/stores/dispatch.ts | 2026-10-15 | edited: an act read or answered after its member left neither queues nor puts back |
+| src/stores/dispatch.ts | 2026-10-23 | edited: marksKnown, per kind, from each read that answered; the page, the next page and the reader no longer wait for the marks; the saved page is the house's answer, joined to the member's own saves (SAVED_CARD_COLUMNS); an act read or answered after its member left neither queues nor puts back |
 | src/stores/dispatchTypes.ts | 2026-10-02 | Read whole (launch audit): row shapes match the live schema (body NOT NULL DEFAULT '', so an ended filing parses). Sound; left alone. |
 | src/stores/domain/__tests__/aFilmAlreadyQueuedStaysQueued.test.ts | 2026-10-02 | a film already on the watchlist stays, and is said to be |
 | src/stores/domain/__tests__/aLogsWordsAreCleanedEverywhere.test.ts | 2026-10-03 | edited: its hidden characters built from code points |
@@ -1429,7 +1430,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/heartbeatsAreKept.test.ts | 2026-10-22 | written: every scheduled workflow has its heartbeat on its own schedule, checking in only when the schedule fired; the check-in's refusals |
 | scripts/batch-report.cjs | 2026-10-22 | written: a batch's report from the register, a line to answer for every class closed by a process; never written over (P0.58) |
 | src/utils/__tests__/theBatchReportIsAnswered.test.ts | 2026-10-22 | written: the report's lines, only those classes; the latest here leaves no answer empty |
-| e2e/lab/arm.mjs | 2026-10-23 | edited: Rh and Rlw retired: the lamp and the wash kept as textures ship; the wash's arm takes its new prop; the Dispatch's arms F0 (the marks unwaited) and Fv (asked before the filings draw); Rh (the lamp and the wash cached as textures) and Rlw (both gone); the Reel's arms (P0.111): beam, wash, lamp, top bar still, scroll bar, pulses and sheen, and all (R0); each applies, R0 type-checked; the speed lab's arms, ported from the study and rewritten for main: five scenes of the light on the welcome, each as main draws it, as the SVG of 4ab40542^ and with none; STILL for the simulator; every edit found once or nothing written; --check for every build the lab makes (P0.103, P0.104) |
+| e2e/lab/arm.mjs | 2026-10-23 | edited: F0 and Fv retired: the Dispatch's page not waiting for the marks ships; Rh and Rlw retired: the lamp and the wash kept as textures ship; the wash's arm takes its new prop; the Dispatch's arms F0 (the marks unwaited) and Fv (asked before the filings draw); Rh (the lamp and the wash cached as textures) and Rlw (both gone); the Reel's arms (P0.111): beam, wash, lamp, top bar still, scroll bar, pulses and sheen, and all (R0); each applies, R0 type-checked; the speed lab's arms, ported from the study and rewritten for main: five scenes of the light on the welcome, each as main draws it, as the SVG of 4ab40542^ and with none; STILL for the simulator; every edit found once or nothing written; --check for every build the lab makes (P0.103, P0.104) |
 | e2e/lab/proofs.mjs | 2026-10-22 | written: each scene's shots judged: still, present against no light, main against SVG within the study's bar; a signed luma grid against none (P0.103) |
 | e2e/lab/analyze.mjs | 2026-10-22 | written: the timed starts per build; each against A by a permutation test, called at Holm's p under 0.01; the A/A pair must call nothing; the log read by cold-start.mjs (P0.104) |
 | e2e/lab/lab.sh | 2026-10-22 | written: one emulator boot, settled; the shots in two rounds of opposite order; the timed starts, each measured by one shell call; a trace per timed build (P0.104) |

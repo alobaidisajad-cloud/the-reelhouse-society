@@ -117,6 +117,12 @@ export interface DispatchState {
   savedIds: Set<string>;
   /** post id → the option index this member marked. */
   myVotes: Record<string, number>;
+  /**
+   * The posts whose marks of each kind this member's reads have answered. A mark outside its
+   * set is unknown, never "off": the page no longer waits for the marks, and an unread mark
+   * drawn as CERTIFY or SAVE invited a second certify the house would count as the first.
+   */
+  marksKnown: { certified: Set<string>; saved: Set<string>; voted: Set<string> };
 
   critiques: Record<string, Critique[]>;
   critiquesLoading: Record<string, boolean>;
@@ -280,6 +286,7 @@ const emptyState = () => ({
   certifiedIds: new Set<string>(),
   savedIds: new Set<string>(),
   myVotes: {} as Record<string, number>,
+  marksKnown: { certified: new Set<string>(), saved: new Set<string>(), voted: new Set<string>() },
   critiques: {} as Record<string, Critique[]>,
   critiquesLoading: {} as Record<string, boolean>,
   critiquesLoadingMore: {} as Record<string, boolean>,
@@ -330,7 +337,10 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         if (dropped > 0) {
           logger.warn(`[dispatch] dropped ${dropped} malformed filing row(s)`);
         }
-        await loadViewerState(filings, set, startedAs);
+        // Not waited for: the filings are the page, and each mark is drawn unknown until its
+        // read answers (marksKnown). Waited for, the page stood 1.3 s longer (speed lab
+        // 39898420669, F0). It never throws: a failed read is reported, its marks left unknown.
+        void loadViewerState(filings, set, startedAs);
         return true;
       } catch (e) {
         if (gen !== generation || !memberUnchanged(startedAs)) return false;
@@ -400,7 +410,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       const seen = new Set(get().filings.map((f) => f.id));
       const fresh = page.filter((f) => !seen.has(f.id));
       set((st) => ({ filings: [...st.filings, ...fresh], hasMore: gotFullPage(rows.length) }));
-      await loadViewerState(fresh, set, startedAs);
+      // Not waited for, as the first page's: the next page's marks are drawn unknown until read.
+      void loadViewerState(fresh, set, startedAs);
     } catch (e) {
       if (!isNetworkError(e)) captureError(e, { where: 'dispatch.loadMore' });
       if (gen === generation && memberUnchanged(startedAs)) set({ moreFailed: true });
@@ -434,7 +445,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         // Recorded (bounded) whether or not the page holds it, so acts find it after a cold open.
         opened: capOpened(st.opened, id, one),
       }));
-      await loadViewerState([one], set, startedAs);
+      // Not waited for: the reader shows the filing, its marks unknown until read.
+      void loadViewerState([one], set, startedAs);
       return one;
     } catch (e) {
       if (!isNetworkError(e)) captureError(e, { where: 'dispatch.hydrate' });
@@ -1086,23 +1098,27 @@ async function writeThrough(
  * twice and misses others; a keyset cursor reads the row after the last one it
  * showed, whatever has happened above.
  */
+/** The card's columns, and only the filings this member saved: their save joined, inner. */
+export const SAVED_CARD_COLUMNS = `${FILING_CARD_COLUMNS}, dispatch_saves!dispatch_saves_post_id_fkey!inner(user_id)`;
+
 async function pageQuery(state: DispatchState, after: Filing | null): Promise<unknown[]> {
   const kind = SECTION_KIND[state.section];
 
+  // The member's saved filings are the house's answer, joined to their own saves: built from
+  // the saves this phone had already read, a filing saved and not yet scrolled past this
+  // session was missing from "Saved", and before the marks were read the page said "kept
+  // nothing". A signed-out reader keeps nothing.
+  const me = useAuthStore.getState().user?.id ?? null;
+  if (state.savedOnly && !me) return [];
   let q = supabase
     .from('dispatch_posts')
-    .select(FILING_CARD_COLUMNS)
+    .select(state.savedOnly ? SAVED_CARD_COLUMNS : FILING_CARD_COLUMNS)
     .eq('is_published', true)
     .is('withheld_at', null);
 
   if (kind) q = q.eq('kind', kind);
 
-  if (state.savedOnly) {
-    const ids = [...state.savedIds];
-    // PostgREST refuses an empty `in.()`, so no saved filings is answered here.
-    if (ids.length === 0) return [];
-    q = q.in('id', ids);
-  }
+  if (state.savedOnly) q = q.eq('dispatch_saves.user_id', me);
 
   if (state.sort === 'CERTIFIED') {
     q = q.order('certify_count', { ascending: false }).order('id', { ascending: false });
@@ -1159,7 +1175,14 @@ async function loadViewerState(
       for (const r of saves.data ?? []) if (r.post_id) saved.add(r.post_id as string);
       const myVotes = { ...st.myVotes };
       for (const r of votes.data ?? []) myVotes[r.post_id as string] = r.option_index as number;
-      return { certifiedIds: certified, savedIds: saved, myVotes };
+      // Known only where its read answered: a failed one leaves its kind unknown, not "off".
+      const known = (held: Set<string>, answered: boolean) => (answered ? new Set([...held, ...ids]) : held);
+      const marksKnown = {
+        certified: known(st.marksKnown.certified, !certs.error),
+        saved: known(st.marksKnown.saved, !saves.error),
+        voted: known(st.marksKnown.voted, !votes.error),
+      };
+      return { certifiedIds: certified, savedIds: saved, myVotes, marksKnown };
     });
     // The reads that answered are merged above; one that failed is still a failure, reported.
     const failed = certs.error ?? saves.error ?? votes.error;
