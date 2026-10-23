@@ -1134,6 +1134,60 @@ mutants:
         replace: "        .limit(100);\n\n      // supabase-js resolves"
     proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the first page is ordered as the page above it is asked for: by its time, then its id" }
 
+  - id: shape-settings-form-over-unread
+    class: DATA-settings-saved-over-an-unread-profile
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "        {profileKnown ? (\n"
+        replace: "        {user ? (\n"
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "draws no form: it retrieves the settings, and asks for the profile" }
+
+  - id: shape-profile-read-by-anyone
+    class: DATA-settings-saved-over-an-unread-profile
+    source: shape
+    edits:
+      - file: src/utils/profileRead.ts
+        find: "  return !!user && 'is_social_private' in user;\n"
+        replace: "  return !!user;\n"
+    proof: { file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "is false of the auth user alone and of nobody; true of a read profile, an older row's null included" }
+
+  - id: shape-reread-onto-another
+    class: DATA-settings-saved-over-an-unread-profile
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "    if (error || !data || !memberUnchanged(id)) return profileRead(get().user);\n"
+        replace: "    if (error || !data) return profileRead(get().user);\n"
+    proof: { file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "an answer for a member who has since gone lands nowhere" }
+
+  - id: shape-sign-in-reads-no-blocks
+    class: DATA-unknown-block-offered-as-none
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "    void useBlockStore.getState().syncFromServer(authedUser.id);\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/theBlocksAreReadAtSignIn.test.ts, test: "a sign-in reads the member's blocks: known, and a block is a block" }
+
+  - id: shape-sheet-offers-unknown-blocks
+    class: DATA-unknown-block-offered-as-none
+    source: shape
+    edits:
+      - file: src/components/moderation/ContentActionSheet.tsx
+        find: "  if (!blocksKnown) {\n"
+        replace: "  if (blocksKnown === null) {\n"
+    proof: { file: src/components/moderation/__tests__/ContentActionSheet.mute.test.tsx, test: "offers no block or mute while they are read, says so, and asks for them" }
+
+  - id: shape-blocks-known-after-sign-out
+    class: DATA-unknown-block-offered-as-none
+    source: shape
+    edits:
+      - file: src/stores/blockStore.ts
+        find: "      _mutedIndex: new Set<string>(),\n      blocksKnown: false,\n    });\n"
+        replace: "      _mutedIndex: new Set<string>(),\n    });\n"
+    proof: { file: src/stores/__tests__/theBlocksAreReadAtSignIn.test.ts, test: "signing out makes them unknown again: the next member's are not these" }
+
   - id: shape-page-waits-for-marks
     class: SPEED-page-waits-for-the-members-marks
     source: shape

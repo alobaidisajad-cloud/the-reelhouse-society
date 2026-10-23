@@ -78,7 +78,7 @@ jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigati
   useIsFocused: () => true,
 }));
 jest.mock('@/src/stores/auth', () => {
-  const user = { id: 'u1', username: 'kane', email: 'member@example.com', created_at: '2026-03-04T00:00:00Z', preferences: {} };
+  const user = { id: 'u1', username: 'kane', email: 'member@example.com', created_at: '2026-03-04T00:00:00Z', is_social_private: false, preferences: {} };
   const state = { user, logout: jest.fn(), setPreference: jest.fn(() => Promise.resolve()) };
   const useAuthStore = (sel?: (s: unknown) => unknown) => (sel ? sel(state) : state);
   (useAuthStore as unknown as { getState: () => unknown }).getState = () => state;

@@ -12,9 +12,11 @@
  * without a handler — whatever a caller passes or leaves out.
  */
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 import { ContentActionSheet } from '../ContentActionSheet';
+import { useAuthStore } from '@/src/stores/auth';
+import { useBlockStore } from '@/src/stores/blockStore';
 
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
@@ -108,7 +110,38 @@ const base = {
     onBlock: jest.fn(),
 };
 
-beforeEach(() => { jest.clearAllMocks(); });
+beforeEach(() => {
+    jest.clearAllMocks();
+    // The member's blocks read, unless a test says otherwise.
+    useBlockStore.setState({ blocksKnown: true });
+});
+
+// A block unknown looked like none: MUTE was offered on a member already blocked, and the house
+// took it, turning the block into a mute (P0.112).
+describe('ContentActionSheet — the member\'s blocks not yet read', () => {
+    it('offers no block or mute while they are read, says so, and asks for them', async () => {
+        useBlockStore.setState({ blocksKnown: false });
+        const sync = jest.spyOn(useBlockStore.getState(), 'syncFromServer').mockImplementation(() => new Promise(() => {}));
+        useAuthStore.setState({ user: { id: 'me' } as never });
+        const { queryByLabelText, getByLabelText } = render(<ContentActionSheet {...base} onMute={jest.fn()} />);
+        expect(getByLabelText('Report alice to the Tribunal')).toBeTruthy();
+        expect(getByLabelText('Reading your blocks').props.accessibilityState).toMatchObject({ disabled: true });
+        expect([queryByLabelText('Block alice'), queryByLabelText('Mute alice'), queryByLabelText('Unblock alice')]).toEqual([null, null, null]);
+        await waitFor(() => expect(sync).toHaveBeenCalledWith('me'));
+        sync.mockRestore();
+    });
+
+    it('a read that could not be answered says so, and asks again', async () => {
+        useBlockStore.setState({ blocksKnown: false });
+        const sync = jest.spyOn(useBlockStore.getState(), 'syncFromServer').mockResolvedValue(undefined);
+        useAuthStore.setState({ user: { id: 'me' } as never });
+        const { getByLabelText } = render(<ContentActionSheet {...base} onMute={jest.fn()} />);
+        const again = await waitFor(() => getByLabelText('Your blocks could not be read. Ask for them again'));
+        await fireEvent.press(again);
+        await waitFor(() => expect(sync).toHaveBeenCalledTimes(2));
+        sync.mockRestore();
+    });
+});
 
 describe('ContentActionSheet — hideMute is what made three handlers dead code', () => {
     it('renders NO Mute row when hideMute is set — the comment sheets', () => {

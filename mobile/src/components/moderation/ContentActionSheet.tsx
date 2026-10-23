@@ -7,7 +7,7 @@
  */
 import { BlurView } from 'expo-blur';
 import { Ban, ShieldAlert, Unlock, Volume2, VolumeX } from 'lucide-react-native';
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -25,6 +25,8 @@ import type { ReportableContentType } from '@/src/types/moderation';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { ToastHost } from '@/src/components/ToastHost';
 import { useSheetBottom } from '@/src/components/layout/navMetrics';
+import { useAuthStore } from '@/src/stores/auth';
+import { useBlockStore } from '@/src/stores/blockStore';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -67,6 +69,22 @@ export function ContentActionSheet({
   const sheetFoot = useSheetBottom();
   const { isRendered, opacity, translateY } = useSheetPresence({ visible });
 
+  // The member's own blocks, read before any is offered: unknown, a block looked like none, and
+  // MUTE turned it into a mute. Asked for here when the sheet opens on a list not yet read.
+  const blocksKnown = useBlockStore((s) => s.blocksKnown);
+  const [askingBlocks, setAskingBlocks] = useState(false);
+  const askBlocks = useCallback(async () => {
+    const me = useAuthStore.getState().user?.id;
+    if (!me) return;
+    setAskingBlocks(true);
+    await useBlockStore.getState().syncFromServer(me);
+    setAskingBlocks(false);
+  }, []);
+  useEffect(() => {
+    // Not awaited: its answer lands in the store, which draws this sheet.
+    if (visible && !blocksKnown) void askBlocks();
+  }, [visible, blocksKnown, askBlocks]);
+
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
 
@@ -93,6 +111,8 @@ export function ContentActionSheet({
     destructive: boolean;
     onPress: () => void;
     accessibilityLabel: string;
+    /** A row that cannot act yet: the member's blocks still being read. */
+    disabled?: boolean;
   };
 
   const options: OptionRow[] = [];
@@ -107,8 +127,25 @@ export function ContentActionSheet({
     accessibilityLabel: `Report ${targetUsername} to the Tribunal`,
   });
 
-  // Block / Unblock
-  if (showUnblock) {
+  // Block, mute and their undoing only over the member's own blocks, read.
+  if (!blocksKnown) {
+    options.push(askingBlocks ? {
+      key: 'blocks-reading',
+      label: 'READING YOUR BLOCKS…',
+      icon: <Ban size={18} color={colors.fog} strokeWidth={1.5} />,
+      destructive: false,
+      onPress: () => {},
+      accessibilityLabel: 'Reading your blocks',
+      disabled: true,
+    } : {
+      key: 'blocks-unread',
+      label: 'YOUR BLOCKS COULD NOT BE READ · ASK AGAIN',
+      icon: <Ban size={18} color={colors.fog} strokeWidth={1.5} />,
+      destructive: false,
+      onPress: () => { void askBlocks(); },
+      accessibilityLabel: 'Your blocks could not be read. Ask for them again',
+    });
+  } else if (showUnblock) {
     options.push({
       key: 'unblock',
       label: `UNBLOCK @${targetUsername.toUpperCase()}`,
@@ -129,7 +166,8 @@ export function ContentActionSheet({
   }
 
   // Mute / Unmute
-  if (showUnmute) {
+  // Only over the member's blocks, read (the one row above reads them).
+  if (blocksKnown && showUnmute) {
     options.push({
       key: 'unmute',
       label: `UNMUTE @${targetUsername.toUpperCase()}`,
@@ -138,7 +176,7 @@ export function ContentActionSheet({
       onPress: onUnmute ?? onClose,
       accessibilityLabel: `Unmute ${targetUsername}`,
     });
-  } else if (!showUnblock && !hideMute && onMute) {
+  } else if (blocksKnown && !showUnblock && !hideMute && onMute) {
     // Mute only visible when NOT showing unblock (per spec condition), and only
     // with a handler behind it: no row that silently closes instead of muting.
     options.push({
@@ -198,9 +236,11 @@ export function ContentActionSheet({
                   // one option fires the next one down. These rows are ~50pt
                   // tall already. Same fix as ActionSheet.tsx.
                   hitSlop={null}
-                  onPress={() => handleOptionPress(option)}
+                  onPress={option.disabled ? undefined : () => handleOptionPress(option)}
+                  disabled={option.disabled}
                   haptic="selection"
                   accessibilityRole="button"
+                  accessibilityState={{ disabled: !!option.disabled, busy: !!option.disabled }}
                   accessibilityLabel={option.accessibilityLabel}
                 >
                   {option.icon}

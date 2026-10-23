@@ -22,6 +22,8 @@ import { storage, setSensitive } from './mmkv-storage';
 import { BAD_CREDENTIALS, isAddress, authLink } from '../utils/authSignals';
 import { e2eTrace } from '../utils/e2eTrace';
 import { raceDeadline } from '../utils/raceDeadline';
+import { profileRead } from '../utils/profileRead';
+import { useBlockStore } from './blockStore';
 export { storage };
 
 export interface AuthState {
@@ -40,6 +42,8 @@ export interface AuthState {
   hydrateFromCache: () => void;
   /** The one way in, from every door: signed in, remembered, the profile fetched behind. */
   adoptSession: (authedUser: AuthUser, profile?: Record<string, unknown> | null) => void;
+  /** The member's profile read again, onto them: true once it is held (profileRead). */
+  rereadProfile: () => Promise<boolean>;
 }
 
 
@@ -327,6 +331,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // The store's identity, by the documented `logIn()`; never awaited by sign-in.
     void identifyUser(authedUser.id);
     void readRankHistory(authedUser.id);
+    // The member's blocks, as a cold start reads them: a login on a new phone read none, and
+    // its member's blocks were unknown for the whole session. The sync guards its own landing
+    // (stillSignedIn) and reports its own failure.
+    useBlockStore.getState().hydrateFromCache(authedUser.id);
+    void useBlockStore.getState().syncFromServer(authedUser.id);
 
     // Otherwise the full profile, in the background with retries; if it never
     // comes, the session runs on the auth user alone, and the failure is reported.
@@ -356,6 +365,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       });
 
     hydrateFollowing();
+  },
+
+  rereadProfile: async () => {
+    const id = get().user?.id ?? null;
+    if (!id) return false;
+    const { data, error } = await supabase.from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', id).single();
+    // Only onto the member it was read for, as the login's read lands.
+    if (error || !data || !memberUnchanged(id)) return profileRead(get().user);
+    set((s) => {
+      const updatedUser = s.user ? ({ ...s.user, ...data } as User) : null;
+      if (updatedUser) setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
+      return { user: updatedUser };
+    });
+    return true;
   },
 
   signup: async (email, password, username, persona = 'The Cinephile') => {

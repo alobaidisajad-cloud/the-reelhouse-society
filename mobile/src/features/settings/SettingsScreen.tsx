@@ -20,6 +20,7 @@ import {
 } from 'lucide-react-native';
 
 import { useAuthStore } from '@/src/stores/auth';
+import { profileRead } from '@/src/utils/profileRead';
 import { useSettingsStore } from '@/src/stores/settings';
 import { supabase } from '@/src/lib/supabase';
 import reelToast from '@/src/utils/reelToast';
@@ -58,6 +59,7 @@ import { erasedBySigningOut, keptFor } from '@/src/utils/keptOnThisPhone';
 import { counted } from '@/src/utils/counted';
 import { Arrive } from '@/src/components/Arrive';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { RoomRetrieving, RoomUnreachable } from '@/src/components/profile/RoomParts';
 
 /** The phone's answer about its lock, or no lock: a check that hangs or fails is a no. */
 const lockAnswer = (asked: Promise<boolean>): Promise<boolean> => raceDeadline(asked, 2000).catch(() => false);
@@ -231,6 +233,20 @@ export function SettingsScreen() {
 
   const currentPrefs = user?.preferences;
 
+  // Whether the member's profile is read, and if not, asked for here: the form waits for it.
+  const profileKnown = useAuthStore((s) => profileRead(s.user));
+  const [profileFailed, setProfileFailed] = useState(false);
+  const askProfile = useCallback(async () => {
+    setProfileFailed(false);
+    const held = await useAuthStore.getState().rereadProfile();
+    if (isMountedRef.current && !held) setProfileFailed(true);
+  }, []);
+  const memberId = user?.id;
+  useEffect(() => {
+    // Not awaited: its answer lands in the store, and a failure in profileFailed.
+    if (memberId && !profileKnown) void askProfile();
+  }, [memberId, profileKnown, askProfile]);
+
   /** The form, as the profile keeps it: over the member's other preferences, never instead of them. */
   const amendments = (data: SettingsFormData) => ({
     is_social_private: data.socialVisibility === 'private',
@@ -280,7 +296,8 @@ export function SettingsScreen() {
   }, [currentPrefs, user?.is_social_private, isDirty, reset]);
 
   const handleSave = handleSubmit(async (data) => {
-    if (!user || isUpdatingUser) return;
+    // Never over a profile not read: the form's defaults would be saved as the member's settings.
+    if (!user || isUpdatingUser || !profileRead(user)) return;
     pendingSaveDataRef.current = data;
 
     let biometricCanceled = false;
@@ -448,7 +465,9 @@ export function SettingsScreen() {
   }));
 
   // Drawn from what this phone holds, so ready at once: the lab's control page (WORKLIST P0.112).
-  const readyMark = useScreenReady('settings', 'ready');
+  // Unless the member's profile is not yet read (a login's first moments, or a read that gave
+  // up): then the form is not drawn, and the page reads it.
+  const readyMark = useScreenReady('settings', profileKnown ? 'ready' : profileFailed ? 'failed' : 'reading');
 
   if (!user) return null;
 
@@ -540,9 +559,21 @@ export function SettingsScreen() {
         {/* ── Chapter: your dossier ── */}
         <View style={st.ornRule}><View style={st.ornLine} /><View style={st.ornDiamond} /><View style={st.ornLine} /></View>
 
-        <AccountSection user={user} control={control} saving={saving} />
-        <PrivacySection control={control} saving={saving} />
-        <NotificationsSection control={control} saving={saving} />
+        {/* The form only over a profile read: drawn from the auth user alone, a private
+            profile read as public and a save wrote it so. */}
+        {profileKnown ? (
+          <>
+            <AccountSection user={user} control={control} saving={saving} />
+            <PrivacySection control={control} saving={saving} />
+            <NotificationsSection control={control} saving={saving} />
+          </>
+        ) : (
+          <SectionCard>
+            {profileFailed
+              ? <RoomUnreachable room="your settings" onRetry={() => { void askProfile(); }} />
+              : <RoomRetrieving room="your settings" />}
+          </SectionCard>
+        )}
 
         {/* ── Chapter: this device, and your data ── */}
         <View style={st.ornRule}><View style={st.ornLine} /><View style={st.ornDiamond} /><View style={st.ornLine} /></View>

@@ -549,7 +549,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/home/VelvetRopeCTA.tsx | 2026-10-03 | read whole: its sheen moved to theme/BrassSheen |
 | src/components/InitiationModal.tsx | 2026-10-15 | beats cross-fade and the door closes through Presence; the card in a CentredCard |
 | src/components/KeyboardRoom.tsx | 2026-10-01 | written: the keyboard's room on Android |
-| src/components/layout/__tests__/aCentredCardScrollsAtTheLargestText.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); new: every centred card in a Modal scrolls in one room at x3.1; every Modal named with its kind; each list read through one() or firstOf(), which say what they found; its files come from the shared file list (test-utils/universe.js) |
+| src/components/layout/__tests__/aCentredCardScrollsAtTheLargestText.test.tsx | 2026-10-23 | edited: its member's profile read (is_social_private), as a loaded member's is; its navigation mock stands on the one base (test-utils/navigationMock); new: every centred card in a Modal scrolls in one room at x3.1; every Modal named with its kind; each list read through one() or firstOf(), which say what they found; its files come from the shared file list (test-utils/universe.js) |
 | src/components/layout/__tests__/aCentredPageScrollsAtTheLargestText.test.tsx | 2026-10-15 | new: every centred page scrolls in one room at x3.1 |
 | src/components/layout/__tests__/aSectionIsAHeading.test.tsx | 2026-10-01 | written: a section title is a heading |
 | src/components/layout/__tests__/aSwipeBackIsHeard.test.tsx | 2026-10-02 | nav's history hears the swipe back |
@@ -557,8 +557,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/__tests__/everyListChoosesItsAnchor.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/layout/__tests__/everyModalAndOverlayStartsAtItsTop.test.tsx | 2026-10-15 | new: modals and overlays at three insets, both platforms |
 | src/components/layout/__tests__/everyModalSheetAndOverlayEndsAboveItsFoot.test.tsx | 2026-10-15 | new: every modal, sheet and overlay foot, at 0, 21 and 34 |
-| src/components/layout/__tests__/everyPushedHeaderStartsAtItsTop.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/components/layout/__tests__/everyPushedScreenEndsAboveItsFoot.test.tsx | 2026-10-15 | new: every pushed route's foot, at 0, 21 and 34 |
+| src/components/layout/__tests__/everyPushedHeaderStartsAtItsTop.test.tsx | 2026-10-23 | edited: its member's profile read (is_social_private), as a loaded member's is; its files come from the shared file list (test-utils/universe.js) |
+| src/components/layout/__tests__/everyPushedScreenEndsAboveItsFoot.test.tsx | 2026-10-23 | edited: its member's profile read (is_social_private), as a loaded member's is; new: every pushed route's foot, at 0, 21 and 34 |
 | src/components/layout/__tests__/everyTabEndsAboveTheTabBar.test.tsx | 2026-10-15 | new: every tab ends above the tab bar, at 0, 21 and 34 |
 | src/components/layout/__tests__/everyTabStartsBelowTheBar.test.tsx | 2026-10-15 | new: every tab under the bar, built and measured; each sets the bar’s tint as it arrives |
 | src/components/layout/__tests__/flashListKeyboard.test.tsx | 2026-09-29 | anchor tests |
@@ -671,7 +671,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/moderation/__tests__/everyModerationRowActs.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/moderation/__tests__/ReportSheet.test.tsx | — |  |
 | src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/components/moderation/ContentActionSheet.tsx | 2026-10-15 | foot from useSheetBottom |
+| src/components/moderation/ContentActionSheet.tsx | 2026-10-23 | edited: block, mute and their undoing only over the member's blocks, read: one row reads them, or says they could not be read and asks again; foot from useSheetBottom |
 | src/components/moderation/ReportSheet.tsx | 2026-10-15 | foot from useSheetBottom |
 | src/components/motion/__tests__/exitingIsNeverUsed.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/motion/__tests__/fixtures/exiting.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
@@ -848,13 +848,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/EditProfileScreen.tsx | 2026-10-15 | nav top from usePushedHeaderTop; foot from useContentBottom |
 | src/features/profile/LinksEditor.tsx | 2026-10-03 | edited: the link title and address name their caps |
 | src/features/profile/profile.styles.ts | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
-| src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the Auteur manages a membership, not a rank to choose |
+| src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-23 | edited: a profile not yet read: no form, retrieved, asked again on failure; a read one draws the form and asks nothing; its navigation mock stands on the one base (test-utils/navigationMock); the Auteur manages a membership, not a rank to choose |
 | src/features/settings/__tests__/anExportIsWhole.test.ts | 2026-10-01 | written: an export holds every row once |
 | src/features/settings/__tests__/theSignOutNamesWhatItErases.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); written: the sign-out confirm counts unsent changes, drafts and failed words; online, the queue goes first |
 | src/features/settings/DataVault.tsx | 2026-10-02 | no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
 | src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
 | src/features/settings/settings.styles.ts | 2026-10-02 | read; sound |
-| src/features/settings/SettingsScreen.tsx | 2026-10-22 | edited: its ready mark (settings), ready at once: the lab's control page; nav top from usePushedHeaderTop; foot from useContentBottom; the code window in a CentredCard |
+| src/features/settings/SettingsScreen.tsx | 2026-10-23 | edited: the form only over a read profile (profileRead): retrieved when not, said when it could not be, and no save without it; its ready mark (settings), ready at once: the lab's control page; nav top from usePushedHeaderTop; foot from useContentBottom; the code window in a CentredCard |
 | src/features/settings/SettingsSections.tsx | 2026-10-03 | edited: a new password is judged by passwordIsAccepted |
 | src/generated/lucideIcons.js | 2026-10-03 | generated by scripts/lucide-icons.js; its --check guard holds it |
 | src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the rooms answered, as the hook hands them; written: a follow that throws is said and rolled back |
@@ -1083,9 +1083,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/theWallHearsWhatChanged.test.ts | 2026-10-03 | new: every write that can change a hanging piece asks for the wall again |
 | src/stores/__tests__/vaultStore.test.ts | — |  |
 | src/stores/__tests__/watchlistSlice.test.ts | 2026-10-03 | edited: the header names what the file tests |
-| src/stores/auth.ts | 2026-10-15 | edited: a session ended elsewhere keeps the member's queue and drafts and tells them; their sign-in gives it back |
+| src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts | 2026-10-23 | profileRead tells a read profile from the auth user alone; rereadProfile lays a read on the member, says a failure, and lands nothing for a member gone (P0.112) |
+| src/stores/__tests__/theBlocksAreReadAtSignIn.test.ts | 2026-10-23 | a sign-in reads the member's blocks: known, and a block a block; a failed read leaves them unknown; sign-out makes them unknown (P0.112) |
+| src/stores/auth.ts | 2026-10-23 | edited: a sign-in reads the member's blocks as a cold start does; rereadProfile lays a fresh read on the member it was read for; a session ended elsewhere keeps the member's queue and drafts and tells them; their sign-in gives it back |
 | src/stores/authEvents.ts | 2026-10-15 | written: the auth listener's answers, out of the component |
-| src/stores/blockStore.ts | 2026-10-02 | sign-out erases the leaving member's saved list |
+| src/stores/blockStore.ts | 2026-10-23 | edited: blocksKnown: the lists the member's, from a saved copy or a read; cleared at sign-out; sign-out erases the leaving member's saved list |
 | src/stores/createSelectors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/discover.ts | 2026-10-02 | Read whole (launch audit). Its comment said the Darkroom's results survive a restart; the films found are not persisted, only the mood, filters and search. |
 | src/stores/dispatch.ts | 2026-10-23 | edited: marksKnown, per kind, from each read that answered; the page, the next page and the reader no longer wait for the marks; the saved page is the house's answer, joined to the member's own saves (SAVED_CARD_COLUMNS); an act read or answered after its member left neither queues nor puts back |
@@ -1454,4 +1456,5 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/navigationMock.ts | 2026-10-23 | @react-navigation/native as every test meets it: the real module, focus answered outside a navigator; the one base every mock spreads |
 | e2e/no-error-dialogs.sh | 2026-10-23 | new: Android's error dialogs hidden and closed, for the flows and the lab alike |
 | src/utils/__tests__/aReadIsKeyedOnWhoNotTheObject.guard.test.ts | 2026-10-23 | new: every hook keyed on the auth user object judged no read; a new one fails |
+| src/utils/profileRead.ts | 2026-10-23 | whether the member's profile has been read: its own columns on the user, never the auth user alone |
 | src/components/lounge/__tests__/theRoomIsAskedForOnce.test.tsx | 2026-10-23 | edited: the store as it now is: the room open, its own flags; new: the room and roster asked once while the session settles, again for another member |

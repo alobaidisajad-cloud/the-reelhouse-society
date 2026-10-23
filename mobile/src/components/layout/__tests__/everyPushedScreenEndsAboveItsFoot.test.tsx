@@ -92,7 +92,7 @@ jest.mock('@/src/stores/auth', () => {
   const held: Record<string, unknown> = {};
   const state = () => (held[mockRole] ??= {
     isAuthenticated: true,
-    user: { id: 'me', username: 'kane', role: mockRole, tier: 'archivist', preferences: {} },
+    user: { id: 'me', username: 'kane', role: mockRole, tier: 'archivist', is_social_private: false, preferences: {} },
     restoreSession: () => Promise.resolve(),
     updateUser: () => Promise.resolve(),
   });

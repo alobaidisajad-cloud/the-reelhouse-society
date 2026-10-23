@@ -33,6 +33,8 @@ let mockUser: Record<string, unknown> | null;
 let mockPerm: string;
 let mockPrevent: { enabled: boolean; cb: ((o: { data: { action: unknown } }) => void) | null };
 const mockLogout = jest.fn(() => Promise.resolve());
+/** The member's profile read again: its answer, true once held. */
+const mockReread = jest.fn((): Promise<boolean> => Promise.resolve(false));
 const mockClearAll = jest.fn();
 const mockRequestDeletion = jest.fn(() => Promise.resolve());
 const mockNavReplace = jest.fn();
@@ -50,7 +52,9 @@ jest.mock('@/src/stores/auth', () => {
     const state = { user: mockUser, logout: mockLogout, setPreference: jest.fn(() => Promise.resolve()) };
     return sel ? sel(state) : state;
   };
-  (useAuthStore as unknown as { getState: () => unknown }).getState = () => ({ user: mockUser, setPreference: jest.fn(() => Promise.resolve()) });
+  (useAuthStore as unknown as { getState: () => unknown }).getState = () => ({
+    user: mockUser, setPreference: jest.fn(() => Promise.resolve()), rereadProfile: () => mockReread(),
+  });
   return { useAuthStore };
 });
 jest.mock('@/src/stores/settings', () => {
@@ -167,6 +171,39 @@ beforeEach(() => {
   mockUser = { ...BASE };
   mockPerm = 'granted';
   mockPrevent = { enabled: false, cb: null };
+});
+
+// After a login, until the member's profile was read (and for the session, if that read gave
+// up), the form was drawn from the auth user alone: a private profile read as public, and any
+// save wrote it so (P0.112).
+describe('a profile not yet read', () => {
+  const UNREAD = { id: 'u1', username: 'sajjadobaidi', email: 'member@example.com', created_at: '2026-03-04T00:00:00Z' };
+
+  it('draws no form: it retrieves the settings, and asks for the profile', async () => {
+    mockUser = { ...UNREAD };
+    mockReread.mockImplementationOnce(() => new Promise(() => {}));
+    const r = await settle(mount());
+    expect(r.getByLabelText('Retrieving your settings')).toBeTruthy();
+    expect(r.queryByText('PRIVACY')).toBeNull();
+    expect(r.queryByText('NOTIFICATIONS')).toBeNull();
+    expect(mockReread).toHaveBeenCalledTimes(1);
+    // What does not need the profile stays.
+    expect(r.getByText('THIS DEVICE')).toBeTruthy();
+  });
+
+  it('a read that could not be answered says so, and asks again', async () => {
+    mockUser = { ...UNREAD };
+    const r = await settle(mount());
+    await waitFor(() => expect(r.getByText('Your settings could not be reached.')).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText('Ask for your settings again')); });
+    expect(mockReread).toHaveBeenCalledTimes(2);
+  });
+
+  it('a profile read draws the form, as ever, and asks for nothing', async () => {
+    const r = await settle(mount());
+    expect(r.getByText('PRIVACY')).toBeTruthy();
+    expect(mockReread).not.toHaveBeenCalled();
+  });
 });
 
 describe('the page says what it is', () => {

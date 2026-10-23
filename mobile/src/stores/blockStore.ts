@@ -39,6 +39,12 @@ export interface BlockState {
   muted: string[];
   _blockedIndex: Set<string>;
   _mutedIndex: Set<string>;
+  /**
+   * Whether these lists are the member's: restored from the phone's copy of a read, or read.
+   * Unknown, a block looked like none: MUTE was offered on a member already blocked, and the
+   * house took it, turning the block into a mute.
+   */
+  blocksKnown: boolean;
 
   // Queries (O(1) Set.has() lookups)
   isBlocked: (userId: string) => boolean;
@@ -67,6 +73,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
   muted: [],
   _blockedIndex: new Set<string>(),
   _mutedIndex: new Set<string>(),
+  blocksKnown: false,
 
   // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -370,6 +377,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
         muted: parsed.muted,
         _blockedIndex: new Set(parsed.blocked),
         _mutedIndex: new Set(parsed.muted),
+        blocksKnown: true,
       });
     } catch (e) {
       // Corrupted JSON — clear key, log to Sentry, proceed empty
@@ -427,6 +435,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
         muted,
         _blockedIndex: new Set(blocked),
         _mutedIndex: new Set(muted),
+        blocksKnown: true,
       });
 
       // Persist fresh data to MMKV
@@ -454,6 +463,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       muted: [],
       _blockedIndex: new Set<string>(),
       _mutedIndex: new Set<string>(),
+      blocksKnown: false,
     });
   },
 }));

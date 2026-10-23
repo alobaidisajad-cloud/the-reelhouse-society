@@ -1133,6 +1133,35 @@ classes:
     fix: "fetchMessages lets another room's words go the moment a room opens, keeping the same room's while it is read again; the screen takes only the words of the room it shows (currentLoungeId === id), so a room's words can be drawn under no other name (mutants shape-room-keeps-last-words, shape-screen-draws-held-words)"
     places: [none]
 
+  - id: DATA-settings-saved-over-an-unread-profile
+    title: "Settings drew its form from the auth user alone in a login's first moments, and for the whole session when the profile read gave up: a private profile read as public, and any save wrote it public"
+    seriousness: serious
+    area: states
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "sweep of member state drawn before it was known (P0.112): adoptSession sets a user without profile columns and reads the profile behind, giving up after two retries" }
+    methods:
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "draws no form: it retrieves the settings, and asks for the profile" }
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "a read that could not be answered says so, and asks again" }
+      - { kind: running, file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "is false of the auth user alone and of nobody; true of a read profile, an older row's null included" }
+      - { kind: running, file: src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts, test: "an answer for a member who has since gone lands nowhere" }
+    fix: "profileRead tells a read profile from the auth user alone; Settings draws its form only over a read profile, reads it when it is not (RETRIEVING YOUR SETTINGS, or could not be reached with TRY AGAIN), and refuses a save without it; rereadProfile lays a fresh read on the member it was read for (mutants shape-settings-form-over-unread, shape-profile-read-by-anyone, shape-reread-onto-another)"
+    places: [none]
+
+  - id: DATA-unknown-block-offered-as-none
+    title: "A member's blocks unknown were offered as none: a sign-in on a new phone never read them, and the action sheet's MUTE on a member already blocked turned the block into a mute"
+    seriousness: serious
+    area: states
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "sweep of member state drawn before it was known (P0.112): syncFromServer ran only on a cold start; the sheet offered MUTE whenever UNBLOCK was not shown" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/theBlocksAreReadAtSignIn.test.ts, test: "a sign-in reads the member's blocks: known, and a block is a block" }
+      - { kind: running, file: src/stores/__tests__/theBlocksAreReadAtSignIn.test.ts, test: "signing out makes them unknown again: the next member's are not these" }
+      - { kind: running, file: src/components/moderation/__tests__/ContentActionSheet.mute.test.tsx, test: "offers no block or mute while they are read, says so, and asks for them" }
+    fix: "a sign-in reads the member's blocks as a cold start does; the store says whether its lists are the member's (blocksKnown, from a saved copy or a read, cleared at sign-out); the sheet offers block, mute and their undoing only over known blocks, reading them when it opens on unknown ones (mutants shape-sign-in-reads-no-blocks, shape-sheet-offers-unknown-blocks, shape-blocks-known-after-sign-out)"
+    places: [none]
+
   - id: SPEED-page-waits-for-the-members-marks
     title: "The Dispatch's page, its next page and its reader waited for the member's own marks (certified, saved, voted) before they were done: 1.3 s on the lab's phone for the page alone"
     seriousness: behaviour
