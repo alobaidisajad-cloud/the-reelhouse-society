@@ -146,7 +146,7 @@ const STATES: [string, Tier, Record<string, string>, (r: ReturnType<typeof rende
     for (const entry of ['THE EDITORIAL DESK', 'THE PHYSICAL ARCHIVE', 'THE VAULT']) await fireEvent.press(r.getByText(entry));
   }],
   // The same tools while the member's rank is still being read: nothing sold, asked again.
-  ['composer-rank-reading', 'unread', FILM, async (r) => {
+  ['composer-rank-reading', 'unread', { filmId: FILM.filmId, filmTitle: FILM.filmTitle }, async (r) => {
     for (const entry of ['THE EDITORIAL DESK', 'THE VAULT']) await fireEvent.press(r.getByText(entry));
   }],
   // Walking out: the status row, and the reasons that wrap.
