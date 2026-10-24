@@ -1258,5 +1258,19 @@
     "proof": "m2",
     "commit": "b511158fe591a6d4fa6708d387212ad565c40c16",
     "verdict": "caught"
+  },
+  {
+    "class": "UI-unknown-mark-drawn-as-off",
+    "mutant": "shape-critique-heart-pressable-unread",
+    "proof": "m14",
+    "commit": "e2f84409d0f953ba1683a3a01db880d43976f918",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-unknown-mark-drawn-as-off",
+    "mutant": "shape-critique-mark-never-known",
+    "proof": "m15",
+    "commit": "e2f84409d0f953ba1683a3a01db880d43976f918",
+    "verdict": "caught"
   }
 ]
