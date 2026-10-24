@@ -1385,3 +1385,16 @@ classes:
       - { kind: running, file: src/components/clearance/__tests__/oneRopeNotThree.test.tsx, test: "sells nothing to a member whose rank is not yet read: it says so, and asks again" }
     fix: "useClearance gives a third standing, reading, while a signed-in member's profile is not read (profileRead); then open() asks for the profile again (rereadProfile), never the Society, and records no gate event. Every rope says so in its own words: ClearanceGate and LogClearanceGate ([ YOUR RANK, BEING READ ] / ✦ ASK AGAIN, in fog), the Dispatch's picker, the share keys on the feed and the person page, the salon's seat. Fixtures and generators draw a member whose profile is read; composer-rank-reading draws the other, measured clean (mutants shape-rank-unread-sold, shape-rank-unread-a-stranger, shape-rope-sells-while-reading)"
     places: [none]
+
+  - id: COPY-said-before-it-was-true
+    title: "The Lobby's rank bill told every unranked member \"The house has seen your taste\": a member who had just joined, or whose ledger was still being read, had shown it none, and the first words the house said of them were not true"
+    seriousness: behaviour
+    area: copy
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "the first minute, read as a new member (2026-10-24): lobby-empty drawn and read" }
+    methods:
+      - { kind: running, file: src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx, test: "to a member with nothing logged, or whose ledger is still read: never that the house has seen their taste" }
+      - { kind: running, file: src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx, test: "to a member whose ledger holds a film: the house has seen their taste" }
+    fix: "the line is said only once the member's ledger is read whole and holds a film (marksLedger); before, the bill says what is true of anyone: The house keeps its best seats / for those who keep the record. The Lobby's other words about a member are true by their rank (mutant shape-taste-claimed-unseen)"
+    places: [none]

@@ -1718,3 +1718,12 @@ mutants:
         find: "strokeDasharray={saveKnown ? undefined : UNINKED}"
         replace: "strokeDasharray={undefined}"
     proof: { file: src/components/log/__tests__/theDeckSaysWhatItKnows.test.tsx, test: "a mark not yet read is uninked and said so; the bookmark stays pressable" }
+
+  - id: shape-taste-claimed-unseen
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: src/components/lobby/RankBill.tsx
+        find: "shownTaste ? RANK_BILL.sub : RANK_BILL.subUnseen"
+        replace: "RANK_BILL.sub"
+    proof: { file: src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx, test: "to a member with nothing logged, or whose ledger is still read: never that the house has seen their taste" }

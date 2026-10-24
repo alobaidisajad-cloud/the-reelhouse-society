@@ -595,9 +595,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/lobby/measure.ts | 2026-10-22 | edited: the one-sheet's foot fitted to the sheet's height as the phone grows its lines (foot, TITLE_FLOOR, FOOT_TOP); the snipe reads it |
 | src/components/lobby/PairBills.tsx | 2026-10-21 | edited: vellum paper; the credit an ink block inside each bill; the vacant doors slanted plates |
 | src/components/lobby/parts.tsx | 2026-10-15 | edited: the letter is initialOf, whole; QUOTE_MARKS exported for its test |
-| src/components/lobby/RankBill.tsx | 2026-10-21 | edited: the banner on vellum paper |
+| src/components/lobby/RankBill.tsx | 2026-10-24 | edited: "has seen your taste" said only once the member's ledger is read and holds a film; before, a line true of anyone |
 | src/components/lobby/wallRead.ts | 2026-09-30 | new |
-| src/components/lobby/words.ts | 2026-09-30 | new; named a test that did not exist |
+| src/components/lobby/words.ts | 2026-10-24 | edited: subUnseen, the rank bill's line for a member whose taste the house has not yet seen |
 | src/components/log/__tests__/editorialDesk.test.tsx | — |  |
 | src/components/log/__tests__/everyCritiqueCanBeReached.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): SHOW MORE asks for older critiques once the page runs out. |
 | src/components/log/__tests__/logAtmosphere.test.tsx | — |  |

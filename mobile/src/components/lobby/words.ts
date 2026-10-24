@@ -64,7 +64,10 @@ export const FILINGS_BILL = {
 
 export const RANK_BILL = {
   name: 'Take Your Rank',
+  // Said only once the member's ledger is read and holds a film: before, it was not true.
   sub: ['The house has seen your taste.', 'It would like to see more of it.'],
+  // A member with nothing logged yet, or whose ledger is still being read: true of anyone.
+  subUnseen: ['The house keeps its best seats', 'for those who keep the record.'],
   subArchivist: ['You keep the record.', 'Now write at length.'],
   thanks: ['The House', 'Thanks You'],
   thanksSub: ['For your service as an Auteur.', 'It will not say so again.'],

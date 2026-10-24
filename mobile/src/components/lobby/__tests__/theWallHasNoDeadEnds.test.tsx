@@ -253,6 +253,29 @@ describe('every door leads somewhere that exists', () => {
   });
 });
 
+describe('the rank bill says only what is true of its member', () => {
+  const films = jest.requireActual('@/src/stores/films').useFilmStore;
+  // Inside act: the last wall drawn is still mounted, and hears the store.
+  afterEach(async () => { await act(async () => { films.setState({ _loggedIndex: {}, marksKnown: 'unread' }); }); });
+
+  it('to a member with nothing logged, or whose ledger is still read: never that the house has seen their taste', async () => {
+    for (const marksKnown of ['held', 'unread'] as const) {
+      films.setState({ _loggedIndex: {}, marksKnown });
+      await drawWall();
+      expect(printed('The house has seen your taste.')).toBe(false);
+      expect(printed('The house keeps its best seats')).toBe(true);
+      screen.unmount();
+    }
+  });
+
+  it('to a member whose ledger holds a film: the house has seen their taste', async () => {
+    films.setState({ _loggedIndex: { 603: { id: 'l1', filmId: 603, status: 'watched', rating: 4, light: true } }, marksKnown: 'held' });
+    await drawWall();
+    expect(printed('The house has seen your taste.')).toBe(true);
+    expect(printed('The house keeps its best seats')).toBe(false);
+  });
+});
+
 describe('every door has a name', () => {
   it('each control says what it is and where it goes', async () => {
     mockUser = { id: 'me', username: 'kane', role: 'admin', tier: null };

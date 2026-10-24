@@ -19,6 +19,7 @@ import type { Rank } from '@/src/components/RankBadge';
 import { Halftone, HouseLine, Rays } from './parts';
 import { WALL, type WallPlan } from './measure';
 import { RANK_BILL, rankTicket } from './words';
+import { useFilmStore } from '@/src/stores/films';
 
 /** Two tickets stand WALL.ticketGap apart, beside or above one another: each reaches half of that. */
 const TICKET_HALO = WALL.ticketGap / 2;
@@ -73,8 +74,16 @@ const Stub = memo(function Stub({ auteur }: { auteur: boolean }) {
   );
 });
 
+/** Whether the index holds any film, without counting them all on every change of the store. */
+const holdsAny = (index: Record<number, unknown>) => {
+  for (const key in index) if (Object.prototype.hasOwnProperty.call(index, key)) return true;
+  return false;
+};
+
 export const RankBill = memo(function RankBill({ plan, viewer }: { plan: WallPlan; viewer: Rank }) {
   const router = useRouter();
+  // The house has seen their taste only once their ledger is read whole and holds a film.
+  const shownTaste = useFilmStore((s) => s.marksKnown === 'held' && holdsAny(s._loggedIndex));
   const banner = (lines: readonly string[], sub: readonly string[]) => {
     const room = plan.recruitStacked
       ? plan.wallW - WALL.recruitMargin * 2 - WALL.recruitPad * 2
@@ -126,7 +135,7 @@ export const RankBill = memo(function RankBill({ plan, viewer }: { plan: WallPla
   const ticketRoom = ticketW - 2 - WALL.ticketStub - WALL.ticketPad * 2;
   return (
     <View style={s.rank}>
-      {banner([RANK_BILL.name], viewer === 'archivist' ? RANK_BILL.subArchivist : RANK_BILL.sub)}
+      {banner([RANK_BILL.name], viewer === 'archivist' ? RANK_BILL.subArchivist : shownTaste ? RANK_BILL.sub : RANK_BILL.subUnseen)}
       <View style={[s.tickets, !beside && s.ticketsStacked]}>
         {ranks.map((r) => <Ticket key={r} rank={r} room={ticketRoom} beside={beside} />)}
       </View>
