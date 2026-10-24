@@ -1293,5 +1293,40 @@
     "proof": "m1",
     "commit": "9c96ccf30b9bd601a40f8014e3673c1d9d8c6764",
     "verdict": "caught"
+  },
+  {
+    "class": "LOOK-stand-in-eye",
+    "mutant": "shape-tab-eye-stand-in",
+    "proof": "m1",
+    "commit": "8bccd95e9f26e94d1018f53af055743e5e46a152",
+    "verdict": "caught"
+  },
+  {
+    "class": "LOOK-stand-in-eye",
+    "mutant": "shape-tab-eye-untinted",
+    "proof": "m2",
+    "commit": "8bccd95e9f26e94d1018f53af055743e5e46a152",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-drawing-left-unmeasured",
+    "mutant": "shape-plate-written-aside",
+    "proof": "m1",
+    "commit": "8bccd95e9f26e94d1018f53af055743e5e46a152",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-nested-takes-the-house-ceiling",
+    "mutant": "shape-nested-text-housed",
+    "proof": "m1",
+    "commit": "8bccd95e9f26e94d1018f53af055743e5e46a152",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-nested-takes-the-house-ceiling",
+    "mutant": "shape-render-nested-own-cap",
+    "proof": "m3",
+    "commit": "8bccd95e9f26e94d1018f53af055743e5e46a152",
+    "verdict": "caught"
   }
 ]
