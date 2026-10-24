@@ -186,6 +186,7 @@
   "__webpack_require__",
   "__workletRuntimeCollector",
   "__workletsModuleProxy",
+  "__zod_globalConfig",
   "__zod_globalRegistry",
   "_sentryDebugIdIdentifier",
   "_sentryDebugIds",
