@@ -47,18 +47,6 @@
       "version": "10.0.0",
       "advisory": "GHSA-vfgh-jcmw-g37q",
       "reason": "The slowdown is in inline HTML, which runs only with html on. react-native-markdown-display builds markdown-it with typographer alone (html off by default), and no mount passes a parser of its own; measured with html off, the payload stays linear (7 ms at 25,000 characters)."
-    },
-    {
-      "package": "nanoid",
-      "version": "3.3.13",
-      "advisory": "GHSA-28wg-ghj8-5hjv",
-      "reason": "The loop needs a negative size. React Navigation and expo-router call nanoid/non-secure's nanoid() with no size, so it is always 21."
-    },
-    {
-      "package": "nanoid",
-      "version": "3.3.13",
-      "advisory": "GHSA-2v37-7h3g-55p8",
-      "reason": "The loop needs customAlphabet or customRandom with a size of 0. Nothing on the phone calls either; React Navigation and expo-router call only nanoid()."
     }
   ],
   "functions": []
