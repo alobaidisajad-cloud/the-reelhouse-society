@@ -12,7 +12,7 @@
  *   · 60 members, each with eight films logged with words (the Reel), followed by the member;
  *   · a salon the member sits in, with 320 messages;
  *   · the member's own stack of every recorded film (61);
- *   · the member's first log with 25 comments;
+ *   · the member's first log with 60 comments, one from each member (seven screen heights: 25 were three, the scroll judge's edge);
  *   · 30 Dispatch filings;
  *   · the member's own profile: every recorded film logged (its archive room), and a portrait.
  * Every film is one the sealed world holds a recording of, with its real poster, so a scroll
@@ -28,7 +28,7 @@ const HERE = fileURLToPath(new URL('.', import.meta.url));
 const FIXTURES = join(HERE, '..', 'supabase', 'functions', 'tmdb-proxy', 'fixtures');
 
 /** The least of each list the lab scrolls; the check fails below any. */
-export const AT_LEAST = { reel: 300, salon: 300, stack: 60, comments: 20, filings: 20, own_logs: 60, portrait: 1 };
+export const AT_LEAST = { reel: 300, salon: 300, stack: 60, comments: 50, filings: 20, own_logs: 60, portrait: 1 };
 const MEMBERS = 60;
 
 /** Every recorded film with a poster: [id, title, year, poster], in id order. */
@@ -117,13 +117,13 @@ SELECT '00000000-0000-4000-b200-000000000001', pg_temp.lid(1 + i % ${MEMBERS}),
        'Message ' || i || ' in the salon. ' || repeat('Words about the picture. ', 1 + i % 4), now() - (320 - i) * interval '3 minutes'
   FROM generate_series(1, 320) i;
 
--- ── the member's first log, with 25 comments ──
+-- ── the member's first log, with 60 comments ──
 CREATE TEMP TABLE lab_log ON COMMIT DROP AS
 SELECT id FROM public.logs WHERE user_id = (SELECT id FROM lab_me) AND review IS NOT NULL ORDER BY created_at DESC, id LIMIT 1;
 INSERT INTO public.log_comments (log_id, user_id, username, body, created_at)
 SELECT (SELECT id FROM lab_log), pg_temp.lid(c), 'lab_' || lpad(c::text, 2, '0'),
-       'Comment ' || c || ': ' || repeat('a reply worth reading. ', 1 + c % 3), now() - (25 - c) * interval '11 minutes'
-  FROM generate_series(1, 25) c;
+       'Comment ' || c || ': ' || repeat('a reply worth reading. ', 1 + c % 3), now() - (60 - c) * interval '11 minutes'
+  FROM generate_series(1, 60) c;
 
 -- ── the Dispatch: 30 filings ──
 INSERT INTO public.dispatch_posts (kind, user_id, author_username, body, created_at)

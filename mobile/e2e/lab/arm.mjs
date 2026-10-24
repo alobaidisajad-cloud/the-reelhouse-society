@@ -29,6 +29,13 @@
  *   R0      all of them: the floor
  * (The lamp and the wash kept as textures, once the arm Rh, ship: speed lab 39901452779.)
  *
+ * The Reel's cards, part by part (R0 gave the page's layers nothing, speed lab 40046819617: the
+ * cost is in the cards), in two runs of four arms, each fitting its step:
+ *   Cs      no washes on the card    Ce  no edge light           Ck  no rounded clip
+ *   C0      all three: the card as flat paper
+ *   Cp      no poster                Ct  the title not shrunk to fit
+ *   Cr      no review                Ca  no action deck
+ *
  * The Dispatch's opening (WORKLIST P0.112) is opened and scrolled as the Reel's arms are
  * (scrolls.sh, LAB_ARM_SCREEN=dispatch). (Its page no longer waiting for the member's marks,
  * once the arm F0, ships: speed lab 39898420669, 1.3 s sooner; Fv, the marks asked first, gave
@@ -226,6 +233,39 @@ const reelPulsesStill = [
 /** The Reel's arms: each layer alone, and all of them (R0, the floor). */
 export const REEL_ARMS = ['Rb', 'Rw', 'Rl', 'Rt', 'Rs', 'Rp', 'R0'];
 
+// The Reel's cards, part by part (R0 gave the page's layers nothing: the cost is in the cards).
+// Two runs, four arms each, so each fits its step: the card's layers, then what it holds.
+const CARD_FILE = 'src/components/feed/ActivityCard.tsx';
+const cardNoShell = [edit(CARD_FILE,
+  'const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {\n',
+  'const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {\n  if (globalThis) return <>{children}</>;\n')];
+const cardNoEdge = [edit(CARD_FILE, '  card: { ...EDGE_LIT,\n', '  card: {\n')];
+const cardNoClip = [edit(CARD_FILE, "    borderColor: 'rgba(184,137,26,0.4)',\n    overflow: 'hidden',\n", "    borderColor: 'rgba(184,137,26,0.4)',\n")];
+const cardNoPoster = [edit(CARD_FILE,
+  '              <PosterFrame filmId={item.film_id} filmTitle={item.film_title} posterPath={item.poster_path} isPremium={isPremium} isAuteur={isAuteur} onPress={handleFilmPress} />\n', '')];
+const cardTitleUnfitted = [edit(CARD_FILE,
+  ' numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>{item.film_title}', ' numberOfLines={3}>{item.film_title}')];
+const cardNoReview = [edit(CARD_FILE,
+  '              <ReviewContent item={item} isPremium={isPremium} isAuteur={isAuteur} onPress={handleLogPress} />\n', '')];
+const cardNoDeck = [edit(CARD_FILE, [
+  '              <ActionDeck',
+  '                itemId={item.id}',
+  '                filmId={item.film_id}',
+  '                filmTitle={item.film_title}',
+  '                posterPath={item.poster_path ?? null}',
+  '                year={item.year ?? undefined}',
+  '                ownerUsername={item.username}',
+  '                ownerId={item.user_id}',
+  '                certifyCount={item.certify_count}',
+  '                critiqueCount={item.critique_count}',
+  '              />',
+  '',
+].join('\n'), '')];
+
+/** The card's layers, each alone, and all three (C0); then what it holds, each alone. */
+export const CARD_LAYER_ARMS = ['Cs', 'Ce', 'Ck', 'C0'];
+export const CARD_PART_ARMS = ['Cp', 'Ct', 'Cr', 'Ca'];
+
 export const ARMS = {
   Ws: [...svgRoom, ...svgVignette, ...svgHalo],
   Dm: [...lampDispatch, ...noVignette, ...noHalo],
@@ -245,6 +285,14 @@ export const ARMS = {
   Rs: reelNoScrollbar,
   Rp: reelPulsesStill,
   R0: [...reelNoBeam, ...reelNoWash, ...reelNoLamp, ...reelBarStill, ...reelNoScrollbar, ...reelPulsesStill],
+  Cs: cardNoShell,
+  Ce: cardNoEdge,
+  Ck: cardNoClip,
+  C0: [...cardNoShell, ...cardNoEdge, ...cardNoClip],
+  Cp: cardNoPoster,
+  Ct: cardTitleUnfitted,
+  Cr: cardNoReview,
+  Ca: cardNoDeck,
 };
 
 /** The scenes the shots compare: each one's main build, its SVG build, and what it shows. */
