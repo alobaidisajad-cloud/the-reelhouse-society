@@ -1700,3 +1700,21 @@ mutants:
         find: "      for (const c of critiques) known.add(c.id);\n"
         replace: ""
     proof: { file: src/stores/__tests__/aCritiqueMarkIsReadBeforeItIsDrawn.test.ts, test: "answered, knows each critique asked about: certified or not" }
+
+  - id: shape-darkroom-save-inked-unread
+    class: DATA-marks-known-from-the-pages
+    source: shape
+    edits:
+      - file: src/components/darkroom/DarkroomCards.tsx
+        find: "strokeDasharray={saveUnknown ? UNINKED : undefined}"
+        replace: "strokeDasharray={undefined}"
+    proof: { file: src/components/darkroom/__tests__/aSaveNotYetReadIsUninked.test.tsx, test: "unread: the bookmark is uninked, and still offered" }
+
+  - id: shape-log-save-inked-unread
+    class: DATA-marks-known-from-the-pages
+    source: shape
+    edits:
+      - file: src/components/log/LogActionDeck.tsx
+        find: "strokeDasharray={saveKnown ? undefined : UNINKED}"
+        replace: "strokeDasharray={undefined}"
+    proof: { file: src/components/log/__tests__/theDeckSaysWhatItKnows.test.tsx, test: "a mark not yet read is uninked and said so; the bookmark stays pressable" }

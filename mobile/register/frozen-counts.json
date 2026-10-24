@@ -533,7 +533,6 @@
     "mobile/src/components/MarkFigure.tsx": 1,
     "mobile/src/components/atmosphere/RoomBloom.tsx": 1,
     "mobile/src/components/auth/PasswordStrengthMeter.tsx": 1,
-    "mobile/src/components/darkroom/DarkroomCards.tsx": 1,
     "mobile/src/components/film/FilmSimilar.tsx": 1,
     "mobile/src/components/home/ProjectorBeam.tsx": 1,
     "mobile/src/components/lobby/KeepOff.tsx": 1,

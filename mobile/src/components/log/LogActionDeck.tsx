@@ -42,6 +42,12 @@ interface LogActionDeckProps {
   critiqueCount: number | null;
   /** Whether this film is already in the member's watchlist. */
   filmSaved: boolean;
+  /**
+   * Whether their watchlist is held whole (marksLedger): until then a film not in it is not
+   * known to be unsaved, and its bookmark is the outline before the ink. A press is still
+   * right: a film already saved is said as saved.
+   */
+  saveKnown?: boolean;
   autopsyOpen: boolean;
   onToggleEndorse: () => void;
   onToggleAutopsy: () => void;
@@ -59,6 +65,7 @@ export default function LogActionDeck({
   certifyCount,
   critiqueCount,
   filmSaved,
+  saveKnown = true,
   autopsyOpen,
   onToggleEndorse,
   onToggleAutopsy,
@@ -141,7 +148,8 @@ export default function LogActionDeck({
                accessibilityState={{ selected: filmSaved }}
                accessibilityLabel={filmSaved ? 'Remove film from your watchlist' : 'Save film to your watchlist'}
              >
-                <Bookmark size={16} strokeWidth={2} color={filmSaved ? colors.sepia : colors.fog} fill={filmSaved ? colors.sepia : 'transparent'} />
+                <Bookmark size={16} strokeWidth={2} color={filmSaved ? colors.sepia : colors.fog} fill={filmSaved ? colors.sepia : 'transparent'}
+                  strokeDasharray={saveKnown ? undefined : UNINKED} />
                 <Text style={[s.deckLabel, filmSaved && s.deckLabelActive]} {...deckLabelProps}>{filmSaved ? 'SAVED' : 'SAVE'}</Text>
              </PressableScale>
            )}

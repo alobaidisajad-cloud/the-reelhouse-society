@@ -135,7 +135,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
 | app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-10-08 | the share captured only once the card is whole; the 20 s limit |
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
-| app/log/[id].tsx | 2026-10-23 | edited: certifiedKnown from the log's read; drawn from the phone, the heart is uninked and a press asks again |
+| app/log/[id].tsx | 2026-10-24 | edited: certifiedKnown from the log's read (drawn from the phone, the heart is uninked and a press asks again); the film's bookmark known once the ledger is held |
 | app/lounge.tsx | 2026-10-01 | true as written |
 | app/lounge/[id].tsx | 2026-10-23 | edited: the seat bar while the rank is read: a guest, asked again, nothing sold |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); a portrait without a photograph carries the whole first letter, unspoken |
@@ -618,7 +618,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/__tests__/zz-composer.gen.test.tsx | — |  |
 | src/components/log/AuteurToolkit.tsx | 2026-10-01 | histories to the present |
 | src/components/log/EditorialDesk.tsx | 2026-10-03 | edited: the pull quote names its cap |
-| src/components/log/LogActionDeck.tsx | 2026-10-23 | edited: certifyKnown: the heart uninked and said to be reading |
+| src/components/log/LogActionDeck.tsx | 2026-10-24 | edited: certifyKnown and saveKnown: a heart or a bookmark not yet read is uninked; the heart said to be reading, the bookmark still pressable |
 | src/components/log/LogAtmosphere.tsx | 2026-10-01 | the film behind the composer, said as why |
 | src/components/log/LogChronicle.tsx | 2026-10-01 | the typed card, said as why |
 | src/components/log/LogClearanceGate.tsx | 2026-10-23 | edited: the log's rope, reading: said, asked again, nothing sold |
@@ -929,6 +929,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx | 2026-10-23 | new: an edit over a record the phone has not paged in, against the strict fake |
 | src/stores/__tests__/theLedgerIsKnownWhole.test.ts | 2026-10-23 | new: the ledger against the strict fake |
 | src/stores/__tests__/aCritiqueMarkIsReadBeforeItIsDrawn.test.ts | 2026-10-24 | new: the critiques' marks against the strict fake |
+| src/components/log/__tests__/theDeckSaysWhatItKnows.test.tsx | 2026-10-24 | new: the log deck's unknown marks |
+| src/components/darkroom/__tests__/aSaveNotYetReadIsUninked.test.tsx | 2026-10-24 | new: a Darkroom poster's save while the ledger is read |
 | src/hooks/useTextScale.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
 | src/hooks/useUpdateUser.ts | 2026-10-02 | read; sound |

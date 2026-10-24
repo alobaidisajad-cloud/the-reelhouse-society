@@ -397,6 +397,8 @@ export default function LogDetailScreen() {
   // film, and keep it. The deck is presentational, so the screen owns the state
   // and hands it down — same shape as its other handlers.
   const filmSaved = useInteractionStore(st => !!st._watchlistIndex[log?.film_id ?? -1]);
+  // Known once their watchlist is held whole (marksLedger); saved is known at once.
+  const filmSaveKnown = useInteractionStore(st => !user || filmSaved || st.marksKnown === 'held');
   const addToWatchlist = useInteractionStore(st => st.addToWatchlist);
   const removeFromWatchlist = useInteractionStore(st => st.removeFromWatchlist);
 
@@ -859,6 +861,7 @@ export default function LogDetailScreen() {
             critiqueCount={commentTotal}
             autopsyOpen={autopsyOpen}
             filmSaved={filmSaved}
+            saveKnown={filmSaveKnown}
             onSavePress={handleToggleSave}
             // The store has already rolled back and said so; a rejection left
             // unhandled here would only reach the error tracker as noise.
