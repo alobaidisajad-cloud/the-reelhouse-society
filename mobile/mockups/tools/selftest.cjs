@@ -62,6 +62,30 @@ const overlaid = (image) => box('flex:1 1 0%;min-height:0',
       T('font-size:14px;line-height:18px', 'THE LINE UNDER THE LAYER', 1.35) +
     `</div></div>` +
   `<div style="position:absolute;left:0;right:0;top:0;bottom:0;background-image:${image}"></div>`);
+/**
+ * A desk: a head, a page that scrolls, and a rail under it, each its own
+ * block. The paragraph on the page is far taller than the room between them.
+ */
+const framed = () => box('flex:1 1 0%;min-height:0',
+  `<div style="height:40px;flex-shrink:0;background:#111"></div>` +
+  `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0;overflow:hidden">` +
+    `<div style="position:relative;display:flex;flex-direction:column">` +
+      T('font-size:14px;line-height:18px;width:100px', 'WORD '.repeat(300).trim(), 1.35) +
+    `</div></div>` +
+  `<div style="height:40px;flex-shrink:0;background:#111"></div>`);
+/**
+ * The same desk, with one line placed so it starts just under the rail and the
+ * scroll ends with it just under the head: covered at both ends, read in between.
+ */
+const passing = () => box('flex:1 1 0%;min-height:0',
+  `<div style="height:40px;flex-shrink:0;background:#111"></div>` +
+  `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0;overflow:hidden">` +
+    `<div style="position:relative;display:flex;flex-direction:column">` +
+      `<div style="height:770px;flex-shrink:0"></div>` +
+      T('font-size:14px;line-height:18px', 'THE LINE THAT PASSES', 1.35) +
+      `<div style="height:775px;flex-shrink:0"></div>` +
+    `</div></div>` +
+  `<div style="height:40px;flex-shrink:0;background:#111"></div>`);
 /** Two 40pt controls side by side, 10pt apart, each with the given halo toward the other. */
 const pair = (a, b) => box('flex-direction:row;padding:40px;gap:10px',
   `<div data-press="0,${a},0,0" aria-label="Earlier" style="width:40px;height:40px;flex-shrink:0"></div>` +
@@ -97,6 +121,10 @@ const CASES = {
   // a word wider than its line, in a clamp — the tagline this tool once missed
   run: [box('width:120px', T('font-size:12px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden', 'Sensational...Daring...Unforgettable')),
     ALL('RUN')],
+  // a glow's room: padded, its negative margins handing the padding back. The phone holds the
+  // text to its parent LESS its margins (wider), so the word fits; held to its parent alone,
+  // the welcome's REELHOUSE was reported 10.7pt over a line the phone gives it.
+  glowline: [box('width:200px', T('font-size:20px;line-height:24px;padding:20px;margin:-20px;--mx:-40px;text-align:center', 'ABCDEFGHIJKLMN', 1)), {}],
   // a two-line clamp in a box one line tall at large sizes — the filmography title
   cut: [box('width:110px', T('font-size:10px;line-height:13px;height:26px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden', 'In the Mood for Love', 1.2)),
     { 'ios@1.35': ['CUT'], 'ios@3.1': ['CUT'], 'android@1.35': ['CUT'], 'android@2': ['CUT'] }],
@@ -150,6 +178,12 @@ const CASES = {
   // the same through a see-through bar: the words are drawn over each other
   scrollsheer: [docked(0, 'rgba(0,0,0,0.4)'), ALL('CLASH')],
   scrollsheerclear: [docked(200, 'rgba(0,0,0,0.4)'), {}],
+  // a paragraph taller than its window: some line is covered at each end, but
+  // never the SAME line, so every line is read somewhere along the scroll
+  scrolltall: [framed(), {}],
+  // a line under the rail at the top and under the head at the end passes through
+  // the whole window between: read, so not UNDER
+  scrollpast: [passing(), {}],
   // a shade over the whole screen (the Lobby's vignette: nowhere past 0.34) hides nothing…
   scrollshade: [overlaid('radial-gradient(ellipse 72% 58% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.34) 100%)'), {}],
   // …but a layer painted with a SOLID gradient covers the words under it
@@ -335,6 +369,11 @@ const YCASES = {
     yb({ flexDirection: 'row', gap: 10 }, 'gap:10px;width:300px',
       yb({ width: 30, height: 30 }, 'width:30px;height:30px') + yb({ flex: 1 }, 'flex:1 1 0%;min-width:0', leaf(50, 10))) +
     yb({ width: 16, height: 16 }, 'width:16px;height:16px')), 0],
+  // a text's floor breaks a wrapping line: words with flex 1 and minWidth 150 go under
+  // a 70pt lead-in in a 186pt row, as Yoga lays them (a leaf keeps its width limits)
+  yogawrapfloor: [yb({ width: 186, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start' }, 'width:186px;flex-wrap:wrap;align-items:flex-start',
+    yb({ width: 70, height: 10 }, 'width:70px;height:10px') +
+    `<span data-scale-cap="0" data-rn='${JSON.stringify({ flex: 1, minWidth: 150 })}' style="position:relative;display:block;flex:1 1 0%;min-width:150px;height:40px"></span>`), 0],
   // AbsolutePercentAgainstInnerSize: 48% of the parent LESS its padding (12.72pt)
   yogaabspct: [yb({ height: 49, paddingTop: 10, paddingBottom: 12.5 }, 'height:49px;padding-top:10px;padding-bottom:12.5px',
     yb({ position: 'absolute', top: 0, left: 0, right: 0, height: '48%' }, 'position:absolute;top:0;left:0;right:0;height:12.72px')), 0],

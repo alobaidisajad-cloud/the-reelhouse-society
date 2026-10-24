@@ -285,6 +285,15 @@ export const p = StyleSheet.create({
     // Gives first (1000× the trail), down to 56pt — about nine characters, still a name.
     flexShrink: 1000, minWidth: 56,
   },
+  /** The name, the rank and the facts after the avatar, on one line: the name gives first. */
+  bylineInline: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  /** The name and the rank with no facts: the rank takes the next line where both will not fit. */
+  bylineWords: {
+    flexShrink: 1, minWidth: 0,
+    flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 6, rowGap: 4,
+  },
+  /** A name shorter than the floor: whole, and no wider than itself (the floor held MIRA at 56pt). */
+  bylineNameShort: { flexShrink: 0, minWidth: 0 },
   /** An Auteur's name in crimsonInk, the crimson for words (5.4:1). Frozen: no row allocates it. */
   bylineNameAuteur: { color: colors.crimsonInk, opacity: 1 },
   /**
@@ -367,36 +376,52 @@ export const p = StyleSheet.create({
 
   // ── the answer on a seeking post ──────────────────────────────────────────
   answer: {
-    flexDirection: 'row', gap: 8, marginTop: 16, paddingTop: 12,
+    marginTop: 16, paddingTop: 12,
     borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.25)', borderStyle: 'dashed',
   },
+  /** The answer's film and its words, beside the film's poster. */
+  answerTop: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   answerBody: {
     fontFamily: fonts.bodyItalic, fontSize: 12.5, lineHeight: 21,
     color: colors.bone, marginTop: 6,
   },
+  /** The byline and the ANSWERED stamp: one line where both fit, the stamp on its own where not. */
+  answerFoot: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 8 },
+  /** The byline gives first, as it does in a post's head: its name truncates. */
+  answerBy: { flexShrink: 1, minWidth: 0 },
+  /** At the right, level with the byline (whose own margin is below it). */
+  answerStamp: { marginLeft: 'auto', marginBottom: 8 },
 
   /**
    * ANSWERED / FILED: a struck brass plate, as the film page's REWATCHED tab
    * is. Decorative, so it never scales and never clips its corner.
    */
+  // The shadow host: the tilt and the lift. A view that clips casts no shadow on
+  // iOS, so the plate that clips the brass to its corners is the one inside.
   stamp: {
-    borderRadius: 2, paddingVertical: 4, paddingHorizontal: 8,
-    borderWidth: 1, borderColor: 'rgba(240,232,176,0.32)',
+    borderRadius: 2,
     // The -6° tilt paints outside the layout box by (h/2)·sin 6° ≈ 1pt a side;
     // 2pt of margin keeps it off the byline and the column's edge.
     marginHorizontal: 2,
-    transform: [{ rotate: '-6deg' }], overflow: 'hidden',
+    transform: [{ rotate: '-6deg' }],
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5, shadowRadius: 4, elevation: 4,
+    shadowOpacity: 0.5, shadowRadius: 4,
+  },
+  // The plate. Android lifts it here, from its own border's outline.
+  stampPlate: {
+    borderRadius: 2, paddingVertical: 4, paddingHorizontal: 8,
+    borderWidth: 1, borderColor: 'rgba(240,232,176,0.32)',
+    overflow: 'hidden', elevation: 4,
   },
   stampText: {
     fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2.2,
     color: colors.ink, includeFontPadding: false,
   },
-  /** WITHHELD is not an achievement, so it keeps the censor's crimson outline, not a plate. */
-  stampCrimson: {
+  /** WITHHELD is not an achievement, so it keeps the censor's crimson outline, not a plate, and no lift on either phone. */
+  stampCrimson: { shadowOpacity: 0 },
+  stampPlateCrimson: {
     borderColor: colors.crimson, backgroundColor: 'rgba(180,45,45,0.10)',
-    shadowOpacity: 0,
+    elevation: 0,
   },
   stampTextCrimson: { color: CRIMSON_INK },
 
@@ -573,13 +598,26 @@ export const p = StyleSheet.create({
   },
   /** The tool rail sits above the keyboard, where the writing room already puts
    *  its toolbar — outside the sheet, so the printed page stays clean. */
+  // One line where the tools and the count fit; on a narrow phone at a large size
+  // the count takes a line of its own at the right, whole, instead of breaking.
   rail: {
-    flexDirection: 'row', alignItems: 'center', gap: 16,
+    flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 16, rowGap: 8,
     paddingHorizontal: 16, paddingVertical: 12,
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
     backgroundColor: colors.ink,
   },
   rl: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.bone, includeFontPadding: false },
+  /**
+   * A desk's lead-in (SEEKING —) and the words typed after it. Beside it while the
+   * words keep three to a line; under it, across the column, where they would
+   * not (a narrow phone, a large size): beside it there they ran two words a line.
+   */
+  leadRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start' },
+  // The floor is what breaks the line: Yoga wraps an item by its basis held to its
+  // minWidth (flex 1's basis alone is 0, and never would).
+  leadBody: { flex: 1, minWidth: 150 },
+  /** The count, at the rail's right end, on whichever line it lands. */
+  railCount: { marginLeft: 'auto' },
   kbd: { ...EDGE_LIT,
     height: 210, backgroundColor: colors.keyWell,
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',

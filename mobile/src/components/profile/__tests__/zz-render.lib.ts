@@ -160,11 +160,12 @@ export function css(raw: Record<string, unknown>, isText: boolean): string {
     }
     // RN's alignContent is flex-start; CSS's `normal` stretches a wrapping box's lines.
     out.push('display:flex', `flex-direction:${(st.flexDirection as string) || 'column'}`, 'align-content:flex-start');
-    // Its side margins, which the harness takes off the column's width when it
-    // holds a box to that width (see RN_RULES in mockups/tools/harness.cjs).
-    const mx = [st.marginLeft, st.marginRight].reduce<number>((a, m) => a + (typeof m === 'number' ? m : 0), 0);
-    if (mx) out.push(`--mx:${mx}px`);
   }
+  // Its side margins, which the harness takes off the parent's width when it holds
+  // a box or a text to that width (see RN_RULES in mockups/tools/harness.cjs). A
+  // negative margin (a glow's room) WIDENS a text's line, as it does on the phone.
+  const mx = [st.marginLeft, st.marginRight].reduce<number>((a, m) => a + (typeof m === 'number' ? m : 0), 0);
+  if (mx) out.push(`--mx:${mx}px`);
 
   // The legacy shadow (the brass glow under a count, the altarpiece's lift).
   const sc = st.shadowColor as string | undefined;
@@ -501,7 +502,8 @@ function placeInside(st: Record<string, unknown>, frame: Frame | undefined): Rec
   return out;
 }
 
-export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): string {
+/** `textCap`: the cap of the Text this node stands in, if any (a nested Text takes its scaling). */
+export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false, textCap?: number): string {
   // The top of a render: modals found anywhere inside are drawn after it, each
   // as its own layer over the whole phone (see `Modal` below).
   if (!opts.layers) {
@@ -512,7 +514,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
   if (node === null || node === undefined) return '';
   if (typeof node === 'string') return esc(node);
   if (typeof node === 'number') return String(node);
-  if (Array.isArray(node)) return node.map((c) => toHtml(c, opts, inSvg)).join('');
+  if (Array.isArray(node)) return node.map((c) => toHtml(c, opts, inSvg, textCap)).join('');
 
   const n = node as N;
   const t = String(n.type || '');
@@ -530,7 +532,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
   }
   // A capture run's SrcMark (jest.setup.ts) is not a box: its source line goes onto its child.
   if (t === 'SrcMark') {
-    const inner = (n.children || []).map((c) => toHtml(c, opts, inSvg)).join('');
+    const inner = (n.children || []).map((c) => toHtml(c, opts, inSvg, textCap)).join('');
     return typeof p.src === 'string' ? inner.replace(/^<(\w+)/, `<$1 data-src="${esc(p.src)}"`) : inner;
   }
   // `rn` is the style as React Native has it — what the Yoga check reads.
@@ -685,10 +687,13 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
         ? `;display:-webkit-box;-webkit-line-clamp:${lines};-webkit-box-orient:vertical;overflow:hidden`
         : '';
     // Each Text's own growth cap (1 = frozen, 0 = none; RN scales by default), for
-    // measuring at accessibility sizes.
-    const cap = p.allowFontScaling === false
-      ? 1
-      : (typeof p.maxFontSizeMultiplier === 'number' ? p.maxFontSizeMultiplier : 0);
+    // measuring at accessibility sizes. A Text inside another scales as its parent
+    // does: React Native drops a nested allowFontScaling, and a nested Text with no
+    // maxFontSizeMultiplier takes the parent's.
+    const own = typeof p.maxFontSizeMultiplier === 'number' ? p.maxFontSizeMultiplier : undefined;
+    const cap = textCap === undefined
+      ? (p.allowFontScaling === false ? 1 : own ?? 0)
+      : textCap === 1 ? 1 : own ?? textCap;
     // And its shrink floor, as CSS has no adjustsFontSizeToFit: the audit models it.
     const fit = p.adjustsFontSizeToFit === true
       ? (typeof p.minimumFontScale === 'number' ? p.minimumFontScale : 0.5)
@@ -700,7 +705,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false): str
     // The harness holds text to its parent's width, but a Text with its OWN width keeps
     // it, as in Yoga (the ticket's rotated ADMIT ONE is 96pt in a 42pt stub).
     const ownWidth = st.width !== undefined && st.width !== null && st.width !== 'auto' ? ';max-width:none' : '';
-    return `<span${capAttr}${a11yAttr(p)}${rnAttr(rn)} style="${css(st, true)}${clamp}${ownWidth}">${(n.children || []).map((c) => toHtml(c, opts, inSvg)).join('')}</span>`;
+    return `<span${capAttr}${a11yAttr(p)}${rnAttr(rn)} style="${css(st, true)}${clamp}${ownWidth}">${(n.children || []).map((c) => toHtml(c, opts, inSvg, cap)).join('')}</span>`;
   }
   if (t === 'ActivityIndicator') return '<div class="spinner"></div>';
 

@@ -53,9 +53,25 @@ describe('the ceiling', () => {
     expect(hostProps(<Text allowFontScaling={false}>STAMP</Text>).allowFontScaling).toBe(false);
   });
 
-  it('a nested text is housed too', () => {
-    const t = render(<Text>Outer <Text>inner</Text></Text>);
-    expect(hosts(t.toJSON(), 'Text').map((e) => e.props.maxFontSizeMultiplier)).toEqual([1.35, 1.35]);
+  // React Native drops a nested allowFontScaling and gives a nested Text with no
+  // maxFontSizeMultiplier its parent's: the house's on it outgrew a frozen or lower-capped line.
+  it('a nested text takes its parent\'s scaling, and nothing of the house\'s', () => {
+    const cases: [object, [boolean, number]][] = [
+      [{ maxFontSizeMultiplier: 1.2 }, [true, 1.2]],
+      [{ allowFontScaling: false }, [false, 1.35]],
+      [{}, [true, 1.35]],
+    ];
+    for (const [outer, housed] of cases) {
+      const ui = <Text {...outer}>Outer <Text>inner</Text></Text>;
+      const o = hostProps(ui, 0);
+      const i = hostProps(ui, 1);
+      expect([o.allowFontScaling, o.maxFontSizeMultiplier]).toEqual(housed);
+      expect([i.allowFontScaling, i.maxFontSizeMultiplier]).toEqual([undefined, undefined]);
+    }
+  });
+
+  it('a nested text\'s own ceiling is still its own', () => {
+    expect(hostProps(<Text>Outer <Text maxFontSizeMultiplier={1.1}>inner</Text></Text>, 1).maxFontSizeMultiplier).toBe(1.1);
   });
 
   it('TextInput and AnimatedText keep it as well', () => {
@@ -87,6 +103,15 @@ describe("Android's letter spacing, drawn as iOS draws it", () => {
     expect(hostProps(<Text style={style}>IOS</Text>).style).toBe(style);
     onAndroid();
     expect(hostProps(<Text style={style} allowFontScaling={false}>FROZEN</Text>).style).toBe(style);
+  });
+
+  it('a nested label is corrected as its parent scales: halved in a growing line, as written in a frozen one', async () => {
+    onAndroid();
+    await setFontScale(2);
+    const inner = (outer: object) =>
+      StyleSheet.flatten(hostProps(<Text {...outer}>No. <Text style={{ letterSpacing: 2.2 }}>214</Text></Text>, 1).style).letterSpacing;
+    expect(inner({})).toBe(1.1);
+    expect(inner({ allowFontScaling: false })).toBe(2.2);
   });
 });
 

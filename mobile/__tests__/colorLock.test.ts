@@ -26,7 +26,6 @@ const EXEMPT = [
   'src/theme/theme.ts',
   'src/components/MasterLogo.tsx',
   'src/components/Buster.tsx',
-  'src/components/ReelEyeIcon.tsx',
   'src/components/darkroom/constants.ts',
   'src/constants/formats.ts',
   'src/components/profile/TasteDNAExportCanvas.tsx',

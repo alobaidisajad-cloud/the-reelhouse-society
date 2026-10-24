@@ -391,6 +391,23 @@ describe('9 — numberOfLines, which is how the app stops overflow', () => {
   });
 });
 
+describe('a nested Text scales as its parent does', () => {
+  const caps = (outer: Record<string, unknown>, inner: Record<string, unknown>) =>
+    [...toHtml({ type: 'Text', props: outer, children: ['No.', { type: 'Text', props: inner, children: ['214'] }] })
+      .matchAll(/data-scale-cap="([^"]*)"/g)].map((m) => Number(m[1]));
+
+  it('frozen in a frozen line, whatever it asks for: React Native drops a nested allowFontScaling', () => {
+    expect(caps({ allowFontScaling: false }, {})).toEqual([1, 1]);
+    expect(caps({ allowFontScaling: false }, { allowFontScaling: true, maxFontSizeMultiplier: 1.35 })).toEqual([1, 1]);
+  });
+
+  it('the parent\'s cap where it sets none, its own where it does', () => {
+    expect(caps({ maxFontSizeMultiplier: 1.2 }, {})).toEqual([1.2, 1.2]);
+    expect(caps({ maxFontSizeMultiplier: 1.2 }, { maxFontSizeMultiplier: 1.1 })).toEqual([1.2, 1.1]);
+    expect(caps({}, { allowFontScaling: false })).toEqual([0, 0]);
+  });
+});
+
 describe('an Svg on each platform', () => {
   it('draws its root as an svg whichever host the platform renders it as, the same on both', () => {
     // On Android react-native-svg's root is RNSVGSvgViewAndroid; drawn as a box it painted nothing.

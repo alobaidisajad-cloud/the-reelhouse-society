@@ -213,8 +213,10 @@ whenRendering('composer generator', () => {
     writeScreen(name, html);
     console.log(`WROTE ${name}: ${html.length} bytes`);
     // Something was drawn, and it has a control to measure — the signed-out
-    // page is one sentence and one way in, so size alone says nothing.
-    expect(html.length).toBeGreaterThan(1500);
+    // page is one sentence and one way in, so size alone says nothing: its own
+    // floor is that sentence and its door (1,339 bytes as drawn), not a form's.
+    expect(html.length).toBeGreaterThan(name === 'composer-signedout' ? 1000 : 1500);
+    if (name === 'composer-signedout') expect(html).toContain('IDENTIFY YOURSELF');
     expect(html).toContain('data-press=');
   });
 });

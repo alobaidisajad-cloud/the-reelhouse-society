@@ -3,39 +3,70 @@
  * logo (MasterLogo), never a stand-in eye.
  *
  * The Take Your Rank banner drew ReelEyeIcon, the tab bar's simplified eye, and
- * the Lounge's gate drew lucide's Eye. Each now draws MasterLogo. The finder
- * reads every file's imports: ReelEyeIcon, or Eye from lucide-react-native, is
- * kept only where an icon is meant, each place listed with its reason (Buster's
- * own Eye is his, and is never read as lucide's).
+ * the Lounge's gate drew lucide's Eye. Each now draws MasterLogo, and the Lobby
+ * tab wears the logo's own small cut; the drawn eye is gone. The finder reads
+ * every file's imports: ReelEyeIcon, or Eye from lucide-react-native, is kept
+ * only where an icon is meant, each place listed with its reason (Buster's own
+ * Eye is his, and is never read as lucide's).
  */
 import React from 'react';
+import { spawnSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { join, relative } from 'path';
+import { pathToFileURL } from 'url';
 import * as ts from 'typescript';
 import { files as universe } from '@/test-utils/universe';
 import { render } from '@testing-library/react-native';
 import { RankBill } from '../lobby/RankBill';
 import { planWall } from '../lobby/measure';
-import { MOBILE } from '@/test-utils/readCode';
+import { MOBILE, readCode } from '@/test-utils/readCode';
 
 jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useRouter: () => ({ push: jest.fn() }) }));
 // Each drawn as a marked stand-in, so the banner's render can be counted.
 jest.mock('../MasterLogo', () => ({ MasterLogo: () => require('react').createElement(require('react-native').View, { testID: 'master-logo' }) }));
-jest.mock('../ReelEyeIcon', () => ({ ReelEyeIcon: () => require('react').createElement(require('react-native').View, { testID: 'reel-eye' }) }));
 
 describe('the Take Your Rank banner', () => {
   const plan = planWall({ width: 390, visible: 844, scale: 1, lineScale: 1 });
 
-  it.each([null, 'archivist'] as const)('draws the house\'s logo and no stand-in eye (viewer %s)', (viewer) => {
+  it.each([null, 'archivist'] as const)('draws the house\'s logo (viewer %s)', (viewer) => {
     const r = render(<RankBill plan={plan} viewer={viewer} />);
     expect(r.queryAllByTestId('master-logo', { includeHiddenElements: true })).toHaveLength(1);
-    expect(r.queryAllByTestId('reel-eye', { includeHiddenElements: true })).toHaveLength(0);
+  });
+});
+
+/** The alpha of every pixel of a PNG, read by the repo's own reader in a Node of its own (jest cannot load an ES module here). */
+function alphaOf(file: string): { width: number; height: number; alpha: number[] } {
+  const code = `const m = await import(${JSON.stringify(pathToFileURL(join(MOBILE, 'e2e/png.mjs')).href)});`
+    + `const p = m.decodePng(require('fs').readFileSync(${JSON.stringify(file)}));`
+    + 'console.log(JSON.stringify({ width: p.width, height: p.height, alpha: [...p.pixels].filter((_, i) => i % 4 === 3) }));';
+  const r = spawnSync(process.execPath, ['--input-type=module', '-e', `import { createRequire } from 'module'; const require = createRequire(import.meta.url); ${code}`], { encoding: 'utf8' });
+  if (r.status !== 0) throw new Error(r.stderr);
+  return JSON.parse(r.stdout);
+}
+
+describe('the Lobby tab', () => {
+  it('wears the house\'s eye, tinted as the other tabs are', () => {
+    const src = readCode('app/(tabs)/_layout.tsx');
+    expect(src).toContain("require('../../assets/images/reelhouse-eye.png')");
+    expect(src).toMatch(/<Image source=\{HOUSE_EYE\}[^>]*tintColor=\{iconColor\}/);
+  });
+
+  // The logo's small cut on a clear ground: the tab tints whatever is not clear,
+  // so a ground left in would light as a solid block, and a mark keyed away would
+  // light as nothing.
+  it('is the mark on a clear ground', () => {
+    const { width, height, alpha } = alphaOf(join(MOBILE, 'assets/images/reelhouse-eye.png'));
+    const at = (x: number, y: number) => alpha[y * width + x];
+    expect([at(0, 0), at(width - 1, 0), at(0, height - 1), at(width - 1, height - 1)]).toEqual([0, 0, 0, 0]);
+    // A third of it is inked (more than half opaque): an eye drawn in line, its reel's holes clear.
+    const ink = alpha.filter((a) => a > 127).length / alpha.length;
+    expect(ink).toBeGreaterThan(0.2);
+    expect(ink).toBeLessThan(0.5);
   });
 });
 
 /** Where a stand-in eye is meant, and why. */
 const KEPT: Record<string, string> = {
-  'app/(tabs)/_layout.tsx': 'the Lobby tab\'s icon: 26 points, recoloured when chosen',
   'src/components/log/LogForm.tsx': 'the log form\'s "watched" status icon',
   'src/features/settings/SettingsSections.tsx': 'the PRIVACY section\'s head icon',
 };

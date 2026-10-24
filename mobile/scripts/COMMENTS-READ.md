@@ -13,7 +13,7 @@ without one). "Read" is the day its comments were last read against its code.
 |---|---|---|
 | __tests__/animationMockCoverage.test.ts | 2026-10-22 | edited: every name the app imports from Reanimated is in the mock, hooks and all; the entrances are Arrive's own values; the layout transitions remain |
 | __tests__/backendContract.test.ts | 2026-10-16 | edited: the tables and buckets read from the code, those passed through the export's and the import's helpers included |
-| __tests__/colorLock.test.ts | 2026-10-15 | edited: the app universe (test-utils/universe.js), its .js files included |
+| __tests__/colorLock.test.ts | 2026-10-24 | edited: the drawn eye's file left the exempt list with the file |
 | __tests__/components/feed/ActivityCard.test.tsx | 2026-10-01 | the poster says its film; the card lies flat |
 | __tests__/deletionIntegrity.test.ts | — |  |
 | __tests__/integration/errorBoundaryRecovery.test.tsx | — |  |
@@ -111,16 +111,16 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/notifications-modal.tsx | 2026-10-15 | handle's top from useModalTop; foot from useContentBottom |
 | app/(modals)/search-modal.tsx | 2026-10-15 | header top from useModalTop; foot from useContentBottom |
 | app/(modals)/social-modal.tsx | 2026-10-15 | handle's top from useModalTop; foot from useContentBottom |
-| app/(tabs)/_layout.tsx | 2026-10-22 | read whole: the navigator is handed TABS_HOME, the Lobby its first tab and where Back lands (the unstable_settings line reached only the link parser); each tab's own button draws its icon; no tabBarIcon |
+| app/(tabs)/_layout.tsx | 2026-10-24 | edited: the Lobby tab wears the house's eye, the logo's small cut on a clear ground, tinted as the other tabs are |
 | app/(tabs)/darkroom.tsx | 2026-10-22 | edited: the empty room's line in the house italic face, its note above the colour it explains |
 | app/(tabs)/dispatch.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
-| app/(tabs)/index.tsx | 2026-10-15 | edited: the Lobby's read; the wall and the welcome end above the tab bar (useTabContentBottom); the welcome's scroll begins at the screen's top |
+| app/(tabs)/index.tsx | 2026-10-24 | edited: the welcome's hairline row runs across the page, as the phone lays it |
 | app/(tabs)/lounge.tsx | 2026-10-23 | edited: reading until the salons have answered once (loungesRead): its first frame came before its read began; the corridor reads the salons' own flag (loungesLoading), not one a room's read lowered; the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/(tabs)/profile.tsx | 2026-10-15 | centred states in a CentredRoom: between the bars, and scrolled when taller; the bar clear on arrival before the file |
 | app/(tabs)/reels.tsx | 2026-10-23 | edited: the page's wash kept as a texture while the Reel is in front; following nobody only of a list read: an unread follow list spools, a failed one says so and reads it again (both reels); the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/+not-found.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
 | app/auth-callback.tsx | 2026-10-22 | edited: a spent link raised in Supabase's own words, so the member reads the house's sentence |
-| app/dispatch/[id].tsx | 2026-10-24 | edited: each critique told whether its mark is known |
+| app/dispatch/[id].tsx | 2026-10-24 | edited: the share card is exported at SHARE_CARD_WIDTH |
 | app/dispatch/archive.tsx | 2026-10-15 | foot from useContentBottom |
 | app/dispatch/compose.tsx | 2026-10-15 | header and door from useModalTop; feet from navMetrics; the essay's footer never on the edge |
 | app/dispatch/room/[username].tsx | 2026-10-15 | foot from useContentBottom, scrollbar from useBottomEdge |
@@ -259,39 +259,39 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-16 | edited: Stryker's sandbox (.stryker-tmp) is never read as tests or modules |
-| jest.setup.ts | 2026-10-23 | edited: @react-navigation/native mocked with the one base every test's own mock spreads; expo-router mocked with the one base every test's own mock spreads; useFrameCallback kept, not run, for a test to hand it frames; expo-image's getCachePathAsync answers null, as native does for a picture not on disk |
+| jest.setup.ts | 2026-10-24 | edited: React Native's Text stand-in tells the Texts inside it they are nested, as the real one does |
 | jest.stryker.config.js | 2026-10-16 | new: the tests' config in Stryker's own process, its environment by its whole path |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
 | mockups/paper/__tests__/zz-badge.gen.test.tsx | 2026-09-29 | described the real badge as it was at one commit (brass ramp); now says A is whatever RankBadge is |
 | mockups/paper/__tests__/zz-choices.gen.test.tsx | 2026-09-29 | a kept proposal: its 'recommendation' was not what shipped, and 'today' described a desk since replaced; both now say so; stale hex values dropped |
-| mockups/paper/__tests__/zz-cover.gen.test.tsx | 2026-09-29 | a design record: its present-tense claims about the app were true only when drawn; now said as such |
-| mockups/paper/__tests__/zz-drafts.gen.test.tsx | 2026-09-29 | true as written |
+| mockups/paper/__tests__/zz-cover.gen.test.tsx | 2026-10-24 | edited: its plates written through writeScreen, measured with the screens |
+| mockups/paper/__tests__/zz-drafts.gen.test.tsx | 2026-10-24 | edited: its plates written through writeScreen, measured with the screens |
 | mockups/paper/__tests__/zz-final.gen.test.tsx | 2026-09-29 | called itself 'the final look' but draws the design before it shipped (RankBadge's wash differs); the paywall line it argued against is long gone |
-| mockups/paper/__tests__/zz-memberroom.gen.test.tsx | 2026-09-29 | 1 finding |
-| mockups/paper/__tests__/zz-paper.gen.test.tsx | 2026-10-23 | edited: b4b: the member's marks not read yet, the stamps uninked and the ballot's boxes unlinked; the bar's room is the tab's content top |
+| mockups/paper/__tests__/zz-memberroom.gen.test.tsx | 2026-10-24 | edited: its plate written through writeScreen, measured with the screens |
+| mockups/paper/__tests__/zz-paper.gen.test.tsx | 2026-10-24 | edited: its plates written through writeScreen; the share card drawn at its own width; the picker and the stranger's empty page drawn as the app shows them |
 | mockups/paper/__tests__/zz-proposals.gen.test.tsx | 2026-09-29 | a design record: its present-tense claims about the app were true only when drawn; now said as such |
 | mockups/paper/__tests__/zz-rank.gen.test.tsx | 2026-09-29 | a design record: its present-tense claims about the app were true only when drawn; now said as such |
-| mockups/paper/__tests__/zz-room.gen.test.tsx | 2026-09-29 | 1 finding |
-| mockups/paths.ts | 2026-09-29 | 6 findings; LARGE's JSDoc carried the layout rule, split to LAYOUTS |
+| mockups/paper/__tests__/zz-room.gen.test.tsx | 2026-10-24 | edited: its plate written through writeScreen, measured with the screens |
+| mockups/paths.ts | 2026-10-24 | edited: writeScreen writes only when a drawing was asked for |
 | mockups/README.md | 2026-10-15 | edited: CI splits the capture run in three, and keeps --require over the three together |
 | mockups/srcMark.ts | 2026-09-29 | an example path that names no file reworded |
 | mockups/tabs/__tests__/zz-dispatch.gen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); true as written |
-| mockups/tabs/__tests__/zz-lobby.gen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); true as written |
+| mockups/tabs/__tests__/zz-lobby.gen.test.tsx | 2026-10-24 | edited: the welcome drawn, nobody signed in; every state drawn again once settled |
 | mockups/tabs/__tests__/zz-reel.gen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); true as written |
 | mockups/tabs/__tests__/zz-rooms.gen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the salons' flag by its own name; the Lounge drawn from rooms in the store's own shape, two doors side by side |
 | mockups/tabs/__tests__/zz-settings.gen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); true as written |
 | mockups/tabs/flashListMock.tsx | 2026-10-01 | rows handed extraData, as FlashList does |
 | mockups/tools/drawn.cjs | 2026-10-03 | read whole: controls counted through stripComments.js |
 | mockups/tools/face-advances.cjs | 2026-10-03 | edited: writes a hidden key as its escape |
-| mockups/tools/harness.cjs | 2026-09-28 | 5 findings; the header's middle sentence was garbled by an insertion; open() said 1.35 was the most a word grows (uncapped grows to 3.1) |
-| mockups/tools/layout.cjs | 2026-10-16 | edited: a one-line text is measured by its box less its padding: a title's glow room holds no letters; the --require promise kept by required.cjs, which the split capture run's verdict shares |
+| mockups/tools/harness.cjs | 2026-10-24 | edited: a text is held to its parent less its own margins |
+| mockups/tools/layout.cjs | 2026-10-24 | edited: UNDER walks the scroll and judges each line; a line is hidden only if no position shows it |
 | mockups/tools/contrast.cjs | 2026-10-22 | edited: a screen that drew no words is passed over, not photographed at no height |
 | mockups/tools/quote-ink.cjs | 2026-10-15 | new: the quote marks' outline, read from the font file; exports its marks; theQuoteMarkIsTheFontsOwn holds the Lobby's copy to them |
 | mockups/tools/required.cjs | 2026-10-15 | new: the --require promise, one definition for layout.cjs and jest-shards.cjs |
-| mockups/tools/selftest.cjs | 2026-10-16 | edited: layout.cjs writing no report ends the self-test in its own words |
-| mockups/tools/shoot.cjs | 2026-09-29 | true as written |
-| mockups/tools/yoga-parity.cjs | 2026-09-28 | 3 findings; the header claimed an iPhone point grid while the code sets none (setPointScaleFactor 0); the build() JSDoc sat above the config |
+| mockups/tools/selftest.cjs | 2026-10-24 | edited: a glow's negative margin widens its line (glowline); a paragraph taller than its window (scrolltall) and a line read between the scroll's ends (scrollpast) are not UNDER; a text's floor breaks a wrapping line in Yoga (yogawrapfloor) |
+| mockups/tools/shoot.cjs | 2026-10-24 | edited: --width, so a shot shows the width that was measured |
+| mockups/tools/yoga-parity.cjs | 2026-10-24 | edited: a leaf keeps its width and height limits in Yoga; a minWidth is what breaks a wrapping line |
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
 | register/classes.yaml | 2026-10-16 | edited: the E2E judges' classes, each with the test that refuses its bad log; the store call's limit among the request class's tests |
 | register/mutants.yaml | 2026-10-16 | new: every mutant, past, new-shape and judge, each with its class and the test that must fail on it |
@@ -352,7 +352,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
 | src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: the lids lie beside the picture, outside the points’ layer, over the whole figure; the still one shows whole |
 | src/components/__tests__/busterRegister.test.ts | 2026-10-23 | edited: the salon's Buster also says its words being read, or not read; its files come from the shared file list (test-utils/universe.js) |
-| src/components/__tests__/theHouseSignsWithItsLogo.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/components/__tests__/theHouseSignsWithItsLogo.test.tsx | 2026-10-24 | edited: the Lobby tab wears the logo's small cut, on a clear ground (read by e2e/png.mjs); no stand-in eye is kept there |
 | src/components/__tests__/theInitiationLeavesAfterItsFade.test.tsx | 2026-10-15 | new: a beat and the door leave after their fade |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
 | src/components/Arrive.tsx | 2026-10-22 | edited: passes a view's own props; its style may move too; rise's sign said |
@@ -480,21 +480,21 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
 | src/components/dispatch/FilingRow.tsx | 2026-10-23 | edited: whether the member's certify and save on its filing are read, from the store; read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperBallot.tsx | 2026-10-23 | edited: voteKnown: unread, its boxes unlinked and its options locked; the stamps' known passed on; docked, the ballot draws no row of marks of its own |
-| src/components/dispatch/paper/PaperComposer.tsx | 2026-10-15 | head top from useModalTop |
+| src/components/dispatch/paper/PaperComposer.tsx | 2026-10-24 | edited: the words go under the lead-in where three would not fit beside it; the rail's count at its right end |
 | src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-24 | edited: a critique's heart, its mark unread: uninked, said to be reading, not pressable |
-| src/components/dispatch/paper/PaperDesk.tsx | 2026-10-15 | DeskHead top from useModalTop |
+| src/components/dispatch/paper/PaperDesk.tsx | 2026-10-24 | edited: the ballot's question as the composer's words; the rails' counts at their right ends |
 | src/components/dispatch/paper/PaperDeskDoc.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperEssay.tsx | 2026-10-04 | edited: the raised initial is extractDropCap’s |
 | src/components/dispatch/paper/PaperFill.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperFrame.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperKeyWell.tsx | 2026-10-15 | keeps the home indicator's edge while the keyboard is down |
-| src/components/dispatch/paper/paperMetrics.ts | 2026-10-02 | Read in the launch audit: issueOf counts calendar days (summer-time bug). |
-| src/components/dispatch/paper/PaperMore.tsx | 2026-10-23 | edited: the picker's locked label, reading: said, asked again |
+| src/components/dispatch/paper/paperMetrics.ts | 2026-10-24 | edited: SHARE_CARD_WIDTH, the width the share card is set and exported at |
+| src/components/dispatch/paper/PaperMore.tsx | 2026-10-24 | edited: a salon card has no halo; the share card has one shape and its own room (the unused ratios and max gone); the story frame takes the card's width |
 | src/components/dispatch/paper/paperMotion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperPerf.ts | 2026-10-15 | edited: memory-disk on every image, held by its guard; no image sets a priority, so the backdrop rule is gone |
-| src/components/dispatch/paper/PaperPost.tsx | 2026-10-23 | edited: UNINKED taken from the theme |
+| src/components/dispatch/paper/PaperPost.tsx | 2026-10-24 | edited: the stamp's lift from a host that does not clip; the answer signed under the whole letter, the stamp on its own line where the byline's is full; a short name takes no floor; with no facts, the rank takes the next line where name and rank will not fit one |
 | src/components/dispatch/paper/PaperStrike.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/dispatch/paper/paperStyles.ts | 2026-10-23 | edited: boxUnread: a ballot box whose mark is still being read, unlinked; the masthead title's glow has room inside the box a phone cuts it at |
+| src/components/dispatch/paper/paperStyles.ts | 2026-10-24 | edited: the stamp's host and plate; the answer's foot; a byline's words wrap when it has no facts; a short byline name; the rail wraps its count; a desk's lead-in row, broken by the words' floor |
 | src/components/dispatch/paper/paperText.ts | 2026-10-22 | edited: counted() now lives in src/utils/counted.ts; this file passes it on |
 | src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
 | src/components/dispatch/roomLink.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -615,7 +615,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/__tests__/theNoteSheetOffersOnlyWhatIsReal.test.tsx | — |  |
 | src/components/log/__tests__/theVaultBelongsToItsViewing.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/log/__tests__/theVaultSaysWhenItCouldNotOpen.test.tsx | 2026-10-01 | written: the Vault on the record, when it could not open |
-| src/components/log/__tests__/zz-composer.gen.test.tsx | — |  |
+| src/components/log/__tests__/zz-composer.gen.test.tsx | 2026-10-24 | read whole: the signed-out page is held to its own floor, its sentence and its door |
 | src/components/log/AuteurToolkit.tsx | 2026-10-01 | histories to the present |
 | src/components/log/EditorialDesk.tsx | 2026-10-03 | edited: the pull quote names its cap |
 | src/components/log/LogActionDeck.tsx | 2026-10-24 | edited: certifyKnown and saveKnown: a heart or a bookmark not yet read is uninked; the heart said to be reading, the bookmark still pressable |
@@ -734,8 +734,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/zz-art.gen.ts | — |  |
 | src/components/profile/__tests__/zz-memberfile.gen.test.tsx | — |  |
 | src/components/profile/__tests__/zz-mockup.gen.test.tsx | — |  |
-| src/components/profile/__tests__/zz-render.lib.test.ts | — |  |
-| src/components/profile/__tests__/zz-render.lib.ts | 2026-09-28 | 35 findings; the RN-vs-CSS differences kept as short present-tense rules, the story of each bug left to history |
+| src/components/profile/__tests__/zz-render.lib.test.ts | 2026-10-24 | edited: a nested Text scales as its parent does |
+| src/components/profile/__tests__/zz-render.lib.ts | 2026-10-24 | edited: a text carries its side margins (--mx); a nested Text is drawn with its parent's scaling, through source marks too |
 | src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
 | src/components/profile/ArchiveLock.tsx | 2026-10-15 | enters and leaves as a PresenceView |
 | src/components/profile/AvatarCropSheet.tsx | 2026-10-15 | enters and leaves as a PresenceView; foot from useSheetBottom |
@@ -768,7 +768,6 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/tasteMatchRead.ts | 2026-10-03 | Written with the Taste Match client: the read of both members' whole-record shapes, and the comparison the card shows. |
 | src/components/profile/WatchlistRoulette.tsx | 2026-10-15 | a mid-spin close stops the spin; opens filmId; nav; the card in a CentredCard, its ground behind it |
 | src/components/RankBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/ReelEyeIcon.tsx | 2026-10-02 | Read (launch audit): artwork. Left alone. |
 | src/components/reels/sectionLayers.ts | 2026-10-16 | new: read against reels.tsx's two layers and the film tray's run 38790116312 |
 | src/components/reels/__tests__/MemberRegistry.select.test.ts | 2026-10-01 | no comments |
 | src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -798,9 +797,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/SpoilerVeil.tsx | 2026-10-01 | veiled from the first frame |
 | src/components/StandingNotice.tsx | 2026-10-15 | stands above the offline plate (useOverlayBottom) |
 | src/components/text/__tests__/aCutLabelIsHeard.test.tsx | 2026-10-17 | new |
-| src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | — |  |
+| src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | 2026-10-24 | edited: a nested text takes its parent's scaling; a nested label's spacing follows its parent |
 | src/components/text/AnimatedText.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/text/index.tsx | 2026-10-17 | read whole; edited: the fifth promise, a cut said in the E2E build by a Text that may cut itself |
+| src/components/text/index.tsx | 2026-10-24 | edited: a nested Text takes nothing of the house's and scales as its parent does; a frozen Text tells the Texts inside it |
 | src/components/theme/__tests__/oneBrassSheen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); written whole: the sheen sweeps only in front, and both plates draw it |
 | src/components/theme/BrassSheen.tsx | 2026-10-03 | written whole: the one sheen both brass plates draw; still behind another tab and under Reduce Motion |
 | src/components/theme/CrestGlow.tsx | 2026-10-01 | the leak note to what it does |
@@ -969,7 +968,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lore/fragments.ts | 2026-10-02 | Read whole in the launch audit: the false 'Ledger is encrypted' line replaced. |
 | src/providers/__tests__/androidTracking.test.ts | — |  |
 | src/providers/__tests__/theMissingSettingsAreNamed.test.ts | 2026-10-02 | Written in the launch audit: the missing-settings message, one line each. |
-| src/providers/androidTracking.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/providers/androidTracking.ts | 2026-10-24 | edited: a nested Text scales as its parent does, so its spacing is corrected as the parent grows |
 | src/providers/AppBootstrapper.tsx | 2026-10-23 | edited: launch asks for the marks ledger beside the follow list |
 | src/providers/FilmDetailProvider.tsx | 2026-10-23 | edited: marksUnknown and rereadMarks |
 | src/schemas/__tests__/aFeedRowWithANullIsStillDrawn.test.ts | 2026-10-01 | written with the null-status fix |
@@ -1139,7 +1138,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/everyStyleIsRead.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/lightFloor.test.ts | — |  |
 | src/theme/__tests__/nothingOvershoots.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/theme/__tests__/theGroundLadder.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/theGroundLadder.test.ts | 2026-10-24 | edited: the drawn eye's file left the art list with the file |
 | src/theme/__tests__/theLightIsReadable.test.ts | 2026-10-08 | written: every light gradient read back through React Native's own parser |
 | src/theme/__tests__/theRoomIsLit.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -1466,3 +1465,4 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aReadIsKeyedOnWhoNotTheObject.guard.test.ts | 2026-10-23 | new: every hook keyed on the auth user object judged no read; a new one fails |
 | src/utils/profileRead.ts | 2026-10-23 | whether the member's profile has been read: its own columns on the user, never the auth user alone |
 | src/components/lounge/__tests__/theRoomIsAskedForOnce.test.tsx | 2026-10-23 | edited: the store as it now is: the room open, its own flags; new: the room and roster asked once while the session settles, again for another member |
+| src/utils/__tests__/everyDrawingIsMeasured.guard.test.ts | 2026-10-24 | written: every drawing of the app lands where CI measures it |

@@ -19,7 +19,8 @@ const RAW = readFixture<Record<string, string>>('lobby-art.json');
 const posters: Record<string, { title: string; data: string }> = {};
 for (const [p, data] of Object.entries(RAW)) if (data) posters[p] = { title: '', data };
 
-let mockViewer: Record<string, unknown> = { id: 'me', username: 'kane', role: 'user', tier: null, preferences: {} };
+/** The member reading the Lobby; null, nobody signed in, and the Lobby is the house's welcome. */
+let mockViewer: Record<string, unknown> | null = { id: 'me', username: 'kane', role: 'user', tier: null, preferences: {} };
 
 jest.mock('expo-router', () => ({
   ...require('@/test-utils/expoRouterMock').expoRouterMock(),
@@ -51,7 +52,7 @@ jest.mock('@/src/lib/supabase', () => {
   return { supabase: { from: () => chain, rpc: () => chain, channel: () => ({ on: () => ({ subscribe: () => ({}) }) }), removeChannel: jest.fn() } };
 });
 jest.mock('@/src/stores/auth', () => {
-  const state = () => ({ isAuthenticated: true, user: mockViewer });
+  const state = () => ({ isAuthenticated: mockViewer !== null, user: mockViewer });
   const useAuthStore = (sel?: (x: unknown) => unknown) => (sel ? sel(state()) : state());
   (useAuthStore as any).getState = state;
   return { useAuthStore };
@@ -110,7 +111,9 @@ const EMPTY: Wall = { edition: '2026-09-30', log: null, stack: null, filings: []
 
 // The sample art is each film's own printed poster. Drawn as wordless (the one-sheet's usual
 // case, the house's words laid over it) it shows its title twice; `-titled` draws it as it is.
-const STATES: [string, Wall, Record<string, unknown>, boolean?][] = [
+const STATES: [string, Wall, Record<string, unknown> | null, boolean?][] = [
+  // The first thing a stranger sees: the house's welcome, the programme behind it.
+  ['welcome', WALL, null],
   ['lobby', WALL, { role: 'user', tier: null }],
   ['lobby-titled', WALL, { role: 'user', tier: null }, true],
   ['lobby-long', LONG, { role: 'admin', tier: null }],
@@ -122,7 +125,7 @@ const RUNS = STATES.flatMap(([name, wall, viewer, titled]) => LAYOUTS.map((l) =>
 
 whenRendering('lobby generator', () => {
   it.each(RUNS)('writes %s', async (name, wall, viewer, layout, titled) => {
-    mockViewer = { id: 'me', username: 'kane', preferences: {}, ...viewer };
+    mockViewer = viewer === null ? null : { id: 'me', username: 'kane', preferences: {}, is_social_private: false, ...viewer };
     const html = await atLayout(layout, async () => {
       const client = testQueryClient({ queries: { staleTime: Infinity } });
       const [feature, ...bill] = trending;
@@ -137,6 +140,9 @@ whenRendering('lobby generator', () => {
         r = render(<QueryClientProvider client={client}><LobbyScreen /></QueryClientProvider>);
         await new Promise((res) => setTimeout(res, 0));
       });
+      // Drawn again once settled, so words that arrive are drawn as they rest, not at their
+      // first frame's opacity 0, where the audits cannot measure them.
+      await act(async () => { r.rerender(<QueryClientProvider client={client}><LobbyScreen /></QueryClientProvider>); });
       return toHtml(r.toJSON(), { posters, local: LOCAL_ART });
     });
     writeScreen(name, html);

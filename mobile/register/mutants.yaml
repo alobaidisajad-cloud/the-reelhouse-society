@@ -1727,3 +1727,51 @@ mutants:
         find: "shownTaste ? RANK_BILL.sub : RANK_BILL.subUnseen"
         replace: "RANK_BILL.sub"
     proof: { file: src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx, test: "to a member with nothing logged, or whose ledger is still read: never that the house has seen their taste" }
+
+  - id: shape-tab-eye-stand-in
+    class: LOOK-stand-in-eye
+    source: shape
+    edits:
+      - file: app/(tabs)/_layout.tsx
+        find: "  Newspaper, Film, Clapperboard, User,\n"
+        replace: "  Newspaper, Film, Clapperboard, User, Eye,\n"
+      - file: app/(tabs)/_layout.tsx
+        find: "<Image source={HOUSE_EYE} style={s.houseEye} tintColor={iconColor} contentFit=\"contain\" cachePolicy=\"memory-disk\" accessible={false} />"
+        replace: "<Eye size={26} color={iconColor} />"
+    proof: { file: src/components/__tests__/theHouseSignsWithItsLogo.test.tsx, test: "imports one only where the list keeps it, and every kept place still does" }
+
+  - id: shape-tab-eye-untinted
+    class: LOOK-stand-in-eye
+    source: shape
+    edits:
+      - file: app/(tabs)/_layout.tsx
+        find: "style={s.houseEye} tintColor={iconColor} contentFit"
+        replace: "style={s.houseEye} contentFit"
+    proof: { file: src/components/__tests__/theHouseSignsWithItsLogo.test.tsx, test: "wears the house's eye, tinted as the other tabs are" }
+
+  - id: shape-plate-written-aside
+    class: TEST-drawing-left-unmeasured
+    source: shape
+    edits:
+      - file: mockups/paper/__tests__/zz-room.gen.test.tsx
+        find: "    writeScreen('w1-the-writing-room', toHtml(r.toJSON()));"
+        replace: "    require('fs').writeFileSync(require('path').join(__dirname, '..', 'out', 'w1-the-writing-room.html'), toHtml(r.toJSON()), 'utf8');"
+    proof: { file: src/utils/__tests__/everyDrawingIsMeasured.guard.test.ts, test: "writes every screen of the app through writeScreen, or is an exploration, listed with its reason" }
+
+  - id: shape-nested-text-housed
+    class: TEXT-nested-takes-the-house-ceiling
+    source: shape
+    edits:
+      - file: src/components/text/index.tsx
+        find: "const housedProps = nested ? nestedProps(own, parentScales, scale) : housed(own, scale);"
+        replace: "const housedProps = housed(own, scale);"
+    proof: { file: src/components/text/__tests__/theTextKeepsItsPromises.test.tsx, test: "a nested text takes its parent's scaling, and nothing of the house's" }
+
+  - id: shape-render-nested-own-cap
+    class: TEXT-nested-takes-the-house-ceiling
+    source: shape
+    edits:
+      - file: src/components/profile/__tests__/zz-render.lib.ts
+        find: "      : textCap === 1 ? 1 : own ?? textCap;"
+        replace: "      : (p.allowFontScaling === false ? 1 : own ?? 0);"
+    proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "frozen in a frozen line, whatever it asks for: React Native drops a nested allowFontScaling" }

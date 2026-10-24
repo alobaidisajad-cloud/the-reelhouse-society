@@ -1286,5 +1286,12 @@
     "proof": "m12",
     "commit": "9b4502dabdc257fc2a95308e05bb844563c0ff9f",
     "verdict": "caught"
+  },
+  {
+    "class": "COPY-said-before-it-was-true",
+    "mutant": "shape-taste-claimed-unseen",
+    "proof": "m1",
+    "commit": "9c96ccf30b9bd601a40f8014e3673c1d9d8c6764",
+    "verdict": "caught"
   }
 ]

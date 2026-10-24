@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   Newspaper, Film, Clapperboard, User,
 } from 'lucide-react-native';
-import { ReelEyeIcon } from '@/src/components/ReelEyeIcon';
+import { Image } from 'expo-image';
 import { HapticTab } from '@/src/components/HapticTab';
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { colors, effects } from '@/src/theme/theme';
@@ -27,7 +27,7 @@ import { tabBarBottomPadding, tabBarHeight } from '@/src/components/layout/navMe
 
 // ════════════════════════════════════════════════════════════════
 //  TAB ICON: icons only, no labels. The chosen one grows a little, lights, and
-//  wears a dot beneath it; the Lobby's is the flicker-lit reel eye.
+//  wears a dot beneath it; the Lobby's is the house's own eye, lit in flicker.
 // ════════════════════════════════════════════════════════════════
 
 /** The choosing, on the house's curve (src/theme/motion.ts): no bounce. */
@@ -77,17 +77,17 @@ function TabIcon({
   );
 }
 
+// The house's own eye, the official logo's small cut (the eye and its reel, without
+// the rays), its ground made clear so the tab can light it as it lights the others.
+const HOUSE_EYE = require('../../assets/images/reelhouse-eye.png');
+
 function LobbyTabIcon({ focused }: { focused: boolean }) {
   const { iconStyle, dotStyle } = useTabIconMotion(focused);
   const iconColor = focused ? colors.flicker : colors.bone;
   return (
     <View style={s.tabIconRoot}>
       <Animated.View collapsable={false} style={[s.tabIconInner, iconStyle]}>
-        <ReelEyeIcon
-          size={26}
-          color={iconColor}
-          strokeWidth={focused ? 2 : 1.5}
-        />
+        <Image source={HOUSE_EYE} style={s.houseEye} tintColor={iconColor} contentFit="contain" cachePolicy="memory-disk" accessible={false} />
       </Animated.View>
       <View style={s.indicatorSlot}>
         <Animated.View collapsable={false} style={[
@@ -314,6 +314,10 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  // Wider than the 22pt line icons beside it, as an eye is: drawn at 22 it read
+  // smaller than its neighbours.
+  houseEye: { width: 28, height: 18 },
 
   indicatorSlot: {
     height: 6,

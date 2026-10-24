@@ -18,8 +18,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { View, Text } from 'react-native';
-import { writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { writeScreen } from '@/mockups/paths';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 
 import { PaperPicker, PaperDoor, FORMS } from '@/src/components/dispatch/paper/PaperMore';
@@ -32,7 +31,6 @@ jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(), notificationAsync: jest.fn(), selectionAsync: jest.fn(),
 }));
 
-const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'out');
 
 /**
  * The restore line, drawn exactly as the writing room draws it — the same
@@ -66,7 +64,6 @@ const line = (text: string, lost: boolean, act: boolean) => (
 
 describe('what a draft makes visible', () => {
   it('renders the three of them to html', () => {
-    mkdirSync(OUT, { recursive: true });
 
     // WEDNESDAY is the longest weekday, so this is the line at its widest.
     const room = render(
@@ -77,7 +74,7 @@ describe('what a draft makes visible', () => {
         </View>
       </View>,
     );
-    writeFileSync(join(OUT, 'y1-the-restore-line.html'), toHtml(room.toJSON()), 'utf8');
+    writeScreen('y1-the-restore-line', toHtml(room.toJSON()));
 
     const picker = render(
       <View style={[p.screen, { justifyContent: 'flex-end' }]}>
@@ -87,7 +84,7 @@ describe('what a draft makes visible', () => {
         />
       </View>,
     );
-    writeFileSync(join(OUT, 'y2-picker-in-progress.html'), toHtml(picker.toJSON()), 'utf8');
+    writeScreen('y2-picker-in-progress', toHtml(picker.toJSON()));
 
     /**
      * The two-sided question, at its widest: the longest weekday on both lines
@@ -124,7 +121,7 @@ describe('what a draft makes visible', () => {
         </View>
       </View>,
     );
-    writeFileSync(join(OUT, 'y4-a-newer-one-elsewhere.html'), toHtml(elsewhere.toJSON()), 'utf8');
+    writeScreen('y4-a-newer-one-elsewhere', toHtml(elsewhere.toJSON()));
 
     const door = render(
       <View style={p.screen}>
@@ -133,7 +130,7 @@ describe('what a draft makes visible', () => {
         </View>
       </View>,
     );
-    writeFileSync(join(OUT, 'y3-door-holding-work.html'), toHtml(door.toJSON()), 'utf8');
+    writeScreen('y3-door-holding-work', toHtml(door.toJSON()));
 
     for (const [name, html] of [
       ['restore', toHtml(room.toJSON())],

@@ -82,7 +82,12 @@ export function readFixture<T = unknown>(file: string): T {
   return JSON.parse(readFileSync(join(FIXTURES, file), 'utf8')) as T;
 }
 
+/**
+ * Writes only when a drawing was asked for: the plates that also run in the
+ * ordinary suite would otherwise lay unmeasured copies over the measured ones.
+ */
 export function writeScreen(name: string, html: string): void {
+  if (!RENDERING) return;
   mkdirSync(OUT, { recursive: true });
   writeFileSync(join(OUT, `${name}.html`), html, 'utf8');
 }

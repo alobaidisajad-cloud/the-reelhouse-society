@@ -167,10 +167,14 @@ function readTree() {
       kids.forEach((k) => { k.parent = self; });
       return self;
     } else {
-      // A leaf is the size the browser laid it out, and keeps its own flex behaviour.
+      // A leaf is the size the browser laid it out, and keeps its own flex behaviour,
+      // with its limits: a minWidth is what breaks a wrapping line in Yoga.
       n.setWidth(d.size.w);
       n.setHeight(d.size.h);
       apply(n, d.rn, { flexOnly: true });
+      for (const k of ['minWidth', 'minHeight', 'maxWidth', 'maxHeight']) {
+        if (d.rn && has(d.rn[k])) n[`set${k[0].toUpperCase()}${k.slice(1)}`](d.rn[k]);
+      }
       if (d.absolute && !(d.rn && d.rn.position === 'absolute')) n.setPositionType(PositionType.Absolute);
       if (d.hidden) n.setDisplay(Display.None);
     }

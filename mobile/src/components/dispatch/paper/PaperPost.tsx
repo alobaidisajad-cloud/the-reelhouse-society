@@ -60,6 +60,9 @@ export interface PaperFilm {
  * The byline heads the column, as a correspondent's name heads a letter; in the
  * 44pt margin a long name wrapped to three lines. No author: the one fallback.
  */
+/** Under this many letters a name is shorter than the byline's floor (56pt), so it is never cut. */
+const SHORT_NAME = 9;
+
 export const Byline = memo(function Byline({
   author, trailing, onPress,
 }: { author: PaperAuthor | null; trailing?: string; onPress?: () => void }) {
@@ -68,6 +71,7 @@ export const Byline = memo(function Byline({
   // member reads as an Auteur here exactly as they do everywhere else.
   const rank = departed ? null : rankOf(author.tier);
   const word = rankWord(rank);
+  const name = departed ? DEPARTED_NAME.toUpperCase() : author.name.toUpperCase();
   // A departed member has no page to open, so the name is not a control. The
   // words stay and the destination goes, which is what the erasure means.
   const Row: React.ComponentType<any> = onPress && !departed ? PressableScale : View;
@@ -103,22 +107,27 @@ export const Byline = memo(function Byline({
         ) : null}
       </View>
       {/* The name truncates; the rank and the trailing facts sit in their own
-          boxes. Measured: a 14-letter name with its facts needs 292pt of 256. */}
-      <Text
-        style={[p.bylineName, rank === 'auteur' && p.bylineNameAuteur]}
-        numberOfLines={1}
-        {...scaledTextProps}
-      >
-        {departed ? DEPARTED_NAME.toUpperCase() : author.name.toUpperCase()}
-      </Text>
-      {/* The app's own badge, which never truncates (`★ AUT` is wrong);
-          `silent` inside a control whose label already says the rank. */}
-      <RankBadge rank={rank} silent={pressable} />
-      {trailing ? (
-        <Text style={p.bylineTrail} numberOfLines={1} {...scaledTextProps}>
-          {`· ${trailing}`}
+          boxes. Measured: a 14-letter name with its facts needs 292pt of 256.
+          With no facts, the name and the rank share a block that wraps: where
+          both will not fit one line (a narrow phone, a large size), the rank
+          takes the next, and neither is cut. */}
+      <View style={trailing ? p.bylineInline : p.bylineWords}>
+        <Text
+          style={[p.bylineName, name.length < SHORT_NAME && p.bylineNameShort, rank === 'auteur' && p.bylineNameAuteur]}
+          numberOfLines={1}
+          {...scaledTextProps}
+        >
+          {name}
         </Text>
-      ) : null}
+        {/* The app's own badge, which never truncates (`★ AUT` is wrong);
+            `silent` inside a control whose label already says the rank. */}
+        <RankBadge rank={rank} silent={pressable} />
+        {trailing ? (
+          <Text style={p.bylineTrail} numberOfLines={1} {...scaledTextProps}>
+            {`· ${trailing}`}
+          </Text>
+        ) : null}
+      </View>
     </Row>
   );
 });
@@ -289,18 +298,20 @@ const Stamp = memo(function Stamp({
 }: { label: string; style?: object; crimson?: boolean }) {
   return (
     <View style={[p.stamp, crimson && p.stampCrimson, style]}>
-      {!crimson && (
-        <>
-          <LinearGradient colors={BRASS} locations={BRASS_STOPS}
-            start={{ x: 0.15, y: 0 }} end={{ x: 0.85, y: 1 }}
-            style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
-          <LinearGradient colors={['rgba(240,232,176,0.42)', 'rgba(240,232,176,0.10)', 'transparent']}
-            style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '52%' }} />
-        </>
-      )}
-      <Text style={[p.stampText, crimson && p.stampTextCrimson]} {...decorativeTextProps}>
-        {label}
-      </Text>
+      <View style={[p.stampPlate, crimson && p.stampPlateCrimson]}>
+        {!crimson && (
+          <>
+            <LinearGradient colors={BRASS} locations={BRASS_STOPS}
+              start={{ x: 0.15, y: 0 }} end={{ x: 0.85, y: 1 }}
+              style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} />
+            <LinearGradient colors={['rgba(240,232,176,0.42)', 'rgba(240,232,176,0.10)', 'transparent']}
+              style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '52%' }} />
+          </>
+        )}
+        <Text style={[p.stampText, crimson && p.stampTextCrimson]} {...decorativeTextProps}>
+          {label}
+        </Text>
+      </View>
     </View>
   );
 });
@@ -545,20 +556,27 @@ export const PaperPost = memo(function PaperPost({
 
           {answer ? (
             <View style={p.answer}>
-              <View style={p.creditArt}>
-                {answer.film.posterPath ? (
-                  <Image source={{ uri: answer.film.posterPath }} style={p.plateArt} contentFit="cover"
-                    recyclingKey={answer.film.posterPath} transition={0} cachePolicy="memory-disk" />
-                ) : null}
+              <View style={p.answerTop}>
+                <View style={p.creditArt}>
+                  {answer.film.posterPath ? (
+                    <Image source={{ uri: answer.film.posterPath }} style={p.plateArt} contentFit="cover"
+                      recyclingKey={answer.film.posterPath} transition={0} cachePolicy="memory-disk" />
+                  ) : null}
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={p.creditText} numberOfLines={1} {...scaledTextProps}>
+                    {[answer.film.title, answer.film.year].filter(Boolean).join(' · ').toUpperCase()}
+                  </Text>
+                  <Text style={[p.answerBody, isRTLText(answer.body) && p.rtlText]} {...scaledTextProps}>{softBreak(answer.body)}</Text>
+                </View>
               </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={p.creditText} numberOfLines={1} {...scaledTextProps}>
-                  {[answer.film.title, answer.film.year].filter(Boolean).join(' · ').toUpperCase()}
-                </Text>
-                <Text style={[p.answerBody, isRTLText(answer.body) && p.rtlText]} {...scaledTextProps}>{softBreak(answer.body)}</Text>
-                <Byline author={answer.author} />
+              {/* Signed under the whole answer, as a letter is. The stamp ends the byline's
+                  line where there is room and takes its own where there is not: laid over
+                  the corner, on a narrow phone it covered the answerer's rank. */}
+              <View style={p.answerFoot}>
+                <View style={p.answerBy}><Byline author={answer.author} /></View>
+                {answered ? <Stamp label="ANSWERED" style={p.answerStamp} /> : null}
               </View>
-              {answered ? <Stamp label="ANSWERED" style={{ position: 'absolute', right: 0, bottom: 0 }} /> : null}
             </View>
           ) : null}
 

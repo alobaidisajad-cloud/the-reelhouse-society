@@ -23,7 +23,7 @@ import type { Standing } from '@/src/components/clearance/Clearance';
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { p, QUIET } from './paperStyles';
-import { KIND_RULE, KIND_NAME, MARGIN_W, RULE_W, RULE_GAP, CRIMSON_INK, UNSPOKEN, AVATAR, nameOf } from './paperMetrics';
+import { KIND_RULE, KIND_NAME, MARGIN_W, RULE_W, RULE_GAP, CRIMSON_INK, UNSPOKEN, AVATAR, SHARE_CARD_WIDTH, nameOf } from './paperMetrics';
 import { DEPARTED_NAME } from '@/src/constants/departed';
 import { LEAD_STYLE } from './paperPerf';
 import { MS, PILL_Y } from './paperMotion';
@@ -533,23 +533,14 @@ const fitTitle = (t: string) => {
  * counted off the rendered 4:5 card (about 42 characters a line at its padding),
  * never estimated; `lines` is the backstop that keeps the signature on the card.
  */
-const openingRoom = (titleLen: number, lead = 1, ratio = 4 / 5) => {
+const openingRoom = (titleLen: number, lead = 1) => {
   const base = titleLen <= 26 ? { max: 210, lines: 5 }
     : titleLen <= 44 ? { max: 165, lines: 4 }
     : { max: 125, lines: 3 };
   // A taller leading (CJK) makes the title half again as tall: one line less below.
-  const forLead = lead <= 1
+  return lead <= 1
     ? base
     : { max: Math.round(base.max * 0.7), lines: Math.max(2, base.lines - 1) };
-
-  // Scaled to the height the ratio leaves: the middle is flex 1, and writing that
-  // over-asks does not overflow, it SHRINKS to nothing (measured: 0pt on a 5:4 card).
-  const h = (4 / 5) / ratio;
-  return {
-    max: Math.round(forLead.max * h),
-    lines: Math.max(1, Math.floor(forLead.lines * h)),
-    titleLines: h >= 0.95 ? 4 : h >= 0.75 ? 3 : 2,
-  };
 };
 
 // Latin, its accents (U+0020-U+024F) and general punctuation (U+2000-U+206F).
@@ -564,8 +555,7 @@ const titleFace = (t: string) =>
     : { fontFamily: fonts.serifMedium, lead: 1.5 / 1.21 };
 
 export const DossierShareCard = memo(function DossierShareCard({
-  // `max` has NO default: one would shadow the computed room in `max ?? room.max`.
-  title, opening, author, filed, logo, width, max, ratio = 4 / 5,
+  title, opening, author, filed, logo, width,
 }: {
   title: string; opening: string;
   /** Null once the member closed their account: the essay survives, the name does not. */
@@ -575,17 +565,13 @@ export const DossierShareCard = memo(function DossierShareCard({
   logo?: string;
   /** Undefined fills the parent; a number is for the story ground, which sizes it. */
   width?: number;
-  /** Overrides the room the title left. Only the story export needs this. */
-  max?: number;
-  /** The card's proportion: 4:5 (a cutting, the most shared), 1:1 or wider. */
-  ratio?: number;
 }) {
   const head = fitTitle(title);
   // The set width, as the ladder measures it, in any script.
-  const room = openingRoom(visualLen(head), titleFace(head).lead, ratio);
-  const cut = clipToSentence(opening, max ?? room.max);
+  const room = openingRoom(visualLen(head), titleFace(head).lead);
+  const cut = clipToSentence(opening, room.max);
   return (
-    <View style={[m.share, { aspectRatio: ratio }, width !== undefined && { width }]}>
+    <View style={[m.share, width !== undefined && { width }]}>
       {/* The inner rule: a second border set in, which makes it read as printed. */}
       <View style={m.shareInner} pointerEvents="none" />
 
@@ -608,7 +594,7 @@ export const DossierShareCard = memo(function DossierShareCard({
 
         {/* Sized by the ladder, not adjustsFontSizeToFit: that is unreliable on Android past
             one line and varies by renderer, on the one asset that must look identical. */}
-        <Text style={[m.shareTitle, titleSet(head)]} numberOfLines={room.titleLines} {...decorativeTextProps}>
+        <Text style={[m.shareTitle, titleSet(head)]} numberOfLines={4} {...decorativeTextProps}>
           {head}
         </Text>
 
@@ -652,7 +638,7 @@ export const DossierShareCard = memo(function DossierShareCard({
  * bands top and bottom are where Instagram and TikTok paint their own chrome.
  */
 export const StoryFrame = memo(function StoryFrame({
-  width = 320, cardWidth = 358, children,
+  width = 320, cardWidth = SHARE_CARD_WIDTH, children,
 }: { width?: number; cardWidth?: number; children: React.ReactNode }) {
   const height = Math.round((width * 16) / 9);
   // SCALED, not re-laid-out: at the narrower width the card reflows and loses its title.
@@ -698,7 +684,7 @@ export const LoungeCard = memo(function LoungeCard({
   // stays for the conversation, and still opens the page and its critiques.
   if (ended) {
     return (
-      <PressableScale style={[m.bubble, m.bubbleEnded]} haptic="selection" pressedScale={0.98} onPress={onOpen}
+      <PressableScale style={[m.bubble, m.bubbleEnded]} haptic="selection" pressedScale={0.98} onPress={onOpen} hitSlop={null}
         accessibilityRole="button" accessibilityLabel="Open this filing">
         <View style={[m.loungeRule, { backgroundColor: colors.fog, opacity: 0.4 }]} />
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -713,7 +699,9 @@ export const LoungeCard = memo(function LoungeCard({
   }
 
   return (
-    <PressableScale style={m.bubble} haptic="selection" pressedScale={0.98} onPress={onOpen}
+    // No halo: the card is the whole target, and in a salon one card follows another; a halo
+    // reached into the next, and the later card took a tap meant for this one.
+    <PressableScale style={m.bubble} haptic="selection" pressedScale={0.98} onPress={onOpen} hitSlop={null}
       accessibilityRole="button"
       accessibilityLabel={`Open this ${nameOf(kind).toLowerCase()}${title ? `: ${title}` : ''}${author ? `, by ${author.name}` : ''}`}>
       <View style={[m.loungeRule, { backgroundColor: ink }]} />

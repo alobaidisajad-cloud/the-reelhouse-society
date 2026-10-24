@@ -58,11 +58,11 @@ function fonts() {
   return fontCss;
 }
 
-// The phone's way where the browser differs: border-box; text no wider than its parent;
-// a box in a COLUMN no wider than it less its own margins (`--mx`, not inherited), unless
-// it has its own `;width:` or is absolute (Yoga lets those overflow).
+// The phone's way where the browser differs: border-box; text no wider than its parent less
+// its own margins; a box in a COLUMN no wider than it less its own margins (`--mx`, not
+// inherited), unless it has its own `;width:` or is absolute (Yoga lets those overflow).
 const RN_RULES = '@property --mx{syntax:"<length>";inherits:false;initial-value:0px}'
-  + '*,*::before,*::after{box-sizing:border-box}span[data-scale-cap]{max-width:100%}'
+  + '*,*::before,*::after{box-sizing:border-box}span[data-scale-cap]{max-width:calc(100% - var(--mx))}'
   + 'div[style*="flex-direction:column"]>div:not([style*=";width:"]):not([style^="width:"]):not([style*="position:absolute"]){max-width:calc(100% - var(--mx))}';
 
 /**

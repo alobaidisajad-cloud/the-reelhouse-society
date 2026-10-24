@@ -32,8 +32,7 @@
  */
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
-import { writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { writeScreen } from '@/mockups/paths';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 
 import RoomScreen from '@/app/dispatch/room/[username]';
@@ -121,18 +120,16 @@ jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 
-const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'out');
 
 describe('a member’s room', () => {
   it('renders the real screen to html, at both text sizes', async () => {
-    mkdirSync(OUT, { recursive: true });
 
     const r = render(<RoomScreen />);
     // Reads resolve on microtasks: unflushed, the plate is a spinner.
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
 
     const html = toHtml(r.toJSON());
-    writeFileSync(join(OUT, 'r1-a-members-room.html'), html, 'utf8');
+    writeScreen('r1-a-members-room', html);
 
     // A plate is worthless if the screen rendered nothing — which is exactly how
     // a signed-out composer once produced an empty tree and a clean pass.

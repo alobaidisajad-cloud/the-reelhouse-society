@@ -23,7 +23,7 @@
  * could not see it, because the test renderer's Text is a class, and a class
  * DOES read defaultProps. An explicit component cannot be skipped.
  */
-import React, { forwardRef, useContext, useRef, useState } from 'react';
+import React, { createContext, forwardRef, useContext, useRef, useState } from 'react';
 import {
   Platform,
   StyleSheet,
@@ -53,6 +53,22 @@ function housed<P extends TextProps | TextInputProps>(props: P, scale: number): 
     if (fix) return { ...merged, style: [merged.style, fix] };
   }
   return merged;
+}
+
+/**
+ * Whether the Text a nested one stands in grows with the text size. React Native
+ * hands a nested Text its parent's scaling (it drops a nested `allowFontScaling`,
+ * and a nested Text with no `maxFontSizeMultiplier` takes the parent's), so a
+ * nested Text gets nothing of the house's: the house ceiling on it let a word
+ * outgrow a frozen or lower-capped line around it. Only Android's spacing needs
+ * to know, and it follows the parent.
+ */
+const ParentScales = createContext(true);
+
+function nestedProps(props: TextProps, parentScales: boolean, scale: number): TextProps {
+  if (Platform.OS !== 'android' || !parentScales) return props;
+  const fix = androidTracking(props.style, true, scale);
+  return fix ? { ...props, style: [props.style, fix] } : props;
 }
 
 /**
@@ -213,10 +229,18 @@ function useCutSaid(props: TextProps, drawn: TextProps): { handlers: Partial<Tex
 export type Text = React.ComponentRef<typeof RNText>;
 export const Text = forwardRef<Text, TextProps>(function Text(props, ref) {
   const scale = useFontScale();
+  const nested = useContext(TextAncestorContext) === true;
+  const parentScales = useContext(ParentScales);
   const said = spoken(props);
-  const housedProps = housed(said ? { ...props, ...said } : props, scale);
+  const own = said ? { ...props, ...said } : props;
+  const housedProps = nested ? nestedProps(own, parentScales, scale) : housed(own, scale);
   const minimumFontScale = flooredMinimumScale(housedProps, scale);
-  const drawn = minimumFontScale !== undefined ? { ...housedProps, minimumFontScale } : housedProps;
+  const shown = minimumFontScale !== undefined ? { ...housedProps, minimumFontScale } : housedProps;
+  // A frozen Text tells the Texts inside it, which take its scaling; a scaling one need not (the default).
+  const scales = nested ? parentScales : shown.allowFontScaling !== false;
+  const drawn = !scales && typeof shown.children !== 'string'
+    ? { ...shown, children: <ParentScales.Provider value={false}>{shown.children}</ParentScales.Provider> }
+    : shown;
   const cut = useCutSaid(props, drawn);
   const text = <RNText ref={ref} {...drawn} {...cut.handlers} />;
   return cut.twin ? <>{text}{cut.twin}</> : text;

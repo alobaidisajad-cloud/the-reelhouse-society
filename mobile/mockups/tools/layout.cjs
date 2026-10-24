@@ -334,9 +334,12 @@ async function audit(page) {
         if (hit) found.push({ kind: 'CLASH', text: `${say(A.e)}  ×  ${say(B.e)}`, size: parseFloat(getComputedStyle(A.e).fontSize), by: `${hit.toFixed(1)}pt` });
       }
     }
-    // UNDER: a line in a scroller that something fixed covers at the top AND at the
-    // end of the scroll, so no position shows it (the docked-bar law: a bar reserves
-    // its height). CLASH exempts covered words; under an open modal, nothing is asked.
+    // UNDER: a line in a scroller that something fixed covers at the top of the
+    // scroll, and at every position the scroll walks to after it, so no position
+    // shows it (the docked-bar law: a bar reserves its height). CLASH exempts covered
+    // words; under an open modal, nothing is asked. Judged LINE by line, and walked,
+    // not read at the two ends: a line under the rail at the top can sit under the
+    // head at the end and pass through the whole window between.
     const coverOf = (e, x, y) => {
       for (const t of document.elementsFromPoint(x, y)) {
         if (t === e || e.contains(t) || t.contains(e)) return null;
@@ -348,20 +351,32 @@ async function audit(page) {
     };
     const modals = [...document.querySelectorAll('[data-t="modal"]')];
     const topModal = modals[modals.length - 1];
-    const coveredLines = (e, s) => linesOf(e)
-      .filter((q) => !parked(q) && q.top + q.height / 2 >= 0 && q.top + q.height / 2 <= innerHeight)
-      .filter((q) => { const c = coverOf(e, (q.left + q.right) / 2, q.top + q.height / 2); return c && !s.contains(c); }).length;
+    // Each line's index, and whether it is on the screen and covered there.
+    const linesNow = (e, s) => linesOf(e).map((q) => {
+      const y = q.top + q.height / 2;
+      if (parked(q) || y < 0 || y > innerHeight) return 'off';
+      const c = coverOf(e, (q.left + q.right) / 2, y);
+      return c && !s.contains(c) ? 'covered' : 'seen';
+    });
     for (const s of document.querySelectorAll('.vscroll')) {
       if (topModal && !topModal.contains(s)) continue;
       const inside = live.filter((e) => e.closest('.vscroll') === s);
-      const atTop = inside.filter((e) => coveredLines(e, s) > 0);
-      if (!atTop.length) continue;
+      const unseen = inside
+        .map((e) => [e, new Set(linesNow(e, s).flatMap((k, i) => (k === 'covered' ? [i] : [])))])
+        .filter(([, at]) => at.size);
+      if (!unseen.length) continue;
       const { travel } = scrollOf(inside[0]);
       const moved = [...s.children].map((c) => [c, c.style.transform]);
-      for (const [c, was] of moved) c.style.transform = `translateY(${-travel}px)${was ? ' ' + was : ''}`;
-      const atEnd = atTop.filter((e) => coveredLines(e, s) > 0);
+      for (let at = 8; travel > 0 && unseen.some(([, u]) => u.size); at += 8) {
+        const off = Math.min(at, travel);
+        for (const [c, was] of moved) c.style.transform = `translateY(${-off}px)${was ? ' ' + was : ''}`;
+        for (const [e, u] of unseen) linesNow(e, s).forEach((k, i) => { if (k === 'seen') u.delete(i); });
+        if (off === travel) break;
+      }
       for (const [c, was] of moved) c.style.transform = was;
-      for (const e of atEnd) found.push({ kind: 'UNDER', text: say(e), size: parseFloat(getComputedStyle(e).fontSize), by: 'covered at every scroll position' });
+      for (const [e, u] of unseen) {
+        if (u.size) found.push({ kind: 'UNDER', text: say(e), size: parseFloat(getComputedStyle(e).fontSize), by: 'covered at every scroll position' });
+      }
     }
     // STEAL: two controls whose touch areas (box plus hitSlop) overlap. Both
     // platforms give the overlap to the LATER control (iOS RCTView walks subviews in

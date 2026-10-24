@@ -103,9 +103,8 @@ export const DeskRail = memo(function DeskRail({
           </PressableScale>
         );
       })}
-      <View style={{ flex: 1 }} />
       {remaining != null && remaining <= COUNTER_SHOWS_AT ? (
-        <Text style={[p.rl, remaining < 0 && { color: CRIMSON_INK }]} {...scaledTextProps}>
+        <Text style={[p.rl, p.railCount, remaining < 0 && { color: CRIMSON_INK }]} {...scaledTextProps}>
           {remaining}
         </Text>
       ) : null}
@@ -201,11 +200,11 @@ export const BallotDesk = memo(function BallotDesk({
             <Byline author={me} />
             {/* The lead-in is the house's, printed beside the field, never in it
                 (where it could be deleted); the harness draws the question. */}
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            <View style={p.leadRow}>
               <Text style={[p.leadIn, LEAD_STYLE.ballot]} {...decorativeTextProps}>BALLOT — </Text>
               {onQuestion ? (
                 <TextInput
-                  style={[d.ballotQ, { flex: 1, minWidth: 0, padding: 0 }]}
+                  style={[d.ballotQ, p.leadBody, { padding: 0 }]}
                   value={question}
                   onChangeText={onQuestion}
                   placeholder="What are you asking?"
@@ -218,7 +217,7 @@ export const BallotDesk = memo(function BallotDesk({
                   {...scaledTextProps}
                 />
               ) : (
-                <Text style={[d.ballotQ, { flex: 1, minWidth: 0 }]} {...displayTextProps}>
+                <Text style={[d.ballotQ, p.leadBody]} {...displayTextProps}>
                   {question}<Text style={p.caret} {...UNSPOKEN}>|</Text>
                 </Text>
               )}
@@ -340,10 +339,9 @@ export const DossierDesk = memo(function DossierDesk({
           <ImageIcon size={13} strokeWidth={2} color={colors.bone} />
           <Text style={p.rl} {...scaledTextProps}>COVER</Text>
         </PressableScale>
-        <View style={{ flex: 1 }} />
         {/* Words, and the read time it implies — the two facts a writer of a
             long piece actually watches. */}
-        <Text style={p.rl} {...scaledTextProps}>
+        <Text style={[p.rl, p.railCount]} {...scaledTextProps}>
           {counted(words, 'WORD', 'WORDS', groupDigits)} · {readMinutes(words)} MIN
         </Text>
       </View>

@@ -30,6 +30,23 @@ jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo
   default: mockAccessibilityInfo,
 }));
 
+// ── A TEXT INSIDE A TEXT KNOWS IT, AS ON THE PHONE ──────────────────────────
+// React Native's Text tells the Texts inside it they are nested (TextAncestorContext),
+// and a nested Text then takes its parent's scaling. React Native's jest stand-in
+// told them nothing, so the app's Text could not tell either, and every test drew
+// a nested word as a line of its own.
+jest.mock('react-native/Libraries/Text/Text', () => {
+  const React = require('react');
+  const Stand = jest.requireActual('react-native/jest/mocks/Text').default;
+  const TextAncestorContext = require('react-native/Libraries/Text/TextAncestorContext').default;
+  class Text extends Stand {
+    render() {
+      return React.createElement(TextAncestorContext.Provider, { value: true }, super.render());
+    }
+  }
+  return { __esModule: true, default: Text };
+});
+
 // Also make it available on the RN mock
 const RN = jest.requireActual('react-native');
 if (!RN.AccessibilityInfo?.announceForAccessibility) {

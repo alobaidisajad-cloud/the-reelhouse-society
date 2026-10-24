@@ -168,7 +168,7 @@ export const PaperComposer = memo(function PaperComposer({
 
                 In the harness there is no `onBody`, so this stays a Text with
                 the drawn caret and every screenshot is unchanged. */}
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            <View style={p.leadRow}>
               <Text
                 style={
                   kind === 'seeking' ? p.seekingLead
@@ -190,7 +190,7 @@ export const PaperComposer = memo(function PaperComposer({
                 <TextInput
                   style={[
                     kind === 'seeking' ? p.seeking : kind === 'wire' ? p.wire : p.take,
-                    { flex: 1, minWidth: 0, padding: 0 },
+                    p.leadBody, { padding: 0 },
                   ]}
                   value={body}
                   onChangeText={onBody}
@@ -206,7 +206,7 @@ export const PaperComposer = memo(function PaperComposer({
                 <Text
                   style={[
                     kind === 'seeking' ? p.seeking : kind === 'wire' ? p.wire : p.take,
-                    { flex: 1, minWidth: 0 },
+                    p.leadBody,
                   ]}
                   {...scaledTextProps}
                 >
@@ -275,11 +275,10 @@ export const PaperComposer = memo(function PaperComposer({
           <AlertTriangle size={13} strokeWidth={2} color={spoiler ? colors.crimson : colors.bone} />
           <Text style={[p.rl, spoiler && { color: CRIMSON_INK }]} {...scaledTextProps}>SPOILER</Text>
         </PressableScale>
-        <View style={{ flex: 1 }} />
         {/* Quiet until it could plausibly matter. A counter watching from the
             first word makes a memory fence feel like an editorial one. */}
         {remaining <= COUNTER_SHOWS_AT ? (
-          <Text style={[p.rl, remaining < 0 && { color: CRIMSON_INK }]} {...scaledTextProps}>
+          <Text style={[p.rl, p.railCount, remaining < 0 && { color: CRIMSON_INK }]} {...scaledTextProps}>
             {remaining < 0 ? `OVER BY ${Math.abs(remaining)}` : `${remaining} LEFT`}
           </Text>
         ) : null}

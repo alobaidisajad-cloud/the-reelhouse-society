@@ -24,7 +24,8 @@ Writes `mockups/out/screens/<name>.html` (ignored by git). One generator per are
 | `app/stacks/__tests__/zz-stacks.gen` | a stack |
 | `src/components/film/__tests__/zz-film.gen` | the film page, eleven states |
 | `src/components/profile/__tests__/zz-memberfile.gen`, `zz-mockup.gen` | the profile and its rooms |
-| `mockups/paper/__tests__/zz-*.gen` | the Dispatch plates → `mockups/paper/out/`. These run in EVERY test run (no `MOCKUPS` needed): they are also render tests, with assertions of their own |
+| `mockups/paper/__tests__/zz-{paper,cover,drafts,room,memberroom}.gen` | the Dispatch plates, written with the screens and measured with them. These run in EVERY test run, as render tests with assertions of their own, and write only with `MOCKUPS=1` |
+| `mockups/paper/__tests__/zz-{badge,choices,final,proposals,rank}.gen` | design explorations, side by side, each in its own folder under `mockups/paper/`: options, some turned down, not the app, and not measured |
 
 Sample films and art live in `mockups/fixtures/` (committed): the TMDB key is
 server-side only, so a fixture cannot be re-fetched here.
@@ -55,8 +56,7 @@ captured with the rest — how the CI `captures` job measures touch (§5).
 ## 3 · Measure
 
 ```powershell
-node mockups/tools/layout.cjs                       # the generator screens
-node mockups/tools/layout.cjs --src mockups/paper/out --skip r2-ratio-1x1,r3-ratio-5x4
+node mockups/tools/layout.cjs                       # the generator screens, the Dispatch plates among them
 node mockups/tools/layout.cjs --src mockups/out/captured
 ```
 

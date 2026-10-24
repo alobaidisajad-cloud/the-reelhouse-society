@@ -320,7 +320,8 @@ const s = StyleSheet.create({
     fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog, textAlign: 'center',
     lineHeight: 22, marginTop: 16, letterSpacing: 0.3,
   },
-  societyRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24, paddingHorizontal: 4 },
+  // Across the page, as the phone lays it: its hairlines take the room either side of the words.
+  societyRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24, paddingHorizontal: 4, alignSelf: 'stretch' },
   societyRuleLine: { flex: 1, height: 1, opacity: 0.4 },
   societyRuleText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3.2, color: colors.sepia },
   

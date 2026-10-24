@@ -8,11 +8,11 @@
 import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { render } from '@testing-library/react-native';
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 import { LOCAL_ART, POSTERS as REPO_POSTERS } from '../../../src/components/profile/__tests__/zz-art.gen';
-import { FIXTURES, HEIGHT_AT } from '../../paths';
+import { FIXTURES, HEIGHT_AT, writeScreen } from '../../paths';
 
 import { PaperPost as RawPaperPost, type PaperAuthor } from '@/src/components/dispatch/paper/PaperPost';
 import { PaperBallot as RawPaperBallot } from '@/src/components/dispatch/paper/PaperBallot';
@@ -43,7 +43,7 @@ import { ConciergeCard } from '@/src/components/layout/ConciergeButton';
 import { TopNavBar } from '@/src/components/layout/TopNavBar';
 import { TAB_CONTENT_GAP, navBarHeight } from '@/src/components/layout/navMetrics';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { columnWidth } from '@/src/components/dispatch/paper/paperMetrics';
+import { columnWidth, SHARE_CARD_WIDTH } from '@/src/components/dispatch/paper/paperMetrics';
 
 /** Nothing is pressed in a still; required props say so out loud. */
 const NOOP = () => {};
@@ -61,8 +61,6 @@ const PostDock = (props: React.ComponentProps<typeof RawPostDock>) => (
   <RawPostDock onCertify={NOOP} onSave={NOOP} {...props} />
 );
 
-/** Where the sheets land: `mockups/paper/out/` in the repo unless PAPER_OUT says. */
-const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'out');
 
 jest.mock('expo-router', () => ({
   ...require('@/test-utils/expoRouterMock').expoRouterMock(),
@@ -414,9 +412,7 @@ add('a7-end-signed-out', (
     <PaperChrome onArchive={() => {}} section="ALL" />
     <PaperSheet>
       <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperPost kind="take" order="08:12" orderIs="hour" author={SAM} measureWidth={COL} film={CHUNGKING}
-        body="Chungking Express gets better every year and I no longer trust anyone who disagrees."
-        certifyCount={88} commentCount={12} />
+      {/* The paper's empty page to a stranger (the feed's list-empty), as the app draws it. */}
       <PaperEmpty said="empty" title="The house is open to read."
         body="Filing is for members." action="JOIN THE SOCIETY" end
         /* a screenshot: nothing to do, said out loud rather than left out */
@@ -621,22 +617,11 @@ add('c3-answers-seeking', (
 ));
 
 // ══ F · EVERYTHING ELSE THE PAGE TOUCHES ════════════════════════════════════
+// The picker as the app shows it (app/dispatch/compose.tsx): its own screen, presented
+// over the page, its sheet at the foot above the phone's edge. Nothing under it is live.
 add('f1-picker', (
-  <View style={p.screen}>
-    <TopNavBar />
-    <NavSpace />
-    <PaperChrome onArchive={() => {}} section="ALL" />
-    <PaperSheet>
-      <RunningHead date={TODAY} dayLabel="WEDNESDAY, AUGUST 28" sort="LATEST" />
-      <PaperPost kind="take" order="21:40" orderIs="hour" author={DAN} measureWidth={COL}
-        body="tbh Odyssey was bad" film={LOST} commentCount={31} certifyCount={4} />
-      <PaperPost kind="seeking" order="20:15" orderIs="hour" author={SAJAD} measureWidth={COL}
-        body="any good horror movies? nothing with gore" commentCount={12} />
-    </PaperSheet>
-    {/* The scrim is the page still being there, dimmed — you are choosing a form
-        for the paper you can see behind it, not leaving for a different app. */}
-    <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(6,5,3,0.72)' }} />
-    <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+  <View style={[p.screen, { justifyContent: 'flex-end' }]}>
+    <View style={{ paddingBottom: 34 }}>
       {/* `onRules`, as the app passes it: an optional prop left off is a screen it lacks. */}
       <PaperPicker onRules={() => {}} />
     </View>
@@ -737,6 +722,13 @@ add('f6-docket', (
   </View>
 ));
 
+/** The card as the reader makes it: at its one width, whatever the phone, shown scaled to fit as a picture is. */
+const ShareCard = (props: Omit<React.ComponentProps<typeof DossierShareCard>, 'width'>) => (
+  <View style={{ transform: [{ scale: Math.min(1, (W - 32) / SHARE_CARD_WIDTH) }] }}>
+    <DossierShareCard {...props} width={SHARE_CARD_WIDTH} />
+  </View>
+);
+
 /* The essay a card has to survive: 25,000 characters is the ceiling, so the
    opening below is deliberately longer than the card can hold. If the cut is
    working, this ends on a full stop and prints THE ESSAY CONTINUES. */
@@ -750,31 +742,9 @@ const OZU_OPENING =
   'none of us have ever been asked to notice.';
 
 add('f7-share-card', (
-  <View style={[p.screen, { justifyContent: 'center', paddingHorizontal: 16 }]}>
-    <DossierShareCard title="The Long Silence in Ozu" author={ANA}
+  <View style={[p.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+    <ShareCard title="The Long Silence in Ozu" author={ANA}
       filed="24 AUGUST 2026" logo={LOGO_KEY} opening={OZU_OPENING} />
-  </View>
-));
-
-// The same card at three proportions, each with the opening its measure supports.
-add('r1-ratio-4x5', (
-  <View style={[p.screen, { justifyContent: 'center', paddingHorizontal: 16 }]}>
-    <DossierShareCard title="The Long Silence in Ozu" author={ANA}
-      filed="24 AUGUST 2026" logo={LOGO_KEY} opening={OZU_OPENING} ratio={4 / 5} />
-  </View>
-));
-
-add('r2-ratio-1x1', (
-  <View style={[p.screen, { justifyContent: 'center', paddingHorizontal: 16 }]}>
-    <DossierShareCard title="The Long Silence in Ozu" author={ANA}
-      filed="24 AUGUST 2026" logo={LOGO_KEY} opening={OZU_OPENING} ratio={1} max={150} />
-  </View>
-));
-
-add('r3-ratio-5x4', (
-  <View style={[p.screen, { justifyContent: 'center', paddingHorizontal: 16 }]}>
-    <DossierShareCard title="The Long Silence in Ozu" author={ANA}
-      filed="24 AUGUST 2026" logo={LOGO_KEY} opening={OZU_OPENING} ratio={5 / 4} max={120} />
   </View>
 ));
 
@@ -783,8 +753,8 @@ add('r3-ratio-5x4', (
    appear. A card that claims an essay runs on when it does not is a card that
    lies about the writing. */
 add('f7b-share-card-short', (
-  <View style={[p.screen, { justifyContent: 'center', paddingHorizontal: 16 }]}>
-    <DossierShareCard
+  <View style={[p.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+    <ShareCard
       title="What the Camera Refuses to Do, and Why That Refusal Is the Whole Argument"
       author={MIRA} filed="11 AUGUST 2026" logo={LOGO_KEY}
       opening="Every frame Bresson cut is still in the film. You feel their absence the way you feel a missing stair." />
@@ -794,7 +764,7 @@ add('f7b-share-card-short', (
 // The share card against inputs chosen to BREAK it: the title ceiling, a script Rye
 // cannot draw, no sentence end near the cut, a departed author. All real rows.
 const S = (n: string, el: React.ReactNode) =>
-  add(n, <View style={[p.screen, { justifyContent: 'center', paddingHorizontal: 16 }]}>{el}</View>);
+  add(n, <View style={[p.screen, { justifyContent: 'center', alignItems: 'center' }]}>{el}</View>);
 
 /* The title ceiling is 200 characters. This is 197. */
 const MAX_TITLE =
@@ -811,34 +781,34 @@ const NO_BREAK =
   'slow or indulgent or difficult but is simply refusing to pretend otherwise';
 
 S('s1-tiny', (
-  <DossierShareCard title="Ozu" author={DAN} filed="3 MARCH 2026"
+  <ShareCard title="Ozu" author={DAN} filed="3 MARCH 2026"
     logo={LOGO_KEY} opening="He never moved the camera. That was the argument." />
 ));
 
 S('s2-max-title', (
-  <DossierShareCard title={MAX_TITLE} author={ANA} filed="24 AUGUST 2026"
+  <ShareCard title={MAX_TITLE} author={ANA} filed="24 AUGUST 2026"
     logo={LOGO_KEY} opening={OZU_OPENING} />
 ));
 
 S('s3-no-break', (
-  <DossierShareCard title="A Room After Everyone Has Gone" author={MIRA}
+  <ShareCard title="A Room After Everyone Has Gone" author={MIRA}
     filed="1 JULY 2026" logo={LOGO_KEY} opening={NO_BREAK} />
 ));
 
 S('s4-japanese', (
-  <DossierShareCard title="東京物語について、あるいは空いた部屋" author={ANA}
+  <ShareCard title="東京物語について、あるいは空いた部屋" author={ANA}
     filed="24 AUGUST 2026" logo={LOGO_KEY} opening={OZU_OPENING} />
 ));
 
 /* No photograph, and a four-figure member number. */
 S('s5-no-avatar', (
-  <DossierShareCard title="Leaving the Room Last" author={SAJAD}
+  <ShareCard title="Leaving the Room Last" author={SAJAD}
     filed="18 JUNE 2026" logo={LOGO_KEY} opening={OZU_OPENING} />
 ));
 
 /* The author closed their account. The essay survives; the name does not. */
 S('s6-departed', (
-  <DossierShareCard title="What the Camera Refuses to Do" author={null}
+  <ShareCard title="What the Camera Refuses to Do" author={null}
     filed="2 FEBRUARY 2026" logo={LOGO_KEY} opening={OZU_OPENING} />
 ));
 
@@ -936,7 +906,7 @@ add('f7c-share-story', (
   <View style={[p.screen, { justifyContent: 'center', alignItems: 'center' }]}>
     <StoryFrame width={300}>
       <DossierShareCard title="The Long Silence in Ozu" author={ANA}
-        filed="24 AUGUST 2026" logo={LOGO_KEY} opening={OZU_OPENING} width={358} />
+        filed="24 AUGUST 2026" logo={LOGO_KEY} opening={OZU_OPENING} width={SHARE_CARD_WIDTH} />
     </StoryFrame>
   </View>
 ));
@@ -1303,10 +1273,9 @@ add('t9-se-desk', (
 
 describe('paper mockups', () => {
   it('renders every screen to html', () => {
-    mkdirSync(OUT, { recursive: true });
     for (const [name, el] of out) {
       const r = render(el);
-      writeFileSync(join(OUT, `${name}.html`), toHtml(r.toJSON(), { posters: IMAGES, local: LOCAL_ART }), 'utf8');
+      writeScreen(name, toHtml(r.toJSON(), { posters: IMAGES, local: LOCAL_ART }));
       r.unmount();
     }
     expect(out.length).toBeGreaterThan(15);

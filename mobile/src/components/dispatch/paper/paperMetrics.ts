@@ -238,3 +238,11 @@ export const formatCount = (n: number): string | null => {
   // Ten units and up: whole units only, and a trillion or more stays 999B.
   return `${Math.min(Math.floor(tenths / 10), 999)}${unit}`;
 };
+
+/**
+ * An essay's share card: a picture, the same on every phone, at the width it is
+ * set for (a 390pt phone less 16 a side). Its budgets for the title and opening
+ * are counted at this width; a page's measure (315) is 45pt short of its 4:5, and
+ * there the dateline and the signature print over the words.
+ */
+export const SHARE_CARD_WIDTH = 358;

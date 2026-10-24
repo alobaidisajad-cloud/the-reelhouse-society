@@ -1398,3 +1398,44 @@ classes:
       - { kind: running, file: src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx, test: "to a member whose ledger holds a film: the house has seen their taste" }
     fix: "the line is said only once the member's ledger is read whole and holds a film (marksLedger); before, the bill says what is true of anyone: The house keeps its best seats / for those who keep the record. The Lobby's other words about a member are true by their rank (mutant shape-taste-claimed-unseen)"
     places: [none]
+
+  - id: LOOK-stand-in-eye
+    title: "A drawn or stock eye stood where the house signs with its own logo: the Take Your Rank banner, the Lounge's gate, and the Lobby's own tab"
+    seriousness: code
+    area: brand
+    status: OPEN
+    count: 3
+    source: { kind: history, ref: "build 41 (UF7); the owner, 2026-10-24: never a generic eye in place of the official logo" }
+    methods:
+      - { kind: static, file: src/components/__tests__/theHouseSignsWithItsLogo.test.tsx, test: "imports one only where the list keeps it, and every kept place still does" }
+      - { kind: static, file: src/components/__tests__/theHouseSignsWithItsLogo.test.tsx, test: "wears the house's eye, tinted as the other tabs are" }
+      - { kind: static, file: src/components/__tests__/theHouseSignsWithItsLogo.test.tsx, test: "is the mark on a clear ground" }
+    fix: "the banner and the gate draw MasterLogo; the Lobby tab wears the official logo's small cut (the eye and its reel, without the rays), its black ground made clear (assets/images/reelhouse-eye.png), tinted bone at rest and flicker when chosen as the other tabs are; the drawn eye (ReelEyeIcon) is gone. The finder refuses ReelEyeIcon or lucide's Eye anywhere but a listed icon (mutants shape-tab-eye-stand-in, shape-tab-eye-untinted)"
+    places: [none]
+
+  - id: TEST-drawing-left-unmeasured
+    title: "The Dispatch's plates were drawn on every CI run into a folder no check read, so a share card exported with words over words, a stamp laid over the answerer's rank, a stamp whose shadow iOS never drew, a composer that ran two words a line and broke its count past the edge, and a salon card whose halo took the next card's taps stood unseen"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 7
+    source: { kind: reviewer, ref: "the Dispatch's SE desk plate, measured by hand, 2026-10-24" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/everyDrawingIsMeasured.guard.test.ts, test: "writes every screen of the app through writeScreen, or is an exploration, listed with its reason" }
+      - { kind: static, file: src/utils/__tests__/everyDrawingIsMeasured.guard.test.ts, test: "draws into the folder the drawing job measures" }
+    fix: "the five generators of the Dispatch's plates write through writeScreen, into the folder the drawing job measures at every width and text size (parity and words), and writeScreen writes only when a drawing was asked for; the design explorations are listed, each with its reason. The faults found: the share card is exported at SHARE_CARD_WIDTH, the width its budgets are counted at, where a page's measure set the dateline and the signature over the words, and its unused 1:1 and 5:4 shapes and max override are gone; the answer is signed under the whole letter and the ANSWERED stamp takes a line of its own where the byline's is full, and a name shorter than the byline's floor no longer takes it; the stamp casts its lift from a host that does not clip, and WITHHELD has none on either phone; a desk's words go under the lead-in where three would not fit beside it, and the rail's count takes its own line; the salon card has no halo; the kind picker's plate draws the screen the app presents (mutant shape-plate-written-aside)"
+    places: [none]
+
+  - id: TEXT-nested-takes-the-house-ceiling
+    title: "A Text inside another was handed the house's 1.35 ceiling, where React Native gives a nested Text its parent's: a nested word outgrew a lower-capped line around it, and neither the tests nor the drawings could see a Text was nested"
+    seriousness: layout
+    area: type
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "the essay's share card measured at large sizes, 2026-10-24: its nested words grew while their lines did not" }
+    methods:
+      - { kind: running, file: src/components/text/__tests__/theTextKeepsItsPromises.test.tsx, test: "a nested text takes its parent's scaling, and nothing of the house's" }
+      - { kind: running, file: src/components/text/__tests__/theTextKeepsItsPromises.test.tsx, test: "a nested label is corrected as its parent scales: halved in a growing line, as written in a frozen one" }
+      - { kind: running, file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "frozen in a frozen line, whatever it asks for: React Native drops a nested allowFontScaling" }
+    fix: "the app's Text gives a nested Text nothing of the house's (React Native drops a nested allowFontScaling and gives it the parent's cap); a frozen Text tells the Texts inside it, so Android's spacing correction follows the parent. Jest's stand-in for React Native's Text tells nested Texts they are nested, as the real one does; the renderer draws a nested Text with its parent's scaling, through a capture run's source marks too (mutants shape-nested-text-housed, shape-render-nested-own-cap)"
+    places: [none]

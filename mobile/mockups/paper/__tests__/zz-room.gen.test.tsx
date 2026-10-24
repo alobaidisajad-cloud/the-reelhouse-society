@@ -20,8 +20,7 @@
  */
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
-import { writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { writeScreen } from '@/mockups/paths';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 
 import ComposeScreen from '@/app/dispatch/compose';
@@ -55,17 +54,15 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
   storage: { getString: () => undefined, set: jest.fn(), delete: jest.fn() },
 }));
 
-const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'out');
 
 describe('the writing room', () => {
   it('renders the real screen to html', async () => {
-    mkdirSync(OUT, { recursive: true });
 
     const r = render(<ComposeScreen />);
     // The mount's effects settled: the room as a member first sees it.
     await act(async () => { await Promise.resolve(); });
 
-    writeFileSync(join(OUT, 'w1-the-writing-room.html'), toHtml(r.toJSON()), 'utf8');
+    writeScreen('w1-the-writing-room', toHtml(r.toJSON()));
 
     // The plate is worthless if the screen rendered nothing, which is exactly
     // how a signed-out composer once produced an empty tree.

@@ -15,8 +15,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { View } from 'react-native';
-import { writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { writeScreen } from '@/mockups/paths';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 
 import { EssayHead } from '@/src/components/dispatch/paper/PaperEssay';
@@ -29,7 +28,6 @@ jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(), notificationAsync: jest.fn(), selectionAsync: jest.fn(),
 }));
 
-const OUT = process.env.PAPER_OUT ?? join(__dirname, '..', 'out');
 
 const ANA = { name: 'ana', memberNo: 17, tier: 'auteur' as const, avatar: null };
 const FILM = {
@@ -53,14 +51,13 @@ const head = (
 
 describe('the essay’s cover', () => {
   it('renders in the reader’s sheet and in the writing room’s preview', () => {
-    mkdirSync(OUT, { recursive: true });
 
     const reader = render(
       <View style={p.screen} testID="reader">
         <PaperSheet>{head}</PaperSheet>
       </View>,
     );
-    writeFileSync(join(OUT, 'x1-cover-in-the-reader.html'), toHtml(reader.toJSON()), 'utf8');
+    writeScreen('x1-cover-in-the-reader', toHtml(reader.toJSON()));
 
     /**
      * The writing room's preview: the same head, in a plain scroll body whose
@@ -74,7 +71,7 @@ describe('the essay’s cover', () => {
         </View>
       </View>,
     );
-    writeFileSync(join(OUT, 'x2-cover-in-the-preview.html'), toHtml(room.toJSON()), 'utf8');
+    writeScreen('x2-cover-in-the-preview', toHtml(room.toJSON()));
 
     /**
      * The BAND, not the bytes. `zz-render.lib` replaces a remote image with a

@@ -39,7 +39,7 @@ import { DossierShareCard, PaperBack } from '@/src/components/dispatch/paper/Pap
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { NOT_SENT_LINE, WITHHELD_LINE, partOf } from '@/src/components/dispatch/paper/paperText';
-import { measure, KIND_NAME } from '@/src/components/dispatch/paper/paperMetrics';
+import { measure, KIND_NAME, SHARE_CARD_WIDTH } from '@/src/components/dispatch/paper/paperMetrics';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { roomOf } from '@/src/components/dispatch/roomLink';
 import { hourLabel } from '@/src/components/dispatch/dayLabel';
@@ -695,8 +695,7 @@ export default function FilingReader() {
               author={author}
               filed={formatDateMonthDay(live.createdAt).toUpperCase()}
               logo={Image.resolveAssetSource(HOUSE_MARK).uri}
-              // A picture, the same on every phone: a 390pt page's measure.
-              width={measure(390)}
+              width={SHARE_CARD_WIDTH}
             />
           </ViewShot>
         </View>

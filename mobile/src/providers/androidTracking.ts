@@ -21,9 +21,9 @@
  * imports — so no label has to know. A text that does not scale (`allowFontScaling={false}`) is
  * drawn by Android as written and is left alone.
  *
- * One edge it cannot see: a FROZEN text nested inside a scaling one inherits
- * the parent's corrected spacing and draws it unscaled — tighter. Nothing in the
- * app nests a spaced frozen text in a spaced scaling one.
+ * A Text inside another scales as its parent does (React Native drops a nested
+ * `allowFontScaling`), so its spacing is corrected exactly when the parent's
+ * scaling would grow it.
  */
 import { StyleSheet, type StyleProp, type TextStyle } from 'react-native';
 
