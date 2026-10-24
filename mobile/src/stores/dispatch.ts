@@ -133,6 +133,11 @@ export interface DispatchState {
   /** The order the loaded pages were fetched IN, so a page can be continued. */
   critiquesOrder: Record<string, CritiqueOrder>;
   certifiedCritiqueIds: Set<string>;
+  /**
+   * The critiques whose certification by this member the house has answered. One outside it
+   * is unknown, never "not certified": its read comes after the critiques, and may fail.
+   */
+  critiqueMarksKnown: Set<string>;
 
   setSection: (s: Section) => void;
   setSort: (s: Sort) => void;
@@ -293,6 +298,7 @@ const emptyState = () => ({
   critiquesHasMore: {} as Record<string, boolean>,
   critiquesOrder: {} as Record<string, CritiqueOrder>,
   certifiedCritiqueIds: new Set<string>(),
+  critiqueMarksKnown: new Set<string>(),
 });
 
 export const useDispatch = create<DispatchState>((set, get) => ({
@@ -865,6 +871,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     set((st) => ({
       critiques: { ...st.critiques, [postId]: [optimistic, ...(st.critiques[postId] ?? [])] },
+      // Filed this moment: nobody has certified it, this member least of all.
+      critiqueMarksKnown: new Set(st.critiqueMarksKnown).add(id),
       ...patchFiling(st, postId, (f) => ({ ...f, commentCount: f.commentCount + 1 })),
     }));
 
@@ -1280,7 +1288,10 @@ async function loadCritiqueCertifications(
     set((st) => {
       const ids = new Set(st.certifiedCritiqueIds);
       for (const r of data ?? []) if (r.comment_id) ids.add(r.comment_id as string);
-      return { certifiedCritiqueIds: ids };
+      // Answered for every critique asked about: those not in the answer are not certified.
+      const known = new Set(st.critiqueMarksKnown);
+      for (const c of critiques) known.add(c.id);
+      return { certifiedCritiqueIds: ids, critiqueMarksKnown: known };
     });
   } catch (e) {
     if (!isNetworkError(e)) captureError(e, { where: 'dispatch.critiqueCerts' });

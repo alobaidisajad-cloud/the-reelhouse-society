@@ -1682,3 +1682,21 @@ mutants:
         find: "  const cta = reading ? '✦ ASK AGAIN' : lapsed"
         replace: "  const cta = lapsed"
     proof: { file: src/components/clearance/__tests__/oneRopeNotThree.test.tsx, test: "sells nothing to a member whose rank is not yet read: it says so, and asks again" }
+
+  - id: shape-critique-heart-pressable-unread
+    class: UI-unknown-mark-drawn-as-off
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperCritiques.tsx
+        find: "            onPress={onCertify && !markReading ? () => onCertify(!c.certified) : undefined}\n            disabled={!onCertify || markReading}\n"
+        replace: "            onPress={onCertify ? () => onCertify(!c.certified) : undefined}\n            disabled={!onCertify}\n"
+    proof: { file: src/components/dispatch/__tests__/aMarkUnreadIsNotOff.test.tsx, test: "unread: neither pressable nor certified, said to be reading; read: the member's, and pressable" }
+
+  - id: shape-critique-mark-never-known
+    class: UI-unknown-mark-drawn-as-off
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      for (const c of critiques) known.add(c.id);\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aCritiqueMarkIsReadBeforeItIsDrawn.test.ts, test: "answered, knows each critique asked about: certified or not" }

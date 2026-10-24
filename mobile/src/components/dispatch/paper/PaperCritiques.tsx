@@ -26,6 +26,8 @@ export interface Critique {
   body: string;
   certifyCount: number;
   certified?: boolean;
+  /** False while this member's certification of it is not yet read: never drawn as not given. */
+  certifyKnown?: boolean;
   age: string;
   film?: PaperFilm | null;   // an answer, on a seeking post
   mine?: boolean;
@@ -165,6 +167,8 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
   onReport?: () => void;
 }) {
   const n = formatCount(c.certifyCount);
+  // A member's certification of this critique not yet read: drawn as the outline before the ink.
+  const markReading = !!onCertify && c.certifyKnown === false;
   return (
     <View style={[p.comment, c.mine && p.commentMine]}>
       <View style={p.avatar}>
@@ -196,21 +200,25 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 8, marginLeft: -8 }}
             hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }} haptic
             // Absent for a signed-out reader, and an absent handler is not a
-            // control: `onCertify?.()` made this look live and do nothing.
-            onPress={onCertify ? () => onCertify(!c.certified) : undefined}
-            disabled={!onCertify}
+            // control: `onCertify?.()` made this look live and do nothing. Their
+            // mark not yet read, it is not pressable either: a press then filed a
+            // certification they may already have given.
+            onPress={onCertify && !markReading ? () => onCertify(!c.certified) : undefined}
+            disabled={!onCertify || markReading}
             accessibilityRole="button"
-            accessibilityState={{ selected: !!c.certified, disabled: !onCertify }}
+            accessibilityState={{ selected: !markReading && !!c.certified, disabled: !onCertify || markReading, busy: markReading }}
             // The count is said here, as on every bar; the number beside the
             // heart is hidden so it is not read twice.
             accessibilityLabel={
               !onCertify ? `Certify this critique. Members only${c.certifyCount > 0 ? `. ${counted(c.certifyCount, 'member has', 'members have')} certified it` : ''}`
+                : markReading ? 'Certify this critique. Reading your mark'
                 : certifyLabel(c.certifyCount, !!c.certified, 'this critique')
             }
           >
             <Heart size={12} strokeWidth={2}
               color={c.certified ? colors.crimson : colors.fog}
-              fill={c.certified ? colors.crimson : 'transparent'} />
+              fill={c.certified ? colors.crimson : 'transparent'}
+              strokeDasharray={markReading ? UNINKED : undefined} />
             {/* None is drawn as nothing — not an empty slot beside the heart. */}
             {n ? (
               <Text style={[p.commentMeta, { marginTop: 0 }, c.certified && { color: CRIMSON_INK }]} {...scaledTextProps} {...UNSPOKEN}>

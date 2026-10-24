@@ -97,6 +97,7 @@ export default function FilingReader() {
   const critiquesLoadingMore = useDispatch((s) => s.critiquesLoadingMore);
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const certifiedCritiqueIds = useDispatch((s) => s.certifiedCritiqueIds);
+  const critiqueMarksKnown = useDispatch((s) => s.critiqueMarksKnown);
   const savedIds = useDispatch((s) => s.savedIds);
   const myVotes = useDispatch((s) => s.myVotes);
   // Which of this member's marks have been read: until then each is drawn unknown, not off.
@@ -602,6 +603,7 @@ export default function FilingReader() {
                 body: c.body,
                 certifyCount: c.certifyCount,
                 certified: certifiedCritiqueIds.has(c.id),
+                certifyKnown: !me || critiqueMarksKnown.has(c.id),
                 age: timeAgo(c.createdAt).toUpperCase(),
                 mine: !!me && c.authorId === me.id,
                 taken: live.answerId === c.id,

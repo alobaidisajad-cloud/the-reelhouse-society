@@ -120,7 +120,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/reels.tsx | 2026-10-23 | edited: the page's wash kept as a texture while the Reel is in front; following nobody only of a list read: an unread follow list spools, a failed one says so and reads it again (both reels); the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/+not-found.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
 | app/auth-callback.tsx | 2026-10-22 | edited: a spent link raised in Supabase's own words, so the member reads the house's sentence |
-| app/dispatch/[id].tsx | 2026-10-23 | edited: which of the member's marks are read (marksKnown), passed to the ballot, the post and the dock: unread, drawn unknown; the post and the ballot told the dock holds their marks |
+| app/dispatch/[id].tsx | 2026-10-24 | edited: each critique told whether its mark is known |
 | app/dispatch/archive.tsx | 2026-10-15 | foot from useContentBottom |
 | app/dispatch/compose.tsx | 2026-10-15 | header and door from useModalTop; feet from navMetrics; the essay's footer never on the edge |
 | app/dispatch/room/[username].tsx | 2026-10-15 | foot from useContentBottom, scrollbar from useBottomEdge |
@@ -481,7 +481,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/FilingRow.tsx | 2026-10-23 | edited: whether the member's certify and save on its filing are read, from the store; read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperBallot.tsx | 2026-10-23 | edited: voteKnown: unread, its boxes unlinked and its options locked; the stamps' known passed on; docked, the ballot draws no row of marks of its own |
 | src/components/dispatch/paper/PaperComposer.tsx | 2026-10-15 | head top from useModalTop |
-| src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-23 | edited: the dock's certify and save drawn unknown while unread, as PaperActions draws them (UNINKED); spine top from usePushedHeaderTop |
+| src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-24 | edited: a critique's heart, its mark unread: uninked, said to be reading, not pressable |
 | src/components/dispatch/paper/PaperDesk.tsx | 2026-10-15 | DeskHead top from useModalTop |
 | src/components/dispatch/paper/PaperDeskDoc.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperEssay.tsx | 2026-10-04 | edited: the raised initial is extractDropCap’s |
@@ -928,6 +928,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/theSecondKeyIsReadAsItIs.test.tsx | 2026-10-17 | new: each refusal the hook meets, handed back as what it is |
 | src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx | 2026-10-23 | new: an edit over a record the phone has not paged in, against the strict fake |
 | src/stores/__tests__/theLedgerIsKnownWhole.test.ts | 2026-10-23 | new: the ledger against the strict fake |
+| src/stores/__tests__/aCritiqueMarkIsReadBeforeItIsDrawn.test.ts | 2026-10-24 | new: the critiques' marks against the strict fake |
 | src/hooks/useTextScale.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
 | src/hooks/useUpdateUser.ts | 2026-10-02 | read; sound |
@@ -1092,7 +1093,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/blockStore.ts | 2026-10-23 | edited: blocksKnown: the lists the member's, from a saved copy or a read; cleared at sign-out; sign-out erases the leaving member's saved list |
 | src/stores/createSelectors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/discover.ts | 2026-10-02 | Read whole (launch audit). Its comment said the Darkroom's results survive a restart; the films found are not persisted, only the mood, filters and search. |
-| src/stores/dispatch.ts | 2026-10-23 | edited: marksKnown, per kind, from each read that answered; the page, the next page and the reader no longer wait for the marks; the saved page is the house's answer, joined to the member's own saves (SAVED_CARD_COLUMNS); an act read or answered after its member left neither queues nor puts back |
+| src/stores/dispatch.ts | 2026-10-24 | edited: critiqueMarksKnown, the critiques whose certification the house answered (and one filed here); unknown is never not certified |
 | src/stores/dispatchTypes.ts | 2026-10-02 | Read whole (launch audit): row shapes match the live schema (body NOT NULL DEFAULT '', so an ended filing parses). Sound; left alone. |
 | src/stores/domain/__tests__/aFilmAlreadyQueuedStaysQueued.test.ts | 2026-10-02 | a film already on the watchlist stays, and is said to be |
 | src/stores/domain/__tests__/aLogsWordsAreCleanedEverywhere.test.ts | 2026-10-03 | edited: its hidden characters built from code points |
