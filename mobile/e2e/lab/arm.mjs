@@ -40,6 +40,8 @@
  *   Cp      no poster                Ct  the title not shrunk to fit
  *   Cr      no review                Ca  no action deck
  *
+ * Any screen, profiled (Pr): Hermes's sampling profile of its opening, read by e2e/lab/profile.mjs.
+ *
  * The house's lit edge (EDGE_LIT), each part taken off everywhere, on a stack (LAB_ARM_SCREEN=stack):
  *   Kx      no inset highlight       Kg  no face gradient        K0  neither
  *
@@ -307,6 +309,31 @@ const postNoSoftBreak = [edit(POST_FILE, 'TAKE — </Text>{softBreak(body)}', 'T
 /** The Dispatch's posts: each part alone, and all four (E0). */
 export const POST_ARMS = ['Ea', 'Eb', 'Er', 'Es', 'E0'];
 
+// Pr: where the JavaScript thread's time goes as a screen opens, sampled. Hermes's sampling profiler
+// starts with the app and is written to the app's own files when the first screen is ready;
+// scrolls.sh takes it off the phone, and e2e/lab/profile.mjs reads it, symbolicated against the
+// build's source map. Its first line says which of the profiler's calls this Hermes has.
+const profiled = [
+  edit('app/_layout.tsx', 'SplashScreen.preventAutoHideAsync();\n', [
+    'const labHermes = (globalThis as { HermesInternal?: Record<string, (...a: unknown[]) => unknown> }).HermesInternal;',
+    'console.warn(`[e2e] lab.hermes ${JSON.stringify(Object.getOwnPropertyNames(labHermes ?? {}))}`);',
+    'labHermes?.enableSamplingProfiler?.();',
+    'SplashScreen.preventAutoHideAsync();',
+    '',
+  ].join('\n')),
+  edit('src/hooks/useScreenReady.tsx', "    e2eTrace(read === 'ready' ? 'screen.ready' : 'screen.failed', { name, ms: Date.now() - startedAt.current });\n", [
+    "    e2eTrace(read === 'ready' ? 'screen.ready' : 'screen.failed', { name, ms: Date.now() - startedAt.current });",
+    '    const labHermes = (globalThis as { HermesInternal?: Record<string, (...a: unknown[]) => unknown>; labProfiled?: boolean });',
+    '    if (labHermes.HermesInternal?.dumpSampledTraceToFile && !labHermes.labProfiled) {',
+    '      labHermes.labProfiled = true;',
+    '      labHermes.HermesInternal.disableSamplingProfiler?.();',
+    '      labHermes.HermesInternal.dumpSampledTraceToFile(`/data/user/0/com.reelhouse.society/files/${name}.cpuprofile`);',
+    "      e2eTrace('lab.profile', { name });",
+    '    }',
+    '',
+  ].join('\n')),
+];
+
 // The house's lit edge (EDGE_LIT, on some fifty kinds of surface), in its two parts, each taken off
 // everywhere: Android draws the inset highlight by clipping to the surface's rounded outline on
 // every frame it replays, and the card's edge alone held the Reel's slowest frames 225-325 ms
@@ -359,6 +386,7 @@ export const ARMS = {
   Er: postNoRankRule,
   Es: postNoSoftBreak,
   E0: [...postNoActions, ...postNoByline, ...postNoRankRule, ...postNoSoftBreak],
+  Pr: profiled,
   Kx: edgeNoHighlight,
   Kg: edgeNoFace,
   K0: edgeNone,
