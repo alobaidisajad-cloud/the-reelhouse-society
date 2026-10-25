@@ -1776,6 +1776,15 @@ mutants:
         replace: "      : (p.allowFontScaling === false ? 1 : own ?? 0);"
     proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "frozen in a frozen line, whatever it asks for: React Native drops a nested allowFontScaling" }
 
+  - id: shape-late-global-held
+    class: E2E-runtime-held-to-a-moment
+    source: shape
+    edits:
+      - file: e2e/runtime-dump.mjs
+        find: "    const gained = a.filter((n) => !b.includes(n) && !late(n));"
+        replace: "    const gained = a.filter((n) => !b.includes(n));"
+    proof: { file: e2e/__tests__/runtimeDump.test.ts, test: "holds a global a native module installs late to no moment, and only that one, only on globalThis" }
+
   - id: shape-lobby-drawn-unseen
     class: SPEED-the-tabs-home-drawn-unseen
     source: shape

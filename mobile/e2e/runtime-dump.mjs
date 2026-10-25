@@ -61,6 +61,18 @@ export function readLaunches(log) {
   });
 }
 
+/**
+ * Globals a native module installs on the runtime when the module first starts, which can come
+ * before or after the first screen writes the runtime: each launch may have them or not, so they are
+ * never held to the copy, either way. Each named with what installs it. Nothing else is excused.
+ */
+export const INSTALLED_LATE = {
+  // Its native module installs it as a JSI function when it first starts; the app reads it only
+  // under __DEV__ (useViewRefHandler). Sealed E2E 40183148664: a launch had it, once the Lobby was
+  // drawn only when first seen and that launch's first screen wrote the runtime at another moment.
+  isViewFlatteningDisabled: 'react-native-gesture-handler',
+};
+
 /** How a runtime differs from the copy, one line a built-in ([] when equal). */
 export function differences(dump, copy) {
   const out = [];
@@ -73,8 +85,9 @@ export function differences(dump, copy) {
       if (a !== b) out.push(`${of}: ${a === null ? 'absent on the phone' : 'absent in the copy'}`);
       continue;
     }
-    const gained = a.filter((n) => !b.includes(n));
-    const lost = b.filter((n) => !a.includes(n));
+    const late = (n) => of === 'globalThis' && n in INSTALLED_LATE;
+    const gained = a.filter((n) => !b.includes(n) && !late(n));
+    const lost = b.filter((n) => !a.includes(n) && !late(n));
     const list = (xs) => `${xs.slice(0, 12).join(', ')}${xs.length > 12 ? ` and ${xs.length - 12} more` : ''}`;
     if (gained.length) out.push(`${of}: the phone has ${list(gained)}, the copy does not`);
     if (lost.length) out.push(`${of}: the copy has ${list(lost)}, the phone does not`);

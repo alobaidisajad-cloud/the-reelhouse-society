@@ -52,6 +52,20 @@ it('says NO to a runtime that is not the copy, naming what each side has', () =>
   expect(out).toContain('AbortSignal: the phone has timeout, the copy does not');
 });
 
+it('holds a global a native module installs late to no moment, and only that one, only on globalThis', () => {
+  // One launch has it, another not, the copy neither: none of them is a difference.
+  const late = { ...PHONE, globalThis: [...GLOBALS, 'isViewFlatteningDisabled'] };
+  const passed = run([...launch(100, late), ...launch(200, PHONE)], PHONE);
+  expect(passed.code).toBe(0);
+  // Any other new global still fails, and the late name is not excused on a built-in.
+  const other = run(launch(100, { ...late, globalThis: [...late.globalThis, 'somethingNew'] }), PHONE);
+  expect(other.code).toBe(1);
+  expect(other.out).toContain('globalThis: the phone has somethingNew, the copy does not');
+  expect(other.out).not.toContain('isViewFlatteningDisabled');
+  const onABuiltIn = run(launch(100, { ...PHONE, AbortSignal: ['prototype', 'abort', 'isViewFlatteningDisabled'] }), PHONE);
+  expect(onABuiltIn.out).toContain('AbortSignal: the phone has isViewFlatteningDisabled, the copy does not');
+});
+
 it('says NO to a part that never reached the log', () => {
   const lines = launch(100, PHONE);
   const cut = lines.filter((l) => !l.includes('"part":2,'));

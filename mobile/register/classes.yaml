@@ -1449,6 +1449,18 @@ classes:
     fix: "the app's Text gives a nested Text nothing of the house's (React Native drops a nested allowFontScaling and gives it the parent's cap); a frozen Text tells the Texts inside it, so Android's spacing correction follows the parent. Jest's stand-in for React Native's Text tells nested Texts they are nested, as the real one does; the renderer draws a nested Text with its parent's scaling, through a capture run's source marks too (mutants shape-nested-text-housed, shape-render-nested-own-cap)"
     places: [none]
 
+  - id: E2E-runtime-held-to-a-moment
+    title: "The runtime check held every global name to the committed copy, so a global a native module installs when it first starts (gesture-handler's isViewFlatteningDisabled) failed a Sealed E2E run whenever a launch's first screen wrote the runtime after that start instead of before"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "Sealed E2E 40183148664, shard 3: a launch's runtime had isViewFlatteningDisabled, the copy did not" }
+    methods:
+      - { kind: running, file: e2e/__tests__/runtimeDump.test.ts, test: "holds a global a native module installs late to no moment, and only that one, only on globalThis" }
+    fix: "runtime-dump.mjs names each late global with what installs it (INSTALLED_LATE) and holds it to no moment, on globalThis alone; every other name, and that name on a built-in, is held to the copy as before (mutant shape-late-global-held)"
+    places: [emulator]
+
   - id: SPEED-the-tabs-home-drawn-unseen
     title: "A link that opened a screen over the tabs (a salon, a log) mounted the Lobby, their home, beneath it, unseen: the Lobby drew its whole wall and asked for its reads on the same thread, and the salon's own answers waited behind it, ready at 1.2-1.9 s with its own part 0.12 s"
     seriousness: behaviour
