@@ -42,7 +42,8 @@
  *   Cr      no review                Ca  no action deck
  *
  * Any screen opened with the boot's background reads begun 1.5 s later (Bd); with the query cache
- * never written (Qp), or never read back at launch (Qr).
+ * never written (Qp), or never read back at launch (Qr); with React's own render times written (Rf,
+ * built last).
  *
  * The house's lit edge (EDGE_LIT), each part taken off everywhere, on a stack (LAB_ARM_SCREEN=stack):
  *   Kx      no inset highlight       Kg  no face gradient        K0  neither
@@ -360,6 +361,38 @@ const cacheNotWritten = [edit(QUERY_FILE, '  persistClient: async (client: Persi
 const cacheNotRead = [edit(QUERY_FILE, '  restoreClient: async () => {\n    try {\n',
   '  restoreClient: async () => {\n    if (globalThis) return undefined;\n    try {\n')];
 
+// Rf: where React's own time goes as a screen opens. Speed lab 40198489341 cleared the query cache
+// (read in 2 ms, written in 22 at most); the Dispatch still takes its answer in a second after it
+// came. The build takes React Native's profiling renderer (its production one keeps no timings), and
+// React's Profiler around the whole app and the Dispatch writes each commit over 8 ms: which tree,
+// mount or update, its ms, and the wall clock it ended at. Its metro change outlives `git checkout
+// -- src app`, so Rf is built last.
+const rendersTimed = [
+  edit('metro.config.js', '  const resolve = upstream ?? context.resolveRequest;\n',
+    "  const resolve = upstream ?? context.resolveRequest;\n  if (moduleName.includes('ReactFabric-prod')) moduleName = moduleName.replace('ReactFabric-prod', 'ReactFabric-profiling');\n"),
+  edit('app/_layout.tsx', "import { useCallback, useEffect, useState } from 'react';\n",
+    "import { Profiler, useCallback, useEffect, useState } from 'react';\n"),
+  edit('app/_layout.tsx', 'SplashScreen.preventAutoHideAsync();\n', [
+    'SplashScreen.preventAutoHideAsync();',
+    'const labRendered = (id: string, phase: string, ms: number) => {',
+    '  if (ms > 8) console.warn(`[e2e] lab.render ${JSON.stringify({ id, phase, ms: Math.round(ms), wall: Date.now() })}`);',
+    '};',
+    '',
+  ].join('\n')),
+  edit('app/_layout.tsx', '        <AppBootstrapper>\n', '        <Profiler id="app" onRender={labRendered}><AppBootstrapper>\n'),
+  edit('app/_layout.tsx', '        </AppBootstrapper>\n', '        </AppBootstrapper></Profiler>\n'),
+  edit('app/(tabs)/dispatch.tsx', "import { useCallback, useEffect, useMemo, useRef } from 'react';\n",
+    "import { Profiler, useCallback, useEffect, useMemo, useRef } from 'react';\n"),
+  edit('app/(tabs)/dispatch.tsx', '    <FrozenTab>\n', [
+    '    <Profiler id="dispatch" onRender={(id: string, phase: string, ms: number) => {',
+    '      if (ms > 8) console.warn(`[e2e] lab.render ${JSON.stringify({ id, phase, ms: Math.round(ms), wall: Date.now() })}`);',
+    '    }}>',
+    '    <FrozenTab>',
+    '',
+  ].join('\n')),
+  edit('app/(tabs)/dispatch.tsx', '    </FrozenTab>\n', '    </FrozenTab>\n    </Profiler>\n'),
+];
+
 // A stack's page, part by part (speed lab 40174299190: the lit edge off everywhere, K0, gave its
 // slowest frames 100 ms of the 75% slow UI frames it holds against the control's 35%).
 const STACK_FILE = 'app/stacks/[id].tsx';
@@ -424,6 +457,7 @@ export const ARMS = {
   Bd: bootReadsWait,
   Qp: cacheNotWritten,
   Qr: cacheNotRead,
+  Rf: rendersTimed,
   Sv: stackVeilStill,
   Sd: stackHeroStill,
   Sk: stackCardsUnclipped,
