@@ -1776,6 +1776,15 @@ mutants:
         replace: "      : (p.allowFontScaling === false ? 1 : own ?? 0);"
     proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "frozen in a frozen line, whatever it asks for: React Native drops a nested allowFontScaling" }
 
+  - id: shape-lobby-drawn-unseen
+    class: SPEED-the-tabs-home-drawn-unseen
+    source: shape
+    edits:
+      - file: app/(tabs)/index.tsx
+        find: "  return opened ? <LobbyBody /> : <View style={s.container} testID=\"lobby-unseen\" />;"
+        replace: "  return <LobbyBody />;"
+    proof: { file: src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx, test: "draws its ground alone and asks the house for nothing until it is first seen; seen, it hangs the wall" }
+
   - id: shape-reel-beam-returns
     class: LOOK-the-reel-lit-as-noise
     source: shape

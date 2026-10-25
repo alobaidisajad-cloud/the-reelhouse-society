@@ -1449,6 +1449,18 @@ classes:
     fix: "the app's Text gives a nested Text nothing of the house's (React Native drops a nested allowFontScaling and gives it the parent's cap); a frozen Text tells the Texts inside it, so Android's spacing correction follows the parent. Jest's stand-in for React Native's Text tells nested Texts they are nested, as the real one does; the renderer draws a nested Text with its parent's scaling, through a capture run's source marks too (mutants shape-nested-text-housed, shape-render-nested-own-cap)"
     places: [none]
 
+  - id: SPEED-the-tabs-home-drawn-unseen
+    title: "A link that opened a screen over the tabs (a salon, a log) mounted the Lobby, their home, beneath it, unseen: the Lobby drew its whole wall and asked for its reads on the same thread, and the salon's own answers waited behind it, ready at 1.2-1.9 s with its own part 0.12 s"
+    seriousness: behaviour
+    area: runtime
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "speed lab 40172265454: the Lobby drawn once first seen (Lz), the salon opened 461 ms sooner with 18 MB less (Holm p < 0.01); its wall alone (Lq, speed lab 40157142171) gave 170 ms, not called; the room's own parts (Lc Lr Lp Lb) nothing" }
+    methods:
+      - { kind: running, file: src/components/lobby/__tests__/theLobbyScreenHangsTheWall.test.tsx, test: "draws its ground alone and asks the house for nothing until it is first seen; seen, it hangs the wall" }
+    fix: "LobbyScreen is drawn once it is first seen (useScreenSeen, set in the render it is first seen, so no frame of bare ground) and kept after; until then its ground alone. Opened on the Lobby it is seen from its first render, so nothing waits (mutant shape-lobby-drawn-unseen)"
+    places: [emulator]
+
   - id: LOOK-the-reel-lit-as-noise
     title: "The Reel stacked a lamp, a floor, a projector beam swinging and flickering over the feed, a sheen sweeping the curate button, a chip that breathed and a live dot that blinked every second: the member found its light messy and noisy, and on a phone the beam read as a hard dome across the header"
     seriousness: layout

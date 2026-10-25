@@ -48,8 +48,8 @@
  *   Es      a take's words without their soft breaks             E0  all four
  *
  * The salon opened cold (LAB_ARM_SCREEN=salon):
- *   Lq      the Lobby under it draws its wall only once it is first seen
- *   Lz      the whole Lobby under it drawn only once it is first seen
+ * (The Lobby under it drawn only once first seen, Lz, shipped: speed lab 40172265454, the salon
+ * opened 461 ms sooner with 18 MB less; its wall alone, Lq, went with it.)
  *   Lc      the live channel not joined  Lr  the room not marked read
  *   Lp      the room's presses as plain views
  *   Lb      the list drawn from its top, not its foot
@@ -307,28 +307,6 @@ const postNoSoftBreak = [edit(POST_FILE, 'TAKE — </Text>{softBreak(body)}', 'T
 /** The Dispatch's posts: each part alone, and all four (E0). */
 export const POST_ARMS = ['Ea', 'Eb', 'Er', 'Es', 'E0'];
 
-// The salon opened cold by its link draws the Lobby under it, its whole wall unseen (speed lab
-// 40046819617: the Lobby ready at 367 ms, before the room asked for anything). Lq: the wall waits
-// until the Lobby is first seen, and stays once it is.
-const LOBBY_FILE = 'app/(tabs)/index.tsx';
-// Lz: the whole Lobby, not its wall alone, drawn only once it is first seen; its ground until then.
-const lobbyWhollyWaits = [edit(LOBBY_FILE, 'export default function LobbyScreen() {\n', [
-  'export default function LobbyScreen() {',
-  "  const seenNow = require('@/src/hooks/useScreenSeen').useScreenSeen();",
-  '  const seenOnce = useRef(false);',
-  '  if (seenNow) seenOnce.current = true;',
-  '  return seenOnce.current ? <LobbyBody /> : <View style={{ flex: 1, backgroundColor: colors.ink }} />;',
-  '}',
-  '',
-  'function LobbyBody() {',
-  '',
-].join('\n'))];
-const lobbyWaitsToBeSeen = [
-  edit(LOBBY_FILE, '  useScrollToTop(scrollRef);\n',
-    "  useScrollToTop(scrollRef);\n  const lqNow = require('@/src/hooks/useScreenSeen').useScreenSeen();\n  const lqOnce = useRef(false);\n  if (lqNow) lqOnce.current = true;\n"),
-  edit(LOBBY_FILE, '        <LobbyWall />\n', '        {lqOnce.current ? <LobbyWall /> : null}\n'),
-];
-
 // The house's lit edge (EDGE_LIT, on some fifty kinds of surface), in its two parts, each taken off
 // everywhere: Android draws the inset highlight by clipping to the surface's rounded outline on
 // every frame it replays, and the card's edge alone held the Reel's slowest frames 225-325 ms
@@ -384,8 +362,6 @@ export const ARMS = {
   Kx: edgeNoHighlight,
   Kg: edgeNoFace,
   K0: edgeNone,
-  Lq: lobbyWaitsToBeSeen,
-  Lz: lobbyWhollyWaits,
   Lc: roomNotLive,
   Lr: roomNotMarked,
   Lp: roomPlainPresses,

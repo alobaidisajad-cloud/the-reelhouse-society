@@ -26,6 +26,7 @@ import { BrassSheen } from '@/src/components/theme/BrassSheen';
 import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { useScreenSeen } from '@/src/hooks/useScreenSeen';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { LobbyWall } from '@/src/components/lobby/LobbyWall';
 import { LIVE_LOBBY_READS, useFeature, useLobbyWall, useProgramme } from '@/src/components/lobby/wallRead';
@@ -44,7 +45,21 @@ const LOBBY = ['lobby'] as const;
 // ════════════════════════════════════════════════════════════════
 //  MAIN SCREEN: THE LOBBY
 // ════════════════════════════════════════════════════════════════
+/**
+ * The tabs' home, drawn once it is first seen and kept after. A link that opens a screen over
+ * the tabs (a salon, a log) mounts the Lobby beneath it, unseen: its wall and its reads held the
+ * salon's own answers back 0.46 s and 18 MB (speed lab 40172265454, Lz). Until then, its ground.
+ * Opened on the Lobby, it is seen from its first render, so nothing waits.
+ */
 export default function LobbyScreen() {
+  const seen = useScreenSeen();
+  const [opened, setOpened] = useState(seen);
+  // Set in render, so the Lobby is drawn in the very pass it is first seen: no frame of bare ground.
+  if (seen && !opened) setOpened(true);
+  return opened ? <LobbyBody /> : <View style={s.container} testID="lobby-unseen" />;
+}
+
+function LobbyBody() {
   // Re-tap the active tab icon → smoothly scroll the Lobby to the top.
   const scrollRef = useRef<any>(null);
   useScrollToTop(scrollRef);

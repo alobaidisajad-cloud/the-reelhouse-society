@@ -222,3 +222,38 @@ describe('a visitor', () => {
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/login', params: { action: 'signup' } });
   });
 });
+
+// Speed lab 40172265454 (Lz): a link that opens a salon over the tabs mounted the Lobby beneath it,
+// unseen, and its wall and reads held the salon's own answers back 0.46 s.
+describe('a Lobby beneath another screen', () => {
+  /** A navigator's view of the Lobby: not in front until `focus` is sent. */
+  const beneath = () => {
+    const heard: Record<string, (() => void)[]> = {};
+    let focused = false;
+    const navigation = {
+      isFocused: () => focused,
+      addListener: (event: string, hear: () => void) => { (heard[event] ??= []).push(hear); return () => {}; },
+    };
+    const focus = () => { focused = true; for (const hear of heard.focus ?? []) hear(); };
+    return { navigation, focus };
+  };
+
+  it('draws its ground alone and asks the house for nothing until it is first seen; seen, it hangs the wall', async () => {
+    const { NavigationContext } = jest.requireActual('@react-navigation/native');
+    const { navigation, focus } = beneath();
+    const client = testQueryClient();
+    const r = render(
+      <QueryClientProvider client={client}>
+        <NavigationContext.Provider value={navigation}><LobbyScreen /></NavigationContext.Provider>
+      </QueryClientProvider>,
+    );
+    await settle();
+    expect(r.getByTestId('lobby-unseen')).toBeTruthy();
+    expect([r.queryByText('The Lobby'), wallAsks(), mockFetchLogs.mock.calls.length]).toEqual([null, 0, 0]);
+
+    await act(async () => { focus(); });
+    await settle();
+    expect(r.queryByTestId('lobby-unseen')).toBeNull();
+    expect([r.getByText('The Lobby') !== null, wallAsks()]).toEqual([true, 1]);
+  });
+});
