@@ -1847,3 +1847,12 @@ mutants:
         find: "const PostWords = memo(function PostWords({"
         replace: "const PostWords = (function PostWords({"
     proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the member's marks, read, redraw each filing's bar and none of its words" }
+
+  - id: shape-lab-default-retired
+    class: TOOL-lab-default-names-a-retired-arm
+    source: shape
+    edits:
+      - file: ../.github/workflows/speed-lab.yml
+        find: "A alone\"\n        type: string\n        default: ''\n"
+        replace: "A alone\"\n        type: string\n        default: 'Rb Rw Rl Rt Rs Rp R0'\n"
+    proof: { file: e2e/__tests__/speedLab.test.ts, test: "names by default, in each input, only arms that exist" }

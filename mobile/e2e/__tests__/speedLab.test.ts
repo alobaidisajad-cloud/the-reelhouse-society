@@ -27,6 +27,20 @@ describe('the arms', () => {
     expect(r.status).toBe(0);
   });
 
+  // A dispatch given an empty input takes the input's default: a default naming a retired arm (Rb)
+  // stopped the lab's build before it measured anything (speed lab 40226081370).
+  it('names by default, in each input, only arms that exist', () => {
+    const builds = Object.keys(JSON.parse(run('arm.mjs', ['--check']).stdout));
+    const workflow = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'speed-lab.yml'), 'utf8').replace(/\r\n/g, '\n');
+    const named = (input: string) => {
+      const m = new RegExp(`\\n      ${input}:\\n(?:        .*\\n)*?        default: '([^']*)'`).exec(workflow);
+      if (!m) throw new Error(`speed-lab.yml has no default for ${input}`);
+      return m[1].split(/\s+/).filter(Boolean);
+    };
+    expect(named('arms')).toEqual(['N']);
+    expect([...named('arms'), ...named('scroll_arms')].filter((a) => !builds.includes(a))).toEqual([]);
+  });
+
   it('refuses an arm whose text is gone, by name, and writes nothing', () => {
     const root = fresh('tree');
     for (const f of ['app/(tabs)/index.tsx', 'src/components/CinematicOverlays.tsx', 'src/components/auth/AuthChrome.tsx']) {

@@ -1509,3 +1509,15 @@ classes:
       - { kind: running, file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the member's marks, read, redraw each filing's bar and none of its words" }
     fix: "PaperPost draws a filing's words in PostWords, a memo of their own that takes none of the marks; FilingRow keeps its handlers across redraws (useCallback on the filing's id, film and author), so a mark being read redraws the bar alone (mutants shape-row-handlers-made-anew, shape-words-unmemoised)"
     places: [emulator]
+
+  - id: TOOL-lab-default-names-a-retired-arm
+    title: "The speed lab's scroll_arms input defaulted to arms since retired (Rb, Rp); a dispatch given the input empty takes its default, so a run meant to measure A alone stopped at its build ('arm Rb does not apply') and measured nothing"
+    seriousness: behaviour
+    area: tooling
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "speed lab 40226081370: the SDK 54 half of the 57-against-54 comparison never measured a screen" }
+    methods:
+      - { kind: running, file: e2e/__tests__/speedLab.test.ts, test: "names by default, in each input, only arms that exist" }
+    fix: "scroll_arms defaults to none (A alone), and every arm either input names by default must be one arm.mjs builds (mutant shape-lab-default-retired)"
+    places: [none]
