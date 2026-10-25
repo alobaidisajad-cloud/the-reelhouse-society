@@ -36,6 +36,13 @@
  *   Cp      no poster                Ct  the title not shrunk to fit
  *   Cr      no review                Ca  no action deck
  *
+ * The Dispatch's posts, part by part (LAB_ARM_SCREEN=dispatch):
+ *   Pa      no action bar            Pb  no byline               Pr  no rank rule
+ *   Ps      a take's words without their soft breaks             P0  all four
+ *
+ * The salon opened cold (LAB_ARM_SCREEN=salon):
+ *   Lq      the Lobby under it draws its wall only once it is first seen
+ *
  * The Dispatch's opening (WORKLIST P0.112) is opened and scrolled as the Reel's arms are
  * (scrolls.sh, LAB_ARM_SCREEN=dispatch). (Its page no longer waiting for the member's marks,
  * once the arm F0, ships: speed lab 39898420669, 1.3 s sooner; Fv, the marks asked first, gave
@@ -266,6 +273,38 @@ const cardNoDeck = [edit(CARD_FILE, [
 export const CARD_LAYER_ARMS = ['Cs', 'Ce', 'Ck', 'C0'];
 export const CARD_PART_ARMS = ['Cp', 'Ct', 'Cr', 'Ca'];
 
+// The Dispatch's posts, part by part (speed lab 40046819617: ready 1453 over its 1160, one task of
+// 910 ms as the paper first draws). The lab's filings are takes by Archivists.
+const POST_FILE = 'src/components/dispatch/paper/PaperPost.tsx';
+const postNoActions = [edit(POST_FILE, [
+  '      {!withheld && !docked && (',
+  '        <PaperActions',
+  '          certifyCount={certifyCount} commentCount={commentCount}',
+  '          certified={certified} saved={saved} dimmed={pending}',
+  '          certifyKnown={certifyKnown} saveKnown={saveKnown}',
+  '          onCertify={onCertify} onCritique={onCritique}',
+  '          onShare={onShare} onSave={onSave}',
+  '        />',
+  '      )}',
+  '',
+].join('\n'), '')];
+const postNoByline = [edit(POST_FILE, '                {noByline ? null : (\n', '                {noByline || globalThis ? null : (\n')];
+const postNoRankRule = [edit(POST_FILE, "          {tier === 'archivist' ? (\n", "          {tier === 'archivist' && !globalThis ? (\n")];
+const postNoSoftBreak = [edit(POST_FILE, 'TAKE — </Text>{softBreak(body)}', 'TAKE — </Text>{body}')];
+
+/** The Dispatch's posts: each part alone, and all four (P0). */
+export const POST_ARMS = ['Pa', 'Pb', 'Pr', 'Ps', 'P0'];
+
+// The salon opened cold by its link draws the Lobby under it, its whole wall unseen (speed lab
+// 40046819617: the Lobby ready at 367 ms, before the room asked for anything). Lq: the wall waits
+// until the Lobby is first seen, and stays once it is.
+const LOBBY_FILE = 'app/(tabs)/index.tsx';
+const lobbyWaitsToBeSeen = [
+  edit(LOBBY_FILE, '  useScrollToTop(scrollRef);\n',
+    "  useScrollToTop(scrollRef);\n  const lqNow = require('@/src/hooks/useScreenSeen').useScreenSeen();\n  const lqOnce = useRef(false);\n  if (lqNow) lqOnce.current = true;\n"),
+  edit(LOBBY_FILE, '        <LobbyWall />\n', '        {lqOnce.current ? <LobbyWall /> : null}\n'),
+];
+
 export const ARMS = {
   Ws: [...svgRoom, ...svgVignette, ...svgHalo],
   Dm: [...lampDispatch, ...noVignette, ...noHalo],
@@ -293,6 +332,12 @@ export const ARMS = {
   Ct: cardTitleUnfitted,
   Cr: cardNoReview,
   Ca: cardNoDeck,
+  Pa: postNoActions,
+  Pb: postNoByline,
+  Pr: postNoRankRule,
+  Ps: postNoSoftBreak,
+  P0: [...postNoActions, ...postNoByline, ...postNoRankRule, ...postNoSoftBreak],
+  Lq: lobbyWaitsToBeSeen,
 };
 
 /** The scenes the shots compare: each one's main build, its SVG build, and what it shows. */

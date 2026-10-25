@@ -102,9 +102,12 @@ fi
 # (1.9e-4); eight gave 4e-3.
 ROUNDS_EACH=7
 ARM_SCREEN=${LAB_ARM_SCREEN:-reel}
+# Each screen read the way the screens part reads it: the salon upward, to its older words.
+ARM_WAY=down
 case "$ARM_SCREEN" in
   reel) ARM_LINK=reels ;;
   dispatch) ARM_LINK=dispatch ;;
+  salon) ARM_LINK="lounge/$(ids salon)"; ARM_WAY=up ;;
   *) echo "no arms' screen called $ARM_SCREEN" >> "$OUT/anomalies.txt"; ARM_LINK= ;;
 esac
 if [ "$PART" != screens ] && [ -n "${LAB_SCROLL_ARMS:-}" ] && [ -n "$ARM_LINK" ]; then
@@ -121,7 +124,7 @@ if [ "$PART" != screens ] && [ -n "${LAB_SCROLL_ARMS:-}" ] && [ -n "$ARM_LINK" ]
       fi
       adb shell cmd package compile -f -m verify "$PKG" > /dev/null 2>&1
       for r in $(seq 1 $ROUNDS_EACH); do
-        scroll_one "$ARM_LINK" down "$OUT/arms/$b-$(( (block - 1) * ROUNDS_EACH + r ))"
+        scroll_one "$ARM_LINK" "$ARM_WAY" "$OUT/arms/$b-$(( (block - 1) * ROUNDS_EACH + r ))"
       done
     done
   done

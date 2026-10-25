@@ -36,9 +36,9 @@ on:
         type: string
         default: 'Rb Rw Rl Rt Rs Rp R0'
       arm_screen:
-        description: "the screen the arms are opened and scrolled on: the Reel (P0.111) or the Dispatch (P0.112)"
+        description: "the screen the arms are opened and scrolled on: the Reel (P0.111), the Dispatch or the salon (P0.112)"
         type: choice
-        options: [reel, dispatch]
+        options: [reel, dispatch, salon]
         default: reel
 
 permissions:
