@@ -1433,5 +1433,19 @@
     "proof": "m1",
     "commit": "dd5b444693d23e43fb47dcf4a8d095f1a45235f5",
     "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-api-missing-on-phone",
+    "mutant": "past-abort-signal-timeout",
+    "proof": "m1",
+    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "verdict": "caught"
+  },
+  {
+    "class": "TOOL-lab-default-names-a-retired-arm",
+    "mutant": "shape-lab-default-retired",
+    "proof": "m1",
+    "commit": "2fe1d70b03889cd55b7f226e51783b2d42b58ece",
+    "verdict": "caught"
   }
 ]

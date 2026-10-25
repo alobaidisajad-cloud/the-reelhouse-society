@@ -32,9 +32,9 @@ on:
         type: boolean
         default: true
       scroll_arms:
-        description: "arms of arm.mjs, each built, opened and scrolled against A on the arms' screen with the scrolls, space-separated"
+        description: "arms of arm.mjs, each built, opened and scrolled against A on the arms' screen with the scrolls, space-separated; none, A alone"
         type: string
-        default: 'Rb Rw Rl Rt Rs Rp R0'
+        default: ''
       arm_screen:
         description: "the screen the arms are opened and scrolled on: the Reel (P0.111), the Dispatch, the salon or a stack (P0.112)"
         type: choice

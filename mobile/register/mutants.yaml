@@ -1912,3 +1912,12 @@ mutants:
         find: "'android:gwpAsanMode': 'never'"
         replace: "'android:gwpAsanMode': 'default'"
     proof: { file: plugins/__tests__/withGwpAsanOff.test.ts, test: "tells the application never to run GWP-ASan, and keeps everything else it says" }
+
+  - id: shape-lab-default-retired
+    class: TOOL-lab-default-names-a-retired-arm
+    source: shape
+    edits:
+      - file: ../.github/workflows/speed-lab.yml
+        find: "A alone\"\n        type: string\n        default: ''\n"
+        replace: "A alone\"\n        type: string\n        default: 'Rb Rw Rl Rt Rs Rp R0'\n"
+    proof: { file: e2e/__tests__/speedLab.test.ts, test: "names by default, in each input, only arms that exist" }

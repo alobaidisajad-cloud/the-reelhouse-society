@@ -1571,3 +1571,15 @@ classes:
       - { kind: running, file: plugins/__tests__/withGwpAsanOff.test.ts, test: "runs the plugin at prebuild" }
     fix: "plugins/withGwpAsanOff.js sets android:gwpAsanMode=\"never\" on the application in the manifest prebuild writes; its test fails once React Native reaches 0.88, said to carry Hermes's fix, so it is read again then (mutants shape-gwp-asan-unrun, shape-gwp-asan-left-on)"
     places: [emulator]
+
+  - id: TOOL-lab-default-names-a-retired-arm
+    title: "The speed lab's scroll_arms input defaulted to arms since retired (Rb, Rp); a dispatch given the input empty takes its default, so a run meant to measure A alone stopped at its build ('arm Rb does not apply') and measured nothing"
+    seriousness: behaviour
+    area: tooling
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "speed lab 40226081370: the SDK 54 half of the 57-against-54 comparison never measured a screen" }
+    methods:
+      - { kind: running, file: e2e/__tests__/speedLab.test.ts, test: "names by default, in each input, only arms that exist" }
+    fix: "scroll_arms defaults to none (A alone), and every arm either input names by default must be one arm.mjs builds (mutant shape-lab-default-retired)"
+    places: [none]
