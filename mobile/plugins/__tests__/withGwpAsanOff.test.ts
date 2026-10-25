@@ -18,7 +18,10 @@ const FIXTURE = join(__dirname, 'fixtures', 'AndroidManifest.xml');
 const numbers = (v: string) => v.split('.').map(Number);
 const atLeast = (v: string, floor: string) => {
   const [a, b] = [numbers(v), numbers(floor)];
-  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] > b[i];
+  for (let i = 0; i < 3; i++) {
+    const [x = 0, y = 0] = [a[i], b[i]];
+    if (x !== y) return x > y;
+  }
   return true;
 };
 

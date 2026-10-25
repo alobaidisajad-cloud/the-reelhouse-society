@@ -34,8 +34,9 @@ describe('the arms', () => {
     const workflow = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'speed-lab.yml'), 'utf8').replace(/\r\n/g, '\n');
     const named = (input: string) => {
       const m = new RegExp(`\\n      ${input}:\\n(?:        .*\\n)*?        default: '([^']*)'`).exec(workflow);
-      if (!m) throw new Error(`speed-lab.yml has no default for ${input}`);
-      return m[1].split(/\s+/).filter(Boolean);
+      const list = m?.[1];
+      if (list === undefined) throw new Error(`speed-lab.yml has no default for ${input}`);
+      return list.split(/\s+/).filter(Boolean);
     };
     expect(named('arms')).toEqual(['N']);
     expect([...named('arms'), ...named('scroll_arms')].filter((a) => !builds.includes(a))).toEqual([]);
