@@ -45,7 +45,8 @@
  * never written (Qp), or never read back at launch (Qr); with React's own render times written (Rf,
  * built last); with each stretch the thread is held, each answer's body and each slow parse written (Jt);
  * and so timed, with the boot's parts begun 3 s later: the store's library and the rank check (JBr), the
- * live notices (JBt), the reads Bd moves (JBd), all three (JBa).
+ * live notices (JBt), the reads Bd moves (JBd), all three (JBa). With both timings (RJ), and the
+ * Dispatch's first page so timed: every pressable a plain one (RPs), the post's icons left out (RPi).
  *
  * The house's lit edge (EDGE_LIT), each part taken off everywhere, on a stack (LAB_ARM_SCREEN=stack):
  *   Kx      no inset highlight       Kg  no face gradient        K0  neither
@@ -445,6 +446,21 @@ const liveLater = [edit(BOOT_FILE, '          Promise.resolve(useNotificationSto
   '          (globalThis ? new Promise((r) => setTimeout(r, 3000)) : Promise.resolve()).then(() => useNotificationStore.getState().setupRealtime()).catch(e => {\n')];
 const readsLater = bootReadsWait.map((e) => ({ ...e, to: e.to.replaceAll('1500', '3000') }));
 
+// The Dispatch's first page drawn, part by part, with React's commits (Rf) and the thread (Jt)
+// timed. Rf: the page's first commit with its posts took about 160 ms. Each post holds some six
+// pressables, each with its own animated scale set up as it mounts, and four drawn icons. RPs:
+// every pressable a plain one, no scale; RPi: the post's four icons left out.
+const PRESS_FILE = 'src/components/PressableScale.tsx';
+const pressablesPlain = [
+  edit(PRESS_FILE, '  const scale = useSharedValue(1);\n', '  const scale = { value: 1 as unknown };\n'),
+  edit(PRESS_FILE, '  const animatedStyle = useAnimatedStyle(() => ({\n    transform: [{ scale: scale.value }],\n  }));\n', ''),
+  edit(PRESS_FILE, '    <AnimatedPressable\n', '    <Pressable\n'),
+  edit(PRESS_FILE, '    </AnimatedPressable>\n', '    </Pressable>\n'),
+  edit(PRESS_FILE, '      style={[style, animatedStyle]}\n', '      style={style}\n'),
+];
+const postIconsGone = [edit(POST_FILE, "import { Heart, MessageSquare, Share2, Bookmark } from 'lucide-react-native';\n",
+  'const Heart = (_: object) => null;\nconst MessageSquare = Heart;\nconst Share2 = Heart;\nconst Bookmark = Heart;\n')];
+
 // A stack's page, part by part (speed lab 40174299190: the lit edge off everywhere, K0, gave its
 // slowest frames 100 ms of the 75% slow UI frames it holds against the control's 35%).
 const STACK_FILE = 'app/stacks/[id].tsx';
@@ -515,6 +531,9 @@ export const ARMS = {
   JBt: [...threadTimed, ...liveLater],
   JBd: [...threadTimed, ...readsLater],
   JBa: [...threadTimed, ...rankLater, ...liveLater, ...readsLater],
+  RJ: [...rendersTimed, ...threadTimed],
+  RPs: [...rendersTimed, ...threadTimed, ...pressablesPlain],
+  RPi: [...rendersTimed, ...threadTimed, ...postIconsGone],
   Sv: stackVeilStill,
   Sd: stackHeroStill,
   Sk: stackCardsUnclipped,
