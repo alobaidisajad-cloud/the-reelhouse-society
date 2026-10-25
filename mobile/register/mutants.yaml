@@ -1865,3 +1865,12 @@ mutants:
         find: "    const body = NO_BODY.has(res.status) ? null : await res.text();\n    traceRequest(init?.method, url, at, { status: res.status });\n    return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });\n"
         replace: "    traceRequest(init?.method, url, at, { status: res.status });\n    return res;\n"
     proof: { file: src/lib/__tests__/aRequestEndsInItsTime.test.ts, test: "is given up at its limit as not reached, its headers come or not" }
+
+  - id: shape-contract-asks-the-stub
+    class: TEST-a-contract-asks-a-stub
+    source: shape
+    edits:
+      - file: test-utils/contractEnv.ts
+        find: "export const houseFetch: typeof fetch = (globalThis as Record<symbol, unknown>)[Symbol.for('reelhouse.nodeFetch')] as typeof fetch;"
+        replace: "export const houseFetch: typeof fetch = (...args) => fetch(...args);"
+    proof: { file: test-utils/__tests__/aContractAsksTheServer.test.ts, test: "asks through Node's own fetch, which fails at a closed port, never answered" }

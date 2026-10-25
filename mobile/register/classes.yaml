@@ -1543,6 +1543,6 @@ classes:
     count: 1
     source: { kind: running, ref: "db-integration on PR #128: the contracts' fetch gave status undefined for every embed" }
     methods:
-      - { kind: running, file: src/services/__tests__/loungeEmbeds.contract.test.ts, test: "$table embeds what the app asks for without a 400" }
-    fix: "test-utils/timerCheckingEnvironment.js keeps Node's own fetch on the file's global before any setup runs; test-utils/contractEnv exports it as houseFetch, and both contract suites ask through it (proved in CI, where they reach the server)"
+      - { kind: running, file: test-utils/__tests__/aContractAsksTheServer.test.ts, test: "asks through Node's own fetch, which fails at a closed port, never answered" }
+    fix: "test-utils/timerCheckingEnvironment.js keeps Node's own fetch on the file's global before any setup runs; test-utils/contractEnv exports it as houseFetch, and both contract suites ask through it: proved here at a closed port, which it fails and the stub answers, and in CI, where they reach the server (mutant shape-contract-asks-the-stub)"
     places: [none]

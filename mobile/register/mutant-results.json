@@ -1398,5 +1398,12 @@
     "proof": "m1",
     "commit": "d1624c5f99fcfec69aa7e8b5fad9ae351b1657c9",
     "verdict": "caught"
+  },
+  {
+    "class": "TEST-a-contract-asks-a-stub",
+    "mutant": "shape-contract-asks-the-stub",
+    "proof": "m1",
+    "commit": "5726830f0856612ac38b6ed7690b5e753a1e9270",
+    "verdict": "caught"
   }
 ]

@@ -1411,6 +1411,7 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/__tests__/timerFixtures/leavesNothing.fixture.ts | 2026-10-04 | written whole |
 | test-utils/asOnThePhone.ts | 2026-10-15 | new: takes away in jest what the phone lacks |
 | test-utils/bottomEdge.ts | 2026-10-15 | new: where a drawn page puts its foot |
+| test-utils/__tests__/aContractAsksTheServer.test.ts | 2026-10-25 | new: a contract's request reaches the server: houseFetch fails at a closed port, which the global (Expo's, stubbed) answers with no status |
 | test-utils/contractEnv.ts | 2026-10-25 | edited: houseFetch: Node's own fetch, which reaches the server; the global one is Expo's, stubbed under jest; read whole: sound; "all 5,000 tests" is every unit test; edited: the address comes from CONTRACT_SUPABASE_* alone, never the app's .env; each connection closes with its answer |
 | test-utils/react-native-testing-library.js | 2026-10-04 | edited: every render's client is testQueryClient(); the comment says what that keeps |
 | test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
