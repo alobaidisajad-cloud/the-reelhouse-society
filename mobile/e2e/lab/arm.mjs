@@ -43,7 +43,7 @@
  *
  * Any screen opened with the boot's background reads begun 1.5 s later (Bd); with the query cache
  * never written (Qp), or never read back at launch (Qr); with React's own render times written (Rf,
- * built last).
+ * built last); with each stretch the thread is held, each answer's body and each slow parse written (Jt).
  *
  * The house's lit edge (EDGE_LIT), each part taken off everywhere, on a stack (LAB_ARM_SCREEN=stack):
  *   Kx      no inset highlight       Kg  no face gradient        K0  neither
@@ -393,6 +393,45 @@ const rendersTimed = [
   edit('app/(tabs)/dispatch.tsx', '    </FrozenTab>\n', '    </FrozenTab>\n    </Profiler>\n'),
 ];
 
+// Jt: what holds the thread between an answer's arrival and its being taken in. Speed lab 40207877489
+// (Rf): the Dispatch's posts came at 0.3-0.45 s and were taken in 16-520 ms later, React's own
+// commits a small part of it. The build writes each stretch the thread was held over 40 ms (a 10 ms
+// tick come late), each answer's body as it is read (how long the read waited, its length) and each
+// JSON parse over 5 ms.
+const LIMIT_FN = 'export const fetchWithinLimit: typeof fetch = async (input, init) => {\n';
+const threadTimed = [
+  edit('src/lib/supabase.ts', LIMIT_FN, [
+    'let labTick = Date.now();',
+    'setInterval(() => {',
+    '  const now = Date.now();',
+    '  if (now - labTick > 50) console.warn(`[e2e] lab.held ${JSON.stringify({ ms: now - labTick - 10, wall: now })}`);',
+    '  labTick = now;',
+    '}, 10);',
+    'const labParse = JSON.parse;',
+    'JSON.parse = ((text: string, reviver?: (this: unknown, key: string, value: unknown) => unknown) => {',
+    '  const t = Date.now();',
+    '  const value = labParse(text, reviver);',
+    '  if (Date.now() - t > 5) console.warn(`[e2e] lab.json ${JSON.stringify({ ms: Date.now() - t, chars: text.length, wall: Date.now() })}`);',
+    '  return value;',
+    '}) as typeof JSON.parse;',
+    '',
+    LIMIT_FN,
+  ].join('\n')),
+  edit('src/lib/supabase.ts', '    traceRequest(init?.method, url, at, { status: res.status });\n    return res;\n', [
+    '    traceRequest(init?.method, url, at, { status: res.status });',
+    '    const answered = Date.now();',
+    '    const labText = res.text.bind(res);',
+    '    res.text = async () => {',
+    '      const asked = Date.now();',
+    '      const body = await labText();',
+    "      console.warn(`[e2e] lab.body ${JSON.stringify({ path: url.split('?')[0].split('/').pop(), askedAfter: asked - answered, readMs: Date.now() - asked, chars: body.length, wall: Date.now() })}`);",
+    '      return body;',
+    '    };',
+    '    return res;',
+    '',
+  ].join('\n')),
+];
+
 // A stack's page, part by part (speed lab 40174299190: the lit edge off everywhere, K0, gave its
 // slowest frames 100 ms of the 75% slow UI frames it holds against the control's 35%).
 const STACK_FILE = 'app/stacks/[id].tsx';
@@ -458,6 +497,7 @@ export const ARMS = {
   Qp: cacheNotWritten,
   Qr: cacheNotRead,
   Rf: rendersTimed,
+  Jt: threadTimed,
   Sv: stackVeilStill,
   Sd: stackHeroStill,
   Sk: stackCardsUnclipped,
