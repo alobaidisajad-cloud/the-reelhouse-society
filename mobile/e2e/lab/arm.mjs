@@ -43,7 +43,9 @@
  *
  * Any screen opened with the boot's background reads begun 1.5 s later (Bd); with the query cache
  * never written (Qp), or never read back at launch (Qr); with React's own render times written (Rf,
- * built last); with each stretch the thread is held, each answer's body and each slow parse written (Jt).
+ * built last); with each stretch the thread is held, each answer's body and each slow parse written (Jt);
+ * and so timed, with the boot's parts begun 3 s later: the store's library and the rank check (JBr), the
+ * live notices (JBt), the reads Bd moves (JBd), all three (JBa).
  *
  * The house's lit edge (EDGE_LIT), each part taken off everywhere, on a stack (LAB_ARM_SCREEN=stack):
  *   Kx      no inset highlight       Kg  no face gradient        K0  neither
@@ -432,6 +434,17 @@ const threadTimed = [
   ].join('\n')),
 ];
 
+// The boot's work, each part begun 3 s later, with the thread timed (Jt). Speed lab 40214986837
+// (Jt): from 0.15-0.4 s after the Dispatch began reading, the thread was held 0.2-0.9 s at a
+// stretch before its posts answered, React's own commits a small part of it (Rf). JBr: the store's
+// library set up and the rank checked later; JBt: the live notices later; JBd: the reads Bd moves;
+// JBa: all three, so what is held besides is the screen's own.
+const rankLater = [edit(BOOT_FILE, '        try {\n          await initRevenueCat(currentUser.id);\n',
+  '        if (globalThis) setTimeout(() => { void initRevenueCat(currentUser.id).then(() => reconcileRank()); }, 3000);\n        else try {\n          await initRevenueCat(currentUser.id);\n')];
+const liveLater = [edit(BOOT_FILE, '          Promise.resolve(useNotificationStore.getState().setupRealtime()).catch(e => {\n',
+  '          (globalThis ? new Promise((r) => setTimeout(r, 3000)) : Promise.resolve()).then(() => useNotificationStore.getState().setupRealtime()).catch(e => {\n')];
+const readsLater = bootReadsWait.map((e) => ({ ...e, to: e.to.replaceAll('1500', '3000') }));
+
 // A stack's page, part by part (speed lab 40174299190: the lit edge off everywhere, K0, gave its
 // slowest frames 100 ms of the 75% slow UI frames it holds against the control's 35%).
 const STACK_FILE = 'app/stacks/[id].tsx';
@@ -498,6 +511,10 @@ export const ARMS = {
   Qr: cacheNotRead,
   Rf: rendersTimed,
   Jt: threadTimed,
+  JBr: [...threadTimed, ...rankLater],
+  JBt: [...threadTimed, ...liveLater],
+  JBd: [...threadTimed, ...readsLater],
+  JBa: [...threadTimed, ...rankLater, ...liveLater, ...readsLater],
   Sv: stackVeilStill,
   Sd: stackHeroStill,
   Sk: stackCardsUnclipped,
