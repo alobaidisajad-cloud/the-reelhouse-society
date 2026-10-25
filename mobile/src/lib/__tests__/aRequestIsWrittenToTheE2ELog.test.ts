@@ -32,7 +32,7 @@ afterEach(() => {
 const requests = () => warned.filter((w) => w.startsWith('[e2e] request ')).map((w) => JSON.parse(w.slice('[e2e] request '.length)));
 
 it('writes each request: its method, its path with its query, when it began, and the status it got', async () => {
-  global.fetch = jest.fn(async () => ({ status: 201 })) as unknown as Fetch;
+  global.fetch = jest.fn(async () => new Response('', { status: 201 })) as unknown as Fetch;
   const before = Date.now();
   await loadFetch(true)('http://10.0.2.2:54330/rest/v1/logs?select=id', { method: 'post' });
   const [line] = requests();
@@ -42,7 +42,7 @@ it('writes each request: its method, its path with its query, when it began, and
 
 it('writes how long the answer took to reach the app', async () => {
   jest.useFakeTimers();
-  global.fetch = jest.fn(() => new Promise((resolve) => { setTimeout(() => resolve({ status: 200 }), 360); })) as unknown as Fetch;
+  global.fetch = jest.fn(() => new Promise((resolve) => { setTimeout(() => resolve(new Response('', { status: 200 })), 360); })) as unknown as Fetch;
   const pending = loadFetch(true)('http://10.0.2.2:54330/rest/v1/dispatch_posts');
   await jest.advanceTimersByTimeAsync(360);
   await pending;
@@ -69,7 +69,7 @@ it('writes a request given up at its limit as timed out', async () => {
 });
 
 it('writes nothing in any other build', async () => {
-  global.fetch = jest.fn(async () => ({ status: 200 })) as unknown as Fetch;
+  global.fetch = jest.fn(async () => new Response('', { status: 200 })) as unknown as Fetch;
   await loadFetch(false)('https://example.supabase.co/rest/v1/films');
   expect(requests()).toEqual([]);
 });

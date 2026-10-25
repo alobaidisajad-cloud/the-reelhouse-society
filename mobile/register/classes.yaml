@@ -1522,3 +1522,27 @@ classes:
       - { kind: running, file: plugins/__tests__/withOneNdk.test.ts, test: "runs the plugin at prebuild" }
     fix: "plugins/withOneNdk.js adds to the root build.gradle a block that sets each Android library's ndkVersion to rootProject.ext.ndkVersion (set by expo-root-project from React Native's catalogue) as its plugin is applied, so the whole build uses the one NDK scripts/android-packages.cjs installs (mutants shape-one-ndk-unrun, shape-one-ndk-unset)"
     places: [emulator]
+
+  - id: NET-a-body-outside-the-limit
+    title: "On SDK 57 the app's fetch is Expo's, which settles once the headers arrive and streams the body; the client's time limit ended with fetch's promise, so an answer whose body stalled (a change of network mid-answer) waited with no limit, holding the queue behind it, where React Native's fetch had held the whole answer inside the limit"
+    seriousness: behaviour
+    area: runtime
+    status: OPEN
+    count: 1
+    source: { kind: static, ref: "expo/src/winter/runtime.native.ts on SDK 57 installs expo/fetch as the global fetch unless EXPO_PUBLIC_USE_RN_FETCH; fetchWithinLimit's own comment said React Native's fetch settles once the whole answer has arrived" }
+    methods:
+      - { kind: running, file: src/lib/__tests__/aRequestEndsInItsTime.test.ts, test: "is given up at its limit as not reached, its headers come or not" }
+    fix: "fetchWithinLimit reads the answer whole (text; none for 204, 205, 304) before the limit's timer is cleared, and hands on a Response made from it with its status, status text and headers (mutant shape-body-read-outside-the-limit)"
+    places: [none]
+
+  - id: TEST-a-contract-asks-a-stub
+    title: "On SDK 57 jest's global fetch is Expo's, whose native module jest-expo stubs: it answers every request, one to a closed port too, with no status, so the contracts that ask the local server for the app's embeds and reads failed on an answer never sent (and a stub's answer could pass where the server's would not)"
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "db-integration on PR #128: the contracts' fetch gave status undefined for every embed" }
+    methods:
+      - { kind: running, file: src/services/__tests__/loungeEmbeds.contract.test.ts, test: "$table embeds what the app asks for without a 400" }
+    fix: "test-utils/timerCheckingEnvironment.js keeps Node's own fetch on the file's global before any setup runs; test-utils/contractEnv exports it as houseFetch, and both contract suites ask through it (proved in CI, where they reach the server)"
+    places: [none]

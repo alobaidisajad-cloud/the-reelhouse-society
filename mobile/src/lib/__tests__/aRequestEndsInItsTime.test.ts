@@ -94,11 +94,44 @@ describe('a caller\'s own cancel', () => {
 });
 
 describe('a request answered in time', () => {
-  it('comes back untouched, and leaves no timer behind', async () => {
-    const answer = new Response(JSON.stringify([{ id: 1 }]), { status: 200 });
-    global.fetch = jest.fn().mockResolvedValue(answer) as unknown as typeof fetch;
+  it('comes back whole, its status, headers and words as sent, and leaves no timer behind', async () => {
+    const words = JSON.stringify([{ id: 1, body: 'مرحبا — the reel' }]);
+    global.fetch = jest.fn().mockResolvedValue(new Response(words, {
+      status: 206, statusText: 'Partial Content', headers: { 'Content-Range': '0-0/1' },
+    })) as unknown as typeof fetch;
     const res = await fetchWithinLimit('https://house.test/rest/v1/logs');
-    expect(res).toBe(answer);
+    expect({ status: res.status, statusText: res.statusText, range: res.headers.get('Content-Range') })
+      .toEqual({ status: 206, statusText: 'Partial Content', range: '0-0/1' });
+    expect(await res.text()).toBe(words);
     expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it('with no body (204) comes back with none', async () => {
+    global.fetch = jest.fn().mockResolvedValue(new Response(null, { status: 204 })) as unknown as typeof fetch;
+    const res = await fetchWithinLimit('https://house.test/rest/v1/logs', { method: 'DELETE' });
+    expect(res.status).toBe(204);
+    expect(await res.text()).toBe('');
+  });
+});
+
+// Expo's fetch settles with the headers and streams the body: the limit holds the whole answer.
+describe('an answer whose words never finish arriving', () => {
+  it('is given up at its limit as not reached, its headers come or not', async () => {
+    global.fetch = jest.fn(async (_input: unknown, init?: RequestInit) => ({
+      status: 200, statusText: 'OK', headers: new Headers(),
+      text: () => new Promise<string>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(Object.assign(new Error('Aborted'), { name: 'AbortError' })));
+      }),
+    })) as unknown as typeof fetch;
+    const seen = watch(fetchWithinLimit('https://house.test/rest/v1/dispatch_posts'));
+    await settle();
+    jest.advanceTimersByTime(REQUEST_LIMIT_MS - 1);
+    await settle();
+    expect(seen.state).toBe('pending');
+    jest.advanceTimersByTime(1);
+    await settle();
+    expect(seen.state).toBe('failed');
+    expect((seen.error as Error).name).toBe('TimeoutError');
+    expect(isNetworkError(seen.error)).toBe(true);
   });
 });

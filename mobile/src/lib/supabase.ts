@@ -14,6 +14,9 @@ export const REQUEST_LIMIT_MS = 15_000;
 /** The same for storage, where a picture goes up over the slowest network a member may have. */
 export const STORAGE_LIMIT_MS = 90_000;
 
+/** The statuses an answer has no body with (a Response made with one throws). */
+const NO_BODY = new Set([204, 205, 304]);
+
 /** The error a request that ran out of time ends with: read by isNetworkError as not reached. */
 const timedOut = (ms: number) => Object.assign(new Error(`The request timed out after ${ms} ms`), { name: 'TimeoutError' });
 
@@ -35,8 +38,10 @@ const traceRequest = (method: string | undefined, url: string, at: number, outco
  * A request given up when its time runs out. Android's networking waits on a
  * connection with no limit, so a request caught by a change of network (data
  * to Wi-Fi) could wait for minutes, holding back everything queued behind it.
- * React Native's fetch settles only once the whole answer has arrived, so the
- * limit covers the answer too. A caller's own signal still ends it, as itself.
+ * Expo's fetch settles once the headers arrive and streams the rest, so the
+ * answer is read here, whole, inside the limit: the caller gets it already
+ * arrived. Every answer the house gives the app is text (JSON, or nothing). A
+ * caller's own signal still ends it, as itself.
  */
 export const fetchWithinLimit: typeof fetch = async (input, init) => {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
@@ -51,8 +56,9 @@ export const fetchWithinLimit: typeof fetch = async (input, init) => {
   const at = Date.now();
   try {
     const res = await fetch(input, { ...init, signal: controller.signal });
+    const body = NO_BODY.has(res.status) ? null : await res.text();
     traceRequest(init?.method, url, at, { status: res.status });
-    return res;
+    return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });
   } catch (e) {
     const ended = ranOut ? timedOut(ms) : e;
     traceRequest(init?.method, url, at, { error: ended instanceof Error ? `${ended.name}: ${ended.message}` : String(ended) });

@@ -125,6 +125,10 @@ function nameOf(test) {
 class TimerCheckingEnvironment extends ReactNativeEnvironment {
   constructor(config, context) {
     super(config, context);
+    // Node's own fetch, for the contracts that ask a real server (contractEnv's houseFetch): the
+    // file's global fetch is Expo's from its setup on, whose native module jest-expo stubs, so it
+    // answers every request, even one to a closed port, with no status.
+    this.global[Symbol.for('reelhouse.nodeFetch')] = globalThis.fetch;
     this.timers = new Map();
     shared.running = this.timers;
   }

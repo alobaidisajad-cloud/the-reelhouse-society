@@ -15,7 +15,7 @@
  *
  * Where its credentials come from, and why only from there: test-utils/contractEnv.
  */
-import { SUPABASE_URL, canRun, visitor } from '@/test-utils/contractEnv';
+import { SUPABASE_URL, canRun, houseFetch, visitor } from '@/test-utils/contractEnv';
 import { MESSAGE_COLUMNS } from '@/src/stores/lounge';
 import { SAVED_CARD_COLUMNS } from '@/src/stores/dispatch';
 
@@ -37,7 +37,7 @@ describeMaybe('the app’s embeds resolve (no schema drift)', () => {
   it.each(EMBEDS)('$table embeds what the app asks for without a 400', async ({ table, select }) => {
     const url = `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(select)}&limit=1`;
     // Given an address, a contract that cannot reach it fails: it was asked to look.
-    const res = await fetch(url, { headers: visitor() });
+    const res = await houseFetch(url, { headers: visitor() });
 
     if (res.status === 400) {
       const body = await res.text();

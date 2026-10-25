@@ -20,7 +20,7 @@
  *
  * Skips with no credentials or no network, like the other contract test.
  */
-import { SUPABASE_URL, canRun, visitor } from '@/test-utils/contractEnv';
+import { SUPABASE_URL, canRun, houseFetch, visitor } from '@/test-utils/contractEnv';
 import { PUBLIC_LOG_COLUMNS } from '@/src/utils/mappers';
 import { logCertifySelect, logCountsSelect, withLogCountFilters } from '@/src/services/logCounts';
 
@@ -41,7 +41,7 @@ const SOMEONE = '00000000-0000-4000-8000-000000000000';
 
 /** GET as a visitor. Given an address, a contract that cannot reach it fails: it was asked to look. */
 async function asVisitor(path: string): Promise<{ status: number; body: string }> {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: visitor() });
+  const res = await houseFetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: visitor() });
   return { status: res.status, body: await res.text() };
 }
 
@@ -81,7 +81,7 @@ describeMaybe('a visitor reads what the app asks for', () => {
   });
 
   it.each(['get_community_feed_auth_cursor'])('%s carries the two counts, and the viewer’s mark, on every row', async (fn) => {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    const res = await houseFetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
       method: 'POST',
       headers: { ...visitor(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_limit: 3 }),
