@@ -93,6 +93,12 @@ jest.mock('../../utils/reelToast', () => {
   return { __esModule: true, default: fn };
 });
 jest.mock('../../lib/sentry', () => ({ captureError: jest.fn() }));
+/** What the store wrote for the E2E build's log. */
+const mockTraced: [string, Record<string, unknown> | undefined][] = [];
+jest.mock('../../utils/e2eTrace', () => ({
+  ...jest.requireActual('../../utils/e2eTrace'),
+  e2eTrace: (event: string, detail?: Record<string, unknown>) => { mockTraced.push([event, detail]); },
+}));
 
 const row = (n: number, over: Record<string, unknown> = {}) => ({
   id: 'f' + n, kind: 'take', user_id: 'u2', author_username: 'someone',
@@ -142,6 +148,15 @@ describe('the first page', () => {
     mockPages = [[row(1)]];
     await useDispatch.getState().fetch();
     expect(useDispatch.getState().hasMore).toBe(false);
+  });
+
+  it('writes for the speed lab how many rows came, and how long they took to check', async () => {
+    mockTraced.length = 0;
+    mockPages = [fullPage()];
+    await useDispatch.getState().fetch();
+    const read = mockTraced.filter(([e]) => e === 'dispatch.read').map(([, d]) => d);
+    expect(read).toEqual([{ rows: PAGE_SIZE, parseMs: expect.any(Number) }]);
+    expect(read[0]?.parseMs).toBeGreaterThanOrEqual(0);
   });
 
   it('counts the rows it had to drop instead of hiding them', async () => {

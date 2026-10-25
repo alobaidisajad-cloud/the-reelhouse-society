@@ -45,6 +45,11 @@
  *
  * The salon opened cold (LAB_ARM_SCREEN=salon):
  *   Lq      the Lobby under it draws its wall only once it is first seen
+ *   Lz      the whole Lobby under it drawn only once it is first seen
+ *   Lc      the live channel not joined  Lr  the room not marked read
+ *   Lp      the room's presses as plain views
+ *   Lb      the list drawn from its top, not its foot
+ *   Ls0     all four
  *
  * The Dispatch's opening (WORKLIST P0.112) is opened and scrolled as the Reel's arms are
  * (scrolls.sh, LAB_ARM_SCREEN=dispatch). (Its page no longer waiting for the member's marks,
@@ -285,11 +290,33 @@ export const POST_ARMS = ['Ea', 'Eb', 'Er', 'Es', 'E0'];
 // 40046819617: the Lobby ready at 367 ms, before the room asked for anything). Lq: the wall waits
 // until the Lobby is first seen, and stays once it is.
 const LOBBY_FILE = 'app/(tabs)/index.tsx';
+// Lz: the whole Lobby, not its wall alone, drawn only once it is first seen; its ground until then.
+const lobbyWhollyWaits = [edit(LOBBY_FILE, 'export default function LobbyScreen() {\n', [
+  'export default function LobbyScreen() {',
+  "  const seenNow = require('@/src/hooks/useScreenSeen').useScreenSeen();",
+  '  const seenOnce = useRef(false);',
+  '  if (seenNow) seenOnce.current = true;',
+  '  return seenOnce.current ? <LobbyBody /> : <View style={{ flex: 1, backgroundColor: colors.ink }} />;',
+  '}',
+  '',
+  'function LobbyBody() {',
+  '',
+].join('\n'))];
 const lobbyWaitsToBeSeen = [
   edit(LOBBY_FILE, '  useScrollToTop(scrollRef);\n',
     "  useScrollToTop(scrollRef);\n  const lqNow = require('@/src/hooks/useScreenSeen').useScreenSeen();\n  const lqOnce = useRef(false);\n  if (lqNow) lqOnce.current = true;\n"),
   edit(LOBBY_FILE, '        <LobbyWall />\n', '        {lqOnce.current ? <LobbyWall /> : null}\n'),
 ];
+
+// The salon's own opening (speed lab 40157142171: under Settings the Lobby is ready at 501 ms, under
+// the salon at 1134, the room at 1601; holding the Lobby's wall back, Lq, gave 170 ms, not called,
+// and 17 MB). What the room itself does as it opens, each switched off alone, and all four (Ls0).
+const SALON_FILE = 'app/lounge/[id].tsx';
+const roomNotLive = [edit(SALON_FILE, '    if (!id || !listening) return;\n', '    if (globalThis || !id || !listening) return;\n')];
+const roomNotMarked = [edit(SALON_FILE, '    fetchMessages(id);\n    markRead(id);\n    return () => { markRead(id); };\n', '    fetchMessages(id);\n    return () => {};\n')];
+const roomPlainPresses = [edit(SALON_FILE, "import PressableScale from '@/src/components/PressableScale';\n",
+  'const PressableScale = ({ style, children }: React.ComponentProps<typeof View> & Record<string, unknown>) => <View style={style}>{children}</View>;\n')];
+const roomFromTheTop = [edit(SALON_FILE, '          maintainVisibleContentPosition={{ startRenderingFromBottom: true, autoscrollToBottomThreshold: 0.2 }}\n', '')];
 
 export const ARMS = {
   Ws: [...svgRoom, ...svgVignette, ...svgHalo],
@@ -321,6 +348,12 @@ export const ARMS = {
   Es: postNoSoftBreak,
   E0: [...postNoActions, ...postNoByline, ...postNoRankRule, ...postNoSoftBreak],
   Lq: lobbyWaitsToBeSeen,
+  Lz: lobbyWhollyWaits,
+  Lc: roomNotLive,
+  Lr: roomNotMarked,
+  Lp: roomPlainPresses,
+  Lb: roomFromTheTop,
+  Ls0: [...roomNotLive, ...roomNotMarked, ...roomPlainPresses, ...roomFromTheTop],
 };
 
 /** The scenes the shots compare: each one's main build, its SVG build, and what it shows. */

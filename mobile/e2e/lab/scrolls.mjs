@@ -87,6 +87,29 @@ export function readyOf(text, name = 'reel') {
 }
 
 /**
+ * How long a screen took to be ready after the last answer it took in before then (each request's
+ * line is written as its answer reaches the app, supabase.ts): the time the app spent itself, past
+ * the network's. A screen at its floor shows its content within a frame of its data; null when the
+ * screen never said it was ready, or took no answer while it read.
+ */
+export function afterDataOf(text, name = 'reel') {
+  const time = (line) => {
+    const m = /^\d\d-\d\d (\d\d):(\d\d):(\d\d)\.(\d{3})/.exec(line);
+    return m ? ((Number(m[1]) * 60 + Number(m[2])) * 60 + Number(m[3])) * 1000 + Number(m[4]) : null;
+  };
+  let last = null;
+  for (const line of text.split('\n')) {
+    if (line.includes(`[e2e] screen.reading {"name":"${name}"`)) last = null;
+    else if (line.includes('[e2e] request ')) last = time(line) ?? last;
+    else if (line.includes(`[e2e] screen.ready {"name":"${name}"`)) {
+      const t = time(line);
+      return t != null && last != null ? t - last : null;
+    }
+  }
+  return null;
+}
+
+/**
  * The JavaScript tasks over 50 ms a run's device log counts (LabFrameLog's lines, in the lab's
  * builds); null when the record never ran (no `lab.frames.on`), so a build without it reads blank.
  */
@@ -236,6 +259,7 @@ export function budgetOf(dir, budget) {
     const js = jsLongSplitOf(log);
     screens.set(name, [...(screens.get(name) ?? []), {
       ready: readyOf(log, READY_NAMES[name] ?? name),
+      afterData: afterDataOf(log, READY_NAMES[name] ?? name),
       jsOpen: js?.open ?? null,
       jsScroll: js?.scroll ?? null,
       slowUi: f?.frames && f.slowUi != null ? Math.round((1000 * f.slowUi) / f.frames) / 10 : null,
@@ -253,10 +277,11 @@ export function budgetOf(dir, budget) {
     slowUi: c.slowUi == null ? null : c.slowUi + L.slowUi.overControlPoints,
     p90: c.p90 == null ? null : c.p90 * L.p90.timesControl,
   };
-  const keys = ['ready', 'jsOpen', 'jsScroll', 'slowUi', 'p90'];
+  const keys = ['ready', 'afterData', 'jsOpen', 'jsScroll', 'slowUi', 'p90'];
   const cell = (v) => String(v == null ? '—' : Math.round(v * 10) / 10).padStart(10);
   const lines = [
     `The frame budget against ${budget.control} (e2e/lab/budget.json): each a median over its rounds`,
+    '(afterData: shown, not judged: the ms from the last answer the screen took in to its ready, the time the app spent itself; at its floor, one frame)',
     ...UNMEASURED.map((k) => `(${k}: shown, not judged: ${UNMEASURED_WHY})`),
     `screen    ${keys.map((k) => k.padStart(10)).join('')}`,
     `budget    ${keys.map((k) => cell(limits[k])).join('')}`,

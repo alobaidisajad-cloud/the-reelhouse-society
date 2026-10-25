@@ -354,6 +354,25 @@ describe('the frame budget (P0.112)', () => {
     expect(r.stdout).toContain('(jsScroll: shown, not judged: ');
   });
 
+  it('shows how long each screen took past its last answer: the app\'s own time, the floor\'s gap', () => {
+    const d = budgetRounds('after-data', { settings: { ready: 400, slowUi: 30, p90: 800 } });
+    const line = (t: string, event: string, detail: object) => `10-23 10:00:${t} W/ReactNativeJS( 1): [e2e] ${event} ${JSON.stringify(detail)}\n`;
+    for (const [round, answered] of [[1, '01.360'], [2, '01.460']] as const) {
+      const f = join(d, `dispatch-${round}`);
+      writeFileSync(`${f}.moves`, Array.from({ length: 11 }, (_, k) => `${k}  -`).join('\n'));
+      writeFileSync(`${f}.gfx`, 'Total frames rendered: 100\n90th percentile: 600ms\nNumber Slow UI thread: 30\n');
+      writeFileSync(`${f}.log`, line('00.900', 'request', { path: '/rest/v1/profiles' })
+        + line('01.000', 'screen.reading', { name: 'dispatch' })
+        + line('01.200', 'request', { path: '/rest/v1/notifications' })
+        + line(answered, 'request', { path: '/rest/v1/dispatch_posts' })
+        + line('02.760', 'screen.ready', { name: 'dispatch', ms: 1760 })
+        + line('03.000', 'request', { path: '/rest/v1/dispatch_saves' }));
+    }
+    const row = run('scrolls.mjs', [d]).stdout.split('\n').find((l) => l.startsWith('dispatch '));
+    // 2760 - 1360 and 2760 - 1460: the median of 1400 and 1300; an answer after ready is not its data.
+    expect(row?.trim().split(/\s+/).slice(0, 3)).toEqual(['dispatch', '1760', '1350']);
+  });
+
   it('judges nothing without the control, and says so', () => {
     const r = run('scrolls.mjs', [budgetRounds('no-control', { log: { ready: 9000, slowUi: 90, p90: 5000, jsScroll: 4 } })]);
     expect(r.stdout).toContain('(no settings in this folder: the frame budget is not judged)');

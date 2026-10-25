@@ -36,14 +36,24 @@ it('writes each request: its method, its path with its query, when it began, and
   const before = Date.now();
   await loadFetch(true)('http://10.0.2.2:54330/rest/v1/logs?select=id', { method: 'post' });
   const [line] = requests();
-  expect(line).toEqual({ method: 'POST', path: '/rest/v1/logs?select=id', at: expect.any(String), status: 201 });
+  expect(line).toEqual({ method: 'POST', path: '/rest/v1/logs?select=id', at: expect.any(String), ms: expect.any(Number), status: 201 });
   expect(Date.parse(line.at)).toBeGreaterThanOrEqual(before - 1);
+});
+
+it('writes how long the answer took to reach the app', async () => {
+  jest.useFakeTimers();
+  global.fetch = jest.fn(() => new Promise((resolve) => { setTimeout(() => resolve({ status: 200 }), 360); })) as unknown as Fetch;
+  const pending = loadFetch(true)('http://10.0.2.2:54330/rest/v1/dispatch_posts');
+  await jest.advanceTimersByTimeAsync(360);
+  await pending;
+  const [line] = requests();
+  expect(line?.ms).toBe(360);
 });
 
 it('writes the error a request met instead of an answer, a lost connection as itself', async () => {
   global.fetch = jest.fn(async () => { throw new TypeError('Network request failed'); }) as unknown as Fetch;
   await expect(loadFetch(true)('http://10.0.2.2:54330/rest/v1/films')).rejects.toThrow('Network request failed');
-  expect(requests()).toEqual([{ method: 'GET', path: '/rest/v1/films', at: expect.any(String), error: 'TypeError: Network request failed' }]);
+  expect(requests()).toEqual([{ method: 'GET', path: '/rest/v1/films', at: expect.any(String), ms: expect.any(Number), error: 'TypeError: Network request failed' }]);
 });
 
 it('writes a request given up at its limit as timed out', async () => {
@@ -55,7 +65,7 @@ it('writes a request given up at its limit as timed out', async () => {
   const settled = expect(pending).rejects.toMatchObject({ name: 'TimeoutError' });
   await jest.advanceTimersByTimeAsync(15_000);
   await settled;
-  expect(requests()).toEqual([{ method: 'PATCH', path: '/rest/v1/logs', at: expect.any(String), error: 'TimeoutError: The request timed out after 15000 ms' }]);
+  expect(requests()).toEqual([{ method: 'PATCH', path: '/rest/v1/logs', at: expect.any(String), ms: expect.any(Number), error: 'TimeoutError: The request timed out after 15000 ms' }]);
 });
 
 it('writes nothing in any other build', async () => {

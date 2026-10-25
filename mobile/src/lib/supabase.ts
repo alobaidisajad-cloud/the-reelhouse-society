@@ -20,13 +20,15 @@ const timedOut = (ms: number) => Object.assign(new Error(`The request timed out 
 /**
  * In the E2E build alone, each request the app made and how it ended: its status, or the error it
  * met. A fault run matches it to the gateway's log line by method, path and time (WORKLIST P0.75),
- * so an answer the house sent and the app never heard is seen from both sides.
+ * so an answer the house sent and the app never heard is seen from both sides. `ms` is how long
+ * after it began the app took the answer in: the round trip, and any wait for the app's own thread,
+ * which the speed lab weighs against when the screen was ready (a screen's floor).
  */
-const traceRequest = (method: string | undefined, url: string, at: string, outcome: { status: number } | { error: string }) => {
+const traceRequest = (method: string | undefined, url: string, at: number, outcome: { status: number } | { error: string }) => {
   if (!E2E_BUILD) return;
   let path = url;
   try { const u = new URL(url); path = `${u.pathname}${u.search}`; } catch { /* written as given */ }
-  e2eTrace('request', { method: (method ?? 'GET').toUpperCase(), path, at, ...outcome });
+  e2eTrace('request', { method: (method ?? 'GET').toUpperCase(), path, at: new Date(at).toISOString(), ms: Date.now() - at, ...outcome });
 };
 
 /**
@@ -46,7 +48,7 @@ export const fetchWithinLimit: typeof fetch = async (input, init) => {
   else theirs?.addEventListener('abort', passOn);
   let ranOut = false;
   const timer = setTimeout(() => { ranOut = true; controller.abort(); }, ms);
-  const at = new Date().toISOString();
+  const at = Date.now();
   try {
     const res = await fetch(input, { ...init, signal: controller.signal });
     traceRequest(init?.method, url, at, { status: res.status });

@@ -29,6 +29,7 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { captureError } from '../lib/sentry';
 import { wallMayHaveChanged } from '../components/lobby/wallRead';
+import { e2eTrace } from '../utils/e2eTrace';
 import { logger } from '../utils/logger';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
@@ -338,7 +339,10 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       try {
         const rows = await pageQuery(get(), null);
         if (gen !== generation || !memberUnchanged(startedAs)) return false;
+        const parsing = Date.now();
         const { filings, dropped } = parseFilingRows(rows);
+        // The page's answer in, and how long its rows took to check: the speed lab's floor for the paper.
+        e2eTrace('dispatch.read', { rows: rows.length, parseMs: Date.now() - parsing });
         set({ filings, hasMore: gotFullPage(rows.length), droppedRows: dropped, newCount: 0, pageState: 'read' });
         if (dropped > 0) {
           logger.warn(`[dispatch] dropped ${dropped} malformed filing row(s)`);
