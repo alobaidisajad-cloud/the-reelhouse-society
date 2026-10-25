@@ -1049,25 +1049,34 @@ classes:
     fix: "20261015_06 (the a_keeps_what_it_is trigger keeps each table's columns for every role but the house's); rehearsal 13/13 with it, 11/13 missed without; applied by the train of 2026-10-16, read back by train_1_live_check.sql: 14 tables, each trigger enabled. Still OPEN: a new table a member may edit gets no trigger unless its migration adds one"
 
   - id: DB-rule-kept-on-one-path
-    area: database
+    title: "A rule held on the path a client uses but not on another path to the same row or answer"
     seriousness: behaviour
+    area: database
     status: OPEN
     count: 10
-    open_in_production: true
+    source: { kind: reviewer, ref: "P0.48 part 2 follow-up (car 07), 2026-10-15/16" }
+    fix: "20261015_07_a_rule_holds_on_every_path, the 10: rate_limit_check counted any table/column (oracle); a block refused no comment, certification, critique or follow (write side, #113); can_annotate_*/can_endorse_content answered for any p_actor and visitors could ask (who-follows-whom oracle); analytics_events filed under any user_id; error_logs unlimited and back-datable; toggle_dossier_certify skipped the ban/suspension and open-post rules; a report whose reporter left could not be resolved with notify (NEW-M1); salon messages from blocked/muted/blocking members still delivered by the server; 1 member's private choice in preferences only (desync); 3 public profiles' stale following/followers text arrays readable by visitors. Rehearsal 41/41 with, 20 missed without, on a local copy of production's shape; up-down-up clean; every other rehearsal holds with it. Judged, no change: record_gate_event open to visitors (names nobody, 500 rows a day, any member could inflate it as easily). Live on production since the train of 2026-10-25, read back by train_3_live_check.sql"
+    places: [none]
 
   - id: DB-row-reaches-past-its-reader
-    area: database
+    title: "A member's own row could reach, quote or reveal what its writer may not read"
     seriousness: behaviour
+    area: database
     status: OPEN
     count: 8
-    open_in_production: true
+    source: { kind: reviewer, ref: "P0.77 attack matrix (e2e/db/attack), 2026-10-16: S1, S2, S3 of the policy reading proven, five more found by the matrix" }
+    fix: "20261016_01_a_salon_keeps_its_own_words (car 08), the 8: a reaction naming one's own salon reached a message of another (private) salon; a reply's quote and name were taken from the sender (forgeable); a reply could quote a message of another salon; a withdrawn or deleted message's words lived on in every reply's quote (withdraw_lounge_message blanked the message only); a follow_request was readable by anyone when its asker's file was open; a comment or certification reached a private member's log or stack its writer could not read (audience_allows asked the preference, never the privacy); a comment or certification reached another member's private stack; the three old Dispatch tables (*_legacy) took members' writes directly (nothing uses them; across blocks too). Production held none of these rows (salon_quotes_check.sql). Rehearsal 22/22 with, 14 missed without; the attack matrix 7,268 tries as written with 07+08, 121 misses with 07 alone; up-down-up clean. Live on production since the train of 2026-10-25, read back by train_3_live_check.sql"
+    places: [none]
 
   - id: DB-standing-stands-in-the-way-out
-    area: database
+    title: "A banned or suspended member could not close their own account"
     seriousness: behaviour
+    area: database
     status: OPEN
     count: 1
-    open_in_production: true
+    source: { kind: reviewer, ref: "P0.77 axis 2 (functions in e2e/db/attack/matrix.json), 2026-10-16" }
+    fix: "20261016_02_a_member_may_always_leave (car 09, after 08): request_account_deletion (the one erasure both the app and the website call, as the member) rewrites the member's critiques and stack notes as '[deleted]' and passes their salons on; the ban gate on those updates (enforce_not_restricted on log_comments/list_comments, enforce_lounge_identity_freeze on lounges) refused a silenced or suspended member, so their 'Delete account' failed (App Store 5.1.1(v); the house's law that withdrawing is never gated). Now the request's claims are set aside once the member is read: the erasure is the house's act. Rehearsal 5/5 with, 3 miss without (banned and suspended members with a critique, a note and a hosted salon). The same car drops get_profile_metrics (failed on every call), get_user_lounges and replace_list_items (P1.14/P3.4: called by nothing). Live on production since the train of 2026-10-25, read back by train_3_live_check.sql"
+    places: [none]
 
   - id: DB-applied-bytes-differ
     title: The train applied a migration with the line ends of the checkout it ran from, so production held other bytes than CI rehearsed

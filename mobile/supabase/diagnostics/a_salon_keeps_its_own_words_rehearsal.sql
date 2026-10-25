@@ -1,11 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_salon_keeps_its_own_words_rehearsal.sql — 20261016_01. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_salon_keeps_its_own_words_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_salon_keeps_its_own_words_rehearsal.sql
 --
--- With with_train set, 20261016_01 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up). Three members are taken, an open
+-- 20261016_01 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml). Three members are taken, an open
 -- salon where two of them sit and a private one where only the third does are
 -- made as the house, and each reaction, reply and withdrawal is tried as a
 -- member signed in as the app signs in, with the app's own values beside a
@@ -16,9 +15,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261016_01_a_salon_keeps_its_own_words.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

@@ -255,9 +255,9 @@ export const GATED_FEATURES: GatedFeature[] = [
     // The same feature, on the table essays were kept in before the Dispatch.
     // Nothing writes it now: `dispatch_dossiers` is a VIEW over dispatch_posts,
     // so an essay filed through that name (the web's, or an older build's queued
-    // add_dossier) meets tr_tier_gate_dispatch like any other. But members may
-    // still write this table directly, and its trigger refuses them — listed so
-    // that refusal is a promise, not an orphan.
+    // add_dossier) meets tr_tier_gate_dispatch like any other. No member may
+    // write this table either (20261016_01 took the right away); its trigger
+    // still stands behind that, listed so the refusal is a promise, not an orphan.
     promise: 'Essays & Ballots',
     enforcement: { kind: 'refuses', table: 'dispatch_dossiers_legacy', trigger: 'tr_tier_gate_dossiers' },
     gates: ['src/utils/mutationExecutor.ts'],
@@ -288,6 +288,23 @@ export const GATED_FEATURES: GatedFeature[] = [
     // host may admit anyone they like.
     enforcement: { kind: 'refuses', table: 'lounges', trigger: 'tr_tier_gate_private_lounges' },
     gates: ['src/components/lounge/CreateLoungeSheet.tsx'],
+  },
+  {
+    id: 'private-rooms-turned',
+    rank: 'auteur',
+    // The same feature, the other way into it: an open salon turned private
+    // after it was founded. Its own trigger stands on that update, so a salon
+    // cannot be made public at its founding and private a moment later.
+    promise: 'Private Screening Rooms',
+    enforcement: { kind: 'refuses', table: 'lounges', trigger: 'tr_tier_gate_private_lounges_turned' },
+    gates: [],
+    reachedThrough: {
+      feature: 'private-rooms',
+      why: 'No screen turns a salon private: a salon is private or open from the moment it is '
+         + 'founded, and the founding sheet is roped by private-rooms. Only a write made around '
+         + 'the app reaches this update, and its trigger refuses it below the Auteur rank, as the '
+         + 'founding one does.',
+    },
   },
   {
     id: 'the-backdrop',

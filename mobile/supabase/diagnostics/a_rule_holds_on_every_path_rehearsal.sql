@@ -1,11 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_rule_holds_on_every_path_rehearsal.sql — 20261015_07. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_rule_holds_on_every_path_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_rule_holds_on_every_path_rehearsal.sql
 --
--- With with_train set, 20261015_07 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up). Two members are taken, rows are made
+-- 20261015_07 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml). Two members are taken, rows are made
 -- for them as the house, and each write and read is tried as a member signed
 -- in as the app signs in: with no block between them (every write lands), with
 -- a block (each is refused, either way), and with a mute (nothing the muted
@@ -17,9 +16,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261015_07_a_rule_holds_on_every_path.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

@@ -1,11 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_member_may_always_leave_rehearsal.sql — 20261016_02. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_member_may_always_leave_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_member_may_always_leave_rehearsal.sql
 --
--- With with_train set, 20261016_02 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up). Three members are taken: one silenced,
+-- 20261016_02 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml). Three members are taken: one silenced,
 -- one suspended, one in good standing, and a fourth who keeps a seat. Each of
 -- the three is given, as the house, a critique on the fourth's log, a note on
 -- the fourth's stack and a salon the fourth sits in; then each closes their own
@@ -17,9 +16,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261016_02_a_member_may_always_leave.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

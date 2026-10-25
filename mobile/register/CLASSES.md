@@ -92,9 +92,9 @@ production shows only its id, area, seriousness and count here.
 | DB-function-grants | database | serious | OPEN | 0 | A public function any login the database has may run, because PUBLIC kept EXECUTE on it |
 | DB-extension-reach | database | serious | OPEN | 1 | open in production |
 | DB-row-edited-past-its-gates | database | serious | OPEN | 0 | A member's own row passed its gates when written, then was edited past them (gates on INSERT only; an UPDATE changed its kind, parties, place or time) |
-| DB-rule-kept-on-one-path | database | behaviour | OPEN | 10 | open in production |
-| DB-row-reaches-past-its-reader | database | behaviour | OPEN | 8 | open in production |
-| DB-standing-stands-in-the-way-out | database | behaviour | OPEN | 1 | open in production |
+| DB-rule-kept-on-one-path | database | behaviour | OPEN | 10 | A rule held on the path a client uses but not on another path to the same row or answer |
+| DB-row-reaches-past-its-reader | database | behaviour | OPEN | 8 | A member's own row could reach, quote or reveal what its writer may not read |
+| DB-standing-stands-in-the-way-out | database | behaviour | OPEN | 1 | A banned or suspended member could not close their own account |
 | DB-applied-bytes-differ | database | code | OPEN | 0 | The train applied a migration with the line ends of the checkout it ran from, so production held other bytes than CI rehearsed |
 | CODE-promise-not-awaited | code | behaviour | OPEN | 310 | A promise nobody waits for, so its failure goes unheard and what follows may run first |
 | CODE-index-read-unchecked | code | behaviour | OPEN | 1462 | A value read by index or key used as if it is always there |

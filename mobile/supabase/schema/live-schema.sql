@@ -36,6 +36,67 @@ COMMENT ON SCHEMA public IS 'standard public schema';
 
 
 --
+-- Name: a_block_stands_between(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.a_block_stands_between(p_one uuid, p_other uuid) RETURNS boolean
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_blocks b
+     WHERE b.type = 'block'
+       AND ((b.blocker_id = p_one AND b.blocked_id = p_other)
+         OR (b.blocker_id = p_other AND b.blocked_id = p_one))
+  );
+$$;
+
+
+--
+-- Name: a_reaction_is_in_its_message_salon(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.a_reaction_is_in_its_message_salon() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.lounge_messages m
+                  WHERE m.id = NEW.message_id AND m.lounge_id = NEW.lounge_id) THEN
+    RAISE EXCEPTION 'A reaction belongs to its message''s salon.' USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END $$;
+
+
+--
+-- Name: a_reply_quotes_its_message(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.a_reply_quotes_its_message() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  q public.lounge_messages%ROWTYPE;
+BEGIN
+  IF NEW.reply_to_id IS NULL THEN
+    NEW.reply_to_content := NULL;
+    NEW.reply_to_username := NULL;
+    RETURN NEW;
+  END IF;
+  SELECT * INTO q FROM public.lounge_messages WHERE id = NEW.reply_to_id;
+  IF NOT FOUND OR q.lounge_id IS DISTINCT FROM NEW.lounge_id THEN
+    RAISE EXCEPTION 'A reply answers a message of its own salon.' USING ERRCODE = '42501';
+  END IF;
+  NEW.reply_to_content := CASE WHEN q.deleted_at IS NULL THEN q.content END;
+  NEW.reply_to_username := CASE WHEN q.user_id IS NULL THEN '[deleted]'
+                                ELSE (SELECT p.username FROM public.profiles p WHERE p.id = q.user_id) END;
+  RETURN NEW;
+END $$;
+
+
+--
 -- Name: a_request_takes_its_notice(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -73,6 +134,23 @@ BEGIN
     kept := kept || jsonb_build_object(col, was -> col);
   END LOOP;
   RETURN jsonb_populate_record(NEW, kept);
+END $$;
+
+
+--
+-- Name: a_withdrawn_message_leaves_its_quotes(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.a_withdrawn_message_leaves_its_quotes() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF TG_OP = 'DELETE' OR NEW.deleted_at IS NOT NULL THEN
+    UPDATE public.lounge_messages SET reply_to_content = NULL
+     WHERE reply_to_id = OLD.id AND reply_to_content IS NOT NULL;
+  END IF;
+  RETURN NULL;
 END $$;
 
 
@@ -166,11 +244,13 @@ CREATE FUNCTION public.audience_allows(p_actor uuid, p_owner uuid, p_pref text) 
     AS $$
   SELECT CASE
     WHEN p_owner IS NULL THEN TRUE
-    WHEN p_actor = p_owner THEN TRUE
+    WHEN auth.uid() = p_owner THEN TRUE
+    WHEN public.a_block_stands_between(auth.uid(), p_owner) THEN FALSE
+    WHEN NOT public.can_view_user_data(p_owner) THEN FALSE
     WHEN COALESCE(p_pref, 'everyone') = 'everyone' THEN TRUE
     WHEN COALESCE(p_pref, 'everyone') = 'nobody' THEN FALSE
     ELSE EXISTS (SELECT 1 FROM public.interactions
-                 WHERE type = 'follow' AND user_id = p_actor AND target_user_id = p_owner)
+                 WHERE type = 'follow' AND user_id = auth.uid() AND target_user_id = p_owner)
   END;
 $$;
 
@@ -217,8 +297,9 @@ CREATE FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) RETURNS b
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  SELECT public.audience_allows(p_actor, l.user_id,
-    (SELECT preferences->>'privacy_annotations' FROM public.profiles WHERE id = l.user_id))
+  SELECT NOT (COALESCE(l.is_private, false) AND l.user_id IS DISTINCT FROM auth.uid())
+     AND public.audience_allows(p_actor, l.user_id,
+           (SELECT preferences->>'privacy_annotations' FROM public.profiles WHERE id = l.user_id))
   FROM public.lists l WHERE l.id = p_list_id;
 $$;
 
@@ -245,14 +326,17 @@ CREATE FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_log_id u
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-DECLARE v_owner uuid; v_pref text;
+DECLARE v_owner uuid; v_pref text; v_private boolean := false;
 BEGIN
   IF p_type = 'endorse_log' THEN
     SELECT user_id INTO v_owner FROM public.logs WHERE id = p_log_id;
   ELSIF p_type = 'endorse_list' THEN
-    SELECT user_id INTO v_owner FROM public.lists WHERE id = p_list_id;
+    SELECT user_id, COALESCE(is_private, false) INTO v_owner, v_private FROM public.lists WHERE id = p_list_id;
   ELSE
     RETURN TRUE;
+  END IF;
+  IF v_private AND v_owner IS DISTINCT FROM auth.uid() THEN
+    RETURN FALSE;
   END IF;
   SELECT preferences->>'privacy_endorsements' INTO v_pref FROM public.profiles WHERE id = v_owner;
   RETURN public.audience_allows(p_actor, v_owner, v_pref);
@@ -980,6 +1064,30 @@ END $$;
 
 
 --
+-- Name: dispatch_refuses_across_a_block(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_refuses_across_a_block() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_row    jsonb := to_jsonb(NEW);
+  v_author uuid;
+BEGIN
+  IF v_row ->> 'comment_id' IS NOT NULL THEN
+    SELECT user_id INTO v_author FROM public.dispatch_comments WHERE id = (v_row ->> 'comment_id')::uuid;
+  ELSE
+    SELECT user_id INTO v_author FROM public.dispatch_posts WHERE id = (v_row ->> 'post_id')::uuid;
+  END IF;
+  IF public.a_block_stands_between(NEW.user_id, v_author) THEN
+    RAISE EXCEPTION 'A block stands between these members.' USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END $$;
+
+
+--
 -- Name: dispatch_room_totals(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1342,6 +1450,10 @@ CREATE FUNCTION public.enforce_privacy_on_follow() RETURNS trigger
 DECLARE
     v_is_private BOOLEAN;
 BEGIN
+    IF NEW.type IN ('follow', 'follow_request')
+       AND public.a_block_stands_between(NEW.user_id, NEW.target_user_id) THEN
+        RAISE EXCEPTION 'A block stands between these members.' USING ERRCODE = '42501';
+    END IF;
     IF NEW.type = 'follow' THEN
         SELECT is_social_private INTO v_is_private FROM public.profiles WHERE id = NEW.target_user_id;
         IF v_is_private THEN
@@ -1520,6 +1632,27 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+
+--
+-- Name: error_logs_daily_ceiling(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.error_logs_daily_ceiling() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF current_user IN ('postgres', 'service_role', 'supabase_admin') THEN
+    RETURN NEW;
+  END IF;
+  NEW.created_at := now();
+  IF (SELECT count(*) FROM public.error_logs
+       WHERE user_id = NEW.user_id AND created_at > now() - interval '1 day') >= 200 THEN
+    RAISE EXCEPTION 'PGRST301: Too many requests. Please wait a moment.';
+  END IF;
+  RETURN NEW;
+END $$;
 
 
 --
@@ -1961,60 +2094,6 @@ $$;
 
 
 --
--- Name: get_profile_metrics(uuid); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.get_profile_metrics(uid uuid) RETURNS json
-    LANGUAGE plpgsql
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-    total_logs int;
-    avg_rating numeric;
-    decades json;
-    autopsy_avg json;
-    result json;
-BEGIN
-    -- 1. Get total logs and global average rating (ignoring 0 ratings)
-    SELECT COUNT(*), COALESCE(AVG(NULLIF(rating, 0)), 0)
-    INTO total_logs, avg_rating
-    FROM logs
-    WHERE user_id = uid;
-
-    -- 2. Aggregate Decades (e.g., "1990s": 14, "2000s": 42)
-    SELECT json_object_agg(decade, count) INTO decades
-    FROM (
-        SELECT CONCAT(FLOOR(year / 10) * 10, 's') AS decade, COUNT(*) as count
-        FROM logs
-        WHERE user_id = uid AND year IS NOT NULL
-        GROUP BY FLOOR(year / 10) * 10
-        ORDER BY count DESC
-    ) AS decade_counts;
-
-    -- 3. Aggregate Autopsy Radar Chart Averages
-    SELECT json_build_object(
-        'story', COALESCE(AVG((autopsy->>'story')::numeric), 0),
-        'cinematography', COALESCE(AVG((autopsy->>'cinematography')::numeric), 0),
-        'sound', COALESCE(AVG((autopsy->>'sound')::numeric), 0),
-        'pacing', COALESCE(AVG((autopsy->>'pacing')::numeric), 0)
-    ) INTO autopsy_avg
-    FROM logs
-    WHERE user_id = uid AND is_autopsied = true AND autopsy IS NOT NULL;
-
-    -- Construct final JSON response to send over the wire (8KB instead of 5MB)
-    result := json_build_object(
-        'total_logs', total_logs,
-        'avg_rating', avg_rating,
-        'decades', COALESCE(decades, '{}'::json),
-        'avg_autopsy', autopsy_avg
-    );
-
-    RETURN result;
-END;
-$$;
-
-
---
 -- Name: get_public_profile_analytics(uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2449,57 +2528,6 @@ CREATE FUNCTION public.get_user_blocks(p_user_id uuid) RETURNS TABLE(blocked_id 
   FROM public.user_blocks ub
   WHERE ub.blocker_id = auth.uid()
   ORDER BY ub.created_at DESC;
-$$;
-
-
---
--- Name: get_user_lounges(uuid); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.get_user_lounges(p_user_id uuid) RETURNS TABLE(id uuid, name text, description text, is_private boolean, invite_code text, creator_id uuid, created_at timestamp with time zone, member_count integer, is_member boolean, unread_count bigint, last_message_at timestamp with time zone)
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-BEGIN
-  RETURN QUERY
-  WITH
-    my_memberships AS (
-      SELECT lm.lounge_id, lm.last_read_at
-      FROM lounge_members lm WHERE lm.user_id = p_user_id
-    ),
-    visible_lounges AS (
-      SELECT DISTINCT ON (l.id)
-        l.id, l.name, l.description, l.is_private, l.invite_code,
-        l.creator_id, l.created_at, l.member_count,
-        (mm.lounge_id IS NOT NULL OR l.creator_id = p_user_id) AS is_member
-      FROM lounges l
-      LEFT JOIN my_memberships mm ON mm.lounge_id = l.id
-      WHERE TRUE OR mm.lounge_id IS NOT NULL OR l.creator_id = p_user_id
-      ORDER BY l.id
-    ),
-    last_msgs AS (
-      SELECT DISTINCT ON (lmsg.lounge_id)
-        lmsg.lounge_id, lmsg.created_at AS last_msg_at
-      FROM lounge_messages lmsg
-      WHERE lmsg.lounge_id IN (SELECT vl.id FROM visible_lounges vl)
-      ORDER BY lmsg.lounge_id, lmsg.created_at DESC
-    ),
-    unread AS (
-      SELECT lmsg.lounge_id, COUNT(*) AS cnt
-      FROM lounge_messages lmsg
-      JOIN my_memberships mm ON mm.lounge_id = lmsg.lounge_id
-      WHERE mm.last_read_at IS NULL OR lmsg.created_at > mm.last_read_at
-      GROUP BY lmsg.lounge_id
-    )
-  SELECT vl.id, vl.name, vl.description, vl.is_private, vl.invite_code,
-    vl.creator_id, vl.created_at, vl.member_count, vl.is_member,
-    COALESCE(u.cnt, 0) AS unread_count, lm.last_msg_at AS last_message_at
-  FROM visible_lounges vl
-  LEFT JOIN last_msgs lm ON lm.lounge_id = vl.id
-  LEFT JOIN unread u ON u.lounge_id = vl.id
-  ORDER BY COALESCE(lm.last_msg_at, vl.created_at) DESC
-  LIMIT 50;
-END;
 $$;
 
 
@@ -3834,6 +3862,9 @@ CREATE FUNCTION public.rate_limit_check(table_name text, user_col text, max_coun
 DECLARE
     current_count INTEGER;
 BEGIN
+    IF table_name IS DISTINCT FROM 'logs' OR user_col IS DISTINCT FROM 'user_id' THEN
+        RAISE EXCEPTION 'rate_limit_check counts only the rows a rule names' USING ERRCODE = '42501';
+    END IF;
     EXECUTE format(
         'SELECT COUNT(*) FROM %I WHERE %I = auth.uid() AND created_at > now() - interval ''%s minutes''',
         table_name, user_col, window_minutes
@@ -4037,52 +4068,6 @@ END $$;
 
 
 --
--- Name: replace_list_items(uuid, jsonb); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.replace_list_items(p_list_id uuid, p_items jsonb DEFAULT '[]'::jsonb) RETURNS void
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_user_id uuid;
-BEGIN
-  v_user_id := auth.uid();
-  IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = 'P0001';
-  END IF;
-
-  -- Verify ownership (defense-in-depth beyond RLS)
-  IF NOT EXISTS (SELECT 1 FROM lists WHERE id = p_list_id AND user_id = v_user_id) THEN
-    RAISE EXCEPTION 'Unauthorized: list does not belong to user'
-      USING ERRCODE = '42501';
-  END IF;
-
-  -- Atomic delete + insert in a single transaction
-  DELETE FROM list_items WHERE list_id = p_list_id;
-
-  IF jsonb_array_length(p_items) > 0 THEN
-    INSERT INTO list_items (list_id, film_id, film_title, poster_path, rank_position)
-    SELECT
-      p_list_id,
-      (item->>'film_id')::INT,
-      COALESCE(item->>'film_title', 'Unknown'),
-      item->>'poster_path',
-      (item->>'rank_position')::INT
-    FROM jsonb_array_elements(p_items) AS item;
-  END IF;
-END;
-$$;
-
-
---
--- Name: FUNCTION replace_list_items(p_list_id uuid, p_items jsonb); Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON FUNCTION public.replace_list_items(p_list_id uuid, p_items jsonb) IS 'Atomically replaces all films in a list (auth.uid()-gated, ownership-checked). Uses rank_position.';
-
-
---
 -- Name: request_account_deletion(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -4099,6 +4084,10 @@ BEGIN
   END IF;
 
   SELECT username INTO v_handle FROM public.profiles WHERE id = uid;
+
+  -- The member has asked; what follows is the house's own act.
+  PERFORM set_config('request.jwt.claims', '', true);
+  PERFORM set_config('request.jwt.claim.sub', '', true);
 
   UPDATE public.lounges l
      SET creator_id = (
@@ -4129,10 +4118,12 @@ BEGIN
   DELETE FROM public.notifications WHERE from_user_id = uid;
 
   IF v_handle IS NOT NULL THEN
+    -- Asked as containment, so the cards' own index (lounge_messages_card_names, 20261022_02) finds them.
     UPDATE public.lounge_messages
        SET metadata = (metadata - 'owner_username') - 'author_username'
-     WHERE metadata->>'owner_username' = v_handle
-        OR metadata->>'author_username' = v_handle;
+     WHERE metadata <> '{}'::jsonb
+       AND (metadata @> jsonb_build_object('owner_username', v_handle)
+         OR metadata @> jsonb_build_object('author_username', v_handle));
   END IF;
 
   UPDATE public.list_comments   SET user_id = NULL WHERE user_id = uid;
@@ -4302,15 +4293,17 @@ BEGIN
           p_duration_hours, v_expires_at, v_snapshot);
 
   IF p_notify_user THEN
-    INSERT INTO notifications (user_id, type, title, body, message, metadata)
-    VALUES (
-      v_reporter_id,
-      'moderation',
-      'Your Report Was Reviewed',
-      'Thank you for looking after the house. Your report was reviewed, and the matter is settled.',
-      'Thank you for looking after the house. Your report was reviewed, and the matter is settled.',
-      jsonb_build_object('report_id', p_report_id, 'action', p_action)
-    );
+    IF v_reporter_id IS NOT NULL THEN
+      INSERT INTO notifications (user_id, type, title, body, message, metadata)
+      VALUES (
+        v_reporter_id,
+        'moderation',
+        'Your Report Was Reviewed',
+        'Thank you for looking after the house. Your report was reviewed, and the matter is settled.',
+        'Thank you for looking after the house. Your report was reviewed, and the matter is settled.',
+        jsonb_build_object('report_id', p_report_id, 'action', p_action)
+      );
+    END IF;
 
     IF p_action != 'dismiss' AND v_target_user_id IS NOT NULL THEN
       v_notice := CASE p_action
@@ -4842,8 +4835,23 @@ CREATE FUNCTION public.toggle_dossier_certify(dossier_uuid uuid) RETURNS boolean
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-    DECLARE already boolean;
+    DECLARE
+      already  boolean;
+      v_banned boolean;
+      v_until  timestamptz;
     BEGIN
+      SELECT is_banned, suspended_until INTO v_banned, v_until
+        FROM public.profiles WHERE id = auth.uid();
+      IF COALESCE(v_banned, false) THEN
+        RAISE EXCEPTION 'Your account has been silenced by The Society.'
+          USING ERRCODE = '42501';
+      END IF;
+      IF v_until IS NOT NULL AND v_until > now() THEN
+        RAISE EXCEPTION 'Your account is suspended until %.',
+          to_char(v_until AT TIME ZONE 'UTC', 'DD Mon YYYY HH24:MI "UTC"')
+          USING ERRCODE = '42501';
+      END IF;
+
       SELECT EXISTS(SELECT 1 FROM public.dispatch_certifications
                      WHERE user_id = auth.uid() AND post_id = dossier_uuid) INTO already;
       IF already THEN
@@ -4851,6 +4859,11 @@ CREATE FUNCTION public.toggle_dossier_certify(dossier_uuid uuid) RETURNS boolean
          WHERE user_id = auth.uid() AND post_id = dossier_uuid;
         RETURN FALSE;
       ELSE
+        IF NOT EXISTS (SELECT 1 FROM public.dispatch_posts p
+                        WHERE p.id = dossier_uuid AND p.ended_at IS NULL AND p.withheld_at IS NULL) THEN
+          RAISE EXCEPTION 'new row violates row-level security policy for table "dispatch_certifications"'
+            USING ERRCODE = '42501';
+        END IF;
         INSERT INTO public.dispatch_certifications (user_id, post_id)
         VALUES (auth.uid(), dossier_uuid);
         RETURN TRUE;
@@ -6658,6 +6671,13 @@ CREATE INDEX dossier_comments_created_at_idx ON public.dossier_comments_legacy U
 
 
 --
+-- Name: error_logs_member_day; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX error_logs_member_day ON public.error_logs USING btree (user_id, created_at);
+
+
+--
 -- Name: idx_dispatch_dossiers_feed; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7470,6 +7490,13 @@ CREATE TRIGGER a_lpn_belongs_to_its_viewing BEFORE INSERT OR UPDATE ON public.lo
 
 
 --
+-- Name: lounge_message_reactions a_reaction_is_in_its_message_salon; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_reaction_is_in_its_message_salon BEFORE INSERT OR UPDATE OF message_id, lounge_id ON public.lounge_message_reactions FOR EACH ROW EXECUTE FUNCTION public.a_reaction_is_in_its_message_salon();
+
+
+--
 -- Name: logs a_register_viewings_insert; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -7484,10 +7511,24 @@ CREATE TRIGGER a_register_viewings_update AFTER UPDATE ON public.logs FOR EACH R
 
 
 --
+-- Name: lounge_messages a_reply_quotes_its_message; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_reply_quotes_its_message BEFORE INSERT ON public.lounge_messages FOR EACH ROW EXECUTE FUNCTION public.a_reply_quotes_its_message();
+
+
+--
 -- Name: interactions a_request_takes_its_notice; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER a_request_takes_its_notice AFTER DELETE OR UPDATE OF type ON public.interactions FOR EACH ROW WHEN ((old.type = 'follow_request'::text)) EXECUTE FUNCTION public.a_request_takes_its_notice();
+
+
+--
+-- Name: lounge_messages a_withdrawn_message_leaves_its_quotes; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_withdrawn_message_leaves_its_quotes AFTER DELETE OR UPDATE OF deleted_at ON public.lounge_messages FOR EACH ROW EXECUTE FUNCTION public.a_withdrawn_message_leaves_its_quotes();
 
 
 --
@@ -7502,6 +7543,13 @@ CREATE TRIGGER count_cert AFTER INSERT OR DELETE ON public.dispatch_certificatio
 --
 
 CREATE TRIGGER count_comment AFTER INSERT OR DELETE ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.dispatch_count_comment();
+
+
+--
+-- Name: error_logs daily_ceiling; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER daily_ceiling BEFORE INSERT ON public.error_logs FOR EACH ROW EXECUTE FUNCTION public.error_logs_daily_ceiling();
 
 
 --
@@ -7642,6 +7690,20 @@ CREATE TRIGGER pin_columns BEFORE UPDATE ON public.dispatch_comments FOR EACH RO
 --
 
 CREATE TRIGGER pin_columns BEFORE UPDATE ON public.dispatch_posts FOR EACH ROW EXECUTE FUNCTION public.dispatch_posts_pin_columns();
+
+
+--
+-- Name: dispatch_certifications refuse_across_a_block; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER refuse_across_a_block BEFORE INSERT ON public.dispatch_certifications FOR EACH ROW EXECUTE FUNCTION public.dispatch_refuses_across_a_block();
+
+
+--
+-- Name: dispatch_comments refuse_across_a_block; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER refuse_across_a_block BEFORE INSERT ON public.dispatch_comments FOR EACH ROW EXECUTE FUNCTION public.dispatch_refuses_across_a_block();
 
 
 --
@@ -8884,7 +8946,7 @@ CREATE POLICY "Users can delete their own push subscriptions" ON public.push_sub
 -- Name: analytics_events Users can insert analytics events; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY "Users can insert analytics events" ON public.analytics_events FOR INSERT WITH CHECK ((auth.role() = 'authenticated'::text));
+CREATE POLICY "Users can insert analytics events" ON public.analytics_events FOR INSERT WITH CHECK (((auth.role() = 'authenticated'::text) AND (user_id = auth.uid())));
 
 
 --
@@ -9429,7 +9491,7 @@ CREATE POLICY interactions_endorse_gate ON public.interactions AS RESTRICTIVE FO
 -- Name: interactions interactions_select_authorized; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY interactions_select_authorized ON public.interactions FOR SELECT USING (((auth.uid() = user_id) OR (auth.uid() = target_user_id) OR public.can_view_user_data(user_id) OR public.can_view_user_data(target_user_id)));
+CREATE POLICY interactions_select_authorized ON public.interactions FOR SELECT USING (((auth.uid() = user_id) OR (auth.uid() = target_user_id) OR ((type <> 'follow_request'::text) AND (public.can_view_user_data(user_id) OR public.can_view_user_data(target_user_id)))));
 
 
 --
@@ -9595,6 +9657,13 @@ ALTER TABLE public.lounge_message_reactions ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.lounge_messages ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: lounge_messages lounge_messages_hide_blocked; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY lounge_messages_hide_blocked ON public.lounge_messages AS RESTRICTIVE FOR SELECT TO authenticated USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
+
 
 --
 -- Name: lounge_sanctions; Type: ROW SECURITY; Schema: public; Owner: -
@@ -10015,6 +10084,30 @@ GRANT USAGE ON SCHEMA public TO service_role;
 
 
 --
+-- Name: FUNCTION a_block_stands_between(p_one uuid, p_other uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.a_block_stands_between(p_one uuid, p_other uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.a_block_stands_between(p_one uuid, p_other uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION a_reaction_is_in_its_message_salon(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.a_reaction_is_in_its_message_salon() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.a_reaction_is_in_its_message_salon() TO service_role;
+
+
+--
+-- Name: FUNCTION a_reply_quotes_its_message(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.a_reply_quotes_its_message() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.a_reply_quotes_its_message() TO service_role;
+
+
+--
 -- Name: FUNCTION a_request_takes_its_notice(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -10028,6 +10121,14 @@ GRANT ALL ON FUNCTION public.a_request_takes_its_notice() TO service_role;
 
 REVOKE ALL ON FUNCTION public.a_row_keeps_what_it_is() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.a_row_keeps_what_it_is() TO service_role;
+
+
+--
+-- Name: FUNCTION a_withdrawn_message_leaves_its_quotes(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.a_withdrawn_message_leaves_its_quotes() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.a_withdrawn_message_leaves_its_quotes() TO service_role;
 
 
 --
@@ -10081,7 +10182,6 @@ GRANT ALL ON FUNCTION public.bulk_dismiss_reports(p_report_ids uuid[], p_admin_i
 --
 
 REVOKE ALL ON FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) TO service_role;
 
@@ -10091,7 +10191,6 @@ GRANT ALL ON FUNCTION public.can_annotate_list(p_actor uuid, p_list_id uuid) TO 
 --
 
 REVOKE ALL ON FUNCTION public.can_annotate_log(p_actor uuid, p_log_id uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.can_annotate_log(p_actor uuid, p_log_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.can_annotate_log(p_actor uuid, p_log_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.can_annotate_log(p_actor uuid, p_log_id uuid) TO service_role;
 
@@ -10101,7 +10200,6 @@ GRANT ALL ON FUNCTION public.can_annotate_log(p_actor uuid, p_log_id uuid) TO se
 --
 
 REVOKE ALL ON FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_log_id uuid, p_list_id uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_log_id uuid, p_list_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_log_id uuid, p_list_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.can_endorse_content(p_actor uuid, p_type text, p_log_id uuid, p_list_id uuid) TO service_role;
 
@@ -10345,6 +10443,14 @@ GRANT ALL ON FUNCTION public.dispatch_posts_pin_columns() TO service_role;
 
 
 --
+-- Name: FUNCTION dispatch_refuses_across_a_block(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.dispatch_refuses_across_a_block() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.dispatch_refuses_across_a_block() TO service_role;
+
+
+--
 -- Name: FUNCTION dispatch_room_totals(p_user_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -10494,6 +10600,14 @@ GRANT ALL ON FUNCTION public.enforce_username_policy() TO service_role;
 
 
 --
+-- Name: FUNCTION error_logs_daily_ceiling(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.error_logs_daily_ceiling() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.error_logs_daily_ceiling() TO service_role;
+
+
+--
 -- Name: FUNCTION freeze_closed_ballots(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -10587,16 +10701,6 @@ GRANT ALL ON FUNCTION public.get_profile_counts(p_user_id uuid) TO service_role;
 
 
 --
--- Name: FUNCTION get_profile_metrics(uid uuid); Type: ACL; Schema: public; Owner: -
---
-
-REVOKE ALL ON FUNCTION public.get_profile_metrics(uid uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.get_profile_metrics(uid uuid) TO anon;
-GRANT ALL ON FUNCTION public.get_profile_metrics(uid uuid) TO authenticated;
-GRANT ALL ON FUNCTION public.get_profile_metrics(uid uuid) TO service_role;
-
-
---
 -- Name: FUNCTION get_public_profile_analytics(p_user_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
@@ -10659,14 +10763,6 @@ GRANT ALL ON FUNCTION public.get_user_analytics(p_user_id uuid) TO service_role;
 REVOKE ALL ON FUNCTION public.get_user_blocks(p_user_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_user_blocks(p_user_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_user_blocks(p_user_id uuid) TO service_role;
-
-
---
--- Name: FUNCTION get_user_lounges(p_user_id uuid); Type: ACL; Schema: public; Owner: -
---
-
-REVOKE ALL ON FUNCTION public.get_user_lounges(p_user_id uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.get_user_lounges(p_user_id uuid) TO service_role;
 
 
 --
@@ -11114,16 +11210,6 @@ GRANT ALL ON FUNCTION public.remove_lounge_member(p_lounge_id uuid, p_user_id uu
 
 
 --
--- Name: FUNCTION replace_list_items(p_list_id uuid, p_items jsonb); Type: ACL; Schema: public; Owner: -
---
-
-REVOKE ALL ON FUNCTION public.replace_list_items(p_list_id uuid, p_items jsonb) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.replace_list_items(p_list_id uuid, p_items jsonb) TO anon;
-GRANT ALL ON FUNCTION public.replace_list_items(p_list_id uuid, p_items jsonb) TO authenticated;
-GRANT ALL ON FUNCTION public.replace_list_items(p_list_id uuid, p_items jsonb) TO service_role;
-
-
---
 -- Name: FUNCTION request_account_deletion(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -11427,8 +11513,8 @@ GRANT ALL ON TABLE public.dispatch_dossiers TO service_role;
 -- Name: TABLE dispatch_dossiers_legacy; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_dossiers_legacy TO anon;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dispatch_dossiers_legacy TO authenticated;
+GRANT SELECT ON TABLE public.dispatch_dossiers_legacy TO anon;
+GRANT SELECT ON TABLE public.dispatch_dossiers_legacy TO authenticated;
 GRANT ALL ON TABLE public.dispatch_dossiers_legacy TO service_role;
 
 
@@ -11461,8 +11547,8 @@ GRANT ALL ON TABLE public.dossier_certifications TO service_role;
 -- Name: TABLE dossier_certifications_legacy; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dossier_certifications_legacy TO anon;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dossier_certifications_legacy TO authenticated;
+GRANT SELECT ON TABLE public.dossier_certifications_legacy TO anon;
+GRANT SELECT ON TABLE public.dossier_certifications_legacy TO authenticated;
 GRANT ALL ON TABLE public.dossier_certifications_legacy TO service_role;
 
 
@@ -11479,8 +11565,8 @@ GRANT ALL ON TABLE public.dossier_comments TO service_role;
 -- Name: TABLE dossier_comments_legacy; Type: ACL; Schema: public; Owner: -
 --
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dossier_comments_legacy TO anon;
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.dossier_comments_legacy TO authenticated;
+GRANT SELECT ON TABLE public.dossier_comments_legacy TO anon;
+GRANT SELECT ON TABLE public.dossier_comments_legacy TO authenticated;
 GRANT ALL ON TABLE public.dossier_comments_legacy TO service_role;
 
 

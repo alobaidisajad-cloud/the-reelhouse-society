@@ -824,7 +824,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/deepLinks.ts | 2026-10-01 | true as written |
 | src/constants/departed.ts | 2026-10-02 | Written in the launch audit: how the house names a member who has left, and one whose name it could not read: one phrase, no made-up handle. |
 | src/constants/formats.ts | 2026-10-01 | the shelf is the Physical Archive, not the Vault; no ticket tag |
-| src/constants/gatedFeatures.ts | 2026-10-02 | Read whole (launch audit). essays-legacy said dispatch_dossiers was a view over the legacy table; it is a view over dispatch_posts (live schema). Its comment and reachedThrough corrected. |
+| src/constants/gatedFeatures.ts | 2026-10-25 | edited: no member may write the old essays table since 20261016_01; an open salon turned private is its own entry under Private Screening Rooms (gates:check found its trigger unlisted) |
 | src/constants/inputLimits.ts | 2026-10-03 | written whole: the limits of boxes that write no column (email, search, year, email code) |
 | src/constants/membership.ts | 2026-10-01 | one list; checked against production |
 | src/constants/modalRoutes.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
