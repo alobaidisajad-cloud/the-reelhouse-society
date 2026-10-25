@@ -724,7 +724,7 @@
     "class": "E2E-ios-cold-link-launch-hang",
     "mutant": "shape-ios-cold-link-once",
     "proof": "m1",
-    "commit": "3ea1eef4faa609298d2f2f6a4a0489f6e281f397",
+    "commit": "2523615704cdb9e5a9a23befcf14c26152a6ea40",
     "verdict": "caught"
   },
   {
