@@ -12,7 +12,7 @@
  *   · 60 members, each with eight films logged with words (the Reel), followed by the member;
  *   · a salon the member sits in, with 320 messages;
  *   · the member's own stack of every recorded film (61);
- *   · the member's first log with 60 comments, one from each member (seven screen heights: 25 were three, the scroll judge's edge);
+ *   · the member's first log with 60 comments, one from each member, each a few sentences long (the log page shows twelve, then SHOW MORE: twelve of a line each were three screen heights, the scroll judge's edge);
  *   · 30 Dispatch filings;
  *   · the member's own profile: every recorded film logged (its archive room), and a portrait.
  * Every film is one the sealed world holds a recording of, with its real poster, so a scroll
@@ -122,7 +122,7 @@ CREATE TEMP TABLE lab_log ON COMMIT DROP AS
 SELECT id FROM public.logs WHERE user_id = (SELECT id FROM lab_me) AND review IS NOT NULL ORDER BY created_at DESC, id LIMIT 1;
 INSERT INTO public.log_comments (log_id, user_id, username, body, created_at)
 SELECT (SELECT id FROM lab_log), pg_temp.lid(c), 'lab_' || lpad(c::text, 2, '0'),
-       'Comment ' || c || ': ' || repeat('a reply worth reading. ', 1 + c % 3), now() - (60 - c) * interval '11 minutes'
+       'Comment ' || c || ': ' || repeat('A reply worth reading, as a member writes one: the film, the scene, and why it stayed. ', 3 + c % 3), now() - (60 - c) * interval '11 minutes'
   FROM generate_series(1, 60) c;
 
 -- ── the Dispatch: 30 filings ──

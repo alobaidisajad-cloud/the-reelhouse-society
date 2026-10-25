@@ -37,8 +37,8 @@
  *   Cr      no review                Ca  no action deck
  *
  * The Dispatch's posts, part by part (LAB_ARM_SCREEN=dispatch):
- *   Pa      no action bar            Pb  no byline               Pr  no rank rule
- *   Ps      a take's words without their soft breaks             P0  all four
+ *   Ea      no action bar            Eb  no byline               Er  no rank rule
+ *   Es      a take's words without their soft breaks             E0  all four
  *
  * The salon opened cold (LAB_ARM_SCREEN=salon):
  *   Lq      the Lobby under it draws its wall only once it is first seen
@@ -292,8 +292,8 @@ const postNoByline = [edit(POST_FILE, '                {noByline ? null : (\n', 
 const postNoRankRule = [edit(POST_FILE, "          {tier === 'archivist' ? (\n", "          {tier === 'archivist' && !globalThis ? (\n")];
 const postNoSoftBreak = [edit(POST_FILE, 'TAKE — </Text>{softBreak(body)}', 'TAKE — </Text>{body}')];
 
-/** The Dispatch's posts: each part alone, and all four (P0). */
-export const POST_ARMS = ['Pa', 'Pb', 'Pr', 'Ps', 'P0'];
+/** The Dispatch's posts: each part alone, and all four (E0). */
+export const POST_ARMS = ['Ea', 'Eb', 'Er', 'Es', 'E0'];
 
 // The salon opened cold by its link draws the Lobby under it, its whole wall unseen (speed lab
 // 40046819617: the Lobby ready at 367 ms, before the room asked for anything). Lq: the wall waits
@@ -332,11 +332,11 @@ export const ARMS = {
   Ct: cardTitleUnfitted,
   Cr: cardNoReview,
   Ca: cardNoDeck,
-  Pa: postNoActions,
-  Pb: postNoByline,
-  Pr: postNoRankRule,
-  Ps: postNoSoftBreak,
-  P0: [...postNoActions, ...postNoByline, ...postNoRankRule, ...postNoSoftBreak],
+  Ea: postNoActions,
+  Eb: postNoByline,
+  Er: postNoRankRule,
+  Es: postNoSoftBreak,
+  E0: [...postNoActions, ...postNoByline, ...postNoRankRule, ...postNoSoftBreak],
   Lq: lobbyWaitsToBeSeen,
 };
 
