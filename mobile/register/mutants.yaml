@@ -19,11 +19,13 @@ mutants:
         replace: "withTiming(1, { duration, easing, reduceMotion: ReduceMotion.System }));"
     proof: { file: src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts, test: "reads every animation config in the app, and each is a literal whose keys all hold a value" }
 
-  - id: past-abort-signal-timeout
+  - id: shape-lacked-api-used
     class: RUNTIME-api-missing-on-phone
-    source: past
-    commit: 11b420f1
-    files: [src/utils/withTimeout.ts]
+    source: shape
+    edits:
+      - file: src/utils/withTimeout.ts
+        find: "const controller = new AbortController();"
+        replace: "const controller = new AbortController(); void [ms].toSorted();"
     proof: { file: src/utils/__tests__/runtimeLacks.guard.test.ts, test: "no file in app/ or src/ uses an API the phone lacks" }
 
   - id: past-psql-reason-dropped
@@ -1892,3 +1894,21 @@ mutants:
         find: "const PostWords = memo(function PostWords({"
         replace: "const PostWords = (function PostWords({"
     proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the member's marks, read, redraw each filing's bar and none of its words" }
+
+  - id: shape-gwp-asan-unrun
+    class: RUNTIME-gwp-asan-crashes-hermes
+    source: shape
+    edits:
+      - file: app.json
+        find: "      \"./plugins/withGwpAsanOff\",\n"
+        replace: ""
+    proof: { file: plugins/__tests__/withGwpAsanOff.test.ts, test: "runs the plugin at prebuild" }
+
+  - id: shape-gwp-asan-left-on
+    class: RUNTIME-gwp-asan-crashes-hermes
+    source: shape
+    edits:
+      - file: plugins/withGwpAsanOff.js
+        find: "'android:gwpAsanMode': 'never'"
+        replace: "'android:gwpAsanMode': 'default'"
+    proof: { file: plugins/__tests__/withGwpAsanOff.test.ts, test: "tells the application never to run GWP-ASan, and keeps everything else it says" }

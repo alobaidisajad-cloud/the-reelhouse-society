@@ -8,9 +8,9 @@
   },
   {
     "class": "RUNTIME-api-missing-on-phone",
-    "mutant": "past-abort-signal-timeout",
+    "mutant": "shape-lacked-api-used",
     "proof": "m1",
-    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "commit": "93d0e52f168fb6d73c6e66b7fd6ef3304d0422a3",
     "verdict": "caught"
   },
   {
@@ -1419,5 +1419,19 @@
     "proof": "m1",
     "commit": "6b259339d66ec1535c8d30c4aacb765d9f6e33dd",
     "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-gwp-asan-crashes-hermes",
+    "mutant": "shape-gwp-asan-unrun",
+    "proof": "m2",
+    "commit": "93d0e52f168fb6d73c6e66b7fd6ef3304d0422a3",
+    "verdict": "invalid"
+  },
+  {
+    "class": "RUNTIME-gwp-asan-crashes-hermes",
+    "mutant": "shape-gwp-asan-left-on",
+    "proof": "m1",
+    "commit": "93d0e52f168fb6d73c6e66b7fd6ef3304d0422a3",
+    "verdict": "invalid"
   }
 ]

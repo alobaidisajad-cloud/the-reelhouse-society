@@ -420,17 +420,11 @@ const threadTimed = [
     '',
     LIMIT_FN,
   ].join('\n')),
-  edit('src/lib/supabase.ts', '    traceRequest(init?.method, url, at, { status: res.status });\n    return res;\n', [
-    '    traceRequest(init?.method, url, at, { status: res.status });',
-    '    const answered = Date.now();',
-    '    const labText = res.text.bind(res);',
-    '    res.text = async () => {',
-    '      const asked = Date.now();',
-    '      const body = await labText();',
-    "      console.warn(`[e2e] lab.body ${JSON.stringify({ path: url.split('?')[0].split('/').pop(), askedAfter: asked - answered, readMs: Date.now() - asked, chars: body.length, wall: Date.now() })}`);",
-    '      return body;',
-    '    };',
-    '    return res;',
+  // The client reads each answer whole as it comes (fetchWithinLimit): the read is timed there.
+  edit('src/lib/supabase.ts', '    const body = NO_BODY.has(res.status) ? null : await res.text();\n', [
+    '    const asked = Date.now();',
+    '    const body = NO_BODY.has(res.status) ? null : await res.text();',
+    "    console.warn(`[e2e] lab.body ${JSON.stringify({ path: url.split('?')[0].split('/').pop(), askedAfter: 0, readMs: Date.now() - asked, chars: body?.length ?? 0, wall: Date.now() })}`);",
     '',
   ].join('\n')),
 ];

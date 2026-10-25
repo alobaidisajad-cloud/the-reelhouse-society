@@ -21,7 +21,7 @@ classes:
     area: runtime
     status: OPEN
     count: 0
-    source: { kind: history, ref: "build 41 (UF3), 11b420f1" }
+    source: { kind: history, ref: "build 41 (UF3): withTimeout called AbortSignal.timeout, which React Native 0.81's runtime lacked; the SDK 57 phone has it, and the list is what that phone lacks (e2e/runtime/phone-runtime.json)" }
     methods:
       - { kind: static, file: src/utils/__tests__/runtimeLacks.guard.test.ts, test: "no file in app/ or src/ uses an API the phone lacks" }
       - { kind: running, file: src/utils/__tests__/runtimeLacks.guard.test.ts, test: "each entry is there on Node, and gone in the tests' engine" }
@@ -1557,4 +1557,17 @@ classes:
     methods:
       - { kind: running, file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the member's marks, read, redraw each filing's bar and none of its words" }
     fix: "PaperPost draws a filing's words in PostWords, a memo of their own that takes none of the marks; FilingRow keeps its handlers across redraws (useCallback on the filing's id, film and author), so a mark being read redraws the bar alone (mutants shape-row-handlers-made-anew, shape-words-unmemoised)"
+    places: [emulator]
+
+  - id: RUNTIME-gwp-asan-crashes-hermes
+    title: "On Android 14 and later, an app whose manifest names no gwpAsanMode runs GWP-ASan on a share of its launches; its frame-pointer chase ran off the end of a Hermes stack (React Native 0.86's) and the app died on its main thread (SIGSEGV, SEGV_ACCERR)"
+    seriousness: serious
+    area: android
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "Sealed E2E run 40232504480 on the sdk57 branch: auth_flow, the trace ending at hoost_make_fcontext in libhermesvm.so (facebook/hermes 1873, 2225)" }
+    methods:
+      - { kind: running, file: plugins/__tests__/withGwpAsanOff.test.ts, test: "tells the application never to run GWP-ASan, and keeps everything else it says" }
+      - { kind: running, file: plugins/__tests__/withGwpAsanOff.test.ts, test: "runs the plugin at prebuild" }
+    fix: "plugins/withGwpAsanOff.js sets android:gwpAsanMode=\"never\" on the application in the manifest prebuild writes; its test fails once React Native reaches 0.88, said to carry Hermes's fix, so it is read again then (mutants shape-gwp-asan-unrun, shape-gwp-asan-left-on)"
     places: [emulator]
