@@ -23,7 +23,7 @@ const SCHEMA = readFileSync(join(__dirname, '..', '..', '..', 'supabase', 'schem
 const NOT_WORDS: Record<string, string[]> = {
   'a handle, judged by enforce_username_policy or copied from one': [
     'profiles.username', 'dispatch_posts.author_username', 'dispatch_comments.author_username',
-    'dispatch_dossiers_legacy.author_username', 'dossier_comments_legacy.username', 'log_comments.username',
+    'log_comments.username',
     'lounge_messages.reply_to_username', 'notifications.from_username',
   ],
   'an address or an image path, opened or drawn, never read as words': [

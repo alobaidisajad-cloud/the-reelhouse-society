@@ -12,9 +12,9 @@ import { EDGE, WASH, flatPaper, seenAt } from '../light';
 
 type C = { r: number; g: number; b: number; a: number };
 const read = (s: string): C => {
-  const m = /\(([^)]+)\)/.exec(s);
-  if (m) {
-    const p = m[1].split(',').map(Number);
+  const inside = /\(([^)]+)\)/.exec(s)?.[1];
+  if (inside !== undefined) {
+    const p = inside.split(',').map(Number);
     return { r: p[0] ?? 0, g: p[1] ?? 0, b: p[2] ?? 0, a: p[3] ?? 1 };
   }
   const v = parseInt(s.slice(1), 16);
@@ -36,7 +36,7 @@ function layered(paper: string, from: string, to: string, y: number): C {
 /** The flat gradient's colour at height y, between its stops. */
 function flat(p: ReturnType<typeof flatPaper>, y: number): C {
   const [s0, s1, s2] = p.locations;
-  const [c0, c1, c2] = p.colors.map(read);
+  const [c0, c1, c2] = [read(p.colors[0]), read(p.colors[1]), read(p.colors[2])];
   return y <= s1 ? mid(c0, c1, (y - s0) / (s1 - s0)) : mid(c1, c2, (y - s1) / (s2 - s1));
 }
 
