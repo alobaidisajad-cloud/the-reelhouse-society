@@ -89,7 +89,7 @@ const COMPUTED: { at: string; text: string; from: string }[] = [
   { at: 'app/auth-callback.tsx', text: 'to', from: 'goOnward\'s two callers: /reset-password and /(tabs): checked below' },
   { at: 'app/dispatch/[id].tsx', text: 'roomOf(username)', from: 'roomOf: checked below' },
   { at: 'app/dispatch/series/[id].tsx', text: 'roomOf(author.name)', from: 'roomOf: checked below' },
-  { at: 'src/components/dispatch/FilingRow.tsx', text: 'roomOf(f.author!.name)', from: 'roomOf: checked below' },
+  { at: 'src/components/dispatch/FilingRow.tsx', text: 'roomOf(authorName)', from: 'roomOf: checked below' },
   { at: 'src/components/layout/ConciergeButton.tsx', text: 'route', from: 'handleAction\'s callers: /log-modal, /list-modal, /dispatch/compose: checked below' },
   { at: 'src/utils/openNoticeFromPush.ts', text: 'route', from: 'noticeRoute, or the notices sheet: checked below' },
 ];
