@@ -14,7 +14,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/animationMockCoverage.test.ts | 2026-10-22 | edited: every name the app imports from Reanimated is in the mock, hooks and all; the entrances are Arrive's own values; the layout transitions remain |
 | __tests__/backendContract.test.ts | 2026-10-16 | edited: the tables and buckets read from the code, those passed through the export's and the import's helpers included |
 | __tests__/colorLock.test.ts | 2026-10-24 | edited: the drawn eye's file left the exempt list with the file |
-| __tests__/components/feed/ActivityCard.test.tsx | 2026-10-01 | the poster says its film; the card lies flat |
+| __tests__/components/feed/ActivityCard.test.tsx | 2026-10-25 | edited: the card is drawn as flat paper: an opaque ground, nothing seen through an opacity, no edge light under it |
 | __tests__/deletionIntegrity.test.ts | — |  |
 | __tests__/integration/errorBoundaryRecovery.test.tsx | — |  |
 | __tests__/integration/feedFlow.test.ts | 2026-10-01 | one path, refusals raised |
@@ -503,7 +503,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/ErrorBoundary.tsx | 2026-10-22 | edited: the whole app's crash in the failure family (StateWords, the house TRY AGAIN, RESTART THE APP in its plate); the tries left and the reference as quiet facts |
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/feed/ActionDeck.tsx | 2026-10-23 | edited: the share key's label, reading: said, asked again |
-| src/components/feed/ActivityCard.tsx | 2026-10-15 | the film title's glow has room inside the box a phone cuts it at |
+| src/components/feed/ActivityCard.tsx | 2026-10-25 | edited: the card's paper drawn flat (flatPaper), its glows at the wash's strength in their colours, no edge light under it |
 | src/components/feed/AutopsyView.tsx | 2026-10-01 | each score read whole |
 | src/components/feed/PosterFrame.tsx | 2026-10-01 | the poster says its film |
 | src/components/feed/ReviewContent.tsx | 2026-10-04 | edited: the review and the pull quote each take their own direction |
@@ -1149,7 +1149,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/authStyles.ts | 2026-10-01 | comments short and true |
 | src/theme/brass.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/faceAdvances.ts | 2026-10-03 | edited: the soft hyphen's key written as an escape |
-| src/theme/light.ts | 2026-10-08 | roomLightImage, spotlightImage, rgbaOf: the light as native gradients |
+| src/theme/light.ts | 2026-10-25 | edited: flatPaper composites a card's paper, the edge's face and the wash into one opaque gradient; seenAt draws a view's opacity into its colour |
 | src/theme/motion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/stamp.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/theme.ts | 2026-10-02 | Read whole (launch audit). Dead tokens removed: typography, physics (springBouncy broke the no-bounce law), three metrics, three effects; type.caption 8.5 and type.badge 7.5 sat under the 10pt floor unused. theTypeFloor now reads the live scale. |
@@ -1466,3 +1466,4 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/profileRead.ts | 2026-10-23 | whether the member's profile has been read: its own columns on the user, never the auth user alone |
 | src/components/lounge/__tests__/theRoomIsAskedForOnce.test.tsx | 2026-10-23 | edited: the store as it now is: the room open, its own flags; new: the room and roster asked once while the session settles, again for another member |
 | src/utils/__tests__/everyDrawingIsMeasured.guard.test.ts | 2026-10-24 | written: every drawing of the app lands where CI measures it |
+| src/theme/__tests__/paperIsFlattened.test.ts | 2026-10-25 | written: the flat paper is the colour its three layers made, at every height |

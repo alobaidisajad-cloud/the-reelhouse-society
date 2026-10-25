@@ -245,6 +245,64 @@ export function rgbaOf(hex: string, alpha: number): string {
   return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${+alpha.toFixed(4)})`;
 }
 
+interface RGBA { r: number; g: number; b: number; a: number }
+
+/** A theme colour, `#rrggbb` or `rgba()`, as numbers. */
+function channels(colour: string): RGBA {
+  const m = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/.exec(colour.trim());
+  if (m) return { r: Number(m[1]), g: Number(m[2]), b: Number(m[3]), a: m[4] === undefined ? 1 : Number(m[4]) };
+  const v = parseInt(colour.replace('#', ''), 16);
+  return { r: (v >> 16) & 255, g: (v >> 8) & 255, b: v & 255, a: 1 };
+}
+
+/** `top` laid over an opaque `under`. */
+const over = (top: RGBA, under: RGBA): RGBA => ({
+  r: top.r * top.a + under.r * (1 - top.a),
+  g: top.g * top.a + under.g * (1 - top.a),
+  b: top.b * top.a + under.b * (1 - top.a),
+  a: 1,
+});
+const between = (x: RGBA, y: RGBA, t: number): RGBA =>
+  ({ r: x.r + (y.r - x.r) * t, g: x.g + (y.g - x.g) * t, b: x.b + (y.b - x.b) * t, a: x.a + (y.a - x.a) * t });
+const rgbOf = ({ r, g, b }: RGBA) => `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+
+/**
+ * A translucent colour seen at `k` of its strength: a view's opacity drawn into
+ * the colour itself, which paints the same pixels and asks for no layer.
+ */
+export function seenAt(colour: string, k: number): string {
+  const { r, g, b, a } = channels(colour);
+  return `rgba(${r},${g},${b},${+(a * k).toFixed(4)})`;
+}
+
+/**
+ * PAPER, FLATTENED — a lit card as one opaque gradient.
+ *
+ * A card was three translucent layers: its paper, the edge's face light
+ * (EDGE_LIT) and a wash laid over both at WASH's strength, the wash a view
+ * whose opacity Android draws by laying it aside and blending it back. A page
+ * of cards blended every one of them on every frame of a scroll (speed lab
+ * 40147693423: the Reel's p90 1800 ms, 650 with the card drawn flat). Composited
+ * here, once, at the heights where the gradients turn, they are the colours the
+ * eye was shown, within 0.03 of a level of 255 at every height. `line` is the
+ * edge's highlight as it showed under the wash, for the card's top line.
+ */
+export function flatPaper(paper: string, washFrom: string, washTo: string) {
+  const face = channels(EDGE.face);
+  const washed = (c: RGBA): RGBA => ({ ...c, a: c.a * WASH.opacity });
+  const at = (y: number): RGBA => {
+    const lit = { ...face, a: y >= EDGE.faceTo ? 0 : face.a * (1 - y / EDGE.faceTo) };
+    return over(washed(between(channels(washFrom), channels(washTo), y)), over(lit, channels(paper)));
+  };
+  const line = over(washed(channels(washFrom)),
+    over(channels(EDGE.highlight), over(face, channels(paper))));
+  return {
+    colors: [rgbOf(at(0)), rgbOf(at(EDGE.faceTo)), rgbOf(at(1))] as [string, string, string],
+    locations: [0, EDGE.faceTo, 1] as [number, number, number],
+    line: rgbOf(line),
+  };
+}
+
 /**
  * The bloom's colour, as a 4×5 matrix: CSS `saturate(s)` then `sepia(a)`,
  * composed — the exact filter the approved mockups were drawn with, in the

@@ -39,7 +39,7 @@ import { timeAgo } from '@/src/utils/timeAgo';
 
 // Single source of truth: Zod schema
 import type { FeedItem } from '@/src/schemas/feed.schema';
-import { EDGE_LIT, WASH } from '@/src/theme/light';
+import { WASH, flatPaper, seenAt } from '@/src/theme/light';
 
 // The banner spans ~326pt: 978 pixels on a 3x screen, which a 500px image fills at half detail.
 const TMDB_IMG_EDITORIAL = `https://image.tmdb.org/t/p/${PixelRatio.get() >= 3 ? 'w780' : 'w500'}`;
@@ -51,21 +51,37 @@ const FLIP_MS = 420;
 const FLIP_EASING = Easing.bezier(0.33, 0, 0.15, 1);
 const CROSSFADE_MS = 250;
 
-/** The card's own washes, thinned: a card is paper on the lit page, not a hole in it. */
-const SHELL = WASH;
+/**
+ * The card's paper: its colour, the edge's light and its wash, thinned so a card
+ * is paper on the lit page and not a hole in it, drawn as one opaque gradient
+ * (flatPaper). Laid as three translucent layers, a page of them was blended on
+ * every frame of the Reel's scroll.
+ */
+const PAPER = {
+  plain: flatPaper(colors.soot, 'rgba(30,25,20,0.95)', 'rgba(6,5,4,0.98)'),
+  premium: flatPaper(colors.ink, 'rgba(30,25,20,0.95)', 'rgba(6,5,4,0.98)'),
+  auteur: flatPaper(colors.sootAuteur, 'rgba(40,18,18,0.7)', 'rgba(14,5,5,0.95)'),
+};
+/** A ranked card's two corner glows, at the wash's strength, drawn into their colours. */
+const GLOW = {
+  archivist: { near: seenAt(colors.sepiaFaint, WASH.opacity), far: seenAt('rgba(184,137,26,0.04)', WASH.opacity) },
+  auteur: { near: seenAt(colors.crimsonFaint, WASH.opacity), far: seenAt('rgba(180,45,45,0.04)', WASH.opacity) },
+};
 
 const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {
+  const paper = isAuteur ? PAPER.auteur : isPremium ? PAPER.premium : PAPER.plain;
+  const glow = isAuteur ? GLOW.auteur : GLOW.archivist;
   return (
     <>
       <LinearGradient
-        colors={isAuteur ? ['rgba(40,18,18,0.7)', 'rgba(14,5,5,0.95)'] : ['rgba(30,25,20,0.95)', 'rgba(6,5,4,0.98)']}
-        locations={[0, 1]}
-        style={[StyleSheet.absoluteFillObject, SHELL]}
+        colors={paper.colors}
+        locations={paper.locations}
+        style={[StyleSheet.absoluteFillObject, s.paperLine, { borderTopColor: paper.line }]}
       />
       {(isPremium || isAuteur) && (
         <>
-          <LinearGradient colors={[isAuteur ? colors.crimsonFaint : colors.sepiaFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFillObject, SHELL]} />
-          <LinearGradient colors={[isAuteur ? 'rgba(180,45,45,0.04)' : 'rgba(184,137,26,0.04)', 'transparent']} start={{x: 1, y: 1}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFillObject, SHELL]} />
+          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={[glow.far, 'transparent']} start={{x: 1, y: 1}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
         </>
       )}
       {children}
@@ -285,7 +301,7 @@ const s = StyleSheet.create({
     shadowRadius: 20,
   },
   // The clip host: the paper, the border, and the mask the reverse face turns inside.
-  card: { ...EDGE_LIT,
+  card: {
     backgroundColor: colors.soot,
     borderRadius: 4,
     borderWidth: 1,
@@ -299,7 +315,9 @@ const s = StyleSheet.create({
     borderColor: 'rgba(184,137,26,0.3)',
     backgroundColor: colors.ink,
   },
-  cardAuteur: { ...EDGE_LIT,
+  /** The edge's highlight, the top line inside the border, as it showed under the wash. */
+  paperLine: { borderTopWidth: 1 },
+  cardAuteur: {
     borderColor: colors.crimsonBorder,
     backgroundColor: colors.sootAuteur,
     // The Android lift, crimson from Android 9, as cardShadowAuteur casts it on iOS.

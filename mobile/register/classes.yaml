@@ -1448,3 +1448,16 @@ classes:
       - { kind: running, file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "frozen in a frozen line, whatever it asks for: React Native drops a nested allowFontScaling" }
     fix: "the app's Text gives a nested Text nothing of the house's (React Native drops a nested allowFontScaling and gives it the parent's cap); a frozen Text tells the Texts inside it, so Android's spacing correction follows the parent. Jest's stand-in for React Native's Text tells nested Texts they are nested, as the real one does; the renderer draws a nested Text with its parent's scaling, through a capture run's source marks too (mutants shape-nested-text-housed, shape-render-nested-own-cap)"
     places: [none]
+
+  - id: SPEED-a-card-blended-every-frame
+    title: "Each card on the Reel was its paper, an edge light and a wash laid over both at 0.35, the wash a view whose opacity Android draws aside and blends back: a page of cards blended all of them on every frame of a scroll, and held the Reel's slowest frames at twice their budget"
+    seriousness: behaviour
+    area: runtime
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "speed lab 40147693423: the washes off (Cs) p50 -500 ms, p90 -800; the edge light off (Ce) -225/-325; the clip off (Ck) -100/-200; all three (C0) p50 450, p90 650 from 1800, under the 1094 budget. Speed lab 40147696024: the poster, the title's fit, the review and the deck each within 100 ms" }
+    methods:
+      - { kind: running, file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat paper: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
+      - { kind: running, file: src/theme/__tests__/paperIsFlattened.test.ts, test: "says NO to paper that leaves out a layer" }
+    fix: "flatPaper (src/theme/light.ts) composites the paper, the edge's face light and the wash once, at the heights where their gradients turn, into one opaque gradient: the colours the eye was shown, within half a level of 255 at every height (paperIsFlattened), the edge's highlight its top line. A ranked card's corner glows carry the wash's strength in their colours (seenAt), so no view of the card is drawn through its opacity; the card's own style holds no edge light. Drawn before and after, the Reel's cards match pixel for pixel inside; only their 1pt translucent borders move, by at most 6 levels (17 at two corner pixels), the face light no longer under them (mutants shape-card-paper-seen-through, shape-card-edge-under-paper)"
+    places: [emulator]

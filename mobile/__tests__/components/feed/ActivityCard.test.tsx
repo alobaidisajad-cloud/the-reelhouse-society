@@ -132,4 +132,34 @@ describe('ActivityCard Component', () => {
     expect(paper('auteur')).toEqual(expect.objectContaining({ elevation: 12, shadowColor: expect.any(String) }));
     expect(paper('auteur').shadowColor).not.toBe('transparent');
   });
+
+  // Speed lab 40147693423: three translucent layers per card, blended on every frame of a
+  // scroll, held the Reel's p90 at 1800 ms; drawn flat, 650.
+  it('is drawn as flat paper: an opaque ground, no layer seen through a view\'s opacity, no edge light under it', () => {
+    const { StyleSheet } = jest.requireActual('react-native');
+    type Node = { type?: string; props?: Record<string, any>; children?: unknown[] | null };
+    for (const role of ['cinephile', 'archivist', 'auteur']) {
+      const item = { id: 4, user_id: 'u9', username: 'reader', role, film_id: 238, film_title: 'Casablanca',
+        rating: 4, review: 'We will always have Paris.', poster_path: '/c.jpg', year: 1942, created_at: new Date().toISOString(), status: 'watched' };
+      const nodes: Node[] = [];
+      const walk = (n: unknown) => {
+        if (!n || typeof n !== 'object') return;
+        const node = n as Node;
+        nodes.push(node);
+        for (const c of node.children ?? []) walk(c);
+      };
+      walk(render(<ActivityCard item={item as any} index={0} />).toJSON());
+      const card = nodes.find((n) => n.props?.shouldRasterizeIOS !== undefined);
+      if (!card) throw new Error('the card was not rendered');
+      const cardStyle = StyleSheet.flatten(card.props!.style);
+      expect([role, cardStyle.experimental_backgroundImage, cardStyle.boxShadow]).toEqual([role, undefined, undefined]);
+      const gradients = nodes.filter((n) => Array.isArray(n.props?.colors));
+      const ground = gradients.find((n) => n.props?.colors.length === 3);
+      // As the native view receives them: 0xAARRGGBB, opaque when its alpha byte is full.
+      const opaque = (c: unknown) => (typeof c === 'number' ? (c >>> 24) === 0xff : String(c).startsWith('rgb('));
+      expect([role, ground?.props?.colors.every(opaque)]).toEqual([role, true]);
+      const seenThrough = gradients.filter((n) => (StyleSheet.flatten(n.props?.style)?.opacity ?? 1) < 1);
+      expect([role, seenThrough.length]).toEqual([role, 0]);
+    }
+  });
 });

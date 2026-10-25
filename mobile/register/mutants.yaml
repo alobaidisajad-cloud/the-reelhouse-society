@@ -1775,3 +1775,21 @@ mutants:
         find: "      : textCap === 1 ? 1 : own ?? textCap;"
         replace: "      : (p.allowFontScaling === false ? 1 : own ?? 0);"
     proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "frozen in a frozen line, whatever it asks for: React Native drops a nested allowFontScaling" }
+
+  - id: shape-card-paper-seen-through
+    class: SPEED-a-card-blended-every-frame
+    source: shape
+    edits:
+      - file: src/components/feed/ActivityCard.tsx
+        find: "          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />"
+        replace: "          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFillObject, WASH]} />"
+    proof: { file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat paper: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
+
+  - id: shape-card-edge-under-paper
+    class: SPEED-a-card-blended-every-frame
+    source: shape
+    edits:
+      - file: src/components/feed/ActivityCard.tsx
+        find: "  card: {\n    backgroundColor: colors.soot,"
+        replace: "  card: {\n    boxShadow: 'inset 0px 1px 0px 0px rgba(255,226,176,0.075)',\n    backgroundColor: colors.soot,"
+    proof: { file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat paper: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
