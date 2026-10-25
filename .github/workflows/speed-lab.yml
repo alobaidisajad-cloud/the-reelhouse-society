@@ -367,12 +367,6 @@ jobs:
                 "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build $1"
             cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/$1.apk"
             echo "built $1: $(stat -c %s "$RUNNER_TEMP/apks/$1.apk") bytes"
-            # A profiled build's source map, so its profile names functions as written (e2e/lab/profile.mjs).
-            if [ "$1" = Pr ]; then
-              mkdir -p "$RUNNER_TEMP/lab/scrolls/maps"
-              cp android/app/build/generated/sourcemaps/react/release/index.android.bundle.map "$RUNNER_TEMP/lab/scrolls/maps/Pr.map" \
-                || echo "no source map for Pr" >> "$B"
-            fi
           }
           npx expo prebuild --platform android --no-install --clean > "$B" 2>&1 || fail "prebuild"
           for arm in A $LAB_SCROLL_ARMS; do build "$arm"; done

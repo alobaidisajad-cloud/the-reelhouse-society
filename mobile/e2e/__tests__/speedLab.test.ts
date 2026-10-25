@@ -323,32 +323,6 @@ describe('the lab\'s phone is the flows\' phone', () => {
   });
 });
 
-describe('a profiled opening (Pr)', () => {
-  it('counts each function\'s own time and its total, one function at many spots counted once', () => {
-    // Samples 1 ms apart: render → FilingRow → parse twice, render → FilingRow once, render alone once.
-    const trace = {
-      stackFrames: {
-        1: { name: 'render(app/(tabs)/dispatch.tsx:10:2)' },
-        2: { name: 'FilingRow(src/components/dispatch/paper/FilingRow.tsx:40:4)', parent: 1 },
-        3: { name: 'safeParse(node_modules/zod/v4/core/api.js:7:1)', parent: 2 },
-        4: { name: 'safeParse(node_modules/zod/v4/core/api.js:9:3)', parent: 2 },
-        5: { name: 'FilingRow(src/components/dispatch/paper/FilingRow.tsx:52:6)', parent: 1 },
-      },
-      samples: [{ ts: 1000, sf: 3 }, { ts: 2000, sf: 4 }, { ts: 3000, sf: 5 }, { ts: 4000, sf: 1 }],
-    };
-    const d = fresh('profile');
-    writeFileSync(join(d, 'dispatch.cpuprofile'), JSON.stringify(trace));
-    const r = run('profile.mjs', [join(d, 'dispatch.cpuprofile'), '--top', '3']);
-    expect(r.status).toBe(0);
-    const rows = r.stdout.split('\n').filter((l) => /^\s+\d+\s+\d+\s+\S/.test(l)).map((l) => l.trim().split(/\s+/).slice(0, 3).join(' '));
-    // By own time: zod 2 ms, FilingRow 1, render 1; by total: render 4, FilingRow 3, zod 2.
-    expect(rows).toEqual([
-      '2 2 safeParse(node_modules/zod/v4/core/api.js)', '1 3 FilingRow(src/components/dispatch/paper/FilingRow.tsx)', '1 4 render(app/(tabs)/dispatch.tsx)',
-      '1 4 render(app/(tabs)/dispatch.tsx)', '1 3 FilingRow(src/components/dispatch/paper/FilingRow.tsx)', '2 2 safeParse(node_modules/zod/v4/core/api.js)',
-    ]);
-  });
-});
-
 describe('the frame budget (P0.112)', () => {
   type Line = { reason: string } & Record<string, number | string>;
   const budget = JSON.parse(readFileSync(join(LAB, 'budget.json'), 'utf8')) as {

@@ -78,11 +78,6 @@ scroll_one() {
   # What the app holds after the scroll, graphics apart: a layer kept as a texture costs memory.
   adb shell dumpsys meminfo "$PKG" > "$f.mem" 2>&1
   adb logcat -d -v threadtime > "$f.log"
-  # A profiled build's sampled opening (arm.mjs, Pr), taken off the phone and cleared for the next run.
-  for p in $(adb shell "ls /data/user/0/$PKG/files" < /dev/null 2>/dev/null | tr -d '\r' | grep '\.cpuprofile$'); do
-    adb pull "/data/user/0/$PKG/files/$p" "$f.$p" > /dev/null 2>&1 < /dev/null
-    adb shell rm -f "/data/user/0/$PKG/files/$p" < /dev/null
-  done
 }
 
 if [ "$PART" != arms ]; then

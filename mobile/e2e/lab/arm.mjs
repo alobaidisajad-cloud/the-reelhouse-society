@@ -41,7 +41,7 @@
  *   Cp      no poster                Ct  the title not shrunk to fit
  *   Cr      no review                Ca  no action deck
  *
- * Any screen, profiled (Pr): Hermes's sampling profile of its opening, read by e2e/lab/profile.mjs.
+ * Any screen opened with the boot's background reads begun 1.5 s later (Bd).
  *
  * The house's lit edge (EDGE_LIT), each part taken off everywhere, on a stack (LAB_ARM_SCREEN=stack):
  *   Kx      no inset highlight       Kg  no face gradient        K0  neither
@@ -336,29 +336,17 @@ const postNoSoftBreak = [edit(POST_FILE, 'TAKE — </Text>{softBreak(body)}', 'T
 /** The Dispatch's posts: each part alone, and all four (E0). */
 export const POST_ARMS = ['Ea', 'Eb', 'Er', 'Es', 'E0'];
 
-// Pr: where the JavaScript thread's time goes as a screen opens, sampled. Hermes's sampling profiler
-// starts with the app and is written to the app's own files when the first screen is ready;
-// scrolls.sh takes it off the phone, and e2e/lab/profile.mjs reads it, symbolicated against the
-// build's source map. Its first line says which of the profiler's calls this Hermes has.
-const profiled = [
-  edit('app/_layout.tsx', 'SplashScreen.preventAutoHideAsync();\n', [
-    'const labHermes = (globalThis as { HermesInternal?: Record<string, (...a: unknown[]) => unknown> }).HermesInternal;',
-    'console.warn(`[e2e] lab.hermes ${JSON.stringify(Object.getOwnPropertyNames(labHermes ?? {}))}`);',
-    'labHermes?.enableSamplingProfiler?.();',
-    'SplashScreen.preventAutoHideAsync();',
-    '',
-  ].join('\n')),
-  edit('src/hooks/useScreenReady.tsx', "    e2eTrace(read === 'ready' ? 'screen.ready' : 'screen.failed', { name, ms: Date.now() - startedAt.current });\n", [
-    "    e2eTrace(read === 'ready' ? 'screen.ready' : 'screen.failed', { name, ms: Date.now() - startedAt.current });",
-    '    const labHermes = (globalThis as { HermesInternal?: Record<string, (...a: unknown[]) => unknown>; labProfiled?: boolean });',
-    '    if (labHermes.HermesInternal?.dumpSampledTraceToFile && !labHermes.labProfiled) {',
-    '      labHermes.labProfiled = true;',
-    '      labHermes.HermesInternal.disableSamplingProfiler?.();',
-    '      labHermes.HermesInternal.dumpSampledTraceToFile(`/data/user/0/com.reelhouse.society/files/${name}.cpuprofile`);',
-    "      e2eTrace('lab.profile', { name });",
-    '    }',
-    '',
-  ].join('\n')),
+// Bd: the boot's background reads (the member's notices, follows and marks) begin 1.5 s after the
+// boot, so the first screen's own answer is taken in first. Speed lab 40172265454: the Dispatch's
+// posts answered in 0.5 s, and were taken in with five more answers at once, after the thread was
+// free. (A sampled profile was tried first: speed lab 40183157672 showed release Hermes carries no
+// sampling profiler; none of the calls on its HermesInternal starts or writes one.)
+const BOOT_FILE = 'src/providers/AppBootstrapper.tsx';
+const bootReadsWait = [
+  edit(BOOT_FILE, '        void hydrateFollowing();\n        // The member\'s marks, whole: every film logged and saved, not the pages read (marksLedger).\n        void readMarks();\n',
+    '        setTimeout(() => { void hydrateFollowing(); void readMarks(); }, 1500);\n'),
+  edit(BOOT_FILE, "        useNotificationStore.getState().fetchNotifications()\n          .catch(e => logger.warn('[Bootstrapper] Notices read failed:', e));\n",
+    "        setTimeout(() => { useNotificationStore.getState().fetchNotifications().catch(e => logger.warn('[Bootstrapper] Notices read failed:', e)); }, 1500);\n"),
 ];
 
 // A stack's page, part by part (speed lab 40174299190: the lit edge off everywhere, K0, gave its
@@ -422,7 +410,7 @@ export const ARMS = {
   Er: postNoRankRule,
   Es: postNoSoftBreak,
   E0: [...postNoActions, ...postNoByline, ...postNoRankRule, ...postNoSoftBreak],
-  Pr: profiled,
+  Bd: bootReadsWait,
   Sv: stackVeilStill,
   Sd: stackHeroStill,
   Sk: stackCardsUnclipped,
