@@ -70,7 +70,7 @@ describe('the veil, drawn', () => {
 // cost the Reel a third of its middle frame time. Kept by Android as a texture while its screen is
 // in front, and let go behind it, so a deep stack holds one screen's texture (speed lab 39901452779).
 describe('the room\'s light, kept', () => {
-  const { NavigationContext } = jest.requireActual('@react-navigation/native') as typeof import('@react-navigation/native');
+  const { NavigationContext } = jest.requireActual('expo-router/react-navigation') as typeof import('expo-router/react-navigation');
   const { act } = jest.requireActual('@testing-library/react-native') as typeof import('@testing-library/react-native');
   const cached = (r: ReturnType<typeof render>) => {
     type Node = { props: Record<string, unknown>; children: (Node | string)[] | null };
@@ -112,7 +112,7 @@ describe('whether a screen is seen', () => {
   });
 
   it('inside one, as the navigator says, from the first draw: a screen opened behind another is not seen', async () => {
-    const { NavigationContext } = jest.requireActual('@react-navigation/native') as typeof import('@react-navigation/native');
+    const { NavigationContext } = jest.requireActual('expo-router/react-navigation') as typeof import('expo-router/react-navigation');
     const navigation = { isFocused: () => false, addListener: () => () => {} };
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(NavigationContext.Provider, { value: navigation as never }, children);

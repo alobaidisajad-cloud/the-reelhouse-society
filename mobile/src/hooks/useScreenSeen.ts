@@ -6,7 +6,7 @@
  * blur, so a component reading it draws again only then.
  */
 import { useContext, useEffect, useState } from 'react';
-import { NavigationContext } from '@react-navigation/native';
+import { NavigationContext } from "expo-router/react-navigation";
 
 export function useScreenSeen(): boolean {
   const navigation = useContext(NavigationContext);

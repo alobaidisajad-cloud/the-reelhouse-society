@@ -15,7 +15,7 @@ import {
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { HapticTab } from '@/src/components/HapticTab';
-import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
+import type { BottomTabBarButtonProps } from "expo-router/js-tabs";
 import { colors, effects } from '@/src/theme/theme';
 import { TopNavBar } from '@/src/components/layout/TopNavBar';
 import InitiationModal from '@/src/components/InitiationModal';

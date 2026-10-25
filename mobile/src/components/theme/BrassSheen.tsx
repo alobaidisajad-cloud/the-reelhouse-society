@@ -13,7 +13,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withTiming,
   Easing, interpolate, cancelAnimation, useReducedMotion,
 } from 'react-native-reanimated';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from "expo-router/react-navigation";
 import { LinearGradient } from 'expo-linear-gradient';
 
 export const BrassSheen = memo(function BrassSheen() {
@@ -40,7 +40,7 @@ export const BrassSheen = memo(function BrassSheen() {
   return (
     <View style={s.wrap}>
       <Animated.View style={[s.band, sheenStyle]}>
-        <LinearGradient colors={['transparent', '#FFF', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFillObject} />
+        <LinearGradient colors={['transparent', '#FFF', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
       </Animated.View>
     </View>
   );

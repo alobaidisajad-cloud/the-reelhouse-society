@@ -42,7 +42,7 @@ const mockRequestPermission = jest.fn(() => Promise.resolve('granted'));
 const mockAlert = jest.fn();
 
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { back: jest.fn(), push: jest.fn(), replace: (...a: unknown[]) => mockNavReplace(...a) } }));
-jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(),
+jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navigationMock').navigationMock(),
   usePreventRemove: (enabled: boolean, cb: (o: { data: { action: unknown } }) => void) => { mockPrevent = { enabled, cb }; },
   useNavigation: () => ({ dispatch: jest.fn() }),
   useIsFocused: () => true,

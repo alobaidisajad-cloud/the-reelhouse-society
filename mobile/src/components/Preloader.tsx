@@ -293,19 +293,19 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
 
 const styles = StyleSheet.create({
   container: { ...EDGE_LIT,
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 100000,
     backgroundColor: colors.soot,
     alignItems: 'center',
     justifyContent: 'center',
   },
   vignette: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.35)',
     zIndex: 1,
   },
   warmth: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(40,28,12,0.3)',
     zIndex: 1,
   },
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   primaryRing: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 1.5,
     borderColor: 'rgba(196,150,26,0.42)',
     borderRadius: 9999,
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     transformOrigin: 'left center',
   },
   digitsWrapper: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   bloom: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(248,240,192,0.18)',
     zIndex: 10,
   }

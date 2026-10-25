@@ -37,7 +37,7 @@ jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo
 // a nested word as a line of its own.
 jest.mock('react-native/Libraries/Text/Text', () => {
   const React = require('react');
-  const Stand = jest.requireActual('react-native/jest/mocks/Text').default;
+  const Stand = jest.requireActual('@react-native/jest-preset/jest/mocks/Text').default;
   const TextAncestorContext = require('react-native/Libraries/Text/TextAncestorContext').default;
   class Text extends Stand {
     render() {
@@ -556,7 +556,7 @@ jest.mock('./src/lib/tmdb', () => {
 // navigator the real answer is given; outside one, "focused", which is what a
 // mounted screen is. A test's own mock of the module replaces this, so it spreads the same base.
 // ─────────────────────────────────────────────────────────────────────────────
-jest.mock('@react-navigation/native', () => require('./test-utils/navigationMock').navigationMock());
+jest.mock('expo-router/react-navigation', () => require('./test-utils/navigationMock').navigationMock());
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock expo-notifications

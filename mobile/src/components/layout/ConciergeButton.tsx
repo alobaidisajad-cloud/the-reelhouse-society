@@ -377,7 +377,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
           ) : null}
           <View style={[StyleSheet.absoluteFill, s.scrim]} />
           <Pressable
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
             onPress={closeSheet}
             accessible={false}
             importantForAccessibility="no-hide-descendants"

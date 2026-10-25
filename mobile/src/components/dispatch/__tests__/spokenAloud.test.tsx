@@ -42,7 +42,7 @@ jest.mock('@/src/stores/auth', () => ({
     { getState: () => ({ user: mockUser }), setState: jest.fn(), subscribe: jest.fn() },
   ),
 }));
-jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn() }));
+jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn() }));
 jest.mock('@/src/utils/typedRouter', () => ({
   nav: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
 }));

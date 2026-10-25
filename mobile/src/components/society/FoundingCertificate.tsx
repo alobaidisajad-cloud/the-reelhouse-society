@@ -67,7 +67,7 @@ export const FoundingCertificate = memo(function FoundingCertificate({
             accessibilityLabel={busy ? 'Processing purchase' : `Claim a founding seat, ${pitch.amount} once`}
             accessibilityState={{ disabled: busy, busy }}
           >
-            <LinearGradient colors={[colors.marqueeGold, colors.sepia]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
+            <LinearGradient colors={[colors.marqueeGold, colors.sepia]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
             <Text style={s.btnText} {...deckLabelProps}>{busy ? 'PROCESSING…' : 'CLAIM A FOUNDING SEAT'}</Text>
           </PressableScale>
         </>

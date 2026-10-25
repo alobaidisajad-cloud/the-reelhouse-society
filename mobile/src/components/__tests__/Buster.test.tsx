@@ -18,8 +18,8 @@ import { BUSTER_ART, type BusterArtKey } from '../busterArt';
 
 let mockFocused = true;
 let mockNoNavigator = false;
-jest.mock('@react-navigation/native', () => ({
-  ...jest.requireActual('@react-navigation/native'),
+jest.mock('expo-router/react-navigation', () => ({
+  ...jest.requireActual('expo-router/react-navigation'),
   useIsFocused: () => {
     if (mockNoNavigator) throw new Error('useIsFocused outside a navigator');
     return mockFocused;

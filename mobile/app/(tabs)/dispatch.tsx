@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ActivityIndicator, RefreshControl, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop } from "expo-router/react-navigation";
 import { useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';

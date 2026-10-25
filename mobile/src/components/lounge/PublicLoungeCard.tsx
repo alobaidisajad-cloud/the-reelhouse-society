@@ -47,7 +47,7 @@ export const PublicLoungeCard = React.memo(({ lounge, index: _index, onReport }:
             <Image source={{ uri: coverUrl }} style={s.publicImgContent} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
             <LinearGradient
               colors={['transparent', 'rgba(13,11,9,0.35)']}
-              style={StyleSheet.absoluteFillObject}
+              style={StyleSheet.absoluteFill}
             />
           </View>
         )}

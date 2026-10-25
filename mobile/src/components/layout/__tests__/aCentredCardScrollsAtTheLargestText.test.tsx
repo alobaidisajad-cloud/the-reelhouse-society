@@ -72,7 +72,7 @@ jest.mock('react-native/Libraries/Alert/Alert', () => {
   const Alert = { alert: (...a: unknown[]) => mockAlert(...a) };
   return { __esModule: true, default: Alert, ...Alert };
 });
-jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(),
+jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navigationMock').navigationMock(),
   usePreventRemove: jest.fn(),
   useNavigation: () => ({ dispatch: jest.fn() }),
   useIsFocused: () => true,

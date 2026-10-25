@@ -6,7 +6,7 @@ import { useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useQueryClient } from '@tanstack/react-query';
-import { useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop } from "expo-router/react-navigation";
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
@@ -181,7 +181,7 @@ function LobbyBody() {
         <LinearGradient
           colors={[colors.ink, 'rgba(13,11,9,0.98)', colors.soot]}
           locations={[0, 0.4, 1]}
-          style={[StyleSheet.absoluteFillObject, WASH]}
+          style={[StyleSheet.absoluteFill, WASH]}
         />
         
         {/* Dynamic Scene Atmospherics */}
@@ -279,7 +279,7 @@ function LobbyBody() {
       <RoomLight room="lobby" />
       {readyMark}
       {/* The page's own fade, house to card, as a wash so the lamp shows through. */}
-      <LinearGradient colors={[colors.ink, 'rgba(13,11,9,0.98)', colors.soot]} locations={[0, 0.4, 1]} style={[StyleSheet.absoluteFillObject, WASH]} />
+      <LinearGradient colors={[colors.ink, 'rgba(13,11,9,0.98)', colors.soot]} locations={[0, 0.4, 1]} style={[StyleSheet.absoluteFill, WASH]} />
 
       <CinematicScrollView
         ref={scrollRef}

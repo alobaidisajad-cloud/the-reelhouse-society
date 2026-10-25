@@ -109,7 +109,7 @@ export function ProfileBackdrop({ user, hem, scrollY }: {
                 <LinearGradient
                     colors={['transparent', 'rgba(13,11,9,0.55)', colors.ink]}
                     locations={[0, 0.45, 1]}
-                    style={StyleSheet.absoluteFillObject}
+                    style={StyleSheet.absoluteFill}
                 />
             )}
         </Arrive>
@@ -118,7 +118,7 @@ export function ProfileBackdrop({ user, hem, scrollY }: {
 
 const s = StyleSheet.create({
     container: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         overflow: 'hidden',
         zIndex: 0,
     },
@@ -129,7 +129,7 @@ const s = StyleSheet.create({
         transform: [{ scale: 1.08 }],
     },
     darkWash: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(13,11,9,0.35)',
     },
     topFade: {

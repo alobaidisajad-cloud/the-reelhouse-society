@@ -9,7 +9,7 @@
  * plain list spreads `traceProps` from useScrollTrace onto itself.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
-import * as Navigation from '@react-navigation/native';
+import * as Navigation from 'expo-router/react-navigation';
 import { runOnJS, useAnimatedReaction, type SharedValue } from 'react-native-reanimated';
 import { startScrollSpan } from '@/src/lib/sentry';
 

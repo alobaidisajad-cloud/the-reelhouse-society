@@ -12,8 +12,8 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator, type BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from "expo-router/react-navigation";
+import { createBottomTabNavigator, type BottomTabBarButtonProps } from "expo-router/js-tabs";
 import { HapticTab } from '../HapticTab';
 import { MOBILE, readCode } from '@/test-utils/readCode';
 import { join, relative } from 'path';

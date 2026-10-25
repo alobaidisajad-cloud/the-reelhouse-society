@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useSharedValue, useAnimatedStyle, withTiming, Easing, withRepeat, cancelAnimation, runOnUI, ReduceMotion } from 'react-native-reanimated';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from "expo-router/react-navigation";
 
 export function useAmbientGlow(baseline = 0.04, peak = 0.08, duration = 3000) {
     const isFocused = useIsFocused();

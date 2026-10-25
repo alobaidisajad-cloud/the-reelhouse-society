@@ -52,7 +52,7 @@ export const SectionCard = ({ children, danger }: { children: React.ReactNode; d
     />
     <LinearGradient
       colors={danger ? ['rgba(162,36,36,0.05)', 'transparent'] : ['rgba(184,137,26,0.03)', 'transparent']}
-      style={[StyleSheet.absoluteFillObject, WASH]}
+      style={[StyleSheet.absoluteFill, WASH]}
     />
     {children}
   </View>

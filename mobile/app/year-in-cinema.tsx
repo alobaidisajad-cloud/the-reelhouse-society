@@ -33,7 +33,7 @@ function StateShell({ closeTop, children }: { closeTop: number; children: React.
   return (
     <View style={s.container}>
       <RoomLight room="member" />
-      <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFillObject, WASH]} />
+      <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFill, WASH]} />
       {children}
       <PressableScale style={[s.closeBtn, { top: closeTop }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
         <X size={24} color={colors.bone} />
@@ -108,9 +108,9 @@ export default function YearInCinemaScreen() {
 
     return (
       <View style={[s.slide, { width, height: slideHeight }]}>
-        <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFillObject, WASH]} />
+        <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFill, WASH]} />
         {/* Filmic vertical vignette — depth without a flat grey wash */}
-        <LinearGradient colors={['rgba(0,0,0,0.4)', 'transparent', 'rgba(0,0,0,0.55)']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFillObject, WASH]} pointerEvents="none" />
+        <LinearGradient colors={['rgba(0,0,0,0.4)', 'transparent', 'rgba(0,0,0,0.55)']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFill, WASH]} pointerEvents="none" />
         <FilmEdges />
 
         {/* Content region — flex:1, centred, can never reach the footer */}

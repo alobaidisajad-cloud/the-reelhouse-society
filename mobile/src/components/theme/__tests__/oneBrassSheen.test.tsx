@@ -16,7 +16,7 @@ import { render } from '@testing-library/react-native';
 import { BrassSheen } from '../BrassSheen';
 
 let mockFocused = true;
-jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => mockFocused }));
+jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => mockFocused }));
 
 const reanimated = jest.requireMock('react-native-reanimated') as { withRepeat: jest.Mock; useReducedMotion: () => boolean };
 const originalReduced = reanimated.useReducedMotion;

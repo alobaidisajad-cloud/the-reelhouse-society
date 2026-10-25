@@ -16,7 +16,7 @@ export function Vignette() {
 
 const styles = StyleSheet.create({
   vignette: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 899,
     experimental_backgroundImage: VIGNETTE_IMAGE,
   },

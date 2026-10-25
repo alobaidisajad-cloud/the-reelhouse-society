@@ -66,7 +66,7 @@ export const AuthBackdrop = memo(function AuthBackdrop() {
       <LinearGradient
         colors={[colors.ink, '#0B0907', colors.soot]}
         locations={[0, 0.5, 1]}
-        style={[StyleSheet.absoluteFillObject, WASH]}
+        style={[StyleSheet.absoluteFill, WASH]}
       />
       <FilmPerforations side="left" />
       <FilmPerforations side="right" />

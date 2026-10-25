@@ -9,7 +9,7 @@ import { useBottomEdge, useModalTop } from '@/src/components/layout/navMetrics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { nav } from '@/src/utils/typedRouter';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from "expo-router/react-navigation";
 import { colors } from '@/src/theme/theme';
 import { SmallPrintLink } from '@/src/components/society/SmallPrint';
 import { openHousePage } from '@/src/utils/housePages';

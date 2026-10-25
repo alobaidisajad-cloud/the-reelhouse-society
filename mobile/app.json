@@ -79,7 +79,8 @@
       "expo-secure-store",
       "expo-web-browser",
       "expo-image",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

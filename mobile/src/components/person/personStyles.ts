@@ -79,7 +79,7 @@ export const s = StyleSheet.create({
   // ── Hero Backdrop ──
   heroWrap: { minHeight: 240, maxHeight: 300, position: 'relative', overflow: 'hidden' },
   heroBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
-  heroSepia: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(13,11,9,0.5)' },
+  heroSepia: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(13,11,9,0.5)' },
   // The film leader runs along the TOP of the frame, not the bottom. The title
   // block is pulled 75pt up over the hero, so a strip anywhere in the hero's
   // lower region crosses the portrait's face — measured, not guessed. Moving it
@@ -184,7 +184,7 @@ export const s = StyleSheet.create({
   auteurHuntTrack: { height: 8, backgroundColor: colors.soot, borderRadius: 2, overflow: 'hidden', position: 'relative' },
   auteurHuntFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.sepia, borderRadius: 2 } as import('react-native').ViewStyle,
   // Frame notches — the strip reads as film, not as a loading bar.
-  auteurHuntNotches: { ...StyleSheet.absoluteFillObject, flexDirection: 'row', justifyContent: 'space-evenly' } as import('react-native').ViewStyle,
+  auteurHuntNotches: { ...StyleSheet.absoluteFill, flexDirection: 'row', justifyContent: 'space-evenly' } as import('react-native').ViewStyle,
   auteurHuntNotch: { width: 1, height: '100%', backgroundColor: 'rgba(13,11,9,0.55)' } as import('react-native').ViewStyle,
   auteurHuntMastery: { shadowColor: colors.sepia, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 10, elevation: 10 } as import('react-native').ViewStyle,
   auteurComplete: {

@@ -10,7 +10,7 @@
 import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 
-jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn(), useIsFocused: () => true }));
+jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn(), useIsFocused: () => true }));
 jest.mock('@react-native-community/netinfo', () => ({
   __esModule: true,
   useNetInfo: () => ({ isConnected: true }),

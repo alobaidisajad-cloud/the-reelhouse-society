@@ -305,7 +305,7 @@ const PERF_HOLES = Array.from({ length: 26 }, (_, i) => `perf-${i}`);
 
 const s = StyleSheet.create({
   layer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 60, justifyContent: 'flex-end' },
-  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: SCRIM },
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: SCRIM },
   tray: { ...EDGE_LIT,
     backgroundColor: colors.surfaceRaised,
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,

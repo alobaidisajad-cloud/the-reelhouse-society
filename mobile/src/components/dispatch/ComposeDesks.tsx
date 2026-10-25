@@ -389,15 +389,15 @@ export function FilmPicker({
   if (!visible) return null;
 
   return (
-    <View style={[StyleSheet.absoluteFillObject, { justifyContent: 'flex-end' }]}>
+    <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end' }]}>
       {/* The ground behind closes it, as every sheet in the app does. */}
       <PressableScale
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         onPress={onClose}
         accessibilityRole="button"
         accessibilityLabel="Close, without naming a film"
       >
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(6,5,4,0.72)' }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(6,5,4,0.72)' }]} />
       </PressableScale>
       <Animated.View style={lift}>
         <FilmFinder

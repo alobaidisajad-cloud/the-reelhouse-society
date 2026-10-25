@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
 
   // ── Logo (absolute-centered so side clusters don't push it) ──
   logoContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },

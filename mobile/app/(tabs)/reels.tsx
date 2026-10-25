@@ -11,7 +11,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { useFocusEffect } from 'expo-router';
 import { nav } from '@/src/utils/typedRouter';
 import { Arrive } from '@/src/components/Arrive';
-import { useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop } from "expo-router/react-navigation";
 
 import { useAuthStore } from '@/src/stores/auth';
 import { resolveTier } from '@/src/utils/tier';
@@ -457,7 +457,7 @@ export default function ReelScreen() {
         testID="reel-floor"
         colors={[colors.ink, 'rgba(13,11,9,1)', colors.soot]}
         locations={[0, 0.4, 1]}
-        style={[StyleSheet.absoluteFillObject, WASH]}
+        style={[StyleSheet.absoluteFill, WASH]}
         renderToHardwareTextureAndroid={seen}
       />
 

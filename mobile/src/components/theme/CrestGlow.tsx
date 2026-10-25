@@ -4,7 +4,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withRepeat, Easing, cancelAnimation
 } from 'react-native-reanimated';
 
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from "expo-router/react-navigation";
 
 export function CrestGlow() {
   const glow = useSharedValue(0.1);

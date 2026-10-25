@@ -18,7 +18,7 @@
  * is still waiting fails the file, by where it was started. Each is then
  * cleared, so a failing run still ends.
  */
-const ReactNativeEnvironment = require('react-native/jest/react-native-env');
+const ReactNativeEnvironment = require('@react-native/jest-preset/jest/react-native-env');
 
 /**
  * The timers the running file has started and not yet seen end (null between

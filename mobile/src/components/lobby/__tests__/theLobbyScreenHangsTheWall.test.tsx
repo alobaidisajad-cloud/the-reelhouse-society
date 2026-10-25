@@ -27,7 +27,7 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
   useFocusEffect: () => {},
 }));
-jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn(), useIsFocused: () => true }));
+jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn(), useIsFocused: () => true }));
 
 /** The house: answers the wall, or cannot be reached. */
 let mockWallDown = false;
@@ -239,7 +239,7 @@ describe('a Lobby beneath another screen', () => {
   };
 
   it('draws its ground alone and asks the house for nothing until it is first seen; seen, it hangs the wall', async () => {
-    const { NavigationContext } = jest.requireActual('@react-navigation/native');
+    const { NavigationContext } = jest.requireActual('expo-router/react-navigation');
     const { navigation, focus } = beneath();
     const client = testQueryClient();
     const r = render(

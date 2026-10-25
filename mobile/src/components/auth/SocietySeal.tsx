@@ -25,7 +25,7 @@ import Animated, {
   withSequence, withRepeat, cancelAnimation, interpolate,
   Easing, ReduceMotion,
 } from 'react-native-reanimated';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from "expo-router/react-navigation";
 import { colors } from '@/src/theme/theme';
 import { CandlelightHalo } from './AuthChrome';
 
@@ -120,7 +120,7 @@ export function SocietySeal({ size = 92 }: { size?: number }) {
           accessibilityLabel="The ReelHouse Society seal"
         />
         {/* Sheen: the logo's own silhouette in candle-flicker, one pass */}
-        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, sheenStyle]}>
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, sheenStyle]}>
           <Image
             source={LOGO}
             style={{ width: size, height: size, tintColor: colors.flicker }}

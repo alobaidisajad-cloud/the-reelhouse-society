@@ -315,7 +315,7 @@ const s = StyleSheet.create({
     position: 'relative',
   },
   sprocketStrip: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     top: '50%',
     marginTop: -2,
     height: 4,

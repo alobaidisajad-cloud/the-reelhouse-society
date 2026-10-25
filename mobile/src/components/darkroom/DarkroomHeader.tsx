@@ -6,7 +6,7 @@ import { SlidersHorizontal } from 'lucide-react-native';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { useSharedValue, useAnimatedStyle, withRepeat, withTiming, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from "expo-router/react-navigation";
 import { useShallow } from 'zustand/react/shallow';
 
 import { colors, fonts, spacing, effects } from '@/src/theme/theme';

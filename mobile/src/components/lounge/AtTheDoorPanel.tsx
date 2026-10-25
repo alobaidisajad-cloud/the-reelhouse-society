@@ -119,7 +119,7 @@ const DOOR_RISE = 320;
 
 const s = StyleSheet.create({
   backdrop: { flex: 1 },
-  frame: { ...StyleSheet.absoluteFillObject },
+  frame: { ...StyleSheet.absoluteFill },
   // Shrinks with the sheet's height cap, so the requests scroll inside it.
   body: { flexShrink: 1 },
   sheet: {

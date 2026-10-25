@@ -14,7 +14,7 @@ const mockUser = {
   created_at: '2024-11-02T00:00:00Z', is_social_private: false, preferences: {},
 };
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { back: jest.fn(), push: jest.fn(), replace: jest.fn() } }));
-jest.mock('@react-navigation/native', () => ({
+jest.mock('expo-router/react-navigation', () => ({
   ...require('@/test-utils/navigationMock').navigationMock(),
   usePreventRemove: () => {}, useNavigation: () => ({ dispatch: jest.fn() }), useIsFocused: () => true,
 }));

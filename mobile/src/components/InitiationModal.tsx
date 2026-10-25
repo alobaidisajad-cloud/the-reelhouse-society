@@ -212,7 +212,7 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
 const s = StyleSheet.create({
   overlay: { flex: 1 },
   room: { alignItems: 'center', paddingHorizontal: 24 },
-  dim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6,5,4,0.55)' },
+  dim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(6,5,4,0.55)' },
   card: {
     width: '100%', maxWidth: 380, backgroundColor: colors.ink,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)', borderRadius: 6,

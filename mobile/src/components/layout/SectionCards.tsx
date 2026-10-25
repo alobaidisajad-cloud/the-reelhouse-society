@@ -16,7 +16,7 @@ export const BureauCard = React.memo(({ children, danger }: { children: React.Re
     />
     <LinearGradient
       colors={[colors.sepiaFaint, 'transparent']}
-      style={[StyleSheet.absoluteFillObject, WASH]}
+      style={[StyleSheet.absoluteFill, WASH]}
     />
     {children}
   </View>

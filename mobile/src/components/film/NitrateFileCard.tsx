@@ -134,7 +134,7 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
           <View style={s.posterFrame}>
             <View style={s.posterClip}>
             {posterUrl ? (
-              <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" cachePolicy="memory-disk" onDisplay={drew('poster')} onError={failed} />
+              <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory-disk" onDisplay={drew('poster')} onError={failed} />
             ) : (
               <LinearGradient colors={['#15120e', '#0D0B09']} style={s.posterFallback}>
                 <View style={s.posterFallbackRule} />
@@ -201,12 +201,12 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   ambient: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     opacity: 0.45,
     transform: [{ scale: 1.15 }],
   },
   vignette: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(6,5,4,0.45)',
   },
 
@@ -290,7 +290,7 @@ const s = StyleSheet.create({
     ...castOf({ shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.7, shadowRadius: 18 }),
   },
   posterClip: { ...EDGE_LIT,
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
@@ -299,7 +299,7 @@ const s = StyleSheet.create({
     ...liftOf({ elevation: 8 }),
   },
   posterFallback: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 14,

@@ -170,7 +170,7 @@ export function EditProfileScreen() {
           <LinearGradient
             colors={['rgba(184,137,26,0.15)', 'transparent', 'transparent']}
             locations={[0, 0.4, 1]}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
         </Animated.View>
 

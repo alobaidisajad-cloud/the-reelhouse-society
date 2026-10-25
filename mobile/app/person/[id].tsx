@@ -395,7 +395,7 @@ export default function PersonDetailScreen() {
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
       <View style={[s.shimmerBackdrop, heroDynStyle]}>
-        <ShimmerBlock style={StyleSheet.absoluteFillObject} />
+        <ShimmerBlock style={StyleSheet.absoluteFill} />
         {/* Fades into the LIT room, as the hero it stands in for does. */}
         <RoomVeil room="film" hem={heroH} stops={PLACEHOLDER_VEIL} />
       </View>

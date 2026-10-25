@@ -52,7 +52,7 @@ function Room({ children }: { children: React.ReactNode }) {
   return (
     <View style={s.container}>
       <RoomLight room="default" />
-      <LinearGradient colors={['rgba(180,45,45,0.10)', colors.ink]} style={[StyleSheet.absoluteFillObject, WASH]} />
+      <LinearGradient colors={['rgba(180,45,45,0.10)', colors.ink]} style={[StyleSheet.absoluteFill, WASH]} />
       <ScrollView contentContainerStyle={[s.page, { paddingTop: top, paddingBottom: bottom }]} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
         <PressableScale onPress={() => nav.back()} style={s.backBtn} haptic="selection" pressedScale={0.92} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button" accessibilityLabel="Go back">
           <ArrowLeft size={20} color={colors.bone} />
