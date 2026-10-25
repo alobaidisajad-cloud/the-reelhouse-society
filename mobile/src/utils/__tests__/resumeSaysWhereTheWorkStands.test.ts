@@ -65,14 +65,17 @@ describe('a journal', () => {
 });
 
 describe('the next train', () => {
-  it('is every migration of the shared list that APPLIED.txt does not name, and only those', () => {
+  it('is every migration of the shared list that APPLIED.txt does not name, a file of comments alone apart', () => {
     const applied = readFileSync(join(MOBILE, 'supabase', 'APPLIED.txt'), 'utf8').split(/\r?\n/).map((l) => l.trim());
-    const migrations = files('migrations').map((p) => p.split(/[\\/]/).pop());
+    const withCode = (p: string) => readFileSync(p, 'utf8').split('\n').some((l) => l.trim() && !l.trim().startsWith('--'));
+    const migrations = files('migrations').filter(withCode).map((p) => p.split(/[\\/]/).pop());
     const waiting = resume.pending();
     for (const name of waiting) {
       expect([name, migrations.includes(name)]).toEqual([name, true]);
       expect([name, applied.includes(name)]).toEqual([name, false]);
     }
     expect(migrations.filter((n) => n && !applied.includes(n)).sort()).toEqual(waiting);
+    // 20260626_02 is comments alone (a no-op by design): the train never runs it, so it is never "next".
+    expect(waiting).not.toContain('20260626_02_profile_freeze_fix.sql');
   });
 });

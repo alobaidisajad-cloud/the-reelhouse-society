@@ -7,7 +7,7 @@
  *   node mobile/scripts/resume.cjs --no-ci   the same, without asking GitHub
  *
  * It prints: the commit checked out against main's, and what is not committed;
- * the migrations still pending (not in APPLIED.txt) for the next train; each
+ * the migrations the next train would run (train.cjs's own list); each
  * workflow's last result for this commit; and the register's open classes,
  * the next first (open in production, then by seriousness, then by count),
  * each with its finders (its methods) and its proofs.
@@ -19,9 +19,8 @@
  */
 const { execFileSync } = require('child_process');
 const { existsSync, mkdirSync, readFileSync, writeFileSync } = require('fs');
-const { basename, join } = require('path');
+const { join } = require('path');
 const { readCommitted, readPrivate } = require('./register.cjs');
-const universe = require('../test-utils/universe');
 
 const MOBILE = join(__dirname, '..');
 const ROOT = join(MOBILE, '..');
@@ -68,12 +67,8 @@ const withHeader = (journal, header) => {
   return `${header}${below.startsWith('\n') ? below : `\n\n${below}`}`;
 };
 
-/** The pending migrations: every migration (the shared file list's, as up-down-up.mjs reads it) APPLIED.txt does not name. */
-const pending = () => {
-  const applied = new Set(readFileSync(join(MOBILE, 'supabase', 'APPLIED.txt'), 'utf8')
-    .split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#')));
-  return universe.files('migrations').map((p) => basename(p)).filter((n) => !applied.has(n)).sort();
-};
+/** The pending migrations: the ones the train would run (train.cjs, one rule in one place). */
+const pending = () => require(join(MOBILE, 'supabase', 'diagnostics', 'train.cjs')).pendingIn().map((m) => m.name);
 
 if (require.main === module) {
   const today = new Date().toISOString().slice(0, 10);
