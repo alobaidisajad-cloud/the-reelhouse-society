@@ -238,8 +238,10 @@ it('is lit by one lamp over its floor, and nothing on it moves on a loop', async
   mockFeeds.community = query({ data: { pages: [[log]] } });
   mockFeeds.stacks = query({ data: { pages: [[stack]] } });
   const r = await mount();
-  const head = render(mockListProps.stacks.ListHeaderComponent);
-  head.unmount();
+  // The stacks' header holds the curate button and the chips: drawn, so its motion is counted too.
+  const stacksHeader = mockListProps.stacks?.ListHeaderComponent;
+  if (!stacksHeader) throw new Error('the stacks were not drawn');
+  render(stacksHeader).unmount();
 
   type Node = { props?: Record<string, any>; children?: unknown[] | null };
   const { StyleSheet } = jest.requireActual('react-native');
