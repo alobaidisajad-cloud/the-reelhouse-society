@@ -7008,10 +7008,24 @@ CREATE INDEX idx_watchlists_user_created_id ON public.watchlists USING btree (us
 
 
 --
+-- Name: interactions_endorse_list_once; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX interactions_endorse_list_once ON public.interactions USING btree (user_id, target_list_id) WHERE (type = 'endorse_list'::text);
+
+
+--
 -- Name: interactions_endorse_log_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX interactions_endorse_log_idx ON public.interactions USING btree (target_log_id, type) WHERE (type = 'endorse_log'::text);
+
+
+--
+-- Name: interactions_endorse_log_once; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX interactions_endorse_log_once ON public.interactions USING btree (user_id, target_log_id) WHERE (type = 'endorse_log'::text);
 
 
 --
@@ -7131,6 +7145,20 @@ CREATE INDEX logs_user_film_idx ON public.logs USING btree (user_id, film_id, cr
 --
 
 CREATE UNIQUE INDEX logs_viewing_id_key ON public.logs USING btree (viewing_id);
+
+
+--
+-- Name: lounge_messages_card_names; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX lounge_messages_card_names ON public.lounge_messages USING gin (metadata jsonb_path_ops) WHERE (metadata <> '{}'::jsonb);
+
+
+--
+-- Name: lounge_messages_reply_to_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX lounge_messages_reply_to_id ON public.lounge_messages USING btree (reply_to_id);
 
 
 --

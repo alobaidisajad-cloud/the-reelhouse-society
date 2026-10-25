@@ -212,3 +212,7 @@
 get_user_lounges.sql
 replace_list_items_rpc.sql
 society_report_system.sql
+20261022_01_a_quote_is_found_by_its_message.sql
+20261022_02_a_card_is_found_by_its_owner.sql
+20261023_01_a_certification_of_a_log_is_counted_once.sql
+20261023_02_a_certification_of_a_stack_is_counted_once.sql

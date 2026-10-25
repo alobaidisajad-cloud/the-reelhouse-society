@@ -4,7 +4,7 @@
 --   psql "$SUPABASE_DB_URL" -X -q -t -A -f mobile/supabase/diagnostics/a_quote_is_found_by_its_message_rehearsal.sql
 --
 -- An index built CONCURRENTLY cannot be built inside this file's transaction,
--- so the train builds it alone first and then runs this: the index is there and
+-- so the train built it alone on production (2026-10-25), and this checks it still holds: the index is there and
 -- whole, and the two reads that find a message's quotes (a withdrawn message's,
 -- in its trigger; a departing member's, in request_account_deletion) are planned
 -- through it. Sequential scans are switched off for the plan alone, so a plan

@@ -4,7 +4,7 @@
 --   psql "$SUPABASE_DB_URL" -X -q -t -A -f mobile/supabase/diagnostics/a_certification_of_a_log_is_counted_once_rehearsal.sql
 --
 -- A key built CONCURRENTLY cannot be built inside this file's transaction, so
--- the train builds it alone first and then runs this: the key is there and
+-- the train built it alone on production (2026-10-25), and this checks it still holds: the key is there and
 -- whole, and a member who certifies another member's log a second time, as a
 -- phone that did not know of the first would, is refused; the log is counted
 -- once, and no log's certification in the house is held twice. Read each
