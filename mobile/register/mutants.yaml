@@ -1776,6 +1776,24 @@ mutants:
         replace: "      : (p.allowFontScaling === false ? 1 : own ?? 0);"
     proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "frozen in a frozen line, whatever it asks for: React Native drops a nested allowFontScaling" }
 
+  - id: shape-reel-beam-returns
+    class: LOOK-the-reel-lit-as-noise
+    source: shape
+    edits:
+      - file: app/(tabs)/reels.tsx
+        find: "      <Animated.View testID=\"reels-logs-layer\""
+        replace: "      <Animated.View pointerEvents=\"none\" style={StyleSheet.absoluteFill} />\n      <Animated.View testID=\"reels-logs-layer\""
+    proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "is lit by one lamp over its floor, and nothing on it moves on a loop" }
+
+  - id: shape-reel-chip-breathes
+    class: LOOK-the-reel-lit-as-noise
+    source: shape
+    edits:
+      - file: src/components/reels/ReelsCards.tsx
+        find: "export const FilterChip = memo(function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {\n"
+        replace: "export const FilterChip = memo(function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {\n  require('react-native-reanimated').withRepeat(0, -1, true);\n"
+    proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "is lit by one lamp over its floor, and nothing on it moves on a loop" }
+
   - id: shape-card-paper-seen-through
     class: SPEED-a-card-blended-every-frame
     source: shape

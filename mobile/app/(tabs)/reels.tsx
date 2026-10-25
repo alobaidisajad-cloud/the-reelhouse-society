@@ -31,7 +31,7 @@ import {
 } from '@/src/components/reels/types';
 import { SharedReelHeader } from '@/src/components/reels/ReelsHeader';
 import { 
-  ReelProjectorBeam, TungstenSpooling, FilterChip, FILTER_GAP,
+  TungstenSpooling, FilterChip, FILTER_GAP,
 } from '@/src/components/reels/ReelsCards';
 import { useCommunityFeed, useFollowingFeed, useStacksFeed } from '@/src/hooks/useFeeds';
 import { ReelsFeedList } from '@/src/components/reels/ReelsFeedList';
@@ -44,7 +44,6 @@ import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useScreenSeen } from '@/src/hooks/useScreenSeen';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import reelToast from '@/src/utils/reelToast';
-import { BrassSheen } from '@/src/components/theme/BrassSheen';
 import { ARRIVAL_GRACE_MS } from '@/src/hooks/useArrival';
 import { CROSSFADE_MS, HIDDEN, SHOWN } from '@/src/components/reels/sectionLayers';
 
@@ -317,7 +316,7 @@ export default function ReelScreen() {
 
   const logsHeader = useMemo(() => (
     <>
-      <SharedReelHeader section={section} variant="logs" userRole={resolvedRole} onTabSwitch={switchSection} />
+      <SharedReelHeader section={section} userRole={resolvedRole} onTabSwitch={switchSection} />
       <View style={st.filterRow}>
         <FilterChip label="MAIN REEL" active={feedFilter === 'all'} onPress={() => switchFeedFilter('all')} />
         <FilterChip label="FOLLOWING" active={feedFilter === 'following'} onPress={() => switchFeedFilter('following')} />
@@ -367,7 +366,7 @@ export default function ReelScreen() {
 
   const stackHeader = useMemo(() => (
     <>
-      <SharedReelHeader section={section} variant="stacks" userRole={resolvedRole} onTabSwitch={switchSection} />
+      <SharedReelHeader section={section} userRole={resolvedRole} onTabSwitch={switchSection} />
       <View style={st.searchWrap}>
         <AnimatedText style={st.searchIcon}>✦</AnimatedText>
         <AutonomousSearchBar 
@@ -388,7 +387,6 @@ export default function ReelScreen() {
         onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.destroy(); nav.push('/list-modal'); }}
         accessibilityRole="button" accessibilityLabel="Curate a collection"
       >
-        <BrassSheen />
         <LinearGradient
           colors={['transparent', 'rgba(184,137,26,0.06)', 'transparent']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -454,14 +452,14 @@ export default function ReelScreen() {
       <View style={st.container}>
       <RoomLight room="reel" />
       {readyMark}
-      {/* The page's own fade, thinned so the projector's light shows through. */}
+      {/* The room's floor, thinned so the lamp's light shows through. */}
       <LinearGradient
+        testID="reel-floor"
         colors={[colors.ink, 'rgba(13,11,9,1)', colors.soot]}
         locations={[0, 0.4, 1]}
         style={[StyleSheet.absoluteFillObject, WASH]}
         renderToHardwareTextureAndroid={seen}
       />
-      <ReelProjectorBeam scrollY={activeScrollY} />
 
       <Animated.View testID="reels-logs-layer" pointerEvents={section === 'logs' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, crossfaded ? (section === 'logs' ? SHOWN : HIDDEN) : logsOpacityStyle]}>
         <ReelsFeedList
@@ -533,7 +531,6 @@ const st = StyleSheet.create({
     backgroundColor: colors.soot, borderWidth: 1,
     borderColor: 'rgba(184,137,26,0.2)', borderStyle: 'dashed', borderRadius: 2,
     paddingVertical: 16, alignItems: 'center',
-    overflow: 'hidden',
   },
   createStackGlow: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,

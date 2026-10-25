@@ -1449,6 +1449,18 @@ classes:
     fix: "the app's Text gives a nested Text nothing of the house's (React Native drops a nested allowFontScaling and gives it the parent's cap); a frozen Text tells the Texts inside it, so Android's spacing correction follows the parent. Jest's stand-in for React Native's Text tells nested Texts they are nested, as the real one does; the renderer draws a nested Text with its parent's scaling, through a capture run's source marks too (mutants shape-nested-text-housed, shape-render-nested-own-cap)"
     places: [none]
 
+  - id: LOOK-the-reel-lit-as-noise
+    title: "The Reel stacked a lamp, a floor, a projector beam swinging and flickering over the feed, a sheen sweeping the curate button, a chip that breathed and a live dot that blinked every second: the member found its light messy and noisy, and on a phone the beam read as a hard dome across the header"
+    seriousness: layout
+    area: motion
+    status: OPEN
+    count: 4
+    source: { kind: history, ref: "build 41 (UF4); WORKLIST P0.110; the Reel's opening frame, speed lab 40147693423" }
+    methods:
+      - { kind: running, file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "is lit by one lamp over its floor, and nothing on it moves on a loop" }
+    fix: "the Reel is one lamp (RoomLight) over its floor (reel-floor), with the cards' own lit paper: the projector beam is gone, the curate button keeps its still glow without the sheen, the chosen chip's filament is lit and still at the strength it breathed around (drawn into its colour), and the live dot is lit and still. The test names every layer the room draws under its two sections and refuses any animation on a loop (mutants shape-reel-beam-returns, shape-reel-chip-breathes)"
+    places: [none]
+
   - id: SPEED-a-card-blended-every-frame
     title: "Each card on the Reel was its paper, an edge light and a wash laid over both at 0.35, the wash a view whose opacity Android draws aside and blends back: a page of cards blended all of them on every frame of a scroll, and held the Reel's slowest frames at twice their budget"
     seriousness: behaviour

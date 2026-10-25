@@ -23,11 +23,12 @@
  *
  * The Reel's layers (WORKLIST P0.111), each switched off alone, signed in (scrolls.sh opens and
  * scrolls the Reel on each build, against A):
- *   Rb      no projector beam        Rw  no page wash           Rl  no room lamp
+ *   Rw      no floor                 Rl  no room lamp
  *   Rt      the top bar as scrolled, moved by nothing          Rs  no scroll bar
- *   Rp      the pulses at rest and the curate button's sheen gone
- *   R0      all of them: the floor
- * (The lamp and the wash kept as textures, once the arm Rh, ship: speed lab 39901452779.)
+ *   R0      all of them
+ * (The lamp and the wash kept as textures, once the arm Rh, ship: speed lab 39901452779. The
+ * projector beam, the pulses and the curate button's sheen left the Reel when its light was
+ * calmed, WORKLIST P0.110; their arms, Rb and Rp, went with them.)
  *
  * The Reel's cards, part by part (R0 gave the page's layers nothing, speed lab 40046819617: the
  * cost is in the cards), in two runs of at most four arms, each fitting its step:
@@ -197,10 +198,10 @@ const REEL_FILE = 'app/(tabs)/reels.tsx';
 const TOPBAR_FILE = 'src/components/layout/TopNavBar.tsx';
 const SCROLL_PROGRESS = '    const scrollProgress = Math.min(1, Math.max(0, globalScrollY.value / 100));\n';
 
-const reelNoBeam = [edit(REEL_FILE, '      <ReelProjectorBeam scrollY={activeScrollY} />\n', '')];
 const reelNoWash = [edit(REEL_FILE, [
-  "      {/* The page's own fade, thinned so the projector's light shows through. */}",
+  "      {/* The room's floor, thinned so the lamp's light shows through. */}",
   '      <LinearGradient',
+  '        testID="reel-floor"',
   "        colors={[colors.ink, 'rgba(13,11,9,1)', colors.soot]}",
   '        locations={[0, 0.4, 1]}',
   '        style={[StyleSheet.absoluteFillObject, WASH]}',
@@ -220,27 +221,11 @@ const reelNoScrollbar = [
   edit('src/components/reels/ReelsFeedList.tsx', '      <CinematicScrollbar scrollY={overallLogsScrollY} scrollHeight={scrollHeight} viewHeight={viewHeight} isScrolling={isScrolling} topInset={topPad} bottomInset={bottomInset} />\n', ''),
   edit('src/components/reels/ReelsStackList.tsx', '      <CinematicScrollbar scrollY={stacksScrollY} scrollHeight={scrollHeight} viewHeight={viewHeight} isScrolling={isScrolling} topInset={topPad} bottomInset={bottomInset} />\n', ''),
 ];
-// The active filter's pulse and the header's live pulse at their resting light; the curate button's sheen gone.
-const reelPulsesStill = [
-  edit('src/components/reels/ReelsCards.tsx', '      pulse.value = withRepeat(withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }), -1, true);\n',
-    '      pulse.value = 0.75;\n'),
-  edit('src/components/reels/ReelsHeader.tsx', [
-    '      livePulse.value = withRepeat(',
-    '        withSequence(withTiming(1, { duration: 1000 }), withTiming(0.4, { duration: 1000 })),',
-    '        -1,',
-    '        true',
-    '      );',
-    '',
-  ].join('\n'), '      livePulse.value = 0.8;\n'),
-  edit('src/components/theme/BrassSheen.tsx',
-    'export const BrassSheen = memo(function BrassSheen() {\n',
-    'export const BrassSheen = memo(function BrassSheen() {\n  if (globalThis) return null;\n'),
-];
 
 
 
 /** The Reel's arms: each layer alone, and all of them (R0, the floor). */
-export const REEL_ARMS = ['Rb', 'Rw', 'Rl', 'Rt', 'Rs', 'Rp', 'R0'];
+export const REEL_ARMS = ['Rw', 'Rl', 'Rt', 'Rs', 'R0'];
 
 // The Reel's cards, part by part (R0 gave the page's layers nothing: the cost is in the cards).
 // Two runs, at most four arms each, so each fits its step: the card's layers, then what it holds.
@@ -318,13 +303,11 @@ export const ARMS = {
   Ps: [...spotlightOnWelcome, ...noVignette, ...noHalo, ...svgSpotlight],
   N: [...noRoom, ...noVignette, ...noHalo],
   STILL: still,
-  Rb: reelNoBeam,
   Rw: reelNoWash,
   Rl: reelNoLamp,
   Rt: reelBarStill,
   Rs: reelNoScrollbar,
-  Rp: reelPulsesStill,
-  R0: [...reelNoBeam, ...reelNoWash, ...reelNoLamp, ...reelBarStill, ...reelNoScrollbar, ...reelPulsesStill],
+  R0: [...reelNoWash, ...reelNoLamp, ...reelBarStill, ...reelNoScrollbar],
   Cs: cardNoShell,
   Ck: cardNoClip,
   C0: [...cardNoShell, ...cardNoClip],

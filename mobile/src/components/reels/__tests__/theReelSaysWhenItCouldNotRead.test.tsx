@@ -220,3 +220,44 @@ it('once the crossfade is over, each section is drawn shown or hidden as its tou
   expect([drawn('logs'), layer('logs').props.pointerEvents, drawn('stacks'), layer('stacks').props.pointerEvents])
     .toEqual(['hidden', 'none', 'shown', 'auto']);
 });
+
+/**
+ * The Reel's light, calmed (WORKLIST P0.110): it stacked a lamp, a wash, a projector beam
+ * swinging and flickering over the feed, a sheen sweeping the curate button and two pulses,
+ * and read as noise. It is one lamp over the room's floor; nothing on it breathes, sweeps or
+ * flickers. Every layer the room draws under its two sections is named here, so a layer that
+ * comes back unnamed fails.
+ */
+it('is lit by one lamp over its floor, and nothing on it moves on a loop', async () => {
+  const looped = jest.requireMock('react-native-reanimated').withRepeat as jest.Mock;
+  looped.mockClear();
+  const log = { id: 1, user_id: 'u9', username: 'wren', role: 'cinephile', film_id: 238, film_title: 'Casablanca',
+    rating: 4, review: 'Here.', poster_path: '/c.jpg', year: 1942, created_at: '2026-10-01T00:00:00Z', status: 'watched' };
+  const stack = { id: '1a2b3c4d', title: 'Noir at Night', description: '', curator: 'wren', curatorId: 'u9',
+    createdAt: '2026-09-01T00:00:00Z', films: [], count: 7, certifyCount: 2, isRanked: false };
+  mockFeeds.community = query({ data: { pages: [[log]] } });
+  mockFeeds.stacks = query({ data: { pages: [[stack]] } });
+  const r = await mount();
+  const head = render(mockListProps.stacks.ListHeaderComponent);
+  head.unmount();
+
+  type Node = { props?: Record<string, any>; children?: unknown[] | null };
+  const { StyleSheet } = jest.requireActual('react-native');
+  const find = (n: unknown): Node | undefined => {
+    if (!n || typeof n !== 'object') return undefined;
+    const node = n as Node;
+    if ((node.children ?? []).some((c) => (c as Node)?.props?.testID === 'reels-logs-layer')) return node;
+    for (const c of node.children ?? []) { const hit = find(c); if (hit) return hit; }
+    return undefined;
+  };
+  const room = find(r.toJSON());
+  if (!room) throw new Error('the Reel was not drawn');
+  // (The screen's ready mark is drawn at no size, out of the layout: it paints nothing.)
+  const painted = (room.children as Node[]).filter((c) => {
+    const s = StyleSheet.flatten(c.props?.style) ?? {};
+    return !(s.width === 0 && s.height === 0);
+  });
+  expect(painted.map((c) => c.props?.testID ?? 'a layer with no name'))
+    .toEqual(['room-light', 'reel-floor', 'reels-logs-layer', 'reels-stacks-layer']);
+  expect(looped).not.toHaveBeenCalled();
+});

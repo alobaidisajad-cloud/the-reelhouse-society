@@ -3,9 +3,11 @@
  *
  * The Reel's "curate a collection" plate had its own copy of the Lobby's sheen,
  * the same in every pixel but one: it never stopped. Tabs stay mounted, so it
- * swept on behind whichever tab the member had moved to. Both plates now draw
- * the one BrassSheen, which sweeps only on the screen in front, and holds still
- * for a member who has asked the system to stop motion.
+ * swept on behind whichever tab the member had moved to. Then the Reel's plate
+ * lost its sheen when the Reel's light was calmed (theReelSaysWhenItCouldNotRead
+ * holds it still); the Lobby's join button draws the one BrassSheen, which sweeps
+ * only on the screen in front, and holds still for a member who has asked the
+ * system to stop motion.
  */
 import React from 'react';
 import { readFileSync } from 'fs';
@@ -41,11 +43,10 @@ describe('the brass sheen', () => {
     expect(sweeps()).toBe(0);
   });
 
-  it('is the one both plates draw — no copy of its own', () => {
+  it('is the one the Lobby\'s plate draws, and the Reel keeps no copy of its own', () => {
     const root = join(__dirname, '..', '..', '..', '..');
-    for (const f of ['app/(tabs)/reels.tsx', 'app/(tabs)/index.tsx']) {
-      expect(`${f}: ${/import \{ BrassSheen \} from '@\/src\/components\/theme\/BrassSheen'/.test(readFileSync(join(root, f), 'utf8'))}`).toBe(`${f}: true`);
-    }
+    const lobby = 'app/(tabs)/index.tsx';
+    expect(`${lobby}: ${/import \{ BrassSheen \} from '@\/src\/components\/theme\/BrassSheen'/.test(readFileSync(join(root, lobby), 'utf8'))}`).toBe(`${lobby}: true`);
     expect(readFileSync(join(root, 'src/components/reels/ReelsCards.tsx'), 'utf8')).not.toMatch(/Sheen = memo/);
   });
 });

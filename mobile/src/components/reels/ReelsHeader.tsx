@@ -1,9 +1,8 @@
 import React, { memo, useEffect } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, interpolate, cancelAnimation } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from 'react-native-reanimated';
 import { arrive, MS } from '@/src/theme/motion';
-import { useIsFocused } from '@react-navigation/native';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ReelSection } from './types';
@@ -20,11 +19,9 @@ import { EDGE_LIT } from '@/src/theme/light';
 //  spent narrating what the lamp already shows.
 // ══════════════════════════════════════════════════════════════
 
-export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, pulse, auteur }: {
+export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, auteur }: {
   activeTab: ReelSection,
   onTabSwitch: (t: ReelSection) => void,
-  /** Only the VISIBLE logs header breathes — the hidden twin holds a steady lamp. */
-  pulse: boolean,
   auteur: boolean,
 }) => {
   const position = useSharedValue(activeTab === 'logs' ? 0 : 1);
@@ -33,23 +30,6 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, pulse, auteu
     position.value = withTiming(activeTab === 'logs' ? 0 : 1, { duration: MS.base, easing: arrive() });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
-
-  const livePulse = useSharedValue(0.8);
-  useEffect(() => {
-    if (pulse) {
-      livePulse.value = withRepeat(
-        withSequence(withTiming(1, { duration: 1000 }), withTiming(0.4, { duration: 1000 })),
-        -1,
-        true
-      );
-    } else {
-      cancelAnimation(livePulse);
-      livePulse.value = 0.8;
-    }
-    return () => cancelAnimation(livePulse);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pulse]);
-  const pulseStyle = useAnimatedStyle(() => ({ opacity: livePulse.value }));
 
   const { width } = useWindowDimensions();
 
@@ -62,7 +42,8 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, pulse, auteu
       <Animated.View style={[StyleSheet.absoluteFillObject, st.tabsActiveBg, pillStyle]} />
       <PressableScale hitSlop={null} style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
         <View style={st.tabInner}>
-          <Animated.View style={[st.liveDot, auteur ? st.liveDotAuteur : st.liveDotDefault, pulseStyle]} />
+          {/* Lit and still: a lamp that blinked every second was the Reel's light read as noise. */}
+          <View style={[st.liveDot, auteur ? st.liveDotAuteur : st.liveDotDefault]} />
           {/* The tab you are not on is quieter by its ink, never drawn see-through. */}
           <Text style={[st.tabText, { color: activeTab === 'logs' ? colors.parchmentDim : colors.fogQuiet }]}>LOGS</Text>
         </View>
@@ -76,10 +57,9 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, pulse, auteu
 
 // ══════════════════════════════════════════════════════════════
 //  SHARED REEL HEADER
-//  `variant` = which list this header instance lives in (both lists
-//  stay mounted for the crossfade). Both variants render the SAME
-//  elements, so the header is identical in height on either tab and
-//  the control below it never jumps.
+//  Each list draws its own (both stay mounted for the crossfade), and
+//  both draw the SAME elements, so the header is identical in height on
+//  either tab and the control below it never jumps.
 //
 //  There is deliberately no count here. Both feeds are paginated —
 //  the old "LIVE · 40 LOGS" was reading the PAGE SIZE, so it said 40
@@ -89,16 +69,12 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, pulse, auteu
 //  printed on the first card. The header carries state, not statistics.
 // ══════════════════════════════════════════════════════════════
 export const SharedReelHeader = memo(function SharedReelHeader({
-  section, variant, userRole, onTabSwitch,
+  section, userRole, onTabSwitch,
 }: {
   section: ReelSection;
-  variant: ReelSection;
   userRole?: string;
   onTabSwitch: (t: ReelSection) => void;
 }) {
-  const isFocused = useIsFocused();
-  const shouldPulse = isFocused && variant === 'logs' && section === 'logs';
-
   return (
     <>
       <View style={st.sectionHeaderWrap}>
@@ -108,7 +84,6 @@ export const SharedReelHeader = memo(function SharedReelHeader({
       <InterlockingGearTabs
         activeTab={section}
         onTabSwitch={onTabSwitch}
-        pulse={shouldPulse}
         auteur={isAuteurPlusTier(userRole)}
       />
     </>

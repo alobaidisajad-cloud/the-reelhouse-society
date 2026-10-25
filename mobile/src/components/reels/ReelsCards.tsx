@@ -1,12 +1,8 @@
-import React, { memo, useEffect } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import React, { memo } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, {
-  SharedValue, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, interpolate, cancelAnimation
-} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import { useIsFocused } from '@react-navigation/native';
 import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { BusterEyes } from '@/src/components/Buster';
@@ -20,94 +16,17 @@ import { counted } from '@/src/components/dispatch/paper/paperText';
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
 
 // ══════════════════════════════════════════════════════════════
-//  PROJECTOR BEAM ATMOSPHERICS (The Reel) - GPU HARDENED
-// ══════════════════════════════════════════════════════════════
-export const ReelProjectorBeam = memo(function ReelProjectorBeam({ scrollY }: { scrollY: SharedValue<number> }) {
-  const { width, height } = useWindowDimensions();
-  const beamSwing = useSharedValue(0.1);
-  const flicker = useSharedValue(0.8);
-  // Tabs stay mounted: the loops run only while this one is on screen, and resume where they froze.
-  const isFocused = useIsFocused();
-
-  useEffect(() => {
-    if (!isFocused) {
-      cancelAnimation(beamSwing);
-      cancelAnimation(flicker);
-      return;
-    }
-    beamSwing.value = withRepeat(
-      withSequence(
-        withTiming(-0.1, { duration: 12000, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0.1, { duration: 12000, easing: Easing.inOut(Easing.sin) })
-      ), -1, true
-    );
-    // A calm 0.92–1.00 flicker: a wider swing strobes on a phone and reads as a glitch.
-    flicker.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 400 }),
-        withTiming(0.95, { duration: 300 }),
-        withTiming(0.98, { duration: 500 }),
-        withTiming(0.92, { duration: 200 }),
-        withTiming(0.97, { duration: 1600 }),
-      ), -1, false
-    );
-    return () => { cancelAnimation(beamSwing); cancelAnimation(flicker); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFocused]);
-
-  const style = useAnimatedStyle(() => {
-    // Mathematical GPU Culling: Disable beam layer opacity entirely when scrolled far down
-    return {
-      opacity: scrollY.value > 600 ? 0 : flicker.value * Math.min(1, Math.max(0, 1 - (scrollY.value / 600))),
-      transform: [
-        { perspective: 400 },
-        { rotateX: '55deg' },
-        { rotateZ: `${beamSwing.value * 15}deg` },
-        { scaleY: 1.5 },
-        { translateY: -height * 0.1 }
-      ],
-    };
-  });
-
-  return (
-    <Animated.View style={[st.beamAbsolute, style]} pointerEvents="none">
-      <LinearGradient
-        colors={['rgba(218,165,32,0.12)', 'rgba(184,137,26,0.04)', 'transparent']}
-        locations={[0, 0.4, 0.9]}
-        style={[st.beamGradient, { width: width * 1.5, height, borderTopLeftRadius: width, borderTopRightRadius: width }]}
-      />
-    </Animated.View>
-  );
-});
-
-// ══════════════════════════════════════════════════════════════
 //  TUNGSTEN FILAMENT FILTER CHIP
 // ══════════════════════════════════════════════════════════════
 /** The space between two filter chips; each reaches half of it, so no tap belongs to both. */
 export const FILTER_GAP = 12;
 const CHIP_HALO = { top: 10, bottom: 10, left: FILTER_GAP / 2, right: FILTER_GAP / 2 };
 
+// The chosen chip's filament, lit and still: it breathed between half and full, and the Reel's
+// light read as noise. Held at what it breathed around, drawn into the colour, not a view's opacity.
+const FILAMENT = ['rgba(218,165,32,0.0)', 'rgba(218,165,32,0.3)', 'rgba(218,165,32,0.0)'] as const;
+
 export const FilterChip = memo(function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  const isFocused = useIsFocused();
-  const pulse = useSharedValue(0);
-  useEffect(() => {
-    // Focus-gated: chips on the hidden tab (both lists stay mounted for the
-    // crossfade) and on blurred screens burn zero UI-thread cycles.
-    if (active && isFocused) {
-      pulse.value = withRepeat(withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }), -1, true);
-    } else {
-      cancelAnimation(pulse);
-      pulse.value = active ? 0.75 : 0;
-    }
-    return () => cancelAnimation(pulse);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, isFocused]);
-
-  const activeStyle = useAnimatedStyle(() => {
-    if (!active) return { opacity: 0 };
-    return { opacity: interpolate(pulse.value, [0, 1], [0.5, 1]) };
-  });
-
   return (
     <PressableScale
       onPress={onPress}
@@ -115,11 +34,11 @@ export const FilterChip = memo(function FilterChip({ label, active, onPress }: {
       hitSlop={CHIP_HALO}
       accessibilityState={{ selected: active }}
     >
-      <View style={st.filterChipInner}>
-         <Animated.View style={[StyleSheet.absoluteFillObject, activeStyle]}>
-            <LinearGradient colors={['rgba(218,165,32,0.0)', 'rgba(218,165,32,0.4)', 'rgba(218,165,32,0.0)']} start={{x:0, y:0.5}} end={{x:1, y:0.5}} style={StyleSheet.absoluteFillObject} />
-         </Animated.View>
-      </View>
+      {active && (
+        <View style={st.filterChipInner}>
+          <LinearGradient colors={FILAMENT} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFillObject} />
+        </View>
+      )}
       <Text style={[st.filterChipText, active && st.filterChipTextActive]}>{label}</Text>
     </PressableScale>
   );
@@ -313,14 +232,6 @@ const st = StyleSheet.create({
   },
   stackCardCuratorName: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog
-  },
-  beamAbsolute: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    zIndex: 0,
-  },
-  beamGradient: {
-
   },
   filterChipActiveBorder: {
     borderColor: 'rgba(218,165,32,0.6)',
