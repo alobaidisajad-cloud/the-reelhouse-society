@@ -1449,6 +1449,18 @@ classes:
     fix: "the app's Text gives a nested Text nothing of the house's (React Native drops a nested allowFontScaling and gives it the parent's cap); a frozen Text tells the Texts inside it, so Android's spacing correction follows the parent. Jest's stand-in for React Native's Text tells nested Texts they are nested, as the real one does; the renderer draws a nested Text with its parent's scaling, through a capture run's source marks too (mutants shape-nested-text-housed, shape-render-nested-own-cap)"
     places: [none]
 
+  - id: TOOL-hook-reads-a-folder-out
+    title: "A push from a linked worktree ran the push gate under the GIT_DIR git exports to a hook, so each git call it made from mobile/ took mobile/ for the whole working tree: every mutant read 'not as committed', a patch's line-end attribute read 'unspecified', and the push was refused for faults the tree did not have"
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "the SDK 57 branch's push from its worktree, 2026-10-25: 43 of 43 mutants invalid, files shown untracked that the worktree held committed" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/hooks.guard.test.ts, test: "reads each file as git holds it once the hook's GIT_DIR is cleared, and reads it wrong under it" }
+    fix: "pre-push.cjs clears the variables git exports to a hook (HOOK_GIT_ENV: GIT_DIR, GIT_WORK_TREE, GIT_INDEX_FILE, GIT_PREFIX, GIT_COMMON_DIR) before it runs anything, so every git call finds its repository from where it runs (mutant shape-hook-env-kept)"
+    places: [none]
+
   - id: E2E-runtime-held-to-a-moment
     title: "The runtime check held every global name to the committed copy, so a global a native module installs when it first starts (gesture-handler's isViewFlatteningDisabled) failed a Sealed E2E run whenever a launch's first screen wrote the runtime after that start instead of before"
     seriousness: code

@@ -16,8 +16,9 @@ const ROOT = join(MOBILE, '..');
 const { mutantInPlace, refusalOf } = require('../../../scripts/hooks/pre-commit.cjs') as {
   mutantInPlace: (root: string) => string | null; refusalOf: (path: string, bytes: Buffer) => string | null;
 };
-const { basesOf, ignored, inBatches, readers, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
+const { basesOf, clearHookGitEnv, ignored, inBatches, readers, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
   basesOf: (input: string, git: (...a: string[]) => string) => string[];
+  clearHookGitEnv: (env: Record<string, string | undefined>) => Record<string, string | undefined>;
   ignored: (mobile: string) => string[];
   inBatches: (paths: string[], room?: number) => string[][];
   readers: (mobile: string) => string[];
@@ -118,6 +119,35 @@ describe('before a push', () => {
     expect(workersFor(64 * GB, 16)).toBe(15);
     expect(workersFor(1 * GB, 16)).toBe(1);
     expect(workersFor(0, 16)).toBe(1);
+  });
+});
+
+describe('a push from a linked worktree', () => {
+  it('reads each file as git holds it once the hook\'s GIT_DIR is cleared, and reads it wrong under it', () => {
+    const { execFileSync } = require('child_process') as typeof import('child_process');
+    const base = mkdtempSync(join(tmpdir(), 'hook-env-'));
+    const main = join(base, 'main');
+    const tree = join(base, 'tree');
+    const git = (cwd: string, env: NodeJS.ProcessEnv, ...args: string[]) =>
+      execFileSync('git', args, { cwd, env, encoding: 'utf8' });
+    const clean = clearHookGitEnv({ ...process.env });
+    try {
+      mkdirSync(join(main, 'mobile'), { recursive: true });
+      git(main, clean, 'init', '-q');
+      writeFileSync(join(main, 'mobile', 'app.json'), '{}\n');
+      git(main, clean, 'add', '-A');
+      git(main, clean, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'one');
+      git(main, clean, 'worktree', 'add', '-q', tree);
+      // As git sets it for a hook in that worktree: its own git folder.
+      const gitDir = git(tree, clean, 'rev-parse', '--absolute-git-dir').trim();
+      const hooked = { ...clean, GIT_DIR: gitDir };
+      // From mobile/, under the hook's GIT_DIR: mobile/ taken for the whole tree, its file untracked.
+      expect(git(join(tree, 'mobile'), hooked, 'status', '--porcelain', '--', 'app.json')).not.toBe('');
+      // Cleared, the same call finds the worktree and sees the file as committed.
+      expect(git(join(tree, 'mobile'), clearHookGitEnv({ ...hooked }), 'status', '--porcelain', '--', 'app.json')).toBe('');
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
   });
 });
 

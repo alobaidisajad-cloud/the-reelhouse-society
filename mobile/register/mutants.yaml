@@ -1776,6 +1776,15 @@ mutants:
         replace: "      : (p.allowFontScaling === false ? 1 : own ?? 0);"
     proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "frozen in a frozen line, whatever it asks for: React Native drops a nested allowFontScaling" }
 
+  - id: shape-hook-env-kept
+    class: TOOL-hook-reads-a-folder-out
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "const clearHookGitEnv = (env) => { for (const k of HOOK_GIT_ENV) delete env[k]; return env; };"
+        replace: "const clearHookGitEnv = (env) => env;"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "reads each file as git holds it once the hook's GIT_DIR is cleared, and reads it wrong under it" }
+
   - id: shape-late-global-held
     class: E2E-runtime-held-to-a-moment
     source: shape

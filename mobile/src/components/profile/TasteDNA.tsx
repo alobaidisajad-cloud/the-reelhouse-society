@@ -10,7 +10,7 @@ import { Text } from '@/src/components/text';
 import TactileEngine from '@/src/utils/TactileEngine';
 import * as Sharing from 'expo-sharing';
 import { Share2 } from 'lucide-react-native';
-import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
+import type { ViewShotRef } from 'react-native-view-shot';
 import { colors, fonts } from '@/src/theme/theme';
 import { TasteDNAExportCanvas } from './TasteDNAExportCanvas';
 import PressableScale from '../PressableScale';

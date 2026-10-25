@@ -83,7 +83,17 @@ const run = (label, cmd, args, cwd) => {
   return r.status === 0 ? null : label;
 };
 
+/**
+ * git exports GIT_DIR to a hook (in a linked worktree, that worktree's own git folder). A git call
+ * under it from mobile/ takes mobile/ for the whole working tree, every path a folder out: pushing
+ * from a worktree, every mutant read "not as committed". Cleared, each call finds its repository
+ * from where it runs, in the main checkout and in a worktree alike.
+ */
+const HOOK_GIT_ENV = ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_PREFIX', 'GIT_COMMON_DIR'];
+const clearHookGitEnv = (env) => { for (const k of HOOK_GIT_ENV) delete env[k]; return env; };
+
 if (require.main === module) {
+  clearHookGitEnv(process.env);
   const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1e8 });
   const bases = basesOf(readFileSync(0, 'utf8'), git);
   const faults = [];
@@ -139,4 +149,4 @@ if (require.main === module) {
   if (faults.length) { console.error(`\nPush refused: ${faults.join('; ')}`); process.exit(1); }
 }
 
-module.exports = { basesOf, ignored, inBatches, readers, workersFor };
+module.exports = { HOOK_GIT_ENV, basesOf, clearHookGitEnv, ignored, inBatches, readers, workersFor };
