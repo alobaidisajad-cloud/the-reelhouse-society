@@ -1330,6 +1330,13 @@
     "verdict": "caught"
   },
   {
+    "class": "TOOL-hook-reads-a-folder-out",
+    "mutant": "shape-hook-env-kept",
+    "proof": "m1",
+    "commit": "0442be263ace40fba38564fefc1a542b47f37451",
+    "verdict": "caught"
+  },
+  {
     "class": "E2E-runtime-held-to-a-moment",
     "mutant": "shape-late-global-held",
     "proof": "m1",
