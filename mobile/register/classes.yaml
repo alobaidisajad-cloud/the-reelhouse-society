@@ -1546,3 +1546,15 @@ classes:
       - { kind: running, file: test-utils/__tests__/aContractAsksTheServer.test.ts, test: "asks through Node's own fetch, which fails at a closed port, never answered" }
     fix: "test-utils/timerCheckingEnvironment.js keeps Node's own fetch on the file's global before any setup runs; test-utils/contractEnv exports it as houseFetch, and both contract suites ask through it: proved here at a closed port, which it fails and the stub answers, and in CI, where they reach the server (mutant shape-contract-asks-the-stub)"
     places: [none]
+
+  - id: SPEED-a-mark-redraws-the-words
+    title: "The member's marks on the Dispatch (certified, saved) are read after the page; as they came, every filing on screen was drawn again whole, its words, byline and still with its bar, because each row made its handlers anew and the post took the marks with its words"
+    seriousness: behaviour
+    area: runtime
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "speed lab 40207877489 (Rf): after the Dispatch was ready, React committed the page again, 20-131 ms at a time, as the marks were read and each row was redrawn" }
+    methods:
+      - { kind: running, file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the member's marks, read, redraw each filing's bar and none of its words" }
+    fix: "PaperPost draws a filing's words in PostWords, a memo of their own that takes none of the marks; FilingRow keeps its handlers across redraws (useCallback on the filing's id, film and author), so a mark being read redraws the bar alone (mutants shape-row-handlers-made-anew, shape-words-unmemoised)"
+    places: [emulator]

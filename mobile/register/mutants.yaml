@@ -1874,3 +1874,21 @@ mutants:
         find: "export const houseFetch: typeof fetch = (globalThis as Record<symbol, unknown>)[Symbol.for('reelhouse.nodeFetch')] as typeof fetch;"
         replace: "export const houseFetch: typeof fetch = (...args) => fetch(...args);"
     proof: { file: test-utils/__tests__/aContractAsksTheServer.test.ts, test: "asks through Node's own fetch, which fails at a closed port, never answered" }
+
+  - id: shape-row-handlers-made-anew
+    class: SPEED-a-mark-redraws-the-words
+    source: shape
+    edits:
+      - file: src/components/dispatch/FilingRow.tsx
+        find: "      onOpen={open}\n"
+        replace: "      onOpen={() => open()}\n"
+    proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the member's marks, read, redraw each filing's bar and none of its words" }
+
+  - id: shape-words-unmemoised
+    class: SPEED-a-mark-redraws-the-words
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperPost.tsx
+        find: "const PostWords = memo(function PostWords({"
+        replace: "const PostWords = (function PostWords({"
+    proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the member's marks, read, redraw each filing's bar and none of its words" }

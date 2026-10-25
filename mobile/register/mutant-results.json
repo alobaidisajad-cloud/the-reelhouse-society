@@ -1405,5 +1405,19 @@
     "proof": "m1",
     "commit": "5726830f0856612ac38b6ed7690b5e753a1e9270",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-mark-redraws-the-words",
+    "mutant": "shape-row-handlers-made-anew",
+    "proof": "m1",
+    "commit": "6b259339d66ec1535c8d30c4aacb765d9f6e33dd",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-mark-redraws-the-words",
+    "mutant": "shape-words-unmemoised",
+    "proof": "m1",
+    "commit": "6b259339d66ec1535c8d30c4aacb765d9f6e33dd",
+    "verdict": "caught"
   }
 ]

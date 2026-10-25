@@ -56,8 +56,9 @@ jest.mock('@/src/utils/openSociety', () => ({
   societyHref: jest.requireActual('@/src/utils/openSociety').societyHref,
 }));
 
-/** Every render of a filing's row, counted by its one "Share this filing" control. */
+/** Every render of a filing's row, counted by its one "Share this filing" control; of its words, by their door. */
 const mockRowRenders: string[] = [];
+const mockWordRenders: string[] = [];
 jest.mock('@/src/components/PressableScale', () => {
   const Real = jest.requireActual('@/src/components/PressableScale').default;
   const ReactActual = jest.requireActual('react');
@@ -65,6 +66,7 @@ jest.mock('@/src/components/PressableScale', () => {
     __esModule: true,
     default: (props: { accessibilityLabel?: string }) => {
       if (props.accessibilityLabel === 'Share this filing') mockRowRenders.push('row');
+      if (props.accessibilityLabel === 'Open this filing') mockWordRenders.push('words');
       return ReactActual.createElement(Real, props);
     },
   };
@@ -656,6 +658,24 @@ describe('what a change redraws (a render budget)', () => {
     mockRowRenders.length = 0;
     await act(async () => { await fireEvent.press(getAllByLabelText('Save this')[5]); });
     expect(mockRowRenders).toHaveLength(1);
+  });
+
+  // The marks are read after the page: each post's bar changes, its words do not. Redrawn whole, the
+  // first page's posts were drawn a second time as the member began to scroll (speed lab 40207877489).
+  it("the member's marks, read, redraw each filing's bar and none of its words", async () => {
+    put({ filings: TEN, marksKnown: { certified: new Set(), saved: new Set(), voted: new Set() } });
+    const { getAllByLabelText, queryByLabelText } = await mount();
+    expect(mockWordRenders.length).toBeGreaterThanOrEqual(10);
+    expect(getAllByLabelText(/^Certify this\. Reading your mark/).length).toBeGreaterThanOrEqual(10);
+    mockRowRenders.length = 0;
+    mockWordRenders.length = 0;
+    const ids = TEN.map((f) => f.id);
+    await act(async () => {
+      useDispatch.setState({ marksKnown: { certified: new Set(ids), saved: new Set(ids), voted: new Set(ids) } });
+    });
+    expect(queryByLabelText(/Reading your mark/)).toBeNull();
+    expect(mockRowRenders.length).toBeGreaterThanOrEqual(10);
+    expect(mockWordRenders).toHaveLength(0);
   });
 
   it('new paper arriving above redraws no filing', async () => {

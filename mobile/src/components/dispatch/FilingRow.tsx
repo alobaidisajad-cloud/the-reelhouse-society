@@ -12,7 +12,7 @@
  * props, and the handlers are made here, so a change to one filing redraws that
  * filing alone.
  */
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { roomOf } from '@/src/components/dispatch/roomLink';
@@ -51,6 +51,15 @@ export const FilingRow = memo(function FilingRow({
   // Whether this member's marks on this filing have been read: a signed-out reader has none to read.
   const certifyKnown = useDispatch((s) => !member || s.marksKnown.certified.has(f.id));
   const saveKnown = useDispatch((s) => !member || s.marksKnown.saved.has(f.id));
+  // Kept across the row's redraws, so its marks being read redraw the bar and not the words.
+  const id = f.id;
+  const subjectId = withFilm ? f.subjectId : null;
+  const authorName = toAuthor ? f.author?.name : undefined;
+  const open = useCallback(() => nav.push(`/dispatch/${id}`), [id]);
+  const certify = useCallback((next: boolean) => useDispatch.getState().certify(id, next), [id]);
+  const save = useCallback((next: boolean) => useDispatch.getState().save(id, next), [id]);
+  const toFilm = useCallback(() => nav.push(`/film/${subjectId}`), [subjectId]);
+  const toRoom = useCallback(() => { if (authorName) nav.push(roomOf(authorName)); }, [authorName]);
   return (
     <PaperPost
       kind={f.kind}
@@ -75,14 +84,14 @@ export const FilingRow = memo(function FilingRow({
       edited={!!f.editedAt}
       series={f.seriesTitle ? partOf(f.partNumber, f.seriesTitle).printed : undefined}
       pending={pending}
-      onOpen={() => nav.push(`/dispatch/${f.id}`)}
-      onCritique={() => nav.push(`/dispatch/${f.id}`)}
-      onCertify={member ? (next) => useDispatch.getState().certify(f.id, next) : undefined}
-      onSave={member ? (next) => useDispatch.getState().save(f.id, next) : undefined}
+      onOpen={open}
+      onCritique={open}
+      onCertify={member ? certify : undefined}
+      onSave={member ? save : undefined}
       // Share opens the reader, where the sheet has room.
-      onShare={() => nav.push(`/dispatch/${f.id}`)}
-      onFilm={withFilm && f.subjectId ? () => nav.push(`/film/${f.subjectId}`) : undefined}
-      onAuthor={toAuthor && f.author ? () => nav.push(roomOf(f.author!.name)) : undefined}
+      onShare={open}
+      onFilm={subjectId ? toFilm : undefined}
+      onAuthor={authorName ? toRoom : undefined}
     />
   );
 });
