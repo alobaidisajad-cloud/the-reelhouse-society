@@ -1330,6 +1330,13 @@
     "verdict": "caught"
   },
   {
+    "class": "SPEED-the-tabs-home-drawn-unseen",
+    "mutant": "shape-lobby-drawn-unseen",
+    "proof": "m1",
+    "commit": "8edb67f1da42d2f98dfd3ef2a35539c5ae41ca09",
+    "verdict": "caught"
+  },
+  {
     "class": "LOOK-the-reel-lit-as-noise",
     "mutant": "shape-reel-beam-returns",
     "proof": "m1",
