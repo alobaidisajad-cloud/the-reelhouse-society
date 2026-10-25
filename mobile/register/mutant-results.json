@@ -1330,6 +1330,20 @@
     "verdict": "caught"
   },
   {
+    "class": "LOOK-the-reel-lit-as-noise",
+    "mutant": "shape-reel-beam-returns",
+    "proof": "m1",
+    "commit": "b40fded90e94ee7e51f0e1cd5999d503d3219adb",
+    "verdict": "caught"
+  },
+  {
+    "class": "LOOK-the-reel-lit-as-noise",
+    "mutant": "shape-reel-chip-breathes",
+    "proof": "m1",
+    "commit": "b40fded90e94ee7e51f0e1cd5999d503d3219adb",
+    "verdict": "caught"
+  },
+  {
     "class": "SPEED-a-card-blended-every-frame",
     "mutant": "shape-card-paper-seen-through",
     "proof": "m1",
