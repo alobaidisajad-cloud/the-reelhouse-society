@@ -136,6 +136,20 @@ describe('mmkvPersister — restore', () => {
     await mmkvPersister.removeClient();
     expect(storage.delete).toHaveBeenCalled();
   });
+
+  it('writes for the speed lab each write\'s bytes and each read\'s characters, and the ms each held the thread', async () => {
+    const e2e = jest.requireActual('@/src/utils/e2eTrace');
+    const traced = jest.spyOn(e2e, 'e2eTrace').mockImplementation(() => {});
+    const c = client({ clientState: { mutations: [], queries: [{ queryKey: ['film', 1], state: { data: 'Ozu' } }] } });
+    await mmkvPersister.persistClient(c);
+    await mmkvPersister.restoreClient();
+    const length = JSON.stringify(c).length;
+    expect(traced.mock.calls.filter(([e]) => String(e).startsWith('cache.'))).toEqual([
+      ['cache.persist', { bytes: length, ms: expect.any(Number) }],
+      ['cache.restore', { chars: length, ms: expect.any(Number) }],
+    ]);
+    traced.mockRestore();
+  });
 });
 
 describe('the connection, as React Query hears it', () => {

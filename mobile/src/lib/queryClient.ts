@@ -10,6 +10,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { onlineManager, QueryClient } from '@tanstack/react-query';
 // Not from auth.ts, which imports this file: that would be a cycle.
 import { storage, setSensitive } from '../stores/mmkv-storage';
+import { e2eTrace } from '../utils/e2eTrace';
 import { QUERY_POLICY } from './queryPolicy';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 
@@ -46,11 +47,15 @@ function utf8Bytes(s: string): number {
   return bytes;
 }
 
+// Each write and read of the cache, its size and the ms it held the thread, for the speed lab
+// (the E2E build alone): a screen's answer is taken in only once the thread is free.
 export const mmkvPersister: Persister = {
   persistClient: async (client: PersistedClient) => {
     try {
+      const started = Date.now();
       const serialized = JSON.stringify(client);
       const bytes = utf8Bytes(serialized);
+      e2eTrace('cache.persist', { bytes, ms: Date.now() - started });
       if (bytes > MAX_CACHE_SIZE_BYTES) {
         if (__DEV__) console.warn(`[QueryCache] Skipping persist — ${(bytes / 1024).toFixed(0)} KB exceeds 2 MB limit`);
         storage.delete(CACHE_KEY);
@@ -63,9 +68,11 @@ export const mmkvPersister: Persister = {
   },
   restoreClient: async () => {
     try {
+      const started = Date.now();
       const data = storage.getString(CACHE_KEY);
       if (!data) return undefined;
       const parsed = JSON.parse(data) as PersistedClient;
+      e2eTrace('cache.restore', { chars: data.length, ms: Date.now() - started });
       // Discard cache if older than 24 hours
       if (parsed.timestamp && Date.now() - parsed.timestamp > MAX_CACHE_AGE_MS) {
         storage.delete(CACHE_KEY);
