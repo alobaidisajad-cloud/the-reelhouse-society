@@ -1328,5 +1328,19 @@
     "proof": "m3",
     "commit": "8bccd95e9f26e94d1018f53af055743e5e46a152",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-card-blended-every-frame",
+    "mutant": "shape-card-paper-seen-through",
+    "proof": "m1",
+    "commit": "56b871c357af6a1283eb2b4de32f7fdcbb2e1a11",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-card-blended-every-frame",
+    "mutant": "shape-card-edge-under-paper",
+    "proof": "m1",
+    "commit": "56b871c357af6a1283eb2b4de32f7fdcbb2e1a11",
+    "verdict": "caught"
   }
 ]
