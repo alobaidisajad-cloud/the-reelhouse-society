@@ -108,6 +108,7 @@ case "$ARM_SCREEN" in
   reel) ARM_LINK=reels ;;
   dispatch) ARM_LINK=dispatch ;;
   salon) ARM_LINK="lounge/$(ids salon)"; ARM_WAY=up ;;
+  stack) ARM_LINK="stacks/$(ids stack)" ;;
   *) echo "no arms' screen called $ARM_SCREEN" >> "$OUT/anomalies.txt"; ARM_LINK= ;;
 esac
 if [ "$PART" != screens ] && [ -n "${LAB_SCROLL_ARMS:-}" ] && [ -n "$ARM_LINK" ]; then

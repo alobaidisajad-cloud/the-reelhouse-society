@@ -39,6 +39,9 @@
  *   Cp      no poster                Ct  the title not shrunk to fit
  *   Cr      no review                Ca  no action deck
  *
+ * The house's lit edge (EDGE_LIT), each part taken off everywhere, on a stack (LAB_ARM_SCREEN=stack):
+ *   Kx      no inset highlight       Kg  no face gradient        K0  neither
+ *
  * The Dispatch's posts, part by part (LAB_ARM_SCREEN=dispatch):
  *   Ea      no action bar            Eb  no byline               Er  no rank rule
  *   Es      a take's words without their soft breaks             E0  all four
@@ -308,6 +311,18 @@ const lobbyWaitsToBeSeen = [
   edit(LOBBY_FILE, '        <LobbyWall />\n', '        {lqOnce.current ? <LobbyWall /> : null}\n'),
 ];
 
+// The house's lit edge (EDGE_LIT, on some fifty kinds of surface), in its two parts, each taken off
+// everywhere: Android draws the inset highlight by clipping to the surface's rounded outline on
+// every frame it replays, and the card's edge alone held the Reel's slowest frames 225-325 ms
+// (speed lab 40147693423, Ce). Measured on a stack's page (LAB_ARM_SCREEN=stack), whose slow frames
+// stood 17 points over the control's (speed lab 40157142171).
+const LIGHT_FILE = 'src/theme/light.ts';
+const EDGE_HIGHLIGHT = '  boxShadow: `inset 0px 1px 0px 0px ${EDGE.highlight}`,\n';
+const EDGE_FACE = '  experimental_backgroundImage: `linear-gradient(180deg, ${EDGE.face} 0%, rgba(255,230,186,0) ${EDGE.faceTo * 100}%)`,\n';
+const edgeNoHighlight = [edit(LIGHT_FILE, EDGE_HIGHLIGHT, '')];
+const edgeNoFace = [edit(LIGHT_FILE, EDGE_FACE, '')];
+const edgeNone = [edit(LIGHT_FILE, EDGE_HIGHLIGHT + EDGE_FACE, '')];
+
 // The salon's own opening (speed lab 40157142171: under Settings the Lobby is ready at 501 ms, under
 // the salon at 1134, the room at 1601; holding the Lobby's wall back, Lq, gave 170 ms, not called,
 // and 17 MB). What the room itself does as it opens, each switched off alone, and all four (Ls0).
@@ -347,6 +362,9 @@ export const ARMS = {
   Er: postNoRankRule,
   Es: postNoSoftBreak,
   E0: [...postNoActions, ...postNoByline, ...postNoRankRule, ...postNoSoftBreak],
+  Kx: edgeNoHighlight,
+  Kg: edgeNoFace,
+  K0: edgeNone,
   Lq: lobbyWaitsToBeSeen,
   Lz: lobbyWhollyWaits,
   Lc: roomNotLive,
