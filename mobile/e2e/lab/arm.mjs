@@ -41,7 +41,8 @@
  *   Cp      no poster                Ct  the title not shrunk to fit
  *   Cr      no review                Ca  no action deck
  *
- * Any screen opened with the boot's background reads begun 1.5 s later (Bd).
+ * Any screen opened with the boot's background reads begun 1.5 s later (Bd); with the query cache
+ * never written (Qp), or never read back at launch (Qr).
  *
  * The house's lit edge (EDGE_LIT), each part taken off everywhere, on a stack (LAB_ARM_SCREEN=stack):
  *   Kx      no inset highlight       Kg  no face gradient        K0  neither
@@ -349,6 +350,16 @@ const bootReadsWait = [
     "        setTimeout(() => { useNotificationStore.getState().fetchNotifications().catch(e => logger.warn('[Bootstrapper] Notices read failed:', e)); }, 1500);\n"),
 ];
 
+// The query cache, written whole on the thread (JSON, its bytes counted a character at a time, then
+// stored) after each change, and read whole at launch. Speed lab 40191043799: the Dispatch's posts
+// answered at 0.9 s and were taken in at 1.9 s, the thread held meanwhile. Qp: never written; Qr:
+// never read back.
+const QUERY_FILE = 'src/lib/queryClient.ts';
+const cacheNotWritten = [edit(QUERY_FILE, '  persistClient: async (client: PersistedClient) => {\n    try {\n',
+  '  persistClient: async (client: PersistedClient) => {\n    if (globalThis) return;\n    try {\n')];
+const cacheNotRead = [edit(QUERY_FILE, '  restoreClient: async () => {\n    try {\n',
+  '  restoreClient: async () => {\n    if (globalThis) return undefined;\n    try {\n')];
+
 // A stack's page, part by part (speed lab 40174299190: the lit edge off everywhere, K0, gave its
 // slowest frames 100 ms of the 75% slow UI frames it holds against the control's 35%).
 const STACK_FILE = 'app/stacks/[id].tsx';
@@ -411,6 +422,8 @@ export const ARMS = {
   Es: postNoSoftBreak,
   E0: [...postNoActions, ...postNoByline, ...postNoRankRule, ...postNoSoftBreak],
   Bd: bootReadsWait,
+  Qp: cacheNotWritten,
+  Qr: cacheNotRead,
   Sv: stackVeilStill,
   Sd: stackHeroStill,
   Sk: stackCardsUnclipped,
