@@ -34,18 +34,22 @@ appId: com.reelhouse.society
       platform: Android
     commands:
       - openLink: "reelhouse://_sitemap"
-# iOS's simulator once hung the app's launch after a stop, no line from
-# the app at all, and gave up the link at ten seconds (iPhone launch
-# 39836999452): the link is opened once more. An app that mishandled it
-# fails the wait below either way.
+# On iOS the link goes to the app running. The simulator hands a link that
+# must also launch the app to it within ten seconds, and a cold launch on
+# the runner takes longer (iPhone launch 39836999452, 40129689064); its
+# failure is not one Maestro's retry takes. Opened with the app closed,
+# the link is Android's to prove here, and a real iPhone's on the device
+# checks.
 - runFlow:
     when:
       platform: iOS
     commands:
-      - retry:
-          maxRetries: 1
-          commands:
-            - openLink: "reelhouse://_sitemap"
+      - launchApp
+      - extendedWaitUntil:
+          visible:
+            id: "home-tab"
+          timeout: 30000
+      - openLink: "reelhouse://_sitemap"
 - runFlow:
     when:
       platform: iOS

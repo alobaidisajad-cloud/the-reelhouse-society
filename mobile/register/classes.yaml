@@ -846,11 +846,11 @@ classes:
     seriousness: code
     area: tests
     status: OPEN
-    count: 1
-    source: { kind: history, ref: "iPhone launch 39836999452, auth_deep_link: simctl openurl reelhouse://_sitemap, NSPOSIXErrorDomain 60 at ten seconds, the launch begun and nothing from the app" }
+    count: 2
+    source: { kind: history, ref: "iPhone launch 39836999452 and 40129689064, auth_deep_link: simctl openurl reelhouse://_sitemap, NSPOSIXErrorDomain 60 at ten seconds, the launch begun and nothing from the app" }
     methods:
-      - { kind: static, file: e2e/__tests__/iosFlows.test.ts, test: "open a link with the app closed once more on iOS, where the simulator may hang the launch" }
-    fix: "on iOS alone the cold link is opened once more (Maestro's retry, once); an app that mishandled it still fails the wait for the not-found screen; release guard reads the per-platform link as the cold open (mutant shape-ios-cold-link-once)"
+      - { kind: static, file: e2e/__tests__/iosFlows.test.ts, test: "hand the link to the app running on iOS: the simulator gives up a link that must launch the app at ten seconds" }
+    fix: "on iOS the link is handed to the app running (launched, its home seen, then the link): the simulator gives up a link that must launch the app at ten seconds, and Maestro's retry, the first fix, does not take that failure. The route is the same table either way; the link opened with the app closed is Android's to prove, and a real iPhone's on the device checks. The release guard holds Android's open closed and iOS's closed or running in exactly that shape (mutant shape-ios-cold-link-once)"
     places: [simulator]
 
   - id: LOOK-text-colour-laid-as-paper

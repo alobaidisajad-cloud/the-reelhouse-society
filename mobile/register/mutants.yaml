@@ -995,9 +995,9 @@ mutants:
     source: shape
     edits:
       - file: .maestro/auth_deep_link.yaml
-        find: "          maxRetries: 1\n"
-        replace: "          maxRetries: 0\n"
-    proof: { file: e2e/__tests__/iosFlows.test.ts, test: "open a link with the app closed once more on iOS, where the simulator may hang the launch" }
+        find: "      - launchApp\n      - extendedWaitUntil:\n          visible:\n            id: \"home-tab\"\n          timeout: 30000\n      - openLink: \"reelhouse://_sitemap\"\n"
+        replace: "      - openLink: \"reelhouse://_sitemap\"\n"
+    proof: { file: e2e/__tests__/iosFlows.test.ts, test: "hand the link to the app running on iOS: the simulator gives up a link that must launch the app at ten seconds" }
 
   - id: shape-parchment-as-paper
     class: LOOK-text-colour-laid-as-paper

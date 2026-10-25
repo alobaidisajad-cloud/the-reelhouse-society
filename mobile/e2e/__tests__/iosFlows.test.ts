@@ -46,12 +46,12 @@ describe('the flows the iPhone runs', () => {
     expect(wait).toBeGreaterThanOrEqual(120000);
   });
 
-  it('open a link with the app closed once more on iOS, where the simulator may hang the launch', () => {
-    // iPhone launch 39836999452: after a stop, the simulator hung the app's launch (no line from the
-    // app at all) and gave up the link at ten seconds.
+  it('hand the link to the app running on iOS: the simulator gives up a link that must launch the app at ten seconds', () => {
+    // iPhone launch 39836999452 and 40129689064: after a stop, the simulator gave up the link at ten
+    // seconds while the app launched, and Maestro's retry did not take that failure.
     const flowText = flow('auth_deep_link.yaml');
-    const iosCold = /- stopApp\n(?:[\s\S]*?)- runFlow:\n {4}when:\n {6}platform: iOS\n {4}commands:\n {6}- retry:\n {10}maxRetries: 1\n {10}commands:\n {12}- openLink: "reelhouse:\/\/_sitemap"/;
-    expect(flowText.replace(/\r\n/g, '\n')).toMatch(iosCold);
+    const iosWarm = /- stopApp\n(?:[\s\S]*?)- runFlow:\n {4}when:\n {6}platform: iOS\n {4}commands:\n {6}- launchApp\n {6}- extendedWaitUntil:\n {10}visible:\n {12}id: "home-tab"\n {10}timeout: \d+\n {6}- openLink: "reelhouse:\/\/_sitemap"/;
+    expect(flowText.replace(/\r\n/g, '\n')).toMatch(iosWarm);
   });
 
   it('open a link as a member who once answered iOS\'s "Open": the app\'s scheme is approved before any flow runs', () => {
