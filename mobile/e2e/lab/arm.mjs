@@ -45,6 +45,9 @@
  *
  * The house's lit edge (EDGE_LIT), each part taken off everywhere, on a stack (LAB_ARM_SCREEN=stack):
  *   Kx      no inset highlight       Kg  no face gradient        K0  neither
+ * A stack's page, part by part (LAB_ARM_SCREEN=stack):
+ *   Sv      the hero's veil not held still (its Skia canvas not redrawn as it scrolls)
+ *   Sd      the hero not drifting     Sk  the posters' cards unclipped   Sp  no posters
  *
  * The Dispatch's posts, part by part (LAB_ARM_SCREEN=dispatch):
  *   Ea      no action bar            Eb  no byline               Er  no rank rule
@@ -358,6 +361,14 @@ const profiled = [
   ].join('\n')),
 ];
 
+// A stack's page, part by part (speed lab 40174299190: the lit edge off everywhere, K0, gave its
+// slowest frames 100 ms of the 75% slow UI frames it holds against the control's 35%).
+const STACK_FILE = 'app/stacks/[id].tsx';
+const stackVeilStill = [edit(STACK_FILE, ' lifted={heroLifted} />', ' />')];
+const stackHeroStill = [edit(STACK_FILE, '        { translateY: heroDrift.value },\n', '        { translateY: 0 },\n')];
+const stackCardsUnclipped = [edit(STACK_FILE, "  filmCard: { ...EDGE_LIT, borderRadius: 2, overflow: 'hidden', ", '  filmCard: { ...EDGE_LIT, borderRadius: 2, ')];
+const stackNoPosters = [edit(STACK_FILE, '        {item.poster_path ? (\n', '        {false && item.poster_path ? (\n')];
+
 // The house's lit edge (EDGE_LIT, on some fifty kinds of surface), in its two parts, each taken off
 // everywhere: Android draws the inset highlight by clipping to the surface's rounded outline on
 // every frame it replays, and the card's edge alone held the Reel's slowest frames 225-325 ms
@@ -412,6 +423,10 @@ export const ARMS = {
   Es: postNoSoftBreak,
   E0: [...postNoActions, ...postNoByline, ...postNoRankRule, ...postNoSoftBreak],
   Pr: profiled,
+  Sv: stackVeilStill,
+  Sd: stackHeroStill,
+  Sk: stackCardsUnclipped,
+  Sp: stackNoPosters,
   Kx: edgeNoHighlight,
   Kg: edgeNoFace,
   K0: edgeNone,
