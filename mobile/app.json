@@ -50,7 +50,6 @@
           "addGeneratedScheme": false
         }
       ],
-      "./plugins/withoutDevLauncherScanner",
       [
         "expo-splash-screen",
         {

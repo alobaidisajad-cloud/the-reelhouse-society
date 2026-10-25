@@ -242,10 +242,9 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/start-stack.sh | 2026-10-15 | edited: the stack's ports reserved from the machine's own connections, and waited for |
 | e2e/variants.mjs | 2026-10-17 | new: each variant's commands to read, set, wait for and put back the phone, and whether it runs every flow; an unknown variant, a reset with nothing, or a read that answered no word the variant allows, refused |
 | e2e/walk-routes.mjs | 2026-10-17 | new: the route walk's plan and flow: every route of routes.json, its ids read from the seeded world by name, guests first, each opened cold and captured; edited: each capture a name inside Maestro's output folder, which refuses any other |
-| plugins/__tests__/withoutDevLauncherScanner.test.ts | 2026-10-15 | new: through withAndroidManifest, read back as XML; the entry read from the installed expo-dev-launcher's manifest |
+| plugins/__tests__/theScannerStaysInDebug.test.ts | 2026-10-25 | new: the installed expo-dev-launcher 57 asks for the code scanner in its debug manifest, not its main one (the plugin that removed it gone); the release guard still refuses it |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it; its files come from the shared file list (test-utils/universe.js) |
 | plugins/__tests__/withLinkDuringLaunch.test.ts | 2026-10-21 | written: on the real generated MainActivity, through withMainActivity, with the splash plugin either side of it |
-| plugins/withoutDevLauncherScanner.js | 2026-10-15 | new: read against expo-dev-launcher 6.0's main and debug manifests and ML Kit's install-time model download |
 | plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |
 | plugins/withLinkDuringLaunch.js | 2026-10-21 | written: a link that reaches the app as it starts is the one it opens; read against React Native 0.81.5's ReactHostImpl.onNewIntent and IntentModule.getInitialURL |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |

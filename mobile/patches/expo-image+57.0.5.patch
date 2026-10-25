@@ -1,16 +1,8 @@
 diff --git a/node_modules/expo-image/android/src/main/java/expo/modules/image/ExpoImageModule.kt b/node_modules/expo-image/android/src/main/java/expo/modules/image/ExpoImageModule.kt
-index f08807d..80be4dc 100644
+index 2adb8be..b6c3e63 100644
 --- a/node_modules/expo-image/android/src/main/java/expo/modules/image/ExpoImageModule.kt
 +++ b/node_modules/expo-image/android/src/main/java/expo/modules/image/ExpoImageModule.kt
-@@ -6,6 +6,7 @@ import android.graphics.Bitmap
- import android.graphics.drawable.BitmapDrawable
- import android.graphics.drawable.Drawable
- import android.util.Base64
-+import java.io.File
- import androidx.core.graphics.drawable.toBitmap
- import androidx.core.graphics.drawable.toBitmapOrNull
- import androidx.core.view.doOnDetach
-@@ -74,6 +75,44 @@ class ExpoImageModule : Module() {
+@@ -86,6 +86,44 @@ class ExpoImageModule : Module() {
        } ?: Headers.DEFAULT
  
        urls.forEach {

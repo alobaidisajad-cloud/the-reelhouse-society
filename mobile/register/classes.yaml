@@ -817,7 +817,7 @@ classes:
     places: [emulator]
 
   - id: TEST-mock-written-from-scratch
-    title: "A test's own mock of a shared module, written from scratch, replaced the shared one whole and lacked what its screen came to call: the stack page's ready mark threw in its tests and its generator (expo-router); every screen with the room's light threw once it read NavigationContext (@react-navigation/native)"
+    title: "A test's own mock of a shared module, written from scratch, replaced the shared one whole and lacked what its screen came to call: the stack page's ready mark threw in its tests and its generator (expo-router); every screen with the room's light threw once it read NavigationContext (expo-router/react-navigation)"
     seriousness: code
     area: tests
     status: OPEN
@@ -825,8 +825,8 @@ classes:
     source: { kind: history, ref: "God-Tier 39836999393: zz-stacks.gen threw 'useFocusEffect is not a function' at every width, after the stack page gained its ready mark" }
     methods:
       - { kind: static, file: test-utils/__tests__/theRouterMockHasOneBase.guard.test.ts, test: "every mock of expo-router spreads the one base, or the real module, first" }
-      - { kind: static, file: test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts, test: "every mock of @react-navigation/native spreads the one base, or the real module, first" }
-    fix: "jest.setup.ts mocks expo-router with test-utils/expoRouterMock.ts, and every test's own mock (65) spreads that base first, or the real module, and changes only what it means to (mutant shape-router-mock-from-scratch); @react-navigation/native the same, with test-utils/navigationMock.ts, its 29 hand-written mocks given the base (mutant shape-navigation-mock-from-scratch)"
+      - { kind: static, file: test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts, test: "every mock of expo-router/react-navigation spreads the one base, or the real module, first" }
+    fix: "jest.setup.ts mocks expo-router with test-utils/expoRouterMock.ts, and every test's own mock (65) spreads that base first, or the real module, and changes only what it means to (mutant shape-router-mock-from-scratch); expo-router/react-navigation the same, with test-utils/navigationMock.ts, its 29 hand-written mocks given the base (mutant shape-navigation-mock-from-scratch)"
     places: [none]
 
   - id: E2E-ios-driver-start-unwaited

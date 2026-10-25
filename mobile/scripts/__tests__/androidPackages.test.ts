@@ -37,7 +37,7 @@ it('reads each version from the catalog and the libraries, and every CMake versi
   const dir = root({
     [CATALOG]: TOML,
     'node_modules/react-native-reanimated/android/build.gradle': NAMES_CMAKE('3.22.1'),
-    'node_modules/react-native-worklets/android/build.gradle': NAMES_CMAKE('3.31.6'),
+    'node_modules/react-native-worklets/android/build.gradle.kts': NAMES_CMAKE('3.31.6'),
   });
   try {
     expect(packages(dir)).toEqual(['ndk;27.1.12297006', 'build-tools;36.0.0', 'platforms;android-36', 'cmake;3.22.1', 'cmake;3.31.6']);
@@ -55,12 +55,12 @@ it('finds a package installed only when sdkmanager wrote its package.xml: a down
   } finally { rmSync(sdk, { recursive: true, force: true }); }
 });
 
-it('says no when the catalog names no NDK, or no library names a CMake version', () => {
+it('says no when the catalog names no NDK; with no library naming a CMake, takes the one they named until then', () => {
   const noNdk = root({ [CATALOG]: TOML.replace(/ndkVersion.*\n/, ''), 'node_modules/react-native-reanimated/android/build.gradle': NAMES_CMAKE('3.22.1') });
   const noCmake = root({ [CATALOG]: TOML });
   try {
     expect(() => packages(noNdk)).toThrow(/names no ndkVersion/);
-    expect(() => packages(noCmake)).toThrow(/no CMake version named/);
+    expect(packages(noCmake).filter((p: string) => p.startsWith('cmake;'))).toEqual(['cmake;3.22.1']);
   } finally {
     rmSync(noNdk, { recursive: true, force: true });
     rmSync(noCmake, { recursive: true, force: true });

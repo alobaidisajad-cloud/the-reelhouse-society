@@ -587,7 +587,7 @@ mutants:
     source: shape
     edits:
       - file: package.json
-        find: "\"react-native-reanimated\": \"~4.3.4\","
+        find: "\"react-native-reanimated\": \"4.5.1\","
         replace: "\"react-native-reanimated\": \"~4.1.1\","
     proof: { file: src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts, test: "the manifest asks for a Reanimated with both, not the SDK pin" }
 
@@ -1301,9 +1301,9 @@ mutants:
     source: shape
     edits:
       - file: src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx
-        find: "jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));"
-        replace: "jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));"
-    proof: { file: test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts, test: "every mock of @react-navigation/native spreads the one base, or the real module, first" }
+        find: "jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));"
+        replace: "jest.mock('expo-router/react-navigation', () => ({ useIsFocused: () => true }));"
+    proof: { file: test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts, test: "every mock of expo-router/react-navigation spreads the one base, or the real module, first" }
 
   - id: shape-transcript-empty-while-reading
     class: UI-read-drawn-as-empty
@@ -1817,8 +1817,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/feed/ActivityCard.tsx
-        find: "          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />"
-        replace: "          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFillObject, WASH]} />"
+        find: "          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFill} />"
+        replace: "          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFill, WASH]} />"
     proof: { file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat paper: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
 
   - id: shape-card-edge-under-paper

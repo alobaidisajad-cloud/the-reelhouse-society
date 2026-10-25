@@ -9,7 +9,7 @@
  *
  * The versions are read where the build reads them: React Native's gradle/libs.versions.toml (which
  * Expo's root project plugin takes the NDK, build tools and SDK from), and the CMake version the native
- * libraries ask for (Reanimated and Worklets name it; the others take the Android plugin's default).
+ * libraries ask for (the Android plugin's own, PLUGIN_CMAKE, when none names one).
  *
  *   node scripts/android-packages.cjs                 prints them on one line, for sdkmanager --install
  *   node scripts/android-packages.cjs --installed     fails, naming each, unless every one is in $ANDROID_HOME
@@ -24,7 +24,15 @@ const { join } = require('path');
 
 const MOBILE = join(__dirname, '..');
 const CATALOG = 'node_modules/react-native/gradle/libs.versions.toml';
-const CMAKE_NAMERS = ['node_modules/react-native-reanimated/android/build.gradle', 'node_modules/react-native-worklets/android/build.gradle'];
+/** The libraries that have named their CMake, in Groovy (to Reanimated 4.3) or Kotlin build files. */
+const CMAKE_NAMERS = ['node_modules/react-native-reanimated/android/build.gradle', 'node_modules/react-native-worklets/android/build.gradle',
+  'node_modules/react-native-reanimated/android/build.gradle.kts', 'node_modules/react-native-worklets/android/build.gradle.kts'];
+/**
+ * The CMake taken when no library names one (Reanimated 4.5 and Worklets 0.10 name none): the one they
+ * named until then. Gradle runs with android.builder.sdkDownload=false, so were the Android plugin to
+ * want another, the build would fail at once naming it, never pass with this one.
+ */
+const PLUGIN_CMAKE = '3.22.1';
 
 /** One version from the catalog's [versions] table, or an error naming it. */
 function version(toml, key) {
@@ -41,7 +49,7 @@ function packages(root = MOBILE) {
     if (!existsSync(join(root, f))) continue;
     for (const m of readFileSync(join(root, f), 'utf8').matchAll(/CMAKE_VERSION"\)\s*\?:\s*"(\d+\.\d+\.\d+)"/g)) cmake.add(m[1]);
   }
-  if (!cmake.size) throw new Error(`no CMake version named in ${CMAKE_NAMERS.join(' or ')}`);
+  if (!cmake.size) cmake.add(PLUGIN_CMAKE);
   return [
     `ndk;${version(toml, 'ndkVersion')}`,
     `build-tools;${version(toml, 'buildTools')}`,

@@ -12,14 +12,10 @@
 const mockClearMemoryCache = jest.fn();
 const mockRemoveQueries = jest.fn();
 const mockResumePausedMutations = jest.fn().mockResolvedValue(undefined);
-const mockAddEventListener = jest.fn();
-
-jest.mock('react-native', () => ({
-  AppState: {
-    addEventListener: mockAddEventListener,
-  },
-  Platform: { OS: 'ios' },
-}));
+// The real react-native, its AppState listened at: a react-native mocked down to AppState failed the
+// moment anything else asked it for a native module (Expo's own fetch, the global from SDK 56, is
+// woken when jest.resetModules reads the globals). Spied anew on each fresh registry, below.
+let mockAddEventListener: jest.SpyInstance;
 
 jest.mock('expo-image', () => ({
   Image: {
@@ -49,6 +45,8 @@ describe('MemoryManager', () => {
     jest.clearAllMocks();
     // Reset the static isListening flag between tests
     jest.resetModules();
+    mockAddEventListener = jest.spyOn(require('react-native').AppState, 'addEventListener')
+      .mockImplementation(() => ({ remove: jest.fn() }) as never);
   });
 
   it('should register AppState listeners on initialize', () => {

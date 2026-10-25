@@ -122,7 +122,7 @@ describe('the three things an overlay has to earn', () => {
     const [event, handler] = spy.mock.calls[spy.mock.calls.length - 1];
     expect(event).toBe('hardwareBackPress');
     // Returning true is what stops the press falling through to the router.
-    expect(handler()).toBe(true);
+    expect(handler({ type: 'hardwareBackPress', timeStamp: 0 })).toBe(true);
     expect(onDismiss).toHaveBeenCalled();
     spy.mockRestore();
   });
