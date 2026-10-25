@@ -1384,5 +1384,12 @@
     "proof": "m1",
     "commit": "6b259339d66ec1535c8d30c4aacb765d9f6e33dd",
     "verdict": "caught"
+  },
+  {
+    "class": "TOOL-lab-default-names-a-retired-arm",
+    "mutant": "shape-lab-default-retired",
+    "proof": "m1",
+    "commit": "2fe1d70b03889cd55b7f226e51783b2d42b58ece",
+    "verdict": "caught"
   }
 ]
