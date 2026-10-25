@@ -26,9 +26,6 @@ import {
 } from '../../src/utils/offlineQueue';
 import { useOfflineQueueStore } from '../../src/stores/offlineQueueStore';
 
-jest.mock('react-native', () => ({
-    AppState: { addEventListener: jest.fn(() => ({ remove: jest.fn() })) },
-}), { virtual: true });
 
 jest.mock('../../src/lib/supabase', () => ({
     supabase: { from: jest.fn() },

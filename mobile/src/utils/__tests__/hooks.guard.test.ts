@@ -18,7 +18,7 @@ const { mutantInPlace, refusalOf } = require('../../../scripts/hooks/pre-commit.
 };
 const { basesOf, clearHookGitEnv, ignored, inBatches, readers, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
   basesOf: (input: string, git: (...a: string[]) => string) => string[];
-  clearHookGitEnv: (env: Record<string, string | undefined>) => Record<string, string | undefined>;
+  clearHookGitEnv: (env: NodeJS.ProcessEnv) => NodeJS.ProcessEnv;
   ignored: (mobile: string) => string[];
   inBatches: (paths: string[], room?: number) => string[][];
   readers: (mobile: string) => string[];
