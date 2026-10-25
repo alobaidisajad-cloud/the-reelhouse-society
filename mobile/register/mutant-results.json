@@ -217,6 +217,13 @@
     "verdict": "caught"
   },
   {
+    "class": "RUNTIME-api-missing-on-phone",
+    "mutant": "shape-group-by-on-phone",
+    "proof": "m1",
+    "commit": "6fc4113e7ab1bfa2f24945d34b6f5dc421504fd8",
+    "verdict": "caught"
+  },
+  {
     "class": "E2E-app-crash-unseen",
     "mutant": "judge-java-crash",
     "proof": "judge",
