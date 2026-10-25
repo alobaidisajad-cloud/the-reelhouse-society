@@ -45,7 +45,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-22 | read whole: the train refuses until this run is green on its files |
 | ../.github/workflows/e2e.yml | 2026-10-22 | read whole: four jobs; the seal's name refused in every container with a shell, its addresses to all; the proxy's and the renderer's reasons beside their own lines; the verdict reads any run's three flow machines; a heartbeat when the schedule ran |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-22 | read whole: the alert proved by the fire drill, not by the nightly; every frozen count named; the mutants' job and the add-only job each under its own head; every measuring tool named; a heartbeat when the schedule ran |
-| ../.github/workflows/ios-launch.yml | 2026-10-22 | read whole: then, on the same simulator, the flows that need no server (e2e/ios-flows.json) by Maestro, their records kept (P0.89); a run is cancelled only by a newer run of its own kind |
+| ../.github/workflows/ios-launch.yml | 2026-10-25 | edited: on macos-26 with Xcode 26.6 named, the store build's (EAS sdk-57); on macos-15's Xcode 16.4 the SDK 57 app's Swift did not compile; read whole: then, on the same simulator, the flows that need no server (e2e/ios-flows.json) by Maestro, their records kept (P0.89); a run is cancelled only by a newer run of its own kind |
 | ../.github/workflows/load.yml | 2026-10-22 | read whole: the pending train run on the full house, its locks timed, its report kept, the train left applied for the reads; the change under measurement and the reads timed whatever the locks said; a heartbeat when the schedule ran |
 | ../.github/workflows/nightly.yml | 2026-10-22 | read whole: a variant's machines as it runs them; a heartbeat when the schedule ran |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
@@ -939,8 +939,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/aRankBoughtOfflineIsKept.test.ts | 2026-10-03 | payments pass: queued for the store's account, with no network and no session |
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | 2026-10-03 | payments pass: a stand-in store drives every answer a configured one gives |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | 2026-10-03 | payments pass: the source pins went; the paths they guarded now run |
-| src/lib/__tests__/aRequestEndsInItsTime.test.ts | 2026-10-16 | new: a request with no answer is given up at its limit as not reached (storage waits longer); a caller's own cancel stays the caller's; an answer in time comes back untouched with no timer left |
-| src/lib/__tests__/aRequestIsWrittenToTheE2ELog.test.ts | 2026-10-16 | new |
+| src/lib/__tests__/aRequestEndsInItsTime.test.ts | 2026-10-25 | edited: an answer whose words never finish arriving is given up at its limit; an answer in time comes back whole (status, headers, words), one with no body with none; new: a request with no answer is given up at its limit as not reached (storage waits longer); a caller's own cancel stays the caller's; an answer in time comes back untouched with no timer left |
+| src/lib/__tests__/aRequestIsWrittenToTheE2ELog.test.ts | 2026-10-25 | edited: its fake answers are Responses, read whole as the client now reads them; new |
 | src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-23 | edited: a read handed on by .catch()/.then() is seen (Promise.resolve(supabase.rpc(…)).catch(…)), in the probe too; the salon's faces read judged by its new name; the queue's standing read is no longer judged; it reads its error |
 | src/lib/__tests__/revenueCat.selectPackage.test.ts | — |  |
 | src/lib/__tests__/sentryMeasures.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -963,7 +963,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/revenueCat.ts | 2026-10-03 | payments pass: the SDK is required (Jest runs every store path); a rank is queued for the account the store sold to |
 | src/lib/scrollBridge.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lib/sentry.ts | 2026-10-15 | edited: tracesSampler keeps every scroll and screen opening, keepTransaction thins the rest; MAIN_ROUTES; startScrollSpan |
-| src/lib/supabase.ts | 2026-10-16 | edited: in the E2E build, each request and how it ended written to the device log |
+| src/lib/supabase.ts | 2026-10-25 | edited: Expo's fetch settles with the headers on SDK 57: the answer read whole inside the limit, handed on as a Response made from it; edited: in the E2E build, each request and how it ended written to the device log |
 | src/lib/tmdb.ts | 2026-10-02 | read; sound |
 | src/lib/tmdbErrors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lore/fragments.ts | 2026-10-02 | Read whole in the launch audit: the false 'Ledger is encrypted' line replaced. |
@@ -985,14 +985,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts | 2026-10-16 | edited: the snapshot's reader comes from test-utils/schema, its one home |
 | src/services/__tests__/aReportIsFiledThroughOneDoor.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/services/__tests__/aShelfEntryIsOnlyAddedTo.test.ts | 2026-10-03 | written whole: the shelf as a table that holds its rows; old replay payloads take nothing away |
-| src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | 2026-10-16 | read whole: sound; edited: given an address, an unreachable one fails |
+| src/services/__tests__/aVisitorReadsWhatTheAppAsksFor.contract.test.ts | 2026-10-25 | edited: asks through houseFetch, Node's own fetch; read whole: sound; edited: given an address, an unreachable one fails |
 | src/services/__tests__/aYearIsReadToTheLast.test.ts | 2026-10-01 | written: a year is read to the last row |
 | src/services/__tests__/certifyCountAuthority.test.ts | 2026-10-03 | read whole: the migration loses its SQL (--) comments, not JS ones |
 | src/services/__tests__/clientNames.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/services/__tests__/everyNameAClientCallsExists.test.ts | 2026-10-15 | edited: the app may name what a pending migration makes; the website never |
 | src/services/__tests__/FeedService.test.ts | 2026-10-01 | cursor note made true |
 | src/services/__tests__/getFilmVerdict.test.ts | 2026-10-03 | read whole: sound |
-| src/services/__tests__/loungeEmbeds.contract.test.ts | 2026-10-23 | edited: the Dispatch's saved page joins it; the app's embeds, not the Lounge's alone; the salon's page checked as the store asks for it (MESSAGE_COLUMNS, its reactions embedded); read whole: sound (the FK names; columns are the query guard's); edited: given an address, an unreachable one fails; only 200 or 401 is an answer |
+| src/services/__tests__/loungeEmbeds.contract.test.ts | 2026-10-25 | edited: asks through houseFetch, Node's own fetch; edited: the Dispatch's saved page joins it; the app's embeds, not the Lounge's alone; the salon's page checked as the store asks for it (MESSAGE_COLUMNS, its reactions embedded); read whole: sound (the FK names; columns are the query guard's); edited: given an address, an unreachable one fails; only 200 or 401 is an answer |
 | src/services/__tests__/loungeSharePayloads.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/ProfileDataService.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/profileRoomFilters.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -1411,7 +1411,7 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/__tests__/timerFixtures/leavesNothing.fixture.ts | 2026-10-04 | written whole |
 | test-utils/asOnThePhone.ts | 2026-10-15 | new: takes away in jest what the phone lacks |
 | test-utils/bottomEdge.ts | 2026-10-15 | new: where a drawn page puts its foot |
-| test-utils/contractEnv.ts | 2026-10-16 | read whole: sound; "all 5,000 tests" is every unit test; edited: the address comes from CONTRACT_SUPABASE_* alone, never the app's .env; each connection closes with its answer |
+| test-utils/contractEnv.ts | 2026-10-25 | edited: houseFetch: Node's own fetch, which reaches the server; the global one is Expo's, stubbed under jest; read whole: sound; "all 5,000 tests" is every unit test; edited: the address comes from CONTRACT_SUPABASE_* alone, never the app's .env; each connection closes with its answer |
 | test-utils/react-native-testing-library.js | 2026-10-04 | edited: every render's client is testQueryClient(); the comment says what that keeps |
 | test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
 | test-utils/runtimeLacks.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -1420,7 +1420,7 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
 | test-utils/supabaseFake.ts | 2026-10-23 | edited: embeds resolved by their keys as PostgREST does (PGRST200/201 thrown), answered from what the test holds; or()/contains() taken on a table the test answers, as its header said; silent, an answer with an empty body (no data and no error), as postgrest-js reads one |
 | test-utils/testQueryClient.ts | 2026-10-04 | written whole: the one client a test builds — the app's rules, no collection timer, errors heard |
-| test-utils/timerCheckingEnvironment.js | 2026-10-16 | written whole: the environment that fails a file ending with a timer still waiting; edited: timers Node starts for itself (startedByNode) are not counted |
+| test-utils/timerCheckingEnvironment.js | 2026-10-25 | edited: keeps Node's own fetch for the contracts before the setup replaces the global with Expo's; written whole: the environment that fails a file ending with a timer still waiting; edited: timers Node starts for itself (startedByNode) are not counted |
 | test-utils/topEdge.ts | 2026-10-15 | new: where a drawn page puts its top |
 | test-utils/universe.js | 2026-10-16 | new: the one list of the files each sweep reads, the route closure, and what each supabase/ file is; the scripts a flow runs (flowScripts) |
 | types/react-test-renderer.d.ts | 2026-09-29 | history reduced to the reason |
@@ -1444,7 +1444,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/lab/proofs.mjs | 2026-10-22 | written: each scene's shots judged: still, present against no light, main against SVG within the study's bar; a signed luma grid against none (P0.103) |
 | e2e/lab/analyze.mjs | 2026-10-22 | written: the timed starts per build; each against A by a permutation test, called at Holm's p under 0.01; the A/A pair must call nothing; the log read by cold-start.mjs (P0.104) |
 | e2e/lab/lab.sh | 2026-10-22 | written: one emulator boot, settled; the shots in two rounds of opposite order; the timed starts, each measured by one shell call; a trace per timed build (P0.104) |
-| ../.github/workflows/speed-lab.yml | 2026-10-24 | edited: the salon among the arms' screens |
+| ../.github/workflows/speed-lab.yml | 2026-10-25 | edited: the iOS job on macos-26 with Xcode 26.6 named, as the iPhone launch check; the salon among the arms' screens |
 | e2e/__tests__/speedLab.test.ts | 2026-10-24 | edited: the seed's counts as the seed now fills them |
 | e2e/db/lab-seed.mjs | 2026-10-25 | edited: the member's first log holds 60 critiques, each a few sentences long: the page shows twelve, then SHOW MORE, and twelve of a line each were three screen heights, the scroll judge's edge |
 | e2e/lab/scrolls.mjs | 2026-10-25 | edited: afterDataOf, each screen's time from its last answer to its ready, shown beside the budget, not judged; memOf, the App Summary's graphics and whole share in MB, two more measures a build is called on; costs() reads the arms' screen from arms/screen.txt, by its own ready mark; UNMEASURED: the JS lines shown, not judged, and why (Android timers fire on the UI frame); the Reel table without them; budgetOf: each busy screen held to e2e/lab/budget.json against the control; jsLongSplitOf at the scroll mark; the slow-UI count; the control exempt from three heights; rankDiff (ranks decide p: the lab's values tie); jsLongOf, the frame record's long JavaScript tasks; costs(): the Reel per build and arm against A (opened, frames, p50, p90; not the janky share, 100% on the lab's GPU), Holm; each screen's scroll judged: moved on each of the first five swipes (three screen heights) or failed by name; Android's own frame counts, this runner's, never a phone's (P0.104) |
