@@ -302,12 +302,12 @@ mutants:
         text: "import { withSpring } from 'react-native-reanimated';\n\nexport const settle = (to: number, damping?: number) => withSpring(to, { damping });\n"
     proof: { file: src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts, test: "reads every animation config in the app, and each is a literal whose keys all hold a value" }
 
-  - id: shape-any-signal-on-phone
+  - id: shape-group-by-on-phone
     class: RUNTIME-api-missing-on-phone
     source: shape
     plant:
-      - path: src/utils/mutantEither.ts
-        text: "export const either = (a: AbortSignal, b: AbortSignal): AbortSignal => (AbortSignal as unknown as { any: (s: AbortSignal[]) => AbortSignal }).any([a, b]);\n"
+      - path: src/utils/mutantGroupBy.ts
+        text: "export const byKind = (xs: { kind: string }[]): unknown => (Object as unknown as { groupBy: (x: { kind: string }[], f: (v: { kind: string }) => string) => unknown }).groupBy(xs, (v) => v.kind);\n"
     proof: { file: src/utils/__tests__/runtimeLacks.guard.test.ts, test: "no file in app/ or src/ uses an API the phone lacks" }
 
   # ── the E2E judges, each fed a bad log made from a good one (P0.69) ───────────
