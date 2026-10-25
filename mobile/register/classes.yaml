@@ -1497,3 +1497,15 @@ classes:
       - { kind: running, file: src/theme/__tests__/paperIsFlattened.test.ts, test: "says NO to paper that leaves out a layer" }
     fix: "flatPaper (src/theme/light.ts) composites the paper, the edge's face light and the wash once, at the heights where their gradients turn, into one opaque gradient: the colours the eye was shown, within half a level of 255 at every height (paperIsFlattened), the edge's highlight its top line. A ranked card's corner glows carry the wash's strength in their colours (seenAt), so no view of the card is drawn through its opacity; the card's own style holds no edge light. Drawn before and after, the Reel's cards match pixel for pixel inside; only their 1pt translucent borders move, by at most 6 levels (17 at two corner pixels), the face light no longer under them (mutants shape-card-paper-seen-through, shape-card-edge-under-paper)"
     places: [emulator]
+
+  - id: SPEED-a-mark-redraws-the-words
+    title: "The member's marks on the Dispatch (certified, saved) are read after the page; as they came, every filing on screen was drawn again whole, its words, byline and still with its bar, because each row made its handlers anew and the post took the marks with its words"
+    seriousness: behaviour
+    area: runtime
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "speed lab 40207877489 (Rf): after the Dispatch was ready, React committed the page again, 20-131 ms at a time, as the marks were read and each row was redrawn" }
+    methods:
+      - { kind: running, file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the member's marks, read, redraw each filing's bar and none of its words" }
+    fix: "PaperPost draws a filing's words in PostWords, a memo of their own that takes none of the marks; FilingRow keeps its handlers across redraws (useCallback on the filing's id, film and author), so a mark being read redraws the bar alone (mutants shape-row-handlers-made-anew, shape-words-unmemoised)"
+    places: [emulator]

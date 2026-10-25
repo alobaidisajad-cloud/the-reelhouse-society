@@ -436,7 +436,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/everyTextHasACeiling.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/excerpt.test.ts | — |  |
 | src/components/dispatch/__tests__/feedRowIsRecyclable.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/components/dispatch/__tests__/feedScreen.test.tsx | 2026-10-23 | edited: the marks put are read unless a test says not; a mark still being read is drawn unknown, unpressed, then the member's; its navigation mock stands on the one base (test-utils/navigationMock); a failed page tells the E2E so, and shows no filing for a flow to find |
+| src/components/dispatch/__tests__/feedScreen.test.tsx | 2026-10-25 | edited: the member's marks, read, redraw each filing's bar and none of its words, counted by the words' door; the marks put are read unless a test says not; a mark still being read is drawn unknown, unpressed, then the member's; its navigation mock stands on the one base (test-utils/navigationMock); a failed page tells the E2E so, and shows no filing for a flow to find |
 | src/components/dispatch/__tests__/motionLaws.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/noIntlInTheDispatch.test.ts | — |  |
 | src/components/dispatch/__tests__/nothingIsLostQuietly.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -478,7 +478,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/dayLabel.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/EssayBody.tsx | 2026-10-04 | edited: no letter is raised from a right-to-left opening |
 | src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
-| src/components/dispatch/FilingRow.tsx | 2026-10-23 | edited: whether the member's certify and save on its filing are read, from the store; read whole in the Dispatch audit; comments checked true |
+| src/components/dispatch/FilingRow.tsx | 2026-10-25 | edited: its handlers kept across redraws, so a mark being read redraws the bar and not the words; whether the member's certify and save on its filing are read, from the store; read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/paper/PaperBallot.tsx | 2026-10-23 | edited: voteKnown: unread, its boxes unlinked and its options locked; the stamps' known passed on; docked, the ballot draws no row of marks of its own |
 | src/components/dispatch/paper/PaperComposer.tsx | 2026-10-24 | edited: the words go under the lead-in where three would not fit beside it; the rail's count at its right end |
 | src/components/dispatch/paper/PaperCritiques.tsx | 2026-10-24 | edited: a critique's heart, its mark unread: uninked, said to be reading, not pressable |
@@ -492,7 +492,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/paper/PaperMore.tsx | 2026-10-24 | edited: a salon card has no halo; the share card has one shape and its own room (the unused ratios and max gone); the story frame takes the card's width |
 | src/components/dispatch/paper/paperMotion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperPerf.ts | 2026-10-15 | edited: memory-disk on every image, held by its guard; no image sets a priority, so the backdrop rule is gone |
-| src/components/dispatch/paper/PaperPost.tsx | 2026-10-24 | edited: the stamp's lift from a host that does not clip; the answer signed under the whole letter, the stamp on its own line where the byline's is full; a short name takes no floor; with no facts, the rank takes the next line where name and rank will not fit one |
+| src/components/dispatch/paper/PaperPost.tsx | 2026-10-25 | edited: a filing's words drawn in PostWords, a memo of their own that takes none of the marks; the stamp's lift from a host that does not clip; the answer signed under the whole letter, the stamp on its own line where the byline's is full; a short name takes no floor; with no facts, the rank takes the next line where name and rank will not fit one |
 | src/components/dispatch/paper/PaperStrike.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/paper/paperStyles.ts | 2026-10-24 | edited: the stamp's host and plate; the answer's foot; a byline's words wrap when it has no facts; a short byline name; the rail wraps its count; a desk's lead-in row, broken by the words' floor |
 | src/components/dispatch/paper/paperText.ts | 2026-10-22 | edited: counted() now lives in src/utils/counted.ts; this file passes it on |

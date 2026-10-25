@@ -328,12 +328,7 @@ const Stamp = memo(function Stamp({
  * display headline. The form is the label — printing both was a row spent
  * saying what the post already says.
  */
-export const PaperPost = memo(function PaperPost({
-  kind, author, body, headline, source, film, still, order, orderIs, measureWidth,
-  certifyCount, commentCount, certified, saved, certifyKnown, saveKnown,
-  answer, answered, spoiler, withheld, ended, edited, series, readTime, noByline, pending, docked,
-  onOpen, onCertify, onCritique, onShare, onSave, onFilm, onAuthor,
-}: {
+type PaperPostProps = {
   /** Whether this member's certify and save have been read (PaperActions). */
   certifyKnown?: boolean;
   saveKnown?: boolean;
@@ -377,52 +372,27 @@ export const PaperPost = memo(function PaperPost({
   onFilm?: () => void;
   /** The byline. A member's name leads to that member. */
   onAuthor?: () => void;
-}) {
+};
+
+type PostWordsProps = Omit<PaperPostProps, 'ended' | 'docked' | 'certifyCount' | 'commentCount' | 'certified'
+  | 'saved' | 'certifyKnown' | 'saveKnown' | 'onCertify' | 'onCritique' | 'onShare' | 'onSave'>;
+
+/**
+ * A filing's words: everything above its marks, in a memo of their own, so the member's marks
+ * (read after the page) redraw the bar alone.
+ */
+const PostWords = memo(function PostWords({
+  kind, author, body, source, film, still, order, orderIs, measureWidth,
+  answer, answered, spoiler, withheld, edited, series, readTime, noByline, pending,
+  onOpen, onFilm, onAuthor,
+}: PostWordsProps) {
   const tier = author?.tier ?? 'free';
 
   // The member's words turn; the house's lead-in (`TAKE —`) stays left to right.
   const rtl = isRTLText(body);
 
-  // A withdrawn filing keeps its room: the words go, the critiques stay.
-  if (ended) {
-    return (
-      <View style={p.post}>
-        <View style={p.postRow}>
-          <View style={p.margin}>
-            <Text style={[p.marginValue, p.marginNil]} {...UNSPOKEN} {...decorativeTextProps}>—</Text>
-          </View>
-          <View style={p.column}>
-            <Text style={p.removedText} {...scaledTextProps}>
-              {ended === 'author'
-                ? 'This filing was withdrawn by its author.'
-                : 'This filing was removed by the house.'}
-            </Text>
-          </View>
-        </View>
-
-        {/* One act on words that are gone: the critiques, which survive, with
-            their count beside the icon as on every bar. */}
-        <View style={p.actions}>
-          <PressableScale style={p.action} hitSlop={SLOP} haptic
-            onPress={onCritique}
-            accessibilityRole="button"
-            accessibilityLabel={
-              (commentCount ?? 0) > 0
-                ? `Critique. ${counted(commentCount ?? 0, 'critique remains', 'critiques remain')} under this filing`
-                : 'Critique'
-            }>
-            <MarkFigure iconSize={16} count={commentCount} style={p.actionLabel}>
-              <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
-            </MarkFigure>
-            <Text style={p.actionLabel} {...actionLabelProps}>CRITIQUE</Text>
-          </PressableScale>
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <View style={p.post}>
+    <>
       {/* No film art behind the writing: rendered, a faint wash reads as a
           stain on a printed page. The deliberate STILL is the one photograph. */}
       <View style={p.postRow}>
@@ -594,6 +564,57 @@ export const PaperPost = memo(function PaperPost({
           ) : null}
         </View>
       </View>
+    </>
+  );
+});
+
+export const PaperPost = memo(function PaperPost({
+  kind, ended, withheld, pending, docked,
+  certifyCount, commentCount, certified, saved, certifyKnown, saveKnown,
+  onCertify, onCritique, onShare, onSave,
+  ...words
+}: PaperPostProps) {
+  // A withdrawn filing keeps its room: the words go, the critiques stay.
+  if (ended) {
+    return (
+      <View style={p.post}>
+        <View style={p.postRow}>
+          <View style={p.margin}>
+            <Text style={[p.marginValue, p.marginNil]} {...UNSPOKEN} {...decorativeTextProps}>—</Text>
+          </View>
+          <View style={p.column}>
+            <Text style={p.removedText} {...scaledTextProps}>
+              {ended === 'author'
+                ? 'This filing was withdrawn by its author.'
+                : 'This filing was removed by the house.'}
+            </Text>
+          </View>
+        </View>
+
+        {/* One act on words that are gone: the critiques, which survive, with
+            their count beside the icon as on every bar. */}
+        <View style={p.actions}>
+          <PressableScale style={p.action} hitSlop={SLOP} haptic
+            onPress={onCritique}
+            accessibilityRole="button"
+            accessibilityLabel={
+              (commentCount ?? 0) > 0
+                ? `Critique. ${counted(commentCount ?? 0, 'critique remains', 'critiques remain')} under this filing`
+                : 'Critique'
+            }>
+            <MarkFigure iconSize={16} count={commentCount} style={p.actionLabel}>
+              <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
+            </MarkFigure>
+            <Text style={p.actionLabel} {...actionLabelProps}>CRITIQUE</Text>
+          </PressableScale>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={p.post}>
+      <PostWords kind={kind} withheld={withheld} pending={pending} {...words} />
 
       {/* A spoilered post keeps its marks; in the reader they stand in its dock, once. */}
       {!withheld && !docked && (
