@@ -1424,14 +1424,14 @@
     "class": "RUNTIME-gwp-asan-crashes-hermes",
     "mutant": "shape-gwp-asan-unrun",
     "proof": "m2",
-    "commit": "93d0e52f168fb6d73c6e66b7fd6ef3304d0422a3",
-    "verdict": "invalid"
+    "commit": "dd5b444693d23e43fb47dcf4a8d095f1a45235f5",
+    "verdict": "caught"
   },
   {
     "class": "RUNTIME-gwp-asan-crashes-hermes",
     "mutant": "shape-gwp-asan-left-on",
     "proof": "m1",
-    "commit": "93d0e52f168fb6d73c6e66b7fd6ef3304d0422a3",
-    "verdict": "invalid"
+    "commit": "dd5b444693d23e43fb47dcf4a8d095f1a45235f5",
+    "verdict": "caught"
   }
 ]
