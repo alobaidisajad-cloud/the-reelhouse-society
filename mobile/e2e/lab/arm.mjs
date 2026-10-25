@@ -30,9 +30,11 @@
  * (The lamp and the wash kept as textures, once the arm Rh, ship: speed lab 39901452779.)
  *
  * The Reel's cards, part by part (R0 gave the page's layers nothing, speed lab 40046819617: the
- * cost is in the cards), in two runs of four arms, each fitting its step:
- *   Cs      no washes on the card    Ce  no edge light           Ck  no rounded clip
- *   C0      all three: the card as flat paper
+ * cost is in the cards), in two runs of at most four arms, each fitting its step:
+ *   Cs      no paper on the card     Ck  no rounded clip
+ *   C0      both: the card on the page's own ground
+ * (Its washes and edge light became one opaque paper after speed lab 40147693423; Ce, the edge
+ * light alone, went with them.)
  *   Cp      no poster                Ct  the title not shrunk to fit
  *   Cr      no review                Ca  no action deck
  *
@@ -241,12 +243,11 @@ const reelPulsesStill = [
 export const REEL_ARMS = ['Rb', 'Rw', 'Rl', 'Rt', 'Rs', 'Rp', 'R0'];
 
 // The Reel's cards, part by part (R0 gave the page's layers nothing: the cost is in the cards).
-// Two runs, four arms each, so each fits its step: the card's layers, then what it holds.
+// Two runs, at most four arms each, so each fits its step: the card's layers, then what it holds.
 const CARD_FILE = 'src/components/feed/ActivityCard.tsx';
 const cardNoShell = [edit(CARD_FILE,
   'const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {\n',
   'const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {\n  if (globalThis) return <>{children}</>;\n')];
-const cardNoEdge = [edit(CARD_FILE, '  card: { ...EDGE_LIT,\n', '  card: {\n')];
 const cardNoClip = [edit(CARD_FILE, "    borderColor: 'rgba(184,137,26,0.4)',\n    overflow: 'hidden',\n", "    borderColor: 'rgba(184,137,26,0.4)',\n")];
 const cardNoPoster = [edit(CARD_FILE,
   '              <PosterFrame filmId={item.film_id} filmTitle={item.film_title} posterPath={item.poster_path} isPremium={isPremium} isAuteur={isAuteur} onPress={handleFilmPress} />\n', '')];
@@ -269,8 +270,8 @@ const cardNoDeck = [edit(CARD_FILE, [
   '',
 ].join('\n'), '')];
 
-/** The card's layers, each alone, and all three (C0); then what it holds, each alone. */
-export const CARD_LAYER_ARMS = ['Cs', 'Ce', 'Ck', 'C0'];
+/** The card's layers, each alone, and both (C0); then what it holds, each alone. */
+export const CARD_LAYER_ARMS = ['Cs', 'Ck', 'C0'];
 export const CARD_PART_ARMS = ['Cp', 'Ct', 'Cr', 'Ca'];
 
 // The Dispatch's posts, part by part (speed lab 40046819617: ready 1453 over its 1160, one task of
@@ -325,9 +326,8 @@ export const ARMS = {
   Rp: reelPulsesStill,
   R0: [...reelNoBeam, ...reelNoWash, ...reelNoLamp, ...reelBarStill, ...reelNoScrollbar, ...reelPulsesStill],
   Cs: cardNoShell,
-  Ce: cardNoEdge,
   Ck: cardNoClip,
-  C0: [...cardNoShell, ...cardNoEdge, ...cardNoClip],
+  C0: [...cardNoShell, ...cardNoClip],
   Cp: cardNoPoster,
   Ct: cardTitleUnfitted,
   Cr: cardNoReview,
