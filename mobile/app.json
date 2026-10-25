@@ -66,6 +66,7 @@
       "./plugins/withSplashWithoutHandoff",
       "./plugins/withLinkDuringLaunch",
       "./plugins/withHouseDialogs",
+      "./plugins/withOneNdk",
       "expo-font",
       [
         "@sentry/react-native",

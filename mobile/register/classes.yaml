@@ -1509,3 +1509,16 @@ classes:
       - { kind: running, file: src/theme/__tests__/paperIsFlattened.test.ts, test: "says NO to paper that leaves out a layer" }
     fix: "flatPaper (src/theme/light.ts) composites the paper, the edge's face light and the wash once, at the heights where their gradients turn, into one opaque gradient: the colours the eye was shown, within half a level of 255 at every height (paperIsFlattened), the edge's highlight its top line. A ranked card's corner glows carry the wash's strength in their colours (seenAt), so no view of the card is drawn through its opacity; the card's own style holds no edge light. Drawn before and after, the Reel's cards match pixel for pixel inside; only their 1pt translucent borders move, by at most 6 levels (17 at two corner pixels), the face light no longer under them (mutants shape-card-paper-seen-through, shape-card-edge-under-paper)"
     places: [emulator]
+
+  - id: BUILD-a-library-takes-another-ndk
+    title: "A library that builds native code and names no NDK took the Android plugin's own default, not the project's: expo-updates 57 builds C++ and asked for NDK 27.0.12077973 beside the project's 27.1.12297006, which CI does not install, and the E2E app's build stopped (\"NDK not configured\")"
+    seriousness: behaviour
+    area: android
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "Sealed E2E run 40226076302 on the sdk57 branch: the app was not built, ':expo-updates' asking for NDK 27.0.12077973" }
+    methods:
+      - { kind: running, file: plugins/__tests__/withOneNdk.test.ts, test: "hands every Android library the project's NDK, after the root plugin that sets it" }
+      - { kind: running, file: plugins/__tests__/withOneNdk.test.ts, test: "runs the plugin at prebuild" }
+    fix: "plugins/withOneNdk.js adds to the root build.gradle a block that sets each Android library's ndkVersion to rootProject.ext.ndkVersion (set by expo-root-project from React Native's catalogue) as its plugin is applied, so the whole build uses the one NDK scripts/android-packages.cjs installs (mutants shape-one-ndk-unrun, shape-one-ndk-unset)"
+    places: [emulator]

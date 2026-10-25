@@ -245,6 +245,8 @@ without one). "Read" is the day its comments were last read against its code.
 | plugins/__tests__/theScannerStaysInDebug.test.ts | 2026-10-25 | new: the installed expo-dev-launcher 57 asks for the code scanner in its debug manifest, not its main one (the plugin that removed it gone); the release guard still refuses it |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it; its files come from the shared file list (test-utils/universe.js) |
 | plugins/__tests__/withLinkDuringLaunch.test.ts | 2026-10-21 | written: on the real generated MainActivity, through withMainActivity, with the splash plugin either side of it |
+| plugins/__tests__/withOneNdk.test.ts | 2026-10-25 | new: on the real generated root build.gradle, through withProjectBuildGradle; the block once, at the end, after expo-root-project; CRLF kept; an unreadable file refused; the app runs it, and builds with one NDK |
+| plugins/withOneNdk.js | 2026-10-25 | new: every Android library builds its native code with the project's one NDK; read against expo-updates 57's CMakeLists.txt build, ExpoRootProjectPlugin's ndkVersion and Sealed E2E run 40226076302 |
 | plugins/withSplashWithoutHandoff.js | 2026-10-04 | written: the app never takes Android's splash over; read against expo-splash-screen 31.0.13, androidx core-splashscreen and Android 14's ActivityRecord |
 | plugins/withLinkDuringLaunch.js | 2026-10-21 | written: a link that reaches the app as it starts is the one it opens; read against React Native 0.81.5's ReactHostImpl.onNewIntent and IntentModule.getInitialURL |
 | e2e/screen.mjs | 2026-09-29 | true; one line narrowed |

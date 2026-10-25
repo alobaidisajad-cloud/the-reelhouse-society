@@ -1838,3 +1838,21 @@ mutants:
         find: "  card: {\n    backgroundColor: colors.soot,"
         replace: "  card: {\n    boxShadow: 'inset 0px 1px 0px 0px rgba(255,226,176,0.075)',\n    backgroundColor: colors.soot,"
     proof: { file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat paper: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
+
+  - id: shape-one-ndk-unrun
+    class: BUILD-a-library-takes-another-ndk
+    source: shape
+    edits:
+      - file: app.json
+        find: "      \"./plugins/withOneNdk\",\n"
+        replace: ""
+    proof: { file: plugins/__tests__/withOneNdk.test.ts, test: "runs the plugin at prebuild" }
+
+  - id: shape-one-ndk-unset
+    class: BUILD-a-library-takes-another-ndk
+    source: shape
+    edits:
+      - file: plugins/withOneNdk.js
+        find: "  '    sub.android.ndkVersion = rootProject.ext.ndkVersion',\n"
+        replace: ""
+    proof: { file: plugins/__tests__/withOneNdk.test.ts, test: "hands every Android library the project's NDK, after the root plugin that sets it" }
