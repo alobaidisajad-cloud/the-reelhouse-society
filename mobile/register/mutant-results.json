@@ -1377,5 +1377,26 @@
     "proof": "m1",
     "commit": "56b871c357af6a1283eb2b4de32f7fdcbb2e1a11",
     "verdict": "caught"
+  },
+  {
+    "class": "BUILD-a-library-takes-another-ndk",
+    "mutant": "shape-one-ndk-unrun",
+    "proof": "m2",
+    "commit": "d1624c5f99fcfec69aa7e8b5fad9ae351b1657c9",
+    "verdict": "caught"
+  },
+  {
+    "class": "BUILD-a-library-takes-another-ndk",
+    "mutant": "shape-one-ndk-unset",
+    "proof": "m1",
+    "commit": "d1624c5f99fcfec69aa7e8b5fad9ae351b1657c9",
+    "verdict": "caught"
+  },
+  {
+    "class": "NET-a-body-outside-the-limit",
+    "mutant": "shape-body-read-outside-the-limit",
+    "proof": "m1",
+    "commit": "d1624c5f99fcfec69aa7e8b5fad9ae351b1657c9",
+    "verdict": "caught"
   }
 ]
