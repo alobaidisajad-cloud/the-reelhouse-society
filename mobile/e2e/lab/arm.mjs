@@ -34,6 +34,7 @@
  * cost is in the cards), in two runs of at most four arms, each fitting its step:
  *   Cs      no paper on the card     Ck  no rounded clip
  *   Cb      the same paper, painted as the view's own background
+ *   Cn      the paper as the front face's own background: one fill, no layer over the card's ground
  *   C0      both: the card on the page's own ground
  * (Its washes and edge light became one opaque paper after speed lab 40147693423; Ce, the edge
  * light alone, went with them.)
@@ -261,7 +262,30 @@ const cardPaperNative = [edit(CARD_FILE, [
   '      />',
   '',
 ].join('\n'))];
-const cardNoClip = [edit(CARD_FILE,"    borderColor: 'rgba(184,137,26,0.4)',\n    overflow: 'hidden',\n", "    borderColor: 'rgba(184,137,26,0.4)',\n")];
+// Cn: the paper as the front face's own background, one fill: the card's ground is not painted
+// beneath it (only once the back is mounted, for the flip), and no layer of its own lies over
+// that ground (speed lab 40176377824: painted natively in its own layer, Cb, -50; no paper, Cs, -450).
+const cardPaperIsTheFace = [
+  edit(CARD_FILE, [
+    '      <LinearGradient',
+    '        colors={paper.colors}',
+    '        locations={paper.locations}',
+    '        style={[StyleSheet.absoluteFillObject, s.paperLine, { borderTopColor: paper.line }]}',
+    '      />',
+    '',
+  ].join('\n'), ''),
+  edit(CARD_FILE, '      <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur]} shouldRasterizeIOS={!flipped}>\n',
+    "      <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur, !backMounted && { backgroundColor: 'transparent' }]} shouldRasterizeIOS={!flipped}>\n"),
+  edit(CARD_FILE, '          style={backMounted ? frontStyle : undefined}\n', [
+    '          style={[(() => {',
+    '            const paper = isAuteur ? PAPER.auteur : isPremium ? PAPER.premium : PAPER.plain;',
+    '            const stops = paper.colors.map((c, i) => `${c} ${(paper.locations[i] ?? 0) * 100}%`).join(\', \');',
+    '            return { experimental_backgroundImage: `linear-gradient(180deg, ${paper.line} 0px, ${paper.line} 1px, transparent 1px), linear-gradient(180deg, ${stops})` };',
+    '          })(), backMounted ? frontStyle : undefined]}',
+    '',
+  ].join('\n')),
+];
+const cardNoClip = [edit(CARD_FILE, "    borderColor: 'rgba(184,137,26,0.4)',\n    overflow: 'hidden',\n", "    borderColor: 'rgba(184,137,26,0.4)',\n")];
 const cardNoPoster = [edit(CARD_FILE,
   '              <PosterFrame filmId={item.film_id} filmTitle={item.film_title} posterPath={item.poster_path} isPremium={isPremium} isAuteur={isAuteur} onPress={handleFilmPress} />\n', '')];
 const cardTitleUnfitted = [edit(CARD_FILE,
@@ -284,7 +308,7 @@ const cardNoDeck = [edit(CARD_FILE, [
 ].join('\n'), '')];
 
 /** The card's layers, each alone, and both (C0); then what it holds, each alone. */
-export const CARD_LAYER_ARMS = ['Cs', 'Cb', 'Ck', 'C0'];
+export const CARD_LAYER_ARMS = ['Cs', 'Cb', 'Cn', 'Ck', 'C0'];
 export const CARD_PART_ARMS = ['Cp', 'Ct', 'Cr', 'Ca'];
 
 // The Dispatch's posts, part by part (speed lab 40046819617: ready 1453 over its 1160, one task of
@@ -375,6 +399,7 @@ export const ARMS = {
   R0: [...reelNoWash, ...reelNoLamp, ...reelBarStill, ...reelNoScrollbar],
   Cs: cardNoShell,
   Cb: cardPaperNative,
+  Cn: cardPaperIsTheFace,
   Ck: cardNoClip,
   C0: [...cardNoShell, ...cardNoClip],
   Cp: cardNoPoster,
