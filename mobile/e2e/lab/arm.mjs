@@ -33,6 +33,7 @@
  * The Reel's cards, part by part (R0 gave the page's layers nothing, speed lab 40046819617: the
  * cost is in the cards), in two runs of at most four arms, each fitting its step:
  *   Cs      no paper on the card     Ck  no rounded clip
+ *   Cb      the same paper, painted as the view's own background
  *   C0      both: the card on the page's own ground
  * (Its washes and edge light became one opaque paper after speed lab 40147693423; Ce, the edge
  * light alone, went with them.)
@@ -241,7 +242,24 @@ const CARD_FILE = 'src/components/feed/ActivityCard.tsx';
 const cardNoShell = [edit(CARD_FILE,
   'const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {\n',
   'const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {\n  if (globalThis) return <>{children}</>;\n')];
-const cardNoClip = [edit(CARD_FILE, "    borderColor: 'rgba(184,137,26,0.4)',\n    overflow: 'hidden',\n", "    borderColor: 'rgba(184,137,26,0.4)',\n")];
+// Cb: the same paper, in the same box, painted by React Native's own background (a shaded rectangle)
+// rather than expo-linear-gradient's view, which draws an anti-aliased, dithered path and makes its
+// shader again whenever a recycled card is bound (speed lab 40167463635: the paper off, Cs, p90 -950).
+const cardPaperNative = [edit(CARD_FILE, [
+  '      <LinearGradient',
+  '        colors={paper.colors}',
+  '        locations={paper.locations}',
+  '        style={[StyleSheet.absoluteFillObject, s.paperLine, { borderTopColor: paper.line }]}',
+  '      />',
+  '',
+].join('\n'), [
+  '      <View',
+  '        style={[StyleSheet.absoluteFillObject, s.paperLine, { borderTopColor: paper.line,',
+  '          experimental_backgroundImage: `linear-gradient(180deg, ${paper.colors.map((c, i) => `${c} ${paper.locations[i] * 100}%`).join(\', \')})` }]}',
+  '      />',
+  '',
+].join('\n'))];
+const cardNoClip = [edit(CARD_FILE,"    borderColor: 'rgba(184,137,26,0.4)',\n    overflow: 'hidden',\n", "    borderColor: 'rgba(184,137,26,0.4)',\n")];
 const cardNoPoster = [edit(CARD_FILE,
   '              <PosterFrame filmId={item.film_id} filmTitle={item.film_title} posterPath={item.poster_path} isPremium={isPremium} isAuteur={isAuteur} onPress={handleFilmPress} />\n', '')];
 const cardTitleUnfitted = [edit(CARD_FILE,
@@ -264,7 +282,7 @@ const cardNoDeck = [edit(CARD_FILE, [
 ].join('\n'), '')];
 
 /** The card's layers, each alone, and both (C0); then what it holds, each alone. */
-export const CARD_LAYER_ARMS = ['Cs', 'Ck', 'C0'];
+export const CARD_LAYER_ARMS = ['Cs', 'Cb', 'Ck', 'C0'];
 export const CARD_PART_ARMS = ['Cp', 'Ct', 'Cr', 'Ca'];
 
 // The Dispatch's posts, part by part (speed lab 40046819617: ready 1453 over its 1160, one task of
@@ -351,6 +369,7 @@ export const ARMS = {
   Rs: reelNoScrollbar,
   R0: [...reelNoWash, ...reelNoLamp, ...reelBarStill, ...reelNoScrollbar],
   Cs: cardNoShell,
+  Cb: cardPaperNative,
   Ck: cardNoClip,
   C0: [...cardNoShell, ...cardNoClip],
   Cp: cardNoPoster,
