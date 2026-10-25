@@ -54,7 +54,7 @@ export default function LogModalScreen() {
     // ════════════════════════════════════════
     return (
         <View style={st.root}>
-            <StatusBar style="light" backgroundColor="transparent" translucent />
+            <StatusBar style="light" />
             {/* The film, behind the chrome and the document alike. Fixed, so it
                 stays put while the docket scrolls over it — the record's own
                 parallax. Arrives after the entrance settles. */}
