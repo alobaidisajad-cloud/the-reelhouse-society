@@ -1330,6 +1330,13 @@
     "verdict": "caught"
   },
   {
+    "class": "E2E-runtime-held-to-a-moment",
+    "mutant": "shape-late-global-held",
+    "proof": "m1",
+    "commit": "d680e4e6ef10fcee59ed5f7f35a592d88042cbfb",
+    "verdict": "caught"
+  },
+  {
     "class": "SPEED-the-tabs-home-drawn-unseen",
     "mutant": "shape-lobby-drawn-unseen",
     "proof": "m1",
