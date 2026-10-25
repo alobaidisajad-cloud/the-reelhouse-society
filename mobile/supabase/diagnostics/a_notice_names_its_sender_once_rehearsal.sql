@@ -18,14 +18,20 @@ BEGIN;
 -- A host, and a guest whose rank opens the Lounge and who is free to ask.
 SELECT set_config('rehearsal.host', pg_temp.rh_found('a member to host the salon',
   (SELECT id FROM public.profiles ORDER BY created_at LIMIT 1))::text, true) AS done \gset rh_
-SELECT set_config('rehearsal.guest', pg_temp.rh_found('a member of Archivist rank or above, in good standing, besides the host', (
+-- The guest's rank and standing are the house's to give for this run, which is rolled back: a
+-- house that holds few ranked members (production held one) still rehearses it.
+SELECT set_config('rehearsal.guest', pg_temp.rh_found('a member besides the host', (
   SELECT id FROM public.profiles
-   WHERE id::text <> current_setting('rehearsal.host')
-     AND (lower(tier) IN ('archivist', 'auteur', 'founding') OR lower(role) IN ('archivist', 'auteur', 'founding') OR is_founding)
-      AND public.profile_tier_weight(tier, role, is_founding) >= 1
-     AND NOT coalesce(is_banned, false)
-     AND (suspended_until IS NULL OR suspended_until <= now())
+   WHERE id::text <> current_setting('rehearsal.host') AND role IS DISTINCT FROM 'admin'
    ORDER BY created_at LIMIT 1))::text, true) AS done \gset rh_
+UPDATE public.profiles SET tier = 'cinephile', role = 'cinephile', entitlement_source = NULL, is_founding = false,
+       is_banned = false, suspended_until = NULL
+ WHERE id = current_setting('rehearsal.guest')::uuid;
+DELETE FROM public.rank_grants WHERE user_id = current_setting('rehearsal.guest')::uuid;
+SELECT count(*) AS done FROM public.grant_entitlement(current_setting('rehearsal.guest')::uuid, 'archivist', 'manual') \gset rh_
+SELECT pg_temp.rh_need('a guest ranked to sit in a salon',
+  (SELECT count(*) FROM public.profiles WHERE id = current_setting('rehearsal.guest')::uuid
+      AND public.profile_tier_weight(tier, role, is_founding) >= 1), 1) AS done \gset rh_
 SELECT set_config('rehearsal.guest_name', (SELECT username FROM public.profiles WHERE id = current_setting('rehearsal.guest')::uuid), true) AS done \gset rh_
 
 CREATE TEMP TABLE nn_lounge ON COMMIT DROP AS

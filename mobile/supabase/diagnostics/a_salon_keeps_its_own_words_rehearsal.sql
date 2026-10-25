@@ -22,17 +22,28 @@ BEGIN;
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
--- a and b hold a rank that may speak in a salon; c is a third member who sits nowhere.
+-- a and b are given a rank that may speak in a salon; c is a third member who sits nowhere.
+-- The rank is the house's to give for this run, which is rolled back: production held one
+-- ranked member when the train first rehearsed this, and the run stopped looking for a second.
 -- Ordered by the key, which its index walks in order to the first that fits: ordered by the
 -- day they joined, every pick sorted the whole house (0.45 s each on 100,000 members).
-SELECT set_config('rehearsal.a', pg_temp.rh_found('a ranked member',
-  (SELECT id FROM public.profiles WHERE (lower(tier) IN ('archivist', 'auteur', 'founding') OR lower(role) IN ('archivist', 'auteur', 'founding') OR is_founding)
-      AND public.profile_tier_weight(tier, role, is_founding) >= 1 AND role <> 'admin'
-    ORDER BY id LIMIT 1))::text, true) AS done \gset rh_
-SELECT set_config('rehearsal.b', pg_temp.rh_found('a second ranked member',
-  (SELECT id FROM public.profiles WHERE (lower(tier) IN ('archivist', 'auteur', 'founding') OR lower(role) IN ('archivist', 'auteur', 'founding') OR is_founding)
-      AND public.profile_tier_weight(tier, role, is_founding) >= 1
+SELECT set_config('rehearsal.a', pg_temp.rh_found('a member',
+  (SELECT id FROM public.profiles WHERE role IS DISTINCT FROM 'admin' ORDER BY id LIMIT 1))::text, true) AS done \gset rh_
+SELECT set_config('rehearsal.b', pg_temp.rh_found('a second member',
+  (SELECT id FROM public.profiles WHERE role IS DISTINCT FROM 'admin'
       AND id <> current_setting('rehearsal.a')::uuid ORDER BY id LIMIT 1))::text, true) AS done \gset rh_
+-- As the seat rehearsals do: each set back to a cinephile with no grant, then granted the
+-- Archivist rank as the house grants one by hand, so a rank held through the store is not in the way.
+UPDATE public.profiles SET tier = 'cinephile', role = 'cinephile', entitlement_source = NULL, is_founding = false
+ WHERE id IN (current_setting('rehearsal.a')::uuid, current_setting('rehearsal.b')::uuid);
+DELETE FROM public.rank_grants
+ WHERE user_id IN (current_setting('rehearsal.a')::uuid, current_setting('rehearsal.b')::uuid);
+SELECT count(*) AS done FROM public.grant_entitlement(current_setting('rehearsal.a')::uuid, 'archivist', 'manual') \gset rh_
+SELECT count(*) AS done FROM public.grant_entitlement(current_setting('rehearsal.b')::uuid, 'archivist', 'manual') \gset rh_
+SELECT pg_temp.rh_need('two members ranked to speak in a salon',
+  (SELECT count(*) FROM public.profiles
+    WHERE id IN (current_setting('rehearsal.a')::uuid, current_setting('rehearsal.b')::uuid)
+      AND public.profile_tier_weight(tier, role, is_founding) >= 1), 2) AS done \gset rh_
 SELECT set_config('rehearsal.c', pg_temp.rh_found('a third member',
   (SELECT id FROM public.profiles WHERE id NOT IN (current_setting('rehearsal.a')::uuid, current_setting('rehearsal.b')::uuid)
     ORDER BY id LIMIT 1))::text, true) AS done \gset rh_
