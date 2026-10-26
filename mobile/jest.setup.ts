@@ -645,6 +645,19 @@ if (process.env.MOCKUPS_CAPTURE || process.env.MOCKUPS) {
   });
 }
 
+// The drawings themselves: every entrance is drawn arrived, as a member sees the page once it
+// has played. Drawn at its first frame it is invisible, and the measures skip what cannot be seen.
+if (process.env.MOCKUPS) {
+  jest.mock('@/src/hooks/useArrival', () => {
+    const actual = jest.requireActual('@/src/hooks/useArrival');
+    return {
+      ...actual,
+      useArrival: () => actual.ARRIVED,
+      useIgnition: (...args: Parameters<typeof actual.useIgnition>) => ({ ...actual.useIgnition(...args), style: actual.IGNITED, rests: true }),
+    };
+  });
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Silence console.warn for tests (noisy reanimated/navigation warnings)
 // ─────────────────────────────────────────────────────────────────────────────

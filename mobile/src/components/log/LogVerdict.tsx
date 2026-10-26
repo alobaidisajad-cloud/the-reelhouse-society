@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, ReduceMotion } from 'react-native-reanimated';
+import Animated, { Easing } from 'react-native-reanimated';
 
 import { colors, fonts } from '@/src/theme/theme';
 import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { RATING_LABELS } from '@/src/hooks/useLogFlow';
+import { useIgnition } from '@/src/hooks/useArrival';
 
 interface Props {
     status: 'watched' | 'rewatched' | 'abandoned';
@@ -39,21 +40,12 @@ interface Props {
  */
 export default React.memo(function LogVerdict({ status, rating }: Props) {
     const abandoned = status === 'abandoned';
-    const word = abandoned ? 'Abandoned' : (rating > 0 ? RATING_LABELS[rating] : '');
+    const word = abandoned ? 'Abandoned' : (rating > 0 ? RATING_LABELS[rating] ?? '' : '');
 
     // The house's own signature: ignite. The same gesture as the Society's mark
     // at the door and the seal at the end — transform and opacity only, so it
     // is GPU-composited and costs no layout.
-    const lit = useSharedValue(0);
-    React.useEffect(() => {
-        lit.value = 0;
-        lit.value = withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System });
-    }, [word, lit]);
-
-    const litStyle = useAnimatedStyle(() => ({
-        opacity: lit.value,
-        transform: [{ scale: 0.94 + lit.value * 0.06 }],
-    }));
+    const { style: litStyle } = useIgnition(word, { duration: 420, from: 0.94, easing: Easing.out(Easing.cubic), name: 'log.verdict' });
 
     return (
         <View style={s.slot}>

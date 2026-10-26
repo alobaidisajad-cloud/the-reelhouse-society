@@ -15,7 +15,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Modal } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate } from 'react-native-reanimated';
+import Animated, { Easing } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts } from '@/src/theme/theme';
@@ -26,6 +26,7 @@ import { ToastHost } from '@/src/components/ToastHost';
 import { CentredCard } from '@/src/components/layout/CentredCard';
 import { EDGE_LIT } from '@/src/theme/light';
 import { Arrive } from '@/src/components/Arrive';
+import { useIgnition } from '@/src/hooks/useArrival';
 
 interface RouletteFilm {
     id?: number;
@@ -108,18 +109,10 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const isMounted = useRef(true);
 
-    // The developing-plate reveal — opacity + a faint settle, timing only.
-    const reveal = useSharedValue(0);
-    const plateStyle = useAnimatedStyle(() => ({
-        opacity: reveal.value,
-        transform: [{ scale: interpolate(reveal.value, [0, 1], [1.04, 1]) }],
-    }));
-    useEffect(() => {
-        if (result) {
-            reveal.set(0);
-            reveal.set(withTiming(1, { duration: 520, easing: CURVE }));
-        }
-    }, [result, reveal]);
+    // The developing-plate reveal — opacity + a faint settle, timing only; each draw reveals,
+    // the same film drawn twice included.
+    const [reveals, setReveals] = useState(0);
+    const { style: plateStyle } = useIgnition(result ? reveals : null, { duration: 520, from: 1.04, easing: CURVE, name: 'roulette.plate' });
 
     // Clean up on unmount
     useEffect(() => {
@@ -139,6 +132,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
         // If exactly 1 film, resolve instantly without the spin loop
         if (watchlist.length === 1) {
             setResult(watchlist[0]);
+            setReveals((n) => n + 1);
             setReason(oracleVerdict(watchlist[0]));
             setPicking(false);
             TactileEngine.success();
@@ -168,6 +162,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
             if (ticks > 30) {
                 if (intervalRef.current) clearInterval(intervalRef.current);
                 setResult(target);
+                setReveals((n) => n + 1);
                 setReason(oracleVerdict(target));
                 setPicking(false);
                 // Heavy clunk on lock-in

@@ -24,9 +24,13 @@ import { useIsFocused } from "expo-router/react-navigation";
 import { Text } from '@/src/components/text';
 import { colors, fonts } from '@/src/theme/theme';
 import { MS, arrive } from '@/src/theme/motion';
+import { ARRIVAL_GRACE_MS } from '@/src/hooks/useArrival';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { useSvgId } from '@/src/utils/svgId';
 import { BUSTER_ART, type BusterArtKey } from '@/src/components/busterArt';
+
+/** Shown, as a plain style: where he stands never waits on an animated style reaching him. */
+const SHOWN = { opacity: 1 } as const;
 
 /** The brass of his eyes, and the bulb's catch of light on it: the drawing's own. */
 const BRASS = '#C4961A';
@@ -134,8 +138,12 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
   }, [laidOut, setLoaded]);
 
   const shown = useSharedValue(0);
+  const [settled, setSettled] = useState(false);
   useEffect(() => {
-    if (loaded && stands) shown.value = withTiming(1, { duration: MS.considered, easing: arrive() });
+    if (!loaded || !stands) return;
+    shown.value = withTiming(1, { duration: MS.considered, easing: arrive() });
+    const rest = setTimeout(() => { shown.value = 1; setSettled(true); }, MS.considered + ARRIVAL_GRACE_MS);
+    return () => clearTimeout(rest);
   }, [loaded, stands, shown]);
 
   // float 0 → 1 (up), sway 0 → 1 (turned), lid 1 open → 0 shut, glance 0 → 1 (aside)
@@ -202,7 +210,7 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
         <View testID="buster-standing" style={[s.standing, fit !== null && !stands && s.aside]}>
           {/* The whole room's height at his own proportions: the layout scales him
               into the room he is given in the same frame, standing on its floor. */}
-          <Animated.View testID="buster-figure" style={[{ height: '100%', aspectRatio: w / h }, appear]}>
+          <Animated.View testID="buster-figure" style={[{ height: '100%', aspectRatio: w / h }, settled ? SHOWN : appear]}>
             {!seated && <Animated.View style={[StyleSheet.absoluteFill, floor]}><Shadow art={art} /></Animated.View>}
             <Animated.View style={[StyleSheet.absoluteFill, { transformOrigin: [`${art.pivot.x * 100}%`, `${art.pivot.y * 100}%`, 0] }, body]}>
               <Image testID="buster-picture" source={art.picture} style={s.fill} contentFit="fill" cachePolicy="memory-disk" onLoad={() => setPictureIn(true)} accessible={false} />
@@ -295,9 +303,11 @@ export function BusterEyes({ label, style }: { label?: string; style?: StyleProp
 
   // The wait is a gate, not a motion: Reanimated skips a delay under Reduce Motion
   // unless told otherwise, and the eyes would flash on every quick answer.
+  const [settled, setSettled] = useState(false);
   useEffect(() => {
     shown.value = withDelay(EYES_AFTER_MS, withTiming(1, { duration: MS.considered, easing: arrive() }), ReduceMotion.Never);
-    return () => cancelAnimation(shown);
+    const rest = setTimeout(() => { shown.value = 1; setSettled(true); }, EYES_AFTER_MS + MS.considered + ARRIVAL_GRACE_MS);
+    return () => { clearTimeout(rest); cancelAnimation(shown); };
   }, [shown]);
 
   useEffect(() => {
@@ -320,7 +330,7 @@ export function BusterEyes({ label, style }: { label?: string; style?: StyleProp
     : UNSPOKEN;
 
   return (
-    <Animated.View testID="buster-eyes" style={[s.eyes, style, appear]} {...voice}>
+    <Animated.View testID="buster-eyes" style={[s.eyes, style, settled ? SHOWN : appear]} {...voice}>
       <Animated.View style={l}><Eye /></Animated.View>
       <Animated.View style={r}><Eye /></Animated.View>
     </Animated.View>

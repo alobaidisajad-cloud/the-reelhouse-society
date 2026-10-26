@@ -36,6 +36,7 @@ import ProfileArchiveTab from '@/src/components/profile/ProfileArchiveTab';
 import { ProfileBackdrop, backdropSource } from '@/src/components/profile/ProfileBackdrop';
 import ArchiveLock, { ArchiveLockedLine, useArchiveLock } from '@/src/components/profile/ArchiveLock';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
+import { IGNITED, useIgnition } from '@/src/hooks/useArrival';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import ProfileLedgerTab from '@/src/components/profile/ProfileLedgerTab';
 import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
@@ -121,6 +122,9 @@ function SpotlightPool({ tint, opacity }: { tint: string; opacity: number }) {
 const spotStyles = StyleSheet.create({
   wrap: { position: 'absolute', top: -30, left: 0, right: 0, height: 340, zIndex: 1 },
 });
+
+/** A beat of the developing plate, developed: a plain style. */
+const DEVELOPED = { opacity: 1 } as const;
 
 /** Small numbers read better as words on a plate. */
 const WORD = ['no', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
@@ -217,28 +221,26 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // three beats — atmosphere breathes up, the portrait develops from a
   // faint ghost, the member Nº stamps down last. Pure timing curve
   // (no bounce, per the motion law); reduce-motion → quick plain fade;
-  // re-runs only when a different member's dossier is opened.
+  // re-runs only when a different member's dossier is opened. Developed, each beat rests on a
+  // plain style: the member Nº never waits on an animated style reaching it.
   const reducedMotion = useReducedMotion();
-  const plate = useSharedValue(0);
-  useEffect(() => {
-    plate.value = 0;
-    plate.value = withTiming(1, {
-      duration: reducedMotion ? 250 : 900,
-      easing: Easing.bezier(0.33, 0, 0.15, 1),
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetUser?.id, reducedMotion]);
+  const { lit: plate, rests: developed } = useIgnition(`${targetUser?.id ?? ''}:${reducedMotion}`, {
+    duration: reducedMotion ? 250 : 900, from: 1, easing: Easing.bezier(0.33, 0, 0.15, 1), name: 'member.plate',
+  });
 
-  const atmosphereDevelop = useAnimatedStyle(() => ({
+  const atmosphereDeveloping = useAnimatedStyle(() => ({
     opacity: interpolate(plate.value, [0, 0.55], [0, 1], Extrapolation.CLAMP),
   }));
-  const portraitDevelop = useAnimatedStyle(() => ({
+  const portraitDeveloping = useAnimatedStyle(() => ({
     opacity: interpolate(plate.value, [0.15, 0.75], [0.25, 1], Extrapolation.CLAMP),
   }));
-  const stampDevelop = useAnimatedStyle(() => {
+  const stampDeveloping = useAnimatedStyle(() => {
     const p = interpolate(plate.value, [0.6, 1], [0, 1], Extrapolation.CLAMP);
     return { opacity: p, transform: [{ scale: 1.12 - 0.12 * p }] };
   });
+  const atmosphereDevelop = developed ? DEVELOPED : atmosphereDeveloping;
+  const portraitDevelop = developed ? DEVELOPED : portraitDeveloping;
+  const stampDevelop = developed ? IGNITED : stampDeveloping;
 
 
   const { refreshing, onRefresh, dnaCardOpen, setDnaCardOpen, rouletteOpen, setRouletteOpen, followLoading, toggleFollow, searchAnswered } = ctrl;

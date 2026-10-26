@@ -22,11 +22,12 @@ import { View, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withDelay,
-  withSequence, withRepeat, cancelAnimation, interpolate,
+  withSequence, withRepeat, cancelAnimation,
   Easing, ReduceMotion,
 } from 'react-native-reanimated';
 import { useIsFocused } from "expo-router/react-navigation";
 import { colors } from '@/src/theme/theme';
+import { useIgnition } from '@/src/hooks/useArrival';
 import { CandlelightHalo } from './AuthChrome';
 
 const LOGO = require('../../../assets/images/reelhouse-logo.png');
@@ -35,18 +36,16 @@ export function SocietySeal({ size = 92 }: { size?: number }) {
   const isFocused = useIsFocused();
   const haloSize = Math.round(size * 2.3);
 
-  const ignite = useSharedValue(0);  // one-time entrance: 0 → 1
+  // The lamp warms up: once per mount, i.e. once per visit to the door, never re-fired
+  // while typing or toggling modes. Lit, the mark rests on a plain style.
+  const { style: logoStyle, lit: ignite } = useIgnition('door', {
+    duration: 900, delay: 150, from: 0.92, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.Never, name: 'society.seal',
+  });
   const sheen = useSharedValue(0);   // one-time glint: 0 → peak → 0
   const breathe = useSharedValue(1); // gentle infinite halo breathing
 
   useEffect(() => {
-    // The lamp warms up… (entrance runs once per mount — i.e. once per
-    // visit to the door, never re-fires while typing or toggling modes)
-    ignite.value = withDelay(
-      150,
-      withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.Never })
-    );
-    // …and the gold catches the light, once.
+    // The gold catches the light, once.
     sheen.value = withDelay(
       700,
       withSequence(
@@ -79,11 +78,6 @@ export function SocietySeal({ size = 92 }: { size?: number }) {
 
   const haloStyle = useAnimatedStyle(() => ({
     opacity: ignite.value * breathe.value,
-  }));
-
-  const logoStyle = useAnimatedStyle(() => ({
-    opacity: ignite.value,
-    transform: [{ scale: interpolate(ignite.value, [0, 1], [0.92, 1]) }],
   }));
 
   const sheenStyle = useAnimatedStyle(() => ({

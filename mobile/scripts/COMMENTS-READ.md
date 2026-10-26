@@ -147,7 +147,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | 2026-10-22 | edited: the router mock answers useFocusEffect as jest.setup.ts's does;  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
 | app/stacks/[id].tsx | 2026-10-26 | edited: the sheet's page size: a ref for the query, state for what is drawn; edited: certifiedKnown from the stack's read; drawn from the phone, the heart is uninked, its count unknown, and a press asks again; seen ticks from the ledger whole |
-| app/user/[username].tsx | 2026-10-23 | edited: sealed only when the follow list says they do not follow; while it is read, the rooms are retrieved and the follow button is hollow, READING or ASK AGAIN |
+| app/user/[username].tsx | 2026-10-26 | edited: the developing plate's beats rest on plain styles once developed; edited: sealed only when the follow list says they do not follow; while it is read, the rooms are retrieved and the follow button is hollow, READING or ASK AGAIN |
 | app/year-in-cinema.tsx | 2026-10-26 | edited: the year read is handed its member; the effect and TRY AGAIN ask only with one, no member said as the error; edited: no member is said as the error, derived; the year read shown in its then; TRY AGAIN shows loading, then reads; edited: a plain paging ScrollView for the six slides, the note saying why not a list |
 | ARCHITECTURE.md | 2026-10-15 | edited: Image Caching is true now that every picture states memory-disk, and names the guard that holds it |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
@@ -264,7 +264,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-10-26 | edited: the React Compiler's globals rule on (a test's probe takes its hook in an effect); its preserve-manual-memoization rule on (each memo's inputs read before it); its immutability rule on (every shared value written by set), the rest off until their places are right; 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-16 | edited: Stryker's sandbox (.stryker-tmp) is never read as tests or modules |
-| jest.setup.ts | 2026-10-26 | edited: the shared value's mock has get and set as Reanimated's (set takes a value or an updater); edited: React Native's Text stand-in tells the Texts inside it they are nested, as the real one does |
+| jest.setup.ts | 2026-10-26 | edited: the drawings draw every arrival and ignition at rest; edited: the shared value's mock has get and set as Reanimated's (set takes a value or an updater); edited: React Native's Text stand-in tells the Texts inside it they are nested, as the real one does |
 | jest.stryker.config.js | 2026-10-16 | new: the tests' config in Stryker's own process, its environment by its whole path |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
@@ -394,9 +394,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/auth/EmailConfirmationScreen.tsx | 2026-10-15 | close from useModalTop |
 | src/components/auth/PasswordRecoveryModal.tsx | 2026-10-15 | edited: the card in a CentredCard, its scroll above the keyboard |
 | src/components/auth/PasswordStrengthMeter.tsx | 2026-10-03 | read whole: one answer for a new password; says when it is too long for the lock |
-| src/components/auth/SocietySeal.tsx | 2026-10-01 | true as written |
+| src/components/auth/SocietySeal.tsx | 2026-10-26 | edited: the mark ignites through useIgnition and rests on a plain style; the halo moves with it; true as written |
 | src/components/AutopsyGauge.tsx | 2026-10-01 | true as written |
-| src/components/Buster.tsx | 2026-10-04 | edited: the still one shows whole or not at all, and anyway once the wait runs out |
+| src/components/Buster.tsx | 2026-10-26 | edited: figure and eyes, shown, rest on SHOWN; edited: the still one shows whole or not at all, and anyway once the wait runs out |
 | src/components/busterArt.ts | 2026-10-04 | regenerated: a picture with points carries the layer over them |
 | src/components/CinematicOverlays.tsx | 2026-10-08 | the vignette a native gradient, not a full-screen SVG bitmap |
 | src/components/clearance/__tests__/oneRopeNotThree.test.tsx | — |  |
@@ -638,7 +638,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogReviewBody.tsx | 2026-10-01 | a Vault that could not open says so |
 | src/components/log/LogSealBar.tsx | 2026-10-22 | edited: the unready seal is hollow (UNREADY); the note on why it still answers moved beside the press |
 | src/components/log/LogSearchEngine.tsx | 2026-10-15 | foot from useContentBottom |
-| src/components/log/LogVerdict.tsx | 2026-10-15 | edited: the word's lit box spans the slot, so Yoga and the browser measure it alike |
+| src/components/log/LogVerdict.tsx | 2026-10-26 | edited: the verdict word ignites through useIgnition and rests on a plain style; edited: the word's lit box spans the slot, so Yoga and the browser measure it alike |
 | src/components/log/NoteSheet.tsx | 2026-10-15 | foot from useSheetBottom |
 | src/components/log/VaultNote.tsx | 2026-10-01 | true as written |
 | src/components/lounge/__tests__/aKeystrokeRedrawsNoMessage.test.tsx | 2026-10-23 | edited: the store as it now is: the room open, its own flags; read whole: openRoom proves rows were drawn before counting redraws |
@@ -678,6 +678,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/moderation/ContentActionSheet.tsx | 2026-10-26 | edited: reading from the frame the sheet opens on unread blocks: the refusal line never shows before the read begins; edited: block, mute and their undoing only over the member's blocks, read: one row reads them, or says they could not be read and asks again; foot from useSheetBottom |
 | src/components/moderation/ReportSheet.tsx | 2026-10-15 | foot from useSheetBottom |
+| src/components/motion/__tests__/everyEntranceRests.guard.test.ts | 2026-10-26 | Written 2026-10-26: a view born invisible rests on a plain style, or is registered as hidden at rest. |
+| src/components/motion/__tests__/fixtures/hiddenAtBirth.fixture.tsx | 2026-10-26 | Written 2026-10-26: one view born invisible, one born seen, for the guard. |
 | src/components/motion/__tests__/exitingIsNeverUsed.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/motion/__tests__/fixtures/exiting.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
 | src/components/motion/__tests__/Presence.test.tsx | 2026-10-15 | new: kept through its exit, removed after; reduced motion at once; frame, order, nesting |
@@ -772,7 +774,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/TasteDNAExportCanvas.tsx | 2026-10-02 | unspoken; words fixed-size (it is a picture); history comments trimmed |
 | src/components/profile/TasteMatch.tsx | 2026-10-15 | the percentage's glow has room inside the box a phone cuts it at |
 | src/components/profile/tasteMatchRead.ts | 2026-10-03 | Written with the Taste Match client: the read of both members' whole-record shapes, and the comparison the card shows. |
-| src/components/profile/WatchlistRoulette.tsx | 2026-10-15 | a mid-spin close stops the spin; opens filmId; nav; the card in a CentredCard, its ground behind it |
+| src/components/profile/WatchlistRoulette.tsx | 2026-10-26 | edited: the plate reveals through useIgnition, keyed by each draw; a mid-spin close stops the spin; opens filmId; nav; the card in a CentredCard, its ground behind it |
 | src/components/RankBadge.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/reels/sectionLayers.ts | 2026-10-16 | new: read against reels.tsx's two layers and the film tray's run 38790116312 |
 | src/components/reels/__tests__/MemberRegistry.select.test.ts | 2026-10-01 | no comments |
@@ -901,7 +903,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useProfileData.reducer.test.ts | — |  |
 | src/hooks/__tests__/useScreenReady.test.tsx | 2026-10-15 | edited: a failed read writes screen.failed; the first screen writes the runtime |
 | src/hooks/useAmbientGlow.ts | 2026-10-01 |  |
-| src/hooks/useArrival.ts | 2026-10-08 | edited: the easing key only when one was given |
+| src/hooks/useArrival.ts | 2026-10-26 | edited: useIgnition: the house's ignition, certain to arrive, resting on IGNITED; edited: the easing key only when one was given |
 | src/hooks/useAuthFlow.ts | 2026-10-26 | edited: the link's action applied as it renders, once per action, the first included; edited: joining refuses a password too long for the lock, first |
 | src/hooks/useAuthThrottle.ts | 2026-10-26 | edited: the mount read placed after evaluateLockout, which calls itself by its own name; a lifted lock keeps the rule |
 | src/hooks/useBanCheck.ts | 2026-10-02 | says what it guards, and that the server guards every write |
