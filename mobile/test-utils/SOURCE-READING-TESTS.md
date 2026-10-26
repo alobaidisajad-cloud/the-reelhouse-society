@@ -237,6 +237,8 @@ Decisions, as of 2026-09-28:
 | `plugins/__tests__/theScannerStaysInDebug.test.ts` | The installed expo-dev-launcher's main and debug manifests, for the code scanner a release build must not merge. |
 | `plugins/__tests__/withSplashWithoutHandoff.test.ts` | The generated MainActivity fixture, app.json's plugins and the app's code, for who imports the splash screen. |
 | `plugins/__tests__/withLinkDuringLaunch.test.ts` | The generated MainActivity fixture and app.json's plugins. |
+| `plugins/__tests__/withOneNdk.test.ts` | The generated root build.gradle fixture, app.json's plugins and the NDK the Android packages script names: Gradle files no render reaches. |
+| `plugins/__tests__/withGwpAsanOff.test.ts` | The generated AndroidManifest.xml fixture, app.json's plugins and the installed React Native's version: a manifest and a version no render reaches. |
 | `src/utils/__tests__/theBatchReportIsAnswered.test.ts` | The latest batch report in the private folder: a record of the work, which no render reaches. |
 | `src/utils/__tests__/heartbeatsAreKept.test.ts` | The workflows' schedules and heartbeat jobs, and register/alert-rules.json: what GitHub runs, which no render reaches. |
 | `src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts` | The installed Reanimated's Android NativeProxy and the manifest's range: native code and a version no render reaches. |
