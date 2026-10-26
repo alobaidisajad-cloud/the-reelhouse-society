@@ -243,9 +243,9 @@ describe('every filter the controller holds reaches the query that pages it', ()
     // Two of the four filtered tabs once fell through to a plain reload, so
     // pulling to refresh a filtered room refilled it UNFILTERED while the chip
     // stayed lit.
-    const effect = hookBody(controller, 'refreshTabRef.current(', '}, [roomFilters');
+    const effect = hookBody(controller, 'refreshTab(room', '}, [roomFilters');
     const handler = hookBody(controller, 'const onRefresh = useCallback', '}, [data, activeTab');
-    expect(effect).toMatch(/refreshTabRef\.current\(room, roomFilters\[room\]\)/);
+    expect(effect).toMatch(/refreshTab\(room, roomFilters\[room\]\)/);
     expect(handler).toMatch(/isNarrowed\(room, roomFilters\[room\]\)/);
     expect(handler).toMatch(/refreshTabWithFilters\(room, roomFilters\[room\], true\)/);
   });
