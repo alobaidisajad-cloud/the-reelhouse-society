@@ -10,7 +10,7 @@
     "class": "RUNTIME-api-missing-on-phone",
     "mutant": "shape-lacked-api-used",
     "proof": "m1",
-    "commit": "93d0e52f168fb6d73c6e66b7fd6ef3304d0422a3",
+    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
     "verdict": "caught"
   },
   {
@@ -220,7 +220,7 @@
     "class": "RUNTIME-api-missing-on-phone",
     "mutant": "shape-group-by-on-phone",
     "proof": "m1",
-    "commit": "6fc4113e7ab1bfa2f24945d34b6f5dc421504fd8",
+    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
     "verdict": "caught"
   },
   {
@@ -1333,7 +1333,7 @@
     "class": "TOOL-hook-reads-a-folder-out",
     "mutant": "shape-hook-env-kept",
     "proof": "m1",
-    "commit": "0442be263ace40fba38564fefc1a542b47f37451",
+    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
     "verdict": "caught"
   },
   {
@@ -1382,28 +1382,28 @@
     "class": "BUILD-a-library-takes-another-ndk",
     "mutant": "shape-one-ndk-unrun",
     "proof": "m2",
-    "commit": "d1624c5f99fcfec69aa7e8b5fad9ae351b1657c9",
+    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
     "verdict": "caught"
   },
   {
     "class": "BUILD-a-library-takes-another-ndk",
     "mutant": "shape-one-ndk-unset",
     "proof": "m1",
-    "commit": "d1624c5f99fcfec69aa7e8b5fad9ae351b1657c9",
+    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
     "verdict": "caught"
   },
   {
     "class": "NET-a-body-outside-the-limit",
     "mutant": "shape-body-read-outside-the-limit",
     "proof": "m1",
-    "commit": "d1624c5f99fcfec69aa7e8b5fad9ae351b1657c9",
+    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
     "verdict": "caught"
   },
   {
     "class": "TEST-a-contract-asks-a-stub",
     "mutant": "shape-contract-asks-the-stub",
     "proof": "m1",
-    "commit": "5726830f0856612ac38b6ed7690b5e753a1e9270",
+    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
     "verdict": "caught"
   },
   {
@@ -1424,14 +1424,14 @@
     "class": "RUNTIME-gwp-asan-crashes-hermes",
     "mutant": "shape-gwp-asan-unrun",
     "proof": "m2",
-    "commit": "dd5b444693d23e43fb47dcf4a8d095f1a45235f5",
+    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
     "verdict": "caught"
   },
   {
     "class": "RUNTIME-gwp-asan-crashes-hermes",
     "mutant": "shape-gwp-asan-left-on",
     "proof": "m1",
-    "commit": "dd5b444693d23e43fb47dcf4a8d095f1a45235f5",
+    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
     "verdict": "caught"
   },
   {
@@ -1445,14 +1445,14 @@
     "class": "CI-simulator-gone-silently",
     "mutant": "shape-simulator-16-pro",
     "proof": "m1",
-    "commit": "cb8253c2b41d3de80ca101a13d1832ff1ba5d471",
+    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
     "verdict": "caught"
   },
   {
     "class": "CI-simulator-gone-silently",
     "mutant": "shape-simulator-fails-silently",
     "proof": "m2",
-    "commit": "cb8253c2b41d3de80ca101a13d1832ff1ba5d471",
+    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
     "verdict": "caught"
   }
 ]
