@@ -683,7 +683,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/motion/__tests__/exitingIsNeverUsed.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/motion/__tests__/fixtures/exiting.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
 | src/components/motion/__tests__/Presence.test.tsx | 2026-10-15 | new: kept through its exit, removed after; reduced motion at once; frame, order, nesting |
-| src/components/motion/Presence.tsx | 2026-10-15 | new: a view plays its exit and is removed by state; Reanimated `exiting` is never used |
+| src/components/motion/Presence.tsx | 2026-10-26 | edited: PresenceView: its latest props written after the commit, its pin the frame recorded at layout, as state; the ledger read as it renders on purpose, opted out of the compiler, says why; new: a view plays its exit and is removed by state; Reanimated `exiting` is never used |
 | src/components/NitrateCalendar.tsx | 2026-10-01 | the header without a stale line count |
 | src/components/OfflineBanner.tsx | 2026-10-26 | edited: the offline time counted from the period's own start and cleared as it ends (the effect's cleanup); rises away through Presence; stands above the tab bar (useOverlayBottom) |
 | src/components/person/canon.ts | 2026-10-01 | the order, not the sort it replaced |

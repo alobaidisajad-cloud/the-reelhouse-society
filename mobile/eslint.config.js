@@ -29,10 +29,11 @@ module.exports = defineConfig([
     // set; preserve-manual-memoization: each memo's inputs read before it, as it names them;
     // globals: a test's probe takes its hook in an effect; set-state-in-effect: a read's answer set in
     // its then, a fresh start made as it renders; purity: a clock read once, in a state's first value,
-    // or in an effect), the rest off until theirs are and the
-    // compiler is turned on, measured (WORKLIST P0.117).
+    // or in an effect; refs: a latest value written after the commit or read as an Effect Event, a
+    // drawn value as state; Presence's ledger alone is read as it renders, and says why). All are on;
+    // next, the compiler itself, measured (WORKLIST P0.117).
     rules: {
-      'react-hooks/refs': 'off',
+      'react-hooks/refs': 'error',
       'react-hooks/set-state-in-effect': 'error',
       'react-hooks/immutability': 'error',
       'react-hooks/preserve-manual-memoization': 'error',

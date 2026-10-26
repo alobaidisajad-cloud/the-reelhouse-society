@@ -119,8 +119,16 @@ const finished = (book?: Book) => !book || [...book.members].every((m) => book.l
 /**
  * Keeps each child React drops, by key, until its exits have ended. A dropped child keeps its
  * place in the order, after anything that arrived where it stood, as a withheld view does.
+ *
+ * Its ledger is kept in refs and read as it renders, as every exit-presence keeps one: what a
+ * render writes there stays true if React throws that render away (a book made once per key, a
+ * returned child's marks cleared, a stage cached per state), and the list is committed only after
+ * the commit. Held in state, every view joining a book would draw its Presence once more. The
+ * compiler is told to leave it as written.
  */
+/* eslint-disable react-hooks/refs -- the ledger above, read as it renders on purpose */
 export function Presence({ children }: { children?: React.ReactNode }) {
+  'use no memo';
   const outer = useContext(StageContext);
   const [, redraw] = useReducer((n: number) => n + 1, 0);
   const shown = useRef<Kept[]>([]);
@@ -197,6 +205,7 @@ export function Presence({ children }: { children?: React.ReactNode }) {
     </>
   );
 }
+/* eslint-enable react-hooks/refs */
 
 // ── the view that moves ──────────────────────────────────────────────────────
 
@@ -242,15 +251,19 @@ export function PresenceView({
   // drawn it. Leaving, it takes its animated style back.
   const [arrived, setArrived] = useState(start === REST);
 
+  // The frame the layout last gave it: read by the exit as it starts, and drawn by the pin.
   const box = useRef<LayoutRectangle | null>(null);
+  const [frame, setFrame] = useState<LayoutRectangle | null>(null);
   const measured = useCallback((e: LayoutChangeEvent) => {
-    box.current = e.nativeEvent.layout;
+    const f = e.nativeEvent.layout;
+    box.current = f;
+    setFrame((was) => (was && was.x === f.x && was.y === f.y && was.width === f.width && was.height === f.height ? was : f));
     onLayout?.(e);
   }, [onLayout]);
 
-  // Read when an effect runs, not when it was scheduled.
+  // Read when an effect runs, not when it was scheduled: written after each commit, before them.
   const live = useRef({ stage, enter, exit, reduced, screen });
-  live.current = { stage, enter, exit, reduced, screen };
+  useLayoutEffect(() => { live.current = { stage, enter, exit, reduced, screen }; });
 
   const id = useRef(0);
   const book = stage?.book;
@@ -331,11 +344,12 @@ export function PresenceView({
     return {};
   });
 
-  // The outermost PresenceView of a removed child steps out of the layout where it last stood.
-  const pin = useRef<LayoutRectangle | null>(null);
+  // The outermost PresenceView of a removed child steps out of the layout where it last stood:
+  // the frame it had as it stepped, held as it renders, and let go when it is back.
+  const [pin, setPin] = useState<LayoutRectangle | null>(null);
   const steps = !!stage?.removed && !stage.held;
-  if (steps && !pin.current) pin.current = box.current;
-  if (!steps) pin.current = null;
+  if (steps && !pin && frame) setPin(frame);
+  if (!steps && pin) setPin(null);
 
   const holds = useMemo<Stage | null>(() => (stage ? { ...stage, held: true } : null), [stage]);
 
@@ -343,7 +357,7 @@ export function PresenceView({
     <StageContext.Provider value={holds}>
       <Animated.View
         {...rest}
-        style={[style, arrived ? restingStyle(fading, moving) : animated, pin.current ? pinAt(pin.current) : null]}
+        style={[style, arrived ? restingStyle(fading, moving) : animated, pin ? pinAt(pin) : null]}
         onLayout={measured}
         pointerEvents={leaving ? 'none' : pointerEvents}
         accessibilityElementsHidden={leaving || rest.accessibilityElementsHidden}
