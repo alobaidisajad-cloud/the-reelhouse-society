@@ -485,6 +485,10 @@ const roomPlainPresses = [edit(SALON_FILE, "import PressableScale from '@/src/co
   'const PressableScale = ({ style, children }: React.ComponentProps<typeof View> & Record<string, unknown>) => <View style={style}>{children}</View>;\n')];
 const roomFromTheTop = [edit(SALON_FILE, '          maintainVisibleContentPosition={{ startRenderingFromBottom: true, autoscrollToBottomThreshold: 0.2 }}\n', '')];
 
+// The React Compiler on (P0.117): every rule it reads holds, and the suite passes under it but for
+// probes that counted redraws it now skips. Whether it opens and scrolls the app faster is this arm's.
+const compilerOn = [edit('app.json', '      "typedRoutes": true\n', '      "typedRoutes": true,\n      "reactCompiler": true\n')];
+
 export const ARMS = {
   Ws: [...svgRoom, ...svgVignette, ...svgHalo],
   Dm: [...lampDispatch, ...noVignette, ...noHalo],
@@ -540,6 +544,7 @@ export const ARMS = {
   Lp: roomPlainPresses,
   Lb: roomFromTheTop,
   Ls0: [...roomNotLive, ...roomNotMarked, ...roomPlainPresses, ...roomFromTheTop],
+  Xc: compilerOn,
 };
 
 /** The scenes the shots compare: each one's main build, its SVG build, and what it shows. */
