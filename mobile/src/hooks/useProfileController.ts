@@ -75,7 +75,10 @@ export function useProfileController(usernameOverride?: string) {
   const [listsSearch, setListsSearch] = useState('');
   const [physicalSearch, setPhysicalSearch] = useState('');
 
-  useEffect(() => {
+  // The route's tab, taken as it renders, once for each tab a link or a tap brings (the first included).
+  const [tabTaken, setTabTaken] = useState<string | undefined | null>(null);
+  if (tabTaken !== tab) {
+    setTabTaken(tab);
     if (tab) {
       const validTabs: ProfileTab[] = ['archive', 'ledger', 'watchlist', 'lists', 'physical', 'passport', 'projector', 'calendar'];
       const mapped = tab === 'diary' ? 'ledger' : tab;
@@ -83,7 +86,7 @@ export function useProfileController(usernameOverride?: string) {
     } else {
       setActiveTab(null);
     }
-  }, [tab]);
+  }
 
   // Following is read by handle from the social store, so it is known before the
   // member's row is (useProfileData needs it to open a sealed profile).
@@ -152,16 +155,20 @@ export function useProfileController(usernameOverride?: string) {
   //
   // For four seconds at most: if the corrected handle fails too, the honest not-found
   // screen shows, with its GO BACK, rather than a spinner that never ends.
+  // Begun in the very render the repair is decided (no frame of not-found), ended by the member
+  // arriving or by the four seconds, whichever comes first.
   const [repairingHandle, setRepairingHandle] = useState(false);
+  const [repairSeen, setRepairSeen] = useState(false);
+  if (repairSeen !== repairRoute) {
+    setRepairSeen(repairRoute);
+    if (repairRoute) setRepairingHandle(true);
+  }
+  if (repairingHandle && data.targetUser) setRepairingHandle(false);
   useEffect(() => {
     if (!repairRoute) return;
-    setRepairingHandle(true);
     const t = setTimeout(() => setRepairingHandle(false), 4000);
     return () => clearTimeout(t);
   }, [repairRoute]);
-  useEffect(() => {
-    if (data.targetUser) setRepairingHandle(false);
-  }, [data.targetUser]);
 
   // Specific properties, never JSON.stringify of the whole row: a key order that
   // changed would read as a change and loop.

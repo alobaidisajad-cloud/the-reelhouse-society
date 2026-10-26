@@ -91,7 +91,8 @@ export default function FilingReader() {
   const filings = useDispatch((s) => s.filings);
   const critiques = useDispatch((s) => s.critiques);
   /** The next part of this essay's series; one row, for one screen, so not in the store. */
-  const [nextPart, setNextPart] = useState<Filing | null>(null);
+  // Held with the series part it was found after: another filing has none until its own is read.
+  const [nextFound, setNextFound] = useState<{ after: string; part: Filing | null } | null>(null);
   const opened = useDispatch((s) => s.opened);
   const critiquesLoading = useDispatch((s) => s.critiquesLoading);
   const critiquesLoadingMore = useDispatch((s) => s.critiquesLoadingMore);
@@ -174,7 +175,8 @@ export default function FilingReader() {
   useEffect(() => {
     const seriesId = live?.seriesId;
     const part = live?.partNumber;
-    if (!seriesId || part == null) { setNextPart(null); return; }
+    if (!seriesId || part == null) return;
+    const after = `${seriesId}:${part}`;
     let cancelled = false;
     (async () => {
       try {
@@ -190,13 +192,15 @@ export default function FilingReader() {
           .limit(1);
         if (error) throw error;
         if (cancelled) return;
-        setNextPart(parseFilingRows(data ?? []).filings[0] ?? null);
+        setNextFound({ after, part: parseFilingRows(data ?? []).filings[0] ?? null });
       } catch {
-        if (!cancelled) setNextPart(null); // no foot, rather than one that goes nowhere
+        if (!cancelled) setNextFound({ after, part: null }); // no foot, rather than one that goes nowhere
       }
     })();
     return () => { cancelled = true; };
   }, [live?.seriesId, live?.partNumber]);
+  const nextPart = nextFound && live?.seriesId && live.partNumber != null
+    && nextFound.after === `${live.seriesId}:${live.partNumber}` ? nextFound.part : null;
 
   /** In the server's order, never re-sorted here: the critiques come in pages. */
   const rows = critiques[id] ?? [];

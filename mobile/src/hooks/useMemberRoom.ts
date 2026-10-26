@@ -133,6 +133,17 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
    * out-of-order fault the film finder was fixed for.
    */
   const gen = useRef(0);
+
+  // A new member, or another try, starts from nothing: no row, page or failure of the last.
+  // Made as it renders, so no frame shows the last room under the new name.
+  const readKey = `${attempt}:${username ?? ''}`;
+  const [readFor, setReadFor] = useState<string | null>(null);
+  if (readFor !== readKey) {
+    setReadFor(readKey);
+    setAuthor(null); setFilings([]); setFiled(0); setCertified(0); setTotalsKnown(false);
+    setCertifiedAtFetch(new Set());
+    setMissing(!username); setFailed(false); setMore(false); setMoreFailed(false); setLoading(!!username);
+  }
   /**
    * How many rows the SERVER has handed over, which runs ahead of the filings
    * drawn when the parser drops one. Paging from `filings.length` asked again
@@ -224,11 +235,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
   useEffect(() => {
     const mine = ++gen.current;
     userId.current = null;
-    setAuthor(null); setFilings([]); setFiled(0); setCertified(0); setTotalsKnown(false);
-    setCertifiedAtFetch(new Set());
-    setMissing(false); setFailed(false); setMore(false); setMoreFailed(false); setLoading(true);
-
-    if (!username) { setLoading(false); setMissing(true); return; }
+    if (!username) return;
 
     (async () => {
       try {

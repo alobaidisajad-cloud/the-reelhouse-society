@@ -120,7 +120,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/reels.tsx | 2026-10-26 | edited: the crossfade settled per section: a new section is mid-crossfade in the render it is chosen; edited: the page's wash kept as a texture while the Reel is in front; following nobody only of a list read: an unread follow list spools, a failed one says so and reads it again (both reels); the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/+not-found.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
 | app/auth-callback.tsx | 2026-10-26 | edited: the mount effect placed after handleCallback, the function it calls; edited: a spent link raised in Supabase's own words, so the member reads the house's sentence |
-| app/dispatch/[id].tsx | 2026-10-26 | edited: the film's id and the member's read before the callbacks that use them (the draft's key named as the member's id); the share card is exported at SHARE_CARD_WIDTH |
+| app/dispatch/[id].tsx | 2026-10-26 | edited: the next part held with the series part it was found after: another filing has none until its own is read; edited: the film's id and the member's read before the callbacks that use them (the draft's key named as the member's id); the share card is exported at SHARE_CARD_WIDTH |
 | app/dispatch/archive.tsx | 2026-10-15 | foot from useContentBottom |
 | app/dispatch/compose.tsx | 2026-10-15 | header and door from useModalTop; feet from navMetrics; the essay's footer never on the edge |
 | app/dispatch/room/[username].tsx | 2026-10-15 | foot from useContentBottom, scrollbar from useBottomEdge |
@@ -917,12 +917,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useInitiation.ts | 2026-10-02 | Read whole (launch audit). The breath was the effect's cleanup, so a user replaced inside it lost the welcome after the flag burned; a user without created_at was decided no for good. Both closed. |
 | src/hooks/useLater.ts | 2026-10-04 | written whole: a component's timer, gone with the component |
 | src/hooks/useLogFlow.ts | 2026-10-23 | edited: an edit reads a record the phone does not hold by its id, fills the form once per record, and hands that record to the seal and the delete; the seal refuses until it is in |
-| src/hooks/useMemberRoom.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/hooks/useMemberRoom.ts | 2026-10-26 | edited: a new member or another try starts from nothing as it renders; the effect only reads; read whole in the Dispatch audit; comments checked true |
 | src/hooks/useMembershipPricing.ts | 2026-10-02 | read; sound |
 | src/hooks/useModalKeyboardPadding.ts | 2026-10-15 | edited: the eased height is its own hook, for a centred card's scroll |
 | src/hooks/useNotableMembers.ts | 2026-10-01 | true as written |
 | src/hooks/useOfflineAware.ts | 2026-10-01 | one subscription, no clock |
-| src/hooks/useProfileController.ts | 2026-10-23 | edited: followKnown and rereadFollows; a follow is never filed before the follow list is known |
+| src/hooks/useProfileController.ts | 2026-10-26 | edited: the route's tab taken as it renders, once per tab; the handle repair begun in the render it is decided, ended by the member arriving or the four seconds; edited: followKnown and rereadFollows; a follow is never filed before the follow list is known |
 | src/hooks/useProfileData.ts | 2026-10-23 | edited: tabAnswered (a room's read came back, not asked) and answeredFilters (the filters a room's rows answer), both reset for a new member; a search overtaken lands neither its rows nor its filters nor lowers the newer one's flag; each read cancelled only by what makes it stale; failures wiped with the member; comments say what is true now |
 | src/hooks/useScreenReady.tsx | 2026-10-16 | edited: takes the read state; a failed read is screen.failed; a wait's start is screen.reading |
 | src/hooks/useScrollTrace.ts | 2026-10-15 | new: a scroll is one Sentry transaction, begin to rest |
