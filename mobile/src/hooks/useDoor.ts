@@ -35,7 +35,7 @@
  * their own app because a read timed out, which is a far worse error than
  * letting somebody reach a refusal the server was always going to give.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
@@ -51,58 +51,61 @@ export interface Door {
   filmsNeeded: number;
   days: number | null;
   daysNeeded: number;
-  refresh: () => void;
 }
 
 /** The house's numbers, repeated here only as a fallback for the LABELS. */
 const FILMS_NEEDED = 5;
 const DAYS_NEEDED = 2;
 
-export function useDoor(): Door {
-  const user = useAuthStore((s) => s.user);
-  const [open, setOpen] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [films, setFilms] = useState<number | null>(null);
-  const [days, setDays] = useState<number | null>(null);
-  const [filmsNeeded, setFilmsNeeded] = useState(FILMS_NEEDED);
-  const [daysNeeded, setDaysNeeded] = useState(DAYS_NEEDED);
-  const gen = useRef(0);
+type DoorRead = Omit<Door, 'loading'>;
 
-  const ask = useCallback(async () => {
-    if (!user?.id) { setLoading(false); return; }
-    const mine = ++gen.current;
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.rpc('dispatch_door');
-      if (mine !== gen.current) return;
-      if (error) { logger.warn(`[door] ${error.message}`); setOpen(true); return; }
-      const row = (data as { films: number; films_needed: number; days: number; days_needed: number; may_file: boolean }[] | null)?.[0];
-      if (!row) { setOpen(true); return; }
-      /**
-       * Capped at what is needed, HERE rather than in the function.
-       *
-       * A member who has logged twelve films and is waiting on the second day
-       * should read `5 OF 5`: the bar is met and the bar is what the line is
-       * about. `12 OF 5` reads as an error. The cap is the display's business,
-       * and doing it here leaves the server function saying the true count for
-       * anything else that ever reads it.
-       */
-      const need = row.films_needed ?? FILMS_NEEDED;
-      setFilms(Math.min(row.films ?? 0, need));
-      setDays(row.days ?? 0);
+/** No answer: the door stands open and draws no bars. */
+const UNANSWERED: DoorRead = { open: true, films: null, filmsNeeded: FILMS_NEEDED, days: null, daysNeeded: DAYS_NEEDED };
+
+async function readDoor(): Promise<DoorRead> {
+  try {
+    const { data, error } = await supabase.rpc('dispatch_door');
+    if (error) { logger.warn(`[door] ${error.message}`); return UNANSWERED; }
+    const row = (data as { films: number; films_needed: number; days: number; days_needed: number; may_file: boolean }[] | null)?.[0];
+    if (!row) return UNANSWERED;
+    /**
+     * Capped at what is needed, HERE rather than in the function.
+     *
+     * A member who has logged twelve films and is waiting on the second day
+     * should read `5 OF 5`: the bar is met and the bar is what the line is
+     * about. `12 OF 5` reads as an error. The cap is the display's business,
+     * and doing it here leaves the server function saying the true count for
+     * anything else that ever reads it.
+     */
+    const need = row.films_needed ?? FILMS_NEEDED;
+    return {
+      open: !!row.may_file,
+      films: Math.min(row.films ?? 0, need),
       // The NEEDED numbers come from the server too, so raising the bar one day
       // does not leave the app printing the old one under a new rule.
-      setFilmsNeeded(row.films_needed ?? FILMS_NEEDED);
-      setDaysNeeded(row.days_needed ?? DAYS_NEEDED);
-      setOpen(!!row.may_file);
-    } catch (e) {
-      if (mine === gen.current) { logger.warn(`[door] ${String(e)}`); setOpen(true); }
-    } finally {
-      if (mine === gen.current) setLoading(false);
-    }
-  }, [user?.id]);
+      filmsNeeded: need,
+      days: row.days ?? 0,
+      daysNeeded: row.days_needed ?? DAYS_NEEDED,
+    };
+  } catch (e) {
+    logger.warn(`[door] ${String(e)}`);
+    return UNANSWERED;
+  }
+}
 
-  useEffect(() => { void ask(); }, [ask]);
+export function useDoor(): Door {
+  const userId = useAuthStore((s) => s.user?.id);
+  // Held with the member it was read for: another member's door is not this one's,
+  // and until theirs comes it is still being asked.
+  const [answer, setAnswer] = useState<{ for: string; read: DoorRead } | null>(null);
 
-  return { open, loading, films, filmsNeeded, days, daysNeeded, refresh: ask };
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    void readDoor().then((read) => { if (!cancelled) setAnswer({ for: userId, read }); });
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  const read = answer && answer.for === userId ? answer.read : null;
+  return { ...(read ?? UNANSWERED), loading: !!userId && !read };
 }

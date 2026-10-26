@@ -403,18 +403,20 @@ export default function LoungeRoomScreen() {
   shownRoomRef.current = id;
 
   // ── Membership + roster refresh (also drives host's "At the Door") ──
-  const refreshMembership = useCallback(async () => {
+  // Asked for, and shown when the answer comes: nothing changes on screen in the asking.
+  const refreshMembership = useCallback(() => {
     if (!id) return;
-    const roster = await fetchMembers(id);
-    // Room A's roster must not become room B's (the screen is reused across rooms).
-    if (shownRoomRef.current !== id) return;
-    // Unread is not empty: the standing already known stays, and if none is, the
-    // room says the list could not be reached (with a way to try again).
-    if (!roster) { setRosterFailed(true); return; }
-    setRosterFailed(false);
-    setMembers(roster);
-    const mine = userId ? roster.find(m => m.user_id === userId) : undefined;
-    setMyStatus((mine?.status as LoungeMemberStatus) ?? 'none');
+    void fetchMembers(id).then((roster) => {
+      // Room A's roster must not become room B's (the screen is reused across rooms).
+      if (shownRoomRef.current !== id) return;
+      // Unread is not empty: the standing already known stays, and if none is, the
+      // room says the list could not be reached (with a way to try again).
+      if (!roster) { setRosterFailed(true); return; }
+      setRosterFailed(false);
+      setMembers(roster);
+      const mine = userId ? roster.find(m => m.user_id === userId) : undefined;
+      setMyStatus((mine?.status as LoungeMemberStatus) ?? 'none');
+    });
   }, [id, userId, fetchMembers]);
 
   const retryRoster = useCallback(() => {
@@ -423,21 +425,25 @@ export default function LoungeRoomScreen() {
   }, [refreshMembership]);
 
   // ── Hydrate lounge metadata + membership ──
-  useEffect(() => {
-    if (!id) return;
-    // The screen is reused across rooms: an answer for the room left behind is dropped.
-    let cancelled = false;
-    // A new room starts from what the list knows of it: the last room's standing is not this one's.
+  // The screen is reused across rooms. A new room (or another try) starts as it renders from what
+  // the list knows of it: the last room's standing, roster, verdict and record are not this one's
+  // (its name, privacy and host drew the header and decided the gate until this one's answer came).
+  const roomKey = `${loadAttempt}:${id ?? ''}`;
+  const [roomFor, setRoomFor] = useState<string | null>(null);
+  if (id && roomFor !== roomKey) {
+    setRoomFor(roomKey);
     setMyStatus(knownStanding(useLoungeStore.getState().lounges, id));
     setRosterFailed(false);
     setPending(false);
     setMembers([]);
-    // A new room starts found: the last room's verdict is not this one's.
     setNotFound(false);
     setLoadFailed(false);
-    // Nor its record: the last room's name, privacy and host drew the header and
-    // decided the gate until this one's answer came — and for good if it failed.
     setLocalLounge(null);
+  }
+  useEffect(() => {
+    if (!id) return;
+    // An answer for the room left behind is dropped.
+    let cancelled = false;
     const loadLounge = async () => {
       const { data: loungeData, error } = await supabase.from('lounges').select('*').eq('id', id).maybeSingle();
       if (cancelled) return;

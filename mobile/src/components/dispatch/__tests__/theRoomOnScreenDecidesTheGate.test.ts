@@ -59,8 +59,8 @@ describe('the room on screen decides what the screen shows', () => {
   });
 
   it('refreshMembership compares the room it fetched FOR against the shown one', () => {
-    const body = bodyOf('const refreshMembership = useCallback(async ()');
-    expect(body).toMatch(/await fetchMembers\(id\)[\s\S]*if \(shownRoomRef\.current !== id\) return;/);
+    const body = bodyOf('const refreshMembership = useCallback(() =>');
+    expect(body).toMatch(/fetchMembers\(id\)\.then\(\(roster\) => \{[\s\S]*if \(shownRoomRef\.current !== id\) return;/);
   });
 
   it('the ref tracking the shown room is kept current on every render', () => {
@@ -70,7 +70,7 @@ describe('the room on screen decides what the screen shows', () => {
 
   it('neither guard sits AFTER the state it is meant to protect', () => {
     // The order is the whole fix: a check below setMembers protects nothing.
-    const membership = bodyOf('const refreshMembership = useCallback(async ()');
+    const membership = bodyOf('const refreshMembership = useCallback(() =>');
     expect(membership.indexOf('shownRoomRef.current !== id'))
       .toBeLessThan(membership.indexOf('setMembers('));
 
@@ -89,15 +89,16 @@ describe('the standing waits for the roster', () => {
   });
 
   it('starts again in every room the screen is reused for — from that room’s own entry, with nothing of the last', () => {
-    const code = CODE;
-    const reset = code.slice(code.indexOf('let cancelled = false;'), code.indexOf('const loadLounge = async ()'));
+    // Keyed by the room and the try, so another room or another try both start clean.
+    expect(CODE).toMatch(/const roomKey = `\$\{loadAttempt\}:\$\{id \?\? ''\}`;/);
+    const reset = bodyOf('if (id && roomFor !== roomKey)');
     for (const call of ['setMyStatus(knownStanding(useLoungeStore.getState().lounges, id))', 'setRosterFailed(false)', 'setPending(false)', 'setMembers([])']) {
       expect(reset).toContain(call);
     }
   });
 
   it('a roster that could not be read changes no standing, and says so', () => {
-    const body = bodyOf('const refreshMembership = useCallback(async ()');
+    const body = bodyOf('const refreshMembership = useCallback(() =>');
     expect(body).toMatch(/if \(!roster\) \{ setRosterFailed\(true\); return; \}/);
     expect(body.indexOf('if (!roster)')).toBeLessThan(body.indexOf('setMyStatus('));
   });
@@ -117,8 +118,6 @@ describe('the standing waits for the roster', () => {
     // The reset cleared standing, roster and verdicts but kept `localLounge`:
     // the last room's name, privacy and host drew the header and decided the
     // gate until this room's answer came — and for good if it failed.
-    const code = CODE;
-    const effect = code.slice(code.indexOf('setNotFound(false);'), code.indexOf('const loadLounge = async ()'));
-    expect(effect).toMatch(/setLocalLounge\(null\);/);
+    expect(bodyOf('if (id && roomFor !== roomKey)')).toMatch(/setNotFound\(false\);[\s\S]*setLocalLounge\(null\);/);
   });
 });

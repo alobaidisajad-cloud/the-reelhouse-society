@@ -21,26 +21,38 @@ export type CodeRefusal = 'wrong' | 'unchecked';
 /** The house's name in the member's authenticator, beside the account. */
 export const ISSUER = 'The ReelHouse Society';
 
+async function readDoor(): Promise<KeyState> {
+  // Asked inside the promise, so a client that throws is a failed read like one that answers an error.
+  const [level, factors] = await Promise.resolve()
+    .then(() => Promise.all([supabase.auth.mfa.getAuthenticatorAssuranceLevel(), supabase.auth.mfa.listFactors()]))
+    .catch(() => [null, null] as const);
+  if (!level || !factors || level.error || factors.error) return { kind: 'failed' };
+  return { kind: 'door', ...doorOf(level.data.currentLevel, factors.data.all as Factor[]) };
+}
+
 export function useSecondKey(userId: string | undefined) {
   const [state, setState] = useState<KeyState>({ kind: 'checking' });
   const alive = useRef(true);
   useEffect(() => () => { alive.current = false; }, []);
 
+  // Another member's session starts at checking as it renders: the last one's door is not theirs.
+  const [readFor, setReadFor] = useState(userId);
+  if (readFor !== userId) {
+    setReadFor(userId);
+    setState({ kind: 'checking' });
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    void readDoor().then((read) => { if (!cancelled) setState(read); });
+    return () => { cancelled = true; };
+  }, [userId]);
+
   const check = useCallback(async () => {
     setState({ kind: 'checking' });
-    // Asked inside the promise, so a client that throws is a failed read like one that answers an error.
-    const [level, factors] = await Promise.resolve()
-      .then(() => Promise.all([supabase.auth.mfa.getAuthenticatorAssuranceLevel(), supabase.auth.mfa.listFactors()]))
-      .catch(() => [null, null] as const);
-    if (!alive.current) return;
-    if (!level || !factors || level.error || factors.error) {
-      setState({ kind: 'failed' });
-      return;
-    }
-    setState({ kind: 'door', ...doorOf(level.data.currentLevel, factors.data.all as Factor[]) });
+    const read = await readDoor();
+    if (alive.current) setState(read);
   }, []);
-
-  useEffect(() => { void check(); }, [check, userId]);
 
   /** Registers a new key, first removing any never confirmed; null when the house refused or was away. */
   const enrol = useCallback(async (stale: readonly string[]): Promise<NewKey | null> => {

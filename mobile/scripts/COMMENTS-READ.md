@@ -137,7 +137,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/log/__tests__/zz-log.gen.test.tsx | — |  |
 | app/log/[id].tsx | 2026-10-24 | edited: certifiedKnown from the log's read (drawn from the phone, the heart is uninked and a press asks again); the film's bookmark known once the ledger is held |
 | app/lounge.tsx | 2026-10-01 | true as written |
-| app/lounge/[id].tsx | 2026-10-23 | edited: the seat bar while the rank is read: a guest, asked again, nothing sold |
+| app/lounge/[id].tsx | 2026-10-26 | edited: a new room or another try starts from what the list knows of it as it renders; the roster shown in its read's then; edited: the seat bar while the rank is read: a guest, asked again, nothing sold |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); a portrait without a photograph carries the whole first letter, unspoken |
 | app/person/__tests__/zz-person.gen.test.tsx | — |  |
 | app/person/[id].tsx | 2026-10-23 | edited: the auteur hunt counted only over the ledger held whole; the share label while the rank is read |
@@ -908,7 +908,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useClearance.ts | 2026-10-23 | edited: a third standing, reading, while the member's profile is not read; then open() asks for the profile, never the Society |
 | src/hooks/useDeviceThrottling.ts | 2026-10-02 | Read whole (launch audit). Answered in an effect, after the preloader had decided on the first render; known synchronously now. A settings override no screen ever wrote removed. |
 | src/hooks/useDispatchArchive.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/hooks/useDoor.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
+| src/hooks/useDoor.ts | 2026-10-26 | edited: the door's answer held with the member it was read for and shown in the read's then; loading is the answer not yet come; the unused refresh gone; read whole in the Dispatch audit; comments checked true |
 | src/hooks/useEditProfile.ts | 2026-10-26 | edited: the preview follows the stored portrait when it changes; a picture just chosen is kept through any other change; a refusal for the member's standing is not reported as a fault |
 | src/hooks/useFeeds.ts | 2026-10-01 | one cursor rule; the fallback note gone with the fallback |
 | src/hooks/useFilmAnimations.ts | 2026-10-01 | each loop only while seen |
@@ -928,7 +928,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useScrollTrace.ts | 2026-10-15 | new: a scroll is one Sentry transaction, begin to rest |
 | src/hooks/useSheetPresence.ts | 2026-10-26 | edited: a visible sheet is a drawn one from the render that opens it; the effect keeps the motion; written: five sheets' rise and fall, once |
 | src/hooks/useStateSaid.ts | 2026-10-16 | new: which state a room drew, empty or failed, to the E2E log |
-| src/hooks/useSecondKey.ts | 2026-10-17 | new: the door read from the session each time; register; give a code |
+| src/hooks/useSecondKey.ts | 2026-10-26 | edited: the door read on mount shown in its read's then; another member starts at checking as it renders; check stays the retry; new: the door read from the session each time; register; give a code |
 | src/hooks/__tests__/theSecondKeyIsReadAsItIs.test.tsx | 2026-10-17 | new: each refusal the hook meets, handed back as what it is |
 | src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx | 2026-10-23 | new: an edit over a record the phone has not paged in, against the strict fake |
 | src/stores/__tests__/theLedgerIsKnownWhole.test.ts | 2026-10-23 | new: the ledger against the strict fake |

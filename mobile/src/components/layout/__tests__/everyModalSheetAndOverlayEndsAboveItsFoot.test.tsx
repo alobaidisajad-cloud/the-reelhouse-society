@@ -116,7 +116,7 @@ jest.mock('@/src/hooks/useClearance', () => ({
 let mockDoorOpen = true;
 jest.mock('@/src/hooks/useDoor', () => ({
   useDoor: () => ({
-    open: mockDoorOpen, loading: false, films: 2, filmsNeeded: 5, days: 1, daysNeeded: 2, refresh: jest.fn(),
+    open: mockDoorOpen, loading: false, films: 2, filmsNeeded: 5, days: 1, daysNeeded: 2,
   }),
 }));
 
