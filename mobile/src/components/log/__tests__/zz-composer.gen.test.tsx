@@ -24,6 +24,7 @@ import { View } from 'react-native';
 import LogVerdict from '@/src/components/log/LogVerdict';
 import { st } from '@/src/components/log/LogModalStyles';
 import { RATING_LABELS } from '@/src/hooks/useLogFlow';
+import { ARRIVAL_GRACE_MS } from '@/src/hooks/useArrival';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
@@ -90,6 +91,8 @@ const LISTS = [
 ];
 /** Let the component's own timers and promises run (the search waits 400ms). */
 const settle = (ms = 0) => act(async () => { await new Promise((res) => setTimeout(res, ms)); });
+/** Past an entrance of `ms`, and its grace: drawn arrived, never at its first frame. */
+const arrived = (ms: number) => settle(ms + ARRIVAL_GRACE_MS + 1);
 
 /** Each state: who is writing, what the route was opened with, and what they did. */
 const STATES: [string, Tier, Record<string, string>, (r: ReturnType<typeof render>) => Promise<void>][] = [
@@ -100,7 +103,7 @@ const STATES: [string, Tier, Record<string, string>, (r: ReturnType<typeof rende
     await settle(500);
   }],
   // Signed out: the whole page is the way in.
-  ['composer-signedout', 'out', FILM, async () => {}],
+  ['composer-signedout', 'out', FILM, async () => { await arrived(400); }],
   // A new record, as it opens — calm, every entry closed.
   ['composer', 'free', FILM, async () => {}],
   // An Auteur with every instrument open and a full manuscript.

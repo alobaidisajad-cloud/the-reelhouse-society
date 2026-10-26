@@ -620,7 +620,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/__tests__/theNoteSheetOffersOnlyWhatIsReal.test.tsx | — |  |
 | src/components/log/__tests__/theVaultBelongsToItsViewing.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/log/__tests__/theVaultSaysWhenItCouldNotOpen.test.tsx | 2026-10-01 | written: the Vault on the record, when it could not open |
-| src/components/log/__tests__/zz-composer.gen.test.tsx | 2026-10-24 | read whole: the signed-out page is held to its own floor, its sentence and its door |
+| src/components/log/__tests__/zz-composer.gen.test.tsx | 2026-10-26 | edited: the signed-out page drawn once its entrance has played (arrived); read whole: the signed-out page is held to its own floor, its sentence and its door |
 | src/components/log/AuteurToolkit.tsx | 2026-10-01 | histories to the present |
 | src/components/log/EditorialDesk.tsx | 2026-10-03 | edited: the pull quote names its cap |
 | src/components/log/LogActionDeck.tsx | 2026-10-24 | edited: certifyKnown and saveKnown: a heart or a bookmark not yet read is uninked; the heart said to be reading, the bookmark still pressable |
