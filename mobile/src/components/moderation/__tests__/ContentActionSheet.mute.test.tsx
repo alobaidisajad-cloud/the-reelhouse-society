@@ -18,6 +18,13 @@ import { ContentActionSheet } from '../ContentActionSheet';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 
+/** On, a render shows its first frame: what is drawn before any effect has run. */
+let mockEffectsOff = false;
+jest.mock('react', () => {
+  const actual = jest.requireActual('react');
+  return { ...actual, useEffect: (fn: () => void, deps?: unknown[]) => (mockEffectsOff ? undefined : actual.useEffect(fn, deps)) };
+});
+
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
   const { View, Text, ScrollView } = require('react-native');
@@ -131,6 +138,20 @@ describe('ContentActionSheet — the member\'s blocks not yet read', () => {
         expect(getByLabelText('Reading your blocks').props.accessibilityState).toMatchObject({ disabled: true });
         expect([queryByLabelText('Block alice'), queryByLabelText('Mute alice'), queryByLabelText('Unblock alice')]).toEqual([null, null, null]);
         await waitFor(() => expect(sync).toHaveBeenCalledWith('me'));
+    });
+
+    it('says it is reading from the first frame, before its read has even begun', () => {
+        // The frame before any effect has run: it said the blocks could not be read.
+        useBlockStore.setState({ blocksKnown: false, syncFromServer: jest.fn((): Promise<void> => new Promise(() => {})) });
+        useAuthStore.setState({ user: { id: 'me' } as never });
+        mockEffectsOff = true;
+        try {
+            const { getByLabelText, queryByLabelText } = render(<ContentActionSheet {...base} onMute={jest.fn()} />);
+            expect(getByLabelText('Reading your blocks')).toBeTruthy();
+            expect(queryByLabelText('Your blocks could not be read. Ask for them again')).toBeNull();
+        } finally {
+            mockEffectsOff = false;
+        }
     });
 
     it('a read that could not be answered says so, and asks again', async () => {

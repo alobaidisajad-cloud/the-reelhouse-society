@@ -59,62 +59,58 @@ export default function AuthCallbackScreen() {
     goOnward('/(tabs)', 1200);
   }
 
-  async function handleCallback() {
-    try {
-      const url = params.url;
-      const tokenHash = params.token_hash;
-      const type = params.type;
+  /** The link's session and which email it was; refused when the link is refused or spent. */
+  async function verify(): Promise<{ session: Session; type: string }> {
+    const url = params.url;
+    const tokenHash = params.token_hash;
+    const type = params.type;
 
-      // Supabase sends a refused link back with its reason ("expired", "used").
-      const refused = params.error_description || params.error_code || params.error;
-      if (refused) throw new Error(refused);
+    // Supabase sends a refused link back with its reason ("expired", "used").
+    const refused = params.error_description || params.error_code || params.error;
+    if (refused) throw new Error(refused);
 
-      // Attempt 1: Modern PKCE code exchange
-      if (url || params.code) {
-        const code = params.code || (url ? (Linking.parse(url).queryParams?.code as string) : undefined);
-        if (code) {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
-          if (data?.session) {
-            // Prefer the redirectType auth-js stored alongside the PKCE code
-            // verifier — it is authoritative for which email flow this was.
-            const urlType = url ? (Linking.parse(url).queryParams?.type as string) : undefined;
-            const libType = (data as { redirectType?: string | null }).redirectType === 'recovery' ? 'recovery' : undefined;
-            const inferredType = libType || params.type || urlType || 'signup';
-            await handleSuccessfulVerification(data.session, inferredType);
-            return;
-          }
-        }
-      }
-
-      // Attempt 2: Legacy OTP token_hash verification
-      if (tokenHash && type) {
-        const { data, error } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: type as EmailOtpType,
-        });
+    // Attempt 1: Modern PKCE code exchange
+    if (url || params.code) {
+      const code = params.code || (url ? (Linking.parse(url).queryParams?.code as string) : undefined);
+      if (code) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) throw error;
         if (data?.session) {
-          await handleSuccessfulVerification(data.session, type);
-          return;
+          // Prefer the redirectType auth-js stored alongside the PKCE code
+          // verifier — it is authoritative for which email flow this was.
+          const urlType = url ? (Linking.parse(url).queryParams?.type as string) : undefined;
+          const libType = (data as { redirectType?: string | null }).redirectType === 'recovery' ? 'recovery' : undefined;
+          return { session: data.session, type: libType || params.type || urlType || 'signup' };
         }
       }
-
-      // Anyone can open this link: a session already here verifies nothing.
-      // In the words Supabase uses for a spent link, so mapAuthError says it in the house's.
-      throw new Error('Email link is invalid or has expired');
-    } catch (err: unknown) {
-      // A failed link must not leave the recovery flag armed — it would sign
-      // the user out of a legitimate session on next launch.
-      try { storage.delete('recovery_pending'); } catch {}
-      const msg = err instanceof Error ? mapAuthError(err.message).message : 'Verification failed. The link may have expired.';
-      setErrorMsg(msg);
-      setStatus('error');
     }
+
+    // Attempt 2: Legacy OTP token_hash verification
+    if (tokenHash && type) {
+      const { data, error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: type as EmailOtpType,
+      });
+      if (error) throw error;
+      if (data?.session) return { session: data.session, type };
+    }
+
+    // Anyone can open this link: a session already here verifies nothing.
+    // In the words Supabase uses for a spent link, so mapAuthError says it in the house's.
+    throw new Error('Email link is invalid or has expired');
+  }
+
+  function showFailure(err: unknown) {
+    // A failed link must not leave the recovery flag armed — it would sign
+    // the user out of a legitimate session on next launch.
+    try { storage.delete('recovery_pending'); } catch {}
+    const msg = err instanceof Error ? mapAuthError(err.message).message : 'Verification failed. The link may have expired.';
+    setErrorMsg(msg);
+    setStatus('error');
   }
 
   useEffect(() => {
-    handleCallback();
+    void verify().then(({ session, type }) => handleSuccessfulVerification(session, type)).catch(showFailure);
     return () => { if (onward.current) clearTimeout(onward.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -23,6 +23,7 @@ import { useDispatch } from '@/src/stores/dispatch';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { toFiling } from '@/src/stores/dispatchTypes';
+import { clearDraft, writeDraft } from '@/src/utils/memberDrafts';
 
 let mockRow: Record<string, unknown> | null = null;
 /** The filing's own read fails, as it does offline. */
@@ -353,6 +354,21 @@ describe('the reader', () => {
     await act(async () => { await Promise.resolve(); });
 
     expect(useDispatch.getState().critiques.f1?.[0]?.body).toBe('That is the argument.');
+  });
+
+  it('opens each filing on its own critique draft, never the last one’s', async () => {
+    // The screen is kept when only the filing changes: the last filing's words stayed in the box.
+    writeDraft('u1', 'critique', { body: 'On Ozu.' }, 'f1');
+    const r = await mount();
+    expect(r.getByLabelText('Your critique').props.value).toBe('On Ozu.');
+
+    mockRow = row({ id: 'f2', title: 'The Long Take' });
+    at({ id: 'f2' });
+    r.rerender(<FilingReader />);
+    await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+    expect(r.queryByLabelText('Your critique')).toBeNull();
+    expect(r.getByLabelText('Write a critique')).toBeTruthy();
+    clearDraft('u1', 'critique', 'f1');
   });
 
   it('re-reads the critiques when the order is changed, and not when it is not', async () => {

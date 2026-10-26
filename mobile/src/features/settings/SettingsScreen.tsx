@@ -236,17 +236,21 @@ export function SettingsScreen() {
 
   // Whether the member's profile is read, and if not, asked for here: the form waits for it.
   const profileKnown = useAuthStore((s) => profileRead(s.user));
-  const [profileFailed, setProfileFailed] = useState(false);
-  const askProfile = useCallback(async () => {
-    setProfileFailed(false);
-    const held = await useAuthStore.getState().rereadProfile();
-    if (isMountedRef.current && !held) setProfileFailed(true);
-  }, []);
   const memberId = user?.id;
+  // A failure is held with the member it was for: another member's read has not failed.
+  const [failedFor, setFailedFor] = useState<string | null>(null);
+  const profileFailed = !!memberId && failedFor === memberId;
+  const readProfile = useCallback(() => {
+    if (!memberId) return;
+    void useAuthStore.getState().rereadProfile().then((held) => {
+      if (isMountedRef.current && !held) setFailedFor(memberId);
+    });
+  }, [memberId]);
   useEffect(() => {
-    // Not awaited: its answer lands in the store, and a failure in profileFailed.
-    if (memberId && !profileKnown) void askProfile();
-  }, [memberId, profileKnown, askProfile]);
+    // Not awaited: its answer lands in the store, and a failure in failedFor.
+    if (!profileKnown) readProfile();
+  }, [profileKnown, readProfile]);
+  const askProfile = useCallback(() => { setFailedFor(null); readProfile(); }, [readProfile]);
 
   /** The form, as the profile keeps it: over the member's other preferences, never instead of them. */
   const amendments = (data: SettingsFormData) => ({
@@ -571,7 +575,7 @@ export function SettingsScreen() {
         ) : (
           <SectionCard>
             {profileFailed
-              ? <RoomUnreachable room="your settings" onRetry={() => { void askProfile(); }} />
+              ? <RoomUnreachable room="your settings" onRetry={askProfile} />
               : <RoomRetrieving room="your settings" />}
           </SectionCard>
         )}

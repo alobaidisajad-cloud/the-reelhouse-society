@@ -322,9 +322,13 @@ function ComposeDossierScreen() {
      * Draft restore — new essays only; an amend loads from the server. Whose draft this is
      * lives in memberDrafts.ts: `adoptLegacyDrafts` claims a draft that carries no member only
      * if this member was the phone's last (`last_user_id`), and deletes it unread otherwise.
+     * Taken up as the room renders, once per member: its first frame is the draft.
      */
-    useEffect(() => {
-        if (edit) return;
+    const [draftFor, setDraftFor] = useState<string | null>(null);
+    /** The series a restored draft named: its part is asked fresh below. */
+    const [partToAsk, setPartToAsk] = useState<string | null>(null);
+    if (!edit && draftFor !== (user?.id ?? '')) {
+        setDraftFor(user?.id ?? '');
         adoptLegacyDrafts(user?.id);
         const held = readDraft<DossierDraft>(user?.id, 'dossier');
         const d = held?.data;
@@ -332,33 +336,35 @@ function ComposeDossierScreen() {
             // readDraft clears a draft it cannot parse; the room says so, or it seems to forget.
             // True only when there WAS one — an empty room says nothing.
             if (unreadableDraftFound(user?.id, 'dossier')) setRestored('unreadable');
-            return;
+        } else {
+            if (d.title) setTitle(d.title);
+            if (d.content) {
+                setContent(d.content);
+                setSelection({ start: d.content.length, end: d.content.length });
+            }
+            // The whole piece, not half of it. A film — with its cover — and a
+            // series are as much the member's work as the words, and a draft that
+            // returns the sentences and loses the rest is a draft you learn to
+            // distrust.
+            if (d.film) setFilm(d.film);
+            if (d.series) {
+                setSeries(d.series);
+                setPartToAsk(d.series.id);
+            }
+            setRestored(held?.savedAt ?? 'unknown');
         }
-
-        if (d.title) setTitle(d.title);
-        if (d.content) {
-            setContent(d.content);
-            setSelection({ start: d.content.length, end: d.content.length });
-        }
-        // The whole piece, not half of it. A film — with its cover — and a
-        // series are as much the member's work as the words, and a draft that
-        // returns the sentences and loses the rest is a draft you learn to
-        // distrust.
-        if (d.film) setFilm(d.film);
-        if (d.series) {
-            setSeries(d.series);
-            /**
-             * And the PART is asked fresh rather than trusted. It was computed
-             * when the series was picked; if they filed Part II from elsewhere
-             * since, this draft still says II and would file a second one.
-             */
-            void freshPartFor(user?.id, d.series.id).then((part) => {
-                if (part != null) setSeries((s) => (s && s.id === d.series!.id ? { ...s, part } : s));
-            });
-        }
-        setRestored(held?.savedAt ?? 'unknown');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id]);
+    }
+    /**
+     * And the PART is asked fresh rather than trusted. It was computed
+     * when the series was picked; if they filed Part II from elsewhere
+     * since, this draft still says II and would file a second one.
+     */
+    useEffect(() => {
+        if (!partToAsk) return;
+        void freshPartFor(user?.id, partToAsk).then((part) => {
+            if (part != null) setSeries((s) => (s && s.id === partToAsk ? { ...s, part } : s));
+        });
+    }, [partToAsk, user?.id]);
 
     /**
      * ── AND THE COPY THAT IS NOT ON THIS PHONE ───────────────────────────────
@@ -452,17 +458,19 @@ function ComposeDossierScreen() {
     /**
      * An amend is kept too, in a slot per FILING: the new essay's slot would let an amend
      * overwrite an unfinished one, and one slot per member would lose essay A's amend the
-     * moment essay B opened. Several are kept, oldest evicted.
+     * moment essay B opened. Several are kept, oldest evicted. Taken up as it renders, once per filing.
      */
-    useEffect(() => {
-        if (!edit || !user?.id) return;
+    const amendKey = edit && user?.id ? `${user.id}:${edit}` : null;
+    const [amendFor, setAmendFor] = useState<string | null>(null);
+    if (amendKey && user?.id && edit && amendFor !== amendKey) {
+        setAmendFor(amendKey);
         const held = readDraft<{ title?: string; content?: string }>(user.id, 'edit', edit);
-        if (!held?.data) return;
-        if (held.data.title) setTitle(held.data.title);
-        if (held.data.content) setContent(held.data.content);
-        setRestored(held.savedAt ?? 'unknown');
-     
-    }, [edit, user?.id]);
+        if (held?.data) {
+            if (held.data.title) setTitle(held.data.title);
+            if (held.data.content) setContent(held.data.content);
+            setRestored(held.savedAt ?? 'unknown');
+        }
+    }
 
     useEffect(() => {
         if (!edit || !user?.id) return;

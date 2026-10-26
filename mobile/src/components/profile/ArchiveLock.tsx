@@ -67,19 +67,20 @@ export default function ArchiveLock({ onUnlocked, inline = false }: { onUnlocked
     /** The phone has nothing to open the lock with. */
     const [noMeans, setNoMeans] = useState(false);
 
-    const authenticate = useCallback(async () => {
-        const asked = await askThePhone();
-        if (asked.ok) {
-            setError('');
-            onUnlocked();
-        } else {
-            setNoMeans(asked.noMeans);
-            setError(asked.error);
-        }
+    const authenticate = useCallback(() => {
+        void askThePhone().then((asked) => {
+            if (asked.ok) {
+                setError('');
+                onUnlocked();
+            } else {
+                setNoMeans(asked.noMeans);
+                setError(asked.error);
+            }
+        });
     }, [onUnlocked]);
 
     useEffect(() => {
-        void authenticate();
+        authenticate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

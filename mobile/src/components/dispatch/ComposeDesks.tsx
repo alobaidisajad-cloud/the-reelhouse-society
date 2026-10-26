@@ -234,23 +234,24 @@ export function ComposeBallotScreen() {
 
   // The draft. Its deadline is safe to restore: `closes` is a relative label
   // (`2 DAYS`), made a time only at filing, so it can never restore as past.
-  useEffect(() => {
-    if (!userId) return;
+  // Taken up as it renders, once per member, so the desk's first frame is the draft.
+  const [draftFor, setDraftFor] = useState<string | null>(null);
+  if (userId && draftFor !== userId) {
+    setDraftFor(userId);
     const held = readDraft<{
       question?: string;
       slots?: ({ film: PaperFilm; id: number } | null)[];
       closes?: string;
     }>(userId, 'ballot');
-    if (!held) return;
-    if (held.data.question) setQuestion(held.data.question);
+    if (held?.data.question) setQuestion(held.data.question);
     // Only a closing time the desk still offers: an unknown one would highlight nothing.
-    if (isClosingTime(held.data.closes)) setCloses(held.data.closes);
-    if (Array.isArray(held.data.slots)) {
+    if (isClosingTime(held?.data.closes)) setCloses(held.data.closes);
+    const kept = held?.data.slots;
+    if (Array.isArray(kept)) {
       // Padded to the full row, whatever BALLOT_MAX was when it was saved.
-      const restored = Array.from({ length: BALLOT_MAX }, (_, i) => held.data.slots![i] ?? null);
-      setSlots(restored);
+      setSlots(Array.from({ length: BALLOT_MAX }, (_, i) => kept[i] ?? null));
     }
-  }, [userId]);
+  }
 
   useEffect(() => {
     if (!userId) return;

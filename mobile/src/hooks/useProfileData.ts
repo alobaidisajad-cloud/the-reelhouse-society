@@ -401,16 +401,18 @@ export function useProfileData({
         // at once and they are renewed behind it.
         const storeHasLogs = useLogStore.getState().logs.length > 0;
 
-        const [countsResult, analyticsSummary, logsRead] = await Promise.all([
+        const [countsResult, analyticsSummary] = await Promise.all([
           ProfileDataService.fetchCounts(typedProfile, isSelf, signal),
           ProfileDataService.fetchAnalyticsSummary(typedProfile, signal),
-          storeHasLogs ? Promise.resolve(true) : fetchLogs(),
+          (storeHasLogs ? Promise.resolve(true) : fetchLogs()).then((logsRead) => {
+            if (signal.aborted || !isMounted.current) return;
+            // With nothing held to show, a logs read that failed leaves the archive
+            // and the ledger unread: said, never drawn as an empty record.
+            if (logsRead === false) setTabFailed((f) => ({ ...f, archive: true, ledger: true }));
+            else setTabAnswered((a) => ({ ...a, archive: true, ledger: true }));
+          }),
         ]);
         if (signal.aborted || !isMounted.current) return;
-        // With nothing held to show, a logs read that failed leaves the archive
-        // and the ledger unread: said, never drawn as an empty record.
-        if (logsRead === false) setTabFailed((f) => ({ ...f, archive: true, ledger: true }));
-        else setTabAnswered((a) => ({ ...a, archive: true, ledger: true }));
 
         // Heal the displayed follower/following counts with the live RPC values —
         // the profile row's denormalized columns drift (three maintainers). Optimistic
@@ -648,8 +650,14 @@ export function useProfileData({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelf, fetchLists, noteMore, state.hasMoreLists, state.isLoadingMore.lists, state.targetUser, state.listsCursor]);
 
-  useEffect(() => {
-    // A new member starts from nothing: no row, room or failure of the last one.
+  // A new member starts from nothing: no row, room or failure of the last one.
+  // Made as it renders, so no frame shows the last member under the new name.
+  const memberKey = `${isSelf ? 'self' : 'other'}:${username}`;
+  const [memberFor, setMemberFor] = useState<string | null>(null);
+  /** Your own file was drawn from what the phone holds: its read runs behind, silent. */
+  const [seededSelf, setSeededSelf] = useState(false);
+  if (memberFor !== memberKey) {
+    setMemberFor(memberKey);
     dispatch({ type: 'RESET_STATE' });
     setTabFailed({});
     setTabAnswered({});
@@ -661,6 +669,7 @@ export function useProfileData({
     // isSelf is true only when the handle IS the signed-in member's, so no other
     // member's file is ever seeded from it.
     const cachedSelf = isSelf ? useAuthStore.getState().user : null;
+    setSeededSelf(!!cachedSelf);
     if (cachedSelf) {
       dispatch({ type: 'SET_USER', payload: cachedSelf as unknown as ProfileUser });
       // The counts are the last EXACT totals this account read (the film store
@@ -678,18 +687,21 @@ export function useProfileData({
         following: cachedSelf.following_count ?? 0,
       } });
       dispatch({ type: 'SET_LOADING', payload: false });
-      fetchUserData(); // silent background refresh — no spinner; errors don't render
     } else {
       dispatch({ type: 'SET_LOADING', payload: true });
-      fetchUserData().finally(() => dispatch({ type: 'SET_LOADING', payload: false }));
     }
+  }
+
+  useEffect(() => {
+    if (seededSelf) void fetchUserData(); // silent background refresh — no spinner; errors don't render
+    else void fetchUserData().finally(() => dispatch({ type: 'SET_LOADING', payload: false }));
     // Leaving the member (or the screen) cancels every read still out.
     return () => {
       _fetchAbortRef.current?.abort();
       for (const c of Object.values(_roomAbortRef.current)) c.abort();
       _roomAbortRef.current = {};
     };
-  }, [fetchUserData, isSelf]);
+  }, [fetchUserData, seededSelf]);
 
 
   /**

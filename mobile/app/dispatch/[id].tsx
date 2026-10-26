@@ -119,11 +119,15 @@ export default function FilingReader() {
 
   // A critique's draft survives a phone call, kept per FILING so two essays'
   // critiques never mix. (The short desks keep none: a take is a sentence.)
-  useEffect(() => {
-    if (!id || !me?.id) return;
-    const held = readDraft<{ body?: string }>(me.id, 'critique', id);
-    if (held?.data.body) { setDraft(held.data.body); setComposing(true); }
-  }, [id, me?.id]);
+  // Taken up as it renders, once per filing: another filing opens on its own draft or none.
+  const draftKey = id && me?.id ? `${me.id}:${id}` : null;
+  const [draftFor, setDraftFor] = useState<string | null>(null);
+  if (draftKey && me?.id && draftFor !== draftKey) {
+    setDraftFor(draftKey);
+    const kept = readDraft<{ body?: string }>(me.id, 'critique', id)?.data.body ?? '';
+    setDraft(kept);
+    setComposing(!!kept);
+  }
 
   useEffect(() => {
     if (!id || !me?.id) return;

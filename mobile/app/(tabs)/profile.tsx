@@ -75,17 +75,17 @@ export default function ProfileTab() {
 function HandleArriving() {
   const [failed, setFailed] = useState(false);
   const mounted = useRef(true);
-  const ask = useCallback(() => {
-    setFailed(false);
+  const read = useCallback(() => {
     void useAuthStore.getState().restoreSession().finally(() => {
       if (mounted.current && !useAuthStore.getState().user?.username) setFailed(true);
     });
   }, []);
   useEffect(() => {
     mounted.current = true;
-    ask();
+    read();
     return () => { mounted.current = false; };
-  }, [ask]);
+  }, [read]);
+  const ask = useCallback(() => { setFailed(false); read(); }, [read]);
 
   return (
     <View style={s.container}>

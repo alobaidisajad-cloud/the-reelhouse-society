@@ -57,6 +57,23 @@ interface RawLogRow {
   profiles: { username?: string; avatar_url?: string | null; role?: string } | { username?: string; avatar_url?: string | null; role?: string }[] | null;
 }
 
+/** One page of the film's critiques, newest first, from `from` (null: the first page). */
+async function readPage(filmId: string, from: Cursor) {
+  const askedAt = Date.now();
+  const viewer = useAuthStore.getState().user?.id ?? null;
+  let query = withLogCountFilters(supabase
+    .from('logs')
+    .select(LOG_COLUMNS(viewer)), viewer)
+    .eq('film_id', filmId)
+    .not('review', 'is', null)
+    .neq('review', '')
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false });
+  if (from) query = query.or(afterCursor(from));
+  const { data, error } = await query.limit(PAGE_SIZE);
+  return { data, error, askedAt };
+}
+
 export default function FilmReviewsScreen() {
   const { id: filmId, title } = useLocalSearchParams<{ id: string; title?: string }>();
   const edge = useBottomEdge();
@@ -73,30 +90,7 @@ export default function FilmReviewsScreen() {
   // A later page could not be read: the critiques drawn stay, and the foot says so.
   const [moreFailed, setMoreFailed] = useState(false);
 
-  const fetchLogs = useCallback(async (isLoadMore = false) => {
-    if (!filmId) return;
-    if (isLoadMore && (!hasMore || fetchingMore)) return;
-
-    if (isLoadMore) {
-      setFetchingMore(true);
-    } else {
-      setLoading(true);
-    }
-
-    const askedAt = Date.now();
-    const viewer = useAuthStore.getState().user?.id ?? null;
-    let query = withLogCountFilters(supabase
-      .from('logs')
-      .select(LOG_COLUMNS(viewer)), viewer)
-      .eq('film_id', filmId)
-      .not('review', 'is', null)
-      .neq('review', '')
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false });
-    const from = isLoadMore ? cursor : null;
-    if (from) query = query.or(afterCursor(from));
-    const { data, error } = await query.limit(PAGE_SIZE);
-
+  const showPage = useCallback((isLoadMore: boolean, { data, error, askedAt }: Awaited<ReturnType<typeof readPage>>) => {
     if (isLoadMore) setMoreFailed(!!error);
     else setFailed(!!error);
 
@@ -136,10 +130,20 @@ export default function FilmReviewsScreen() {
 
     if (isLoadMore) setFetchingMore(false);
     else setLoading(false);
-  }, [filmId, cursor, hasMore, fetchingMore]);
+  }, []);
 
+  const fetchLogs = useCallback((isLoadMore = false) => {
+    if (!filmId) return;
+    if (isLoadMore && (!hasMore || fetchingMore)) return;
+    if (isLoadMore) setFetchingMore(true);
+    else setLoading(true);
+    void readPage(filmId, isLoadMore ? cursor : null).then((page) => showPage(isLoadMore, page));
+  }, [filmId, cursor, hasMore, fetchingMore, showPage]);
+
+  // The first page, read once: the screen opens loading.
   useEffect(() => {
-    fetchLogs();
+    if (!filmId) return;
+    void readPage(filmId, null).then((page) => showPage(false, page));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -192,12 +196,12 @@ export default function FilmReviewsScreen() {
               : moreFailed ? (
                 <View style={s.moreFailed}>
                   <Text style={s.moreFailedText}>More critiques could not be reached.</Text>
-                  <TryAgainLine onPress={() => { void fetchLogs(true); }} accessibilityLabel="Ask for more critiques" style={s.moreRetry} />
+                  <TryAgainLine onPress={() => fetchLogs(true)} accessibilityLabel="Ask for more critiques" style={s.moreRetry} />
                 </View>
               ) : null
           }
           ListEmptyComponent={failed ? (
-            <EmptyOffline onRetry={() => { void fetchLogs(); }} />
+            <EmptyOffline onRetry={() => fetchLogs()} />
           ) : (
             <View style={s.emptyBox}>
               <Text style={s.emptyTitle}>The projection box awaits.</Text>

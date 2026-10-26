@@ -71,19 +71,24 @@ export function ContentActionSheet({
 
   // The member's own blocks, read before any is offered: unknown, a block looked like none, and
   // MUTE turned it into a mute. Asked for here when the sheet opens on a list not yet read.
+  // Reading from the frame the sheet opens: the refusal line never shows before the read begins.
   const blocksKnown = useBlockStore((s) => s.blocksKnown);
-  const [askingBlocks, setAskingBlocks] = useState(false);
-  const askBlocks = useCallback(async () => {
+  const wantsBlocks = visible && !blocksKnown;
+  const [askingBlocks, setAskingBlocks] = useState(wantsBlocks);
+  const [wanted, setWanted] = useState(wantsBlocks);
+  if (wanted !== wantsBlocks) {
+    setWanted(wantsBlocks);
+    if (wantsBlocks) setAskingBlocks(true);
+  }
+  const readBlocks = useCallback(() => {
     const me = useAuthStore.getState().user?.id;
-    if (!me) return;
-    setAskingBlocks(true);
-    await useBlockStore.getState().syncFromServer(me);
-    setAskingBlocks(false);
+    void (me ? useBlockStore.getState().syncFromServer(me) : Promise.resolve()).then(() => setAskingBlocks(false));
   }, []);
   useEffect(() => {
     // Not awaited: its answer lands in the store, which draws this sheet.
-    if (visible && !blocksKnown) void askBlocks();
-  }, [visible, blocksKnown, askBlocks]);
+    if (wantsBlocks) readBlocks();
+  }, [wantsBlocks, readBlocks]);
+  const askBlocks = useCallback(() => { setAskingBlocks(true); readBlocks(); }, [readBlocks]);
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
@@ -142,7 +147,7 @@ export function ContentActionSheet({
       label: 'YOUR BLOCKS COULD NOT BE READ · ASK AGAIN',
       icon: <Ban size={18} color={colors.fog} strokeWidth={1.5} />,
       destructive: false,
-      onPress: () => { void askBlocks(); },
+      onPress: askBlocks,
       accessibilityLabel: 'Your blocks could not be read. Ask for them again',
     });
   } else if (showUnblock) {

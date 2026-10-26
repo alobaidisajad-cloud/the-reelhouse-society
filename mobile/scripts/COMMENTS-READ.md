@@ -116,20 +116,20 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/dispatch.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/(tabs)/index.tsx | 2026-10-24 | edited: the welcome's hairline row runs across the page, as the phone lays it |
 | app/(tabs)/lounge.tsx | 2026-10-23 | edited: reading until the salons have answered once (loungesRead): its first frame came before its read began; the corridor reads the salons' own flag (loungesLoading), not one a room's read lowered; the screen says its read failed; ends above the tab bar (useTabContentBottom) |
-| app/(tabs)/profile.tsx | 2026-10-15 | centred states in a CentredRoom: between the bars, and scrolled when taller; the bar clear on arrival before the file |
+| app/(tabs)/profile.tsx | 2026-10-26 | edited: the handle read on mount sets nothing until it answers; TRY AGAIN clears the failure, then reads; centred states in a CentredRoom: between the bars, and scrolled when taller; the bar clear on arrival before the file |
 | app/(tabs)/reels.tsx | 2026-10-26 | edited: the crossfade settled per section: a new section is mid-crossfade in the render it is chosen; edited: the page's wash kept as a texture while the Reel is in front; following nobody only of a list read: an unread follow list spools, a failed one says so and reads it again (both reels); the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/+not-found.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
-| app/auth-callback.tsx | 2026-10-26 | edited: the mount effect placed after handleCallback, the function it calls; edited: a spent link raised in Supabase's own words, so the member reads the house's sentence |
-| app/dispatch/[id].tsx | 2026-10-26 | edited: the next part held with the series part it was found after: another filing has none until its own is read; edited: the film's id and the member's read before the callbacks that use them (the draft's key named as the member's id); the share card is exported at SHARE_CARD_WIDTH |
+| app/auth-callback.tsx | 2026-10-26 | edited: the link verified first (verify), then the success or the failure shown; edited: the mount effect placed after handleCallback, the function it calls; edited: a spent link raised in Supabase's own words, so the member reads the house's sentence |
+| app/dispatch/[id].tsx | 2026-10-26 | edited: each filing opens on its own critique draft or none, taken up as it renders; edited: the next part held with the series part it was found after: another filing has none until its own is read; edited: the film's id and the member's read before the callbacks that use them (the draft's key named as the member's id); the share card is exported at SHARE_CARD_WIDTH |
 | app/dispatch/archive.tsx | 2026-10-15 | foot from useContentBottom |
-| app/dispatch/compose.tsx | 2026-10-15 | header and door from useModalTop; feet from navMetrics; the essay's footer never on the edge |
+| app/dispatch/compose.tsx | 2026-10-26 | edited: the essay's and the amend's drafts taken up as the room renders; the series part asked fresh in an effect; header and door from useModalTop; feet from navMetrics; the essay's footer never on the edge |
 | app/dispatch/room/[username].tsx | 2026-10-15 | foot from useContentBottom, scrollbar from useBottomEdge |
 | app/dispatch/rules.tsx | 2026-10-15 | foot from useContentBottom |
 | app/dispatch/series/[id].tsx | 2026-10-15 | foot from useContentBottom |
 | app/dossier/[id].tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | app/edit-profile.tsx | 2026-10-01 |  |
 | app/film-reviews/__tests__/theArchiveSaysWhenItCouldNotRead.test.tsx | — |  |
-| app/film-reviews/[id].tsx | 2026-10-15 | header top from usePushedHeaderTop; foot from useContentBottom |
+| app/film-reviews/[id].tsx | 2026-10-26 | edited: a page is read (readPage) and then shown (showPage); the first page read once, the screen opening loading; header top from usePushedHeaderTop; foot from useContentBottom |
 | app/film/[id].tsx | 2026-10-23 | edited: marksUnknown from the ledger, and the ledger asked for when it never was |
 | app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx | 2026-09-30 | written with the log page's critiques matched to the stack's |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | — |  |
@@ -148,7 +148,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
 | app/stacks/[id].tsx | 2026-10-23 | edited: certifiedKnown from the stack's read; drawn from the phone, the heart is uninked, its count unknown, and a press asks again; seen ticks from the ledger whole |
 | app/user/[username].tsx | 2026-10-23 | edited: sealed only when the follow list says they do not follow; while it is read, the rooms are retrieved and the follow button is hollow, READING or ASK AGAIN |
-| app/year-in-cinema.tsx | 2026-10-22 | edited: a plain paging ScrollView for the six slides, the note saying why not a list |
+| app/year-in-cinema.tsx | 2026-10-26 | edited: no member is said as the error, derived; the year read shown in its then; TRY AGAIN shows loading, then reads; edited: a plain paging ScrollView for the six slides, the note saying why not a list |
 | ARCHITECTURE.md | 2026-10-15 | edited: Image Caching is true now that every picture states memory-disk, and names the guard that holds it |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
@@ -479,7 +479,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theWritingRoomExplainsItself.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx | — |  |
 | src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/components/dispatch/ComposeDesks.tsx | 2026-10-26 | edited: the search field emptied on close as it renders; the pickers stand on the edge (useBottomEdge) |
+| src/components/dispatch/ComposeDesks.tsx | 2026-10-26 | edited: the ballot's draft taken up as the desk renders, once per member; edited: the search field emptied on close as it renders; the pickers stand on the edge (useBottomEdge) |
 | src/components/dispatch/dayLabel.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/EssayBody.tsx | 2026-10-04 | edited: no letter is raised from a right-to-left opening |
 | src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
@@ -676,7 +676,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/moderation/__tests__/everyModerationRowActs.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/moderation/__tests__/ReportSheet.test.tsx | — |  |
 | src/components/moderation/__tests__/reportSheetDimensions.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/components/moderation/ContentActionSheet.tsx | 2026-10-23 | edited: block, mute and their undoing only over the member's blocks, read: one row reads them, or says they could not be read and asks again; foot from useSheetBottom |
+| src/components/moderation/ContentActionSheet.tsx | 2026-10-26 | edited: reading from the frame the sheet opens on unread blocks: the refusal line never shows before the read begins; edited: block, mute and their undoing only over the member's blocks, read: one row reads them, or says they could not be read and asks again; foot from useSheetBottom |
 | src/components/moderation/ReportSheet.tsx | 2026-10-15 | foot from useSheetBottom |
 | src/components/motion/__tests__/exitingIsNeverUsed.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/motion/__tests__/fixtures/exiting.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
@@ -742,7 +742,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/zz-render.lib.test.ts | 2026-10-24 | edited: a nested Text scales as its parent does |
 | src/components/profile/__tests__/zz-render.lib.ts | 2026-10-24 | edited: a text carries its side margins (--mx); a nested Text is drawn with its parent's scaling, through source marks too |
 | src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
-| src/components/profile/ArchiveLock.tsx | 2026-10-15 | enters and leaves as a PresenceView |
+| src/components/profile/ArchiveLock.tsx | 2026-10-26 | edited: the phone's answer shown in its then; enters and leaves as a PresenceView |
 | src/components/profile/AvatarCropSheet.tsx | 2026-10-15 | enters and leaves as a PresenceView; foot from useSheetBottom |
 | src/components/profile/CinemaDNACard.tsx | 2026-10-15 | close from useOverlayTop |
 | src/components/profile/CinematicInsights.tsx | 2026-10-01 | says retrieving or failed; whose-words; no history comments |
@@ -858,7 +858,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/settings/DataVault.tsx | 2026-10-26 | edited: the undo receipt read as the vault is made and again for another member, not by an effect; no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
 | src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
 | src/features/settings/settings.styles.ts | 2026-10-02 | read; sound |
-| src/features/settings/SettingsScreen.tsx | 2026-10-23 | edited: the form only over a read profile (profileRead): retrieved when not, said when it could not be, and no save without it; its ready mark (settings), ready at once: the lab's control page; nav top from usePushedHeaderTop; foot from useContentBottom; the code window in a CentredCard |
+| src/features/settings/SettingsScreen.tsx | 2026-10-26 | edited: a failed profile read held with the member it was for; the read sets nothing until it answers; edited: the form only over a read profile (profileRead): retrieved when not, said when it could not be, and no save without it; its ready mark (settings), ready at once: the lab's control page; nav top from usePushedHeaderTop; foot from useContentBottom; the code window in a CentredCard |
 | src/features/settings/SettingsSections.tsx | 2026-10-03 | edited: a new password is judged by passwordIsAccepted |
 | src/generated/lucideIcons.js | 2026-10-03 | generated by scripts/lucide-icons.js; its --check guard holds it |
 | src/hooks/__tests__/aFollowThatThrowsIsSaid.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the rooms answered, as the hook hands them; written: a follow that throws is said and rolled back |
@@ -923,7 +923,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useNotableMembers.ts | 2026-10-01 | true as written |
 | src/hooks/useOfflineAware.ts | 2026-10-01 | one subscription, no clock |
 | src/hooks/useProfileController.ts | 2026-10-26 | edited: the route's tab taken as it renders, once per tab; the handle repair begun in the render it is decided, ended by the member arriving or the four seconds; edited: followKnown and rereadFollows; a follow is never filed before the follow list is known |
-| src/hooks/useProfileData.ts | 2026-10-23 | edited: tabAnswered (a room's read came back, not asked) and answeredFilters (the filters a room's rows answer), both reset for a new member; a search overtaken lands neither its rows nor its filters nor lowers the newer one's flag; each read cancelled only by what makes it stale; failures wiped with the member; comments say what is true now |
+| src/hooks/useProfileData.ts | 2026-10-26 | edited: a new member starts from nothing as it renders (your own file seeded there); the archive marks set in the logs read's then; edited: tabAnswered (a room's read came back, not asked) and answeredFilters (the filters a room's rows answer), both reset for a new member; a search overtaken lands neither its rows nor its filters nor lowers the newer one's flag; each read cancelled only by what makes it stale; failures wiped with the member; comments say what is true now |
 | src/hooks/useScreenReady.tsx | 2026-10-16 | edited: takes the read state; a failed read is screen.failed; a wait's start is screen.reading |
 | src/hooks/useScrollTrace.ts | 2026-10-15 | new: a scroll is one Sentry transaction, begin to rest |
 | src/hooks/useSheetPresence.ts | 2026-10-26 | edited: a visible sheet is a drawn one from the render that opens it; the effect keeps the motion; written: five sheets' rise and fall, once |
